@@ -55,17 +55,19 @@ class PlanningResourceTest {
 
     @Test
     void creneauCrudWorks() {
+        String futureTestDate = "2030-01-02";
+
         given()
                 .contentType("application/json")
                 .body("""
                         {
                           "id":"J2-SOIR",
                           "jour":2,
-                          "date":"2030-01-02",
+                          "date":"%s",
                           "heureDebut":"18:00:00",
                           "heureFin":"22:00:00"
                         }
-                        """)
+                        """.formatted(futureTestDate))
                 .when().post("/api/creneaux")
                 .then()
                 .statusCode(200)
