@@ -1,4 +1,4 @@
-package fr.festival.planning.domain;
+package dev.sylvain.planning.domain;
 
 import java.util.HashSet;
 import java.util.Objects;

@@ -1,4 +1,4 @@
-package fr.festival.planning.api;
+package dev.sylvain.planning.api;
 
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 

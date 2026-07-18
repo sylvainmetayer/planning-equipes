@@ -1,4 +1,4 @@
-package fr.festival.planning.domain;
+package dev.sylvain.planning.domain;
 
 import java.time.LocalDate;
 import java.util.List;

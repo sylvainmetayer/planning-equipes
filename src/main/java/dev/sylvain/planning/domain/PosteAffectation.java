@@ -1,4 +1,4 @@
-package fr.festival.planning.domain;
+package dev.sylvain.planning.domain;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;

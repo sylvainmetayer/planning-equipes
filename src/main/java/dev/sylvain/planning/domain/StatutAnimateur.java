@@ -1,4 +1,4 @@
-package fr.festival.planning.domain;
+package dev.sylvain.planning.domain;
 
 public enum StatutAnimateur {
     BENEVOLE,

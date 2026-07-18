@@ -1,4 +1,4 @@
-package fr.festival.planning.service;
+package dev.sylvain.planning.service;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -13,15 +13,15 @@ import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import ai.timefold.solver.core.config.solver.SolverConfig;
-import fr.festival.planning.domain.Animateur;
-import fr.festival.planning.domain.ContactLegal;
-import fr.festival.planning.domain.Creneau;
-import fr.festival.planning.domain.NiveauCompetence;
-import fr.festival.planning.domain.PlanningFestival;
-import fr.festival.planning.domain.PosteAffectation;
-import fr.festival.planning.domain.Stand;
-import fr.festival.planning.domain.StatutAnimateur;
-import fr.festival.planning.domain.TypologieJeu;
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.ContactLegal;
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.NiveauCompetence;
+import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.domain.StatutAnimateur;
+import dev.sylvain.planning.domain.TypologieJeu;
 
 @ApplicationScoped
 public class PlanningService {

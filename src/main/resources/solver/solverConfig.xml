@@ -3,11 +3,11 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="https://timefold.ai/xsd/solver https://timefold.ai/xsd/solver/solver.xsd">
 
-    <solutionClass>fr.festival.planning.domain.PlanningFestival</solutionClass>
-    <entityClass>fr.festival.planning.domain.PosteAffectation</entityClass>
+    <solutionClass>dev.sylvain.planning.domain.PlanningFestival</solutionClass>
+    <entityClass>dev.sylvain.planning.domain.PosteAffectation</entityClass>
 
     <scoreDirectorFactory>
-        <constraintProviderClass>fr.festival.planning.solver.PlanningConstraintProvider</constraintProviderClass>
+        <constraintProviderClass>dev.sylvain.planning.solver.PlanningConstraintProvider</constraintProviderClass>
     </scoreDirectorFactory>
 
 </solver>

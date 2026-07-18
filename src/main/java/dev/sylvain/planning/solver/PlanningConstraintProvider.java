@@ -1,4 +1,4 @@
-package fr.festival.planning.solver;
+package dev.sylvain.planning.solver;
 
 import ai.timefold.solver.core.api.score.buildin.hardmediumsoft.HardMediumSoftScore;
 import ai.timefold.solver.core.api.score.stream.Constraint;
@@ -6,7 +6,7 @@ import ai.timefold.solver.core.api.score.stream.ConstraintCollectors;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
 import ai.timefold.solver.core.api.score.stream.ConstraintProvider;
 import ai.timefold.solver.core.api.score.stream.Joiners;
-import fr.festival.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.PosteAffectation;
 
 public class PlanningConstraintProvider implements ConstraintProvider {
 
