@@ -54,6 +54,36 @@ class PlanningResourceTest {
     }
 
     @Test
+    void creneauCrudWorks() {
+        given()
+                .contentType("application/json")
+                .body("""
+                        {
+                          "id":"J2-SOIR",
+                          "jour":2,
+                          "date":"2030-01-02",
+                          "heureDebut":"18:00:00",
+                          "heureFin":"22:00:00"
+                        }
+                        """)
+                .when().post("/api/creneaux")
+                .then()
+                .statusCode(200)
+                .body("id", equalTo("J2-SOIR"));
+
+        given()
+                .when().get("/api/creneaux")
+                .then()
+                .statusCode(200)
+                .body("find { it.id == 'J2-SOIR' }.jour", equalTo(2));
+
+        given()
+                .when().delete("/api/creneaux/J2-SOIR")
+                .then()
+                .statusCode(204);
+    }
+
+    @Test
     void exportEndpointsReturnFiles() {
         String planningJson = given()
                 .when().get("/api/planning/sample")

@@ -41,6 +41,19 @@
   </section>
 
   <section>
+    <h2>Timeslots</h2>
+    <form id="creneau-form">
+      <input name="id" placeholder="id" required>
+      <input name="jour" placeholder="day" type="number" min="1" required>
+      <input name="date" type="date" required>
+      <input name="heureDebut" type="time" required>
+      <input name="heureFin" type="time" required>
+      <button type="submit">Save timeslot</button>
+    </form>
+    <ul id="creneaux-list"></ul>
+  </section>
+
+  <section>
     <h2>Typologies</h2>
     <form id="typologie-form">
       <input name="id" placeholder="id" required>

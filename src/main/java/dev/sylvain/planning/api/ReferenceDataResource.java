@@ -4,6 +4,7 @@ import java.util.List;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
+import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.ReferenceDataService;
 import dev.sylvain.planning.service.ReferenceDataService.TypologieItem;
@@ -49,6 +50,31 @@ public class ReferenceDataResource {
     @Path("/stands/{id}")
     public Response deleteStand(@PathParam("id") String id) {
         referenceDataService.deleteStand(id);
+        return Response.noContent().build();
+    }
+
+    @GET
+    @Path("/creneaux")
+    public List<Creneau> listCreneaux() {
+        return referenceDataService.listCreneaux();
+    }
+
+    @POST
+    @Path("/creneaux")
+    public Creneau createCreneau(Creneau creneau) {
+        return referenceDataService.createCreneau(creneau);
+    }
+
+    @PUT
+    @Path("/creneaux/{id}")
+    public Creneau updateCreneau(@PathParam("id") String id, Creneau creneau) {
+        return referenceDataService.updateCreneau(id, creneau);
+    }
+
+    @DELETE
+    @Path("/creneaux/{id}")
+    public Response deleteCreneau(@PathParam("id") String id) {
+        referenceDataService.deleteCreneau(id);
         return Response.noContent().build();
     }
 

@@ -2,6 +2,7 @@ package dev.sylvain.planning.service;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -13,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
+import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.StatutAnimateur;
@@ -26,6 +28,7 @@ public class ReferenceDataService {
 
     private final Map<String, Animateur> animateurs = new ConcurrentHashMap<>();
     private final Map<String, Stand> stands = new ConcurrentHashMap<>();
+    private final Map<String, Creneau> creneaux = new ConcurrentHashMap<>();
     private final Map<String, ContrainteAdHoc> contraintes = new ConcurrentHashMap<>();
     private final Map<String, TypologieItem> typologies = new ConcurrentHashMap<>();
 
@@ -37,6 +40,9 @@ public class ReferenceDataService {
 
         Stand stand = new Stand("STAND-STRAT", "Stand stratégie", Set.of(TypologieJeu.STRATEGIE), 1, 2, false);
         stands.put(stand.getId(), stand);
+
+        Creneau creneau = new Creneau("J1-MATIN", 1, LocalDate.now().plusDays(7), LocalTime.of(9, 0), LocalTime.of(13, 0));
+        creneaux.put(creneau.getId(), creneau);
 
         Animateur animateur = new Animateur("A1", "Alice", "Referente", LocalDate.now().minusYears(25), StatutAnimateur.BENEVOLE);
         animateur.setCompetences(Map.of(TypologieJeu.STRATEGIE, NiveauCompetence.REFERENT));
@@ -87,6 +93,29 @@ public class ReferenceDataService {
 
     public void deleteStand(String id) {
         stands.remove(id);
+    }
+
+    public List<Creneau> listCreneaux() {
+        return sortedCopy(creneaux);
+    }
+
+    public Creneau createCreneau(Creneau creneau) {
+        creneau.setId(requiredId(creneau.getId(), "timeslot id"));
+        creneaux.put(creneau.getId(), creneau);
+        return creneau;
+    }
+
+    public Creneau updateCreneau(String id, Creneau creneau) {
+        if (!creneaux.containsKey(id)) {
+            throw new NotFoundException("Timeslot not found: " + id);
+        }
+        creneau.setId(id);
+        creneaux.put(id, creneau);
+        return creneau;
+    }
+
+    public void deleteCreneau(String id) {
+        creneaux.remove(id);
     }
 
     public List<TypologieItem> listTypologies() {

@@ -7,6 +7,8 @@ const standForm = document.getElementById('stand-form');
 const standsList = document.getElementById('stands-list');
 const animateurForm = document.getElementById('animateur-form');
 const animateursList = document.getElementById('animateurs-list');
+const creneauForm = document.getElementById('creneau-form');
+const creneauxList = document.getElementById('creneaux-list');
 const typologieForm = document.getElementById('typologie-form');
 const typologiesList = document.getElementById('typologies-list');
 const contrainteForm = document.getElementById('contrainte-form');
@@ -87,6 +89,21 @@ animateurForm.addEventListener('submit', async (event) => {
   await refreshAnimateurs();
 });
 
+creneauForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const id = creneauForm.elements.id.value.trim();
+  const jour = Number(creneauForm.elements.jour.value);
+  const date = creneauForm.elements.date.value;
+  const heureDebut = creneauForm.elements.heureDebut.value;
+  const heureFin = creneauForm.elements.heureFin.value;
+  await fetchJson('/api/creneaux', {
+    method: 'POST',
+    body: JSON.stringify({ id, jour, date, heureDebut, heureFin })
+  });
+  creneauForm.reset();
+  await refreshCreneaux();
+});
+
 typologieForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   const id = typologieForm.elements.id.value.trim();
@@ -117,6 +134,14 @@ async function refreshStands() {
 
 async function refreshAnimateurs() {
   renderSimpleList(animateursList, await getJson('/api/animateurs'), (animateur) => `${animateur.id} - ${animateur.prenom} ${animateur.nom}`);
+}
+
+async function refreshCreneaux() {
+  renderSimpleList(
+    creneauxList,
+    await getJson('/api/creneaux'),
+    (creneau) => `${creneau.id} - J${creneau.jour} ${creneau.date} ${creneau.heureDebut}-${creneau.heureFin}`
+  );
 }
 
 async function refreshTypologies() {
@@ -191,6 +216,7 @@ async function fetchJson(url, options) {
 Promise.all([
   refreshStands(),
   refreshAnimateurs(),
+  refreshCreneaux(),
   refreshTypologies(),
   refreshContraintes()
 ]).catch((error) => {
