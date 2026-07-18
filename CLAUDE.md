@@ -113,6 +113,38 @@ le bon nombre de `PosteAffectation` au démarrage (étape de setup/seed à parti
 données réelles importées), ce n'est pas une contrainte calculée par une classe
 séparée.
 
+**Contraintes manuelles ponctuelles (ad hoc)**
+
+En complément du référentiel général (section 4 du cahier des charges), l'admin
+doit pouvoir poser des exceptions au cas par cas (ex. « cet animateur pas affecté
+le jour 7 », « ces deux animateurs jamais sur le même créneau »). Modélisées comme
+une entité à part, stockée en base et transformée en contrainte dure dynamique
+côté solveur — pas de contrainte codée en dur pour un cas particulier.
+
+```java
+public enum TypeContrainteAdHoc {
+    INDISPONIBILITE_FORCEE,   // un animateur ne doit jamais être affecté sur X
+    INCOMPATIBILITE,          // deux animateurs ne doivent jamais être ensemble
+    AFFECTATION_FORCEE        // un animateur DOIT être sur ce créneau/stand
+}
+
+public class ContrainteAdHoc {
+    private String id;
+    private TypeContrainteAdHoc type;
+    private List<Animateur> animateursConcernes;  // 1 pour indispo/forcée, 2 pour incompatibilité
+    private Creneau creneau;                       // nullable si la règle porte sur tout le festival
+    private Stand stand;                            // nullable
+    private String raison;                          // libre, pour traçabilité
+    private String creeParUtilisateurId;
+    private Instant creeLe;
+}
+```
+
+Ces contraintes sont chargées au même titre que le référentiel général dans
+`PlanningFestival` et évaluées comme `HardScore` par le moteur — au même niveau de
+priorité que les contraintes dures légales, elles ne doivent jamais être
+contournées silencieusement par l'optimiseur.
+
 ## Référentiel de contraintes
 
 Implémenter le référentiel complet dur / medium / soft détaillé dans le cahier des
@@ -124,6 +156,22 @@ fortement pénalisées mais non bloquantes, les contraintes soft optimisées en
 dernier. Se référer au tableau du cahier des charges pour le classement exact de
 chaque règle — ne pas reclasser une contrainte dure en medium/soft sans validation
 explicite (en particulier tout ce qui touche au cadre légal des mineurs).
+
+## Fonctionnalités attendues
+
+- **Pages CRUD** (ajout / modification / suppression) pour les trois référentiels
+  de base : espaces (stands), personnes (animateurs), typologies de jeux. Écrans
+  simples formulaire + liste, consommant des endpoints REST classiques
+  (`GET/POST/PUT/DELETE /api/stands`, `/api/animateurs`, `/api/typologies`) — pas
+  de logique métier complexe à ce niveau.
+- **Page d'administration des contraintes ad hoc** : lister / créer / supprimer les
+  `ContrainteAdHoc` (voir modèle de données ci-dessus), séparée des écrans CRUD de
+  base.
+- **Export PDF** du planning individuel et du planning global — génération côté
+  serveur (Quarkus, ex. lib type OpenPDF), pas de génération PDF côté navigateur.
+- **Export ICS** du planning individuel : chaque animateur doit pouvoir importer
+  directement ses créneaux dans son calendrier personnel (Google Calendar, Apple
+  Calendar, Outlook). Format texte simple, pas de dépendance lourde nécessaire.
 
 ## Architecture / Stack
 
@@ -160,8 +208,7 @@ docker-compose.yml
 
 ## Conventions de travail
 
-- Code et commentaires en français ou en anglais, à ta convenance, mais rester
-  cohérent dans tout le projet.
+- Code et commentaires  en anglais.
 - Nommer clairement les classes de domaine en français métier (`Animateur`,
   `Creneau`, `TypologieJeu`) pour rester alignées avec le cahier des charges.
 - Écrire un test qui vérifie qu'aucune contrainte dure n'est violée dans le planning
