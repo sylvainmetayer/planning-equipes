@@ -9,9 +9,60 @@
 <body>
 <main>
   <h1>Planning Équipes</h1>
-  <p>Prototype Quarkus + Timefold.</p>
-  <button id="solve-btn">Générer un planning exemple</button>
-  <pre id="output"></pre>
+  <p>Administration and planning tools.</p>
+
+  <section>
+    <h2>Planning</h2>
+    <button id="solve-btn">Generate sample planning</button>
+    <button id="export-pdf-btn">Export global PDF</button>
+    <button id="export-ics-btn">Export ICS for first animator</button>
+    <pre id="planning-output"></pre>
+  </section>
+
+  <section>
+    <h2>Stands</h2>
+    <form id="stand-form">
+      <input name="id" placeholder="id" required>
+      <input name="nom" placeholder="name" required>
+      <button type="submit">Save stand</button>
+    </form>
+    <ul id="stands-list"></ul>
+  </section>
+
+  <section>
+    <h2>Animators</h2>
+    <form id="animateur-form">
+      <input name="id" placeholder="id" required>
+      <input name="prenom" placeholder="first name" required>
+      <input name="nom" placeholder="last name" required>
+      <button type="submit">Save animator</button>
+    </form>
+    <ul id="animateurs-list"></ul>
+  </section>
+
+  <section>
+    <h2>Typologies</h2>
+    <form id="typologie-form">
+      <input name="id" placeholder="id" required>
+      <input name="label" placeholder="label">
+      <button type="submit">Save typology</button>
+    </form>
+    <ul id="typologies-list"></ul>
+  </section>
+
+  <section>
+    <h2>Ad hoc constraints</h2>
+    <form id="contrainte-form">
+      <input name="id" placeholder="id" required>
+      <select name="type">
+        <option value="INDISPONIBILITE_FORCEE">Forced unavailability</option>
+        <option value="INCOMPATIBILITE">Incompatibility</option>
+        <option value="AFFECTATION_FORCEE">Forced assignment</option>
+      </select>
+      <button type="submit">Save constraint</button>
+    </form>
+    <ul id="contraintes-list"></ul>
+  </section>
 </main>
 <script src="/planning.js"></script>
 </body>

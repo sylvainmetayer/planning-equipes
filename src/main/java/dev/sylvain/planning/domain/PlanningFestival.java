@@ -1,6 +1,7 @@
 package dev.sylvain.planning.domain;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 import ai.timefold.solver.core.api.domain.solution.PlanningEntityCollectionProperty;
@@ -22,6 +23,9 @@ public class PlanningFestival {
     @PlanningEntityCollectionProperty
     private List<PosteAffectation> postes;
 
+    @ProblemFactCollectionProperty
+    private List<ContrainteAdHoc> contraintesAdHoc = new ArrayList<>();
+
     @PlanningScore
     private HardMediumSoftScore score;
 
@@ -32,6 +36,14 @@ public class PlanningFestival {
         this.dateDebutFestival = dateDebutFestival;
         this.animateurs = animateurs;
         this.postes = postes;
+    }
+
+    public PlanningFestival(LocalDate dateDebutFestival, List<Animateur> animateurs, List<PosteAffectation> postes,
+            List<ContrainteAdHoc> contraintesAdHoc) {
+        this.dateDebutFestival = dateDebutFestival;
+        this.animateurs = animateurs;
+        this.postes = postes;
+        this.contraintesAdHoc = contraintesAdHoc;
     }
 
     public LocalDate getDateDebutFestival() {
@@ -56,6 +68,14 @@ public class PlanningFestival {
 
     public void setPostes(List<PosteAffectation> postes) {
         this.postes = postes;
+    }
+
+    public List<ContrainteAdHoc> getContraintesAdHoc() {
+        return contraintesAdHoc;
+    }
+
+    public void setContraintesAdHoc(List<ContrainteAdHoc> contraintesAdHoc) {
+        this.contraintesAdHoc = contraintesAdHoc;
     }
 
     public HardMediumSoftScore getScore() {

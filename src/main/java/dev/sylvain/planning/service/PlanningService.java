@@ -27,15 +27,18 @@ import dev.sylvain.planning.domain.TypologieJeu;
 public class PlanningService {
 
     private final SolverFactory<PlanningFestival> solverFactory;
+    private final ReferenceDataService referenceDataService;
 
     public PlanningService(
-            @ConfigProperty(name = "planning.solver.seconds-limit", defaultValue = "30") Long secondsLimit) {
+            @ConfigProperty(name = "planning.solver.seconds-limit", defaultValue = "30") Long secondsLimit,
+            ReferenceDataService referenceDataService) {
         SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
         if (solverConfig.getTerminationConfig() == null) {
             solverConfig.setTerminationConfig(new TerminationConfig());
         }
         solverConfig.getTerminationConfig().setSecondsSpentLimit(secondsLimit);
         this.solverFactory = SolverFactory.create(solverConfig);
+        this.referenceDataService = referenceDataService;
     }
 
     public PlanningFestival construireExemple() {
@@ -63,10 +66,14 @@ public class PlanningService {
                 new PosteAffectation("P1", standStrategie, creneauMatin),
                 new PosteAffectation("P2", standStrategie, creneauApresMidi));
 
-        return new PlanningFestival(debutFestival, List.of(referent, autonome, mineur), postes);
+        return new PlanningFestival(debutFestival, List.of(referent, autonome, mineur), postes,
+                referenceDataService.snapshotContraintes());
     }
 
     public PlanningFestival resoudre(PlanningFestival problem) {
+        if (problem.getContraintesAdHoc() == null || problem.getContraintesAdHoc().isEmpty()) {
+            problem.setContraintesAdHoc(referenceDataService.snapshotContraintes());
+        }
         Solver<PlanningFestival> solver = solverFactory.buildSolver();
         return solver.solve(problem);
     }
