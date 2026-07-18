@@ -43,11 +43,11 @@
   <section>
     <h2>Timeslots</h2>
     <form id="creneau-form">
-      <input name="id" placeholder="id" required>
-      <input name="jour" placeholder="day" type="number" min="1" required>
-      <input name="date" type="date" required>
-      <input name="heureDebut" type="time" required>
-      <input name="heureFin" type="time" required>
+      <label>Id <input name="id" placeholder="id" required></label>
+      <label>Day <input name="jour" placeholder="day" type="number" min="1" required></label>
+      <label>Date <input name="date" type="date" required></label>
+      <label>Start <input name="heureDebut" type="time" required></label>
+      <label>End <input name="heureFin" type="time" required></label>
       <button type="submit">Save timeslot</button>
     </form>
     <ul id="creneaux-list"></ul>

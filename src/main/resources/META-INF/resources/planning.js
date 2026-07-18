@@ -34,18 +34,26 @@ solveButton.addEventListener('click', async () => {
 });
 
 exportPdfButton.addEventListener('click', async () => {
-  const planning = await ensurePlanning();
-  await downloadFile('/api/planning/export/pdf/global', 'planning-global.pdf', planning, 'application/pdf');
+  try {
+    const planning = await ensurePlanning();
+    await downloadFile('/api/planning/export/pdf/global', 'planning-global.pdf', planning, 'application/pdf');
+  } catch (error) {
+    planningOutput.textContent = `Error: ${error.message}`;
+  }
 });
 
 exportIcsButton.addEventListener('click', async () => {
-  const planning = await ensurePlanning();
-  const animateur = (planning.animateurs || [])[0];
-  if (!animateur) {
-    planningOutput.textContent = 'No animator available for ICS export.';
-    return;
+  try {
+    const planning = await ensurePlanning();
+    const animateur = (planning.animateurs || [])[0];
+    if (!animateur) {
+      planningOutput.textContent = 'No animator available for ICS export.';
+      return;
+    }
+    await downloadFile(`/api/planning/export/ics/animateur/${encodeURIComponent(animateur.id)}`, `${animateur.id}.ics`, planning, 'text/calendar');
+  } catch (error) {
+    planningOutput.textContent = `Error: ${error.message}`;
   }
-  await downloadFile(`/api/planning/export/ics/animateur/${encodeURIComponent(animateur.id)}`, `${animateur.id}.ics`, planning, 'text/calendar');
 });
 
 standForm.addEventListener('submit', async (event) => {
