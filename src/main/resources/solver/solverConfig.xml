@@ -10,7 +10,4 @@
         <constraintProviderClass>fr.festival.planning.solver.PlanningConstraintProvider</constraintProviderClass>
     </scoreDirectorFactory>
 
-    <termination>
-        <secondsSpentLimit>3</secondsSpentLimit>
-    </termination>
 </solver>

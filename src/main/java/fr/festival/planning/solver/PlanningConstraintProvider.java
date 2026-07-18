@@ -2,6 +2,7 @@ package fr.festival.planning.solver;
 
 import ai.timefold.solver.core.api.score.buildin.hardmediumsoft.HardMediumSoftScore;
 import ai.timefold.solver.core.api.score.stream.Constraint;
+import ai.timefold.solver.core.api.score.stream.ConstraintCollectors;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
 import ai.timefold.solver.core.api.score.stream.ConstraintProvider;
 import ai.timefold.solver.core.api.score.stream.Joiners;
@@ -71,6 +72,7 @@ public class PlanningConstraintProvider implements ConstraintProvider {
                 .filter(poste -> poste.getAnimateur() != null
                         && poste.getAnimateur().estMineurLe(poste.getCreneau().getDate()))
                 .ifNotExists(PosteAffectation.class,
+                        Joiners.equal(PosteAffectation::getStand),
                         Joiners.equal(PosteAffectation::getCreneau),
                         Joiners.filtering((posteMineur, autrePoste) -> autrePoste.getAnimateur() != null
                                 && autrePoste.getAnimateur().estMajeurLe(autrePoste.getCreneau().getDate())))
@@ -80,11 +82,11 @@ public class PlanningConstraintProvider implements ConstraintProvider {
 
     private Constraint standComplexeAvecReferent(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(PosteAffectation.class)
-                .ifNotExists(PosteAffectation.class,
-                        Joiners.equal(PosteAffectation::getStand),
-                        Joiners.equal(PosteAffectation::getCreneau),
-                        Joiners.filtering((poste, autrePoste) -> autrePoste.getAnimateur() != null
-                                && autrePoste.getAnimateur().estReferentPour(autrePoste.getStand())))
+                .groupBy(PosteAffectation::getStand,
+                        PosteAffectation::getCreneau,
+                        ConstraintCollectors.sum(poste -> poste.getAnimateur() != null
+                                && poste.getAnimateur().estReferentPour(poste.getStand()) ? 1 : 0))
+                .filter((stand, creneau, nombreReferents) -> nombreReferents == 0)
                 .penalize(HardMediumSoftScore.ONE_MEDIUM)
                 .asConstraint("standComplexeAvecReferent");
     }
@@ -92,7 +94,7 @@ public class PlanningConstraintProvider implements ConstraintProvider {
     private Constraint equilibrerCharge(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(PosteAffectation.class)
                 .filter(poste -> poste.getAnimateur() != null)
-                .groupBy(PosteAffectation::getAnimateur, ai.timefold.solver.core.api.score.stream.ConstraintCollectors.count())
+                .groupBy(PosteAffectation::getAnimateur, ConstraintCollectors.count())
                 .penalize(HardMediumSoftScore.ONE_MEDIUM, (animateur, nbAffectations) -> nbAffectations * nbAffectations)
                 .asConstraint("equilibrerCharge");
     }

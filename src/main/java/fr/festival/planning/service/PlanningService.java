@@ -8,7 +8,11 @@ import java.util.Set;
 
 import ai.timefold.solver.core.api.solver.Solver;
 import ai.timefold.solver.core.api.solver.SolverFactory;
+import ai.timefold.solver.core.config.solver.termination.TerminationConfig;
 import jakarta.enterprise.context.ApplicationScoped;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+
+import ai.timefold.solver.core.config.solver.SolverConfig;
 import fr.festival.planning.domain.Animateur;
 import fr.festival.planning.domain.ContactLegal;
 import fr.festival.planning.domain.Creneau;
@@ -24,8 +28,14 @@ public class PlanningService {
 
     private final SolverFactory<PlanningFestival> solverFactory;
 
-    public PlanningService() {
-        this.solverFactory = SolverFactory.createFromXmlResource("solver/solverConfig.xml");
+    public PlanningService(
+            @ConfigProperty(name = "planning.solver.seconds-limit", defaultValue = "30") Long secondsLimit) {
+        SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
+        if (solverConfig.getTerminationConfig() == null) {
+            solverConfig.setTerminationConfig(new TerminationConfig());
+        }
+        solverConfig.getTerminationConfig().setSecondsSpentLimit(secondsLimit);
+        this.solverFactory = SolverFactory.create(solverConfig);
     }
 
     public PlanningFestival construireExemple() {

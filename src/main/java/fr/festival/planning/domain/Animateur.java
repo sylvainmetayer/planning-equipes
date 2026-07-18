@@ -37,7 +37,9 @@ public class Animateur {
     }
 
     public boolean estMajeurLe(LocalDate dateReference) {
-        return !estMineurLe(dateReference);
+        return dateReference != null
+                && dateNaissance != null
+                && !estMineurLe(dateReference);
     }
 
     public boolean possedeCompetencePour(Stand stand) {
