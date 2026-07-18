@@ -1,7 +1,8 @@
 package dev.sylvain.planning.service;
 
 import java.io.ByteArrayOutputStream;
-import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
@@ -18,9 +19,12 @@ import jakarta.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class PlanningExportService {
 
+    private static final String FESTIVAL_TIMEZONE = "Europe/Paris";
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ISO_LOCAL_DATE;
-    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HHmmss");
-    private static final DateTimeFormatter ICS_DATE_TIME = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss");
+    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
+    private static final DateTimeFormatter ICS_UTC_DATE_TIME = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'")
+            .withZone(ZoneOffset.UTC);
+    private static final DateTimeFormatter ICS_LOCAL_DATE_TIME = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss");
 
     public byte[] exportGlobalPdf(PlanningFestival planning) {
         return buildPdf(
@@ -56,14 +60,14 @@ public class PlanningExportService {
             String uid = poste.getId() + "@planning-equipes";
             builder.append("BEGIN:VEVENT\r\n")
                     .append("UID:").append(uid).append("\r\n")
-                    .append("DTSTAMP:")
-                    .append(poste.getCreneau().getDate().atStartOfDay().format(ICS_DATE_TIME))
-                    .append("Z\r\n")
-                    .append("DTSTART:")
-                    .append(poste.getCreneau().getDate().atTime(poste.getCreneau().getHeureDebut()).format(ICS_DATE_TIME))
+                    .append("DTSTAMP:").append(ICS_UTC_DATE_TIME.format(Instant.now())).append("\r\n")
+                    .append("DTSTART;TZID=").append(FESTIVAL_TIMEZONE).append(":")
+                    .append(poste.getCreneau().getDate().atTime(poste.getCreneau().getHeureDebut())
+                            .format(ICS_LOCAL_DATE_TIME))
                     .append("\r\n")
-                    .append("DTEND:")
-                    .append(poste.getCreneau().getDate().atTime(poste.getCreneau().getHeureFin()).format(ICS_DATE_TIME))
+                    .append("DTEND;TZID=").append(FESTIVAL_TIMEZONE).append(":")
+                    .append(poste.getCreneau().getDate().atTime(poste.getCreneau().getHeureFin())
+                            .format(ICS_LOCAL_DATE_TIME))
                     .append("\r\n")
                     .append("SUMMARY:").append(escapeIcs(poste.getStand().getNom())).append("\r\n")
                     .append("DESCRIPTION:")
