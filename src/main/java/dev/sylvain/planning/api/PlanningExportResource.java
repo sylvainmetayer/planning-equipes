@@ -45,9 +45,10 @@ public class PlanningExportResource {
     public Response exportAnimateurIcs(@PathParam("animateurId") String animateurId, PlanningFestival planningFestival) {
         String content = planningExportService.exportAnimateurIcs(planningFestival, animateurId);
         String displayName = planningExportService.resolveAnimateurName(planningFestival, animateurId);
+        String safeFilename = (displayName == null ? "planning" : displayName).replaceAll("[\\\\/\\r\\n\\\"]", "_");
         return Response.ok(content)
                 .type("text/calendar; charset=utf-8")
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + displayName + ".ics\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + safeFilename + ".ics\"")
                 .build();
     }
 }
