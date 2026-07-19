@@ -1,16 +1,22 @@
 package dev.sylvain.planning.service;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import ai.timefold.solver.core.api.solver.Solver;
 import ai.timefold.solver.core.api.solver.SolverFactory;
 import ai.timefold.solver.core.config.solver.termination.TerminationConfig;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.yaml.snakeyaml.Yaml;
 
 import ai.timefold.solver.core.config.solver.SolverConfig;
 import dev.sylvain.planning.domain.Animateur;
@@ -42,31 +48,118 @@ public class PlanningService {
     }
 
     public PlanningFestival construireExemple() {
-        LocalDate debutFestival = LocalDate.now().plusDays(7);
+        try {
+            return chargerScenarioYaml("scenario.yml");
+        } catch (IOException e) {
+            throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
+        }
+    }
 
-        Creneau creneauMatin = new Creneau("J1-MATIN", 1, debutFestival, LocalTime.of(9, 0), LocalTime.of(13, 0));
-        Creneau creneauApresMidi = new Creneau("J1-AM", 1, debutFestival, LocalTime.of(14, 0), LocalTime.of(18, 0));
-
-        Stand standStrategie = new Stand("STAND-STRAT", "Stand stratégie", Set.of(TypologieJeu.STRATEGIE), 1, 1, false);
-
-        Animateur referent = new Animateur("A1", "Alice", "Referente", LocalDate.now().minusYears(24), StatutAnimateur.BENEVOLE);
-        referent.setCompetences(Map.of(TypologieJeu.STRATEGIE, NiveauCompetence.REFERENT));
-        referent.setDisponibilites(Set.of(creneauMatin, creneauApresMidi));
-
-        Animateur autonome = new Animateur("A2", "Bruno", "Autonome", LocalDate.now().minusYears(19), StatutAnimateur.BENEVOLE);
-        autonome.setCompetences(Map.of(TypologieJeu.STRATEGIE, NiveauCompetence.AUTONOME));
-        autonome.setDisponibilites(Set.of(creneauMatin, creneauApresMidi));
-
-        Animateur mineur = new Animateur("A3", "Chloe", "Junior", LocalDate.now().minusYears(16), StatutAnimateur.BENEVOLE);
-        mineur.setCompetences(Map.of(TypologieJeu.STRATEGIE, NiveauCompetence.DEBUTANT));
-        mineur.setDisponibilites(Set.of(creneauApresMidi));
-        mineur.setContactLegal(new ContactLegal("Parent Junior", "+33000000000", "parent@example.org"));
-
-        List<PosteAffectation> postes = List.of(
-                new PosteAffectation("P1", standStrategie, creneauMatin),
-                new PosteAffectation("P2", standStrategie, creneauApresMidi));
-
-        return new PlanningFestival(debutFestival, List.of(referent, autonome, mineur), postes,
+    @SuppressWarnings("unchecked")
+    private PlanningFestival chargerScenarioYaml(String scenarioPath) throws IOException {
+        Yaml yaml = new Yaml();
+        InputStream inputStream = getClass().getClassLoader().getResourceAsStream(scenarioPath);
+        if (inputStream == null) {
+            throw new IOException("Fichier de scénario non trouvé: " + scenarioPath);
+        }
+        
+        Map<String, Object> scenarioData = yaml.load(inputStream);
+        
+        // Charger les creneaux
+        Map<String, Creneau> creneauxMap = new HashMap<>();
+        List<Map<String, Object>> creneauxList = (List<Map<String, Object>>) scenarioData.get("creneaux");
+        for (Map<String, Object> creneauData : creneauxList) {
+            String id = (String) creneauData.get("id");
+            int jour = ((Number) creneauData.get("jour")).intValue();
+            String dateStr = (String) creneauData.get("date");
+            String heureDebutStr = (String) creneauData.get("heureDebut");
+            String heureFinStr = (String) creneauData.get("heureFin");
+            
+            LocalDate date = LocalDate.parse(dateStr);
+            LocalTime heureDebut = LocalTime.parse(heureDebutStr);
+            LocalTime heureFin = LocalTime.parse(heureFinStr);
+            
+            Creneau creneau = new Creneau(id, jour, date, heureDebut, heureFin);
+            creneauxMap.put(id, creneau);
+        }
+        
+        // Charger les stands
+        Map<String, Stand> standsMap = new HashMap<>();
+        List<Map<String, Object>> standsList = (List<Map<String, Object>>) scenarioData.get("stands");
+        for (Map<String, Object> standData : standsList) {
+            String id = (String) standData.get("id");
+            String nom = (String) standData.get("nom");
+            List<String> typologiesStr = (List<String>) standData.get("typologiesProposees");
+            Set<TypologieJeu> typologies = typologiesStr.stream()
+                    .map(TypologieJeu::valueOf)
+                    .collect(Collectors.toSet());
+            int effectifMin = ((Number) standData.get("effectifMin")).intValue();
+            int effectifMax = ((Number) standData.get("effectifMax")).intValue();
+            boolean reserveMajeurs = (Boolean) standData.getOrDefault("reserveMajeurs", false);
+            
+            Stand stand = new Stand(id, nom, typologies, effectifMin, effectifMax, reserveMajeurs);
+            standsMap.put(id, stand);
+        }
+        
+        // Charger les animateurs
+        List<Animateur> animateurs = new ArrayList<>();
+        List<Map<String, Object>> animateursList = (List<Map<String, Object>>) scenarioData.get("animateurs");
+        for (Map<String, Object> animateurData : animateursList) {
+            String id = (String) animateurData.get("id");
+            String prenom = (String) animateurData.get("prenom");
+            String nom = (String) animateurData.get("nom");
+            String dateNaissanceStr = (String) animateurData.get("dateNaissance");
+            LocalDate dateNaissance = LocalDate.parse(dateNaissanceStr);
+            String statutStr = (String) animateurData.get("statut");
+            StatutAnimateur statut = StatutAnimateur.valueOf(statutStr);
+            
+            Animateur animateur = new Animateur(id, prenom, nom, dateNaissance, statut);
+            
+            // Charger les compétences
+            Map<String, String> competencesData = (Map<String, String>) animateurData.get("competences");
+            Map<TypologieJeu, NiveauCompetence> competences = new HashMap<>();
+            for (Map.Entry<String, String> entry : competencesData.entrySet()) {
+                competences.put(TypologieJeu.valueOf(entry.getKey()), NiveauCompetence.valueOf(entry.getValue()));
+            }
+            animateur.setCompetences(competences);
+            
+            // Charger les disponibilités
+            List<String> dispoIds = (List<String>) animateurData.get("disponibilites");
+            Set<Creneau> disponibilites = dispoIds.stream()
+                    .map(creneauxMap::get)
+                    .collect(Collectors.toSet());
+            animateur.setDisponibilites(disponibilites);
+            
+            // Charger le contact légal si présent
+            Map<String, String> contactData = (Map<String, String>) animateurData.get("contactLegal");
+            if (contactData != null) {
+                String nomContact = contactData.get("nomContact");
+                String telephone = contactData.get("telephone");
+                String email = contactData.get("email");
+                animateur.setContactLegal(new ContactLegal(nomContact, telephone, email));
+            }
+            
+            animateurs.add(animateur);
+        }
+        
+        // Charger les postes
+        List<PosteAffectation> postes = new ArrayList<>();
+        List<Map<String, Object>> postesList = (List<Map<String, Object>>) scenarioData.get("postes");
+        for (Map<String, Object> posteData : postesList) {
+            String id = (String) posteData.get("id");
+            String standId = (String) posteData.get("standId");
+            String creneauId = (String) posteData.get("creneauId");
+            
+            Stand stand = standsMap.get(standId);
+            Creneau creneau = creneauxMap.get(creneauId);
+            
+            PosteAffectation poste = new PosteAffectation(id, stand, creneau);
+            postes.add(poste);
+        }
+        
+        LocalDate dateDebut = LocalDate.parse((String) ((Map<String, Object>) scenarioData.get("festival")).get("dateDebut"));
+        
+        return new PlanningFestival(dateDebut, animateurs, postes,
                 referenceDataService.snapshotContraintes());
     }
 

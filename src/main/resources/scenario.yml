@@ -1,0 +1,70 @@
+festival:
+  dateDebut: 2026-07-08
+  
+creneaux:
+  - id: J1-MATIN
+    jour: 1
+    date: 2026-07-08
+    heureDebut: "09:00"
+    heureFin: "13:00"
+  - id: J1-AM
+    jour: 1
+    date: 2026-07-08
+    heureDebut: "14:00"
+    heureFin: "18:00"
+
+stands:
+  - id: STAND-STRAT
+    nom: Stand stratégie
+    typologiesProposees:
+      - STRATEGIE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+
+animateurs:
+  - id: A1
+    prenom: Alice
+    nom: Referente
+    dateNaissance: 2002-07-19
+    statut: BENEVOLE
+    competences:
+      STRATEGIE: REFERENT
+    disponibilites:
+      - J1-MATIN
+      - J1-AM
+    contactLegal: null
+  - id: A2
+    prenom: Bruno
+    nom: Autonome
+    dateNaissance: 2007-07-19
+    statut: BENEVOLE
+    competences:
+      STRATEGIE: AUTONOME
+    disponibilites:
+      - J1-MATIN
+      - J1-AM
+    contactLegal: null
+  - id: A3
+    prenom: Chloe
+    nom: Junior
+    dateNaissance: 2010-07-19
+    statut: BENEVOLE
+    competences:
+      STRATEGIE: DEBUTANT
+    disponibilites:
+      - J1-AM
+    contactLegal:
+      nomContact: Parent Junior
+      telephone: "+33000000000"
+      email: parent@example.org
+
+postes:
+  - id: P1
+    standId: STAND-STRAT
+    creneauId: J1-MATIN
+    animateurId: null
+  - id: P2
+    standId: STAND-STRAT
+    creneauId: J1-AM
+    animateurId: null

@@ -1,5 +1,6 @@
 const planningOutput = document.getElementById('planning-output');
-const solveButton = document.getElementById('solve-btn');
+const loadSampleButton = document.getElementById('solve-btn');
+const timefoldSolveButton = document.getElementById('timefold-solve-btn');
 const exportPdfButton = document.getElementById('export-pdf-btn');
 const exportIcsButton = document.getElementById('export-ics-btn');
 
@@ -16,20 +17,68 @@ const contraintesList = document.getElementById('contraintes-list');
 
 let lastSolvedPlanning = null;
 
-solveButton.addEventListener('click', async () => {
-  solveButton.disabled = true;
-  planningOutput.textContent = 'Loading planning...';
+// Local state for manually entered data
+let localStands = [];
+let localAnimateurs = [];
+let localCreneaux = [];
+let localTypologies = [];
+let localContraintes = [];
+
+loadSampleButton.addEventListener('click', async () => {
+  loadSampleButton.disabled = true;
+  planningOutput.textContent = 'Loading sample planning...';
   try {
     const sample = await getJson('/api/planning/sample');
+    planningOutput.textContent = JSON.stringify(sample, null, 2);
+    lastSolvedPlanning = sample;
+    
+    // Populate local state with sample data
+    localAnimateurs = sample.animateurs || [];
+    localStands = sample.stands || [];
+    localCreneaux = sample.creneaux || [];
+    localTypologies = sample.typologies || [];
+    localContraintes = sample.contraintes || [];
+    
+    // Refresh all lists to display loaded data
+    await Promise.all([
+      refreshStands(),
+      refreshAnimateurs(),
+      refreshCreneaux(),
+      refreshTypologies(),
+      refreshContraintes()
+    ]);
+    
+    planningOutput.textContent = 'Sample planning loaded. Data populated in forms.';
+  } catch (error) {
+    planningOutput.textContent = `Error: ${error.message}`;
+  } finally {
+    loadSampleButton.disabled = false;
+  }
+});
+
+timefoldSolveButton.addEventListener('click', async () => {
+  timefoldSolveButton.disabled = true;
+  planningOutput.textContent = 'Solving with Timefold...';
+  try {
+    let planningToSolve = lastSolvedPlanning;
+    
+    // If no loaded planning, try to build from local data
+    if (!planningToSolve) {
+      if (localAnimateurs.length === 0 && localStands.length === 0) {
+        throw new Error('No planning loaded. Click "Load Sample" first or enter data manually.');
+      }
+      planningToSolve = buildLocalPlanning();
+    }
+    
     lastSolvedPlanning = await fetchJson('/api/solve', {
       method: 'POST',
-      body: JSON.stringify(sample)
+      body: JSON.stringify(planningToSolve)
     });
     planningOutput.textContent = JSON.stringify(lastSolvedPlanning, null, 2);
   } catch (error) {
     planningOutput.textContent = `Error: ${error.message}`;
   } finally {
-    solveButton.disabled = false;
+    timefoldSolveButton.disabled = false;
   }
 });
 
@@ -60,16 +109,18 @@ standForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   const id = standForm.elements.id.value.trim();
   const nom = standForm.elements.nom.value.trim();
+  const stand = {
+    id,
+    nom,
+    typologiesProposees: ['STRATEGIE'],
+    effectifMin: 1,
+    effectifMax: 1,
+    reserveMajeurs: false
+  };
+  localStands.push(stand);
   await fetchJson('/api/stands', {
     method: 'POST',
-    body: JSON.stringify({
-      id,
-      nom,
-      typologiesProposees: ['STRATEGIE'],
-      effectifMin: 1,
-      effectifMax: 1,
-      reserveMajeurs: false
-    })
+    body: JSON.stringify(stand)
   });
   standForm.reset();
   await refreshStands();
@@ -80,18 +131,20 @@ animateurForm.addEventListener('submit', async (event) => {
   const id = animateurForm.elements.id.value.trim();
   const prenom = animateurForm.elements.prenom.value.trim();
   const nom = animateurForm.elements.nom.value.trim();
+  const animateur = {
+    id,
+    prenom,
+    nom,
+    dateNaissance: '2000-01-01',
+    statut: 'BENEVOLE',
+    competences: { STRATEGIE: 'AUTONOME' },
+    disponibilites: [],
+    contactLegal: null
+  };
+  localAnimateurs.push(animateur);
   await fetchJson('/api/animateurs', {
     method: 'POST',
-    body: JSON.stringify({
-      id,
-      prenom,
-      nom,
-      dateNaissance: '2000-01-01',
-      statut: 'BENEVOLE',
-      competences: { STRATEGIE: 'AUTONOME' },
-      disponibilites: [],
-      contactLegal: null
-    })
+    body: JSON.stringify(animateur)
   });
   animateurForm.reset();
   await refreshAnimateurs();
@@ -104,9 +157,11 @@ creneauForm.addEventListener('submit', async (event) => {
   const date = creneauForm.elements.date.value;
   const heureDebut = creneauForm.elements.heureDebut.value;
   const heureFin = creneauForm.elements.heureFin.value;
+  const creneau = { id, jour, date, heureDebut, heureFin };
+  localCreneaux.push(creneau);
   await fetchJson('/api/creneaux', {
     method: 'POST',
-    body: JSON.stringify({ id, jour, date, heureDebut, heureFin })
+    body: JSON.stringify(creneau)
   });
   creneauForm.reset();
   await refreshCreneaux();
@@ -116,9 +171,11 @@ typologieForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   const id = typologieForm.elements.id.value.trim();
   const label = typologieForm.elements.label.value.trim();
+  const typologie = { id, label };
+  localTypologies.push(typologie);
   await fetchJson('/api/typologies', {
     method: 'POST',
-    body: JSON.stringify({ id, label })
+    body: JSON.stringify(typologie)
   });
   typologieForm.reset();
   await refreshTypologies();
@@ -128,13 +185,47 @@ contrainteForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   const id = contrainteForm.elements.id.value.trim();
   const type = contrainteForm.elements.type.value;
+  const contrainte = { id, type, animateursConcernes: [], creeParUtilisateurId: 'ui' };
+  localContraintes.push(contrainte);
   await fetchJson('/api/contraintes-ad-hoc', {
     method: 'POST',
-    body: JSON.stringify({ id, type, animateursConcernes: [], creeParUtilisateurId: 'ui' })
+    body: JSON.stringify(contrainte)
   });
   contrainteForm.reset();
   await refreshContraintes();
 });
+
+function buildLocalPlanning() {
+  // Build a planning from locally entered data
+  // Generate PosteAffectation for each combination of stand and creneau
+  const postes = [];
+  let posteCounter = 0;
+  
+  for (const stand of localStands) {
+    for (const creneau of localCreneaux) {
+      // Create posts based on effectifMin to effectifMax
+      const numPosts = Math.min(stand.effectifMax, 2); // default to 2 if not specified
+      for (let i = 0; i < numPosts; i++) {
+        postes.push({
+          id: `poste-${posteCounter++}`,
+          stand,
+          creneau,
+          animateur: null
+        });
+      }
+    }
+  }
+  
+  return {
+    animateurs: localAnimateurs,
+    stands: localStands,
+    creneaux: localCreneaux,
+    typologies: localTypologies,
+    contraintes: localContraintes,
+    postes,
+    score: null
+  };
+}
 
 async function refreshStands() {
   renderSimpleList(standsList, await getJson('/api/stands'), (stand) => `${stand.id} - ${stand.nom}`);
