@@ -34,8 +34,9 @@ public class PlanningExportResource {
     @Produces("application/pdf")
     public Response exportAnimateurPdf(@PathParam("animateurId") String animateurId, PlanningFestival planningFestival) {
         byte[] content = planningExportService.exportAnimateurPdf(planningFestival, animateurId);
+        String safeAnimateurId = (animateurId == null ? "unknown" : animateurId).replaceAll("[\\\\/\\r\\n\\\"]", "_");
         return Response.ok(content)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"planning-" + animateurId + ".pdf\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"planning-" + safeAnimateurId + ".pdf\"")
                 .build();
     }
 
