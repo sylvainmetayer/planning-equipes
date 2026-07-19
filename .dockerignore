@@ -1,5 +1,8 @@
-*
-!target/*-runner
-!target/*-runner.jar
-!target/lib/*
-!target/quarkus-app/*
+# Ignore build output and VCS/editor metadata
+target/
+.git/
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
