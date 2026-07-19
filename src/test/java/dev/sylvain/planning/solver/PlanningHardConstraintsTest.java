@@ -24,7 +24,7 @@ class PlanningHardConstraintsTest {
     PlanningService planningService;
 
     @Test
-    void planningGenereNeVioleAucuneContrainteDureSurLeCasNominal() {
+    void generatedPlanningDoesNotViolateAnyHardConstraintOnNominalCase() {
         PlanningFestival problem = planningService.construireExemple();
 
         PlanningFestival solved = planningService.resoudre(problem);
