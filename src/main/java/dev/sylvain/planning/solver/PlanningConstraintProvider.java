@@ -40,8 +40,13 @@ public class PlanningConstraintProvider implements ConstraintProvider {
 
     private Constraint animateurDisponible(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(PosteAffectation.class)
-                .filter(poste -> poste.getAnimateur() != null
-                        && !poste.getAnimateur().getDisponibilites().contains(poste.getCreneau()))
+                .filter(poste -> {
+                    Animateur animateur = poste.getAnimateur();
+                    return animateur != null
+                            && poste.getCreneau() != null
+                            && animateur.getDisponibilites() != null
+                            && !animateur.getDisponibilites().contains(poste.getCreneau());
+                })
                 .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint("animateurDisponible");
     }
