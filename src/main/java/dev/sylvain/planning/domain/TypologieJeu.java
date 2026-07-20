@@ -6,5 +6,6 @@ public enum TypologieJeu {
     ENFANT,
     COOPERATIF,
     ADRESSE,
-    ROLE
+    ROLE,
+    ENIGME
 }

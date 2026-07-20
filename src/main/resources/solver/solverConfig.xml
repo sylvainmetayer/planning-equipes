@@ -10,4 +10,16 @@
         <constraintProviderClass>dev.sylvain.planning.solver.PlanningConstraintProvider</constraintProviderClass>
     </scoreDirectorFactory>
 
+    <!--
+        Phases intentionally left implicit so Timefold uses its default tuned
+        pipeline (FIRST_FIT construction heuristic + Late Acceptance local
+        search). Overriding either phase without a matching diversification of
+        moves has empirically produced worse hard scores at short time
+        budgets. Tune here only after measuring against ScoreAnalysis output.
+
+        Termination (seconds / unimproved-seconds) is injected programmatically
+        by PlanningService so that individual solve requests can override the
+        default from application.properties.
+    -->
+
 </solver>

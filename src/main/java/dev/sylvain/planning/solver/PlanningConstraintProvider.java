@@ -106,10 +106,16 @@ public class PlanningConstraintProvider implements ConstraintProvider {
     }
 
     private Constraint equilibrerCharge(ConstraintFactory constraintFactory) {
+        // Use a real load-balance collector: unfairness() returns 0 when every
+        // animateur has the same number of postes, and grows with the deviation.
+        // The old sum-of-squares formulation had a huge non-zero baseline
+        // (>29 000 medium points on the nominal scenario) which drowned the
+        // signal of real medium-level violations in the reported score.
         return constraintFactory.forEach(PosteAffectation.class)
                 .filter(poste -> poste.getAnimateur() != null)
-                .groupBy(PosteAffectation::getAnimateur, ConstraintCollectors.count())
-                .penalize(HardMediumSoftScore.ONE_MEDIUM, (animateur, nbAffectations) -> nbAffectations * nbAffectations)
+                .groupBy(ConstraintCollectors.loadBalance(PosteAffectation::getAnimateur))
+                .penalize(HardMediumSoftScore.ONE_MEDIUM,
+                        loadBalance -> loadBalance.unfairness().intValue())
                 .asConstraint("equilibrerCharge");
     }
 

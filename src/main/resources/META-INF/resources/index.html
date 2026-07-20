@@ -11,12 +11,19 @@
   <h1>Planning Équipes</h1>
   <p>Administration and planning tools.</p>
 
+  <nav id="page-nav">
+    <button type="button" class="nav-btn active" data-page="admin-page">Administration</button>
+    <button type="button" class="nav-btn" data-page="calendar-page">Assignment calendar</button>
+  </nav>
+
+  <div id="admin-page" class="page">
   <section>
     <h2>Planning</h2>
     <button id="solve-btn">Generate sample planning</button>
     <button id="timefold-solve-btn">Solve with Timefold</button>
+    <button id="analyze-btn">Analyze solution</button>
     <button id="export-pdf-btn">Export global PDF</button>
-    <button id="export-ics-btn">Export ICS for first animator</button>
+    <button id="export-ics-btn">Export ICS (all animators, ZIP)</button>
     <pre id="planning-output"></pre>
   </section>
 
@@ -77,6 +84,16 @@
     </form>
     <ul id="contraintes-list"></ul>
   </section>
+  </div>
+
+  <div id="calendar-page" class="page hidden">
+    <section>
+      <h2>Assignment calendar</h2>
+      <p>Visual view of the currently loaded/solved planning (stands &times; timeslots).</p>
+      <button id="calendar-refresh-btn">Load / refresh calendar</button>
+      <div id="calendar-container"></div>
+    </section>
+  </div>
 </main>
 <script src="/planning.js"></script>
 </body>

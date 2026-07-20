@@ -41,6 +41,16 @@ public class PlanningExportResource {
     }
 
     @POST
+    @Path("/ics/all")
+    @Produces("application/zip")
+    public Response exportAllIcsZip(PlanningFestival planningFestival) {
+        byte[] content = planningExportService.exportAllIcsZip(planningFestival);
+        return Response.ok(content)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"planning-ics.zip\"")
+                .build();
+    }
+
+    @POST
     @Path("/ics/animateur/{animateurId}")
     @Produces("text/calendar")
     public Response exportAnimateurIcs(@PathParam("animateurId") String animateurId, PlanningFestival planningFestival) {

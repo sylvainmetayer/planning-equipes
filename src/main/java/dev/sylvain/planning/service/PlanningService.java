@@ -13,7 +13,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import ai.timefold.solver.core.api.score.analysis.ConstraintAnalysis;
+import ai.timefold.solver.core.api.score.analysis.ScoreAnalysis;
 import ai.timefold.solver.core.api.solver.Solver;
+import ai.timefold.solver.core.api.solver.SolutionManager;
 import ai.timefold.solver.core.api.solver.SolverFactory;
 import ai.timefold.solver.core.config.score.director.ScoreDirectorFactoryConfig;
 import ai.timefold.solver.core.config.solver.termination.TerminationConfig;
@@ -37,25 +40,40 @@ import dev.sylvain.planning.solver.PlanningConstraintProvider;
 public class PlanningService {
 
     private final SolverFactory<PlanningFestival> solverFactory;
+    private final SolutionManager<PlanningFestival, ?> solutionManager;
     private final ReferenceDataService referenceDataService;
+    private final long defaultSecondsLimit;
+    private final long defaultUnimprovedSecondsLimit;
 
     public PlanningService(
-            @ConfigProperty(name = "planning.solver.seconds-limit", defaultValue = "30") Long secondsLimit,
+            @ConfigProperty(name = "planning.solver.seconds-limit", defaultValue = "120") Long secondsLimit,
+            @ConfigProperty(name = "planning.solver.unimproved-seconds-limit", defaultValue = "30") Long unimprovedSecondsLimit,
             ReferenceDataService referenceDataService) {
         SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
+        solverConfig.setScoreDirectorFactoryConfig(new ScoreDirectorFactoryConfig()
+                .withConstraintProviderClass(PlanningConstraintProvider.class));
+        applyTermination(solverConfig, secondsLimit, unimprovedSecondsLimit);
+        this.solverFactory = SolverFactory.create(solverConfig);
+        this.solutionManager = SolutionManager.create(this.solverFactory);
+        this.referenceDataService = referenceDataService;
+        this.defaultSecondsLimit = secondsLimit;
+        this.defaultUnimprovedSecondsLimit = unimprovedSecondsLimit;
+    }
+
+    private static void applyTermination(SolverConfig solverConfig, Long secondsLimit, Long unimprovedSecondsLimit) {
         if (solverConfig.getTerminationConfig() == null) {
             solverConfig.setTerminationConfig(new TerminationConfig());
         }
-        solverConfig.setScoreDirectorFactoryConfig(new ScoreDirectorFactoryConfig()
-                .withConstraintProviderClass(PlanningConstraintProvider.class));
-        solverConfig.getTerminationConfig().setSecondsSpentLimit(secondsLimit);
-        this.solverFactory = SolverFactory.create(solverConfig);
-        this.referenceDataService = referenceDataService;
+        TerminationConfig termination = solverConfig.getTerminationConfig();
+        termination.setSecondsSpentLimit(secondsLimit);
+        if (unimprovedSecondsLimit != null && unimprovedSecondsLimit > 0) {
+            termination.setUnimprovedSecondsSpentLimit(unimprovedSecondsLimit);
+        }
     }
 
     public PlanningFestival construireExemple() {
         try {
-            return chargerScenarioYaml("scenario.yml");
+            return chargerScenarioYaml("scenario-complet.yaml");
         } catch (IOException e) {
             throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
         }
@@ -170,11 +188,59 @@ public class PlanningService {
     }
 
     public PlanningFestival resoudre(PlanningFestival problem) {
+        return resoudre(problem, null);
+    }
+
+    public PlanningFestival resoudre(PlanningFestival problem, Long secondsLimitOverride) {
         if (problem.getContraintesAdHoc() == null || problem.getContraintesAdHoc().isEmpty()) {
             problem.setContraintesAdHoc(referenceDataService.snapshotContraintes());
         }
-        Solver<PlanningFestival> solver = solverFactory.buildSolver();
+        Solver<PlanningFestival> solver = resolveSolverFactory(secondsLimitOverride).buildSolver();
         return solver.solve(problem);
+    }
+
+    /**
+     * Solve and return a structured explanation of every constraint that
+     * contributed to the final score — including hard/medium violations that
+     * remain in the best solution found. Useful for diagnosing why the solver
+     * did not converge to zero hard.
+     */
+    public PlanningDiagnostic analyser(PlanningFestival problem, Long secondsLimitOverride) {
+        PlanningFestival solved = resoudre(problem, secondsLimitOverride);
+        ScoreAnalysis<?> analysis = solutionManager.analyze(solved);
+        List<ConstraintDiagnostic> constraintDiagnostics = new ArrayList<>();
+        for (ConstraintAnalysis<?> ca : analysis.constraintAnalyses()) {
+            constraintDiagnostics.add(new ConstraintDiagnostic(
+                    ca.constraintRef().constraintName(),
+                    String.valueOf(ca.score()),
+                    ca.matchCount()));
+        }
+        constraintDiagnostics.sort((a, b) -> Integer.compare(b.matchCount, a.matchCount));
+        int unassigned = (int) solved.getPostes().stream()
+                .filter(p -> p.getAnimateur() == null)
+                .count();
+        return new PlanningDiagnostic(String.valueOf(solved.getScore()), unassigned, constraintDiagnostics, solved);
+    }
+
+    private SolverFactory<PlanningFestival> resolveSolverFactory(Long secondsLimitOverride) {
+        if (secondsLimitOverride == null || secondsLimitOverride.equals(defaultSecondsLimit)) {
+            return solverFactory;
+        }
+        SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
+        solverConfig.setScoreDirectorFactoryConfig(new ScoreDirectorFactoryConfig()
+                .withConstraintProviderClass(PlanningConstraintProvider.class));
+        applyTermination(solverConfig, secondsLimitOverride, defaultUnimprovedSecondsLimit);
+        return SolverFactory.create(solverConfig);
+    }
+
+    public record ConstraintDiagnostic(String name, String score, int matchCount) {
+    }
+
+    public record PlanningDiagnostic(
+            String score,
+            int postesNonPourvus,
+            List<ConstraintDiagnostic> contraintes,
+            PlanningFestival planning) {
     }
 
     private LocalDate parseLocalDate(Object value, String fieldName) {

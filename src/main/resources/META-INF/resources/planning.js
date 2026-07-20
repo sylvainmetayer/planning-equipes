@@ -1,8 +1,14 @@
 const planningOutput = document.getElementById('planning-output');
 const loadSampleButton = document.getElementById('solve-btn');
 const timefoldSolveButton = document.getElementById('timefold-solve-btn');
+const analyzeButton = document.getElementById('analyze-btn');
 const exportPdfButton = document.getElementById('export-pdf-btn');
 const exportIcsButton = document.getElementById('export-ics-btn');
+
+const navButtons = document.querySelectorAll('.nav-btn');
+const pages = document.querySelectorAll('.page');
+const calendarRefreshButton = document.getElementById('calendar-refresh-btn');
+const calendarContainer = document.getElementById('calendar-container');
 
 const standForm = document.getElementById('stand-form');
 const standsList = document.getElementById('stands-list');
@@ -71,6 +77,26 @@ timefoldSolveButton.addEventListener('click', async () => {
   }
 });
 
+analyzeButton.addEventListener('click', async () => {
+  analyzeButton.disabled = true;
+  planningOutput.textContent = 'Analyzing solution...';
+  try {
+    const planningToAnalyze = await ensurePlanning();
+    const analysis = await fetchJson('/api/solve/analyze', {
+      method: 'POST',
+      body: JSON.stringify(planningToAnalyze)
+    });
+    lastSolvedPlanning = analysis.planning || planningToAnalyze;
+    hydrateLocalStateFromPlanning(lastSolvedPlanning);
+    renderLocalReferenceData();
+    planningOutput.textContent = JSON.stringify(analysis, null, 2);
+  } catch (error) {
+    planningOutput.textContent = `Error: ${error.message}`;
+  } finally {
+    analyzeButton.disabled = false;
+  }
+});
+
 exportPdfButton.addEventListener('click', async () => {
   try {
     const planning = await ensurePlanning();
@@ -83,16 +109,106 @@ exportPdfButton.addEventListener('click', async () => {
 exportIcsButton.addEventListener('click', async () => {
   try {
     const planning = await ensurePlanning();
-    const animateur = (planning.animateurs || [])[0];
-    if (!animateur) {
-      planningOutput.textContent = 'No animator available for ICS export.';
-      return;
-    }
-    await downloadFile(`/api/planning/export/ics/animateur/${encodeURIComponent(animateur.id)}`, `${animateur.id}.ics`, planning, 'text/calendar');
+    await downloadFile('/api/planning/export/ics/all', 'planning-ics.zip', planning, 'application/zip');
   } catch (error) {
     planningOutput.textContent = `Error: ${error.message}`;
   }
 });
+
+navButtons.forEach((button) => {
+  button.addEventListener('click', async () => {
+    navButtons.forEach((btn) => btn.classList.toggle('active', btn === button));
+    pages.forEach((page) => page.classList.toggle('hidden', page.id !== button.dataset.page));
+    if (button.dataset.page === 'calendar-page') {
+      await renderCalendar();
+    }
+  });
+});
+
+calendarRefreshButton.addEventListener('click', () => {
+  renderCalendar().catch((error) => {
+    calendarContainer.textContent = `Error: ${error.message}`;
+  });
+});
+
+async function renderCalendar() {
+  calendarContainer.textContent = 'Loading calendar...';
+  const planning = await ensurePlanning();
+  const postes = planning.postes || [];
+
+  const creneauxById = new Map();
+  const standsById = new Map();
+  postes.forEach((poste) => {
+    if (poste.creneau) {
+      creneauxById.set(poste.creneau.id, poste.creneau);
+    }
+    if (poste.stand) {
+      standsById.set(poste.stand.id, poste.stand);
+    }
+  });
+
+  const creneaux = Array.from(creneauxById.values()).sort(
+    (a, b) => `${a.date}T${a.heureDebut}`.localeCompare(`${b.date}T${b.heureDebut}`)
+  );
+  const stands = Array.from(standsById.values()).sort((a, b) => a.nom.localeCompare(b.nom));
+
+  if (creneaux.length === 0 || stands.length === 0) {
+    calendarContainer.textContent = 'No planning data available yet.';
+    return;
+  }
+
+  // Group animators by stand + timeslot
+  const assignments = new Map(); // key: creneauId|standId -> [animateur names]
+  postes.forEach((poste) => {
+    if (!poste.creneau || !poste.stand) {
+      return;
+    }
+    const key = `${poste.creneau.id}|${poste.stand.id}`;
+    const names = assignments.get(key) || [];
+    if (poste.animateur) {
+      names.push(`${poste.animateur.prenom || ''} ${poste.animateur.nom || ''}`.trim());
+    }
+    assignments.set(key, names);
+  });
+
+  const table = document.createElement('table');
+  table.className = 'calendar-table';
+
+  const thead = document.createElement('thead');
+  const headRow = document.createElement('tr');
+  headRow.appendChild(document.createElement('th')).textContent = 'Timeslot';
+  stands.forEach((stand) => {
+    const th = document.createElement('th');
+    th.textContent = stand.nom;
+    headRow.appendChild(th);
+  });
+  thead.appendChild(headRow);
+  table.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
+  creneaux.forEach((creneau) => {
+    const row = document.createElement('tr');
+    const th = document.createElement('th');
+    th.textContent = `J${creneau.jour} ${creneau.date} ${creneau.heureDebut}-${creneau.heureFin}`;
+    row.appendChild(th);
+    stands.forEach((stand) => {
+      const td = document.createElement('td');
+      const names = assignments.get(`${creneau.id}|${stand.id}`) || [];
+      if (names.length === 0) {
+        td.textContent = '-';
+        td.className = 'empty-slot';
+      } else {
+        td.textContent = names.join(', ');
+      }
+      row.appendChild(td);
+    });
+    tbody.appendChild(row);
+  });
+  table.appendChild(tbody);
+
+  calendarContainer.innerHTML = '';
+  calendarContainer.appendChild(table);
+}
 
 standForm.addEventListener('submit', async (event) => {
   event.preventDefault();

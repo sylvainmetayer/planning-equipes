@@ -2,12 +2,14 @@ package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.service.PlanningService;
+import dev.sylvain.planning.service.PlanningService.PlanningDiagnostic;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 
 @Path("/api")
@@ -26,7 +28,21 @@ public class PlanningResource {
 
     @POST
     @Path("/solve")
-    public PlanningFestival solve(PlanningFestival planningFestival) {
-        return planningService.resoudre(planningFestival);
+    public PlanningFestival solve(PlanningFestival planningFestival,
+            @QueryParam("seconds") Long secondsLimit) {
+        return planningService.resoudre(planningFestival, secondsLimit);
+    }
+
+    /**
+     * Solve and return a per-constraint breakdown of the resulting score.
+     * Useful when {@code /api/solve} finishes with a non-zero hard score:
+     * this endpoint tells you which constraint(s) are still violated and by
+     * how much, instead of just returning the raw score.
+     */
+    @POST
+    @Path("/solve/analyze")
+    public PlanningDiagnostic analyze(PlanningFestival planningFestival,
+            @QueryParam("seconds") Long secondsLimit) {
+        return planningService.analyser(planningFestival, secondsLimit);
     }
 }
