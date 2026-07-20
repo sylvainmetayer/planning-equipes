@@ -31,22 +31,9 @@ loadSampleButton.addEventListener('click', async () => {
     const sample = await getJson('/api/planning/sample');
     planningOutput.textContent = JSON.stringify(sample, null, 2);
     lastSolvedPlanning = sample;
-    
-    // Populate local state with sample data
-    localAnimateurs = sample.animateurs || [];
-    localStands = sample.stands || [];
-    localCreneaux = sample.creneaux || [];
-    localTypologies = sample.typologies || [];
-    localContraintes = sample.contraintes || [];
-    
-    // Refresh all lists to display loaded data
-    await Promise.all([
-      refreshStands(),
-      refreshAnimateurs(),
-      refreshCreneaux(),
-      refreshTypologies(),
-      refreshContraintes()
-    ]);
+
+    hydrateLocalStateFromPlanning(sample);
+    renderLocalReferenceData();
     
     planningOutput.textContent = 'Sample planning loaded. Data populated in forms.';
   } catch (error) {
@@ -74,6 +61,8 @@ timefoldSolveButton.addEventListener('click', async () => {
       method: 'POST',
       body: JSON.stringify(planningToSolve)
     });
+    hydrateLocalStateFromPlanning(lastSolvedPlanning);
+    renderLocalReferenceData();
     planningOutput.textContent = JSON.stringify(lastSolvedPlanning, null, 2);
   } catch (error) {
     planningOutput.textContent = `Error: ${error.message}`;
@@ -221,10 +210,46 @@ function buildLocalPlanning() {
     stands: localStands,
     creneaux: localCreneaux,
     typologies: localTypologies,
-    contraintes: localContraintes,
+    contraintesAdHoc: localContraintes,
     postes,
     score: null
   };
+}
+
+function hydrateLocalStateFromPlanning(planning) {
+  const postes = planning.postes || [];
+
+  localAnimateurs = planning.animateurs || [];
+  localStands = uniqueById(postes.map((poste) => poste.stand).filter(Boolean));
+  localCreneaux = uniqueById(postes.map((poste) => poste.creneau).filter(Boolean));
+  localContraintes = planning.contraintesAdHoc || [];
+
+  const typologyIds = new Set();
+  localStands.forEach((stand) => {
+    (stand.typologiesProposees || []).forEach((typologie) => typologyIds.add(typologie));
+  });
+  localAnimateurs.forEach((animateur) => {
+    Object.keys(animateur.competences || {}).forEach((typologie) => typologyIds.add(typologie));
+  });
+  localTypologies = Array.from(typologyIds)
+    .sort((left, right) => left.localeCompare(right))
+    .map((typologie) => ({ id: typologie, label: typologie }));
+}
+
+function renderLocalReferenceData() {
+  renderSimpleList(standsList, localStands, (stand) => `${stand.id} - ${stand.nom}`);
+  renderSimpleList(animateursList, localAnimateurs, (animateur) => `${animateur.id} - ${animateur.prenom} ${animateur.nom}`);
+  renderSimpleList(
+    creneauxList,
+    localCreneaux,
+    (creneau) => `${creneau.id} - J${creneau.jour} ${creneau.date} ${creneau.heureDebut}-${creneau.heureFin}`
+  );
+  renderSimpleList(typologiesList, localTypologies, (typologie) => `${typologie.id} - ${typologie.label}`);
+  renderSimpleList(contraintesList, localContraintes, (contrainte) => `${contrainte.id} - ${contrainte.type}`);
+}
+
+function uniqueById(items) {
+  return Array.from(new Map(items.map((item) => [item.id, item])).values());
 }
 
 async function refreshStands() {

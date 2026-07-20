@@ -32,7 +32,10 @@ public class PlanningConstraintProvider implements ConstraintProvider {
     }
 
     private Constraint posteDoitEtrePourvu(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(PosteAffectation.class)
+        // forEach() excludes entities with a null planning variable value, so this
+        // constraint (which specifically targets unassigned postes) must use
+        // forEachIncludingUnassigned() to actually see them.
+        return constraintFactory.forEachIncludingUnassigned(PosteAffectation.class)
                 .filter(poste -> poste.getAnimateur() == null)
                 .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint("posteDoitEtrePourvu");

@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +15,7 @@ import java.util.stream.Collectors;
 
 import ai.timefold.solver.core.api.solver.Solver;
 import ai.timefold.solver.core.api.solver.SolverFactory;
+import ai.timefold.solver.core.config.score.director.ScoreDirectorFactoryConfig;
 import ai.timefold.solver.core.config.solver.termination.TerminationConfig;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -28,6 +31,7 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.StatutAnimateur;
 import dev.sylvain.planning.domain.TypologieJeu;
+import dev.sylvain.planning.solver.PlanningConstraintProvider;
 
 @ApplicationScoped
 public class PlanningService {
@@ -42,6 +46,8 @@ public class PlanningService {
         if (solverConfig.getTerminationConfig() == null) {
             solverConfig.setTerminationConfig(new TerminationConfig());
         }
+        solverConfig.setScoreDirectorFactoryConfig(new ScoreDirectorFactoryConfig()
+                .withConstraintProviderClass(PlanningConstraintProvider.class));
         solverConfig.getTerminationConfig().setSecondsSpentLimit(secondsLimit);
         this.solverFactory = SolverFactory.create(solverConfig);
         this.referenceDataService = referenceDataService;
@@ -71,11 +77,10 @@ public class PlanningService {
         for (Map<String, Object> creneauData : creneauxList) {
             String id = (String) creneauData.get("id");
             int jour = ((Number) creneauData.get("jour")).intValue();
-            String dateStr = (String) creneauData.get("date");
             String heureDebutStr = (String) creneauData.get("heureDebut");
             String heureFinStr = (String) creneauData.get("heureFin");
             
-            LocalDate date = LocalDate.parse(dateStr);
+            LocalDate date = parseLocalDate(creneauData.get("date"), "creneaux.date");
             LocalTime heureDebut = LocalTime.parse(heureDebutStr);
             LocalTime heureFin = LocalTime.parse(heureFinStr);
             
@@ -108,8 +113,7 @@ public class PlanningService {
             String id = (String) animateurData.get("id");
             String prenom = (String) animateurData.get("prenom");
             String nom = (String) animateurData.get("nom");
-            String dateNaissanceStr = (String) animateurData.get("dateNaissance");
-            LocalDate dateNaissance = LocalDate.parse(dateNaissanceStr);
+            LocalDate dateNaissance = parseLocalDate(animateurData.get("dateNaissance"), "animateurs.dateNaissance");
             String statutStr = (String) animateurData.get("statut");
             StatutAnimateur statut = StatutAnimateur.valueOf(statutStr);
             
@@ -157,7 +161,9 @@ public class PlanningService {
             postes.add(poste);
         }
         
-        LocalDate dateDebut = LocalDate.parse((String) ((Map<String, Object>) scenarioData.get("festival")).get("dateDebut"));
+        LocalDate dateDebut = parseLocalDate(
+            ((Map<String, Object>) scenarioData.get("festival")).get("dateDebut"),
+            "festival.dateDebut");
         
         return new PlanningFestival(dateDebut, animateurs, postes,
                 referenceDataService.snapshotContraintes());
@@ -169,5 +175,22 @@ public class PlanningService {
         }
         Solver<PlanningFestival> solver = solverFactory.buildSolver();
         return solver.solve(problem);
+    }
+
+    private LocalDate parseLocalDate(Object value, String fieldName) {
+        if (value == null) {
+            throw new IllegalArgumentException("Champ date manquant: " + fieldName);
+        }
+        if (value instanceof LocalDate localDate) {
+            return localDate;
+        }
+        if (value instanceof Date date) {
+            return date.toInstant().atZone(ZoneOffset.UTC).toLocalDate();
+        }
+        if (value instanceof CharSequence charSequence) {
+            return LocalDate.parse(charSequence.toString());
+        }
+        throw new IllegalArgumentException(
+                "Type de date non supporte pour " + fieldName + ": " + value.getClass().getName());
     }
 }
