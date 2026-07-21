@@ -33,7 +33,6 @@ animateurs:
     disponibilites:
       - J1-MATIN
       - J1-AM
-    contactLegal: null
   - id: A2
     prenom: Bruno
     nom: Autonome
@@ -44,7 +43,6 @@ animateurs:
     disponibilites:
       - J1-MATIN
       - J1-AM
-    contactLegal: null
   - id: A3
     prenom: Chloe
     nom: Junior
@@ -54,10 +52,6 @@ animateurs:
       STRATEGIE: DEBUTANT
     disponibilites:
       - J1-AM
-    contactLegal:
-      nomContact: Parent Junior
-      telephone: "+33000000000"
-      email: parent@example.org
 
 postes:
   - id: P1

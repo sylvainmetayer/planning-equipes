@@ -43,7 +43,6 @@ public class Animateur {
     private StatutAnimateur statut;           // BENEVOLE, SALARIE, ... (cf. cahier des charges 2.)
     private Map<TypologieJeu, NiveauCompetence> competences;
     private Set<Creneau> disponibilites;      // créneaux où il peut être affecté
-    private ContactLegal contactLegal;        // si mineur — nullable sinon
 }
 
 public class Stand {

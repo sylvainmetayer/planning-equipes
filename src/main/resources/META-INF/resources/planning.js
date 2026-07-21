@@ -243,8 +243,7 @@ animateurForm.addEventListener('submit', async (event) => {
     dateNaissance: '2000-01-01',
     statut: 'BENEVOLE',
     competences: { STRATEGIE: 'AUTONOME' },
-    disponibilites: [],
-    contactLegal: null
+    disponibilites: []
   };
   localAnimateurs.push(animateur);
   await fetchJson('/api/animateurs', {

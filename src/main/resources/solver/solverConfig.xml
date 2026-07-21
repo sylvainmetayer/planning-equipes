@@ -11,15 +11,27 @@
     </scoreDirectorFactory>
 
     <!--
-        Phases intentionally left implicit so Timefold uses its default tuned
-        pipeline (FIRST_FIT construction heuristic + Late Acceptance local
-        search). Overriding either phase without a matching diversification of
-        moves has empirically produced worse hard scores at short time
-        budgets. Tune here only after measuring against ScoreAnalysis output.
-
-        Termination (seconds / unimproved-seconds) is injected programmatically
-        by PlanningService so that individual solve requests can override the
-        default from application.properties.
+        Explicit pipeline. FIRST_FIT quickly builds an initial assignment, then
+        Late Acceptance does the heavy lifting. A dedicated union move selector
+        (change + swap) keeps a healthy move diversity so the search can trade
+        an "unavailable" assignment for an available animateur rather than
+        stalling. Termination (seconds / unimproved-seconds) is injected
+        programmatically by PlanningService.
     -->
+    <constructionHeuristic>
+        <constructionHeuristicType>FIRST_FIT</constructionHeuristicType>
+    </constructionHeuristic>
+    <localSearch>
+        <unionMoveSelector>
+            <changeMoveSelector/>
+            <swapMoveSelector/>
+        </unionMoveSelector>
+        <acceptor>
+            <lateAcceptanceSize>400</lateAcceptanceSize>
+        </acceptor>
+        <forager>
+            <acceptedCountLimit>4</acceptedCountLimit>
+        </forager>
+    </localSearch>
 
 </solver>

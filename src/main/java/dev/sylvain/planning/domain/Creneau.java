@@ -63,6 +63,38 @@ public class Creneau {
         this.heureFin = heureFin;
     }
 
+    /**
+     * Duration of the slot in minutes, handling slots that cross midnight
+     * (e.g. 20:00 -> 00:00 counts as 240 minutes, not a negative value).
+     */
+    public int getDureeMinutes() {
+        if (heureDebut == null || heureFin == null) {
+            return 0;
+        }
+        int debut = heureDebut.toSecondOfDay();
+        int fin = heureFin.toSecondOfDay();
+        int seconds = fin > debut ? fin - debut : (24 * 3600 - debut) + fin;
+        return seconds / 60;
+    }
+
+    /**
+     * True when the slot overlaps the legal night window for minors
+     * (20:00-06:00), including any slot that runs into or past midnight.
+     * Used to forbid night work for minors.
+     */
+    public boolean chevaucheNuit() {
+        if (heureDebut == null || heureFin == null) {
+            return false;
+        }
+        boolean croiseMinuit = !heureFin.isAfter(heureDebut);
+        if (croiseMinuit) {
+            return true;
+        }
+        LocalTime debutNuit = LocalTime.of(20, 0);
+        LocalTime finNuit = LocalTime.of(6, 0);
+        return !heureDebut.isBefore(debutNuit) || !heureFin.isAfter(finNuit);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

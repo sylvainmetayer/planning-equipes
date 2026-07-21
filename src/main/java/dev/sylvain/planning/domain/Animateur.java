@@ -17,7 +17,6 @@ public class Animateur {
     private StatutAnimateur statut;
     private Map<TypologieJeu, NiveauCompetence> competences = new HashMap<>();
     private Set<Creneau> disponibilites = new HashSet<>();
-    private ContactLegal contactLegal;
 
     public Animateur() {
     }
@@ -49,6 +48,11 @@ public class Animateur {
     public boolean estReferentPour(Stand stand) {
         return stand.getTypologiesProposees().stream()
                 .anyMatch(typologie -> competences.get(typologie) == NiveauCompetence.REFERENT);
+    }
+
+    public boolean estDebutantPour(Stand stand) {
+        return stand.getTypologiesProposees().stream()
+                .anyMatch(typologie -> competences.get(typologie) == NiveauCompetence.DEBUTANT);
     }
 
     public String getId() {
@@ -105,14 +109,6 @@ public class Animateur {
 
     public void setDisponibilites(Set<Creneau> disponibilites) {
         this.disponibilites = disponibilites;
-    }
-
-    public ContactLegal getContactLegal() {
-        return contactLegal;
-    }
-
-    public void setContactLegal(ContactLegal contactLegal) {
-        this.contactLegal = contactLegal;
     }
 
     @Override

@@ -26,7 +26,6 @@ import org.yaml.snakeyaml.Yaml;
 
 import ai.timefold.solver.core.config.solver.SolverConfig;
 import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.ContactLegal;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.PlanningFestival;
@@ -74,6 +73,20 @@ public class PlanningService {
     public PlanningFestival construireExemple() {
         try {
             return chargerScenarioYaml("scenario-complet.yaml");
+        } catch (IOException e) {
+            throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
+        }
+    }
+
+    /**
+     * Small, self-contained scenario used as a fast nominal case (a handful of
+     * postes) so the hard-constraint invariant can be checked in seconds. The
+     * large {@code scenario-complet.yaml} is the complex performance target
+     * solved by {@link #construireExemple()}.
+     */
+    public PlanningFestival construireExempleSimple() {
+        try {
+            return chargerScenarioYaml("scenario.yml");
         } catch (IOException e) {
             throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
         }
@@ -151,16 +164,7 @@ public class PlanningService {
                     .map(creneauxMap::get)
                     .collect(Collectors.toSet());
             animateur.setDisponibilites(disponibilites);
-            
-            // Charger le contact légal si présent
-            Map<String, String> contactData = (Map<String, String>) animateurData.get("contactLegal");
-            if (contactData != null) {
-                String nomContact = contactData.get("nomContact");
-                String telephone = contactData.get("telephone");
-                String email = contactData.get("email");
-                animateur.setContactLegal(new ContactLegal(nomContact, telephone, email));
-            }
-            
+
             animateurs.add(animateur);
         }
         
