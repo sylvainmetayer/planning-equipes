@@ -14,6 +14,7 @@
   <nav id="page-nav">
     <button type="button" class="nav-btn active" data-page="admin-page">Administration</button>
     <button type="button" class="nav-btn" data-page="calendar-page">Assignment calendar</button>
+    <button type="button" class="nav-btn" data-page="day-calendar-page">Day calendar</button>
   </nav>
 
   <div id="admin-page" class="page">
@@ -92,6 +93,18 @@
       <p>Visual view of the currently loaded/solved planning (stands &times; timeslots).</p>
       <button id="calendar-refresh-btn">Load / refresh calendar</button>
       <div id="calendar-container"></div>
+    </section>
+  </div>
+
+  <div id="day-calendar-page" class="page hidden">
+    <section>
+      <h2>Day calendar</h2>
+      <p>HTML calendar grouped by festival day. Each day lists its timeslots with the animators assigned to every stand.</p>
+      <div class="calendar-toolbar">
+        <button id="day-calendar-refresh-btn">Load / refresh calendar</button>
+        <label>Persisted assignments in DB: <strong id="persisted-count">?</strong></label>
+      </div>
+      <div id="day-calendar-container"></div>
     </section>
   </div>
 </main>

@@ -1,6 +1,7 @@
 package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.service.PlanningPersistenceService;
 import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.PlanningService.PlanningDiagnostic;
 import jakarta.inject.Inject;
@@ -20,6 +21,9 @@ public class PlanningResource {
     @Inject
     PlanningService planningService;
 
+    @Inject
+    PlanningPersistenceService persistenceService;
+
     @GET
     @Path("/planning/sample")
     public PlanningFestival sample() {
@@ -30,7 +34,22 @@ public class PlanningResource {
     @Path("/solve")
     public PlanningFestival solve(PlanningFestival planningFestival,
             @QueryParam("seconds") Long secondsLimit) {
-        return planningService.resoudre(planningFestival, secondsLimit);
+        PlanningFestival solved = planningService.resoudre(planningFestival, secondsLimit);
+        persistenceService.persist(solved);
+        return solved;
+    }
+
+    /**
+     * Reports how many assignment rows are currently stored in the database,
+     * so callers can confirm the last solve was persisted.
+     */
+    @GET
+    @Path("/planning/persisted/count")
+    public PersistenceStatus persistedCount() {
+        return new PersistenceStatus(persistenceService.countPersistedAssignments());
+    }
+
+    public record PersistenceStatus(int assignments) {
     }
 
     /**
