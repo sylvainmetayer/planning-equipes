@@ -42,9 +42,30 @@ detailed constraint catalogue and domain rationale before adding constraints.
   - `service/PlanningExportService.java` — server-side PDF/ICS generation, no
     client-side export logic.
 - Frontend is vanilla JS served as Quarkus static resources from
-  `src/main/resources/META-INF/resources/` (`index.html`, `planning.js`,
-  `style.css`) — calls the REST API with native `fetch`. No bundler, no
+  `src/main/resources/META-INF/resources/` (`index.html`, `style.css`, and ES
+  modules under `js/`) — calls the REST API with native `fetch`. No bundler, no
   framework; don't introduce one without explicit sign-off.
+  - JS is split into ES modules loaded via `<script type="module"
+    src="/js/app.js">`; ES modules require HTTP serving (Quarkus), not
+    `file://`. One responsibility per file: `js/app.js` (entry point: page nav +
+    module init), `js/api.js` (fetch helpers; `downloadFile` returns a status
+    string, never touches the DOM), `js/utils.js`, `js/date-utils.js` (calendar
+    date math, week starts Monday), `js/planning-state.js` (shared planning
+    state behind get/setLastSolvedPlanning + `ensurePlanning()` — no free global
+    var), `js/calendar-month.js` (monthly view + animator/stand filters, keeps
+    its own view state), `js/calendar-day.js` (day view), `js/admin.js`
+    (planning actions, exports, reference-data CRUD; owns its local CRUD state).
+  - Each view module exports `initX()` (wires DOM events once) and `renderX()`
+    used by nav; keep DOM lookups inside the owning module. State flows one way:
+    admin solve/analyze -> `setLastSolvedPlanning`, calendars read it via
+    `ensurePlanning`. Don't reintroduce shared mutable globals or recreate the
+    old monolithic `planning.js`.
+  - CSS mirrors the same split: `style.css` is a thin aggregator of `@import`
+    rules only (Google font first, then partials), and component styles live in
+    partials under `css/` (`base.css` design tokens/reset/typography/controls,
+    `layout.css` nav, `calendar-month.css`, `calendar-day.css`), each holding
+    its own responsive `@media` rules. Add new styles as new partials; don't
+    recreate the old monolithic `style.css`.
 - Persistence: PostgreSQL + Flyway migrations in
   `src/main/resources/db/migration/` (`V1__init.sql`, etc.). Add new schema
   changes as new versioned migration files, never edit an applied one.

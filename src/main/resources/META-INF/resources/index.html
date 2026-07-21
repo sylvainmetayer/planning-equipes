@@ -90,9 +90,46 @@
   <div id="calendar-page" class="page hidden">
     <section>
       <h2>Assignment calendar</h2>
-      <p>Visual view of the currently loaded/solved planning (stands &times; timeslots).</p>
-      <button id="calendar-refresh-btn">Load / refresh calendar</button>
-      <div id="calendar-container"></div>
+      <p>Monthly planning view inspired by modern agenda boards.</p>
+      <div class="calendar-shell">
+        <div class="calendar-header">
+          <div class="calendar-header-main">
+            <button id="calendar-prev-month-btn" class="calendar-nav-btn" type="button" aria-label="Previous month">&lsaquo;</button>
+            <h3 id="calendar-month-label">Month</h3>
+            <button id="calendar-next-month-btn" class="calendar-nav-btn" type="button" aria-label="Next month">&rsaquo;</button>
+          </div>
+          <div class="calendar-header-actions">
+            <button id="calendar-today-btn" type="button">Today</button>
+            <button id="calendar-reset-filters-btn" class="calendar-reset-btn" type="button">Reset filters</button>
+            <button id="calendar-refresh-btn" type="button">Load / refresh calendar</button>
+          </div>
+        </div>
+
+        <div class="calendar-filters">
+          <label for="calendar-animateur-filter">Animator</label>
+          <select id="calendar-animateur-filter">
+            <option value="ALL">All animators</option>
+          </select>
+          <label for="calendar-stand-filter">Stand</label>
+          <select id="calendar-stand-filter">
+            <option value="ALL">All stands</option>
+          </select>
+        </div>
+
+        <div class="calendar-weekdays" aria-hidden="true">
+          <span>Mon</span>
+          <span>Tue</span>
+          <span>Wed</span>
+          <span>Thu</span>
+          <span>Fri</span>
+          <span>Sat</span>
+          <span>Sun</span>
+        </div>
+
+        <div id="calendar-container" class="calendar-grid" role="grid" aria-label="Monthly assignment calendar"></div>
+
+        <aside id="calendar-day-details" class="calendar-day-details" aria-live="polite"></aside>
+      </div>
     </section>
   </div>
 
@@ -108,6 +145,6 @@
     </section>
   </div>
 </main>
-<script src="/planning.js"></script>
+<script type="module" src="/js/app.js"></script>
 </body>
 </html>

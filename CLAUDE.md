@@ -185,6 +185,30 @@ explicite (en particulier tout ce qui touche au cadre légal des mineurs).
   simples. **Servi directement par Quarkus** en tant que ressources statiques
   (`src/main/resources/META-INF/resources`) — un seul déploiement, aucune
   dépendance Node supplémentaire, pas de build frontend séparé à orchestrer.
+  - Le JS est découpé en **modules ES** sous `js/`, chargés via
+    `<script type="module" src="/js/app.js">` (les modules ES exigent un service
+    HTTP via Quarkus, pas `file://`). Une responsabilité par fichier :
+    `js/app.js` (point d'entrée : navigation + init des modules), `js/api.js`
+    (helpers `fetch` ; `downloadFile` renvoie un message, ne touche pas au DOM),
+    `js/utils.js`, `js/date-utils.js` (calcul de dates calendrier, semaine
+    commençant lundi), `js/planning-state.js` (état planning partagé derrière
+    get/setLastSolvedPlanning + `ensurePlanning()`, pas de global libre),
+    `js/calendar-month.js` (vue mensuelle + filtres animateur/stand, état de vue
+    interne), `js/calendar-day.js` (vue par jour), `js/admin.js` (actions
+    planning, exports, CRUD référentiels ; état CRUD local isolé).
+  - Chaque module de vue exporte `initX()` (câble les events DOM une fois) et
+    `renderX()` utilisé par la navigation ; garder les lookups DOM dans le module
+    propriétaire. L'état circule dans un seul sens : admin solve/analyze ->
+    `setLastSolvedPlanning`, les calendriers le relisent via `ensurePlanning`.
+    Ne pas réintroduire de globals mutables partagés ni recréer l'ancien
+    `planning.js` monolithique.
+  - Le CSS suit le même découpage : `style.css` est un simple agrégateur de
+    règles `@import` (police Google d'abord, puis les partials), et les styles
+    par composant vivent dans des partials sous `css/` (`base.css` tokens de
+    design/reset/typo/contrôles, `layout.css` navigation, `calendar-month.css`,
+    `calendar-day.css`), chacun portant ses propres règles responsive `@media`.
+    Ajouter les nouveaux styles comme nouveaux partials ; ne pas recréer
+    l'ancien `style.css` monolithique.
 - Le frontend appelle l'API REST exposée par le même service Java
   (`/api/solve`, `/api/animateurs`, `/api/planning`, …) en `fetch` natif.
 - **Base de données** : PostgreSQL, dans son propre conteneur.
@@ -199,7 +223,7 @@ explicite (en particulier tout ce qui touche au cadre légal des mineurs).
 Structure de dossiers indicative :
 ```
 /src/main/java/...              → domaine, contraintes, API REST (Quarkus)
-/src/main/resources/META-INF/resources → index.html, planning.js, style.css (vanilla JS)
+/src/main/resources/META-INF/resources → index.html, style.css, css/*.css (partials), js/*.js (modules ES vanilla)
 /src/main/resources/db          → migrations SQL (ex. Flyway)
 Dockerfile
 docker-compose.yml
