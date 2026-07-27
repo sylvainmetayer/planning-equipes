@@ -14,7 +14,7 @@ detailed constraint catalogue and domain rationale before adding constraints.
 - Single test method: `./mvnw test -Dtest=PlanningHardConstraintsTest#generatedPlanningDoesNotViolateAnyHardConstraintOnNominalCase`
 - Integration tests (`*IT.java`, run via failsafe): `./mvnw verify`
 - Docker Compose (full app + Postgres): `docker compose --profile app up --build`
-- Java 17 / Maven toolchain pinned via `mise.toml` (`temurin-17`, `maven 3.9.9`).
+- Java 25 / Maven toolchain pinned via `mise.toml` (`temurin-25`, `maven 3.9.9`).
 
 ## Architecture
 
