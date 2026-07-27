@@ -35,6 +35,9 @@ public class PlanningPersistenceService {
     @Inject
     DataSource dataSource;
 
+    @Inject
+    ReferenceDataService referenceDataService;
+
     /**
      * Writes the whole solution to the database in a single transaction and
      * returns how many assignment rows were stored.
@@ -43,12 +46,45 @@ public class PlanningPersistenceService {
         if (planning == null || planning.getPostes() == null) {
             return 0;
         }
+        return inTransaction(connection -> {
+            upsertReferenceData(connection, planning);
+            return rewriteAssignments(connection, planning.getPostes());
+        }, "Failed to persist planning solution");
+    }
+
+    /**
+     * Wipes every planning table and reloads the given scenario as a blank
+     * slate: reference data is replaced and all seats are stored unassigned,
+     * without running the solver. Used by the "Reset BDD" admin action to get
+     * back to a clean dataset for tests. Typologies are kept: they are seeded
+     * by the Flyway migrations, not by a scenario.
+     */
+    public int resetToUnsolvedPlanning(PlanningFestival planning) {
+        if (planning == null || planning.getPostes() == null) {
+            return 0;
+        }
+        planning.getPostes().forEach(poste -> poste.setAnimateur(null));
+        return inTransaction(connection -> {
+            clearPlanningTables(connection);
+            upsertReferenceData(connection, planning);
+            return rewriteAssignments(connection, planning.getPostes());
+        }, "Failed to reset the database");
+    }
+
+    private void clearPlanningTables(Connection connection) throws SQLException {
+        try (Statement statement = connection.createStatement()) {
+            statement.executeUpdate("TRUNCATE TABLE poste_affectation, contrainte_animateur, contrainte_ad_hoc, "
+                    + "stand_typologie, animateur_competence, animateur_jour_indispo, stand, creneau, animateur "
+                    + "CASCADE");
+        }
+    }
+
+    private int inTransaction(TransactionalWork work, String errorMessage) {
         try (Connection connection = dataSource.getConnection()) {
             boolean previousAutoCommit = connection.getAutoCommit();
             connection.setAutoCommit(false);
             try {
-                upsertReferenceData(connection, planning);
-                int rows = rewriteAssignments(connection, planning.getPostes());
+                int rows = work.execute(connection);
                 connection.commit();
                 return rows;
             } catch (SQLException e) {
@@ -58,8 +94,13 @@ public class PlanningPersistenceService {
                 connection.setAutoCommit(previousAutoCommit);
             }
         } catch (SQLException e) {
-            throw new IllegalStateException("Failed to persist planning solution", e);
+            throw new IllegalStateException(errorMessage, e);
         }
+    }
+
+    @FunctionalInterface
+    private interface TransactionalWork {
+        int execute(Connection connection) throws SQLException;
     }
 
     private void upsertReferenceData(Connection connection, PlanningFestival planning) throws SQLException {
@@ -224,6 +265,60 @@ public class PlanningPersistenceService {
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to count persisted assignments", e);
         }
+    }
+
+    /**
+     * Rebuilds the last persisted solution from the database. Read-only view
+     * used by the calendars and the exports: it never triggers a solve, so
+     * simply browsing the app cannot start a solver run. Returns an empty
+     * planning (no postes) when nothing has been solved yet.
+     */
+    public PlanningFestival loadPersistedPlanning() {
+        List<Animateur> animateurs = referenceDataService.listAnimateurs();
+        Map<String, Animateur> animateursById = indexById(animateurs, Animateur::getId);
+        Map<String, Stand> standsById = indexById(referenceDataService.listStands(), Stand::getId);
+        Map<String, Creneau> creneauxById = indexById(referenceDataService.listCreneaux(), Creneau::getId);
+
+        List<PosteAffectation> postes = new ArrayList<>();
+        String sql = "SELECT id, stand_id, creneau_id, animateur_id FROM poste_affectation ORDER BY id";
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = connection.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                Stand stand = standsById.get(rs.getString("stand_id"));
+                Creneau creneau = creneauxById.get(rs.getString("creneau_id"));
+                if (stand == null || creneau == null) {
+                    continue;
+                }
+                PosteAffectation poste = new PosteAffectation(rs.getString("id"), stand, creneau);
+                String animateurId = rs.getString("animateur_id");
+                if (animateurId != null) {
+                    poste.setAnimateur(animateursById.get(animateurId));
+                }
+                postes.add(poste);
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to load persisted planning", e);
+        }
+
+        LocalDate dateDebut = postes.stream()
+                .map(poste -> poste.getCreneau().getDate())
+                .filter(java.util.Objects::nonNull)
+                .min(LocalDate::compareTo)
+                .orElse(null);
+        return new PlanningFestival(dateDebut, animateurs, postes,
+                referenceDataService.snapshotContraintes());
+    }
+
+    private <T> Map<String, T> indexById(List<T> items, IdAccessor<T> accessor) {
+        Map<String, T> byId = new java.util.HashMap<>();
+        for (T item : items) {
+            String id = accessor.id(item);
+            if (id != null) {
+                byId.put(id, item);
+            }
+        }
+        return byId;
     }
 
     private interface IdAccessor<T> {

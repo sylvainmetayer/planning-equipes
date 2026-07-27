@@ -15,17 +15,48 @@
     <button type="button" class="nav-btn active" data-page="admin-page">Administration</button>
     <button type="button" class="nav-btn" data-page="calendar-page">Assignment calendar</button>
     <button type="button" class="nav-btn" data-page="day-calendar-page">Day calendar</button>
+    <button type="button" class="nav-btn" data-page="constraints-page">Constraints</button>
   </nav>
+
+  <div id="job-monitor" class="job-monitor hidden" aria-live="polite"></div>
 
   <div id="admin-page" class="page">
   <section>
     <h2>Planning</h2>
     <button id="solve-btn">Generate sample planning</button>
+    <button id="reset-db-btn" class="danger-btn">Reset BDD</button>
     <button id="timefold-solve-btn">Solve with Timefold</button>
     <button id="analyze-btn">Analyze solution</button>
-    <button id="export-pdf-btn">Export global PDF</button>
+    <button id="export-pdf-btn">Export PDF (one per animator, ZIP)</button>
     <button id="export-ics-btn">Export ICS (all animators, ZIP)</button>
     <pre id="planning-output"></pre>
+  </section>
+
+  <section>
+    <h2>Data transfer</h2>
+    <p class="section-hint">Export or replay the whole database as a SQL script to share a dataset that blocks the solver.</p>
+    <button id="export-sql-btn">Export SQL dump</button>
+    <button id="import-sql-btn" class="danger-btn">Import SQL dump</button>
+    <input type="file" id="import-sql-input" accept=".sql,application/sql,text/plain" hidden>
+    <h3>CSV import</h3>
+    <p class="section-hint">
+      Each import replaces the whole table and drops the existing assignments.
+      Separator <code>;</code> or <code>,</code>, header line required, multi-values separated by <code>|</code>:
+    </p>
+    <ul class="csv-format">
+      <li><strong>animateurs</strong>: <code>id;prenom;nom;dateNaissance;statut;competences;joursIndisponibles</code>
+        — <code>statut</code> = BENEVOLE|SALARIE, <code>competences</code> = <code>STRATEGIE:REFERENT|ENFANT:AUTONOME</code>,
+        <code>joursIndisponibles</code> = <code>2026-07-02|2026-07-03</code></li>
+      <li><strong>stands</strong>: <code>id;nom;typologies;effectifMin;effectifMax;reserveMajeurs</code>
+        — <code>typologies</code> = <code>STRATEGIE|ENFANT</code>, <code>reserveMajeurs</code> = true/false</li>
+      <li><strong>creneaux</strong>: <code>id;jour;date;heureDebut;heureFin</code>
+        — <code>date</code> = 2026-07-02, heures = 10:00</li>
+    </ul>
+    <button id="import-csv-animateurs-btn">Import animateurs CSV</button>
+    <button id="import-csv-stands-btn">Import stands CSV</button>
+    <button id="import-csv-creneaux-btn">Import créneaux CSV</button>
+    <input type="file" id="import-csv-input" accept=".csv,text/csv,text/plain" hidden>
+    <pre id="data-transfer-output"></pre>
   </section>
 
   <div id="reference-data"></div>
@@ -74,6 +105,18 @@
 
         <aside id="calendar-day-details" class="calendar-day-details" aria-live="polite"></aside>
       </div>
+    </section>
+  </div>
+
+  <div id="constraints-page" class="page hidden">
+    <section>
+      <h2>Active constraints</h2>
+      <p>Business description of every rule enforced by the solver, with the result of the latest analysis.</p>
+      <div class="calendar-toolbar">
+        <button id="constraints-refresh-btn">Load / refresh constraints</button>
+      </div>
+      <p id="constraints-summary" class="constraints-summary"></p>
+      <div id="constraints-container"></div>
     </section>
   </div>
 

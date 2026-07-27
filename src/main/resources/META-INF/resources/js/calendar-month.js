@@ -1,6 +1,6 @@
 // Monthly assignment calendar with animator/stand filters.
 
-import { ensurePlanning } from './planning-state.js';
+import { loadPlanningForDisplay } from './planning-state.js';
 import { uniqueById } from './utils.js';
 import {
   getMonthStart,
@@ -77,7 +77,7 @@ export function initMonthCalendar() {
 export async function renderCalendar() {
   calendarContainer.innerHTML = '';
   calendarDayDetails.innerHTML = '<p class="calendar-empty">Loading calendar...</p>';
-  const planning = await ensurePlanning();
+  const planning = await loadPlanningForDisplay();
   const postes = planning.postes || [];
 
   populateCalendarFilterOptions(postes);
@@ -89,7 +89,8 @@ export async function renderCalendar() {
 
   if (assignmentsByDate.size === 0) {
     calendarContainer.innerHTML = '<p class="calendar-empty">No planning data available yet.</p>';
-    calendarDayDetails.innerHTML = '<p class="calendar-empty">Load a solved planning to view assignments.</p>';
+    calendarDayDetails.innerHTML =
+      '<p class="calendar-empty">Run "Solve with Timefold" from the Administration page to fill this calendar.</p>';
     return;
   }
 

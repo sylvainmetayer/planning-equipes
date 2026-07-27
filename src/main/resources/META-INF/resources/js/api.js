@@ -28,6 +28,30 @@ export async function downloadFile(url, filename, payload, contentType) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   });
+  return saveResponseAs(response, filename, contentType);
+}
+
+export async function downloadUrl(url, filename, contentType) {
+  const response = await fetch(url);
+  return saveResponseAs(response, filename, contentType);
+}
+
+// Sends a raw (non JSON) payload such as a SQL dump or a CSV file.
+export async function postRaw(url, body, contentType) {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': contentType },
+    body
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    const detail = payload && payload.message ? payload.message : `Request failed with ${response.status}`;
+    throw new Error(detail);
+  }
+  return payload;
+}
+
+async function saveResponseAs(response, filename, contentType) {
   if (!response.ok) {
     throw new Error(`Request failed with ${response.status}`);
   }

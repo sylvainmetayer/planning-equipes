@@ -1,7 +1,7 @@
 // Day calendar grouped by festival day.
 
 import { getJson } from './api.js';
-import { ensurePlanning } from './planning-state.js';
+import { loadPlanningForDisplay } from './planning-state.js';
 
 const dayCalendarRefreshButton = document.getElementById('day-calendar-refresh-btn');
 const dayCalendarContainer = document.getElementById('day-calendar-container');
@@ -19,10 +19,11 @@ export async function renderDayCalendar() {
   dayCalendarContainer.textContent = 'Loading calendar...';
   await refreshPersistedCount();
 
-  const planning = await ensurePlanning();
+  const planning = await loadPlanningForDisplay();
   const postes = planning.postes || [];
   if (postes.length === 0) {
-    dayCalendarContainer.textContent = 'No planning data available yet.';
+    dayCalendarContainer.textContent =
+      'No planning data available yet. Run "Solve with Timefold" from the Administration page.';
     return;
   }
 

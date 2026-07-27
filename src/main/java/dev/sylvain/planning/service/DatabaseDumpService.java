@@ -1,0 +1,239 @@
+package dev.sylvain.planning.service;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import java.util.regex.Pattern;
+
+import javax.sql.DataSource;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+
+/**
+ * Exports and re-imports the whole business dataset as a plain SQL script, so a
+ * blocking dataset can be shared, archived and replayed later for analysis.
+ *
+ * <p>
+ * The dump is intentionally restricted to the business tables: the Flyway
+ * history and any other table is never exported nor accepted on import. On
+ * import only {@code DELETE}, {@code TRUNCATE} and {@code INSERT} statements
+ * targeting those tables are executed, and the whole script runs in a single
+ * transaction.
+ */
+@ApplicationScoped
+public class DatabaseDumpService {
+
+    /**
+     * Business tables, ordered so that a sequential insert never breaks a
+     * foreign key. Deletes are issued in the reverse order.
+     */
+    static final List<String> TABLES = List.of(
+            "typologie",
+            "animateur",
+            "stand",
+            "creneau",
+            "animateur_competence",
+            "animateur_jour_indispo",
+            "stand_typologie",
+            "poste_affectation",
+            "contrainte_ad_hoc",
+            "contrainte_animateur");
+
+    private static final Set<String> ALLOWED_TABLES = Set.copyOf(TABLES);
+
+    private static final Pattern STATEMENT_PATTERN = Pattern.compile(
+            "^(insert\\s+into|delete\\s+from|truncate\\s+table|truncate)\\s+([a-z_][a-z0-9_]*)");
+
+    @Inject
+    DataSource dataSource;
+
+    /**
+     * Builds a self-contained SQL script that wipes and repopulates every
+     * business table.
+     */
+    public String exportDump() {
+        StringBuilder sql = new StringBuilder();
+        sql.append("-- Festival planning database dump\n");
+        sql.append("-- Generated at ").append(Instant.now()).append('\n');
+        sql.append("-- Replay with the \"Import SQL\" admin action.\n\n");
+        try (Connection connection = dataSource.getConnection()) {
+            for (int i = TABLES.size() - 1; i >= 0; i--) {
+                sql.append("DELETE FROM ").append(TABLES.get(i)).append(";\n");
+            }
+            sql.append('\n');
+            for (String table : TABLES) {
+                appendTable(connection, table, sql);
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to export the database", e);
+        }
+        return sql.toString();
+    }
+
+    /**
+     * Replays a dump previously produced by {@link #exportDump()} and returns
+     * the number of executed statements. Any statement outside the allowed
+     * verbs/tables aborts the whole import.
+     */
+    public int importDump(String script) {
+        List<String> statements = splitStatements(script);
+        if (statements.isEmpty()) {
+            throw new IllegalArgumentException("The SQL script does not contain any statement");
+        }
+        statements.forEach(DatabaseDumpService::checkStatementIsAllowed);
+        try (Connection connection = dataSource.getConnection()) {
+            boolean previousAutoCommit = connection.getAutoCommit();
+            connection.setAutoCommit(false);
+            try (Statement statement = connection.createStatement()) {
+                for (String sql : statements) {
+                    statement.execute(sql);
+                }
+                connection.commit();
+                return statements.size();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw new IllegalArgumentException("The SQL script could not be replayed: " + e.getMessage(), e);
+            } finally {
+                connection.setAutoCommit(previousAutoCommit);
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to import the database", e);
+        }
+    }
+
+    private void appendTable(Connection connection, String table, StringBuilder sql) throws SQLException {
+        try (Statement statement = connection.createStatement();
+                ResultSet rows = statement.executeQuery("SELECT * FROM " + table)) {
+            ResultSetMetaData metaData = rows.getMetaData();
+            int columnCount = metaData.getColumnCount();
+            String columns = columnNames(metaData, columnCount);
+            boolean empty = true;
+            while (rows.next()) {
+                empty = false;
+                sql.append("INSERT INTO ").append(table).append(" (").append(columns).append(") VALUES (");
+                for (int i = 1; i <= columnCount; i++) {
+                    if (i > 1) {
+                        sql.append(", ");
+                    }
+                    sql.append(literal(rows, metaData, i));
+                }
+                sql.append(");\n");
+            }
+            if (!empty) {
+                sql.append('\n');
+            }
+        }
+    }
+
+    private String columnNames(ResultSetMetaData metaData, int columnCount) throws SQLException {
+        StringBuilder columns = new StringBuilder();
+        for (int i = 1; i <= columnCount; i++) {
+            if (i > 1) {
+                columns.append(", ");
+            }
+            columns.append(metaData.getColumnName(i));
+        }
+        return columns.toString();
+    }
+
+    private String literal(ResultSet rows, ResultSetMetaData metaData, int index) throws SQLException {
+        Object value = rows.getObject(index);
+        if (value == null || rows.wasNull()) {
+            return "NULL";
+        }
+        int type = metaData.getColumnType(index);
+        return switch (type) {
+            case Types.BOOLEAN, Types.BIT -> rows.getBoolean(index) ? "TRUE" : "FALSE";
+            case Types.TINYINT, Types.SMALLINT, Types.INTEGER, Types.BIGINT, Types.DECIMAL, Types.NUMERIC,
+                    Types.DOUBLE, Types.FLOAT, Types.REAL ->
+                value.toString();
+            default -> quote(rows.getString(index));
+        };
+    }
+
+    private static String quote(String value) {
+        return "'" + value.replace("'", "''") + "'";
+    }
+
+    /**
+     * Splits the script on semicolons, ignoring the ones inside quoted literals
+     * and the {@code --} comment lines.
+     */
+    static List<String> splitStatements(String script) {
+        List<String> statements = new ArrayList<>();
+        if (script == null) {
+            return statements;
+        }
+        StringBuilder current = new StringBuilder();
+        boolean inString = false;
+        boolean inComment = false;
+        for (int i = 0; i < script.length(); i++) {
+            char c = script.charAt(i);
+            if (inComment) {
+                if (c == '\n') {
+                    inComment = false;
+                    current.append(' ');
+                }
+                continue;
+            }
+            if (!inString && c == '-' && i + 1 < script.length() && script.charAt(i + 1) == '-') {
+                inComment = true;
+                i++;
+                continue;
+            }
+            if (c == '\'') {
+                // Doubled quotes escape a quote inside a literal.
+                if (inString && i + 1 < script.length() && script.charAt(i + 1) == '\'') {
+                    current.append("''");
+                    i++;
+                    continue;
+                }
+                inString = !inString;
+                current.append(c);
+                continue;
+            }
+            if (c == ';' && !inString) {
+                addStatement(statements, current);
+                current.setLength(0);
+                continue;
+            }
+            current.append(c);
+        }
+        addStatement(statements, current);
+        return statements;
+    }
+
+    private static void addStatement(List<String> statements, StringBuilder current) {
+        String statement = current.toString().trim();
+        if (!statement.isEmpty()) {
+            statements.add(statement);
+        }
+    }
+
+    static void checkStatementIsAllowed(String statement) {
+        String normalized = statement.replaceAll("\\s+", " ").trim().toLowerCase(Locale.ROOT);
+        var matcher = STATEMENT_PATTERN.matcher(normalized);
+        if (!matcher.find()) {
+            throw new IllegalArgumentException(
+                    "Only INSERT, DELETE and TRUNCATE statements are allowed, found: " + preview(statement));
+        }
+        String table = matcher.group(2);
+        if (!ALLOWED_TABLES.contains(table)) {
+            throw new IllegalArgumentException("Table not allowed in an imported dump: " + table);
+        }
+    }
+
+    private static String preview(String statement) {
+        return statement.length() <= 60 ? statement : statement.substring(0, 60) + "...";
+    }
+}

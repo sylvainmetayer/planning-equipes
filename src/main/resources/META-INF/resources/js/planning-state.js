@@ -1,6 +1,6 @@
 // Shared planning state and lazy loading of a solved planning.
 
-import { getJson, fetchJson } from './api.js';
+import { getJson } from './api.js';
 
 let lastSolvedPlanning = null;
 
@@ -38,15 +38,24 @@ export async function buildPlanningFromReferenceData() {
   return { animateurs, postes, score: null };
 }
 
-// Returns the in-memory solved planning, or builds one from the persisted
-// reference data and solves it. Does not touch the demo sample.
-export async function ensurePlanning() {
-  if (!lastSolvedPlanning) {
-    const planning = await buildPlanningFromReferenceData();
-    lastSolvedPlanning = await fetchJson('/api/solve', {
-      method: 'POST',
-      body: JSON.stringify(planning)
-    });
+// Read-only planning source for the display pages (calendars) and exports.
+// Returns the planning solved during this session if there is one, otherwise
+// the last solution persisted in the database. It never starts a solve:
+// only the Administration page may launch solver jobs, so switching tabs can
+// no longer spawn parallel solver runs.
+export async function loadPlanningForDisplay() {
+  if (lastSolvedPlanning) {
+    return lastSolvedPlanning;
   }
-  return lastSolvedPlanning;
+  return getJson('/api/planning/persisted');
+}
+
+// Same read-only source, but fails loudly when nothing has been solved yet:
+// used by actions that cannot produce anything without a planning (exports).
+export async function requirePlanning() {
+  const planning = await loadPlanningForDisplay();
+  if (!planning || !(planning.postes || []).length) {
+    throw new Error('No planning available yet. Run "Solve with Timefold" first.');
+  }
+  return planning;
 }

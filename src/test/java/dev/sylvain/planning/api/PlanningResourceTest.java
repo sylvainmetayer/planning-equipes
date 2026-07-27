@@ -1,7 +1,17 @@
 package dev.sylvain.planning.api;
 
 import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.path.json.JsonPath;
 import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
@@ -86,6 +96,123 @@ class PlanningResourceTest {
     }
 
     @Test
+    void persistedPlanningEndpointIsReadOnly() {
+        int before = given()
+                .when().get("/api/planning/persisted/count")
+                .then()
+                .statusCode(200)
+                .extract().path("assignments");
+
+        given()
+                .when().get("/api/planning/persisted")
+                .then()
+                .statusCode(200)
+                .body("postes.size()", equalTo(before));
+
+        // Reading the planning must never trigger a solve, so the stored
+        // assignments are left untouched.
+        given()
+                .when().get("/api/planning/persisted/count")
+                .then()
+                .statusCode(200)
+                .body("assignments", equalTo(before));
+    }
+
+    @Test
+    void constraintsCatalogueExposesEveryRuleWithADescription() {
+        given()
+                .when().get("/api/constraints")
+                .then()
+                .statusCode(200)
+                .body("contraintes.size()", greaterThan(0))
+                .body("contraintes.findAll { it.description == null || it.description.isEmpty() }.size()",
+                        equalTo(0))
+                .body("contraintes.findAll { !(it.niveau in ['HARD', 'MEDIUM', 'SOFT']) }.size()", equalTo(0));
+    }
+
+    @Test
+    void analyzeFeedsTheConstraintsScreen() {
+        String planningJson = given()
+                .when().get("/api/planning/sample")
+                .then()
+                .statusCode(200)
+                .extract().asString();
+
+        List<String> analysedNames = given()
+                .contentType("application/json")
+                .body(planningJson)
+                .when().post("/api/solve/analyze?seconds=1")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath().getList("contraintes.name");
+
+        JsonPath view = given()
+                .when().get("/api/constraints")
+                .then()
+                .statusCode(200)
+                .body("analysedAt", notNullValue())
+                .body("scoreGlobal", notNullValue())
+                .extract().jsonPath();
+
+        // The catalogue ids must match the solver constraint ids, otherwise the
+        // screen would silently show rules without any result.
+        List<String> catalogueNames = view.getList("contraintes.name");
+        assertThat(catalogueNames).containsAll(analysedNames);
+        List<String> scoredNames = view.getList("contraintes.findAll { it.score != null }.name");
+        assertThat(scoredNames).containsExactlyInAnyOrderElementsOf(analysedNames);
+    }
+
+    @Test
+    void resetLoadsSampleWithoutSolving() {
+        int postes = given()
+                .when().post("/api/planning/reset")
+                .then()
+                .statusCode(200)
+                .body("animateurs", greaterThan(0))
+                .body("stands", greaterThan(0))
+                .body("creneaux", greaterThan(0))
+                .extract().path("postes");
+
+        // Every seat must be stored, and none of them assigned: the reset is a
+        // blank slate, not a solve.
+        given()
+                .when().get("/api/planning/persisted")
+                .then()
+                .statusCode(200)
+                .body("postes.size()", equalTo(postes))
+                .body("postes.findAll { it.animateur != null }.size()", equalTo(0));
+    }
+
+    @Test
+    void pdfExportBundlesOneFilePerAnimateur() throws IOException {
+        String planningJson = given()
+                .when().get("/api/planning/sample")
+                .then()
+                .statusCode(200)
+                .extract().asString();
+        int animateurs = JsonPath.from(planningJson).getList("animateurs").size();
+
+        byte[] zip = given()
+                .contentType("application/json")
+                .body(planningJson)
+                .when().post("/api/planning/export/pdf/all")
+                .then()
+                .statusCode(200)
+                .contentType("application/zip")
+                .extract().asByteArray();
+
+        List<String> entries = new ArrayList<>();
+        try (ZipInputStream stream = new ZipInputStream(new ByteArrayInputStream(zip))) {
+            ZipEntry entry;
+            while ((entry = stream.getNextEntry()) != null) {
+                entries.add(entry.getName());
+            }
+        }
+        assertThat(entries).hasSize(animateurs);
+        assertThat(entries).allMatch(name -> name.endsWith(".pdf"));
+    }
+
+    @Test
     void exportEndpointsReturnFiles() {
         String planningJson = given()
                 .when().get("/api/planning/sample")
@@ -96,10 +223,10 @@ class PlanningResourceTest {
         given()
                 .contentType("application/json")
                 .body(planningJson)
-                .when().post("/api/planning/export/pdf/global")
+                .when().post("/api/planning/export/pdf/all")
                 .then()
                 .statusCode(200)
-                .contentType("application/pdf");
+                .contentType("application/zip");
 
         given()
                 .contentType("application/json")

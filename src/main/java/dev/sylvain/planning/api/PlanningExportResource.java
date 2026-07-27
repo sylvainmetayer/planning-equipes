@@ -20,12 +20,12 @@ public class PlanningExportResource {
     PlanningExportService planningExportService;
 
     @POST
-    @Path("/pdf/global")
-    @Produces("application/pdf")
-    public Response exportGlobalPdf(PlanningFestival planningFestival) {
-        byte[] content = planningExportService.exportGlobalPdf(planningFestival);
+    @Path("/pdf/all")
+    @Produces("application/zip")
+    public Response exportAllPdfZip(PlanningFestival planningFestival) {
+        byte[] content = planningExportService.exportAllPdfZip(planningFestival);
         return Response.ok(content)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"planning-global.pdf\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"planning-pdf.zip\"")
                 .build();
     }
 

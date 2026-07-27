@@ -40,46 +40,58 @@ public class PlanningExportService {
             .withZone(ZoneOffset.UTC);
     private static final DateTimeFormatter ICS_LOCAL_DATE_TIME = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss");
 
-    public byte[] exportGlobalPdf(PlanningFestival planning) {
-        List<String> lines = planning.getPostes().stream()
-                .sorted(byCreneauThenStand())
-                .map(this::formatPosteLine)
-                .toList();
-        return buildPdf("Global planning", lines, planning.getPostes());
-    }
-
     public byte[] exportAnimateurPdf(PlanningFestival planning, String animateurId) {
         List<PosteAffectation> animateurPostes = planning.getPostes().stream()
                 .filter(poste -> poste.getAnimateur() != null && animateurId.equals(poste.getAnimateur().getId()))
                 .sorted(byCreneauThenStand())
                 .toList();
         List<String> lines = animateurPostes.stream().map(this::formatPosteLine).toList();
-        return buildPdf("Planning for " + animateurId, lines, animateurPostes);
+        return buildPdf("Planning for " + resolveAnimateurName(planning, animateurId), lines, animateurPostes);
+    }
+
+    /**
+     * One PDF per animateur, bundled in a single ZIP. Replaces the former
+     * global PDF: the planning is always handed out person by person.
+     */
+    public byte[] exportAllPdfZip(PlanningFestival planning) {
+        return buildZip(planning, ".pdf",
+                animateurId -> exportAnimateurPdf(planning, animateurId));
     }
 
     public byte[] exportAllIcsZip(PlanningFestival planning) {
+        return buildZip(planning, ".ics",
+                animateurId -> exportAnimateurIcs(planning, animateurId)
+                        .getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    }
+
+    /** Bundles one file per animateur, named after the animateur, into a ZIP. */
+    private byte[] buildZip(PlanningFestival planning, String extension, AnimateurFileBuilder fileBuilder) {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         try (ZipOutputStream zip = new ZipOutputStream(output)) {
             Set<String> usedFilenames = new LinkedHashSet<>();
             for (Animateur animateur : planning.getAnimateurs()) {
-                String ics = exportAnimateurIcs(planning, animateur.getId());
                 String displayName = resolveAnimateurName(planning, animateur.getId());
                 String baseName = (displayName == null || displayName.isBlank() ? animateur.getId() : displayName)
                         .replaceAll("[\\\\/\\r\\n\\\"]", "_");
-                String filename = baseName + ".ics";
+                String filename = baseName + extension;
                 int suffix = 2;
                 while (!usedFilenames.add(filename)) {
-                    filename = baseName + "-" + suffix + ".ics";
+                    filename = baseName + "-" + suffix + extension;
                     suffix++;
                 }
                 zip.putNextEntry(new ZipEntry(filename));
-                zip.write(ics.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                zip.write(fileBuilder.build(animateur.getId()));
                 zip.closeEntry();
             }
         } catch (IOException e) {
-            throw new RuntimeException("Unable to build ICS ZIP export", e);
+            throw new RuntimeException("Unable to build ZIP export", e);
         }
         return output.toByteArray();
+    }
+
+    @FunctionalInterface
+    private interface AnimateurFileBuilder {
+        byte[] build(String animateurId);
     }
 
     public String exportAnimateurIcs(PlanningFestival planning, String animateurId) {

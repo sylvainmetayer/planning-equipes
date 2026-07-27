@@ -1,6 +1,7 @@
 package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.service.ConstraintAnalysisStore;
 import dev.sylvain.planning.service.PlanningPersistenceService;
 import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.PlanningService.PlanningDiagnostic;
@@ -24,6 +25,9 @@ public class PlanningResource {
     @Inject
     PlanningPersistenceService persistenceService;
 
+    @Inject
+    ConstraintAnalysisStore analysisStore;
+
     @GET
     @Path("/planning/sample")
     public PlanningFestival sample() {
@@ -37,6 +41,38 @@ public class PlanningResource {
         PlanningFestival solved = planningService.resoudre(planningFestival, secondsLimit);
         persistenceService.persist(solved);
         return solved;
+    }
+
+    /**
+     * Resets the database to the demo scenario without solving it: reference
+     * data is replaced and every seat is stored unassigned, so tests can start
+     * from a blank but complete dataset.
+     */
+    @POST
+    @Path("/planning/reset")
+    @Consumes(MediaType.WILDCARD)
+    public ResetSummary reset() {
+        PlanningFestival sample = planningService.construireExemple();
+        int postes = persistenceService.resetToUnsolvedPlanning(sample);
+        return new ResetSummary(
+                sample.getAnimateurs() == null ? 0 : sample.getAnimateurs().size(),
+                (int) sample.getPostes().stream().map(p -> p.getStand().getId()).distinct().count(),
+                (int) sample.getPostes().stream().map(p -> p.getCreneau().getId()).distinct().count(),
+                postes);
+    }
+
+    public record ResetSummary(int animateurs, int stands, int creneaux, int postes) {
+    }
+
+    /**
+     * Read-only view of the last solved planning stored in the database.
+     * Used by the calendar pages and the exports so that browsing the app
+     * never starts a solver run.
+     */
+    @GET
+    @Path("/planning/persisted")
+    public PlanningFestival persistedPlanning() {
+        return persistenceService.loadPersistedPlanning();
     }
 
     /**
@@ -62,6 +98,8 @@ public class PlanningResource {
     @Path("/solve/analyze")
     public PlanningDiagnostic analyze(PlanningFestival planningFestival,
             @QueryParam("seconds") Long secondsLimit) {
-        return planningService.analyser(planningFestival, secondsLimit);
+        PlanningDiagnostic diagnostic = planningService.analyser(planningFestival, secondsLimit);
+        analysisStore.record(diagnostic);
+        return diagnostic;
     }
 }
