@@ -1,6 +1,7 @@
 // Application entry point: page navigation and module wiring.
 
 import { initAdmin } from './admin.js';
+import { initReferenceData } from './reference-data.js';
 import { initMonthCalendar, renderCalendar } from './calendar-month.js';
 import { initDayCalendar, renderDayCalendar } from './calendar-day.js';
 
@@ -21,5 +22,6 @@ navButtons.forEach((button) => {
 });
 
 initAdmin();
+initReferenceData();
 initMonthCalendar();
 initDayCalendar();

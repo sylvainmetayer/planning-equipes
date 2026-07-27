@@ -1,0 +1,170 @@
+/* Reference-data CRUD editors: forms, dynamic sub-editors and list rows. */
+
+.ref-status {
+  min-height: 1.2rem;
+  margin: 0 0 0.75rem;
+  font-weight: 600;
+  color: var(--accent-strong);
+}
+
+.ref-status.is-error {
+  color: var(--danger);
+}
+
+.ref-editor {
+  /* inherits .section styling from base.css */
+}
+
+.ref-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.ref-form.is-editing {
+  border-left: 4px solid var(--accent);
+  padding-left: 0.75rem;
+}
+
+.ref-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.6rem 0.9rem;
+}
+
+.ref-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  color: var(--text-soft);
+  font-weight: 600;
+}
+
+.ref-fields input,
+.ref-fields select {
+  font-size: 0.95rem;
+}
+
+.ref-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--text-main);
+  font-weight: 500;
+}
+
+.ref-subeditor {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.75rem 0.85rem;
+  margin: 0;
+}
+
+.ref-subeditor legend {
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 0 0.4rem;
+  color: var(--text-soft);
+}
+
+.ref-checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.4rem 0.9rem;
+}
+
+.ref-inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ref-competence-row {
+  margin-bottom: 0.5rem;
+}
+
+.ref-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.ref-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  border-radius: 999px;
+  padding: 0.2rem 0.4rem 0.2rem 0.7rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.ref-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.ref-mini,
+.ref-chip-remove {
+  padding: 0.35rem 0.7rem;
+  font-size: 0.8rem;
+  background: var(--accent);
+}
+
+.ref-chip-remove {
+  padding: 0 0.4rem;
+  line-height: 1.4;
+  background: transparent;
+  color: var(--accent-strong);
+  border-radius: 999px;
+}
+
+.ref-danger,
+.ref-cancel {
+  background: var(--danger);
+}
+
+.ref-cancel {
+  background: transparent;
+  color: var(--text-soft);
+  border: 1px solid var(--line);
+}
+
+.ref-list {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ref-list td {
+  border-top: 1px solid var(--line);
+  padding: 0.55rem 0.4rem;
+  vertical-align: middle;
+}
+
+.ref-cell {
+  font-size: 0.9rem;
+}
+
+.ref-row-actions {
+  white-space: nowrap;
+  text-align: right;
+  width: 1%;
+}
+
+.ref-row-actions button {
+  margin-left: 0.4rem;
+}
+
+@media (max-width: 740px) {
+  .ref-row-actions {
+    white-space: normal;
+  }
+}

@@ -42,7 +42,7 @@ public class Animateur {
     private LocalDate dateNaissance;          // permet de calculer mineur/majeur et tranche d'âge
     private StatutAnimateur statut;           // BENEVOLE, SALARIE, ... (cf. cahier des charges 2.)
     private Map<TypologieJeu, NiveauCompetence> competences;
-    private Set<Creneau> disponibilites;      // créneaux où il peut être affecté
+    private Set<LocalDate> joursIndisponibles;  // opt-out: disponible par défaut, on liste seulement les jours OFF
 }
 
 public class Stand {
@@ -96,7 +96,9 @@ public class PlanningFestival {
 **Mapping contraintes → modèle**
 - Compétence : `poste.animateur.competences` doit contenir une typologie présente
   dans `poste.stand.typologiesProposees`
-- Disponibilité : `poste.creneau` doit être dans `poste.animateur.disponibilites`
+- Disponibilité (opt-out) : `poste.animateur` ne doit pas avoir `poste.creneau.date`
+  dans `poste.animateur.joursIndisponibles` (disponible par défaut, seuls les jours
+  OFF sont déclarés) — cf. `Animateur.estIndisponibleLe(LocalDate)`
 - Effectif min/max : comptage des `poste.animateur != null` groupés par `stand` +
   `creneau`
 - Mineur/majeur : dérivé de `animateur.dateNaissance` à la date du festival — pas de

@@ -339,31 +339,9 @@ animateurs:
     statut: BENEVOLE
     competences:
       ADRESSE: AUTONOME
-    disponibilites:
-      - J4-MATIN
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J11-SOIREE
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-09
+      - 2026-07-10
   - id: A2
     prenom: Jules
     nom: Roux
@@ -371,27 +349,11 @@ animateurs:
     statut: BENEVOLE
     competences:
       AMBIANCE: AUTONOME
-    disponibilites:
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-SOIREE
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-APREM
+    joursIndisponibles:
+      - 2026-07-10
+      - 2026-07-11
+      - 2026-07-12
+      - 2026-07-13
   - id: A3
     prenom: Berenice
     nom: Richard
@@ -399,32 +361,10 @@ animateurs:
     statut: BENEVOLE
     competences:
       ADRESSE: REFERENT
-    disponibilites:
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-18
+      - 2026-07-19
   - id: A4
     prenom: Iris
     nom: Henry
@@ -433,31 +373,11 @@ animateurs:
     competences:
       COOPERATIF: AUTONOME
       ADRESSE: DEBUTANT
-    disponibilites:
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-09
+      - 2026-07-16
+      - 2026-07-17
+      - 2026-07-18
   - id: A5
     prenom: Adrien
     nom: Petit
@@ -465,21 +385,13 @@ animateurs:
     statut: BENEVOLE
     competences:
       ROLE: AUTONOME
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J6-MATIN
+    joursIndisponibles:
+      - 2026-07-14
+      - 2026-07-15
+      - 2026-07-16
+      - 2026-07-17
+      - 2026-07-18
+      - 2026-07-19
   - id: A6
     prenom: Karim
     nom: Michel
@@ -487,38 +399,7 @@ animateurs:
     statut: SALARIE
     competences:
       COOPERATIF: DEBUTANT
-    disponibilites:
-      - J1-MATIN
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles: []
   - id: A7
     prenom: Tania
     nom: Garcia
@@ -528,31 +409,10 @@ animateurs:
       STRATEGIE: DEBUTANT
       ENIGME: DEBUTANT
       ADRESSE: REFERENT
-    disponibilites:
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-15
+      - 2026-07-16
+      - 2026-07-17
   - id: A8
     prenom: Thibault
     nom: Simon
@@ -560,33 +420,10 @@ animateurs:
     statut: BENEVOLE
     competences:
       STRATEGIE: AUTONOME
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
+    joursIndisponibles:
+      - 2026-07-17
+      - 2026-07-18
+      - 2026-07-19
   - id: A9
     prenom: Noemie
     nom: Muller
@@ -595,35 +432,8 @@ animateurs:
     competences:
       STRATEGIE: AUTONOME
       AMBIANCE: DEBUTANT
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-SOIREE
-      - J8-APREM
-      - J9-MATIN
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
+    joursIndisponibles:
+      - 2026-07-19
   - id: A10
     prenom: Yasmine
     nom: Morin
@@ -633,34 +443,9 @@ animateurs:
       ENIGME: DEBUTANT
       ADRESSE: DEBUTANT
       AMBIANCE: AUTONOME
-    disponibilites:
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-SOIREE
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-09
   - id: A11
     prenom: Olivier
     nom: Fontaine
@@ -668,31 +453,10 @@ animateurs:
     statut: BENEVOLE
     competences:
       AMBIANCE: DEBUTANT
-    disponibilites:
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-09
+      - 2026-07-10
   - id: A12
     prenom: Jules
     nom: Fontaine
@@ -702,33 +466,10 @@ animateurs:
       COOPERATIF: REFERENT
       ADRESSE: AUTONOME
       ENIGME: AUTONOME
-    disponibilites:
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-18
+      - 2026-07-19
   - id: A13
     prenom: William
     nom: Moreau
@@ -738,34 +479,8 @@ animateurs:
       AMBIANCE: DEBUTANT
       COOPERATIF: AUTONOME
       ENIGME: DEBUTANT
-    disponibilites:
-      - J1-MATIN
-      - J2-MATIN
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J9-MATIN
-      - J9-APREM
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
+    joursIndisponibles:
+      - 2026-07-19
   - id: A14
     prenom: Elise
     nom: Blanc
@@ -774,22 +489,13 @@ animateurs:
     competences:
       AMBIANCE: AUTONOME
       ADRESSE: AUTONOME
-    disponibilites:
-      - J7-MATIN
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-09
+      - 2026-07-10
+      - 2026-07-11
+      - 2026-07-12
+      - 2026-07-13
   - id: A15
     prenom: William
     nom: Roux
@@ -797,41 +503,7 @@ animateurs:
     statut: BENEVOLE
     competences:
       ENIGME: AUTONOME
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles: []
   - id: A16
     prenom: Jules
     nom: Henry
@@ -839,38 +511,8 @@ animateurs:
     statut: BENEVOLE
     competences:
       STRATEGIE: DEBUTANT
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
+    joursIndisponibles:
+      - 2026-07-19
   - id: A17
     prenom: Wafa
     nom: David
@@ -879,40 +521,7 @@ animateurs:
     competences:
       ENFANT: REFERENT
       AMBIANCE: DEBUTANT
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles: []
   - id: A18
     prenom: Emma
     nom: Blanc
@@ -920,31 +529,9 @@ animateurs:
     statut: BENEVOLE
     competences:
       COOPERATIF: DEBUTANT
-    disponibilites:
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J9-MATIN
-      - J9-APREM
-      - J1-APREM
-      - J1-SOIREE
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-17
+      - 2026-07-18
   - id: A19
     prenom: Wafa
     nom: Blanc
@@ -953,39 +540,8 @@ animateurs:
     competences:
       ADRESSE: AUTONOME
       ROLE: DEBUTANT
-    disponibilites:
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
   - id: A20
     prenom: Olivier
     nom: Fontaine
@@ -995,31 +551,10 @@ animateurs:
       COOPERATIF: REFERENT
       STRATEGIE: REFERENT
       AMBIANCE: AUTONOME
-    disponibilites:
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-10
+      - 2026-07-11
+      - 2026-07-12
   - id: A21
     prenom: Gabrielle
     nom: Leroy
@@ -1029,32 +564,8 @@ animateurs:
       ROLE: AUTONOME
       COOPERATIF: AUTONOME
       AMBIANCE: DEBUTANT
-    disponibilites:
-      - J2-APREM
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-APREM
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-APREM
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
   - id: A22
     prenom: Valentine
     nom: Perrin
@@ -1063,32 +574,10 @@ animateurs:
     competences:
       ENIGME: DEBUTANT
       ADRESSE: DEBUTANT
-    disponibilites:
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-18
+      - 2026-07-19
   - id: A23
     prenom: Diane
     nom: Morin
@@ -1097,31 +586,10 @@ animateurs:
     competences:
       ADRESSE: AUTONOME
       ENFANT: AUTONOME
-    disponibilites:
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-SOIREE
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-09
+      - 2026-07-10
   - id: A24
     prenom: Quitterie
     nom: Blanc
@@ -1130,31 +598,10 @@ animateurs:
     competences:
       ENIGME: DEBUTANT
       COOPERATIF: DEBUTANT
-    disponibilites:
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J1-MATIN
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-15
+      - 2026-07-16
+      - 2026-07-17
   - id: A25
     prenom: Remi
     nom: Lefebvre
@@ -1162,37 +609,7 @@ animateurs:
     statut: BENEVOLE
     competences:
       ENFANT: AUTONOME
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
+    joursIndisponibles: []
   - id: A26
     prenom: Chloe
     nom: Guerin
@@ -1200,36 +617,9 @@ animateurs:
     statut: BENEVOLE
     competences:
       ROLE: DEBUTANT
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
+    joursIndisponibles:
+      - 2026-07-18
+      - 2026-07-19
   - id: A27
     prenom: Pauline
     nom: Vincent
@@ -1238,35 +628,9 @@ animateurs:
     competences:
       ADRESSE: AUTONOME
       STRATEGIE: AUTONOME
-    disponibilites:
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-09
   - id: A28
     prenom: Perrine
     nom: Rousseau
@@ -1275,36 +639,8 @@ animateurs:
     competences:
       AMBIANCE: DEBUTANT
       COOPERATIF: AUTONOME
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-APREM
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
+    joursIndisponibles:
+      - 2026-07-19
   - id: A29
     prenom: Oscar
     nom: Roussel
@@ -1314,37 +650,9 @@ animateurs:
       STRATEGIE: DEBUTANT
       ADRESSE: DEBUTANT
       ENFANT: AUTONOME
-    disponibilites:
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-19
   - id: A30
     prenom: Florian
     nom: Bertrand
@@ -1352,31 +660,10 @@ animateurs:
     statut: BENEVOLE
     competences:
       STRATEGIE: DEBUTANT
-    disponibilites:
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-SOIREE
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-17
+      - 2026-07-18
   - id: A31
     prenom: Noemie
     nom: Garcia
@@ -1384,31 +671,10 @@ animateurs:
     statut: BENEVOLE
     competences:
       COOPERATIF: AUTONOME
-    disponibilites:
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J11-APREM
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-09
+      - 2026-07-10
+      - 2026-07-17
   - id: A32
     prenom: Emma
     nom: Richard
@@ -1418,32 +684,9 @@ animateurs:
       COOPERATIF: AUTONOME
       ROLE: REFERENT
       ADRESSE: DEBUTANT
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J7-MATIN
-      - J7-APREM
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
+    joursIndisponibles:
+      - 2026-07-18
+      - 2026-07-19
   - id: A33
     prenom: Fabien
     nom: Bertrand
@@ -1452,31 +695,10 @@ animateurs:
     competences:
       ADRESSE: AUTONOME
       ENIGME: DEBUTANT
-    disponibilites:
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-09
+      - 2026-07-10
   - id: A34
     prenom: Victor
     nom: Blanc
@@ -1485,33 +707,9 @@ animateurs:
     competences:
       STRATEGIE: DEBUTANT
       ENFANT: REFERENT
-    disponibilites:
-      - J2-MATIN
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-19
   - id: A35
     prenom: Marc
     nom: Laurent
@@ -1520,29 +718,11 @@ animateurs:
     competences:
       ADRESSE: AUTONOME
       ENIGME: DEBUTANT
-    disponibilites:
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J9-MATIN
-      - J9-APREM
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-SOIREE
-      - J12-APREM
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-09
+      - 2026-07-10
+      - 2026-07-11
   - id: A36
     prenom: Bruno
     nom: Simon
@@ -1550,40 +730,7 @@ animateurs:
     statut: BENEVOLE
     competences:
       STRATEGIE: DEBUTANT
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles: []
   - id: A37
     prenom: Elise
     nom: Bernard
@@ -1591,28 +738,11 @@ animateurs:
     statut: SALARIE
     competences:
       ENFANT: DEBUTANT
-    disponibilites:
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-APREM
-      - J11-APREM
+    joursIndisponibles:
+      - 2026-07-10
+      - 2026-07-11
+      - 2026-07-12
+      - 2026-07-13
   - id: A38
     prenom: Ugo
     nom: Mathieu
@@ -1620,31 +750,10 @@ animateurs:
     statut: BENEVOLE
     competences:
       ENFANT: DEBUTANT
-    disponibilites:
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J11-APREM
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-10
+      - 2026-07-11
+      - 2026-07-12
   - id: A39
     prenom: Laura
     nom: Roux
@@ -1653,40 +762,7 @@ animateurs:
     competences:
       COOPERATIF: AUTONOME
       ADRESSE: DEBUTANT
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles: []
   - id: A40
     prenom: Jules
     nom: Thomas
@@ -1696,28 +772,11 @@ animateurs:
       ENFANT: DEBUTANT
       ROLE: DEBUTANT
       COOPERATIF: DEBUTANT
-    disponibilites:
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
-      - J1-APREM
+    joursIndisponibles:
+      - 2026-07-09
+      - 2026-07-10
+      - 2026-07-11
+      - 2026-07-12
   - id: A41
     prenom: Xavier
     nom: Garcia
@@ -1725,38 +784,7 @@ animateurs:
     statut: BENEVOLE
     competences:
       ENFANT: DEBUTANT
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-APREM
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles: []
   - id: A42
     prenom: Umberto
     nom: Morin
@@ -1764,32 +792,10 @@ animateurs:
     statut: BENEVOLE
     competences:
       STRATEGIE: REFERENT
-    disponibilites:
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-18
+      - 2026-07-19
   - id: A43
     prenom: Romane
     nom: Garcia
@@ -1799,31 +805,10 @@ animateurs:
       COOPERATIF: REFERENT
       AMBIANCE: REFERENT
       ROLE: AUTONOME
-    disponibilites:
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J4-MATIN
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-17
+      - 2026-07-18
   - id: A44
     prenom: Marc
     nom: Laurent
@@ -1833,34 +818,9 @@ animateurs:
       ENFANT: DEBUTANT
       ADRESSE: REFERENT
       ROLE: DEBUTANT
-    disponibilites:
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-09
   - id: A45
     prenom: Sarah
     nom: Rousseau
@@ -1870,37 +830,8 @@ animateurs:
       ADRESSE: AUTONOME
       AMBIANCE: DEBUTANT
       STRATEGIE: AUTONOME
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J7-MATIN
-      - J7-APREM
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-APREM
-      - J11-SOIREE
+    joursIndisponibles:
+      - 2026-07-19
   - id: A46
     prenom: Yanis
     nom: Moreau
@@ -1909,36 +840,8 @@ animateurs:
     competences:
       ADRESSE: DEBUTANT
       ROLE: DEBUTANT
-    disponibilites:
-      - J2-MATIN
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-SOIREE
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
   - id: A47
     prenom: Marc
     nom: Henry
@@ -1946,31 +849,10 @@ animateurs:
     statut: SALARIE
     competences:
       ROLE: AUTONOME
-    disponibilites:
-      - J3-MATIN
-      - J3-APREM
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-SOIREE
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-15
+      - 2026-07-16
+      - 2026-07-17
   - id: A48
     prenom: Diane
     nom: Rousseau
@@ -1979,32 +861,10 @@ animateurs:
     competences:
       AMBIANCE: DEBUTANT
       STRATEGIE: AUTONOME
-    disponibilites:
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-APREM
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-18
+      - 2026-07-19
   - id: A49
     prenom: Karim
     nom: Lefebvre
@@ -2013,39 +873,7 @@ animateurs:
     competences:
       ENFANT: DEBUTANT
       ADRESSE: REFERENT
-    disponibilites:
-      - J1-MATIN
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-APREM
-      - J6-SOIREE
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles: []
   - id: A50
     prenom: Bruno
     nom: Lefebvre
@@ -2053,19 +881,13 @@ animateurs:
     statut: BENEVOLE
     competences:
       COOPERATIF: DEBUTANT
-    disponibilites:
-      - J5-SOIREE
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J8-MATIN
-      - J8-APREM
-      - J9-MATIN
-      - J9-APREM
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-09
+      - 2026-07-10
+      - 2026-07-11
+      - 2026-07-18
+      - 2026-07-19
   - id: A51
     prenom: Iris
     nom: Robert
@@ -2074,27 +896,12 @@ animateurs:
     competences:
       ADRESSE: AUTONOME
       AMBIANCE: DEBUTANT
-    disponibilites:
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J1-MATIN
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-13
+      - 2026-07-14
+      - 2026-07-15
+      - 2026-07-16
+      - 2026-07-17
   - id: A52
     prenom: Bruno
     nom: Durand
@@ -2102,36 +909,8 @@ animateurs:
     statut: BENEVOLE
     competences:
       AMBIANCE: AUTONOME
-    disponibilites:
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-APREM
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
   - id: A53
     prenom: Elise
     nom: Durand
@@ -2139,37 +918,8 @@ animateurs:
     statut: BENEVOLE
     competences:
       ADRESSE: AUTONOME
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-APREM
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
+    joursIndisponibles:
+      - 2026-07-19
   - id: A54
     prenom: Diane
     nom: Roux
@@ -2178,34 +928,9 @@ animateurs:
     competences:
       COOPERATIF: REFERENT
       STRATEGIE: AUTONOME
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
+    joursIndisponibles:
+      - 2026-07-18
+      - 2026-07-19
   - id: A55
     prenom: Chloe
     nom: Nicolas
@@ -2213,30 +938,10 @@ animateurs:
     statut: SALARIE
     competences:
       ENIGME: AUTONOME
-    disponibilites:
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-APREM
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-10
+      - 2026-07-11
+      - 2026-07-12
   - id: A56
     prenom: Laura
     nom: Thomas
@@ -2246,39 +951,7 @@ animateurs:
       ENFANT: AUTONOME
       ENIGME: DEBUTANT
       ROLE: REFERENT
-    disponibilites:
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-SOIREE
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles: []
   - id: A57
     prenom: Thibault
     nom: Nicolas
@@ -2288,31 +961,10 @@ animateurs:
       ENIGME: DEBUTANT
       COOPERATIF: AUTONOME
       ADRESSE: DEBUTANT
-    disponibilites:
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J11-APREM
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-09
+      - 2026-07-10
+      - 2026-07-11
   - id: A58
     prenom: Yasmine
     nom: Dubois
@@ -2321,38 +973,8 @@ animateurs:
     competences:
       AMBIANCE: AUTONOME
       COOPERATIF: AUTONOME
-    disponibilites:
-      - J2-MATIN
-      - J2-APREM
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
   - id: A59
     prenom: Xavier
     nom: Leroy
@@ -2360,31 +982,9 @@ animateurs:
     statut: BENEVOLE
     competences:
       COOPERATIF: DEBUTANT
-    disponibilites:
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J4-MATIN
-      - J4-APREM
-      - J5-MATIN
-      - J5-APREM
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-17
+      - 2026-07-18
   - id: A60
     prenom: Iris
     nom: Richard
@@ -2392,29 +992,11 @@ animateurs:
     statut: BENEVOLE
     competences:
       COOPERATIF: AUTONOME
-    disponibilites:
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-SOIREE
-      - J11-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-10
+      - 2026-07-11
+      - 2026-07-12
+      - 2026-07-13
   - id: A61
     prenom: Sarah
     nom: Morin
@@ -2422,29 +1004,11 @@ animateurs:
     statut: SALARIE
     competences:
       ROLE: AUTONOME
-    disponibilites:
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-SOIREE
-      - J1-MATIN
-      - J1-APREM
-      - J12-APREM
+    joursIndisponibles:
+      - 2026-07-09
+      - 2026-07-10
+      - 2026-07-11
+      - 2026-07-12
   - id: A62
     prenom: Simon
     nom: Michel
@@ -2452,42 +1016,7 @@ animateurs:
     statut: BENEVOLE
     competences:
       ENFANT: DEBUTANT
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles: []
   - id: A63
     prenom: Xavier
     nom: Simon
@@ -2497,36 +1026,9 @@ animateurs:
       ROLE: DEBUTANT
       ENFANT: DEBUTANT
       ADRESSE: DEBUTANT
-    disponibilites:
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-19
   - id: A64
     prenom: Jules
     nom: Bertrand
@@ -2535,31 +1037,10 @@ animateurs:
     competences:
       COOPERATIF: DEBUTANT
       AMBIANCE: DEBUTANT
-    disponibilites:
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-09
+      - 2026-07-18
   - id: A65
     prenom: Fabien
     nom: Garcia
@@ -2569,31 +1050,10 @@ animateurs:
       ROLE: AUTONOME
       ENFANT: DEBUTANT
       ADRESSE: DEBUTANT
-    disponibilites:
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J4-MATIN
-      - J4-APREM
-      - J5-MATIN
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-17
+      - 2026-07-18
   - id: A66
     prenom: Zoe
     nom: David
@@ -2601,23 +1061,13 @@ animateurs:
     statut: BENEVOLE
     competences:
       ROLE: AUTONOME
-    disponibilites:
-      - J4-MATIN
-      - J4-APREM
-      - J5-MATIN
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-09
+      - 2026-07-10
+      - 2026-07-17
+      - 2026-07-18
+      - 2026-07-19
   - id: A67
     prenom: Ugo
     nom: Nicolas
@@ -2626,28 +1076,11 @@ animateurs:
     competences:
       ENIGME: REFERENT
       ENFANT: AUTONOME
-    disponibilites:
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-APREM
-      - J3-SOIREE
-      - J4-APREM
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J3-MATIN
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-14
+      - 2026-07-15
+      - 2026-07-16
+      - 2026-07-17
   - id: A68
     prenom: Xavier
     nom: Leroy
@@ -2655,25 +1088,13 @@ animateurs:
     statut: BENEVOLE
     competences:
       COOPERATIF: AUTONOME
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
+    joursIndisponibles:
+      - 2026-07-14
+      - 2026-07-15
+      - 2026-07-16
+      - 2026-07-17
+      - 2026-07-18
+      - 2026-07-19
   - id: A69
     prenom: Perrine
     nom: Blanc
@@ -2682,36 +1103,8 @@ animateurs:
     competences:
       ROLE: AUTONOME
       AMBIANCE: DEBUTANT
-    disponibilites:
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
+    joursIndisponibles:
+      - 2026-07-08
   - id: A70
     prenom: Ines
     nom: Lefebvre
@@ -2719,29 +1112,11 @@ animateurs:
     statut: BENEVOLE
     competences:
       ENIGME: AUTONOME
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J2-MATIN
-      - J2-APREM
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-14
+      - 2026-07-15
+      - 2026-07-16
+      - 2026-07-17
   - id: A71
     prenom: Julien
     nom: Roux
@@ -2749,31 +1124,10 @@ animateurs:
     statut: BENEVOLE
     competences:
       ENFANT: AUTONOME
-    disponibilites:
-      - J1-MATIN
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-16
+      - 2026-07-17
+      - 2026-07-18
   - id: A72
     prenom: Hicham
     nom: Dubois
@@ -2783,31 +1137,9 @@ animateurs:
       ENFANT: REFERENT
       STRATEGIE: DEBUTANT
       COOPERATIF: DEBUTANT
-    disponibilites:
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J8-MATIN
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-SOIREE
-      - J11-APREM
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-10
+      - 2026-07-11
   - id: A73
     prenom: Ugo
     nom: Leroy
@@ -2815,30 +1147,11 @@ animateurs:
     statut: BENEVOLE
     competences:
       AMBIANCE: DEBUTANT
-    disponibilites:
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-10
+      - 2026-07-11
+      - 2026-07-12
+      - 2026-07-13
   - id: A74
     prenom: Marc
     nom: Muller
@@ -2847,31 +1160,10 @@ animateurs:
     competences:
       STRATEGIE: AUTONOME
       AMBIANCE: AUTONOME
-    disponibilites:
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-APREM
-      - J9-SOIREE
-      - J10-APREM
-      - J10-SOIREE
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-10
+      - 2026-07-11
+      - 2026-07-12
   - id: A75
     prenom: Sarah
     nom: Morin
@@ -2879,30 +1171,10 @@ animateurs:
     statut: SALARIE
     competences:
       ROLE: REFERENT
-    disponibilites:
-      - J5-MATIN
-      - J5-APREM
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J11-APREM
-      - J12-MATIN
-      - J12-APREM
+    joursIndisponibles:
+      - 2026-07-09
+      - 2026-07-10
+      - 2026-07-11
   - id: A76
     prenom: Adrien
     nom: Thomas
@@ -2911,31 +1183,10 @@ animateurs:
     competences:
       ENIGME: DEBUTANT
       STRATEGIE: REFERENT
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-APREM
-      - J9-SOIREE
+    joursIndisponibles:
+      - 2026-07-17
+      - 2026-07-18
+      - 2026-07-19
   - id: A77
     prenom: Emma
     nom: Martin
@@ -2943,36 +1194,9 @@ animateurs:
     statut: BENEVOLE
     competences:
       ENIGME: REFERENT
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-SOIREE
+    joursIndisponibles:
+      - 2026-07-18
+      - 2026-07-19
   - id: A78
     prenom: William
     nom: David
@@ -2981,30 +1205,9 @@ animateurs:
     competences:
       ENFANT: DEBUTANT
       AMBIANCE: AUTONOME
-    disponibilites:
-      - J5-MATIN
-      - J5-SOIREE
-      - J6-MATIN
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-SOIREE
-      - J9-APREM
-      - J9-SOIREE
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-11
+      - 2026-07-17
   - id: A79
     prenom: Yasmine
     nom: Laurent
@@ -3013,30 +1216,10 @@ animateurs:
     competences:
       ADRESSE: AUTONOME
       STRATEGIE: DEBUTANT
-    disponibilites:
-      - J5-APREM
-      - J5-SOIREE
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J1-MATIN
-      - J1-APREM
-      - J12-MATIN
-      - J12-APREM
+    joursIndisponibles:
+      - 2026-07-09
+      - 2026-07-10
+      - 2026-07-11
   - id: A80
     prenom: Julien
     nom: Henry
@@ -3045,20 +1228,12 @@ animateurs:
     competences:
       ADRESSE: DEBUTANT
       STRATEGIE: DEBUTANT
-    disponibilites:
-      - J6-APREM
-      - J7-MATIN
-      - J7-APREM
-      - J8-MATIN
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J12-MATIN
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-09
+      - 2026-07-10
+      - 2026-07-11
+      - 2026-07-12
   - id: A81
     prenom: Laura
     nom: Fontaine
@@ -3067,36 +1242,9 @@ animateurs:
     competences:
       AMBIANCE: AUTONOME
       ENFANT: DEBUTANT
-    disponibilites:
-      - J1-MATIN
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
+    joursIndisponibles:
+      - 2026-07-18
+      - 2026-07-19
   - id: A82
     prenom: Gaelle
     nom: Dubois
@@ -3104,40 +1252,7 @@ animateurs:
     statut: SALARIE
     competences:
       ENFANT: AUTONOME
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-APREM
-      - J3-SOIREE
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles: []
   - id: A83
     prenom: Yasmine
     nom: Laurent
@@ -3145,30 +1260,10 @@ animateurs:
     statut: BENEVOLE
     competences:
       ENIGME: DEBUTANT
-    disponibilites:
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J11-APREM
-      - J12-MATIN
-      - J12-APREM
+    joursIndisponibles:
+      - 2026-07-15
+      - 2026-07-16
+      - 2026-07-17
   - id: A84
     prenom: Elise
     nom: Moreau
@@ -3178,24 +1273,12 @@ animateurs:
       ROLE: DEBUTANT
       ADRESSE: AUTONOME
       AMBIANCE: DEBUTANT
-    disponibilites:
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-APREM
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-16
+      - 2026-07-17
+      - 2026-07-18
+      - 2026-07-19
   - id: A85
     prenom: Hugo
     nom: Michel
@@ -3204,33 +1287,10 @@ animateurs:
     competences:
       ENIGME: REFERENT
       ADRESSE: REFERENT
-    disponibilites:
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-09
+      - 2026-07-10
   - id: A86
     prenom: Mathis
     nom: Rousseau
@@ -3239,27 +1299,12 @@ animateurs:
     competences:
       ENIGME: REFERENT
       ADRESSE: REFERENT
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
+    joursIndisponibles:
+      - 2026-07-15
+      - 2026-07-16
+      - 2026-07-17
+      - 2026-07-18
+      - 2026-07-19
   - id: A87
     prenom: Elise
     nom: Vincent
@@ -3267,30 +1312,10 @@ animateurs:
     statut: BENEVOLE
     competences:
       ENFANT: DEBUTANT
-    disponibilites:
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J11-APREM
-      - J12-MATIN
-      - J12-APREM
+    joursIndisponibles:
+      - 2026-07-15
+      - 2026-07-16
+      - 2026-07-17
   - id: A88
     prenom: Oscar
     nom: Leroy
@@ -3299,31 +1324,10 @@ animateurs:
     competences:
       COOPERATIF: AUTONOME
       ENFANT: DEBUTANT
-    disponibilites:
-      - J4-MATIN
-      - J4-APREM
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-09
+      - 2026-07-10
   - id: A89
     prenom: Florian
     nom: Moreau
@@ -3333,42 +1337,7 @@ animateurs:
       ROLE: DEBUTANT
       ADRESSE: AUTONOME
       AMBIANCE: AUTONOME
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles: []
   - id: A90
     prenom: Adrien
     nom: Vincent
@@ -3376,35 +1345,9 @@ animateurs:
     statut: BENEVOLE
     competences:
       ENIGME: DEBUTANT
-    disponibilites:
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-09
   - id: A91
     prenom: Tania
     nom: Richard
@@ -3414,41 +1357,7 @@ animateurs:
       ADRESSE: AUTONOME
       ENIGME: AUTONOME
       ENFANT: DEBUTANT
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles: []
   - id: A92
     prenom: Gabrielle
     nom: Muller
@@ -3456,30 +1365,10 @@ animateurs:
     statut: SALARIE
     competences:
       ADRESSE: DEBUTANT
-    disponibilites:
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J8-MATIN
-      - J8-APREM
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-18
+      - 2026-07-19
   - id: A93
     prenom: Remi
     nom: Simon
@@ -3487,30 +1376,10 @@ animateurs:
     statut: BENEVOLE
     competences:
       STRATEGIE: REFERENT
-    disponibilites:
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-APREM
-      - J9-SOIREE
-      - J1-MATIN
-      - J1-APREM
-      - J12-MATIN
-      - J12-APREM
+    joursIndisponibles:
+      - 2026-07-09
+      - 2026-07-17
+      - 2026-07-18
   - id: A94
     prenom: Lea
     nom: David
@@ -3519,30 +1388,10 @@ animateurs:
     competences:
       ADRESSE: REFERENT
       STRATEGIE: REFERENT
-    disponibilites:
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J1-APREM
-      - J1-SOIREE
-      - J12-MATIN
-      - J12-APREM
+    joursIndisponibles:
+      - 2026-07-09
+      - 2026-07-10
+      - 2026-07-18
   - id: A95
     prenom: Yasmine
     nom: Robert
@@ -3550,41 +1399,7 @@ animateurs:
     statut: SALARIE
     competences:
       ADRESSE: REFERENT
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles: []
   - id: A96
     prenom: Quitterie
     nom: Laurent
@@ -3592,31 +1407,10 @@ animateurs:
     statut: BENEVOLE
     competences:
       ENFANT: DEBUTANT
-    disponibilites:
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-09
+      - 2026-07-19
   - id: A97
     prenom: Berenice
     nom: Nicolas
@@ -3624,35 +1418,9 @@ animateurs:
     statut: BENEVOLE
     competences:
       STRATEGIE: DEBUTANT
-    disponibilites:
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-09
   - id: A98
     prenom: Wafa
     nom: Laurent
@@ -3662,30 +1430,10 @@ animateurs:
       ENFANT: AUTONOME
       COOPERATIF: DEBUTANT
       STRATEGIE: DEBUTANT
-    disponibilites:
-      - J4-MATIN
-      - J4-APREM
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J11-APREM
-      - J12-MATIN
-      - J12-APREM
+    joursIndisponibles:
+      - 2026-07-10
+      - 2026-07-16
+      - 2026-07-17
   - id: A99
     prenom: Perrine
     nom: Roux
@@ -3693,34 +1441,9 @@ animateurs:
     statut: BENEVOLE
     competences:
       COOPERATIF: DEBUTANT
-    disponibilites:
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-SOIREE
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-09
   - id: A100
     prenom: Ugo
     nom: Fontaine
@@ -3729,25 +1452,12 @@ animateurs:
     competences:
       STRATEGIE: DEBUTANT
       ROLE: DEBUTANT
-    disponibilites:
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-APREM
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-APREM
-      - J11-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-09
+      - 2026-07-10
+      - 2026-07-11
+      - 2026-07-19
   - id: A101
     prenom: Remi
     nom: Morin
@@ -3756,39 +1466,7 @@ animateurs:
     competences:
       STRATEGIE: REFERENT
       ADRESSE: DEBUTANT
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-SOIREE
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J7-MATIN
-      - J7-APREM
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles: []
   - id: A102
     prenom: Remi
     nom: Thomas
@@ -3798,31 +1476,10 @@ animateurs:
       STRATEGIE: DEBUTANT
       ROLE: AUTONOME
       ENIGME: DEBUTANT
-    disponibilites:
-      - J1-MATIN
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J6-MATIN
-      - J6-APREM
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
+    joursIndisponibles:
+      - 2026-07-17
+      - 2026-07-18
+      - 2026-07-19
   - id: A103
     prenom: Victor
     nom: Morin
@@ -3830,32 +1487,10 @@ animateurs:
     statut: BENEVOLE
     competences:
       AMBIANCE: DEBUTANT
-    disponibilites:
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-18
+      - 2026-07-19
   - id: A104
     prenom: Berenice
     nom: Richard
@@ -3864,43 +1499,7 @@ animateurs:
     competences:
       ENFANT: DEBUTANT
       ENIGME: AUTONOME
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles: []
   - id: A105
     prenom: Remi
     nom: Richard
@@ -3910,30 +1509,10 @@ animateurs:
       ROLE: REFERENT
       AMBIANCE: DEBUTANT
       COOPERATIF: AUTONOME
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J12-MATIN
-      - J12-APREM
+    joursIndisponibles:
+      - 2026-07-16
+      - 2026-07-17
+      - 2026-07-18
   - id: A106
     prenom: Oscar
     nom: Bertrand
@@ -3943,32 +1522,10 @@ animateurs:
       STRATEGIE: AUTONOME
       ADRESSE: DEBUTANT
       AMBIANCE: AUTONOME
-    disponibilites:
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-APREM
-      - J9-SOIREE
-      - J10-APREM
-      - J10-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-18
+      - 2026-07-19
   - id: A107
     prenom: Umberto
     nom: Blanc
@@ -3977,30 +1534,11 @@ animateurs:
     competences:
       ENIGME: DEBUTANT
       COOPERATIF: REFERENT
-    disponibilites:
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-09
+      - 2026-07-10
+      - 2026-07-11
   - id: A108
     prenom: Gabrielle
     nom: Henry
@@ -4010,36 +1548,8 @@ animateurs:
       ENIGME: AUTONOME
       STRATEGIE: DEBUTANT
       COOPERATIF: DEBUTANT
-    disponibilites:
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
+    joursIndisponibles:
+      - 2026-07-19
   - id: A109
     prenom: Wafa
     nom: Petit
@@ -4049,36 +1559,8 @@ animateurs:
       ADRESSE: REFERENT
       COOPERATIF: AUTONOME
       ENFANT: AUTONOME
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
+    joursIndisponibles:
+      - 2026-07-19
   - id: A110
     prenom: Marc
     nom: Perrin
@@ -4088,30 +1570,10 @@ animateurs:
       ADRESSE: AUTONOME
       ENIGME: AUTONOME
       AMBIANCE: DEBUTANT
-    disponibilites:
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J11-MATIN
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
+    joursIndisponibles:
+      - 2026-07-15
+      - 2026-07-16
+      - 2026-07-17
   - id: A111
     prenom: Oscar
     nom: Fontaine
@@ -4119,30 +1581,9 @@ animateurs:
     statut: SALARIE
     competences:
       COOPERATIF: AUTONOME
-    disponibilites:
-      - J5-MATIN
-      - J5-SOIREE
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J11-MATIN
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
+    joursIndisponibles:
+      - 2026-07-10
+      - 2026-07-11
   - id: A112
     prenom: Emma
     nom: Lefebvre
@@ -4151,32 +1592,10 @@ animateurs:
     competences:
       COOPERATIF: AUTONOME
       ENFANT: DEBUTANT
-    disponibilites:
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-APREM
-      - J10-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-18
+      - 2026-07-19
   - id: A113
     prenom: Iris
     nom: Bernard
@@ -4186,37 +1605,8 @@ animateurs:
       ENIGME: DEBUTANT
       ENFANT: AUTONOME
       COOPERATIF: AUTONOME
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
+    joursIndisponibles:
+      - 2026-07-19
   - id: A114
     prenom: Remi
     nom: Durand
@@ -4225,30 +1615,10 @@ animateurs:
     competences:
       ENIGME: DEBUTANT
       COOPERATIF: REFERENT
-    disponibilites:
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J1-SOIREE
-      - J12-MATIN
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-09
+      - 2026-07-10
+      - 2026-07-18
   - id: A115
     prenom: Quentin
     nom: Laurent
@@ -4258,30 +1628,10 @@ animateurs:
       AMBIANCE: AUTONOME
       ADRESSE: AUTONOME
       ROLE: REFERENT
-    disponibilites:
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-APREM
-      - J11-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-09
+      - 2026-07-19
   - id: A116
     prenom: Adrien
     nom: Richard
@@ -4290,34 +1640,8 @@ animateurs:
     competences:
       ROLE: AUTONOME
       ENIGME: DEBUTANT
-    disponibilites:
-      - J1-MATIN
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-APREM
-      - J9-SOIREE
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
+    joursIndisponibles:
+      - 2026-07-19
   - id: A117
     prenom: Berenice
     nom: Bertrand
@@ -4325,34 +1649,10 @@ animateurs:
     statut: BENEVOLE
     competences:
       ENIGME: DEBUTANT
-    disponibilites:
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-09
+      - 2026-07-19
   - id: A118
     prenom: Hicham
     nom: Henry
@@ -4362,29 +1662,11 @@ animateurs:
       ENIGME: DEBUTANT
       ENFANT: DEBUTANT
       COOPERATIF: DEBUTANT
-    disponibilites:
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-APREM
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-09
+      - 2026-07-10
+      - 2026-07-11
+      - 2026-07-12
   - id: A119
     prenom: Florian
     nom: Laurent
@@ -4392,34 +1674,8 @@ animateurs:
     statut: SALARIE
     competences:
       STRATEGIE: DEBUTANT
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-APREM
-      - J3-SOIREE
-      - J4-APREM
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-APREM
-      - J11-SOIREE
+    joursIndisponibles:
+      - 2026-07-19
   - id: A120
     prenom: Alice
     nom: Richard
@@ -4427,39 +1683,7 @@ animateurs:
     statut: BENEVOLE
     competences:
       STRATEGIE: AUTONOME
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-SOIREE
+    joursIndisponibles: []
   - id: A121
     prenom: Emma
     nom: Bertrand
@@ -4467,38 +1691,8 @@ animateurs:
     statut: BENEVOLE
     competences:
       ENIGME: AUTONOME
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
+    joursIndisponibles:
+      - 2026-07-19
   - id: A122
     prenom: Nina
     nom: Rousseau
@@ -4507,36 +1701,9 @@ animateurs:
     competences:
       ADRESSE: REFERENT
       ROLE: AUTONOME
-    disponibilites:
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-09
   - id: A123
     prenom: William
     nom: Morin
@@ -4545,30 +1712,9 @@ animateurs:
     competences:
       ENIGME: DEBUTANT
       ROLE: DEBUTANT
-    disponibilites:
-      - J4-MATIN
-      - J4-SOIREE
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-APREM
-      - J11-SOIREE
-      - J1-APREM
-      - J1-SOIREE
-      - J12-MATIN
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-09
+      - 2026-07-10
   - id: A124
     prenom: William
     nom: Robert
@@ -4577,23 +1723,13 @@ animateurs:
     competences:
       STRATEGIE: DEBUTANT
       ADRESSE: REFERENT
-    disponibilites:
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-09
+      - 2026-07-10
+      - 2026-07-11
+      - 2026-07-12
+      - 2026-07-19
   - id: A125
     prenom: Victor
     nom: Rousseau
@@ -4601,34 +1737,9 @@ animateurs:
     statut: BENEVOLE
     competences:
       ENFANT: AUTONOME
-    disponibilites:
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-09
   - id: A126
     prenom: Romane
     nom: Henry
@@ -4637,30 +1748,10 @@ animateurs:
     competences:
       COOPERATIF: DEBUTANT
       ENFANT: DEBUTANT
-    disponibilites:
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J11-MATIN
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-10
+      - 2026-07-11
+      - 2026-07-17
   - id: A127
     prenom: Julien
     nom: Perrin
@@ -4668,30 +1759,10 @@ animateurs:
     statut: BENEVOLE
     competences:
       ENFANT: AUTONOME
-    disponibilites:
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-APREM
-      - J11-MATIN
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-10
+      - 2026-07-11
+      - 2026-07-12
   - id: A128
     prenom: Sarah
     nom: Fontaine
@@ -4700,31 +1771,10 @@ animateurs:
     competences:
       ROLE: DEBUTANT
       ENIGME: DEBUTANT
-    disponibilites:
-      - J4-MATIN
-      - J4-APREM
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-09
+      - 2026-07-10
   - id: A129
     prenom: Bruno
     nom: Roux
@@ -4732,30 +1782,9 @@ animateurs:
     statut: BENEVOLE
     competences:
       STRATEGIE: AUTONOME
-    disponibilites:
-      - J4-MATIN
-      - J4-APREM
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-SOIREE
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-SOIREE
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-09
+      - 2026-07-10
   - id: A130
     prenom: Ugo
     nom: Nicolas
@@ -4764,34 +1793,10 @@ animateurs:
     competences:
       COOPERATIF: AUTONOME
       ENFANT: REFERENT
-    disponibilites:
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-18
+      - 2026-07-19
   - id: A131
     prenom: Marc
     nom: Henry
@@ -4800,30 +1805,11 @@ animateurs:
     competences:
       ENIGME: REFERENT
       COOPERATIF: AUTONOME
-    disponibilites:
-      - J7-MATIN
-      - J7-APREM
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-10
+      - 2026-07-11
+      - 2026-07-12
+      - 2026-07-13
   - id: A132
     prenom: Chloe
     nom: Roux
@@ -4832,30 +1818,10 @@ animateurs:
     competences:
       COOPERATIF: AUTONOME
       ENFANT: DEBUTANT
-    disponibilites:
-      - J4-MATIN
-      - J4-SOIREE
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J1-APREM
-      - J1-SOIREE
-      - J12-MATIN
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-09
+      - 2026-07-10
+      - 2026-07-18
   - id: A133
     prenom: Perrine
     nom: Mathieu
@@ -4863,35 +1829,9 @@ animateurs:
     statut: SALARIE
     competences:
       ROLE: AUTONOME
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
+    joursIndisponibles:
+      - 2026-07-18
+      - 2026-07-19
   - id: A134
     prenom: Pauline
     nom: Petit
@@ -4901,30 +1841,10 @@ animateurs:
       ADRESSE: REFERENT
       STRATEGIE: DEBUTANT
       AMBIANCE: AUTONOME
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-16
+      - 2026-07-17
+      - 2026-07-18
   - id: A135
     prenom: Emma
     nom: Henry
@@ -4932,35 +1852,9 @@ animateurs:
     statut: BENEVOLE
     competences:
       ROLE: REFERENT
-    disponibilites:
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-09
   - id: A136
     prenom: Victor
     nom: Perrin
@@ -4969,33 +1863,10 @@ animateurs:
     competences:
       ADRESSE: DEBUTANT
       ROLE: AUTONOME
-    disponibilites:
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-09
+      - 2026-07-19
   - id: A137
     prenom: Umberto
     nom: Blanc
@@ -5004,30 +1875,10 @@ animateurs:
     competences:
       ENIGME: DEBUTANT
       ENFANT: DEBUTANT
-    disponibilites:
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J11-MATIN
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-10
+      - 2026-07-11
+      - 2026-07-12
   - id: A138
     prenom: Tania
     nom: Petit
@@ -5035,27 +1886,12 @@ animateurs:
     statut: BENEVOLE
     competences:
       STRATEGIE: AUTONOME
-    disponibilites:
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-APREM
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J11-MATIN
-      - J11-SOIREE
+    joursIndisponibles:
+      - 2026-07-10
+      - 2026-07-11
+      - 2026-07-12
+      - 2026-07-13
+      - 2026-07-14
   - id: A139
     prenom: Hicham
     nom: Thomas
@@ -5063,22 +1899,14 @@ animateurs:
     statut: BENEVOLE
     competences:
       ENFANT: AUTONOME
-    disponibilites:
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-14
+      - 2026-07-15
+      - 2026-07-16
+      - 2026-07-17
+      - 2026-07-18
+      - 2026-07-19
   - id: A140
     prenom: Jules
     nom: Bertrand
@@ -5087,35 +1915,9 @@ animateurs:
     competences:
       ADRESSE: DEBUTANT
       AMBIANCE: DEBUTANT
-    disponibilites:
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-09
   - id: A141
     prenom: Julien
     nom: Perrin
@@ -5124,41 +1926,7 @@ animateurs:
     competences:
       ENIGME: AUTONOME
       ENFANT: DEBUTANT
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles: []
   - id: A142
     prenom: Laura
     nom: Moreau
@@ -5168,30 +1936,10 @@ animateurs:
       ENIGME: AUTONOME
       COOPERATIF: AUTONOME
       ENFANT: DEBUTANT
-    disponibilites:
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-APREM
-      - J10-MATIN
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-09
+      - 2026-07-10
+      - 2026-07-11
   - id: A143
     prenom: Zoe
     nom: Perrin
@@ -5199,34 +1947,9 @@ animateurs:
     statut: BENEVOLE
     competences:
       STRATEGIE: AUTONOME
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
+    joursIndisponibles:
+      - 2026-07-18
+      - 2026-07-19
   - id: A144
     prenom: Berenice
     nom: Fontaine
@@ -5235,38 +1958,7 @@ animateurs:
     competences:
       ENFANT: DEBUTANT
       AMBIANCE: AUTONOME
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
+    joursIndisponibles: []
   - id: A145
     prenom: Simon
     nom: Moreau
@@ -5276,32 +1968,10 @@ animateurs:
       ENFANT: AUTONOME
       STRATEGIE: AUTONOME
       COOPERATIF: AUTONOME
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J9-MATIN
-      - J9-APREM
+    joursIndisponibles:
+      - 2026-07-17
+      - 2026-07-18
+      - 2026-07-19
   - id: A146
     prenom: Yanis
     nom: Lefebvre
@@ -5311,30 +1981,9 @@ animateurs:
       ROLE: AUTONOME
       ENFANT: AUTONOME
       STRATEGIE: DEBUTANT
-    disponibilites:
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J8-MATIN
-      - J8-APREM
-      - J9-MATIN
-      - J9-APREM
-      - J10-MATIN
-      - J10-SOIREE
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J11-SOIREE
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-09
+      - 2026-07-10
   - id: A147
     prenom: Perrine
     nom: Perrin
@@ -5344,34 +1993,9 @@ animateurs:
       COOPERATIF: AUTONOME
       ENIGME: AUTONOME
       AMBIANCE: DEBUTANT
-    disponibilites:
-      - J3-MATIN
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J8-MATIN
-      - J8-APREM
-      - J9-MATIN
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-09
   - id: A148
     prenom: Diane
     nom: Blanc
@@ -5380,29 +2004,11 @@ animateurs:
     competences:
       ENFANT: AUTONOME
       AMBIANCE: DEBUTANT
-    disponibilites:
-      - J7-MATIN
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
-      - J9-APREM
-      - J9-SOIREE
-      - J10-MATIN
-      - J10-APREM
-      - J10-SOIREE
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-MATIN
-      - J2-APREM
-      - J2-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-10
+      - 2026-07-11
+      - 2026-07-12
+      - 2026-07-13
   - id: A149
     prenom: Cedric
     nom: Guerin
@@ -5411,27 +2017,12 @@ animateurs:
     competences:
       ENIGME: DEBUTANT
       COOPERATIF: AUTONOME
-    disponibilites:
-      - J1-MATIN
-      - J1-APREM
-      - J1-SOIREE
-      - J2-APREM
-      - J2-SOIREE
-      - J3-APREM
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J2-MATIN
-      - J3-MATIN
-      - J11-MATIN
-      - J11-APREM
-      - J11-SOIREE
-      - J12-MATIN
-      - J12-APREM
-      - J12-SOIREE
+    joursIndisponibles:
+      - 2026-07-13
+      - 2026-07-14
+      - 2026-07-15
+      - 2026-07-16
+      - 2026-07-17
   - id: A150
     prenom: Yanis
     nom: David
@@ -5439,24 +2030,13 @@ animateurs:
     statut: BENEVOLE
     competences:
       ROLE: REFERENT
-    disponibilites:
-      - J3-MATIN
-      - J3-SOIREE
-      - J4-MATIN
-      - J4-APREM
-      - J4-SOIREE
-      - J5-MATIN
-      - J5-APREM
-      - J5-SOIREE
-      - J6-MATIN
-      - J6-APREM
-      - J6-SOIREE
-      - J7-MATIN
-      - J7-APREM
-      - J7-SOIREE
-      - J8-MATIN
-      - J8-APREM
-      - J8-SOIREE
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-09
+      - 2026-07-16
+      - 2026-07-17
+      - 2026-07-18
+      - 2026-07-19
 postes:
   - id: P1
     standId: STAND-01

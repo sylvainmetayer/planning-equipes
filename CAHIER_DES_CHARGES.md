@@ -41,7 +41,7 @@ Objectifs du projet :
 - Permettre des ajustements manuels après génération, avec revalidation
   automatique des contraintes dures.
 
-### 1.1 Périmètre (à valider)
+### 1.1 Périmètre
 
 Le périmètre couvre la saisie des données animateurs et stands, la configuration
 des contraintes, la génération et l'ajustement du planning, ainsi que son export.

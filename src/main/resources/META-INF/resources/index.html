@@ -28,63 +28,7 @@
     <pre id="planning-output"></pre>
   </section>
 
-  <section>
-    <h2>Stands</h2>
-    <form id="stand-form">
-      <input name="id" placeholder="id" required>
-      <input name="nom" placeholder="name" required>
-      <button type="submit">Save stand</button>
-    </form>
-    <ul id="stands-list"></ul>
-  </section>
-
-  <section>
-    <h2>Animators</h2>
-    <form id="animateur-form">
-      <input name="id" placeholder="id" required>
-      <input name="prenom" placeholder="first name" required>
-      <input name="nom" placeholder="last name" required>
-      <button type="submit">Save animator</button>
-    </form>
-    <ul id="animateurs-list"></ul>
-  </section>
-
-  <section>
-    <h2>Timeslots</h2>
-    <form id="creneau-form">
-      <label>Id <input name="id" placeholder="id" required></label>
-      <label>Festival day (1-15) <input name="jour" placeholder="festival day" type="number" min="1" max="15" required></label>
-      <label>Date <input name="date" type="date" required></label>
-      <label>Start <input name="heureDebut" type="time" required></label>
-      <label>End <input name="heureFin" type="time" required></label>
-      <button type="submit">Save timeslot</button>
-    </form>
-    <ul id="creneaux-list"></ul>
-  </section>
-
-  <section>
-    <h2>Typologies</h2>
-    <form id="typologie-form">
-      <input name="id" placeholder="id" required>
-      <input name="label" placeholder="label">
-      <button type="submit">Save typology</button>
-    </form>
-    <ul id="typologies-list"></ul>
-  </section>
-
-  <section>
-    <h2>Ad hoc constraints</h2>
-    <form id="contrainte-form">
-      <input name="id" placeholder="id" required>
-      <select name="type">
-        <option value="INDISPONIBILITE_FORCEE">Forced unavailability</option>
-        <option value="INCOMPATIBILITE">Incompatibility</option>
-        <option value="AFFECTATION_FORCEE">Forced assignment</option>
-      </select>
-      <button type="submit">Save constraint</button>
-    </form>
-    <ul id="contraintes-list"></ul>
-  </section>
+  <div id="reference-data"></div>
   </div>
 
   <div id="calendar-page" class="page hidden">

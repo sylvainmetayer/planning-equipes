@@ -91,5 +91,5 @@ detailed constraint catalogue and domain rationale before adding constraints.
   hard constraint is introduced, and don't consider a constraint change done
   until it passes.
 - Domain class/field names stay in French business vocabulary (`Animateur`,
-  `Creneau`, `TypologieJeu`, `disponibilites`, etc.) to match the spec
+  `Creneau`, `TypologieJeu`, `joursIndisponibles`, etc.) to match the spec
   document; code comments and non-domain identifiers are in English.

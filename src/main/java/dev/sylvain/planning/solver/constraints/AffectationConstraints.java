@@ -40,8 +40,8 @@ public final class AffectationConstraints {
                     Animateur animateur = poste.getAnimateur();
                     return animateur != null
                             && poste.getCreneau() != null
-                            && animateur.getDisponibilites() != null
-                            && !animateur.getDisponibilites().contains(poste.getCreneau());
+                            && poste.getCreneau().getDate() != null
+                            && animateur.estIndisponibleLe(poste.getCreneau().getDate());
                 })
                 .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint("animateurDisponible");

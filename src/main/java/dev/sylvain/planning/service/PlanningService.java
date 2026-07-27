@@ -158,12 +158,14 @@ public class PlanningService {
             }
             animateur.setCompetences(competences);
             
-            // Charger les disponibilités
-            List<String> dispoIds = (List<String>) animateurData.get("disponibilites");
-            Set<Creneau> disponibilites = dispoIds.stream()
-                    .map(creneauxMap::get)
-                    .collect(Collectors.toSet());
-            animateur.setDisponibilites(disponibilites);
+            // Charger les jours d'indisponibilité (opt-out: available by default)
+            List<Object> joursOffData = (List<Object>) animateurData.get("joursIndisponibles");
+            Set<LocalDate> joursIndisponibles = joursOffData == null
+                    ? new java.util.HashSet<>()
+                    : joursOffData.stream()
+                            .map(value -> parseLocalDate(value, "animateurs.joursIndisponibles"))
+                            .collect(Collectors.toCollection(java.util.HashSet::new));
+            animateur.setJoursIndisponibles(joursIndisponibles);
 
             animateurs.add(animateur);
         }

@@ -16,7 +16,7 @@ public class Animateur {
     private LocalDate dateNaissance;
     private StatutAnimateur statut;
     private Map<TypologieJeu, NiveauCompetence> competences = new HashMap<>();
-    private Set<Creneau> disponibilites = new HashSet<>();
+    private Set<LocalDate> joursIndisponibles = new HashSet<>();
 
     public Animateur() {
     }
@@ -27,6 +27,17 @@ public class Animateur {
         this.nom = nom;
         this.dateNaissance = dateNaissance;
         this.statut = statut;
+    }
+
+    /**
+     * True when the animateur has declared the given date as an off day.
+     * Availability is opt-out: an animateur is available on every festival date
+     * except the ones listed in {@link #joursIndisponibles}.
+     */
+    public boolean estIndisponibleLe(LocalDate dateReference) {
+        return dateReference != null
+                && joursIndisponibles != null
+                && joursIndisponibles.contains(dateReference);
     }
 
     public boolean estMineurLe(LocalDate dateReference) {
@@ -103,12 +114,12 @@ public class Animateur {
         this.competences = competences;
     }
 
-    public Set<Creneau> getDisponibilites() {
-        return disponibilites;
+    public Set<LocalDate> getJoursIndisponibles() {
+        return joursIndisponibles;
     }
 
-    public void setDisponibilites(Set<Creneau> disponibilites) {
-        this.disponibilites = disponibilites;
+    public void setJoursIndisponibles(Set<LocalDate> joursIndisponibles) {
+        this.joursIndisponibles = joursIndisponibles != null ? joursIndisponibles : new HashSet<>();
     }
 
     @Override

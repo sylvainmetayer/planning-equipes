@@ -128,6 +128,13 @@ public class ReferenceDataResource {
         return Response.noContent().build();
     }
 
+    @POST
+    @Path("/reference-data/import")
+    public Response importReferenceData(dev.sylvain.planning.domain.PlanningFestival planning) {
+        referenceDataService.importFromPlanning(planning);
+        return Response.noContent().build();
+    }
+
     @GET
     @Path("/contraintes-ad-hoc")
     public List<ContrainteAdHoc> listContraintesAdHoc() {

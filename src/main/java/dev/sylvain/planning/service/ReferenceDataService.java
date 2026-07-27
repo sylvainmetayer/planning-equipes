@@ -1,149 +1,139 @@
 package dev.sylvain.planning.service;
 
 import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.NiveauCompetence;
+import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.domain.StatutAnimateur;
-import dev.sylvain.planning.domain.TypologieJeu;
-import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.NotFoundException;
 
+/**
+ * Reference-data CRUD facade. Every mutation is written straight to PostgreSQL
+ * through {@link ReferenceDataRepository}; there is no in-memory cache. Read and
+ * write methods null-guard the repository so the non-CDI plain test (which
+ * builds this service with {@code new}) stays green.
+ */
 @ApplicationScoped
 public class ReferenceDataService {
 
-    private final Map<String, Animateur> animateurs = new ConcurrentHashMap<>();
-    private final Map<String, Stand> stands = new ConcurrentHashMap<>();
-    private final Map<String, Creneau> creneaux = new ConcurrentHashMap<>();
-    private final Map<String, ContrainteAdHoc> contraintes = new ConcurrentHashMap<>();
-    private final Map<String, TypologieItem> typologies = new ConcurrentHashMap<>();
+    @Inject
+    ReferenceDataRepository repository;
 
-    @PostConstruct
+    /** Kept for the non-CDI plain test which constructs and calls init() by hand. */
     void init() {
-        Arrays.stream(TypologieJeu.values())
-                .map(value -> new TypologieItem(value.name(), value.name()))
-                .forEach(item -> typologies.put(item.id(), item));
-
-        Stand stand = new Stand("STAND-STRAT", "Stand stratégie", Set.of(TypologieJeu.STRATEGIE), 1, 2, false);
-        stands.put(stand.getId(), stand);
-
-        Creneau creneau = new Creneau("J1-MATIN", 1, LocalDate.now().plusDays(7), LocalTime.of(9, 0), LocalTime.of(13, 0));
-        creneaux.put(creneau.getId(), creneau);
-
-        Animateur animateur = new Animateur("A1", "Alice", "Referente", LocalDate.now().minusYears(25), StatutAnimateur.BENEVOLE);
-        animateur.setCompetences(Map.of(TypologieJeu.STRATEGIE, NiveauCompetence.REFERENT));
-        animateurs.put(animateur.getId(), animateur);
+        // No-op: state lives in the database, seeded by Flyway migrations.
     }
 
+    /* ------------------------------ Animateurs ----------------------------- */
+
     public List<Animateur> listAnimateurs() {
-        return sortedCopy(animateurs);
+        return repository == null ? List.of() : repository.listAnimateurs();
     }
 
     public Animateur createAnimateur(Animateur animateur) {
         animateur.setId(requiredId(animateur.getId(), "animateur id"));
-        animateurs.put(animateur.getId(), animateur);
+        repository.saveAnimateur(animateur);
         return animateur;
     }
 
     public Animateur updateAnimateur(String id, Animateur animateur) {
-        if (!animateurs.containsKey(id)) {
+        if (!repository.animateurExists(id)) {
             throw new NotFoundException("Animateur not found: " + id);
         }
         animateur.setId(id);
-        animateurs.put(id, animateur);
+        repository.saveAnimateur(animateur);
         return animateur;
     }
 
     public void deleteAnimateur(String id) {
-        animateurs.remove(id);
+        repository.deleteAnimateur(id);
     }
 
+    /* -------------------------------- Stands ------------------------------- */
+
     public List<Stand> listStands() {
-        return sortedCopy(stands);
+        return repository == null ? List.of() : repository.listStands();
     }
 
     public Stand createStand(Stand stand) {
         stand.setId(requiredId(stand.getId(), "stand id"));
-        stands.put(stand.getId(), stand);
+        repository.saveStand(stand);
         return stand;
     }
 
     public Stand updateStand(String id, Stand stand) {
-        if (!stands.containsKey(id)) {
+        if (!repository.standExists(id)) {
             throw new NotFoundException("Stand not found: " + id);
         }
         stand.setId(id);
-        stands.put(id, stand);
+        repository.saveStand(stand);
         return stand;
     }
 
     public void deleteStand(String id) {
-        stands.remove(id);
+        repository.deleteStand(id);
     }
 
+    /* ------------------------------ Timeslots ------------------------------ */
+
     public List<Creneau> listCreneaux() {
-        return sortedCopy(creneaux);
+        return repository == null ? List.of() : repository.listCreneaux();
     }
 
     public Creneau createCreneau(Creneau creneau) {
         creneau.setId(requiredId(creneau.getId(), "timeslot id"));
-        creneaux.put(creneau.getId(), creneau);
+        repository.saveCreneau(creneau);
         return creneau;
     }
 
     public Creneau updateCreneau(String id, Creneau creneau) {
-        if (!creneaux.containsKey(id)) {
+        if (!repository.creneauExists(id)) {
             throw new NotFoundException("Timeslot not found: " + id);
         }
         creneau.setId(id);
-        creneaux.put(id, creneau);
+        repository.saveCreneau(creneau);
         return creneau;
     }
 
     public void deleteCreneau(String id) {
-        creneaux.remove(id);
+        repository.deleteCreneau(id);
     }
 
+    /* ------------------------------ Typologies ----------------------------- */
+
     public List<TypologieItem> listTypologies() {
-        return sortedCopy(typologies);
+        return repository == null ? List.of() : repository.listTypologies();
     }
 
     public TypologieItem createTypologie(TypologieItem typologie) {
         String id = requiredId(typologie.id(), "typology id");
         TypologieItem created = new TypologieItem(id, typologie.label());
-        typologies.put(id, created);
+        repository.saveTypologie(created);
         return created;
     }
 
     public TypologieItem updateTypologie(String id, TypologieItem typologie) {
-        if (!typologies.containsKey(id)) {
+        if (!repository.typologieExists(id)) {
             throw new NotFoundException("Typology not found: " + id);
         }
         TypologieItem updated = new TypologieItem(id, typologie.label());
-        typologies.put(id, updated);
+        repository.saveTypologie(updated);
         return updated;
     }
 
     public void deleteTypologie(String id) {
-        typologies.remove(id);
+        repository.deleteTypologie(id);
     }
 
+    /* --------------------------- Ad hoc constraints ------------------------ */
+
     public List<ContrainteAdHoc> listContraintesAdHoc() {
-        return sortedCopy(contraintes);
+        return repository == null ? List.of() : repository.listContraintes();
     }
 
     public ContrainteAdHoc createContrainteAdHoc(ContrainteAdHoc contrainte) {
@@ -151,16 +141,27 @@ public class ReferenceDataService {
         if (contrainte.getCreeLe() == null) {
             contrainte.setCreeLe(Instant.now());
         }
-        contraintes.put(contrainte.getId(), contrainte);
+        repository.saveContrainte(contrainte);
         return contrainte;
     }
 
     public void deleteContrainteAdHoc(String id) {
-        contraintes.remove(id);
+        repository.deleteContrainte(id);
     }
 
     public List<ContrainteAdHoc> snapshotContraintes() {
-        return new ArrayList<>(contraintes.values());
+        return repository == null ? List.of() : repository.listContraintes();
+    }
+
+    /**
+     * Replaces the whole persisted reference dataset with the one carried by a
+     * (sample or solved) planning, so it becomes editable through the CRUD
+     * endpoints. Delegated to the repository in a single transaction.
+     */
+    public void importFromPlanning(PlanningFestival planning) {
+        if (repository != null) {
+            repository.importFromPlanning(planning);
+        }
     }
 
     private String requiredId(String id, String fieldName) {
@@ -168,13 +169,6 @@ public class ReferenceDataService {
             throw new IllegalArgumentException("Missing " + fieldName);
         }
         return id;
-    }
-
-    private <T> List<T> sortedCopy(Map<String, T> map) {
-        return map.entrySet().stream()
-                .sorted(Comparator.comparing(Map.Entry::getKey))
-                .map(Map.Entry::getValue)
-                .toList();
     }
 
     public record TypologieItem(String id, String label) {

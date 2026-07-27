@@ -30,9 +30,7 @@ animateurs:
     statut: BENEVOLE
     competences:
       STRATEGIE: REFERENT
-    disponibilites:
-      - J1-MATIN
-      - J1-AM
+    joursIndisponibles: []
   - id: A2
     prenom: Bruno
     nom: Autonome
@@ -40,9 +38,7 @@ animateurs:
     statut: BENEVOLE
     competences:
       STRATEGIE: AUTONOME
-    disponibilites:
-      - J1-MATIN
-      - J1-AM
+    joursIndisponibles: []
   - id: A3
     prenom: Chloe
     nom: Junior
@@ -50,8 +46,7 @@ animateurs:
     statut: BENEVOLE
     competences:
       STRATEGIE: DEBUTANT
-    disponibilites:
-      - J1-AM
+    joursIndisponibles: []
 
 postes:
   - id: P1

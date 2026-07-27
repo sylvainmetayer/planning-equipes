@@ -5,16 +5,20 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.sql.DataSource;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.domain.TypologieJeu;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -70,85 +74,116 @@ public class PlanningPersistenceService {
             }
         }
 
-        for (Stand stand : dedupById(stands, Stand::getId)) {
-            upsertStand(connection, stand);
+        String upsertStand = "INSERT INTO stand (id, nom, effectif_min, effectif_max, reserve_majeurs) "
+                + "VALUES (?, ?, ?, ?, ?) ON CONFLICT (id) DO UPDATE SET "
+                + "nom = EXCLUDED.nom, effectif_min = EXCLUDED.effectif_min, "
+                + "effectif_max = EXCLUDED.effectif_max, reserve_majeurs = EXCLUDED.reserve_majeurs";
+        List<Stand> distinctStands = dedupById(stands, Stand::getId);
+        try (PreparedStatement ps = connection.prepareStatement(upsertStand)) {
+            for (Stand stand : distinctStands) {
+                ps.setString(1, stand.getId());
+                ps.setString(2, stand.getNom());
+                ps.setInt(3, stand.getEffectifMin());
+                ps.setInt(4, stand.getEffectifMax());
+                ps.setBoolean(5, stand.isReserveMajeurs());
+                ps.addBatch();
+            }
+            ps.executeBatch();
+        }
+        rewriteStandTypologies(connection, distinctStands);
+
+        String upsertCreneau = "INSERT INTO creneau (id, jour, date_creneau, heure_debut, heure_fin) "
+                + "VALUES (?, ?, ?, ?, ?) ON CONFLICT (id) DO UPDATE SET "
+                + "jour = EXCLUDED.jour, date_creneau = EXCLUDED.date_creneau, "
+                + "heure_debut = EXCLUDED.heure_debut, heure_fin = EXCLUDED.heure_fin";
+        try (PreparedStatement ps = connection.prepareStatement(upsertCreneau)) {
+            for (Creneau creneau : dedupById(creneaux, Creneau::getId)) {
+                ps.setString(1, creneau.getId());
+                ps.setInt(2, creneau.getJour());
+                ps.setObject(3, creneau.getDate());
+                ps.setObject(4, creneau.getHeureDebut());
+                ps.setObject(5, creneau.getHeureFin());
+                ps.addBatch();
+            }
+            ps.executeBatch();
         }
 
-        for (Creneau creneau : dedupById(creneaux, Creneau::getId)) {
-            upsertCreneau(connection, creneau);
-        }
-
-        List<Animateur> animateurs = planning.getAnimateurs() != null
-                ? planning.getAnimateurs()
-                : List.of();
-        for (Animateur animateur : dedupById(animateurs, Animateur::getId)) {
-            upsertAnimateur(connection, animateur);
+        String upsertAnimateur = "INSERT INTO animateur (id, prenom, nom, date_naissance, statut) "
+                + "VALUES (?, ?, ?, ?, ?) ON CONFLICT (id) DO UPDATE SET "
+                + "prenom = EXCLUDED.prenom, nom = EXCLUDED.nom, "
+                + "date_naissance = EXCLUDED.date_naissance, statut = EXCLUDED.statut";
+        try (PreparedStatement ps = connection.prepareStatement(upsertAnimateur)) {
+            List<Animateur> animateurs = planning.getAnimateurs() != null
+                    ? planning.getAnimateurs()
+                    : List.of();
+            List<Animateur> distinctAnimateurs = dedupById(animateurs, Animateur::getId);
+            for (Animateur animateur : distinctAnimateurs) {
+                ps.setString(1, animateur.getId());
+                ps.setString(2, animateur.getPrenom());
+                ps.setString(3, animateur.getNom());
+                ps.setObject(4, animateur.getDateNaissance());
+                ps.setString(5, animateur.getStatut() != null ? animateur.getStatut().name() : null);
+                ps.addBatch();
+            }
+            ps.executeBatch();
+            rewriteAnimateurDetails(connection, distinctAnimateurs);
         }
     }
 
-    private void upsertStand(Connection connection, Stand stand) throws SQLException {
-        String update = "UPDATE stand SET nom = ?, effectif_min = ?, effectif_max = ?, reserve_majeurs = ? WHERE id = ?";
-        try (PreparedStatement updatePs = connection.prepareStatement(update)) {
-            updatePs.setString(1, stand.getNom());
-            updatePs.setInt(2, stand.getEffectifMin());
-            updatePs.setInt(3, stand.getEffectifMax());
-            updatePs.setBoolean(4, stand.isReserveMajeurs());
-            updatePs.setString(5, stand.getId());
-            if (updatePs.executeUpdate() == 0) {
-                String insert = "INSERT INTO stand (id, nom, effectif_min, effectif_max, reserve_majeurs) VALUES (?, ?, ?, ?, ?)";
-                try (PreparedStatement insertPs = connection.prepareStatement(insert)) {
-                    insertPs.setString(1, stand.getId());
-                    insertPs.setString(2, stand.getNom());
-                    insertPs.setInt(3, stand.getEffectifMin());
-                    insertPs.setInt(4, stand.getEffectifMax());
-                    insertPs.setBoolean(5, stand.isReserveMajeurs());
-                    insertPs.executeUpdate();
+    private void rewriteStandTypologies(Connection connection, List<Stand> stands) throws SQLException {
+        try (PreparedStatement delete = connection.prepareStatement("DELETE FROM stand_typologie WHERE stand_id = ?");
+                PreparedStatement insert = connection.prepareStatement(
+                        "INSERT INTO stand_typologie (stand_id, typologie) VALUES (?, ?)")) {
+            for (Stand stand : stands) {
+                delete.setString(1, stand.getId());
+                delete.addBatch();
+                if (stand.getTypologiesProposees() != null) {
+                    for (TypologieJeu typologie : stand.getTypologiesProposees()) {
+                        insert.setString(1, stand.getId());
+                        insert.setString(2, typologie.name());
+                        insert.addBatch();
+                    }
                 }
             }
+            delete.executeBatch();
+            insert.executeBatch();
         }
     }
 
-    private void upsertCreneau(Connection connection, Creneau creneau) throws SQLException {
-        String update = "UPDATE creneau SET jour = ?, date_creneau = ?, heure_debut = ?, heure_fin = ? WHERE id = ?";
-        try (PreparedStatement updatePs = connection.prepareStatement(update)) {
-            updatePs.setInt(1, creneau.getJour());
-            updatePs.setObject(2, creneau.getDate());
-            updatePs.setObject(3, creneau.getHeureDebut());
-            updatePs.setObject(4, creneau.getHeureFin());
-            updatePs.setString(5, creneau.getId());
-            if (updatePs.executeUpdate() == 0) {
-                String insert = "INSERT INTO creneau (id, jour, date_creneau, heure_debut, heure_fin) VALUES (?, ?, ?, ?, ?)";
-                try (PreparedStatement insertPs = connection.prepareStatement(insert)) {
-                    insertPs.setString(1, creneau.getId());
-                    insertPs.setInt(2, creneau.getJour());
-                    insertPs.setObject(3, creneau.getDate());
-                    insertPs.setObject(4, creneau.getHeureDebut());
-                    insertPs.setObject(5, creneau.getHeureFin());
-                    insertPs.executeUpdate();
+    private void rewriteAnimateurDetails(Connection connection, List<Animateur> animateurs) throws SQLException {
+        try (PreparedStatement deleteComp = connection
+                        .prepareStatement("DELETE FROM animateur_competence WHERE animateur_id = ?");
+                PreparedStatement insertComp = connection.prepareStatement(
+                        "INSERT INTO animateur_competence (animateur_id, typologie, niveau) VALUES (?, ?, ?)");
+                PreparedStatement deleteJour = connection
+                        .prepareStatement("DELETE FROM animateur_jour_indispo WHERE animateur_id = ?");
+                PreparedStatement insertJour = connection.prepareStatement(
+                        "INSERT INTO animateur_jour_indispo (animateur_id, jour) VALUES (?, ?)")) {
+            for (Animateur animateur : animateurs) {
+                deleteComp.setString(1, animateur.getId());
+                deleteComp.addBatch();
+                deleteJour.setString(1, animateur.getId());
+                deleteJour.addBatch();
+                if (animateur.getCompetences() != null) {
+                    for (Map.Entry<TypologieJeu, NiveauCompetence> entry : animateur.getCompetences().entrySet()) {
+                        insertComp.setString(1, animateur.getId());
+                        insertComp.setString(2, entry.getKey().name());
+                        insertComp.setString(3, entry.getValue().name());
+                        insertComp.addBatch();
+                    }
+                }
+                if (animateur.getJoursIndisponibles() != null) {
+                    for (LocalDate jour : animateur.getJoursIndisponibles()) {
+                        insertJour.setString(1, animateur.getId());
+                        insertJour.setObject(2, jour);
+                        insertJour.addBatch();
+                    }
                 }
             }
-        }
-    }
-
-    private void upsertAnimateur(Connection connection, Animateur animateur) throws SQLException {
-        String update = "UPDATE animateur SET prenom = ?, nom = ?, date_naissance = ?, statut = ? WHERE id = ?";
-        try (PreparedStatement updatePs = connection.prepareStatement(update)) {
-            updatePs.setString(1, animateur.getPrenom());
-            updatePs.setString(2, animateur.getNom());
-            updatePs.setObject(3, animateur.getDateNaissance());
-            updatePs.setString(4, animateur.getStatut() != null ? animateur.getStatut().name() : null);
-            updatePs.setString(5, animateur.getId());
-            if (updatePs.executeUpdate() == 0) {
-                String insert = "INSERT INTO animateur (id, prenom, nom, date_naissance, statut) VALUES (?, ?, ?, ?, ?)";
-                try (PreparedStatement insertPs = connection.prepareStatement(insert)) {
-                    insertPs.setString(1, animateur.getId());
-                    insertPs.setString(2, animateur.getPrenom());
-                    insertPs.setString(3, animateur.getNom());
-                    insertPs.setObject(4, animateur.getDateNaissance());
-                    insertPs.setString(5, animateur.getStatut() != null ? animateur.getStatut().name() : null);
-                    insertPs.executeUpdate();
-                }
-            }
+            deleteComp.executeBatch();
+            deleteJour.executeBatch();
+            insertComp.executeBatch();
+            insertJour.executeBatch();
         }
     }
 
