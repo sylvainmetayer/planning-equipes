@@ -6,3 +6,7 @@ target/
 *.iml
 *.ipr
 *.iws
+# Angular build artifacts (rebuilt inside the image by Quinoa)
+src/main/webui/node_modules/
+src/main/webui/dist/
+src/main/webui/.angular/

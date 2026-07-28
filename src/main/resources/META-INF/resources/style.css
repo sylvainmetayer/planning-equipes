@@ -1,9 +1,0 @@
-/* Aggregator: import order matters (base tokens first, views last). */
-@import url('https://fonts.googleapis.com/css2?family=Chivo:wght@400;600;800&family=Fraunces:opsz,wght@9..144,700&display=swap');
-@import url('/css/base.css');
-@import url('/css/layout.css');
-@import url('/css/notifications.css');
-@import url('/css/reference-data.css');
-@import url('/css/calendar-month.css');
-@import url('/css/calendar-day.css');
-@import url('/css/constraints.css');

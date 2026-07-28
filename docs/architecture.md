@@ -4,7 +4,7 @@ Application **unique** conteneurisée : un service Quarkus qui embarque le solve
 Timefold et sert le frontend statique, plus une base PostgreSQL.
 
 ```
-Navigateur (vanilla JS, modules ES)
+Navigateur (application Angular)
         │  fetch /api/...
         ▼
 Service Quarkus  ──►  Timefold Solver (même JVM, pas de micro-service)
@@ -20,10 +20,10 @@ PostgreSQL (+ migrations Flyway)
 | Backend / API | Quarkus (Java 25) | REST + ressources statiques dans le même déploiement |
 | Moteur d'optimisation | Timefold Solver Community, `HardMediumSoftScore` | Encapsulé dans la même JVM |
 | Persistance | PostgreSQL + Flyway | Migrations versionnées dans `src/main/resources/db/migration` |
-| Frontend | HTML/CSS/JS vanilla, modules ES | Aucun bundler, aucun framework, aucune dépendance Node |
+| Frontend | Angular 22 (standalone, signals, zoneless) dans `src/main/webui` | Construit et servi par l'extension Quarkus Quinoa |
 | Exports | OpenPDF (PDF), génération ICS maison | Toujours côté serveur |
 | Conteneurisation | Docker Compose (app, postgres, pgadmin) | Config par variables d'environnement |
-| Outillage | `mise.toml` (`temurin-25`, Maven 3.9.9) | Toolchain épinglée |
+| Outillage | `mise.toml` (`temurin-25`, Maven 3.9.9, Node 22) | Toolchain épinglée ; Quinoa télécharge Node au build si absent |
 
 ## Arborescence
 
@@ -36,8 +36,8 @@ src/main/java/.../solver/
   ├── domain/                   → modèle Timefold
   ├── service/                  → services métier, persistance, exports, jobs
   └── solver/                   → configuration et contraintes du solveur
+src/main/webui/                 → application Angular (sources, package.json)
 src/main/resources/
-  ├── META-INF/resources/       → frontend statique (index.html, css/, js/)
   ├── db/migration/             → migrations Flyway
   ├── solver/solverConfig.xml   → configuration Timefold
   ├── scenario.yml              → scénario de démonstration (SnakeYAML)
@@ -89,44 +89,84 @@ Ressources JAX-RS : `PlanningResource`, `SolverJobResource`, `ReferenceDataResou
 
 ## Frontend
 
-Servi tel quel depuis `src/main/resources/META-INF/resources` — les modules ES
-exigent un service HTTP (Quarkus), ils ne fonctionnent pas en `file://`.
+Application **Angular 22** dont les sources vivent dans `src/main/webui`.
+L'extension [Quinoa](https://docs.quarkiverse.io/quarkus-quinoa/dev/index.html)
+lance `npm ci && npm run build` pendant `mvn package` et copie le bundle dans les
+ressources statiques du service Quarkus : le déploiement reste unique, il n'y a
+pas de serveur Node en production. En `quarkus:dev`, Quinoa démarre `ng serve` et
+proxifie le port 4200, ce qui donne le rechargement à chaud du frontend.
 
-Une responsabilité par fichier, chargés via `<script type="module" src="/js/app.js">` :
+Configuration dans `application.properties` (`quarkus.quinoa.*`) : répertoire de
+build `dist/planning-equipes-ui/browser`, `package-manager-install=true` (Node est
+téléchargé par le build, aucune installation locale requise en CI ou dans
+Docker), `enable-spa-routing=true` (les routes Angular inconnues du serveur
+renvoient `index.html`) et frontend désactivé sur le profil `%test`.
 
-| Module | Rôle |
+Le design s'appuie sur **Angular Material** (Material Design 3). Le thème est
+défini dans `src/material-theme.scss` via `mat.theme()` (palettes azure / blue,
+typographie Roboto) ; le CSS applicatif n'utilise que les variables système
+`--mat-sys-*`. L'application ne dépend pas de `@angular/animations` : les
+composants Material s'animent en CSS.
+
+Chaque bloc fonctionnel a **sa propre route et sa propre page**, chargée en
+*lazy loading* :
+
+| Route | Page | Contenu |
+| --- | --- | --- |
+| `/solver` (défaut) | `app/pages/solver/` | Scénario d'exemple, réinitialisation, résolution, analyse |
+| `/exports` | `app/pages/exports/` | Exports PDF et ICS du planning |
+| `/data-transfer` | `app/pages/data-transfer/` | Export / import de dump SQL, imports CSV |
+| `/stands` | `app/pages/stands/` | CRUD des stands |
+| `/animateurs` | `app/pages/animateurs/` | CRUD des animateurs (compétences, jours d'indisponibilité) |
+| `/creneaux` | `app/pages/creneaux/` | CRUD des créneaux |
+| `/typologies` | `app/pages/typologies/` | CRUD des typologies de jeux |
+| `/ad-hoc-constraints` | `app/pages/ad-hoc-constraints/` | CRUD des contraintes ad hoc |
+| `/calendar` | `app/pages/calendar-month/` | Vue mensuelle + filtres animateur / stand |
+| `/day-calendar` | `app/pages/calendar-day/` | Vue par jour du festival |
+| `/constraints` | `app/pages/constraints/` | Catalogue des contraintes + dernière analyse |
+
+Le code est organisé par responsabilité, sans module `NgModule` (composants
+standalone) :
+
+| Fichier | Rôle |
 | --- | --- |
-| `js/app.js` | Point d'entrée : navigation entre pages + init des modules |
-| `js/api.js` | Helpers `fetch` ; `downloadFile` renvoie un message, ne touche jamais au DOM |
-| `js/utils.js`, `js/date-utils.js` | Utilitaires, calculs de dates (semaine commençant lundi) |
-| `js/planning-state.js` | État planning partagé derrière `get/setLastSolvedPlanning` + `ensurePlanning()` — pas de global libre |
-| `js/calendar-month.js` | Vue mensuelle + filtres animateur / stand (état de vue interne) |
-| `js/calendar-day.js` | Vue par jour |
-| `js/constraints.js` | Onglet « Constraints » (catalogue + dernière analyse) |
-| `js/jobs.js`, `js/notifications.js` | Suivi des jobs asynchrones (état lu sur le serveur via `/api/jobs/active`, aucun stockage navigateur) et notifications IHM |
-| `js/reference-data.js` | CRUD des référentiels |
-| `js/data-transfer.js` | Imports CSV, export / import de dump SQL |
-| `js/admin.js` | Actions planning et exports |
+| `app/app.ts`, `app/app.html` | Coquille applicative : `mat-toolbar`, `mat-sidenav` (navigation groupée Planning / Référentiels / Vues), moniteur de job |
+| `app/app.routes.ts` | Table des routes ci-dessus, toutes en *lazy loading* |
+| `app/core/api.service.ts` | Helpers `HttpClient` ; `downloadFile` renvoie un message, ne touche jamais au DOM |
+| `app/core/models.ts` | Types TypeScript des payloads de l'API |
+| `app/core/date-utils.ts` | Calculs de dates (semaine commençant lundi) |
+| `app/core/planning-state.service.ts` | État planning partagé (signal) + chargement lecture seule pour les vues |
+| `app/core/reference-data.store.ts` | Référentiels partagés (signals) et opérations CRUD |
+| `app/core/reference-crud.service.ts` | Enregistrement / suppression mutualisés des pages référentiels (retour utilisateur, confirmation) |
+| `app/core/solver-job.service.ts` | Suivi des jobs asynchrones : lit `/api/jobs/active` toutes les 2 s, aucun stockage navigateur |
+| `app/core/notification.service.ts` | Notifications via `MatSnackBar` (+ notifications système) |
+| `app/shared/job-monitor.ts` | Indicateur « une résolution est en cours » dans la barre d'outils, temps écoulé calculé par le serveur |
+| `app/shared/confirm-dialog.ts` | Dialogue Material de confirmation (remplace `window.confirm`) |
+| `app/shared/output-panel.ts` | Panneau de résultat monospace partagé par les pages d'action |
 
 Conventions :
 
-- chaque module de vue exporte `initX()` (câblage des events une seule fois) et
-  `renderX()` utilisé par la navigation ;
-- les lookups DOM restent dans le module propriétaire ;
-- l'état circule dans un seul sens : `admin` (solve/analyze) → `setLastSolvedPlanning`,
-  les calendriers relisent via `ensurePlanning()` ;
-- pas de globals mutables partagés, pas de retour à un `planning.js` monolithique ;
+- composants **standalone**, état local en `signal()` / `computed()`, nouveau
+  flot de contrôle (`@if` / `@for`) dans les templates ; pas de `NgModule` ;
+- un bloc fonctionnel = une route = une page ; on n'ajoute pas une section dans
+  une page existante ;
+- les services de `core/` portent l'état partagé et les appels HTTP, les
+  composants ne font pas de `fetch` direct ;
+- l'état circule dans un seul sens : la page « Solver » pousse le planning
+  résolu dans `PlanningStateService`, les calendriers le relisent en lecture
+  seule (ils ne lancent jamais de résolution) ;
 - l'état « un solveur tourne » n'est jamais stocké dans le navigateur
-  (`localStorage` / `sessionStorage`) : `js/jobs.js` interroge `/api/jobs/active`
-  toutes les 2 secondes, de sorte qu'une résolution lancée depuis un autre
-  navigateur ou une fenêtre privée verrouille aussi les boutons ici, affiche le
-  temps écoulé calculé par le serveur, et pousse son résultat à la fin.
+  (`localStorage` / `sessionStorage`) : `SolverJobService` interroge
+  `/api/jobs/active` toutes les 2 secondes, de sorte qu'une résolution lancée
+  depuis un autre navigateur ou une fenêtre privée verrouille aussi les boutons
+  ici, affiche le temps écoulé calculé par le serveur, et pousse son résultat à
+  la fin.
 
-Le CSS suit le même découpage : `style.css` n'est qu'un agrégateur de règles
-`@import` (police Google d'abord, puis les partials) et chaque composant a son
-partial sous `css/` (`base.css` tokens/reset/typo/contrôles, `layout.css`,
-`calendar-month.css`, `calendar-day.css`, `constraints.css`, `notifications.css`,
-`reference-data.css`), avec ses propres `@media`.
+Le CSS global se limite à ce que Material ne couvre pas : `src/styles.css` n'est
+qu'un agrégateur de règles `@import` et chaque partial vit sous `src/styles/`
+(`pages.css` cartes / formulaires / tableaux, `feedback.css` moniteur de job et
+variantes de snack bar, `calendar-month.css`, `calendar-day.css`,
+`constraints.css`), avec ses propres `@media`.
 
 ## Base de données
 

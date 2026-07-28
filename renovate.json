@@ -16,7 +16,8 @@
     "dockerfile",
     "docker-compose",
     "github-actions",
-    "mise"
+    "mise",
+    "npm"
   ],
   "packageRules": [
     {
@@ -46,6 +47,20 @@
       "matchDepTypes": ["build", "plugin"],
       "matchUpdateTypes": ["minor", "patch"],
       "groupName": "maven build plugins"
+    },
+    {
+      "description": "Angular frontend (src/main/webui): Angular packages move together",
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["@angular{/,}**", "zone.js", "rxjs"],
+      "groupName": "angular",
+      "addLabels": ["frontend"]
+    },
+    {
+      "description": "Other frontend dependencies: one grouped PR for minor and patch",
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "frontend dependencies",
+      "addLabels": ["frontend"]
     },
     {
       "description": "GitHub Actions: one grouped PR for minor and patch",

@@ -1,0 +1,50 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.app-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  gap: 0.5rem;
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+}
+
+.app-title {
+  font: var(--mat-sys-title-medium);
+}
+
+.app-toolbar-spacer {
+  flex: 1 1 auto;
+}
+
+.app-shell {
+  flex: 1 1 auto;
+  background: var(--mat-sys-surface);
+}
+
+.app-drawer {
+  width: 16rem;
+  border-right: 1px solid var(--mat-sys-outline-variant);
+}
+
+.app-page {
+  padding: 1.25rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.active-link {
+  --mat-list-list-item-label-text-color: var(--mat-sys-primary);
+  --mat-list-list-item-leading-icon-color: var(--mat-sys-primary);
+  background: var(--mat-sys-secondary-container);
+}
+
+@media (max-width: 740px) {
+  .app-page {
+    padding: 0.75rem;
+  }
+}

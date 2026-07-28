@@ -15,7 +15,7 @@ particulier tout ce qui touche au cadre légal des mineurs.
 
 Source : `solver/ConstraintCatalog.java` (description métier) et
 `solver/constraints/*.java` (implémentation). Le catalogue est exposé par
-`GET /api/constraints` et affiché dans l'onglet « Constraints » de l'IHM.
+`GET /api/constraints` et affiché sur la page « Constraints » de l'IHM.
 
 ### Dures — affectation (`AffectationConstraints`)
 

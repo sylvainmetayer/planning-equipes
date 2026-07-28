@@ -1,0 +1,135 @@
+/* Month calendar: Material does not ship a calendar board, so the grid stays
+   custom and is themed with the Material system tokens. */
+
+.calendar-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.calendar-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.calendar-meta {
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.calendar-filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 1rem;
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.375rem;
+  margin-bottom: 0.375rem;
+  font: var(--mat-sys-label-medium);
+  color: var(--mat-sys-on-surface-variant);
+  text-align: center;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.375rem;
+}
+
+.calendar-day-cell {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-height: 5.5rem;
+  padding: 0.5rem;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: var(--mat-sys-on-surface);
+  background: var(--mat-sys-surface-container-low);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.calendar-day-cell:hover {
+  background: var(--mat-sys-surface-container-high);
+}
+
+.calendar-day-cell:focus-visible {
+  outline: 2px solid var(--mat-sys-primary);
+  outline-offset: 2px;
+}
+
+.calendar-day-cell.is-other-month {
+  opacity: 0.5;
+}
+
+.calendar-day-cell.is-today {
+  border-color: var(--mat-sys-primary);
+}
+
+.calendar-day-cell.is-selected {
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+  border-color: var(--mat-sys-primary);
+}
+
+.calendar-day-number {
+  font: var(--mat-sys-title-small);
+}
+
+.calendar-day-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font: var(--mat-sys-label-small);
+  color: inherit;
+  opacity: 0.85;
+}
+
+.calendar-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: var(--mat-sys-corner-full);
+  background: var(--mat-sys-outline-variant);
+}
+
+.calendar-dot.has-events {
+  background: var(--mat-sys-primary);
+}
+
+.calendar-empty {
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+  padding: 1rem 0;
+}
+
+.empty-slot {
+  color: var(--mat-sys-error);
+}
+
+@media (max-width: 900px) {
+  .calendar-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 740px) {
+  .calendar-day-cell {
+    min-height: 4rem;
+    padding: 0.375rem;
+  }
+
+  .calendar-day-meta span:first-child {
+    display: none;
+  }
+}

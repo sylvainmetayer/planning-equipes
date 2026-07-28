@@ -1,0 +1,114 @@
+<mat-card appearance="outlined" class="page-card" [class.is-editing]="editingId()">
+  <mat-card-header>
+    <mat-card-title>{{ formTitle() }}</mat-card-title>
+    <mat-card-subtitle>
+      Ad hoc constraints are enforced as hard constraints, at the same priority as the legal ones.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <form class="form-grid" (ngSubmit)="save()">
+      <mat-form-field appearance="outline">
+        <mat-label>Id</mat-label>
+        <input matInput name="id" required [readonly]="!!editingId()"
+               [ngModel]="draft().id" (ngModelChange)="patch({ id: $event })" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Type</mat-label>
+        <mat-select name="type" [ngModel]="draft().type" (ngModelChange)="patch({ type: $event })">
+          @for (type of types; track type.value) {
+            <mat-option [value]="type.value">{{ type.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Timeslot (optional)</mat-label>
+        <mat-select name="creneauId" [ngModel]="draft().creneauId" (ngModelChange)="patch({ creneauId: $event })">
+          <mat-option value="">Any timeslot</mat-option>
+          @for (creneau of store.creneaux(); track creneau.id) {
+            <mat-option [value]="creneau.id">
+              {{ creneau.id }} · J{{ creneau.jour }} {{ creneau.heureDebut }}–{{ creneau.heureFin }}
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Stand (optional)</mat-label>
+        <mat-select name="standId" [ngModel]="draft().standId" (ngModelChange)="patch({ standId: $event })">
+          <mat-option value="">Any stand</mat-option>
+          @for (stand of store.stands(); track stand.id) {
+            <mat-option [value]="stand.id">{{ stand.nom || stand.id }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="span-2">
+        <mat-label>Animateurs concerned</mat-label>
+        <mat-select name="animateurIds" multiple
+                    [ngModel]="draft().animateurIds" (ngModelChange)="patch({ animateurIds: $event })">
+          @for (animateur of store.animateurs(); track animateur.id) {
+            <mat-option [value]="animateur.id">
+              {{ animateur.prenom }} {{ animateur.nom }} ({{ animateur.id }})
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="span-2">
+        <mat-label>Reason</mat-label>
+        <textarea matInput name="raison" rows="2"
+                  [ngModel]="draft().raison" (ngModelChange)="patch({ raison: $event })"></textarea>
+      </mat-form-field>
+      <div class="form-actions span-2">
+        <button matButton="filled" type="submit">
+          <mat-icon>save</mat-icon>
+          Save constraint
+        </button>
+        <button matButton type="button" (click)="cancel()">Cancel</button>
+      </div>
+    </form>
+  </mat-card-content>
+</mat-card>
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <mat-card-title>Ad hoc constraints ({{ store.contraintes().length }})</mat-card-title>
+  </mat-card-header>
+  <mat-card-content class="table-wrapper">
+    <table mat-table [dataSource]="store.contraintes()">
+      <ng-container matColumnDef="id">
+        <th mat-header-cell *matHeaderCellDef>Id</th>
+        <td mat-cell *matCellDef="let contrainte">{{ contrainte.id }}</td>
+      </ng-container>
+      <ng-container matColumnDef="type">
+        <th mat-header-cell *matHeaderCellDef>Type</th>
+        <td mat-cell *matCellDef="let contrainte">{{ contrainte.type }}</td>
+      </ng-container>
+      <ng-container matColumnDef="animateurs">
+        <th mat-header-cell *matHeaderCellDef>Animateurs</th>
+        <td mat-cell *matCellDef="let contrainte">{{ animateursLabel(contrainte) }}</td>
+      </ng-container>
+      <ng-container matColumnDef="portee">
+        <th mat-header-cell *matHeaderCellDef>Scope</th>
+        <td mat-cell *matCellDef="let contrainte">{{ porteeLabel(contrainte) }}</td>
+      </ng-container>
+      <ng-container matColumnDef="raison">
+        <th mat-header-cell *matHeaderCellDef>Reason</th>
+        <td mat-cell *matCellDef="let contrainte">{{ contrainte.raison }}</td>
+      </ng-container>
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef aria-label="Actions"></th>
+        <td mat-cell *matCellDef="let contrainte" class="row-actions">
+          <button matIconButton matTooltip="Edit" aria-label="Edit" (click)="edit(contrainte)">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button matIconButton matTooltip="Delete" aria-label="Delete" class="danger-action" (click)="remove(contrainte)">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="columns"></tr>
+      <tr mat-row *matRowDef="let row; columns: columns"></tr>
+    </table>
+    @if (store.contraintes().length === 0) {
+      <p class="empty-hint">No ad hoc constraint yet.</p>
+    }
+  </mat-card-content>
+</mat-card>

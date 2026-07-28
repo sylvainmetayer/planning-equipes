@@ -1,0 +1,125 @@
+import { Component, computed, inject, signal } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { ApiService } from '../../core/api.service';
+import { PlanningStateService } from '../../core/planning-state.service';
+import { Creneau, PersistenceStatus, PosteAffectation, Stand } from '../../core/models';
+
+interface StandLine {
+  standNom: string;
+  names: string[];
+}
+
+interface SlotCard {
+  creneauId: string;
+  heureDebut: string;
+  heureFin: string;
+  stands: StandLine[];
+}
+
+interface DayCard {
+  jour: number;
+  title: string;
+  slots: SlotCard[];
+}
+
+/**
+ * Read-only calendar grouped by festival day. Also displays how many
+ * assignments are currently persisted in database.
+ */
+@Component({
+  selector: 'app-calendar-day-page',
+  imports: [MatCardModule, MatButtonModule, MatIconModule, MatProgressBarModule],
+  templateUrl: './calendar-day-page.html'
+})
+export class CalendarDayPage {
+  protected readonly loading = signal(false);
+  protected readonly error = signal('');
+  protected readonly persistedCount = signal<string>('?');
+  protected readonly postes = signal<PosteAffectation[]>([]);
+
+  private readonly api = inject(ApiService);
+  private readonly planningState = inject(PlanningStateService);
+
+  protected readonly days = computed<DayCard[]>(() => buildDays(this.postes()));
+
+  constructor() {
+    void this.refresh();
+  }
+
+  protected async refresh(): Promise<void> {
+    this.loading.set(true);
+    this.error.set('');
+    await this.refreshPersistedCount();
+    try {
+      const planning = await this.planningState.loadForDisplay();
+      this.postes.set(planning.postes ?? []);
+    } catch (error) {
+      this.postes.set([]);
+      this.error.set(`Error: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  private async refreshPersistedCount(): Promise<void> {
+    try {
+      const status = await this.api.get<PersistenceStatus>('/api/planning/persisted/count');
+      this.persistedCount.set(String(status.assignments));
+    } catch {
+      this.persistedCount.set('n/a');
+    }
+  }
+}
+
+function buildDays(postes: PosteAffectation[]): DayCard[] {
+  const days = new Map<number, { jour: number; date: string | null; creneaux: Map<string, Creneau> }>();
+  const assignments = new Map<string, Map<string, { stand: Stand; names: string[] }>>();
+
+  postes.forEach((poste) => {
+    const creneau = poste.creneau;
+    const stand = poste.stand;
+    if (!creneau || !stand) {
+      return;
+    }
+    let day = days.get(creneau.jour);
+    if (!day) {
+      day = { jour: creneau.jour, date: creneau.date ?? null, creneaux: new Map() };
+      days.set(creneau.jour, day);
+    }
+    day.creneaux.set(creneau.id, creneau);
+
+    let standMap = assignments.get(creneau.id);
+    if (!standMap) {
+      standMap = new Map();
+      assignments.set(creneau.id, standMap);
+    }
+    let entry = standMap.get(stand.id);
+    if (!entry) {
+      entry = { stand, names: [] };
+      standMap.set(stand.id, entry);
+    }
+    if (poste.animateur) {
+      entry.names.push(`${poste.animateur.prenom ?? ''} ${poste.animateur.nom ?? ''}`.trim());
+    }
+  });
+
+  return Array.from(days.values())
+    .sort((left, right) => left.jour - right.jour)
+    .map((day) => ({
+      jour: day.jour,
+      title: day.date ? `Day ${day.jour} — ${day.date}` : `Day ${day.jour}`,
+      slots: Array.from(day.creneaux.values())
+        .sort((left, right) => `${left.heureDebut}`.localeCompare(`${right.heureDebut}`))
+        .map((creneau) => ({
+          creneauId: creneau.id,
+          heureDebut: creneau.heureDebut,
+          heureFin: creneau.heureFin,
+          stands: Array.from(assignments.get(creneau.id)?.values() ?? [])
+            .map((entry) => ({ standNom: entry.stand.nom || entry.stand.id, names: entry.names }))
+            .sort((left, right) => left.standNom.localeCompare(right.standNom))
+        }))
+    }));
+}

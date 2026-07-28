@@ -1,0 +1,21 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <mat-card-title>Planning exports</mat-card-title>
+    <mat-card-subtitle>
+      One file per animator, zipped. The planning solved during this session is used when there is one, otherwise the
+      last planning persisted in database.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-actions class="card-actions">
+    <button matButton="filled" [disabled]="busy()" (click)="onExportPdf()">
+      <mat-icon>picture_as_pdf</mat-icon>
+      Export PDF (ZIP)
+    </button>
+    <button matButton="tonal" [disabled]="busy()" (click)="onExportIcs()">
+      <mat-icon>event</mat-icon>
+      Export ICS (ZIP)
+    </button>
+  </mat-card-actions>
+</mat-card>
+
+<app-output-panel [text]="output()" />

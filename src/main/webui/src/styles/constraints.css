@@ -1,0 +1,57 @@
+/* Constraint catalogue: one card per rule, coloured by enforcement level. */
+
+.constraint-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+  gap: 1rem;
+}
+
+.constraint-card {
+  display: block;
+}
+
+.constraint-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.constraint-description {
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+  margin: 0 0 0.5rem;
+}
+
+.constraint-badge-hard {
+  --mdc-chip-elevated-container-color: var(--mat-sys-error-container);
+  --mdc-chip-label-text-color: var(--mat-sys-on-error-container);
+}
+
+.constraint-badge-medium {
+  --mdc-chip-elevated-container-color: var(--mat-sys-tertiary-container);
+  --mdc-chip-label-text-color: var(--mat-sys-on-tertiary-container);
+}
+
+.constraint-badge-soft {
+  --mdc-chip-elevated-container-color: var(--mat-sys-secondary-container);
+  --mdc-chip-label-text-color: var(--mat-sys-on-secondary-container);
+}
+
+.constraint-result {
+  font: var(--mat-sys-label-large);
+  margin: 0;
+}
+
+.constraint-result-empty {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.constraint-result-hit {
+  color: var(--mat-sys-error);
+}
+
+.constraint-result-clean {
+  color: var(--mat-sys-primary);
+}

@@ -1,0 +1,28 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <mat-card-title>Solver</mat-card-title>
+    <mat-card-subtitle>
+      Seed the data, then run Timefold in the background. Only one solver job runs at a time for the whole server.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-actions class="card-actions">
+    <button matButton="filled" [disabled]="solverBusy()" (click)="onTimefoldSolve()">
+      <mat-icon>play_arrow</mat-icon>
+      Solve with Timefold
+    </button>
+    <button matButton="tonal" [disabled]="solverBusy()" (click)="onAnalyze()">
+      <mat-icon>analytics</mat-icon>
+      Analyze solution
+    </button>
+    <button matButton="outlined" [disabled]="sampleLoading()" (click)="onLoadSample()">
+      <mat-icon>auto_awesome</mat-icon>
+      Generate sample planning
+    </button>
+    <button matButton="outlined" class="danger-action" [disabled]="resetting()" (click)="onResetDatabase()">
+      <mat-icon>restart_alt</mat-icon>
+      Reset database
+    </button>
+  </mat-card-actions>
+</mat-card>
+
+<app-output-panel [text]="output()" />

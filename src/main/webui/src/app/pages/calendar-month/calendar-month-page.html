@@ -1,0 +1,116 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <mat-card-title>{{ monthLabel() }}</mat-card-title>
+    <mat-card-subtitle>Read-only view of the last solved or persisted planning.</mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    <div class="calendar-toolbar">
+      <div class="calendar-nav">
+        <button matIconButton type="button" aria-label="Previous month" (click)="previousMonth()">
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+        <button matButton type="button" (click)="today()">Today</button>
+        <button matIconButton type="button" aria-label="Next month" (click)="nextMonth()">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+      </div>
+      <div class="calendar-nav">
+        <button matButton type="button" (click)="resetFilters()">
+          <mat-icon>filter_alt_off</mat-icon>
+          Reset filters
+        </button>
+        <button matButton="tonal" type="button" [disabled]="loading()" (click)="refresh()">
+          <mat-icon>refresh</mat-icon>
+          Refresh
+        </button>
+      </div>
+    </div>
+
+    <div class="calendar-filters">
+      <mat-form-field appearance="outline">
+        <mat-label>Animator</mat-label>
+        <mat-select [value]="animateurFilter()" (valueChange)="selectAnimateur($event)">
+          <mat-option value="ALL">All animators</mat-option>
+          @for (option of animateurOptions(); track option.value) {
+            <mat-option [value]="option.value">{{ option.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Stand</mat-label>
+        <mat-select [value]="standFilter()" (valueChange)="selectStand($event)">
+          <mat-option value="ALL">All stands</mat-option>
+          @for (option of standOptions(); track option.value) {
+            <mat-option [value]="option.value">{{ option.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    @if (loading()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+
+    <div class="calendar-weekdays" aria-hidden="true">
+      <span>Mon</span>
+      <span>Tue</span>
+      <span>Wed</span>
+      <span>Thu</span>
+      <span>Fri</span>
+      <span>Sat</span>
+      <span>Sun</span>
+    </div>
+
+    @if (error()) {
+      <p class="calendar-empty">{{ error() }}</p>
+    } @else if (!hasData() && loaded()) {
+      <p class="calendar-empty">No planning data available yet.</p>
+    } @else {
+      <div class="calendar-grid" role="grid" aria-label="Monthly assignment calendar">
+        @for (cell of cells(); track cell.dateKey) {
+          <button type="button" class="calendar-day-cell"
+                  [class.is-other-month]="cell.otherMonth"
+                  [class.is-today]="cell.today"
+                  [class.is-selected]="cell.dateKey === effectiveDateKey()"
+                  (click)="selectDay(cell)">
+            <div class="calendar-day-number">{{ cell.dayNumber }}</div>
+            <div class="calendar-day-meta">
+              <span>{{ cell.count }} slot{{ cell.count > 1 ? 's' : '' }}</span>
+              <span class="calendar-dot" [class.has-events]="cell.count > 0"></span>
+            </div>
+          </button>
+        }
+      </div>
+    }
+  </mat-card-content>
+</mat-card>
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <mat-card-title>{{ dayTitle() || 'Day details' }}</mat-card-title>
+  </mat-card-header>
+  <mat-card-content aria-live="polite">
+    @if (!hasData()) {
+      <p class="empty-hint">Run a solve from the Solver page to fill this calendar.</p>
+    } @else if (daySlots().length === 0) {
+      <p class="empty-hint">No assignment for this date.</p>
+    } @else {
+      <mat-list>
+        @for (slot of daySlots(); track slot.creneauId) {
+          <div matSubheader>{{ slot.heureDebut }} – {{ slot.heureFin }}</div>
+          @for (stand of slot.stands; track stand.standNom) {
+            <mat-list-item [class.empty-slot]="stand.names.length === 0">
+              <mat-icon matListItemIcon>storefront</mat-icon>
+              <span matListItemTitle>{{ stand.standNom }}</span>
+              <span matListItemLine>
+                {{ stand.names.length === 0 ? '(unassigned)' : stand.names.join(', ') }}
+              </span>
+            </mat-list-item>
+          }
+          <mat-divider />
+        }
+      </mat-list>
+    }
+  </mat-card-content>
+</mat-card>

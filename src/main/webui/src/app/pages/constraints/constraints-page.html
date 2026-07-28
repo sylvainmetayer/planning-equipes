@@ -1,0 +1,61 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <mat-card-title>Active constraints</mat-card-title>
+    <mat-card-subtitle>
+      Business description of every rule enforced by the solver, with the result of the latest analysis.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <div class="calendar-toolbar">
+      <button matButton="tonal" type="button" [disabled]="loading()" (click)="refresh()">
+        <mat-icon>refresh</mat-icon>
+        Refresh
+      </button>
+      @if (summary()) {
+        <span class="calendar-meta">{{ summary() }}</span>
+      }
+    </div>
+    @if (loading()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    @if (error()) {
+      <p class="calendar-empty">{{ error() }}</p>
+    }
+  </mat-card-content>
+</mat-card>
+
+@if (!error() && !loading() && groups().length === 0) {
+  <mat-card appearance="outlined" class="page-card">
+    <mat-card-content>
+      <p class="empty-hint">No constraint declared.</p>
+    </mat-card-content>
+  </mat-card>
+}
+
+@for (group of groups(); track group.categorie) {
+  <mat-card appearance="outlined" class="page-card">
+    <mat-card-header>
+      <mat-card-title>{{ group.categorie }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="constraint-grid">
+        @for (constraint of group.items; track constraint.name) {
+          <mat-card appearance="outlined" class="constraint-card">
+            <mat-card-content>
+              <div class="constraint-card-header">
+                <strong>{{ constraint.name }}</strong>
+                <mat-chip-set>
+                  <mat-chip [class]="badgeClass(constraint.niveau)" [highlighted]="constraint.niveau === 'HARD'">
+                    {{ niveauLabel(constraint.niveau) }}
+                  </mat-chip>
+                </mat-chip-set>
+              </div>
+              <p class="constraint-description">{{ constraint.description }}</p>
+              <p [class]="resultClass(constraint)">{{ resultLabel(constraint) }}</p>
+            </mat-card-content>
+          </mat-card>
+        }
+      </div>
+    </mat-card-content>
+  </mat-card>
+}

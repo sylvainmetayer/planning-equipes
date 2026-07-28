@@ -1,0 +1,84 @@
+<mat-card appearance="outlined" class="page-card" [class.is-editing]="editingId()">
+  <mat-card-header>
+    <mat-card-title>{{ formTitle() }}</mat-card-title>
+    <mat-card-subtitle>Every stand is staffed on every timeslot of the festival.</mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <form class="form-grid" (ngSubmit)="save()">
+      <mat-form-field appearance="outline">
+        <mat-label>Id</mat-label>
+        <input matInput name="id" required [readonly]="!!editingId()"
+               [ngModel]="draft().id" (ngModelChange)="patch({ id: $event })" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Festival day</mat-label>
+        <input matInput name="jour" type="number" min="1" max="15" required
+               [ngModel]="draft().jour" (ngModelChange)="patch({ jour: $event })" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Date</mat-label>
+        <input matInput name="date" type="date" required
+               [ngModel]="draft().date" (ngModelChange)="patch({ date: $event })" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Start</mat-label>
+        <input matInput name="heureDebut" type="time" required
+               [ngModel]="draft().heureDebut" (ngModelChange)="patch({ heureDebut: $event })" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>End</mat-label>
+        <input matInput name="heureFin" type="time" required
+               [ngModel]="draft().heureFin" (ngModelChange)="patch({ heureFin: $event })" />
+      </mat-form-field>
+      <div class="form-actions span-2">
+        <button matButton="filled" type="submit">
+          <mat-icon>save</mat-icon>
+          {{ editingId() ? 'Update timeslot' : 'Create timeslot' }}
+        </button>
+        <button matButton type="button" (click)="cancel()">Cancel</button>
+      </div>
+    </form>
+  </mat-card-content>
+</mat-card>
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <mat-card-title>Timeslots ({{ store.creneaux().length }})</mat-card-title>
+  </mat-card-header>
+  <mat-card-content class="table-wrapper">
+    <table mat-table [dataSource]="store.creneaux()">
+      <ng-container matColumnDef="id">
+        <th mat-header-cell *matHeaderCellDef>Id</th>
+        <td mat-cell *matCellDef="let creneau">{{ creneau.id }}</td>
+      </ng-container>
+      <ng-container matColumnDef="jour">
+        <th mat-header-cell *matHeaderCellDef>Day</th>
+        <td mat-cell *matCellDef="let creneau">J{{ creneau.jour }}</td>
+      </ng-container>
+      <ng-container matColumnDef="date">
+        <th mat-header-cell *matHeaderCellDef>Date</th>
+        <td mat-cell *matCellDef="let creneau">{{ creneau.date }}</td>
+      </ng-container>
+      <ng-container matColumnDef="heures">
+        <th mat-header-cell *matHeaderCellDef>Hours</th>
+        <td mat-cell *matCellDef="let creneau">{{ creneau.heureDebut }} – {{ creneau.heureFin }}</td>
+      </ng-container>
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef aria-label="Actions"></th>
+        <td mat-cell *matCellDef="let creneau" class="row-actions">
+          <button matIconButton matTooltip="Edit" aria-label="Edit" (click)="edit(creneau)">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button matIconButton matTooltip="Delete" aria-label="Delete" class="danger-action" (click)="remove(creneau)">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="columns"></tr>
+      <tr mat-row *matRowDef="let row; columns: columns"></tr>
+    </table>
+    @if (store.creneaux().length === 0) {
+      <p class="empty-hint">No timeslot yet.</p>
+    }
+  </mat-card-content>
+</mat-card>

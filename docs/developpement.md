@@ -2,9 +2,14 @@
 
 ## Prérequis
 
-- Java 25 et Maven 3.9.9, épinglés dans `mise.toml` (`mise install`).
+- Java 25, Maven 3.9.9 et Node 22, épinglés dans `mise.toml` (`mise install`).
 - Un runtime de conteneurs (Docker ou Podman) pour PostgreSQL et pour les tests
   (Quarkus dev services).
+
+Node n'est nécessaire que pour travailler directement sur le frontend : le build
+Maven télécharge sa propre version de Node via Quinoa
+(`quarkus.quinoa.package-manager-install=true`), donc la CI et l'image Docker ne
+demandent aucune installation préalable.
 
 ## Commandes courantes
 
@@ -17,6 +22,20 @@
 docker compose up postgres             # base seule
 docker compose --profile app up --build  # application complète + base
 ```
+
+Frontend Angular (sources dans `src/main/webui`) :
+
+```bash
+cd src/main/webui
+npm install                            # dépendances (une seule fois)
+npm run build                          # build de production dans dist/planning-equipes-ui/browser
+npm start                              # ng serve seul sur http://localhost:4200 (API non proxifiée)
+```
+
+En pratique, `./mvnw quarkus:dev` suffit : Quinoa démarre `ng serve` et le
+proxifie sur http://localhost:8080, backend et frontend rechargent à chaud
+ensemble. Le build Maven (`package`, `verify`) reconstruit toujours le frontend ;
+il est désactivé sur le profil `%test` pour ne pas ralentir les tests unitaires.
 
 `skipITs` vaut `true` par défaut dans le `pom.xml` : les tests `*IT` (failsafe)
 ne s'exécutent qu'avec `-DskipITs=false`.
@@ -79,7 +98,8 @@ La configuration vit dans `renovate.json` à la racine. Renovate surveille :
   (`quarkus.platform.version`, `timefold.solver.version`) ;
 - les images Docker (`Dockerfile`, `src/main/docker/*`, `docker-compose.yml`) ;
 - les actions GitHub (`.github/workflows/*`) ;
-- la toolchain `mise.toml` (Java, Maven).
+- les dépendances npm du frontend Angular (`src/main/webui/package.json`) ;
+- la toolchain `mise.toml` (Java, Maven, Node).
 
 Points de vigilance :
 
@@ -87,6 +107,9 @@ Points de vigilance :
   regroupées pour limiter le bruit ;
 - Quarkus et Timefold sont regroupés par écosystème : leurs montées de version
   doivent être validées par un `./mvnw verify -DskipITs=false` complet ;
+- les paquets `@angular/*` sont regroupés dans une seule PR : une montée de
+  version d'Angular doit être validée par un `npm run build` puis un
+  `./mvnw verify -DskipITs=false` ;
 - les montées de version majeures de Java (image de base, `mise.toml`,
   `maven.compiler.release`, workflows) restent des PR séparées, à traiter
   manuellement — elles touchent plusieurs fichiers à la fois.
@@ -98,7 +121,12 @@ d'onboarding ; la configuration présente ici sera reprise telle quelle.
 ## Conventions de code
 
 - Code et commentaires en anglais ; noms de domaine en français métier.
-- Pas de dépendance frontend supplémentaire (pas de bundler, pas de framework)
-  sans validation explicite.
+- Frontend Angular : composants standalone, `signal()` / `computed()` pour
+  l'état, nouveau flot de contrôle `@if` / `@for` ; les appels HTTP passent par
+  les services de `app/core/`.
+- IHM en **Angular Material** : un bloc fonctionnel = une route = une page sous
+  `app/pages/`. Le CSS global (`src/styles/`) ne couvre que ce que Material ne
+  fournit pas ; les couleurs viennent des variables `--mat-sys-*` du thème
+  (`src/material-theme.scss`).
 - Voir [`architecture.md`](architecture.md) pour le découpage des modules et
   [`domaine.md`](domaine.md) pour les invariants du modèle.

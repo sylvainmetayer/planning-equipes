@@ -43,3 +43,10 @@ nb-configuration.xml
 /.quarkus/cli/plugins/
 # TLS Certificates
 .certs/
+
+.quinoa/
+
+# Angular frontend (src/main/webui)
+node_modules/
+dist/
+.angular/

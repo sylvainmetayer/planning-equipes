@@ -264,10 +264,12 @@ animateur × créneau × stand), à l'échelle d'environ 150 animateurs sur 15 j
 
 ### 6.3 Frontend
 
-- **Choix retenu** : JavaScript **vanilla** (sans framework), servi directement
-  par Quarkus en tant que ressources statiques
-  (`src/main/resources/META-INF/resources`) — un seul déploiement, aucune
-  dépendance Node ni build frontend séparé à orchestrer.
+- **Choix retenu** : application **Angular** (sources dans `src/main/webui`),
+  construite au moment du build Maven par l'extension Quarkus **Quinoa** et
+  servie par Quarkus en tant que ressources statiques — un seul déploiement,
+  aucun serveur Node en production. Le premier prototype était en JavaScript
+  vanilla ; le passage à Angular a été décidé pour la maintenabilité (typage,
+  composants, routage, outillage).
 - **Communication** : appels REST natifs (`fetch`) vers les endpoints exposés par
   le même service Quarkus.
 - **À prévoir vu le volume (150 animateurs)** : des filtres robustes (par stand,

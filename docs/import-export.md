@@ -1,7 +1,7 @@
 # Import / export de données
 
-Tout se pilote depuis la section « Data transfer » de la page Administration, ou
-directement via l'[API](api.md).
+Tout se pilote depuis la page « Data transfer » de l'IHM, ou directement via
+l'[API](api.md).
 
 ## Export / import SQL
 

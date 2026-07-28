@@ -1,0 +1,71 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <mat-card-title>SQL dump</mat-card-title>
+    <mat-card-subtitle>
+      Export or replay the whole database as a SQL script, to share a dataset that blocks the solver.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-actions class="card-actions">
+    <button matButton="filled" [disabled]="busy()" (click)="onExportSql()">
+      <mat-icon>download</mat-icon>
+      Export SQL dump
+    </button>
+    <button matButton="outlined" class="danger-action" [disabled]="busy()" (click)="pickSqlFile()">
+      <mat-icon>upload</mat-icon>
+      Import SQL dump
+    </button>
+    <input #sqlInput type="file" accept=".sql,application/sql,text/plain" hidden (change)="onSqlFileSelected($event)" />
+  </mat-card-actions>
+</mat-card>
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <mat-card-title>CSV import</mat-card-title>
+    <mat-card-subtitle>
+      Each import replaces the whole table and drops the existing assignments. Separator <code>;</code> or
+      <code>,</code>, header line required, multi-values separated by <code>|</code>.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <mat-list class="csv-format">
+      <mat-list-item lines="3">
+        <span matListItemTitle>animateurs</span>
+        <span matListItemLine><code>id;prenom;nom;dateNaissance;statut;competences;joursIndisponibles</code></span>
+        <span matListItemLine>
+          <code>statut</code> = BENEVOLE|SALARIE · <code>competences</code> =
+          <code>STRATEGIE:REFERENT|ENFANT:AUTONOME</code> · <code>joursIndisponibles</code> =
+          <code>2026-07-02|2026-07-03</code>
+        </span>
+      </mat-list-item>
+      <mat-list-item lines="3">
+        <span matListItemTitle>stands</span>
+        <span matListItemLine><code>id;nom;typologies;effectifMin;effectifMax;reserveMajeurs</code></span>
+        <span matListItemLine>
+          <code>typologies</code> = <code>STRATEGIE|ENFANT</code> · <code>reserveMajeurs</code> = true/false
+        </span>
+      </mat-list-item>
+      <mat-list-item lines="3">
+        <span matListItemTitle>creneaux</span>
+        <span matListItemLine><code>id;jour;date;heureDebut;heureFin</code></span>
+        <span matListItemLine><code>date</code> = 2026-07-02 · heures = 10:00</span>
+      </mat-list-item>
+    </mat-list>
+  </mat-card-content>
+  <mat-card-actions class="card-actions">
+    <button matButton="tonal" [disabled]="busy()" (click)="pickCsvFile('animateurs')">
+      <mat-icon>groups</mat-icon>
+      Import animateurs
+    </button>
+    <button matButton="tonal" [disabled]="busy()" (click)="pickCsvFile('stands')">
+      <mat-icon>storefront</mat-icon>
+      Import stands
+    </button>
+    <button matButton="tonal" [disabled]="busy()" (click)="pickCsvFile('creneaux')">
+      <mat-icon>schedule</mat-icon>
+      Import créneaux
+    </button>
+    <input #csvInput type="file" accept=".csv,text/csv,text/plain" hidden (change)="onCsvFileSelected($event)" />
+  </mat-card-actions>
+</mat-card>
+
+<app-output-panel [text]="output()" />

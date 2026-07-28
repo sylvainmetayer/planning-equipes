@@ -1,0 +1,63 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <mat-card-title>Day calendar</mat-card-title>
+    <mat-card-subtitle>
+      Timeslots grouped by festival day, with the animators assigned to every stand.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <div class="calendar-toolbar">
+      <button matButton="tonal" type="button" [disabled]="loading()" (click)="refresh()">
+        <mat-icon>refresh</mat-icon>
+        Refresh
+      </button>
+      <span class="calendar-meta">
+        Persisted assignments in database: <strong>{{ persistedCount() }}</strong>
+      </span>
+    </div>
+    @if (loading()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    @if (error()) {
+      <p class="calendar-empty">{{ error() }}</p>
+    }
+  </mat-card-content>
+</mat-card>
+
+@if (!error() && !loading() && days().length === 0) {
+  <mat-card appearance="outlined" class="page-card">
+    <mat-card-content>
+      <p class="empty-hint">No planning data available yet. Run a solve from the Solver page.</p>
+    </mat-card-content>
+  </mat-card>
+} @else {
+  <div class="day-calendar-grid">
+    @for (day of days(); track day.jour) {
+      <mat-card appearance="outlined" class="day-card">
+        <mat-card-header>
+          <mat-card-title>{{ day.title }}</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          @for (slot of day.slots; track slot.creneauId) {
+            <div class="day-slot">
+              <div class="day-slot-title">
+                <mat-icon inline>schedule</mat-icon>
+                {{ slot.heureDebut }} – {{ slot.heureFin }}
+              </div>
+              @if (slot.stands.length === 0) {
+                <div class="day-slot-empty">No stand</div>
+              } @else {
+                @for (stand of slot.stands; track stand.standNom) {
+                  <div class="day-stand" [class.empty-slot]="stand.names.length === 0">
+                    <strong>{{ stand.standNom }}</strong>
+                    <span>{{ stand.names.length === 0 ? '(unassigned)' : stand.names.join(', ') }}</span>
+                  </div>
+                }
+              }
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+    }
+  </div>
+}

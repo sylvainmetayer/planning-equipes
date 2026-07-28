@@ -1,0 +1,60 @@
+<mat-card appearance="outlined" class="page-card" [class.is-editing]="editingId()">
+  <mat-card-header>
+    <mat-card-title>{{ formTitle() }}</mat-card-title>
+    <mat-card-subtitle>Game families used by stand offers and animator skills.</mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <form class="form-grid" (ngSubmit)="save()">
+      <mat-form-field appearance="outline">
+        <mat-label>Id</mat-label>
+        <input matInput name="id" required [readonly]="!!editingId()"
+               [ngModel]="draft().id" (ngModelChange)="patch({ id: $event })" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Label</mat-label>
+        <input matInput name="label" [ngModel]="draft().label" (ngModelChange)="patch({ label: $event })" />
+      </mat-form-field>
+      <div class="form-actions span-2">
+        <button matButton="filled" type="submit">
+          <mat-icon>save</mat-icon>
+          {{ editingId() ? 'Update typology' : 'Create typology' }}
+        </button>
+        <button matButton type="button" (click)="cancel()">Cancel</button>
+      </div>
+    </form>
+  </mat-card-content>
+</mat-card>
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <mat-card-title>Typologies ({{ store.typologies().length }})</mat-card-title>
+  </mat-card-header>
+  <mat-card-content class="table-wrapper">
+    <table mat-table [dataSource]="store.typologies()">
+      <ng-container matColumnDef="id">
+        <th mat-header-cell *matHeaderCellDef>Id</th>
+        <td mat-cell *matCellDef="let typologie">{{ typologie.id }}</td>
+      </ng-container>
+      <ng-container matColumnDef="label">
+        <th mat-header-cell *matHeaderCellDef>Label</th>
+        <td mat-cell *matCellDef="let typologie">{{ typologie.label }}</td>
+      </ng-container>
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef aria-label="Actions"></th>
+        <td mat-cell *matCellDef="let typologie" class="row-actions">
+          <button matIconButton matTooltip="Edit" aria-label="Edit" (click)="edit(typologie)">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button matIconButton matTooltip="Delete" aria-label="Delete" class="danger-action" (click)="remove(typologie)">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="columns"></tr>
+      <tr mat-row *matRowDef="let row; columns: columns"></tr>
+    </table>
+    @if (store.typologies().length === 0) {
+      <p class="empty-hint">No typology yet.</p>
+    }
+  </mat-card-content>
+</mat-card>

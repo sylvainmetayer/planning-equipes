@@ -16,9 +16,12 @@ modèle de domaine, contraintes, formats d'import/export, contribution) est dans
 
 ### Prérequis
 
-- Java 25 et Maven 3.9.9 — épinglés dans `mise.toml`, installables d'un coup avec
-  [mise](https://mise.jdx.dev) : `mise install`
+- Java 25, Maven 3.9.9 et Node 22 — épinglés dans `mise.toml`, installables d'un
+  coup avec [mise](https://mise.jdx.dev) : `mise install`
 - Docker ou Podman (pour la base PostgreSQL)
+
+Node n'est requis que pour développer le frontend : le build Maven télécharge
+lui-même la version de Node dont il a besoin.
 
 ### Option A — tout via Docker Compose (le plus simple)
 
@@ -36,9 +39,9 @@ docker compose up -d postgres     # base seule
 ./mvnw quarkus:dev                # application sur http://localhost:8080
 ```
 
-Le code Java comme le frontend sont rechargés à chaud. Le frontend étant composé
-de modules ES, il doit être servi en HTTP par Quarkus (ouvrir les fichiers en
-`file://` ne fonctionne pas).
+Le code Java comme le frontend Angular sont rechargés à chaud : Quarkus démarre
+aussi le serveur de développement Angular et le proxifie, tout passe donc par
+<http://localhost:8080>.
 
 ## Registry login
 
@@ -48,8 +51,11 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 
 ### Premiers pas dans l'application
 
-1. Ouvrir <http://localhost:8080> — la page **Administration** s'affiche.
-2. Cliquer sur **Reset BDD** pour charger le jeu de données d'exemple.
+1. Ouvrir <http://localhost:8080> — la page **Solver** s'affiche ; le menu
+   latéral donne accès à chaque écran.
+2. Cliquer sur **Generate sample planning** pour charger le jeu de données
+   d'exemple (les référentiels sont ensuite modifiables depuis **Stands**,
+   **Animateurs**, **Créneaux**, **Typologies** et **Ad hoc constraints**).
 3. Cliquer sur **Solve with Timefold** : la résolution part en tâche de fond
    (plusieurs minutes sur le scénario complet), la navigation reste libre et une
    notification s'affiche à la fin — y compris dans les autres navigateurs
@@ -57,7 +63,7 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 4. Consulter le résultat dans **Assignment calendar** (vue mensuelle) ou
    **Day calendar** (vue par jour), et le respect des règles dans **Constraints**.
 5. Exporter les plannings individuels en PDF ou en ICS depuis la page
-   Administration.
+   **Exports**.
 
 ### Configuration
 

@@ -1,0 +1,32 @@
+<mat-toolbar class="app-toolbar">
+  <button matIconButton aria-label="Toggle navigation" (click)="toggleDrawer()">
+    <mat-icon>menu</mat-icon>
+  </button>
+  <span class="app-title">Planning Équipes</span>
+  <span class="app-toolbar-spacer"></span>
+  <app-job-monitor />
+</mat-toolbar>
+
+<mat-sidenav-container class="app-shell">
+  <mat-sidenav class="app-drawer" [mode]="drawerMode()" [opened]="drawerOpen()"
+               (openedChange)="drawerOpen.set($event)">
+    @for (group of navGroups; track group.title) {
+      <mat-nav-list>
+        <div matSubheader>{{ group.title }}</div>
+        @for (link of group.links; track link.path) {
+          <a mat-list-item [routerLink]="link.path" routerLinkActive="active-link" (click)="onNavigate()">
+            <mat-icon matListItemIcon>{{ link.icon }}</mat-icon>
+            <span matListItemTitle>{{ link.label }}</span>
+          </a>
+        }
+      </mat-nav-list>
+      <mat-divider />
+    }
+  </mat-sidenav>
+
+  <mat-sidenav-content>
+    <div class="app-page">
+      <router-outlet />
+    </div>
+  </mat-sidenav-content>
+</mat-sidenav-container>

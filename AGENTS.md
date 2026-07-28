@@ -31,7 +31,10 @@ Read before working on constraints or the domain model:
 - Integration tests (`*IT.java`, failsafe, `skipITs=true` by default):
   `./mvnw verify -DskipITs=false`
 - Full stack: `docker compose --profile app up --build`
-- Toolchain pinned in `mise.toml` (`temurin-25`, `maven 3.9.9`)
+- Frontend only (from `src/main/webui`): `npm install`, `npm run build`,
+  `npm start` (`ng serve` on 4200). `quarkus:dev` already starts and proxies it.
+- Toolchain pinned in `mise.toml` (`temurin-25`, `maven 3.9.9`, `node 22`); the
+  Maven build downloads its own Node through Quinoa, so CI/Docker need none.
 
 ## Architecture (essentials)
 
@@ -65,28 +68,54 @@ Single Quarkus service, no separate solver microservice. Package root:
 
 ### Frontend
 
-Vanilla JS served as Quarkus static resources from
-`src/main/resources/META-INF/resources/` — no bundler, no framework, no Node
-dependency; don't introduce one without explicit sign-off. ES modules require
-HTTP serving (Quarkus), not `file://`.
+Angular 22 application in `src/main/webui`, built during `mvn package` and served
+as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
+`application.properties`). Single deployment, no Node server in production; in
+`quarkus:dev` Quinoa runs `ng serve` and proxies it on port 8080.
 
-- One responsibility per file: `js/app.js` (entry point: page nav + module init),
-  `js/api.js` (fetch helpers; `downloadFile` returns a status string, never
-  touches the DOM), `js/utils.js`, `js/date-utils.js` (week starts Monday),
-  `js/planning-state.js` (shared planning state behind
-  `get/setLastSolvedPlanning` + `ensurePlanning()` — no free global var),
-  `js/calendar-month.js`, `js/calendar-day.js`, `js/constraints.js`, `js/jobs.js`,
-  `js/notifications.js`, `js/reference-data.js`, `js/data-transfer.js`,
-  `js/admin.js`.
-- Each view module exports `initX()` (wires DOM events once) and `renderX()` used
-  by nav; keep DOM lookups inside the owning module. State flows one way: admin
-  solve/analyze -> `setLastSolvedPlanning`, calendars read it via
-  `ensurePlanning`. Don't reintroduce shared mutable globals or a monolithic
-  `planning.js`.
-- CSS mirrors the split: `style.css` is a thin aggregator of `@import` rules only
-  (Google font first, then partials); component styles live in partials under
-  `css/`, each holding its own `@media` rules. Add new styles as new partials;
-  don't recreate a monolithic `style.css`.
+- Standalone components only (no `NgModule`), `signal()` / `computed()` for
+  state, new control flow (`@if` / `@for`) in templates, lazy-loaded routes in
+  `app/app.routes.ts`.
+- UI built with **Angular Material** (Material Design 3). The theme lives in
+  `src/material-theme.scss` (`mat.theme()`, azure/blue palettes, Roboto); use the
+  `--mat-sys-*` tokens in custom CSS instead of hard-coded colours. The app has
+  no `@angular/animations` dependency: Material components animate through CSS,
+  so don't add `provideAnimations*()` back.
+- Shell: `app/app.ts` renders a `mat-toolbar` + `mat-sidenav` with the navigation
+  grouped in Planning / Reference data / Views, and the solver `app-job-monitor`
+  in the toolbar.
+- **One route = one page = one block.** Routes: `/solver` (default), `/exports`,
+  `/data-transfer`, `/stands`, `/animateurs`, `/creneaux`, `/typologies`,
+  `/ad-hoc-constraints`, `/calendar`, `/day-calendar`, `/constraints`. Adding a
+  functional block means adding a route and a `app/pages/<block>/` folder, never
+  a new section inside an existing page.
+- Layout: `app/core/` holds shared services (`api.service.ts` — the only place
+  doing HTTP, `downloadFile` returns a status string and never touches the DOM;
+  `models.ts`; `date-utils.ts`, week starts Monday; `planning-state.service.ts`;
+  `reference-data.store.ts`; `reference-crud.service.ts` — save/delete plus
+  snack-bar feedback shared by the five reference pages;
+  `solver-job.service.ts`; `notification.service.ts`, backed by `MatSnackBar`),
+  `app/shared/` holds cross-page components (`job-monitor.ts`,
+  `confirm-dialog.ts` — replaces `window.confirm`, `output-panel.ts`), and
+  `app/pages/<page>/` holds one folder per route.
+- State flows one way: the solver page pushes the solved planning into
+  `PlanningStateService`, calendars read it back read-only and never start a
+  solve. Components don't call `fetch` directly.
+- The "a solver is running" state is never stored in the browser
+  (`localStorage` / `sessionStorage`): `SolverJobService` polls
+  `/api/jobs/active` every 2 s so a solve started from another browser or a
+  private window also locks the buttons here, shows the server-computed elapsed
+  time and delivers its result.
+- CSS stays **global** and limited to what Material does not cover:
+  `src/styles.css` is a thin aggregator of `@import` rules only and the partials
+  live in `src/styles/` (`pages.css` for the shared card/form/table scaffolding,
+  `feedback.css` for the job monitor and snack-bar variants,
+  `calendar-month.css`, `calendar-day.css`, `constraints.css`), each holding its
+  own `@media` rules. Add new styles as new partials; don't recreate a monolithic
+  stylesheet and don't restyle what a Material component already themes.
+- Keep the frontend dependency-light: Angular, its CLI and Angular Material are
+  the whole frontend stack. Don't add another UI component library, a
+  state-management library or a CSS framework without explicit sign-off.
 
 ## Domain invariants (never break these)
 
@@ -139,8 +168,9 @@ The doc layout is intentional — respect it when adding or updating docs.
 ## Dependency updates
 
 Renovate (`renovate.json` at the repo root) tracks Maven dependencies (including
-the `quarkus.platform.version` / `timefold.solver.version` properties), Docker
-images, GitHub Actions and the `mise.toml` toolchain. Keep the config in that
+the `quarkus.platform.version` / `timefold.solver.version` properties), the npm
+dependencies of `src/main/webui`, Docker images, GitHub Actions and the
+`mise.toml` toolchain. Keep the config in that
 single file; document behaviour changes in `docs/developpement.md`. Quarkus and
 Timefold bumps must be validated with `./mvnw verify -DskipITs=false`.
 
@@ -149,6 +179,6 @@ Timefold bumps must be validated with `./mvnw verify -DskipITs=false`.
 - Code and comments in English, domain names in French business vocabulary.
 - Write/extend a test proving no hard constraint is violated before considering a
   step done.
-- No additional frontend dependency (no bundler, no framework) without explicit
-  sign-off — statically served vanilla JS is a deliberate choice, not a temporary
-  step.
+- No additional frontend dependency (UI kit, state library, CSS framework)
+  without explicit sign-off — plain Angular served by Quinoa is a deliberate
+  choice.

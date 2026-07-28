@@ -1,0 +1,39 @@
+/* Day calendar: responsive board of one card per festival day. */
+
+.day-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.day-card {
+  display: block;
+}
+
+.day-slot + .day-slot {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+}
+
+.day-slot-title {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font: var(--mat-sys-title-small);
+  margin-bottom: 0.375rem;
+}
+
+.day-slot-empty {
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.day-stand {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  font: var(--mat-sys-body-small);
+  padding: 0.125rem 0;
+}
