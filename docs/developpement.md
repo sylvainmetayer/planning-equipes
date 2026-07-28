@@ -1,0 +1,104 @@
+# Développement
+
+## Prérequis
+
+- Java 25 et Maven 3.9.9, épinglés dans `mise.toml` (`mise install`).
+- Un runtime de conteneurs (Docker ou Podman) pour PostgreSQL et pour les tests
+  (Quarkus dev services).
+
+## Commandes courantes
+
+```bash
+./mvnw quarkus:dev                     # serveur de dev (hot reload) sur http://localhost:8080
+./mvnw test                            # tests unitaires
+./mvnw test -Dtest=PlanningHardConstraintsTest                 # une classe
+./mvnw test -Dtest=PlanningHardConstraintsTest#generatedPlanningDoesNotViolateAnyHardConstraintOnNominalCase
+./mvnw verify -DskipITs=false          # + tests d'intégration (*IT) sur l'app packagée
+docker compose up postgres             # base seule
+docker compose --profile app up --build  # application complète + base
+```
+
+`skipITs` vaut `true` par défaut dans le `pom.xml` : les tests `*IT` (failsafe)
+ne s'exécutent qu'avec `-DskipITs=false`.
+
+## Tests
+
+Les tests démarrent un PostgreSQL jetable via les *dev services* Quarkus
+(`postgres:17`), donc les migrations Flyway s'exécutent exactement comme en
+production.
+
+Avec Podman (rootless), exposer la socket compatible Docker :
+
+```bash
+systemctl --user start podman.socket
+export DOCKER_HOST=unix:///run/user/$(id -u)/podman/podman.sock
+```
+
+Règle non négociable : **aucune contrainte dure ne doit être violée** dans un
+planning résolu valide. `PlanningHardConstraintsTest` assert que
+`solved.getScore().hardScore()` vaut zéro sur le scénario nominal ; toute
+nouvelle contrainte dure doit être couverte dans le même esprit.
+
+## Réglage du solveur
+
+Dans `application.properties` :
+
+| Propriété | Défaut | Rôle |
+| --- | --- | --- |
+| `planning.solver.seconds-limit` | `180` (`3` en profil `%test`) | Durée maximale de résolution |
+| `planning.solver.unimproved-seconds-limit` | `60` (`2` en profil `%test`) | Arrêt anticipé si le score n'a pas progressé |
+
+La configuration Timefold elle-même est dans `src/main/resources/solver/solverConfig.xml`.
+
+## Configuration
+
+| Variable | Défaut | Usage |
+| --- | --- | --- |
+| `DB_URL` | `jdbc:postgresql://localhost:5432/festival` | Connexion PostgreSQL |
+| `DB_USER` | `festival` | Utilisateur base |
+| `DB_PASSWORD` | `festival` | Mot de passe base |
+| `HTTP_PORT` | `8080` | Port HTTP exposé |
+
+## Base de données
+
+Migrations Flyway dans `src/main/resources/db/migration/`, appliquées au
+démarrage. **Un changement de schéma = un nouveau fichier versionné** ; ne jamais
+éditer une migration déjà appliquée.
+
+## Intégration continue
+
+- `.github/workflows/tests.yml` — `./mvnw verify -DskipITs=false` sur chaque push
+  `main` et chaque pull request, avec upload des rapports surefire/failsafe.
+- `.github/workflows/docker-ghcr.yml` — publication de l'image sur GHCR.
+
+## Mises à jour de dépendances (Renovate)
+
+La configuration vit dans `renovate.json` à la racine. Renovate surveille :
+
+- les dépendances Maven (`pom.xml`), y compris les propriétés de version
+  (`quarkus.platform.version`, `timefold.solver.version`) ;
+- les images Docker (`Dockerfile`, `src/main/docker/*`, `docker-compose.yml`) ;
+- les actions GitHub (`.github/workflows/*`) ;
+- la toolchain `mise.toml` (Java, Maven).
+
+Points de vigilance :
+
+- les mises à jour **mineures et correctives** des dépendances de test sont
+  regroupées pour limiter le bruit ;
+- Quarkus et Timefold sont regroupés par écosystème : leurs montées de version
+  doivent être validées par un `./mvnw verify -DskipITs=false` complet ;
+- les montées de version majeures de Java (image de base, `mise.toml`,
+  `maven.compiler.release`, workflows) restent des PR séparées, à traiter
+  manuellement — elles touchent plusieurs fichiers à la fois.
+
+Pour activer Renovate sur le dépôt : installer l'application GitHub
+[Renovate](https://github.com/apps/renovate) et la laisser ouvrir sa PR
+d'onboarding ; la configuration présente ici sera reprise telle quelle.
+
+## Conventions de code
+
+- Code et commentaires en anglais ; noms de domaine en français métier.
+- Pas de dépendance frontend supplémentaire (pas de bundler, pas de framework)
+  sans validation explicite.
+- Voir [`architecture.md`](architecture.md) pour le découpage des modules et
+  [`domaine.md`](domaine.md) pour les invariants du modèle.

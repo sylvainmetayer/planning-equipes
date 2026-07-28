@@ -1,102 +1,179 @@
 # Planning Équipes
 
-Implémentation initiale Quarkus + Timefold pour le planning du festival de jeux (15 jours, ~150 animateurs), basée sur `CLAUDE.md`.
+Application de gestion de planning pour un festival de jeux de société de
+15 jours : elle affecte automatiquement ~150 animateurs aux stands, en respectant
+le cadre légal (notamment celui des mineurs), les compétences, les disponibilités
+et l'équité de charge.
 
-## Stack
+Ce README couvre deux choses : **démarrer l'application en local** et **ce que
+l'application sait faire**. Toute la documentation technique (architecture, API,
+modèle de domaine, contraintes, formats d'import/export, contribution) est dans
+[`docs/`](docs/README.md).
 
-- Quarkus (API REST + serveur statique frontend)
-- Timefold Solver (`HardMediumSoftScore`)
-- PostgreSQL + Flyway
-- Frontend vanilla JS (`src/main/resources/META-INF/resources`)
-- Docker Compose
+---
 
-## Endpoints MVP
+## 1. Démarrer l'application en local
 
-- `GET /api/planning/sample` : retourne un jeu d'exemple
-- `POST /api/solve` : résout un planning envoyé en JSON
-- `POST /api/solve/async`, `POST /api/solve/analyze/async`, `GET /api/jobs[/{id}]` :
-  résolution / analyse en tâche de fond (l'IHM notifie à la fin, la navigation
-  reste libre pendant les 3-4 minutes de résolution)
-- `GET /api/planning/persisted` : planning persisté (lecture seule, utilisé par
-  les vues calendrier — elles ne déclenchent jamais de résolution)
-- `POST /api/planning/reset` : recharge le scénario d'exemple en base **sans**
-  résolution (bouton « Reset BDD »), pour repartir d'un jeu de données vierge
-- `GET /api/constraints` : catalogue métier des contraintes + résultat de la
-  dernière analyse (onglet « Constraints »)
-- `GET /api/database/export` / `POST /api/database/import` : export / import SQL
-  de la base
-- `POST /api/import/csv/{animateurs|stands|creneaux}` : import CSV du référentiel
+### Prérequis
 
-## Import / export de jeux de données
+- Java 25 et Maven 3.9.9 — épinglés dans `mise.toml`, installables d'un coup avec
+  [mise](https://mise.jdx.dev) : `mise install`
+- Docker ou Podman (pour la base PostgreSQL)
 
-### Export / import SQL
-
-`GET /api/database/export` produit un script SQL autonome (DELETE puis INSERT de
-toutes les tables métier) téléchargeable depuis la section « Data transfer » de
-la page Administration. `POST /api/database/import` rejoue un tel script dans une
-seule transaction : seules les instructions `INSERT` / `DELETE` / `TRUNCATE` sur
-les tables métier sont acceptées, tout le reste est rejeté (400).
-
-### Import CSV
-
-Un import remplace **l'intégralité** de la table concernée et supprime les
-affectations existantes (elles référenceraient des lignes disparues). Ligne
-d'en-tête obligatoire, séparateur `;` ou `,` (détecté automatiquement), valeurs
-multiples séparées par `|`, dates ISO `yyyy-MM-dd`, heures ISO `HH:mm`.
-
-| Entité | Colonnes |
-| --- | --- |
-| `animateurs` | `id;prenom;nom;dateNaissance;statut;competences;joursIndisponibles` |
-| `stands` | `id;nom;typologies;effectifMin;effectifMax;reserveMajeurs` |
-| `creneaux` | `id;jour;date;heureDebut;heureFin` |
-
-- `statut` : `BENEVOLE` ou `SALARIE`
-- `competences` : `STRATEGIE:REFERENT|ENFANT:AUTONOME`
-  (typologies : `STRATEGIE, AMBIANCE, ENFANT, COOPERATIF, ADRESSE, ROLE, ENIGME` ;
-  niveaux : `DEBUTANT, AUTONOME, REFERENT`)
-- `joursIndisponibles` : `2026-07-02|2026-07-03` (colonne facultative, vide = toujours dispo)
-- `typologies` : `STRATEGIE|ENFANT`
-- `reserveMajeurs` : `true` / `false` (`1`, `oui`, `yes` acceptés)
-
-Exemple :
-
-```csv
-id;prenom;nom;dateNaissance;statut;competences;joursIndisponibles
-A-1;Ada;Lovelace;1990-05-04;BENEVOLE;STRATEGIE:REFERENT|ENFANT:AUTONOME;2026-07-02
-A-2;Alan;Turing;2010-01-15;SALARIE;;
-```
-
-Une ligne invalide annule tout l'import et renvoie un message précisant le
-numéro de ligne et la colonne fautive.
-
-## Lancer en local
+### Option A — tout via Docker Compose (le plus simple)
 
 ```bash
-./mvnw quarkus:dev
+docker compose --profile app up --build
 ```
 
-## Lancer les tests
+Puis ouvrir <http://localhost:8080>. La base PostgreSQL et une interface pgAdmin
+(<http://localhost:5050>) sont démarrées en même temps.
+
+### Option B — mode développement (rechargement à chaud)
+
+```bash
+docker compose up -d postgres     # base seule
+./mvnw quarkus:dev                # application sur http://localhost:8080
+```
+
+Le code Java comme le frontend sont rechargés à chaud. Le frontend étant composé
+de modules ES, il doit être servi en HTTP par Quarkus (ouvrir les fichiers en
+`file://` ne fonctionne pas).
+
+### Premiers pas dans l'application
+
+1. Ouvrir <http://localhost:8080> — la page **Administration** s'affiche.
+2. Cliquer sur **Reset BDD** pour charger le jeu de données d'exemple.
+3. Cliquer sur **Solve with Timefold** : la résolution part en tâche de fond
+   (plusieurs minutes sur le scénario complet), la navigation reste libre et une
+   notification s'affiche à la fin.
+4. Consulter le résultat dans **Assignment calendar** (vue mensuelle) ou
+   **Day calendar** (vue par jour), et le respect des règles dans **Constraints**.
+5. Exporter les plannings individuels en PDF ou en ICS depuis la page
+   Administration.
+
+### Configuration
+
+| Variable | Défaut | Usage |
+| --- | --- | --- |
+| `DB_URL` | `jdbc:postgresql://localhost:5432/festival` | Connexion PostgreSQL |
+| `DB_USER` / `DB_PASSWORD` | `festival` / `festival` | Identifiants base |
+| `HTTP_PORT` | `8080` | Port HTTP exposé |
+
+### Lancer les tests
+
+```bash
+./mvnw test                       # tests unitaires
+./mvnw verify -DskipITs=false     # + tests d'intégration sur l'application packagée
+```
 
 Les tests démarrent un PostgreSQL jetable via les *dev services* Quarkus : un
-runtime de conteneurs (Docker ou Podman) doit être disponible.
+runtime de conteneurs doit être disponible. Détails (Podman, réglages du solveur,
+CI) dans [`docs/developpement.md`](docs/developpement.md).
 
-```bash
-./mvnw test                      # tests unitaires
-./mvnw verify -DskipITs=false    # + tests d'intégration (*IT) sur l'app packagée
-```
+---
 
-Avec Podman (rootless), exposer la socket compatible Docker :
+## 2. Fonctionnalités métier
 
-```bash
-systemctl --user start podman.socket
-export DOCKER_HOST=unix:///run/user/$(id -u)/podman/podman.sock
-```
+### Génération automatique du planning
 
-La CI GitHub Actions (`.github/workflows/tests.yml`) exécute `verify -DskipITs=false`
-sur chaque push `main` et chaque pull request.
+Le moteur d'optimisation affecte les animateurs aux places à pourvoir sur chaque
+stand et chaque créneau, en distinguant trois niveaux d'exigence :
 
-## Lancer avec Docker Compose
+- **contraintes dures**, jamais violées dans un planning valide ;
+- **contraintes medium**, respectées autant que possible et signalées sinon ;
+- **contraintes souples**, optimisées en dernier pour départager deux plannings
+  valides.
 
-```bash
-docker compose up --build
-```
+La résolution s'exécute en tâche de fond : l'application reste utilisable pendant
+le calcul et notifie l'utilisateur à la fin.
+
+**Ce qui est garanti (contraintes dures)**
+
+- chaque place ouverte sur un stand est pourvue ;
+- aucun animateur n'est affecté un jour qu'il a déclaré indisponible ;
+- un animateur n'anime que des stands dont il maîtrise au moins une typologie de
+  jeu ;
+- un animateur ne tient qu'un seul poste par créneau ;
+- cadre légal des mineurs : pas de travail de nuit, 8 h de présence quotidienne
+  maximum, repos d'environ 12 h après un créneau de nuit, présence obligatoire
+  d'un majeur sur le même stand, et stands réservés aux majeurs respectés ;
+- les exceptions posées manuellement par l'administrateur sont traitées au même
+  niveau de priorité que le cadre légal.
+
+**Ce qui est optimisé**
+
+- au moins un animateur référent par stand et par créneau ;
+- charge de travail équilibrée entre animateurs ;
+- pas plus de mineurs que de majeurs sur un même stand et créneau ;
+- rotation des stands d'un animateur au fil du festival ;
+- mixité des niveaux (associer un débutant à un référent).
+
+Le détail règle par règle est dans [`docs/contraintes.md`](docs/contraintes.md).
+
+### Gestion des référentiels
+
+Écrans d'ajout / modification / suppression pour :
+
+- les **animateurs** : identité, date de naissance (le statut mineur/majeur est
+  toujours recalculé, jamais saisi), statut bénévole ou salarié, compétences par
+  typologie de jeu avec niveau (débutant / autonome / référent), et jours
+  d'indisponibilité (par défaut, un animateur est disponible) ;
+- les **stands** : typologies de jeux proposées, effectif minimum et maximum
+  d'animateurs simultanés, restriction éventuelle aux majeurs ;
+- les **créneaux** : jour du festival, date, heures de début et de fin ;
+- les **typologies de jeux**.
+
+### Exceptions ponctuelles (contraintes ad hoc)
+
+L'administrateur peut poser des règles au cas par cas, sans passer par le code,
+avec une raison tracée :
+
+- **indisponibilité forcée** — cet animateur ne doit jamais être affecté sur ce
+  jour / créneau / stand ;
+- **incompatibilité** — ces deux animateurs ne doivent jamais travailler sur le
+  même créneau ;
+- **affectation forcée** — cet animateur doit être présent sur ce créneau ou ce
+  stand.
+
+Ces exceptions sont traitées par le moteur au même niveau que les contraintes
+dures : elles ne sont jamais contournées silencieusement.
+
+### Consultation du planning
+
+- **Calendrier mensuel** avec filtres par animateur et par stand, et détail des
+  affectations au clic sur une journée ;
+- **Vue par jour**, stand par stand et créneau par créneau ;
+- **Page « Constraints »** : catalogue des règles actives et résultat de la
+  dernière analyse, avec le score du planning et les contraintes en défaut — ce
+  qui permet d'identifier précisément ce qui bloque quand aucun planning
+  satisfaisant n'est trouvé.
+
+### Restitution et échanges de données
+
+- **Export PDF** du planning individuel d'un animateur, ou de tous les plannings
+  individuels en une archive ZIP ;
+- **Export ICS** du planning individuel, importable directement dans Google
+  Calendar, Apple Calendar ou Outlook (également disponible en archive ZIP pour
+  l'ensemble des animateurs) ;
+- **Import CSV** en masse des animateurs, stands et créneaux — indispensable à
+  l'échelle de 150 profils ;
+- **Export / import d'un dump SQL** complet, pour dupliquer ou restaurer un jeu de
+  données.
+
+Formats détaillés dans [`docs/import-export.md`](docs/import-export.md).
+
+---
+
+## Documentation
+
+| Pour… | Voir |
+| --- | --- |
+| Le besoin métier de référence | [`docs/CAHIER_DES_CHARGES.md`](docs/CAHIER_DES_CHARGES.md) |
+| L'architecture technique | [`docs/architecture.md`](docs/architecture.md) |
+| Le modèle de domaine | [`docs/domaine.md`](docs/domaine.md) |
+| Le référentiel de contraintes | [`docs/contraintes.md`](docs/contraintes.md) |
+| L'API REST | [`docs/api.md`](docs/api.md) |
+| Les imports / exports | [`docs/import-export.md`](docs/import-export.md) |
+| Contribuer (build, tests, CI, Renovate) | [`docs/developpement.md`](docs/developpement.md) |
+| Les conventions suivies par les agents IA | [`AGENTS.md`](AGENTS.md) |

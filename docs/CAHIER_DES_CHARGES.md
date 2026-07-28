@@ -96,7 +96,7 @@ travail, et la billetterie du festival.
 
 ### 3.5 Modélisation technique (pattern Timefold)
 
-Voir `CLAUDE.md` pour le détail des classes (`Animateur`, `Stand`, `Creneau`,
+Voir `docs/domaine.md` pour le détail des classes (`Animateur`, `Stand`, `Creneau`,
 `PosteAffectation`, `PlanningFestival`) et leur mapping vers les contraintes
 ci-dessous. Point clé : un `PosteAffectation` est créé par place à pourvoir (pas
 une seule entité par couple stand × créneau), ce qui permet de gérer l'effectif
@@ -116,7 +116,7 @@ poser des exceptions au cas par cas, sans passer par le code :
 
 Chaque règle est tracée (raison, auteur, date de création) et traitée par le
 moteur au même niveau de priorité que les contraintes dures du référentiel
-général — jamais contournée silencieusement. Voir `CLAUDE.md` pour la modélisation
+général — jamais contournée silencieusement. Voir `docs/domaine.md` pour la modélisation
 technique (`ContrainteAdHoc`).
 
 ---
@@ -355,6 +355,6 @@ prestataire français.
 
 ---
 
-*Voir aussi `CLAUDE.md` à la racine du dépôt pour le contexte destiné à Claude
-Code (modèle de données technique, conventions de travail, structure de
-dossiers).*
+*Voir aussi `AGENTS.md` à la racine du dépôt (mémoire unique destinée aux agents
+IA : conventions de travail, commandes, invariants) et `docs/domaine.md` pour le
+modèle de données technique.*
