@@ -3,8 +3,7 @@
 Pattern standard Timefold de « shift rostering », à respecter tel quel pour rester
 compatible avec `HardMediumSoftScore`. Les noms de classes et de champs restent en
 **vocabulaire métier français** (`Animateur`, `Creneau`, `TypologieJeu`,
-`joursIndisponibles`) pour rester alignés avec le
-[cahier des charges](CAHIER_DES_CHARGES.md) ; les commentaires et identifiants
+`joursIndisponibles`) pour rester alignés avec la documentation métier ; les commentaires et identifiants
 non métier sont en anglais.
 
 ## Données de référence (non modifiées par le solveur)

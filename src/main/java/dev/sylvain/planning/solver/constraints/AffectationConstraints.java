@@ -10,8 +10,8 @@ import dev.sylvain.planning.domain.PosteAffectation;
 /**
  * Core assignment hard constraints: every mandatory seat must be filled by an
  * available, competent animateur, and nobody can hold two seats on the same
- * slot. These map directly to sections 4.3 and 4.4 (effectif, disponibilité,
- * compétence) of the cahier des charges.
+ * slot. These map to the documented assignment rules (effectif,
+ * disponibilite, competence).
  */
 public final class AffectationConstraints {
 

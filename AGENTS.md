@@ -15,7 +15,7 @@ onto game festival `Stand`s over 15 days, under hard/medium/soft constraints.
 
 Read before working on constraints or the domain model:
 
-- `docs/CAHIER_DES_CHARGES.md` — functional spec, legal constraint catalogue
+- `README.md` (section *Fonctionnalités métier*) — functional scope and business capabilities
 - `docs/domaine.md` — Timefold model and its invariants
 - `docs/contraintes.md` — implemented constraints and how to add one
 - `docs/architecture.md` — backend/frontend module layout
@@ -154,9 +154,8 @@ The doc layout is intentional — respect it when adding or updating docs.
    else technical goes to `docs/`.
 3. **All technical documentation lives in `docs/`**: `architecture.md`,
    `domaine.md`, `contraintes.md`, `api.md`, `import-export.md`,
-   `developpement.md`, plus `CAHIER_DES_CHARGES.md`. Adding a topic means adding
-   a file there and a row in `docs/README.md` — not a new root-level file and not
-   a new README section.
+   `developpement.md`. Adding a topic means adding a file there and a row in
+   `docs/README.md` — not a new root-level file and not a new README section.
 4. Docs are written in **French**; keep the existing tone and Markdown style
    (tables for enumerable facts, fenced code blocks for commands).
 5. When behaviour changes, update the doc that owns it: new endpoint →

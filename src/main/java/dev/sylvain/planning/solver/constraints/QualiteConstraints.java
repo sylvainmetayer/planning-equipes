@@ -8,9 +8,8 @@ import dev.sylvain.planning.domain.PosteAffectation;
 
 /**
  * Medium constraints: strongly penalised but non-blocking organisational
- * quality rules (cahier des charges 4.2, 4.3, 4.4) — referent coverage on
- * complex stands, balanced workload, and avoiding a majority of minors on a
- * single slot.
+ * quality rules: referent coverage on complex stands, balanced workload, and
+ * avoiding a majority of minors on a single slot.
  */
 public final class QualiteConstraints {
 

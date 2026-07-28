@@ -10,9 +10,9 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 
 /**
- * One-off administrative exceptions (cahier des charges 3.6). They are enforced
- * as hard constraints, at the same priority as the legal ones, so the optimiser
- * can never silently work around them.
+ * One-off administrative exceptions. They are enforced as hard constraints, at
+ * the same priority as the legal ones, so the optimiser can never silently
+ * work around them.
  */
 public final class AdHocConstraints {
 

@@ -187,7 +187,6 @@ Formats détaillés dans [`docs/import-export.md`](docs/import-export.md).
 
 | Pour… | Voir |
 | --- | --- |
-| Le besoin métier de référence | [`docs/CAHIER_DES_CHARGES.md`](docs/CAHIER_DES_CHARGES.md) |
 | L'architecture technique | [`docs/architecture.md`](docs/architecture.md) |
 | Le modèle de domaine | [`docs/domaine.md`](docs/domaine.md) |
 | Le référentiel de contraintes | [`docs/contraintes.md`](docs/contraintes.md) |

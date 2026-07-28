@@ -8,9 +8,9 @@ import ai.timefold.solver.core.api.score.stream.Joiners;
 import dev.sylvain.planning.domain.PosteAffectation;
 
 /**
- * Soft preferences (cahier des charges 4.3, 4.4): tie-breakers that shape an
- * otherwise valid plan — spread stands across the festival for each animateur
- * and pair beginners with a referent for on-the-job training.
+ * Soft preferences: tie-breakers that shape an otherwise valid plan — spread
+ * stands across the festival for each animateur and pair beginners with a
+ * referent for on-the-job training.
  */
 public final class PreferenceConstraints {
 

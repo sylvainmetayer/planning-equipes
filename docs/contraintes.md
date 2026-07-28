@@ -6,9 +6,7 @@ Trois niveaux, alignés sur le `HardMediumSoftScore` de Timefold :
 - **MEDIUM** — fortement pénalisé mais non bloquant, signalé à l'organisateur ;
 - **SOFT** — préférence, optimisée en dernier pour départager deux plannings valides.
 
-Le classement de référence de chaque règle métier figure dans le
-[cahier des charges](CAHIER_DES_CHARGES.md) (sections 4.1 à 4.4). **Ne jamais
-reclasser une contrainte dure en medium/soft sans validation explicite**, en
+**Ne jamais reclasser une contrainte dure en medium/soft sans validation explicite**, en
 particulier tout ce qui touche au cadre légal des mineurs.
 
 ## Contraintes implémentées
