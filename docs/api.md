@@ -19,13 +19,25 @@ JSON sauf mention contraire.
 La résolution complète dure plusieurs minutes : l'IHM lance un job, reste
 navigable et notifie à la fin.
 
+Le verrou « un solveur à la fois » est **porté par le serveur**, pas par le
+navigateur : un seul job de résolution ou d'analyse peut tourner à la fois pour
+toute l'application. Toute autre session (autre navigateur, navigation privée,
+autre onglet) voit le même job actif et le même temps écoulé via
+`GET /api/jobs/active`, et se voit refuser un second lancement en `409 Conflict`
+(le corps de la réponse contient le job en cours).
+
 | Méthode | Chemin | Description |
 | --- | --- | --- |
-| `POST` | `/api/solve/async?seconds={n}` | Démarre une résolution en tâche de fond |
-| `POST` | `/api/solve/analyze/async?seconds={n}` | Démarre une analyse en tâche de fond |
+| `POST` | `/api/solve/async?seconds={n}` | Démarre une résolution en tâche de fond (`202`, ou `409` si le solveur est occupé) |
+| `POST` | `/api/solve/analyze/async?seconds={n}` | Démarre une analyse en tâche de fond (`202`, ou `409` si le solveur est occupé) |
 | `GET` | `/api/jobs` | Liste des jobs |
+| `GET` | `/api/jobs/active` | Job en cours (`200`) ou solveur libre (`204`) |
 | `GET` | `/api/jobs/{id}` | État et résultat d'un job |
-| `DELETE` | `/api/jobs/{id}` | Supprime un job terminé |
+| `DELETE` | `/api/jobs/{id}` | Supprime un job terminé (`409` si le job tourne encore) |
+
+Chaque job expose `elapsedSeconds`, calculé côté serveur : le temps écoulé
+affiché est identique quel que soit le client, son horloge ou son heure de
+connexion.
 
 ## Contraintes
 

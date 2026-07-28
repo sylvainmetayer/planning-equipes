@@ -5,6 +5,7 @@ import java.util.List;
 
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.service.SolverJobService;
+import dev.sylvain.planning.service.SolverJobService.SolverBusyException;
 import dev.sylvain.planning.service.SolverJobService.SolverJob;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -34,21 +35,52 @@ public class SolverJobResource {
     @POST
     @Path("/solve/async")
     public Response solveAsync(PlanningFestival planningFestival, @QueryParam("seconds") Long secondsLimit) {
-        SolverJob job = solverJobService.submitSolve(planningFestival, secondsLimit);
-        return Response.accepted(JobView.withoutResult(job)).build();
+        try {
+            SolverJob job = solverJobService.submitSolve(planningFestival, secondsLimit);
+            return Response.accepted(JobView.withoutResult(job)).build();
+        } catch (SolverBusyException e) {
+            return busy(e);
+        }
     }
 
     @POST
     @Path("/solve/analyze/async")
     public Response analyzeAsync(PlanningFestival planningFestival, @QueryParam("seconds") Long secondsLimit) {
-        SolverJob job = solverJobService.submitAnalyze(planningFestival, secondsLimit);
-        return Response.accepted(JobView.withoutResult(job)).build();
+        try {
+            SolverJob job = solverJobService.submitAnalyze(planningFestival, secondsLimit);
+            return Response.accepted(JobView.withoutResult(job)).build();
+        } catch (SolverBusyException e) {
+            return busy(e);
+        }
+    }
+
+    /**
+     * The solver is a single shared resource: a second run is refused with the
+     * job that currently holds it, so any client can display who is running.
+     */
+    private Response busy(SolverBusyException e) {
+        return Response.status(Response.Status.CONFLICT)
+                .entity(JobView.withoutResult(e.getActiveJob()))
+                .build();
     }
 
     @GET
     @Path("/jobs")
     public List<JobView> listJobs() {
         return solverJobService.list().stream().map(JobView::withoutResult).toList();
+    }
+
+    /**
+     * Server-side "is the solver busy?" flag, polled by every browser so a
+     * running job locks the UI even in another session or a private window.
+     * Returns 204 when the solver is idle.
+     */
+    @GET
+    @Path("/jobs/active")
+    public Response activeJob() {
+        return solverJobService.findActive()
+                .map(job -> Response.ok(JobView.withoutResult(job)).build())
+                .orElseGet(() -> Response.noContent().build());
     }
 
     /**
@@ -66,9 +98,13 @@ public class SolverJobResource {
     @DELETE
     @Path("/jobs/{id}")
     public Response deleteJob(@PathParam("id") String id) {
-        return solverJobService.forget(id)
-                ? Response.noContent().build()
-                : Response.status(Response.Status.NOT_FOUND).build();
+        try {
+            return solverJobService.forget(id)
+                    ? Response.noContent().build()
+                    : Response.status(Response.Status.NOT_FOUND).build();
+        } catch (SolverBusyException e) {
+            return busy(e);
+        }
     }
 
     public record JobView(
@@ -79,6 +115,7 @@ public class SolverJobResource {
             Instant submittedAt,
             Instant startedAt,
             Instant finishedAt,
+            long elapsedSeconds,
             String error,
             Object result) {
 
@@ -99,6 +136,7 @@ public class SolverJobResource {
                     job.getSubmittedAt(),
                     job.getStartedAt(),
                     job.getFinishedAt(),
+                    job.getElapsedSeconds(),
                     job.getError(),
                     result);
         }

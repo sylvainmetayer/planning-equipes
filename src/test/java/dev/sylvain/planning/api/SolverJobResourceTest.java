@@ -2,6 +2,7 @@ package dev.sylvain.planning.api;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.path.json.JsonPath;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -16,6 +17,13 @@ class SolverJobResourceTest {
 
     private static final int MAX_POLLS = 120;
     private static final long POLL_INTERVAL_MS = 500;
+
+    // The solver is a single shared resource: a job left running by the
+    // previous test would make the next submit return 409.
+    @BeforeEach
+    void solverIsIdle() throws InterruptedException {
+        awaitIdleSolver();
+    }
 
     @Test
     void solveAsyncReturnsImmediatelyThenCompletes() throws InterruptedException {
@@ -71,6 +79,63 @@ class SolverJobResourceTest {
         given().when().get("/api/jobs/does-not-exist")
                 .then()
                 .statusCode(404);
+    }
+
+    /**
+     * The solver lock lives on the server: a second run is refused whoever asks
+     * for it, and any client can read the running job (and its elapsed time)
+     * from {@code /api/jobs/active} without any browser-side state.
+     */
+    @Test
+    void secondSolverJobIsRefusedWhileOneIsRunning() throws InterruptedException {
+        String planningJson = sampleplanning();
+
+        String jobId = given()
+                .contentType("application/json")
+                .body(planningJson)
+                .when().post("/api/solve/async")
+                .then()
+                .statusCode(202)
+                .extract().path("id");
+
+        given()
+                .contentType("application/json")
+                .body(planningJson)
+                .when().post("/api/solve/analyze/async")
+                .then()
+                .statusCode(409)
+                .body("id", equalTo(jobId))
+                .body("type", equalTo("SOLVE"));
+
+        JsonPath active = given().when().get("/api/jobs/active")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath();
+        assertThat(active.getString("id")).isEqualTo(jobId);
+        assertThat(active.getLong("elapsedSeconds")).isGreaterThanOrEqualTo(0);
+
+        // A running job cannot be dropped: that would release the lock while
+        // the solver keeps working.
+        given().when().delete("/api/jobs/" + jobId)
+                .then()
+                .statusCode(409);
+
+        assertThat(pollUntilFinished(jobId).getString("status")).isEqualTo("COMPLETED");
+
+        given().when().get("/api/jobs/active")
+                .then()
+                .statusCode(204);
+    }
+
+    /** Tests share one solver: wait for any job left running by another test. */
+    private void awaitIdleSolver() throws InterruptedException {
+        for (int i = 0; i < MAX_POLLS; i++) {
+            if (given().when().get("/api/jobs/active").then().extract().statusCode() == 204) {
+                return;
+            }
+            Thread.sleep(POLL_INTERVAL_MS);
+        }
+        throw new AssertionError("Solver still busy");
     }
 
     private String sampleplanning() {

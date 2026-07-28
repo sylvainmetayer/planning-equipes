@@ -27,6 +27,11 @@ import jakarta.inject.Inject;
  * {@code /api/jobs/{id}} until the job is finished. Jobs are kept in memory
  * only: a restart loses them, which is fine because every completed solve is
  * also persisted by {@link PlanningPersistenceService}.</p>
+ *
+ * <p>The "a solver run is in progress" state lives here, not in the browser:
+ * only one solve or analyze may run at a time for the whole server, so any
+ * client (other browser, private window) sees the same lock and the same
+ * elapsed time through {@code GET /api/jobs/active}.</p>
  */
 @ApplicationScoped
 public class SolverJobService {
@@ -75,8 +80,15 @@ public class SolverJobService {
         });
     }
 
-    private SolverJob submit(JobType type, Long secondsLimit, JobTask task) {
+    /**
+     * Registers the job and hands it to the worker pool. Synchronized so two
+     * simultaneous requests cannot both pass the "no active job" check.
+     */
+    private synchronized SolverJob submit(JobType type, Long secondsLimit, JobTask task) {
         purgeExpiredJobs();
+        findActive().ifPresent(active -> {
+            throw new SolverBusyException(active);
+        });
         SolverJob job = new SolverJob(UUID.randomUUID().toString(), type, secondsLimit);
         jobs.put(job.getId(), job);
         executor.submit(() -> run(job, task));
@@ -99,6 +111,16 @@ public class SolverJobService {
         return Optional.ofNullable(jobs.get(jobId));
     }
 
+    /**
+     * The job currently holding the solver, if any. Shared by every client so
+     * the "solver busy" state does not depend on browser-local storage.
+     */
+    public Optional<SolverJob> findActive() {
+        return jobs.values().stream()
+                .filter(job -> !job.isFinished())
+                .min(Comparator.comparing(SolverJob::getSubmittedAt));
+    }
+
     /** Newest job first, so the UI can show a readable history. */
     public List<SolverJob> list() {
         return jobs.values().stream()
@@ -107,15 +129,21 @@ public class SolverJobService {
     }
 
     /**
-     * Forgets a job. A job that has not started yet is marked cancelled so the
-     * worker skips it; a running solver is not interrupted.
+     * Forgets a finished job (or cancels one still queued). A running job is
+     * refused: dropping it would release the server-side solver lock while the
+     * solver keeps working.
      */
-    public boolean forget(String jobId) {
-        SolverJob job = jobs.remove(jobId);
+    public synchronized boolean forget(String jobId) {
+        SolverJob job = jobs.get(jobId);
         if (job == null) {
             return false;
         }
-        job.markCancelledIfPending();
+        if (job.getStatus() == JobStatus.PENDING) {
+            job.markCancelledIfPending();
+        } else if (!job.isFinished()) {
+            throw new SolverBusyException(job);
+        }
+        jobs.remove(jobId);
         return true;
     }
 
@@ -139,6 +167,21 @@ public class SolverJobService {
     @FunctionalInterface
     private interface JobTask {
         Object execute();
+    }
+
+    /** Raised when a solve or analyze is requested while another one runs. */
+    public static final class SolverBusyException extends RuntimeException {
+
+        private final transient SolverJob activeJob;
+
+        SolverBusyException(SolverJob activeJob) {
+            super("A solver job is already running (" + activeJob.getType() + ", id " + activeJob.getId() + ")");
+            this.activeJob = activeJob;
+        }
+
+        public SolverJob getActiveJob() {
+            return activeJob;
+        }
     }
 
     private static final class SolverThreadFactory implements ThreadFactory {
@@ -198,6 +241,16 @@ public class SolverJobService {
 
         public boolean isFinished() {
             return status == JobStatus.COMPLETED || status == JobStatus.FAILED || status == JobStatus.CANCELLED;
+        }
+
+        /**
+         * Seconds since the job entered the queue, frozen once it is finished.
+         * Computed server-side so every client displays the same duration,
+         * whatever its own clock or when it connected.
+         */
+        public long getElapsedSeconds() {
+            Instant end = finishedAt == null ? Instant.now() : finishedAt;
+            return Math.max(0, Duration.between(submittedAt, end).getSeconds());
         }
 
         public String getId() {

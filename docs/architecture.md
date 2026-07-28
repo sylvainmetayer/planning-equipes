@@ -74,7 +74,7 @@ dans [`domaine.md`](domaine.md).
 | Service | Rôle |
 | --- | --- |
 | `PlanningService` | Construit la `SolverFactory` depuis `solver/solverConfig.xml`, charge `scenario.yml`, expose `construireExemple()` / `resoudre()` |
-| `SolverJobService` | Résolutions et analyses asynchrones (jobs suivis par l'IHM) |
+| `SolverJobService` | Résolutions et analyses asynchrones ; porte le verrou « un seul solveur à la fois », partagé par tous les clients |
 | `ConstraintAnalysisStore` | Mémorise le résultat de la dernière analyse pour l'onglet « Constraints » |
 | `ReferenceDataService` / `ReferenceDataRepository` | CRUD référentiels (stands, créneaux, animateurs, typologies, contraintes ad hoc) |
 | `PlanningPersistenceService` | Lecture / écriture du planning persisté |
@@ -103,7 +103,7 @@ Une responsabilité par fichier, chargés via `<script type="module" src="/js/ap
 | `js/calendar-month.js` | Vue mensuelle + filtres animateur / stand (état de vue interne) |
 | `js/calendar-day.js` | Vue par jour |
 | `js/constraints.js` | Onglet « Constraints » (catalogue + dernière analyse) |
-| `js/jobs.js`, `js/notifications.js` | Suivi des jobs asynchrones et notifications IHM |
+| `js/jobs.js`, `js/notifications.js` | Suivi des jobs asynchrones (état lu sur le serveur via `/api/jobs/active`, aucun stockage navigateur) et notifications IHM |
 | `js/reference-data.js` | CRUD des référentiels |
 | `js/data-transfer.js` | Imports CSV, export / import de dump SQL |
 | `js/admin.js` | Actions planning et exports |
@@ -115,7 +115,12 @@ Conventions :
 - les lookups DOM restent dans le module propriétaire ;
 - l'état circule dans un seul sens : `admin` (solve/analyze) → `setLastSolvedPlanning`,
   les calendriers relisent via `ensurePlanning()` ;
-- pas de globals mutables partagés, pas de retour à un `planning.js` monolithique.
+- pas de globals mutables partagés, pas de retour à un `planning.js` monolithique ;
+- l'état « un solveur tourne » n'est jamais stocké dans le navigateur
+  (`localStorage` / `sessionStorage`) : `js/jobs.js` interroge `/api/jobs/active`
+  toutes les 2 secondes, de sorte qu'une résolution lancée depuis un autre
+  navigateur ou une fenêtre privée verrouille aussi les boutons ici, affiche le
+  temps écoulé calculé par le serveur, et pousse son résultat à la fin.
 
 Le CSS suit le même découpage : `style.css` n'est qu'un agrégateur de règles
 `@import` (police Google d'abord, puis les partials) et chaque composant a son

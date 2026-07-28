@@ -4,8 +4,9 @@
 import { getJson, fetchJson, downloadFile } from './api.js';
 import { reloadReferenceData } from './reference-data.js';
 import {
-  hasRunningJob,
-  onRunningJobsChange,
+  describeActiveJob,
+  isSolverBusy,
+  onActiveJobChange,
   registerJobResultHandler,
   submitAnalyzeJob,
   submitSolveJob
@@ -32,13 +33,15 @@ export function initAdmin() {
   analyzeButton.addEventListener('click', onAnalyze);
   exportPdfButton.addEventListener('click', onExportPdf);
   exportIcsButton.addEventListener('click', onExportIcs);
-  // Applies the payload of a job that finished while no click handler was
-  // awaiting it (page reloaded during a multi-minute solve).
+  // Results are pushed by the job monitor, whoever started the job: a solve
+  // launched from another browser also lands here when it completes.
   registerJobResultHandler('SOLVE', applySolveResult);
   registerJobResultHandler('ANALYZE', applyAnalyzeResult);
-  // Keeps the solver buttons locked while a job runs, including a job resumed
-  // after a page reload.
-  onRunningJobsChange((count) => setSolverButtonsDisabled(count > 0));
+  // Locked until the server tells us whether a solve is already running, then
+  // driven by that server-side state whatever the browser, tab or private
+  // window it was started from.
+  setSolverButtonsDisabled(true);
+  onActiveJobChange(onSolverLockChange);
 }
 
 async function onLoadSample() {
@@ -91,25 +94,34 @@ async function onTimefoldSolve() {
   setSolverButtonsDisabled(true);
   planningOutput.textContent = 'Submitting solve to the background solver...';
   try {
-    const solvePromise = submitSolveJob(await planningToWorkOn());
+    await submitSolveJob(await planningToWorkOn());
     planningOutput.textContent =
-      'Solving with Timefold in the background. You can keep browsing; a notification will pop up when it is done.';
-    applySolveResult(await solvePromise);
+      'Solving with Timefold on the server. You can keep browsing; a notification will pop up when it is done, '
+      + 'here and in any other browser watching this server.';
   } catch (error) {
     planningOutput.textContent = `Error: ${error.message}`;
-  } finally {
-    setSolverButtonsDisabled(false);
+    setSolverButtonsDisabled(isSolverBusy());
   }
 }
 
-// Only one solver job at a time: a solve and an analysis both run the solver,
-// so they must never be started in parallel.
+// Only one solver job at a time for the whole server: a solve and an analysis
+// both run the solver, so they must never be started in parallel — including
+// from two different browsers.
 function solverJobAlreadyRunning() {
-  if (!hasRunningJob('SOLVE') && !hasRunningJob('ANALYZE')) {
+  if (!isSolverBusy()) {
     return false;
   }
-  planningOutput.textContent = 'A solver job is already running. Wait for it to finish before starting another one.';
+  planningOutput.textContent = `${describeActiveJob()} Wait for it to finish before starting another one.`;
   return true;
+}
+
+// The server-side lock drives the buttons: they unlock only when the server
+// reports no running job.
+function onSolverLockChange(job) {
+  setSolverButtonsDisabled(job !== null);
+  if (job && !job.mine) {
+    planningOutput.textContent = `${describeActiveJob()} Solver actions are locked until it finishes.`;
+  }
 }
 
 function setSolverButtonsDisabled(disabled) {
@@ -135,14 +147,12 @@ async function onAnalyze() {
   setSolverButtonsDisabled(true);
   planningOutput.textContent = 'Submitting analysis to the background solver...';
   try {
-    const analyzePromise = submitAnalyzeJob(await planningToWorkOn());
+    await submitAnalyzeJob(await planningToWorkOn());
     planningOutput.textContent =
-      'Analyzing the solution in the background. You can keep browsing; a notification will pop up when it is done.';
-    applyAnalyzeResult(await analyzePromise);
+      'Analyzing the solution on the server. You can keep browsing; a notification will pop up when it is done.';
   } catch (error) {
     planningOutput.textContent = `Error: ${error.message}`;
-  } finally {
-    setSolverButtonsDisabled(false);
+    setSolverButtonsDisabled(isSolverBusy());
   }
 }
 

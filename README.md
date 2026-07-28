@@ -40,13 +40,20 @@ Le code Java comme le frontend sont rechargés à chaud. Le frontend étant comp
 de modules ES, il doit être servi en HTTP par Quarkus (ouvrir les fichiers en
 `file://` ne fonctionne pas).
 
+## Registry login
+
+```bash
+echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
+```
+
 ### Premiers pas dans l'application
 
 1. Ouvrir <http://localhost:8080> — la page **Administration** s'affiche.
 2. Cliquer sur **Reset BDD** pour charger le jeu de données d'exemple.
 3. Cliquer sur **Solve with Timefold** : la résolution part en tâche de fond
    (plusieurs minutes sur le scénario complet), la navigation reste libre et une
-   notification s'affiche à la fin.
+   notification s'affiche à la fin — y compris dans les autres navigateurs
+   ouverts sur l'application, qui voient le calcul en cours et son temps écoulé.
 4. Consulter le résultat dans **Assignment calendar** (vue mensuelle) ou
    **Day calendar** (vue par jour), et le respect des règles dans **Constraints**.
 5. Exporter les plannings individuels en PDF ou en ICS depuis la page
@@ -85,8 +92,13 @@ stand et chaque créneau, en distinguant trois niveaux d'exigence :
 - **contraintes souples**, optimisées en dernier pour départager deux plannings
   valides.
 
-La résolution s'exécute en tâche de fond : l'application reste utilisable pendant
-le calcul et notifie l'utilisateur à la fin.
+La résolution s'exécute en tâche de fond, côté serveur : l'application reste
+utilisable pendant le calcul et notifie l'utilisateur à la fin. Le calcul
+appartient au serveur, pas au navigateur — une seule résolution tourne à la fois
+pour toute l'application. Quiconque ouvre l'application pendant ce temps (autre
+poste, autre navigateur, navigation privée) voit le calcul en cours avec son
+temps écoulé, ne peut pas en lancer un second, et reçoit la notification de fin
+ainsi que le planning résolu.
 
 **Ce qui est garanti (contraintes dures)**
 
