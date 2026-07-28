@@ -41,7 +41,7 @@ Objectifs du projet :
 - Permettre des ajustements manuels après génération, avec revalidation
   automatique des contraintes dures.
 
-### 1.1 Périmètre (à valider)
+### 1.1 Périmètre
 
 Le périmètre couvre la saisie des données animateurs et stands, la configuration
 des contraintes, la génération et l'ajustement du planning, ainsi que son export.
@@ -96,11 +96,28 @@ travail, et la billetterie du festival.
 
 ### 3.5 Modélisation technique (pattern Timefold)
 
-Voir `CLAUDE.md` pour le détail des classes (`Animateur`, `Stand`, `Creneau`,
+Voir `docs/domaine.md` pour le détail des classes (`Animateur`, `Stand`, `Creneau`,
 `PosteAffectation`, `PlanningFestival`) et leur mapping vers les contraintes
 ci-dessous. Point clé : un `PosteAffectation` est créé par place à pourvoir (pas
 une seule entité par couple stand × créneau), ce qui permet de gérer l'effectif
 min/max nativement.
+
+### 3.6 Contraintes manuelles ponctuelles (ad hoc)
+
+En complément du référentiel général (section 4), l'administrateur doit pouvoir
+poser des exceptions au cas par cas, sans passer par le code :
+
+- Indisponibilité forcée : un animateur donné ne doit jamais être affecté sur un
+  créneau/jour/stand précis
+- Incompatibilité : deux animateurs donnés ne doivent jamais être affectés sur le
+  même créneau
+- Affectation forcée : un animateur donné doit obligatoirement être affecté sur un
+  créneau/stand précis
+
+Chaque règle est tracée (raison, auteur, date de création) et traitée par le
+moteur au même niveau de priorité que les contraintes dures du référentiel
+général — jamais contournée silencieusement. Voir `docs/domaine.md` pour la modélisation
+technique (`ContrainteAdHoc`).
 
 ---
 
@@ -175,12 +192,19 @@ dans le moteur de génération :
 
 ### 5.1 Gestion des données
 
+- Pages d'ajout / modification / suppression pour les trois référentiels de base :
+  **espaces (stands)**, **personnes (animateurs)**, **typologies de jeux**. Écrans
+  simples formulaire + liste, sans logique métier complexe.
 - Création / import des animateurs (saisie manuelle ou import fichier — CSV, Excel)
 - Formulaire de déclaration des disponibilités et compétences (auto-service
   animateur, ou saisie par l'administrateur)
 - Gestion des stands et de leurs besoins (effectifs, compétences, horaires)
 - Configuration du référentiel de contraintes (activation, pondération des
   contraintes medium/soft)
+- **Ajout de contraintes manuelles ponctuelles (« hard » ad hoc)** : page dédiée
+  permettant à l'administrateur de poser des exceptions au cas par cas (ex.
+  « cet animateur pas affecté le jour 7 », « ces deux animateurs jamais sur le
+  même créneau »), sans passer par le code. Voir modélisation en 3.6.
 
 ### 5.2 Génération du planning
 
@@ -200,6 +224,8 @@ dans le moteur de génération :
 ### 5.4 Restitution
 
 - Planning individuel par animateur (vue calendrier, export PDF, envoi par email)
+- **Export ICS** du planning individuel : import direct dans un calendrier
+  personnel (Google Calendar, Apple Calendar, Outlook)
 - Planning global (vue par stand et par jour, filtrable par animateur, stand ou
   statut majeur/mineur)
 - Tableau de bord de suivi : taux d'occupation des stands, répartition des repos,
@@ -329,6 +355,6 @@ prestataire français.
 
 ---
 
-*Voir aussi `CLAUDE.md` à la racine du dépôt pour le contexte destiné à Claude
-Code (modèle de données technique, conventions de travail, structure de
-dossiers).*
+*Voir aussi `AGENTS.md` à la racine du dépôt (mémoire unique destinée aux agents
+IA : conventions de travail, commandes, invariants) et `docs/domaine.md` pour le
+modèle de données technique.*

@@ -1,0 +1,88 @@
+/* Constraints catalogue page. */
+
+.constraints-summary {
+  color: var(--text-soft);
+  font-size: 0.9rem;
+  margin: 0.5rem 0 1rem;
+}
+
+.constraint-group {
+  margin-bottom: 1rem;
+}
+
+.constraint-group h3 {
+  font-family: 'Fraunces', Georgia, serif;
+  margin-bottom: 0.75rem;
+}
+
+.constraint-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.6rem;
+}
+
+.constraint-card-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.35rem;
+}
+
+.constraint-badge {
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.constraint-badge-hard {
+  background: #f7dcd3;
+  color: var(--danger);
+}
+
+.constraint-badge-medium {
+  background: #f6ecd0;
+  color: #8a6412;
+}
+
+.constraint-badge-soft {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.constraint-description {
+  margin: 0 0 0.4rem;
+  color: var(--text-main);
+}
+
+.constraint-result {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.constraint-result-empty {
+  color: var(--text-soft);
+  font-weight: 400;
+}
+
+.constraint-result-hit {
+  color: var(--danger);
+}
+
+.constraint-result-clean {
+  color: var(--accent-strong);
+}
+
+@media (max-width: 600px) {
+  .constraint-card-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+}

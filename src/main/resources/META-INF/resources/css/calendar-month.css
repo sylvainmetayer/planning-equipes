@@ -1,0 +1,232 @@
+/* Monthly assignment calendar: shell, header, filters, grid and day details. */
+
+.calendar-shell {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  padding: 1.1rem;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.calendar-header-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.calendar-header-main h3 {
+  margin: 0;
+  min-width: 220px;
+  font-size: 1.35rem;
+  font-family: 'Fraunces', Georgia, serif;
+}
+
+.calendar-header-actions {
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.calendar-filters {
+  margin-top: 0.8rem;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.6rem;
+}
+
+.calendar-filters label {
+  font-size: 0.82rem;
+  color: var(--text-soft);
+  font-weight: 600;
+}
+
+.calendar-filters select {
+  min-width: 170px;
+  background: #fff;
+  border-color: #d8c9af;
+  border-radius: 999px;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.86rem;
+}
+
+.calendar-nav-btn {
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 999px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  background: #f4ede1;
+  color: var(--text-main);
+  border: 1px solid #d8c9af;
+}
+
+.calendar-reset-btn {
+  background: transparent;
+  color: var(--text-main);
+  border-color: #d8c9af;
+}
+
+.calendar-weekdays {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.calendar-weekdays span {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+  color: var(--text-soft);
+  text-align: center;
+  font-weight: 600;
+}
+
+.calendar-grid {
+  margin-top: 0.45rem;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.calendar-day-cell {
+  min-height: 94px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.55rem 0.55rem 0.45rem;
+  background: #fff;
+  text-align: left;
+  color: var(--text-main);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.calendar-day-cell:hover {
+  border-color: #bfb29b;
+}
+
+.calendar-day-cell.is-other-month {
+  background: #f8f3ea;
+  color: #a39a8d;
+}
+
+.calendar-day-cell.is-today {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, white);
+}
+
+.calendar-day-cell.is-selected {
+  background: linear-gradient(140deg, #ffffff 0%, #f4fcfb 75%);
+  border-color: var(--accent);
+}
+
+.calendar-day-number {
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+
+.calendar-day-meta {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--text-soft);
+}
+
+.calendar-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  display: inline-block;
+  background: #c6bcad;
+}
+
+.calendar-dot.has-events {
+  background: var(--accent);
+}
+
+.calendar-day-details {
+  margin-top: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 0.9rem;
+  background: #fffdfa;
+}
+
+.calendar-day-details h4 {
+  margin: 0 0 0.5rem;
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 1.15rem;
+}
+
+.day-detail-slot {
+  border-top: 1px dashed #d8cfbf;
+  padding: 0.55rem 0;
+}
+
+.day-detail-slot:first-of-type {
+  border-top: 0;
+}
+
+.day-detail-title {
+  font-size: 0.85rem;
+  color: var(--text-soft);
+  margin-bottom: 0.22rem;
+}
+
+.day-detail-line {
+  font-size: 0.9rem;
+  line-height: 1.35;
+  padding: 0.12rem 0;
+}
+
+.day-detail-line.empty-slot {
+  color: var(--danger);
+}
+
+.calendar-empty {
+  color: var(--text-soft);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 740px) {
+  .calendar-shell {
+    padding: 0.8rem;
+  }
+
+  .calendar-header-main h3 {
+    min-width: 160px;
+    font-size: 1.1rem;
+  }
+
+  .calendar-day-cell {
+    min-height: 82px;
+    padding: 0.45rem;
+  }
+
+  .calendar-filters {
+    gap: 0.35rem 0.5rem;
+  }
+
+  .calendar-filters select {
+    min-width: 145px;
+    font-size: 0.8rem;
+  }
+
+  .calendar-header-actions button {
+    padding: 0.55rem 0.7rem;
+    font-size: 0.8rem;
+  }
+}
