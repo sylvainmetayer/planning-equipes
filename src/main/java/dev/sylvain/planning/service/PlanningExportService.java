@@ -20,8 +20,11 @@ import com.lowagie.text.Document;
 import com.lowagie.text.Element;
 import com.lowagie.text.Font;
 import com.lowagie.text.Paragraph;
+import com.lowagie.text.Phrase;
+import com.lowagie.text.Rectangle;
 import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfPageEventHelper;
 import com.lowagie.text.pdf.PdfWriter;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
@@ -39,14 +42,34 @@ public class PlanningExportService {
     private static final DateTimeFormatter ICS_UTC_DATE_TIME = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'")
             .withZone(ZoneOffset.UTC);
     private static final DateTimeFormatter ICS_LOCAL_DATE_TIME = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss");
+    private static final DateTimeFormatter GENERATED_AT_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+    // --- Palette ---
+    private static final java.awt.Color PRIMARY = new java.awt.Color(37, 99, 235);
+    private static final java.awt.Color PRIMARY_DARK = new java.awt.Color(30, 58, 138);
+    private static final java.awt.Color HEADER_TEXT = java.awt.Color.WHITE;
+    private static final java.awt.Color ZEBRA = new java.awt.Color(240, 245, 253);
+    private static final java.awt.Color BORDER = new java.awt.Color(203, 213, 225);
+    private static final java.awt.Color TEXT = new java.awt.Color(31, 41, 55);
+    private static final java.awt.Color MUTED = new java.awt.Color(107, 114, 128);
+
+    // --- Fonts ---
+    private static final Font TITLE_FONT = new Font(Font.HELVETICA, 20, Font.BOLD, PRIMARY_DARK);
+    private static final Font SUBTITLE_FONT = new Font(Font.HELVETICA, 9, Font.NORMAL, MUTED);
+    private static final Font SECTION_FONT = new Font(Font.HELVETICA, 13, Font.BOLD, PRIMARY_DARK);
+    private static final Font HEADER_CELL_FONT = new Font(Font.HELVETICA, 9, Font.BOLD, HEADER_TEXT);
+    private static final Font CELL_FONT = new Font(Font.HELVETICA, 9, Font.NORMAL, TEXT);
+    private static final Font TIMESLOT_FONT = new Font(Font.HELVETICA, 9, Font.BOLD, TEXT);
+    private static final Font MUTED_CELL_FONT = new Font(Font.HELVETICA, 9, Font.NORMAL, MUTED);
+    private static final Font EMPTY_STATE_FONT = new Font(Font.HELVETICA, 10, Font.ITALIC, MUTED);
+    private static final Font FOOTER_FONT = new Font(Font.HELVETICA, 8, Font.NORMAL, MUTED);
 
     public byte[] exportAnimateurPdf(PlanningFestival planning, String animateurId) {
         List<PosteAffectation> animateurPostes = planning.getPostes().stream()
                 .filter(poste -> poste.getAnimateur() != null && animateurId.equals(poste.getAnimateur().getId()))
                 .sorted(byCreneauThenStand())
                 .toList();
-        List<String> lines = animateurPostes.stream().map(this::formatPosteLine).toList();
-        return buildPdf("Planning for " + resolveAnimateurName(planning, animateurId), lines, animateurPostes);
+        return buildPdf(resolveAnimateurName(planning, animateurId), animateurPostes);
     }
 
     /**
@@ -138,35 +161,105 @@ public class PlanningExportService {
                 .orElse(animateurId);
     }
 
-    private byte[] buildPdf(String title, List<String> lines, List<PosteAffectation> postes) {
+    private byte[] buildPdf(String animateurName, List<PosteAffectation> postes) {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        Document document = new Document();
-        PdfWriter.getInstance(document, output);
+        Document document = new Document(com.lowagie.text.PageSize.A4, 42, 42, 54, 54);
+        PdfWriter writer = PdfWriter.getInstance(document, output);
+        writer.setPageEvent(new FooterEvent());
         document.open();
-        document.add(new Paragraph(title));
-        document.add(new Paragraph(" "));
 
-        document.add(new Paragraph("Calendar view", new Font(Font.HELVETICA, 12, Font.BOLD)));
-        document.add(new Paragraph(" "));
+        addHeader(document, animateurName, postes.size());
+
+        addSectionTitle(document, "Calendar view");
         PdfPTable calendarTable = buildCalendarTable(postes);
         if (calendarTable == null) {
-            document.add(new Paragraph("No assignments"));
+            document.add(emptyState());
         } else {
             document.add(calendarTable);
         }
-        document.add(new Paragraph(" "));
+        document.add(spacer());
 
-        document.add(new Paragraph("Detailed list", new Font(Font.HELVETICA, 12, Font.BOLD)));
-        document.add(new Paragraph(" "));
-        if (lines.isEmpty()) {
-            document.add(new Paragraph("No assignments"));
+        addSectionTitle(document, "Detailed list");
+        PdfPTable detailTable = buildDetailTable(postes);
+        if (detailTable == null) {
+            document.add(emptyState());
         } else {
-            for (String line : lines) {
-                document.add(new Paragraph(line));
-            }
+            document.add(detailTable);
         }
+
         document.close();
         return output.toByteArray();
+    }
+
+    private void addHeader(Document document, String animateurName, int posteCount) {
+        Paragraph title = new Paragraph("Planning — " + animateurName, TITLE_FONT);
+        title.setSpacingAfter(2);
+        document.add(title);
+
+        String assignmentLabel = posteCount + (posteCount > 1 ? " assignments" : " assignment");
+        Paragraph subtitle = new Paragraph(
+                assignmentLabel + " · generated on " + GENERATED_AT_FORMAT.format(
+                        Instant.now().atZone(ZoneOffset.systemDefault())),
+                SUBTITLE_FONT);
+        subtitle.setSpacingAfter(6);
+        document.add(subtitle);
+
+        // Colored rule under the header.
+        PdfPTable rule = new PdfPTable(1);
+        rule.setWidthPercentage(100);
+        PdfPCell ruleCell = new PdfPCell();
+        ruleCell.setFixedHeight(3f);
+        ruleCell.setBackgroundColor(PRIMARY);
+        ruleCell.setBorder(Rectangle.NO_BORDER);
+        rule.addCell(ruleCell);
+        rule.setSpacingAfter(16);
+        document.add(rule);
+    }
+
+    private void addSectionTitle(Document document, String text) {
+        Paragraph section = new Paragraph(text, SECTION_FONT);
+        section.setSpacingAfter(8);
+        document.add(section);
+    }
+
+    private Paragraph spacer() {
+        Paragraph spacer = new Paragraph(" ");
+        spacer.setSpacingAfter(10);
+        return spacer;
+    }
+
+    private Paragraph emptyState() {
+        Paragraph paragraph = new Paragraph("No assignments", EMPTY_STATE_FONT);
+        paragraph.setSpacingAfter(10);
+        return paragraph;
+    }
+
+    private PdfPTable buildDetailTable(List<PosteAffectation> postes) {
+        if (postes.isEmpty()) {
+            return null;
+        }
+        PdfPTable table = new PdfPTable(new float[] { 1.4f, 1.2f, 2.4f, 2f });
+        table.setWidthPercentage(100);
+        table.setSpacingBefore(2);
+        table.addCell(headerCell("Date"));
+        table.addCell(headerCell("Time"));
+        table.addCell(headerCell("Stand"));
+        table.addCell(headerCell("Animateur"));
+
+        int row = 0;
+        for (PosteAffectation poste : postes) {
+            boolean zebra = row++ % 2 == 1;
+            table.addCell(bodyCell(poste.getCreneau().getDate().format(DATE_FORMAT), CELL_FONT, zebra));
+            table.addCell(bodyCell(
+                    poste.getCreneau().getHeureDebut().format(TIME_FORMAT) + " - "
+                            + poste.getCreneau().getHeureFin().format(TIME_FORMAT),
+                    CELL_FONT, zebra));
+            table.addCell(bodyCell(poste.getStand().getNom(), CELL_FONT, zebra));
+            String animateur = poste.getAnimateur() == null ? "UNASSIGNED" : toDisplayName(poste.getAnimateur());
+            table.addCell(bodyCell(animateur,
+                    poste.getAnimateur() == null ? MUTED_CELL_FONT : CELL_FONT, zebra));
+        }
+        return table;
     }
 
     private PdfPTable buildCalendarTable(List<PosteAffectation> postes) {
@@ -203,43 +296,55 @@ public class PlanningExportService {
 
         PdfPTable table = new PdfPTable(stands.size() + 1);
         table.setWidthPercentage(100);
+        table.setSpacingBefore(2);
+        table.getDefaultCell().setBorderColor(BORDER);
         table.addCell(headerCell("Timeslot"));
         for (Stand stand : stands) {
             table.addCell(headerCell(stand.getNom()));
         }
+        int row = 0;
         for (Creneau creneau : creneaux) {
-            table.addCell(new PdfPCell(new com.lowagie.text.Phrase(
-                    "J" + creneau.getJour() + " " + creneau.getDate().format(DATE_FORMAT) + " "
-                            + creneau.getHeureDebut().format(TIME_FORMAT) + "-"
-                            + creneau.getHeureFin().format(TIME_FORMAT))));
+            boolean zebra = row++ % 2 == 1;
+            PdfPCell slotCell = bodyCell(
+                    "J" + creneau.getJour() + " · " + creneau.getDate().format(DATE_FORMAT) + "\n"
+                            + creneau.getHeureDebut().format(TIME_FORMAT) + " - "
+                            + creneau.getHeureFin().format(TIME_FORMAT),
+                    TIMESLOT_FONT, zebra);
+            slotCell.setHorizontalAlignment(Element.ALIGN_LEFT);
+            table.addCell(slotCell);
             for (Stand stand : stands) {
                 List<String> names = assignmentsByKey.getOrDefault(creneau.getId() + "|" + stand.getId(), List.of());
-                String text = names.isEmpty() ? "-" : String.join(", ", names);
-                table.addCell(new PdfPCell(new com.lowagie.text.Phrase(text)));
+                boolean empty = names.isEmpty();
+                PdfPCell cell = bodyCell(empty ? "—" : String.join(", ", names),
+                        empty ? MUTED_CELL_FONT : CELL_FONT, zebra);
+                cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                table.addCell(cell);
             }
         }
         return table;
     }
 
     private PdfPCell headerCell(String text) {
-        PdfPCell cell = new PdfPCell(new com.lowagie.text.Phrase(text, new Font(Font.HELVETICA, 10, Font.BOLD)));
+        PdfPCell cell = new PdfPCell(new Phrase(text, HEADER_CELL_FONT));
         cell.setHorizontalAlignment(Element.ALIGN_CENTER);
-        cell.setBorderWidth(1);
-        cell.setBackgroundColor(new java.awt.Color(240, 240, 240));
+        cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        cell.setBackgroundColor(PRIMARY);
+        cell.setBorderColor(PRIMARY);
+        cell.setBorderWidth(0.5f);
+        cell.setPadding(6f);
         return cell;
     }
 
-    private String formatPosteLine(PosteAffectation poste) {
-        String animateur = poste.getAnimateur() == null ? "UNASSIGNED" : toDisplayName(poste.getAnimateur());
-        return poste.getCreneau().getDate().format(DATE_FORMAT)
-                + " "
-                + poste.getCreneau().getHeureDebut().format(TIME_FORMAT)
-                + "-"
-                + poste.getCreneau().getHeureFin().format(TIME_FORMAT)
-                + " | "
-                + poste.getStand().getNom()
-                + " | "
-                + animateur;
+    private PdfPCell bodyCell(String text, Font font, boolean zebra) {
+        PdfPCell cell = new PdfPCell(new Phrase(text, font));
+        cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        cell.setBorderColor(BORDER);
+        cell.setBorderWidth(0.5f);
+        cell.setPadding(5f);
+        if (zebra) {
+            cell.setBackgroundColor(ZEBRA);
+        }
+        return cell;
     }
 
     private Comparator<PosteAffectation> byCreneauThenStand() {
@@ -263,5 +368,29 @@ public class PlanningExportService {
                 .replace(",", "\\,")
                 .replace(";", "\\;")
                 .replace("\n", "\\n");
+    }
+
+    /** Draws a thin rule and a centered "page X / Y" footer at the bottom of every page. */
+    private static final class FooterEvent extends PdfPageEventHelper {
+        @Override
+        public void onEndPage(PdfWriter writer, Document document) {
+            Rectangle page = document.getPageSize();
+            float y = document.bottomMargin() - 18;
+
+            com.lowagie.text.pdf.PdfContentByte canvas = writer.getDirectContent();
+            canvas.setColorStroke(BORDER);
+            canvas.setLineWidth(0.5f);
+            canvas.moveTo(document.leftMargin(), y + 12);
+            canvas.lineTo(page.getWidth() - document.rightMargin(), y + 12);
+            canvas.stroke();
+
+            Phrase footer = new Phrase("planning-equipes", FOOTER_FONT);
+            com.lowagie.text.pdf.ColumnText.showTextAligned(canvas, Element.ALIGN_LEFT,
+                    footer, document.leftMargin(), y, 0);
+
+            Phrase pageNumber = new Phrase("Page " + writer.getPageNumber(), FOOTER_FONT);
+            com.lowagie.text.pdf.ColumnText.showTextAligned(canvas, Element.ALIGN_RIGHT,
+                    pageNumber, page.getWidth() - document.rightMargin(), y, 0);
+        }
     }
 }
