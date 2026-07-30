@@ -4,6 +4,7 @@ import ai.timefold.solver.core.api.score.buildin.hardmediumsoft.HardMediumSoftSc
 import ai.timefold.solver.core.api.score.stream.Constraint;
 import ai.timefold.solver.core.api.score.stream.ConstraintCollectors;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
+import ai.timefold.solver.core.api.score.stream.Joiners;
 import dev.sylvain.planning.domain.PosteAffectation;
 
 /**
@@ -17,7 +18,9 @@ public final class QualiteConstraints {
         return new Constraint[] {
                 standComplexeAvecReferent(constraintFactory),
                 equilibrerCharge(constraintFactory),
-                repartitionMineursParCreneau(constraintFactory)
+                repartitionMineursParCreneau(constraintFactory),
+                experienceRequisePourStandsPremium(constraintFactory),
+                eviterRoulementStandsPremium(constraintFactory)
         };
     }
 
@@ -57,5 +60,31 @@ public final class QualiteConstraints {
                 .penalize(HardMediumSoftScore.ONE_MEDIUM,
                         (stand, creneau, mineurs, majeurs) -> mineurs - majeurs)
                 .asConstraint("repartitionMineursParCreneau");
+    }
+
+    private Constraint experienceRequisePourStandsPremium(ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(PosteAffectation.class)
+                .filter(poste -> poste.getStand().isPremium()
+                        && poste.getAnimateur() != null
+                        && poste.getAnimateur().estDebutantPour(poste.getStand()))
+                .penalize(HardMediumSoftScore.ONE_MEDIUM)
+                .asConstraint("experienceRequisePourStandsPremium");
+    }
+
+    private Constraint eviterRoulementStandsPremium(ConstraintFactory constraintFactory) {
+        // Mirrors favoriserRotationDesStands but inverted and scoped to premium
+        // stands: prefer keeping the same (already-vetted) animateur on a
+        // high-visibility stand across timeslots instead of rotating people
+        // through it.
+        return constraintFactory.forEachUniquePair(
+                PosteAffectation.class,
+                Joiners.equal(poste -> poste.getStand().getId()))
+                .filter((posteA, posteB) -> posteA.getStand().isPremium()
+                        && posteA.getAnimateur() != null
+                        && posteB.getAnimateur() != null
+                        && !posteA.getAnimateur().equals(posteB.getAnimateur())
+                        && !posteA.getCreneau().equals(posteB.getCreneau()))
+                .penalize(HardMediumSoftScore.ONE_MEDIUM)
+                .asConstraint("eviterRoulementStandsPremium");
     }
 }

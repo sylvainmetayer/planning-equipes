@@ -1,7 +1,6 @@
 // TypeScript mirror of the JSON exposed by the Quarkus API.
 // Domain names stay in the French business vocabulary of the backend.
 
-export type StatutAnimateur = 'BENEVOLE' | 'SALARIE';
 export type NiveauCompetence = 'DEBUTANT' | 'AUTONOME' | 'REFERENT';
 export type TypeContrainteAdHoc = 'INDISPONIBILITE_FORCEE' | 'INCOMPATIBILITE' | 'AFFECTATION_FORCEE';
 export type NiveauContrainte = 'HARD' | 'MEDIUM' | 'SOFT';
@@ -17,7 +16,8 @@ export interface Animateur {
   prenom: string;
   nom: string;
   dateNaissance: string | null;
-  statut: StatutAnimateur;
+  /** Manages other animateurs; every animateur (manager or not) is paid. */
+  manager: boolean;
   competences: Record<string, NiveauCompetence>;
   joursIndisponibles: string[];
 }
@@ -29,6 +29,8 @@ export interface Stand {
   effectifMin: number;
   effectifMax: number;
   reserveMajeurs: boolean;
+  /** Editor/publisher-tier stand: the solver avoids rotating staff and favors experienced animateurs. */
+  premium: boolean;
 }
 
 export interface Creneau {
@@ -37,6 +39,8 @@ export interface Creneau {
   date: string;
   heureDebut: string;
   heureFin: string;
+  /** Empty = every stand is open on this timeslot (the default). */
+  standsOuvertsIds: string[];
 }
 
 /** One seat to fill: a stand on a timeslot, with its animator once solved. */
@@ -130,6 +134,16 @@ export interface ConstraintsView {
   contraintes: ConstraintView[];
 }
 
+/**
+ * `/api/parametres-legaux`: admin-configurable legal parameters, consumed by
+ * the `dureeHebdomadaireMax` hard constraint. Default is 48h (2880 min), the
+ * weekly working-time ceiling set by the Code du travail (art. L3121-20) and
+ * the Convention collective nationale de l'Animation (ÉCLAT, IDCC 1518).
+ */
+export interface ParametresLegaux {
+  dureeHebdomadaireMaxMinutes: number;
+}
+
 export type JobType = 'SOLVE' | 'ANALYZE';
 export type JobStatus = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
 
@@ -145,6 +159,19 @@ export interface JobView {
   elapsedSeconds: number;
   error: string | null;
   result: unknown;
+}
+
+/** One row of `/api/planning/hours`: hours planned per ISO week (`AAAA-Wss`) plus the total. */
+export interface HeuresAnimateur {
+  animateurId: string;
+  nom: string;
+  heuresParSemaine: Record<string, number>;
+  total: number;
+}
+
+export interface HeuresRapport {
+  semaines: string[];
+  animateurs: HeuresAnimateur[];
 }
 
 export interface ResetSummary {

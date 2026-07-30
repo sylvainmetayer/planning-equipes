@@ -19,10 +19,11 @@ from pathlib import Path
 import yaml
 
 # --- Valeurs autorisées par le modèle Java (doivent rester synchronisées avec
-# les enums TypologieJeu / StatutAnimateur / NiveauCompetence) ---
+# les enums TypologieJeu / NiveauCompetence) ---
 TYPOLOGIES = ["ROLE", "STRATEGIE", "COOPERATIF", "ENFANT", "ENIGME", "ADRESSE", "AMBIANCE"]
-STATUTS = ["BENEVOLE", "SALARIE"]
 NIVEAUX = ["DEBUTANT", "AUTONOME", "REFERENT"]
+# Part des animateurs qui sont managers (encadrent d'autres animateurs).
+PART_MANAGERS = 0.1
 
 # Créneaux journaliers, identiques à ceux de scenario-complet.yaml.
 CRENEAUX_JOURNALIERS = [
@@ -86,7 +87,7 @@ def generer_scenario(date_debut_str, nb_jours, nb_stands, nb_animateurs, seed=No
     dob_delta_days = (dob_end - dob_start).days
 
     for i in range(1, nb_animateurs + 1):
-        statut = random.choice(STATUTS)
+        manager = random.random() < PART_MANAGERS
         # Une à trois compétences distinctes, chacune avec son niveau.
         nb_competences = random.randint(1, 3)
         competences = {
@@ -109,7 +110,7 @@ def generer_scenario(date_debut_str, nb_jours, nb_stands, nb_animateurs, seed=No
             "prenom": random.choice(PRENOMS),
             "nom": random.choice(NOMS),
             "dateNaissance": random_dob.strftime("%Y-%m-%d"),
-            "statut": statut,
+            "manager": manager,
             "competences": competences,
             "joursIndisponibles": jours_indispos,
         })

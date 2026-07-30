@@ -19,10 +19,10 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.NiveauCompetence;
+import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.domain.StatutAnimateur;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.TypologieJeu;
 import dev.sylvain.planning.service.ReferenceDataService.TypologieItem;
@@ -47,7 +47,7 @@ public class ReferenceDataRepository {
         Map<String, Stand> byId = new LinkedHashMap<>();
         try (Connection connection = dataSource.getConnection()) {
             try (PreparedStatement ps = connection.prepareStatement(
-                    "SELECT id, nom, effectif_min, effectif_max, reserve_majeurs FROM stand ORDER BY id");
+                    "SELECT id, nom, effectif_min, effectif_max, reserve_majeurs, premium FROM stand ORDER BY id");
                     ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Stand stand = new Stand();
@@ -56,6 +56,7 @@ public class ReferenceDataRepository {
                     stand.setEffectifMin(rs.getInt("effectif_min"));
                     stand.setEffectifMax(rs.getInt("effectif_max"));
                     stand.setReserveMajeurs(rs.getBoolean("reserve_majeurs"));
+                    stand.setPremium(rs.getBoolean("premium"));
                     byId.put(stand.getId(), stand);
                 }
             }
@@ -99,14 +100,16 @@ public class ReferenceDataRepository {
 
     private void upsertStand(Connection connection, Stand stand) throws SQLException {
         try (PreparedStatement ps = connection.prepareStatement(
-                "INSERT INTO stand (id, nom, effectif_min, effectif_max, reserve_majeurs) VALUES (?, ?, ?, ?, ?) "
+                "INSERT INTO stand (id, nom, effectif_min, effectif_max, reserve_majeurs, premium) VALUES (?, ?, ?, ?, ?, ?) "
                         + "ON CONFLICT (id) DO UPDATE SET nom = EXCLUDED.nom, effectif_min = EXCLUDED.effectif_min, "
-                        + "effectif_max = EXCLUDED.effectif_max, reserve_majeurs = EXCLUDED.reserve_majeurs")) {
+                        + "effectif_max = EXCLUDED.effectif_max, reserve_majeurs = EXCLUDED.reserve_majeurs, "
+                        + "premium = EXCLUDED.premium")) {
             ps.setString(1, stand.getId());
             ps.setString(2, stand.getNom());
             ps.setInt(3, stand.getEffectifMin());
             ps.setInt(4, stand.getEffectifMax());
             ps.setBoolean(5, stand.isReserveMajeurs());
+            ps.setBoolean(6, stand.isPremium());
             ps.executeUpdate();
         }
         try (PreparedStatement del = connection.prepareStatement("DELETE FROM stand_typologie WHERE stand_id = ?")) {
@@ -129,23 +132,35 @@ public class ReferenceDataRepository {
     /* ------------------------------ Timeslots ------------------------------ */
 
     public List<Creneau> listCreneaux() {
-        List<Creneau> creneaux = new ArrayList<>();
-        try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = connection.prepareStatement(
-                        "SELECT id, jour, date_creneau, heure_debut, heure_fin FROM creneau ORDER BY id");
-                ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                creneaux.add(new Creneau(
-                        rs.getString("id"),
-                        rs.getInt("jour"),
-                        rs.getObject("date_creneau", LocalDate.class),
-                        rs.getObject("heure_debut", LocalTime.class),
-                        rs.getObject("heure_fin", LocalTime.class)));
+        Map<String, Creneau> byId = new LinkedHashMap<>();
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement ps = connection.prepareStatement(
+                    "SELECT id, jour, date_creneau, heure_debut, heure_fin FROM creneau ORDER BY id");
+                    ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Creneau creneau = new Creneau(
+                            rs.getString("id"),
+                            rs.getInt("jour"),
+                            rs.getObject("date_creneau", LocalDate.class),
+                            rs.getObject("heure_debut", LocalTime.class),
+                            rs.getObject("heure_fin", LocalTime.class));
+                    byId.put(creneau.getId(), creneau);
+                }
+            }
+            try (PreparedStatement ps = connection.prepareStatement(
+                    "SELECT creneau_id, stand_id FROM creneau_stand_ouvert");
+                    ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Creneau creneau = byId.get(rs.getString("creneau_id"));
+                    if (creneau != null) {
+                        creneau.getStandsOuvertsIds().add(rs.getString("stand_id"));
+                    }
+                }
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to list timeslots", e);
         }
-        return creneaux;
+        return new ArrayList<>(byId.values());
     }
 
     public boolean creneauExists(String id) {
@@ -153,17 +168,15 @@ public class ReferenceDataRepository {
     }
 
     public void saveCreneau(Creneau creneau) {
-        try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = connection.prepareStatement(
-                        "INSERT INTO creneau (id, jour, date_creneau, heure_debut, heure_fin) VALUES (?, ?, ?, ?, ?) "
-                                + "ON CONFLICT (id) DO UPDATE SET jour = EXCLUDED.jour, date_creneau = EXCLUDED.date_creneau, "
-                                + "heure_debut = EXCLUDED.heure_debut, heure_fin = EXCLUDED.heure_fin")) {
-            ps.setString(1, creneau.getId());
-            ps.setInt(2, creneau.getJour());
-            ps.setObject(3, creneau.getDate());
-            ps.setObject(4, creneau.getHeureDebut());
-            ps.setObject(5, creneau.getHeureFin());
-            ps.executeUpdate();
+        try (Connection connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                upsertCreneauTx(connection, creneau);
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw e;
+            }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to save timeslot " + creneau.getId(), e);
         }
@@ -179,16 +192,15 @@ public class ReferenceDataRepository {
         Map<String, Animateur> byId = new LinkedHashMap<>();
         try (Connection connection = dataSource.getConnection()) {
             try (PreparedStatement ps = connection.prepareStatement(
-                    "SELECT id, prenom, nom, date_naissance, statut FROM animateur ORDER BY id");
+                    "SELECT id, prenom, nom, date_naissance, manager FROM animateur ORDER BY id");
                     ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    String statut = rs.getString("statut");
                     Animateur animateur = new Animateur(
                             rs.getString("id"),
                             rs.getString("prenom"),
                             rs.getString("nom"),
                             rs.getObject("date_naissance", LocalDate.class),
-                            statut != null ? StatutAnimateur.valueOf(statut) : null);
+                            rs.getBoolean("manager"));
                     byId.put(animateur.getId(), animateur);
                 }
             }
@@ -245,14 +257,14 @@ public class ReferenceDataRepository {
 
     private void upsertAnimateur(Connection connection, Animateur animateur) throws SQLException {
         try (PreparedStatement ps = connection.prepareStatement(
-                "INSERT INTO animateur (id, prenom, nom, date_naissance, statut) VALUES (?, ?, ?, ?, ?) "
+                "INSERT INTO animateur (id, prenom, nom, date_naissance, manager) VALUES (?, ?, ?, ?, ?) "
                         + "ON CONFLICT (id) DO UPDATE SET prenom = EXCLUDED.prenom, nom = EXCLUDED.nom, "
-                        + "date_naissance = EXCLUDED.date_naissance, statut = EXCLUDED.statut")) {
+                        + "date_naissance = EXCLUDED.date_naissance, manager = EXCLUDED.manager")) {
             ps.setString(1, animateur.getId());
             ps.setString(2, animateur.getPrenom());
             ps.setString(3, animateur.getNom());
             ps.setObject(4, animateur.getDateNaissance());
-            ps.setString(5, animateur.getStatut() != null ? animateur.getStatut().name() : null);
+            ps.setBoolean(5, animateur.isManager());
             ps.executeUpdate();
         }
         try (PreparedStatement del = connection.prepareStatement(
@@ -438,6 +450,35 @@ public class ReferenceDataRepository {
         }
     }
 
+    /* --------------------------- Legal parameters --------------------------- */
+
+    public ParametresLegaux getParametresLegaux() {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = connection.prepareStatement(
+                        "SELECT duree_hebdomadaire_max_minutes FROM parametres_legaux WHERE id = 1");
+                ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return new ParametresLegaux(rs.getInt("duree_hebdomadaire_max_minutes"));
+            }
+            return new ParametresLegaux();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to load legal parameters", e);
+        }
+    }
+
+    public void saveParametresLegaux(ParametresLegaux parametres) {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = connection.prepareStatement(
+                        "INSERT INTO parametres_legaux (id, duree_hebdomadaire_max_minutes) VALUES (1, ?) "
+                                + "ON CONFLICT (id) DO UPDATE SET "
+                                + "duree_hebdomadaire_max_minutes = EXCLUDED.duree_hebdomadaire_max_minutes")) {
+            ps.setInt(1, parametres.getDureeHebdomadaireMaxMinutes());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to save legal parameters", e);
+        }
+    }
+
     /* ------------------------------ CSV replace ----------------------------- */
 
     /**
@@ -582,6 +623,22 @@ public class ReferenceDataRepository {
             ps.setObject(4, creneau.getHeureDebut());
             ps.setObject(5, creneau.getHeureFin());
             ps.executeUpdate();
+        }
+        try (PreparedStatement del = connection.prepareStatement(
+                "DELETE FROM creneau_stand_ouvert WHERE creneau_id = ?")) {
+            del.setString(1, creneau.getId());
+            del.executeUpdate();
+        }
+        if (creneau.getStandsOuvertsIds() != null && !creneau.getStandsOuvertsIds().isEmpty()) {
+            try (PreparedStatement ins = connection.prepareStatement(
+                    "INSERT INTO creneau_stand_ouvert (creneau_id, stand_id) VALUES (?, ?)")) {
+                for (String standId : creneau.getStandsOuvertsIds()) {
+                    ins.setString(1, creneau.getId());
+                    ins.setString(2, standId);
+                    ins.addBatch();
+                }
+                ins.executeBatch();
+            }
         }
     }
 

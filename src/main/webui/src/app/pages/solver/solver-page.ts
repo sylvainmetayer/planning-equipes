@@ -2,6 +2,7 @@ import { Component, computed, effect, inject, signal, untracked } from '@angular
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
+import { ApiService } from '../../core/api.service';
 import { FeasibilityReport, PlanningDiagnostic } from '../../core/models';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { SolverJobService } from '../../core/solver-job.service';
@@ -9,11 +10,12 @@ import { FeasibilityBanner } from '../../shared/feasibility-banner';
 import { OutputPanel } from '../../shared/output-panel';
 
 /**
- * Solver page: launches the background solve job. The server always analyzes
- * the result as part of the same job (see {@code SolverJobService.submitSolve}
+ * Solver page: launches the background solve job, and exports the resulting
+ * planning (PDF + ICS bundled in one ZIP). The server always analyzes the
+ * solve result as part of the same job (see {@code SolverJobService.submitSolve}
  * on the backend), so there is no separate analyze action and no client-side
  * chaining to keep in sync. Seeding and resetting the database live on the
- * Data setup page; exports on the Exports page.
+ * Data setup page.
  */
 @Component({
   selector: 'app-solver-page',
@@ -23,10 +25,12 @@ import { OutputPanel } from '../../shared/output-panel';
 export class SolverPage {
   protected readonly output = signal('');
   protected readonly feasibility = signal<FeasibilityReport | null>(null);
+  protected readonly exportBusy = signal(false);
 
   /** The server-side lock, not a local flag: it also covers other browsers. */
   protected readonly solverBusy = computed(() => this.jobs.solverBusy());
 
+  private readonly api = inject(ApiService);
   private readonly planningState = inject(PlanningStateService);
   private readonly jobs = inject(SolverJobService);
 
@@ -75,6 +79,21 @@ export class SolverPage {
     }
     this.output.set(`${this.jobs.activeJobDescription()} Wait for it to finish before starting another one.`);
     return true;
+  }
+
+  protected async onExportPlanning(): Promise<void> {
+    this.exportBusy.set(true);
+    this.output.set('Building the export archive...');
+    try {
+      const planning = await this.planningState.require();
+      this.output.set(
+        await this.api.downloadPost('/api/planning/export/bundle/all', 'planning.zip', planning, 'application/zip')
+      );
+    } catch (error) {
+      this.output.set(`Error: ${message(error)}`);
+    } finally {
+      this.exportBusy.set(false);
+    }
   }
 
   private applySolveResult(diagnostic: PlanningDiagnostic): void {

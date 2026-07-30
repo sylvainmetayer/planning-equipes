@@ -9,6 +9,7 @@ import dev.sylvain.planning.domain.Stand;
 class QualiteConstraintsTest extends ConstraintTestBase {
 
     private final Stand standStrat = standStrategie("STAND-STRAT");
+    private final Stand standPremium = standPremium("STAND-PREMIUM");
     private final Creneau creneauMatin = matin("J1-MATIN", 1, D1);
     private final Creneau creneauAprem = apresMidi("J1-AM", 1, D1);
 
@@ -64,6 +65,46 @@ class QualiteConstraintsTest extends ConstraintTestBase {
         verify("repartitionMineursParCreneau")
                 .given(poste(standStrat, creneauMatin, mineurDebutant("M1")),
                         poste(standStrat, creneauMatin, majeurReferent("A1")))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void debutantSurStandPremiumEstPenalise() {
+        verify("experienceRequisePourStandsPremium")
+                .given(poste(standPremium, creneauMatin, mineurDebutant("M1")))
+                .penalizesBy(1);
+    }
+
+    @Test
+    void referentSurStandPremiumNEstPasPenalise() {
+        verify("experienceRequisePourStandsPremium")
+                .given(poste(standPremium, creneauMatin, majeurReferent("A1")))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void deuxAnimateursDifferentsSurStandPremiumADesCreneauxDifferentsEstPenalise() {
+        verify("eviterRoulementStandsPremium")
+                .given(poste(standPremium, creneauMatin, majeurReferent("A1")),
+                        poste(standPremium, creneauAprem, majeurReferent("A2")))
+                .penalizesBy(1);
+    }
+
+    @Test
+    void memeAnimateurSurStandPremiumADesCreneauxDifferentsNEstPasPenalise() {
+        Animateur a1 = majeurReferent("A1");
+        verify("eviterRoulementStandsPremium")
+                .given(poste(standPremium, creneauMatin, a1),
+                        poste(standPremium, creneauAprem, a1))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void deuxAnimateursDifferentsSurStandPremiumAuMemeCreneauNEstPasPenalise() {
+        // Simultaneous multi-staffing on the same slot is not a rotation.
+        verify("eviterRoulementStandsPremium")
+                .given(poste(standPremium, creneauMatin, majeurReferent("A1")),
+                        poste(standPremium, creneauMatin, majeurReferent("A2")))
                 .penalizesBy(0);
     }
 }

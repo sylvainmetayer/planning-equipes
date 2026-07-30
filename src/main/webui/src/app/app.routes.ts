@@ -13,11 +13,7 @@ export const routes: Routes = [
     title: 'Data setup — Planning Équipes',
     loadComponent: () => import('./pages/data-setup/data-setup-page').then((m) => m.DataSetupPage)
   },
-  {
-    path: 'exports',
-    title: 'Exports — Planning Équipes',
-    loadComponent: () => import('./pages/exports/exports-page').then((m) => m.ExportsPage)
-  },
+  { path: 'exports', redirectTo: 'solver' },
   {
     path: 'data-transfer',
     title: 'Data transfer — Planning Équipes',
@@ -62,6 +58,11 @@ export const routes: Routes = [
     path: 'constraints',
     title: 'Constraints — Planning Équipes',
     loadComponent: () => import('./pages/constraints/constraints-page').then((m) => m.ConstraintsPage)
+  },
+  {
+    path: 'hours',
+    title: 'Hours — Planning Équipes',
+    loadComponent: () => import('./pages/hours/hours-page').then((m) => m.HoursPage)
   },
   { path: '**', redirectTo: 'solver' }
 ];

@@ -2,7 +2,11 @@ package dev.sylvain.planning.domain;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.temporal.IsoFields;
+import java.util.HashSet;
+import java.util.Locale;
 import java.util.Objects;
+import java.util.Set;
 
 public class Creneau {
 
@@ -11,6 +15,8 @@ public class Creneau {
     private LocalDate date;
     private LocalTime heureDebut;
     private LocalTime heureFin;
+    /** Empty = every stand is open on this timeslot (the default). */
+    private Set<String> standsOuvertsIds = new HashSet<>();
 
     public Creneau() {
     }
@@ -63,6 +69,19 @@ public class Creneau {
         this.heureFin = heureFin;
     }
 
+    public Set<String> getStandsOuvertsIds() {
+        return standsOuvertsIds;
+    }
+
+    public void setStandsOuvertsIds(Set<String> standsOuvertsIds) {
+        this.standsOuvertsIds = standsOuvertsIds != null ? standsOuvertsIds : new HashSet<>();
+    }
+
+    /** True when the given stand is open on this timeslot (open-by-default). */
+    public boolean estStandOuvert(String standId) {
+        return standsOuvertsIds.isEmpty() || standsOuvertsIds.contains(standId);
+    }
+
     /**
      * Duration of the slot in minutes, handling slots that cross midnight
      * (e.g. 20:00 -> 00:00 counts as 240 minutes, not a negative value).
@@ -75,6 +94,21 @@ public class Creneau {
         int fin = heureFin.toSecondOfDay();
         int seconds = fin > debut ? fin - debut : (24 * 3600 - debut) + fin;
         return seconds / 60;
+    }
+
+    /**
+     * ISO calendar week (e.g. {@code "2026-W28"}) the slot's {@link #date}
+     * falls in. Used to group worked minutes per animateur and week, both for
+     * reporting ({@code HeuresPlanningService}) and for the weekly max
+     * working-time hard constraint.
+     */
+    public String semaineIso() {
+        if (date == null) {
+            return "?";
+        }
+        int annee = date.get(IsoFields.WEEK_BASED_YEAR);
+        int semaine = date.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR);
+        return String.format(Locale.ROOT, "%d-W%02d", annee, semaine);
     }
 
     /**

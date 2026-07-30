@@ -27,7 +27,7 @@ animateurs:
     prenom: Alice
     nom: Referente
     dateNaissance: 2002-07-19
-    statut: BENEVOLE
+    manager: false
     competences:
       STRATEGIE: REFERENT
     joursIndisponibles: []
@@ -35,7 +35,7 @@ animateurs:
     prenom: Bruno
     nom: Autonome
     dateNaissance: 2007-07-19
-    statut: BENEVOLE
+    manager: false
     competences:
       STRATEGIE: AUTONOME
     joursIndisponibles: []
@@ -43,7 +43,7 @@ animateurs:
     prenom: Chloe
     nom: Junior
     dateNaissance: 2010-07-19
-    statut: BENEVOLE
+    manager: false
     competences:
       STRATEGIE: DEBUTANT
     joursIndisponibles: []

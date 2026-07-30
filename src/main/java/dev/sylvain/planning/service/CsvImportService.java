@@ -15,7 +15,6 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.domain.StatutAnimateur;
 import dev.sylvain.planning.domain.TypologieJeu;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -29,10 +28,11 @@ import jakarta.inject.Inject;
  * Files use a header line, {@code ;} or {@code ,} as separator (auto-detected
  * from the header) and the following columns:
  * <ul>
- * <li>animateurs: {@code id;prenom;nom;dateNaissance;statut;competences;joursIndisponibles}
- * where {@code competences} is {@code STRATEGIE:REFERENT|AMBIANCE:AUTONOME} and
+ * <li>animateurs: {@code id;prenom;nom;dateNaissance;manager;competences;joursIndisponibles}
+ * where {@code manager} is {@code true}/{@code false} (optional, defaults to {@code false}),
+ * {@code competences} is {@code STRATEGIE:REFERENT|AMBIANCE:AUTONOME} and
  * {@code joursIndisponibles} is {@code 2026-07-02|2026-07-03}</li>
- * <li>stands: {@code id;nom;typologies;effectifMin;effectifMax;reserveMajeurs}
+ * <li>stands: {@code id;nom;typologies;effectifMin;effectifMax;reserveMajeurs;premium}
  * where {@code typologies} is {@code STRATEGIE|ENFANT}</li>
  * <li>creneaux: {@code id;jour;date;heureDebut;heureFin}</li>
  * </ul>
@@ -47,8 +47,8 @@ public class CsvImportService {
 
     public int importAnimateurs(String csv) {
         CsvTable table = CsvTable.parse(csv,
-                List.of("id", "prenom", "nom", "dateNaissance", "statut"),
-                List.of("competences", "joursIndisponibles"));
+                List.of("id", "prenom", "nom", "dateNaissance"),
+                List.of("manager", "competences", "joursIndisponibles"));
         List<Animateur> animateurs = new ArrayList<>();
         Set<String> ids = new LinkedHashSet<>();
         for (CsvRow row : table.rows()) {
@@ -57,7 +57,7 @@ public class CsvImportService {
             animateur.setPrenom(row.required("prenom"));
             animateur.setNom(row.required("nom"));
             animateur.setDateNaissance(row.date("dateNaissance"));
-            animateur.setStatut(row.enumValue("statut", StatutAnimateur.class));
+            animateur.setManager(row.bool("manager"));
             animateur.setCompetences(parseCompetences(row));
             animateur.setJoursIndisponibles(parseJoursIndisponibles(row));
             animateurs.add(animateur);
@@ -69,7 +69,7 @@ public class CsvImportService {
     public int importStands(String csv) {
         CsvTable table = CsvTable.parse(csv,
                 List.of("id", "nom", "effectifMin", "effectifMax"),
-                List.of("typologies", "reserveMajeurs"));
+                List.of("typologies", "reserveMajeurs", "premium"));
         List<Stand> stands = new ArrayList<>();
         Set<String> ids = new LinkedHashSet<>();
         for (CsvRow row : table.rows()) {
@@ -83,6 +83,7 @@ public class CsvImportService {
                         row.prefix() + "effectifMin cannot be greater than effectifMax");
             }
             stand.setReserveMajeurs(row.bool("reserveMajeurs"));
+            stand.setPremium(row.bool("premium"));
             Set<TypologieJeu> typologies = new LinkedHashSet<>();
             for (String value : row.multi("typologies")) {
                 typologies.add(row.parseEnum("typologies", value, TypologieJeu.class));

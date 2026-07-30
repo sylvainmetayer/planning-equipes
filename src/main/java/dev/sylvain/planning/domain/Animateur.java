@@ -14,19 +14,19 @@ public class Animateur {
     private String prenom;
     private String nom;
     private LocalDate dateNaissance;
-    private StatutAnimateur statut;
+    private boolean manager;
     private Map<TypologieJeu, NiveauCompetence> competences = new HashMap<>();
     private Set<LocalDate> joursIndisponibles = new HashSet<>();
 
     public Animateur() {
     }
 
-    public Animateur(String id, String prenom, String nom, LocalDate dateNaissance, StatutAnimateur statut) {
+    public Animateur(String id, String prenom, String nom, LocalDate dateNaissance, boolean manager) {
         this.id = id;
         this.prenom = prenom;
         this.nom = nom;
         this.dateNaissance = dateNaissance;
-        this.statut = statut;
+        this.manager = manager;
     }
 
     /**
@@ -98,12 +98,13 @@ public class Animateur {
         this.dateNaissance = dateNaissance;
     }
 
-    public StatutAnimateur getStatut() {
-        return statut;
+    /** Manages other animateurs; every animateur (manager or not) is paid. */
+    public boolean isManager() {
+        return manager;
     }
 
-    public void setStatut(StatutAnimateur statut) {
-        this.statut = statut;
+    public void setManager(boolean manager) {
+        this.manager = manager;
     }
 
     public Map<TypologieJeu, NiveauCompetence> getCompetences() {

@@ -2,6 +2,37 @@
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
+    <mat-card-title>Legal parameters</mat-card-title>
+    <mat-card-subtitle>
+      Weekly working-time cap enforced by the <code>dureeHebdomadaireMax</code> hard constraint, for every
+      animateur (all paid). Default 48h (Code du travail art. L3121-20 / Convention collective de l'Animation).
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <form class="form-grid" (ngSubmit)="saveParametresLegaux()">
+      <mat-form-field appearance="outline">
+        <mat-label>Max weekly working time (hours)</mat-label>
+        <input matInput type="number" min="1" step="0.5" name="dureeHebdomadaireMaxHeures"
+               [ngModel]="dureeHebdomadaireMaxHeures()" (ngModelChange)="dureeHebdomadaireMaxHeures.set($event)" />
+      </mat-form-field>
+      <div class="form-actions">
+        <button matButton="filled" type="submit" [disabled]="parametresLoading()">
+          <mat-icon>save</mat-icon>
+          Save
+        </button>
+        @if (parametresSaved()) {
+          <span class="calendar-meta">Saved.</span>
+        }
+      </div>
+    </form>
+    @if (parametresError()) {
+      <p class="calendar-empty">{{ parametresError() }}</p>
+    }
+  </mat-card-content>
+</mat-card>
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
     <mat-card-title>Active constraints</mat-card-title>
     <mat-card-subtitle>
       Business description of every rule enforced by the solver, with the result of the latest analysis.

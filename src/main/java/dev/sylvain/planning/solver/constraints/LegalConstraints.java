@@ -6,13 +6,17 @@ import ai.timefold.solver.core.api.score.stream.ConstraintCollectors;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
 import ai.timefold.solver.core.api.score.stream.Joiners;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PosteAffectation;
 
 /**
- * Legal / safety hard constraints tied to the protection of minors (cahier des
- * charges 4.1 and 4.2). These must never be violated in a valid plan:
- * majeur-only stands, mandatory adult supervision, no night work, capped daily
- * working time and minimum daily rest for minors.
+ * Legal / safety hard constraints. Most are tied to the protection of minors
+ * (cahier des charges 4.1 and 4.2): majeur-only stands, mandatory adult
+ * supervision, no night work, capped daily working time and minimum daily
+ * rest for minors. {@link #dureeHebdomadaireMax} applies to every animateur
+ * (all paid, manager or not) and caps weekly working time against the
+ * admin-configurable {@link ParametresLegaux}. None of these may ever be
+ * violated in a valid plan.
  */
 public final class LegalConstraints {
 
@@ -24,7 +28,8 @@ public final class LegalConstraints {
                 mineurNecessiteEncadrementMajeur(constraintFactory),
                 travailDeNuitInterditPourMineur(constraintFactory),
                 dureeQuotidienneMaxMineur(constraintFactory),
-                reposQuotidienMineur(constraintFactory)
+                reposQuotidienMineur(constraintFactory),
+                dureeHebdomadaireMax(constraintFactory)
         };
     }
 
@@ -87,6 +92,21 @@ public final class LegalConstraints {
                         && reposInsuffisant(posteA.getCreneau(), posteB.getCreneau()))
                 .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint("reposQuotidienMineur");
+    }
+
+    private Constraint dureeHebdomadaireMax(ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(PosteAffectation.class)
+                .filter(poste -> poste.getAnimateur() != null && poste.getCreneau() != null)
+                .groupBy(PosteAffectation::getAnimateur,
+                        poste -> poste.getCreneau().semaineIso(),
+                        ConstraintCollectors.sum(poste -> poste.getCreneau().getDureeMinutes()))
+                .join(ParametresLegaux.class)
+                .filter((animateur, semaine, dureeTotale, parametres) ->
+                        dureeTotale > parametres.getDureeHebdomadaireMaxMinutes())
+                .penalize(HardMediumSoftScore.ONE_HARD,
+                        (animateur, semaine, dureeTotale, parametres) ->
+                                dureeTotale - parametres.getDureeHebdomadaireMaxMinutes())
+                .asConstraint("dureeHebdomadaireMax");
     }
 
     private boolean reposInsuffisant(Creneau a, Creneau b) {

@@ -6,6 +6,7 @@ import java.util.List;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.Stand;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -62,6 +63,7 @@ public class ReferenceDataService {
 
     public Stand createStand(Stand stand) {
         stand.setId(requiredId(stand.getId(), "stand id"));
+        validateEffectifs(stand);
         repository.saveStand(stand);
         return stand;
     }
@@ -71,8 +73,17 @@ public class ReferenceDataService {
             throw new NotFoundException("Stand not found: " + id);
         }
         stand.setId(id);
+        validateEffectifs(stand);
         repository.saveStand(stand);
         return stand;
+    }
+
+    private void validateEffectifs(Stand stand) {
+        if (stand.getEffectifMin() > stand.getEffectifMax()) {
+            throw new IllegalArgumentException(
+                    "effectifMin (" + stand.getEffectifMin() + ") cannot be greater than effectifMax ("
+                            + stand.getEffectifMax() + ")");
+        }
     }
 
     public void deleteStand(String id) {
@@ -162,6 +173,20 @@ public class ReferenceDataService {
         if (repository != null) {
             repository.importFromPlanning(planning);
         }
+    }
+
+    /* --------------------------- Legal parameters --------------------------- */
+
+    public ParametresLegaux getParametresLegaux() {
+        return repository == null ? new ParametresLegaux() : repository.getParametresLegaux();
+    }
+
+    public ParametresLegaux updateParametresLegaux(ParametresLegaux parametres) {
+        if (parametres.getDureeHebdomadaireMaxMinutes() <= 0) {
+            throw new IllegalArgumentException("dureeHebdomadaireMaxMinutes must be positive");
+        }
+        repository.saveParametresLegaux(parametres);
+        return parametres;
     }
 
     private String requiredId(String id, String fieldName) {

@@ -2,6 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatExpansionModule } from '@angular/material/expansion';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -10,6 +11,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
+import { SolverJobService } from '../../core/solver-job.service';
 import { ContrainteAdHoc, TypeContrainteAdHoc } from '../../core/models';
 
 const CONTRAINTE_TYPES: { value: TypeContrainteAdHoc; label: string }[] = [
@@ -40,6 +42,7 @@ interface ContrainteDraft {
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
+    MatExpansionModule,
     MatButtonModule,
     MatIconModule,
     MatTableModule,
@@ -57,6 +60,9 @@ export class AdHocConstraintsPage {
   protected readonly formTitle = computed(() =>
     this.editingId() ? `Edit constraint ${this.editingId()}` : 'New ad hoc constraint'
   );
+  protected readonly jobs = inject(SolverJobService);
+  /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
+  protected readonly editingLocked = computed(() => this.jobs.solverBusy());
 
   private readonly crud = inject(ReferenceCrudService);
 

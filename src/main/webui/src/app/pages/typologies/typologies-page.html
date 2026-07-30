@@ -1,10 +1,15 @@
 <mat-card appearance="outlined" class="page-card" [class.is-editing]="editingId()">
-  <mat-card-header>
-    <mat-card-title>{{ formTitle() }}</mat-card-title>
-    <mat-card-subtitle>Game families used by stand offers and animator skills.</mat-card-subtitle>
-  </mat-card-header>
-  <mat-card-content>
-    <form class="form-grid" (ngSubmit)="save()">
+  <mat-accordion>
+    <mat-expansion-panel [expanded]="true">
+      <mat-expansion-panel-header>
+        <mat-panel-title>{{ formTitle() }}</mat-panel-title>
+        <mat-panel-description>Game families used by stand offers and animator skills.</mat-panel-description>
+      </mat-expansion-panel-header>
+      <form class="form-grid" (ngSubmit)="save()">
+      <fieldset class="form-fieldset" [disabled]="editingLocked()">
+      @if (editingLocked()) {
+        <p class="locked-hint span-2">Editing is locked while the solver is running.</p>
+      }
       <mat-form-field appearance="outline">
         <mat-label>Id</mat-label>
         <input matInput name="id" required [readonly]="!!editingId()"
@@ -21,8 +26,10 @@
         </button>
         <button matButton type="button" (click)="cancel()">Cancel</button>
       </div>
-    </form>
-  </mat-card-content>
+      </fieldset>
+      </form>
+    </mat-expansion-panel>
+  </mat-accordion>
 </mat-card>
 
 <mat-card appearance="outlined" class="page-card">
@@ -42,10 +49,11 @@
       <ng-container matColumnDef="actions">
         <th mat-header-cell *matHeaderCellDef aria-label="Actions"></th>
         <td mat-cell *matCellDef="let typologie" class="row-actions">
-          <button matIconButton matTooltip="Edit" aria-label="Edit" (click)="edit(typologie)">
+          <button matIconButton matTooltip="Edit" aria-label="Edit" [disabled]="editingLocked()" (click)="edit(typologie)">
             <mat-icon>edit</mat-icon>
           </button>
-          <button matIconButton matTooltip="Delete" aria-label="Delete" class="danger-action" (click)="remove(typologie)">
+          <button matIconButton matTooltip="Delete" aria-label="Delete" class="danger-action" [disabled]="editingLocked()"
+                  (click)="remove(typologie)">
             <mat-icon>delete</mat-icon>
           </button>
         </td>

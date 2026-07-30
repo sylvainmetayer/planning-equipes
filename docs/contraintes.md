@@ -33,6 +33,7 @@ Source : `solver/ConstraintCatalog.java` (description métier) et
 | `travailDeNuitInterditPourMineur` | Pas de créneau empiétant sur la nuit pour un mineur |
 | `dureeQuotidienneMaxMineur` | Maximum 8 h de présence sur une même journée pour un mineur |
 | `reposQuotidienMineur` | Après un créneau de nuit, pas de reprise avant midi le lendemain (~12 h de repos) |
+| `dureeHebdomadaireMax` | Aucun animateur (tous payés) ne dépasse la durée hebdomadaire maximale paramétrée (48 h par défaut) — voir `ParametresLegaux` dans [`domaine.md`](domaine.md) |
 
 ### Dures — exceptions administrateur (`AdHocConstraints`)
 
@@ -49,6 +50,8 @@ Source : `solver/ConstraintCatalog.java` (description métier) et
 | `standComplexeAvecReferent` | Au moins un référent par stand et par créneau |
 | `equilibrerCharge` | Répartition équitable de la charge entre animateurs |
 | `repartitionMineursParCreneau` | Pas plus de mineurs que de majeurs sur un stand et un créneau |
+| `experienceRequisePourStandsPremium` | Un stand premium ne devrait pas être tenu par un débutant |
+| `eviterRoulementStandsPremium` | Sur un stand premium, éviter de faire tourner plusieurs animateurs différents |
 
 ### Soft — préférences (`PreferenceConstraints`)
 

@@ -2,6 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatExpansionModule } from '@angular/material/expansion';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -9,6 +10,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
+import { SolverJobService } from '../../core/solver-job.service';
 import { TypologieItem } from '../../core/models';
 
 /** Typologies CRUD: the game families a stand can propose and an animator master. */
@@ -19,6 +21,7 @@ import { TypologieItem } from '../../core/models';
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
+    MatExpansionModule,
     MatButtonModule,
     MatIconModule,
     MatTableModule,
@@ -34,6 +37,9 @@ export class TypologiesPage {
   protected readonly formTitle = computed(() =>
     this.editingId() ? `Edit typology ${this.editingId()}` : 'New typology'
   );
+  protected readonly jobs = inject(SolverJobService);
+  /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
+  protected readonly editingLocked = computed(() => this.jobs.solverBusy());
 
   private readonly crud = inject(ReferenceCrudService);
 

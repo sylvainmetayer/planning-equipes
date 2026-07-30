@@ -18,7 +18,6 @@ import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.domain.StatutAnimateur;
 import dev.sylvain.planning.domain.TypologieJeu;
 import dev.sylvain.planning.solver.PlanningConstraintProvider;
 
@@ -97,10 +96,16 @@ abstract class ConstraintTestBase {
         return stand(id, false, TypologieJeu.STRATEGIE);
     }
 
+    protected static Stand standPremium(String id) {
+        Stand stand = stand(id, false, TypologieJeu.STRATEGIE);
+        stand.setPremium(true);
+        return stand;
+    }
+
     // --- Animateur factories ----------------------------------------------
 
     protected static Animateur animateur(String id, LocalDate naissance, Map<TypologieJeu, NiveauCompetence> comp) {
-        Animateur a = new Animateur(id, id, id, naissance, StatutAnimateur.BENEVOLE);
+        Animateur a = new Animateur(id, id, id, naissance, false);
         a.setCompetences(new HashMap<>(comp));
         return a;
     }

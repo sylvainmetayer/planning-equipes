@@ -40,6 +40,11 @@ public final class ConstraintCatalog {
             new ConstraintDefinition("reposQuotidienMineur", Niveau.HARD, "Légal (mineurs)",
                     "Après un créneau de nuit, un mineur ne peut pas reprendre avant midi le lendemain (repos d'environ 12 h)."),
 
+            new ConstraintDefinition("dureeHebdomadaireMax", Niveau.HARD, "Légal (temps de travail)",
+                    "Aucun animateur (tous payés, manager ou non) ne peut dépasser la durée hebdomadaire de travail "
+                            + "maximale paramétrée (48 h par défaut, Code du travail art. L3121-20 / Convention "
+                            + "collective de l'Animation)."),
+
             new ConstraintDefinition("indisponibiliteForcee", Niveau.HARD, "Contraintes ad hoc",
                     "Indisponibilité posée manuellement par l'administrateur : l'animateur ne doit jamais être affecté sur le périmètre visé."),
             new ConstraintDefinition("incompatibiliteAdHoc", Niveau.HARD, "Contraintes ad hoc",
@@ -53,6 +58,10 @@ public final class ConstraintCatalog {
                     "La charge de travail doit être répartie équitablement entre les animateurs."),
             new ConstraintDefinition("repartitionMineursParCreneau", Niveau.MEDIUM, "Qualité d'organisation",
                     "Sur un créneau, un stand ne devrait pas compter plus de mineurs que de majeurs."),
+            new ConstraintDefinition("experienceRequisePourStandsPremium", Niveau.MEDIUM, "Qualité d'organisation",
+                    "Un stand premium ne devrait pas être tenu par un animateur débutant sur sa typologie."),
+            new ConstraintDefinition("eviterRoulementStandsPremium", Niveau.MEDIUM, "Qualité d'organisation",
+                    "Sur un stand premium, éviter de faire tourner plusieurs animateurs différents : on privilégie la continuité."),
 
             new ConstraintDefinition("favoriserRotationDesStands", Niveau.SOFT, "Préférences",
                     "Éviter d'affecter plusieurs fois le même animateur sur le même stand : on privilégie la rotation."),

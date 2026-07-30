@@ -25,9 +25,9 @@ class CsvImportResourceTest {
     @Test
     void animateursCsvReplacesTheWholeTable() {
         String body = """
-                id;prenom;nom;dateNaissance;statut;competences;joursIndisponibles
-                CSV-1;Ada;Lovelace;1990-05-04;BENEVOLE;STRATEGIE:REFERENT|ENFANT:AUTONOME;2026-07-02|2026-07-03
-                CSV-2;Alan;Turing;2010-01-15;SALARIE;;
+                id;prenom;nom;dateNaissance;manager;competences;joursIndisponibles
+                CSV-1;Ada;Lovelace;1990-05-04;false;STRATEGIE:REFERENT|ENFANT:AUTONOME;2026-07-02|2026-07-03
+                CSV-2;Alan;Turing;2010-01-15;true;;
                 """;
 
         csv(body)
@@ -44,7 +44,7 @@ class CsvImportResourceTest {
                 .body("id", hasItem("CSV-1"))
                 .body("find { it.id == 'CSV-1' }.competences.STRATEGIE", equalTo("REFERENT"))
                 .body("find { it.id == 'CSV-1' }.joursIndisponibles.size()", equalTo(2))
-                .body("find { it.id == 'CSV-2' }.statut", equalTo("SALARIE"));
+                .body("find { it.id == 'CSV-2' }.manager", equalTo(true));
     }
 
     @Test
@@ -87,8 +87,8 @@ class CsvImportResourceTest {
     @Test
     void invalidCsvIsRejectedWithAnExplicitMessage() {
         csv("""
-                id;prenom;nom;statut
-                CSV-1;Ada;Lovelace;BENEVOLE
+                id;prenom;nom;manager
+                CSV-1;Ada;Lovelace;false
                 """)
                 .when().post("/api/import/csv/animateurs")
                 .then()
@@ -113,7 +113,7 @@ class CsvImportResourceTest {
                 .statusCode(400)
                 .body("message", containsString("must be one of"));
 
-        csv("id;prenom;nom;dateNaissance;statut\n")
+        csv("id;prenom;nom;dateNaissance;manager\n")
                 .when().post("/api/import/csv/animateurs")
                 .then()
                 .statusCode(400)

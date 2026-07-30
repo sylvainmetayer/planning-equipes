@@ -30,7 +30,6 @@ const NAV_GROUPS: NavGroup[] = [
     links: [
       { path: '/solver', label: 'Solver', icon: 'play_circle' },
       { path: '/data-setup', label: 'Data setup', icon: 'database' },
-      { path: '/exports', label: 'Exports', icon: 'download' },
       { path: '/data-transfer', label: 'Data transfer', icon: 'swap_vert' }
     ]
   },
@@ -49,7 +48,8 @@ const NAV_GROUPS: NavGroup[] = [
     links: [
       { path: '/calendar', label: 'Assignment calendar', icon: 'calendar_month' },
       { path: '/day-calendar', label: 'Day calendar', icon: 'view_day' },
-      { path: '/constraints', label: 'Constraints', icon: 'fact_check' }
+      { path: '/constraints', label: 'Constraints', icon: 'fact_check' },
+      { path: '/hours', label: 'Hours', icon: 'schedule' }
     ]
   }
 ];

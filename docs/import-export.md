@@ -26,24 +26,28 @@ Règles de format :
 
 | Entité | Colonnes |
 | --- | --- |
-| `animateurs` | `id;prenom;nom;dateNaissance;statut;competences;joursIndisponibles` |
-| `stands` | `id;nom;typologies;effectifMin;effectifMax;reserveMajeurs` |
+| `animateurs` | `id;prenom;nom;dateNaissance;manager;competences;joursIndisponibles` |
+| `stands` | `id;nom;typologies;effectifMin;effectifMax;reserveMajeurs;premium` |
 | `creneaux` | `id;jour;date;heureDebut;heureFin` |
 
-- `statut` : `BENEVOLE` ou `SALARIE`
+- `manager` : `true` / `false` (colonne facultative, vide = `false`) — anime et encadre d'autres
+  animateurs ; tous les animateurs sont payés, il n'existe plus de distinction bénévole/salarié
 - `competences` : `STRATEGIE:REFERENT|ENFANT:AUTONOME`
   (typologies : `STRATEGIE, AMBIANCE, ENFANT, COOPERATIF, ADRESSE, ROLE, ENIGME` ;
   niveaux : `DEBUTANT, AUTONOME, REFERENT`)
 - `joursIndisponibles` : `2026-07-02|2026-07-03` (colonne facultative, vide = toujours disponible)
 - `typologies` : `STRATEGIE|ENFANT`
 - `reserveMajeurs` : `true` / `false` (`1`, `oui`, `yes` acceptés)
+- `premium` : `true` / `false` (colonne facultative, vide = `false`) — stand éditeur/vedette :
+  le solveur évite d'y faire tourner le personnel et privilégie les animateurs expérimentés
+  (`AUTONOME`/`REFERENT`)
 
 Exemple :
 
 ```csv
-id;prenom;nom;dateNaissance;statut;competences;joursIndisponibles
-A-1;Ada;Lovelace;1990-05-04;BENEVOLE;STRATEGIE:REFERENT|ENFANT:AUTONOME;2026-07-02
-A-2;Alan;Turing;2010-01-15;SALARIE;;
+id;prenom;nom;dateNaissance;manager;competences;joursIndisponibles
+A-1;Ada;Lovelace;1990-05-04;true;STRATEGIE:REFERENT|ENFANT:AUTONOME;2026-07-02
+A-2;Alan;Turing;2010-01-15;false;;
 ```
 
 Une ligne invalide annule tout l'import et renvoie un message précisant le numéro

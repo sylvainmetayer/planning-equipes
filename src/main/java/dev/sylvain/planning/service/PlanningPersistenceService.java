@@ -143,10 +143,10 @@ public class PlanningPersistenceService {
             ps.executeBatch();
         }
 
-        String upsertAnimateur = "INSERT INTO animateur (id, prenom, nom, date_naissance, statut) "
+        String upsertAnimateur = "INSERT INTO animateur (id, prenom, nom, date_naissance, manager) "
                 + "VALUES (?, ?, ?, ?, ?) ON CONFLICT (id) DO UPDATE SET "
                 + "prenom = EXCLUDED.prenom, nom = EXCLUDED.nom, "
-                + "date_naissance = EXCLUDED.date_naissance, statut = EXCLUDED.statut";
+                + "date_naissance = EXCLUDED.date_naissance, manager = EXCLUDED.manager";
         try (PreparedStatement ps = connection.prepareStatement(upsertAnimateur)) {
             List<Animateur> animateurs = planning.getAnimateurs() != null
                     ? planning.getAnimateurs()
@@ -157,7 +157,7 @@ public class PlanningPersistenceService {
                 ps.setString(2, animateur.getPrenom());
                 ps.setString(3, animateur.getNom());
                 ps.setObject(4, animateur.getDateNaissance());
-                ps.setString(5, animateur.getStatut() != null ? animateur.getStatut().name() : null);
+                ps.setBoolean(5, animateur.isManager());
                 ps.addBatch();
             }
             ps.executeBatch();

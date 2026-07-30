@@ -11,12 +11,13 @@ function stand(id: string, effectifMax: number): Stand {
     typologiesProposees: ['STRATEGIE'],
     effectifMin: 1,
     effectifMax,
-    reserveMajeurs: false
+    reserveMajeurs: false,
+    premium: false
   };
 }
 
 function creneau(id: string): Creneau {
-  return { id, jour: 1, date: '2026-07-08', heureDebut: '09:00', heureFin: '13:00' };
+  return { id, jour: 1, date: '2026-07-08', heureDebut: '09:00', heureFin: '13:00', standsOuvertsIds: [] };
 }
 
 function animateur(id: string): Animateur {
@@ -25,7 +26,7 @@ function animateur(id: string): Animateur {
     prenom: id,
     nom: id,
     dateNaissance: '2000-01-01',
-    statut: 'BENEVOLE',
+    manager: false,
     competences: { STRATEGIE: 'REFERENT' },
     joursIndisponibles: []
   };

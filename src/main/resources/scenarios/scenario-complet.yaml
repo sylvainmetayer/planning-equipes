@@ -336,7 +336,7 @@ animateurs:
     prenom: Nina
     nom: Blanc
     dateNaissance: 1965-11-03
-    statut: BENEVOLE
+    manager: false
     competences:
       ADRESSE: AUTONOME
     joursIndisponibles:
@@ -346,7 +346,7 @@ animateurs:
     prenom: Jules
     nom: Roux
     dateNaissance: 1971-07-19
-    statut: BENEVOLE
+    manager: false
     competences:
       AMBIANCE: AUTONOME
     joursIndisponibles:
@@ -358,7 +358,7 @@ animateurs:
     prenom: Berenice
     nom: Richard
     dateNaissance: 1962-12-09
-    statut: BENEVOLE
+    manager: false
     competences:
       ADRESSE: REFERENT
     joursIndisponibles:
@@ -369,7 +369,7 @@ animateurs:
     prenom: Iris
     nom: Henry
     dateNaissance: 1996-12-10
-    statut: BENEVOLE
+    manager: false
     competences:
       COOPERATIF: AUTONOME
       ADRESSE: DEBUTANT
@@ -382,7 +382,7 @@ animateurs:
     prenom: Adrien
     nom: Petit
     dateNaissance: 2009-06-14
-    statut: BENEVOLE
+    manager: false
     competences:
       ROLE: AUTONOME
     joursIndisponibles:
@@ -396,7 +396,7 @@ animateurs:
     prenom: Karim
     nom: Michel
     dateNaissance: 1995-07-02
-    statut: SALARIE
+    manager: true
     competences:
       COOPERATIF: DEBUTANT
     joursIndisponibles: []
@@ -404,7 +404,7 @@ animateurs:
     prenom: Tania
     nom: Garcia
     dateNaissance: 1960-02-01
-    statut: BENEVOLE
+    manager: false
     competences:
       STRATEGIE: DEBUTANT
       ENIGME: DEBUTANT
@@ -417,7 +417,7 @@ animateurs:
     prenom: Thibault
     nom: Simon
     dateNaissance: 1968-05-17
-    statut: BENEVOLE
+    manager: false
     competences:
       STRATEGIE: AUTONOME
     joursIndisponibles:
@@ -428,7 +428,7 @@ animateurs:
     prenom: Noemie
     nom: Muller
     dateNaissance: 1993-03-26
-    statut: BENEVOLE
+    manager: false
     competences:
       STRATEGIE: AUTONOME
       AMBIANCE: DEBUTANT
@@ -438,7 +438,7 @@ animateurs:
     prenom: Yasmine
     nom: Morin
     dateNaissance: 1992-01-23
-    statut: BENEVOLE
+    manager: false
     competences:
       ENIGME: DEBUTANT
       ADRESSE: DEBUTANT
@@ -450,7 +450,7 @@ animateurs:
     prenom: Olivier
     nom: Fontaine
     dateNaissance: 1960-04-22
-    statut: BENEVOLE
+    manager: false
     competences:
       AMBIANCE: DEBUTANT
     joursIndisponibles:
@@ -461,7 +461,7 @@ animateurs:
     prenom: Jules
     nom: Fontaine
     dateNaissance: 1960-08-20
-    statut: BENEVOLE
+    manager: false
     competences:
       COOPERATIF: REFERENT
       ADRESSE: AUTONOME
@@ -474,7 +474,7 @@ animateurs:
     prenom: William
     nom: Moreau
     dateNaissance: 1982-09-24
-    statut: BENEVOLE
+    manager: false
     competences:
       AMBIANCE: DEBUTANT
       COOPERATIF: AUTONOME
@@ -485,7 +485,7 @@ animateurs:
     prenom: Elise
     nom: Blanc
     dateNaissance: 2010-08-23
-    statut: BENEVOLE
+    manager: false
     competences:
       AMBIANCE: AUTONOME
       ADRESSE: AUTONOME
@@ -500,7 +500,7 @@ animateurs:
     prenom: William
     nom: Roux
     dateNaissance: 1985-02-17
-    statut: BENEVOLE
+    manager: false
     competences:
       ENIGME: AUTONOME
     joursIndisponibles: []
@@ -508,7 +508,7 @@ animateurs:
     prenom: Jules
     nom: Henry
     dateNaissance: 1978-11-23
-    statut: BENEVOLE
+    manager: false
     competences:
       STRATEGIE: DEBUTANT
     joursIndisponibles:
@@ -517,7 +517,7 @@ animateurs:
     prenom: Wafa
     nom: David
     dateNaissance: 2010-10-10
-    statut: BENEVOLE
+    manager: false
     competences:
       ENFANT: REFERENT
       AMBIANCE: DEBUTANT
@@ -526,7 +526,7 @@ animateurs:
     prenom: Emma
     nom: Blanc
     dateNaissance: 1992-11-19
-    statut: BENEVOLE
+    manager: false
     competences:
       COOPERATIF: DEBUTANT
     joursIndisponibles:
@@ -536,7 +536,7 @@ animateurs:
     prenom: Wafa
     nom: Blanc
     dateNaissance: 1972-01-25
-    statut: BENEVOLE
+    manager: false
     competences:
       ADRESSE: AUTONOME
       ROLE: DEBUTANT
@@ -546,7 +546,7 @@ animateurs:
     prenom: Olivier
     nom: Fontaine
     dateNaissance: 1963-03-10
-    statut: BENEVOLE
+    manager: false
     competences:
       COOPERATIF: REFERENT
       STRATEGIE: REFERENT
@@ -559,7 +559,7 @@ animateurs:
     prenom: Gabrielle
     nom: Leroy
     dateNaissance: 1990-12-10
-    statut: BENEVOLE
+    manager: false
     competences:
       ROLE: AUTONOME
       COOPERATIF: AUTONOME
@@ -570,7 +570,7 @@ animateurs:
     prenom: Valentine
     nom: Perrin
     dateNaissance: 1974-07-11
-    statut: BENEVOLE
+    manager: false
     competences:
       ENIGME: DEBUTANT
       ADRESSE: DEBUTANT
@@ -582,7 +582,7 @@ animateurs:
     prenom: Diane
     nom: Morin
     dateNaissance: 1974-03-03
-    statut: BENEVOLE
+    manager: false
     competences:
       ADRESSE: AUTONOME
       ENFANT: AUTONOME
@@ -594,7 +594,7 @@ animateurs:
     prenom: Quitterie
     nom: Blanc
     dateNaissance: 1968-02-21
-    statut: BENEVOLE
+    manager: false
     competences:
       ENIGME: DEBUTANT
       COOPERATIF: DEBUTANT
@@ -606,7 +606,7 @@ animateurs:
     prenom: Remi
     nom: Lefebvre
     dateNaissance: 1973-06-03
-    statut: BENEVOLE
+    manager: false
     competences:
       ENFANT: AUTONOME
     joursIndisponibles: []
@@ -614,7 +614,7 @@ animateurs:
     prenom: Chloe
     nom: Guerin
     dateNaissance: 1980-08-08
-    statut: BENEVOLE
+    manager: false
     competences:
       ROLE: DEBUTANT
     joursIndisponibles:
@@ -624,7 +624,7 @@ animateurs:
     prenom: Pauline
     nom: Vincent
     dateNaissance: 1997-05-02
-    statut: SALARIE
+    manager: true
     competences:
       ADRESSE: AUTONOME
       STRATEGIE: AUTONOME
@@ -635,7 +635,7 @@ animateurs:
     prenom: Perrine
     nom: Rousseau
     dateNaissance: 1973-12-28
-    statut: BENEVOLE
+    manager: false
     competences:
       AMBIANCE: DEBUTANT
       COOPERATIF: AUTONOME
@@ -645,7 +645,7 @@ animateurs:
     prenom: Oscar
     nom: Roussel
     dateNaissance: 1973-10-20
-    statut: BENEVOLE
+    manager: false
     competences:
       STRATEGIE: DEBUTANT
       ADRESSE: DEBUTANT
@@ -657,7 +657,7 @@ animateurs:
     prenom: Florian
     nom: Bertrand
     dateNaissance: 2006-04-13
-    statut: BENEVOLE
+    manager: false
     competences:
       STRATEGIE: DEBUTANT
     joursIndisponibles:
@@ -668,7 +668,7 @@ animateurs:
     prenom: Noemie
     nom: Garcia
     dateNaissance: 1985-02-14
-    statut: BENEVOLE
+    manager: false
     competences:
       COOPERATIF: AUTONOME
     joursIndisponibles:
@@ -679,7 +679,7 @@ animateurs:
     prenom: Emma
     nom: Richard
     dateNaissance: 1968-08-15
-    statut: BENEVOLE
+    manager: false
     competences:
       COOPERATIF: AUTONOME
       ROLE: REFERENT
@@ -691,7 +691,7 @@ animateurs:
     prenom: Fabien
     nom: Bertrand
     dateNaissance: 2006-04-23
-    statut: BENEVOLE
+    manager: false
     competences:
       ADRESSE: AUTONOME
       ENIGME: DEBUTANT
@@ -703,7 +703,7 @@ animateurs:
     prenom: Victor
     nom: Blanc
     dateNaissance: 2003-11-22
-    statut: BENEVOLE
+    manager: false
     competences:
       STRATEGIE: DEBUTANT
       ENFANT: REFERENT
@@ -714,7 +714,7 @@ animateurs:
     prenom: Marc
     nom: Laurent
     dateNaissance: 1972-08-15
-    statut: BENEVOLE
+    manager: false
     competences:
       ADRESSE: AUTONOME
       ENIGME: DEBUTANT
@@ -727,7 +727,7 @@ animateurs:
     prenom: Bruno
     nom: Simon
     dateNaissance: 1963-11-11
-    statut: BENEVOLE
+    manager: false
     competences:
       STRATEGIE: DEBUTANT
     joursIndisponibles: []
@@ -735,7 +735,7 @@ animateurs:
     prenom: Elise
     nom: Bernard
     dateNaissance: 1985-05-24
-    statut: SALARIE
+    manager: true
     competences:
       ENFANT: DEBUTANT
     joursIndisponibles:
@@ -747,7 +747,7 @@ animateurs:
     prenom: Ugo
     nom: Mathieu
     dateNaissance: 1983-09-16
-    statut: BENEVOLE
+    manager: false
     competences:
       ENFANT: DEBUTANT
     joursIndisponibles:
@@ -758,7 +758,7 @@ animateurs:
     prenom: Laura
     nom: Roux
     dateNaissance: 2002-02-11
-    statut: BENEVOLE
+    manager: false
     competences:
       COOPERATIF: AUTONOME
       ADRESSE: DEBUTANT
@@ -767,7 +767,7 @@ animateurs:
     prenom: Jules
     nom: Thomas
     dateNaissance: 1992-12-15
-    statut: BENEVOLE
+    manager: false
     competences:
       ENFANT: DEBUTANT
       ROLE: DEBUTANT
@@ -781,7 +781,7 @@ animateurs:
     prenom: Xavier
     nom: Garcia
     dateNaissance: 1973-03-20
-    statut: BENEVOLE
+    manager: false
     competences:
       ENFANT: DEBUTANT
     joursIndisponibles: []
@@ -789,7 +789,7 @@ animateurs:
     prenom: Umberto
     nom: Morin
     dateNaissance: 1972-01-27
-    statut: BENEVOLE
+    manager: false
     competences:
       STRATEGIE: REFERENT
     joursIndisponibles:
@@ -800,7 +800,7 @@ animateurs:
     prenom: Romane
     nom: Garcia
     dateNaissance: 2002-01-10
-    statut: BENEVOLE
+    manager: false
     competences:
       COOPERATIF: REFERENT
       AMBIANCE: REFERENT
@@ -813,7 +813,7 @@ animateurs:
     prenom: Marc
     nom: Laurent
     dateNaissance: 2004-07-17
-    statut: BENEVOLE
+    manager: false
     competences:
       ENFANT: DEBUTANT
       ADRESSE: REFERENT
@@ -825,7 +825,7 @@ animateurs:
     prenom: Sarah
     nom: Rousseau
     dateNaissance: 2009-05-21
-    statut: BENEVOLE
+    manager: false
     competences:
       ADRESSE: AUTONOME
       AMBIANCE: DEBUTANT
@@ -836,7 +836,7 @@ animateurs:
     prenom: Yanis
     nom: Moreau
     dateNaissance: 1964-12-16
-    statut: BENEVOLE
+    manager: false
     competences:
       ADRESSE: DEBUTANT
       ROLE: DEBUTANT
@@ -846,7 +846,7 @@ animateurs:
     prenom: Marc
     nom: Henry
     dateNaissance: 1988-05-21
-    statut: SALARIE
+    manager: true
     competences:
       ROLE: AUTONOME
     joursIndisponibles:
@@ -857,7 +857,7 @@ animateurs:
     prenom: Diane
     nom: Rousseau
     dateNaissance: 1977-03-28
-    statut: BENEVOLE
+    manager: false
     competences:
       AMBIANCE: DEBUTANT
       STRATEGIE: AUTONOME
@@ -869,7 +869,7 @@ animateurs:
     prenom: Karim
     nom: Lefebvre
     dateNaissance: 1963-05-23
-    statut: SALARIE
+    manager: true
     competences:
       ENFANT: DEBUTANT
       ADRESSE: REFERENT
@@ -878,7 +878,7 @@ animateurs:
     prenom: Bruno
     nom: Lefebvre
     dateNaissance: 2008-12-07
-    statut: BENEVOLE
+    manager: false
     competences:
       COOPERATIF: DEBUTANT
     joursIndisponibles:
@@ -892,7 +892,7 @@ animateurs:
     prenom: Iris
     nom: Robert
     dateNaissance: 1986-02-06
-    statut: BENEVOLE
+    manager: false
     competences:
       ADRESSE: AUTONOME
       AMBIANCE: DEBUTANT
@@ -906,7 +906,7 @@ animateurs:
     prenom: Bruno
     nom: Durand
     dateNaissance: 2002-10-02
-    statut: BENEVOLE
+    manager: false
     competences:
       AMBIANCE: AUTONOME
     joursIndisponibles:
@@ -915,7 +915,7 @@ animateurs:
     prenom: Elise
     nom: Durand
     dateNaissance: 1989-12-05
-    statut: BENEVOLE
+    manager: false
     competences:
       ADRESSE: AUTONOME
     joursIndisponibles:
@@ -924,7 +924,7 @@ animateurs:
     prenom: Diane
     nom: Roux
     dateNaissance: 1989-05-12
-    statut: BENEVOLE
+    manager: false
     competences:
       COOPERATIF: REFERENT
       STRATEGIE: AUTONOME
@@ -935,7 +935,7 @@ animateurs:
     prenom: Chloe
     nom: Nicolas
     dateNaissance: 1966-01-25
-    statut: SALARIE
+    manager: true
     competences:
       ENIGME: AUTONOME
     joursIndisponibles:
@@ -946,7 +946,7 @@ animateurs:
     prenom: Laura
     nom: Thomas
     dateNaissance: 1975-03-08
-    statut: SALARIE
+    manager: true
     competences:
       ENFANT: AUTONOME
       ENIGME: DEBUTANT
@@ -956,7 +956,7 @@ animateurs:
     prenom: Thibault
     nom: Nicolas
     dateNaissance: 2004-05-06
-    statut: BENEVOLE
+    manager: false
     competences:
       ENIGME: DEBUTANT
       COOPERATIF: AUTONOME
@@ -969,7 +969,7 @@ animateurs:
     prenom: Yasmine
     nom: Dubois
     dateNaissance: 1990-04-23
-    statut: SALARIE
+    manager: true
     competences:
       AMBIANCE: AUTONOME
       COOPERATIF: AUTONOME
@@ -979,7 +979,7 @@ animateurs:
     prenom: Xavier
     nom: Leroy
     dateNaissance: 1962-11-16
-    statut: BENEVOLE
+    manager: false
     competences:
       COOPERATIF: DEBUTANT
     joursIndisponibles:
@@ -989,7 +989,7 @@ animateurs:
     prenom: Iris
     nom: Richard
     dateNaissance: 1973-01-24
-    statut: BENEVOLE
+    manager: false
     competences:
       COOPERATIF: AUTONOME
     joursIndisponibles:
@@ -1001,7 +1001,7 @@ animateurs:
     prenom: Sarah
     nom: Morin
     dateNaissance: 1970-11-03
-    statut: SALARIE
+    manager: true
     competences:
       ROLE: AUTONOME
     joursIndisponibles:
@@ -1013,7 +1013,7 @@ animateurs:
     prenom: Simon
     nom: Michel
     dateNaissance: 2003-02-27
-    statut: BENEVOLE
+    manager: false
     competences:
       ENFANT: DEBUTANT
     joursIndisponibles: []
@@ -1021,7 +1021,7 @@ animateurs:
     prenom: Xavier
     nom: Simon
     dateNaissance: 2001-05-22
-    statut: BENEVOLE
+    manager: false
     competences:
       ROLE: DEBUTANT
       ENFANT: DEBUTANT
@@ -1033,7 +1033,7 @@ animateurs:
     prenom: Jules
     nom: Bertrand
     dateNaissance: 1982-11-16
-    statut: BENEVOLE
+    manager: false
     competences:
       COOPERATIF: DEBUTANT
       AMBIANCE: DEBUTANT
@@ -1045,7 +1045,7 @@ animateurs:
     prenom: Fabien
     nom: Garcia
     dateNaissance: 2001-04-07
-    statut: BENEVOLE
+    manager: false
     competences:
       ROLE: AUTONOME
       ENFANT: DEBUTANT
@@ -1058,7 +1058,7 @@ animateurs:
     prenom: Zoe
     nom: David
     dateNaissance: 2009-11-14
-    statut: BENEVOLE
+    manager: false
     competences:
       ROLE: AUTONOME
     joursIndisponibles:
@@ -1072,7 +1072,7 @@ animateurs:
     prenom: Ugo
     nom: Nicolas
     dateNaissance: 1973-10-05
-    statut: BENEVOLE
+    manager: false
     competences:
       ENIGME: REFERENT
       ENFANT: AUTONOME
@@ -1085,7 +1085,7 @@ animateurs:
     prenom: Xavier
     nom: Leroy
     dateNaissance: 2010-01-13
-    statut: BENEVOLE
+    manager: false
     competences:
       COOPERATIF: AUTONOME
     joursIndisponibles:
@@ -1099,7 +1099,7 @@ animateurs:
     prenom: Perrine
     nom: Blanc
     dateNaissance: 2010-10-21
-    statut: SALARIE
+    manager: true
     competences:
       ROLE: AUTONOME
       AMBIANCE: DEBUTANT
@@ -1109,7 +1109,7 @@ animateurs:
     prenom: Ines
     nom: Lefebvre
     dateNaissance: 1972-07-12
-    statut: BENEVOLE
+    manager: false
     competences:
       ENIGME: AUTONOME
     joursIndisponibles:
@@ -1121,7 +1121,7 @@ animateurs:
     prenom: Julien
     nom: Roux
     dateNaissance: 1971-11-25
-    statut: BENEVOLE
+    manager: false
     competences:
       ENFANT: AUTONOME
     joursIndisponibles:
@@ -1132,7 +1132,7 @@ animateurs:
     prenom: Hicham
     nom: Dubois
     dateNaissance: 1972-11-03
-    statut: BENEVOLE
+    manager: false
     competences:
       ENFANT: REFERENT
       STRATEGIE: DEBUTANT
@@ -1144,7 +1144,7 @@ animateurs:
     prenom: Ugo
     nom: Leroy
     dateNaissance: 1972-06-04
-    statut: BENEVOLE
+    manager: false
     competences:
       AMBIANCE: DEBUTANT
     joursIndisponibles:
@@ -1156,7 +1156,7 @@ animateurs:
     prenom: Marc
     nom: Muller
     dateNaissance: 1960-04-05
-    statut: SALARIE
+    manager: true
     competences:
       STRATEGIE: AUTONOME
       AMBIANCE: AUTONOME
@@ -1168,7 +1168,7 @@ animateurs:
     prenom: Sarah
     nom: Morin
     dateNaissance: 1961-02-19
-    statut: SALARIE
+    manager: true
     competences:
       ROLE: REFERENT
     joursIndisponibles:
@@ -1179,7 +1179,7 @@ animateurs:
     prenom: Adrien
     nom: Thomas
     dateNaissance: 1959-04-15
-    statut: BENEVOLE
+    manager: false
     competences:
       ENIGME: DEBUTANT
       STRATEGIE: REFERENT
@@ -1191,7 +1191,7 @@ animateurs:
     prenom: Emma
     nom: Martin
     dateNaissance: 1996-11-15
-    statut: BENEVOLE
+    manager: false
     competences:
       ENIGME: REFERENT
     joursIndisponibles:
@@ -1201,7 +1201,7 @@ animateurs:
     prenom: William
     nom: David
     dateNaissance: 1977-06-19
-    statut: BENEVOLE
+    manager: false
     competences:
       ENFANT: DEBUTANT
       AMBIANCE: AUTONOME
@@ -1212,7 +1212,7 @@ animateurs:
     prenom: Yasmine
     nom: Laurent
     dateNaissance: 1997-03-08
-    statut: BENEVOLE
+    manager: false
     competences:
       ADRESSE: AUTONOME
       STRATEGIE: DEBUTANT
@@ -1224,7 +1224,7 @@ animateurs:
     prenom: Julien
     nom: Henry
     dateNaissance: 2009-02-12
-    statut: BENEVOLE
+    manager: false
     competences:
       ADRESSE: DEBUTANT
       STRATEGIE: DEBUTANT
@@ -1238,7 +1238,7 @@ animateurs:
     prenom: Laura
     nom: Fontaine
     dateNaissance: 1969-04-21
-    statut: BENEVOLE
+    manager: false
     competences:
       AMBIANCE: AUTONOME
       ENFANT: DEBUTANT
@@ -1249,7 +1249,7 @@ animateurs:
     prenom: Gaelle
     nom: Dubois
     dateNaissance: 1984-03-24
-    statut: SALARIE
+    manager: true
     competences:
       ENFANT: AUTONOME
     joursIndisponibles: []
@@ -1257,7 +1257,7 @@ animateurs:
     prenom: Yasmine
     nom: Laurent
     dateNaissance: 2006-05-15
-    statut: BENEVOLE
+    manager: false
     competences:
       ENIGME: DEBUTANT
     joursIndisponibles:
@@ -1268,7 +1268,7 @@ animateurs:
     prenom: Elise
     nom: Moreau
     dateNaissance: 2010-09-19
-    statut: BENEVOLE
+    manager: false
     competences:
       ROLE: DEBUTANT
       ADRESSE: AUTONOME
@@ -1283,7 +1283,7 @@ animateurs:
     prenom: Hugo
     nom: Michel
     dateNaissance: 2010-02-19
-    statut: BENEVOLE
+    manager: false
     competences:
       ENIGME: REFERENT
       ADRESSE: REFERENT
@@ -1295,7 +1295,7 @@ animateurs:
     prenom: Mathis
     nom: Rousseau
     dateNaissance: 2009-04-27
-    statut: BENEVOLE
+    manager: false
     competences:
       ENIGME: REFERENT
       ADRESSE: REFERENT
@@ -1309,7 +1309,7 @@ animateurs:
     prenom: Elise
     nom: Vincent
     dateNaissance: 1986-03-27
-    statut: BENEVOLE
+    manager: false
     competences:
       ENFANT: DEBUTANT
     joursIndisponibles:
@@ -1320,7 +1320,7 @@ animateurs:
     prenom: Oscar
     nom: Leroy
     dateNaissance: 1989-12-23
-    statut: BENEVOLE
+    manager: false
     competences:
       COOPERATIF: AUTONOME
       ENFANT: DEBUTANT
@@ -1332,7 +1332,7 @@ animateurs:
     prenom: Florian
     nom: Moreau
     dateNaissance: 1982-07-13
-    statut: BENEVOLE
+    manager: false
     competences:
       ROLE: DEBUTANT
       ADRESSE: AUTONOME
@@ -1342,7 +1342,7 @@ animateurs:
     prenom: Adrien
     nom: Vincent
     dateNaissance: 1979-03-11
-    statut: BENEVOLE
+    manager: false
     competences:
       ENIGME: DEBUTANT
     joursIndisponibles:
@@ -1352,7 +1352,7 @@ animateurs:
     prenom: Tania
     nom: Richard
     dateNaissance: 2010-05-10
-    statut: BENEVOLE
+    manager: false
     competences:
       ADRESSE: AUTONOME
       ENIGME: AUTONOME
@@ -1362,7 +1362,7 @@ animateurs:
     prenom: Gabrielle
     nom: Muller
     dateNaissance: 1990-02-26
-    statut: SALARIE
+    manager: true
     competences:
       ADRESSE: DEBUTANT
     joursIndisponibles:
@@ -1373,7 +1373,7 @@ animateurs:
     prenom: Remi
     nom: Simon
     dateNaissance: 2001-02-28
-    statut: BENEVOLE
+    manager: false
     competences:
       STRATEGIE: REFERENT
     joursIndisponibles:
@@ -1384,7 +1384,7 @@ animateurs:
     prenom: Lea
     nom: David
     dateNaissance: 1965-08-06
-    statut: BENEVOLE
+    manager: false
     competences:
       ADRESSE: REFERENT
       STRATEGIE: REFERENT
@@ -1396,7 +1396,7 @@ animateurs:
     prenom: Yasmine
     nom: Robert
     dateNaissance: 1973-10-02
-    statut: SALARIE
+    manager: true
     competences:
       ADRESSE: REFERENT
     joursIndisponibles: []
@@ -1404,7 +1404,7 @@ animateurs:
     prenom: Quitterie
     nom: Laurent
     dateNaissance: 2001-02-25
-    statut: BENEVOLE
+    manager: false
     competences:
       ENFANT: DEBUTANT
     joursIndisponibles:
@@ -1415,7 +1415,7 @@ animateurs:
     prenom: Berenice
     nom: Nicolas
     dateNaissance: 1976-03-23
-    statut: BENEVOLE
+    manager: false
     competences:
       STRATEGIE: DEBUTANT
     joursIndisponibles:
@@ -1425,7 +1425,7 @@ animateurs:
     prenom: Wafa
     nom: Laurent
     dateNaissance: 1971-10-22
-    statut: BENEVOLE
+    manager: false
     competences:
       ENFANT: AUTONOME
       COOPERATIF: DEBUTANT
@@ -1438,7 +1438,7 @@ animateurs:
     prenom: Perrine
     nom: Roux
     dateNaissance: 1976-12-10
-    statut: BENEVOLE
+    manager: false
     competences:
       COOPERATIF: DEBUTANT
     joursIndisponibles:
@@ -1448,7 +1448,7 @@ animateurs:
     prenom: Ugo
     nom: Fontaine
     dateNaissance: 2009-08-26
-    statut: BENEVOLE
+    manager: false
     competences:
       STRATEGIE: DEBUTANT
       ROLE: DEBUTANT
@@ -1462,7 +1462,7 @@ animateurs:
     prenom: Remi
     nom: Morin
     dateNaissance: 1958-02-13
-    statut: BENEVOLE
+    manager: false
     competences:
       STRATEGIE: REFERENT
       ADRESSE: DEBUTANT
@@ -1471,7 +1471,7 @@ animateurs:
     prenom: Remi
     nom: Thomas
     dateNaissance: 1967-12-20
-    statut: SALARIE
+    manager: true
     competences:
       STRATEGIE: DEBUTANT
       ROLE: AUTONOME
@@ -1484,7 +1484,7 @@ animateurs:
     prenom: Victor
     nom: Morin
     dateNaissance: 1995-07-21
-    statut: BENEVOLE
+    manager: false
     competences:
       AMBIANCE: DEBUTANT
     joursIndisponibles:
@@ -1495,7 +1495,7 @@ animateurs:
     prenom: Berenice
     nom: Richard
     dateNaissance: 2010-04-23
-    statut: BENEVOLE
+    manager: false
     competences:
       ENFANT: DEBUTANT
       ENIGME: AUTONOME
@@ -1504,7 +1504,7 @@ animateurs:
     prenom: Remi
     nom: Richard
     dateNaissance: 2000-08-06
-    statut: SALARIE
+    manager: true
     competences:
       ROLE: REFERENT
       AMBIANCE: DEBUTANT
@@ -1517,7 +1517,7 @@ animateurs:
     prenom: Oscar
     nom: Bertrand
     dateNaissance: 1986-08-26
-    statut: BENEVOLE
+    manager: false
     competences:
       STRATEGIE: AUTONOME
       ADRESSE: DEBUTANT
@@ -1530,7 +1530,7 @@ animateurs:
     prenom: Umberto
     nom: Blanc
     dateNaissance: 2003-04-15
-    statut: BENEVOLE
+    manager: false
     competences:
       ENIGME: DEBUTANT
       COOPERATIF: REFERENT
@@ -1543,7 +1543,7 @@ animateurs:
     prenom: Gabrielle
     nom: Henry
     dateNaissance: 2009-11-05
-    statut: BENEVOLE
+    manager: false
     competences:
       ENIGME: AUTONOME
       STRATEGIE: DEBUTANT
@@ -1554,7 +1554,7 @@ animateurs:
     prenom: Wafa
     nom: Petit
     dateNaissance: 1958-09-16
-    statut: SALARIE
+    manager: true
     competences:
       ADRESSE: REFERENT
       COOPERATIF: AUTONOME
@@ -1565,7 +1565,7 @@ animateurs:
     prenom: Marc
     nom: Perrin
     dateNaissance: 1975-05-07
-    statut: SALARIE
+    manager: true
     competences:
       ADRESSE: AUTONOME
       ENIGME: AUTONOME
@@ -1578,7 +1578,7 @@ animateurs:
     prenom: Oscar
     nom: Fontaine
     dateNaissance: 1979-07-19
-    statut: SALARIE
+    manager: true
     competences:
       COOPERATIF: AUTONOME
     joursIndisponibles:
@@ -1588,7 +1588,7 @@ animateurs:
     prenom: Emma
     nom: Lefebvre
     dateNaissance: 1994-11-23
-    statut: BENEVOLE
+    manager: false
     competences:
       COOPERATIF: AUTONOME
       ENFANT: DEBUTANT
@@ -1600,7 +1600,7 @@ animateurs:
     prenom: Iris
     nom: Bernard
     dateNaissance: 1985-10-11
-    statut: BENEVOLE
+    manager: false
     competences:
       ENIGME: DEBUTANT
       ENFANT: AUTONOME
@@ -1611,7 +1611,7 @@ animateurs:
     prenom: Remi
     nom: Durand
     dateNaissance: 1962-05-26
-    statut: BENEVOLE
+    manager: false
     competences:
       ENIGME: DEBUTANT
       COOPERATIF: REFERENT
@@ -1623,7 +1623,7 @@ animateurs:
     prenom: Quentin
     nom: Laurent
     dateNaissance: 2010-06-28
-    statut: BENEVOLE
+    manager: false
     competences:
       AMBIANCE: AUTONOME
       ADRESSE: AUTONOME
@@ -1636,7 +1636,7 @@ animateurs:
     prenom: Adrien
     nom: Richard
     dateNaissance: 2007-03-24
-    statut: BENEVOLE
+    manager: false
     competences:
       ROLE: AUTONOME
       ENIGME: DEBUTANT
@@ -1646,7 +1646,7 @@ animateurs:
     prenom: Berenice
     nom: Bertrand
     dateNaissance: 1974-05-12
-    statut: BENEVOLE
+    manager: false
     competences:
       ENIGME: DEBUTANT
     joursIndisponibles:
@@ -1657,7 +1657,7 @@ animateurs:
     prenom: Hicham
     nom: Henry
     dateNaissance: 1969-12-22
-    statut: BENEVOLE
+    manager: false
     competences:
       ENIGME: DEBUTANT
       ENFANT: DEBUTANT
@@ -1671,7 +1671,7 @@ animateurs:
     prenom: Florian
     nom: Laurent
     dateNaissance: 1958-01-11
-    statut: SALARIE
+    manager: true
     competences:
       STRATEGIE: DEBUTANT
     joursIndisponibles:
@@ -1680,7 +1680,7 @@ animateurs:
     prenom: Alice
     nom: Richard
     dateNaissance: 1971-02-13
-    statut: BENEVOLE
+    manager: false
     competences:
       STRATEGIE: AUTONOME
     joursIndisponibles: []
@@ -1688,7 +1688,7 @@ animateurs:
     prenom: Emma
     nom: Bertrand
     dateNaissance: 1990-05-18
-    statut: BENEVOLE
+    manager: false
     competences:
       ENIGME: AUTONOME
     joursIndisponibles:
@@ -1697,7 +1697,7 @@ animateurs:
     prenom: Nina
     nom: Rousseau
     dateNaissance: 2003-08-26
-    statut: BENEVOLE
+    manager: false
     competences:
       ADRESSE: REFERENT
       ROLE: AUTONOME
@@ -1708,7 +1708,7 @@ animateurs:
     prenom: William
     nom: Morin
     dateNaissance: 1988-06-14
-    statut: BENEVOLE
+    manager: false
     competences:
       ENIGME: DEBUTANT
       ROLE: DEBUTANT
@@ -1719,7 +1719,7 @@ animateurs:
     prenom: William
     nom: Robert
     dateNaissance: 2009-10-08
-    statut: BENEVOLE
+    manager: false
     competences:
       STRATEGIE: DEBUTANT
       ADRESSE: REFERENT
@@ -1734,7 +1734,7 @@ animateurs:
     prenom: Victor
     nom: Rousseau
     dateNaissance: 2008-11-25
-    statut: BENEVOLE
+    manager: false
     competences:
       ENFANT: AUTONOME
     joursIndisponibles:
@@ -1744,7 +1744,7 @@ animateurs:
     prenom: Romane
     nom: Henry
     dateNaissance: 1965-10-03
-    statut: SALARIE
+    manager: true
     competences:
       COOPERATIF: DEBUTANT
       ENFANT: DEBUTANT
@@ -1756,7 +1756,7 @@ animateurs:
     prenom: Julien
     nom: Perrin
     dateNaissance: 1990-01-11
-    statut: BENEVOLE
+    manager: false
     competences:
       ENFANT: AUTONOME
     joursIndisponibles:
@@ -1767,7 +1767,7 @@ animateurs:
     prenom: Sarah
     nom: Fontaine
     dateNaissance: 1979-11-01
-    statut: SALARIE
+    manager: true
     competences:
       ROLE: DEBUTANT
       ENIGME: DEBUTANT
@@ -1779,7 +1779,7 @@ animateurs:
     prenom: Bruno
     nom: Roux
     dateNaissance: 1994-03-11
-    statut: BENEVOLE
+    manager: false
     competences:
       STRATEGIE: AUTONOME
     joursIndisponibles:
@@ -1789,7 +1789,7 @@ animateurs:
     prenom: Ugo
     nom: Nicolas
     dateNaissance: 1962-01-25
-    statut: BENEVOLE
+    manager: false
     competences:
       COOPERATIF: AUTONOME
       ENFANT: REFERENT
@@ -1801,7 +1801,7 @@ animateurs:
     prenom: Marc
     nom: Henry
     dateNaissance: 1997-08-28
-    statut: BENEVOLE
+    manager: false
     competences:
       ENIGME: REFERENT
       COOPERATIF: AUTONOME
@@ -1814,7 +1814,7 @@ animateurs:
     prenom: Chloe
     nom: Roux
     dateNaissance: 1960-11-02
-    statut: SALARIE
+    manager: true
     competences:
       COOPERATIF: AUTONOME
       ENFANT: DEBUTANT
@@ -1826,7 +1826,7 @@ animateurs:
     prenom: Perrine
     nom: Mathieu
     dateNaissance: 1998-12-24
-    statut: SALARIE
+    manager: true
     competences:
       ROLE: AUTONOME
     joursIndisponibles:
@@ -1836,7 +1836,7 @@ animateurs:
     prenom: Pauline
     nom: Petit
     dateNaissance: 1978-08-14
-    statut: BENEVOLE
+    manager: false
     competences:
       ADRESSE: REFERENT
       STRATEGIE: DEBUTANT
@@ -1849,7 +1849,7 @@ animateurs:
     prenom: Emma
     nom: Henry
     dateNaissance: 1973-02-10
-    statut: BENEVOLE
+    manager: false
     competences:
       ROLE: REFERENT
     joursIndisponibles:
@@ -1859,7 +1859,7 @@ animateurs:
     prenom: Victor
     nom: Perrin
     dateNaissance: 1969-07-14
-    statut: SALARIE
+    manager: true
     competences:
       ADRESSE: DEBUTANT
       ROLE: AUTONOME
@@ -1871,7 +1871,7 @@ animateurs:
     prenom: Umberto
     nom: Blanc
     dateNaissance: 1974-01-07
-    statut: BENEVOLE
+    manager: false
     competences:
       ENIGME: DEBUTANT
       ENFANT: DEBUTANT
@@ -1883,7 +1883,7 @@ animateurs:
     prenom: Tania
     nom: Petit
     dateNaissance: 1997-02-12
-    statut: BENEVOLE
+    manager: false
     competences:
       STRATEGIE: AUTONOME
     joursIndisponibles:
@@ -1896,7 +1896,7 @@ animateurs:
     prenom: Hicham
     nom: Thomas
     dateNaissance: 2010-11-28
-    statut: BENEVOLE
+    manager: false
     competences:
       ENFANT: AUTONOME
     joursIndisponibles:
@@ -1911,7 +1911,7 @@ animateurs:
     prenom: Jules
     nom: Bertrand
     dateNaissance: 2009-09-11
-    statut: BENEVOLE
+    manager: false
     competences:
       ADRESSE: DEBUTANT
       AMBIANCE: DEBUTANT
@@ -1922,7 +1922,7 @@ animateurs:
     prenom: Julien
     nom: Perrin
     dateNaissance: 1992-06-13
-    statut: SALARIE
+    manager: true
     competences:
       ENIGME: AUTONOME
       ENFANT: DEBUTANT
@@ -1931,7 +1931,7 @@ animateurs:
     prenom: Laura
     nom: Moreau
     dateNaissance: 2004-10-04
-    statut: BENEVOLE
+    manager: false
     competences:
       ENIGME: AUTONOME
       COOPERATIF: AUTONOME
@@ -1944,7 +1944,7 @@ animateurs:
     prenom: Zoe
     nom: Perrin
     dateNaissance: 2009-01-12
-    statut: BENEVOLE
+    manager: false
     competences:
       STRATEGIE: AUTONOME
     joursIndisponibles:
@@ -1954,7 +1954,7 @@ animateurs:
     prenom: Berenice
     nom: Fontaine
     dateNaissance: 1976-07-18
-    statut: BENEVOLE
+    manager: false
     competences:
       ENFANT: DEBUTANT
       AMBIANCE: AUTONOME
@@ -1963,7 +1963,7 @@ animateurs:
     prenom: Simon
     nom: Moreau
     dateNaissance: 1964-10-24
-    statut: BENEVOLE
+    manager: false
     competences:
       ENFANT: AUTONOME
       STRATEGIE: AUTONOME
@@ -1976,7 +1976,7 @@ animateurs:
     prenom: Yanis
     nom: Lefebvre
     dateNaissance: 1980-12-21
-    statut: SALARIE
+    manager: true
     competences:
       ROLE: AUTONOME
       ENFANT: AUTONOME
@@ -1988,7 +1988,7 @@ animateurs:
     prenom: Perrine
     nom: Perrin
     dateNaissance: 1991-05-26
-    statut: SALARIE
+    manager: true
     competences:
       COOPERATIF: AUTONOME
       ENIGME: AUTONOME
@@ -2000,7 +2000,7 @@ animateurs:
     prenom: Diane
     nom: Blanc
     dateNaissance: 1968-08-09
-    statut: BENEVOLE
+    manager: false
     competences:
       ENFANT: AUTONOME
       AMBIANCE: DEBUTANT
@@ -2013,7 +2013,7 @@ animateurs:
     prenom: Cedric
     nom: Guerin
     dateNaissance: 2006-02-03
-    statut: BENEVOLE
+    manager: false
     competences:
       ENIGME: DEBUTANT
       COOPERATIF: AUTONOME
@@ -2027,7 +2027,7 @@ animateurs:
     prenom: Yanis
     nom: David
     dateNaissance: 2009-06-22
-    statut: BENEVOLE
+    manager: false
     competences:
       ROLE: REFERENT
     joursIndisponibles:

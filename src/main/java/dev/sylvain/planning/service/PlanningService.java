@@ -32,7 +32,6 @@ import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.domain.StatutAnimateur;
 import dev.sylvain.planning.domain.TypologieJeu;
 import dev.sylvain.planning.solver.PlanningConstraintProvider;
 
@@ -133,23 +132,39 @@ public class PlanningService {
                     "Aucune donnée de référence. Chargez un scénario ou créez des stands, "
                             + "des animateurs et des créneaux d'abord.");
         }
-        List<PosteAffectation> postes = new ArrayList<>();
-        int counter = 0;
-        for (Stand stand : stands) {
-            int seats = Math.max(1, stand.getEffectifMax());
-            for (Creneau creneau : creneaux) {
-                for (int seat = 0; seat < seats; seat++) {
-                    postes.add(new PosteAffectation("poste-" + (counter++), stand, creneau));
-                }
-            }
-        }
+        List<PosteAffectation> postes = construirePostes(stands, creneaux);
         LocalDate dateDebut = creneaux.stream()
                 .map(Creneau::getDate)
                 .filter(java.util.Objects::nonNull)
                 .min(LocalDate::compareTo)
                 .orElse(null);
-        return new PlanningFestival(dateDebut, animateurs, postes,
+        PlanningFestival festival = new PlanningFestival(dateDebut, animateurs, postes,
                 referenceDataService.snapshotContraintes());
+        festival.setParametresLegaux(List.of(referenceDataService.getParametresLegaux()));
+        return festival;
+    }
+
+    /**
+     * One {@link PosteAffectation} per required seat ({@code stand.effectifMax})
+     * on every stand × timeslot where the stand is open (see
+     * {@link Creneau#estStandOuvert(String)}), all seats unassigned. Package-
+     * private and static so it can be unit-tested without a database.
+     */
+    static List<PosteAffectation> construirePostes(List<Stand> stands, List<Creneau> creneaux) {
+        List<PosteAffectation> postes = new ArrayList<>();
+        int counter = 0;
+        for (Stand stand : stands) {
+            int seats = Math.max(1, stand.getEffectifMax());
+            for (Creneau creneau : creneaux) {
+                if (!creneau.estStandOuvert(stand.getId())) {
+                    continue;
+                }
+                for (int seat = 0; seat < seats; seat++) {
+                    postes.add(new PosteAffectation("poste-" + (counter++), stand, creneau));
+                }
+            }
+        }
+        return postes;
     }
 
     /**
@@ -242,8 +257,9 @@ public class PlanningService {
             int effectifMin = ((Number) standData.get("effectifMin")).intValue();
             int effectifMax = ((Number) standData.get("effectifMax")).intValue();
             boolean reserveMajeurs = (Boolean) standData.getOrDefault("reserveMajeurs", false);
-            
-            Stand stand = new Stand(id, nom, typologies, effectifMin, effectifMax, reserveMajeurs);
+            boolean premium = (Boolean) standData.getOrDefault("premium", false);
+
+            Stand stand = new Stand(id, nom, typologies, effectifMin, effectifMax, reserveMajeurs, premium);
             standsMap.put(id, stand);
         }
         
@@ -255,10 +271,9 @@ public class PlanningService {
             String prenom = (String) animateurData.get("prenom");
             String nom = (String) animateurData.get("nom");
             LocalDate dateNaissance = parseLocalDate(animateurData.get("dateNaissance"), "animateurs.dateNaissance");
-            String statutStr = (String) animateurData.get("statut");
-            StatutAnimateur statut = StatutAnimateur.valueOf(statutStr);
-            
-            Animateur animateur = new Animateur(id, prenom, nom, dateNaissance, statut);
+            boolean manager = Boolean.TRUE.equals(animateurData.get("manager"));
+
+            Animateur animateur = new Animateur(id, prenom, nom, dateNaissance, manager);
             
             // Charger les compétences
             Map<String, String> competencesData = (Map<String, String>) animateurData.get("competences");
@@ -298,9 +313,11 @@ public class PlanningService {
         LocalDate dateDebut = parseLocalDate(
             ((Map<String, Object>) scenarioData.get("festival")).get("dateDebut"),
             "festival.dateDebut");
-        
-        return new PlanningFestival(dateDebut, animateurs, postes,
+
+        PlanningFestival festival = new PlanningFestival(dateDebut, animateurs, postes,
                 referenceDataService.snapshotContraintes());
+        festival.setParametresLegaux(List.of(referenceDataService.getParametresLegaux()));
+        return festival;
     }
 
     public PlanningFestival resoudre(PlanningFestival problem) {
@@ -310,6 +327,9 @@ public class PlanningService {
     public PlanningFestival resoudre(PlanningFestival problem, Long secondsLimitOverride) {
         if (problem.getContraintesAdHoc() == null || problem.getContraintesAdHoc().isEmpty()) {
             problem.setContraintesAdHoc(referenceDataService.snapshotContraintes());
+        }
+        if (problem.getParametresLegaux() == null || problem.getParametresLegaux().isEmpty()) {
+            problem.setParametresLegaux(List.of(referenceDataService.getParametresLegaux()));
         }
         Solver<PlanningFestival> solver = resolveSolverFactory(secondsLimitOverride).buildSolver();
         return solver.solve(problem);

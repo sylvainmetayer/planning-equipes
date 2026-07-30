@@ -1,4 +1,4 @@
-import { Component, ElementRef, inject, signal, viewChild } from '@angular/core';
+import { Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -7,6 +7,7 @@ import { ApiService } from '../../core/api.service';
 import { ImportSummary } from '../../core/models';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
+import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { OutputPanel } from '../../shared/output-panel';
 
@@ -24,6 +25,9 @@ type CsvEntity = 'animateurs' | 'stands' | 'creneaux';
 export class DataTransferPage {
   protected readonly output = signal('');
   protected readonly busy = signal(false);
+  protected readonly jobs = inject(SolverJobService);
+  /** Importing/replaying data while a solve reads it would corrupt the run. */
+  protected readonly transferLocked = computed(() => this.busy() || this.jobs.solverBusy());
 
   private readonly sqlInput = viewChild.required<ElementRef<HTMLInputElement>>('sqlInput');
   private readonly csvInput = viewChild.required<ElementRef<HTMLInputElement>>('csvInput');

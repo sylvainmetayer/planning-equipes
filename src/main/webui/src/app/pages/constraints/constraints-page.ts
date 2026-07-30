@@ -1,11 +1,14 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ApiService } from '../../core/api.service';
-import { ConstraintView, ConstraintsView, NiveauContrainte } from '../../core/models';
+import { ConstraintView, ConstraintsView, NiveauContrainte, ParametresLegaux } from '../../core/models';
 import { FeasibilityBanner } from '../../shared/feasibility-banner';
 
 const NIVEAU_LABELS: Record<NiveauContrainte, string> = {
@@ -25,13 +28,28 @@ interface ConstraintGroup {
  */
 @Component({
   selector: 'app-constraints-page',
-  imports: [MatCardModule, MatButtonModule, MatIconModule, MatChipsModule, MatProgressBarModule, FeasibilityBanner],
+  imports: [
+    FormsModule,
+    MatCardModule,
+    MatButtonModule,
+    MatIconModule,
+    MatChipsModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatProgressBarModule,
+    FeasibilityBanner
+  ],
   templateUrl: './constraints-page.html'
 })
 export class ConstraintsPage {
   protected readonly loading = signal(false);
   protected readonly error = signal('');
   protected readonly view = signal<ConstraintsView | null>(null);
+
+  protected readonly parametresLoading = signal(false);
+  protected readonly parametresError = signal('');
+  protected readonly parametresSaved = signal(false);
+  protected readonly dureeHebdomadaireMaxHeures = signal<number | null>(null);
 
   protected readonly feasibility = computed(() => this.view()?.faisabilite ?? null);
 
@@ -62,6 +80,7 @@ export class ConstraintsPage {
 
   constructor() {
     void this.refresh();
+    void this.loadParametresLegaux();
   }
 
   protected async refresh(): Promise<void> {
@@ -74,6 +93,40 @@ export class ConstraintsPage {
       this.error.set(`Error: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  protected async loadParametresLegaux(): Promise<void> {
+    this.parametresLoading.set(true);
+    this.parametresError.set('');
+    try {
+      const parametres = await this.api.get<ParametresLegaux>('/api/parametres-legaux');
+      this.dureeHebdomadaireMaxHeures.set(parametres.dureeHebdomadaireMaxMinutes / 60);
+    } catch (error) {
+      this.parametresError.set(`Error: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      this.parametresLoading.set(false);
+    }
+  }
+
+  protected async saveParametresLegaux(): Promise<void> {
+    const heures = this.dureeHebdomadaireMaxHeures();
+    if (heures === null || heures <= 0) {
+      return;
+    }
+    this.parametresLoading.set(true);
+    this.parametresError.set('');
+    this.parametresSaved.set(false);
+    try {
+      const parametres = await this.api.put<ParametresLegaux>('/api/parametres-legaux', {
+        dureeHebdomadaireMaxMinutes: Math.round(heures * 60)
+      });
+      this.dureeHebdomadaireMaxHeures.set(parametres.dureeHebdomadaireMaxMinutes / 60);
+      this.parametresSaved.set(true);
+    } catch (error) {
+      this.parametresError.set(`Error: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      this.parametresLoading.set(false);
     }
   }
 

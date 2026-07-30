@@ -48,14 +48,25 @@ public class PlanningExportService {
     private static final java.awt.Color PRIMARY = new java.awt.Color(37, 99, 235);
     private static final java.awt.Color PRIMARY_DARK = new java.awt.Color(30, 58, 138);
     private static final java.awt.Color HEADER_TEXT = java.awt.Color.WHITE;
+    private static final java.awt.Color BANNER_SUBTITLE = new java.awt.Color(191, 219, 254);
     private static final java.awt.Color ZEBRA = new java.awt.Color(240, 245, 253);
     private static final java.awt.Color BORDER = new java.awt.Color(203, 213, 225);
     private static final java.awt.Color TEXT = new java.awt.Color(31, 41, 55);
     private static final java.awt.Color MUTED = new java.awt.Color(107, 114, 128);
 
+    /** Rotating accent colors for stand columns in the calendar grid, so stands stay visually distinct. */
+    private static final java.awt.Color[] STAND_PALETTE = {
+            new java.awt.Color(37, 99, 235),
+            new java.awt.Color(5, 150, 105),
+            new java.awt.Color(217, 119, 6),
+            new java.awt.Color(219, 39, 119),
+            new java.awt.Color(124, 58, 237),
+            new java.awt.Color(8, 145, 178)
+    };
+
     // --- Fonts ---
-    private static final Font TITLE_FONT = new Font(Font.HELVETICA, 20, Font.BOLD, PRIMARY_DARK);
-    private static final Font SUBTITLE_FONT = new Font(Font.HELVETICA, 9, Font.NORMAL, MUTED);
+    private static final Font BANNER_TITLE_FONT = new Font(Font.HELVETICA, 20, Font.BOLD, HEADER_TEXT);
+    private static final Font BANNER_SUBTITLE_FONT = new Font(Font.HELVETICA, 9.5f, Font.NORMAL, BANNER_SUBTITLE);
     private static final Font SECTION_FONT = new Font(Font.HELVETICA, 13, Font.BOLD, PRIMARY_DARK);
     private static final Font HEADER_CELL_FONT = new Font(Font.HELVETICA, 9, Font.BOLD, HEADER_TEXT);
     private static final Font CELL_FONT = new Font(Font.HELVETICA, 9, Font.NORMAL, TEXT);
@@ -77,18 +88,27 @@ public class PlanningExportService {
      * global PDF: the planning is always handed out person by person.
      */
     public byte[] exportAllPdfZip(PlanningFestival planning) {
-        return buildZip(planning, ".pdf",
-                animateurId -> exportAnimateurPdf(planning, animateurId));
+        return buildZip(planning, List.of(new NamedFileBuilder(".pdf", id -> exportAnimateurPdf(planning, id))));
     }
 
     public byte[] exportAllIcsZip(PlanningFestival planning) {
-        return buildZip(planning, ".ics",
-                animateurId -> exportAnimateurIcs(planning, animateurId)
-                        .getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        return buildZip(planning, List.of(new NamedFileBuilder(".ics",
+                id -> exportAnimateurIcs(planning, id).getBytes(java.nio.charset.StandardCharsets.UTF_8))));
     }
 
-    /** Bundles one file per animateur, named after the animateur, into a ZIP. */
-    private byte[] buildZip(PlanningFestival planning, String extension, AnimateurFileBuilder fileBuilder) {
+    /**
+     * Both the PDF and the ICS of every animateur, bundled in a single ZIP so
+     * the whole planning can be handed out through one download.
+     */
+    public byte[] exportAllBundleZip(PlanningFestival planning) {
+        return buildZip(planning, List.of(
+                new NamedFileBuilder(".pdf", id -> exportAnimateurPdf(planning, id)),
+                new NamedFileBuilder(".ics",
+                        id -> exportAnimateurIcs(planning, id).getBytes(java.nio.charset.StandardCharsets.UTF_8))));
+    }
+
+    /** Bundles one or more files per animateur, named after the animateur, into a ZIP. */
+    private byte[] buildZip(PlanningFestival planning, List<NamedFileBuilder> fileBuilders) {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         try (ZipOutputStream zip = new ZipOutputStream(output)) {
             Set<String> usedFilenames = new LinkedHashSet<>();
@@ -96,20 +116,25 @@ public class PlanningExportService {
                 String displayName = resolveAnimateurName(planning, animateur.getId());
                 String baseName = (displayName == null || displayName.isBlank() ? animateur.getId() : displayName)
                         .replaceAll("[\\\\/\\r\\n\\\"]", "_");
-                String filename = baseName + extension;
-                int suffix = 2;
-                while (!usedFilenames.add(filename)) {
-                    filename = baseName + "-" + suffix + extension;
-                    suffix++;
+                for (NamedFileBuilder fileBuilder : fileBuilders) {
+                    String filename = baseName + fileBuilder.extension();
+                    int suffix = 2;
+                    while (!usedFilenames.add(filename)) {
+                        filename = baseName + "-" + suffix + fileBuilder.extension();
+                        suffix++;
+                    }
+                    zip.putNextEntry(new ZipEntry(filename));
+                    zip.write(fileBuilder.builder().build(animateur.getId()));
+                    zip.closeEntry();
                 }
-                zip.putNextEntry(new ZipEntry(filename));
-                zip.write(fileBuilder.build(animateur.getId()));
-                zip.closeEntry();
             }
         } catch (IOException e) {
             throw new RuntimeException("Unable to build ZIP export", e);
         }
         return output.toByteArray();
+    }
+
+    private record NamedFileBuilder(String extension, AnimateurFileBuilder builder) {
     }
 
     @FunctionalInterface
@@ -168,7 +193,7 @@ public class PlanningExportService {
         writer.setPageEvent(new FooterEvent());
         document.open();
 
-        addHeader(document, animateurName, postes.size());
+        addHeader(document, animateurName, postes);
 
         addSectionTitle(document, "Calendar view");
         PdfPTable calendarTable = buildCalendarTable(postes);
@@ -191,29 +216,48 @@ public class PlanningExportService {
         return output.toByteArray();
     }
 
-    private void addHeader(Document document, String animateurName, int posteCount) {
-        Paragraph title = new Paragraph("Planning — " + animateurName, TITLE_FONT);
-        title.setSpacingAfter(2);
-        document.add(title);
+    private void addHeader(Document document, String animateurName, List<PosteAffectation> postes) {
+        String assignmentLabel = postes.size() + (postes.size() > 1 ? " assignments" : " assignment");
+        String statsLabel = distinctStandCount(postes) + " stands · " + distinctCreneauCount(postes) + " timeslots · "
+                + assignmentLabel;
+        String subtitleText = statsLabel + " · generated on "
+                + GENERATED_AT_FORMAT.format(Instant.now().atZone(ZoneOffset.systemDefault()));
 
-        String assignmentLabel = posteCount + (posteCount > 1 ? " assignments" : " assignment");
-        Paragraph subtitle = new Paragraph(
-                assignmentLabel + " · generated on " + GENERATED_AT_FORMAT.format(
-                        Instant.now().atZone(ZoneOffset.systemDefault())),
-                SUBTITLE_FONT);
-        subtitle.setSpacingAfter(6);
-        document.add(subtitle);
+        PdfPTable banner = new PdfPTable(1);
+        banner.setWidthPercentage(100);
+        PdfPCell bannerCell = new PdfPCell();
+        bannerCell.setBackgroundColor(PRIMARY_DARK);
+        bannerCell.setBorder(Rectangle.NO_BORDER);
+        bannerCell.setPadding(14f);
 
-        // Colored rule under the header.
-        PdfPTable rule = new PdfPTable(1);
-        rule.setWidthPercentage(100);
-        PdfPCell ruleCell = new PdfPCell();
-        ruleCell.setFixedHeight(3f);
-        ruleCell.setBackgroundColor(PRIMARY);
-        ruleCell.setBorder(Rectangle.NO_BORDER);
-        rule.addCell(ruleCell);
-        rule.setSpacingAfter(16);
-        document.add(rule);
+        Paragraph title = new Paragraph("Planning — " + animateurName, BANNER_TITLE_FONT);
+        title.setSpacingAfter(4);
+        Paragraph subtitle = new Paragraph(subtitleText, BANNER_SUBTITLE_FONT);
+        bannerCell.addElement(title);
+        bannerCell.addElement(subtitle);
+        banner.addCell(bannerCell);
+        banner.setSpacingAfter(18);
+        document.add(banner);
+    }
+
+    private int distinctStandCount(List<PosteAffectation> postes) {
+        Set<String> ids = new LinkedHashSet<>();
+        for (PosteAffectation poste : postes) {
+            if (poste.getStand() != null) {
+                ids.add(poste.getStand().getId());
+            }
+        }
+        return ids.size();
+    }
+
+    private int distinctCreneauCount(List<PosteAffectation> postes) {
+        Set<String> ids = new LinkedHashSet<>();
+        for (PosteAffectation poste : postes) {
+            if (poste.getCreneau() != null) {
+                ids.add(poste.getCreneau().getId());
+            }
+        }
+        return ids.size();
     }
 
     private void addSectionTitle(Document document, String text) {
@@ -298,9 +342,9 @@ public class PlanningExportService {
         table.setWidthPercentage(100);
         table.setSpacingBefore(2);
         table.getDefaultCell().setBorderColor(BORDER);
-        table.addCell(headerCell("Timeslot"));
-        for (Stand stand : stands) {
-            table.addCell(headerCell(stand.getNom()));
+        table.addCell(headerCell("Timeslot", PRIMARY_DARK));
+        for (int i = 0; i < stands.size(); i++) {
+            table.addCell(headerCell(stands.get(i).getNom(), STAND_PALETTE[i % STAND_PALETTE.length]));
         }
         int row = 0;
         for (Creneau creneau : creneaux) {
@@ -325,11 +369,15 @@ public class PlanningExportService {
     }
 
     private PdfPCell headerCell(String text) {
+        return headerCell(text, PRIMARY);
+    }
+
+    private PdfPCell headerCell(String text, java.awt.Color background) {
         PdfPCell cell = new PdfPCell(new Phrase(text, HEADER_CELL_FONT));
         cell.setHorizontalAlignment(Element.ALIGN_CENTER);
         cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
-        cell.setBackgroundColor(PRIMARY);
-        cell.setBorderColor(PRIMARY);
+        cell.setBackgroundColor(background);
+        cell.setBorderColor(background);
         cell.setBorderWidth(0.5f);
         cell.setPadding(6f);
         return cell;

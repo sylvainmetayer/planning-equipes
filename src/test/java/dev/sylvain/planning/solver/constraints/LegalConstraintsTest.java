@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypologieJeu;
 
@@ -107,6 +108,42 @@ class LegalConstraintsTest extends ConstraintTestBase {
         verify("reposQuotidienMineur")
                 .given(poste(standStrat, creneauNuit, majeur),
                         poste(standStrat, matinJ2, majeur))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void depassementDureeHebdomadaireMaxEstPenalise() {
+        // Same ISO week as D1/D2 (2026-07-08/09): two 4h slots (matin + aprem)
+        // total 480 min, 80 min over a 400 min cap.
+        Animateur majeur = majeurReferent("A1");
+        ParametresLegaux parametres = new ParametresLegaux(400);
+        verify("dureeHebdomadaireMax")
+                .given(poste(standStrat, creneauMatin, majeur),
+                        poste(standStrat, apremJ2, majeur),
+                        parametres)
+                .penalizesBy(80);
+    }
+
+    @Test
+    void sousLaDureeHebdomadaireMaxNEstPasPenalise() {
+        Animateur majeur = majeurReferent("A1");
+        ParametresLegaux parametres = new ParametresLegaux(500);
+        verify("dureeHebdomadaireMax")
+                .given(poste(standStrat, creneauMatin, majeur),
+                        poste(standStrat, apremJ2, majeur),
+                        parametres)
+                .penalizesBy(0);
+    }
+
+    @Test
+    void deuxAnimateursDistinctsNeSontPasCumulesEnsemble() {
+        Animateur a1 = majeurReferent("A1");
+        Animateur a2 = majeurReferent("A2");
+        ParametresLegaux parametres = new ParametresLegaux(400);
+        verify("dureeHebdomadaireMax")
+                .given(poste(standStrat, creneauMatin, a1),
+                        poste(standStrat, apremJ2, a2),
+                        parametres)
                 .penalizesBy(0);
     }
 }

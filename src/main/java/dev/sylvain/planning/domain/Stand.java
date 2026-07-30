@@ -12,18 +12,25 @@ public class Stand {
     private int effectifMin;
     private int effectifMax;
     private boolean reserveMajeurs;
+    private boolean premium;
 
     public Stand() {
     }
 
     public Stand(String id, String nom, Set<TypologieJeu> typologiesProposees, int effectifMin, int effectifMax,
             boolean reserveMajeurs) {
+        this(id, nom, typologiesProposees, effectifMin, effectifMax, reserveMajeurs, false);
+    }
+
+    public Stand(String id, String nom, Set<TypologieJeu> typologiesProposees, int effectifMin, int effectifMax,
+            boolean reserveMajeurs, boolean premium) {
         this.id = id;
         this.nom = nom;
         this.typologiesProposees = typologiesProposees;
         this.effectifMin = effectifMin;
         this.effectifMax = effectifMax;
         this.reserveMajeurs = reserveMajeurs;
+        this.premium = premium;
     }
 
     public String getId() {
@@ -72,6 +79,15 @@ public class Stand {
 
     public void setReserveMajeurs(boolean reserveMajeurs) {
         this.reserveMajeurs = reserveMajeurs;
+    }
+
+    /** Editor/publisher-tier stand: high-visibility, needs experienced staffing continuity. */
+    public boolean isPremium() {
+        return premium;
+    }
+
+    public void setPremium(boolean premium) {
+        this.premium = premium;
     }
 
     @Override

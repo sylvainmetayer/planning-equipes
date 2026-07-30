@@ -41,6 +41,16 @@ public class PlanningExportResource {
     }
 
     @POST
+    @Path("/bundle/all")
+    @Produces("application/zip")
+    public Response exportAllBundleZip(PlanningFestival planningFestival) {
+        byte[] content = planningExportService.exportAllBundleZip(planningFestival);
+        return Response.ok(content)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"planning.zip\"")
+                .build();
+    }
+
+    @POST
     @Path("/ics/all")
     @Produces("application/zip")
     public Response exportAllIcsZip(PlanningFestival planningFestival) {

@@ -2,7 +2,9 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatExpansionModule } from '@angular/material/expansion';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -11,9 +13,9 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
-import { Animateur, NiveauCompetence, StatutAnimateur } from '../../core/models';
+import { SolverJobService } from '../../core/solver-job.service';
+import { Animateur, NiveauCompetence } from '../../core/models';
 
-const STATUTS: StatutAnimateur[] = ['BENEVOLE', 'SALARIE'];
 const NIVEAUX: NiveauCompetence[] = ['DEBUTANT', 'AUTONOME', 'REFERENT'];
 
 interface CompetenceRow {
@@ -26,7 +28,7 @@ interface AnimateurDraft {
   prenom: string;
   nom: string;
   dateNaissance: string;
-  statut: StatutAnimateur;
+  manager: boolean;
   competences: CompetenceRow[];
   joursIndisponibles: string[];
 }
@@ -41,10 +43,12 @@ interface AnimateurDraft {
   imports: [
     FormsModule,
     MatCardModule,
+    MatCheckboxModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
     MatChipsModule,
+    MatExpansionModule,
     MatButtonModule,
     MatIconModule,
     MatTableModule,
@@ -53,9 +57,8 @@ interface AnimateurDraft {
   templateUrl: './animateurs-page.html'
 })
 export class AnimateursPage {
-  protected readonly statuts = STATUTS;
   protected readonly niveaux = NIVEAUX;
-  protected readonly columns = ['id', 'nom', 'statut', 'competences', 'indisponibilites', 'actions'];
+  protected readonly columns = ['id', 'nom', 'manager', 'competences', 'indisponibilites', 'actions'];
 
   protected readonly store = inject(ReferenceDataStore);
   protected readonly draft = signal<AnimateurDraft>(emptyDraft());
@@ -64,6 +67,9 @@ export class AnimateursPage {
   protected readonly formTitle = computed(() =>
     this.editingId() ? `Edit animateur ${this.editingId()}` : 'New animateur'
   );
+  protected readonly jobs = inject(SolverJobService);
+  /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
+  protected readonly editingLocked = computed(() => this.jobs.solverBusy());
 
   private readonly crud = inject(ReferenceCrudService);
 
@@ -93,7 +99,7 @@ export class AnimateursPage {
       prenom: draft.prenom.trim(),
       nom: draft.nom.trim(),
       dateNaissance: draft.dateNaissance || null,
-      statut: draft.statut,
+      manager: draft.manager,
       competences,
       joursIndisponibles: draft.joursIndisponibles
     };
@@ -108,7 +114,7 @@ export class AnimateursPage {
       prenom: animateur.prenom ?? '',
       nom: animateur.nom ?? '',
       dateNaissance: animateur.dateNaissance ?? '',
-      statut: animateur.statut ?? STATUTS[0],
+      manager: animateur.manager ?? false,
       competences: Object.entries(animateur.competences ?? {}).map(([typologie, niveau]) => ({ typologie, niveau })),
       joursIndisponibles: [...(animateur.joursIndisponibles ?? [])]
     });
@@ -177,7 +183,7 @@ function emptyDraft(): AnimateurDraft {
     prenom: '',
     nom: '',
     dateNaissance: '',
-    statut: STATUTS[0],
+    manager: false,
     competences: [],
     joursIndisponibles: []
   };

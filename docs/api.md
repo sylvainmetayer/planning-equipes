@@ -85,7 +85,19 @@ Génération **côté serveur** (OpenPDF pour le PDF, texte pour l'ICS). Le plan
 
 | Méthode | Chemin | Description |
 | --- | --- | --- |
+| `POST` | `/api/planning/export/bundle/all` | ZIP contenant un PDF **et** un ICS par animateur (utilisé par l'IHM) |
 | `POST` | `/api/planning/export/pdf/all` | ZIP contenant un PDF par animateur |
 | `POST` | `/api/planning/export/pdf/animateur/{animateurId}` | PDF du planning individuel |
 | `POST` | `/api/planning/export/ics/all` | ZIP contenant un ICS par animateur |
 | `POST` | `/api/planning/export/ics/animateur/{animateurId}` | ICS du planning individuel |
+
+## Heures planifiées
+
+Calcule, pour chaque animateur, le nombre d'heures planifiées par semaine
+calendaire ISO (`AAAA-Wss`) et le total. Le planning à analyser est envoyé
+dans le corps de la requête, comme pour les exports.
+
+| Méthode | Chemin | Description |
+| --- | --- | --- |
+| `POST` | `/api/planning/hours` | Rapport JSON (semaines + heures par animateur) |
+| `POST` | `/api/planning/hours/export` | Le même rapport, au format CSV |

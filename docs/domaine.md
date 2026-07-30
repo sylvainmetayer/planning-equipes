@@ -17,16 +17,13 @@ public enum NiveauCompetence {
     DEBUTANT, AUTONOME, REFERENT
 }
 
-public enum StatutAnimateur {
-    BENEVOLE, SALARIE
-}
-
 public class Creneau {
     private String id;
     private int jour;            // 1 à 15
     private LocalDate date;
     private LocalTime heureDebut;
     private LocalTime heureFin;
+    private Set<String> standsOuvertsIds;  // vide = tous les stands ouverts (défaut) ; sinon liste exclusive
 }
 
 public class Animateur {
@@ -34,7 +31,7 @@ public class Animateur {
     private String prenom;
     private String nom;
     private LocalDate dateNaissance;            // → mineur/majeur et tranche d'âge calculés
-    private StatutAnimateur statut;
+    private boolean manager;                    // gère d'autres animateurs ; tous les animateurs sont payés
     private Map<TypologieJeu, NiveauCompetence> competences;
     private Set<LocalDate> joursIndisponibles;  // opt-out : dispo par défaut, on ne liste que les jours OFF
 }
@@ -46,6 +43,7 @@ public class Stand {
     private int effectifMin;
     private int effectifMax;
     private boolean reserveMajeurs;             // stand interdit aux mineurs
+    private boolean premium;                    // stand éditeur : continuité + expérience privilégiées
 }
 ```
 
@@ -55,6 +53,11 @@ Un `PosteAffectation` est créé **par place à pourvoir**, pas un par couple
 stand × créneau : si un stand a besoin de 2 personnes sur un créneau, deux
 instances sont générées à l'initialisation (seed / scénario), en respectant
 `Stand.effectifMin` / `effectifMax`. Un poste non pourvu garde `animateur = null`.
+
+Un stand est ouvert sur tous les créneaux par défaut. Si `Creneau.standsOuvertsIds`
+n'est pas vide, seuls les stands listés y génèrent des postes (voir
+`PlanningService.construirePostes`) — les autres stands sont simplement fermés
+sur ce créneau, sans poste ni pénalité associée.
 
 ```java
 @PlanningEntity
@@ -117,6 +120,18 @@ général et évaluées en `HardScore`, **au même niveau de priorité que les
 contraintes dures légales** — jamais reclassées en medium/soft.
 `ReferenceDataService` injecte les contraintes ad hoc dans un `PlanningFestival`
 résolu si aucune n'a été fournie.
+
+## Paramètres légaux
+
+`ParametresLegaux` est un fait de problème (`@ProblemFactCollectionProperty` sur
+`PlanningFestival`, même mécanisme que `ContrainteAdHoc`) qui porte la durée
+hebdomadaire de travail maximale, paramétrable depuis la page « Constraints » et
+persistée en base (`ReferenceDataService.getParametresLegaux()` /
+`updateParametresLegaux(...)`). Valeur par défaut : 48 h (2880 min), plafond fixé
+par le Code du travail (art. L3121-20) et la Convention collective nationale de
+l'Animation (ÉCLAT, IDCC 1518, art. 5.2). Consommée par
+`LegalConstraints.dureeHebdomadaireMax`, qui regroupe les `PosteAffectation` par
+animateur et semaine ISO (`Creneau.semaineIso()`) et pénalise le dépassement.
 
 ## Mapping contraintes → modèle
 

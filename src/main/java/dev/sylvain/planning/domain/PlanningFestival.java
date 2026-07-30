@@ -26,6 +26,9 @@ public class PlanningFestival {
     @ProblemFactCollectionProperty
     private List<ContrainteAdHoc> contraintesAdHoc = new ArrayList<>();
 
+    @ProblemFactCollectionProperty
+    private List<ParametresLegaux> parametresLegaux = new ArrayList<>(List.of(new ParametresLegaux()));
+
     @PlanningScore
     private HardMediumSoftScore score;
 
@@ -76,6 +79,14 @@ public class PlanningFestival {
 
     public void setContraintesAdHoc(List<ContrainteAdHoc> contraintesAdHoc) {
         this.contraintesAdHoc = contraintesAdHoc;
+    }
+
+    public List<ParametresLegaux> getParametresLegaux() {
+        return parametresLegaux;
+    }
+
+    public void setParametresLegaux(List<ParametresLegaux> parametresLegaux) {
+        this.parametresLegaux = parametresLegaux;
     }
 
     public HardMediumSoftScore getScore() {

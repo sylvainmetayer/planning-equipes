@@ -13,7 +13,6 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.domain.StatutAnimateur;
 import dev.sylvain.planning.domain.TypologieJeu;
 import dev.sylvain.planning.service.FeasibilityAnalyzer.FeasibilityReport;
 
@@ -105,7 +104,7 @@ class FeasibilityAnalyzerTest {
     }
 
     private static Animateur animateur(String id, TypologieJeu typologie) {
-        Animateur animateur = new Animateur(id, id, id, LocalDate.of(1990, 1, 1), StatutAnimateur.BENEVOLE);
+        Animateur animateur = new Animateur(id, id, id, LocalDate.of(1990, 1, 1), false);
         animateur.setCompetences(java.util.Map.of(typologie, NiveauCompetence.AUTONOME));
         return animateur;
     }

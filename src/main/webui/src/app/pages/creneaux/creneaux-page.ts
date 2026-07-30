@@ -2,13 +2,15 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatExpansionModule } from '@angular/material/expansion';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
+import { SolverJobService } from '../../core/solver-job.service';
 import { Creneau } from '../../core/models';
 
 interface CreneauDraft {
@@ -17,6 +19,7 @@ interface CreneauDraft {
   date: string;
   heureDebut: string;
   heureFin: string;
+  standsOuvertsIds: string[];
 }
 
 /** Timeslots CRUD: festival day, date and hours of every schedulable slot. */
@@ -27,21 +30,24 @@ interface CreneauDraft {
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
+    MatCheckboxModule,
+    MatExpansionModule,
     MatButtonModule,
     MatIconModule,
-    MatTableModule,
     MatTooltipModule
   ],
   templateUrl: './creneaux-page.html'
 })
 export class CreneauxPage {
-  protected readonly columns = ['id', 'jour', 'date', 'heures', 'actions'];
   protected readonly store = inject(ReferenceDataStore);
   protected readonly draft = signal<CreneauDraft>(emptyDraft());
   protected readonly editingId = signal<string | null>(null);
   protected readonly formTitle = computed(() =>
     this.editingId() ? `Edit timeslot ${this.editingId()}` : 'New timeslot'
   );
+  protected readonly jobs = inject(SolverJobService);
+  /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
+  protected readonly editingLocked = computed(() => this.jobs.solverBusy());
 
   private readonly crud = inject(ReferenceCrudService);
 
@@ -60,7 +66,8 @@ export class CreneauxPage {
       jour: Number(draft.jour),
       date: draft.date,
       heureDebut: draft.heureDebut,
-      heureFin: draft.heureFin
+      heureFin: draft.heureFin,
+      standsOuvertsIds: draft.standsOuvertsIds
     };
     if (await this.crud.save('creneaux', creneau, this.editingId(), 'Timeslot')) {
       this.cancel();
@@ -73,7 +80,8 @@ export class CreneauxPage {
       jour: creneau.jour,
       date: creneau.date ?? '',
       heureDebut: creneau.heureDebut ?? '',
-      heureFin: creneau.heureFin ?? ''
+      heureFin: creneau.heureFin ?? '',
+      standsOuvertsIds: [...(creneau.standsOuvertsIds ?? [])]
     });
     this.editingId.set(creneau.id);
   }
@@ -88,8 +96,35 @@ export class CreneauxPage {
       this.cancel();
     }
   }
+
+  /** Empty (or full) list means "every stand is open" — the default. */
+  protected isStandOuvert(creneau: Creneau, standId: string): boolean {
+    const ids = creneau.standsOuvertsIds ?? [];
+    return ids.length === 0 || ids.includes(standId);
+  }
+
+  protected standsOuvertsLabel(creneau: Creneau): string {
+    const ids = creneau.standsOuvertsIds ?? [];
+    if (ids.length === 0) {
+      return 'All stands open';
+    }
+    const closed = this.store.stands().length - ids.length;
+    return closed > 0 ? `${closed} stand${closed > 1 ? 's' : ''} closed` : 'All stands open';
+  }
+
+  /** Toggling saves immediately: this checklist edits persisted state directly, not the draft form. */
+  protected async toggleStandOuvert(creneau: Creneau, standId: string, checked: boolean): Promise<void> {
+    if (this.editingLocked()) {
+      return;
+    }
+    const allIds = this.store.stands().map((stand) => stand.id);
+    const current = creneau.standsOuvertsIds && creneau.standsOuvertsIds.length > 0 ? creneau.standsOuvertsIds : allIds;
+    const next = checked ? Array.from(new Set([...current, standId])) : current.filter((id) => id !== standId);
+    const standsOuvertsIds = next.length >= allIds.length ? [] : next;
+    await this.crud.save('creneaux', { ...creneau, standsOuvertsIds }, creneau.id, 'Timeslot');
+  }
 }
 
 function emptyDraft(): CreneauDraft {
-  return { id: '', jour: 1, date: '', heureDebut: '', heureFin: '' };
+  return { id: '', jour: 1, date: '', heureDebut: '', heureFin: '', standsOuvertsIds: [] };
 }

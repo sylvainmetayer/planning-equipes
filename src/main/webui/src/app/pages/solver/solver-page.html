@@ -11,6 +11,10 @@
       <mat-icon>play_arrow</mat-icon>
       Solve with Timefold
     </button>
+    <button matButton="tonal" [disabled]="exportBusy() || solverBusy()" (click)="onExportPlanning()">
+      <mat-icon>archive</mat-icon>
+      Export planning (PDF + ICS)
+    </button>
   </mat-card-actions>
 </mat-card>
 

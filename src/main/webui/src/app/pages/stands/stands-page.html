@@ -1,10 +1,15 @@
 <mat-card appearance="outlined" class="page-card" [class.is-editing]="editingId()">
-  <mat-card-header>
-    <mat-card-title>{{ formTitle() }}</mat-card-title>
-    <mat-card-subtitle>A stand is staffed on every timeslot, between its minimum and maximum staffing.</mat-card-subtitle>
-  </mat-card-header>
-  <mat-card-content>
-    <form class="form-grid" (ngSubmit)="save()">
+  <mat-accordion>
+    <mat-expansion-panel [expanded]="true">
+      <mat-expansion-panel-header>
+        <mat-panel-title>{{ formTitle() }}</mat-panel-title>
+        <mat-panel-description>A stand is staffed on every timeslot, between its minimum and maximum staffing.</mat-panel-description>
+      </mat-expansion-panel-header>
+      <form class="form-grid" (ngSubmit)="save()">
+      <fieldset class="form-fieldset" [disabled]="editingLocked()">
+      @if (editingLocked()) {
+        <p class="locked-hint span-2">Editing is locked while the solver is running.</p>
+      }
       <mat-form-field appearance="outline">
         <mat-label>Id</mat-label>
         <input matInput name="id" required [readonly]="!!editingId()"
@@ -24,28 +29,38 @@
         <input matInput name="effectifMax" type="number" min="0"
                [ngModel]="draft().effectifMax" (ngModelChange)="patch({ effectifMax: $event })" />
       </mat-form-field>
+      @if (effectifInvalid()) {
+        <p class="field-error span-2">Maximum staff cannot be lower than minimum staff.</p>
+      }
       <mat-form-field appearance="outline" class="span-2">
         <mat-label>Game typologies</mat-label>
-        <mat-select name="typologies" multiple
+        <mat-select name="typologies" multiple [disabled]="editingLocked()"
                     [ngModel]="draft().typologiesProposees" (ngModelChange)="patch({ typologiesProposees: $event })">
           @for (typologie of store.typologies(); track typologie.id) {
             <mat-option [value]="typologie.id">{{ typologie.label || typologie.id }}</mat-option>
           }
         </mat-select>
       </mat-form-field>
-      <mat-checkbox name="reserveMajeurs" class="span-2"
+      <mat-checkbox name="reserveMajeurs" [disabled]="editingLocked()"
                     [ngModel]="draft().reserveMajeurs" (ngModelChange)="patch({ reserveMajeurs: $event })">
         Adults only
       </mat-checkbox>
+      <mat-checkbox name="premium" [disabled]="editingLocked()"
+                    matTooltip="Editor/publisher stand: the solver avoids rotating staff and favors experienced animateurs."
+                    [ngModel]="draft().premium" (ngModelChange)="patch({ premium: $event })">
+        Premium (editor stand)
+      </mat-checkbox>
       <div class="form-actions span-2">
-        <button matButton="filled" type="submit">
+        <button matButton="filled" type="submit" [disabled]="effectifInvalid() || editingLocked()">
           <mat-icon>save</mat-icon>
           {{ editingId() ? 'Update stand' : 'Create stand' }}
         </button>
         <button matButton type="button" (click)="cancel()">Cancel</button>
       </div>
-    </form>
-  </mat-card-content>
+      </fieldset>
+      </form>
+    </mat-expansion-panel>
+  </mat-accordion>
 </mat-card>
 
 <mat-card appearance="outlined" class="page-card">
@@ -65,7 +80,7 @@
       <ng-container matColumnDef="effectif">
         <th mat-header-cell *matHeaderCellDef>Staff</th>
         <td mat-cell *matCellDef="let stand">
-          {{ stand.effectifMin }}–{{ stand.effectifMax }}{{ stand.reserveMajeurs ? ' · adults' : '' }}
+          {{ stand.effectifMin }}–{{ stand.effectifMax }}{{ stand.reserveMajeurs ? ' · adults' : '' }}{{ stand.premium ? ' · premium' : '' }}
         </td>
       </ng-container>
       <ng-container matColumnDef="typologies">
@@ -75,10 +90,11 @@
       <ng-container matColumnDef="actions">
         <th mat-header-cell *matHeaderCellDef aria-label="Actions"></th>
         <td mat-cell *matCellDef="let stand" class="row-actions">
-          <button matIconButton matTooltip="Edit" aria-label="Edit" (click)="edit(stand)">
+          <button matIconButton matTooltip="Edit" aria-label="Edit" [disabled]="editingLocked()" (click)="edit(stand)">
             <mat-icon>edit</mat-icon>
           </button>
-          <button matIconButton matTooltip="Delete" aria-label="Delete" class="danger-action" (click)="remove(stand)">
+          <button matIconButton matTooltip="Delete" aria-label="Delete" class="danger-action" [disabled]="editingLocked()"
+                  (click)="remove(stand)">
             <mat-icon>delete</mat-icon>
           </button>
         </td>

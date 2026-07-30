@@ -5,12 +5,17 @@
       Export or replay the whole database as a SQL script, to share a dataset that blocks the solver.
     </mat-card-subtitle>
   </mat-card-header>
+  @if (jobs.solverBusy()) {
+    <mat-card-content>
+      <p class="locked-hint">Transfers are locked while the solver is running.</p>
+    </mat-card-content>
+  }
   <mat-card-actions class="card-actions">
-    <button matButton="filled" [disabled]="busy()" (click)="onExportSql()">
+    <button matButton="filled" [disabled]="transferLocked()" (click)="onExportSql()">
       <mat-icon>download</mat-icon>
       Export SQL dump
     </button>
-    <button matButton="outlined" class="danger-action" [disabled]="busy()" (click)="pickSqlFile()">
+    <button matButton="outlined" class="danger-action" [disabled]="transferLocked()" (click)="pickSqlFile()">
       <mat-icon>upload</mat-icon>
       Import SQL dump
     </button>
@@ -30,18 +35,18 @@
     <mat-list class="csv-format">
       <mat-list-item lines="3">
         <span matListItemTitle>animateurs</span>
-        <span matListItemLine><code>id;prenom;nom;dateNaissance;statut;competences;joursIndisponibles</code></span>
+        <span matListItemLine><code>id;prenom;nom;dateNaissance;manager;competences;joursIndisponibles</code></span>
         <span matListItemLine>
-          <code>statut</code> = BENEVOLE|SALARIE · <code>competences</code> =
+          <code>manager</code> = true|false (optional, default false) · <code>competences</code> =
           <code>STRATEGIE:REFERENT|ENFANT:AUTONOME</code> · <code>joursIndisponibles</code> =
           <code>2026-07-02|2026-07-03</code>
         </span>
       </mat-list-item>
       <mat-list-item lines="3">
         <span matListItemTitle>stands</span>
-        <span matListItemLine><code>id;nom;typologies;effectifMin;effectifMax;reserveMajeurs</code></span>
+        <span matListItemLine><code>id;nom;typologies;effectifMin;effectifMax;reserveMajeurs;premium</code></span>
         <span matListItemLine>
-          <code>typologies</code> = <code>STRATEGIE|ENFANT</code> · <code>reserveMajeurs</code> = true/false
+          <code>typologies</code> = <code>STRATEGIE|ENFANT</code> · <code>reserveMajeurs</code>/<code>premium</code> = true/false
         </span>
       </mat-list-item>
       <mat-list-item lines="3">
@@ -52,15 +57,15 @@
     </mat-list>
   </mat-card-content>
   <mat-card-actions class="card-actions">
-    <button matButton="tonal" [disabled]="busy()" (click)="pickCsvFile('animateurs')">
+    <button matButton="tonal" [disabled]="transferLocked()" (click)="pickCsvFile('animateurs')">
       <mat-icon>groups</mat-icon>
       Import animateurs
     </button>
-    <button matButton="tonal" [disabled]="busy()" (click)="pickCsvFile('stands')">
+    <button matButton="tonal" [disabled]="transferLocked()" (click)="pickCsvFile('stands')">
       <mat-icon>storefront</mat-icon>
       Import stands
     </button>
-    <button matButton="tonal" [disabled]="busy()" (click)="pickCsvFile('creneaux')">
+    <button matButton="tonal" [disabled]="transferLocked()" (click)="pickCsvFile('creneaux')">
       <mat-icon>schedule</mat-icon>
       Import créneaux
     </button>

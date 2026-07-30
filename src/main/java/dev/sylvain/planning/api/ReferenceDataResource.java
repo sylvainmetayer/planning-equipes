@@ -5,6 +5,7 @@ import java.util.List;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.ReferenceDataService;
@@ -171,5 +172,17 @@ public class ReferenceDataResource {
     public Response deleteContrainteAdHoc(@PathParam("id") String id) {
         referenceDataService.deleteContrainteAdHoc(id);
         return Response.noContent().build();
+    }
+
+    @GET
+    @Path("/parametres-legaux")
+    public ParametresLegaux getParametresLegaux() {
+        return referenceDataService.getParametresLegaux();
+    }
+
+    @PUT
+    @Path("/parametres-legaux")
+    public ParametresLegaux updateParametresLegaux(ParametresLegaux parametres) {
+        return referenceDataService.updateParametresLegaux(parametres);
     }
 }

@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatExpansionModule } from '@angular/material/expansion';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -11,6 +12,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
+import { SolverJobService } from '../../core/solver-job.service';
 import { Stand } from '../../core/models';
 
 interface StandDraft {
@@ -19,6 +21,7 @@ interface StandDraft {
   effectifMin: number;
   effectifMax: number;
   reserveMajeurs: boolean;
+  premium: boolean;
   typologiesProposees: string[];
 }
 
@@ -32,6 +35,7 @@ interface StandDraft {
     MatInputModule,
     MatSelectModule,
     MatCheckboxModule,
+    MatExpansionModule,
     MatButtonModule,
     MatIconModule,
     MatTableModule,
@@ -47,6 +51,13 @@ export class StandsPage {
   protected readonly formTitle = computed(() =>
     this.editingId() ? `Edit stand ${this.editingId()}` : 'New stand'
   );
+  protected readonly effectifInvalid = computed(() => {
+    const draft = this.draft();
+    return Number(draft.effectifMax) < Number(draft.effectifMin);
+  });
+  protected readonly jobs = inject(SolverJobService);
+  /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
+  protected readonly editingLocked = computed(() => this.jobs.solverBusy());
 
   private readonly crud = inject(ReferenceCrudService);
 
@@ -63,6 +74,9 @@ export class StandsPage {
   }
 
   protected async save(): Promise<void> {
+    if (this.effectifInvalid()) {
+      return;
+    }
     const draft = this.draft();
     const stand: Stand = {
       id: draft.id.trim(),
@@ -70,7 +84,8 @@ export class StandsPage {
       typologiesProposees: draft.typologiesProposees,
       effectifMin: Number(draft.effectifMin) || 0,
       effectifMax: Number(draft.effectifMax) || 0,
-      reserveMajeurs: draft.reserveMajeurs
+      reserveMajeurs: draft.reserveMajeurs,
+      premium: draft.premium
     };
     if (await this.crud.save('stands', stand, this.editingId(), 'Stand')) {
       this.cancel();
@@ -84,6 +99,7 @@ export class StandsPage {
       effectifMin: stand.effectifMin,
       effectifMax: stand.effectifMax,
       reserveMajeurs: Boolean(stand.reserveMajeurs),
+      premium: Boolean(stand.premium),
       typologiesProposees: [...(stand.typologiesProposees ?? [])]
     });
     this.editingId.set(stand.id);
@@ -102,5 +118,13 @@ export class StandsPage {
 }
 
 function emptyDraft(): StandDraft {
-  return { id: '', nom: '', effectifMin: 1, effectifMax: 1, reserveMajeurs: false, typologiesProposees: [] };
+  return {
+    id: '',
+    nom: '',
+    effectifMin: 1,
+    effectifMax: 1,
+    reserveMajeurs: false,
+    premium: false,
+    typologiesProposees: []
+  };
 }
