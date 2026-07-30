@@ -325,14 +325,40 @@ public class PlanningService {
     }
 
     public PlanningFestival resoudre(PlanningFestival problem, Long secondsLimitOverride) {
+        prepareProblem(problem);
+        Solver<PlanningFestival> solver = resolveSolverFactory(secondsLimitOverride).buildSolver();
+        return solver.solve(problem);
+    }
+
+    /**
+     * Solves until the plan becomes hard-feasible (or {@code secondsLimitSecurite}
+     * elapses, whichever comes first), instead of spending a full time budget on
+     * medium/soft polishing. Large scenarios (e.g. {@code scenario-complet.yaml},
+     * ~2000 postes) reach hard-feasibility in well under a minute but keep
+     * improving medium/soft for the rest of a production-sized budget; a caller
+     * that only cares about the hard score (e.g. a regression test) would
+     * otherwise wait out that whole budget for nothing.
+     */
+    public PlanningFestival resoudreJusquaFaisabilite(PlanningFestival problem, long secondsLimitSecurite) {
+        prepareProblem(problem);
+        SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
+        solverConfig.setScoreDirectorFactoryConfig(new ScoreDirectorFactoryConfig()
+                .withConstraintProviderClass(PlanningConstraintProvider.class));
+        TerminationConfig termination = new TerminationConfig();
+        termination.setSecondsSpentLimit(secondsLimitSecurite);
+        termination.setBestScoreFeasible(true);
+        solverConfig.setTerminationConfig(termination);
+        Solver<PlanningFestival> solver = SolverFactory.<PlanningFestival>create(solverConfig).buildSolver();
+        return solver.solve(problem);
+    }
+
+    private void prepareProblem(PlanningFestival problem) {
         if (problem.getContraintesAdHoc() == null || problem.getContraintesAdHoc().isEmpty()) {
             problem.setContraintesAdHoc(referenceDataService.snapshotContraintes());
         }
         if (problem.getParametresLegaux() == null || problem.getParametresLegaux().isEmpty()) {
             problem.setParametresLegaux(List.of(referenceDataService.getParametresLegaux()));
         }
-        Solver<PlanningFestival> solver = resolveSolverFactory(secondsLimitOverride).buildSolver();
-        return solver.solve(problem);
     }
 
     /**
@@ -393,7 +419,11 @@ public class PlanningService {
         SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
         solverConfig.setScoreDirectorFactoryConfig(new ScoreDirectorFactoryConfig()
                 .withConstraintProviderClass(PlanningConstraintProvider.class));
-        applyTermination(solverConfig, secondsLimitOverride, defaultUnimprovedSecondsLimit);
+        // An explicit override means the caller wants exactly that many seconds;
+        // the ambient unimproved-time bailout (e.g. the test profile's 2s, far
+        // too tight for a large scenario solved with a bigger override) must not
+        // silently cut it short, so it is disabled rather than reused here.
+        applyTermination(solverConfig, secondsLimitOverride, 0L);
         return SolverFactory.create(solverConfig);
     }
 
