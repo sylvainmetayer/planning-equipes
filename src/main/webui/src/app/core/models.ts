@@ -99,22 +99,18 @@ export interface FeasibilityReport {
   message: string;
 }
 
-/** Payload of an ANALYZE job. */
+/**
+ * Payload of a SOLVE or ANALYZE job: score, unfilled seats and feasibility.
+ * Deliberately excludes the solved planning itself (animateurs/stands/
+ * créneaux/postes) — that payload can reach several dozens of MB and is
+ * consulted through the dedicated screens instead, which load it from
+ * `/api/planning/persisted`.
+ */
 export interface PlanningDiagnostic {
   score: string;
   postesNonPourvus: number;
   contraintes: ConstraintDiagnostic[];
-  planning: PlanningFestival | null;
   faisabilite: FeasibilityReport | null;
-}
-
-/**
- * Payload of a SOLVE job: the solve is always followed, server-side, by its
- * own analysis — so both land together, whatever the browser does meanwhile.
- */
-export interface SolveWithDiagnostic {
-  solved: PlanningFestival;
-  diagnostic: PlanningDiagnostic;
 }
 
 export interface ConstraintView {

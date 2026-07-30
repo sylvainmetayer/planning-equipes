@@ -13,7 +13,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { ApiService, toError } from './api.service';
 import { NotificationService } from './notification.service';
-import { JobType, JobView, PlanningDiagnostic, PlanningFestival, SolveWithDiagnostic } from './models';
+import { JobType, JobView, PlanningDiagnostic, PlanningFestival } from './models';
 
 const POLL_INTERVAL_MS = 2000;
 const LABELS: Record<JobType, string> = {
@@ -86,8 +86,10 @@ export class SolverJobService {
   /**
    * Submits a solve. The server always analyzes the result as part of the same
    * job (see {@code SolverJobService.submitSolve} on the backend), so the
-   * SOLVE result handler receives a {@link SolveWithDiagnostic} — no separate
-   * follow-up action or client-side state is needed.
+   * SOLVE result handler receives a {@link PlanningDiagnostic} directly — no
+   * separate follow-up action or client-side state is needed. The solved
+   * planning itself is not part of the payload; it is persisted server-side
+   * and fetched from `/api/planning/persisted` by the dedicated screens.
    */
   submitSolve(planning: PlanningFestival, seconds?: number): Promise<JobView> {
     return this.submit('/api/solve/async', planning, 'SOLVE', seconds);
@@ -225,7 +227,7 @@ export class SolverJobService {
     }
     this.notifications.notify({
       title: `${entry.label} finished in ${formatDuration(job.elapsedSeconds)}`,
-      message: describeResult(job.type, job.result),
+      message: describeResult(job.result),
       variant: 'success',
       desktop: true
     });
@@ -243,11 +245,11 @@ export function formatDuration(totalSeconds: number): string {
   return minutes > 0 ? `${minutes}m ${String(seconds % 60).padStart(2, '0')}s` : `${seconds}s`;
 }
 
-function describeResult(type: JobType, result: unknown): string {
+function describeResult(result: unknown): string {
   if (!result) {
     return '';
   }
-  const diagnostic = type === 'SOLVE' ? (result as SolveWithDiagnostic).diagnostic : (result as PlanningDiagnostic);
+  const diagnostic = result as PlanningDiagnostic;
   return `Score ${diagnostic.score} — ${diagnostic.postesNonPourvus} unfilled seats.`;
 }
 

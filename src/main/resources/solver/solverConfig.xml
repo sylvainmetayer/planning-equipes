@@ -3,6 +3,13 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="https://timefold.ai/xsd/solver https://timefold.ai/xsd/solver/solver.xsd">
 
+    <!--
+        Fixed seed: makes solves reproducible run-to-run, which is what let us
+        diagnose the local-optimum problem below in the first place. Remove if
+        solution diversity across repeated solves is ever wanted back.
+    -->
+    <randomSeed>0</randomSeed>
+
     <solutionClass>dev.sylvain.planning.domain.PlanningFestival</solutionClass>
     <entityClass>dev.sylvain.planning.domain.PosteAffectation</entityClass>
 
@@ -11,12 +18,21 @@
     </scoreDirectorFactory>
 
     <!--
-        Explicit pipeline. FIRST_FIT quickly builds an initial assignment, then
-        Late Acceptance does the heavy lifting. A dedicated union move selector
-        (change + swap) keeps a healthy move diversity so the search can trade
-        an "unavailable" assignment for an available animateur rather than
-        stalling. Termination (seconds / unimproved-seconds) is injected
-        programmatically by PlanningService.
+        Explicit pipeline. FIRST_FIT_DECREASING builds the initial assignment,
+        then Late Acceptance does the heavy lifting. A dedicated union move
+        selector (change + swap) keeps a healthy move diversity so the search
+        can trade an "unavailable" assignment for an available animateur
+        rather than stalling. Termination (seconds / unimproved-seconds) is
+        injected programmatically by PlanningService.
+
+        FIRST_FIT_DECREASING (not FIRST_FIT): postes are processed hardest
+        first, via PosteAffectationDifficultyComparatorFactory which ranks
+        them by how many animateurs are actually eligible (competence +
+        availability). Plain FIRST_FIT processed postes in declaration order,
+        so easy postes greedily consumed animateurs that scarce postes needed
+        later, regularly leaving several postes unpourvus/double-booked
+        (hard violations) for local search to repair from a bad starting
+        point — a major source of the run-to-run inconsistency this fixes.
 
         The animateurRange value range spans every animateur (~150): eligibility
         depends on the target poste, not on a static animateur property, so it
@@ -27,7 +43,7 @@
         constrained hardware (e.g. a Raspberry Pi).
     -->
     <constructionHeuristic>
-        <constructionHeuristicType>FIRST_FIT</constructionHeuristicType>
+        <constructionHeuristicType>FIRST_FIT_DECREASING</constructionHeuristicType>
         <changeMoveSelector>
             <filterClass>dev.sylvain.planning.solver.EligibleAnimateurMoveFilter$ChangeMoveFilter</filterClass>
         </changeMoveSelector>
@@ -45,7 +61,16 @@
             <lateAcceptanceSize>400</lateAcceptanceSize>
         </acceptor>
         <forager>
-            <acceptedCountLimit>4</acceptedCountLimit>
+            <!--
+                Was 4: each local-search step only sampled 4 candidate moves,
+                which is too narrow a neighborhood to reliably find the
+                multi-move chains (e.g. a swap-of-swaps) needed to clear a
+                double-booking together with an unfilled poste. 20 costs more
+                per step but finds improving/escaping moves far more
+                consistently; re-tune down if this proves too slow on
+                constrained hardware.
+            -->
+            <acceptedCountLimit>20</acceptedCountLimit>
         </forager>
     </localSearch>
 

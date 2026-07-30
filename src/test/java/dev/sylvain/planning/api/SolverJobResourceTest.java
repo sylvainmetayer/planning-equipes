@@ -41,10 +41,11 @@ class SolverJobResourceTest {
 
         JsonPath job = pollUntilFinished(jobId);
         assertThat(job.getString("status")).isEqualTo("COMPLETED");
-        assertThat(job.getList("result.solved.postes")).isNotEmpty();
-        // The analysis must always follow the solve within the same job: a
-        // client that only ever asks once still gets both.
-        assertThat(job.getString("result.diagnostic.score")).isNotBlank();
+        // The job result is the diagnostic only (score, unfilled seats,
+        // constraint breakdown, feasibility) — the solved planning itself is
+        // not part of the polling payload, it is fetched from
+        // /api/planning/persisted by the dedicated screens instead.
+        assertThat(job.getString("result.score")).isNotBlank();
     }
 
     /**
@@ -67,8 +68,11 @@ class SolverJobResourceTest {
 
         JsonPath job = pollUntilFinished(jobId);
         assertThat(job.getString("status")).isEqualTo("COMPLETED");
-        assertThat(job.getList("result.solved.postes")).isNotEmpty();
-        assertThat(job.getString("result.diagnostic.score")).isNotBlank();
+        assertThat(job.getString("result.score")).isNotBlank();
+        // The solved planning is persisted server-side even though it never
+        // travels back as part of the job result.
+        assertThat(given().when().get("/api/planning/persisted").then().extract().jsonPath().getList("postes"))
+                .isNotEmpty();
     }
 
     @Test

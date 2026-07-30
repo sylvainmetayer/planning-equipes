@@ -346,7 +346,7 @@ public class PlanningService {
                 .count();
         FeasibilityAnalyzer.FeasibilityReport faisabilite = feasibilityAnalyzer.analyser(
                 solved.getAnimateurs(), distinctStands(solved), distinctCreneaux(solved));
-        return new PlanningDiagnostic(String.valueOf(solved.getScore()), unassigned, constraintDiagnostics, solved,
+        return new PlanningDiagnostic(String.valueOf(solved.getScore()), unassigned, constraintDiagnostics,
                 faisabilite);
     }
 
@@ -380,11 +380,17 @@ public class PlanningService {
     public record ConstraintDiagnostic(String name, String score, int matchCount) {
     }
 
+    /**
+     * Business-facing result of a solve/analyze: score, unfilled seats and
+     * per-constraint breakdown. Deliberately excludes the {@link PlanningFestival}
+     * itself (animateurs/stands/créneaux/postes) — that payload can reach several
+     * dozens of MB and is consulted through the dedicated screens instead, which
+     * load it from {@code /api/planning/persisted}.
+     */
     public record PlanningDiagnostic(
             String score,
             int postesNonPourvus,
             List<ConstraintDiagnostic> contraintes,
-            PlanningFestival planning,
             FeasibilityAnalyzer.FeasibilityReport faisabilite) {
     }
 

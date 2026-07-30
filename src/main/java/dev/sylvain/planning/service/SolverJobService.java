@@ -67,7 +67,11 @@ public class SolverJobService {
     /**
      * Solves, then always analyzes the result in the same job — the two are
      * never split across a client-visible gap, so the score analysis reaches
-     * the caller even if the browser reloads, closes, or never asks again.
+     * the caller even if the browser reloads, closes, or never asks again. The
+     * solved planning itself is persisted but not returned as part of the job
+     * result: it is fetched from {@code /api/planning/persisted} by whichever
+     * dedicated screen needs it, so the (possibly huge) job-polling payload
+     * stays limited to the diagnostic.
      */
     public SolverJob submitSolve(PlanningFestival problem, Long secondsLimit) {
         return submit(JobType.SOLVE, secondsLimit, () -> {
@@ -75,7 +79,7 @@ public class SolverJobService {
             persistenceService.persist(solved);
             PlanningService.PlanningDiagnostic diagnostic = planningService.diagnostiquer(solved);
             analysisStore.record(diagnostic);
-            return new SolveWithDiagnostic(solved, diagnostic);
+            return diagnostic;
         });
     }
 
@@ -174,10 +178,6 @@ public class SolverJobService {
     @FunctionalInterface
     private interface JobTask {
         Object execute();
-    }
-
-    /** Result of a SOLVE job: the solved planning plus its own analysis. */
-    public record SolveWithDiagnostic(PlanningFestival solved, PlanningService.PlanningDiagnostic diagnostic) {
     }
 
     /** Raised when a solve or analyze is requested while another one runs. */

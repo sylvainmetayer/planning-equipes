@@ -2,7 +2,7 @@ import { Component, computed, effect, inject, signal, untracked } from '@angular
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
-import { FeasibilityReport, SolveWithDiagnostic } from '../../core/models';
+import { FeasibilityReport, PlanningDiagnostic } from '../../core/models';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { FeasibilityBanner } from '../../shared/feasibility-banner';
@@ -34,7 +34,7 @@ export class SolverPage {
     // Results are pushed by the job service, whoever started the job: a solve
     // launched from another browser also lands here when it completes, already
     // analyzed.
-    this.jobs.onResult('SOLVE', (result) => this.applySolveResult(result as SolveWithDiagnostic));
+    this.jobs.onResult('SOLVE', (result) => this.applySolveResult(result as PlanningDiagnostic));
     // Explains why the solver buttons are locked when the job comes from
     // somewhere else (another tab, another browser, a private window).
     effect(() => {
@@ -77,10 +77,14 @@ export class SolverPage {
     return true;
   }
 
-  private applySolveResult(result: SolveWithDiagnostic): void {
-    this.planningState.set(result.solved);
-    this.feasibility.set(result.diagnostic.faisabilite);
-    this.output.set(JSON.stringify(result, null, 2));
+  private applySolveResult(diagnostic: PlanningDiagnostic): void {
+    // The solved planning is not part of the job result (it can be dozens of
+    // MB); dedicated screens (calendars, exports) load it lazily from
+    // /api/planning/persisted instead. Dropping the cached planning here makes
+    // sure they pick up the freshly solved one rather than a stale in-memory copy.
+    this.planningState.set(null);
+    this.feasibility.set(diagnostic.faisabilite);
+    this.output.set(JSON.stringify(diagnostic, null, 2));
   }
 }
 
