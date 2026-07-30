@@ -84,7 +84,7 @@ Dans `application.properties` :
 | Propriété | Défaut | Rôle |
 | --- | --- | --- |
 | `planning.solver.seconds-limit` | `180` (`3` en profil `%test`) | Durée maximale de résolution |
-| `planning.solver.unimproved-seconds-limit` | `60` (`2` en profil `%test`) | Arrêt anticipé si le score n'a pas progressé |
+| `planning.solver.unimproved-seconds-limit` | `0` = désactivé (`2` en profil `%test`) | Arrêt anticipé si le score n'a pas progressé ; désactivé par défaut pour laisser la recherche locale utiliser tout le budget `seconds-limit` plutôt que d'abandonner sur un optimum local à hard > 0 |
 
 La configuration Timefold elle-même est dans `src/main/resources/solver/solverConfig.xml`.
 Le value range `animateurRange` couvre tous les animateurs (~150) car
@@ -94,6 +94,20 @@ rejette les change/swap moves manifestement invalides avant tout calcul de
 score, ce qui multiplie par ~3 le débit de la recherche locale sur le scénario
 complet (150 animateurs / 2088 postes) et est déterminant sur du matériel
 contraint (Raspberry Pi).
+
+Le `unionMoveSelector` de la recherche locale combine deux paires de
+sélecteurs change/swap à poids égal (`fixedProbabilityWeight`) : une paire
+générale (tous postes) et une paire dont un des deux côtés est restreint aux
+postes non pourvus (`UnassignedPosteFilter`). Sans ce second groupe, une
+sélection uniforme sur ~2000+ postes ne retombe qu'exceptionnellement sur les
+quelques postes encore vides, et le solveur plafonnait avec 1 à plusieurs
+dizaines de violations `posteDoitEtrePourvu` même après tout le budget de
+180 s, alors que `FeasibilityAnalyzer` confirmait un scénario réalisable
+(assez d'animateurs compétents et disponibles). Ce second groupe force une
+part constante des mouvements à cibler directement ces postes vides — soit en
+les pourvant avec un animateur encore libre à ce créneau, soit en délogeant
+quelqu'un déjà affecté ailleurs à un autre créneau — ce qui suffit à ramener
+le hard score à zéro sur `scenario-complet.yaml` dans le budget existant.
 
 ## Configuration
 

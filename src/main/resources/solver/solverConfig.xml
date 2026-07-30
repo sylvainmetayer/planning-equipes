@@ -52,9 +52,36 @@
         <unionMoveSelector>
             <changeMoveSelector>
                 <filterClass>dev.sylvain.planning.solver.EligibleAnimateurMoveFilter$ChangeMoveFilter</filterClass>
+                <fixedProbabilityWeight>1.0</fixedProbabilityWeight>
             </changeMoveSelector>
             <swapMoveSelector>
                 <filterClass>dev.sylvain.planning.solver.EligibleAnimateurMoveFilter$SwapMoveFilter</filterClass>
+                <fixedProbabilityWeight>1.0</fixedProbabilityWeight>
+            </swapMoveSelector>
+            <!--
+                Uniform Change/Swap selection over ~2000+ postes samples the
+                handful still unassigned far too rarely to clear the last
+                posteDoitEtrePourvu violations within the time budget (empirically:
+                the solver plateaus at 1-10 unfilled seats out of 2088 even after
+                the full 180s). These two selectors restrict one side of the pair
+                to unassigned postes and get an equal share of move attempts
+                (fixedProbabilityWeight), so filling an empty seat directly, or by
+                displacing someone already scheduled elsewhere at a different
+                slot, is tried constantly instead of by chance.
+            -->
+            <changeMoveSelector>
+                <filterClass>dev.sylvain.planning.solver.EligibleAnimateurMoveFilter$ChangeMoveFilter</filterClass>
+                <fixedProbabilityWeight>1.0</fixedProbabilityWeight>
+                <entitySelector>
+                    <filterClass>dev.sylvain.planning.solver.UnassignedPosteFilter</filterClass>
+                </entitySelector>
+            </changeMoveSelector>
+            <swapMoveSelector>
+                <filterClass>dev.sylvain.planning.solver.EligibleAnimateurMoveFilter$SwapMoveFilter</filterClass>
+                <fixedProbabilityWeight>1.0</fixedProbabilityWeight>
+                <entitySelector>
+                    <filterClass>dev.sylvain.planning.solver.UnassignedPosteFilter</filterClass>
+                </entitySelector>
             </swapMoveSelector>
         </unionMoveSelector>
         <acceptor>
