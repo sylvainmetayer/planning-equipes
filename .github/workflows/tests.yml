@@ -46,3 +46,29 @@ jobs:
             target/failsafe-reports/**
           if-no-files-found: ignore
           retention-days: 7
+
+  frontend:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: src/main/webui
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: src/main/webui/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Vitest runs in a Node/jsdom environment (no browser needed) and, when
+      # not attached to a TTY, executes once and exits instead of watching.
+      - name: Run unit tests
+        run: npm test

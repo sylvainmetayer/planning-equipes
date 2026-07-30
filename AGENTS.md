@@ -32,7 +32,9 @@ Read before working on constraints or the domain model:
   `./mvnw verify -DskipITs=false`
 - Full stack: `docker compose --profile app up --build`
 - Frontend only (from `src/main/webui`): `npm install`, `npm run build`,
-  `npm start` (`ng serve` on 4200). `quarkus:dev` already starts and proxies it.
+  `npm start` (`ng serve` on 4200), `npm test` (Vitest unit tests, Node/jsdom,
+  one pass in CI / watch in a terminal). `quarkus:dev` already starts and
+  proxies the dev server.
 - Toolchain pinned in `mise.toml` (`temurin-25`, `maven 3.9.9`, `node 24`); the
   Maven build downloads its own Node through Quinoa, so CI/Docker need none.
 
@@ -116,6 +118,12 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
 - Keep the frontend dependency-light: Angular, its CLI and Angular Material are
   the whole frontend stack. Don't add another UI component library, a
   state-management library or a CSS framework without explicit sign-off.
+- Frontend tests are Vitest specs (`*.spec.ts` next to the code, `TestBed` for
+  anything DI/rendering, `provideZonelessChangeDetection()` since the app is
+  zoneless). They run via `npm test` in a Node/jsdom environment — no browser,
+  not wired into the Maven `%test` phase (Quinoa stays disabled there), run by a
+  dedicated CI job. Favour testing `core/` logic (services with a mocked
+  `ApiService`, pure helpers) over heavy component-rendering tests.
 
 ## Domain invariants (never break these)
 

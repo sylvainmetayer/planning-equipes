@@ -30,6 +30,7 @@ cd src/main/webui
 npm install                            # dépendances (une seule fois)
 npm run build                          # build de production dans dist/planning-equipes-ui/browser
 npm start                              # ng serve seul sur http://localhost:4200 (API non proxifiée)
+npm test                               # tests unitaires (Vitest) : watch en terminal, une passe en CI
 ```
 
 En pratique, `./mvnw quarkus:dev` suffit : Quinoa démarre `ng serve` et le
@@ -42,7 +43,7 @@ ne s'exécutent qu'avec `-DskipITs=false`.
 
 ## Tests
 
-On distingue deux familles de tests :
+On distingue trois familles de tests :
 
 - **Tests unitaires de contraintes** (`solver/constraints/*ConstraintsTest`) :
   chaque contrainte est vérifiée isolément avec le `ConstraintVerifier` de
@@ -56,6 +57,13 @@ On distingue deux familles de tests :
   `PlanningHardConstraintsTest`) : ils démarrent un PostgreSQL jetable via les
   *dev services* Quarkus (`postgres:17`), donc les migrations Flyway
   s'exécutent exactement comme en production.
+- **Tests frontend** (`src/main/webui`, fichiers `*.spec.ts`) : lancés par
+  `npm test` (builder `@angular/build:unit-test`, runner **Vitest**) dans un
+  environnement Node/**jsdom**, sans navigateur. Ils couvrent surtout la logique
+  des services et utilitaires de `app/core/` (mock d'`ApiService` via `TestBed`,
+  fonctions pures de dates/formatage) et le rendu des composants légers de
+  `app/shared/`. Ils ne sont **pas** branchés sur la phase de test Maven (Quinoa
+  reste désactivé sur `%test`) ; ils tournent dans un job CI dédié.
 
 Avec Podman (rootless), exposer la socket compatible Docker :
 
@@ -104,8 +112,10 @@ démarrage. **Un changement de schéma = un nouveau fichier versionné** ; ne ja
 
 ## Intégration continue
 
-- `.github/workflows/tests.yml` — `./mvnw verify -DskipITs=false` sur chaque push
-  `main` et chaque pull request, avec upload des rapports surefire/failsafe.
+- `.github/workflows/tests.yml` — deux jobs sur chaque push `main` et chaque
+  pull request : `test` (`./mvnw verify -DskipITs=false`, avec upload des
+  rapports surefire/failsafe) et `frontend` (`npm ci` puis `npm test` sur
+  `src/main/webui`, Node 24).
 - `.github/workflows/docker-ghcr.yml` — publication de l'image sur GHCR, en
   multi-arch (`linux/amd64`, `linux/arm64` via QEMU) pour un déploiement natif
   sur Raspberry Pi.
