@@ -30,10 +30,18 @@ class DatabaseResourceTest {
 
     @Test
     void exportedDumpCanBeReplayedAndRestoresTheDataset() {
+        // Reset first for a deterministic baseline (no leftovers from another
+        // test), then seed: reset alone empties the database and leaves
+        // nothing to export (see PlanningResourceTest.resetEmptiesTheDatabase).
         given()
                 .when().post("/api/planning/reset")
                 .then()
                 .statusCode(200);
+
+        given()
+                .when().post("/api/reference-data/import-scenario?name=scenario.yml")
+                .then()
+                .statusCode(204);
 
         int animateurs = given()
                 .when().get("/api/animateurs")
