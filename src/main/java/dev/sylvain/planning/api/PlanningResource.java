@@ -28,10 +28,21 @@ public class PlanningResource {
     @Inject
     ConstraintAnalysisStore analysisStore;
 
+    /**
+     * Lists the scenario files available in the {@code scenarios} folder so the
+     * UI can offer them in a dropdown. Adding a file to that folder makes it
+     * appear here with no code change.
+     */
+    @GET
+    @Path("/planning/scenarios")
+    public java.util.List<String> scenarios() {
+        return planningService.listerScenarios();
+    }
+
     @GET
     @Path("/planning/sample")
-    public PlanningFestival sample() {
-        return planningService.construireExemple();
+    public PlanningFestival sample(@QueryParam("name") String name) {
+        return planningService.construireExemple(name);
     }
 
     @POST
@@ -44,21 +55,17 @@ public class PlanningResource {
     }
 
     /**
-     * Resets the database to the demo scenario without solving it: reference
-     * data is replaced and every seat is stored unassigned, so tests can start
-     * from a blank but complete dataset.
+     * Empties the database: every stand, timeslot, animator, assignment and ad
+     * hoc constraint is wiped, without loading any scenario. Reference data is
+     * then seeded from the Data setup page. Returns an all-zero summary since
+     * nothing remains.
      */
     @POST
     @Path("/planning/reset")
     @Consumes(MediaType.WILDCARD)
     public ResetSummary reset() {
-        PlanningFestival sample = planningService.construireExemple();
-        int postes = persistenceService.resetToUnsolvedPlanning(sample);
-        return new ResetSummary(
-                sample.getAnimateurs() == null ? 0 : sample.getAnimateurs().size(),
-                (int) sample.getPostes().stream().map(p -> p.getStand().getId()).distinct().count(),
-                (int) sample.getPostes().stream().map(p -> p.getCreneau().getId()).distinct().count(),
-                postes);
+        persistenceService.clearDatabase();
+        return new ResetSummary(0, 0, 0, 0);
     }
 
     public record ResetSummary(int animateurs, int stands, int creneaux, int postes) {

@@ -29,6 +29,7 @@ const NAV_GROUPS: NavGroup[] = [
     title: 'Planning',
     links: [
       { path: '/solver', label: 'Solver', icon: 'play_circle' },
+      { path: '/data-setup', label: 'Data setup', icon: 'database' },
       { path: '/exports', label: 'Exports', icon: 'download' },
       { path: '/data-transfer', label: 'Data transfer', icon: 'swap_vert' }
     ]

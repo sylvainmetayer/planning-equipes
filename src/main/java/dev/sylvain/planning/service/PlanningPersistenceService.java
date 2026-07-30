@@ -53,22 +53,16 @@ public class PlanningPersistenceService {
     }
 
     /**
-     * Wipes every planning table and reloads the given scenario as a blank
-     * slate: reference data is replaced and all seats are stored unassigned,
-     * without running the solver. Used by the "Reset BDD" admin action to get
-     * back to a clean dataset for tests. Typologies are kept: they are seeded
-     * by the Flyway migrations, not by a scenario.
+     * Empties the database: wipes every planning table (stands, timeslots,
+     * animators, assignments and constraints) without loading any scenario.
+     * Typologies are kept: they are seeded by the Flyway migrations, not by a
+     * scenario. Used by the "Reset BDD" admin action to start from scratch.
      */
-    public int resetToUnsolvedPlanning(PlanningFestival planning) {
-        if (planning == null || planning.getPostes() == null) {
-            return 0;
-        }
-        planning.getPostes().forEach(poste -> poste.setAnimateur(null));
-        return inTransaction(connection -> {
+    public void clearDatabase() {
+        inTransaction(connection -> {
             clearPlanningTables(connection);
-            upsertReferenceData(connection, planning);
-            return rewriteAssignments(connection, planning.getPostes());
-        }, "Failed to reset the database");
+            return 0;
+        }, "Failed to clear the database");
     }
 
     private void clearPlanningTables(Connection connection) throws SQLException {

@@ -9,6 +9,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/solver/solver-page').then((m) => m.SolverPage)
   },
   {
+    path: 'data-setup',
+    title: 'Data setup — Planning Équipes',
+    loadComponent: () => import('./pages/data-setup/data-setup-page').then((m) => m.DataSetupPage)
+  },
+  {
     path: 'exports',
     title: 'Exports — Planning Équipes',
     loadComponent: () => import('./pages/exports/exports-page').then((m) => m.ExportsPage)

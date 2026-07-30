@@ -2,18 +2,16 @@ import { Component, computed, effect, inject, signal, untracked } from '@angular
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
-import { ApiService } from '../../core/api.service';
-import { PlanningDiagnostic, PlanningFestival, ResetSummary } from '../../core/models';
+import { PlanningDiagnostic, PlanningFestival } from '../../core/models';
 import { PlanningStateService } from '../../core/planning-state.service';
-import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
-import { ConfirmService } from '../../shared/confirm-dialog';
 import { OutputPanel } from '../../shared/output-panel';
 
 /**
- * Solver page: seeds the database with the sample scenario, resets it, and
- * launches the background solve / analysis jobs. Exports live on their own
- * page, reference data editing on one page per entity.
+ * Solver page: launches the background solve job. Each solve started here is
+ * followed by an automatic analysis of the result, so there is no separate
+ * analyze action. Seeding and resetting the database live on the Data setup
+ * page; exports on the Exports page.
  */
 @Component({
   selector: 'app-solver-page',
@@ -22,16 +20,11 @@ import { OutputPanel } from '../../shared/output-panel';
 })
 export class SolverPage {
   protected readonly output = signal('');
-  protected readonly sampleLoading = signal(false);
-  protected readonly resetting = signal(false);
 
   /** The server-side lock, not a local flag: it also covers other browsers. */
   protected readonly solverBusy = computed(() => this.jobs.solverBusy());
 
-  private readonly api = inject(ApiService);
   private readonly planningState = inject(PlanningStateService);
-  private readonly referenceData = inject(ReferenceDataStore);
-  private readonly confirm = inject(ConfirmService);
   private readonly jobs = inject(SolverJobService);
 
   constructor() {
@@ -50,77 +43,16 @@ export class SolverPage {
     });
   }
 
-  protected async onLoadSample(): Promise<void> {
-    this.sampleLoading.set(true);
-    this.output.set('Loading sample planning...');
-    try {
-      const sample = await this.api.get<PlanningFestival>('/api/planning/sample');
-      this.planningState.set(sample);
-      // Import the sample reference data into the CRUD store so it is editable.
-      await this.api.post('/api/reference-data/import', sample);
-      await this.referenceData.reload();
-      this.output.set('Sample planning loaded. Reference data is populated and editable from the reference pages.');
-    } catch (error) {
-      this.output.set(`Error: ${message(error)}`);
-    } finally {
-      this.sampleLoading.set(false);
-    }
-  }
-
-  // Blank-slate reset: reloads the demo scenario into the database with every
-  // seat unassigned, so a test run starts from clean, unsolved data.
-  protected async onResetDatabase(): Promise<void> {
-    const confirmed = await this.confirm.ask({
-      title: 'Reset the database?',
-      message: 'The sample scenario replaces every stand, timeslot, animator, assignment and ad hoc constraint.',
-      confirmLabel: 'Reset',
-      danger: true
-    });
-    if (!confirmed) {
-      return;
-    }
-    this.resetting.set(true);
-    this.output.set('Resetting database...');
-    try {
-      const summary = await this.api.post<ResetSummary>('/api/planning/reset', {});
-      this.planningState.set(null);
-      await this.referenceData.reload();
-      this.output.set(
-        `Database reset: ${summary.animateurs} animators, ${summary.stands} stands, `
-          + `${summary.creneaux} timeslots, ${summary.postes} unassigned seats.`
-      );
-    } catch (error) {
-      this.output.set(`Error: ${message(error)}`);
-    } finally {
-      this.resetting.set(false);
-    }
-  }
-
   protected async onTimefoldSolve(): Promise<void> {
     if (this.solverJobAlreadyRunning()) {
       return;
     }
     this.output.set('Submitting solve to the background solver...');
     try {
-      await this.jobs.submitSolve(await this.planningToWorkOn());
+      await this.jobs.submitSolve(await this.planningToWorkOn(), true);
       this.output.set(
-        'Solving with Timefold on the server. You can keep browsing; a notification will pop up when it is done, '
-          + 'here and in any other browser watching this server.'
-      );
-    } catch (error) {
-      this.output.set(`Error: ${message(error)}`);
-    }
-  }
-
-  protected async onAnalyze(): Promise<void> {
-    if (this.solverJobAlreadyRunning()) {
-      return;
-    }
-    this.output.set('Submitting analysis to the background solver...');
-    try {
-      await this.jobs.submitAnalyze(await this.planningToWorkOn());
-      this.output.set(
-        'Analyzing the solution on the server. You can keep browsing; a notification will pop up when it is done.'
+        'Solving with Timefold on the server, then analyzing the result automatically. You can keep browsing; '
+          + 'a notification will pop up at each step, here and in any other browser watching this server.'
       );
     } catch (error) {
       this.output.set(`Error: ${message(error)}`);
@@ -146,6 +78,7 @@ export class SolverPage {
 
   private applySolveResult(solved: PlanningFestival): void {
     this.planningState.set(solved);
+    // The analysis chained by the job service will overwrite this shortly.
     this.output.set(JSON.stringify(solved, null, 2));
   }
 

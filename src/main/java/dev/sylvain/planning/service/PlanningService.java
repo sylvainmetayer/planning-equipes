@@ -70,9 +70,28 @@ public class PlanningService {
         }
     }
 
+    /** Classpath folder holding every selectable scenario file. */
+    static final String SCENARIOS_DIR = "scenarios";
+
+    /** Default scenario loaded when the caller does not pick one. */
+    static final String DEFAULT_SCENARIO = "scenario-complet.yaml";
+
     public PlanningFestival construireExemple() {
+        return construireExemple(DEFAULT_SCENARIO);
+    }
+
+    /**
+     * Loads a named scenario from the {@link #SCENARIOS_DIR} folder. The name is
+     * a bare file name (e.g. {@code scenario-complet.yaml}); any path component
+     * is rejected so callers cannot escape the scenarios folder.
+     */
+    public PlanningFestival construireExemple(String scenarioName) {
+        String name = (scenarioName == null || scenarioName.isBlank()) ? DEFAULT_SCENARIO : scenarioName;
+        if (name.contains("/") || name.contains("\\") || name.contains("..")) {
+            throw new IllegalArgumentException("Nom de scénario invalide: " + name);
+        }
         try {
-            return chargerScenarioYaml("scenario-complet.yaml");
+            return chargerScenarioYaml(SCENARIOS_DIR + "/" + name);
         } catch (IOException e) {
             throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
         }
@@ -86,10 +105,58 @@ public class PlanningService {
      */
     public PlanningFestival construireExempleSimple() {
         try {
-            return chargerScenarioYaml("scenario.yml");
+            return chargerScenarioYaml(SCENARIOS_DIR + "/scenario.yml");
         } catch (IOException e) {
             throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
         }
+    }
+
+    /**
+     * Lists every {@code .yaml}/{@code .yml} scenario available in the
+     * {@link #SCENARIOS_DIR} classpath folder, sorted alphabetically. Drop a new
+     * file in that folder and it shows up here (and in the UI dropdown) with no
+     * code change. Works both in dev (folder on disk) and from a packaged jar.
+     */
+    public List<String> listerScenarios() {
+        try {
+            java.net.URL dirUrl = getClass().getClassLoader().getResource(SCENARIOS_DIR);
+            if (dirUrl == null) {
+                return List.of();
+            }
+            Set<String> names = new java.util.TreeSet<>();
+            if ("file".equals(dirUrl.getProtocol())) {
+                java.nio.file.Path dir = java.nio.file.Paths.get(dirUrl.toURI());
+                try (java.util.stream.Stream<java.nio.file.Path> files = java.nio.file.Files.list(dir)) {
+                    files.filter(java.nio.file.Files::isRegularFile)
+                            .map(p -> p.getFileName().toString())
+                            .filter(PlanningService::estFichierScenario)
+                            .forEach(names::add);
+                }
+            } else if ("jar".equals(dirUrl.getProtocol())) {
+                java.net.JarURLConnection conn = (java.net.JarURLConnection) dirUrl.openConnection();
+                String prefix = SCENARIOS_DIR + "/";
+                try (java.util.jar.JarFile jar = conn.getJarFile()) {
+                    java.util.Enumeration<java.util.jar.JarEntry> entries = jar.entries();
+                    while (entries.hasMoreElements()) {
+                        String entry = entries.nextElement().getName();
+                        if (entry.startsWith(prefix) && !entry.endsWith("/")) {
+                            String fileName = entry.substring(prefix.length());
+                            if (!fileName.contains("/") && estFichierScenario(fileName)) {
+                                names.add(fileName);
+                            }
+                        }
+                    }
+                }
+            }
+            return new ArrayList<>(names);
+        } catch (Exception e) {
+            throw new RuntimeException("Erreur lors de la lecture du dossier des scénarios", e);
+        }
+    }
+
+    private static boolean estFichierScenario(String fileName) {
+        String lower = fileName.toLowerCase(java.util.Locale.ROOT);
+        return lower.endsWith(".yaml") || lower.endsWith(".yml");
     }
 
     @SuppressWarnings("unchecked")

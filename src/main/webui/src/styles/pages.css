@@ -33,6 +33,11 @@
   gap: 0.75rem;
 }
 
+/* Scenario picker sits inline with the action buttons on the Data setup page. */
+.scenario-select {
+  min-width: 16rem;
+}
+
 .subform {
   border: 1px solid var(--mat-sys-outline-variant);
   border-radius: var(--mat-sys-corner-medium);

@@ -62,6 +62,10 @@ export class SolverJobService {
   private readonly stateKnown = signal(false);
   private readonly resultHandlers = new Map<JobType, ResultHandler>();
   private started = false;
+  // Id of a solve this browser wants analyzed automatically once it completes.
+  // Held in the (per-browser) singleton so the chain survives page navigation
+  // and only the initiating session triggers the follow-up analysis.
+  private autoAnalyzeSolveId: string | null = null;
 
   /** Starts the shared polling loop. Called once by the app shell. */
   start(): void {
@@ -83,8 +87,15 @@ export class SolverJobService {
     this.resultHandlers.set(type, handler);
   }
 
-  submitSolve(planning: PlanningFestival, seconds?: number): Promise<JobView> {
-    return this.submit('/api/solve/async', planning, 'SOLVE', seconds);
+  /**
+   * Submits a solve. When {@code autoAnalyze} is set, the solved result is
+   * analyzed automatically as soon as this job completes, without a separate
+   * user action.
+   */
+  async submitSolve(planning: PlanningFestival, autoAnalyze = false, seconds?: number): Promise<JobView> {
+    const job = await this.submit('/api/solve/async', planning, 'SOLVE', seconds);
+    this.autoAnalyzeSolveId = autoAnalyze ? job.id : null;
+    return job;
   }
 
   submitAnalyze(planning: PlanningFestival, seconds?: number): Promise<JobView> {
@@ -209,6 +220,27 @@ export class SolverJobService {
       desktop: true
     });
     this.resultHandlers.get(job.type)?.(job.result);
+    this.maybeChainAnalysis(entry, job);
+  }
+
+  // Chains an analysis on a just-finished solve this browser asked to analyze
+  // automatically. Runs even if the user has left the Solver page, since the
+  // pending id lives on this service, not on the component.
+  private maybeChainAnalysis(entry: TrackedJob, job: JobView): void {
+    if (entry.id !== this.autoAnalyzeSolveId) {
+      return;
+    }
+    this.autoAnalyzeSolveId = null;
+    if (job.type !== 'SOLVE' || job.status !== 'COMPLETED' || !job.result) {
+      return;
+    }
+    void this.submitAnalyze(job.result as PlanningFestival).catch((error) => {
+      this.notifications.notify({
+        title: 'Automatic analysis could not start',
+        message: error instanceof Error ? error.message : String(error),
+        variant: 'error'
+      });
+    });
   }
 }
 

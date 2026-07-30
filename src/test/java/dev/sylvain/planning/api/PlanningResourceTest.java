@@ -163,24 +163,37 @@ class PlanningResourceTest {
     }
 
     @Test
-    void resetLoadsSampleWithoutSolving() {
-        int postes = given()
+    void resetEmptiesTheDatabase() {
+        // Seed some data first so the reset has something to wipe. Uses the tiny
+        // scenario so the solve (which persists the assignments) stays fast.
+        String sample = given()
+                .when().get("/api/planning/sample?name=scenario.yml")
+                .then()
+                .statusCode(200)
+                .extract().asString();
+        given()
+                .contentType("application/json")
+                .body(sample)
+                .when().post("/api/solve?seconds=1")
+                .then()
+                .statusCode(200);
+
+        // Reset now empties the database instead of reloading a scenario: the
+        // summary is all zeros and nothing remains persisted.
+        given()
                 .when().post("/api/planning/reset")
                 .then()
                 .statusCode(200)
-                .body("animateurs", greaterThan(0))
-                .body("stands", greaterThan(0))
-                .body("creneaux", greaterThan(0))
-                .extract().path("postes");
+                .body("animateurs", equalTo(0))
+                .body("stands", equalTo(0))
+                .body("creneaux", equalTo(0))
+                .body("postes", equalTo(0));
 
-        // Every seat must be stored, and none of them assigned: the reset is a
-        // blank slate, not a solve.
         given()
                 .when().get("/api/planning/persisted")
                 .then()
                 .statusCode(200)
-                .body("postes.size()", equalTo(postes))
-                .body("postes.findAll { it.animateur != null }.size()", equalTo(0));
+                .body("postes.size()", equalTo(0));
     }
 
     @Test

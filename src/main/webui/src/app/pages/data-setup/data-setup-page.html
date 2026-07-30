@@ -1,0 +1,31 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <mat-card-title>Data setup</mat-card-title>
+    <mat-card-subtitle>
+      Seed the database with a sample scenario or reset it. These actions are locked while the solver is running.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-actions class="card-actions">
+    <mat-form-field appearance="outline" class="scenario-select">
+      <mat-label>Scenario</mat-label>
+      <mat-select [value]="selectedScenario()" (valueChange)="onSelectScenario($event)"
+        [disabled]="solverBusy() || sampleLoading() || scenarios().length === 0">
+        @for (name of scenarios(); track name) {
+          <mat-option [value]="name">{{ name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <button matButton="outlined" [disabled]="solverBusy() || sampleLoading() || scenarios().length === 0"
+      (click)="onLoadSample()">
+      <mat-icon>auto_awesome</mat-icon>
+      Load sample planning
+    </button>
+    <button matButton="outlined" class="danger-action" [disabled]="solverBusy() || resetting()"
+      (click)="onResetDatabase()">
+      <mat-icon>delete_sweep</mat-icon>
+      Empty database
+    </button>
+  </mat-card-actions>
+</mat-card>
+
+<app-output-panel [text]="output()" />
