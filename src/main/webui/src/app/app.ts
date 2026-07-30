@@ -29,7 +29,7 @@ const NAV_GROUPS: NavGroup[] = [
     title: 'Planning',
     links: [
       { path: '/solver', label: 'Solver', icon: 'play_circle' },
-      { path: '/data-setup', label: 'Data setup', icon: 'database' },
+      { path: '/data-setup', label: 'Data setup', icon: 'storage' },
       { path: '/data-transfer', label: 'Data transfer', icon: 'swap_vert' }
     ]
   },
