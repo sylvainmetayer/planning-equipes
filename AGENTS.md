@@ -33,7 +33,7 @@ Read before working on constraints or the domain model:
 - Full stack: `docker compose --profile app up --build`
 - Frontend only (from `src/main/webui`): `npm install`, `npm run build`,
   `npm start` (`ng serve` on 4200). `quarkus:dev` already starts and proxies it.
-- Toolchain pinned in `mise.toml` (`temurin-25`, `maven 3.9.9`, `node 22`); the
+- Toolchain pinned in `mise.toml` (`temurin-25`, `maven 3.9.9`, `node 24`); the
   Maven build downloads its own Node through Quinoa, so CI/Docker need none.
 
 ## Architecture (essentials)

@@ -2,7 +2,7 @@
 
 ## Prérequis
 
-- Java 25, Maven 3.9.9 et Node 22, épinglés dans `mise.toml` (`mise install`).
+- Java 25, Maven 3.9.9 et Node 24, épinglés dans `mise.toml` (`mise install`).
 - Un runtime de conteneurs (Docker ou Podman) pour PostgreSQL et pour les tests
   (Quarkus dev services).
 

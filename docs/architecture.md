@@ -23,7 +23,7 @@ PostgreSQL (+ migrations Flyway)
 | Frontend | Angular 22 (standalone, signals, zoneless) dans `src/main/webui` | Construit et servi par l'extension Quarkus Quinoa |
 | Exports | OpenPDF (PDF), génération ICS maison | Toujours côté serveur |
 | Conteneurisation | Docker Compose (app, postgres, pgadmin) | Config par variables d'environnement |
-| Outillage | `mise.toml` (`temurin-25`, Maven 3.9.9, Node 22) | Toolchain épinglée ; Quinoa télécharge Node au build si absent |
+| Outillage | `mise.toml` (`temurin-25`, Maven 3.9.9, Node 24) | Toolchain épinglée ; Quinoa télécharge Node au build si absent |
 
 ## Arborescence
 

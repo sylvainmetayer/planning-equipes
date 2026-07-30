@@ -16,7 +16,7 @@ modèle de domaine, contraintes, formats d'import/export, contribution) est dans
 
 ### Prérequis
 
-- Java 25, Maven 3.9.9 et Node 22 — épinglés dans `mise.toml`, installables d'un
+- Java 25, Maven 3.9.9 et Node 24 — épinglés dans `mise.toml`, installables d'un
   coup avec [mise](https://mise.jdx.dev) : `mise install`
 - Docker ou Podman (pour la base PostgreSQL)
 
