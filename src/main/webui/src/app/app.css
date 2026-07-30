@@ -13,6 +13,11 @@
   color: var(--mat-sys-on-primary-container);
 }
 
+.app-logo {
+  height: 2.5rem;
+  width: auto;
+}
+
 .app-title {
   font: var(--mat-sys-title-medium);
 }
