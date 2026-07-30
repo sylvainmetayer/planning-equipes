@@ -88,6 +88,12 @@
             <version>3.27.7</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>ai.timefold.solver</groupId>
+            <artifactId>timefold-solver-test</artifactId>
+            <version>${timefold.solver.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

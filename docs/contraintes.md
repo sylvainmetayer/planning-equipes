@@ -66,6 +66,13 @@ Source : `solver/ConstraintCatalog.java` (description métier) et
    `PlanningConstraintProvider.defineConstraints`.
 3. Ajouter sa description métier dans `ConstraintCatalog` (niveau + catégorie +
    libellé) — c'est ce qui alimente l'IHM.
-4. Écrire ou étendre un test : `PlanningHardConstraintsTest` vérifie que
-   `solved.getScore().hardScore()` vaut zéro sur le scénario nominal. **Une
-   contrainte n'est pas terminée tant que ce test ne passe pas.**
+4. Écrire les tests :
+   - un test unitaire isolé dans la classe `*ConstraintsTest` de la famille
+     (via le `ConstraintVerifier`), avec au moins un cas pénalisé et un cas
+     valide — c'est ce qui garantit que la contrainte pénalise exactement ce
+     qu'elle doit ;
+   - pour une contrainte **dure**, s'assurer en plus que
+     `PlanningHardConstraintsTest` (score `hardScore()` à zéro sur le scénario
+     nominal) passe toujours.
+
+   **Une contrainte n'est pas terminée tant que ces tests ne passent pas.**

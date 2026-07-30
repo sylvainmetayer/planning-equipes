@@ -131,6 +131,10 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
 - `ContrainteAdHoc` (`INDISPONIBILITE_FORCEE`, `INCOMPATIBILITE`,
   `AFFECTATION_FORCEE`) is evaluated as `HardScore`, at the same priority as
   legal/minor hard constraints — never demote these to medium/soft.
+- Every constraint has an isolated unit test in the matching
+  `solver/constraints/*ConstraintsTest` (Timefold `ConstraintVerifier`, no
+  Quarkus/DB, shared `ConstraintTestBase`): at least one penalized case and one
+  valid case. A new constraint isn't done without one.
 - Hard constraints must never be violated in a valid solved plan.
   `PlanningHardConstraintsTest` asserts `solved.getScore().hardScore()` is zero on
   the nominal scenario — extend this style of test whenever a new hard constraint

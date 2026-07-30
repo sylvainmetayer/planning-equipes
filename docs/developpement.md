@@ -42,9 +42,20 @@ ne s'exécutent qu'avec `-DskipITs=false`.
 
 ## Tests
 
-Les tests démarrent un PostgreSQL jetable via les *dev services* Quarkus
-(`postgres:17`), donc les migrations Flyway s'exécutent exactement comme en
-production.
+On distingue deux familles de tests :
+
+- **Tests unitaires de contraintes** (`solver/constraints/*ConstraintsTest`) :
+  chaque contrainte est vérifiée isolément avec le `ConstraintVerifier` de
+  Timefold (dépendance `timefold-solver-test`). Ils ne démarrent ni Quarkus ni
+  base de données et s'exécutent en quelques millisecondes ; ils s'appuient sur
+  `ConstraintTestBase`, qui sélectionne la contrainte à tester par son nom et
+  fournit les fabriques de fixtures (créneaux, stands, animateurs, postes).
+  **Toute nouvelle contrainte doit y ajouter au moins un cas pénalisé et un cas
+  valide.**
+- **Tests d'intégration** (`@QuarkusTest`, ressources REST, persistance,
+  `PlanningHardConstraintsTest`) : ils démarrent un PostgreSQL jetable via les
+  *dev services* Quarkus (`postgres:17`), donc les migrations Flyway
+  s'exécutent exactement comme en production.
 
 Avec Podman (rootless), exposer la socket compatible Docker :
 
