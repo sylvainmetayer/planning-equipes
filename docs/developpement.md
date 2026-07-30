@@ -68,6 +68,13 @@ Dans `application.properties` :
 | `planning.solver.unimproved-seconds-limit` | `60` (`2` en profil `%test`) | Arrêt anticipé si le score n'a pas progressé |
 
 La configuration Timefold elle-même est dans `src/main/resources/solver/solverConfig.xml`.
+Le value range `animateurRange` couvre tous les animateurs (~150) car
+l'éligibilité dépend du poste visé (compétence du stand, disponibilité à la
+date), pas d'une propriété statique de l'animateur : `EligibleAnimateurMoveFilter`
+rejette les change/swap moves manifestement invalides avant tout calcul de
+score, ce qui multiplie par ~3 le débit de la recherche locale sur le scénario
+complet (150 animateurs / 2088 postes) et est déterminant sur du matériel
+contraint (Raspberry Pi).
 
 ## Configuration
 
@@ -88,7 +95,9 @@ démarrage. **Un changement de schéma = un nouveau fichier versionné** ; ne ja
 
 - `.github/workflows/tests.yml` — `./mvnw verify -DskipITs=false` sur chaque push
   `main` et chaque pull request, avec upload des rapports surefire/failsafe.
-- `.github/workflows/docker-ghcr.yml` — publication de l'image sur GHCR.
+- `.github/workflows/docker-ghcr.yml` — publication de l'image sur GHCR, en
+  multi-arch (`linux/amd64`, `linux/arm64` via QEMU) pour un déploiement natif
+  sur Raspberry Pi.
 
 ## Mises à jour de dépendances (Renovate)
 

@@ -17,14 +17,29 @@
         an "unavailable" assignment for an available animateur rather than
         stalling. Termination (seconds / unimproved-seconds) is injected
         programmatically by PlanningService.
+
+        The animateurRange value range spans every animateur (~150): eligibility
+        depends on the target poste, not on a static animateur property, so it
+        cannot be narrowed at the @ValueRangeProvider level. EligibleAnimateurMoveFilter
+        rejects moves that assign an incompetent or unavailable animateur before
+        the solver pays for a score calculation, which is what keeps the full
+        ~150 animateurs / 2000+ postes scenario solvable in reasonable time on
+        constrained hardware (e.g. a Raspberry Pi).
     -->
     <constructionHeuristic>
         <constructionHeuristicType>FIRST_FIT</constructionHeuristicType>
+        <changeMoveSelector>
+            <filterClass>dev.sylvain.planning.solver.EligibleAnimateurMoveFilter$ChangeMoveFilter</filterClass>
+        </changeMoveSelector>
     </constructionHeuristic>
     <localSearch>
         <unionMoveSelector>
-            <changeMoveSelector/>
-            <swapMoveSelector/>
+            <changeMoveSelector>
+                <filterClass>dev.sylvain.planning.solver.EligibleAnimateurMoveFilter$ChangeMoveFilter</filterClass>
+            </changeMoveSelector>
+            <swapMoveSelector>
+                <filterClass>dev.sylvain.planning.solver.EligibleAnimateurMoveFilter$SwapMoveFilter</filterClass>
+            </swapMoveSelector>
         </unionMoveSelector>
         <acceptor>
             <lateAcceptanceSize>400</lateAcceptanceSize>
