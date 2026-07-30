@@ -9,6 +9,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/solver/solver-page').then((m) => m.SolverPage)
   },
   {
+    path: 'debug',
+    title: 'Debug — Planning Équipes',
+    loadComponent: () => import('./pages/debug/debug-page').then((m) => m.DebugPage)
+  },
+  {
     path: 'data-setup',
     title: 'Data setup — Planning Équipes',
     loadComponent: () => import('./pages/data-setup/data-setup-page').then((m) => m.DataSetupPage)

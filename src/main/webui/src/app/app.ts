@@ -1,5 +1,5 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
@@ -7,8 +7,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
-import { map } from 'rxjs';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { map } from 'rxjs';
 import { SolverJobService } from './core/solver-job.service';
 import { JobMonitor } from './shared/job-monitor';
 
@@ -29,6 +29,7 @@ const NAV_GROUPS: NavGroup[] = [
     title: 'Planning',
     links: [
       { path: '/solver', label: 'Solver', icon: 'play_circle' },
+      { path: '/debug', label: 'Debug', icon: 'bug_report' },
       { path: '/data-setup', label: 'Data setup', icon: 'storage' },
       { path: '/data-transfer', label: 'Data transfer', icon: 'swap_vert' }
     ]

@@ -9,8 +9,8 @@
   top: 0;
   z-index: 3;
   gap: 0.5rem;
-  background: var(--mat-sys-primary-container);
-  color: var(--mat-sys-on-primary-container);
+  background: #0098d7;
+  color: #fff;
 }
 
 .app-logo {
