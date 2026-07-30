@@ -5,7 +5,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { ApiService } from '../../core/api.service';
-import { PlanningFestival, ResetSummary } from '../../core/models';
+import { ResetSummary } from '../../core/models';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
@@ -70,12 +70,18 @@ export class DataSetupPage {
     this.sampleLoading.set(true);
     this.output.set(name ? `Loading scenario "${name}"...` : 'Loading sample planning...');
     try {
-      const url = name ? `/api/planning/sample?name=${encodeURIComponent(name)}` : '/api/planning/sample';
-      const sample = await this.api.get<PlanningFestival>(url);
-      this.planningState.set(sample);
-      // Import the sample reference data into the CRUD store so it is editable.
-      await this.api.post('/api/reference-data/import', sample);
+      // The scenario is parsed and imported entirely server-side: we only send
+      // its name, so a large scenario never travels to the browser and back.
+      const url = name
+        ? `/api/reference-data/import-scenario?name=${encodeURIComponent(name)}`
+        : '/api/reference-data/import-scenario';
+      await this.api.post(url, {});
       await this.referenceData.reload();
+      // Nothing is solved yet, and no planning is built in the browser: the
+      // problem is assembled server-side when the user launches a solve. The
+      // display pages fall back to the persisted planning until then, so a very
+      // large scenario never has to be materialised client-side.
+      this.planningState.set(null);
       this.output.set('Sample planning loaded. Reference data is populated and editable from the reference pages.');
     } catch (error) {
       this.output.set(`Error: ${message(error)}`);

@@ -54,58 +54,6 @@ describe('PlanningStateService', () => {
     service = TestBed.inject(PlanningStateService);
   });
 
-  describe('buildFromReferenceData', () => {
-    it('generates effectifMax seats per stand and per timeslot', async () => {
-      api.responses = {
-        '/api/animateurs': [animateur('A1')],
-        '/api/stands': [stand('S1', 2), stand('S2', 3)],
-        '/api/creneaux': [creneau('C1'), creneau('C2')]
-      };
-
-      const planning = await service.buildFromReferenceData();
-
-      // (2 + 3) seats × 2 timeslots = 10 postes.
-      expect(planning.postes).toHaveLength(10);
-      expect(planning.postes.every((p) => p.animateur === null)).toBe(true);
-      expect(planning.animateurs).toEqual(api.responses['/api/animateurs']);
-      expect(planning.score).toBeNull();
-    });
-
-    it('assigns a unique id to every poste', async () => {
-      api.responses = {
-        '/api/animateurs': [animateur('A1')],
-        '/api/stands': [stand('S1', 2)],
-        '/api/creneaux': [creneau('C1'), creneau('C2')]
-      };
-
-      const planning = await service.buildFromReferenceData();
-      const ids = planning.postes.map((p) => p.id);
-
-      expect(new Set(ids).size).toBe(ids.length);
-    });
-
-    it('falls back to at least one seat when effectifMax is zero', async () => {
-      api.responses = {
-        '/api/animateurs': [animateur('A1')],
-        '/api/stands': [stand('S1', 0)],
-        '/api/creneaux': [creneau('C1')]
-      };
-
-      const planning = await service.buildFromReferenceData();
-      expect(planning.postes).toHaveLength(1);
-    });
-
-    it('throws when any reference collection is empty', async () => {
-      api.responses = {
-        '/api/animateurs': [],
-        '/api/stands': [stand('S1', 1)],
-        '/api/creneaux': [creneau('C1')]
-      };
-
-      await expect(service.buildFromReferenceData()).rejects.toThrow(/No reference data/);
-    });
-  });
-
   describe('loadForDisplay / require', () => {
     const solved: PlanningFestival = {
       animateurs: [animateur('A1')],

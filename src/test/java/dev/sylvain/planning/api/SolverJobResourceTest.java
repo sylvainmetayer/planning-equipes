@@ -44,6 +44,29 @@ class SolverJobResourceTest {
         assertThat(job.getList("result.postes")).isNotEmpty();
     }
 
+    /**
+     * A large scenario's planning JSON is too big to upload; instead the solve
+     * problem is built server-side from the persisted reference data, so the
+     * browser sends no planning at all.
+     */
+    @Test
+    void solveFromReferenceDataBuildsProblemServerSide() throws InterruptedException {
+        given()
+                .when().post("/api/reference-data/import-scenario?name=scenario.yml")
+                .then().statusCode(204);
+
+        String jobId = given()
+                .when().post("/api/solve/async/reference-data")
+                .then()
+                .statusCode(202)
+                .body("type", equalTo("SOLVE"))
+                .extract().path("id");
+
+        JsonPath job = pollUntilFinished(jobId);
+        assertThat(job.getString("status")).isEqualTo("COMPLETED");
+        assertThat(job.getList("result.postes")).isNotEmpty();
+    }
+
     @Test
     void analyzeAsyncReturnsConstraintBreakdown() throws InterruptedException {
         String planningJson = sampleplanning();

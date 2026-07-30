@@ -22,6 +22,7 @@ import ai.timefold.solver.core.config.score.director.ScoreDirectorFactoryConfig;
 import ai.timefold.solver.core.config.solver.termination.TerminationConfig;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 
 import ai.timefold.solver.core.config.solver.SolverConfig;
@@ -112,6 +113,43 @@ public class PlanningService {
     }
 
     /**
+     * Builds a fresh problem from the persisted reference data: one
+     * {@link PosteAffectation} per required seat ({@code stand.effectifMax}) on
+     * every stand × timeslot, all seats unassigned. This mirrors the client-side
+     * builder so a solve can be launched by sending only a request to the
+     * server — the (potentially huge) planning is built here and never travels
+     * to the browser and back, which is what makes very large scenarios
+     * solvable at all (the JSON of such a planning exceeds the HTTP body limit).
+     */
+    public PlanningFestival construireDepuisReferenceData() {
+        List<Animateur> animateurs = referenceDataService.listAnimateurs();
+        List<Stand> stands = referenceDataService.listStands();
+        List<Creneau> creneaux = referenceDataService.listCreneaux();
+        if (animateurs.isEmpty() || stands.isEmpty() || creneaux.isEmpty()) {
+            throw new IllegalStateException(
+                    "Aucune donnée de référence. Chargez un scénario ou créez des stands, "
+                            + "des animateurs et des créneaux d'abord.");
+        }
+        List<PosteAffectation> postes = new ArrayList<>();
+        int counter = 0;
+        for (Stand stand : stands) {
+            int seats = Math.max(1, stand.getEffectifMax());
+            for (Creneau creneau : creneaux) {
+                for (int seat = 0; seat < seats; seat++) {
+                    postes.add(new PosteAffectation("poste-" + (counter++), stand, creneau));
+                }
+            }
+        }
+        LocalDate dateDebut = creneaux.stream()
+                .map(Creneau::getDate)
+                .filter(java.util.Objects::nonNull)
+                .min(LocalDate::compareTo)
+                .orElse(null);
+        return new PlanningFestival(dateDebut, animateurs, postes,
+                referenceDataService.snapshotContraintes());
+    }
+
+    /**
      * Lists every {@code .yaml}/{@code .yml} scenario available in the
      * {@link #SCENARIOS_DIR} classpath folder, sorted alphabetically. Drop a new
      * file in that folder and it shows up here (and in the UI dropdown) with no
@@ -161,7 +199,9 @@ public class PlanningService {
 
     @SuppressWarnings("unchecked")
     private PlanningFestival chargerScenarioYaml(String scenarioPath) throws IOException {
-        Yaml yaml = new Yaml();
+        LoaderOptions loaderOptions = new LoaderOptions();
+        loaderOptions.setCodePointLimit(Integer.MAX_VALUE);
+        Yaml yaml = new Yaml(new org.yaml.snakeyaml.constructor.SafeConstructor(loaderOptions));
         InputStream inputStream = getClass().getClassLoader().getResourceAsStream(scenarioPath);
         if (inputStream == null) {
             throw new IOException("Fichier de scénario non trouvé: " + scenarioPath);

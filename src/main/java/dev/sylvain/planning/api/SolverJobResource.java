@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.List;
 
 import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.SolverJobService;
 import dev.sylvain.planning.service.SolverJobService.SolverBusyException;
 import dev.sylvain.planning.service.SolverJobService.SolverJob;
@@ -32,6 +33,9 @@ public class SolverJobResource {
     @Inject
     SolverJobService solverJobService;
 
+    @Inject
+    PlanningService planningService;
+
     @POST
     @Path("/solve/async")
     public Response solveAsync(PlanningFestival planningFestival, @QueryParam("seconds") Long secondsLimit) {
@@ -48,6 +52,39 @@ public class SolverJobResource {
     public Response analyzeAsync(PlanningFestival planningFestival, @QueryParam("seconds") Long secondsLimit) {
         try {
             SolverJob job = solverJobService.submitAnalyze(planningFestival, secondsLimit);
+            return Response.accepted(JobView.withoutResult(job)).build();
+        } catch (SolverBusyException e) {
+            return busy(e);
+        }
+    }
+
+    /**
+     * Launches a solve on a problem built entirely server-side from the
+     * persisted reference data. The browser sends no planning at all, so even a
+     * very large scenario (whose planning JSON would exceed the HTTP body limit)
+     * can be solved.
+     */
+    @POST
+    @Path("/solve/async/reference-data")
+    @Consumes(MediaType.WILDCARD)
+    public Response solveFromReferenceData(@QueryParam("seconds") Long secondsLimit) {
+        try {
+            SolverJob job = solverJobService.submitSolve(
+                    planningService.construireDepuisReferenceData(), secondsLimit);
+            return Response.accepted(JobView.withoutResult(job)).build();
+        } catch (SolverBusyException e) {
+            return busy(e);
+        }
+    }
+
+    /** Server-side-built counterpart of {@link #analyzeAsync}. */
+    @POST
+    @Path("/solve/analyze/async/reference-data")
+    @Consumes(MediaType.WILDCARD)
+    public Response analyzeFromReferenceData(@QueryParam("seconds") Long secondsLimit) {
+        try {
+            SolverJob job = solverJobService.submitAnalyze(
+                    planningService.construireDepuisReferenceData(), secondsLimit);
             return Response.accepted(JobView.withoutResult(job)).build();
         } catch (SolverBusyException e) {
             return busy(e);

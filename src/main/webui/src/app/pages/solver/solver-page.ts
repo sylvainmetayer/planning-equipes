@@ -49,7 +49,10 @@ export class SolverPage {
     }
     this.output.set('Submitting solve to the background solver...');
     try {
-      await this.jobs.submitSolve(await this.planningToWorkOn(), true);
+      // The problem is built server-side from the reference data: no planning is
+      // uploaded, so even a very large scenario can be solved without hitting the
+      // HTTP body limit (which would fail with a network error).
+      await this.jobs.submitSolveFromReferenceData(true);
       this.output.set(
         'Solving with Timefold on the server, then analyzing the result automatically. You can keep browsing; '
           + 'a notification will pop up at each step, here and in any other browser watching this server.'
@@ -68,12 +71,6 @@ export class SolverPage {
     }
     this.output.set(`${this.jobs.activeJobDescription()} Wait for it to finish before starting another one.`);
     return true;
-  }
-
-  // Solver input: the planning solved during this session if any, otherwise a
-  // fresh problem built from the reference data.
-  private async planningToWorkOn(): Promise<PlanningFestival> {
-    return this.planningState.lastSolvedPlanning() ?? this.planningState.buildFromReferenceData();
   }
 
   private applySolveResult(solved: PlanningFestival): void {

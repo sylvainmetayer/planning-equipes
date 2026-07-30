@@ -6,6 +6,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.ReferenceDataService;
 import dev.sylvain.planning.service.ReferenceDataService.TypologieItem;
 import jakarta.inject.Inject;
@@ -17,6 +18,7 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -27,6 +29,9 @@ public class ReferenceDataResource {
 
     @Inject
     ReferenceDataService referenceDataService;
+
+    @Inject
+    PlanningService planningService;
 
     @GET
     @Path("/stands")
@@ -132,6 +137,20 @@ public class ReferenceDataResource {
     @Path("/reference-data/import")
     public Response importReferenceData(dev.sylvain.planning.domain.PlanningFestival planning) {
         referenceDataService.importFromPlanning(planning);
+        return Response.noContent().build();
+    }
+
+    /**
+     * Loads a scenario by name entirely server-side and imports its reference
+     * data into the database. The scenario file is parsed on the backend, so
+     * the (potentially large) planning never travels to the browser and back —
+     * the client only sends the desired scenario name.
+     */
+    @POST
+    @Path("/reference-data/import-scenario")
+    @Consumes(MediaType.WILDCARD)
+    public Response importScenario(@QueryParam("name") String name) {
+        referenceDataService.importFromPlanning(planningService.construireExemple(name));
         return Response.noContent().build();
     }
 

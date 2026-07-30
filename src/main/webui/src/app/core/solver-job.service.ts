@@ -66,6 +66,10 @@ export class SolverJobService {
   // Held in the (per-browser) singleton so the chain survives page navigation
   // and only the initiating session triggers the follow-up analysis.
   private autoAnalyzeSolveId: string | null = null;
+  // True when the auto-analyze must also be built server-side (the matching
+  // solve was launched from reference data): the browser holds no planning big
+  // enough to repost, so the analyze is rebuilt on the server too.
+  private autoAnalyzeFromReferenceData = false;
 
   /** Starts the shared polling loop. Called once by the app shell. */
   start(): void {
@@ -95,6 +99,20 @@ export class SolverJobService {
   async submitSolve(planning: PlanningFestival, autoAnalyze = false, seconds?: number): Promise<JobView> {
     const job = await this.submit('/api/solve/async', planning, 'SOLVE', seconds);
     this.autoAnalyzeSolveId = autoAnalyze ? job.id : null;
+    this.autoAnalyzeFromReferenceData = false;
+    return job;
+  }
+
+  /**
+   * Submits a solve whose problem is built entirely server-side from the
+   * persisted reference data: no planning is uploaded, so even a very large
+   * scenario (whose planning JSON would exceed the HTTP body limit and fail
+   * with a network error) can be solved.
+   */
+  async submitSolveFromReferenceData(autoAnalyze = false, seconds?: number): Promise<JobView> {
+    const job = await this.submit('/api/solve/async/reference-data', {}, 'SOLVE', seconds);
+    this.autoAnalyzeSolveId = autoAnalyze ? job.id : null;
+    this.autoAnalyzeFromReferenceData = autoAnalyze;
     return job;
   }
 
@@ -102,7 +120,12 @@ export class SolverJobService {
     return this.submit('/api/solve/analyze/async', planning, 'ANALYZE', seconds);
   }
 
-  private async submit(endpoint: string, payload: PlanningFestival, type: JobType, seconds?: number): Promise<JobView> {
+  /** Server-side-built counterpart of {@link submitAnalyze}. */
+  submitAnalyzeFromReferenceData(seconds?: number): Promise<JobView> {
+    return this.submit('/api/solve/analyze/async/reference-data', {}, 'ANALYZE', seconds);
+  }
+
+  private async submit(endpoint: string, payload: unknown, type: JobType, seconds?: number): Promise<JobView> {
     this.notifications.requestDesktopPermission();
     const url = seconds ? `${endpoint}?seconds=${encodeURIComponent(seconds)}` : endpoint;
     let job: JobView;
@@ -234,7 +257,12 @@ export class SolverJobService {
     if (job.type !== 'SOLVE' || job.status !== 'COMPLETED' || !job.result) {
       return;
     }
-    void this.submitAnalyze(job.result as PlanningFestival).catch((error) => {
+    const fromReferenceData = this.autoAnalyzeFromReferenceData;
+    this.autoAnalyzeFromReferenceData = false;
+    const analysis = fromReferenceData
+      ? this.submitAnalyzeFromReferenceData()
+      : this.submitAnalyze(job.result as PlanningFestival);
+    void analysis.catch((error) => {
       this.notifications.notify({
         title: 'Automatic analysis could not start',
         message: error instanceof Error ? error.message : String(error),
