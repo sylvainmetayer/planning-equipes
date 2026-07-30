@@ -13,7 +13,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { ApiService, toError } from './api.service';
 import { NotificationService } from './notification.service';
-import { JobType, JobView, PlanningDiagnostic, PlanningFestival } from './models';
+import { JobType, JobView, PlanningDiagnostic, PlanningFestival, SolveWithDiagnostic } from './models';
 
 const POLL_INTERVAL_MS = 2000;
 const LABELS: Record<JobType, string> = {
@@ -62,14 +62,6 @@ export class SolverJobService {
   private readonly stateKnown = signal(false);
   private readonly resultHandlers = new Map<JobType, ResultHandler>();
   private started = false;
-  // Id of a solve this browser wants analyzed automatically once it completes.
-  // Held in the (per-browser) singleton so the chain survives page navigation
-  // and only the initiating session triggers the follow-up analysis.
-  private autoAnalyzeSolveId: string | null = null;
-  // True when the auto-analyze must also be built server-side (the matching
-  // solve was launched from reference data): the browser holds no planning big
-  // enough to repost, so the analyze is rebuilt on the server too.
-  private autoAnalyzeFromReferenceData = false;
 
   /** Starts the shared polling loop. Called once by the app shell. */
   start(): void {
@@ -92,15 +84,13 @@ export class SolverJobService {
   }
 
   /**
-   * Submits a solve. When {@code autoAnalyze} is set, the solved result is
-   * analyzed automatically as soon as this job completes, without a separate
-   * user action.
+   * Submits a solve. The server always analyzes the result as part of the same
+   * job (see {@code SolverJobService.submitSolve} on the backend), so the
+   * SOLVE result handler receives a {@link SolveWithDiagnostic} — no separate
+   * follow-up action or client-side state is needed.
    */
-  async submitSolve(planning: PlanningFestival, autoAnalyze = false, seconds?: number): Promise<JobView> {
-    const job = await this.submit('/api/solve/async', planning, 'SOLVE', seconds);
-    this.autoAnalyzeSolveId = autoAnalyze ? job.id : null;
-    this.autoAnalyzeFromReferenceData = false;
-    return job;
+  submitSolve(planning: PlanningFestival, seconds?: number): Promise<JobView> {
+    return this.submit('/api/solve/async', planning, 'SOLVE', seconds);
   }
 
   /**
@@ -109,11 +99,8 @@ export class SolverJobService {
    * scenario (whose planning JSON would exceed the HTTP body limit and fail
    * with a network error) can be solved.
    */
-  async submitSolveFromReferenceData(autoAnalyze = false, seconds?: number): Promise<JobView> {
-    const job = await this.submit('/api/solve/async/reference-data', {}, 'SOLVE', seconds);
-    this.autoAnalyzeSolveId = autoAnalyze ? job.id : null;
-    this.autoAnalyzeFromReferenceData = autoAnalyze;
-    return job;
+  submitSolveFromReferenceData(seconds?: number): Promise<JobView> {
+    return this.submit('/api/solve/async/reference-data', {}, 'SOLVE', seconds);
   }
 
   submitAnalyze(planning: PlanningFestival, seconds?: number): Promise<JobView> {
@@ -243,32 +230,6 @@ export class SolverJobService {
       desktop: true
     });
     this.resultHandlers.get(job.type)?.(job.result);
-    this.maybeChainAnalysis(entry, job);
-  }
-
-  // Chains an analysis on a just-finished solve this browser asked to analyze
-  // automatically. Runs even if the user has left the Solver page, since the
-  // pending id lives on this service, not on the component.
-  private maybeChainAnalysis(entry: TrackedJob, job: JobView): void {
-    if (entry.id !== this.autoAnalyzeSolveId) {
-      return;
-    }
-    this.autoAnalyzeSolveId = null;
-    if (job.type !== 'SOLVE' || job.status !== 'COMPLETED' || !job.result) {
-      return;
-    }
-    const fromReferenceData = this.autoAnalyzeFromReferenceData;
-    this.autoAnalyzeFromReferenceData = false;
-    const analysis = fromReferenceData
-      ? this.submitAnalyzeFromReferenceData()
-      : this.submitAnalyze(job.result as PlanningFestival);
-    void analysis.catch((error) => {
-      this.notifications.notify({
-        title: 'Automatic analysis could not start',
-        message: error instanceof Error ? error.message : String(error),
-        variant: 'error'
-      });
-    });
   }
 }
 
@@ -286,16 +247,8 @@ function describeResult(type: JobType, result: unknown): string {
   if (!result) {
     return '';
   }
-  if (type === 'ANALYZE') {
-    const analysis = result as PlanningDiagnostic;
-    return `Score ${analysis.score} — ${analysis.postesNonPourvus} unfilled seats.`;
-  }
-  const solved = result as PlanningFestival;
-  const unfilled = Array.isArray(solved.postes)
-    ? solved.postes.filter((poste) => !poste.animateur).length
-    : null;
-  const score = formatScore(solved.score);
-  return unfilled === null ? `Score ${score}.` : `Score ${score} — ${unfilled} unfilled seats.`;
+  const diagnostic = type === 'SOLVE' ? (result as SolveWithDiagnostic).diagnostic : (result as PlanningDiagnostic);
+  return `Score ${diagnostic.score} — ${diagnostic.postesNonPourvus} unfilled seats.`;
 }
 
 export function formatScore(score: PlanningFestival['score']): string {

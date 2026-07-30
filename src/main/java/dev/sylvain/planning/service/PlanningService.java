@@ -42,13 +42,15 @@ public class PlanningService {
     private final SolverFactory<PlanningFestival> solverFactory;
     private final SolutionManager<PlanningFestival, ?> solutionManager;
     private final ReferenceDataService referenceDataService;
+    private final FeasibilityAnalyzer feasibilityAnalyzer;
     private final long defaultSecondsLimit;
     private final long defaultUnimprovedSecondsLimit;
 
     public PlanningService(
             @ConfigProperty(name = "planning.solver.seconds-limit", defaultValue = "120") Long secondsLimit,
             @ConfigProperty(name = "planning.solver.unimproved-seconds-limit", defaultValue = "30") Long unimprovedSecondsLimit,
-            ReferenceDataService referenceDataService) {
+            ReferenceDataService referenceDataService,
+            FeasibilityAnalyzer feasibilityAnalyzer) {
         SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
         solverConfig.setScoreDirectorFactoryConfig(new ScoreDirectorFactoryConfig()
                 .withConstraintProviderClass(PlanningConstraintProvider.class));
@@ -56,6 +58,7 @@ public class PlanningService {
         this.solverFactory = SolverFactory.create(solverConfig);
         this.solutionManager = SolutionManager.create(this.solverFactory);
         this.referenceDataService = referenceDataService;
+        this.feasibilityAnalyzer = feasibilityAnalyzer;
         this.defaultSecondsLimit = secondsLimit;
         this.defaultUnimprovedSecondsLimit = unimprovedSecondsLimit;
     }
@@ -320,6 +323,15 @@ public class PlanningService {
      */
     public PlanningDiagnostic analyser(PlanningFestival problem, Long secondsLimitOverride) {
         PlanningFestival solved = resoudre(problem, secondsLimitOverride);
+        return diagnostiquer(solved);
+    }
+
+    /**
+     * Builds the diagnostic of an already-solved planning, without solving it
+     * again. Used right after {@link #resoudre} so a solve is never run twice
+     * just to produce its own analysis.
+     */
+    public PlanningDiagnostic diagnostiquer(PlanningFestival solved) {
         ScoreAnalysis<?> analysis = solutionManager.analyze(solved);
         List<ConstraintDiagnostic> constraintDiagnostics = new ArrayList<>();
         for (ConstraintAnalysis<?> ca : analysis.constraintAnalyses()) {
@@ -332,7 +344,26 @@ public class PlanningService {
         int unassigned = (int) solved.getPostes().stream()
                 .filter(p -> p.getAnimateur() == null)
                 .count();
-        return new PlanningDiagnostic(String.valueOf(solved.getScore()), unassigned, constraintDiagnostics, solved);
+        FeasibilityAnalyzer.FeasibilityReport faisabilite = feasibilityAnalyzer.analyser(
+                solved.getAnimateurs(), distinctStands(solved), distinctCreneaux(solved));
+        return new PlanningDiagnostic(String.valueOf(solved.getScore()), unassigned, constraintDiagnostics, solved,
+                faisabilite);
+    }
+
+    private static List<Stand> distinctStands(PlanningFestival solved) {
+        Map<String, Stand> byId = new java.util.LinkedHashMap<>();
+        for (PosteAffectation poste : solved.getPostes()) {
+            byId.putIfAbsent(poste.getStand().getId(), poste.getStand());
+        }
+        return new ArrayList<>(byId.values());
+    }
+
+    private static List<Creneau> distinctCreneaux(PlanningFestival solved) {
+        Map<String, Creneau> byId = new java.util.LinkedHashMap<>();
+        for (PosteAffectation poste : solved.getPostes()) {
+            byId.putIfAbsent(poste.getCreneau().getId(), poste.getCreneau());
+        }
+        return new ArrayList<>(byId.values());
     }
 
     private SolverFactory<PlanningFestival> resolveSolverFactory(Long secondsLimitOverride) {
@@ -353,7 +384,8 @@ public class PlanningService {
             String score,
             int postesNonPourvus,
             List<ConstraintDiagnostic> contraintes,
-            PlanningFestival planning) {
+            PlanningFestival planning,
+            FeasibilityAnalyzer.FeasibilityReport faisabilite) {
     }
 
     private LocalDate parseLocalDate(Object value, String fieldName) {

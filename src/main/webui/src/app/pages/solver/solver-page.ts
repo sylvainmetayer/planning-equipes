@@ -2,24 +2,27 @@ import { Component, computed, effect, inject, signal, untracked } from '@angular
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
-import { PlanningDiagnostic, PlanningFestival } from '../../core/models';
+import { FeasibilityReport, SolveWithDiagnostic } from '../../core/models';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { SolverJobService } from '../../core/solver-job.service';
+import { FeasibilityBanner } from '../../shared/feasibility-banner';
 import { OutputPanel } from '../../shared/output-panel';
 
 /**
- * Solver page: launches the background solve job. Each solve started here is
- * followed by an automatic analysis of the result, so there is no separate
- * analyze action. Seeding and resetting the database live on the Data setup
- * page; exports on the Exports page.
+ * Solver page: launches the background solve job. The server always analyzes
+ * the result as part of the same job (see {@code SolverJobService.submitSolve}
+ * on the backend), so there is no separate analyze action and no client-side
+ * chaining to keep in sync. Seeding and resetting the database live on the
+ * Data setup page; exports on the Exports page.
  */
 @Component({
   selector: 'app-solver-page',
-  imports: [MatCardModule, MatButtonModule, MatIconModule, OutputPanel],
+  imports: [MatCardModule, MatButtonModule, MatIconModule, FeasibilityBanner, OutputPanel],
   templateUrl: './solver-page.html'
 })
 export class SolverPage {
   protected readonly output = signal('');
+  protected readonly feasibility = signal<FeasibilityReport | null>(null);
 
   /** The server-side lock, not a local flag: it also covers other browsers. */
   protected readonly solverBusy = computed(() => this.jobs.solverBusy());
@@ -29,9 +32,9 @@ export class SolverPage {
 
   constructor() {
     // Results are pushed by the job service, whoever started the job: a solve
-    // launched from another browser also lands here when it completes.
-    this.jobs.onResult('SOLVE', (result) => this.applySolveResult(result as PlanningFestival));
-    this.jobs.onResult('ANALYZE', (result) => this.applyAnalyzeResult(result as PlanningDiagnostic));
+    // launched from another browser also lands here when it completes, already
+    // analyzed.
+    this.jobs.onResult('SOLVE', (result) => this.applySolveResult(result as SolveWithDiagnostic));
     // Explains why the solver buttons are locked when the job comes from
     // somewhere else (another tab, another browser, a private window).
     effect(() => {
@@ -48,11 +51,12 @@ export class SolverPage {
       return;
     }
     this.output.set('Submitting solve to the background solver...');
+    this.feasibility.set(null);
     try {
       // The problem is built server-side from the reference data: no planning is
       // uploaded, so even a very large scenario can be solved without hitting the
       // HTTP body limit (which would fail with a network error).
-      await this.jobs.submitSolveFromReferenceData(true);
+      await this.jobs.submitSolveFromReferenceData();
       this.output.set(
         'Solving with Timefold on the server, then analyzing the result automatically. You can keep browsing; '
           + 'a notification will pop up at each step, here and in any other browser watching this server.'
@@ -73,17 +77,10 @@ export class SolverPage {
     return true;
   }
 
-  private applySolveResult(solved: PlanningFestival): void {
-    this.planningState.set(solved);
-    // The analysis chained by the job service will overwrite this shortly.
-    this.output.set(JSON.stringify(solved, null, 2));
-  }
-
-  private applyAnalyzeResult(analysis: PlanningDiagnostic): void {
-    if (analysis.planning) {
-      this.planningState.set(analysis.planning);
-    }
-    this.output.set(JSON.stringify(analysis, null, 2));
+  private applySolveResult(result: SolveWithDiagnostic): void {
+    this.planningState.set(result.solved);
+    this.feasibility.set(result.diagnostic.faisabilite);
+    this.output.set(JSON.stringify(result, null, 2));
   }
 }
 

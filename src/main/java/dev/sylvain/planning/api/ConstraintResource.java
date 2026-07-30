@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import dev.sylvain.planning.service.ConstraintAnalysisStore;
 import dev.sylvain.planning.service.ConstraintAnalysisStore.StoredAnalysis;
+import dev.sylvain.planning.service.FeasibilityAnalyzer.FeasibilityReport;
 import dev.sylvain.planning.service.PlanningService.ConstraintDiagnostic;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.ConstraintCatalog.ConstraintDefinition;
@@ -45,6 +46,7 @@ public class ConstraintResource {
                 analysis == null ? null : analysis.analysedAt(),
                 analysis == null ? null : analysis.diagnostic().score(),
                 analysis == null ? null : analysis.diagnostic().postesNonPourvus(),
+                analysis == null ? null : analysis.diagnostic().faisabilite(),
                 constraints);
     }
 
@@ -77,6 +79,7 @@ public class ConstraintResource {
             Instant analysedAt,
             String scoreGlobal,
             Integer postesNonPourvus,
+            FeasibilityReport faisabilite,
             List<ConstraintView> contraintes) {
     }
 }

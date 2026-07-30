@@ -41,7 +41,10 @@ class SolverJobResourceTest {
 
         JsonPath job = pollUntilFinished(jobId);
         assertThat(job.getString("status")).isEqualTo("COMPLETED");
-        assertThat(job.getList("result.postes")).isNotEmpty();
+        assertThat(job.getList("result.solved.postes")).isNotEmpty();
+        // The analysis must always follow the solve within the same job: a
+        // client that only ever asks once still gets both.
+        assertThat(job.getString("result.diagnostic.score")).isNotBlank();
     }
 
     /**
@@ -64,7 +67,8 @@ class SolverJobResourceTest {
 
         JsonPath job = pollUntilFinished(jobId);
         assertThat(job.getString("status")).isEqualTo("COMPLETED");
-        assertThat(job.getList("result.postes")).isNotEmpty();
+        assertThat(job.getList("result.solved.postes")).isNotEmpty();
+        assertThat(job.getString("result.diagnostic.score")).isNotBlank();
     }
 
     @Test

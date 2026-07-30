@@ -64,11 +64,18 @@ public class SolverJobService {
     private final Map<String, SolverJob> jobs = new ConcurrentHashMap<>();
     private final ExecutorService executor = Executors.newFixedThreadPool(2, new SolverThreadFactory());
 
+    /**
+     * Solves, then always analyzes the result in the same job — the two are
+     * never split across a client-visible gap, so the score analysis reaches
+     * the caller even if the browser reloads, closes, or never asks again.
+     */
     public SolverJob submitSolve(PlanningFestival problem, Long secondsLimit) {
         return submit(JobType.SOLVE, secondsLimit, () -> {
             PlanningFestival solved = planningService.resoudre(problem, secondsLimit);
             persistenceService.persist(solved);
-            return solved;
+            PlanningService.PlanningDiagnostic diagnostic = planningService.diagnostiquer(solved);
+            analysisStore.record(diagnostic);
+            return new SolveWithDiagnostic(solved, diagnostic);
         });
     }
 
@@ -167,6 +174,10 @@ public class SolverJobService {
     @FunctionalInterface
     private interface JobTask {
         Object execute();
+    }
+
+    /** Result of a SOLVE job: the solved planning plus its own analysis. */
+    public record SolveWithDiagnostic(PlanningFestival solved, PlanningService.PlanningDiagnostic diagnostic) {
     }
 
     /** Raised when a solve or analyze is requested while another one runs. */

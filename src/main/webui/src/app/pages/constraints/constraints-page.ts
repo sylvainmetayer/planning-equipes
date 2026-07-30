@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ApiService } from '../../core/api.service';
 import { ConstraintView, ConstraintsView, NiveauContrainte } from '../../core/models';
+import { FeasibilityBanner } from '../../shared/feasibility-banner';
 
 const NIVEAU_LABELS: Record<NiveauContrainte, string> = {
   HARD: 'Dure (bloquante)',
@@ -24,13 +25,15 @@ interface ConstraintGroup {
  */
 @Component({
   selector: 'app-constraints-page',
-  imports: [MatCardModule, MatButtonModule, MatIconModule, MatChipsModule, MatProgressBarModule],
+  imports: [MatCardModule, MatButtonModule, MatIconModule, MatChipsModule, MatProgressBarModule, FeasibilityBanner],
   templateUrl: './constraints-page.html'
 })
 export class ConstraintsPage {
   protected readonly loading = signal(false);
   protected readonly error = signal('');
   protected readonly view = signal<ConstraintsView | null>(null);
+
+  protected readonly feasibility = computed(() => this.view()?.faisabilite ?? null);
 
   private readonly api = inject(ApiService);
 

@@ -78,12 +78,43 @@ export interface ConstraintDiagnostic {
   matchCount: number;
 }
 
+/** The créneau where the animateur shortfall is worst, when infeasible. */
+export interface CreneauManque {
+  creneauId: string;
+  date: string | null;
+  heureDebut: string | null;
+  heureFin: string | null;
+  manque: number;
+}
+
+/**
+ * Plain-language capacity check: is there even a theoretical chance to fill
+ * every seat, regardless of solver time? `message` is ready to show as-is to
+ * a non-technical user.
+ */
+export interface FeasibilityReport {
+  feasible: boolean;
+  manqueAnimateurs: number;
+  creneauLePlusCritique: CreneauManque | null;
+  message: string;
+}
+
 /** Payload of an ANALYZE job. */
 export interface PlanningDiagnostic {
   score: string;
   postesNonPourvus: number;
   contraintes: ConstraintDiagnostic[];
   planning: PlanningFestival | null;
+  faisabilite: FeasibilityReport | null;
+}
+
+/**
+ * Payload of a SOLVE job: the solve is always followed, server-side, by its
+ * own analysis — so both land together, whatever the browser does meanwhile.
+ */
+export interface SolveWithDiagnostic {
+  solved: PlanningFestival;
+  diagnostic: PlanningDiagnostic;
 }
 
 export interface ConstraintView {
@@ -99,6 +130,7 @@ export interface ConstraintsView {
   analysedAt: string | null;
   scoreGlobal: string | null;
   postesNonPourvus: number | null;
+  faisabilite: FeasibilityReport | null;
   contraintes: ConstraintView[];
 }
 

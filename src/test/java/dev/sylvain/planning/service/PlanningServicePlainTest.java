@@ -13,7 +13,7 @@ class PlanningServicePlainTest {
         ReferenceDataService referenceDataService = new ReferenceDataService();
         referenceDataService.init();
 
-        PlanningService planningService = new PlanningService(3L, 2L, referenceDataService);
+        PlanningService planningService = new PlanningService(3L, 2L, referenceDataService, new FeasibilityAnalyzer());
         PlanningFestival problem = planningService.construireExempleSimple();
 
         PlanningFestival solved = planningService.resoudre(problem);
