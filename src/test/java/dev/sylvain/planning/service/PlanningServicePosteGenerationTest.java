@@ -44,4 +44,19 @@ class PlanningServicePosteGenerationTest {
         assertThat(postes).hasSize(1);
         assertThat(postes.get(0).getStand().getId()).isEqualTo("STAND-A");
     }
+
+    @Test
+    void genereEffectifMinSeatsPasEffectifMax() {
+        // effectifMin != effectifMax here on purpose: standA/standB above use
+        // identical values and would silently pass even if this regressed back
+        // to effectifMax, which is exactly the bug that made solving from
+        // reference data generate 2736 mandatory seats instead of the 2088 the
+        // scenario actually needs (effectifMax is the capacity ceiling, not the
+        // number of seats that must be staffed).
+        Stand standMinMax = new Stand("STAND-C", "C", Set.of(), 2, 5, false);
+
+        List<PosteAffectation> postes = PlanningService.construirePostes(List.of(standMinMax), List.of(creneauOuvert));
+
+        assertThat(postes).hasSize(2);
+    }
 }

@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service;
 
+import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -9,9 +10,12 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.sql.DataSource;
 
@@ -40,6 +44,37 @@ public class ReferenceDataRepository {
 
     @Inject
     DataSource dataSource;
+
+    /**
+     * Numeric-aware id order ("A2" before "A10"), unlike SQL's {@code ORDER BY id}
+     * which sorts ids as plain text ("A1", "A10", "A100", "A101", ..., "A11", ...).
+     * Every list read here is re-sorted with it in Java: besides being confusing
+     * wherever these lists reach the UI, that scrambled order also becomes the
+     * solver's animateurRange value order, and the local search (fixed random
+     * seed) is highly sensitive to it — an alphabetically-scrambled animateur
+     * list measurably slowed convergence on scenario-complet.yaml (~25s to
+     * hard-feasible with a natural order vs. not even converging within the full
+     * 180s production time budget with the raw SQL order).
+     */
+    private static final Comparator<String> NATURAL_ID_ORDER = ReferenceDataRepository::compareNatural;
+
+    private static final Pattern ID_CHUNK = Pattern.compile("(\\d+)|(\\D+)");
+
+    private static int compareNatural(String a, String b) {
+        Matcher ma = ID_CHUNK.matcher(a);
+        Matcher mb = ID_CHUNK.matcher(b);
+        while (ma.find() && mb.find()) {
+            String chunkA = ma.group();
+            String chunkB = mb.group();
+            int comparison = Character.isDigit(chunkA.charAt(0)) && Character.isDigit(chunkB.charAt(0))
+                    ? new BigInteger(chunkA).compareTo(new BigInteger(chunkB))
+                    : chunkA.compareTo(chunkB);
+            if (comparison != 0) {
+                return comparison;
+            }
+        }
+        return a.length() - b.length();
+    }
 
     /* ------------------------------- Stands -------------------------------- */
 
@@ -72,7 +107,9 @@ public class ReferenceDataRepository {
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to list stands", e);
         }
-        return new ArrayList<>(byId.values());
+        List<Stand> stands = new ArrayList<>(byId.values());
+        stands.sort(Comparator.comparing(Stand::getId, NATURAL_ID_ORDER));
+        return stands;
     }
 
     public boolean standExists(String id) {
@@ -160,7 +197,18 @@ public class ReferenceDataRepository {
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to list timeslots", e);
         }
-        return new ArrayList<>(byId.values());
+        // Chronological order (day, then start time), not `ORDER BY id`: ids like
+        // J1.../J10... sort lexicographically ("J10-MATIN" before "J2-MATIN"), and
+        // even within one day "APREM"/"MATIN"/"SOIREE" sort alphabetically instead
+        // of morning-afternoon-evening. Besides being confusing wherever this list
+        // feeds the UI, that scrambled order became the solver's animateurRange-
+        // adjacent value order too, and a fixed-seed search is highly sensitive to
+        // it — this scenario went from converging in ~25s to stalling short of
+        // hard-feasibility within the full 180s production budget.
+        List<Creneau> creneaux = new ArrayList<>(byId.values());
+        creneaux.sort(Comparator.comparingInt(Creneau::getJour)
+                .thenComparing(Creneau::getHeureDebut, Comparator.nullsLast(Comparator.naturalOrder())));
+        return creneaux;
     }
 
     public boolean creneauExists(String id) {
@@ -229,7 +277,9 @@ public class ReferenceDataRepository {
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to list animators", e);
         }
-        return new ArrayList<>(byId.values());
+        List<Animateur> animateurs = new ArrayList<>(byId.values());
+        animateurs.sort(Comparator.comparing(Animateur::getId, NATURAL_ID_ORDER));
+        return animateurs;
     }
 
     public boolean animateurExists(String id) {

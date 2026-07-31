@@ -145,16 +145,28 @@ public class PlanningService {
     }
 
     /**
-     * One {@link PosteAffectation} per required seat ({@code stand.effectifMax})
+     * One {@link PosteAffectation} per required seat ({@code stand.effectifMin})
      * on every stand × timeslot where the stand is open (see
      * {@link Creneau#estStandOuvert(String)}), all seats unassigned. Package-
      * private and static so it can be unit-tested without a database.
+     *
+     * <p>Uses {@code effectifMin}, not {@code effectifMax}: {@code effectifMax}
+     * is the upper capacity a stand could accept, not the number of seats that
+     * must be staffed (that's exactly what {@code posteDoitEtrePourvu} makes a
+     * hard requirement for every generated poste). Confirmed against
+     * scenario-complet.yaml, whose own hand-authored poste list has 2088
+     * entries — precisely {@code sum(effectifMin) * creneaux} (58 * 36); the
+     * effectifMax sum instead gives 2736, 31% more mandatory seats than the
+     * scenario intends. Building a problem from reference data with effectifMax
+     * silently inflated every solve started from "Lancer le solveur" into a
+     * substantially bigger, harder problem than the one actually staffed
+     * for — the real reason it kept stalling short of hard-feasibility.</p>
      */
     static List<PosteAffectation> construirePostes(List<Stand> stands, List<Creneau> creneaux) {
         List<PosteAffectation> postes = new ArrayList<>();
         int counter = 0;
         for (Stand stand : stands) {
-            int seats = Math.max(1, stand.getEffectifMax());
+            int seats = Math.max(1, stand.getEffectifMin());
             for (Creneau creneau : creneaux) {
                 if (!creneau.estStandOuvert(stand.getId())) {
                     continue;
