@@ -7,11 +7,15 @@ instruction needs to change, change it here.
 
 This file is written in English; user-facing documentation (`README.md`, `docs/`)
 is written in French, and domain identifiers stay in French business vocabulary.
-The Angular frontend UI (`src/main/webui`) is entirely in French too — every
-user-visible string (labels, buttons, tooltips, aria-labels, snack bar/dialog
-messages) must be written in French directly in the templates/components;
-there is no i18n framework (no `ngx-translate`, no `@angular/localize`). Code
-comments and non-domain identifiers stay in English.
+The Angular frontend UI (`src/main/webui`) is bilingual French/English via
+`@angular/localize`, translated at runtime (`loadTranslations()`, no per-locale
+build): French is the source language written directly in templates/components
+(`i18n="@@id"` / `` $localize`:@@id:…` ``), and the English string for every
+id lives in `public/i18n/messages.en.json` — a new user-visible string needs
+both. Never call `$localize` at module scope (only from a method, a
+`computed()`, or a constructor): it must run after `main.ts` has loaded
+translations, not at import time. See `docs/developpement.md` for the full
+workflow. Code comments and non-domain identifiers stay in English.
 
 ## Project overview
 
@@ -121,9 +125,11 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `calendar-month.css`, `calendar-day.css`, `constraints.css`), each holding its
   own `@media` rules. Add new styles as new partials; don't recreate a monolithic
   stylesheet and don't restyle what a Material component already themes.
-- Keep the frontend dependency-light: Angular, its CLI and Angular Material are
-  the whole frontend stack. Don't add another UI component library, a
-  state-management library or a CSS framework without explicit sign-off.
+- Keep the frontend dependency-light: Angular, its CLI, Angular Material and
+  `@angular/localize` are the whole frontend stack. Don't add another UI
+  component library, a state-management library, a CSS framework or a
+  third-party i18n library (`ngx-translate`, `transloco`, …) without explicit
+  sign-off.
 - Frontend tests are Vitest specs (`*.spec.ts` next to the code, `TestBed` for
   anything DI/rendering, `provideZonelessChangeDetection()` since the app is
   zoneless). They run via `npm test` in a Node/jsdom environment — no browser,

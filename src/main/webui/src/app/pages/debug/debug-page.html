@@ -1,7 +1,7 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title>Débogage</mat-card-title>
-    <mat-card-subtitle>
+    <mat-card-title i18n="@@nav.link.debug">Débogage</mat-card-title>
+    <mat-card-subtitle i18n="@@debug.description">
       Diagnostic brut de la dernière résolution ou analyse : score global, postes non pourvus, faisabilité
       et score/nombre de correspondances par contrainte (sans animateurs/créneaux/postes).
     </mat-card-subtitle>
@@ -10,7 +10,7 @@
     <div class="calendar-toolbar">
       <button matButton="tonal" type="button" [disabled]="loading()" (click)="refresh()">
         <mat-icon>refresh</mat-icon>
-        Actualiser
+        <ng-container i18n="@@common.refresh">Actualiser</ng-container>
       </button>
     </div>
     @if (loading()) {
@@ -20,7 +20,7 @@
       <p class="calendar-empty">{{ error() }}</p>
     }
     @if (!loading() && !error() && !output()) {
-      <p class="empty-hint">Aucune résolution ni analyse pour cette session pour le moment.</p>
+      <p class="empty-hint" i18n="@@debug.empty">Aucune résolution ni analyse pour cette session pour le moment.</p>
     }
   </mat-card-content>
 </mat-card>

@@ -3,44 +3,44 @@
     <mat-expansion-panel [expanded]="true">
       <mat-expansion-panel-header>
         <mat-panel-title>{{ formTitle() }}</mat-panel-title>
-        <mat-panel-description>Chaque stand est ouvert sur chaque créneau par défaut ; à modifier créneau par créneau ci-dessous.</mat-panel-description>
+        <mat-panel-description i18n="@@creneaux.form.description">Chaque stand est ouvert sur chaque créneau par défaut ; à modifier créneau par créneau ci-dessous.</mat-panel-description>
       </mat-expansion-panel-header>
       <form class="form-grid" (ngSubmit)="save()">
       <fieldset class="form-fieldset" [disabled]="editingLocked()">
       @if (editingLocked()) {
-        <p class="locked-hint span-2">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
+        <p class="locked-hint span-2" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
       }
       <mat-form-field appearance="outline">
-        <mat-label>Identifiant</mat-label>
+        <mat-label i18n="@@stands.field.id">Identifiant</mat-label>
         <input matInput name="id" required [readonly]="!!editingId()"
                [ngModel]="draft().id" (ngModelChange)="patch({ id: $event })" />
       </mat-form-field>
       <mat-form-field appearance="outline">
-        <mat-label>Jour du festival</mat-label>
+        <mat-label i18n="@@creneaux.field.jour">Jour du festival</mat-label>
         <input matInput name="jour" type="number" min="1" max="15" required
                [ngModel]="draft().jour" (ngModelChange)="patch({ jour: $event })" />
       </mat-form-field>
       <mat-form-field appearance="outline">
-        <mat-label>Date</mat-label>
+        <mat-label i18n="@@creneaux.field.date">Date</mat-label>
         <input matInput name="date" type="date" required
                [ngModel]="draft().date" (ngModelChange)="patch({ date: $event })" />
       </mat-form-field>
       <mat-form-field appearance="outline">
-        <mat-label>Début</mat-label>
+        <mat-label i18n="@@creneaux.field.heureDebut">Début</mat-label>
         <input matInput name="heureDebut" type="time" required
                [ngModel]="draft().heureDebut" (ngModelChange)="patch({ heureDebut: $event })" />
       </mat-form-field>
       <mat-form-field appearance="outline">
-        <mat-label>Fin</mat-label>
+        <mat-label i18n="@@creneaux.field.heureFin">Fin</mat-label>
         <input matInput name="heureFin" type="time" required
                [ngModel]="draft().heureFin" (ngModelChange)="patch({ heureFin: $event })" />
       </mat-form-field>
       <div class="form-actions span-2">
         <button matButton="filled" type="submit">
           <mat-icon>save</mat-icon>
-          {{ editingId() ? 'Modifier le créneau' : 'Créer le créneau' }}
+          {{ submitLabel() }}
         </button>
-        <button matButton type="button" (click)="cancel()">Annuler</button>
+        <button matButton type="button" (click)="cancel()" i18n="@@common.cancel">Annuler</button>
       </div>
       </fieldset>
       </form>
@@ -50,7 +50,7 @@
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title>Créneaux ({{ store.creneaux().length }})</mat-card-title>
+    <mat-card-title i18n="@@creneaux.list.title">Créneaux ({{ store.creneaux().length }})</mat-card-title>
   </mat-card-header>
   <mat-card-content>
     <mat-accordion class="table-wrapper">
@@ -61,11 +61,11 @@
             <mat-panel-description>
               {{ standsOuvertsLabel(creneau) }}
               <span class="row-actions">
-                <button matIconButton matTooltip="Modifier" aria-label="Modifier" [disabled]="editingLocked()"
+                <button matIconButton i18n-matTooltip="@@common.edit" matTooltip="Modifier" i18n-aria-label="@@common.edit" aria-label="Modifier" [disabled]="editingLocked()"
                         (click)="edit(creneau); $event.stopPropagation()">
                   <mat-icon>edit</mat-icon>
                 </button>
-                <button matIconButton matTooltip="Supprimer" aria-label="Supprimer" class="danger-action" [disabled]="editingLocked()"
+                <button matIconButton i18n-matTooltip="@@common.delete" matTooltip="Supprimer" i18n-aria-label="@@common.delete" aria-label="Supprimer" class="danger-action" [disabled]="editingLocked()"
                         (click)="remove(creneau); $event.stopPropagation()">
                   <mat-icon>delete</mat-icon>
                 </button>
@@ -73,9 +73,9 @@
             </mat-panel-description>
           </mat-expansion-panel-header>
           @if (editingLocked()) {
-            <p class="locked-hint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
+            <p class="locked-hint" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
           }
-          <p class="empty-hint">Décochez un stand pour le fermer sur ce créneau. Laissez tous les stands cochés (ou aucun) pour les garder tous ouverts.</p>
+          <p class="empty-hint" i18n="@@creneaux.checklist.hint">Décochez un stand pour le fermer sur ce créneau. Laissez tous les stands cochés (ou aucun) pour les garder tous ouverts.</p>
           <div class="stand-checklist">
             @for (stand of store.stands(); track stand.id) {
               <mat-checkbox [checked]="isStandOuvert(creneau, stand.id)" [disabled]="editingLocked()"
@@ -88,7 +88,7 @@
       }
     </mat-accordion>
     @if (store.creneaux().length === 0) {
-      <p class="empty-hint">Aucun créneau pour le moment.</p>
+      <p class="empty-hint" i18n="@@creneaux.empty">Aucun créneau pour le moment.</p>
     }
   </mat-card-content>
 </mat-card>

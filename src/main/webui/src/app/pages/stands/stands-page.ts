@@ -48,8 +48,12 @@ export class StandsPage {
   protected readonly store = inject(ReferenceDataStore);
   protected readonly draft = signal<StandDraft>(emptyDraft());
   protected readonly editingId = signal<string | null>(null);
-  protected readonly formTitle = computed(() =>
-    this.editingId() ? `Modifier le stand ${this.editingId()}` : 'Nouveau stand'
+  protected readonly formTitle = computed(() => {
+    const id = this.editingId();
+    return id ? $localize`:@@stands.form.editTitle:Modifier le stand ${id}:id:` : $localize`:@@stands.form.newTitle:Nouveau stand`;
+  });
+  protected readonly submitLabel = computed(() =>
+    this.editingId() ? $localize`:@@stands.submit.edit:Modifier le stand` : $localize`:@@stands.submit.create:Créer le stand`
   );
   protected readonly effectifInvalid = computed(() => {
     const draft = this.draft();
@@ -73,6 +77,12 @@ export class StandsPage {
     return (stand.typologiesProposees ?? []).join(', ') || '—';
   }
 
+  protected effectifSuffix(stand: Stand): string {
+    const majeurs = stand.reserveMajeurs ? $localize`:@@stands.suffix.majeurs: · majeurs` : '';
+    const premium = stand.premium ? $localize`:@@stands.suffix.premium: · premium` : '';
+    return `${majeurs}${premium}`;
+  }
+
   protected async save(): Promise<void> {
     if (this.effectifInvalid()) {
       return;
@@ -87,7 +97,7 @@ export class StandsPage {
       reserveMajeurs: draft.reserveMajeurs,
       premium: draft.premium
     };
-    if (await this.crud.save('stands', stand, this.editingId(), 'Stand')) {
+    if (await this.crud.save('stands', stand, this.editingId(), $localize`:@@stands.entityLabel:Stand`)) {
       this.cancel();
     }
   }
@@ -111,7 +121,7 @@ export class StandsPage {
   }
 
   protected async remove(stand: Stand): Promise<void> {
-    if (await this.crud.remove('stands', stand.id, 'Stand') && this.editingId() === stand.id) {
+    if (await this.crud.remove('stands', stand.id, $localize`:@@stands.entityLabel:Stand`) && this.editingId() === stand.id) {
       this.cancel();
     }
   }

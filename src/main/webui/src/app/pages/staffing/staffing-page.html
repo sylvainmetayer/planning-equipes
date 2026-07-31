@@ -1,7 +1,7 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title>Besoin minimum en effectif</mat-card-title>
-    <mat-card-subtitle>
+    <mat-card-title i18n="@@staffing.title">Besoin minimum en effectif</mat-card-title>
+    <mat-card-subtitle i18n="@@staffing.description">
       Effectif minimum d'animateurs à recruter, déduit des stands et créneaux configurés dans les données de référence —
       aucune résolution requise. Le total correspond aux postes ouverts du créneau le plus chargé (somme des
       <code>effectifMin</code> sur ses stands ouverts), en supposant qu'un animateur peut travailler sur plusieurs
@@ -15,51 +15,50 @@
     <div class="staffing-summary">
       <mat-card appearance="outlined" class="staffing-stat">
         <div class="staffing-stat-value">{{ summary().minimumTotal }}</div>
-        <div class="staffing-stat-label">Animateurs minimum</div>
+        <div class="staffing-stat-label" i18n="@@staffing.minimumTotal">Animateurs minimum</div>
       </mat-card>
       <mat-card appearance="outlined" class="staffing-stat">
         <div class="staffing-stat-value">{{ summary().minimumMajeurs }}</div>
-        <div class="staffing-stat-label">dont majeurs</div>
+        <div class="staffing-stat-label" i18n="@@staffing.minimumMajeurs">dont majeurs</div>
       </mat-card>
       <mat-card appearance="outlined" class="staffing-stat">
         <div class="staffing-stat-value">{{ summary().minimumMineurs }}</div>
-        <div class="staffing-stat-label">dont mineurs (au plus)</div>
+        <div class="staffing-stat-label" i18n="@@staffing.minimumMineurs">dont mineurs (au plus)</div>
       </mat-card>
     </div>
     @if (summary().creneauCritique; as critique) {
       <p class="calendar-meta">
-        <mat-icon inline aria-hidden="true" matTooltip="Créneau le plus chargé">priority_high</mat-icon>
-        Créneau le plus chargé : {{ critique.creneauId }} — J{{ critique.jour }} · {{ critique.date }}
-        {{ critique.heureDebut }}–{{ critique.heureFin }} ({{ critique.standsOuverts }} stands ouverts)
+        <mat-icon inline aria-hidden="true" i18n-matTooltip="@@staffing.busiestTooltip" matTooltip="Créneau le plus chargé">priority_high</mat-icon>
+        {{ busiestCreneauLabel(critique) }}
       </p>
     }
     @if (summary().parCreneau.length === 0) {
-      <p class="empty-hint">Aucun créneau pour le moment.</p>
+      <p class="empty-hint" i18n="@@creneaux.empty">Aucun créneau pour le moment.</p>
     } @else {
       <div class="table-wrapper">
         <table mat-table [dataSource]="summary().parCreneau">
           <ng-container matColumnDef="creneau">
-            <th mat-header-cell *matHeaderCellDef>Créneau</th>
+            <th mat-header-cell *matHeaderCellDef i18n="@@stands.column.effectif.creneau">Créneau</th>
             <td mat-cell *matCellDef="let row">
               {{ row.creneauId }} — J{{ row.jour }} · {{ row.date }} {{ row.heureDebut }}–{{ row.heureFin }}
             </td>
           </ng-container>
           <ng-container matColumnDef="standsOuverts">
-            <th mat-header-cell *matHeaderCellDef>Stands ouverts</th>
+            <th mat-header-cell *matHeaderCellDef i18n="@@staffing.column.standsOuverts">Stands ouverts</th>
             <td mat-cell *matCellDef="let row">{{ row.standsOuverts }}</td>
           </ng-container>
           <ng-container matColumnDef="total">
-            <th mat-header-cell *matHeaderCellDef>Total</th>
+            <th mat-header-cell *matHeaderCellDef i18n="@@hours.column.total">Total</th>
             <td mat-cell *matCellDef="let row">
               <strong [class.staffing-critical]="row === summary().creneauCritique">{{ row.total }}</strong>
             </td>
           </ng-container>
           <ng-container matColumnDef="majeurs">
-            <th mat-header-cell *matHeaderCellDef>Majeurs</th>
+            <th mat-header-cell *matHeaderCellDef i18n="@@staffing.column.majeurs">Majeurs</th>
             <td mat-cell *matCellDef="let row">{{ row.majeurs }}</td>
           </ng-container>
           <ng-container matColumnDef="mineurs">
-            <th mat-header-cell *matHeaderCellDef>Mineurs</th>
+            <th mat-header-cell *matHeaderCellDef i18n="@@staffing.column.mineurs">Mineurs</th>
             <td mat-cell *matCellDef="let row">{{ row.mineurs }}</td>
           </ng-container>
           <tr mat-header-row *matHeaderRowDef="columns"></tr>

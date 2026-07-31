@@ -37,7 +37,9 @@ export class PlanningStateService {
   async require(): Promise<PlanningFestival> {
     const planning = await this.loadForDisplay();
     if (!planning || (planning.postes ?? []).length === 0) {
-      throw new Error('Aucun planning disponible pour le moment. Lancez d\'abord « Résoudre avec Timefold ».');
+      throw new Error(
+        $localize`:@@planningState.noneAvailable:Aucun planning disponible pour le moment. Lancez d'abord « Résoudre avec Timefold ».`
+      );
     }
     return planning;
   }

@@ -1,46 +1,46 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
     <mat-card-title>{{ monthLabel() }}</mat-card-title>
-    <mat-card-subtitle>Vue en lecture seule du dernier planning résolu ou enregistré.</mat-card-subtitle>
+    <mat-card-subtitle i18n="@@calendarMonth.subtitle">Vue en lecture seule du dernier planning résolu ou enregistré.</mat-card-subtitle>
   </mat-card-header>
 
   <mat-card-content>
     <div class="calendar-toolbar">
       <div class="calendar-nav">
-        <button matIconButton type="button" aria-label="Mois précédent" (click)="previousMonth()">
+        <button matIconButton type="button" i18n-aria-label="@@calendarMonth.previousMonth" aria-label="Mois précédent" (click)="previousMonth()">
           <mat-icon>chevron_left</mat-icon>
         </button>
-        <button matButton type="button" (click)="today()">Aujourd'hui</button>
-        <button matIconButton type="button" aria-label="Mois suivant" (click)="nextMonth()">
+        <button matButton type="button" (click)="today()" i18n="@@calendarMonth.today">Aujourd'hui</button>
+        <button matIconButton type="button" i18n-aria-label="@@calendarMonth.nextMonth" aria-label="Mois suivant" (click)="nextMonth()">
           <mat-icon>chevron_right</mat-icon>
         </button>
       </div>
       <div class="calendar-nav">
         <button matButton type="button" (click)="resetFilters()">
           <mat-icon>filter_alt_off</mat-icon>
-          Réinitialiser les filtres
+          <ng-container i18n="@@calendarMonth.resetFilters">Réinitialiser les filtres</ng-container>
         </button>
         <button matButton="tonal" type="button" [disabled]="loading()" (click)="refresh()">
           <mat-icon>refresh</mat-icon>
-          Actualiser
+          <ng-container i18n="@@common.refresh">Actualiser</ng-container>
         </button>
       </div>
     </div>
 
     <div class="calendar-filters">
       <mat-form-field appearance="outline">
-        <mat-label>Animateur</mat-label>
+        <mat-label i18n="@@calendarMonth.filter.animateur">Animateur</mat-label>
         <mat-select [value]="animateurFilter()" (valueChange)="selectAnimateur($event)">
-          <mat-option value="ALL">Tous les animateurs</mat-option>
+          <mat-option value="ALL" i18n="@@calendarMonth.filter.allAnimateurs">Tous les animateurs</mat-option>
           @for (option of animateurOptions(); track option.value) {
             <mat-option [value]="option.value">{{ option.label }}</mat-option>
           }
         </mat-select>
       </mat-form-field>
       <mat-form-field appearance="outline">
-        <mat-label>Stand</mat-label>
+        <mat-label i18n="@@calendarMonth.filter.stand">Stand</mat-label>
         <mat-select [value]="standFilter()" (valueChange)="selectStand($event)">
-          <mat-option value="ALL">Tous les stands</mat-option>
+          <mat-option value="ALL" i18n="@@calendarMonth.filter.allStands">Tous les stands</mat-option>
           @for (option of standOptions(); track option.value) {
             <mat-option [value]="option.value">{{ option.label }}</mat-option>
           }
@@ -53,21 +53,17 @@
     }
 
     <div class="calendar-weekdays" aria-hidden="true">
-      <span>Lun</span>
-      <span>Mar</span>
-      <span>Mer</span>
-      <span>Jeu</span>
-      <span>Ven</span>
-      <span>Sam</span>
-      <span>Dim</span>
+      @for (weekday of weekdayAbbreviations(); track weekday) {
+        <span>{{ weekday }}</span>
+      }
     </div>
 
     @if (error()) {
       <p class="calendar-empty">{{ error() }}</p>
     } @else if (!hasData() && loaded()) {
-      <p class="calendar-empty">Aucune donnée de planning disponible pour le moment.</p>
+      <p class="calendar-empty" i18n="@@calendarMonth.noData">Aucune donnée de planning disponible pour le moment.</p>
     } @else {
-      <div class="calendar-grid" role="grid" aria-label="Calendrier mensuel des affectations">
+      <div class="calendar-grid" role="grid" i18n-aria-label="@@calendarMonth.gridLabel" aria-label="Calendrier mensuel des affectations">
         @for (cell of cells(); track cell.dateKey) {
           <button type="button" class="calendar-day-cell"
                   [class.is-other-month]="cell.otherMonth"
@@ -76,7 +72,7 @@
                   (click)="selectDay(cell)">
             <div class="calendar-day-number">{{ cell.dayNumber }}</div>
             <div class="calendar-day-meta">
-              <span>{{ cell.count }} créneau{{ cell.count > 1 ? 'x' : '' }}</span>
+              <span>{{ creneauCountLabel(cell.count) }}</span>
               <span class="calendar-dot" [class.has-events]="cell.count > 0"></span>
             </div>
           </button>
@@ -88,13 +84,13 @@
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title>{{ dayTitle() || 'Détails du jour' }}</mat-card-title>
+    <mat-card-title>{{ dayTitle() || dayDetailsFallback }}</mat-card-title>
   </mat-card-header>
   <mat-card-content aria-live="polite">
     @if (!hasData()) {
-      <p class="empty-hint">Lancez une résolution depuis la page Solveur pour remplir ce calendrier.</p>
+      <p class="empty-hint" i18n="@@calendarMonth.emptyNoData">Lancez une résolution depuis la page Solveur pour remplir ce calendrier.</p>
     } @else if (daySlots().length === 0) {
-      <p class="empty-hint">Aucune affectation pour cette date.</p>
+      <p class="empty-hint" i18n="@@calendarMonth.emptyNoAssignment">Aucune affectation pour cette date.</p>
     } @else {
       <mat-list>
         @for (slot of daySlots(); track slot.creneauId) {
@@ -104,7 +100,7 @@
               <mat-icon matListItemIcon>storefront</mat-icon>
               <span matListItemTitle>{{ stand.standNom }}</span>
               <span matListItemLine>
-                {{ stand.names.length === 0 ? '(non assigné)' : stand.names.join(', ') }}
+                {{ stand.names.length === 0 ? unassignedLabel : stand.names.join(', ') }}
               </span>
             </mat-list-item>
           }

@@ -5,7 +5,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
-import { computeStaffingSummary } from './staffing';
+import { computeStaffingSummary, CreneauStaffing } from './staffing';
 
 /**
  * Staffing-need calculator: from the configured stands and créneaux alone
@@ -28,5 +28,15 @@ export class StaffingPage {
 
   constructor() {
     void this.crud.reload();
+  }
+
+  protected busiestCreneauLabel(critique: CreneauStaffing): string {
+    const creneauId = critique.creneauId;
+    const jour = critique.jour;
+    const date = critique.date;
+    const heureDebut = critique.heureDebut;
+    const heureFin = critique.heureFin;
+    const standsOuverts = critique.standsOuverts;
+    return $localize`:@@staffing.busiestCreneau:Créneau le plus chargé : ${creneauId}:id: — J${jour}:jour: · ${date}:date: ${heureDebut}:heureDebut:–${heureFin}:heureFin: (${standsOuverts}:count: stands ouverts)`;
   }
 }

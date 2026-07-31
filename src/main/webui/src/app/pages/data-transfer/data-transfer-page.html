@@ -1,23 +1,23 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title>Export SQL</mat-card-title>
-    <mat-card-subtitle>
+    <mat-card-title i18n="@@dataTransfer.sql.title">Export SQL</mat-card-title>
+    <mat-card-subtitle i18n="@@dataTransfer.sql.description">
       Exporte ou rejoue toute la base de données sous forme de script SQL, pour partager un jeu de données qui bloque le solveur.
     </mat-card-subtitle>
   </mat-card-header>
   @if (jobs.solverBusy()) {
     <mat-card-content>
-      <p class="locked-hint">Les transferts sont verrouillés pendant que le solveur est en cours d'exécution.</p>
+      <p class="locked-hint" i18n="@@dataTransfer.locked">Les transferts sont verrouillés pendant que le solveur est en cours d'exécution.</p>
     </mat-card-content>
   }
   <mat-card-actions class="card-actions">
     <button matButton="filled" [disabled]="transferLocked()" (click)="onExportSql()">
       <mat-icon>download</mat-icon>
-      Exporter le dump SQL
+      <ng-container i18n="@@dataTransfer.exportSql">Exporter le dump SQL</ng-container>
     </button>
     <button matButton="outlined" class="danger-action" [disabled]="transferLocked()" (click)="pickSqlFile()">
       <mat-icon>upload</mat-icon>
-      Importer un dump SQL
+      <ng-container i18n="@@dataTransfer.importSql">Importer un dump SQL</ng-container>
     </button>
     <input #sqlInput type="file" accept=".sql,application/sql,text/plain" hidden (change)="onSqlFileSelected($event)" />
   </mat-card-actions>
@@ -25,8 +25,8 @@
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title>Import CSV</mat-card-title>
-    <mat-card-subtitle>
+    <mat-card-title i18n="@@dataTransfer.csv.title">Import CSV</mat-card-title>
+    <mat-card-subtitle i18n="@@dataTransfer.csv.description">
       Chaque import remplace toute la table et supprime les affectations existantes. Séparateur <code>;</code> ou
       <code>,</code>, ligne d'en-tête requise, valeurs multiples séparées par <code>|</code>.
     </mat-card-subtitle>
@@ -36,7 +36,7 @@
       <mat-list-item lines="3">
         <span matListItemTitle>animateurs</span>
         <span matListItemLine><code>id;prenom;nom;dateNaissance;manager;competences;joursIndisponibles</code></span>
-        <span matListItemLine>
+        <span matListItemLine i18n="@@dataTransfer.csv.animateursHint">
           <code>manager</code> = true|false (facultatif, false par défaut) · <code>competences</code> =
           <code>STRATEGIE:REFERENT|ENFANT:AUTONOME</code> · <code>joursIndisponibles</code> =
           <code>2026-07-02|2026-07-03</code>
@@ -45,29 +45,29 @@
       <mat-list-item lines="3">
         <span matListItemTitle>stands</span>
         <span matListItemLine><code>id;nom;typologies;effectifMin;effectifMax;reserveMajeurs;premium</code></span>
-        <span matListItemLine>
+        <span matListItemLine i18n="@@dataTransfer.csv.standsHint">
           <code>typologies</code> = <code>STRATEGIE|ENFANT</code> · <code>reserveMajeurs</code>/<code>premium</code> = true/false
         </span>
       </mat-list-item>
       <mat-list-item lines="3">
         <span matListItemTitle>creneaux</span>
         <span matListItemLine><code>id;jour;date;heureDebut;heureFin</code></span>
-        <span matListItemLine><code>date</code> = 2026-07-02 · heure = 10:00</span>
+        <span matListItemLine i18n="@@dataTransfer.csv.creneauxHint"><code>date</code> = 2026-07-02 · heure = 10:00</span>
       </mat-list-item>
     </mat-list>
   </mat-card-content>
   <mat-card-actions class="card-actions">
     <button matButton="tonal" [disabled]="transferLocked()" (click)="pickCsvFile('animateurs')">
       <mat-icon>groups</mat-icon>
-      Importer les animateurs
+      <ng-container i18n="@@dataTransfer.importAnimateurs">Importer les animateurs</ng-container>
     </button>
     <button matButton="tonal" [disabled]="transferLocked()" (click)="pickCsvFile('stands')">
       <mat-icon>storefront</mat-icon>
-      Importer les stands
+      <ng-container i18n="@@dataTransfer.importStands">Importer les stands</ng-container>
     </button>
     <button matButton="tonal" [disabled]="transferLocked()" (click)="pickCsvFile('creneaux')">
       <mat-icon>schedule</mat-icon>
-      Importer les créneaux
+      <ng-container i18n="@@dataTransfer.importCreneaux">Importer les créneaux</ng-container>
     </button>
     <input #csvInput type="file" accept=".csv,text/csv,text/plain" hidden (change)="onCsvFileSelected($event)" />
   </mat-card-actions>

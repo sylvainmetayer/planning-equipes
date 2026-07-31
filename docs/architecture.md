@@ -102,12 +102,18 @@ téléchargé par le build, aucune installation locale requise en CI ou dans
 Docker), `enable-spa-routing=true` (les routes Angular inconnues du serveur
 renvoient `index.html`) et frontend désactivé sur le profil `%test`.
 
-L'interface utilisateur est **entièrement en français** (libellés, boutons,
-info-bulles, messages d'erreur et notifications) : il n'y a pas de mécanisme
-d'internationalisation (pas de `ngx-translate` ni de `@angular/localize`), les
-chaînes affichées sont écrites en dur en français directement dans les
-templates et les composants. Seuls les commentaires de code et les
-identifiants techniques restent en anglais, conformément à `AGENTS.md`.
+L'interface est **bilingue français/anglais** via `@angular/localize`, avec
+traduction à l'exécution : le français est écrit en dur dans les templates et
+composants (`i18n="@@id"` / `` $localize`:@@id:…` ``), et `src/main.ts` charge
+`public/i18n/messages.en.json` puis appelle `loadTranslations()` avant
+`bootstrapApplication()` quand l'anglais est sélectionné — un seul build, pas
+de bundle par locale, donc aucune configuration Quinoa/Quarkus supplémentaire.
+Le bouton en haut à droite de la barre d'outils bascule la préférence stockée
+dans `localStorage` (`app/core/locale.ts`) et recharge la page ; le français
+reste la langue par défaut. Voir [`developpement.md`](developpement.md) pour
+la procédure d'ajout d'une chaîne traduisible. Seuls les commentaires de code
+et les identifiants techniques restent en anglais, conformément à
+`AGENTS.md`.
 
 Le design s'appuie sur **Angular Material** (Material Design 3). Le thème est
 défini dans `src/material-theme.scss` via `mat.theme()` (palettes azure / blue,

@@ -54,7 +54,9 @@ export class DataSetupPage {
         this.selectedScenario.set(names[0]);
       }
     } catch (error) {
-      this.output.set(`Erreur lors du chargement de la liste des scénarios : ${message(error)}`);
+      this.output.set(
+        $localize`:@@dataSetup.scenarioListError:Erreur lors du chargement de la liste des scénarios : ${message(error)}:message:`
+      );
     }
   }
 
@@ -68,7 +70,11 @@ export class DataSetupPage {
     }
     const name = this.selectedScenario();
     this.sampleLoading.set(true);
-    this.output.set(name ? `Chargement du scénario « ${name} »...` : "Chargement du planning d'exemple...");
+    this.output.set(
+      name
+        ? $localize`:@@dataSetup.loadingScenario:Chargement du scénario « ${name}:name: »...`
+        : $localize`:@@dataSetup.loadingSample:Chargement du planning d'exemple...`
+    );
     try {
       // The scenario is parsed and imported entirely server-side: we only send
       // its name, so a large scenario never travels to the browser and back.
@@ -82,9 +88,11 @@ export class DataSetupPage {
       // display pages fall back to the persisted planning until then, so a very
       // large scenario never has to be materialised client-side.
       this.planningState.set(null);
-      this.output.set('Planning d\'exemple chargé. Les données de référence sont peuplées et modifiables depuis les pages de référence.');
+      this.output.set(
+        $localize`:@@dataSetup.sampleLoaded:Planning d'exemple chargé. Les données de référence sont peuplées et modifiables depuis les pages de référence.`
+      );
     } catch (error) {
-      this.output.set(`Erreur : ${message(error)}`);
+      this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
     } finally {
       this.sampleLoading.set(false);
     }
@@ -97,23 +105,25 @@ export class DataSetupPage {
       return;
     }
     const confirmed = await this.confirm.ask({
-      title: 'Vider la base de données ?',
-      message: 'Tous les stands, créneaux, animateurs, affectations et contraintes ad hoc sont supprimés. Rien n\'est rechargé.',
-      confirmLabel: 'Vider',
+      title: $localize`:@@dataSetup.resetConfirmTitle:Vider la base de données ?`,
+      message: $localize`:@@dataSetup.resetConfirmMessage:Tous les stands, créneaux, animateurs, affectations et contraintes ad hoc sont supprimés. Rien n'est rechargé.`,
+      confirmLabel: $localize`:@@dataSetup.resetConfirmLabel:Vider`,
       danger: true
     });
     if (!confirmed) {
       return;
     }
     this.resetting.set(true);
-    this.output.set('Suppression des données...');
+    this.output.set($localize`:@@dataSetup.resetting:Suppression des données...`);
     try {
       await this.api.post<ResetSummary>('/api/planning/reset', {});
       this.planningState.set(null);
       await this.referenceData.reload();
-      this.output.set('Base de données vidée. Chargez un planning d\'exemple pour la repeupler.');
+      this.output.set(
+        $localize`:@@dataSetup.resetDone:Base de données vidée. Chargez un planning d'exemple pour la repeupler.`
+      );
     } catch (error) {
-      this.output.set(`Erreur : ${message(error)}`);
+      this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
     } finally {
       this.resetting.set(false);
     }
@@ -123,7 +133,10 @@ export class DataSetupPage {
   // but a job could have started between the last render and the click.
   private solverActionBlocked(): boolean {
     if (this.jobs.solverBusy()) {
-      this.output.set(`${this.jobs.activeJobDescription()} La configuration des données est verrouillée jusqu'à la fin.`);
+      const description = this.jobs.activeJobDescription();
+      this.output.set(
+        $localize`:@@dataSetup.lockedByJob:${description}:description: La configuration des données est verrouillée jusqu'à la fin.`
+      );
       return true;
     }
     return false;

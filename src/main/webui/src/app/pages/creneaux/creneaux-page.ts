@@ -42,8 +42,16 @@ export class CreneauxPage {
   protected readonly store = inject(ReferenceDataStore);
   protected readonly draft = signal<CreneauDraft>(emptyDraft());
   protected readonly editingId = signal<string | null>(null);
-  protected readonly formTitle = computed(() =>
-    this.editingId() ? `Modifier le créneau ${this.editingId()}` : 'Nouveau créneau'
+  protected readonly formTitle = computed(() => {
+    const id = this.editingId();
+    return id
+      ? $localize`:@@creneaux.form.editTitle:Modifier le créneau ${id}:id:`
+      : $localize`:@@creneaux.form.newTitle:Nouveau créneau`;
+  });
+  protected readonly submitLabel = computed(() =>
+    this.editingId()
+      ? $localize`:@@creneaux.submit.edit:Modifier le créneau`
+      : $localize`:@@creneaux.submit.create:Créer le créneau`
   );
   protected readonly jobs = inject(SolverJobService);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
@@ -69,7 +77,7 @@ export class CreneauxPage {
       heureFin: draft.heureFin,
       standsOuvertsIds: draft.standsOuvertsIds
     };
-    if (await this.crud.save('creneaux', creneau, this.editingId(), 'Créneau')) {
+    if (await this.crud.save('creneaux', creneau, this.editingId(), $localize`:@@creneaux.entityLabel:Créneau`)) {
       this.cancel();
     }
   }
@@ -92,7 +100,7 @@ export class CreneauxPage {
   }
 
   protected async remove(creneau: Creneau): Promise<void> {
-    if (await this.crud.remove('creneaux', creneau.id, 'Créneau') && this.editingId() === creneau.id) {
+    if (await this.crud.remove('creneaux', creneau.id, $localize`:@@creneaux.entityLabel:Créneau`) && this.editingId() === creneau.id) {
       this.cancel();
     }
   }
@@ -106,10 +114,15 @@ export class CreneauxPage {
   protected standsOuvertsLabel(creneau: Creneau): string {
     const ids = creneau.standsOuvertsIds ?? [];
     if (ids.length === 0) {
-      return 'Tous les stands sont ouverts';
+      return $localize`:@@creneaux.allOpen:Tous les stands sont ouverts`;
     }
     const closed = this.store.stands().length - ids.length;
-    return closed > 0 ? `${closed} stand${closed > 1 ? 's' : ''} fermé${closed > 1 ? 's' : ''}` : 'Tous les stands sont ouverts';
+    if (closed <= 0) {
+      return $localize`:@@creneaux.allOpen:Tous les stands sont ouverts`;
+    }
+    return closed === 1
+      ? $localize`:@@creneaux.closedOne:${closed}:count: stand fermé`
+      : $localize`:@@creneaux.closedMany:${closed}:count: stands fermés`;
   }
 
   /** Toggling saves immediately: this checklist edits persisted state directly, not the draft form. */
@@ -121,7 +134,7 @@ export class CreneauxPage {
     const current = creneau.standsOuvertsIds && creneau.standsOuvertsIds.length > 0 ? creneau.standsOuvertsIds : allIds;
     const next = checked ? Array.from(new Set([...current, standId])) : current.filter((id) => id !== standId);
     const standsOuvertsIds = next.length >= allIds.length ? [] : next;
-    await this.crud.save('creneaux', { ...creneau, standsOuvertsIds }, creneau.id, 'Créneau');
+    await this.crud.save('creneaux', { ...creneau, standsOuvertsIds }, creneau.id, $localize`:@@creneaux.entityLabel:Créneau`);
   }
 }
 

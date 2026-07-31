@@ -25,9 +25,9 @@ export interface ConfirmData {
     <h2 mat-dialog-title>{{ data.title }}</h2>
     <mat-dialog-content>{{ data.message }}</mat-dialog-content>
     <mat-dialog-actions align="end">
-      <button matButton (click)="dialogRef.close(false)">Annuler</button>
+      <button matButton (click)="dialogRef.close(false)" i18n="@@confirmDialog.cancel">Annuler</button>
       <button matButton="filled" [color]="data.danger ? 'warn' : 'primary'" (click)="dialogRef.close(true)">
-        {{ data.confirmLabel ?? 'Confirmer' }}
+        {{ data.confirmLabel ?? defaultConfirmLabel }}
       </button>
     </mat-dialog-actions>
   `
@@ -35,6 +35,7 @@ export interface ConfirmData {
 export class ConfirmDialog {
   protected readonly dialogRef = inject<MatDialogRef<ConfirmDialog, boolean>>(MatDialogRef);
   protected readonly data = inject<ConfirmData>(MAT_DIALOG_DATA);
+  protected readonly defaultConfirmLabel = $localize`:@@confirmDialog.confirm:Confirmer`;
 }
 
 @Injectable({ providedIn: 'root' })

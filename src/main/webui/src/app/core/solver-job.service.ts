@@ -16,15 +16,31 @@ import { NotificationService } from './notification.service';
 import { JobType, JobView, PlanningDiagnostic, PlanningFestival } from './models';
 
 const POLL_INTERVAL_MS = 2000;
-const LABELS: Record<JobType, string> = {
-  SOLVE: 'Résolution Timefold',
-  ANALYZE: 'Analyse de la solution'
-};
 
-const STATUS_LABELS: Record<string, string> = {
-  FAILED: 'échouée',
-  CANCELLED: 'annulée'
-};
+/**
+ * Called lazily (from methods, never at module scope): $localize only sees
+ * translations registered by `loadTranslations()` in `main.ts`, and that
+ * runs after this module is imported but before any of these calls execute.
+ */
+function jobLabel(type: string): string {
+  if (type === 'SOLVE') {
+    return $localize`:@@job.type.solve:Résolution Timefold`;
+  }
+  if (type === 'ANALYZE') {
+    return $localize`:@@job.type.analyze:Analyse de la solution`;
+  }
+  return type;
+}
+
+function statusLabel(status: string): string {
+  if (status === 'FAILED') {
+    return $localize`:@@job.status.failed:échouée`;
+  }
+  if (status === 'CANCELLED') {
+    return $localize`:@@job.status.cancelled:annulée`;
+  }
+  return status.toLowerCase();
+}
 
 /** Job held by the server, as followed by this client. */
 export interface TrackedJob {
@@ -55,10 +71,12 @@ export class SolverJobService {
   readonly activeJobDescription = computed(() => {
     const job = this.activeJob();
     if (!job) {
-      return this.stateKnown() ? '' : "L'état du solveur n'est pas encore connu.";
+      return this.stateKnown() ? '' : $localize`:@@job.stateUnknown:L'état du solveur n'est pas encore connu.`;
     }
-    const origin = job.mine ? '' : ' (démarré depuis une autre session)';
-    return `${job.label} est en cours depuis ${formatDuration(elapsedSeconds(job, this.now()))}${origin}.`;
+    const duration = formatDuration(elapsedSeconds(job, this.now()));
+    return job.mine
+      ? $localize`:@@job.runningMine:${job.label}:jobLabel: est en cours depuis ${duration}:duration:.`
+      : $localize`:@@job.runningOther:${job.label}:jobLabel: est en cours depuis ${duration}:duration: (démarré depuis une autre session).`;
   });
 
   private readonly api = inject(ApiService);
@@ -130,8 +148,8 @@ export class SolverJobService {
     }
     this.adopt(job, true);
     this.notifications.notify({
-      title: `${LABELS[type]} démarrée`,
-      message: "Cela s'exécute sur le serveur — vous pouvez continuer à utiliser l'application, depuis ce navigateur ou un autre.",
+      title: $localize`:@@job.started:${jobLabel(type)}:jobLabel: démarrée`,
+      message: $localize`:@@job.startedMessage:Cela s'exécute sur le serveur — vous pouvez continuer à utiliser l'application, depuis ce navigateur ou un autre.`,
       timeout: 5000
     });
     return job;
@@ -142,9 +160,9 @@ export class SolverJobService {
     if (error instanceof HttpErrorResponse && error.status === 409 && error.error) {
       const running = error.error as JobView;
       this.adopt(running, false);
+      const duration = formatDuration(running.elapsedSeconds);
       return new Error(
-        `${LABELS[running.type] ?? running.type} est déjà en cours (${formatDuration(running.elapsedSeconds)}). `
-          + "Veuillez attendre la fin avant d'en démarrer une autre."
+        $localize`:@@job.alreadyRunning:${jobLabel(running.type)}:jobLabel: est déjà en cours (${duration}:duration:). Veuillez attendre la fin avant d'en démarrer une autre.`
       );
     }
     return toError(error);
@@ -197,16 +215,16 @@ export class SolverJobService {
     const entry: TrackedJob = {
       id: job.id,
       type: job.type,
-      label: LABELS[job.type] ?? job.type,
+      label: jobLabel(job.type),
       startedAtMs: Date.now() - (Number(job.elapsedSeconds) || 0) * 1000,
       mine
     };
     this.activeJob.set(entry);
     if (!entry.mine) {
+      const duration = formatDuration(job.elapsedSeconds);
       this.notifications.notify({
-        title: `${entry.label} déjà en cours`,
-        message: `Démarrage depuis une autre session il y a ${formatDuration(job.elapsedSeconds)}. `
-          + "Les actions du solveur sont verrouillées jusqu'à la fin."
+        title: $localize`:@@job.alreadyRunningTitle:${entry.label}:jobLabel: déjà en cours`,
+        message: $localize`:@@job.alreadyRunningMessage:Démarrage depuis une autre session il y a ${duration}:duration:. Les actions du solveur sont verrouillées jusqu'à la fin.`
       });
     }
   }
@@ -215,14 +233,14 @@ export class SolverJobService {
     const job = await this.api.get<JobView>(`/api/jobs/${entry.id}`).catch(() => null);
     if (!job) {
       this.notifications.notify({
-        title: `${entry.label} terminée`,
-        message: 'Le serveur ne connaît plus cette tâche (redémarrage ou purge de rétention).'
+        title: $localize`:@@job.finishedUnknownTitle:${entry.label}:jobLabel: terminée`,
+        message: $localize`:@@job.finishedUnknownMessage:Le serveur ne connaît plus cette tâche (redémarrage ou purge de rétention).`
       });
       return;
     }
     if (job.status !== 'COMPLETED') {
       this.notifications.notify({
-        title: `${entry.label} ${STATUS_LABELS[job.status] ?? job.status.toLowerCase()}`,
+        title: $localize`:@@job.notCompletedTitle:${entry.label}:jobLabel: ${statusLabel(job.status)}:status:`,
         message: job.error ?? '',
         variant: 'error',
         desktop: true,
@@ -230,8 +248,9 @@ export class SolverJobService {
       });
       return;
     }
+    const duration = formatDuration(job.elapsedSeconds);
     this.notifications.notify({
-      title: `${entry.label} terminée en ${formatDuration(job.elapsedSeconds)}`,
+      title: $localize`:@@job.completedTitle:${entry.label}:jobLabel: terminée en ${duration}:duration:`,
       message: describeResult(job.result),
       variant: 'success',
       desktop: true
@@ -255,12 +274,14 @@ function describeResult(result: unknown): string {
     return '';
   }
   const diagnostic = result as PlanningDiagnostic;
-  return `Score ${diagnostic.score} — ${diagnostic.postesNonPourvus} poste(s) non pourvu(s).`;
+  const score = diagnostic.score;
+  const postesNonPourvus = diagnostic.postesNonPourvus;
+  return $localize`:@@job.result:Score ${score}:score: — ${postesNonPourvus}:count: poste(s) non pourvu(s).`;
 }
 
 export function formatScore(score: PlanningFestival['score']): string {
   if (!score) {
-    return 'n/d';
+    return $localize`:@@job.scoreUnavailable:n/d`;
   }
   return `${score.hardScore}hard/${score.mediumScore}medium/${score.softScore}soft`;
 }

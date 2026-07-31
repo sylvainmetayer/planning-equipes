@@ -45,7 +45,9 @@ export class SolverPage {
       const job = this.jobs.activeJob();
       if (job && !job.mine) {
         const description = untracked(() => this.jobs.activeJobDescription());
-        this.output.set(`${description} Les actions du solveur sont verrouillées jusqu'à la fin.`);
+        this.output.set(
+          $localize`:@@solver.lockedByOther:${description}:description: Les actions du solveur sont verrouillées jusqu'à la fin.`
+        );
       }
     });
   }
@@ -54,7 +56,7 @@ export class SolverPage {
     if (this.solverJobAlreadyRunning()) {
       return;
     }
-    this.output.set('Envoi de la résolution au solveur en arrière-plan...');
+    this.output.set($localize`:@@solver.submitting:Envoi de la résolution au solveur en arrière-plan...`);
     this.feasibility.set(null);
     try {
       // The problem is built server-side from the reference data: no planning is
@@ -62,11 +64,10 @@ export class SolverPage {
       // HTTP body limit (which would fail with a network error).
       await this.jobs.submitSolveFromReferenceData();
       this.output.set(
-        'Résolution avec Timefold sur le serveur, puis analyse automatique du résultat. Vous pouvez continuer à naviguer ; '
-          + 'une notification apparaîtra à chaque étape, ici et dans tout autre navigateur observant ce serveur.'
+        $localize`:@@solver.submitted:Résolution avec Timefold sur le serveur, puis analyse automatique du résultat. Vous pouvez continuer à naviguer ; une notification apparaîtra à chaque étape, ici et dans tout autre navigateur observant ce serveur.`
       );
     } catch (error) {
-      this.output.set(`Erreur : ${message(error)}`);
+      this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
     }
   }
 
@@ -77,20 +78,23 @@ export class SolverPage {
     if (!this.jobs.solverBusy()) {
       return false;
     }
-    this.output.set(`${this.jobs.activeJobDescription()} Veuillez attendre la fin avant d'en démarrer une autre.`);
+    const description = this.jobs.activeJobDescription();
+    this.output.set(
+      $localize`:@@solver.alreadyRunning:${description}:description: Veuillez attendre la fin avant d'en démarrer une autre.`
+    );
     return true;
   }
 
   protected async onExportPlanning(): Promise<void> {
     this.exportBusy.set(true);
-    this.output.set("Construction de l'archive d'export...");
+    this.output.set($localize`:@@solver.exportBuilding:Construction de l'archive d'export...`);
     try {
       const planning = await this.planningState.require();
       this.output.set(
         await this.api.downloadPost('/api/planning/export/bundle/all', 'planning.zip', planning, 'application/zip')
       );
     } catch (error) {
-      this.output.set(`Erreur : ${message(error)}`);
+      this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
     } finally {
       this.exportBusy.set(false);
     }

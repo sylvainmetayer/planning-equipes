@@ -8,14 +8,23 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ApiService } from '../../core/api.service';
+import { intlLocale } from '../../core/locale';
 import { ConstraintView, ConstraintsView, NiveauContrainte, ParametresLegaux } from '../../core/models';
 import { FeasibilityBanner } from '../../shared/feasibility-banner';
 
-const NIVEAU_LABELS: Record<NiveauContrainte, string> = {
-  HARD: 'Dure (bloquante)',
-  MEDIUM: 'Moyenne (fortement pénalisée)',
-  SOFT: 'Souple (optimisée en dernier)'
-};
+/** Called lazily (never at module scope, see `app.ts`'s `buildNavGroups`). */
+function niveauLabel(niveau: NiveauContrainte): string {
+  switch (niveau) {
+    case 'HARD':
+      return $localize`:@@constraints.niveau.hard:Dure (bloquante)`;
+    case 'MEDIUM':
+      return $localize`:@@constraints.niveau.medium:Moyenne (fortement pénalisée)`;
+    case 'SOFT':
+      return $localize`:@@constraints.niveau.soft:Souple (optimisée en dernier)`;
+    default:
+      return niveau;
+  }
+}
 
 interface ConstraintGroup {
   categorie: string;
@@ -61,10 +70,12 @@ export class ConstraintsPage {
       return '';
     }
     if (!view.analysedAt) {
-      return 'Aucune analyse pour le moment — lancez une résolution depuis la page Solveur pour voir le score de chaque règle.';
+      return $localize`:@@constraints.summary.none:Aucune analyse pour le moment — lancez une résolution depuis la page Solveur pour voir le score de chaque règle.`;
     }
-    const analysedAt = new Date(view.analysedAt).toLocaleString('fr-FR');
-    return `Dernière analyse ${analysedAt} — score ${view.scoreGlobal}, ${view.postesNonPourvus} poste(s) non pourvu(s).`;
+    const analysedAt = new Date(view.analysedAt).toLocaleString(intlLocale());
+    const score = view.scoreGlobal;
+    const postesNonPourvus = view.postesNonPourvus;
+    return $localize`:@@constraints.summary.latest:Dernière analyse ${analysedAt}:date: — score ${score}:score:, ${postesNonPourvus}:count: poste(s) non pourvu(s).`;
   });
 
   protected readonly groups = computed<ConstraintGroup[]>(() => {
@@ -90,7 +101,7 @@ export class ConstraintsPage {
       this.view.set(await this.api.get<ConstraintsView>('/api/constraints'));
     } catch (error) {
       this.view.set(null);
-      this.error.set(`Erreur : ${error instanceof Error ? error.message : String(error)}`);
+      this.error.set($localize`:@@common.errorPrefix:Erreur : ${error instanceof Error ? error.message : String(error)}:message:`);
     } finally {
       this.loading.set(false);
     }
@@ -103,7 +114,7 @@ export class ConstraintsPage {
       const parametres = await this.api.get<ParametresLegaux>('/api/parametres-legaux');
       this.dureeHebdomadaireMaxHeures.set(parametres.dureeHebdomadaireMaxMinutes / 60);
     } catch (error) {
-      this.parametresError.set(`Erreur : ${error instanceof Error ? error.message : String(error)}`);
+      this.parametresError.set($localize`:@@common.errorPrefix:Erreur : ${error instanceof Error ? error.message : String(error)}:message:`);
     } finally {
       this.parametresLoading.set(false);
     }
@@ -124,14 +135,14 @@ export class ConstraintsPage {
       this.dureeHebdomadaireMaxHeures.set(parametres.dureeHebdomadaireMaxMinutes / 60);
       this.parametresSaved.set(true);
     } catch (error) {
-      this.parametresError.set(`Erreur : ${error instanceof Error ? error.message : String(error)}`);
+      this.parametresError.set($localize`:@@common.errorPrefix:Erreur : ${error instanceof Error ? error.message : String(error)}:message:`);
     } finally {
       this.parametresLoading.set(false);
     }
   }
 
   protected niveauLabel(niveau: NiveauContrainte): string {
-    return NIVEAU_LABELS[niveau] ?? niveau;
+    return niveauLabel(niveau);
   }
 
   protected badgeClass(niveau: NiveauContrainte): string {
@@ -147,10 +158,12 @@ export class ConstraintsPage {
 
   protected resultLabel(constraint: ConstraintView): string {
     if (constraint.score === null || constraint.score === undefined) {
-      return 'Pas encore évaluée.';
+      return $localize`:@@constraints.result.notEvaluated:Pas encore évaluée.`;
     }
-    return (constraint.matchCount ?? 0) > 0
-      ? `${constraint.matchCount} correspondance(s) — score ${constraint.score}`
-      : `Satisfaite — score ${constraint.score}`;
+    const matchCount = constraint.matchCount ?? 0;
+    const score = constraint.score;
+    return matchCount > 0
+      ? $localize`:@@constraints.result.matches:${matchCount}:count: correspondance(s) — score ${score}:score:`
+      : $localize`:@@constraints.result.satisfied:Satisfaite — score ${score}:score:`;
   }
 }

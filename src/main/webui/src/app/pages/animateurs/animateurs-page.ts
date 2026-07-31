@@ -64,8 +64,16 @@ export class AnimateursPage {
   protected readonly draft = signal<AnimateurDraft>(emptyDraft());
   protected readonly editingId = signal<string | null>(null);
   protected readonly newJour = signal('');
-  protected readonly formTitle = computed(() =>
-    this.editingId() ? `Modifier l'animateur ${this.editingId()}` : 'Nouvel animateur'
+  protected readonly formTitle = computed(() => {
+    const id = this.editingId();
+    return id
+      ? $localize`:@@animateurs.form.editTitle:Modifier l'animateur ${id}:id:`
+      : $localize`:@@animateurs.form.newTitle:Nouvel animateur`;
+  });
+  protected readonly submitLabel = computed(() =>
+    this.editingId()
+      ? $localize`:@@animateurs.submit.edit:Modifier l'animateur`
+      : $localize`:@@animateurs.submit.create:Créer l'animateur`
   );
   protected readonly jobs = inject(SolverJobService);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
@@ -86,6 +94,14 @@ export class AnimateursPage {
     return entries.length === 0 ? '—' : entries.map(([typo, niveau]) => `${typo}: ${niveau}`).join(', ');
   }
 
+  protected ouiNon(value: boolean): string {
+    return value ? $localize`:@@common.oui:Oui` : $localize`:@@common.non:Non`;
+  }
+
+  protected removeJourLabel(jour: string): string {
+    return $localize`:@@animateurs.indispo.removeLabel:Retirer ${jour}:jour:`;
+  }
+
   protected async save(): Promise<void> {
     const draft = this.draft();
     const competences: Record<string, NiveauCompetence> = {};
@@ -103,7 +119,7 @@ export class AnimateursPage {
       competences,
       joursIndisponibles: draft.joursIndisponibles
     };
-    if (await this.crud.save('animateurs', animateur, this.editingId(), 'Animateur')) {
+    if (await this.crud.save('animateurs', animateur, this.editingId(), $localize`:@@animateurs.entityLabel:Animateur`)) {
       this.cancel();
     }
   }
@@ -128,7 +144,10 @@ export class AnimateursPage {
   }
 
   protected async remove(animateur: Animateur): Promise<void> {
-    if (await this.crud.remove('animateurs', animateur.id, 'Animateur') && this.editingId() === animateur.id) {
+    if (
+      (await this.crud.remove('animateurs', animateur.id, $localize`:@@animateurs.entityLabel:Animateur`))
+      && this.editingId() === animateur.id
+    ) {
       this.cancel();
     }
   }

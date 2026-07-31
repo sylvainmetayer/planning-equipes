@@ -2,8 +2,8 @@
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title>Paramètres légaux</mat-card-title>
-    <mat-card-subtitle>
+    <mat-card-title i18n="@@constraints.legal.title">Paramètres légaux</mat-card-title>
+    <mat-card-subtitle i18n="@@constraints.legal.description">
       Plafond hebdomadaire de temps de travail appliqué par la contrainte forte <code>dureeHebdomadaireMax</code>, pour
       chaque animateur (tous rémunérés). Par défaut 48h (Code du travail art. L3121-20 / Convention collective de l'Animation).
     </mat-card-subtitle>
@@ -11,17 +11,17 @@
   <mat-card-content>
     <form class="form-grid" (ngSubmit)="saveParametresLegaux()">
       <mat-form-field appearance="outline">
-        <mat-label>Durée hebdomadaire maximale (heures)</mat-label>
+        <mat-label i18n="@@constraints.legal.field.dureeMax">Durée hebdomadaire maximale (heures)</mat-label>
         <input matInput type="number" min="1" step="0.5" name="dureeHebdomadaireMaxHeures"
                [ngModel]="dureeHebdomadaireMaxHeures()" (ngModelChange)="dureeHebdomadaireMaxHeures.set($event)" />
       </mat-form-field>
       <div class="form-actions">
         <button matButton="filled" type="submit" [disabled]="parametresLoading()">
           <mat-icon>save</mat-icon>
-          Enregistrer
+          <ng-container i18n="@@common.save">Enregistrer</ng-container>
         </button>
         @if (parametresSaved()) {
-          <span class="calendar-meta">Enregistré.</span>
+          <span class="calendar-meta" i18n="@@constraints.legal.saved">Enregistré.</span>
         }
       </div>
     </form>
@@ -33,8 +33,8 @@
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title>Contraintes actives</mat-card-title>
-    <mat-card-subtitle>
+    <mat-card-title i18n="@@constraints.active.title">Contraintes actives</mat-card-title>
+    <mat-card-subtitle i18n="@@constraints.active.description">
       Description métier de chaque règle appliquée par le solveur, avec le résultat de la dernière analyse.
     </mat-card-subtitle>
   </mat-card-header>
@@ -42,7 +42,7 @@
     <div class="calendar-toolbar">
       <button matButton="tonal" type="button" [disabled]="loading()" (click)="refresh()">
         <mat-icon>refresh</mat-icon>
-        Actualiser
+        <ng-container i18n="@@common.refresh">Actualiser</ng-container>
       </button>
       @if (summary()) {
         <span class="calendar-meta">{{ summary() }}</span>
@@ -60,7 +60,7 @@
 @if (!error() && !loading() && groups().length === 0) {
   <mat-card appearance="outlined" class="page-card">
     <mat-card-content>
-      <p class="empty-hint">Aucune contrainte déclarée.</p>
+      <p class="empty-hint" i18n="@@constraints.noneDeclared">Aucune contrainte déclarée.</p>
     </mat-card-content>
   </mat-card>
 }

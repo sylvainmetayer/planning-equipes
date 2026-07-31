@@ -1,7 +1,7 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title>Heures planifiées par animateur</mat-card-title>
-    <mat-card-subtitle>
+    <mat-card-title i18n="@@hours.title">Heures planifiées par animateur</mat-card-title>
+    <mat-card-subtitle i18n="@@hours.description">
       Les heures sont regroupées par semaine calendaire ISO, calculées à partir du planning résolu cette session ou
       du dernier enregistré en base.
     </mat-card-subtitle>
@@ -9,11 +9,11 @@
   <mat-card-actions class="card-actions">
     <button matButton="tonal" [disabled]="busy()" (click)="load()">
       <mat-icon>refresh</mat-icon>
-      Actualiser
+      <ng-container i18n="@@common.refresh">Actualiser</ng-container>
     </button>
     <button matButton="filled" [disabled]="exportBusy() || !rapport()" (click)="onExportCsv()">
       <mat-icon>download</mat-icon>
-      Exporter en CSV
+      <ng-container i18n="@@hours.exportCsv">Exporter en CSV</ng-container>
     </button>
   </mat-card-actions>
   @if (rapport(); as report) {
@@ -22,10 +22,10 @@
         @for (col of columns(); track col) {
           <ng-container [matColumnDef]="col">
             @if (col === 'animateur') {
-              <th mat-header-cell *matHeaderCellDef mat-sort-header>Animateur</th>
+              <th mat-header-cell *matHeaderCellDef mat-sort-header i18n="@@hours.column.animateur">Animateur</th>
               <td mat-cell *matCellDef="let row">{{ row.nom }}</td>
             } @else if (col === 'total') {
-              <th mat-header-cell *matHeaderCellDef mat-sort-header>Total</th>
+              <th mat-header-cell *matHeaderCellDef mat-sort-header i18n="@@hours.column.total">Total</th>
               <td mat-cell *matCellDef="let row"><strong>{{ row.total | number: '1.1-1' }} h</strong></td>
             } @else {
               <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ col }}</th>
@@ -37,7 +37,7 @@
         <tr mat-row *matRowDef="let row; columns: columns()"></tr>
       </table>
       @if (report.animateurs.length === 0) {
-        <p class="empty-hint">Aucun animateur pour le moment.</p>
+        <p class="empty-hint" i18n="@@animateurs.empty">Aucun animateur pour le moment.</p>
       }
     </mat-card-content>
   }
