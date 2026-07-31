@@ -19,6 +19,10 @@
         <quinoa.version>2.8.3</quinoa.version>
         <skipITs>true</skipITs>
         <surefire-plugin.version>3.5.2</surefire-plugin.version>
+        <!-- Silences JDK 25 startup warnings (native access from Netty/Vert.x,
+             deprecated sun.misc.Unsafe memory access) in the JVM forked by
+             quarkus:dev, quarkus:test and quarkus:run. -->
+        <jvm.args>--enable-native-access=ALL-UNNAMED --sun-misc-unsafe-memory-access=allow</jvm.args>
     </properties>
 
     <dependencyManagement>
@@ -125,6 +129,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${surefire-plugin.version}</version>
                 <configuration>
+                    <argLine>${jvm.args}</argLine>
                     <systemPropertyVariables>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                         <maven.home>${maven.home}</maven.home>
@@ -143,6 +148,7 @@
                     </execution>
                 </executions>
                 <configuration>
+                    <argLine>${jvm.args}</argLine>
                     <systemPropertyVariables>
                         <native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
