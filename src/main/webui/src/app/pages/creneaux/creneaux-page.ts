@@ -8,6 +8,7 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
@@ -26,6 +27,7 @@ import { CreneauFormData, CreneauFormDialog } from './creneau-form-dialog';
     MatExpansionModule,
     MatFormFieldModule,
     MatInputModule,
+    MatSelectModule,
     MatButtonModule,
     MatIconModule,
     MatTooltipModule
@@ -44,6 +46,21 @@ export class CreneauxPage {
   protected readonly nouveauGroupeNom = signal('');
   /** Id of the group currently being activated/created, to disable its row while the request is in flight. */
   protected readonly groupeEnCours = signal<string | null>(null);
+
+  /** `null` = every group shown. */
+  protected readonly filtreGroupeId = signal<string | null>(null);
+
+  /**
+   * Filtered by the selected group (if any), then sorted by group name so
+   * each planning's slots stay together; `store.creneaux()` is already
+   * chronological (jour, heureDebut), and the sort below is stable, so slots
+   * within a group keep that order.
+   */
+  protected readonly creneauxAffiches = computed(() => {
+    const groupeId = this.filtreGroupeId();
+    const creneaux = groupeId ? this.store.creneaux().filter((c) => c.groupe?.id === groupeId) : this.store.creneaux();
+    return [...creneaux].sort((a, b) => (a.groupe?.nom ?? a.groupe?.id ?? '').localeCompare(b.groupe?.nom ?? b.groupe?.id ?? ''));
+  });
 
   constructor() {
     void this.crud.reload();

@@ -57,7 +57,10 @@ export class CreneauFormDialog {
 
   protected readonly nouveauGroupeValue = NOUVEAU_GROUPE;
   protected readonly editingId = signal<string | null>(this.data.creneau?.id ?? null);
-  protected readonly draft = signal<CreneauDraft>(toDraft(this.data.creneau));
+  /** New créneaux default to the currently active group, not a fixed one. */
+  private readonly activeGroupeId =
+    this.store.groupesCreneaux().find((groupe) => groupe.actif)?.id ?? GROUPE_DEFAUT_ID;
+  protected readonly draft = signal<CreneauDraft>(toDraft(this.data.creneau, this.activeGroupeId));
   protected readonly formTitle = computed(() => {
     const id = this.editingId();
     return id
@@ -118,7 +121,7 @@ export class CreneauFormDialog {
   }
 }
 
-function toDraft(creneau: Creneau | null): CreneauDraft {
+function toDraft(creneau: Creneau | null, activeGroupeId: string): CreneauDraft {
   if (!creneau) {
     return {
       id: '',
@@ -127,7 +130,7 @@ function toDraft(creneau: Creneau | null): CreneauDraft {
       heureDebut: '',
       heureFin: '',
       standsOuvertsIds: [],
-      groupeId: GROUPE_DEFAUT_ID,
+      groupeId: activeGroupeId,
       nouveauGroupeNom: ''
     };
   }
@@ -138,7 +141,7 @@ function toDraft(creneau: Creneau | null): CreneauDraft {
     heureDebut: creneau.heureDebut ?? '',
     heureFin: creneau.heureFin ?? '',
     standsOuvertsIds: [...(creneau.standsOuvertsIds ?? [])],
-    groupeId: creneau.groupe?.id ?? GROUPE_DEFAUT_ID,
+    groupeId: creneau.groupe?.id ?? activeGroupeId,
     nouveauGroupeNom: ''
   };
 }

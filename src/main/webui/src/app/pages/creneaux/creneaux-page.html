@@ -35,7 +35,7 @@
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title i18n="@@creneaux.list.title">Créneaux ({{ store.creneaux().length }})</mat-card-title>
+    <mat-card-title i18n="@@creneaux.list.title">Créneaux ({{ creneauxAffiches().length }})</mat-card-title>
     <mat-card-subtitle i18n="@@creneaux.form.description">Chaque stand est ouvert sur chaque créneau par défaut ; à modifier créneau par créneau ci-dessous.</mat-card-subtitle>
   </mat-card-header>
   <mat-card-actions class="card-actions">
@@ -43,10 +43,19 @@
       <mat-icon>add</mat-icon>
       <ng-container i18n="@@common.add">Ajouter</ng-container>
     </button>
+    <mat-form-field appearance="outline">
+      <mat-label i18n="@@creneaux.filter.groupe">Filtrer par groupe</mat-label>
+      <mat-select [ngModel]="filtreGroupeId()" (ngModelChange)="filtreGroupeId.set($event)">
+        <mat-option [value]="null" i18n="@@creneaux.filter.tousGroupes">Tous les groupes</mat-option>
+        @for (groupe of store.groupesCreneaux(); track groupe.id) {
+          <mat-option [value]="groupe.id">{{ groupe.nom || groupe.id }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
   </mat-card-actions>
   <mat-card-content>
     <mat-accordion class="table-wrapper">
-      @for (creneau of store.creneaux(); track creneau.id) {
+      @for (creneau of creneauxAffiches(); track creneau.id) {
         <mat-expansion-panel>
           <mat-expansion-panel-header>
             <mat-panel-title>{{ creneau.id }} — J{{ creneau.jour }} · {{ creneau.date }} {{ creneau.heureDebut }}–{{ creneau.heureFin }} · {{ creneau.groupe?.nom || creneau.groupe?.id }}</mat-panel-title>
@@ -79,7 +88,7 @@
         </mat-expansion-panel>
       }
     </mat-accordion>
-    @if (store.creneaux().length === 0) {
+    @if (creneauxAffiches().length === 0) {
       <p class="empty-hint" i18n="@@creneaux.empty">Aucun créneau pour le moment.</p>
     }
   </mat-card-content>
