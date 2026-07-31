@@ -269,6 +269,8 @@
   "confirmDialog.confirm": "Confirm",
   "jobMonitor.mine": "{$jobLabel} running… {$duration}",
   "jobMonitor.other": "{$jobLabel} running… {$duration} (other session)",
+  "mapPicker.ariaLabel": "Location picker map",
+  "mapPicker.hint": "Click the map or drag the marker to set the coordinates.",
   "emplacements.form.description": "A location is a geolocated place (kiosk, town hall, ...) that a stand can be tied to.",
   "emplacements.field.latitude": "Latitude",
   "emplacements.field.longitude": "Longitude",

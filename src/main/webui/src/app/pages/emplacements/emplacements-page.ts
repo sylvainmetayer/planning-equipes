@@ -1,69 +1,34 @@
-import { Component, computed, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, computed, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { MatExpansionModule } from '@angular/material/expansion';
-import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { Emplacement } from '../../core/models';
-
-interface EmplacementDraft {
-  id: string;
-  nom: string;
-  latitude: number | null;
-  longitude: number | null;
-}
+import { EmplacementFormData, EmplacementFormDialog } from './emplacement-form-dialog';
 
 /** Emplacements CRUD: named, GPS-located places a stand can be tied to. */
 @Component({
   selector: 'app-emplacements-page',
-  imports: [
-    FormsModule,
-    MatCardModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatExpansionModule,
-    MatButtonModule,
-    MatIconModule,
-    MatTableModule,
-    MatTooltipModule
-  ],
+  imports: [MatCardModule, MatButtonModule, MatIconModule, MatTableModule, MatTooltipModule],
   templateUrl: './emplacements-page.html'
 })
 export class EmplacementsPage {
   protected readonly columns = ['id', 'nom', 'coordonnees', 'actions'];
   protected readonly store = inject(ReferenceDataStore);
-  protected readonly draft = signal<EmplacementDraft>(emptyDraft());
-  protected readonly editingId = signal<string | null>(null);
-  protected readonly formTitle = computed(() => {
-    const id = this.editingId();
-    return id
-      ? $localize`:@@emplacements.form.editTitle:Modifier l'emplacement ${id}:id:`
-      : $localize`:@@emplacements.form.newTitle:Nouvel emplacement`;
-  });
-  protected readonly submitLabel = computed(() =>
-    this.editingId()
-      ? $localize`:@@emplacements.submit.edit:Modifier l'emplacement`
-      : $localize`:@@emplacements.submit.create:Créer l'emplacement`
-  );
   protected readonly jobs = inject(SolverJobService);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
   protected readonly editingLocked = computed(() => this.jobs.solverBusy());
 
   private readonly crud = inject(ReferenceCrudService);
+  private readonly dialog = inject(MatDialog);
 
   constructor() {
     void this.crud.reload();
-  }
-
-  protected patch(patch: Partial<EmplacementDraft>): void {
-    this.draft.update((draft) => ({ ...draft, ...patch }));
   }
 
   protected coordonneesLabel(emplacement: Emplacement): string {
@@ -73,50 +38,24 @@ export class EmplacementsPage {
     return `${emplacement.latitude.toFixed(5)}, ${emplacement.longitude.toFixed(5)}`;
   }
 
-  protected async save(): Promise<void> {
-    const draft = this.draft();
-    const emplacement: Emplacement = {
-      id: draft.id.trim(),
-      nom: draft.nom.trim(),
-      latitude: draft.latitude === null || draft.latitude === undefined || `${draft.latitude}` === ''
-        ? null
-        : Number(draft.latitude),
-      longitude: draft.longitude === null || draft.longitude === undefined || `${draft.longitude}` === ''
-        ? null
-        : Number(draft.longitude)
-    };
-    if (await this.crud.save('emplacements', emplacement, this.editingId(), $localize`:@@emplacements.entityLabel:Emplacement`)) {
-      this.cancel();
-    }
+  protected openCreate(): void {
+    this.openDialog(null);
   }
 
   protected edit(emplacement: Emplacement): void {
-    this.draft.set({
-      id: emplacement.id,
-      nom: emplacement.nom ?? '',
-      latitude: emplacement.latitude,
-      longitude: emplacement.longitude
-    });
-    this.editingId.set(emplacement.id);
+    this.openDialog(emplacement);
   }
 
-  protected cancel(): void {
-    this.draft.set(emptyDraft());
-    this.editingId.set(null);
+  private openDialog(emplacement: Emplacement | null): void {
+    this.dialog.open<EmplacementFormDialog, EmplacementFormData, boolean>(EmplacementFormDialog, {
+      data: { emplacement },
+      width: '40rem',
+      maxWidth: '95vw',
+      autoFocus: 'first-tabbable'
+    });
   }
 
   protected async remove(emplacement: Emplacement): Promise<void> {
-    if (await this.crud.remove('emplacements', emplacement.id, $localize`:@@emplacements.entityLabel:Emplacement`) && this.editingId() === emplacement.id) {
-      this.cancel();
-    }
+    await this.crud.remove('emplacements', emplacement.id, $localize`:@@emplacements.entityLabel:Emplacement`);
   }
-}
-
-function emptyDraft(): EmplacementDraft {
-  return {
-    id: '',
-    nom: '',
-    latitude: null,
-    longitude: null
-  };
 }

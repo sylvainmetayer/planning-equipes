@@ -1,51 +1,13 @@
-<mat-card appearance="outlined" class="page-card" [class.is-editing]="editingId()">
-  <mat-accordion>
-    <mat-expansion-panel [expanded]="true">
-      <mat-expansion-panel-header>
-        <mat-panel-title>{{ formTitle() }}</mat-panel-title>
-        <mat-panel-description i18n="@@emplacements.form.description">Un emplacement est un lieu géolocalisé (kiosque, mairie, ...) auquel un stand peut être rattaché.</mat-panel-description>
-      </mat-expansion-panel-header>
-      <form class="form-grid" (ngSubmit)="save()">
-      <fieldset class="form-fieldset" [disabled]="editingLocked()">
-      @if (editingLocked()) {
-        <p class="locked-hint span-2" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
-      }
-      <mat-form-field appearance="outline">
-        <mat-label i18n="@@stands.field.id">Identifiant</mat-label>
-        <input matInput name="id" required [readonly]="!!editingId()"
-               [ngModel]="draft().id" (ngModelChange)="patch({ id: $event })" />
-      </mat-form-field>
-      <mat-form-field appearance="outline">
-        <mat-label i18n="@@stands.field.nom">Nom</mat-label>
-        <input matInput name="nom" required [ngModel]="draft().nom" (ngModelChange)="patch({ nom: $event })" />
-      </mat-form-field>
-      <mat-form-field appearance="outline">
-        <mat-label i18n="@@emplacements.field.latitude">Latitude</mat-label>
-        <input matInput name="latitude" type="number" step="any" min="-90" max="90"
-               [ngModel]="draft().latitude" (ngModelChange)="patch({ latitude: $event })" />
-      </mat-form-field>
-      <mat-form-field appearance="outline">
-        <mat-label i18n="@@emplacements.field.longitude">Longitude</mat-label>
-        <input matInput name="longitude" type="number" step="any" min="-180" max="180"
-               [ngModel]="draft().longitude" (ngModelChange)="patch({ longitude: $event })" />
-      </mat-form-field>
-      <div class="form-actions span-2">
-        <button matButton="filled" type="submit" [disabled]="editingLocked()">
-          <mat-icon>save</mat-icon>
-          {{ submitLabel() }}
-        </button>
-        <button matButton type="button" (click)="cancel()" i18n="@@common.cancel">Annuler</button>
-      </div>
-      </fieldset>
-      </form>
-    </mat-expansion-panel>
-  </mat-accordion>
-</mat-card>
-
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
     <mat-card-title i18n="@@emplacements.list.title">Emplacements ({{ store.emplacements().length }})</mat-card-title>
   </mat-card-header>
+  <mat-card-actions class="card-actions">
+    <button matButton="filled" type="button" [disabled]="editingLocked()" (click)="openCreate()">
+      <mat-icon>add</mat-icon>
+      <ng-container i18n="@@common.add">Ajouter</ng-container>
+    </button>
+  </mat-card-actions>
   <mat-card-content class="table-wrapper">
     <table mat-table [dataSource]="store.emplacements()">
       <ng-container matColumnDef="id">

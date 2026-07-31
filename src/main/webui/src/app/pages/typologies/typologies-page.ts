@@ -1,89 +1,54 @@
-import { Component, computed, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, computed, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { MatExpansionModule } from '@angular/material/expansion';
-import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { TypologieItem } from '../../core/models';
+import { TypologieFormData, TypologieFormDialog } from './typologie-form-dialog';
 
 /** Typologies CRUD: the game families a stand can propose and an animator master. */
 @Component({
   selector: 'app-typologies-page',
-  imports: [
-    FormsModule,
-    MatCardModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatExpansionModule,
-    MatButtonModule,
-    MatIconModule,
-    MatTableModule,
-    MatTooltipModule
-  ],
+  imports: [MatCardModule, MatButtonModule, MatIconModule, MatTableModule, MatTooltipModule],
   templateUrl: './typologies-page.html'
 })
 export class TypologiesPage {
   protected readonly columns = ['id', 'label', 'actions'];
   protected readonly store = inject(ReferenceDataStore);
-  protected readonly draft = signal<TypologieItem>(emptyDraft());
-  protected readonly editingId = signal<string | null>(null);
-  protected readonly formTitle = computed(() => {
-    const id = this.editingId();
-    return id
-      ? $localize`:@@typologies.form.editTitle:Modifier la typologie ${id}:id:`
-      : $localize`:@@typologies.form.newTitle:Nouvelle typologie`;
-  });
-  protected readonly submitLabel = computed(() =>
-    this.editingId()
-      ? $localize`:@@typologies.submit.edit:Modifier la typologie`
-      : $localize`:@@typologies.submit.create:Créer la typologie`
-  );
   protected readonly jobs = inject(SolverJobService);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
   protected readonly editingLocked = computed(() => this.jobs.solverBusy());
 
   private readonly crud = inject(ReferenceCrudService);
+  private readonly dialog = inject(MatDialog);
 
   constructor() {
     void this.crud.reload();
   }
 
-  protected patch(patch: Partial<TypologieItem>): void {
-    this.draft.update((draft) => ({ ...draft, ...patch }));
-  }
-
-  protected async save(): Promise<void> {
-    const draft = this.draft();
-    const typologie: TypologieItem = { id: draft.id.trim(), label: draft.label.trim() };
-    if (await this.crud.save('typologies', typologie, this.editingId(), $localize`:@@typologies.entityLabel:Typologie`)) {
-      this.cancel();
-    }
+  protected openCreate(): void {
+    this.openDialog(null);
   }
 
   protected edit(typologie: TypologieItem): void {
-    this.draft.set({ id: typologie.id, label: typologie.label ?? '' });
-    this.editingId.set(typologie.id);
+    this.openDialog(typologie);
   }
 
-  protected cancel(): void {
-    this.draft.set(emptyDraft());
-    this.editingId.set(null);
+  private openDialog(typologie: TypologieItem | null): void {
+    this.dialog.open<TypologieFormDialog, TypologieFormData, boolean>(TypologieFormDialog, {
+      data: { typologie },
+      width: '40rem',
+      maxWidth: '95vw',
+      autoFocus: 'first-tabbable'
+    });
   }
 
   protected async remove(typologie: TypologieItem): Promise<void> {
-    if (await this.crud.remove('typologies', typologie.id, $localize`:@@typologies.entityLabel:Typologie`) && this.editingId() === typologie.id) {
-      this.cancel();
-    }
+    await this.crud.remove('typologies', typologie.id, $localize`:@@typologies.entityLabel:Typologie`);
   }
-}
-
-function emptyDraft(): TypologieItem {
-  return { id: '', label: '' };
 }

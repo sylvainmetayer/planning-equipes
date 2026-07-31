@@ -1,0 +1,13 @@
+/* Leaflet requires an explicitly sized container or it renders blank. */
+.map-picker-host {
+  height: 18rem;
+  border-radius: var(--mat-sys-corner-medium);
+  overflow: hidden;
+  border: 1px solid var(--mat-sys-outline-variant);
+}
+
+.map-picker-hint {
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+  margin: 0.5rem 0 0;
+}

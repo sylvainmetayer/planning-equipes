@@ -1,0 +1,67 @@
+<h2 mat-dialog-title>{{ formTitle() }}</h2>
+<form (ngSubmit)="save()">
+<mat-dialog-content class="form-grid">
+<fieldset class="form-fieldset" [disabled]="editingLocked()">
+@if (editingLocked()) {
+  <p class="locked-hint span-2" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
+}
+<mat-form-field appearance="outline">
+  <mat-label i18n="@@stands.field.id">Identifiant</mat-label>
+  <input matInput name="id" required [readonly]="!!editingId()"
+         [ngModel]="draft().id" (ngModelChange)="patch({ id: $event })" />
+</mat-form-field>
+<mat-form-field appearance="outline">
+  <mat-label i18n="@@adHoc.field.type">Type</mat-label>
+  <mat-select name="type" [disabled]="editingLocked()" [ngModel]="draft().type" (ngModelChange)="patch({ type: $event })">
+    @for (type of types; track type.value) {
+      <mat-option [value]="type.value">{{ type.label }}</mat-option>
+    }
+  </mat-select>
+</mat-form-field>
+<mat-form-field appearance="outline">
+  <mat-label i18n="@@adHoc.field.creneau">Créneau (facultatif)</mat-label>
+  <mat-select name="creneauId" [disabled]="editingLocked()"
+              [ngModel]="draft().creneauId" (ngModelChange)="patch({ creneauId: $event })">
+    <mat-option value="" i18n="@@adHoc.field.anyCreneau">Tout créneau</mat-option>
+    @for (creneau of store.creneaux(); track creneau.id) {
+      <mat-option [value]="creneau.id">
+        {{ creneau.id }} · J{{ creneau.jour }} {{ creneau.heureDebut }}–{{ creneau.heureFin }}
+      </mat-option>
+    }
+  </mat-select>
+</mat-form-field>
+<mat-form-field appearance="outline">
+  <mat-label i18n="@@adHoc.field.stand">Stand (facultatif)</mat-label>
+  <mat-select name="standId" [disabled]="editingLocked()" [ngModel]="draft().standId" (ngModelChange)="patch({ standId: $event })">
+    <mat-option value="" i18n="@@adHoc.field.anyStand">Tout stand</mat-option>
+    @for (stand of store.stands(); track stand.id) {
+      <mat-option [value]="stand.id">{{ stand.nom || stand.id }}</mat-option>
+    }
+  </mat-select>
+</mat-form-field>
+<mat-form-field appearance="outline" class="span-2">
+  <mat-label i18n="@@adHoc.field.animateurs">Animateurs concernés</mat-label>
+  <mat-select name="animateurIds" multiple [disabled]="editingLocked()"
+              [ngModel]="draft().animateurIds" (ngModelChange)="patch({ animateurIds: $event })">
+    @for (animateur of store.animateurs(); track animateur.id) {
+      <mat-option [value]="animateur.id">
+        {{ animateur.prenom }} {{ animateur.nom }} ({{ animateur.id }})
+      </mat-option>
+    }
+  </mat-select>
+</mat-form-field>
+<mat-form-field appearance="outline" class="span-2">
+  <mat-label i18n="@@adHoc.field.raison">Raison</mat-label>
+  <textarea matInput name="raison" rows="2"
+            [ngModel]="draft().raison" (ngModelChange)="patch({ raison: $event })"></textarea>
+</mat-form-field>
+</fieldset>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="dialogRef.close(false)" i18n="@@common.cancel">Annuler</button>
+  <button matButton="filled" type="submit" [disabled]="editingLocked()">
+    <mat-icon>save</mat-icon>
+    <ng-container i18n="@@adHoc.submit">Enregistrer la contrainte</ng-container>
+  </button>
+</mat-dialog-actions>
+</form>
