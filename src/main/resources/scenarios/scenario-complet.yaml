@@ -183,6 +183,40 @@ creneaux:
     heureDebut: "20:00"
     heureFin: "00:00"
 
+emplacements:
+  - id: PLACE-DRAPEAU
+    nom: Place du Drapeau
+    latitude: 46.6513
+    longitude: 2.2492
+  - id: MAIRIE
+    nom: Mairie centrale
+    latitude: 46.6490
+    longitude: 2.2547
+  - id: CHATEAU
+    nom: Château
+    latitude: 46.6517
+    longitude: 2.2481
+  - id: PLACE-11-NOVEMBRE
+    nom: Place du 11 Novembre
+    latitude: 46.6480
+    longitude: 2.2555
+  - id: HALLE-AUX-GRAINS
+    nom: Halle aux Grains
+    latitude: 46.6499
+    longitude: 2.2529
+  - id: JARDIN-DUGUESCLIN
+    nom: Jardin Duguesclin
+    latitude: 46.6528
+    longitude: 2.2503
+  - id: PONT-MEDIEVAL
+    nom: Pont médiéval
+    latitude: 46.6522
+    longitude: 2.2469
+  - id: ESPLANADE-FRANCOIS-MITTERRAND
+    nom: Esplanade François Mitterrand
+    latitude: 46.6472
+    longitude: 2.2518
+
 stands:
   - id: STAND-01
     nom: Stand Jeu de rôle 01
@@ -192,6 +226,7 @@ stands:
     effectifMin: 3
     effectifMax: 4
     reserveMajeurs: true
+    emplacementId: PLACE-DRAPEAU
   - id: STAND-02
     nom: Stand Jeu de rôle 02
     typologiesProposees:
@@ -200,6 +235,7 @@ stands:
     effectifMin: 3
     effectifMax: 4
     reserveMajeurs: false
+    emplacementId: PLACE-DRAPEAU
   - id: STAND-03
     nom: Stand Jeu de rôle 03
     typologiesProposees:
@@ -207,6 +243,7 @@ stands:
     effectifMin: 2
     effectifMax: 3
     reserveMajeurs: false
+    emplacementId: MAIRIE
   - id: STAND-04
     nom: Stand Coopératif 04
     typologiesProposees:
@@ -214,6 +251,7 @@ stands:
     effectifMin: 2
     effectifMax: 2
     reserveMajeurs: false
+    emplacementId: MAIRIE
   - id: STAND-05
     nom: Stand Enfants 05
     typologiesProposees:
@@ -221,6 +259,7 @@ stands:
     effectifMin: 3
     effectifMax: 3
     reserveMajeurs: false
+    emplacementId: CHATEAU
   - id: STAND-06
     nom: Stand Coopératif 06
     typologiesProposees:
@@ -228,6 +267,7 @@ stands:
     effectifMin: 3
     effectifMax: 4
     reserveMajeurs: true
+    emplacementId: CHATEAU
   - id: STAND-07
     nom: Stand Enfants 07
     typologiesProposees:
@@ -235,6 +275,7 @@ stands:
     effectifMin: 4
     effectifMax: 5
     reserveMajeurs: false
+    emplacementId: PLACE-11-NOVEMBRE
   - id: STAND-08
     nom: Stand Énigme / Escape 08
     typologiesProposees:
@@ -242,6 +283,7 @@ stands:
     effectifMin: 2
     effectifMax: 4
     reserveMajeurs: false
+    emplacementId: PLACE-11-NOVEMBRE
   - id: STAND-09
     nom: Stand Jeu de rôle 09
     typologiesProposees:
@@ -249,6 +291,7 @@ stands:
     effectifMin: 4
     effectifMax: 4
     reserveMajeurs: true
+    emplacementId: HALLE-AUX-GRAINS
   - id: STAND-10
     nom: Stand Stratégie 10
     typologiesProposees:
@@ -257,6 +300,7 @@ stands:
     effectifMin: 3
     effectifMax: 3
     reserveMajeurs: false
+    emplacementId: HALLE-AUX-GRAINS
   - id: STAND-11
     nom: Stand Adresse 11
     typologiesProposees:
@@ -264,6 +308,7 @@ stands:
     effectifMin: 4
     effectifMax: 5
     reserveMajeurs: false
+    emplacementId: JARDIN-DUGUESCLIN
   - id: STAND-12
     nom: Stand Adresse 12
     typologiesProposees:
@@ -271,6 +316,7 @@ stands:
     effectifMin: 4
     effectifMax: 5
     reserveMajeurs: false
+    emplacementId: JARDIN-DUGUESCLIN
   - id: STAND-13
     nom: Stand Jeu de rôle 13
     typologiesProposees:
@@ -279,6 +325,7 @@ stands:
     effectifMin: 4
     effectifMax: 5
     reserveMajeurs: false
+    emplacementId: PONT-MEDIEVAL
   - id: STAND-14
     nom: Stand Ambiance 14
     typologiesProposees:
@@ -286,6 +333,7 @@ stands:
     effectifMin: 2
     effectifMax: 2
     reserveMajeurs: false
+    emplacementId: PONT-MEDIEVAL
   - id: STAND-15
     nom: Stand Enfants 15
     typologiesProposees:
@@ -294,6 +342,7 @@ stands:
     effectifMin: 2
     effectifMax: 3
     reserveMajeurs: false
+    emplacementId: ESPLANADE-FRANCOIS-MITTERRAND
   - id: STAND-16
     nom: Stand Stratégie 16
     typologiesProposees:
@@ -301,6 +350,7 @@ stands:
     effectifMin: 2
     effectifMax: 3
     reserveMajeurs: false
+    emplacementId: ESPLANADE-FRANCOIS-MITTERRAND
   - id: STAND-17
     nom: Stand Stratégie 17
     typologiesProposees:
@@ -308,6 +358,7 @@ stands:
     effectifMin: 2
     effectifMax: 4
     reserveMajeurs: false
+    emplacementId: PLACE-DRAPEAU
   - id: STAND-18
     nom: Stand Énigme / Escape 18
     typologiesProposees:
@@ -315,6 +366,7 @@ stands:
     effectifMin: 3
     effectifMax: 5
     reserveMajeurs: false
+    emplacementId: MAIRIE
   - id: STAND-19
     nom: Stand Ambiance 19
     typologiesProposees:
@@ -322,6 +374,7 @@ stands:
     effectifMin: 3
     effectifMax: 4
     reserveMajeurs: true
+    emplacementId: CHATEAU
   - id: STAND-20
     nom: Stand Ambiance 20
     typologiesProposees:
@@ -330,6 +383,7 @@ stands:
     effectifMin: 3
     effectifMax: 4
     reserveMajeurs: false
+    emplacementId: PLACE-11-NOVEMBRE
 
 animateurs:
   - id: A1

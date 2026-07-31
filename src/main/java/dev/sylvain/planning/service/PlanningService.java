@@ -31,6 +31,7 @@ import ai.timefold.solver.core.config.solver.SolverConfig;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ConstraintToggle;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
@@ -369,6 +370,23 @@ public class PlanningService {
             creneauxMap.put(id, creneau);
         }
         
+        // Charger les emplacements
+        Map<String, Emplacement> emplacementsMap = new HashMap<>();
+        List<Map<String, Object>> emplacementsList = (List<Map<String, Object>>) scenarioData.get("emplacements");
+        if (emplacementsList != null) {
+            for (Map<String, Object> emplacementData : emplacementsList) {
+                String id = (String) emplacementData.get("id");
+                String nom = (String) emplacementData.get("nom");
+                Double latitude = emplacementData.get("latitude") == null ? null
+                        : ((Number) emplacementData.get("latitude")).doubleValue();
+                Double longitude = emplacementData.get("longitude") == null ? null
+                        : ((Number) emplacementData.get("longitude")).doubleValue();
+
+                Emplacement emplacement = new Emplacement(id, nom, latitude, longitude);
+                emplacementsMap.put(id, emplacement);
+            }
+        }
+
         // Charger les stands
         Map<String, Stand> standsMap = new HashMap<>();
         List<Map<String, Object>> standsList = (List<Map<String, Object>>) scenarioData.get("stands");
@@ -385,6 +403,10 @@ public class PlanningService {
             boolean premium = (Boolean) standData.getOrDefault("premium", false);
 
             Stand stand = new Stand(id, nom, typologies, effectifMin, effectifMax, reserveMajeurs, premium);
+            String emplacementId = (String) standData.get("emplacementId");
+            if (emplacementId != null) {
+                stand.setEmplacement(emplacementsMap.get(emplacementId));
+            }
             standsMap.put(id, stand);
         }
         
