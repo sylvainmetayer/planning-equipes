@@ -204,6 +204,8 @@
   "dataTransfer.importingAs": "Importing {$fileName} as {$entity}...",
   "debug.description": "Raw diagnostic of the last solve or analysis: overall score, unfilled seats, feasibility, and score/match count per constraint (without staff/time slots/seats).",
   "debug.empty": "No solve or analysis for this session yet.",
+  "debug.version": "Version:",
+  "debug.repoLink": "GitHub repository",
   "hours.title": "Hours scheduled per staff member",
   "hours.description": "Hours are grouped by ISO calendar week, computed from the schedule solved this session or the last one saved in the database.",
   "hours.exportCsv": "Export as CSV",

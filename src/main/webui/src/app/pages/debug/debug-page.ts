@@ -6,6 +6,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ApiService } from '../../core/api.service';
 import { ConstraintsView } from '../../core/models';
 import { OutputPanel } from '../../shared/output-panel';
+import { APP_VERSION, REPO_URL } from '../../version';
 
 /**
  * Raw dump of the last solve/analyze diagnostic (`GET /api/constraints`):
@@ -25,6 +26,8 @@ export class DebugPage {
   protected readonly loading = signal(false);
   protected readonly error = signal('');
   protected readonly output = signal('');
+  protected readonly appVersion = APP_VERSION;
+  protected readonly repoUrl = REPO_URL;
 
   private readonly api = inject(ApiService);
 

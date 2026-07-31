@@ -1,6 +1,5 @@
 # Ignore build output and VCS/editor metadata
 target/
-.git/
 .idea/
 .vscode/
 *.iml
