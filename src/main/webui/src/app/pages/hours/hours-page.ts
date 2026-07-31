@@ -3,9 +3,10 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
+import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { ApiService } from '../../core/api.service';
-import { HeuresRapport } from '../../core/models';
+import { HeuresAnimateur, HeuresRapport } from '../../core/models';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { OutputPanel } from '../../shared/output-panel';
 
@@ -17,7 +18,7 @@ import { OutputPanel } from '../../shared/output-panel';
  */
 @Component({
   selector: 'app-hours-page',
-  imports: [MatCardModule, MatButtonModule, MatIconModule, MatTableModule, DecimalPipe, OutputPanel],
+  imports: [MatCardModule, MatButtonModule, MatIconModule, MatTableModule, MatSortModule, DecimalPipe, OutputPanel],
   templateUrl: './hours-page.html'
 })
 export class HoursPage {
@@ -26,6 +27,16 @@ export class HoursPage {
   protected readonly exportBusy = signal(false);
   protected readonly rapport = signal<HeuresRapport | null>(null);
   protected readonly columns = computed(() => ['animateur', ...(this.rapport()?.semaines ?? []), 'total']);
+  protected readonly sort = signal<Sort>({ active: '', direction: '' });
+  protected readonly sortedAnimateurs = computed(() => {
+    const animateurs = this.rapport()?.animateurs ?? [];
+    const { active, direction } = this.sort();
+    if (!active || !direction) {
+      return animateurs;
+    }
+    const factor = direction === 'asc' ? 1 : -1;
+    return [...animateurs].sort((a, b) => factor * compareByColumn(a, b, active));
+  });
 
   private readonly api = inject(ApiService);
   private readonly planningState = inject(PlanningStateService);
@@ -71,4 +82,13 @@ export class HoursPage {
 
 function message(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+function compareByColumn(a: HeuresAnimateur, b: HeuresAnimateur, column: string): number {
+  if (column === 'animateur') {
+    return a.nom.localeCompare(b.nom);
+  }
+  const valueA = column === 'total' ? a.total : (a.heuresParSemaine[column] ?? 0);
+  const valueB = column === 'total' ? b.total : (b.heuresParSemaine[column] ?? 0);
+  return valueA - valueB;
 }

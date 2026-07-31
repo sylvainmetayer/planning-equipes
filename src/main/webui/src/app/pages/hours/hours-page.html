@@ -18,17 +18,17 @@
   </mat-card-actions>
   @if (rapport(); as report) {
     <mat-card-content class="table-wrapper">
-      <table mat-table [dataSource]="report.animateurs">
+      <table mat-table [dataSource]="sortedAnimateurs()" matSort [matSortActive]="sort().active" [matSortDirection]="sort().direction" (matSortChange)="sort.set($event)">
         @for (col of columns(); track col) {
           <ng-container [matColumnDef]="col">
             @if (col === 'animateur') {
-              <th mat-header-cell *matHeaderCellDef>Animateur</th>
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Animateur</th>
               <td mat-cell *matCellDef="let row">{{ row.nom }}</td>
             } @else if (col === 'total') {
-              <th mat-header-cell *matHeaderCellDef>Total</th>
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Total</th>
               <td mat-cell *matCellDef="let row"><strong>{{ row.total | number: '1.1-1' }} h</strong></td>
             } @else {
-              <th mat-header-cell *matHeaderCellDef>{{ col }}</th>
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ col }}</th>
               <td mat-cell *matCellDef="let row">{{ hoursFor(row.animateurId, col) | number: '1.1-1' }} h</td>
             }
           </ng-container>
