@@ -25,6 +25,15 @@ case "$file_path" in
   /*) abs_path="$file_path" ;;
   *) abs_path="$repo_root/$file_path" ;;
 esac
+
+# Paths outside the repo are none of this hook's business (e.g. a plan file
+# under ~/.claude/plans/ — the leftover-unstripped-prefix case below would
+# otherwise wrongly match it against the *plan* glob).
+case "$abs_path" in
+  "$repo_root"/*) ;;
+  *) exit 0 ;;
+esac
+
 rel_path="${abs_path#"$repo_root"/}"
 
 lower_path="$(printf '%s' "$rel_path" | tr '[:upper:]' '[:lower:]')"
