@@ -1,0 +1,42 @@
+<h2 mat-dialog-title>{{ editingId() ? 'Edit timeslot ' + editingId() : 'New timeslot' }}</h2>
+<form (ngSubmit)="save()">
+<mat-dialog-content class="form-grid">
+<fieldset class="form-fieldset" [disabled]="editingLocked()">
+@if (editingLocked()) {
+  <p class="locked-hint span-2">Editing is locked while the solver is running.</p>
+}
+<mat-form-field appearance="outline">
+  <mat-label>Id</mat-label>
+  <input matInput name="id" required [readonly]="!!editingId()"
+         [ngModel]="draft().id" (ngModelChange)="patch({ id: $event })" />
+</mat-form-field>
+<mat-form-field appearance="outline">
+  <mat-label>Festival day</mat-label>
+  <input matInput name="jour" type="number" min="1" max="15" required
+         [ngModel]="draft().jour" (ngModelChange)="patch({ jour: $event })" />
+</mat-form-field>
+<mat-form-field appearance="outline">
+  <mat-label>Date</mat-label>
+  <input matInput name="date" type="date" required
+         [ngModel]="draft().date" (ngModelChange)="patch({ date: $event })" />
+</mat-form-field>
+<mat-form-field appearance="outline">
+  <mat-label>Start</mat-label>
+  <input matInput name="heureDebut" type="time" required
+         [ngModel]="draft().heureDebut" (ngModelChange)="patch({ heureDebut: $event })" />
+</mat-form-field>
+<mat-form-field appearance="outline">
+  <mat-label>End</mat-label>
+  <input matInput name="heureFin" type="time" required
+         [ngModel]="draft().heureFin" (ngModelChange)="patch({ heureFin: $event })" />
+</mat-form-field>
+</fieldset>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="dialogRef.close(false)">Cancel</button>
+  <button matButton="filled" type="submit" [disabled]="editingLocked()">
+    <mat-icon>save</mat-icon>
+    {{ editingId() ? 'Update timeslot' : 'Create timeslot' }}
+  </button>
+</mat-dialog-actions>
+</form>

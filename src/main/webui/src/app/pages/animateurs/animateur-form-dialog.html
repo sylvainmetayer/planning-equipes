@@ -1,0 +1,108 @@
+<h2 mat-dialog-title>{{ editingId() ? 'Edit animateur ' + editingId() : 'New animateur' }}</h2>
+<form (ngSubmit)="save()">
+<mat-dialog-content class="form-grid">
+<fieldset class="form-fieldset" [disabled]="editingLocked()">
+@if (editingLocked()) {
+  <p class="locked-hint span-2">Editing is locked while the solver is running.</p>
+}
+<mat-form-field appearance="outline">
+  <mat-label>Id</mat-label>
+  <input matInput name="id" required [readonly]="!!editingId()"
+         [ngModel]="draft().id" (ngModelChange)="patch({ id: $event })" />
+</mat-form-field>
+<mat-form-field appearance="outline">
+  <mat-label>First name</mat-label>
+  <input matInput name="prenom" [ngModel]="draft().prenom" (ngModelChange)="patch({ prenom: $event })" />
+</mat-form-field>
+<mat-form-field appearance="outline">
+  <mat-label>Last name</mat-label>
+  <input matInput name="nom" [ngModel]="draft().nom" (ngModelChange)="patch({ nom: $event })" />
+</mat-form-field>
+<mat-form-field appearance="outline">
+  <mat-label>Birth date</mat-label>
+  <input matInput name="dateNaissance" type="date"
+         [ngModel]="draft().dateNaissance" (ngModelChange)="patch({ dateNaissance: $event })" />
+</mat-form-field>
+<mat-checkbox name="manager" [disabled]="editingLocked()"
+              [ngModel]="draft().manager" (ngModelChange)="patch({ manager: $event })">
+  Manager
+</mat-checkbox>
+
+<div class="span-2 subform">
+  <div class="subform-header">
+    <h3>Skills</h3>
+    <button matButton type="button" (click)="addCompetence()">
+      <mat-icon>add</mat-icon>
+      Add a skill
+    </button>
+  </div>
+  @for (competence of draft().competences; track $index) {
+    <div class="competence-row">
+      <mat-form-field appearance="outline">
+        <mat-label>Typology</mat-label>
+        <mat-select [name]="'typologie-' + $index" [disabled]="editingLocked()" [ngModel]="competence.typologie"
+                    (ngModelChange)="updateCompetence($index, { typologie: $event })">
+          @for (typologie of store.typologies(); track typologie.id) {
+            <mat-option [value]="typologie.id">{{ typologie.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Level</mat-label>
+        <mat-select [name]="'niveau-' + $index" [disabled]="editingLocked()" [ngModel]="competence.niveau"
+                    (ngModelChange)="updateCompetence($index, { niveau: $event })">
+          @for (niveau of niveaux; track niveau) {
+            <mat-option [value]="niveau">{{ niveau }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <button matIconButton type="button" matTooltip="Remove this skill" aria-label="Remove this skill" class="danger-action"
+              (click)="removeCompetence($index)">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  } @empty {
+    <p class="empty-hint">No skill declared.</p>
+  }
+</div>
+
+<div class="span-2 subform">
+  <div class="subform-header">
+    <h3>Unavailable days</h3>
+  </div>
+  <div class="competence-row">
+    <mat-form-field appearance="outline">
+      <mat-label>Day</mat-label>
+      <input matInput name="newJour" type="date"
+             [ngModel]="newJour()" (ngModelChange)="newJour.set($event)" />
+    </mat-form-field>
+    <button matButton type="button" (click)="addJour()">
+      <mat-icon>add</mat-icon>
+      Add
+    </button>
+  </div>
+  @if (draft().joursIndisponibles.length) {
+    <mat-chip-set>
+      @for (jour of draft().joursIndisponibles; track jour) {
+        <mat-chip (removed)="removeJour(jour)">
+          {{ jour }}
+          <button matChipRemove [attr.aria-label]="'Remove ' + jour">
+            <mat-icon>cancel</mat-icon>
+          </button>
+        </mat-chip>
+      }
+    </mat-chip-set>
+  } @else {
+    <p class="empty-hint">Available every day.</p>
+  }
+</div>
+</fieldset>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="dialogRef.close(false)">Cancel</button>
+  <button matButton="filled" type="submit" [disabled]="editingLocked()">
+    <mat-icon>save</mat-icon>
+    {{ editingId() ? 'Update animateur' : 'Create animateur' }}
+  </button>
+</mat-dialog-actions>
+</form>
