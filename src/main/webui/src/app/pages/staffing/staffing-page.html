@@ -1,0 +1,70 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <mat-card-title>Minimum staffing need</mat-card-title>
+    <mat-card-subtitle>
+      Minimum animateur headcount to recruit, derived from the stands and créneaux configured in reference data —
+      no solve required. The total is the busiest créneau's open seats (sum of <code>effectifMin</code> over its
+      open stands), assuming an animateur can work several créneaux across the festival. The majeur/mineur split
+      targets majeurs&nbsp;≥&nbsp;mineurs per stand (a majeurs-only stand counts 100% majeurs), which satisfies
+      both the legal floor (at least one majeur as soon as a mineur is present) and the organisational target. This
+      is a lower bound: it ignores compétences, disponibilités and legal rest, which only the solver enforces.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <div class="staffing-summary">
+      <mat-card appearance="outlined" class="staffing-stat">
+        <div class="staffing-stat-value">{{ summary().minimumTotal }}</div>
+        <div class="staffing-stat-label">Minimum animateurs</div>
+      </mat-card>
+      <mat-card appearance="outlined" class="staffing-stat">
+        <div class="staffing-stat-value">{{ summary().minimumMajeurs }}</div>
+        <div class="staffing-stat-label">dont majeurs</div>
+      </mat-card>
+      <mat-card appearance="outlined" class="staffing-stat">
+        <div class="staffing-stat-value">{{ summary().minimumMineurs }}</div>
+        <div class="staffing-stat-label">dont mineurs (au plus)</div>
+      </mat-card>
+    </div>
+    @if (summary().creneauCritique; as critique) {
+      <p class="calendar-meta">
+        <mat-icon inline aria-hidden="true" matTooltip="Busiest créneau">priority_high</mat-icon>
+        Busiest créneau: {{ critique.creneauId }} — J{{ critique.jour }} · {{ critique.date }}
+        {{ critique.heureDebut }}–{{ critique.heureFin }} ({{ critique.standsOuverts }} open stands)
+      </p>
+    }
+    @if (summary().parCreneau.length === 0) {
+      <p class="empty-hint">No créneau yet.</p>
+    } @else {
+      <div class="table-wrapper">
+        <table mat-table [dataSource]="summary().parCreneau">
+          <ng-container matColumnDef="creneau">
+            <th mat-header-cell *matHeaderCellDef>Créneau</th>
+            <td mat-cell *matCellDef="let row">
+              {{ row.creneauId }} — J{{ row.jour }} · {{ row.date }} {{ row.heureDebut }}–{{ row.heureFin }}
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="standsOuverts">
+            <th mat-header-cell *matHeaderCellDef>Open stands</th>
+            <td mat-cell *matCellDef="let row">{{ row.standsOuverts }}</td>
+          </ng-container>
+          <ng-container matColumnDef="total">
+            <th mat-header-cell *matHeaderCellDef>Total</th>
+            <td mat-cell *matCellDef="let row">
+              <strong [class.staffing-critical]="row === summary().creneauCritique">{{ row.total }}</strong>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="majeurs">
+            <th mat-header-cell *matHeaderCellDef>Majeurs</th>
+            <td mat-cell *matCellDef="let row">{{ row.majeurs }}</td>
+          </ng-container>
+          <ng-container matColumnDef="mineurs">
+            <th mat-header-cell *matHeaderCellDef>Mineurs</th>
+            <td mat-cell *matCellDef="let row">{{ row.mineurs }}</td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="columns"></tr>
+          <tr mat-row *matRowDef="let row; columns: columns"></tr>
+        </table>
+      </div>
+    }
+  </mat-card-content>
+</mat-card>

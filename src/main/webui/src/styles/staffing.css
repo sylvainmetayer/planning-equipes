@@ -1,0 +1,27 @@
+/* Staffing-need calculator: headline stat tiles above the per-créneau table. */
+
+.staffing-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.staffing-stat {
+  display: block;
+  text-align: center;
+}
+
+.staffing-stat-value {
+  font: var(--mat-sys-display-small);
+  color: var(--mat-sys-primary);
+}
+
+.staffing-stat-label {
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.staffing-critical {
+  color: var(--mat-sys-error);
+}

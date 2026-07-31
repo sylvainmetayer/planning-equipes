@@ -69,5 +69,10 @@ export const routes: Routes = [
     title: 'Hours — Planning Équipes',
     loadComponent: () => import('./pages/hours/hours-page').then((m) => m.HoursPage)
   },
+  {
+    path: 'staffing',
+    title: 'Staffing need — Planning Équipes',
+    loadComponent: () => import('./pages/staffing/staffing-page').then((m) => m.StaffingPage)
+  },
   { path: '**', redirectTo: 'solver' }
 ];

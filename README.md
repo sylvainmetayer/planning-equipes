@@ -142,6 +142,25 @@ Le détail règle par règle est dans [`docs/contraintes.md`](docs/contraintes.m
 - les **créneaux** : jour du festival, date, heures de début et de fin ;
 - les **typologies de jeux**.
 
+### Estimation du besoin en animateurs
+
+Avant même de lancer une génération de planning, une page dédiée calcule, à
+partir des stands et créneaux saisis dans les référentiels (effectif minimum
+par stand, restriction éventuelle aux majeurs, stands ouverts par créneau), le
+nombre minimum d'animateurs à recruter :
+
+- le **minimum global** correspond au créneau le plus chargé du festival, en
+  supposant qu'un animateur puisse enchaîner plusieurs créneaux différents ;
+- ce minimum est décomposé en **majeurs** et **mineurs**, en respectant à la
+  fois l'encadrement obligatoire (au moins un majeur dès qu'un mineur est
+  présent sur un stand) et l'équilibre visé entre les deux ;
+- le détail créneau par créneau est également affiché, avec le nombre de
+  stands ouverts et le créneau le plus critique mis en évidence.
+
+C'est une estimation basse : elle ne tient pas compte des compétences, des
+disponibilités ni du repos légal, qui restent gérés par le moteur de
+planification lors de la génération effective.
+
 ### Exceptions ponctuelles (contraintes ad hoc)
 
 L'administrateur peut poser des règles au cas par cas, sans passer par le code,

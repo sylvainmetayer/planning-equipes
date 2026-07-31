@@ -88,8 +88,9 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   in the toolbar.
 - **One route = one page = one block.** Routes: `/solver` (default), `/exports`,
   `/data-transfer`, `/stands`, `/animateurs`, `/creneaux`, `/typologies`,
-  `/ad-hoc-constraints`, `/calendar`, `/day-calendar`, `/constraints`. Adding a
-  functional block means adding a route and a `app/pages/<block>/` folder, never
+  `/ad-hoc-constraints`, `/calendar`, `/day-calendar`, `/constraints`, `/hours`,
+  `/staffing`. Adding a functional block means adding a route and a
+  `app/pages/<block>/` folder, never
   a new section inside an existing page.
 - Layout: `app/core/` holds shared services (`api.service.ts` — the only place
   doing HTTP, `downloadFile` returns a status string and never touches the DOM;

@@ -50,7 +50,8 @@ const NAV_GROUPS: NavGroup[] = [
       { path: '/calendar', label: 'Assignment calendar', icon: 'calendar_month' },
       { path: '/day-calendar', label: 'Day calendar', icon: 'view_day' },
       { path: '/constraints', label: 'Constraints', icon: 'fact_check' },
-      { path: '/hours', label: 'Hours', icon: 'schedule' }
+      { path: '/hours', label: 'Hours', icon: 'schedule' },
+      { path: '/staffing', label: 'Staffing need', icon: 'engineering' }
     ]
   }
 ];
