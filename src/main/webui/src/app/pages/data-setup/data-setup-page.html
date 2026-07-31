@@ -25,6 +25,10 @@
       <mat-icon>delete_sweep</mat-icon>
       Empty database
     </button>
+    <button matButton="outlined" [disabled]="exporting()" (click)="onExportScenario()">
+      <mat-icon>file_download</mat-icon>
+      Export current data as scenario
+    </button>
   </mat-card-actions>
 </mat-card>
 
