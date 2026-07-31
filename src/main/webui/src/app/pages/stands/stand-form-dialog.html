@@ -1,0 +1,57 @@
+<h2 mat-dialog-title>{{ editingId() ? 'Edit stand ' + editingId() : 'New stand' }}</h2>
+<form (ngSubmit)="save()">
+<mat-dialog-content class="form-grid">
+<fieldset class="form-fieldset" [disabled]="editingLocked()">
+@if (editingLocked()) {
+  <p class="locked-hint span-2">Editing is locked while the solver is running.</p>
+}
+<mat-form-field appearance="outline">
+  <mat-label>Id</mat-label>
+  <input matInput name="id" required [readonly]="!!editingId()"
+         [ngModel]="draft().id" (ngModelChange)="patch({ id: $event })" />
+</mat-form-field>
+<mat-form-field appearance="outline">
+  <mat-label>Name</mat-label>
+  <input matInput name="nom" required [ngModel]="draft().nom" (ngModelChange)="patch({ nom: $event })" />
+</mat-form-field>
+<mat-form-field appearance="outline">
+  <mat-label>Minimum staff</mat-label>
+  <input matInput name="effectifMin" type="number" min="0"
+         [ngModel]="draft().effectifMin" (ngModelChange)="patch({ effectifMin: $event })" />
+</mat-form-field>
+<mat-form-field appearance="outline">
+  <mat-label>Maximum staff</mat-label>
+  <input matInput name="effectifMax" type="number" min="0"
+         [ngModel]="draft().effectifMax" (ngModelChange)="patch({ effectifMax: $event })" />
+</mat-form-field>
+@if (effectifInvalid()) {
+  <p class="field-error span-2">Maximum staff cannot be lower than minimum staff.</p>
+}
+<mat-form-field appearance="outline" class="span-2">
+  <mat-label>Game typologies</mat-label>
+  <mat-select name="typologies" multiple [disabled]="editingLocked()"
+              [ngModel]="draft().typologiesProposees" (ngModelChange)="patch({ typologiesProposees: $event })">
+    @for (typologie of store.typologies(); track typologie.id) {
+      <mat-option [value]="typologie.id">{{ typologie.label || typologie.id }}</mat-option>
+    }
+  </mat-select>
+</mat-form-field>
+<mat-checkbox name="reserveMajeurs" [disabled]="editingLocked()"
+              [ngModel]="draft().reserveMajeurs" (ngModelChange)="patch({ reserveMajeurs: $event })">
+  Adults only
+</mat-checkbox>
+<mat-checkbox name="premium" [disabled]="editingLocked()"
+              matTooltip="Editor/publisher stand: the solver avoids rotating staff and favors experienced animateurs."
+              [ngModel]="draft().premium" (ngModelChange)="patch({ premium: $event })">
+  Premium (editor stand)
+</mat-checkbox>
+</fieldset>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="dialogRef.close(false)">Cancel</button>
+  <button matButton="filled" type="submit" [disabled]="effectifInvalid() || editingLocked()">
+    <mat-icon>save</mat-icon>
+    {{ editingId() ? 'Update stand' : 'Create stand' }}
+  </button>
+</mat-dialog-actions>
+</form>
