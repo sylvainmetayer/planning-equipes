@@ -17,8 +17,13 @@ import { JobType, JobView, PlanningDiagnostic, PlanningFestival } from './models
 
 const POLL_INTERVAL_MS = 2000;
 const LABELS: Record<JobType, string> = {
-  SOLVE: 'Timefold solve',
-  ANALYZE: 'Solution analysis'
+  SOLVE: 'Résolution Timefold',
+  ANALYZE: 'Analyse de la solution'
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  FAILED: 'échouée',
+  CANCELLED: 'annulée'
 };
 
 /** Job held by the server, as followed by this client. */
@@ -50,10 +55,10 @@ export class SolverJobService {
   readonly activeJobDescription = computed(() => {
     const job = this.activeJob();
     if (!job) {
-      return this.stateKnown() ? '' : 'The solver state is not known yet.';
+      return this.stateKnown() ? '' : "L'état du solveur n'est pas encore connu.";
     }
-    const origin = job.mine ? '' : ' (started from another session)';
-    return `${job.label} has been running for ${formatDuration(elapsedSeconds(job, this.now()))}${origin}.`;
+    const origin = job.mine ? '' : ' (démarré depuis une autre session)';
+    return `${job.label} est en cours depuis ${formatDuration(elapsedSeconds(job, this.now()))}${origin}.`;
   });
 
   private readonly api = inject(ApiService);
@@ -125,8 +130,8 @@ export class SolverJobService {
     }
     this.adopt(job, true);
     this.notifications.notify({
-      title: `${LABELS[type]} started`,
-      message: 'This runs on the server — you can keep using the app, from this browser or another one.',
+      title: `${LABELS[type]} démarrée`,
+      message: "Cela s'exécute sur le serveur — vous pouvez continuer à utiliser l'application, depuis ce navigateur ou un autre.",
       timeout: 5000
     });
     return job;
@@ -138,8 +143,8 @@ export class SolverJobService {
       const running = error.error as JobView;
       this.adopt(running, false);
       return new Error(
-        `${LABELS[running.type] ?? running.type} is already running (${formatDuration(running.elapsedSeconds)}). `
-          + 'Wait for it to finish before starting another one.'
+        `${LABELS[running.type] ?? running.type} est déjà en cours (${formatDuration(running.elapsedSeconds)}). `
+          + "Veuillez attendre la fin avant d'en démarrer une autre."
       );
     }
     return toError(error);
@@ -199,9 +204,9 @@ export class SolverJobService {
     this.activeJob.set(entry);
     if (!entry.mine) {
       this.notifications.notify({
-        title: `${entry.label} already running`,
-        message: `Started from another session ${formatDuration(job.elapsedSeconds)} ago. `
-          + 'Solver actions are locked until it finishes.'
+        title: `${entry.label} déjà en cours`,
+        message: `Démarrage depuis une autre session il y a ${formatDuration(job.elapsedSeconds)}. `
+          + "Les actions du solveur sont verrouillées jusqu'à la fin."
       });
     }
   }
@@ -210,14 +215,14 @@ export class SolverJobService {
     const job = await this.api.get<JobView>(`/api/jobs/${entry.id}`).catch(() => null);
     if (!job) {
       this.notifications.notify({
-        title: `${entry.label} is over`,
-        message: 'The server no longer knows this job (restart or retention purge).'
+        title: `${entry.label} terminée`,
+        message: 'Le serveur ne connaît plus cette tâche (redémarrage ou purge de rétention).'
       });
       return;
     }
     if (job.status !== 'COMPLETED') {
       this.notifications.notify({
-        title: `${entry.label} ${job.status.toLowerCase()}`,
+        title: `${entry.label} ${STATUS_LABELS[job.status] ?? job.status.toLowerCase()}`,
         message: job.error ?? '',
         variant: 'error',
         desktop: true,
@@ -226,7 +231,7 @@ export class SolverJobService {
       return;
     }
     this.notifications.notify({
-      title: `${entry.label} finished in ${formatDuration(job.elapsedSeconds)}`,
+      title: `${entry.label} terminée en ${formatDuration(job.elapsedSeconds)}`,
       message: describeResult(job.result),
       variant: 'success',
       desktop: true
@@ -250,12 +255,12 @@ function describeResult(result: unknown): string {
     return '';
   }
   const diagnostic = result as PlanningDiagnostic;
-  return `Score ${diagnostic.score} — ${diagnostic.postesNonPourvus} unfilled seats.`;
+  return `Score ${diagnostic.score} — ${diagnostic.postesNonPourvus} poste(s) non pourvu(s).`;
 }
 
 export function formatScore(score: PlanningFestival['score']): string {
   if (!score) {
-    return 'n/a';
+    return 'n/d';
   }
   return `${score.hardScore}hard/${score.mediumScore}medium/${score.softScore}soft`;
 }

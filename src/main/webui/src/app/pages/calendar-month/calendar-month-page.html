@@ -1,37 +1,37 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
     <mat-card-title>{{ monthLabel() }}</mat-card-title>
-    <mat-card-subtitle>Read-only view of the last solved or persisted planning.</mat-card-subtitle>
+    <mat-card-subtitle>Vue en lecture seule du dernier planning résolu ou enregistré.</mat-card-subtitle>
   </mat-card-header>
 
   <mat-card-content>
     <div class="calendar-toolbar">
       <div class="calendar-nav">
-        <button matIconButton type="button" aria-label="Previous month" (click)="previousMonth()">
+        <button matIconButton type="button" aria-label="Mois précédent" (click)="previousMonth()">
           <mat-icon>chevron_left</mat-icon>
         </button>
-        <button matButton type="button" (click)="today()">Today</button>
-        <button matIconButton type="button" aria-label="Next month" (click)="nextMonth()">
+        <button matButton type="button" (click)="today()">Aujourd'hui</button>
+        <button matIconButton type="button" aria-label="Mois suivant" (click)="nextMonth()">
           <mat-icon>chevron_right</mat-icon>
         </button>
       </div>
       <div class="calendar-nav">
         <button matButton type="button" (click)="resetFilters()">
           <mat-icon>filter_alt_off</mat-icon>
-          Reset filters
+          Réinitialiser les filtres
         </button>
         <button matButton="tonal" type="button" [disabled]="loading()" (click)="refresh()">
           <mat-icon>refresh</mat-icon>
-          Refresh
+          Actualiser
         </button>
       </div>
     </div>
 
     <div class="calendar-filters">
       <mat-form-field appearance="outline">
-        <mat-label>Animator</mat-label>
+        <mat-label>Animateur</mat-label>
         <mat-select [value]="animateurFilter()" (valueChange)="selectAnimateur($event)">
-          <mat-option value="ALL">All animators</mat-option>
+          <mat-option value="ALL">Tous les animateurs</mat-option>
           @for (option of animateurOptions(); track option.value) {
             <mat-option [value]="option.value">{{ option.label }}</mat-option>
           }
@@ -40,7 +40,7 @@
       <mat-form-field appearance="outline">
         <mat-label>Stand</mat-label>
         <mat-select [value]="standFilter()" (valueChange)="selectStand($event)">
-          <mat-option value="ALL">All stands</mat-option>
+          <mat-option value="ALL">Tous les stands</mat-option>
           @for (option of standOptions(); track option.value) {
             <mat-option [value]="option.value">{{ option.label }}</mat-option>
           }
@@ -53,21 +53,21 @@
     }
 
     <div class="calendar-weekdays" aria-hidden="true">
-      <span>Mon</span>
-      <span>Tue</span>
-      <span>Wed</span>
-      <span>Thu</span>
-      <span>Fri</span>
-      <span>Sat</span>
-      <span>Sun</span>
+      <span>Lun</span>
+      <span>Mar</span>
+      <span>Mer</span>
+      <span>Jeu</span>
+      <span>Ven</span>
+      <span>Sam</span>
+      <span>Dim</span>
     </div>
 
     @if (error()) {
       <p class="calendar-empty">{{ error() }}</p>
     } @else if (!hasData() && loaded()) {
-      <p class="calendar-empty">No planning data available yet.</p>
+      <p class="calendar-empty">Aucune donnée de planning disponible pour le moment.</p>
     } @else {
-      <div class="calendar-grid" role="grid" aria-label="Monthly assignment calendar">
+      <div class="calendar-grid" role="grid" aria-label="Calendrier mensuel des affectations">
         @for (cell of cells(); track cell.dateKey) {
           <button type="button" class="calendar-day-cell"
                   [class.is-other-month]="cell.otherMonth"
@@ -76,7 +76,7 @@
                   (click)="selectDay(cell)">
             <div class="calendar-day-number">{{ cell.dayNumber }}</div>
             <div class="calendar-day-meta">
-              <span>{{ cell.count }} slot{{ cell.count > 1 ? 's' : '' }}</span>
+              <span>{{ cell.count }} créneau{{ cell.count > 1 ? 'x' : '' }}</span>
               <span class="calendar-dot" [class.has-events]="cell.count > 0"></span>
             </div>
           </button>
@@ -88,13 +88,13 @@
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title>{{ dayTitle() || 'Day details' }}</mat-card-title>
+    <mat-card-title>{{ dayTitle() || 'Détails du jour' }}</mat-card-title>
   </mat-card-header>
   <mat-card-content aria-live="polite">
     @if (!hasData()) {
-      <p class="empty-hint">Run a solve from the Solver page to fill this calendar.</p>
+      <p class="empty-hint">Lancez une résolution depuis la page Solveur pour remplir ce calendrier.</p>
     } @else if (daySlots().length === 0) {
-      <p class="empty-hint">No assignment for this date.</p>
+      <p class="empty-hint">Aucune affectation pour cette date.</p>
     } @else {
       <mat-list>
         @for (slot of daySlots(); track slot.creneauId) {
@@ -104,7 +104,7 @@
               <mat-icon matListItemIcon>storefront</mat-icon>
               <span matListItemTitle>{{ stand.standNom }}</span>
               <span matListItemLine>
-                {{ stand.names.length === 0 ? '(unassigned)' : stand.names.join(', ') }}
+                {{ stand.names.length === 0 ? '(non assigné)' : stand.names.join(', ') }}
               </span>
             </mat-list-item>
           }

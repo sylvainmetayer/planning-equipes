@@ -4,16 +4,16 @@
       <mat-expansion-panel-header>
         <mat-panel-title>{{ formTitle() }}</mat-panel-title>
         <mat-panel-description>
-          Ad hoc constraints are enforced as hard constraints, at the same priority as the legal ones.
+          Les contraintes ad hoc sont appliquées comme contraintes fortes, à la même priorité que les contraintes légales.
         </mat-panel-description>
       </mat-expansion-panel-header>
       <form class="form-grid" (ngSubmit)="save()">
       <fieldset class="form-fieldset" [disabled]="editingLocked()">
       @if (editingLocked()) {
-        <p class="locked-hint span-2">Editing is locked while the solver is running.</p>
+        <p class="locked-hint span-2">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
       }
       <mat-form-field appearance="outline">
-        <mat-label>Id</mat-label>
+        <mat-label>Identifiant</mat-label>
         <input matInput name="id" required [readonly]="!!editingId()"
                [ngModel]="draft().id" (ngModelChange)="patch({ id: $event })" />
       </mat-form-field>
@@ -26,10 +26,10 @@
         </mat-select>
       </mat-form-field>
       <mat-form-field appearance="outline">
-        <mat-label>Timeslot (optional)</mat-label>
+        <mat-label>Créneau (facultatif)</mat-label>
         <mat-select name="creneauId" [disabled]="editingLocked()"
                     [ngModel]="draft().creneauId" (ngModelChange)="patch({ creneauId: $event })">
-          <mat-option value="">Any timeslot</mat-option>
+          <mat-option value="">Tout créneau</mat-option>
           @for (creneau of store.creneaux(); track creneau.id) {
             <mat-option [value]="creneau.id">
               {{ creneau.id }} · J{{ creneau.jour }} {{ creneau.heureDebut }}–{{ creneau.heureFin }}
@@ -38,16 +38,16 @@
         </mat-select>
       </mat-form-field>
       <mat-form-field appearance="outline">
-        <mat-label>Stand (optional)</mat-label>
+        <mat-label>Stand (facultatif)</mat-label>
         <mat-select name="standId" [disabled]="editingLocked()" [ngModel]="draft().standId" (ngModelChange)="patch({ standId: $event })">
-          <mat-option value="">Any stand</mat-option>
+          <mat-option value="">Tout stand</mat-option>
           @for (stand of store.stands(); track stand.id) {
             <mat-option [value]="stand.id">{{ stand.nom || stand.id }}</mat-option>
           }
         </mat-select>
       </mat-form-field>
       <mat-form-field appearance="outline" class="span-2">
-        <mat-label>Animateurs concerned</mat-label>
+        <mat-label>Animateurs concernés</mat-label>
         <mat-select name="animateurIds" multiple [disabled]="editingLocked()"
                     [ngModel]="draft().animateurIds" (ngModelChange)="patch({ animateurIds: $event })">
           @for (animateur of store.animateurs(); track animateur.id) {
@@ -58,16 +58,16 @@
         </mat-select>
       </mat-form-field>
       <mat-form-field appearance="outline" class="span-2">
-        <mat-label>Reason</mat-label>
+        <mat-label>Raison</mat-label>
         <textarea matInput name="raison" rows="2"
                   [ngModel]="draft().raison" (ngModelChange)="patch({ raison: $event })"></textarea>
       </mat-form-field>
       <div class="form-actions span-2">
         <button matButton="filled" type="submit">
           <mat-icon>save</mat-icon>
-          Save constraint
+          Enregistrer la contrainte
         </button>
-        <button matButton type="button" (click)="cancel()">Cancel</button>
+        <button matButton type="button" (click)="cancel()">Annuler</button>
       </div>
       </fieldset>
       </form>
@@ -77,7 +77,7 @@
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title>Ad hoc constraints ({{ store.contraintes().length }})</mat-card-title>
+    <mat-card-title>Contraintes ad hoc ({{ store.contraintes().length }})</mat-card-title>
   </mat-card-header>
   <mat-card-content class="table-wrapper">
     <table mat-table [dataSource]="store.contraintes()">
@@ -87,27 +87,27 @@
       </ng-container>
       <ng-container matColumnDef="type">
         <th mat-header-cell *matHeaderCellDef>Type</th>
-        <td mat-cell *matCellDef="let contrainte">{{ contrainte.type }}</td>
+        <td mat-cell *matCellDef="let contrainte">{{ typeLabel(contrainte) }}</td>
       </ng-container>
       <ng-container matColumnDef="animateurs">
         <th mat-header-cell *matHeaderCellDef>Animateurs</th>
         <td mat-cell *matCellDef="let contrainte">{{ animateursLabel(contrainte) }}</td>
       </ng-container>
       <ng-container matColumnDef="portee">
-        <th mat-header-cell *matHeaderCellDef>Scope</th>
+        <th mat-header-cell *matHeaderCellDef>Périmètre</th>
         <td mat-cell *matCellDef="let contrainte">{{ porteeLabel(contrainte) }}</td>
       </ng-container>
       <ng-container matColumnDef="raison">
-        <th mat-header-cell *matHeaderCellDef>Reason</th>
+        <th mat-header-cell *matHeaderCellDef>Raison</th>
         <td mat-cell *matCellDef="let contrainte">{{ contrainte.raison }}</td>
       </ng-container>
       <ng-container matColumnDef="actions">
         <th mat-header-cell *matHeaderCellDef aria-label="Actions"></th>
         <td mat-cell *matCellDef="let contrainte" class="row-actions">
-          <button matIconButton matTooltip="Edit" aria-label="Edit" [disabled]="editingLocked()" (click)="edit(contrainte)">
+          <button matIconButton matTooltip="Modifier" aria-label="Modifier" [disabled]="editingLocked()" (click)="edit(contrainte)">
             <mat-icon>edit</mat-icon>
           </button>
-          <button matIconButton matTooltip="Delete" aria-label="Delete" class="danger-action" [disabled]="editingLocked()"
+          <button matIconButton matTooltip="Supprimer" aria-label="Supprimer" class="danger-action" [disabled]="editingLocked()"
                   (click)="remove(contrainte)">
             <mat-icon>delete</mat-icon>
           </button>
@@ -117,7 +117,7 @@
       <tr mat-row *matRowDef="let row; columns: columns"></tr>
     </table>
     @if (store.contraintes().length === 0) {
-      <p class="empty-hint">No ad hoc constraint yet.</p>
+      <p class="empty-hint">Aucune contrainte ad hoc pour le moment.</p>
     }
   </mat-card-content>
 </mat-card>

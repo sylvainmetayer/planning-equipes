@@ -65,7 +65,7 @@ export class AnimateursPage {
   protected readonly editingId = signal<string | null>(null);
   protected readonly newJour = signal('');
   protected readonly formTitle = computed(() =>
-    this.editingId() ? `Edit animateur ${this.editingId()}` : 'New animateur'
+    this.editingId() ? `Modifier l'animateur ${this.editingId()}` : 'Nouvel animateur'
   );
   protected readonly jobs = inject(SolverJobService);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */

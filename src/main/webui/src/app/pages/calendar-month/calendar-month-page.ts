@@ -80,7 +80,7 @@ export class CalendarMonthPage {
   private readonly planningState = inject(PlanningStateService);
 
   protected readonly monthLabel = computed(() =>
-    this.month().toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
+    this.month().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
   );
 
   protected readonly animateurOptions = computed<FilterOption[]>(() =>
@@ -150,7 +150,7 @@ export class CalendarMonthPage {
     if (!dateKey) {
       return '';
     }
-    return parseDateKey(dateKey).toLocaleDateString(undefined, {
+    return parseDateKey(dateKey).toLocaleDateString('fr-FR', {
       weekday: 'long',
       day: 'numeric',
       month: 'long',
@@ -176,7 +176,7 @@ export class CalendarMonthPage {
       this.loaded.set(true);
     } catch (error) {
       this.postes.set([]);
-      this.error.set(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      this.error.set(`Erreur : ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       this.loading.set(false);
     }

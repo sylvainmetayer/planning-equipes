@@ -7,6 +7,11 @@ instruction needs to change, change it here.
 
 This file is written in English; user-facing documentation (`README.md`, `docs/`)
 is written in French, and domain identifiers stay in French business vocabulary.
+The Angular frontend UI (`src/main/webui`) is entirely in French too — every
+user-visible string (labels, buttons, tooltips, aria-labels, snack bar/dialog
+messages) must be written in French directly in the templates/components;
+there is no i18n framework (no `ngx-translate`, no `@angular/localize`). Code
+comments and non-domain identifiers stay in English.
 
 ## Project overview
 

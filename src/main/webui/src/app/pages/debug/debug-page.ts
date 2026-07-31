@@ -40,7 +40,7 @@ export class DebugPage {
       this.output.set(JSON.stringify(view, null, 2));
     } catch (error) {
       this.output.set('');
-      this.error.set(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      this.error.set(`Erreur : ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       this.loading.set(false);
     }

@@ -1,18 +1,18 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title>Day calendar</mat-card-title>
+    <mat-card-title>Calendrier journalier</mat-card-title>
     <mat-card-subtitle>
-      Timeslots grouped by festival day, with the animators assigned to every stand.
+      Créneaux regroupés par jour de festival, avec les animateurs affectés à chaque stand.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
     <div class="calendar-toolbar">
       <button matButton="tonal" type="button" [disabled]="loading()" (click)="refresh()">
         <mat-icon>refresh</mat-icon>
-        Refresh
+        Actualiser
       </button>
       <span class="calendar-meta">
-        Persisted assignments in database: <strong>{{ persistedCount() }}</strong>
+        Affectations enregistrées en base : <strong>{{ persistedCount() }}</strong>
       </span>
     </div>
     @if (loading()) {
@@ -27,7 +27,7 @@
 @if (!error() && !loading() && days().length === 0) {
   <mat-card appearance="outlined" class="page-card">
     <mat-card-content>
-      <p class="empty-hint">No planning data available yet. Run a solve from the Solver page.</p>
+      <p class="empty-hint">Aucune donnée de planning disponible pour le moment. Lancez une résolution depuis la page Solveur.</p>
     </mat-card-content>
   </mat-card>
 } @else {
@@ -45,12 +45,12 @@
                 {{ slot.heureDebut }} – {{ slot.heureFin }}
               </div>
               @if (slot.stands.length === 0) {
-                <div class="day-slot-empty">No stand</div>
+                <div class="day-slot-empty">Aucun stand</div>
               } @else {
                 @for (stand of slot.stands; track stand.standNom) {
                   <div class="day-stand" [class.empty-slot]="stand.names.length === 0">
                     <strong>{{ stand.standNom }}</strong>
-                    <span>{{ stand.names.length === 0 ? '(unassigned)' : stand.names.join(', ') }}</span>
+                    <span>{{ stand.names.length === 0 ? '(non assigné)' : stand.names.join(', ') }}</span>
                   </div>
                 }
               }

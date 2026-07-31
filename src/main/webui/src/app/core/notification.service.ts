@@ -22,7 +22,7 @@ export class NotificationService {
   private readonly snackBar = inject(MatSnackBar);
 
   notify({ title, message = '', variant = 'info', timeout = SNACK_TIMEOUT_MS, desktop = false }: NotifyOptions): void {
-    this.snackBar.open(message ? `${title} — ${message}` : title, 'Close', {
+    this.snackBar.open(message ? `${title} — ${message}` : title, 'Fermer', {
       duration: timeout > 0 ? timeout : undefined,
       panelClass: `snack-${variant}`,
       horizontalPosition: 'right',

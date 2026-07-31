@@ -102,6 +102,13 @@ téléchargé par le build, aucune installation locale requise en CI ou dans
 Docker), `enable-spa-routing=true` (les routes Angular inconnues du serveur
 renvoient `index.html`) et frontend désactivé sur le profil `%test`.
 
+L'interface utilisateur est **entièrement en français** (libellés, boutons,
+info-bulles, messages d'erreur et notifications) : il n'y a pas de mécanisme
+d'internationalisation (pas de `ngx-translate` ni de `@angular/localize`), les
+chaînes affichées sont écrites en dur en français directement dans les
+templates et les composants. Seuls les commentaires de code et les
+identifiants techniques restent en anglais, conformément à `AGENTS.md`.
+
 Le design s'appuie sur **Angular Material** (Material Design 3). Le thème est
 défini dans `src/material-theme.scss` via `mat.theme()` (palettes azure / blue,
 typographie Roboto) ; le CSS applicatif n'utilise que les variables système

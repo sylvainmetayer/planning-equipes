@@ -54,7 +54,7 @@ export class DataSetupPage {
         this.selectedScenario.set(names[0]);
       }
     } catch (error) {
-      this.output.set(`Error loading scenario list: ${message(error)}`);
+      this.output.set(`Erreur lors du chargement de la liste des scénarios : ${message(error)}`);
     }
   }
 
@@ -68,7 +68,7 @@ export class DataSetupPage {
     }
     const name = this.selectedScenario();
     this.sampleLoading.set(true);
-    this.output.set(name ? `Loading scenario "${name}"...` : 'Loading sample planning...');
+    this.output.set(name ? `Chargement du scénario « ${name} »...` : "Chargement du planning d'exemple...");
     try {
       // The scenario is parsed and imported entirely server-side: we only send
       // its name, so a large scenario never travels to the browser and back.
@@ -82,9 +82,9 @@ export class DataSetupPage {
       // display pages fall back to the persisted planning until then, so a very
       // large scenario never has to be materialised client-side.
       this.planningState.set(null);
-      this.output.set('Sample planning loaded. Reference data is populated and editable from the reference pages.');
+      this.output.set('Planning d\'exemple chargé. Les données de référence sont peuplées et modifiables depuis les pages de référence.');
     } catch (error) {
-      this.output.set(`Error: ${message(error)}`);
+      this.output.set(`Erreur : ${message(error)}`);
     } finally {
       this.sampleLoading.set(false);
     }
@@ -97,23 +97,23 @@ export class DataSetupPage {
       return;
     }
     const confirmed = await this.confirm.ask({
-      title: 'Empty the database?',
-      message: 'Every stand, timeslot, animator, assignment and ad hoc constraint is deleted. Nothing is reloaded.',
-      confirmLabel: 'Empty',
+      title: 'Vider la base de données ?',
+      message: 'Tous les stands, créneaux, animateurs, affectations et contraintes ad hoc sont supprimés. Rien n\'est rechargé.',
+      confirmLabel: 'Vider',
       danger: true
     });
     if (!confirmed) {
       return;
     }
     this.resetting.set(true);
-    this.output.set('Emptying database...');
+    this.output.set('Suppression des données...');
     try {
       await this.api.post<ResetSummary>('/api/planning/reset', {});
       this.planningState.set(null);
       await this.referenceData.reload();
-      this.output.set('Database emptied. Load a sample planning to repopulate it.');
+      this.output.set('Base de données vidée. Chargez un planning d\'exemple pour la repeupler.');
     } catch (error) {
-      this.output.set(`Error: ${message(error)}`);
+      this.output.set(`Erreur : ${message(error)}`);
     } finally {
       this.resetting.set(false);
     }
@@ -123,7 +123,7 @@ export class DataSetupPage {
   // but a job could have started between the last render and the click.
   private solverActionBlocked(): boolean {
     if (this.jobs.solverBusy()) {
-      this.output.set(`${this.jobs.activeJobDescription()} Data setup is locked until it finishes.`);
+      this.output.set(`${this.jobs.activeJobDescription()} La configuration des données est verrouillée jusqu'à la fin.`);
       return true;
     }
     return false;

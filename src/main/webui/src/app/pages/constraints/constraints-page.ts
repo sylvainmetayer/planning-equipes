@@ -13,7 +13,7 @@ import { FeasibilityBanner } from '../../shared/feasibility-banner';
 
 const NIVEAU_LABELS: Record<NiveauContrainte, string> = {
   HARD: 'Dure (bloquante)',
-  MEDIUM: 'Medium (fortement pénalisée)',
+  MEDIUM: 'Moyenne (fortement pénalisée)',
   SOFT: 'Souple (optimisée en dernier)'
 };
 
@@ -61,10 +61,10 @@ export class ConstraintsPage {
       return '';
     }
     if (!view.analysedAt) {
-      return 'No analysis yet — run "Analyze" from the Solver page to see how each rule scored.';
+      return 'Aucune analyse pour le moment — lancez une résolution depuis la page Solveur pour voir le score de chaque règle.';
     }
-    const analysedAt = new Date(view.analysedAt).toLocaleString();
-    return `Last analysis ${analysedAt} — score ${view.scoreGlobal}, ${view.postesNonPourvus} unfilled seats.`;
+    const analysedAt = new Date(view.analysedAt).toLocaleString('fr-FR');
+    return `Dernière analyse ${analysedAt} — score ${view.scoreGlobal}, ${view.postesNonPourvus} poste(s) non pourvu(s).`;
   });
 
   protected readonly groups = computed<ConstraintGroup[]>(() => {
@@ -90,7 +90,7 @@ export class ConstraintsPage {
       this.view.set(await this.api.get<ConstraintsView>('/api/constraints'));
     } catch (error) {
       this.view.set(null);
-      this.error.set(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      this.error.set(`Erreur : ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       this.loading.set(false);
     }
@@ -103,7 +103,7 @@ export class ConstraintsPage {
       const parametres = await this.api.get<ParametresLegaux>('/api/parametres-legaux');
       this.dureeHebdomadaireMaxHeures.set(parametres.dureeHebdomadaireMaxMinutes / 60);
     } catch (error) {
-      this.parametresError.set(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      this.parametresError.set(`Erreur : ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       this.parametresLoading.set(false);
     }
@@ -124,7 +124,7 @@ export class ConstraintsPage {
       this.dureeHebdomadaireMaxHeures.set(parametres.dureeHebdomadaireMaxMinutes / 60);
       this.parametresSaved.set(true);
     } catch (error) {
-      this.parametresError.set(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      this.parametresError.set(`Erreur : ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       this.parametresLoading.set(false);
     }
@@ -147,10 +147,10 @@ export class ConstraintsPage {
 
   protected resultLabel(constraint: ConstraintView): string {
     if (constraint.score === null || constraint.score === undefined) {
-      return 'Not evaluated yet.';
+      return 'Pas encore évaluée.';
     }
     return (constraint.matchCount ?? 0) > 0
-      ? `${constraint.matchCount} match(es) — score ${constraint.score}`
-      : `Satisfied — score ${constraint.score}`;
+      ? `${constraint.matchCount} correspondance(s) — score ${constraint.score}`
+      : `Satisfaite — score ${constraint.score}`;
   }
 }

@@ -24,8 +24,8 @@ describe('formatScore', () => {
     expect(formatScore(score)).toBe('0hard/-219medium/-2824soft');
   });
 
-  it('returns n/a when there is no score', () => {
-    expect(formatScore(null)).toBe('n/a');
+  it('returns n/d when there is no score', () => {
+    expect(formatScore(null)).toBe('n/d');
   });
 });
 

@@ -15,9 +15,9 @@ import { SolverJobService } from '../../core/solver-job.service';
 import { ContrainteAdHoc, TypeContrainteAdHoc } from '../../core/models';
 
 const CONTRAINTE_TYPES: { value: TypeContrainteAdHoc; label: string }[] = [
-  { value: 'INDISPONIBILITE_FORCEE', label: 'Forced unavailability' },
-  { value: 'INCOMPATIBILITE', label: 'Incompatibility' },
-  { value: 'AFFECTATION_FORCEE', label: 'Forced assignment' }
+  { value: 'INDISPONIBILITE_FORCEE', label: 'Indisponibilité forcée' },
+  { value: 'INCOMPATIBILITE', label: 'Incompatibilité' },
+  { value: 'AFFECTATION_FORCEE', label: 'Affectation forcée' }
 ];
 
 interface ContrainteDraft {
@@ -58,7 +58,7 @@ export class AdHocConstraintsPage {
   protected readonly draft = signal<ContrainteDraft>(emptyDraft());
   protected readonly editingId = signal<string | null>(null);
   protected readonly formTitle = computed(() =>
-    this.editingId() ? `Edit constraint ${this.editingId()}` : 'New ad hoc constraint'
+    this.editingId() ? `Modifier la contrainte ${this.editingId()}` : 'Nouvelle contrainte ad hoc'
   );
   protected readonly jobs = inject(SolverJobService);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
@@ -74,6 +74,10 @@ export class AdHocConstraintsPage {
     this.draft.update((draft) => ({ ...draft, ...patch }));
   }
 
+  protected typeLabel(contrainte: ContrainteAdHoc): string {
+    return CONTRAINTE_TYPES.find((type) => type.value === contrainte.type)?.label ?? contrainte.type;
+  }
+
   protected animateursLabel(contrainte: ContrainteAdHoc): string {
     const ids = (contrainte.animateursConcernes ?? []).map((animateur) => animateur.id);
     return ids.length ? ids.join(', ') : '—';
@@ -81,7 +85,7 @@ export class AdHocConstraintsPage {
 
   protected porteeLabel(contrainte: ContrainteAdHoc): string {
     const scope = [
-      contrainte.creneau ? `slot ${contrainte.creneau.id}` : '',
+      contrainte.creneau ? `créneau ${contrainte.creneau.id}` : '',
       contrainte.stand ? `stand ${contrainte.stand.id}` : ''
     ]
       .filter(Boolean)
@@ -100,7 +104,7 @@ export class AdHocConstraintsPage {
       raison: draft.raison.trim(),
       creeParUtilisateurId: 'ui'
     };
-    if (await this.crud.save('contraintes-ad-hoc', contrainte, null, 'Constraint')) {
+    if (await this.crud.save('contraintes-ad-hoc', contrainte, null, 'Contrainte')) {
       this.cancel();
     }
   }
@@ -124,7 +128,7 @@ export class AdHocConstraintsPage {
 
   protected async remove(contrainte: ContrainteAdHoc): Promise<void> {
     if (
-      (await this.crud.remove('contraintes-ad-hoc', contrainte.id, 'Constraint')) &&
+      (await this.crud.remove('contraintes-ad-hoc', contrainte.id, 'Contrainte')) &&
       this.editingId() === contrainte.id
     ) {
       this.cancel();

@@ -53,7 +53,7 @@ export class HoursPage {
       this.rapport.set(await this.api.post<HeuresRapport>('/api/planning/hours', planning));
     } catch (error) {
       this.rapport.set(null);
-      this.output.set(`Error: ${message(error)}`);
+      this.output.set(`Erreur : ${message(error)}`);
     } finally {
       this.busy.set(false);
     }
@@ -66,14 +66,14 @@ export class HoursPage {
 
   protected async onExportCsv(): Promise<void> {
     this.exportBusy.set(true);
-    this.output.set('Building the CSV export...');
+    this.output.set("Construction de l'export CSV...");
     try {
       const planning = await this.planningState.require();
       this.output.set(
         await this.api.downloadPost('/api/planning/hours/export', 'heures-planning.csv', planning, 'text/csv')
       );
     } catch (error) {
-      this.output.set(`Error: ${message(error)}`);
+      this.output.set(`Erreur : ${message(error)}`);
     } finally {
       this.exportBusy.set(false);
     }

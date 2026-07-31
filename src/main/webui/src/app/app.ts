@@ -28,30 +28,30 @@ const NAV_GROUPS: NavGroup[] = [
   {
     title: 'Planning',
     links: [
-      { path: '/solver', label: 'Solver', icon: 'play_circle' },
-      { path: '/debug', label: 'Debug', icon: 'bug_report' },
-      { path: '/data-setup', label: 'Data setup', icon: 'storage' },
-      { path: '/data-transfer', label: 'Data transfer', icon: 'swap_vert' }
+      { path: '/solver', label: 'Solveur', icon: 'play_circle' },
+      { path: '/debug', label: 'Débogage', icon: 'bug_report' },
+      { path: '/data-setup', label: 'Configuration des données', icon: 'storage' },
+      { path: '/data-transfer', label: 'Transfert de données', icon: 'swap_vert' }
     ]
   },
   {
-    title: 'Reference data',
+    title: 'Données de référence',
     links: [
       { path: '/stands', label: 'Stands', icon: 'storefront' },
       { path: '/animateurs', label: 'Animateurs', icon: 'groups' },
       { path: '/creneaux', label: 'Créneaux', icon: 'schedule' },
       { path: '/typologies', label: 'Typologies', icon: 'category' },
-      { path: '/ad-hoc-constraints', label: 'Ad hoc constraints', icon: 'rule' }
+      { path: '/ad-hoc-constraints', label: 'Contraintes ad hoc', icon: 'rule' }
     ]
   },
   {
-    title: 'Views',
+    title: 'Vues',
     links: [
-      { path: '/calendar', label: 'Assignment calendar', icon: 'calendar_month' },
-      { path: '/day-calendar', label: 'Day calendar', icon: 'view_day' },
-      { path: '/constraints', label: 'Constraints', icon: 'fact_check' },
-      { path: '/hours', label: 'Hours', icon: 'schedule' },
-      { path: '/staffing', label: 'Staffing need', icon: 'engineering' }
+      { path: '/calendar', label: 'Calendrier des affectations', icon: 'calendar_month' },
+      { path: '/day-calendar', label: 'Calendrier journalier', icon: 'view_day' },
+      { path: '/constraints', label: 'Contraintes', icon: 'fact_check' },
+      { path: '/hours', label: 'Heures', icon: 'schedule' },
+      { path: '/staffing', label: 'Besoin en animateurs', icon: 'engineering' }
     ]
   }
 ];

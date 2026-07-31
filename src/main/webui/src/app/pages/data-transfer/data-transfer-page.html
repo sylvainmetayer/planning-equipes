@@ -1,23 +1,23 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title>SQL dump</mat-card-title>
+    <mat-card-title>Export SQL</mat-card-title>
     <mat-card-subtitle>
-      Export or replay the whole database as a SQL script, to share a dataset that blocks the solver.
+      Exporte ou rejoue toute la base de données sous forme de script SQL, pour partager un jeu de données qui bloque le solveur.
     </mat-card-subtitle>
   </mat-card-header>
   @if (jobs.solverBusy()) {
     <mat-card-content>
-      <p class="locked-hint">Transfers are locked while the solver is running.</p>
+      <p class="locked-hint">Les transferts sont verrouillés pendant que le solveur est en cours d'exécution.</p>
     </mat-card-content>
   }
   <mat-card-actions class="card-actions">
     <button matButton="filled" [disabled]="transferLocked()" (click)="onExportSql()">
       <mat-icon>download</mat-icon>
-      Export SQL dump
+      Exporter le dump SQL
     </button>
     <button matButton="outlined" class="danger-action" [disabled]="transferLocked()" (click)="pickSqlFile()">
       <mat-icon>upload</mat-icon>
-      Import SQL dump
+      Importer un dump SQL
     </button>
     <input #sqlInput type="file" accept=".sql,application/sql,text/plain" hidden (change)="onSqlFileSelected($event)" />
   </mat-card-actions>
@@ -25,10 +25,10 @@
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title>CSV import</mat-card-title>
+    <mat-card-title>Import CSV</mat-card-title>
     <mat-card-subtitle>
-      Each import replaces the whole table and drops the existing assignments. Separator <code>;</code> or
-      <code>,</code>, header line required, multi-values separated by <code>|</code>.
+      Chaque import remplace toute la table et supprime les affectations existantes. Séparateur <code>;</code> ou
+      <code>,</code>, ligne d'en-tête requise, valeurs multiples séparées par <code>|</code>.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
@@ -37,7 +37,7 @@
         <span matListItemTitle>animateurs</span>
         <span matListItemLine><code>id;prenom;nom;dateNaissance;manager;competences;joursIndisponibles</code></span>
         <span matListItemLine>
-          <code>manager</code> = true|false (optional, default false) · <code>competences</code> =
+          <code>manager</code> = true|false (facultatif, false par défaut) · <code>competences</code> =
           <code>STRATEGIE:REFERENT|ENFANT:AUTONOME</code> · <code>joursIndisponibles</code> =
           <code>2026-07-02|2026-07-03</code>
         </span>
@@ -52,22 +52,22 @@
       <mat-list-item lines="3">
         <span matListItemTitle>creneaux</span>
         <span matListItemLine><code>id;jour;date;heureDebut;heureFin</code></span>
-        <span matListItemLine><code>date</code> = 2026-07-02 · heures = 10:00</span>
+        <span matListItemLine><code>date</code> = 2026-07-02 · heure = 10:00</span>
       </mat-list-item>
     </mat-list>
   </mat-card-content>
   <mat-card-actions class="card-actions">
     <button matButton="tonal" [disabled]="transferLocked()" (click)="pickCsvFile('animateurs')">
       <mat-icon>groups</mat-icon>
-      Import animateurs
+      Importer les animateurs
     </button>
     <button matButton="tonal" [disabled]="transferLocked()" (click)="pickCsvFile('stands')">
       <mat-icon>storefront</mat-icon>
-      Import stands
+      Importer les stands
     </button>
     <button matButton="tonal" [disabled]="transferLocked()" (click)="pickCsvFile('creneaux')">
       <mat-icon>schedule</mat-icon>
-      Import créneaux
+      Importer les créneaux
     </button>
     <input #csvInput type="file" accept=".csv,text/csv,text/plain" hidden (change)="onCsvFileSelected($event)" />
   </mat-card-actions>

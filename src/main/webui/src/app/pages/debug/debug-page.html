@@ -1,16 +1,16 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title>Debug</mat-card-title>
+    <mat-card-title>Débogage</mat-card-title>
     <mat-card-subtitle>
-      Raw diagnostic of the last solve or analyze run: global score, unfilled seats, feasibility
-      and per-constraint score/match count (no animateurs/creneaux/postes).
+      Diagnostic brut de la dernière résolution ou analyse : score global, postes non pourvus, faisabilité
+      et score/nombre de correspondances par contrainte (sans animateurs/créneaux/postes).
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
     <div class="calendar-toolbar">
       <button matButton="tonal" type="button" [disabled]="loading()" (click)="refresh()">
         <mat-icon>refresh</mat-icon>
-        Refresh
+        Actualiser
       </button>
     </div>
     @if (loading()) {
@@ -20,7 +20,7 @@
       <p class="calendar-empty">{{ error() }}</p>
     }
     @if (!loading() && !error() && !output()) {
-      <p class="empty-hint">No solve/analyze run yet this session.</p>
+      <p class="empty-hint">Aucune résolution ni analyse pour cette session pour le moment.</p>
     }
   </mat-card-content>
 </mat-card>

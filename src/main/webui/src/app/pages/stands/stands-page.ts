@@ -49,7 +49,7 @@ export class StandsPage {
   protected readonly draft = signal<StandDraft>(emptyDraft());
   protected readonly editingId = signal<string | null>(null);
   protected readonly formTitle = computed(() =>
-    this.editingId() ? `Edit stand ${this.editingId()}` : 'New stand'
+    this.editingId() ? `Modifier le stand ${this.editingId()}` : 'Nouveau stand'
   );
   protected readonly effectifInvalid = computed(() => {
     const draft = this.draft();

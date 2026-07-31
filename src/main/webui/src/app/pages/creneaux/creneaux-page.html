@@ -3,20 +3,20 @@
     <mat-expansion-panel [expanded]="true">
       <mat-expansion-panel-header>
         <mat-panel-title>{{ formTitle() }}</mat-panel-title>
-        <mat-panel-description>Every stand is open on every timeslot by default; override per timeslot below.</mat-panel-description>
+        <mat-panel-description>Chaque stand est ouvert sur chaque créneau par défaut ; à modifier créneau par créneau ci-dessous.</mat-panel-description>
       </mat-expansion-panel-header>
       <form class="form-grid" (ngSubmit)="save()">
       <fieldset class="form-fieldset" [disabled]="editingLocked()">
       @if (editingLocked()) {
-        <p class="locked-hint span-2">Editing is locked while the solver is running.</p>
+        <p class="locked-hint span-2">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
       }
       <mat-form-field appearance="outline">
-        <mat-label>Id</mat-label>
+        <mat-label>Identifiant</mat-label>
         <input matInput name="id" required [readonly]="!!editingId()"
                [ngModel]="draft().id" (ngModelChange)="patch({ id: $event })" />
       </mat-form-field>
       <mat-form-field appearance="outline">
-        <mat-label>Festival day</mat-label>
+        <mat-label>Jour du festival</mat-label>
         <input matInput name="jour" type="number" min="1" max="15" required
                [ngModel]="draft().jour" (ngModelChange)="patch({ jour: $event })" />
       </mat-form-field>
@@ -26,21 +26,21 @@
                [ngModel]="draft().date" (ngModelChange)="patch({ date: $event })" />
       </mat-form-field>
       <mat-form-field appearance="outline">
-        <mat-label>Start</mat-label>
+        <mat-label>Début</mat-label>
         <input matInput name="heureDebut" type="time" required
                [ngModel]="draft().heureDebut" (ngModelChange)="patch({ heureDebut: $event })" />
       </mat-form-field>
       <mat-form-field appearance="outline">
-        <mat-label>End</mat-label>
+        <mat-label>Fin</mat-label>
         <input matInput name="heureFin" type="time" required
                [ngModel]="draft().heureFin" (ngModelChange)="patch({ heureFin: $event })" />
       </mat-form-field>
       <div class="form-actions span-2">
         <button matButton="filled" type="submit">
           <mat-icon>save</mat-icon>
-          {{ editingId() ? 'Update timeslot' : 'Create timeslot' }}
+          {{ editingId() ? 'Modifier le créneau' : 'Créer le créneau' }}
         </button>
-        <button matButton type="button" (click)="cancel()">Cancel</button>
+        <button matButton type="button" (click)="cancel()">Annuler</button>
       </div>
       </fieldset>
       </form>
@@ -50,7 +50,7 @@
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title>Timeslots ({{ store.creneaux().length }})</mat-card-title>
+    <mat-card-title>Créneaux ({{ store.creneaux().length }})</mat-card-title>
   </mat-card-header>
   <mat-card-content>
     <mat-accordion class="table-wrapper">
@@ -61,11 +61,11 @@
             <mat-panel-description>
               {{ standsOuvertsLabel(creneau) }}
               <span class="row-actions">
-                <button matIconButton matTooltip="Edit" aria-label="Edit" [disabled]="editingLocked()"
+                <button matIconButton matTooltip="Modifier" aria-label="Modifier" [disabled]="editingLocked()"
                         (click)="edit(creneau); $event.stopPropagation()">
                   <mat-icon>edit</mat-icon>
                 </button>
-                <button matIconButton matTooltip="Delete" aria-label="Delete" class="danger-action" [disabled]="editingLocked()"
+                <button matIconButton matTooltip="Supprimer" aria-label="Supprimer" class="danger-action" [disabled]="editingLocked()"
                         (click)="remove(creneau); $event.stopPropagation()">
                   <mat-icon>delete</mat-icon>
                 </button>
@@ -73,9 +73,9 @@
             </mat-panel-description>
           </mat-expansion-panel-header>
           @if (editingLocked()) {
-            <p class="locked-hint">Editing is locked while the solver is running.</p>
+            <p class="locked-hint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
           }
-          <p class="empty-hint">Uncheck a stand to close it on this timeslot. Leave every stand checked (or none) to keep it open to all.</p>
+          <p class="empty-hint">Décochez un stand pour le fermer sur ce créneau. Laissez tous les stands cochés (ou aucun) pour les garder tous ouverts.</p>
           <div class="stand-checklist">
             @for (stand of store.stands(); track stand.id) {
               <mat-checkbox [checked]="isStandOuvert(creneau, stand.id)" [disabled]="editingLocked()"
@@ -88,7 +88,7 @@
       }
     </mat-accordion>
     @if (store.creneaux().length === 0) {
-      <p class="empty-hint">No timeslot yet.</p>
+      <p class="empty-hint">Aucun créneau pour le moment.</p>
     }
   </mat-card-content>
 </mat-card>

@@ -83,7 +83,7 @@ describe('PlanningStateService', () => {
         '/api/planning/persisted': { animateurs: [], postes: [], score: null } satisfies PlanningFestival
       };
 
-      await expect(service.require()).rejects.toThrow(/No planning available/);
+      await expect(service.require()).rejects.toThrow(/Aucun planning disponible/);
     });
 
     it('require() returns the planning when it has postes', async () => {

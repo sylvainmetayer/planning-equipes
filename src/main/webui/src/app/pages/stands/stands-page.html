@@ -3,37 +3,37 @@
     <mat-expansion-panel [expanded]="true">
       <mat-expansion-panel-header>
         <mat-panel-title>{{ formTitle() }}</mat-panel-title>
-        <mat-panel-description>A stand is staffed on every timeslot, between its minimum and maximum staffing.</mat-panel-description>
+        <mat-panel-description>Un stand est doté d'un effectif à chaque créneau, entre son effectif minimum et maximum.</mat-panel-description>
       </mat-expansion-panel-header>
       <form class="form-grid" (ngSubmit)="save()">
       <fieldset class="form-fieldset" [disabled]="editingLocked()">
       @if (editingLocked()) {
-        <p class="locked-hint span-2">Editing is locked while the solver is running.</p>
+        <p class="locked-hint span-2">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
       }
       <mat-form-field appearance="outline">
-        <mat-label>Id</mat-label>
+        <mat-label>Identifiant</mat-label>
         <input matInput name="id" required [readonly]="!!editingId()"
                [ngModel]="draft().id" (ngModelChange)="patch({ id: $event })" />
       </mat-form-field>
       <mat-form-field appearance="outline">
-        <mat-label>Name</mat-label>
+        <mat-label>Nom</mat-label>
         <input matInput name="nom" required [ngModel]="draft().nom" (ngModelChange)="patch({ nom: $event })" />
       </mat-form-field>
       <mat-form-field appearance="outline">
-        <mat-label>Minimum staff</mat-label>
+        <mat-label>Effectif minimum</mat-label>
         <input matInput name="effectifMin" type="number" min="0"
                [ngModel]="draft().effectifMin" (ngModelChange)="patch({ effectifMin: $event })" />
       </mat-form-field>
       <mat-form-field appearance="outline">
-        <mat-label>Maximum staff</mat-label>
+        <mat-label>Effectif maximum</mat-label>
         <input matInput name="effectifMax" type="number" min="0"
                [ngModel]="draft().effectifMax" (ngModelChange)="patch({ effectifMax: $event })" />
       </mat-form-field>
       @if (effectifInvalid()) {
-        <p class="field-error span-2">Maximum staff cannot be lower than minimum staff.</p>
+        <p class="field-error span-2">L'effectif maximum ne peut pas être inférieur à l'effectif minimum.</p>
       }
       <mat-form-field appearance="outline" class="span-2">
-        <mat-label>Game typologies</mat-label>
+        <mat-label>Typologies de jeu</mat-label>
         <mat-select name="typologies" multiple [disabled]="editingLocked()"
                     [ngModel]="draft().typologiesProposees" (ngModelChange)="patch({ typologiesProposees: $event })">
           @for (typologie of store.typologies(); track typologie.id) {
@@ -43,19 +43,19 @@
       </mat-form-field>
       <mat-checkbox name="reserveMajeurs" [disabled]="editingLocked()"
                     [ngModel]="draft().reserveMajeurs" (ngModelChange)="patch({ reserveMajeurs: $event })">
-        Adults only
+        Réservé aux majeurs
       </mat-checkbox>
       <mat-checkbox name="premium" [disabled]="editingLocked()"
-                    matTooltip="Editor/publisher stand: the solver avoids rotating staff and favors experienced animateurs."
+                    matTooltip="Stand éditeur : le solveur évite la rotation du personnel et privilégie les animateurs expérimentés."
                     [ngModel]="draft().premium" (ngModelChange)="patch({ premium: $event })">
-        Premium (editor stand)
+        Premium (stand éditeur)
       </mat-checkbox>
       <div class="form-actions span-2">
         <button matButton="filled" type="submit" [disabled]="effectifInvalid() || editingLocked()">
           <mat-icon>save</mat-icon>
-          {{ editingId() ? 'Update stand' : 'Create stand' }}
+          {{ editingId() ? 'Modifier le stand' : 'Créer le stand' }}
         </button>
-        <button matButton type="button" (click)="cancel()">Cancel</button>
+        <button matButton type="button" (click)="cancel()">Annuler</button>
       </div>
       </fieldset>
       </form>
@@ -74,13 +74,13 @@
         <td mat-cell *matCellDef="let stand">{{ stand.id }}</td>
       </ng-container>
       <ng-container matColumnDef="nom">
-        <th mat-header-cell *matHeaderCellDef>Name</th>
+        <th mat-header-cell *matHeaderCellDef>Nom</th>
         <td mat-cell *matCellDef="let stand">{{ stand.nom }}</td>
       </ng-container>
       <ng-container matColumnDef="effectif">
-        <th mat-header-cell *matHeaderCellDef>Staff</th>
+        <th mat-header-cell *matHeaderCellDef>Effectif</th>
         <td mat-cell *matCellDef="let stand">
-          {{ stand.effectifMin }}–{{ stand.effectifMax }}{{ stand.reserveMajeurs ? ' · adults' : '' }}{{ stand.premium ? ' · premium' : '' }}
+          {{ stand.effectifMin }}–{{ stand.effectifMax }}{{ stand.reserveMajeurs ? ' · majeurs' : '' }}{{ stand.premium ? ' · premium' : '' }}
         </td>
       </ng-container>
       <ng-container matColumnDef="typologies">
@@ -90,10 +90,10 @@
       <ng-container matColumnDef="actions">
         <th mat-header-cell *matHeaderCellDef aria-label="Actions"></th>
         <td mat-cell *matCellDef="let stand" class="row-actions">
-          <button matIconButton matTooltip="Edit" aria-label="Edit" [disabled]="editingLocked()" (click)="edit(stand)">
+          <button matIconButton matTooltip="Modifier" aria-label="Modifier" [disabled]="editingLocked()" (click)="edit(stand)">
             <mat-icon>edit</mat-icon>
           </button>
-          <button matIconButton matTooltip="Delete" aria-label="Delete" class="danger-action" [disabled]="editingLocked()"
+          <button matIconButton matTooltip="Supprimer" aria-label="Supprimer" class="danger-action" [disabled]="editingLocked()"
                   (click)="remove(stand)">
             <mat-icon>delete</mat-icon>
           </button>
@@ -103,7 +103,7 @@
       <tr mat-row *matRowDef="let row; columns: columns"></tr>
     </table>
     @if (store.stands().length === 0) {
-      <p class="empty-hint">No stand yet. Create one above, or load the sample from the Solver page.</p>
+      <p class="empty-hint">Aucun stand pour le moment. Créez-en un ci-dessus, ou chargez l'exemple depuis la page Solveur.</p>
     }
   </mat-card-content>
 </mat-card>

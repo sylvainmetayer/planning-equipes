@@ -1,19 +1,19 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title>Hours planned per animateur</mat-card-title>
+    <mat-card-title>Heures planifiées par animateur</mat-card-title>
     <mat-card-subtitle>
-      Hours are grouped by ISO calendar week, computed from the planning solved this session or the last one
-      persisted in database.
+      Les heures sont regroupées par semaine calendaire ISO, calculées à partir du planning résolu cette session ou
+      du dernier enregistré en base.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-actions class="card-actions">
     <button matButton="tonal" [disabled]="busy()" (click)="load()">
       <mat-icon>refresh</mat-icon>
-      Refresh
+      Actualiser
     </button>
     <button matButton="filled" [disabled]="exportBusy() || !rapport()" (click)="onExportCsv()">
       <mat-icon>download</mat-icon>
-      Export CSV
+      Exporter en CSV
     </button>
   </mat-card-actions>
   @if (rapport(); as report) {
@@ -37,7 +37,7 @@
         <tr mat-row *matRowDef="let row; columns: columns()"></tr>
       </table>
       @if (report.animateurs.length === 0) {
-        <p class="empty-hint">No animateur yet.</p>
+        <p class="empty-hint">Aucun animateur pour le moment.</p>
       }
     </mat-card-content>
   }

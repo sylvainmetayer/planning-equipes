@@ -1,19 +1,19 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title>Solver</mat-card-title>
+    <mat-card-title>Solveur</mat-card-title>
     <mat-card-subtitle>
-      Run Timefold in the background; the result is analyzed automatically. Only one solver job runs at a time for the
-      whole server. Seed or reset the data from the Data setup page.
+      Exécute Timefold en arrière-plan ; le résultat est analysé automatiquement. Une seule tâche du solveur s'exécute à la
+      fois pour tout le serveur. Initialisez ou réinitialisez les données depuis la page Configuration des données.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-actions class="card-actions">
     <button matButton="filled" [disabled]="solverBusy()" (click)="onTimefoldSolve()">
       <mat-icon>play_arrow</mat-icon>
-      Solve with Timefold
+      Résoudre avec Timefold
     </button>
     <button matButton="tonal" [disabled]="exportBusy() || solverBusy()" (click)="onExportPlanning()">
       <mat-icon>archive</mat-icon>
-      Export planning (PDF + ICS)
+      Exporter le planning (PDF + ICS)
     </button>
   </mat-card-actions>
 </mat-card>

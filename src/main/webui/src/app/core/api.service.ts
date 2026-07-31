@@ -60,7 +60,7 @@ export class ApiService {
     link.download = filename;
     link.click();
     URL.revokeObjectURL(objectUrl);
-    return `Downloaded ${filename} (${contentType}).`;
+    return `${filename} téléchargé (${contentType}).`;
   }
 }
 
@@ -74,7 +74,7 @@ export function toError(error: unknown): Error {
     if (body && typeof body === 'object' && body.message) {
       return new Error(body.message);
     }
-    return new Error(`Request failed with ${error.status}`);
+    return new Error(`Échec de la requête (code ${error.status})`);
   }
   return error instanceof Error ? error : new Error(String(error));
 }
