@@ -18,10 +18,17 @@
       <mat-nav-list>
         <div matSubheader>{{ group.title }}</div>
         @for (link of group.links; track link.path) {
-          <a mat-list-item [routerLink]="link.path" routerLinkActive="active-link" (click)="onNavigate()">
-            <mat-icon matListItemIcon>{{ link.icon }}</mat-icon>
-            <span matListItemTitle>{{ link.label }}</span>
-          </a>
+          @if (link.external) {
+            <a mat-list-item [href]="link.path" target="_blank" rel="noopener">
+              <mat-icon matListItemIcon>{{ link.icon }}</mat-icon>
+              <span matListItemTitle>{{ link.label }}</span>
+            </a>
+          } @else {
+            <a mat-list-item [routerLink]="link.path" routerLinkActive="active-link" (click)="onNavigate()">
+              <mat-icon matListItemIcon>{{ link.icon }}</mat-icon>
+              <span matListItemTitle>{{ link.label }}</span>
+            </a>
+          }
         }
       </mat-nav-list>
       <mat-divider />

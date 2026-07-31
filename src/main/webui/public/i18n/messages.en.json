@@ -20,6 +20,8 @@
   "nav.link.constraints": "Constraints",
   "nav.link.hours": "Hours",
   "nav.link.staffing": "Staffing needs",
+  "nav.group.tools": "Tools",
+  "nav.link.db": "Database (pgAdmin)",
   "api.downloaded": "{$filename} downloaded ({$contentType}).",
   "api.requestFailed": "Request failed (code {$status})",
   "notification.close": "Close",

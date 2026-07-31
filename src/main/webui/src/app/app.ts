@@ -17,6 +17,14 @@ interface NavLink {
   path: string;
   label: string;
   icon: string;
+  /**
+   * True for a real external link (target="_blank"), rendered as a plain
+   * <a href> instead of an Angular routerLink. `/db` resolves relative to
+   * whatever host serves this app; routing it to pgAdmin is a deployment-side
+   * reverse-proxy concern, not something this repo builds (docker-compose
+   * only exposes a dev-only pgAdmin on :5050, unrelated to this link).
+   */
+  external?: boolean;
 }
 
 interface NavGroup {
@@ -86,6 +94,17 @@ function buildNavGroups(): NavGroup[] {
         path: '/staffing',
         label: $localize`:@@nav.link.staffing:Besoin en animateurs`,
         icon: 'engineering'
+      }
+    ]
+  },
+  {
+    title: $localize`:@@nav.group.tools:Outils`,
+    links: [
+      {
+        path: '/db',
+        label: $localize`:@@nav.link.db:Base de données (pgAdmin)`,
+        icon: 'database',
+        external: true
       }
     ]
   }
