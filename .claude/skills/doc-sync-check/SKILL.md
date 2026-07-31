@@ -1,0 +1,52 @@
+---
+name: doc-sync-check
+description: Check whether a code change in planning-equipes requires a matching documentation update (README, docs/*, ConstraintCatalog), per the ownership rules in AGENTS.md. Use before wrapping up a task, or when the user asks "did I miss a doc update?" or "is the documentation in sync?".
+---
+
+# Documentation sync check
+
+This repo has a strict, intentional doc layout (see "Documentation rules" in
+`AGENTS.md`). Use this checklist against the current diff (`git diff` /
+`git status`) before calling a task done.
+
+## Ownership table
+
+Match what changed to the doc that owns it:
+
+| Change | Doc(s) to update |
+| --- | --- |
+| New/changed REST endpoint (`api/*Resource.java`) | `docs/api.md` |
+| New/changed Timefold constraint | `docs/contraintes.md` **and** `solver/ConstraintCatalog.java` |
+| New business capability visible to end users | `README.md` section 2 (*Fonctionnalités métier*) — business language only, no class names, no file paths |
+| Change to Timefold model / invariants (`domain/*`) | `docs/domaine.md` |
+| Change to backend/frontend module layout, new top-level package | `docs/architecture.md` |
+| Change to CSV/dump/PDF/ICS import-export formats | `docs/import-export.md` |
+| New command, CI job, tooling, Renovate behaviour | `docs/developpement.md` |
+| New route/page | verify `docs/architecture.md` frontend section still matches if the page list is enumerated there |
+
+## Rules to enforce
+
+1. **No new root-level Markdown files** and no new `README.md` sections —
+   everything technical goes under `docs/`, with a new row added to
+   `docs/README.md`'s index table if it's a new file.
+2. **No `CLAUDE.md` or `.github/copilot-instructions.md`** — `AGENTS.md` is
+   the single memory file. If repo conventions changed, edit `AGENTS.md`
+   directly.
+3. **Don't create planning/notes/tracking Markdown files** in the repo at
+   all (scratch notes belong outside the repo).
+4. Docs are written in **French**, code/comments in **English**; domain
+   identifiers (`Animateur`, `Creneau`, `TypologieJeu`, …) stay in French
+   business vocabulary everywhere.
+5. `README.md` must keep exactly its two sections (*Démarrer l'application en
+   local*, *Fonctionnalités métier*) plus the optional intro/doc-index table
+   — nothing else.
+
+## How to run this check
+
+1. `git diff --stat` (or the relevant file list) to see what changed.
+2. For each changed file, map it through the ownership table above.
+3. Grep the target doc to see if it already mentions the changed
+   behaviour — don't assume it's missing just because you didn't write it
+   this session.
+4. Report a short list: doc already in sync / doc needs updating (and
+   propose the update) / no doc impact.
