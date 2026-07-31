@@ -25,7 +25,7 @@ public final class AdHocConstraints {
     }
 
     private Constraint indisponibiliteForcee(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(PosteAffectation.class)
+        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class), "indisponibiliteForcee")
                 .filter(poste -> poste.getAnimateur() != null)
                 .join(ContrainteAdHoc.class, Joiners.filtering(this::violeIndisponibiliteForcee))
                 .penalize(HardMediumSoftScore.ONE_HARD)
@@ -33,9 +33,9 @@ public final class AdHocConstraints {
     }
 
     private Constraint incompatibiliteAdHoc(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEachUniquePair(
+        return ConstraintToggleSupport.actif(constraintFactory.forEachUniquePair(
                 PosteAffectation.class,
-                Joiners.equal(PosteAffectation::getCreneau))
+                Joiners.equal(PosteAffectation::getCreneau)), "incompatibiliteAdHoc")
                 .filter((posteA, posteB) -> posteA.getAnimateur() != null
                         && posteB.getAnimateur() != null
                         && !posteA.getAnimateur().equals(posteB.getAnimateur()))
@@ -45,7 +45,7 @@ public final class AdHocConstraints {
     }
 
     private Constraint affectationForcee(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(ContrainteAdHoc.class)
+        return ConstraintToggleSupport.actif(constraintFactory.forEach(ContrainteAdHoc.class), "affectationForcee")
                 .filter(contrainte -> contrainte.getType() == TypeContrainteAdHoc.AFFECTATION_FORCEE)
                 .ifNotExists(PosteAffectation.class, Joiners.filtering(this::satisfaitAffectationForcee))
                 .penalize(HardMediumSoftScore.ONE_HARD)

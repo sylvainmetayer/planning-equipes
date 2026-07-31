@@ -189,6 +189,18 @@ public class ReferenceDataService {
         return parametres;
     }
 
+    /* --------------------------- Constraint toggles -------------------------- */
+
+    public java.util.Set<String> getContraintesDesactivees() {
+        return repository == null ? java.util.Set.of() : repository.getContraintesDesactivees();
+    }
+
+    public void setContrainteActive(String nom, boolean actif) {
+        if (repository != null) {
+            repository.setContrainteActive(nom, actif);
+        }
+    }
+
     private String requiredId(String id, String fieldName) {
         if (id == null || id.isBlank()) {
             throw new IllegalArgumentException("Missing " + fieldName);

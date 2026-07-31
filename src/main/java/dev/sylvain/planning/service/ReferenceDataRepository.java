@@ -529,6 +529,42 @@ public class ReferenceDataRepository {
         }
     }
 
+    /* ---------------------------- Constraint toggles ------------------------- */
+
+    public java.util.Set<String> getContraintesDesactivees() {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = connection.prepareStatement("SELECT nom FROM constraint_toggle");
+                ResultSet rs = ps.executeQuery()) {
+            java.util.Set<String> desactivees = new java.util.HashSet<>();
+            while (rs.next()) {
+                desactivees.add(rs.getString("nom"));
+            }
+            return desactivees;
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to load constraint toggles", e);
+        }
+    }
+
+    public void setContrainteActive(String nom, boolean actif) {
+        try (Connection connection = dataSource.getConnection()) {
+            if (actif) {
+                try (PreparedStatement ps = connection.prepareStatement(
+                        "DELETE FROM constraint_toggle WHERE nom = ?")) {
+                    ps.setString(1, nom);
+                    ps.executeUpdate();
+                }
+            } else {
+                try (PreparedStatement ps = connection.prepareStatement(
+                        "INSERT INTO constraint_toggle (nom) VALUES (?) ON CONFLICT (nom) DO NOTHING")) {
+                    ps.setString(1, nom);
+                    ps.executeUpdate();
+                }
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to save constraint toggle", e);
+        }
+    }
+
     /* ------------------------------ CSV replace ----------------------------- */
 
     /**

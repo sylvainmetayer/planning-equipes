@@ -27,6 +27,7 @@ import org.yaml.snakeyaml.Yaml;
 
 import ai.timefold.solver.core.config.solver.SolverConfig;
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.ConstraintToggle;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.PlanningFestival;
@@ -370,6 +371,11 @@ public class PlanningService {
         }
         if (problem.getParametresLegaux() == null || problem.getParametresLegaux().isEmpty()) {
             problem.setParametresLegaux(List.of(referenceDataService.getParametresLegaux()));
+        }
+        if (problem.getConstraintsDesactivees() == null || problem.getConstraintsDesactivees().isEmpty()) {
+            problem.setConstraintsDesactivees(referenceDataService.getContraintesDesactivees().stream()
+                    .map(ConstraintToggle::new)
+                    .toList());
         }
     }
 

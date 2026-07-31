@@ -25,7 +25,8 @@ public final class QualiteConstraints {
     }
 
     private Constraint standComplexeAvecReferent(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(PosteAffectation.class)
+        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
+                "standComplexeAvecReferent")
                 .groupBy(PosteAffectation::getStand,
                         PosteAffectation::getCreneau,
                         ConstraintCollectors.sum(poste -> poste.getAnimateur() != null
@@ -39,7 +40,7 @@ public final class QualiteConstraints {
         // loadBalance().unfairness() is 0 when every animateur carries the same
         // number of postes and grows with the deviation, giving a clean fairness
         // signal without the huge non-zero baseline of a sum-of-squares formula.
-        return constraintFactory.forEach(PosteAffectation.class)
+        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class), "equilibrerCharge")
                 .filter(poste -> poste.getAnimateur() != null)
                 .groupBy(ConstraintCollectors.loadBalance(PosteAffectation::getAnimateur))
                 .penalize(HardMediumSoftScore.ONE_MEDIUM,
@@ -48,7 +49,8 @@ public final class QualiteConstraints {
     }
 
     private Constraint repartitionMineursParCreneau(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(PosteAffectation.class)
+        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
+                "repartitionMineursParCreneau")
                 .filter(poste -> poste.getAnimateur() != null && poste.getCreneau() != null)
                 .groupBy(PosteAffectation::getStand,
                         PosteAffectation::getCreneau,
@@ -63,7 +65,8 @@ public final class QualiteConstraints {
     }
 
     private Constraint experienceRequisePourStandsPremium(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(PosteAffectation.class)
+        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
+                "experienceRequisePourStandsPremium")
                 .filter(poste -> poste.getStand().isPremium()
                         && poste.getAnimateur() != null
                         && poste.getAnimateur().estDebutantPour(poste.getStand()))
@@ -76,9 +79,9 @@ public final class QualiteConstraints {
         // stands: prefer keeping the same (already-vetted) animateur on a
         // high-visibility stand across timeslots instead of rotating people
         // through it.
-        return constraintFactory.forEachUniquePair(
+        return ConstraintToggleSupport.actif(constraintFactory.forEachUniquePair(
                 PosteAffectation.class,
-                Joiners.equal(poste -> poste.getStand().getId()))
+                Joiners.equal(poste -> poste.getStand().getId())), "eviterRoulementStandsPremium")
                 .filter((posteA, posteB) -> posteA.getStand().isPremium()
                         && posteA.getAnimateur() != null
                         && posteB.getAnimateur() != null

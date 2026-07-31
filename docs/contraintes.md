@@ -60,11 +60,30 @@ Source : `solver/ConstraintCatalog.java` (description métier) et
 | `favoriserRotationDesStands` | Éviter de réaffecter le même animateur au même stand |
 | `favoriserMixiteDesNiveaux` | Associer un débutant à un référent pour la montée en compétence |
 
+## Activer / désactiver une contrainte
+
+Chaque contrainte peut être activée ou désactivée individuellement depuis la page
+« Constraints » de l'IHM (un interrupteur par carte), pour le prochain solve
+uniquement — la désactivation ne modifie ni la pondération ni la logique de la
+règle, elle empêche simplement le stream de produire des matches. Toutes les
+contraintes sont actives par défaut.
+
+- Persistance : table `constraint_toggle` (présence d'une ligne = désactivée,
+  absence = active) via `ReferenceDataRepository`/`ReferenceDataService`.
+- API : `GET /api/constraints` renvoie `actif` pour chaque contrainte,
+  `PUT /api/constraints/{name}` bascule l'état.
+- Solveur : l'état désactivé est injecté comme fait de planification
+  `ConstraintToggle` sur `PlanningFestival` (voir `PlanningService.prepareProblem`),
+  et chaque contrainte le consulte via `ConstraintToggleSupport.actif(stream, "nom")`,
+  appelé juste après le `forEach`/`forEachUniquePair` initial.
+
 ## Ajouter une contrainte
 
 1. Implémenter la règle dans la classe de `solver/constraints/` correspondant à sa
    famille (ou en créer une nouvelle si la famille n'existe pas), une méthode
-   privée par contrainte.
+   privée par contrainte. Enrober le stream initial avec
+   `ConstraintToggleSupport.actif(constraintFactory.forEach(...), "nomDeLaContrainte")`
+   pour qu'elle soit désactivable depuis l'IHM comme les autres.
 2. L'enregistrer dans le tableau retourné par
    `PlanningConstraintProvider.defineConstraints`.
 3. Ajouter sa description métier dans `ConstraintCatalog` (niveau + catégorie +

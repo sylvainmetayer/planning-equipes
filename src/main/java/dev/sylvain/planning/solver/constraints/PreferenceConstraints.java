@@ -22,10 +22,10 @@ public final class PreferenceConstraints {
     }
 
     private Constraint favoriserRotationDesStands(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEachUniquePair(
+        return ConstraintToggleSupport.actif(constraintFactory.forEachUniquePair(
                 PosteAffectation.class,
                 Joiners.equal(PosteAffectation::getAnimateur),
-                Joiners.equal(poste -> poste.getStand().getId()))
+                Joiners.equal(poste -> poste.getStand().getId())), "favoriserRotationDesStands")
                 .filter((posteA, posteB) -> posteA.getAnimateur() != null)
                 .penalize(HardMediumSoftScore.ONE_SOFT)
                 .asConstraint("favoriserRotationDesStands");
@@ -34,7 +34,7 @@ public final class PreferenceConstraints {
     private Constraint favoriserMixiteDesNiveaux(ConstraintFactory constraintFactory) {
         // On a slot that already has a referent, having no beginner is a missed
         // training opportunity (soft, so it never blocks a valid plan).
-        return constraintFactory.forEach(PosteAffectation.class)
+        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class), "favoriserMixiteDesNiveaux")
                 .filter(poste -> poste.getAnimateur() != null)
                 .groupBy(PosteAffectation::getStand,
                         PosteAffectation::getCreneau,
