@@ -11,6 +11,26 @@ Maven télécharge sa propre version de Node via Quinoa
 (`quarkus.quinoa.package-manager-install=true`), donc la CI et l'image Docker ne
 demandent aucune installation préalable.
 
+### Avertissements JDK 25 au démarrage
+
+Le JDK 25 restreint l'accès natif (JEP 472) et signale les usages dépréciés de
+`sun.misc.Unsafe` (JEP 498). Deux sources de bruit résiduelles, indépendantes
+l'une de l'autre :
+
+- **Le Maven wrapper** embarque ses propres jansi/guava (`.mvn/wrapper`), qui
+  déclenchent ces avertissements dès `./mvnw -v`. `.mvn/jvm.config` les
+  silence pour le processus Maven lui-même ; ce fichier ne dépend pas de la
+  version de Quarkus.
+- **La console interactive de `quarkus:dev`/`quarkus:test`** charge JNA, qui
+  déclenche le même avertissement d'accès natif dans la JVM forkée par ces
+  goals. La propriété `jvm.args` du `pom.xml` (reprise par les `argLine`
+  surefire/failsafe) porte `--enable-native-access=ALL-UNNAMED` pour ça.
+
+Netty (utilisé par Quarkus/Vert.x) déclenchait aussi ces deux avertissements
+jusqu'à Quarkus 3.28 ; depuis cette version, Quarkus les évite nativement
+([quarkusio/quarkus#49905](https://github.com/quarkusio/quarkus/issues/49905)),
+donc l'image Docker de production ne nécessite plus aucun flag JVM.
+
 ## Commandes courantes
 
 ```bash
