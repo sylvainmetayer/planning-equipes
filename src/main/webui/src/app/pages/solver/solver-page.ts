@@ -3,6 +3,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { ApiService } from '../../core/api.service';
+import { intlLocale } from '../../core/locale';
 import { FeasibilityReport, PlanningDiagnostic } from '../../core/models';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { SolverJobService } from '../../core/solver-job.service';
@@ -30,15 +31,26 @@ export class SolverPage {
   /** The server-side lock, not a local flag: it also covers other browsers. */
   protected readonly solverBusy = computed(() => this.jobs.solverBusy());
 
+  /** Completion time of the most recent finished SOLVE or ANALYZE job, if any has ever run. */
+  protected readonly lastRunAt = signal<string | null>(null);
+  protected readonly formattedLastRun = computed(() => {
+    const lastRunAt = this.lastRunAt();
+    return lastRunAt ? new Date(lastRunAt).toLocaleString(intlLocale()) : '';
+  });
+
   private readonly api = inject(ApiService);
   private readonly planningState = inject(PlanningStateService);
   private readonly jobs = inject(SolverJobService);
 
   constructor() {
+    void this.loadLastRun();
     // Results are pushed by the job service, whoever started the job: a solve
     // launched from another browser also lands here when it completes, already
     // analyzed.
-    this.jobs.onResult('SOLVE', (result) => this.applySolveResult(result as PlanningDiagnostic));
+    this.jobs.onResult('SOLVE', (result) => {
+      this.applySolveResult(result as PlanningDiagnostic);
+      void this.loadLastRun();
+    });
     // Explains why the solver buttons are locked when the job comes from
     // somewhere else (another tab, another browser, a private window).
     effect(() => {
@@ -97,6 +109,17 @@ export class SolverPage {
       this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
     } finally {
       this.exportBusy.set(false);
+    }
+  }
+
+  private async loadLastRun(): Promise<void> {
+    try {
+      const jobs = await this.jobs.listJobs();
+      // listJobs() is submitted-desc and jobs never overlap (single solver
+      // lock), so the first entry with a finishedAt is the most recent run.
+      this.lastRunAt.set(jobs.find((job) => job.finishedAt)?.finishedAt ?? null);
+    } catch {
+      this.lastRunAt.set(null); // best-effort: the page still works without history
     }
   }
 

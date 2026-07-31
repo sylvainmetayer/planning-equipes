@@ -137,6 +137,11 @@ export class SolverJobService {
     return this.submit('/api/solve/analyze/async/reference-data', {}, 'ANALYZE', seconds);
   }
 
+  /** Every job, newest-submitted first — used for history (e.g. last run date), not polled. */
+  async listJobs(): Promise<JobView[]> {
+    return firstValueFrom(this.http.get<JobView[]>('/api/jobs'));
+  }
+
   private async submit(endpoint: string, payload: unknown, type: JobType, seconds?: number): Promise<JobView> {
     this.notifications.requestDesktopPermission();
     const url = seconds ? `${endpoint}?seconds=${encodeURIComponent(seconds)}` : endpoint;

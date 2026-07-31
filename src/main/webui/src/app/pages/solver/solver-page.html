@@ -16,6 +16,11 @@
       <ng-container i18n="@@solver.export">Exporter le planning (PDF + ICS)</ng-container>
     </button>
   </mat-card-actions>
+  @if (lastRunAt()) {
+    <mat-card-content>
+      <p class="calendar-meta" i18n="@@solver.lastRun">Dernière exécution : {{ formattedLastRun() }}</p>
+    </mat-card-content>
+  }
 </mat-card>
 
 <app-feasibility-banner [report]="feasibility()" />

@@ -220,6 +220,7 @@
   "solver.submitted": "Solving with Timefold on the server, then automatic analysis of the result. You can keep browsing; a notification will appear at each step, here and in any other browser watching this server.",
   "solver.alreadyRunning": "{$description} Please wait for it to finish before starting another one.",
   "solver.exportBuilding": "Building the export archive...",
+  "solver.lastRun": "Last run: {$INTERPOLATION}",
   "staffing.title": "Minimum staffing needs",
   "staffing.description": "Two lower bounds computed from stands and time slots alone, before any staff member exists — the larger one is kept. Neither accounts for skills or real availability, so treat this as a floor to recruit above, not a target — see the note below.",
   "staffing.minimumTotal": "Minimum kept",
