@@ -7,6 +7,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
+import dev.sylvain.planning.domain.GroupeCreneau;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.Stand;
@@ -131,12 +132,20 @@ public class ReferenceDataService {
 
     /* ------------------------------ Timeslots ------------------------------ */
 
+    private static final String GROUPE_CRENEAU_DEFAUT_ID = "DEFAUT";
+
     public List<Creneau> listCreneaux() {
         return repository == null ? List.of() : repository.listCreneaux();
     }
 
+    /** Timeslots of the currently active group only — what the solver builds its problem from. */
+    public List<Creneau> listCreneauxGroupeActif() {
+        return repository == null ? List.of() : repository.listCreneauxGroupeActif();
+    }
+
     public Creneau createCreneau(Creneau creneau) {
         creneau.setId(requiredId(creneau.getId(), "timeslot id"));
+        defaultGroupeIfMissing(creneau);
         repository.saveCreneau(creneau);
         return creneau;
     }
@@ -146,12 +155,64 @@ public class ReferenceDataService {
             throw new NotFoundException("Timeslot not found: " + id);
         }
         creneau.setId(id);
+        defaultGroupeIfMissing(creneau);
         repository.saveCreneau(creneau);
         return creneau;
     }
 
     public void deleteCreneau(String id) {
         repository.deleteCreneau(id);
+    }
+
+    /** Clients that don't send a group (older callers, tests) land in the default one. */
+    private void defaultGroupeIfMissing(Creneau creneau) {
+        if (creneau.getGroupe() == null || creneau.getGroupe().getId() == null) {
+            creneau.setGroupe(new GroupeCreneau(GROUPE_CRENEAU_DEFAUT_ID, null, false));
+        }
+    }
+
+    /* -------------------------- Timeslot groups ----------------------------- */
+
+    public List<GroupeCreneau> listGroupesCreneaux() {
+        return repository == null ? List.of() : repository.listGroupesCreneaux();
+    }
+
+    public GroupeCreneau createGroupeCreneau(GroupeCreneau groupe) {
+        groupe.setId(requiredId(groupe.getId(), "timeslot group id"));
+        if (groupe.getNom() == null || groupe.getNom().isBlank()) {
+            throw new IllegalArgumentException("timeslot group name is required");
+        }
+        groupe.setActif(false);
+        repository.saveGroupeCreneau(groupe);
+        return groupe;
+    }
+
+    public GroupeCreneau updateGroupeCreneau(String id, GroupeCreneau groupe) {
+        if (!repository.groupeCreneauExists(id)) {
+            throw new NotFoundException("Timeslot group not found: " + id);
+        }
+        if (groupe.getNom() == null || groupe.getNom().isBlank()) {
+            throw new IllegalArgumentException("timeslot group name is required");
+        }
+        groupe.setId(id);
+        repository.saveGroupeCreneau(groupe);
+        return groupe;
+    }
+
+    public void activerGroupeCreneau(String id) {
+        if (!repository.groupeCreneauExists(id)) {
+            throw new NotFoundException("Timeslot group not found: " + id);
+        }
+        repository.activerGroupeCreneau(id);
+    }
+
+    public void deleteGroupeCreneau(String id) {
+        boolean actif = repository.listGroupesCreneaux().stream()
+                .anyMatch(groupe -> groupe.getId().equals(id) && groupe.isActif());
+        if (actif) {
+            throw new IllegalArgumentException("Impossible de supprimer le groupe actif");
+        }
+        repository.deleteGroupeCreneau(id);
     }
 
     /* ------------------------------ Typologies ----------------------------- */

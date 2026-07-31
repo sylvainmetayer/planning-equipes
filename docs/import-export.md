@@ -30,6 +30,11 @@ Règles de format :
 | `stands` | `id;nom;typologies;effectifMin;effectifMax;reserveMajeurs;premium` |
 | `creneaux` | `id;jour;date;heureDebut;heureFin` |
 
+Un import `creneaux` remplace la table dans son intégralité, **tous groupes
+de créneaux confondus** — pas seulement ceux du groupe actif — et les lignes
+importées sont rattachées au groupe « Défaut ». Voir
+[`domaine.md`](domaine.md) pour la notion de groupe de créneaux.
+
 - `manager` : `true` / `false` (colonne facultative, vide = `false`) — anime et encadre d'autres
   animateurs ; tous les animateurs sont payés, il n'existe plus de distinction bénévole/salarié
 - `competences` : `STRATEGIE:REFERENT|ENFANT:AUTONOME`

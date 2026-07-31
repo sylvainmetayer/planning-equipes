@@ -24,6 +24,7 @@ public class Creneau {
     private LocalTime heureDebut;
     private LocalTime heureFin;
     private Set<String> standsOuvertsIds;  // vide = tous les stands ouverts (défaut) ; sinon liste exclusive
+    private GroupeCreneau groupe; // planning ("groupe de créneaux") auquel ce créneau appartient
 }
 
 public class Animateur {
@@ -53,6 +54,12 @@ public class Emplacement {
     private Double latitude;
     private Double longitude;
 }
+
+public class GroupeCreneau {
+    private String id;
+    private String nom;
+    private boolean actif;       // un seul groupe actif à la fois (index unique partiel en base)
+}
 ```
 
 Un `Emplacement` est un référentiel éditable indépendamment (page « Emplacements »),
@@ -60,6 +67,18 @@ géré comme `Stand`/`Creneau`/`Animateur` (CRUD, pas de logique métier propre 
 `distanceMetresVers(...)`, la distance à vol d'oiseau — formule de haversine — vers
 un autre emplacement). Un stand non géolocalisé (`emplacement == null`) est
 simplement ignoré par la contrainte de distance.
+
+Un `GroupeCreneau` regroupe des créneaux en un planning nommé (page « Créneaux »,
+panneau « Groupes de créneaux »), pour préparer un planning alternatif à
+l'avance et l'activer en cas de besoin de dernière minute. Chaque `Creneau`
+appartient à exactement un groupe (le groupe « Défaut » créé par la migration
+`V10__groupe_creneau.sql` sert de valeur par défaut). Activer un groupe
+(`PUT /api/groupes-creneaux/{id}/actif`) désactive automatiquement tous les
+autres — au plus un groupe actif à la fois, garanti à la fois en base (index
+unique partiel) et côté service. Le solveur ne construit son problème
+(`PlanningService.construireDepuisReferenceData`) qu'à partir des créneaux du
+groupe actif ; les créneaux des autres groupes existent en base mais ne sont
+jamais soumis au solveur tant que leur groupe n'est pas activé.
 
 ## Entité de planification
 
@@ -71,7 +90,10 @@ instances sont générées à l'initialisation (seed / scénario), en respectant
 Un stand est ouvert sur tous les créneaux par défaut. Si `Creneau.standsOuvertsIds`
 n'est pas vide, seuls les stands listés y génèrent des postes (voir
 `PlanningService.construirePostes`) — les autres stands sont simplement fermés
-sur ce créneau, sans poste ni pénalité associée.
+sur ce créneau, sans poste ni pénalité associée. En amont, `construirePostes`
+ne reçoit que les créneaux du `GroupeCreneau` actif
+(`referenceDataService.listCreneauxGroupeActif()`) : les créneaux d'un groupe
+inactif ne génèrent aucun poste tant que ce groupe n'est pas activé.
 
 ```java
 @PlanningEntity

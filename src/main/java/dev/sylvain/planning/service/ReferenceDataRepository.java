@@ -23,6 +23,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
+import dev.sylvain.planning.domain.GroupeCreneau;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PlanningFestival;
@@ -235,11 +236,24 @@ public class ReferenceDataRepository {
 
     /* ------------------------------ Timeslots ------------------------------ */
 
+    private static final String SELECT_CRENEAU_SQL =
+            "SELECT c.id, c.jour, c.date_creneau, c.heure_debut, c.heure_fin, "
+                    + "g.id AS groupe_id, g.nom AS groupe_nom, g.actif AS groupe_actif "
+                    + "FROM creneau c JOIN groupe_creneau g ON g.id = c.groupe_creneau_id";
+
     public List<Creneau> listCreneaux() {
+        return listCreneaux(SELECT_CRENEAU_SQL + " ORDER BY c.id");
+    }
+
+    /** Timeslots of the currently active group only — what the solver builds its problem from. */
+    public List<Creneau> listCreneauxGroupeActif() {
+        return listCreneaux(SELECT_CRENEAU_SQL + " WHERE g.actif ORDER BY c.id");
+    }
+
+    private List<Creneau> listCreneaux(String sql) {
         Map<String, Creneau> byId = new LinkedHashMap<>();
         try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement ps = connection.prepareStatement(
-                    "SELECT id, jour, date_creneau, heure_debut, heure_fin FROM creneau ORDER BY id");
+            try (PreparedStatement ps = connection.prepareStatement(sql);
                     ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Creneau creneau = new Creneau(
@@ -248,16 +262,20 @@ public class ReferenceDataRepository {
                             rs.getObject("date_creneau", LocalDate.class),
                             rs.getObject("heure_debut", LocalTime.class),
                             rs.getObject("heure_fin", LocalTime.class));
+                    creneau.setGroupe(new GroupeCreneau(
+                            rs.getString("groupe_id"), rs.getString("groupe_nom"), rs.getBoolean("groupe_actif")));
                     byId.put(creneau.getId(), creneau);
                 }
             }
-            try (PreparedStatement ps = connection.prepareStatement(
-                    "SELECT creneau_id, stand_id FROM creneau_stand_ouvert");
-                    ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    Creneau creneau = byId.get(rs.getString("creneau_id"));
-                    if (creneau != null) {
-                        creneau.getStandsOuvertsIds().add(rs.getString("stand_id"));
+            if (!byId.isEmpty()) {
+                try (PreparedStatement ps = connection.prepareStatement(
+                        "SELECT creneau_id, stand_id FROM creneau_stand_ouvert");
+                        ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        Creneau creneau = byId.get(rs.getString("creneau_id"));
+                        if (creneau != null) {
+                            creneau.getStandsOuvertsIds().add(rs.getString("stand_id"));
+                        }
                     }
                 }
             }
@@ -299,6 +317,73 @@ public class ReferenceDataRepository {
 
     public void deleteCreneau(String id) {
         delete("DELETE FROM creneau WHERE id = ?", id);
+    }
+
+    /* -------------------------- Timeslot groups ----------------------------- */
+
+    public List<GroupeCreneau> listGroupesCreneaux() {
+        List<GroupeCreneau> groupes = new ArrayList<>();
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = connection.prepareStatement(
+                        "SELECT id, nom, actif FROM groupe_creneau ORDER BY nom");
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                groupes.add(new GroupeCreneau(rs.getString("id"), rs.getString("nom"), rs.getBoolean("actif")));
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to list timeslot groups", e);
+        }
+        return groupes;
+    }
+
+    public boolean groupeCreneauExists(String id) {
+        return exists("groupe_creneau", id);
+    }
+
+    /** Upserts id/nom only — {@code actif} is never touched here, see {@link #activerGroupeCreneau(String)}. */
+    public void saveGroupeCreneau(GroupeCreneau groupe) {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = connection.prepareStatement(
+                        "INSERT INTO groupe_creneau (id, nom, actif) VALUES (?, ?, FALSE) "
+                                + "ON CONFLICT (id) DO UPDATE SET nom = EXCLUDED.nom")) {
+            ps.setString(1, groupe.getId());
+            ps.setString(2, groupe.getNom());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to save timeslot group " + groupe.getId(), e);
+        }
+    }
+
+    /**
+     * Activates the given group and deactivates every other one, in a single
+     * transaction (deactivate-then-activate order, so the partial unique index
+     * on {@code actif} is never violated in between).
+     */
+    public void activerGroupeCreneau(String id) {
+        try (Connection connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                try (PreparedStatement ps = connection.prepareStatement(
+                        "UPDATE groupe_creneau SET actif = FALSE")) {
+                    ps.executeUpdate();
+                }
+                try (PreparedStatement ps = connection.prepareStatement(
+                        "UPDATE groupe_creneau SET actif = TRUE WHERE id = ?")) {
+                    ps.setString(1, id);
+                    ps.executeUpdate();
+                }
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw e;
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to activate timeslot group " + id, e);
+        }
+    }
+
+    public void deleteGroupeCreneau(String id) {
+        delete("DELETE FROM groupe_creneau WHERE id = ?", id);
     }
 
     /* ------------------------------ Animateurs ----------------------------- */
@@ -775,15 +860,21 @@ public class ReferenceDataRepository {
     }
 
     private void upsertCreneauTx(Connection connection, Creneau creneau) throws SQLException {
+        // Callers that don't know about groups yet (CSV import) leave this null;
+        // fall back to the seeded default group rather than fail the NOT NULL FK.
+        String groupeId = creneau.getGroupe() != null ? creneau.getGroupe().getId() : "DEFAUT";
         try (PreparedStatement ps = connection.prepareStatement(
-                "INSERT INTO creneau (id, jour, date_creneau, heure_debut, heure_fin) VALUES (?, ?, ?, ?, ?) "
+                "INSERT INTO creneau (id, jour, date_creneau, heure_debut, heure_fin, groupe_creneau_id) "
+                        + "VALUES (?, ?, ?, ?, ?, ?) "
                         + "ON CONFLICT (id) DO UPDATE SET jour = EXCLUDED.jour, date_creneau = EXCLUDED.date_creneau, "
-                        + "heure_debut = EXCLUDED.heure_debut, heure_fin = EXCLUDED.heure_fin")) {
+                        + "heure_debut = EXCLUDED.heure_debut, heure_fin = EXCLUDED.heure_fin, "
+                        + "groupe_creneau_id = EXCLUDED.groupe_creneau_id")) {
             ps.setString(1, creneau.getId());
             ps.setInt(2, creneau.getJour());
             ps.setObject(3, creneau.getDate());
             ps.setObject(4, creneau.getHeureDebut());
             ps.setObject(5, creneau.getHeureFin());
+            ps.setString(6, groupeId);
             ps.executeUpdate();
         }
         try (PreparedStatement del = connection.prepareStatement(

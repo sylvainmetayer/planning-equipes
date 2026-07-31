@@ -6,6 +6,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
+import dev.sylvain.planning.domain.GroupeCreneau;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.PlanningService;
@@ -107,6 +108,39 @@ public class ReferenceDataResource {
     @Path("/creneaux/{id}")
     public Response deleteCreneau(@PathParam("id") String id) {
         referenceDataService.deleteCreneau(id);
+        return Response.noContent().build();
+    }
+
+    @GET
+    @Path("/groupes-creneaux")
+    public List<GroupeCreneau> listGroupesCreneaux() {
+        return referenceDataService.listGroupesCreneaux();
+    }
+
+    @POST
+    @Path("/groupes-creneaux")
+    public GroupeCreneau createGroupeCreneau(GroupeCreneau groupe) {
+        return referenceDataService.createGroupeCreneau(groupe);
+    }
+
+    @PUT
+    @Path("/groupes-creneaux/{id}")
+    public GroupeCreneau updateGroupeCreneau(@PathParam("id") String id, GroupeCreneau groupe) {
+        return referenceDataService.updateGroupeCreneau(id, groupe);
+    }
+
+    /** Activates this group for the next solve and deactivates every other one. */
+    @PUT
+    @Path("/groupes-creneaux/{id}/actif")
+    public Response activerGroupeCreneau(@PathParam("id") String id) {
+        referenceDataService.activerGroupeCreneau(id);
+        return Response.noContent().build();
+    }
+
+    @DELETE
+    @Path("/groupes-creneaux/{id}")
+    public Response deleteGroupeCreneau(@PathParam("id") String id) {
+        referenceDataService.deleteGroupeCreneau(id);
         return Response.noContent().build();
     }
 

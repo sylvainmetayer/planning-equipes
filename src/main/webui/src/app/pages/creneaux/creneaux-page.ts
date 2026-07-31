@@ -1,24 +1,31 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
 import { MatExpansionModule } from '@angular/material/expansion';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
-import { Creneau } from '../../core/models';
+import { slugify } from '../../core/slug';
+import { Creneau, GroupeCreneau } from '../../core/models';
 import { CreneauFormData, CreneauFormDialog } from './creneau-form-dialog';
 
-/** Timeslots CRUD: festival day, date and hours of every schedulable slot. */
+/** Timeslots CRUD: festival day, date and hours of every schedulable slot, organized in switchable "groupes de créneaux" (alternate plannings). */
 @Component({
   selector: 'app-creneaux-page',
   imports: [
+    FormsModule,
     MatCardModule,
     MatCheckboxModule,
     MatExpansionModule,
+    MatFormFieldModule,
+    MatInputModule,
     MatButtonModule,
     MatIconModule,
     MatTooltipModule
@@ -33,6 +40,10 @@ export class CreneauxPage {
 
   private readonly crud = inject(ReferenceCrudService);
   private readonly dialog = inject(MatDialog);
+
+  protected readonly nouveauGroupeNom = signal('');
+  /** Id of the group currently being activated/created, to disable its row while the request is in flight. */
+  protected readonly groupeEnCours = signal<string | null>(null);
 
   constructor() {
     void this.crud.reload();
@@ -89,5 +100,46 @@ export class CreneauxPage {
     const next = checked ? Array.from(new Set([...current, standId])) : current.filter((id) => id !== standId);
     const standsOuvertsIds = next.length >= allIds.length ? [] : next;
     await this.crud.save('creneaux', { ...creneau, standsOuvertsIds }, creneau.id, $localize`:@@creneaux.entityLabel:Créneau`);
+  }
+
+  /** Activates a timeslot group; checking one implicitly deactivates every other one, so an already-active row is a no-op. */
+  protected async activerGroupe(groupe: GroupeCreneau): Promise<void> {
+    if (groupe.actif || this.editingLocked() || this.groupeEnCours()) {
+      return;
+    }
+    this.groupeEnCours.set(groupe.id);
+    try {
+      await this.store.activerGroupeCreneau(groupe.id);
+    } catch (error) {
+      this.crud.reportError(error);
+    } finally {
+      this.groupeEnCours.set(null);
+    }
+  }
+
+  protected async supprimerGroupe(groupe: GroupeCreneau): Promise<void> {
+    await this.crud.remove('groupes-creneaux', groupe.id, $localize`:@@groupesCreneaux.entityLabel:Groupe de créneaux`);
+  }
+
+  protected async ajouterGroupe(): Promise<void> {
+    const nom = this.nouveauGroupeNom().trim();
+    if (!nom) {
+      return;
+    }
+    const id = slugify(
+      nom,
+      this.store.groupesCreneaux().map((g) => g.id)
+    );
+    const groupe: GroupeCreneau = { id, nom, actif: false };
+    if (
+      await this.crud.save(
+        'groupes-creneaux',
+        groupe,
+        null,
+        $localize`:@@groupesCreneaux.entityLabel:Groupe de créneaux`
+      )
+    ) {
+      this.nouveauGroupeNom.set('');
+    }
   }
 }

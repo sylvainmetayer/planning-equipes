@@ -127,6 +127,16 @@ ainsi que le planning résolu.
 - rotation des stands d'un animateur au fil du festival ;
 - mixité des niveaux (associer un débutant à un référent).
 
+### Plannings alternatifs
+
+Les créneaux peuvent être organisés en plusieurs groupes (« plannings ») —
+un planning normal et, par exemple, un planning de repli en cas
+d'imprévu de dernière minute (météo, lieu indisponible, ...). Un seul
+groupe est actif à la fois ; l'activer désactive automatiquement les
+autres. La résolution ne tient compte que des créneaux du groupe actif, ce
+qui permet de préparer un planning alternatif à l'avance et de basculer
+dessus en un clic sans perdre le planning courant.
+
 Le détail règle par règle est dans [`docs/contraintes.md`](docs/contraintes.md).
 
 ### Gestion des référentiels

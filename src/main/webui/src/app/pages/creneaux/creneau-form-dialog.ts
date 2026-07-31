@@ -5,9 +5,16 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
+import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
-import { Creneau } from '../../core/models';
+import { slugify } from '../../core/slug';
+import { Creneau, GroupeCreneau } from '../../core/models';
+
+/** Sentinel `mat-select` value that reveals the "new group" name field. */
+const NOUVEAU_GROUPE = '__nouveau__';
+const GROUPE_DEFAUT_ID = 'DEFAUT';
 
 interface CreneauDraft {
   id: string;
@@ -16,16 +23,26 @@ interface CreneauDraft {
   heureDebut: string;
   heureFin: string;
   standsOuvertsIds: string[];
+  groupeId: string;
+  nouveauGroupeNom: string;
 }
 
 export interface CreneauFormData {
   creneau: Creneau | null;
 }
 
-/** Add/edit dialog for a timeslot: festival day, date and hours. Per-stand overrides stay on the page's checklist. */
+/** Add/edit dialog for a timeslot: festival day, date, hours and planning group. Per-stand overrides stay on the page's checklist. */
 @Component({
   selector: 'app-creneau-form-dialog',
-  imports: [FormsModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule],
+  imports: [
+    FormsModule,
+    MatDialogModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatButtonModule,
+    MatIconModule
+  ],
   templateUrl: './creneau-form-dialog.html'
 })
 export class CreneauFormDialog {
@@ -33,10 +50,12 @@ export class CreneauFormDialog {
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
   protected readonly editingLocked = computed(() => this.jobs.solverBusy());
 
+  protected readonly store = inject(ReferenceDataStore);
   protected readonly dialogRef = inject<MatDialogRef<CreneauFormDialog, boolean>>(MatDialogRef);
   private readonly data = inject<CreneauFormData>(MAT_DIALOG_DATA);
   private readonly crud = inject(ReferenceCrudService);
 
+  protected readonly nouveauGroupeValue = NOUVEAU_GROUPE;
   protected readonly editingId = signal<string | null>(this.data.creneau?.id ?? null);
   protected readonly draft = signal<CreneauDraft>(toDraft(this.data.creneau));
   protected readonly formTitle = computed(() => {
@@ -57,23 +76,60 @@ export class CreneauFormDialog {
 
   protected async save(): Promise<void> {
     const draft = this.draft();
+    let groupeId = draft.groupeId;
+    if (groupeId === NOUVEAU_GROUPE) {
+      const id = await this.creerGroupe(draft.nouveauGroupeNom.trim());
+      if (!id) {
+        return;
+      }
+      groupeId = id;
+    }
     const creneau: Creneau = {
       id: draft.id.trim(),
       jour: Number(draft.jour),
       date: draft.date,
       heureDebut: draft.heureDebut,
       heureFin: draft.heureFin,
-      standsOuvertsIds: draft.standsOuvertsIds
+      standsOuvertsIds: draft.standsOuvertsIds,
+      groupe: { id: groupeId, nom: '', actif: false }
     };
     if (await this.crud.save('creneaux', creneau, this.editingId(), $localize`:@@creneaux.entityLabel:Créneau`)) {
       this.dialogRef.close(true);
     }
   }
+
+  /** Creates the group typed in the "new group" field, deriving its id from the name. Returns the new id, or null on failure. */
+  private async creerGroupe(nom: string): Promise<string | null> {
+    if (!nom) {
+      return null;
+    }
+    const id = slugify(
+      nom,
+      this.store.groupesCreneaux().map((groupe) => groupe.id)
+    );
+    const groupe: GroupeCreneau = { id, nom, actif: false };
+    const created = await this.crud.save(
+      'groupes-creneaux',
+      groupe,
+      null,
+      $localize`:@@groupesCreneaux.entityLabel:Groupe de créneaux`
+    );
+    return created ? groupe.id : null;
+  }
 }
 
 function toDraft(creneau: Creneau | null): CreneauDraft {
   if (!creneau) {
-    return { id: '', jour: 1, date: '', heureDebut: '', heureFin: '', standsOuvertsIds: [] };
+    return {
+      id: '',
+      jour: 1,
+      date: '',
+      heureDebut: '',
+      heureFin: '',
+      standsOuvertsIds: [],
+      groupeId: GROUPE_DEFAUT_ID,
+      nouveauGroupeNom: ''
+    };
   }
   return {
     id: creneau.id,
@@ -81,6 +137,8 @@ function toDraft(creneau: Creneau | null): CreneauDraft {
     date: creneau.date ?? '',
     heureDebut: creneau.heureDebut ?? '',
     heureFin: creneau.heureFin ?? '',
-    standsOuvertsIds: [...(creneau.standsOuvertsIds ?? [])]
+    standsOuvertsIds: [...(creneau.standsOuvertsIds ?? [])],
+    groupeId: creneau.groupe?.id ?? GROUPE_DEFAUT_ID,
+    nouveauGroupeNom: ''
   };
 }

@@ -51,6 +51,19 @@ export interface Creneau {
   heureFin: string;
   /** Empty = every stand is open on this timeslot (the default). */
   standsOuvertsIds: string[];
+  /** Planning ("groupe de créneaux") this slot belongs to. */
+  groupe: GroupeCreneau | null;
+}
+
+/**
+ * Named set of timeslots (a "planning"), so an alternate schedule can be
+ * prepared ahead of time and activated on short notice (`/api/groupes-creneaux`).
+ * Exactly one group is active; the solver only uses the active group's créneaux.
+ */
+export interface GroupeCreneau {
+  id: string;
+  nom: string;
+  actif: boolean;
 }
 
 /** One seat to fill: a stand on a timeslot, with its animator once solved. */

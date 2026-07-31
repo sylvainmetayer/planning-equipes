@@ -130,7 +130,7 @@ public class PlanningService {
     public PlanningFestival construireDepuisReferenceData() {
         List<Animateur> animateurs = referenceDataService.listAnimateurs();
         List<Stand> stands = referenceDataService.listStands();
-        List<Creneau> creneaux = referenceDataService.listCreneaux();
+        List<Creneau> creneaux = referenceDataService.listCreneauxGroupeActif();
         if (animateurs.isEmpty() || stands.isEmpty() || creneaux.isEmpty()) {
             throw new IllegalStateException(
                     "Aucune donnée de référence. Chargez un scénario ou créez des stands, "
@@ -193,7 +193,7 @@ public class PlanningService {
     public String exporterScenarioYaml() {
         List<Animateur> animateurs = referenceDataService.listAnimateurs();
         List<Stand> stands = referenceDataService.listStands();
-        List<Creneau> creneaux = referenceDataService.listCreneaux();
+        List<Creneau> creneaux = referenceDataService.listCreneauxGroupeActif();
         if (animateurs.isEmpty() || stands.isEmpty() || creneaux.isEmpty()) {
             throw new IllegalStateException(
                     "Aucune donnée de référence à exporter. Créez des stands, des animateurs et des créneaux d'abord.");

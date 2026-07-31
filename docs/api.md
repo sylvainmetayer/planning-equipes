@@ -55,8 +55,13 @@ Même schéma pour chaque référentiel : `GET` (liste), `POST` (création),
 | --- | --- |
 | Stands | `/api/stands` |
 | Créneaux | `/api/creneaux` |
+| Groupes de créneaux | `/api/groupes-creneaux` |
 | Animateurs | `/api/animateurs` |
 | Typologies de jeux | `/api/typologies` |
+
+`PUT /api/groupes-creneaux/{id}/actif` active ce groupe de créneaux pour le
+prochain solve et désactive tous les autres (un seul groupe actif à la
+fois).
 
 Contraintes ad hoc (pas de mise à jour, on supprime et on recrée) :
 

@@ -1,5 +1,40 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
+    <mat-card-title i18n="@@groupesCreneaux.list.title">Groupes de créneaux</mat-card-title>
+    <mat-card-subtitle i18n="@@groupesCreneaux.list.subtitle">Un seul groupe est actif à la fois : c'est lui que le solveur utilise. Cochez un groupe pour l'activer et désactiver les autres.</mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <div class="stand-checklist">
+      @for (groupe of store.groupesCreneaux(); track groupe.id) {
+        <span class="row-actions">
+          <mat-checkbox [checked]="groupe.actif"
+                        [disabled]="groupe.actif || editingLocked() || !!groupeEnCours()"
+                        (change)="activerGroupe(groupe)">
+            {{ groupe.nom || groupe.id }}
+          </mat-checkbox>
+          <button matIconButton i18n-matTooltip="@@common.delete" matTooltip="Supprimer" i18n-aria-label="@@common.delete" aria-label="Supprimer" class="danger-action"
+                  [disabled]="groupe.actif || editingLocked()" (click)="supprimerGroupe(groupe)">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </span>
+      }
+    </div>
+    <form class="form-grid" (ngSubmit)="ajouterGroupe()">
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@groupesCreneaux.field.nom">Nom du nouveau groupe</mat-label>
+        <input matInput name="nouveauGroupeNom" [disabled]="editingLocked()"
+               [ngModel]="nouveauGroupeNom()" (ngModelChange)="nouveauGroupeNom.set($event)" />
+      </mat-form-field>
+      <button matButton type="submit" [disabled]="editingLocked() || !nouveauGroupeNom().trim()">
+        <mat-icon>add</mat-icon>
+        <ng-container i18n="@@groupesCreneaux.add">Ajouter un groupe</ng-container>
+      </button>
+    </form>
+  </mat-card-content>
+</mat-card>
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
     <mat-card-title i18n="@@creneaux.list.title">Créneaux ({{ store.creneaux().length }})</mat-card-title>
     <mat-card-subtitle i18n="@@creneaux.form.description">Chaque stand est ouvert sur chaque créneau par défaut ; à modifier créneau par créneau ci-dessous.</mat-card-subtitle>
   </mat-card-header>
@@ -14,7 +49,7 @@
       @for (creneau of store.creneaux(); track creneau.id) {
         <mat-expansion-panel>
           <mat-expansion-panel-header>
-            <mat-panel-title>{{ creneau.id }} — J{{ creneau.jour }} · {{ creneau.date }} {{ creneau.heureDebut }}–{{ creneau.heureFin }}</mat-panel-title>
+            <mat-panel-title>{{ creneau.id }} — J{{ creneau.jour }} · {{ creneau.date }} {{ creneau.heureDebut }}–{{ creneau.heureFin }} · {{ creneau.groupe?.nom || creneau.groupe?.id }}</mat-panel-title>
             <mat-panel-description>
               {{ standsOuvertsLabel(creneau) }}
               <span class="row-actions">

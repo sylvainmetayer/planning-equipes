@@ -17,6 +17,8 @@ public class Creneau {
     private LocalTime heureFin;
     /** Empty = every stand is open on this timeslot (the default). */
     private Set<String> standsOuvertsIds = new HashSet<>();
+    /** Planning ("groupe de créneaux") this slot belongs to; nullable defensively, always set once persisted. */
+    private GroupeCreneau groupe;
 
     public Creneau() {
     }
@@ -75,6 +77,14 @@ public class Creneau {
 
     public void setStandsOuvertsIds(Set<String> standsOuvertsIds) {
         this.standsOuvertsIds = standsOuvertsIds != null ? standsOuvertsIds : new HashSet<>();
+    }
+
+    public GroupeCreneau getGroupe() {
+        return groupe;
+    }
+
+    public void setGroupe(GroupeCreneau groupe) {
+        this.groupe = groupe;
     }
 
     /** True when the given stand is open on this timeslot (open-by-default). */
