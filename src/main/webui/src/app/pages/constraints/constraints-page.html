@@ -40,7 +40,7 @@
   </mat-card-header>
   <mat-card-content>
     <div class="calendar-toolbar">
-      <button matButton="tonal" type="button" [disabled]="loading()" (click)="refresh()">
+      <button matButton="tonal" type="button" [disabled]="loading() || jobs.solverBusy()" (click)="refresh()">
         <mat-icon>refresh</mat-icon>
         <ng-container i18n="@@common.refresh">Actualiser</ng-container>
       </button>
@@ -87,7 +87,7 @@
               <div class="constraint-toggle-row">
                 <mat-slide-toggle
                   [checked]="constraint.actif"
-                  [disabled]="togglingConstraint() === constraint.name"
+                  [disabled]="togglingConstraint() === constraint.name || jobs.solverBusy()"
                   (change)="toggleConstraint(constraint, $event.checked)">
                   {{ actifLabel(constraint.actif) }}
                 </mat-slide-toggle>

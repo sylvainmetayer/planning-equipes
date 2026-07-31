@@ -11,6 +11,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { ApiService } from '../../core/api.service';
 import { intlLocale } from '../../core/locale';
 import { ConstraintView, ConstraintsView, NiveauContrainte, ParametresLegaux } from '../../core/models';
+import { SolverJobService } from '../../core/solver-job.service';
 import { FeasibilityBanner } from '../../shared/feasibility-banner';
 
 /** Called lazily (never at module scope, see `app.ts`'s `buildNavGroups`). */
@@ -65,6 +66,8 @@ export class ConstraintsPage {
 
   protected readonly feasibility = computed(() => this.view()?.faisabilite ?? null);
 
+  protected readonly jobs = inject(SolverJobService);
+
   private readonly api = inject(ApiService);
 
   protected readonly summary = computed(() => {
@@ -93,11 +96,14 @@ export class ConstraintsPage {
   });
 
   constructor() {
-    void this.refresh();
+    void this.loadConstraints();
     void this.loadParametresLegaux();
+    // The refresh button launches an ANALYZE job (see refresh() below); once
+    // it completes, whichever browser started it, reload the scored view.
+    this.jobs.onResult('ANALYZE', () => void this.loadConstraints());
   }
 
-  protected async refresh(): Promise<void> {
+  private async loadConstraints(): Promise<void> {
     this.loading.set(true);
     this.error.set('');
     try {
@@ -107,6 +113,16 @@ export class ConstraintsPage {
       this.error.set($localize`:@@common.errorPrefix:Erreur : ${error instanceof Error ? error.message : String(error)}:message:`);
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  /** Refresh button: launches a background solver analysis; loadConstraints() picks up its result via onResult above. */
+  protected async refresh(): Promise<void> {
+    this.error.set('');
+    try {
+      await this.jobs.submitAnalyzeFromReferenceData();
+    } catch (error) {
+      this.error.set($localize`:@@common.errorPrefix:Erreur : ${error instanceof Error ? error.message : String(error)}:message:`);
     }
   }
 
