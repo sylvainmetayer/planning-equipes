@@ -145,6 +145,19 @@ public class ReferenceDataRepository {
         delete("DELETE FROM stand WHERE id = ?", id);
     }
 
+    private void upsertEmplacementTx(Connection connection, Emplacement emplacement) throws SQLException {
+        try (PreparedStatement ps = connection.prepareStatement(
+                "INSERT INTO emplacement (id, nom, latitude, longitude) VALUES (?, ?, ?, ?) "
+                        + "ON CONFLICT (id) DO UPDATE SET nom = EXCLUDED.nom, latitude = EXCLUDED.latitude, "
+                        + "longitude = EXCLUDED.longitude")) {
+            ps.setString(1, emplacement.getId());
+            ps.setString(2, emplacement.getNom());
+            ps.setObject(3, emplacement.getLatitude());
+            ps.setObject(4, emplacement.getLongitude());
+            ps.executeUpdate();
+        }
+    }
+
     private void upsertStand(Connection connection, Stand stand) throws SQLException {
         try (PreparedStatement ps = connection.prepareStatement(
                 "INSERT INTO stand (id, nom, effectif_min, effectif_max, reserve_majeurs, premium, emplacement_id) "
@@ -725,6 +738,15 @@ public class ReferenceDataRepository {
                 }
                 for (Creneau creneau : creneauxById.values()) {
                     upsertCreneauTx(connection, creneau);
+                }
+                Map<String, Emplacement> emplacementsById = new LinkedHashMap<>();
+                for (Stand stand : standsById.values()) {
+                    if (stand.getEmplacement() != null) {
+                        emplacementsById.putIfAbsent(stand.getEmplacement().getId(), stand.getEmplacement());
+                    }
+                }
+                for (Emplacement emplacement : emplacementsById.values()) {
+                    upsertEmplacementTx(connection, emplacement);
                 }
                 for (Stand stand : standsById.values()) {
                     upsertStand(connection, stand);
