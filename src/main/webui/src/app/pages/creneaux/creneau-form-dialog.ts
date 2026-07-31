@@ -39,6 +39,17 @@ export class CreneauFormDialog {
 
   protected readonly editingId = signal<string | null>(this.data.creneau?.id ?? null);
   protected readonly draft = signal<CreneauDraft>(toDraft(this.data.creneau));
+  protected readonly formTitle = computed(() => {
+    const id = this.editingId();
+    return id
+      ? $localize`:@@creneaux.form.editTitle:Modifier le créneau ${id}:id:`
+      : $localize`:@@creneaux.form.newTitle:Nouveau créneau`;
+  });
+  protected readonly submitLabel = computed(() =>
+    this.editingId()
+      ? $localize`:@@creneaux.submit.edit:Modifier le créneau`
+      : $localize`:@@creneaux.submit.create:Créer le créneau`
+  );
 
   protected patch(patch: Partial<CreneauDraft>): void {
     this.draft.update((draft) => ({ ...draft, ...patch }));
@@ -54,7 +65,7 @@ export class CreneauFormDialog {
       heureFin: draft.heureFin,
       standsOuvertsIds: draft.standsOuvertsIds
     };
-    if (await this.crud.save('creneaux', creneau, this.editingId(), 'Timeslot')) {
+    if (await this.crud.save('creneaux', creneau, this.editingId(), $localize`:@@creneaux.entityLabel:Créneau`)) {
       this.dialogRef.close(true);
     }
   }

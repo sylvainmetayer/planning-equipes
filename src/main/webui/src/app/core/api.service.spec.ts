@@ -13,12 +13,12 @@ describe('toError', () => {
 
   it('falls back to the status code when the body has no message', () => {
     const response = new HttpErrorResponse({ status: 500, error: 'boom' });
-    expect(toError(response).message).toBe('Request failed with 500');
+    expect(toError(response).message).toBe('Échec de la requête (code 500)');
   });
 
   it('falls back to the status code when the body is null', () => {
     const response = new HttpErrorResponse({ status: 409, error: null });
-    expect(toError(response).message).toBe('Request failed with 409');
+    expect(toError(response).message).toBe('Échec de la requête (code 409)');
   });
 
   it('returns a non-HTTP Error unchanged', () => {

@@ -1,13 +1,13 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title>Data setup</mat-card-title>
-    <mat-card-subtitle>
-      Seed the database with a sample scenario or reset it. These actions are locked while the solver is running.
+    <mat-card-title i18n="@@nav.link.dataSetup">Configuration des données</mat-card-title>
+    <mat-card-subtitle i18n="@@dataSetup.description">
+      Initialisez la base avec un scénario d'exemple ou réinitialisez-la. Ces actions sont verrouillées pendant que le solveur est en cours d'exécution.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-actions class="card-actions">
     <mat-form-field appearance="outline" class="scenario-select">
-      <mat-label>Scenario</mat-label>
+      <mat-label i18n="@@dataSetup.scenario">Scénario</mat-label>
       <mat-select [value]="selectedScenario()" (valueChange)="onSelectScenario($event)"
         [disabled]="solverBusy() || sampleLoading() || scenarios().length === 0">
         @for (name of scenarios(); track name) {
@@ -18,16 +18,16 @@
     <button matButton="outlined" [disabled]="solverBusy() || sampleLoading() || scenarios().length === 0"
       (click)="onLoadSample()">
       <mat-icon>auto_awesome</mat-icon>
-      Load sample planning
+      <ng-container i18n="@@dataSetup.loadSample">Charger le planning d'exemple</ng-container>
     </button>
     <button matButton="outlined" class="danger-action" [disabled]="solverBusy() || resetting()"
       (click)="onResetDatabase()">
       <mat-icon>delete_sweep</mat-icon>
-      Empty database
+      <ng-container i18n="@@dataSetup.resetDatabase">Vider la base de données</ng-container>
     </button>
     <button matButton="outlined" [disabled]="exporting()" (click)="onExportScenario()">
       <mat-icon>file_download</mat-icon>
-      Export current data as scenario
+      <ng-container i18n="@@dataSetup.exportScenario">Exporter les données actuelles en scénario</ng-container>
     </button>
   </mat-card-actions>
 </mat-card>

@@ -41,6 +41,10 @@ export class AnimateursPage {
     return entries.length === 0 ? '—' : entries.map(([typo, niveau]) => `${typo}: ${niveau}`).join(', ');
   }
 
+  protected ouiNon(value: boolean): string {
+    return value ? $localize`:@@common.oui:Oui` : $localize`:@@common.non:Non`;
+  }
+
   protected openCreate(): void {
     this.openDialog(null);
   }
@@ -59,6 +63,6 @@ export class AnimateursPage {
   }
 
   protected async remove(animateur: Animateur): Promise<void> {
-    await this.crud.remove('animateurs', animateur.id, 'Animateur');
+    await this.crud.remove('animateurs', animateur.id, $localize`:@@animateurs.entityLabel:Animateur`);
   }
 }

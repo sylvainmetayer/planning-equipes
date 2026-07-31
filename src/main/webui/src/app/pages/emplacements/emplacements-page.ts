@@ -41,8 +41,16 @@ export class EmplacementsPage {
   protected readonly store = inject(ReferenceDataStore);
   protected readonly draft = signal<EmplacementDraft>(emptyDraft());
   protected readonly editingId = signal<string | null>(null);
-  protected readonly formTitle = computed(() =>
-    this.editingId() ? `Edit location ${this.editingId()}` : 'New location'
+  protected readonly formTitle = computed(() => {
+    const id = this.editingId();
+    return id
+      ? $localize`:@@emplacements.form.editTitle:Modifier l'emplacement ${id}:id:`
+      : $localize`:@@emplacements.form.newTitle:Nouvel emplacement`;
+  });
+  protected readonly submitLabel = computed(() =>
+    this.editingId()
+      ? $localize`:@@emplacements.submit.edit:Modifier l'emplacement`
+      : $localize`:@@emplacements.submit.create:Créer l'emplacement`
   );
   protected readonly jobs = inject(SolverJobService);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
@@ -77,7 +85,7 @@ export class EmplacementsPage {
         ? null
         : Number(draft.longitude)
     };
-    if (await this.crud.save('emplacements', emplacement, this.editingId(), 'Location')) {
+    if (await this.crud.save('emplacements', emplacement, this.editingId(), $localize`:@@emplacements.entityLabel:Emplacement`)) {
       this.cancel();
     }
   }
@@ -98,7 +106,7 @@ export class EmplacementsPage {
   }
 
   protected async remove(emplacement: Emplacement): Promise<void> {
-    if (await this.crud.remove('emplacements', emplacement.id, 'Location') && this.editingId() === emplacement.id) {
+    if (await this.crud.remove('emplacements', emplacement.id, $localize`:@@emplacements.entityLabel:Emplacement`) && this.editingId() === emplacement.id) {
       this.cancel();
     }
   }

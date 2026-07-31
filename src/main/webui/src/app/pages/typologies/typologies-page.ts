@@ -34,8 +34,16 @@ export class TypologiesPage {
   protected readonly store = inject(ReferenceDataStore);
   protected readonly draft = signal<TypologieItem>(emptyDraft());
   protected readonly editingId = signal<string | null>(null);
-  protected readonly formTitle = computed(() =>
-    this.editingId() ? `Edit typology ${this.editingId()}` : 'New typology'
+  protected readonly formTitle = computed(() => {
+    const id = this.editingId();
+    return id
+      ? $localize`:@@typologies.form.editTitle:Modifier la typologie ${id}:id:`
+      : $localize`:@@typologies.form.newTitle:Nouvelle typologie`;
+  });
+  protected readonly submitLabel = computed(() =>
+    this.editingId()
+      ? $localize`:@@typologies.submit.edit:Modifier la typologie`
+      : $localize`:@@typologies.submit.create:Créer la typologie`
   );
   protected readonly jobs = inject(SolverJobService);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
@@ -54,7 +62,7 @@ export class TypologiesPage {
   protected async save(): Promise<void> {
     const draft = this.draft();
     const typologie: TypologieItem = { id: draft.id.trim(), label: draft.label.trim() };
-    if (await this.crud.save('typologies', typologie, this.editingId(), 'Typology')) {
+    if (await this.crud.save('typologies', typologie, this.editingId(), $localize`:@@typologies.entityLabel:Typologie`)) {
       this.cancel();
     }
   }
@@ -70,7 +78,7 @@ export class TypologiesPage {
   }
 
   protected async remove(typologie: TypologieItem): Promise<void> {
-    if (await this.crud.remove('typologies', typologie.id, 'Typology') && this.editingId() === typologie.id) {
+    if (await this.crud.remove('typologies', typologie.id, $localize`:@@typologies.entityLabel:Typologie`) && this.editingId() === typologie.id) {
       this.cancel();
     }
   }

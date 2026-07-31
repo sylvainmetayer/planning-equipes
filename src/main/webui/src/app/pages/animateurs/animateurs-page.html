@@ -1,45 +1,45 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title>Animateurs ({{ store.animateurs().length }})</mat-card-title>
-    <mat-card-subtitle>
-      Minor/adult status is derived from the birth date; an animateur is available unless a day is listed.
+    <mat-card-title i18n="@@animateurs.list.title">Animateurs ({{ store.animateurs().length }})</mat-card-title>
+    <mat-card-subtitle i18n="@@animateurs.form.description">
+      Le statut mineur/majeur est déduit de la date de naissance ; un animateur est disponible sauf si un jour est listé.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-actions class="card-actions">
     <button matButton="filled" type="button" [disabled]="editingLocked()" (click)="openCreate()">
       <mat-icon>add</mat-icon>
-      Add
+      <ng-container i18n="@@common.add">Ajouter</ng-container>
     </button>
   </mat-card-actions>
   <mat-card-content class="table-wrapper">
     <table mat-table [dataSource]="store.animateurs()">
       <ng-container matColumnDef="id">
-        <th mat-header-cell *matHeaderCellDef>Id</th>
+        <th mat-header-cell *matHeaderCellDef i18n="@@common.id">Id</th>
         <td mat-cell *matCellDef="let animateur">{{ animateur.id }}</td>
       </ng-container>
       <ng-container matColumnDef="nom">
-        <th mat-header-cell *matHeaderCellDef>Name</th>
+        <th mat-header-cell *matHeaderCellDef i18n="@@common.nom">Nom</th>
         <td mat-cell *matCellDef="let animateur">{{ animateur.prenom }} {{ animateur.nom }}</td>
       </ng-container>
       <ng-container matColumnDef="manager">
-        <th mat-header-cell *matHeaderCellDef>Manager</th>
-        <td mat-cell *matCellDef="let animateur">{{ animateur.manager ? 'Yes' : 'No' }}</td>
+        <th mat-header-cell *matHeaderCellDef i18n="@@animateurs.column.manager">Manager</th>
+        <td mat-cell *matCellDef="let animateur">{{ ouiNon(animateur.manager) }}</td>
       </ng-container>
       <ng-container matColumnDef="competences">
-        <th mat-header-cell *matHeaderCellDef>Skills</th>
+        <th mat-header-cell *matHeaderCellDef i18n="@@animateurs.competences.title">Compétences</th>
         <td mat-cell *matCellDef="let animateur">{{ competencesLabel(animateur) }}</td>
       </ng-container>
       <ng-container matColumnDef="indisponibilites">
-        <th mat-header-cell *matHeaderCellDef>Unavailable</th>
+        <th mat-header-cell *matHeaderCellDef i18n="@@animateurs.column.indisponibilites">Indisponibilités</th>
         <td mat-cell *matCellDef="let animateur">{{ animateur.joursIndisponibles.length }}</td>
       </ng-container>
       <ng-container matColumnDef="actions">
-        <th mat-header-cell *matHeaderCellDef aria-label="Actions"></th>
+        <th mat-header-cell *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>
         <td mat-cell *matCellDef="let animateur" class="row-actions">
-          <button matIconButton matTooltip="Edit" aria-label="Edit" [disabled]="editingLocked()" (click)="edit(animateur)">
+          <button matIconButton i18n-matTooltip="@@common.edit" matTooltip="Modifier" i18n-aria-label="@@common.edit" aria-label="Modifier" [disabled]="editingLocked()" (click)="edit(animateur)">
             <mat-icon>edit</mat-icon>
           </button>
-          <button matIconButton matTooltip="Delete" aria-label="Delete" class="danger-action" [disabled]="editingLocked()"
+          <button matIconButton i18n-matTooltip="@@common.delete" matTooltip="Supprimer" i18n-aria-label="@@common.delete" aria-label="Supprimer" class="danger-action" [disabled]="editingLocked()"
                   (click)="remove(animateur)">
             <mat-icon>delete</mat-icon>
           </button>
@@ -49,7 +49,7 @@
       <tr mat-row *matRowDef="let row; columns: columns"></tr>
     </table>
     @if (store.animateurs().length === 0) {
-      <p class="empty-hint">No animateur yet.</p>
+      <p class="empty-hint" i18n="@@animateurs.empty">Aucun animateur pour le moment.</p>
     }
   </mat-card-content>
 </mat-card>

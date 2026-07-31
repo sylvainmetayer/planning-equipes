@@ -1,34 +1,34 @@
-<h2 mat-dialog-title>{{ editingId() ? 'Edit stand ' + editingId() : 'New stand' }}</h2>
+<h2 mat-dialog-title>{{ formTitle() }}</h2>
 <form (ngSubmit)="save()">
 <mat-dialog-content class="form-grid">
 <fieldset class="form-fieldset" [disabled]="editingLocked()">
 @if (editingLocked()) {
-  <p class="locked-hint span-2">Editing is locked while the solver is running.</p>
+  <p class="locked-hint span-2" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
 }
 <mat-form-field appearance="outline">
-  <mat-label>Id</mat-label>
+  <mat-label i18n="@@stands.field.id">Identifiant</mat-label>
   <input matInput name="id" required [readonly]="!!editingId()"
          [ngModel]="draft().id" (ngModelChange)="patch({ id: $event })" />
 </mat-form-field>
 <mat-form-field appearance="outline">
-  <mat-label>Name</mat-label>
+  <mat-label i18n="@@stands.field.nom">Nom</mat-label>
   <input matInput name="nom" required [ngModel]="draft().nom" (ngModelChange)="patch({ nom: $event })" />
 </mat-form-field>
 <mat-form-field appearance="outline">
-  <mat-label>Minimum staff</mat-label>
+  <mat-label i18n="@@stands.field.effectifMin">Effectif minimum</mat-label>
   <input matInput name="effectifMin" type="number" min="0"
          [ngModel]="draft().effectifMin" (ngModelChange)="patch({ effectifMin: $event })" />
 </mat-form-field>
 <mat-form-field appearance="outline">
-  <mat-label>Maximum staff</mat-label>
+  <mat-label i18n="@@stands.field.effectifMax">Effectif maximum</mat-label>
   <input matInput name="effectifMax" type="number" min="0"
          [ngModel]="draft().effectifMax" (ngModelChange)="patch({ effectifMax: $event })" />
 </mat-form-field>
 @if (effectifInvalid()) {
-  <p class="field-error span-2">Maximum staff cannot be lower than minimum staff.</p>
+  <p class="field-error span-2" i18n="@@stands.effectifInvalid">L'effectif maximum ne peut pas être inférieur à l'effectif minimum.</p>
 }
 <mat-form-field appearance="outline" class="span-2">
-  <mat-label>Game typologies</mat-label>
+  <mat-label i18n="@@stands.field.typologies">Typologies de jeu</mat-label>
   <mat-select name="typologies" multiple [disabled]="editingLocked()"
               [ngModel]="draft().typologiesProposees" (ngModelChange)="patch({ typologiesProposees: $event })">
     @for (typologie of store.typologies(); track typologie.id) {
@@ -37,31 +37,34 @@
   </mat-select>
 </mat-form-field>
 <mat-form-field appearance="outline" class="span-2">
-  <mat-label>Location</mat-label>
+  <mat-label i18n="@@stands.field.emplacement">Emplacement</mat-label>
   <mat-select name="emplacement" [disabled]="editingLocked()"
               [ngModel]="draft().emplacementId" (ngModelChange)="patch({ emplacementId: $event })">
-    <mat-option [value]="null">None</mat-option>
+    <mat-option [value]="null" i18n="@@stands.field.noEmplacement">Aucun</mat-option>
     @for (emplacement of store.emplacements(); track emplacement.id) {
       <mat-option [value]="emplacement.id">{{ emplacement.nom || emplacement.id }}</mat-option>
     }
   </mat-select>
 </mat-form-field>
 <mat-checkbox name="reserveMajeurs" [disabled]="editingLocked()"
-              [ngModel]="draft().reserveMajeurs" (ngModelChange)="patch({ reserveMajeurs: $event })">
-  Adults only
+              [ngModel]="draft().reserveMajeurs" (ngModelChange)="patch({ reserveMajeurs: $event })"
+              i18n="@@stands.field.reserveMajeurs">
+  Réservé aux majeurs
 </mat-checkbox>
 <mat-checkbox name="premium" [disabled]="editingLocked()"
-              matTooltip="Editor/publisher stand: the solver avoids rotating staff and favors experienced animateurs."
-              [ngModel]="draft().premium" (ngModelChange)="patch({ premium: $event })">
-  Premium (editor stand)
+              i18n-matTooltip="@@stands.premium.tooltip"
+              matTooltip="Stand éditeur : le solveur évite la rotation du personnel et privilégie les animateurs expérimentés."
+              [ngModel]="draft().premium" (ngModelChange)="patch({ premium: $event })"
+              i18n="@@stands.field.premium">
+  Premium (stand éditeur)
 </mat-checkbox>
 </fieldset>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
-  <button matButton type="button" (click)="dialogRef.close(false)">Cancel</button>
+  <button matButton type="button" (click)="dialogRef.close(false)" i18n="@@common.cancel">Annuler</button>
   <button matButton="filled" type="submit" [disabled]="effectifInvalid() || editingLocked()">
     <mat-icon>save</mat-icon>
-    {{ editingId() ? 'Update stand' : 'Create stand' }}
+    {{ submitLabel() }}
   </button>
 </mat-dialog-actions>
 </form>

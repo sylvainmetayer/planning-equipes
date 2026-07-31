@@ -60,6 +60,13 @@ export class StandFormDialog {
     const draft = this.draft();
     return Number(draft.effectifMax) < Number(draft.effectifMin);
   });
+  protected readonly formTitle = computed(() => {
+    const id = this.editingId();
+    return id ? $localize`:@@stands.form.editTitle:Modifier le stand ${id}:id:` : $localize`:@@stands.form.newTitle:Nouveau stand`;
+  });
+  protected readonly submitLabel = computed(() =>
+    this.editingId() ? $localize`:@@stands.submit.edit:Modifier le stand` : $localize`:@@stands.submit.create:Créer le stand`
+  );
 
   protected patch(patch: Partial<StandDraft>): void {
     this.draft.update((draft) => ({ ...draft, ...patch }));
@@ -82,7 +89,7 @@ export class StandFormDialog {
         ? (this.store.emplacements().find((e) => e.id === draft.emplacementId) ?? null)
         : null
     };
-    if (await this.crud.save('stands', stand, this.editingId(), 'Stand')) {
+    if (await this.crud.save('stands', stand, this.editingId(), $localize`:@@stands.entityLabel:Stand`)) {
       this.dialogRef.close(true);
     }
   }

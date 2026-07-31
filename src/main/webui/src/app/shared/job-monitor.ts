@@ -28,7 +28,9 @@ export class JobMonitor {
     if (!job) {
       return '';
     }
-    const origin = job.mine ? '' : ' (another session)';
-    return `${job.label} running… ${formatDuration(elapsedSeconds(job, this.jobs.now()))}${origin}`;
+    const duration = formatDuration(elapsedSeconds(job, this.jobs.now()));
+    return job.mine
+      ? $localize`:@@jobMonitor.mine:${job.label}:jobLabel: en cours… ${duration}:duration:`
+      : $localize`:@@jobMonitor.other:${job.label}:jobLabel: en cours… ${duration}:duration: (autre session)`;
   });
 }

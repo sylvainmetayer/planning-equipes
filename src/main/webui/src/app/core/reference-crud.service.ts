@@ -32,13 +32,18 @@ export class ReferenceCrudService {
     label: string
   ): Promise<boolean> {
     if (!payload.id) {
-      this.notifications.notify({ title: 'An id is required.', variant: 'error' });
+      this.notifications.notify({
+        title: $localize`:@@crud.idRequired:Un identifiant est requis.`,
+        variant: 'error'
+      });
       return false;
     }
     try {
       await this.store.save(resource, payload, editingId);
       this.notifications.notify({
-        title: `${label} ${payload.id} ${editingId ? 'updated' : 'created'}.`,
+        title: editingId
+          ? $localize`:@@crud.updated:Modification de ${label}:label: ${payload.id}:id: effectuée.`
+          : $localize`:@@crud.created:Création de ${label}:label: ${payload.id}:id: effectuée.`,
         variant: 'success',
         timeout: 4000
       });
@@ -52,9 +57,9 @@ export class ReferenceCrudService {
   /** Asks for a confirmation, then deletes. Returns true when deleted. */
   async remove(resource: string, id: string, label: string): Promise<boolean> {
     const confirmed = await this.confirm.ask({
-      title: `Delete ${label} ${id}?`,
-      message: 'This cannot be undone.',
-      confirmLabel: 'Delete',
+      title: $localize`:@@crud.deleteTitle:Supprimer ${label}:label: ${id}:id: ?`,
+      message: $localize`:@@crud.deleteMessage:Cette action est irréversible.`,
+      confirmLabel: $localize`:@@crud.deleteConfirm:Supprimer`,
       danger: true
     });
     if (!confirmed) {
@@ -62,7 +67,11 @@ export class ReferenceCrudService {
     }
     try {
       await this.store.remove(resource, id);
-      this.notifications.notify({ title: `${label} ${id} deleted.`, variant: 'success', timeout: 4000 });
+      this.notifications.notify({
+        title: $localize`:@@crud.deleted:Suppression de ${label}:label: ${id}:id: effectuée.`,
+        variant: 'success',
+        timeout: 4000
+      });
       return true;
     } catch (error) {
       this.reportError(error);
@@ -72,7 +81,7 @@ export class ReferenceCrudService {
 
   reportError(error: unknown): void {
     this.notifications.notify({
-      title: 'Error',
+      title: $localize`:@@crud.error:Erreur`,
       message: error instanceof Error ? error.message : String(error),
       variant: 'error'
     });

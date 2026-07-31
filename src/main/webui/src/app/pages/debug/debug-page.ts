@@ -40,7 +40,8 @@ export class DebugPage {
       this.output.set(JSON.stringify(view, null, 2));
     } catch (error) {
       this.output.set('');
-      this.error.set(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      const message = error instanceof Error ? error.message : String(error);
+      this.error.set($localize`:@@common.errorPrefix:Erreur : ${message}:message:`);
     } finally {
       this.loading.set(false);
     }

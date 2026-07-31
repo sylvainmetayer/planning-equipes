@@ -39,6 +39,7 @@ export class CalendarDayPage {
   protected readonly error = signal('');
   protected readonly persistedCount = signal<string>('?');
   protected readonly postes = signal<PosteAffectation[]>([]);
+  protected readonly unassignedLabel = $localize`:@@calendarMonth.unassigned:(non assigné)`;
 
   private readonly api = inject(ApiService);
   private readonly planningState = inject(PlanningStateService);
@@ -58,7 +59,8 @@ export class CalendarDayPage {
       this.postes.set(planning.postes ?? []);
     } catch (error) {
       this.postes.set([]);
-      this.error.set(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      const message = error instanceof Error ? error.message : String(error);
+      this.error.set($localize`:@@common.errorPrefix:Erreur : ${message}:message:`);
     } finally {
       this.loading.set(false);
     }
@@ -69,7 +71,7 @@ export class CalendarDayPage {
       const status = await this.api.get<PersistenceStatus>('/api/planning/persisted/count');
       this.persistedCount.set(String(status.assignments));
     } catch {
-      this.persistedCount.set('n/a');
+      this.persistedCount.set($localize`:@@job.scoreUnavailable:n/d`);
     }
   }
 }
@@ -110,7 +112,9 @@ function buildDays(postes: PosteAffectation[]): DayCard[] {
     .sort((left, right) => left.jour - right.jour)
     .map((day) => ({
       jour: day.jour,
-      title: day.date ? `Day ${day.jour} — ${day.date}` : `Day ${day.jour}`,
+      title: day.date
+        ? $localize`:@@calendarDay.dayTitleWithDate:Jour ${day.jour}:jour: — ${day.date}:date:`
+        : $localize`:@@calendarDay.dayTitle:Jour ${day.jour}:jour:`,
       slots: Array.from(day.creneaux.values())
         .sort((left, right) => `${left.heureDebut}`.localeCompare(`${right.heureDebut}`))
         .map((creneau) => ({

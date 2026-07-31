@@ -7,6 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
+import { intlLocale } from '../../core/locale';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { PosteAffectation } from '../../core/models';
 import {
@@ -79,8 +80,11 @@ export class CalendarMonthPage {
 
   private readonly planningState = inject(PlanningStateService);
 
+  protected readonly dayDetailsFallback = $localize`:@@calendarMonth.dayDetails:Détails du jour`;
+  protected readonly unassignedLabel = $localize`:@@calendarMonth.unassigned:(non assigné)`;
+
   protected readonly monthLabel = computed(() =>
-    this.month().toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
+    this.month().toLocaleDateString(intlLocale(), { month: 'long', year: 'numeric' })
   );
 
   protected readonly animateurOptions = computed<FilterOption[]>(() =>
@@ -150,13 +154,26 @@ export class CalendarMonthPage {
     if (!dateKey) {
       return '';
     }
-    return parseDateKey(dateKey).toLocaleDateString(undefined, {
+    return parseDateKey(dateKey).toLocaleDateString(intlLocale(), {
       weekday: 'long',
       day: 'numeric',
       month: 'long',
       year: 'numeric'
     });
   });
+
+  /** Monday-start abbreviations for the calendar header, in the current UI locale. */
+  protected weekdayAbbreviations(): string[] {
+    const formatter = new Intl.DateTimeFormat(intlLocale(), { weekday: 'short' });
+    // 2024-01-01 was a Monday: a stable reference week, independent of the displayed month.
+    return Array.from({ length: 7 }, (_, index) => formatter.format(new Date(2024, 0, 1 + index)));
+  }
+
+  protected creneauCountLabel(count: number): string {
+    return count === 1
+      ? $localize`:@@calendarMonth.creneauCountOne:${count}:count: créneau`
+      : $localize`:@@calendarMonth.creneauCountMany:${count}:count: créneaux`;
+  }
 
   protected readonly daySlots = computed<SlotEntry[]>(() => {
     const dateKey = this.effectiveDateKey();
@@ -176,7 +193,8 @@ export class CalendarMonthPage {
       this.loaded.set(true);
     } catch (error) {
       this.postes.set([]);
-      this.error.set(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      const message = error instanceof Error ? error.message : String(error);
+      this.error.set($localize`:@@common.errorPrefix:Erreur : ${message}:message:`);
     } finally {
       this.loading.set(false);
     }

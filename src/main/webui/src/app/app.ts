@@ -9,6 +9,7 @@ import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { map } from 'rxjs';
+import { AppLocale, getStoredLocale, setStoredLocaleAndReload } from './core/locale';
 import { SolverJobService } from './core/solver-job.service';
 import { JobMonitor } from './shared/job-monitor';
 
@@ -23,39 +24,73 @@ interface NavGroup {
   links: NavLink[];
 }
 
-/** One entry per route: the navigation mirrors the page split exactly. */
-const NAV_GROUPS: NavGroup[] = [
+/**
+ * One entry per route: the navigation mirrors the page split exactly.
+ *
+ * Built lazily (called from the component constructor, not at module scope):
+ * $localize resolves translations from whatever `loadTranslations()` has
+ * registered at call time, and that only happens once `main.ts` has fetched
+ * the English catalog — before `bootstrapApplication()` runs, but after this
+ * module has already been imported.
+ */
+function buildNavGroups(): NavGroup[] {
+  return [
   {
-    title: 'Planning',
+    title: $localize`:@@nav.group.planning:Planning`,
     links: [
-      { path: '/solver', label: 'Solver', icon: 'play_circle' },
-      { path: '/debug', label: 'Debug', icon: 'bug_report' },
-      { path: '/data-setup', label: 'Data setup', icon: 'storage' },
-      { path: '/data-transfer', label: 'Data transfer', icon: 'swap_vert' }
+      { path: '/solver', label: $localize`:@@nav.link.solver:Solveur`, icon: 'play_circle' },
+      { path: '/debug', label: $localize`:@@nav.link.debug:Débogage`, icon: 'bug_report' },
+      {
+        path: '/data-setup',
+        label: $localize`:@@nav.link.dataSetup:Configuration des données`,
+        icon: 'storage'
+      },
+      {
+        path: '/data-transfer',
+        label: $localize`:@@nav.link.dataTransfer:Transfert de données`,
+        icon: 'swap_vert'
+      }
     ]
   },
   {
-    title: 'Reference data',
+    title: $localize`:@@nav.group.referenceData:Données de référence`,
     links: [
-      { path: '/stands', label: 'Stands', icon: 'storefront' },
-      { path: '/emplacements', label: 'Locations', icon: 'place' },
-      { path: '/animateurs', label: 'Animateurs', icon: 'groups' },
-      { path: '/creneaux', label: 'Créneaux', icon: 'schedule' },
-      { path: '/typologies', label: 'Typologies', icon: 'category' },
-      { path: '/ad-hoc-constraints', label: 'Ad hoc constraints', icon: 'rule' }
+      { path: '/stands', label: $localize`:@@nav.link.stands:Stands`, icon: 'storefront' },
+      { path: '/emplacements', label: $localize`:@@nav.link.emplacements:Emplacements`, icon: 'place' },
+      { path: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs`, icon: 'groups' },
+      { path: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux`, icon: 'schedule' },
+      { path: '/typologies', label: $localize`:@@nav.link.typologies:Typologies`, icon: 'category' },
+      {
+        path: '/ad-hoc-constraints',
+        label: $localize`:@@nav.link.adHocConstraints:Contraintes ad hoc`,
+        icon: 'rule'
+      }
     ]
   },
   {
-    title: 'Views',
+    title: $localize`:@@nav.group.views:Vues`,
     links: [
-      { path: '/calendar', label: 'Assignment calendar', icon: 'calendar_month' },
-      { path: '/day-calendar', label: 'Day calendar', icon: 'view_day' },
-      { path: '/constraints', label: 'Constraints', icon: 'fact_check' },
-      { path: '/hours', label: 'Hours', icon: 'schedule' },
-      { path: '/staffing', label: 'Staffing need', icon: 'engineering' }
+      {
+        path: '/calendar',
+        label: $localize`:@@nav.link.calendar:Calendrier des affectations`,
+        icon: 'calendar_month'
+      },
+      {
+        path: '/day-calendar',
+        label: $localize`:@@nav.link.dayCalendar:Calendrier journalier`,
+        icon: 'view_day'
+      },
+      { path: '/constraints', label: $localize`:@@nav.link.constraints:Contraintes`, icon: 'fact_check' },
+      { path: '/hours', label: $localize`:@@nav.link.hours:Heures`, icon: 'schedule' },
+      {
+        path: '/staffing',
+        label: $localize`:@@nav.link.staffing:Besoin en animateurs`,
+        icon: 'engineering'
+      }
     ]
   }
-];
+  ];
+}
 
 /**
  * Application shell: Material toolbar, navigation drawer listing every page,
@@ -79,8 +114,9 @@ const NAV_GROUPS: NavGroup[] = [
   styleUrl: './app.css'
 })
 export class App {
-  protected readonly navGroups = NAV_GROUPS;
+  protected readonly navGroups = buildNavGroups();
   protected readonly jobs = inject(SolverJobService);
+  protected readonly locale: AppLocale = getStoredLocale();
 
   private readonly handset = toSignal(
     inject(BreakpointObserver)
@@ -109,5 +145,10 @@ export class App {
     if (this.handset()) {
       this.drawerOpen.set(false);
     }
+  }
+
+  /** Language messages resolve once at bootstrap, so switching reloads the page. */
+  protected toggleLocale(): void {
+    setStoredLocaleAndReload(this.locale === 'fr' ? 'en' : 'fr');
   }
 }

@@ -61,6 +61,42 @@ il est désactivé sur le profil `%test` pour ne pas ralentir les tests unitaire
 `skipITs` vaut `true` par défaut dans le `pom.xml` : les tests `*IT` (failsafe)
 ne s'exécutent qu'avec `-DskipITs=false`.
 
+## Internationalisation (i18n) du frontend
+
+L'interface est bilingue français/anglais via `@angular/localize`, avec
+traduction **à l'exécution** (un seul build, pas de bundle par langue) : le
+français est la langue source directement écrite dans les templates et les
+composants, et `src/main.ts` charge `public/i18n/messages.en.json` puis appelle
+`loadTranslations()` avant `bootstrapApplication()` si l'anglais est
+sélectionné. Le bouton en haut à droite de la barre d'outils (`app.html`)
+bascule la préférence stockée dans `localStorage` et recharge la page — les
+messages `$localize` ne sont résolus qu'une fois, au démarrage, donc changer de
+langue sans recharger n'est pas possible.
+
+Pour ajouter une chaîne traduisible :
+
+1. Dans un template : `<span i18n="@@monId">Texte en français</span>` (ou
+   `i18n-ariaLabel`, `i18n-matTooltip`, etc. pour un attribut). Dans du
+   TypeScript : `` $localize`:@@monId:Texte ${valeur}:placeholder:` `` —
+   **jamais** au niveau module (`const x = $localize\`...\`` hors d'une
+   fonction/méthode) : le fichier serait évalué avant que `loadTranslations()`
+   ait pu s'exécuter, et resterait figé en français ; utilisez un
+   `computed()`, une méthode, ou une fonction appelée depuis le constructeur
+   (voir `buildNavGroups()` dans `app.ts` ou `jobLabel()` dans
+   `solver-job.service.ts`).
+2. Choisissez un id stable et unique (`@@page.section.role`), en réutilisant un
+   id existant (`@@common.*`, `@@stands.lockedHint`, …) quand le texte anglais
+   attendu est identique.
+3. Extrayez le catalogue : `npx ng extract-i18n --output-path src/locale`
+   (depuis `src/main/webui`) — le fichier `src/locale/messages.xlf` généré
+   n'est **pas** versionné, il ne sert qu'à lire le texte source exact et les
+   noms des placeholders (`<x id="…"/>` → `{$…}`).
+4. Ajoutez la traduction anglaise dans `public/i18n/messages.en.json`, avec
+   les mêmes placeholders `{$nom}` que la source, dans le même ordre.
+   `npx ng extract-i18n` réémet un avertissement si deux textes différents
+   partagent le même id : renommez l'un des deux plutôt que d'ignorer
+   l'avertissement.
+
 ## Tests
 
 On distingue trois familles de tests :

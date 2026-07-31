@@ -71,6 +71,17 @@ export class AnimateurFormDialog {
   protected readonly editingId = signal<string | null>(this.data.animateur?.id ?? null);
   protected readonly draft = signal<AnimateurDraft>(toDraft(this.data.animateur));
   protected readonly newJour = signal('');
+  protected readonly formTitle = computed(() => {
+    const id = this.editingId();
+    return id
+      ? $localize`:@@animateurs.form.editTitle:Modifier l'animateur ${id}:id:`
+      : $localize`:@@animateurs.form.newTitle:Nouvel animateur`;
+  });
+  protected readonly submitLabel = computed(() =>
+    this.editingId()
+      ? $localize`:@@animateurs.submit.edit:Modifier l'animateur`
+      : $localize`:@@animateurs.submit.create:Créer l'animateur`
+  );
 
   protected patch(patch: Partial<AnimateurDraft>): void {
     this.draft.update((draft) => ({ ...draft, ...patch }));
@@ -93,7 +104,7 @@ export class AnimateurFormDialog {
       competences,
       joursIndisponibles: draft.joursIndisponibles
     };
-    if (await this.crud.save('animateurs', animateur, this.editingId(), 'Animateur')) {
+    if (await this.crud.save('animateurs', animateur, this.editingId(), $localize`:@@animateurs.entityLabel:Animateur`)) {
       this.dialogRef.close(true);
     }
   }
@@ -139,6 +150,10 @@ export class AnimateurFormDialog {
       ...draft,
       joursIndisponibles: draft.joursIndisponibles.filter((day) => day !== date)
     }));
+  }
+
+  protected removeJourLabel(jour: string): string {
+    return $localize`:@@animateurs.indispo.removeLabel:Retirer ${jour}:jour:`;
   }
 }
 

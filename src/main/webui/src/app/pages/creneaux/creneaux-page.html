@@ -1,12 +1,12 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title>Timeslots ({{ store.creneaux().length }})</mat-card-title>
-    <mat-card-subtitle>Every stand is open on every timeslot by default; override per timeslot below.</mat-card-subtitle>
+    <mat-card-title i18n="@@creneaux.list.title">Créneaux ({{ store.creneaux().length }})</mat-card-title>
+    <mat-card-subtitle i18n="@@creneaux.form.description">Chaque stand est ouvert sur chaque créneau par défaut ; à modifier créneau par créneau ci-dessous.</mat-card-subtitle>
   </mat-card-header>
   <mat-card-actions class="card-actions">
     <button matButton="filled" type="button" [disabled]="editingLocked()" (click)="openCreate()">
       <mat-icon>add</mat-icon>
-      Add
+      <ng-container i18n="@@common.add">Ajouter</ng-container>
     </button>
   </mat-card-actions>
   <mat-card-content>
@@ -18,11 +18,11 @@
             <mat-panel-description>
               {{ standsOuvertsLabel(creneau) }}
               <span class="row-actions">
-                <button matIconButton matTooltip="Edit" aria-label="Edit" [disabled]="editingLocked()"
+                <button matIconButton i18n-matTooltip="@@common.edit" matTooltip="Modifier" i18n-aria-label="@@common.edit" aria-label="Modifier" [disabled]="editingLocked()"
                         (click)="edit(creneau); $event.stopPropagation()">
                   <mat-icon>edit</mat-icon>
                 </button>
-                <button matIconButton matTooltip="Delete" aria-label="Delete" class="danger-action" [disabled]="editingLocked()"
+                <button matIconButton i18n-matTooltip="@@common.delete" matTooltip="Supprimer" i18n-aria-label="@@common.delete" aria-label="Supprimer" class="danger-action" [disabled]="editingLocked()"
                         (click)="remove(creneau); $event.stopPropagation()">
                   <mat-icon>delete</mat-icon>
                 </button>
@@ -30,9 +30,9 @@
             </mat-panel-description>
           </mat-expansion-panel-header>
           @if (editingLocked()) {
-            <p class="locked-hint">Editing is locked while the solver is running.</p>
+            <p class="locked-hint" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
           }
-          <p class="empty-hint">Uncheck a stand to close it on this timeslot. Leave every stand checked (or none) to keep it open to all.</p>
+          <p class="empty-hint" i18n="@@creneaux.checklist.hint">Décochez un stand pour le fermer sur ce créneau. Laissez tous les stands cochés (ou aucun) pour les garder tous ouverts.</p>
           <div class="stand-checklist">
             @for (stand of store.stands(); track stand.id) {
               <mat-checkbox [checked]="isStandOuvert(creneau, stand.id)" [disabled]="editingLocked()"
@@ -45,7 +45,7 @@
       }
     </mat-accordion>
     @if (store.creneaux().length === 0) {
-      <p class="empty-hint">No timeslot yet.</p>
+      <p class="empty-hint" i18n="@@creneaux.empty">Aucun créneau pour le moment.</p>
     }
   </mat-card-content>
 </mat-card>

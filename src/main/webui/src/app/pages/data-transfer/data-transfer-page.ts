@@ -41,11 +41,11 @@ export class DataTransferPage {
 
   protected async onExportSql(): Promise<void> {
     this.busy.set(true);
-    this.output.set('Building the SQL dump...');
+    this.output.set($localize`:@@dataTransfer.buildingSqlDump:Construction du dump SQL...`);
     try {
       this.output.set(await this.api.downloadGet('/api/database/export', 'planning-equipes.sql', 'application/sql'));
     } catch (error) {
-      this.output.set(`Error: ${message(error)}`);
+      this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
     } finally {
       this.busy.set(false);
     }
@@ -66,16 +66,16 @@ export class DataTransferPage {
       return;
     }
     const confirmed = await this.confirm.ask({
-      title: 'Replay this SQL dump?',
-      message: `${file.name} replaces the current database content.`,
-      confirmLabel: 'Import',
+      title: $localize`:@@dataTransfer.replaySqlTitle:Rejouer ce dump SQL ?`,
+      message: $localize`:@@dataTransfer.replaySqlMessage:${file.name}:fileName: remplace le contenu actuel de la base de données.`,
+      confirmLabel: $localize`:@@dataTransfer.importAction:Importer`,
       danger: true
     });
     if (!confirmed) {
       return;
     }
     this.busy.set(true);
-    this.output.set(`Importing ${file.name}...`);
+    this.output.set($localize`:@@dataTransfer.importing:Import de ${file.name}:fileName: en cours...`);
     try {
       const summary = await this.api.postRaw<ImportSummary>(
         '/api/database/import',
@@ -85,7 +85,7 @@ export class DataTransferPage {
       await this.refreshAfterImport();
       this.output.set(summary.message);
     } catch (error) {
-      this.output.set(`Error: ${message(error)}`);
+      this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
     } finally {
       this.busy.set(false);
     }
@@ -99,16 +99,16 @@ export class DataTransferPage {
       return;
     }
     const confirmed = await this.confirm.ask({
-      title: `Import ${entity} from CSV?`,
-      message: `${file.name} replaces every ${entity} row and drops the existing assignments.`,
-      confirmLabel: 'Import',
+      title: $localize`:@@dataTransfer.importCsvTitle:Importer ${entity}:entity: depuis un CSV ?`,
+      message: $localize`:@@dataTransfer.importCsvMessage:${file.name}:fileName: remplace toutes les lignes de ${entity}:entity: et supprime les affectations existantes.`,
+      confirmLabel: $localize`:@@dataTransfer.importAction:Importer`,
       danger: true
     });
     if (!confirmed) {
       return;
     }
     this.busy.set(true);
-    this.output.set(`Importing ${file.name} as ${entity}...`);
+    this.output.set($localize`:@@dataTransfer.importingAs:Import de ${file.name}:fileName: en tant que ${entity}:entity:...`);
     try {
       const summary = await this.api.postRaw<ImportSummary>(
         `/api/import/csv/${entity}`,
@@ -118,7 +118,7 @@ export class DataTransferPage {
       await this.refreshAfterImport();
       this.output.set(summary.message);
     } catch (error) {
-      this.output.set(`Error: ${message(error)}`);
+      this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
     } finally {
       this.busy.set(false);
     }

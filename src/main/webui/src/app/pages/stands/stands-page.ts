@@ -35,6 +35,12 @@ export class StandsPage {
     return (stand.typologiesProposees ?? []).join(', ') || '—';
   }
 
+  protected effectifSuffix(stand: Stand): string {
+    const majeurs = stand.reserveMajeurs ? $localize`:@@stands.suffix.majeurs: · majeurs` : '';
+    const premium = stand.premium ? $localize`:@@stands.suffix.premium: · premium` : '';
+    return `${majeurs}${premium}`;
+  }
+
   protected emplacementLabel(stand: Stand): string {
     return stand.emplacement?.nom || '—';
   }
@@ -57,6 +63,6 @@ export class StandsPage {
   }
 
   protected async remove(stand: Stand): Promise<void> {
-    await this.crud.remove('stands', stand.id, 'Stand');
+    await this.crud.remove('stands', stand.id, $localize`:@@stands.entityLabel:Stand`);
   }
 }
