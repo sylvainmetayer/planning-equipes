@@ -16,6 +16,8 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import org.openpdf.text.Anchor;
+import org.openpdf.text.Chunk;
 import org.openpdf.text.Document;
 import org.openpdf.text.Element;
 import org.openpdf.text.Font;
@@ -28,6 +30,7 @@ import org.openpdf.text.pdf.PdfPageEventHelper;
 import org.openpdf.text.pdf.PdfWriter;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -74,6 +77,7 @@ public class PlanningExportService {
     private static final Font MUTED_CELL_FONT = new Font(Font.HELVETICA, 9, Font.NORMAL, MUTED);
     private static final Font EMPTY_STATE_FONT = new Font(Font.HELVETICA, 10, Font.ITALIC, MUTED);
     private static final Font FOOTER_FONT = new Font(Font.HELVETICA, 8, Font.NORMAL, MUTED);
+    private static final Font LINK_FONT = new Font(Font.HELVETICA, 8, Font.UNDERLINE, PRIMARY);
 
     public byte[] exportAnimateurPdf(PlanningFestival planning, String animateurId) {
         List<PosteAffectation> animateurPostes = planning.getPostes().stream()
@@ -170,8 +174,16 @@ public class PlanningExportService {
                     .append("SUMMARY:").append(escapeIcs(poste.getStand().getNom())).append("\r\n")
                     .append("DESCRIPTION:")
                     .append(escapeIcs("Stand " + poste.getStand().getNom() + " - slot " + poste.getCreneau().getId()))
-                    .append("\r\n")
-                    .append("END:VEVENT\r\n");
+                    .append("\r\n");
+            Emplacement emplacement = poste.getStand().getEmplacement();
+            if (emplacement != null && emplacement.getNom() != null && !emplacement.getNom().isBlank()) {
+                builder.append("LOCATION:").append(escapeIcs(emplacement.getNom())).append("\r\n");
+            }
+            if (emplacement != null && emplacement.getLatitude() != null && emplacement.getLongitude() != null) {
+                builder.append("GEO:").append(emplacement.getLatitude()).append(";").append(emplacement.getLongitude())
+                        .append("\r\n");
+            }
+            builder.append("END:VEVENT\r\n");
         }
 
         builder.append("END:VCALENDAR\r\n");
@@ -298,7 +310,7 @@ public class PlanningExportService {
                     poste.getCreneau().getHeureDebut().format(TIME_FORMAT) + " - "
                             + poste.getCreneau().getHeureFin().format(TIME_FORMAT),
                     CELL_FONT, zebra));
-            table.addCell(bodyCell(poste.getStand().getNom(), CELL_FONT, zebra));
+            table.addCell(standCell(poste.getStand(), CELL_FONT, zebra));
             String animateur = poste.getAnimateur() == null ? "UNASSIGNED" : toDisplayName(poste.getAnimateur());
             table.addCell(bodyCell(animateur,
                     poste.getAnimateur() == null ? MUTED_CELL_FONT : CELL_FONT, zebra));
@@ -306,6 +318,9 @@ public class PlanningExportService {
         return table;
     }
 
+    // Stand column headers stay plain text (headerCell only accepts a Phrase,
+    // not a clickable Anchor); the detail table below already carries the
+    // OpenStreetMap link for every stand via standCell().
     private PdfPTable buildCalendarTable(List<PosteAffectation> postes) {
         Map<String, Creneau> creneauxById = new LinkedHashMap<>();
         Map<String, Stand> standsById = new LinkedHashMap<>();
@@ -393,6 +408,37 @@ public class PlanningExportService {
             cell.setBackgroundColor(ZEBRA);
         }
         return cell;
+    }
+
+    /** Stand name, plus a clickable OpenStreetMap link on a second line when the stand has a geocoded emplacement. */
+    private PdfPCell standCell(Stand stand, Font font, boolean zebra) {
+        PdfPCell cell = new PdfPCell();
+        cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        cell.setBorderColor(BORDER);
+        cell.setBorderWidth(0.5f);
+        cell.setPadding(5f);
+        if (zebra) {
+            cell.setBackgroundColor(ZEBRA);
+        }
+        Paragraph paragraph = new Paragraph();
+        paragraph.add(new Chunk(stand.getNom(), font));
+        Emplacement emplacement = stand.getEmplacement();
+        if (emplacement != null && emplacement.getLatitude() != null && emplacement.getLongitude() != null) {
+            paragraph.add(Chunk.NEWLINE);
+            Anchor link = new Anchor(
+                    emplacement.getNom() != null && !emplacement.getNom().isBlank() ? emplacement.getNom() : "Map",
+                    LINK_FONT);
+            link.setReference(osmUrl(emplacement));
+            paragraph.add(link);
+        }
+        cell.addElement(paragraph);
+        return cell;
+    }
+
+    private String osmUrl(Emplacement emplacement) {
+        double lat = emplacement.getLatitude();
+        double lon = emplacement.getLongitude();
+        return "https://www.openstreetmap.org/?mlat=" + lat + "&mlon=" + lon + "#map=18/" + lat + "/" + lon;
     }
 
     private Comparator<PosteAffectation> byCreneauThenStand() {

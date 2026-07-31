@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
@@ -87,6 +88,44 @@ class PlanningExportServiceTest {
         assertThat(ics).startsWith("BEGIN:VCALENDAR").endsWith("END:VCALENDAR\r\n");
     }
 
+    @Test
+    void exportAnimateurIcsIncludesLocationAndGeoForAGeocodedStandOnly() {
+        PlanningFestival planning = fakePlanning();
+        String animateurId = planning.getAnimateurs().get(0).getId();
+
+        String ics = service.exportAnimateurIcs(planning, animateurId);
+
+        // Referent's postes span standStrategie/standAdultes (no emplacement)
+        // and standPremium (geocoded, see fakePlanning): exactly one VEVENT
+        // should carry the LOCATION/GEO pair, proving the other two postes'
+        // null-emplacement path stays untouched.
+        assertThat(ics).contains("LOCATION:Kiosque Central\r\n");
+        assertThat(ics).contains("GEO:48.8566;2.3522\r\n");
+        assertThat(countOccurrences(ics, "LOCATION:")).isEqualTo(1);
+        assertThat(countOccurrences(ics, "GEO:")).isEqualTo(1);
+    }
+
+    @Test
+    void exportAnimateurPdfRendersAGeocodedStandWithoutError() throws IOException {
+        PlanningFestival planning = fakePlanning();
+        String animateurId = planning.getAnimateurs().get(0).getId();
+
+        byte[] pdf = service.exportAnimateurPdf(planning, animateurId);
+
+        assertThat(pdf).isNotEmpty();
+        assertThat(new String(pdf, 0, 4, java.nio.charset.StandardCharsets.US_ASCII)).isEqualTo("%PDF");
+    }
+
+    private int countOccurrences(String text, String needle) {
+        int count = 0;
+        int index = 0;
+        while ((index = text.indexOf(needle, index)) != -1) {
+            count++;
+            index += needle.length();
+        }
+        return count;
+    }
+
     private void writeSample(String filename, byte[] content) throws IOException {
         Path dir = Path.of("target", "sample-exports");
         Files.createDirectories(dir);
@@ -101,6 +140,7 @@ class PlanningExportServiceTest {
     private PlanningFestival fakePlanning() {
         Stand standStrategie = new Stand("STAND-1", "Stratèges Associés", typologies(TypologieJeu.STRATEGIE), 1, 2, false);
         Stand standPremium = new Stand("STAND-2", "Éditeur Vedette", typologies(TypologieJeu.AMBIANCE), 1, 2, false, true);
+        standPremium.setEmplacement(new Emplacement("EMP-1", "Kiosque Central", 48.8566, 2.3522));
         Stand standAdultes = new Stand("STAND-3", "Loup-Garou Nocturne", typologies(TypologieJeu.ROLE), 1, 1, true);
         Stand standEnfant = new Stand("STAND-4", "Coin des Petits", typologies(TypologieJeu.ENFANT), 1, 2, false);
 

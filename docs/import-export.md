@@ -58,8 +58,12 @@ de ligne et la colonne fautive.
 Générés **côté serveur** — pas de génération dans le navigateur :
 
 - **PDF** (OpenPDF) : planning individuel par animateur, ou ZIP de tous les
-  plannings individuels ;
+  plannings individuels. Quand un stand est rattaché à un emplacement géocodé,
+  la liste détaillée affiche un lien OpenStreetMap cliquable sous le nom du
+  stand ;
 - **ICS** : planning individuel importable directement dans Google Calendar,
-  Apple Calendar ou Outlook, ou ZIP de tous les plannings.
+  Apple Calendar ou Outlook, ou ZIP de tous les plannings. Les événements dont
+  le stand a un emplacement portent aussi les champs `LOCATION` (nom du lieu)
+  et `GEO` (latitude/longitude) quand ils sont disponibles.
 
 Endpoints correspondants dans [`api.md`](api.md).
