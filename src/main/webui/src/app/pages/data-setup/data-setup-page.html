@@ -25,6 +25,10 @@
       <mat-icon>delete_sweep</mat-icon>
       <ng-container i18n="@@dataSetup.resetDatabase">Vider la base de données</ng-container>
     </button>
+    <button matButton="outlined" [disabled]="exporting()" (click)="onExportScenario()">
+      <mat-icon>file_download</mat-icon>
+      <ng-container i18n="@@dataSetup.exportScenario">Exporter les données actuelles en scénario</ng-container>
+    </button>
   </mat-card-actions>
 </mat-card>
 

@@ -62,6 +62,9 @@ public final class ConstraintCatalog {
                     "Un stand premium ne devrait pas être tenu par un animateur débutant sur sa typologie."),
             new ConstraintDefinition("eviterRoulementStandsPremium", Niveau.MEDIUM, "Qualité d'organisation",
                     "Sur un stand premium, éviter de faire tourner plusieurs animateurs différents : on privilégie la continuité."),
+            new ConstraintDefinition("eviterChangementEmplacementEloigne", Niveau.MEDIUM, "Qualité d'organisation",
+                    "Entre deux créneaux consécutifs, éviter de faire basculer un animateur vers un stand dont "
+                            + "l'emplacement est éloigné (> 300 m à vol d'oiseau) de celui du créneau précédent."),
 
             new ConstraintDefinition("favoriserRotationDesStands", Niveau.SOFT, "Préférences",
                     "Éviter d'affecter plusieurs fois le même animateur sur le même stand : on privilégie la rotation."),

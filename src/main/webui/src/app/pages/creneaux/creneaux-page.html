@@ -1,57 +1,14 @@
-<mat-card appearance="outlined" class="page-card" [class.is-editing]="editingId()">
-  <mat-accordion>
-    <mat-expansion-panel [expanded]="true">
-      <mat-expansion-panel-header>
-        <mat-panel-title>{{ formTitle() }}</mat-panel-title>
-        <mat-panel-description i18n="@@creneaux.form.description">Chaque stand est ouvert sur chaque créneau par défaut ; à modifier créneau par créneau ci-dessous.</mat-panel-description>
-      </mat-expansion-panel-header>
-      <form class="form-grid" (ngSubmit)="save()">
-      <fieldset class="form-fieldset" [disabled]="editingLocked()">
-      @if (editingLocked()) {
-        <p class="locked-hint span-2" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
-      }
-      <mat-form-field appearance="outline">
-        <mat-label i18n="@@stands.field.id">Identifiant</mat-label>
-        <input matInput name="id" required [readonly]="!!editingId()"
-               [ngModel]="draft().id" (ngModelChange)="patch({ id: $event })" />
-      </mat-form-field>
-      <mat-form-field appearance="outline">
-        <mat-label i18n="@@creneaux.field.jour">Jour du festival</mat-label>
-        <input matInput name="jour" type="number" min="1" max="15" required
-               [ngModel]="draft().jour" (ngModelChange)="patch({ jour: $event })" />
-      </mat-form-field>
-      <mat-form-field appearance="outline">
-        <mat-label i18n="@@creneaux.field.date">Date</mat-label>
-        <input matInput name="date" type="date" required
-               [ngModel]="draft().date" (ngModelChange)="patch({ date: $event })" />
-      </mat-form-field>
-      <mat-form-field appearance="outline">
-        <mat-label i18n="@@creneaux.field.heureDebut">Début</mat-label>
-        <input matInput name="heureDebut" type="time" required
-               [ngModel]="draft().heureDebut" (ngModelChange)="patch({ heureDebut: $event })" />
-      </mat-form-field>
-      <mat-form-field appearance="outline">
-        <mat-label i18n="@@creneaux.field.heureFin">Fin</mat-label>
-        <input matInput name="heureFin" type="time" required
-               [ngModel]="draft().heureFin" (ngModelChange)="patch({ heureFin: $event })" />
-      </mat-form-field>
-      <div class="form-actions span-2">
-        <button matButton="filled" type="submit">
-          <mat-icon>save</mat-icon>
-          {{ submitLabel() }}
-        </button>
-        <button matButton type="button" (click)="cancel()" i18n="@@common.cancel">Annuler</button>
-      </div>
-      </fieldset>
-      </form>
-    </mat-expansion-panel>
-  </mat-accordion>
-</mat-card>
-
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
     <mat-card-title i18n="@@creneaux.list.title">Créneaux ({{ store.creneaux().length }})</mat-card-title>
+    <mat-card-subtitle i18n="@@creneaux.form.description">Chaque stand est ouvert sur chaque créneau par défaut ; à modifier créneau par créneau ci-dessous.</mat-card-subtitle>
   </mat-card-header>
+  <mat-card-actions class="card-actions">
+    <button matButton="filled" type="button" [disabled]="editingLocked()" (click)="openCreate()">
+      <mat-icon>add</mat-icon>
+      <ng-container i18n="@@common.add">Ajouter</ng-container>
+    </button>
+  </mat-card-actions>
   <mat-card-content>
     <mat-accordion class="table-wrapper">
       @for (creneau of store.creneaux(); track creneau.id) {

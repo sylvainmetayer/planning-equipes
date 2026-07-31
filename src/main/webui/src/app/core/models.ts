@@ -31,6 +31,16 @@ export interface Stand {
   reserveMajeurs: boolean;
   /** Editor/publisher-tier stand: the solver avoids rotating staff and favors experienced animateurs. */
   premium: boolean;
+  /** Physical location (kiosque, mairie, ...), nullable. */
+  emplacement: Emplacement | null;
+}
+
+/** Editable GPS-located place a stand can be tied to (`/api/emplacements`). */
+export interface Emplacement {
+  id: string;
+  nom: string;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 export interface Creneau {
@@ -122,6 +132,7 @@ export interface ConstraintView {
   niveau: NiveauContrainte;
   categorie: string;
   description: string;
+  actif: boolean;
   score: string | null;
   matchCount: number | null;
 }

@@ -1,35 +1,22 @@
-import { Component, computed, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, computed, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatDialog } from '@angular/material/dialog';
 import { MatExpansionModule } from '@angular/material/expansion';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { Creneau } from '../../core/models';
-
-interface CreneauDraft {
-  id: string;
-  jour: number;
-  date: string;
-  heureDebut: string;
-  heureFin: string;
-  standsOuvertsIds: string[];
-}
+import { CreneauFormData, CreneauFormDialog } from './creneau-form-dialog';
 
 /** Timeslots CRUD: festival day, date and hours of every schedulable slot. */
 @Component({
   selector: 'app-creneaux-page',
   imports: [
-    FormsModule,
     MatCardModule,
-    MatFormFieldModule,
-    MatInputModule,
     MatCheckboxModule,
     MatExpansionModule,
     MatButtonModule,
@@ -40,69 +27,36 @@ interface CreneauDraft {
 })
 export class CreneauxPage {
   protected readonly store = inject(ReferenceDataStore);
-  protected readonly draft = signal<CreneauDraft>(emptyDraft());
-  protected readonly editingId = signal<string | null>(null);
-  protected readonly formTitle = computed(() => {
-    const id = this.editingId();
-    return id
-      ? $localize`:@@creneaux.form.editTitle:Modifier le créneau ${id}:id:`
-      : $localize`:@@creneaux.form.newTitle:Nouveau créneau`;
-  });
-  protected readonly submitLabel = computed(() =>
-    this.editingId()
-      ? $localize`:@@creneaux.submit.edit:Modifier le créneau`
-      : $localize`:@@creneaux.submit.create:Créer le créneau`
-  );
   protected readonly jobs = inject(SolverJobService);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
   protected readonly editingLocked = computed(() => this.jobs.solverBusy());
 
   private readonly crud = inject(ReferenceCrudService);
+  private readonly dialog = inject(MatDialog);
 
   constructor() {
     void this.crud.reload();
   }
 
-  protected patch(patch: Partial<CreneauDraft>): void {
-    this.draft.update((draft) => ({ ...draft, ...patch }));
-  }
-
-  protected async save(): Promise<void> {
-    const draft = this.draft();
-    const creneau: Creneau = {
-      id: draft.id.trim(),
-      jour: Number(draft.jour),
-      date: draft.date,
-      heureDebut: draft.heureDebut,
-      heureFin: draft.heureFin,
-      standsOuvertsIds: draft.standsOuvertsIds
-    };
-    if (await this.crud.save('creneaux', creneau, this.editingId(), $localize`:@@creneaux.entityLabel:Créneau`)) {
-      this.cancel();
-    }
+  protected openCreate(): void {
+    this.openDialog(null);
   }
 
   protected edit(creneau: Creneau): void {
-    this.draft.set({
-      id: creneau.id,
-      jour: creneau.jour,
-      date: creneau.date ?? '',
-      heureDebut: creneau.heureDebut ?? '',
-      heureFin: creneau.heureFin ?? '',
-      standsOuvertsIds: [...(creneau.standsOuvertsIds ?? [])]
-    });
-    this.editingId.set(creneau.id);
+    this.openDialog(creneau);
   }
 
-  protected cancel(): void {
-    this.draft.set(emptyDraft());
-    this.editingId.set(null);
+  private openDialog(creneau: Creneau | null): void {
+    this.dialog.open<CreneauFormDialog, CreneauFormData, boolean>(CreneauFormDialog, {
+      data: { creneau },
+      width: '36rem',
+      maxWidth: '95vw',
+      autoFocus: 'first-tabbable'
+    });
   }
 
   protected async remove(creneau: Creneau): Promise<void> {
-    if (await this.crud.remove('creneaux', creneau.id, $localize`:@@creneaux.entityLabel:Créneau`) && this.editingId() === creneau.id) {
-      this.cancel();
-    }
+    await this.crud.remove('creneaux', creneau.id, $localize`:@@creneaux.entityLabel:Créneau`);
   }
 
   /** Empty (or full) list means "every stand is open" — the default. */
@@ -136,8 +90,4 @@ export class CreneauxPage {
     const standsOuvertsIds = next.length >= allIds.length ? [] : next;
     await this.crud.save('creneaux', { ...creneau, standsOuvertsIds }, creneau.id, $localize`:@@creneaux.entityLabel:Créneau`);
   }
-}
-
-function emptyDraft(): CreneauDraft {
-  return { id: '', jour: 1, date: '', heureDebut: '', heureFin: '', standsOuvertsIds: [] };
 }

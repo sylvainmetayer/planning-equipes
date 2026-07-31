@@ -1,0 +1,82 @@
+<mat-card appearance="outlined" class="page-card" [class.is-editing]="editingId()">
+  <mat-accordion>
+    <mat-expansion-panel [expanded]="true">
+      <mat-expansion-panel-header>
+        <mat-panel-title>{{ formTitle() }}</mat-panel-title>
+        <mat-panel-description i18n="@@emplacements.form.description">Un emplacement est un lieu géolocalisé (kiosque, mairie, ...) auquel un stand peut être rattaché.</mat-panel-description>
+      </mat-expansion-panel-header>
+      <form class="form-grid" (ngSubmit)="save()">
+      <fieldset class="form-fieldset" [disabled]="editingLocked()">
+      @if (editingLocked()) {
+        <p class="locked-hint span-2" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
+      }
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@stands.field.id">Identifiant</mat-label>
+        <input matInput name="id" required [readonly]="!!editingId()"
+               [ngModel]="draft().id" (ngModelChange)="patch({ id: $event })" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@stands.field.nom">Nom</mat-label>
+        <input matInput name="nom" required [ngModel]="draft().nom" (ngModelChange)="patch({ nom: $event })" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@emplacements.field.latitude">Latitude</mat-label>
+        <input matInput name="latitude" type="number" step="any" min="-90" max="90"
+               [ngModel]="draft().latitude" (ngModelChange)="patch({ latitude: $event })" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@emplacements.field.longitude">Longitude</mat-label>
+        <input matInput name="longitude" type="number" step="any" min="-180" max="180"
+               [ngModel]="draft().longitude" (ngModelChange)="patch({ longitude: $event })" />
+      </mat-form-field>
+      <div class="form-actions span-2">
+        <button matButton="filled" type="submit" [disabled]="editingLocked()">
+          <mat-icon>save</mat-icon>
+          {{ submitLabel() }}
+        </button>
+        <button matButton type="button" (click)="cancel()" i18n="@@common.cancel">Annuler</button>
+      </div>
+      </fieldset>
+      </form>
+    </mat-expansion-panel>
+  </mat-accordion>
+</mat-card>
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <mat-card-title i18n="@@emplacements.list.title">Emplacements ({{ store.emplacements().length }})</mat-card-title>
+  </mat-card-header>
+  <mat-card-content class="table-wrapper">
+    <table mat-table [dataSource]="store.emplacements()">
+      <ng-container matColumnDef="id">
+        <th mat-header-cell *matHeaderCellDef i18n="@@common.id">Id</th>
+        <td mat-cell *matCellDef="let emplacement">{{ emplacement.id }}</td>
+      </ng-container>
+      <ng-container matColumnDef="nom">
+        <th mat-header-cell *matHeaderCellDef i18n="@@common.nom">Nom</th>
+        <td mat-cell *matCellDef="let emplacement">{{ emplacement.nom }}</td>
+      </ng-container>
+      <ng-container matColumnDef="coordonnees">
+        <th mat-header-cell *matHeaderCellDef i18n="@@emplacements.column.coordonnees">Coordonnées</th>
+        <td mat-cell *matCellDef="let emplacement">{{ coordonneesLabel(emplacement) }}</td>
+      </ng-container>
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>
+        <td mat-cell *matCellDef="let emplacement" class="row-actions">
+          <button matIconButton i18n-matTooltip="@@common.edit" matTooltip="Modifier" i18n-aria-label="@@common.edit" aria-label="Modifier" [disabled]="editingLocked()" (click)="edit(emplacement)">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button matIconButton i18n-matTooltip="@@common.delete" matTooltip="Supprimer" i18n-aria-label="@@common.delete" aria-label="Supprimer" class="danger-action" [disabled]="editingLocked()"
+                  (click)="remove(emplacement)">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="columns"></tr>
+      <tr mat-row *matRowDef="let row; columns: columns"></tr>
+    </table>
+    @if (store.emplacements().length === 0) {
+      <p class="empty-hint" i18n="@@emplacements.empty">Aucun emplacement pour le moment. Créez-en un ci-dessus.</p>
+    }
+  </mat-card-content>
+</mat-card>

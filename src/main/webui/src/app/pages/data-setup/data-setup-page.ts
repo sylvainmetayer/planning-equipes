@@ -26,6 +26,7 @@ export class DataSetupPage {
   protected readonly output = signal('');
   protected readonly sampleLoading = signal(false);
   protected readonly resetting = signal(false);
+  protected readonly exporting = signal(false);
 
   /** Scenario files offered by the backend, and the one currently selected. */
   protected readonly scenarios = signal<string[]>([]);
@@ -126,6 +127,21 @@ export class DataSetupPage {
       this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
     } finally {
       this.resetting.set(false);
+    }
+  }
+
+  // Read-only, so it is not gated by solverActionBlocked() like the other two
+  // actions: it never touches the dataset, only reads it.
+  protected async onExportScenario(): Promise<void> {
+    this.exporting.set(true);
+    this.output.set($localize`:@@dataSetup.exportingScenario:Export des données actuelles en fichier scénario...`);
+    try {
+      const result = await this.api.downloadGet('/api/planning/export-scenario', 'scenario.yaml', 'application/x-yaml');
+      this.output.set(result);
+    } catch (error) {
+      this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
+    } finally {
+      this.exporting.set(false);
     }
   }
 

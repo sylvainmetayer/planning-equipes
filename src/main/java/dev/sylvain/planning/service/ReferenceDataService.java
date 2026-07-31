@@ -6,6 +6,7 @@ import java.util.List;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.Stand;
@@ -88,6 +89,44 @@ public class ReferenceDataService {
 
     public void deleteStand(String id) {
         repository.deleteStand(id);
+    }
+
+    /* ----------------------------- Emplacements ----------------------------- */
+
+    public List<Emplacement> listEmplacements() {
+        return repository == null ? List.of() : repository.listEmplacements();
+    }
+
+    public Emplacement createEmplacement(Emplacement emplacement) {
+        emplacement.setId(requiredId(emplacement.getId(), "emplacement id"));
+        validateCoordonnees(emplacement);
+        repository.saveEmplacement(emplacement);
+        return emplacement;
+    }
+
+    public Emplacement updateEmplacement(String id, Emplacement emplacement) {
+        if (!repository.emplacementExists(id)) {
+            throw new NotFoundException("Emplacement not found: " + id);
+        }
+        emplacement.setId(id);
+        validateCoordonnees(emplacement);
+        repository.saveEmplacement(emplacement);
+        return emplacement;
+    }
+
+    public void deleteEmplacement(String id) {
+        repository.deleteEmplacement(id);
+    }
+
+    private void validateCoordonnees(Emplacement emplacement) {
+        Double latitude = emplacement.getLatitude();
+        Double longitude = emplacement.getLongitude();
+        if (latitude != null && (latitude < -90 || latitude > 90)) {
+            throw new IllegalArgumentException("latitude must be between -90 and 90");
+        }
+        if (longitude != null && (longitude < -180 || longitude > 180)) {
+            throw new IllegalArgumentException("longitude must be between -180 and 180");
+        }
     }
 
     /* ------------------------------ Timeslots ------------------------------ */
@@ -187,6 +226,18 @@ public class ReferenceDataService {
         }
         repository.saveParametresLegaux(parametres);
         return parametres;
+    }
+
+    /* --------------------------- Constraint toggles -------------------------- */
+
+    public java.util.Set<String> getContraintesDesactivees() {
+        return repository == null ? java.util.Set.of() : repository.getContraintesDesactivees();
+    }
+
+    public void setContrainteActive(String nom, boolean actif) {
+        if (repository != null) {
+            repository.setContrainteActive(nom, actif);
+        }
     }
 
     private String requiredId(String id, String fieldName) {

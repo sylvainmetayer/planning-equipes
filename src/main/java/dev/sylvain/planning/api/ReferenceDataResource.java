@@ -5,6 +5,7 @@ import java.util.List;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.PlanningService;
@@ -56,6 +57,31 @@ public class ReferenceDataResource {
     @Path("/stands/{id}")
     public Response deleteStand(@PathParam("id") String id) {
         referenceDataService.deleteStand(id);
+        return Response.noContent().build();
+    }
+
+    @GET
+    @Path("/emplacements")
+    public List<Emplacement> listEmplacements() {
+        return referenceDataService.listEmplacements();
+    }
+
+    @POST
+    @Path("/emplacements")
+    public Emplacement createEmplacement(Emplacement emplacement) {
+        return referenceDataService.createEmplacement(emplacement);
+    }
+
+    @PUT
+    @Path("/emplacements/{id}")
+    public Emplacement updateEmplacement(@PathParam("id") String id, Emplacement emplacement) {
+        return referenceDataService.updateEmplacement(id, emplacement);
+    }
+
+    @DELETE
+    @Path("/emplacements/{id}")
+    public Response deleteEmplacement(@PathParam("id") String id) {
+        referenceDataService.deleteEmplacement(id);
         return Response.noContent().build();
     }
 

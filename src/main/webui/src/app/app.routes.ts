@@ -30,6 +30,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/stands/stands-page').then((m) => m.StandsPage)
   },
   {
+    path: 'emplacements',
+    title: 'Locations — Planning Équipes',
+    loadComponent: () => import('./pages/emplacements/emplacements-page').then((m) => m.EmplacementsPage)
+  },
+  {
     path: 'animateurs',
     title: 'Animateurs — Planning Équipes',
     loadComponent: () => import('./pages/animateurs/animateurs-page').then((m) => m.AnimateursPage)

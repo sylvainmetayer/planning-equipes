@@ -34,7 +34,7 @@ public final class LegalConstraints {
     }
 
     private Constraint standReserveAuxMajeurs(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(PosteAffectation.class)
+        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class), "standReserveAuxMajeurs")
                 .filter(poste -> poste.getAnimateur() != null
                         && poste.getStand().isReserveMajeurs()
                         && poste.getAnimateur().estMineurLe(poste.getCreneau().getDate()))
@@ -43,7 +43,8 @@ public final class LegalConstraints {
     }
 
     private Constraint mineurNecessiteEncadrementMajeur(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(PosteAffectation.class)
+        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
+                "mineurNecessiteEncadrementMajeur")
                 .filter(poste -> poste.getAnimateur() != null
                         && poste.getAnimateur().estMineurLe(poste.getCreneau().getDate()))
                 .ifNotExists(PosteAffectation.class,
@@ -56,7 +57,8 @@ public final class LegalConstraints {
     }
 
     private Constraint travailDeNuitInterditPourMineur(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(PosteAffectation.class)
+        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
+                "travailDeNuitInterditPourMineur")
                 .filter(poste -> poste.getAnimateur() != null
                         && poste.getCreneau() != null
                         && poste.getCreneau().chevaucheNuit()
@@ -66,7 +68,8 @@ public final class LegalConstraints {
     }
 
     private Constraint dureeQuotidienneMaxMineur(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(PosteAffectation.class)
+        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
+                "dureeQuotidienneMaxMineur")
                 .filter(poste -> poste.getAnimateur() != null
                         && poste.getCreneau() != null
                         && poste.getAnimateur().estMineurLe(poste.getCreneau().getDate()))
@@ -82,9 +85,9 @@ public final class LegalConstraints {
     private Constraint reposQuotidienMineur(ConstraintFactory constraintFactory) {
         // A minor working a night slot must get at least ~12h of rest, so a night
         // slot on day J forbids an early (before noon) slot on day J+1.
-        return constraintFactory.forEachUniquePair(
+        return ConstraintToggleSupport.actif(constraintFactory.forEachUniquePair(
                 PosteAffectation.class,
-                Joiners.equal(PosteAffectation::getAnimateur))
+                Joiners.equal(PosteAffectation::getAnimateur)), "reposQuotidienMineur")
                 .filter((posteA, posteB) -> posteA.getAnimateur() != null
                         && posteA.getCreneau() != null
                         && posteB.getCreneau() != null
@@ -95,7 +98,7 @@ public final class LegalConstraints {
     }
 
     private Constraint dureeHebdomadaireMax(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(PosteAffectation.class)
+        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class), "dureeHebdomadaireMax")
                 .filter(poste -> poste.getAnimateur() != null && poste.getCreneau() != null)
                 .groupBy(PosteAffectation::getAnimateur,
                         poste -> poste.getCreneau().semaineIso(),

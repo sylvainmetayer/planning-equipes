@@ -3,7 +3,7 @@
 
 import { Injectable, inject, signal } from '@angular/core';
 import { ApiService } from './api.service';
-import { Animateur, ContrainteAdHoc, Creneau, Stand, TypologieItem } from './models';
+import { Animateur, ContrainteAdHoc, Creneau, Emplacement, Stand, TypologieItem } from './models';
 
 @Injectable({ providedIn: 'root' })
 export class ReferenceDataStore {
@@ -11,22 +11,25 @@ export class ReferenceDataStore {
   readonly creneaux = signal<Creneau[]>([]);
   readonly animateurs = signal<Animateur[]>([]);
   readonly stands = signal<Stand[]>([]);
+  readonly emplacements = signal<Emplacement[]>([]);
   readonly contraintes = signal<ContrainteAdHoc[]>([]);
 
   private readonly api = inject(ApiService);
 
   async reload(): Promise<void> {
-    const [typologies, creneaux, animateurs, stands, contraintes] = await Promise.all([
+    const [typologies, creneaux, animateurs, stands, emplacements, contraintes] = await Promise.all([
       this.api.get<TypologieItem[]>('/api/typologies'),
       this.api.get<Creneau[]>('/api/creneaux'),
       this.api.get<Animateur[]>('/api/animateurs'),
       this.api.get<Stand[]>('/api/stands'),
+      this.api.get<Emplacement[]>('/api/emplacements'),
       this.api.get<ContrainteAdHoc[]>('/api/contraintes-ad-hoc')
     ]);
     this.typologies.set(typologies);
     this.creneaux.set(creneaux);
     this.animateurs.set(animateurs);
     this.stands.set(stands);
+    this.emplacements.set(emplacements);
     this.contraintes.set(contraintes);
   }
 

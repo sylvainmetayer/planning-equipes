@@ -73,7 +73,7 @@
     <mat-card-content>
       <div class="constraint-grid">
         @for (constraint of group.items; track constraint.name) {
-          <mat-card appearance="outlined" class="constraint-card">
+          <mat-card appearance="outlined" class="constraint-card" [class.constraint-card-inactive]="!constraint.actif">
             <mat-card-content>
               <div class="constraint-card-header">
                 <strong>{{ constraint.name }}</strong>
@@ -84,6 +84,14 @@
                 </mat-chip-set>
               </div>
               <p class="constraint-description">{{ constraint.description }}</p>
+              <div class="constraint-toggle-row">
+                <mat-slide-toggle
+                  [checked]="constraint.actif"
+                  [disabled]="togglingConstraint() === constraint.name"
+                  (change)="toggleConstraint(constraint, $event.checked)">
+                  {{ actifLabel(constraint.actif) }}
+                </mat-slide-toggle>
+              </div>
               <p [class]="resultClass(constraint)">{{ resultLabel(constraint) }}</p>
             </mat-card-content>
           </mat-card>

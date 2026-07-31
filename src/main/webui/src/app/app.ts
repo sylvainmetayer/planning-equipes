@@ -56,6 +56,7 @@ function buildNavGroups(): NavGroup[] {
     title: $localize`:@@nav.group.referenceData:Données de référence`,
     links: [
       { path: '/stands', label: $localize`:@@nav.link.stands:Stands`, icon: 'storefront' },
+      { path: '/emplacements', label: $localize`:@@nav.link.emplacements:Emplacements`, icon: 'place' },
       { path: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs`, icon: 'groups' },
       { path: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux`, icon: 'schedule' },
       { path: '/typologies', label: $localize`:@@nav.link.typologies:Typologies`, icon: 'category' },

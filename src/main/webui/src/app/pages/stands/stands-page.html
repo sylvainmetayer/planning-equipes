@@ -1,75 +1,14 @@
-<mat-card appearance="outlined" class="page-card" [class.is-editing]="editingId()">
-  <mat-accordion>
-    <mat-expansion-panel [expanded]="true">
-      <mat-expansion-panel-header>
-        <mat-panel-title>{{ formTitle() }}</mat-panel-title>
-        <mat-panel-description i18n="@@stands.form.description">Un stand est doté d'un effectif à chaque créneau, entre son effectif minimum et maximum.</mat-panel-description>
-      </mat-expansion-panel-header>
-      <form class="form-grid" (ngSubmit)="save()">
-      <fieldset class="form-fieldset" [disabled]="editingLocked()">
-      @if (editingLocked()) {
-        <p class="locked-hint span-2" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
-      }
-      <mat-form-field appearance="outline">
-        <mat-label i18n="@@stands.field.id">Identifiant</mat-label>
-        <input matInput name="id" required [readonly]="!!editingId()"
-               [ngModel]="draft().id" (ngModelChange)="patch({ id: $event })" />
-      </mat-form-field>
-      <mat-form-field appearance="outline">
-        <mat-label i18n="@@stands.field.nom">Nom</mat-label>
-        <input matInput name="nom" required [ngModel]="draft().nom" (ngModelChange)="patch({ nom: $event })" />
-      </mat-form-field>
-      <mat-form-field appearance="outline">
-        <mat-label i18n="@@stands.field.effectifMin">Effectif minimum</mat-label>
-        <input matInput name="effectifMin" type="number" min="0"
-               [ngModel]="draft().effectifMin" (ngModelChange)="patch({ effectifMin: $event })" />
-      </mat-form-field>
-      <mat-form-field appearance="outline">
-        <mat-label i18n="@@stands.field.effectifMax">Effectif maximum</mat-label>
-        <input matInput name="effectifMax" type="number" min="0"
-               [ngModel]="draft().effectifMax" (ngModelChange)="patch({ effectifMax: $event })" />
-      </mat-form-field>
-      @if (effectifInvalid()) {
-        <p class="field-error span-2" i18n="@@stands.effectifInvalid">L'effectif maximum ne peut pas être inférieur à l'effectif minimum.</p>
-      }
-      <mat-form-field appearance="outline" class="span-2">
-        <mat-label i18n="@@stands.field.typologies">Typologies de jeu</mat-label>
-        <mat-select name="typologies" multiple [disabled]="editingLocked()"
-                    [ngModel]="draft().typologiesProposees" (ngModelChange)="patch({ typologiesProposees: $event })">
-          @for (typologie of store.typologies(); track typologie.id) {
-            <mat-option [value]="typologie.id">{{ typologie.label || typologie.id }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-      <mat-checkbox name="reserveMajeurs" [disabled]="editingLocked()"
-                    [ngModel]="draft().reserveMajeurs" (ngModelChange)="patch({ reserveMajeurs: $event })"
-                    i18n="@@stands.field.reserveMajeurs">
-        Réservé aux majeurs
-      </mat-checkbox>
-      <mat-checkbox name="premium" [disabled]="editingLocked()"
-                    i18n-matTooltip="@@stands.premium.tooltip"
-                    matTooltip="Stand éditeur : le solveur évite la rotation du personnel et privilégie les animateurs expérimentés."
-                    [ngModel]="draft().premium" (ngModelChange)="patch({ premium: $event })"
-                    i18n="@@stands.field.premium">
-        Premium (stand éditeur)
-      </mat-checkbox>
-      <div class="form-actions span-2">
-        <button matButton="filled" type="submit" [disabled]="effectifInvalid() || editingLocked()">
-          <mat-icon>save</mat-icon>
-          {{ submitLabel() }}
-        </button>
-        <button matButton type="button" (click)="cancel()" i18n="@@common.cancel">Annuler</button>
-      </div>
-      </fieldset>
-      </form>
-    </mat-expansion-panel>
-  </mat-accordion>
-</mat-card>
-
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
     <mat-card-title i18n="@@stands.list.title">Stands ({{ store.stands().length }})</mat-card-title>
+    <mat-card-subtitle i18n="@@stands.form.description">Un stand est doté d'un effectif à chaque créneau, entre son effectif minimum et maximum.</mat-card-subtitle>
   </mat-card-header>
+  <mat-card-actions class="card-actions">
+    <button matButton="filled" type="button" [disabled]="editingLocked()" (click)="openCreate()">
+      <mat-icon>add</mat-icon>
+      <ng-container i18n="@@common.add">Ajouter</ng-container>
+    </button>
+  </mat-card-actions>
   <mat-card-content class="table-wrapper">
     <table mat-table [dataSource]="store.stands()">
       <ng-container matColumnDef="id">
@@ -89,6 +28,10 @@
       <ng-container matColumnDef="typologies">
         <th mat-header-cell *matHeaderCellDef i18n="@@stands.column.typologies">Typologies</th>
         <td mat-cell *matCellDef="let stand">{{ typologiesLabel(stand) }}</td>
+      </ng-container>
+      <ng-container matColumnDef="emplacement">
+        <th mat-header-cell *matHeaderCellDef i18n="@@stands.field.emplacement">Emplacement</th>
+        <td mat-cell *matCellDef="let stand">{{ emplacementLabel(stand) }}</td>
       </ng-container>
       <ng-container matColumnDef="actions">
         <th mat-header-cell *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>

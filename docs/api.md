@@ -44,6 +44,7 @@ connexion.
 | Méthode | Chemin | Description |
 | --- | --- | --- |
 | `GET` | `/api/constraints` | Catalogue métier des contraintes + résultat de la dernière analyse |
+| `PUT` | `/api/constraints/{name}` | Active/désactive une contrainte (`{ "actif": boolean }`) pour le prochain solve |
 
 ## Référentiels (CRUD)
 

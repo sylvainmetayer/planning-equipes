@@ -1,0 +1,109 @@
+<h2 mat-dialog-title>{{ formTitle() }}</h2>
+<form (ngSubmit)="save()">
+<mat-dialog-content class="form-grid">
+<fieldset class="form-fieldset" [disabled]="editingLocked()">
+@if (editingLocked()) {
+  <p class="locked-hint span-2" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
+}
+<mat-form-field appearance="outline">
+  <mat-label i18n="@@stands.field.id">Identifiant</mat-label>
+  <input matInput name="id" required [readonly]="!!editingId()"
+         [ngModel]="draft().id" (ngModelChange)="patch({ id: $event })" />
+</mat-form-field>
+<mat-form-field appearance="outline">
+  <mat-label i18n="@@animateurs.field.prenom">Prénom</mat-label>
+  <input matInput name="prenom" [ngModel]="draft().prenom" (ngModelChange)="patch({ prenom: $event })" />
+</mat-form-field>
+<mat-form-field appearance="outline">
+  <mat-label i18n="@@stands.field.nom">Nom</mat-label>
+  <input matInput name="nom" [ngModel]="draft().nom" (ngModelChange)="patch({ nom: $event })" />
+</mat-form-field>
+<mat-form-field appearance="outline">
+  <mat-label i18n="@@animateurs.field.dateNaissance">Date de naissance</mat-label>
+  <input matInput name="dateNaissance" type="date"
+         [ngModel]="draft().dateNaissance" (ngModelChange)="patch({ dateNaissance: $event })" />
+</mat-form-field>
+<mat-checkbox name="manager" [disabled]="editingLocked()"
+              [ngModel]="draft().manager" (ngModelChange)="patch({ manager: $event })"
+              i18n="@@animateurs.field.manager">
+  Manager
+</mat-checkbox>
+
+<div class="span-2 subform">
+  <div class="subform-header">
+    <h3 i18n="@@animateurs.competences.title">Compétences</h3>
+    <button matButton type="button" (click)="addCompetence()">
+      <mat-icon>add</mat-icon>
+      <ng-container i18n="@@animateurs.competences.add">Ajouter une compétence</ng-container>
+    </button>
+  </div>
+  @for (competence of draft().competences; track $index) {
+    <div class="competence-row">
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@animateurs.competences.typologie">Typologie</mat-label>
+        <mat-select [name]="'typologie-' + $index" [disabled]="editingLocked()" [ngModel]="competence.typologie"
+                    (ngModelChange)="updateCompetence($index, { typologie: $event })">
+          @for (typologie of store.typologies(); track typologie.id) {
+            <mat-option [value]="typologie.id">{{ typologie.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@animateurs.competences.niveau">Niveau</mat-label>
+        <mat-select [name]="'niveau-' + $index" [disabled]="editingLocked()" [ngModel]="competence.niveau"
+                    (ngModelChange)="updateCompetence($index, { niveau: $event })">
+          @for (niveau of niveaux; track niveau) {
+            <mat-option [value]="niveau">{{ niveau }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <button matIconButton type="button" i18n-matTooltip="@@animateurs.competences.remove" matTooltip="Retirer cette compétence" i18n-aria-label="@@animateurs.competences.remove" aria-label="Retirer cette compétence" class="danger-action"
+              (click)="removeCompetence($index)">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  } @empty {
+    <p class="empty-hint" i18n="@@animateurs.competences.empty">Aucune compétence déclarée.</p>
+  }
+</div>
+
+<div class="span-2 subform">
+  <div class="subform-header">
+    <h3 i18n="@@animateurs.indispo.title">Jours d'indisponibilité</h3>
+  </div>
+  <div class="competence-row">
+    <mat-form-field appearance="outline">
+      <mat-label i18n="@@animateurs.indispo.jour">Jour</mat-label>
+      <input matInput name="newJour" type="date"
+             [ngModel]="newJour()" (ngModelChange)="newJour.set($event)" />
+    </mat-form-field>
+    <button matButton type="button" (click)="addJour()">
+      <mat-icon>add</mat-icon>
+      <ng-container i18n="@@common.add">Ajouter</ng-container>
+    </button>
+  </div>
+  @if (draft().joursIndisponibles.length) {
+    <mat-chip-set>
+      @for (jour of draft().joursIndisponibles; track jour) {
+        <mat-chip (removed)="removeJour(jour)">
+          {{ jour }}
+          <button matChipRemove [attr.aria-label]="removeJourLabel(jour)">
+            <mat-icon>cancel</mat-icon>
+          </button>
+        </mat-chip>
+      }
+    </mat-chip-set>
+  } @else {
+    <p class="empty-hint" i18n="@@animateurs.indispo.empty">Disponible tous les jours.</p>
+  }
+</div>
+</fieldset>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="dialogRef.close(false)" i18n="@@common.cancel">Annuler</button>
+  <button matButton="filled" type="submit" [disabled]="editingLocked()">
+    <mat-icon>save</mat-icon>
+    {{ submitLabel() }}
+  </button>
+</mat-dialog-actions>
+</form>

@@ -7,6 +7,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { ApiService } from '../../core/api.service';
 import { intlLocale } from '../../core/locale';
 import { ConstraintView, ConstraintsView, NiveauContrainte, ParametresLegaux } from '../../core/models';
@@ -46,6 +47,7 @@ interface ConstraintGroup {
     MatFormFieldModule,
     MatInputModule,
     MatProgressBarModule,
+    MatSlideToggleModule,
     FeasibilityBanner
   ],
   templateUrl: './constraints-page.html'
@@ -54,6 +56,7 @@ export class ConstraintsPage {
   protected readonly loading = signal(false);
   protected readonly error = signal('');
   protected readonly view = signal<ConstraintsView | null>(null);
+  protected readonly togglingConstraint = signal<string | null>(null);
 
   protected readonly parametresLoading = signal(false);
   protected readonly parametresError = signal('');
@@ -139,6 +142,40 @@ export class ConstraintsPage {
     } finally {
       this.parametresLoading.set(false);
     }
+  }
+
+  /**
+   * Toggles a constraint on/off for the next solve. Applied optimistically so
+   * the switch reacts instantly; rolled back if the save fails.
+   */
+  protected async toggleConstraint(constraint: ConstraintView, actif: boolean): Promise<void> {
+    this.setConstraintActif(constraint.name, actif);
+    this.togglingConstraint.set(constraint.name);
+    this.error.set('');
+    try {
+      await this.api.put<{ actif: boolean }>(`/api/constraints/${encodeURIComponent(constraint.name)}`, { actif });
+    } catch (error) {
+      this.setConstraintActif(constraint.name, !actif);
+      const message = error instanceof Error ? error.message : String(error);
+      this.error.set($localize`:@@common.errorPrefix:Erreur : ${message}:message:`);
+    } finally {
+      this.togglingConstraint.set(null);
+    }
+  }
+
+  protected actifLabel(actif: boolean): string {
+    return actif ? $localize`:@@constraints.active:Active` : $localize`:@@constraints.disabled:Désactivée`;
+  }
+
+  private setConstraintActif(name: string, actif: boolean): void {
+    const view = this.view();
+    if (!view) {
+      return;
+    }
+    this.view.set({
+      ...view,
+      contraintes: view.contraintes.map((constraint) => (constraint.name === name ? { ...constraint, actif } : constraint))
+    });
   }
 
   protected niveauLabel(niveau: NiveauContrainte): string {

@@ -146,20 +146,33 @@ Le détail règle par règle est dans [`docs/contraintes.md`](docs/contraintes.m
 
 Avant même de lancer une génération de planning, une page dédiée calcule, à
 partir des stands et créneaux saisis dans les référentiels (effectif minimum
-par stand, restriction éventuelle aux majeurs, stands ouverts par créneau), le
-nombre minimum d'animateurs à recruter :
+par stand, restriction éventuelle aux majeurs, stands ouverts par créneau) et
+de la durée hebdomadaire maximale légale, le nombre minimum d'animateurs à
+recruter. Deux minimums sont calculés, et le plus élevé des deux est retenu :
 
-- le **minimum global** correspond au créneau le plus chargé du festival, en
-  supposant qu'un animateur puisse enchaîner plusieurs créneaux différents ;
-- ce minimum est décomposé en **majeurs** et **mineurs**, en respectant à la
-  fois l'encadrement obligatoire (au moins un majeur dès qu'un mineur est
-  présent sur un stand) et l'équilibre visé entre les deux ;
-- le détail créneau par créneau est également affiché, avec le nombre de
-  stands ouverts et le créneau le plus critique mis en évidence.
+- le **pic de créneau** : sièges ouverts au créneau le plus chargé du
+  festival, en supposant qu'un animateur puisse enchaîner n'importe quel
+  créneau ;
+- la **charge horaire** : le volume total d'heures-personne à couvrir,
+  rapporté au plafond légal hebdomadaire sur le nombre de semaines ISO que
+  couvre le festival — le pic de créneau seul ignore ce plafond, alors qu'il
+  est souvent la contrainte la plus limitante sur un festival de plusieurs
+  jours.
 
-C'est une estimation basse : elle ne tient pas compte des compétences, des
-disponibilités ni du repos légal, qui restent gérés par le moteur de
-planification lors de la génération effective.
+Ce minimum retenu est ensuite décomposé en **majeurs** et **mineurs**, en
+respectant à la fois l'encadrement obligatoire (au moins un majeur dès qu'un
+mineur est présent sur un stand) et l'équilibre visé entre les deux. Le détail
+créneau par créneau reste affiché, avec le créneau le plus critique mis en
+évidence.
+
+Les deux minimums restent des estimations basses : ils supposent une
+répartition parfaite et ignorent les compétences de chaque animateur ainsi que
+la façon dont les indisponibilités réelles se superposent. Sur le scénario de
+référence de l'application, le pic de créneau seul donnait 58 animateurs, la
+charge horaire 102 — et il en fallait en réalité 150 pour obtenir un planning
+réellement réalisable (score dur à zéro) une fois le solveur lancé. Une fois de
+vrais animateurs saisis, la faisabilité réelle se vérifie sur la page «
+Constraints ».
 
 ### Exceptions ponctuelles (contraintes ad hoc)
 

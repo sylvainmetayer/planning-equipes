@@ -1,76 +1,34 @@
-import { Component, computed, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, computed, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatExpansionModule } from '@angular/material/expansion';
-import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { Stand } from '../../core/models';
-
-interface StandDraft {
-  id: string;
-  nom: string;
-  effectifMin: number;
-  effectifMax: number;
-  reserveMajeurs: boolean;
-  premium: boolean;
-  typologiesProposees: string[];
-}
+import { StandFormData, StandFormDialog } from './stand-form-dialog';
 
 /** Stands CRUD: identity, staffing bounds, adults-only flag and typologies. */
 @Component({
   selector: 'app-stands-page',
-  imports: [
-    FormsModule,
-    MatCardModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatCheckboxModule,
-    MatExpansionModule,
-    MatButtonModule,
-    MatIconModule,
-    MatTableModule,
-    MatTooltipModule
-  ],
+  imports: [MatCardModule, MatButtonModule, MatIconModule, MatTableModule, MatTooltipModule],
   templateUrl: './stands-page.html'
 })
 export class StandsPage {
-  protected readonly columns = ['id', 'nom', 'effectif', 'typologies', 'actions'];
+  protected readonly columns = ['id', 'nom', 'effectif', 'typologies', 'emplacement', 'actions'];
   protected readonly store = inject(ReferenceDataStore);
-  protected readonly draft = signal<StandDraft>(emptyDraft());
-  protected readonly editingId = signal<string | null>(null);
-  protected readonly formTitle = computed(() => {
-    const id = this.editingId();
-    return id ? $localize`:@@stands.form.editTitle:Modifier le stand ${id}:id:` : $localize`:@@stands.form.newTitle:Nouveau stand`;
-  });
-  protected readonly submitLabel = computed(() =>
-    this.editingId() ? $localize`:@@stands.submit.edit:Modifier le stand` : $localize`:@@stands.submit.create:Créer le stand`
-  );
-  protected readonly effectifInvalid = computed(() => {
-    const draft = this.draft();
-    return Number(draft.effectifMax) < Number(draft.effectifMin);
-  });
   protected readonly jobs = inject(SolverJobService);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
   protected readonly editingLocked = computed(() => this.jobs.solverBusy());
 
   private readonly crud = inject(ReferenceCrudService);
+  private readonly dialog = inject(MatDialog);
 
   constructor() {
     void this.crud.reload();
-  }
-
-  protected patch(patch: Partial<StandDraft>): void {
-    this.draft.update((draft) => ({ ...draft, ...patch }));
   }
 
   protected typologiesLabel(stand: Stand): string {
@@ -83,58 +41,28 @@ export class StandsPage {
     return `${majeurs}${premium}`;
   }
 
-  protected async save(): Promise<void> {
-    if (this.effectifInvalid()) {
-      return;
-    }
-    const draft = this.draft();
-    const stand: Stand = {
-      id: draft.id.trim(),
-      nom: draft.nom.trim(),
-      typologiesProposees: draft.typologiesProposees,
-      effectifMin: Number(draft.effectifMin) || 0,
-      effectifMax: Number(draft.effectifMax) || 0,
-      reserveMajeurs: draft.reserveMajeurs,
-      premium: draft.premium
-    };
-    if (await this.crud.save('stands', stand, this.editingId(), $localize`:@@stands.entityLabel:Stand`)) {
-      this.cancel();
-    }
+  protected emplacementLabel(stand: Stand): string {
+    return stand.emplacement?.nom || '—';
+  }
+
+  protected openCreate(): void {
+    this.openDialog(null);
   }
 
   protected edit(stand: Stand): void {
-    this.draft.set({
-      id: stand.id,
-      nom: stand.nom ?? '',
-      effectifMin: stand.effectifMin,
-      effectifMax: stand.effectifMax,
-      reserveMajeurs: Boolean(stand.reserveMajeurs),
-      premium: Boolean(stand.premium),
-      typologiesProposees: [...(stand.typologiesProposees ?? [])]
-    });
-    this.editingId.set(stand.id);
+    this.openDialog(stand);
   }
 
-  protected cancel(): void {
-    this.draft.set(emptyDraft());
-    this.editingId.set(null);
+  private openDialog(stand: Stand | null): void {
+    this.dialog.open<StandFormDialog, StandFormData, boolean>(StandFormDialog, {
+      data: { stand },
+      width: '40rem',
+      maxWidth: '95vw',
+      autoFocus: 'first-tabbable'
+    });
   }
 
   protected async remove(stand: Stand): Promise<void> {
-    if (await this.crud.remove('stands', stand.id, $localize`:@@stands.entityLabel:Stand`) && this.editingId() === stand.id) {
-      this.cancel();
-    }
+    await this.crud.remove('stands', stand.id, $localize`:@@stands.entityLabel:Stand`);
   }
-}
-
-function emptyDraft(): StandDraft {
-  return {
-    id: '',
-    nom: '',
-    effectifMin: 1,
-    effectifMax: 1,
-    reserveMajeurs: false,
-    premium: false,
-    typologiesProposees: []
-  };
 }
