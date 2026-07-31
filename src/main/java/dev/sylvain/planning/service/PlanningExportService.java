@@ -16,16 +16,16 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import com.lowagie.text.Document;
-import com.lowagie.text.Element;
-import com.lowagie.text.Font;
-import com.lowagie.text.Paragraph;
-import com.lowagie.text.Phrase;
-import com.lowagie.text.Rectangle;
-import com.lowagie.text.pdf.PdfPCell;
-import com.lowagie.text.pdf.PdfPTable;
-import com.lowagie.text.pdf.PdfPageEventHelper;
-import com.lowagie.text.pdf.PdfWriter;
+import org.openpdf.text.Document;
+import org.openpdf.text.Element;
+import org.openpdf.text.Font;
+import org.openpdf.text.Paragraph;
+import org.openpdf.text.Phrase;
+import org.openpdf.text.Rectangle;
+import org.openpdf.text.pdf.PdfPCell;
+import org.openpdf.text.pdf.PdfPTable;
+import org.openpdf.text.pdf.PdfPageEventHelper;
+import org.openpdf.text.pdf.PdfWriter;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningFestival;
@@ -188,7 +188,7 @@ public class PlanningExportService {
 
     private byte[] buildPdf(String animateurName, List<PosteAffectation> postes) {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        Document document = new Document(com.lowagie.text.PageSize.A4, 42, 42, 54, 54);
+        Document document = new Document(org.openpdf.text.PageSize.A4, 42, 42, 54, 54);
         PdfWriter writer = PdfWriter.getInstance(document, output);
         writer.setPageEvent(new FooterEvent());
         document.open();
@@ -425,7 +425,7 @@ public class PlanningExportService {
             Rectangle page = document.getPageSize();
             float y = document.bottomMargin() - 18;
 
-            com.lowagie.text.pdf.PdfContentByte canvas = writer.getDirectContent();
+            org.openpdf.text.pdf.PdfContentByte canvas = writer.getDirectContent();
             canvas.setColorStroke(BORDER);
             canvas.setLineWidth(0.5f);
             canvas.moveTo(document.leftMargin(), y + 12);
@@ -433,11 +433,11 @@ public class PlanningExportService {
             canvas.stroke();
 
             Phrase footer = new Phrase("planning-equipes", FOOTER_FONT);
-            com.lowagie.text.pdf.ColumnText.showTextAligned(canvas, Element.ALIGN_LEFT,
+            org.openpdf.text.pdf.ColumnText.showTextAligned(canvas, Element.ALIGN_LEFT,
                     footer, document.leftMargin(), y, 0);
 
             Phrase pageNumber = new Phrase("Page " + writer.getPageNumber(), FOOTER_FONT);
-            com.lowagie.text.pdf.ColumnText.showTextAligned(canvas, Element.ALIGN_RIGHT,
+            org.openpdf.text.pdf.ColumnText.showTextAligned(canvas, Element.ALIGN_RIGHT,
                     pageNumber, page.getWidth() - document.rightMargin(), y, 0);
         }
     }
