@@ -18,7 +18,7 @@ import { StandFormData, StandFormDialog } from './stand-form-dialog';
   templateUrl: './stands-page.html'
 })
 export class StandsPage {
-  protected readonly columns = ['id', 'nom', 'effectif', 'typologies', 'actions'];
+  protected readonly columns = ['id', 'nom', 'effectif', 'typologies', 'emplacement', 'actions'];
   protected readonly store = inject(ReferenceDataStore);
   protected readonly jobs = inject(SolverJobService);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
@@ -33,6 +33,10 @@ export class StandsPage {
 
   protected typologiesLabel(stand: Stand): string {
     return (stand.typologiesProposees ?? []).join(', ') || '—';
+  }
+
+  protected emplacementLabel(stand: Stand): string {
+    return stand.emplacement?.nom || '—';
   }
 
   protected openCreate(): void {

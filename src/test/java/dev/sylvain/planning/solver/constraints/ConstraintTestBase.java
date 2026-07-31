@@ -14,6 +14,7 @@ import ai.timefold.solver.test.api.score.stream.SingleConstraintVerification;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
@@ -100,6 +101,16 @@ abstract class ConstraintTestBase {
         Stand stand = stand(id, false, TypologieJeu.STRATEGIE);
         stand.setPremium(true);
         return stand;
+    }
+
+    protected static Stand standAvecEmplacement(String id, Emplacement emplacement) {
+        Stand stand = standStrategie(id);
+        stand.setEmplacement(emplacement);
+        return stand;
+    }
+
+    protected static Emplacement emplacement(String id, double latitude, double longitude) {
+        return new Emplacement(id, id, latitude, longitude);
     }
 
     // --- Animateur factories ----------------------------------------------

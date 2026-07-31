@@ -13,6 +13,8 @@ public class Stand {
     private int effectifMax;
     private boolean reserveMajeurs;
     private boolean premium;
+    /** Physical location the stand is set up at; nullable (not every stand is geocoded). */
+    private Emplacement emplacement;
 
     public Stand() {
     }
@@ -88,6 +90,14 @@ public class Stand {
 
     public void setPremium(boolean premium) {
         this.premium = premium;
+    }
+
+    public Emplacement getEmplacement() {
+        return emplacement;
+    }
+
+    public void setEmplacement(Emplacement emplacement) {
+        this.emplacement = emplacement;
     }
 
     @Override

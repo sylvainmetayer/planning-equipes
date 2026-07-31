@@ -52,6 +52,7 @@ Source : `solver/ConstraintCatalog.java` (description métier) et
 | `repartitionMineursParCreneau` | Pas plus de mineurs que de majeurs sur un stand et un créneau |
 | `experienceRequisePourStandsPremium` | Un stand premium ne devrait pas être tenu par un débutant |
 | `eviterRoulementStandsPremium` | Sur un stand premium, éviter de faire tourner plusieurs animateurs différents |
+| `eviterChangementEmplacementEloigne` | Entre deux créneaux consécutifs, éviter de basculer un animateur vers un stand dont l'emplacement est éloigné (> 300 m) |
 
 ### Soft — préférences (`PreferenceConstraints`)
 

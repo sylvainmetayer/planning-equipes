@@ -10,6 +10,7 @@ function stand(overrides: Partial<Stand> & { id: string }): Stand {
     effectifMax: 1,
     reserveMajeurs: false,
     premium: false,
+    emplacement: null,
     ...overrides
   };
 }

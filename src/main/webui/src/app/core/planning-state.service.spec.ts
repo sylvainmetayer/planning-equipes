@@ -12,7 +12,8 @@ function stand(id: string, effectifMax: number): Stand {
     effectifMin: 1,
     effectifMax,
     reserveMajeurs: false,
-    premium: false
+    premium: false,
+    emplacement: null
   };
 }
 

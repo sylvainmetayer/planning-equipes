@@ -5,7 +5,10 @@ import ai.timefold.solver.core.api.score.stream.Constraint;
 import ai.timefold.solver.core.api.score.stream.ConstraintCollectors;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
 import ai.timefold.solver.core.api.score.stream.Joiners;
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.Stand;
 
 /**
  * Medium constraints: strongly penalised but non-blocking organisational
@@ -14,13 +17,21 @@ import dev.sylvain.planning.domain.PosteAffectation;
  */
 public final class QualiteConstraints {
 
+    /**
+     * Beyond this great-circle distance between two emplacements, moving an
+     * animateur from one to the other between two back-to-back slots is
+     * considered a costly trek rather than a short walk across the same site.
+     */
+    static final double DISTANCE_ELOIGNEE_METRES = 300.0;
+
     public Constraint[] define(ConstraintFactory constraintFactory) {
         return new Constraint[] {
                 standComplexeAvecReferent(constraintFactory),
                 equilibrerCharge(constraintFactory),
                 repartitionMineursParCreneau(constraintFactory),
                 experienceRequisePourStandsPremium(constraintFactory),
-                eviterRoulementStandsPremium(constraintFactory)
+                eviterRoulementStandsPremium(constraintFactory),
+                eviterChangementEmplacementEloigne(constraintFactory)
         };
     }
 
@@ -89,5 +100,43 @@ public final class QualiteConstraints {
                         && !posteA.getCreneau().equals(posteB.getCreneau()))
                 .penalize(HardMediumSoftScore.ONE_MEDIUM)
                 .asConstraint("eviterRoulementStandsPremium");
+    }
+
+    private Constraint eviterChangementEmplacementEloigne(ConstraintFactory constraintFactory) {
+        // Same animateur, two back-to-back slots (same day, one ending exactly
+        // when the other starts), different stands whose emplacements are far
+        // apart: the switch costs a real trek across town, so it's penalised.
+        return constraintFactory.forEachUniquePair(
+                PosteAffectation.class,
+                Joiners.equal(PosteAffectation::getAnimateur))
+                .filter((posteA, posteB) -> posteA.getAnimateur() != null
+                        && posteA.getStand() != null && posteB.getStand() != null
+                        && !posteA.getStand().equals(posteB.getStand())
+                        && creneauxConsecutifs(posteA.getCreneau(), posteB.getCreneau())
+                        && emplacementsEloignes(posteA.getStand(), posteB.getStand()))
+                .penalize(HardMediumSoftScore.ONE_MEDIUM)
+                .asConstraint("eviterChangementEmplacementEloigne");
+    }
+
+    /** True when two slots are back-to-back on the same day: one ends exactly when the other starts. */
+    private boolean creneauxConsecutifs(Creneau a, Creneau b) {
+        if (a == null || b == null || a.getJour() != b.getJour()
+                || a.getHeureDebut() == null || a.getHeureFin() == null
+                || b.getHeureDebut() == null || b.getHeureFin() == null) {
+            return false;
+        }
+        Creneau tot = a.getHeureDebut().isBefore(b.getHeureDebut()) ? a : b;
+        Creneau suivant = tot == a ? b : a;
+        return tot.getHeureFin().equals(suivant.getHeureDebut());
+    }
+
+    private boolean emplacementsEloignes(Stand standA, Stand standB) {
+        Emplacement emplacementA = standA.getEmplacement();
+        Emplacement emplacementB = standB.getEmplacement();
+        if (emplacementA == null || emplacementB == null) {
+            return false;
+        }
+        Double distanceMetres = emplacementA.distanceMetresVers(emplacementB);
+        return distanceMetres != null && distanceMetres > DISTANCE_ELOIGNEE_METRES;
     }
 }

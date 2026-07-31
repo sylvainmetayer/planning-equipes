@@ -44,8 +44,22 @@ public class Stand {
     private int effectifMax;
     private boolean reserveMajeurs;             // stand interdit aux mineurs
     private boolean premium;                    // stand éditeur : continuité + expérience privilégiées
+    private Emplacement emplacement;            // lieu physique (kiosque, mairie, ...) ; nullable
+}
+
+public class Emplacement {
+    private String id;
+    private String nom;
+    private Double latitude;
+    private Double longitude;
 }
 ```
+
+Un `Emplacement` est un référentiel éditable indépendamment (page « Emplacements »),
+géré comme `Stand`/`Creneau`/`Animateur` (CRUD, pas de logique métier propre hormis
+`distanceMetresVers(...)`, la distance à vol d'oiseau — formule de haversine — vers
+un autre emplacement). Un stand non géolocalisé (`emplacement == null`) est
+simplement ignoré par la contrainte de distance.
 
 ## Entité de planification
 
@@ -154,6 +168,7 @@ désactivée) et pilotable depuis la page « Constraints » via
 | Mineur / majeur | Toujours dérivé de `dateNaissance` à la date du créneau via `estMineurLe(LocalDate)` / `estMajeurLe(LocalDate)` — **jamais un booléen stocké**, pour éviter toute désynchronisation |
 | Repos quotidien, hebdo, encadrement | Regroupement des `PosteAffectation` d'un même animateur, triés par `creneau.jour` / `heureDebut` |
 | Stand réservé aux majeurs | `poste.stand.reserveMajeurs` vs âge de `poste.animateur` à la date du créneau |
+| Éloignement entre créneaux consécutifs | `Emplacement.distanceMetresVers(...)` (haversine) entre les emplacements des deux stands d'un même animateur sur deux créneaux consécutifs (même jour, l'un se terminant quand l'autre commence) |
 
 ## Invariants à ne pas casser
 

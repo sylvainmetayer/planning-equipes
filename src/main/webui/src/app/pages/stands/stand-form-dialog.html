@@ -36,6 +36,16 @@
     }
   </mat-select>
 </mat-form-field>
+<mat-form-field appearance="outline" class="span-2">
+  <mat-label>Location</mat-label>
+  <mat-select name="emplacement" [disabled]="editingLocked()"
+              [ngModel]="draft().emplacementId" (ngModelChange)="patch({ emplacementId: $event })">
+    <mat-option [value]="null">None</mat-option>
+    @for (emplacement of store.emplacements(); track emplacement.id) {
+      <mat-option [value]="emplacement.id">{{ emplacement.nom || emplacement.id }}</mat-option>
+    }
+  </mat-select>
+</mat-form-field>
 <mat-checkbox name="reserveMajeurs" [disabled]="editingLocked()"
               [ngModel]="draft().reserveMajeurs" (ngModelChange)="patch({ reserveMajeurs: $event })">
   Adults only

@@ -38,6 +38,7 @@ const NAV_GROUPS: NavGroup[] = [
     title: 'Reference data',
     links: [
       { path: '/stands', label: 'Stands', icon: 'storefront' },
+      { path: '/emplacements', label: 'Locations', icon: 'place' },
       { path: '/animateurs', label: 'Animateurs', icon: 'groups' },
       { path: '/creneaux', label: 'Créneaux', icon: 'schedule' },
       { path: '/typologies', label: 'Typologies', icon: 'category' },

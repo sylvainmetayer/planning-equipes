@@ -21,6 +21,7 @@ interface StandDraft {
   reserveMajeurs: boolean;
   premium: boolean;
   typologiesProposees: string[];
+  emplacementId: string | null;
 }
 
 export interface StandFormData {
@@ -76,7 +77,10 @@ export class StandFormDialog {
       effectifMin: Number(draft.effectifMin) || 0,
       effectifMax: Number(draft.effectifMax) || 0,
       reserveMajeurs: draft.reserveMajeurs,
-      premium: draft.premium
+      premium: draft.premium,
+      emplacement: draft.emplacementId
+        ? (this.store.emplacements().find((e) => e.id === draft.emplacementId) ?? null)
+        : null
     };
     if (await this.crud.save('stands', stand, this.editingId(), 'Stand')) {
       this.dialogRef.close(true);
@@ -86,7 +90,16 @@ export class StandFormDialog {
 
 function toDraft(stand: Stand | null): StandDraft {
   if (!stand) {
-    return { id: '', nom: '', effectifMin: 1, effectifMax: 1, reserveMajeurs: false, premium: false, typologiesProposees: [] };
+    return {
+      id: '',
+      nom: '',
+      effectifMin: 1,
+      effectifMax: 1,
+      reserveMajeurs: false,
+      premium: false,
+      typologiesProposees: [],
+      emplacementId: null
+    };
   }
   return {
     id: stand.id,
@@ -95,6 +108,7 @@ function toDraft(stand: Stand | null): StandDraft {
     effectifMax: stand.effectifMax,
     reserveMajeurs: Boolean(stand.reserveMajeurs),
     premium: Boolean(stand.premium),
-    typologiesProposees: [...(stand.typologiesProposees ?? [])]
+    typologiesProposees: [...(stand.typologiesProposees ?? [])],
+    emplacementId: stand.emplacement?.id ?? null
   };
 }

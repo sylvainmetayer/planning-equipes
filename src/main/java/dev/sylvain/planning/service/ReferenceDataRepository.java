@@ -22,6 +22,7 @@ import javax.sql.DataSource;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PlanningFestival;
@@ -82,7 +83,10 @@ public class ReferenceDataRepository {
         Map<String, Stand> byId = new LinkedHashMap<>();
         try (Connection connection = dataSource.getConnection()) {
             try (PreparedStatement ps = connection.prepareStatement(
-                    "SELECT id, nom, effectif_min, effectif_max, reserve_majeurs, premium FROM stand ORDER BY id");
+                    "SELECT s.id, s.nom, s.effectif_min, s.effectif_max, s.reserve_majeurs, s.premium, "
+                            + "e.id AS emplacement_id, e.nom AS emplacement_nom, e.latitude AS emplacement_latitude, "
+                            + "e.longitude AS emplacement_longitude "
+                            + "FROM stand s LEFT JOIN emplacement e ON e.id = s.emplacement_id ORDER BY s.id");
                     ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Stand stand = new Stand();
@@ -92,6 +96,12 @@ public class ReferenceDataRepository {
                     stand.setEffectifMax(rs.getInt("effectif_max"));
                     stand.setReserveMajeurs(rs.getBoolean("reserve_majeurs"));
                     stand.setPremium(rs.getBoolean("premium"));
+                    String emplacementId = rs.getString("emplacement_id");
+                    if (emplacementId != null) {
+                        stand.setEmplacement(new Emplacement(emplacementId, rs.getString("emplacement_nom"),
+                                (Double) rs.getObject("emplacement_latitude"),
+                                (Double) rs.getObject("emplacement_longitude")));
+                    }
                     byId.put(stand.getId(), stand);
                 }
             }
@@ -137,16 +147,18 @@ public class ReferenceDataRepository {
 
     private void upsertStand(Connection connection, Stand stand) throws SQLException {
         try (PreparedStatement ps = connection.prepareStatement(
-                "INSERT INTO stand (id, nom, effectif_min, effectif_max, reserve_majeurs, premium) VALUES (?, ?, ?, ?, ?, ?) "
+                "INSERT INTO stand (id, nom, effectif_min, effectif_max, reserve_majeurs, premium, emplacement_id) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?) "
                         + "ON CONFLICT (id) DO UPDATE SET nom = EXCLUDED.nom, effectif_min = EXCLUDED.effectif_min, "
                         + "effectif_max = EXCLUDED.effectif_max, reserve_majeurs = EXCLUDED.reserve_majeurs, "
-                        + "premium = EXCLUDED.premium")) {
+                        + "premium = EXCLUDED.premium, emplacement_id = EXCLUDED.emplacement_id")) {
             ps.setString(1, stand.getId());
             ps.setString(2, stand.getNom());
             ps.setInt(3, stand.getEffectifMin());
             ps.setInt(4, stand.getEffectifMax());
             ps.setBoolean(5, stand.isReserveMajeurs());
             ps.setBoolean(6, stand.isPremium());
+            ps.setString(7, stand.getEmplacement() != null ? stand.getEmplacement().getId() : null);
             ps.executeUpdate();
         }
         try (PreparedStatement del = connection.prepareStatement("DELETE FROM stand_typologie WHERE stand_id = ?")) {
@@ -164,6 +176,48 @@ public class ReferenceDataRepository {
                 ins.executeBatch();
             }
         }
+    }
+
+    /* ---------------------------- Emplacements ------------------------------ */
+
+    public List<Emplacement> listEmplacements() {
+        List<Emplacement> emplacements = new ArrayList<>();
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = connection.prepareStatement(
+                        "SELECT id, nom, latitude, longitude FROM emplacement ORDER BY id");
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                emplacements.add(new Emplacement(rs.getString("id"), rs.getString("nom"),
+                        (Double) rs.getObject("latitude"), (Double) rs.getObject("longitude")));
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to list emplacements", e);
+        }
+        return emplacements;
+    }
+
+    public boolean emplacementExists(String id) {
+        return exists("emplacement", id);
+    }
+
+    public void saveEmplacement(Emplacement emplacement) {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = connection.prepareStatement(
+                        "INSERT INTO emplacement (id, nom, latitude, longitude) VALUES (?, ?, ?, ?) "
+                                + "ON CONFLICT (id) DO UPDATE SET nom = EXCLUDED.nom, latitude = EXCLUDED.latitude, "
+                                + "longitude = EXCLUDED.longitude")) {
+            ps.setString(1, emplacement.getId());
+            ps.setString(2, emplacement.getNom());
+            ps.setObject(3, emplacement.getLatitude());
+            ps.setObject(4, emplacement.getLongitude());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to save emplacement " + emplacement.getId(), e);
+        }
+    }
+
+    public void deleteEmplacement(String id) {
+        delete("DELETE FROM emplacement WHERE id = ?", id);
     }
 
     /* ------------------------------ Timeslots ------------------------------ */
