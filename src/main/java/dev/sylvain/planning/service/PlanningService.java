@@ -8,6 +8,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -22,6 +23,7 @@ import ai.timefold.solver.core.config.score.director.ScoreDirectorFactoryConfig;
 import ai.timefold.solver.core.config.solver.termination.TerminationConfig;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 
@@ -177,6 +179,116 @@ public class PlanningService {
             }
         }
         return postes;
+    }
+
+    /**
+     * Serializes the current reference data (animateurs, stands, créneaux) plus
+     * the seat list it implies (mirroring {@link #construireDepuisReferenceData})
+     * into the same YAML shape read by {@link #chargerScenarioYaml}, so the
+     * result can be dropped into the {@link #SCENARIOS_DIR} folder and reloaded
+     * as-is.
+     */
+    public String exporterScenarioYaml() {
+        List<Animateur> animateurs = referenceDataService.listAnimateurs();
+        List<Stand> stands = referenceDataService.listStands();
+        List<Creneau> creneaux = referenceDataService.listCreneaux();
+        if (animateurs.isEmpty() || stands.isEmpty() || creneaux.isEmpty()) {
+            throw new IllegalStateException(
+                    "Aucune donnée de référence à exporter. Créez des stands, des animateurs et des créneaux d'abord.");
+        }
+        return construireScenarioYaml(animateurs, stands, creneaux, construirePostes(stands, creneaux));
+    }
+
+    /**
+     * Builds the YAML text from already-fetched data. Package-private and
+     * static, like {@link #construirePostes}, so it can be unit-tested without
+     * a database.
+     */
+    static String construireScenarioYaml(List<Animateur> animateurs, List<Stand> stands, List<Creneau> creneaux,
+            List<PosteAffectation> postes) {
+        LocalDate dateDebut = creneaux.stream()
+                .map(Creneau::getDate)
+                .filter(java.util.Objects::nonNull)
+                .min(LocalDate::compareTo)
+                .orElse(null);
+
+        Map<String, Object> festival = new LinkedHashMap<>();
+        festival.put("dateDebut", asString(dateDebut));
+
+        List<Map<String, Object>> creneauxYaml = new ArrayList<>();
+        for (Creneau creneau : creneaux) {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("id", creneau.getId());
+            item.put("jour", creneau.getJour());
+            item.put("date", asString(creneau.getDate()));
+            item.put("heureDebut", asString(creneau.getHeureDebut()));
+            item.put("heureFin", asString(creneau.getHeureFin()));
+            creneauxYaml.add(item);
+        }
+
+        List<Map<String, Object>> standsYaml = new ArrayList<>();
+        for (Stand stand : stands) {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("id", stand.getId());
+            item.put("nom", stand.getNom());
+            item.put("typologiesProposees", stand.getTypologiesProposees().stream()
+                    .map(Enum::name)
+                    .collect(Collectors.toList()));
+            item.put("effectifMin", stand.getEffectifMin());
+            item.put("effectifMax", stand.getEffectifMax());
+            item.put("reserveMajeurs", stand.isReserveMajeurs());
+            item.put("premium", stand.isPremium());
+            standsYaml.add(item);
+        }
+
+        List<Map<String, Object>> animateursYaml = new ArrayList<>();
+        for (Animateur animateur : animateurs) {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("id", animateur.getId());
+            item.put("prenom", animateur.getPrenom());
+            item.put("nom", animateur.getNom());
+            item.put("dateNaissance", asString(animateur.getDateNaissance()));
+            item.put("manager", animateur.isManager());
+            Map<String, String> competences = new LinkedHashMap<>();
+            if (animateur.getCompetences() != null) {
+                animateur.getCompetences()
+                        .forEach((typologie, niveau) -> competences.put(typologie.name(), niveau.name()));
+            }
+            item.put("competences", competences);
+            List<String> joursIndisponibles = animateur.getJoursIndisponibles() == null
+                    ? List.of()
+                    : animateur.getJoursIndisponibles().stream()
+                            .sorted()
+                            .map(PlanningService::asString)
+                            .collect(Collectors.toList());
+            item.put("joursIndisponibles", joursIndisponibles);
+            animateursYaml.add(item);
+        }
+
+        List<Map<String, Object>> postesYaml = new ArrayList<>();
+        for (PosteAffectation poste : postes) {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("id", poste.getId());
+            item.put("standId", poste.getStand().getId());
+            item.put("creneauId", poste.getCreneau().getId());
+            item.put("animateurId", null);
+            postesYaml.add(item);
+        }
+
+        Map<String, Object> root = new LinkedHashMap<>();
+        root.put("festival", festival);
+        root.put("creneaux", creneauxYaml);
+        root.put("stands", standsYaml);
+        root.put("animateurs", animateursYaml);
+        root.put("postes", postesYaml);
+
+        DumperOptions options = new DumperOptions();
+        options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+        return new Yaml(options).dump(root);
+    }
+
+    private static String asString(Object value) {
+        return value == null ? null : value.toString();
     }
 
     /**

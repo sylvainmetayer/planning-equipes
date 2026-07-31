@@ -197,6 +197,25 @@ class PlanningResourceTest {
     }
 
     @Test
+    void exportScenarioReturnsTheCurrentReferenceDataAsYaml() {
+        given()
+                .when().post("/api/reference-data/import-scenario?name=scenario.yml")
+                .then()
+                .statusCode(204);
+
+        String yaml = given()
+                .when().get("/api/planning/export-scenario")
+                .then()
+                .statusCode(200)
+                .contentType("application/x-yaml")
+                .header("Content-Disposition", notNullValue())
+                .extract().asString();
+
+        assertThat(yaml).contains("festival:", "creneaux:", "stands:", "animateurs:", "postes:")
+                .contains("STAND-STRAT", "A1");
+    }
+
+    @Test
     void pdfExportBundlesOneFilePerAnimateur() throws IOException {
         String planningJson = given()
                 .when().get("/api/planning/sample")

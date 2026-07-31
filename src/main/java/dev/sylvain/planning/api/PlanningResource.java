@@ -1,5 +1,8 @@
 package dev.sylvain.planning.api;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.service.ConstraintAnalysisStore;
 import dev.sylvain.planning.service.PlanningPersistenceService;
@@ -12,7 +15,9 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 @Path("/api")
 @Produces(MediaType.APPLICATION_JSON)
@@ -43,6 +48,22 @@ public class PlanningResource {
     @Path("/planning/sample")
     public PlanningFestival sample(@QueryParam("name") String name) {
         return planningService.construireExemple(name);
+    }
+
+    /**
+     * Exports the currently persisted reference data (stands, créneaux,
+     * animateurs, and the seat list they imply) as a downloadable scenario YAML
+     * file, in the same format read by the "Load sample planning" scenarios.
+     */
+    @GET
+    @Path("/planning/export-scenario")
+    @Produces("application/x-yaml")
+    public Response exportScenario() {
+        String yaml = planningService.exporterScenarioYaml();
+        String filename = "scenario-" + LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE) + ".yaml";
+        return Response.ok(yaml)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .build();
     }
 
     @POST
