@@ -29,6 +29,9 @@ public class PlanningFestival {
     @ProblemFactCollectionProperty
     private List<ParametresLegaux> parametresLegaux = new ArrayList<>(List.of(new ParametresLegaux()));
 
+    @ProblemFactCollectionProperty
+    private List<ConstraintToggle> constraintsDesactivees = new ArrayList<>();
+
     @PlanningScore
     private HardMediumSoftScore score;
 
@@ -87,6 +90,14 @@ public class PlanningFestival {
 
     public void setParametresLegaux(List<ParametresLegaux> parametresLegaux) {
         this.parametresLegaux = parametresLegaux;
+    }
+
+    public List<ConstraintToggle> getConstraintsDesactivees() {
+        return constraintsDesactivees;
+    }
+
+    public void setConstraintsDesactivees(List<ConstraintToggle> constraintsDesactivees) {
+        this.constraintsDesactivees = constraintsDesactivees;
     }
 
     public HardMediumSoftScore getScore() {

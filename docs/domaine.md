@@ -133,6 +133,17 @@ l'Animation (ÉCLAT, IDCC 1518, art. 5.2). Consommée par
 `LegalConstraints.dureeHebdomadaireMax`, qui regroupe les `PosteAffectation` par
 animateur et semaine ISO (`Creneau.semaineIso()`) et pénalise le dépassement.
 
+## Activation des contraintes
+
+`ConstraintToggle` (même mécanisme de fait de problème que `ParametresLegaux` /
+`ContrainteAdHoc`) porte le nom d'une contrainte désactivée pour le solve en
+cours. Absence de fait pour un nom donné = contrainte active (comportement par
+défaut). Persisté en base (table `constraint_toggle`, présence d'une ligne =
+désactivée) et pilotable depuis la page « Constraints » via
+`PUT /api/constraints/{name}`. Chaque contrainte consulte ce fait via
+`ConstraintToggleSupport.actif(stream, "nom")`, voir
+[`contraintes.md`](contraintes.md).
+
 ## Mapping contraintes → modèle
 
 | Règle | Mise en œuvre |

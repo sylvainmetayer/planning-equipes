@@ -122,6 +122,7 @@ export interface ConstraintView {
   niveau: NiveauContrainte;
   categorie: string;
   description: string;
+  actif: boolean;
   score: string | null;
   matchCount: number | null;
 }

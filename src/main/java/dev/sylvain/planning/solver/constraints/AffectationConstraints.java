@@ -28,14 +28,15 @@ public final class AffectationConstraints {
         // forEach() excludes entities with a null planning variable value, so this
         // constraint (which specifically targets unassigned postes) must use
         // forEachIncludingUnassigned() to actually see them.
-        return constraintFactory.forEachIncludingUnassigned(PosteAffectation.class)
+        return ConstraintToggleSupport.actif(
+                constraintFactory.forEachIncludingUnassigned(PosteAffectation.class), "posteDoitEtrePourvu")
                 .filter(poste -> poste.getAnimateur() == null)
                 .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint("posteDoitEtrePourvu");
     }
 
     private Constraint animateurDisponible(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(PosteAffectation.class)
+        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class), "animateurDisponible")
                 .filter(poste -> {
                     Animateur animateur = poste.getAnimateur();
                     return animateur != null
@@ -48,7 +49,7 @@ public final class AffectationConstraints {
     }
 
     private Constraint competenceCompatible(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(PosteAffectation.class)
+        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class), "competenceCompatible")
                 .filter(poste -> poste.getAnimateur() != null
                         && !poste.getAnimateur().possedeCompetencePour(poste.getStand()))
                 .penalize(HardMediumSoftScore.ONE_HARD)
@@ -56,10 +57,10 @@ public final class AffectationConstraints {
     }
 
     private Constraint pasDeDoubleAffectationSurMemeCreneau(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEachUniquePair(
+        return ConstraintToggleSupport.actif(constraintFactory.forEachUniquePair(
                 PosteAffectation.class,
                 Joiners.equal(PosteAffectation::getAnimateur),
-                Joiners.equal(PosteAffectation::getCreneau))
+                Joiners.equal(PosteAffectation::getCreneau)), "pasDeDoubleAffectationSurMemeCreneau")
                 .filter((posteA, posteB) -> posteA.getAnimateur() != null)
                 .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint("pasDeDoubleAffectationSurMemeCreneau");
