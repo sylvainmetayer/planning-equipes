@@ -47,6 +47,20 @@ public class GroupeCreneau {
         this.actif = actif;
     }
 
+    /**
+     * Qualifies a créneau id with this group's id (idempotent — a call on an
+     * already-qualified id, e.g. from re-importing a previously exported
+     * scenario, is a no-op). Créneau ids are a single global primary key, so
+     * without this, two groups both defining e.g. "J1-MATIN" (a very common
+     * naming convention across scenarios) would collide on save; qualifying
+     * transparently at save time — the user only ever types the short id —
+     * makes that structurally impossible instead of rejecting the save.
+     */
+    public String qualifierCreneauId(String creneauId) {
+        String suffixe = "-" + id;
+        return creneauId.endsWith(suffixe) ? creneauId : creneauId + suffixe;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

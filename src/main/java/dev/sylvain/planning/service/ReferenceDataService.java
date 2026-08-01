@@ -146,6 +146,7 @@ public class ReferenceDataService {
     public Creneau createCreneau(Creneau creneau) {
         creneau.setId(requiredId(creneau.getId(), "timeslot id"));
         defaultGroupeIfMissing(creneau);
+        creneau.setId(creneau.getGroupe().qualifierCreneauId(creneau.getId()));
         repository.saveCreneau(creneau);
         return creneau;
     }

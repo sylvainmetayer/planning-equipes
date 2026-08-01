@@ -793,7 +793,13 @@ public class ReferenceDataRepository {
      * are not — only the currently active {@link GroupeCreneau}'s créneaux are
      * cleared and reloaded, so a scenario can be imported into one group
      * (e.g. an alternate planning) without wiping out the créneaux other
-     * groups already hold. Runs in a single transaction.
+     * groups already hold. Each imported créneau's id is qualified with the
+     * active group's id ({@link GroupeCreneau#qualifierCreneauId(String)}),
+     * so a scenario re-using an id already claimed by another group (very
+     * common — the bundled scenarios all follow the same "J1-MATIN"
+     * convention) can't collide with it; ad hoc constraints referencing one
+     * of those créneaux by its original (short) id are remapped accordingly.
+     * Runs in a single transaction.
      */
     public void importFromPlanning(PlanningFestival planning) {
         if (planning == null) {
@@ -818,14 +824,6 @@ public class ReferenceDataRepository {
 
         try (Connection connection = dataSource.getConnection()) {
             String groupeActifId = groupeActifId(connection);
-            // Fail fast, before touching anything: creneau.id is a single global
-            // primary key, so a scenario re-using an id already claimed by another
-            // group (very common — the bundled scenarios all follow the same
-            // "J1-MATIN" convention) can't be inserted into the active group without
-            // colliding. Silently upserting on conflict would move that créneau out
-            // of its current group instead of leaving it alone, defeating the whole
-            // point of importing into one group without disturbing the others.
-            assertAucunConflitDeGroupe(connection, groupeActifId, creneauxById);
             connection.setAutoCommit(false);
             try {
                 for (String table : List.of("contrainte_animateur", "contrainte_ad_hoc", "poste_affectation",
@@ -841,7 +839,11 @@ public class ReferenceDataRepository {
                     ps.executeUpdate();
                 }
                 GroupeCreneau groupeActif = new GroupeCreneau(groupeActifId, null, false);
+                Map<String, String> idsQualifies = new LinkedHashMap<>();
                 for (Creneau creneau : creneauxById.values()) {
+                    String idQualifie = groupeActif.qualifierCreneauId(creneau.getId());
+                    idsQualifies.put(creneau.getId(), idQualifie);
+                    creneau.setId(idQualifie);
                     creneau.setGroupe(groupeActif);
                     upsertCreneauTx(connection, creneau);
                 }
@@ -864,6 +866,12 @@ public class ReferenceDataRepository {
                 }
                 for (ContrainteAdHoc contrainte : contraintes) {
                     if (contrainte != null && contrainte.getId() != null) {
+                        if (contrainte.getCreneau() != null && contrainte.getCreneau().getId() != null) {
+                            String idQualifie = idsQualifies.get(contrainte.getCreneau().getId());
+                            if (idQualifie != null) {
+                                contrainte.getCreneau().setId(idQualifie);
+                            }
+                        }
                         upsertContrainte(connection, contrainte);
                     }
                 }
@@ -884,42 +892,6 @@ public class ReferenceDataRepository {
         try (PreparedStatement ps = connection.prepareStatement("SELECT id FROM groupe_creneau WHERE actif");
                 ResultSet rs = ps.executeQuery()) {
             return rs.next() ? rs.getString("id") : "DEFAUT";
-        }
-    }
-
-    /**
-     * Rejects a scenario import whose créneau ids collide with ones already
-     * held by a different (non-active) group — see the caller for why this
-     * can't just be resolved by upserting.
-     */
-    private void assertAucunConflitDeGroupe(Connection connection, String groupeActifId,
-            Map<String, Creneau> creneauxById) throws SQLException {
-        if (creneauxById.isEmpty()) {
-            return;
-        }
-        StringBuilder placeholders = new StringBuilder();
-        for (int i = 0; i < creneauxById.size(); i++) {
-            placeholders.append(i == 0 ? "?" : ", ?");
-        }
-        List<String> conflits = new ArrayList<>();
-        try (PreparedStatement ps = connection.prepareStatement(
-                "SELECT id FROM creneau WHERE groupe_creneau_id <> ? AND id IN (" + placeholders + ")")) {
-            ps.setString(1, groupeActifId);
-            int index = 2;
-            for (String id : creneauxById.keySet()) {
-                ps.setString(index++, id);
-            }
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    conflits.add(rs.getString("id"));
-                }
-            }
-        }
-        if (!conflits.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "Ce scénario utilise des identifiants de créneau déjà présents dans un autre groupe : "
-                            + String.join(", ", conflits)
-                            + ". Renommez-les dans le scénario, ou videz/supprimez-les de l'autre groupe d'abord.");
         }
     }
 

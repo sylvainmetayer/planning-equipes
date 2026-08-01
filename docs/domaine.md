@@ -84,6 +84,16 @@ règle : il ne remplace que les créneaux du groupe actif, ce qui permet de
 charger un scénario différent dans chaque groupe sans écraser les autres —
 voir [`import-export.md`](import-export.md).
 
+L'id d'un `Creneau` est une clé primaire globale (pas scopée par groupe), donc
+deux groupes ne peuvent pas chacun posséder un créneau avec le même id. Pour
+éviter qu'un id de créneau réutilisé d'un groupe à l'autre (« J1-MATIN » par
+exemple, convention commune à tous les scénarios fournis) ne provoque une
+collision, `GroupeCreneau.qualifierCreneauId(id)` qualifie automatiquement
+l'id avec celui du groupe (`"<id>-<idGroupe>"`, idempotent) à chaque
+enregistrement — création manuelle via `ReferenceDataService.createCreneau`
+comme import de scénario. C'est transparent pour l'utilisateur : il ne saisit
+que l'id court, la qualification est appliquée par le serveur.
+
 ## Entité de planification
 
 Un `PosteAffectation` est créé **par place à pourvoir**, pas un par couple

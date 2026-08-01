@@ -69,10 +69,14 @@ remplacement :
   totalité** ;
 - les créneaux, eux, sont scopés au groupe de créneaux actif : seuls ceux du
   groupe actif sont supprimés puis rechargés avec les créneaux du scénario ;
-  les créneaux des autres groupes ne sont pas touchés. Cela permet de charger
-  plusieurs scénarios dans différents groupes (par exemple un planning normal
-  et un planning de repli) sans que l'un écrase les créneaux de l'autre. Voir
-  [`domaine.md`](domaine.md) pour la notion de groupe de créneaux.
+  les créneaux des autres groupes ne sont pas touchés. L'id de chaque créneau
+  importé est automatiquement qualifié avec l'id du groupe actif (transparent
+  pour l'utilisateur), pour qu'un même nom (« J1-MATIN », convention commune à
+  tous les scénarios fournis) puisse être réutilisé dans plusieurs groupes
+  sans collision. Cela permet de charger plusieurs scénarios dans différents
+  groupes (par exemple un planning normal et un planning de repli) sans que
+  l'un écrase les créneaux de l'autre. Voir [`domaine.md`](domaine.md) pour la
+  notion de groupe de créneaux.
 - les affectations (`poste_affectation`) et les contraintes ad hoc restent
   supprimées en totalité à chaque import, quel que soit le groupe, puisqu'elles
   n'ont pas de notion de groupe propre.
