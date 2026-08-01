@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { ApiService } from '../../core/api.service';
 import { intlLocale } from '../../core/locale';
 import { FeasibilityReport, PlanningDiagnostic } from '../../core/models';
+import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { FeasibilityBanner } from '../../shared/feasibility-banner';
@@ -37,6 +38,14 @@ export class SolverPage {
     const lastRunAt = this.lastRunAt();
     return lastRunAt ? new Date(lastRunAt).toLocaleString(intlLocale()) : '';
   });
+
+  /** Groupe de créneaux the last persisted solve was computed for, if any has ever run. */
+  protected readonly resolution = inject(PlanningResolutionStore);
+  protected readonly resolvedGroupeNom = computed(
+    () => this.resolution.resolution()?.groupeCreneauNom ?? $localize`:@@groupeMismatch.deletedGroup:groupe supprimé`
+  );
+  /** True once the last solve's group no longer matches the active one: its result is stale. */
+  protected readonly groupeMismatch = computed(() => this.resolution.stale());
 
   private readonly api = inject(ApiService);
   private readonly planningState = inject(PlanningStateService);

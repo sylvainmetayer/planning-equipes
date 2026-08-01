@@ -10,6 +10,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
@@ -42,6 +43,7 @@ export class CreneauxPage {
 
   private readonly crud = inject(ReferenceCrudService);
   private readonly dialog = inject(MatDialog);
+  private readonly resolution = inject(PlanningResolutionStore);
 
   protected readonly nouveauGroupeNom = signal('');
   /** Id of the group currently being activated/created, to disable its row while the request is in flight. */
@@ -127,6 +129,9 @@ export class CreneauxPage {
     this.groupeEnCours.set(groupe.id);
     try {
       await this.store.activerGroupeCreneau(groupe.id);
+      // The mismatch banner compares against the active group: refresh it
+      // right away instead of waiting for the next solve.
+      void this.resolution.reload();
     } catch (error) {
       this.crud.reportError(error);
     } finally {

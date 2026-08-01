@@ -10,7 +10,9 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { map } from 'rxjs';
 import { AppLocale, getStoredLocale, setStoredLocaleAndReload } from './core/locale';
+import { PlanningResolutionStore } from './core/planning-resolution.store';
 import { SolverJobService } from './core/solver-job.service';
+import { GroupeMismatchBanner } from './shared/groupe-mismatch-banner';
 import { JobMonitor } from './shared/job-monitor';
 
 interface NavLink {
@@ -127,7 +129,8 @@ function buildNavGroups(): NavGroup[] {
     MatIconModule,
     MatButtonModule,
     MatDividerModule,
-    JobMonitor
+    JobMonitor,
+    GroupeMismatchBanner
   ],
   templateUrl: './app.html',
   styleUrl: './app.css'
@@ -135,6 +138,7 @@ function buildNavGroups(): NavGroup[] {
 export class App {
   protected readonly navGroups = buildNavGroups();
   protected readonly jobs = inject(SolverJobService);
+  protected readonly resolution = inject(PlanningResolutionStore);
   protected readonly locale: AppLocale = getStoredLocale();
 
   private readonly handset = toSignal(
@@ -151,6 +155,11 @@ export class App {
   constructor() {
     // Starts polling the server-side solver lock for the whole session.
     this.jobs.start();
+    // Loaded once here (not per-page) so the mismatch banner is correct on
+    // every screen, including ones that never touch ReferenceDataStore (e.g.
+    // the calendars). Refreshed after every solve, wherever it was started.
+    void this.resolution.reload();
+    this.jobs.onResult('SOLVE', () => void this.resolution.reload());
     // The drawer follows the viewport, but stays user-controllable afterwards.
     effect(() => this.drawerOpen.set(!this.handset()));
   }

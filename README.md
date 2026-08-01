@@ -137,6 +137,11 @@ autres. La résolution ne tient compte que des créneaux du groupe actif, ce
 qui permet de préparer un planning alternatif à l'avance et de basculer
 dessus en un clic sans perdre le planning courant.
 
+Si le groupe actif change après une résolution (par exemple en basculant sur
+le planning de repli), l'application avertit l'utilisateur, sur tous les
+écrans concernant les créneaux, que le dernier calcul ne correspond plus au
+groupe actif et qu'une nouvelle résolution est nécessaire.
+
 Le détail règle par règle est dans [`docs/contraintes.md`](docs/contraintes.md).
 
 ### Gestion des référentiels

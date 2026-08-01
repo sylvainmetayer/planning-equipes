@@ -1,5 +1,6 @@
 package dev.sylvain.planning.api;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
@@ -114,6 +115,27 @@ public class PlanningResource {
     }
 
     public record PersistenceStatus(int assignments) {
+    }
+
+    /**
+     * Which groupe de créneaux the last persisted solve was computed for, and
+     * when. Lets the UI warn when the active group has since changed, so the
+     * persisted planning shown by the calendars is stale for it.
+     * {@code solved} is {@code false} when nothing has ever been solved.
+     */
+    @GET
+    @Path("/planning/persisted/resolution")
+    public PlanningResolutionView persistedResolution() {
+        PlanningPersistenceService.PlanningResolution resolution = persistenceService.loadResolution();
+        if (resolution == null) {
+            return new PlanningResolutionView(false, null, null, null);
+        }
+        return new PlanningResolutionView(true, resolution.groupeCreneauId(), resolution.groupeCreneauNom(),
+                resolution.resoluLe());
+    }
+
+    public record PlanningResolutionView(boolean solved, String groupeCreneauId, String groupeCreneauNom,
+            Instant resoluLe) {
     }
 
     /**

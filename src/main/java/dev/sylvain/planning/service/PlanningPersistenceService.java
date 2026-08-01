@@ -5,15 +5,19 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.sql.DataSource;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.GroupeCreneau;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
@@ -48,7 +52,9 @@ public class PlanningPersistenceService {
         }
         return inTransaction(connection -> {
             upsertReferenceData(connection, planning);
-            return rewriteAssignments(connection, planning.getPostes());
+            int count = rewriteAssignments(connection, planning.getPostes());
+            recordResolution(connection, planning);
+            return count;
         }, "Failed to persist planning solution");
     }
 
@@ -67,8 +73,9 @@ public class PlanningPersistenceService {
 
     private void clearPlanningTables(Connection connection) throws SQLException {
         try (Statement statement = connection.createStatement()) {
-            statement.executeUpdate("TRUNCATE TABLE poste_affectation, contrainte_animateur, contrainte_ad_hoc, "
-                    + "stand_typologie, animateur_competence, animateur_jour_indispo, stand, creneau, animateur "
+            statement.executeUpdate("TRUNCATE TABLE poste_affectation, planning_resolution, contrainte_animateur, "
+                    + "contrainte_ad_hoc, stand_typologie, animateur_competence, animateur_jour_indispo, "
+                    + "stand, creneau, animateur "
                     + "CASCADE");
         }
     }
@@ -244,6 +251,60 @@ public class PlanningPersistenceService {
             ps.executeBatch();
         }
         return count;
+    }
+
+    /**
+     * Records which groupe de créneaux this solve was computed for, taken from
+     * the (already-hydrated) créneau of the solved postes rather than
+     * re-reading "the active group" from the database: that way the record
+     * reflects the group actually solved even if it was changed while the
+     * solve was running. Silently records {@code null} when the solved
+     * postes carry no group (e.g. a YAML scenario solved without reference
+     * data), rather than blocking persistence.
+     */
+    private void recordResolution(Connection connection, PlanningFestival planning) throws SQLException {
+        String groupeId = planning.getPostes().stream()
+                .map(PosteAffectation::getCreneau)
+                .filter(Objects::nonNull)
+                .map(Creneau::getGroupe)
+                .filter(Objects::nonNull)
+                .map(GroupeCreneau::getId)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
+        String sql = "INSERT INTO planning_resolution (id, groupe_creneau_id, resolu_le) VALUES (1, ?, ?) "
+                + "ON CONFLICT (id) DO UPDATE SET groupe_creneau_id = EXCLUDED.groupe_creneau_id, "
+                + "resolu_le = EXCLUDED.resolu_le";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, groupeId);
+            ps.setTimestamp(2, Timestamp.from(Instant.now()));
+            ps.executeUpdate();
+        }
+    }
+
+    /**
+     * The groupe de créneaux the last persisted solve was computed for, and
+     * when it ran. {@code null} when nothing has been solved yet.
+     */
+    public PlanningResolution loadResolution() {
+        String sql = "SELECT r.groupe_creneau_id, g.nom, r.resolu_le FROM planning_resolution r "
+                + "LEFT JOIN groupe_creneau g ON g.id = r.groupe_creneau_id WHERE r.id = 1";
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = connection.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+            if (!rs.next()) {
+                return null;
+            }
+            Timestamp resoluLe = rs.getTimestamp("resolu_le");
+            return new PlanningResolution(rs.getString("groupe_creneau_id"), rs.getString("nom"),
+                    resoluLe != null ? resoluLe.toInstant() : null);
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to load planning resolution", e);
+        }
+    }
+
+    /** @param groupeCreneauId may be {@code null} if the group solved for was later deleted. */
+    public record PlanningResolution(String groupeCreneauId, String groupeCreneauNom, Instant resoluLe) {
     }
 
     /**

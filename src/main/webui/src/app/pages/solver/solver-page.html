@@ -21,6 +21,16 @@
       <p class="calendar-meta" i18n="@@solver.lastRun">Dernière exécution : {{ formattedLastRun() }}</p>
     </mat-card-content>
   }
+  @if (resolution.resolution()?.solved) {
+    <mat-card-content>
+      <p class="calendar-meta" [class.groupe-mismatch]="groupeMismatch()">
+        <ng-container i18n="@@solver.lastRunGroupe">Groupe de créneaux résolu : {{ resolvedGroupeNom() }}</ng-container>
+        @if (groupeMismatch()) {
+          <ng-container i18n="@@solver.lastRunGroupeStale"> — ne correspond plus au groupe actif, relancez le solveur pour un résultat à jour</ng-container>
+        }
+      </p>
+    </mat-card-content>
+  }
 </mat-card>
 
 <app-feasibility-banner [report]="feasibility()" />

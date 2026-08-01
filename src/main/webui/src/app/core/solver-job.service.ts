@@ -83,7 +83,7 @@ export class SolverJobService {
   private readonly http = inject(HttpClient);
   private readonly notifications = inject(NotificationService);
   private readonly stateKnown = signal(false);
-  private readonly resultHandlers = new Map<JobType, ResultHandler>();
+  private readonly resultHandlers = new Map<JobType, ResultHandler[]>();
   private started = false;
 
   /** Starts the shared polling loop. Called once by the app shell. */
@@ -100,10 +100,16 @@ export class SolverJobService {
   /**
    * Registers what to do with the payload of a finished job. Results are always
    * dispatched, whoever started the job: a solve launched from another browser
-   * also updates this one when it completes.
+   * also updates this one when it completes. Multiple independent callers can
+   * subscribe to the same job type (e.g. the app shell and the page showing it).
    */
   onResult(type: JobType, handler: ResultHandler): void {
-    this.resultHandlers.set(type, handler);
+    const handlers = this.resultHandlers.get(type);
+    if (handlers) {
+      handlers.push(handler);
+    } else {
+      this.resultHandlers.set(type, [handler]);
+    }
   }
 
   /**
@@ -260,7 +266,7 @@ export class SolverJobService {
       variant: 'success',
       desktop: true
     });
-    this.resultHandlers.get(job.type)?.(job.result);
+    this.resultHandlers.get(job.type)?.forEach((handler) => handler(job.result));
   }
 }
 
