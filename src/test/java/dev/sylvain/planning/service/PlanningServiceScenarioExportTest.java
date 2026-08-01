@@ -30,7 +30,7 @@ import dev.sylvain.planning.domain.TypologieJeu;
 class PlanningServiceScenarioExportTest {
 
     private final Stand stand = new Stand("STAND-A", "Stand A", Set.of(TypologieJeu.STRATEGIE), 1, 2, false);
-    private final Creneau creneau = new Creneau("C1", 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
+    private final Creneau creneau = new Creneau(1L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
     private final Animateur animateur = new Animateur("A1", "Alice", "Referente", LocalDate.of(2000, 1, 1), false);
 
     @Test
@@ -48,7 +48,7 @@ class PlanningServiceScenarioExportTest {
 
         List<Map<String, Object>> creneaux = (List<Map<String, Object>>) parsed.get("creneaux");
         assertThat(creneaux).hasSize(1);
-        assertThat(creneaux.get(0)).containsEntry("id", "C1")
+        assertThat(creneaux.get(0)).containsEntry("id", 1)
                 .containsEntry("heureDebut", "09:00")
                 .containsEntry("heureFin", "13:00");
 
@@ -69,7 +69,7 @@ class PlanningServiceScenarioExportTest {
         List<Map<String, Object>> postesYaml = (List<Map<String, Object>>) parsed.get("postes");
         assertThat(postesYaml).hasSize(1);
         assertThat(postesYaml.get(0)).containsEntry("standId", "STAND-A")
-                .containsEntry("creneauId", "C1")
+                .containsEntry("creneauId", 1)
                 .containsEntry("animateurId", null);
     }
 

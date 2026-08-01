@@ -4,7 +4,9 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 
 import ai.timefold.solver.core.api.score.stream.Constraint;
@@ -66,8 +68,19 @@ abstract class ConstraintTestBase {
 
     // --- Créneau factories -------------------------------------------------
 
+    // Creneau.id is a numeric surrogate in production; tests keep their
+    // readable String labels ("J1-MATIN"...) and map each distinct label to a
+    // stable synthetic Long id, so none of the many call sites below need to
+    // change.
+    private static final Map<String, Long> CRENEAU_ID_POOL = new ConcurrentHashMap<>();
+    private static final AtomicLong CRENEAU_ID_SEQUENCE = new AtomicLong();
+
+    private static Long idCreneau(String label) {
+        return CRENEAU_ID_POOL.computeIfAbsent(label, k -> CRENEAU_ID_SEQUENCE.incrementAndGet());
+    }
+
     protected static Creneau creneau(String id, int jour, LocalDate date, LocalTime debut, LocalTime fin) {
-        return new Creneau(id, jour, date, debut, fin);
+        return new Creneau(idCreneau(id), jour, date, debut, fin);
     }
 
     protected static Creneau matin(String id, int jour, LocalDate date) {

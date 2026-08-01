@@ -144,24 +144,22 @@ public class ReferenceDataService {
     }
 
     public Creneau createCreneau(Creneau creneau) {
-        creneau.setId(requiredId(creneau.getId(), "timeslot id"));
+        creneau.setId(null); // ignore any client-supplied id — the database always generates it
         defaultGroupeIfMissing(creneau);
-        creneau.setId(creneau.getGroupe().qualifierCreneauId(creneau.getId()));
-        repository.saveCreneau(creneau);
-        return creneau;
+        return repository.insertCreneau(creneau);
     }
 
-    public Creneau updateCreneau(String id, Creneau creneau) {
+    public Creneau updateCreneau(Long id, Creneau creneau) {
         if (!repository.creneauExists(id)) {
             throw new NotFoundException("Timeslot not found: " + id);
         }
         creneau.setId(id);
         defaultGroupeIfMissing(creneau);
-        repository.saveCreneau(creneau);
+        repository.updateCreneau(creneau);
         return creneau;
     }
 
-    public void deleteCreneau(String id) {
+    public void deleteCreneau(Long id) {
         repository.deleteCreneau(id);
     }
 

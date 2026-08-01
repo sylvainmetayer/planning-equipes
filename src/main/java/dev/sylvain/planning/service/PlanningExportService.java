@@ -263,7 +263,7 @@ public class PlanningExportService {
     }
 
     private int distinctCreneauCount(List<PosteAffectation> postes) {
-        Set<String> ids = new LinkedHashSet<>();
+        Set<Long> ids = new LinkedHashSet<>();
         for (PosteAffectation poste : postes) {
             if (poste.getCreneau() != null) {
                 ids.add(poste.getCreneau().getId());
@@ -322,7 +322,7 @@ public class PlanningExportService {
     // not a clickable Anchor); the detail table below already carries the
     // OpenStreetMap link for every stand via standCell().
     private PdfPTable buildCalendarTable(List<PosteAffectation> postes) {
-        Map<String, Creneau> creneauxById = new LinkedHashMap<>();
+        Map<Long, Creneau> creneauxById = new LinkedHashMap<>();
         Map<String, Stand> standsById = new LinkedHashMap<>();
         for (PosteAffectation poste : postes) {
             if (poste.getCreneau() != null) {

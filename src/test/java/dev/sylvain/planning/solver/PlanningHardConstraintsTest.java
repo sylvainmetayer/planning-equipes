@@ -39,7 +39,8 @@ class PlanningHardConstraintsTest {
 
         ContrainteAdHoc contrainte = new ContrainteAdHoc("C1", TypeContrainteAdHoc.AFFECTATION_FORCEE);
         contrainte.setAnimateursConcernes(List.of(problem.getAnimateurs().get(0)));
-        contrainte.setCreneau(new Creneau("UNKNOWN", 10, LocalDate.now().plusDays(20), LocalTime.of(9, 0), LocalTime.of(12, 0)));
+        contrainte.setCreneau(
+                new Creneau(Long.MAX_VALUE, 10, LocalDate.now().plusDays(20), LocalTime.of(9, 0), LocalTime.of(12, 0)));
         contrainte.setStand(problem.getPostes().get(0).getStand());
         contrainte.setCreeLe(Instant.now());
         problem.setContraintesAdHoc(List.of(contrainte));

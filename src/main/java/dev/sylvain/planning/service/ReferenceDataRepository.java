@@ -237,7 +237,7 @@ public class ReferenceDataRepository {
     /* ------------------------------ Timeslots ------------------------------ */
 
     private static final String SELECT_CRENEAU_SQL =
-            "SELECT c.id, c.jour, c.date_creneau, c.heure_debut, c.heure_fin, "
+            "SELECT c.id, c.date_creneau, c.heure_debut, c.heure_fin, "
                     + "g.id AS groupe_id, g.nom AS groupe_nom, g.actif AS groupe_actif "
                     + "FROM creneau c JOIN groupe_creneau g ON g.id = c.groupe_creneau_id";
 
@@ -251,14 +251,14 @@ public class ReferenceDataRepository {
     }
 
     private List<Creneau> listCreneaux(String sql) {
-        Map<String, Creneau> byId = new LinkedHashMap<>();
+        Map<Long, Creneau> byId = new LinkedHashMap<>();
         try (Connection connection = dataSource.getConnection()) {
             try (PreparedStatement ps = connection.prepareStatement(sql);
                     ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Creneau creneau = new Creneau(
-                            rs.getString("id"),
-                            rs.getInt("jour"),
+                            rs.getLong("id"),
+                            0,
                             rs.getObject("date_creneau", LocalDate.class),
                             rs.getObject("heure_debut", LocalTime.class),
                             rs.getObject("heure_fin", LocalTime.class));
@@ -272,7 +272,7 @@ public class ReferenceDataRepository {
                         "SELECT creneau_id, stand_id FROM creneau_stand_ouvert");
                         ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
-                        Creneau creneau = byId.get(rs.getString("creneau_id"));
+                        Creneau creneau = byId.get(rs.getLong("creneau_id"));
                         if (creneau != null) {
                             creneau.getStandsOuvertsIds().add(rs.getString("stand_id"));
                         }
@@ -282,6 +282,14 @@ public class ReferenceDataRepository {
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to list timeslots", e);
         }
+        // `jour` is never stored — it's computed per group from each group's
+        // earliest date (see Creneau.assignerJours), so consecutive calendar
+        // days always yield consecutive day numbers even across a gap day.
+        Map<String, List<Creneau>> parGroupe = new LinkedHashMap<>();
+        for (Creneau creneau : byId.values()) {
+            parGroupe.computeIfAbsent(creneau.getGroupe().getId(), k -> new ArrayList<>()).add(creneau);
+        }
+        parGroupe.values().forEach(Creneau::assignerJours);
         // Chronological order (day, then start time), not `ORDER BY id`: ids like
         // J1.../J10... sort lexicographically ("J10-MATIN" before "J2-MATIN"), and
         // even within one day "APREM"/"MATIN"/"SOIREE" sort alphabetically instead
@@ -296,15 +304,33 @@ public class ReferenceDataRepository {
         return creneaux;
     }
 
-    public boolean creneauExists(String id) {
-        return exists("creneau", id);
+    public boolean creneauExists(Long id) {
+        return existsLong("creneau", id);
     }
 
-    public void saveCreneau(Creneau creneau) {
+    /** Inserts a new timeslot; the database generates its id, which is set back onto {@code creneau}. */
+    public Creneau insertCreneau(Creneau creneau) {
         try (Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
             try {
-                upsertCreneauTx(connection, creneau);
+                insertCreneauTx(connection, creneau);
+                connection.commit();
+                return creneau;
+            } catch (SQLException e) {
+                connection.rollback();
+                throw e;
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to save timeslot", e);
+        }
+    }
+
+    /** Updates an existing timeslot in place; its id is left untouched. */
+    public void updateCreneau(Creneau creneau) {
+        try (Connection connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                updateCreneauTx(connection, creneau);
                 connection.commit();
             } catch (SQLException e) {
                 connection.rollback();
@@ -315,8 +341,8 @@ public class ReferenceDataRepository {
         }
     }
 
-    public void deleteCreneau(String id) {
-        delete("DELETE FROM creneau WHERE id = ?", id);
+    public void deleteCreneau(Long id) {
+        deleteLong("DELETE FROM creneau WHERE id = ?", id);
     }
 
     /* -------------------------- Timeslot groups ----------------------------- */
@@ -556,8 +582,8 @@ public class ReferenceDataRepository {
                 while (rs.next()) {
                     ContrainteAdHoc contrainte = new ContrainteAdHoc(
                             rs.getString("id"), TypeContrainteAdHoc.valueOf(rs.getString("type")));
-                    String creneauId = rs.getString("creneau_id");
-                    if (creneauId != null) {
+                    long creneauId = rs.getLong("creneau_id");
+                    if (!rs.wasNull()) {
                         Creneau creneau = new Creneau();
                         creneau.setId(creneauId);
                         contrainte.setCreneau(creneau);
@@ -620,7 +646,7 @@ public class ReferenceDataRepository {
                         + "cree_par = EXCLUDED.cree_par, cree_le = EXCLUDED.cree_le")) {
             ps.setString(1, contrainte.getId());
             ps.setString(2, contrainte.getType() != null ? contrainte.getType().name() : null);
-            ps.setString(3, contrainte.getCreneau() != null ? contrainte.getCreneau().getId() : null);
+            ps.setObject(3, contrainte.getCreneau() != null ? contrainte.getCreneau().getId() : null);
             ps.setString(4, contrainte.getStand() != null ? contrainte.getStand().getId() : null);
             ps.setString(5, contrainte.getRaison());
             ps.setString(6, contrainte.getCreeParUtilisateurId());
@@ -751,7 +777,7 @@ public class ReferenceDataRepository {
     public void replaceCreneaux(List<Creneau> creneaux) {
         replaceInTransaction(List.of("poste_affectation", "creneau"), connection -> {
             for (Creneau creneau : creneaux) {
-                upsertCreneauTx(connection, creneau);
+                insertCreneauTx(connection, creneau);
             }
         }, "Failed to import creneaux");
     }
@@ -793,12 +819,11 @@ public class ReferenceDataRepository {
      * are not — only the currently active {@link GroupeCreneau}'s créneaux are
      * cleared and reloaded, so a scenario can be imported into one group
      * (e.g. an alternate planning) without wiping out the créneaux other
-     * groups already hold. Each imported créneau's id is qualified with the
-     * active group's id ({@link GroupeCreneau#qualifierCreneauId(String)}),
-     * so a scenario re-using an id already claimed by another group (very
-     * common — the bundled scenarios all follow the same "J1-MATIN"
-     * convention) can't collide with it; ad hoc constraints referencing one
-     * of those créneaux by its original (short) id are remapped accordingly.
+     * groups already hold. Each imported créneau receives a freshly
+     * DB-generated id (ids are a numeric identity column, so collisions with
+     * another group's créneaux are structurally impossible); ad hoc
+     * constraints referencing one of those créneaux by its original
+     * (scenario-local) id are remapped to the new generated id accordingly.
      * Runs in a single transaction.
      */
     public void importFromPlanning(PlanningFestival planning) {
@@ -806,7 +831,7 @@ public class ReferenceDataRepository {
             return;
         }
         Map<String, Stand> standsById = new LinkedHashMap<>();
-        Map<String, Creneau> creneauxById = new LinkedHashMap<>();
+        Map<Long, Creneau> creneauxById = new LinkedHashMap<>();
         if (planning.getPostes() != null) {
             for (PosteAffectation poste : planning.getPostes()) {
                 if (poste.getStand() != null) {
@@ -839,13 +864,12 @@ public class ReferenceDataRepository {
                     ps.executeUpdate();
                 }
                 GroupeCreneau groupeActif = new GroupeCreneau(groupeActifId, null, false);
-                Map<String, String> idsQualifies = new LinkedHashMap<>();
+                Map<Long, Long> idsRemap = new LinkedHashMap<>();
                 for (Creneau creneau : creneauxById.values()) {
-                    String idQualifie = groupeActif.qualifierCreneauId(creneau.getId());
-                    idsQualifies.put(creneau.getId(), idQualifie);
-                    creneau.setId(idQualifie);
+                    Long ancienId = creneau.getId();
                     creneau.setGroupe(groupeActif);
-                    upsertCreneauTx(connection, creneau);
+                    Long nouvelId = insertCreneauTx(connection, creneau);
+                    idsRemap.put(ancienId, nouvelId);
                 }
                 Map<String, Emplacement> emplacementsById = new LinkedHashMap<>();
                 for (Stand stand : standsById.values()) {
@@ -867,9 +891,9 @@ public class ReferenceDataRepository {
                 for (ContrainteAdHoc contrainte : contraintes) {
                     if (contrainte != null && contrainte.getId() != null) {
                         if (contrainte.getCreneau() != null && contrainte.getCreneau().getId() != null) {
-                            String idQualifie = idsQualifies.get(contrainte.getCreneau().getId());
-                            if (idQualifie != null) {
-                                contrainte.getCreneau().setId(idQualifie);
+                            Long nouvelId = idsRemap.get(contrainte.getCreneau().getId());
+                            if (nouvelId != null) {
+                                contrainte.getCreneau().setId(nouvelId);
                             }
                         }
                         upsertContrainte(connection, contrainte);
@@ -895,34 +919,54 @@ public class ReferenceDataRepository {
         }
     }
 
-    private void upsertCreneauTx(Connection connection, Creneau creneau) throws SQLException {
+    /** Inserts a new timeslot row; the generated id is set back onto {@code creneau} and returned. */
+    private Long insertCreneauTx(Connection connection, Creneau creneau) throws SQLException {
         // Callers that don't know about groups yet (CSV import) leave this null;
         // fall back to the seeded default group rather than fail the NOT NULL FK.
         String groupeId = creneau.getGroupe() != null ? creneau.getGroupe().getId() : "DEFAUT";
         try (PreparedStatement ps = connection.prepareStatement(
-                "INSERT INTO creneau (id, jour, date_creneau, heure_debut, heure_fin, groupe_creneau_id) "
-                        + "VALUES (?, ?, ?, ?, ?, ?) "
-                        + "ON CONFLICT (id) DO UPDATE SET jour = EXCLUDED.jour, date_creneau = EXCLUDED.date_creneau, "
-                        + "heure_debut = EXCLUDED.heure_debut, heure_fin = EXCLUDED.heure_fin, "
-                        + "groupe_creneau_id = EXCLUDED.groupe_creneau_id")) {
-            ps.setString(1, creneau.getId());
-            ps.setInt(2, creneau.getJour());
-            ps.setObject(3, creneau.getDate());
-            ps.setObject(4, creneau.getHeureDebut());
-            ps.setObject(5, creneau.getHeureFin());
-            ps.setString(6, groupeId);
+                "INSERT INTO creneau (date_creneau, heure_debut, heure_fin, groupe_creneau_id) "
+                        + "VALUES (?, ?, ?, ?) RETURNING id")) {
+            ps.setObject(1, creneau.getDate());
+            ps.setObject(2, creneau.getHeureDebut());
+            ps.setObject(3, creneau.getHeureFin());
+            ps.setString(4, groupeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                long id = rs.getLong("id");
+                creneau.setId(id);
+            }
+        }
+        writeStandsOuverts(connection, creneau);
+        return creneau.getId();
+    }
+
+    private void updateCreneauTx(Connection connection, Creneau creneau) throws SQLException {
+        String groupeId = creneau.getGroupe() != null ? creneau.getGroupe().getId() : "DEFAUT";
+        try (PreparedStatement ps = connection.prepareStatement(
+                "UPDATE creneau SET date_creneau = ?, heure_debut = ?, heure_fin = ?, groupe_creneau_id = ? "
+                        + "WHERE id = ?")) {
+            ps.setObject(1, creneau.getDate());
+            ps.setObject(2, creneau.getHeureDebut());
+            ps.setObject(3, creneau.getHeureFin());
+            ps.setString(4, groupeId);
+            ps.setLong(5, creneau.getId());
             ps.executeUpdate();
         }
+        writeStandsOuverts(connection, creneau);
+    }
+
+    private void writeStandsOuverts(Connection connection, Creneau creneau) throws SQLException {
         try (PreparedStatement del = connection.prepareStatement(
                 "DELETE FROM creneau_stand_ouvert WHERE creneau_id = ?")) {
-            del.setString(1, creneau.getId());
+            del.setLong(1, creneau.getId());
             del.executeUpdate();
         }
         if (creneau.getStandsOuvertsIds() != null && !creneau.getStandsOuvertsIds().isEmpty()) {
             try (PreparedStatement ins = connection.prepareStatement(
                     "INSERT INTO creneau_stand_ouvert (creneau_id, stand_id) VALUES (?, ?)")) {
                 for (String standId : creneau.getStandsOuvertsIds()) {
-                    ins.setString(1, creneau.getId());
+                    ins.setLong(1, creneau.getId());
                     ins.setString(2, standId);
                     ins.addBatch();
                 }
@@ -964,6 +1008,28 @@ public class ReferenceDataRepository {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, id);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to delete " + id, e);
+        }
+    }
+
+    private boolean existsLong(String table, Long id) {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = connection.prepareStatement("SELECT 1 FROM " + table + " WHERE id = ?")) {
+            ps.setLong(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to probe " + table + " " + id, e);
+        }
+    }
+
+    private void deleteLong(String sql, Long id) {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setLong(1, id);
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to delete " + id, e);

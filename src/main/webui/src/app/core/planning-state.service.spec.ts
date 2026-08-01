@@ -17,8 +17,8 @@ function stand(id: string, effectifMax: number): Stand {
   };
 }
 
-function creneau(id: string): Creneau {
-  return { id, jour: 1, date: '2026-07-08', heureDebut: '09:00', heureFin: '13:00', standsOuvertsIds: [] };
+function creneau(id: number): Creneau {
+  return { id, jour: 1, date: '2026-07-08', heureDebut: '09:00', heureFin: '13:00', standsOuvertsIds: [], groupe: null };
 }
 
 function animateur(id: string): Animateur {
@@ -59,7 +59,7 @@ describe('PlanningStateService', () => {
   describe('loadForDisplay / require', () => {
     const solved: PlanningFestival = {
       animateurs: [animateur('A1')],
-      postes: [{ id: 'p1', stand: stand('S1', 1), creneau: creneau('C1'), animateur: animateur('A1') }],
+      postes: [{ id: 'p1', stand: stand('S1', 1), creneau: creneau(1), animateur: animateur('A1') }],
       score: { hardScore: 0, mediumScore: 0, softScore: 0 }
     };
 

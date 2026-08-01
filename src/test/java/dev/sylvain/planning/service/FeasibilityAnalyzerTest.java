@@ -23,7 +23,7 @@ class FeasibilityAnalyzerTest {
     @Test
     void feasibleWhenEnoughCompetentAvailableAnimateurs() {
         Stand stand = stand("stand-1", 2, TypologieJeu.STRATEGIE);
-        Creneau creneau = creneau("c1", LocalDate.of(2026, 8, 1));
+        Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
         Animateur a1 = animateur("a1", TypologieJeu.STRATEGIE);
         Animateur a2 = animateur("a2", TypologieJeu.STRATEGIE);
         Animateur a3 = animateur("a3", TypologieJeu.STRATEGIE);
@@ -38,7 +38,7 @@ class FeasibilityAnalyzerTest {
     @Test
     void infeasibleWhenNotEnoughCompetentAnimateurs() {
         Stand stand = stand("stand-1", 5, TypologieJeu.STRATEGIE);
-        Creneau creneau = creneau("c1", LocalDate.of(2026, 8, 1));
+        Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
         Animateur a1 = animateur("a1", TypologieJeu.STRATEGIE);
         Animateur a2 = animateur("a2", TypologieJeu.STRATEGIE);
 
@@ -54,8 +54,8 @@ class FeasibilityAnalyzerTest {
         Stand stand = stand("stand-1", 3, TypologieJeu.STRATEGIE);
         LocalDate samedi = LocalDate.of(2026, 8, 1);
         LocalDate dimanche = LocalDate.of(2026, 8, 2);
-        Creneau creneauSamedi = creneau("samedi", samedi);
-        Creneau creneauDimanche = creneau("dimanche", dimanche);
+        Creneau creneauSamedi = creneau(1, samedi);
+        Creneau creneauDimanche = creneau(2, dimanche);
 
         Animateur a1 = animateur("a1", TypologieJeu.STRATEGIE);
         Animateur a2 = animateur("a2", TypologieJeu.STRATEGIE);
@@ -68,13 +68,13 @@ class FeasibilityAnalyzerTest {
 
         assertThat(report.feasible()).isFalse();
         assertThat(report.manqueAnimateurs()).isEqualTo(2);
-        assertThat(report.creneauLePlusCritique().creneauId()).isEqualTo("samedi");
+        assertThat(report.creneauLePlusCritique().date()).isEqualTo(samedi);
     }
 
     @Test
     void animateurWithoutMatchingCompetenceDoesNotCountTowardsCapacity() {
         Stand stand = stand("stand-1", 1, TypologieJeu.STRATEGIE);
-        Creneau creneau = creneau("c1", LocalDate.of(2026, 8, 1));
+        Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
         Animateur competent = animateur("a1", TypologieJeu.STRATEGIE);
         Animateur incompetent = animateur("a2", TypologieJeu.ADRESSE);
 
@@ -99,7 +99,7 @@ class FeasibilityAnalyzerTest {
         return new Stand(id, id, Set.of(typologie), 1, effectifMax, false);
     }
 
-    private static Creneau creneau(String id, LocalDate date) {
+    private static Creneau creneau(long id, LocalDate date) {
         return new Creneau(id, 1, date, LocalTime.of(10, 0), LocalTime.of(12, 0));
     }
 

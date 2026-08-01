@@ -18,8 +18,8 @@ public enum NiveauCompetence {
 }
 
 public class Creneau {
-    private String id;
-    private int jour;            // 1 à 15
+    private Long id;              // entier auto-généré par la base, jamais saisi ni affiché
+    private int jour;              // calculé, jamais persisté — voir plus bas
     private LocalDate date;
     private LocalTime heureDebut;
     private LocalTime heureFin;
@@ -84,15 +84,20 @@ règle : il ne remplace que les créneaux du groupe actif, ce qui permet de
 charger un scénario différent dans chaque groupe sans écraser les autres —
 voir [`import-export.md`](import-export.md).
 
-L'id d'un `Creneau` est une clé primaire globale (pas scopée par groupe), donc
-deux groupes ne peuvent pas chacun posséder un créneau avec le même id. Pour
-éviter qu'un id de créneau réutilisé d'un groupe à l'autre (« J1-MATIN » par
-exemple, convention commune à tous les scénarios fournis) ne provoque une
-collision, `GroupeCreneau.qualifierCreneauId(id)` qualifie automatiquement
-l'id avec celui du groupe (`"<id>-<idGroupe>"`, idempotent) à chaque
-enregistrement — création manuelle via `ReferenceDataService.createCreneau`
-comme import de scénario. C'est transparent pour l'utilisateur : il ne saisit
-que l'id court, la qualification est appliquée par le serveur.
+L'id d'un `Creneau` est un entier auto-généré par la base (colonne identity),
+jamais saisi par l'utilisateur ni affiché dans l'IHM. Deux groupes ne peuvent
+donc structurellement plus entrer en collision d'id (contrairement à l'ancien
+schéma à clé texte globale), ce qui rend inutile toute qualification d'id par
+groupe.
+
+Le `jour` (« jour du festival ») n'est pas non plus saisi : il est calculé à
+chaque lecture (`Creneau.assignerJours`, appelé par
+`ReferenceDataRepository.listCreneaux`) comme le nombre de jours calendaires
+entre la date la plus ancienne du groupe et la date du créneau, plus un. Ce
+calcul garantit que deux créneaux sur des jours calendaires consécutifs ont
+toujours des numéros de jour consécutifs, même si un jour du groupe ne
+contient aucun créneau — invariant dont dépend la contrainte légale de repos
+nuit → lendemain (`LegalConstraints`, `soir.getJour() + 1 == lendemain.getJour()`).
 
 ## Entité de planification
 

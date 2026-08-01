@@ -352,24 +352,28 @@ public class PlanningService {
         }
         
         Map<String, Object> scenarioData = yaml.load(inputStream);
-        
-        // Charger les creneaux
+
+        // Charger les creneaux : le fichier YAML porte un id texte historique
+        // (utilisé seulement pour relier postes/creneaux entre eux ci-dessous),
+        // remplacé ici par un id numérique synthétique ; jour est recalculé
+        // (voir Creneau.assignerJours), la valeur du fichier est ignorée.
         Map<String, Creneau> creneauxMap = new HashMap<>();
+        long compteurCreneauId = 1;
         List<Map<String, Object>> creneauxList = (List<Map<String, Object>>) scenarioData.get("creneaux");
         for (Map<String, Object> creneauData : creneauxList) {
             String id = (String) creneauData.get("id");
-            int jour = ((Number) creneauData.get("jour")).intValue();
             String heureDebutStr = (String) creneauData.get("heureDebut");
             String heureFinStr = (String) creneauData.get("heureFin");
-            
+
             LocalDate date = parseLocalDate(creneauData.get("date"), "creneaux.date");
             LocalTime heureDebut = LocalTime.parse(heureDebutStr);
             LocalTime heureFin = LocalTime.parse(heureFinStr);
-            
-            Creneau creneau = new Creneau(id, jour, date, heureDebut, heureFin);
+
+            Creneau creneau = new Creneau(compteurCreneauId++, 0, date, heureDebut, heureFin);
             creneauxMap.put(id, creneau);
         }
-        
+        Creneau.assignerJours(creneauxMap.values());
+
         // Charger les emplacements
         Map<String, Emplacement> emplacementsMap = new HashMap<>();
         List<Map<String, Object>> emplacementsList = (List<Map<String, Object>>) scenarioData.get("emplacements");
@@ -557,7 +561,7 @@ public class PlanningService {
     }
 
     private static List<Creneau> distinctCreneaux(PlanningFestival solved) {
-        Map<String, Creneau> byId = new java.util.LinkedHashMap<>();
+        Map<Long, Creneau> byId = new java.util.LinkedHashMap<>();
         for (PosteAffectation poste : solved.getPostes()) {
             byId.putIfAbsent(poste.getCreneau().getId(), poste.getCreneau());
         }

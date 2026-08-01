@@ -17,8 +17,6 @@ const NOUVEAU_GROUPE = '__nouveau__';
 const GROUPE_DEFAUT_ID = 'DEFAUT';
 
 interface CreneauDraft {
-  id: string;
-  jour: number;
   date: string;
   heureDebut: string;
   heureFin: string;
@@ -56,15 +54,15 @@ export class CreneauFormDialog {
   private readonly crud = inject(ReferenceCrudService);
 
   protected readonly nouveauGroupeValue = NOUVEAU_GROUPE;
-  protected readonly editingId = signal<string | null>(this.data.creneau?.id ?? null);
+  protected readonly editingId = signal<number | null>(this.data.creneau?.id ?? null);
   /** New créneaux default to the currently active group, not a fixed one. */
   private readonly activeGroupeId =
     this.store.groupesCreneaux().find((groupe) => groupe.actif)?.id ?? GROUPE_DEFAUT_ID;
   protected readonly draft = signal<CreneauDraft>(toDraft(this.data.creneau, this.activeGroupeId));
   protected readonly formTitle = computed(() => {
-    const id = this.editingId();
-    return id
-      ? $localize`:@@creneaux.form.editTitle:Modifier le créneau ${id}:id:`
+    const creneau = this.data.creneau;
+    return creneau
+      ? $localize`:@@creneaux.form.editTitle:Modifier le créneau du ${creneau.date}:date: ${creneau.heureDebut}:heure:`
       : $localize`:@@creneaux.form.newTitle:Nouveau créneau`;
   });
   protected readonly submitLabel = computed(() =>
@@ -87,16 +85,22 @@ export class CreneauFormDialog {
       }
       groupeId = id;
     }
-    const creneau: Creneau = {
-      id: draft.id.trim(),
-      jour: Number(draft.jour),
+    const editingId = this.editingId();
+    const creneau: Partial<Creneau> = {
       date: draft.date,
       heureDebut: draft.heureDebut,
       heureFin: draft.heureFin,
       standsOuvertsIds: draft.standsOuvertsIds,
       groupe: { id: groupeId, nom: '', actif: false }
     };
-    if (await this.crud.save('creneaux', creneau, this.editingId(), $localize`:@@creneaux.entityLabel:Créneau`)) {
+    if (editingId != null) {
+      creneau.id = editingId;
+    }
+    if (
+      await this.crud.save('creneaux', creneau, editingId, $localize`:@@creneaux.entityLabel:Créneau`, {
+        requireId: false
+      })
+    ) {
       this.dialogRef.close(true);
     }
   }
@@ -124,8 +128,6 @@ export class CreneauFormDialog {
 function toDraft(creneau: Creneau | null, activeGroupeId: string): CreneauDraft {
   if (!creneau) {
     return {
-      id: '',
-      jour: 1,
       date: '',
       heureDebut: '',
       heureFin: '',
@@ -135,8 +137,6 @@ function toDraft(creneau: Creneau | null, activeGroupeId: string): CreneauDraft 
     };
   }
   return {
-    id: creneau.id,
-    jour: creneau.jour,
     date: creneau.date ?? '',
     heureDebut: creneau.heureDebut ?? '',
     heureFin: creneau.heureFin ?? '',

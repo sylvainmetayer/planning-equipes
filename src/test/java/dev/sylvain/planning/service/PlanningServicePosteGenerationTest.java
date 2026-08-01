@@ -23,7 +23,7 @@ class PlanningServicePosteGenerationTest {
 
     private final Stand standA = new Stand("STAND-A", "A", Set.of(), 1, 1, false);
     private final Stand standB = new Stand("STAND-B", "B", Set.of(), 1, 1, false);
-    private final Creneau creneauOuvert = new Creneau("C1", 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
+    private final Creneau creneauOuvert = new Creneau(1L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
 
     @Test
     void creneauSansRestrictionResteOuvertATousLesStands() {
@@ -36,7 +36,7 @@ class PlanningServicePosteGenerationTest {
 
     @Test
     void creneauRestreintNeGenereQueLesStandsListes() {
-        Creneau creneauRestreint = new Creneau("C2", 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
+        Creneau creneauRestreint = new Creneau(2L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
         creneauRestreint.setStandsOuvertsIds(Set.of("STAND-A"));
 
         List<PosteAffectation> postes = PlanningService.construirePostes(List.of(standA, standB), List.of(creneauRestreint));

@@ -68,8 +68,8 @@ class CsvImportResourceTest {
                 .body("[0].typologiesProposees", hasItem("ENIGME"));
 
         csv("""
-                id;jour;date;heureDebut;heureFin
-                C-CSV;1;2026-07-02;10:00;13:00
+                date;heureDebut;heureFin
+                2026-07-02;10:00;13:00
                 """)
                 .when().post("/api/import/csv/creneaux")
                 .then()
@@ -96,8 +96,8 @@ class CsvImportResourceTest {
                 .body("message", containsString("dateNaissance"));
 
         csv("""
-                id;jour;date;heureDebut;heureFin
-                C-1;1;02/07/2026;10:00;13:00
+                date;heureDebut;heureFin
+                02/07/2026;10:00;13:00
                 """)
                 .when().post("/api/import/csv/creneaux")
                 .then()

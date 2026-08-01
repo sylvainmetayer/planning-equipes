@@ -67,12 +67,10 @@ class PlanningResourceTest {
     void creneauCrudWorks() {
         String futureTestDate = "2030-01-02";
 
-        given()
+        Object createdId = given()
                 .contentType("application/json")
                 .body("""
                         {
-                          "id":"J2-SOIR",
-                          "jour":2,
                           "date":"%s",
                           "heureDebut":"18:00:00",
                           "heureFin":"22:00:00"
@@ -81,16 +79,17 @@ class PlanningResourceTest {
                 .when().post("/api/creneaux")
                 .then()
                 .statusCode(200)
-                .body("id", equalTo("J2-SOIR"));
+                .body("id", notNullValue())
+                .extract().path("id");
 
         given()
                 .when().get("/api/creneaux")
                 .then()
                 .statusCode(200)
-                .body("find { it.id == 'J2-SOIR' }.jour", equalTo(2));
+                .body("find { it.id == " + createdId + " }.date", equalTo(futureTestDate));
 
         given()
-                .when().delete("/api/creneaux/J2-SOIR")
+                .when().delete("/api/creneaux/" + createdId)
                 .then()
                 .statusCode(204);
     }

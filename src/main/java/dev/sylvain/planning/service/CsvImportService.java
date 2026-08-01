@@ -34,7 +34,7 @@ import jakarta.inject.Inject;
  * {@code joursIndisponibles} is {@code 2026-07-02|2026-07-03}</li>
  * <li>stands: {@code id;nom;typologies;effectifMin;effectifMax;reserveMajeurs;premium}
  * where {@code typologies} is {@code STRATEGIE|ENFANT}</li>
- * <li>creneaux: {@code id;jour;date;heureDebut;heureFin}</li>
+ * <li>creneaux: {@code date;heureDebut;heureFin} (id is generated, jour is computed)</li>
  * </ul>
  */
 @ApplicationScoped
@@ -97,14 +97,11 @@ public class CsvImportService {
 
     public int importCreneaux(String csv) {
         CsvTable table = CsvTable.parse(csv,
-                List.of("id", "jour", "date", "heureDebut", "heureFin"),
+                List.of("date", "heureDebut", "heureFin"),
                 List.of());
         List<Creneau> creneaux = new ArrayList<>();
-        Set<String> ids = new LinkedHashSet<>();
         for (CsvRow row : table.rows()) {
             Creneau creneau = new Creneau();
-            creneau.setId(uniqueId(row, ids));
-            creneau.setJour(row.integer("jour"));
             creneau.setDate(row.date("date"));
             creneau.setHeureDebut(row.time("heureDebut"));
             creneau.setHeureFin(row.time("heureFin"));

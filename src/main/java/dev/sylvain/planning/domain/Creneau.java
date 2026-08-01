@@ -2,7 +2,9 @@ package dev.sylvain.planning.domain;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.time.temporal.IsoFields;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Objects;
@@ -10,7 +12,7 @@ import java.util.Set;
 
 public class Creneau {
 
-    private String id;
+    private Long id;
     private int jour;
     private LocalDate date;
     private LocalTime heureDebut;
@@ -23,7 +25,7 @@ public class Creneau {
     public Creneau() {
     }
 
-    public Creneau(String id, int jour, LocalDate date, LocalTime heureDebut, LocalTime heureFin) {
+    public Creneau(Long id, int jour, LocalDate date, LocalTime heureDebut, LocalTime heureFin) {
         this.id = id;
         this.jour = jour;
         this.date = date;
@@ -31,11 +33,35 @@ public class Creneau {
         this.heureFin = heureFin;
     }
 
-    public String getId() {
+    /**
+     * Computes and assigns {@link #getJour()} for every créneau of the same
+     * group: the number of calendar days between the group's earliest date
+     * and each créneau's date, plus one. This guarantees two créneaux on
+     * calendar-consecutive dates always get day numbers differing by exactly
+     * one — even across a créneau-less gap day — which the night-rest legal
+     * constraint relies on ({@code soir.getJour() + 1 == lendemain.getJour()}).
+     */
+    public static void assignerJours(Collection<Creneau> creneauxMemeGroupe) {
+        LocalDate min = creneauxMemeGroupe.stream()
+                .map(Creneau::getDate)
+                .filter(Objects::nonNull)
+                .min(LocalDate::compareTo)
+                .orElse(null);
+        if (min == null) {
+            return;
+        }
+        for (Creneau creneau : creneauxMemeGroupe) {
+            if (creneau.getDate() != null) {
+                creneau.setJour((int) ChronoUnit.DAYS.between(min, creneau.getDate()) + 1);
+            }
+        }
+    }
+
+    public Long getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(Long id) {
         this.id = id;
     }
 

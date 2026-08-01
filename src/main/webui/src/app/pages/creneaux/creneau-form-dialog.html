@@ -6,16 +6,6 @@
   <p class="locked-hint span-2" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
 }
 <mat-form-field appearance="outline">
-  <mat-label i18n="@@stands.field.id">Identifiant</mat-label>
-  <input matInput name="id" required [readonly]="!!editingId()"
-         [ngModel]="draft().id" (ngModelChange)="patch({ id: $event })" />
-</mat-form-field>
-<mat-form-field appearance="outline">
-  <mat-label i18n="@@creneaux.field.jour">Jour du festival</mat-label>
-  <input matInput name="jour" type="number" min="1" max="15" required
-         [ngModel]="draft().jour" (ngModelChange)="patch({ jour: $event })" />
-</mat-form-field>
-<mat-form-field appearance="outline">
   <mat-label i18n="@@creneaux.field.date">Date</mat-label>
   <input matInput name="date" type="date" required
          [ngModel]="draft().date" (ngModelChange)="patch({ date: $event })" />

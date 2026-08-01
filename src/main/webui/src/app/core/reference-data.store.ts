@@ -37,17 +37,21 @@ export class ReferenceDataStore {
   }
 
   /** Creates or updates an entity, then refreshes every collection. */
-  async save<T extends { id: string }>(resource: string, payload: T, editingId: string | null): Promise<void> {
-    if (editingId) {
-      await this.api.put(`/api/${resource}/${encodeURIComponent(editingId)}`, payload);
+  async save<T extends { id?: string | number | null }>(
+    resource: string,
+    payload: T,
+    editingId: string | number | null
+  ): Promise<void> {
+    if (editingId !== null && editingId !== undefined) {
+      await this.api.put(`/api/${resource}/${encodeURIComponent(String(editingId))}`, payload);
     } else {
       await this.api.post(`/api/${resource}`, payload);
     }
     await this.reload();
   }
 
-  async remove(resource: string, id: string): Promise<void> {
-    await this.api.delete(`/api/${resource}/${encodeURIComponent(id)}`);
+  async remove(resource: string, id: string | number): Promise<void> {
+    await this.api.delete(`/api/${resource}/${encodeURIComponent(String(id))}`);
     await this.reload();
   }
 

@@ -28,7 +28,7 @@ Règles de format :
 | --- | --- |
 | `animateurs` | `id;prenom;nom;dateNaissance;manager;competences;joursIndisponibles` |
 | `stands` | `id;nom;typologies;effectifMin;effectifMax;reserveMajeurs;premium` |
-| `creneaux` | `id;jour;date;heureDebut;heureFin` |
+| `creneaux` | `date;heureDebut;heureFin` (id généré, jour calculé) |
 
 Un import `creneaux` remplace la table dans son intégralité, **tous groupes
 de créneaux confondus** — pas seulement ceux du groupe actif — et les lignes
@@ -69,11 +69,10 @@ remplacement :
   totalité** ;
 - les créneaux, eux, sont scopés au groupe de créneaux actif : seuls ceux du
   groupe actif sont supprimés puis rechargés avec les créneaux du scénario ;
-  les créneaux des autres groupes ne sont pas touchés. L'id de chaque créneau
-  importé est automatiquement qualifié avec l'id du groupe actif (transparent
-  pour l'utilisateur), pour qu'un même nom (« J1-MATIN », convention commune à
-  tous les scénarios fournis) puisse être réutilisé dans plusieurs groupes
-  sans collision. Cela permet de charger plusieurs scénarios dans différents
+  les créneaux des autres groupes ne sont pas touchés. Chaque créneau importé
+  reçoit un nouvel id généré par la base ; les contraintes ad hoc qui
+  référençaient un créneau du scénario par son id d'origine sont réassociées
+  au nouvel id. Cela permet de charger plusieurs scénarios dans différents
   groupes (par exemple un planning normal et un planning de repli) sans que
   l'un écrase les créneaux de l'autre. Voir [`domaine.md`](domaine.md) pour la
   notion de groupe de créneaux.

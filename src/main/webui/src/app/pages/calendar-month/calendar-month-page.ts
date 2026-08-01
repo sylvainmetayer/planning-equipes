@@ -26,7 +26,7 @@ interface StandLine {
 }
 
 interface SlotEntry {
-  creneauId: string;
+  creneauId: number;
   heureDebut: string;
   heureFin: string;
   jour: number;
@@ -238,7 +238,7 @@ export class CalendarMonthPage {
 }
 
 function buildAssignmentsByDate(postes: PosteAffectation[]): Map<string, SlotEntry[]> {
-  const byDate = new Map<string, Map<string, SlotEntry & { standMap: Map<string, StandLine> }>>();
+  const byDate = new Map<string, Map<number, SlotEntry & { standMap: Map<string, StandLine> }>>();
 
   postes.forEach((poste) => {
     const creneau = poste.creneau;

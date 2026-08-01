@@ -127,17 +127,16 @@ public class PlanningPersistenceService {
         }
         rewriteStandTypologies(connection, distinctStands);
 
-        String upsertCreneau = "INSERT INTO creneau (id, jour, date_creneau, heure_debut, heure_fin) "
-                + "VALUES (?, ?, ?, ?, ?) ON CONFLICT (id) DO UPDATE SET "
-                + "jour = EXCLUDED.jour, date_creneau = EXCLUDED.date_creneau, "
+        String upsertCreneau = "INSERT INTO creneau (id, date_creneau, heure_debut, heure_fin) "
+                + "VALUES (?, ?, ?, ?) ON CONFLICT (id) DO UPDATE SET "
+                + "date_creneau = EXCLUDED.date_creneau, "
                 + "heure_debut = EXCLUDED.heure_debut, heure_fin = EXCLUDED.heure_fin";
         try (PreparedStatement ps = connection.prepareStatement(upsertCreneau)) {
             for (Creneau creneau : dedupById(creneaux, Creneau::getId)) {
-                ps.setString(1, creneau.getId());
-                ps.setInt(2, creneau.getJour());
-                ps.setObject(3, creneau.getDate());
-                ps.setObject(4, creneau.getHeureDebut());
-                ps.setObject(5, creneau.getHeureFin());
+                ps.setLong(1, creneau.getId());
+                ps.setObject(2, creneau.getDate());
+                ps.setObject(3, creneau.getHeureDebut());
+                ps.setObject(4, creneau.getHeureFin());
                 ps.addBatch();
             }
             ps.executeBatch();
@@ -237,7 +236,7 @@ public class PlanningPersistenceService {
                 }
                 ps.setString(1, poste.getId());
                 ps.setString(2, poste.getStand().getId());
-                ps.setString(3, poste.getCreneau().getId());
+                ps.setLong(3, poste.getCreneau().getId());
                 ps.setString(4, poste.getAnimateur() != null ? poste.getAnimateur().getId() : null);
                 ps.addBatch();
                 count++;
@@ -271,7 +270,7 @@ public class PlanningPersistenceService {
         List<Animateur> animateurs = referenceDataService.listAnimateurs();
         Map<String, Animateur> animateursById = indexById(animateurs, Animateur::getId);
         Map<String, Stand> standsById = indexById(referenceDataService.listStands(), Stand::getId);
-        Map<String, Creneau> creneauxById = indexById(referenceDataService.listCreneaux(), Creneau::getId);
+        Map<Long, Creneau> creneauxById = indexById(referenceDataService.listCreneaux(), Creneau::getId);
 
         List<PosteAffectation> postes = new ArrayList<>();
         String sql = "SELECT id, stand_id, creneau_id, animateur_id FROM poste_affectation ORDER BY id";
@@ -280,7 +279,7 @@ public class PlanningPersistenceService {
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 Stand stand = standsById.get(rs.getString("stand_id"));
-                Creneau creneau = creneauxById.get(rs.getString("creneau_id"));
+                Creneau creneau = creneauxById.get(rs.getLong("creneau_id"));
                 if (stand == null || creneau == null) {
                     continue;
                 }
@@ -304,10 +303,10 @@ public class PlanningPersistenceService {
                 referenceDataService.snapshotContraintes());
     }
 
-    private <T> Map<String, T> indexById(List<T> items, IdAccessor<T> accessor) {
-        Map<String, T> byId = new java.util.HashMap<>();
+    private <T, K> Map<K, T> indexById(List<T> items, java.util.function.Function<T, K> idFn) {
+        Map<K, T> byId = new java.util.HashMap<>();
         for (T item : items) {
-            String id = accessor.id(item);
+            K id = idFn.apply(item);
             if (id != null) {
                 byId.put(id, item);
             }
@@ -315,15 +314,11 @@ public class PlanningPersistenceService {
         return byId;
     }
 
-    private interface IdAccessor<T> {
-        String id(T item);
-    }
-
-    private <T> List<T> dedupById(List<T> items, IdAccessor<T> accessor) {
+    private <T, K> List<T> dedupById(List<T> items, java.util.function.Function<T, K> idFn) {
         List<T> result = new ArrayList<>();
-        java.util.Set<String> seen = new java.util.HashSet<>();
+        java.util.Set<K> seen = new java.util.HashSet<>();
         for (T item : items) {
-            String id = accessor.id(item);
+            K id = idFn.apply(item);
             if (id != null && seen.add(id)) {
                 result.add(item);
             }

@@ -24,14 +24,19 @@ export class ReferenceCrudService {
   /**
    * Creates or updates an entity. `editingId` is null for a creation. Returns
    * true when the entity was persisted, so the page can reset its form.
+   * `requireId` defaults to true (every entity but créneaux is keyed by a
+   * user-typed natural id); créneaux pass `false` since their id is generated
+   * by the server and never entered by the user.
    */
-  async save<T extends { id: string }>(
+  async save<T extends { id?: string | number | null }>(
     resource: string,
     payload: T,
-    editingId: string | null,
-    label: string
+    editingId: string | number | null,
+    label: string,
+    options: { requireId?: boolean } = {}
   ): Promise<boolean> {
-    if (!payload.id) {
+    const requireId = options.requireId ?? true;
+    if (requireId && !payload.id) {
       this.notifications.notify({
         title: $localize`:@@crud.idRequired:Un identifiant est requis.`,
         variant: 'error'
@@ -55,7 +60,7 @@ export class ReferenceCrudService {
   }
 
   /** Asks for a confirmation, then deletes. Returns true when deleted. */
-  async remove(resource: string, id: string, label: string): Promise<boolean> {
+  async remove(resource: string, id: string | number, label: string): Promise<boolean> {
     const confirmed = await this.confirm.ask({
       title: $localize`:@@crud.deleteTitle:Supprimer ${label}:label: ${id}:id: ?`,
       message: $localize`:@@crud.deleteMessage:Cette action est irréversible.`,

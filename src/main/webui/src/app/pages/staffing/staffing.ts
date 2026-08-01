@@ -28,7 +28,7 @@
 import { Creneau, Stand } from '../../core/models';
 
 export interface CreneauStaffing {
-  creneauId: string;
+  creneauId: number;
   jour: number;
   date: string;
   heureDebut: string;

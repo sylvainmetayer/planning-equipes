@@ -13,7 +13,7 @@ interface StandLine {
 }
 
 interface SlotCard {
-  creneauId: string;
+  creneauId: number;
   heureDebut: string;
   heureFin: string;
   stands: StandLine[];
@@ -77,8 +77,8 @@ export class CalendarDayPage {
 }
 
 function buildDays(postes: PosteAffectation[]): DayCard[] {
-  const days = new Map<number, { jour: number; date: string | null; creneaux: Map<string, Creneau> }>();
-  const assignments = new Map<string, Map<string, { stand: Stand; names: string[] }>>();
+  const days = new Map<number, { jour: number; date: string | null; creneaux: Map<number, Creneau> }>();
+  const assignments = new Map<number, Map<string, { stand: Stand; names: string[] }>>();
 
   postes.forEach((poste) => {
     const creneau = poste.creneau;

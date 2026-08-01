@@ -26,9 +26,9 @@ class HeuresPlanningServiceTest {
         // 2026-08-14 (Fri) and 2026-08-15 (Sat) fall in ISO week 2026-W33;
         // 2026-08-24 (Mon) falls in the following ISO week 2026-W35.
         Stand stand = new Stand("STAND-1", "Stand", java.util.Set.of(), 1, 2, false);
-        Creneau creneauJ1 = new Creneau("C1", 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
-        Creneau creneauJ2 = new Creneau("C2", 2, LocalDate.of(2026, 8, 15), LocalTime.of(14, 0), LocalTime.of(18, 0));
-        Creneau creneauJ3 = new Creneau("C3", 3, LocalDate.of(2026, 8, 24), LocalTime.of(9, 0), LocalTime.of(12, 0));
+        Creneau creneauJ1 = new Creneau(1L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
+        Creneau creneauJ2 = new Creneau(2L, 2, LocalDate.of(2026, 8, 15), LocalTime.of(14, 0), LocalTime.of(18, 0));
+        Creneau creneauJ3 = new Creneau(3L, 3, LocalDate.of(2026, 8, 24), LocalTime.of(9, 0), LocalTime.of(12, 0));
 
         Animateur ada = new Animateur("A-ADA", "Ada", "Lovelace", LocalDate.of(1990, 1, 1), false);
 
@@ -57,7 +57,7 @@ class HeuresPlanningServiceTest {
     @Test
     void csvHasOneColumnPerWeekPlusTotal() {
         Stand stand = new Stand("STAND-1", "Stand", java.util.Set.of(), 1, 1, false);
-        Creneau creneau = new Creneau("C1", 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
+        Creneau creneau = new Creneau(1L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
         Animateur ada = new Animateur("A-ADA", "Ada", "Lovelace", LocalDate.of(1990, 1, 1), false);
         PosteAffectation poste = new PosteAffectation("P1", stand, creneau);
         poste.setAnimateur(ada);

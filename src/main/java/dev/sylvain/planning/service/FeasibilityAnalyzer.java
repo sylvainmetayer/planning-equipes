@@ -73,13 +73,13 @@ public class FeasibilityAnalyzer {
                 ? pire.date() + (pire.heureDebut() != null && pire.heureFin() != null
                         ? " " + pire.heureDebut() + "-" + pire.heureFin()
                         : "")
-                : pire.creneauId();
+                : String.valueOf(pire.creneauId());
         String animateurMot = manque > 1 ? "animateurs" : "animateur";
         return "Ce planning n'est pas réalisable avec les animateurs actuels : il manque au moins " + manque + " "
                 + animateurMot + " (par exemple le " + creneauDescription + ") pour couvrir tous les postes.";
     }
 
-    public record CreneauManque(String creneauId, LocalDate date, LocalTime heureDebut, LocalTime heureFin,
+    public record CreneauManque(Long creneauId, LocalDate date, LocalTime heureDebut, LocalTime heureFin,
             int manque) {
     }
 

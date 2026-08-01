@@ -100,13 +100,13 @@ public class ReferenceDataResource {
 
     @PUT
     @Path("/creneaux/{id}")
-    public Creneau updateCreneau(@PathParam("id") String id, Creneau creneau) {
+    public Creneau updateCreneau(@PathParam("id") Long id, Creneau creneau) {
         return referenceDataService.updateCreneau(id, creneau);
     }
 
     @DELETE
     @Path("/creneaux/{id}")
-    public Response deleteCreneau(@PathParam("id") String id) {
+    public Response deleteCreneau(@PathParam("id") Long id) {
         referenceDataService.deleteCreneau(id);
         return Response.noContent().build();
     }

@@ -15,46 +15,47 @@ function stand(overrides: Partial<Stand> & { id: string }): Stand {
   };
 }
 
-function creneau(overrides: Partial<Creneau> & { id: string }): Creneau {
+function creneau(overrides: Partial<Creneau> & { id: number }): Creneau {
   return {
     jour: 1,
     date: '2026-08-01',
     heureDebut: '09:00',
     heureFin: '12:00',
     standsOuvertsIds: [],
+    groupe: null,
     ...overrides
   };
 }
 
 describe('computeStaffingSummary — per-créneau seats', () => {
   it('splits an open stand majeurs >= mineurs, ceil/floor', () => {
-    const summary = computeStaffingSummary([stand({ id: 's1', effectifMin: 3 })], [creneau({ id: 'c1' })]);
+    const summary = computeStaffingSummary([stand({ id: 's1', effectifMin: 3 })], [creneau({ id: 1 })]);
     expect(summary.parCreneau).toEqual([
-      expect.objectContaining({ creneauId: 'c1', standsOuverts: 1, total: 3, majeurs: 2, mineurs: 1 })
+      expect.objectContaining({ creneauId: 1, standsOuverts: 1, total: 3, majeurs: 2, mineurs: 1 })
     ]);
   });
 
   it('forces every seat to majeurs on a stand reserved to majeurs', () => {
     const summary = computeStaffingSummary(
       [stand({ id: 's1', effectifMin: 4, reserveMajeurs: true })],
-      [creneau({ id: 'c1' })]
+      [creneau({ id: 1 })]
     );
     expect(summary.parCreneau[0]).toMatchObject({ total: 4, majeurs: 4, mineurs: 0 });
   });
 
   it('treats effectifMin of 0 as at least one seat, mirroring the backend poste generation', () => {
-    const summary = computeStaffingSummary([stand({ id: 's1', effectifMin: 0 })], [creneau({ id: 'c1' })]);
+    const summary = computeStaffingSummary([stand({ id: 's1', effectifMin: 0 })], [creneau({ id: 1 })]);
     expect(summary.parCreneau[0]).toMatchObject({ total: 1, majeurs: 1, mineurs: 0 });
   });
 
   it('restricts open stands to standsOuvertsIds when non-empty, and all stands when empty', () => {
     const stands = [stand({ id: 's1', effectifMin: 2 }), stand({ id: 's2', effectifMin: 5 })];
     const summary = computeStaffingSummary(stands, [
-      creneau({ id: 'c-restricted', standsOuvertsIds: ['s1'] }),
-      creneau({ id: 'c-all', standsOuvertsIds: [] })
+      creneau({ id: 1, standsOuvertsIds: ['s1'] }),
+      creneau({ id: 2, standsOuvertsIds: [] })
     ]);
-    const restricted = summary.parCreneau.find((row) => row.creneauId === 'c-restricted');
-    const all = summary.parCreneau.find((row) => row.creneauId === 'c-all');
+    const restricted = summary.parCreneau.find((row) => row.creneauId === 1);
+    const all = summary.parCreneau.find((row) => row.creneauId === 2);
     expect(restricted).toMatchObject({ standsOuverts: 1, total: 2 });
     expect(all).toMatchObject({ standsOuverts: 2, total: 7 });
   });
@@ -62,7 +63,7 @@ describe('computeStaffingSummary — per-créneau seats', () => {
   it('ignores stand ids in standsOuvertsIds that no longer exist', () => {
     const summary = computeStaffingSummary(
       [stand({ id: 's1', effectifMin: 2 })],
-      [creneau({ id: 'c1', standsOuvertsIds: ['s1', 'ghost'] })]
+      [creneau({ id: 1, standsOuvertsIds: ['s1', 'ghost'] })]
     );
     expect(summary.parCreneau[0]).toMatchObject({ standsOuverts: 1, total: 2 });
   });
@@ -76,16 +77,16 @@ describe('computeStaffingSummary — per-créneau seats', () => {
     const summary = computeStaffingSummary(
       [],
       [
-        creneau({ id: 'later', date: '2026-08-02', heureDebut: '09:00' }),
-        creneau({ id: 'earlier-same-day', date: '2026-08-01', heureDebut: '09:00' }),
-        creneau({ id: 'earlier', date: '2026-08-01', heureDebut: '14:00' })
+        creneau({ id: 3, date: '2026-08-02', heureDebut: '09:00' }),
+        creneau({ id: 1, date: '2026-08-01', heureDebut: '09:00' }),
+        creneau({ id: 2, date: '2026-08-01', heureDebut: '14:00' })
       ]
     );
-    expect(summary.parCreneau.map((row) => row.creneauId)).toEqual(['earlier-same-day', 'earlier', 'later']);
+    expect(summary.parCreneau.map((row) => row.creneauId)).toEqual([1, 2, 3]);
   });
 
   it('computes duration across a midnight-crossing slot like the backend does', () => {
-    const summary = computeStaffingSummary([], [creneau({ id: 'night', heureDebut: '20:00', heureFin: '00:00' })]);
+    const summary = computeStaffingSummary([], [creneau({ id: 1, heureDebut: '20:00', heureFin: '00:00' })]);
     expect(summary.parCreneau[0].dureeHeures).toBe(4);
   });
 });
@@ -94,8 +95,8 @@ describe('computeStaffingSummary — peak vs workload bound', () => {
   it('picks the busiest créneau as the peak bound, not the sum across créneaux', () => {
     const stands = [stand({ id: 's1', effectifMin: 2 })];
     const summary = computeStaffingSummary(stands, [
-      creneau({ id: 'c-light', date: '2026-08-01', standsOuvertsIds: ['s1'] }),
-      creneau({ id: 'c-peak', date: '2026-08-02', standsOuvertsIds: ['s1'] })
+      creneau({ id: 1, date: '2026-08-01', standsOuvertsIds: ['s1'] }),
+      creneau({ id: 2, date: '2026-08-02', standsOuvertsIds: ['s1'] })
     ]);
     expect(summary.peakTotal).toBe(2);
   });
@@ -108,7 +109,7 @@ describe('computeStaffingSummary — peak vs workload bound', () => {
     const stands = [stand({ id: 's1', effectifMin: 10 })];
     const creneaux: Creneau[] = Array.from({ length: 14 }, (_, i) =>
       creneau({
-        id: `c${i}`,
+        id: i,
         date: i % 2 === 0 ? '2027-02-15' : '2027-02-16',
         heureDebut: '08:00',
         heureFin: '12:00',
@@ -126,14 +127,14 @@ describe('computeStaffingSummary — peak vs workload bound', () => {
 
   it('falls back to the 48h/week legal default when no legal parameter is supplied', () => {
     const stands = [stand({ id: 's1', effectifMin: 5 })];
-    const withDefault = computeStaffingSummary(stands, [creneau({ id: 'c1' })]);
-    const withExplicit48h = computeStaffingSummary(stands, [creneau({ id: 'c1' })], 48 * 60);
+    const withDefault = computeStaffingSummary(stands, [creneau({ id: 1 })]);
+    const withExplicit48h = computeStaffingSummary(stands, [creneau({ id: 1 })], 48 * 60);
     expect(withDefault.workloadTotal).toBe(withExplicit48h.workloadTotal);
   });
 
   it('splits the retained minimum majeurs/mineurs using the aggregate majeurs share', () => {
     const stands = [stand({ id: 's1', effectifMin: 10, reserveMajeurs: true }), stand({ id: 's2', effectifMin: 10 })];
-    const summary = computeStaffingSummary(stands, [creneau({ id: 'c1' })]);
+    const summary = computeStaffingSummary(stands, [creneau({ id: 1 })]);
     // s1: 10 majeurs, 0 mineurs; s2: 5 majeurs, 5 mineurs -> 15/20 = 75% majeurs.
     expect(summary.minimumMajeurs + summary.minimumMineurs).toBe(summary.minimumTotal);
     expect(summary.minimumMajeurs).toBe(Math.ceil(summary.minimumTotal * 0.75));

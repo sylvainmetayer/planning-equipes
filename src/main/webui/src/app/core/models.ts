@@ -44,7 +44,7 @@ export interface Emplacement {
 }
 
 export interface Creneau {
-  id: string;
+  id: number;
   jour: number;
   date: string;
   heureDebut: string;

@@ -144,9 +144,9 @@ class PlanningExportServiceTest {
         Stand standAdultes = new Stand("STAND-3", "Loup-Garou Nocturne", typologies(TypologieJeu.ROLE), 1, 1, true);
         Stand standEnfant = new Stand("STAND-4", "Coin des Petits", typologies(TypologieJeu.ENFANT), 1, 2, false);
 
-        Creneau matinJ1 = new Creneau("J1-MATIN", 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
-        Creneau apremJ1 = new Creneau("J1-AM", 1, LocalDate.of(2026, 8, 14), LocalTime.of(14, 0), LocalTime.of(18, 0));
-        Creneau matinJ2 = new Creneau("J2-MATIN", 2, LocalDate.of(2026, 8, 15), LocalTime.of(9, 0), LocalTime.of(13, 0));
+        Creneau matinJ1 = new Creneau(1L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
+        Creneau apremJ1 = new Creneau(2L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(14, 0), LocalTime.of(18, 0));
+        Creneau matinJ2 = new Creneau(3L, 2, LocalDate.of(2026, 8, 15), LocalTime.of(9, 0), LocalTime.of(13, 0));
 
         Animateur referent = animateur("A-ADA", "Ada", "Lovelace", NiveauCompetence.REFERENT);
         Animateur debutant = animateur("A-ALAN", "Alan", "Turing", NiveauCompetence.DEBUTANT);
