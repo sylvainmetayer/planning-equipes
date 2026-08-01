@@ -78,7 +78,11 @@ autres — au plus un groupe actif à la fois, garanti à la fois en base (index
 unique partiel) et côté service. Le solveur ne construit son problème
 (`PlanningService.construireDepuisReferenceData`) qu'à partir des créneaux du
 groupe actif ; les créneaux des autres groupes existent en base mais ne sont
-jamais soumis au solveur tant que leur groupe n'est pas activé.
+jamais soumis au solveur tant que leur groupe n'est pas activé. Le chargement
+d'un scénario (`ReferenceDataRepository.importFromPlanning`) respecte la même
+règle : il ne remplace que les créneaux du groupe actif, ce qui permet de
+charger un scénario différent dans chaque groupe sans écraser les autres —
+voir [`import-export.md`](import-export.md).
 
 ## Entité de planification
 

@@ -58,6 +58,25 @@ A-2;Alan;Turing;2010-01-15;false;;
 Une ligne invalide annule tout l'import et renvoie un message précisant le numéro
 de ligne et la colonne fautive.
 
+## Chargement de scénario
+
+`POST /api/reference-data/import-scenario?name=...` (bouton « Charger le
+planning d'exemple » de la page Data setup) et `POST /api/reference-data/import`
+(import générique d'un `PlanningFestival`) partagent la même logique de
+remplacement :
+
+- animateurs et stands sont des référentiels globaux, **toujours remplacés en
+  totalité** ;
+- les créneaux, eux, sont scopés au groupe de créneaux actif : seuls ceux du
+  groupe actif sont supprimés puis rechargés avec les créneaux du scénario ;
+  les créneaux des autres groupes ne sont pas touchés. Cela permet de charger
+  plusieurs scénarios dans différents groupes (par exemple un planning normal
+  et un planning de repli) sans que l'un écrase les créneaux de l'autre. Voir
+  [`domaine.md`](domaine.md) pour la notion de groupe de créneaux.
+- les affectations (`poste_affectation`) et les contraintes ad hoc restent
+  supprimées en totalité à chaque import, quel que soit le groupe, puisqu'elles
+  n'ont pas de notion de groupe propre.
+
 ## Exports de planning (PDF / ICS)
 
 Générés **côté serveur** — pas de génération dans le navigateur :
