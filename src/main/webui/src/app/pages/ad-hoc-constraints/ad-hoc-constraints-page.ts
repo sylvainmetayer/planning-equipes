@@ -57,15 +57,26 @@ export class AdHocConstraintsPage {
   }
 
   protected porteeLabel(contrainte: ContrainteAdHoc): string {
-    const creneauId = contrainte.creneau?.id;
     const standId = contrainte.stand?.id;
     const scope = [
-      creneauId ? $localize`:@@adHoc.scope.creneau:créneau ${creneauId}:id:` : '',
+      this.creneauScopeLabel(contrainte.creneau),
       standId ? $localize`:@@adHoc.scope.stand:stand ${standId}:id:` : ''
     ]
       .filter(Boolean)
       .join(' · ');
     return scope || '—';
+  }
+
+  /** The backend only sends the créneau id (see `ContrainteAdHoc`): resolve the human-readable slot from the reference store rather than showing that internal id. */
+  private creneauScopeLabel(creneauRef: { id: number } | null): string {
+    if (!creneauRef) {
+      return '';
+    }
+    const creneau = this.store.creneaux().find((c) => c.id === creneauRef.id);
+    if (!creneau) {
+      return $localize`:@@adHoc.scope.creneauSupprime:créneau supprimé`;
+    }
+    return $localize`:@@adHoc.scope.creneau:créneau J${creneau.jour}:jour: · ${creneau.date}:date: ${creneau.heureDebut}:heureDebut:–${creneau.heureFin}:heureFin:`;
   }
 
   protected openCreate(): void {

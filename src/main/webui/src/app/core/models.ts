@@ -91,7 +91,8 @@ export interface ContrainteAdHoc {
   id: string;
   type: TypeContrainteAdHoc;
   animateursConcernes: { id: string }[];
-  creneau: { id: string } | null;
+  /** Only `id` is populated by the backend; look up `Creneau` details from the reference store if needed. */
+  creneau: { id: number } | null;
   stand: { id: string } | null;
   raison: string;
   creeParUtilisateurId?: string;

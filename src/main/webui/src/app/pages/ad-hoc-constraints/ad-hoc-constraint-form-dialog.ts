@@ -32,7 +32,7 @@ function contrainteTypes(): { value: TypeContrainteAdHoc; label: string }[] {
 interface ContrainteDraft {
   id: string;
   type: TypeContrainteAdHoc;
-  creneauId: string;
+  creneauId: number | '';
   standId: string;
   raison: string;
   animateurIds: string[];
@@ -83,7 +83,7 @@ export class AdHocConstraintFormDialog {
       id: draft.id.trim(),
       type: draft.type,
       animateursConcernes: draft.animateurIds.map((id) => ({ id })),
-      creneau: draft.creneauId ? { id: draft.creneauId } : null,
+      creneau: draft.creneauId !== '' ? { id: draft.creneauId } : null,
       stand: draft.standId ? { id: draft.standId } : null,
       raison: draft.raison.trim(),
       creeParUtilisateurId: 'ui'

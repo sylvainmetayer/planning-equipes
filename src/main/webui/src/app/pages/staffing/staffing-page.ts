@@ -27,8 +27,13 @@ export class StaffingPage {
   protected readonly store = inject(ReferenceDataStore);
   protected readonly columns = ['creneau', 'standsOuverts', 'total', 'majeurs', 'mineurs'];
   protected readonly dureeHebdomadaireMaxMinutes = signal<number | null>(null);
+  /** Only the active groupe de créneaux' slots count — the others are an alternate planning, not the one being staffed. */
+  private readonly activeGroupeId = computed(() => this.store.groupesCreneaux().find((groupe) => groupe.actif)?.id ?? null);
+  private readonly creneauxGroupeActif = computed(() =>
+    this.store.creneaux().filter((creneau) => creneau.groupe?.id === this.activeGroupeId())
+  );
   protected readonly summary = computed(() =>
-    computeStaffingSummary(this.store.stands(), this.store.creneaux(), this.dureeHebdomadaireMaxMinutes() ?? undefined)
+    computeStaffingSummary(this.store.stands(), this.creneauxGroupeActif(), this.dureeHebdomadaireMaxMinutes() ?? undefined)
   );
 
   private readonly crud = inject(ReferenceCrudService);
@@ -49,12 +54,11 @@ export class StaffingPage {
   }
 
   protected busiestCreneauLabel(critique: CreneauStaffing): string {
-    const creneauId = critique.creneauId;
     const jour = critique.jour;
     const date = critique.date;
     const heureDebut = critique.heureDebut;
     const heureFin = critique.heureFin;
     const standsOuverts = critique.standsOuverts;
-    return $localize`:@@staffing.busiestCreneau:Créneau le plus chargé : ${creneauId}:id: — J${jour}:jour: · ${date}:date: ${heureDebut}:heureDebut:–${heureFin}:heureFin: (${standsOuverts}:count: stands ouverts)`;
+    return $localize`:@@staffing.busiestCreneau:Créneau le plus chargé : J${jour}:jour: · ${date}:date: ${heureDebut}:heureDebut:–${heureFin}:heureFin: (${standsOuverts}:count: stands ouverts)`;
   }
 }

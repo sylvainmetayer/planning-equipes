@@ -61,7 +61,7 @@
           <ng-container matColumnDef="creneau">
             <th mat-header-cell *matHeaderCellDef i18n="@@stands.column.effectif.creneau">Créneau</th>
             <td mat-cell *matCellDef="let row">
-              {{ row.creneauId }} — J{{ row.jour }} · {{ row.date }} {{ row.heureDebut }}–{{ row.heureFin }}
+              J{{ row.jour }} · {{ row.date }} {{ row.heureDebut }}–{{ row.heureFin }}
             </td>
           </ng-container>
           <ng-container matColumnDef="standsOuverts">
