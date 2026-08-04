@@ -27,6 +27,9 @@ public class ReferenceDataService {
     @Inject
     ReferenceDataRepository repository;
 
+    @Inject
+    ReferenceDataChangeTracker changeTracker;
+
     /** Kept for the non-CDI plain test which constructs and calls init() by hand. */
     void init() {
         // No-op: state lives in the database, seeded by Flyway migrations.
@@ -41,6 +44,7 @@ public class ReferenceDataService {
     public Animateur createAnimateur(Animateur animateur) {
         animateur.setId(requiredId(animateur.getId(), "animateur id"));
         repository.saveAnimateur(animateur);
+        markModified();
         return animateur;
     }
 
@@ -50,11 +54,13 @@ public class ReferenceDataService {
         }
         animateur.setId(id);
         repository.saveAnimateur(animateur);
+        markModified();
         return animateur;
     }
 
     public void deleteAnimateur(String id) {
         repository.deleteAnimateur(id);
+        markModified();
     }
 
     /* -------------------------------- Stands ------------------------------- */
@@ -67,6 +73,7 @@ public class ReferenceDataService {
         stand.setId(requiredId(stand.getId(), "stand id"));
         validateEffectifs(stand);
         repository.saveStand(stand);
+        markModified();
         return stand;
     }
 
@@ -77,6 +84,7 @@ public class ReferenceDataService {
         stand.setId(id);
         validateEffectifs(stand);
         repository.saveStand(stand);
+        markModified();
         return stand;
     }
 
@@ -90,6 +98,7 @@ public class ReferenceDataService {
 
     public void deleteStand(String id) {
         repository.deleteStand(id);
+        markModified();
     }
 
     /* ----------------------------- Emplacements ----------------------------- */
@@ -102,6 +111,7 @@ public class ReferenceDataService {
         emplacement.setId(requiredId(emplacement.getId(), "emplacement id"));
         validateCoordonnees(emplacement);
         repository.saveEmplacement(emplacement);
+        markModified();
         return emplacement;
     }
 
@@ -112,11 +122,13 @@ public class ReferenceDataService {
         emplacement.setId(id);
         validateCoordonnees(emplacement);
         repository.saveEmplacement(emplacement);
+        markModified();
         return emplacement;
     }
 
     public void deleteEmplacement(String id) {
         repository.deleteEmplacement(id);
+        markModified();
     }
 
     private void validateCoordonnees(Emplacement emplacement) {
@@ -146,7 +158,9 @@ public class ReferenceDataService {
     public Creneau createCreneau(Creneau creneau) {
         creneau.setId(null); // ignore any client-supplied id — the database always generates it
         defaultGroupeIfMissing(creneau);
-        return repository.insertCreneau(creneau);
+        Creneau created = repository.insertCreneau(creneau);
+        markModified();
+        return created;
     }
 
     public Creneau updateCreneau(Long id, Creneau creneau) {
@@ -156,11 +170,13 @@ public class ReferenceDataService {
         creneau.setId(id);
         defaultGroupeIfMissing(creneau);
         repository.updateCreneau(creneau);
+        markModified();
         return creneau;
     }
 
     public void deleteCreneau(Long id) {
         repository.deleteCreneau(id);
+        markModified();
     }
 
     /** Clients that don't send a group (older callers, tests) land in the default one. */
@@ -183,6 +199,7 @@ public class ReferenceDataService {
         }
         groupe.setActif(false);
         repository.saveGroupeCreneau(groupe);
+        markModified();
         return groupe;
     }
 
@@ -195,9 +212,16 @@ public class ReferenceDataService {
         }
         groupe.setId(id);
         repository.saveGroupeCreneau(groupe);
+        markModified();
         return groupe;
     }
 
+    /**
+     * Doesn't mark reference data as modified: switching the active group is
+     * already surfaced precisely by the groupe de créneaux mismatch check (which
+     * group the last solve ran for vs. the active one), so flagging it here too
+     * would just be a redundant, less specific warning.
+     */
     public void activerGroupeCreneau(String id) {
         if (!repository.groupeCreneauExists(id)) {
             throw new NotFoundException("Timeslot group not found: " + id);
@@ -212,6 +236,7 @@ public class ReferenceDataService {
             throw new IllegalArgumentException("Impossible de supprimer le groupe actif");
         }
         repository.deleteGroupeCreneau(id);
+        markModified();
     }
 
     /* ------------------------------ Typologies ----------------------------- */
@@ -224,6 +249,7 @@ public class ReferenceDataService {
         String id = requiredId(typologie.id(), "typology id");
         TypologieItem created = new TypologieItem(id, typologie.label());
         repository.saveTypologie(created);
+        markModified();
         return created;
     }
 
@@ -233,11 +259,13 @@ public class ReferenceDataService {
         }
         TypologieItem updated = new TypologieItem(id, typologie.label());
         repository.saveTypologie(updated);
+        markModified();
         return updated;
     }
 
     public void deleteTypologie(String id) {
         repository.deleteTypologie(id);
+        markModified();
     }
 
     /* --------------------------- Ad hoc constraints ------------------------ */
@@ -252,11 +280,13 @@ public class ReferenceDataService {
             contrainte.setCreeLe(Instant.now());
         }
         repository.saveContrainte(contrainte);
+        markModified();
         return contrainte;
     }
 
     public void deleteContrainteAdHoc(String id) {
         repository.deleteContrainte(id);
+        markModified();
     }
 
     public List<ContrainteAdHoc> snapshotContraintes() {
@@ -271,6 +301,7 @@ public class ReferenceDataService {
     public void importFromPlanning(PlanningFestival planning) {
         if (repository != null) {
             repository.importFromPlanning(planning);
+            markModified();
         }
     }
 
@@ -285,6 +316,7 @@ public class ReferenceDataService {
             throw new IllegalArgumentException("dureeHebdomadaireMaxMinutes must be positive");
         }
         repository.saveParametresLegaux(parametres);
+        markModified();
         return parametres;
     }
 
@@ -297,6 +329,7 @@ public class ReferenceDataService {
     public void setContrainteActive(String nom, boolean actif) {
         if (repository != null) {
             repository.setContrainteActive(nom, actif);
+            markModified();
         }
     }
 
@@ -305,6 +338,12 @@ public class ReferenceDataService {
             throw new IllegalArgumentException("Missing " + fieldName);
         }
         return id;
+    }
+
+    private void markModified() {
+        if (changeTracker != null) {
+            changeTracker.markModified();
+        }
     }
 
     public record TypologieItem(String id, String label) {

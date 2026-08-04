@@ -70,13 +70,15 @@ export interface GroupeCreneau {
  * Which groupe de créneaux the last persisted solve (`/api/planning/persisted`)
  * was computed for, and when. `solved` is `false` when nothing has ever been
  * solved; `groupeCreneauId`/`groupeCreneauNom` can still be `null` even when
- * `solved` is `true` if that group was since deleted.
+ * `solved` is `true` if that group was since deleted. `derniereModificationDonnees`
+ * is when reference data was last edited (`null` if never, or since server start).
  */
 export interface PlanningResolution {
   solved: boolean;
   groupeCreneauId: string | null;
   groupeCreneauNom: string | null;
   resoluLe: string | null;
+  derniereModificationDonnees: string | null;
 }
 
 /** One seat to fill: a stand on a timeslot, with its animator once solved. */

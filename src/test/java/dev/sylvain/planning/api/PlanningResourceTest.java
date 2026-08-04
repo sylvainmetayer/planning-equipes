@@ -64,6 +64,46 @@ class PlanningResourceTest {
     }
 
     @Test
+    void referenceDataMutationUpdatesTheStaleDataMarker() {
+        String before = given()
+                .when().get("/api/planning/persisted/resolution")
+                .then()
+                .statusCode(200)
+                .extract().path("derniereModificationDonnees");
+
+        given()
+                .contentType("application/json")
+                .body("""
+                        {
+                          "id":"STAND-STALE-MARKER",
+                          "nom":"Test Stand",
+                          "typologiesProposees":["STRATEGIE"],
+                          "effectifMin":1,
+                          "effectifMax":1,
+                          "reserveMajeurs":false
+                        }
+                        """)
+                .when().post("/api/stands")
+                .then()
+                .statusCode(200);
+
+        try {
+            String after = given()
+                    .when().get("/api/planning/persisted/resolution")
+                    .then()
+                    .statusCode(200)
+                    .extract().path("derniereModificationDonnees");
+
+            assertThat(after).isNotNull();
+            if (before != null) {
+                assertThat(java.time.Instant.parse(after)).isAfterOrEqualTo(java.time.Instant.parse(before));
+            }
+        } finally {
+            given().when().delete("/api/stands/STAND-STALE-MARKER").then().statusCode(204);
+        }
+    }
+
+    @Test
     void creneauCrudWorks() {
         String futureTestDate = "2030-01-02";
 

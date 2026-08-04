@@ -42,6 +42,12 @@
   font-weight: 600;
 }
 
+/* Softer than .groupe-mismatch: a hint, not an error, since editing data
+   without resolving right away is often intentional. */
+.data-stale-hint {
+  color: var(--mat-sys-tertiary);
+}
+
 @media (max-width: 740px) {
   .job-monitor-bar {
     display: none;

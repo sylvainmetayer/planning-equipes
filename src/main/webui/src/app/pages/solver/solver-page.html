@@ -29,6 +29,11 @@
           <ng-container i18n="@@solver.lastRunGroupeStale"> — ne correspond plus au groupe actif, relancez le solveur pour un résultat à jour</ng-container>
         }
       </p>
+      @if (dataStale()) {
+        <p class="calendar-meta data-stale-hint" i18n="@@solver.dataStale">
+          Des données de référence ont été modifiées depuis cette résolution ; le résultat affiché peut ne plus être à jour.
+        </p>
+      }
     </mat-card-content>
   }
 </mat-card>

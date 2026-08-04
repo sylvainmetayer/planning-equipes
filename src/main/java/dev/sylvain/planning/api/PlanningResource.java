@@ -9,6 +9,7 @@ import dev.sylvain.planning.service.ConstraintAnalysisStore;
 import dev.sylvain.planning.service.PlanningPersistenceService;
 import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.PlanningService.PlanningDiagnostic;
+import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -33,6 +34,9 @@ public class PlanningResource {
 
     @Inject
     ConstraintAnalysisStore analysisStore;
+
+    @Inject
+    ReferenceDataChangeTracker changeTracker;
 
     /**
      * Lists the scenario files available in the {@code scenarios} folder so the
@@ -119,23 +123,26 @@ public class PlanningResource {
 
     /**
      * Which groupe de créneaux the last persisted solve was computed for, and
-     * when. Lets the UI warn when the active group has since changed, so the
-     * persisted planning shown by the calendars is stale for it.
+     * when, plus when reference data (stands, animateurs, créneaux, constraint
+     * toggles, ...) was last changed. Lets the UI warn when the active group has
+     * since changed, or when the data has been edited since that solve, so the
+     * persisted planning shown by the calendars may be stale.
      * {@code solved} is {@code false} when nothing has ever been solved.
      */
     @GET
     @Path("/planning/persisted/resolution")
     public PlanningResolutionView persistedResolution() {
         PlanningPersistenceService.PlanningResolution resolution = persistenceService.loadResolution();
+        Instant derniereModificationDonnees = changeTracker.lastModifiedAt();
         if (resolution == null) {
-            return new PlanningResolutionView(false, null, null, null);
+            return new PlanningResolutionView(false, null, null, null, derniereModificationDonnees);
         }
         return new PlanningResolutionView(true, resolution.groupeCreneauId(), resolution.groupeCreneauNom(),
-                resolution.resoluLe());
+                resolution.resoluLe(), derniereModificationDonnees);
     }
 
     public record PlanningResolutionView(boolean solved, String groupeCreneauId, String groupeCreneauNom,
-            Instant resoluLe) {
+            Instant resoluLe, Instant derniereModificationDonnees) {
     }
 
     /**

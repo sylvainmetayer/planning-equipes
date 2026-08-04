@@ -12,6 +12,7 @@ import { map } from 'rxjs';
 import { AppLocale, getStoredLocale, setStoredLocaleAndReload } from './core/locale';
 import { PlanningResolutionStore } from './core/planning-resolution.store';
 import { SolverJobService } from './core/solver-job.service';
+import { DataStaleIndicator } from './shared/data-stale-indicator';
 import { GroupeMismatchBanner } from './shared/groupe-mismatch-banner';
 import { JobMonitor } from './shared/job-monitor';
 
@@ -130,6 +131,7 @@ function buildNavGroups(): NavGroup[] {
     MatButtonModule,
     MatDividerModule,
     JobMonitor,
+    DataStaleIndicator,
     GroupeMismatchBanner
   ],
   templateUrl: './app.html',

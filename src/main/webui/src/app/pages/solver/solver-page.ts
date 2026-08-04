@@ -46,6 +46,8 @@ export class SolverPage {
   );
   /** True once the last solve's group no longer matches the active one: its result is stale. */
   protected readonly groupeMismatch = computed(() => this.resolution.stale());
+  /** True once reference data was edited after the last solve: its result may be stale. */
+  protected readonly dataStale = computed(() => this.resolution.dataStale());
 
   private readonly api = inject(ApiService);
   private readonly planningState = inject(PlanningStateService);

@@ -25,6 +25,21 @@ export class PlanningResolutionStore {
     return !!(resolution?.solved && active && resolution.groupeCreneauId !== active.id);
   });
 
+  /**
+   * True once a solve has run and reference data was edited afterwards: the
+   * persisted planning may no longer reflect it. Independent of `stale` (which
+   * only tracks the groupe de créneaux switching), and deliberately soft: a
+   * left-over from an earlier server run before this one started is not known,
+   * so it never flags anything until an edit actually happens during this run.
+   */
+  readonly dataStale = computed(() => {
+    const resolution = this.resolution();
+    if (!resolution?.solved || !resolution.derniereModificationDonnees) {
+      return false;
+    }
+    return new Date(resolution.derniereModificationDonnees) > new Date(resolution.resoluLe ?? 0);
+  });
+
   private readonly api = inject(ApiService);
 
   async reload(): Promise<void> {

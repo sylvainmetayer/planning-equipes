@@ -13,7 +13,7 @@ JSON sauf mention contraire.
 | `POST` | `/api/planning/reset` | Recharge le scénario d'exemple en base **sans** résolution (bouton « Reset BDD ») |
 | `GET` | `/api/planning/persisted` | Planning persisté en base, lecture seule (utilisé par les vues calendrier, qui ne déclenchent jamais de résolution) |
 | `GET` | `/api/planning/persisted/count` | Nombre d'affectations persistées |
-| `GET` | `/api/planning/persisted/resolution` | Groupe de créneaux et date de la dernière résolution persistée (`solved: false` si aucune résolution n'a encore eu lieu) |
+| `GET` | `/api/planning/persisted/resolution` | Groupe de créneaux et date de la dernière résolution persistée (`solved: false` si aucune résolution n'a encore eu lieu), plus `derniereModificationDonnees` : date de la dernière modification d'une donnée de référence (`null` si aucune depuis le démarrage du serveur) |
 
 ## Résolution asynchrone
 

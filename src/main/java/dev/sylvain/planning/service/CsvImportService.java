@@ -45,6 +45,9 @@ public class CsvImportService {
     @Inject
     ReferenceDataRepository repository;
 
+    @Inject
+    ReferenceDataChangeTracker changeTracker;
+
     public int importAnimateurs(String csv) {
         CsvTable table = CsvTable.parse(csv,
                 List.of("id", "prenom", "nom", "dateNaissance"),
@@ -63,6 +66,7 @@ public class CsvImportService {
             animateurs.add(animateur);
         }
         repository.replaceAnimateurs(animateurs);
+        changeTracker.markModified();
         return animateurs.size();
     }
 
@@ -92,6 +96,7 @@ public class CsvImportService {
             stands.add(stand);
         }
         repository.replaceStands(stands);
+        changeTracker.markModified();
         return stands.size();
     }
 
@@ -111,6 +116,7 @@ public class CsvImportService {
             creneaux.add(creneau);
         }
         repository.replaceCreneaux(creneaux);
+        changeTracker.markModified();
         return creneaux.size();
     }
 

@@ -142,6 +142,14 @@ le planning de repli), l'application avertit l'utilisateur, sur tous les
 écrans concernant les créneaux, que le dernier calcul ne correspond plus au
 groupe actif et qu'une nouvelle résolution est nécessaire.
 
+Plus généralement, si une donnée de référence (stand, animateur, créneau,
+contrainte ad hoc, activation/désactivation de règle, ...) est modifiée après
+la dernière résolution, un indicateur discret apparaît dans la barre d'outils
+(et un rappel sur la page Solveur) : le résultat affiché peut ne plus être à
+jour. C'est volontairement léger — modifier des données sans relancer tout de
+suite le solveur est un usage courant en préparant un planning — mais
+l'utilisateur doit pouvoir s'en rendre compte.
+
 Le détail règle par règle est dans [`docs/contraintes.md`](docs/contraintes.md).
 
 ### Gestion des référentiels
