@@ -32,7 +32,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
 
   pgadmin:
     image: dpage/pgadmin4:9
@@ -51,4 +51,5 @@ services:
 
 volumes:
   postgres_data:
+    name: postgres_data_pg18
   pgadmin_data:
