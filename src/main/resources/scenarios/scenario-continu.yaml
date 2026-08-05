@@ -1,5 +1,5 @@
 festival:
-  dateDebut: 2026-07-08
+  dateDebut: 2026-08-01
 
 creneaux:
   - id: J1-JOUR
@@ -16,21 +16,11 @@ creneaux:
     jour: 3
     date: 2026-07-10
     heureDebut: "10:00"
-    heureFin: "20:00"
-  - id: J3-NOCTURNE
-    jour: 3
-    date: 2026-07-10
-    heureDebut: "21:00"
     heureFin: "00:00"
   - id: J4-JOUR
     jour: 4
     date: 2026-07-11
     heureDebut: "10:00"
-    heureFin: "20:00"
-  - id: J4-NOCTURNE
-    jour: 4
-    date: 2026-07-11
-    heureDebut: "21:00"
     heureFin: "00:00"
   - id: J5-JOUR
     jour: 5
@@ -61,21 +51,11 @@ creneaux:
     jour: 10
     date: 2026-07-17
     heureDebut: "10:00"
-    heureFin: "20:00"
-  - id: J10-NOCTURNE
-    jour: 10
-    date: 2026-07-17
-    heureDebut: "21:00"
     heureFin: "00:00"
   - id: J11-JOUR
     jour: 11
     date: 2026-07-18
     heureDebut: "10:00"
-    heureFin: "20:00"
-  - id: J11-NOCTURNE
-    jour: 11
-    date: 2026-07-18
-    heureDebut: "21:00"
     heureFin: "00:00"
   - id: J12-JOUR
     jour: 12
