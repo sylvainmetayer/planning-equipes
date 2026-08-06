@@ -12,6 +12,7 @@ fonctionnalités métier) : **tout ajout de documentation technique se fait ici*
 | [`api.md`](api.md) | Endpoints REST exposés par le service Quarkus |
 | [`import-export.md`](import-export.md) | Formats d'import / export : CSV, dump SQL, PDF, ICS |
 | [`developpement.md`](developpement.md) | Build, tests, CI, Podman, réglage du solveur, mises à jour Renovate |
+| [`audit-conformite-rh.md`](audit-conformite-rh.md) | Audit de conformité RH du référentiel de contraintes (Code du travail, CCN ÉCLAT) — constats, articles et suites données |
 
 La mémoire destinée aux agents IA (Copilot, Claude Code, …) est centralisée dans
 un fichier unique à la racine : [`../AGENTS.md`](../AGENTS.md).

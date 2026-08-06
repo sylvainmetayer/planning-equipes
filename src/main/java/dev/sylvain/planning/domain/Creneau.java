@@ -136,7 +136,14 @@ public class Creneau {
      * ISO calendar week (e.g. {@code "2026-W28"}) the slot's {@link #date}
      * falls in. Used to group worked minutes per animateur and week, both for
      * reporting ({@code HeuresPlanningService}) and for the weekly max
-     * working-time hard constraint.
+     * working-time hard constraints (art. L3121-20 for adults, L3162-1 for
+     * minors).
+     *
+     * <p><b>Attribution convention:</b> a slot crossing midnight is attributed
+     * <i>in full</i> to the ISO week of its start date. A Sunday 20:00-00:00
+     * slot therefore counts towards the week that ends, not the one that
+     * begins. Deliberate simplification, conservative as long as night slots
+     * stay short.</p>
      */
     public String semaineIso() {
         if (date == null) {

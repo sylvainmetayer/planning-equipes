@@ -135,6 +135,58 @@ class LegalConstraintsTest extends ConstraintTestBase {
                 .penalizesBy(0);
     }
 
+    // --- Art. L3162-1 : 35 h/semaine pour un mineur ------------------------
+
+    @Test
+    void mineurDepassant35HeuresParSemaineEstPenalise() {
+        // Quatre journées de 9 h dans la même semaine ISO = 36 h, soit 60 min
+        // au-dessus du plafond d'ordre public de 35 h (art. L3162-1).
+        Animateur mineur = mineurDebutant("M1");
+        verify("dureeHebdomadaireMaxMineur")
+                .given(poste(standStrat, journeeLongue("J1-LONG", 1, D1), mineur),
+                        poste(standStrat, journeeLongue("J2-LONG", 2, D2), mineur),
+                        poste(standStrat, journeeLongue("J3-LONG", 3, D3), mineur),
+                        poste(standStrat, journeeLongue("J4-LONG", 4, D4), mineur),
+                        new ParametresLegaux())
+                .penalizesBy(60);
+    }
+
+    @Test
+    void mineurSousLes35HeuresParSemaineNEstPasPenalise() {
+        Animateur mineur = mineurDebutant("M1");
+        verify("dureeHebdomadaireMaxMineur")
+                .given(poste(standStrat, journeeLongue("J1-LONG", 1, D1), mineur),
+                        poste(standStrat, journeeLongue("J2-LONG", 2, D2), mineur),
+                        poste(standStrat, journeeLongue("J3-LONG", 3, D3), mineur),
+                        new ParametresLegaux())
+                .penalizesBy(0);
+    }
+
+    @Test
+    void majeurNEstPasConcerneParLePlafondHebdomadaireMineur() {
+        Animateur majeur = majeurReferent("A1");
+        verify("dureeHebdomadaireMaxMineur")
+                .given(poste(standStrat, journeeLongue("J1-LONG", 1, D1), majeur),
+                        poste(standStrat, journeeLongue("J2-LONG", 2, D2), majeur),
+                        poste(standStrat, journeeLongue("J3-LONG", 3, D3), majeur),
+                        poste(standStrat, journeeLongue("J4-LONG", 4, D4), majeur),
+                        new ParametresLegaux())
+                .penalizesBy(0);
+    }
+
+    @Test
+    void mineurNEstPlusSoumisAuPlafondHebdomadaireMajeur() {
+        // Régression de la violation B3 de l'audit : avant le correctif, un
+        // mineur était plafonné à 48 h par dureeHebdomadaireMax.
+        Animateur mineur = mineurDebutant("M1");
+        ParametresLegaux parametres = new ParametresLegaux(400);
+        verify("dureeHebdomadaireMax")
+                .given(poste(standStrat, creneauMatin, mineur),
+                        poste(standStrat, apremJ2, mineur),
+                        parametres)
+                .penalizesBy(0);
+    }
+
     @Test
     void deuxAnimateursDistinctsNeSontPasCumulesEnsemble() {
         Animateur a1 = majeurReferent("A1");

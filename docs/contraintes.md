@@ -26,14 +26,43 @@ Source : `solver/ConstraintCatalog.java` (description métier) et
 
 ### Dures — cadre légal mineurs (`LegalConstraints`)
 
-| Contrainte | Description |
-| --- | --- |
-| `standReserveAuxMajeurs` | Aucun mineur sur un stand réservé aux majeurs |
-| `mineurNecessiteEncadrementMajeur` | Au moins un majeur sur le même stand et le même créneau qu'un mineur |
-| `travailDeNuitInterditPourMineur` | Pas de créneau empiétant sur la nuit pour un mineur |
-| `dureeQuotidienneMaxMineur` | Maximum 8 h de présence sur une même journée pour un mineur |
-| `reposQuotidienMineur` | Après un créneau de nuit, pas de reprise avant midi le lendemain (~12 h de repos) |
-| `dureeHebdomadaireMax` | Aucun animateur (tous payés) ne dépasse la durée hebdomadaire maximale paramétrée (48 h par défaut) — voir `ParametresLegaux` dans [`domaine.md`](domaine.md) |
+Toutes ces règles sont dérivées de `dateNaissance` **à la date du créneau**,
+jamais d'un booléen stocké.
+
+| Contrainte | Article | Description |
+| --- | --- | --- |
+| `standReserveAuxMajeurs` | — (drapeau métier) | Aucun mineur sur un stand réservé aux majeurs |
+| `travailDeNuitInterditPourMineur` | L3163-1 | Pas de créneau empiétant sur la nuit pour un mineur |
+| `dureeQuotidienneMaxMineur` | L3162-1 | Maximum 8 h de travail effectif sur une même journée pour un mineur |
+| `dureeHebdomadaireMaxMineur` | L3162-1, D4153-3 | Maximum 35 h de travail effectif par semaine pour un mineur |
+| `reposQuotidienMineur` | — | Après un créneau de nuit, pas de reprise avant midi le lendemain (~12 h de repos) |
+
+`reserveMajeurs` est un **drapeau métier** : il ne présume pas d'une
+interdiction légale. Si le stand relève des travaux réglementés interdits aux
+moins de 18 ans (art. L4153-8 et D4153-15 et suivants
+*[non vérifié — à faire valider]*), la restriction est obligatoire et ne doit
+pas être levée ; si le stand n'est marqué que par confort d'organisation, la
+lever relève de l'organisateur. Le modèle ne distingue pas les deux cas.
+
+### Dures — cadre légal temps de travail (`LegalConstraints`)
+
+| Contrainte | Article | Description |
+| --- | --- | --- |
+| `dureeHebdomadaireMax` | L3121-20 (ordre public) | Aucun animateur **majeur** (tous payés) ne dépasse la durée hebdomadaire maximale paramétrée (48 h par défaut) — voir `ParametresLegaux` dans [`domaine.md`](domaine.md) |
+
+### Dures — sécurité (`LegalConstraints`)
+
+| Contrainte | Article | Description |
+| --- | --- | --- |
+| `mineurNecessiteEncadrementMajeur` | aucun — politique interne | Au moins un majeur sur le même stand et le même créneau qu'un mineur |
+
+`mineurNecessiteEncadrementMajeur` est une **règle de sécurité posée par
+l'organisateur, pas une obligation du Code du travail** : aucun article
+n'impose la présence d'un majeur aux côtés d'un jeune travailleur sur son
+poste. Elle est **maintenue en contrainte dure par choix**, et classée
+« Sécurité (mineurs) » dans `ConstraintCatalog` pour ne pas laisser croire
+qu'elle est facultative au même titre qu'une règle métier, ni qu'elle est
+opposable au même titre qu'une règle légale.
 
 ### Dures — exceptions administrateur (`AdHocConstraints`)
 

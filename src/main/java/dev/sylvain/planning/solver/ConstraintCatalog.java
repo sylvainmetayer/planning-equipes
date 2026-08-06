@@ -31,8 +31,13 @@ public final class ConstraintCatalog {
 
             new ConstraintDefinition("standReserveAuxMajeurs", Niveau.HARD, "Légal (mineurs)",
                     "Les stands réservés aux majeurs ne peuvent accueillir aucun mineur."),
-            new ConstraintDefinition("mineurNecessiteEncadrementMajeur", Niveau.HARD, "Légal (mineurs)",
-                    "Un mineur doit toujours être accompagné d'au moins un majeur sur le même stand et le même créneau."),
+            // Reclassée « Sécurité (mineurs) » : aucun article du Code du travail n'impose la présence
+            // d'un majeur aux côtés d'un jeune travailleur sur son poste. C'est une politique de sécurité
+            // de l'organisateur, maintenue en contrainte DURE par choix. Voir docs/contraintes.md.
+            new ConstraintDefinition("mineurNecessiteEncadrementMajeur", Niveau.HARD, "Sécurité (mineurs)",
+                    "Un mineur doit toujours être accompagné d'au moins un majeur sur le même stand et le même "
+                            + "créneau. Règle de sécurité posée par l'organisateur, pas une obligation du Code du "
+                            + "travail — maintenue en contrainte dure par choix."),
             new ConstraintDefinition("travailDeNuitInterditPourMineur", Niveau.HARD, "Légal (mineurs)",
                     "Un mineur ne peut pas être affecté sur un créneau qui empiète sur la nuit."),
             new ConstraintDefinition("dureeQuotidienneMaxMineur", Niveau.HARD, "Légal (mineurs)",
@@ -41,9 +46,13 @@ public final class ConstraintCatalog {
                     "Après un créneau de nuit, un mineur ne peut pas reprendre avant midi le lendemain (repos d'environ 12 h)."),
 
             new ConstraintDefinition("dureeHebdomadaireMax", Niveau.HARD, "Légal (temps de travail)",
-                    "Aucun animateur (tous payés, manager ou non) ne peut dépasser la durée hebdomadaire de travail "
-                            + "maximale paramétrée (48 h par défaut, Code du travail art. L3121-20 / Convention "
-                            + "collective de l'Animation)."),
+                    "Aucun animateur majeur (tous payés, manager ou non) ne peut dépasser la durée hebdomadaire de "
+                            + "travail effectif maximale paramétrée (48 h par défaut, Code du travail art. L3121-20, "
+                            + "d'ordre public / Convention collective de l'Animation art. 5.2)."),
+            new ConstraintDefinition("dureeHebdomadaireMaxMineur", Niveau.HARD, "Légal (mineurs)",
+                    "Un mineur ne peut pas dépasser 35 heures de travail effectif par semaine "
+                            + "(Code du travail art. L3162-1 ; art. D4153-3 pour les 14 à moins de 16 ans employés "
+                            + "pendant les vacances scolaires)."),
 
             new ConstraintDefinition("indisponibiliteForcee", Niveau.HARD, "Contraintes ad hoc",
                     "Indisponibilité posée manuellement par l'administrateur : l'animateur ne doit jamais être affecté sur le périmètre visé."),

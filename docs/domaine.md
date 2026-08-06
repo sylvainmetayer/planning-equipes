@@ -187,14 +187,41 @@ résolu si aucune n'a été fournie.
 ## Paramètres légaux
 
 `ParametresLegaux` est un fait de problème (`@ProblemFactCollectionProperty` sur
-`PlanningFestival`, même mécanisme que `ContrainteAdHoc`) qui porte la durée
-hebdomadaire de travail maximale, paramétrable depuis la page « Constraints » et
-persistée en base (`ReferenceDataService.getParametresLegaux()` /
-`updateParametresLegaux(...)`). Valeur par défaut : 48 h (2880 min), plafond fixé
-par le Code du travail (art. L3121-20) et la Convention collective nationale de
-l'Animation (ÉCLAT, IDCC 1518, art. 5.2). Consommée par
-`LegalConstraints.dureeHebdomadaireMax`, qui regroupe les `PosteAffectation` par
-animateur et semaine ISO (`Creneau.semaineIso()`) et pénalise le dépassement.
+`PlanningFestival`, même mécanisme que `ContrainteAdHoc`) qui porte les **deux
+durées hebdomadaires de travail maximales**, paramétrables depuis la page
+« Constraints » et persistées en base (`ReferenceDataService.getParametresLegaux()` /
+`updateParametresLegaux(...)`).
+
+| Champ | Défaut | Base légale | Contrainte qui le consomme |
+| --- | --- | --- | --- |
+| `dureeHebdomadaireMaxMinutes` | 48 h (2880 min) | Code du travail art. L3121-20 (ordre public) ; CCN Animation ÉCLAT IDCC 1518 art. 5.2 *[non vérifié]* | `dureeHebdomadaireMax` (**majeurs uniquement**) |
+| `dureeHebdomadaireMaxMineurMinutes` | 35 h (2100 min) | Code du travail art. L3162-1 ; art. D4153-3 pour les 14 à moins de 16 ans | `dureeHebdomadaireMaxMineur` |
+
+Les deux contraintes regroupent les `PosteAffectation` par animateur et semaine
+ISO (`Creneau.semaineIso()`) et pénalisent le dépassement au prorata des minutes
+excédentaires (gradient, pas simple booléen).
+
+Les autres seuils légaux (repos quotidien, durée quotidienne, pauses, repos
+hebdomadaire, jours fériés) sont **des constantes du code**, pas des paramètres :
+ce sont des minima/maxima d'ordre public qu'un administrateur n'a aucune raison
+légitime d'assouplir. Ils sont déclarés dans `LegalConstraints`, chacun avec son
+article.
+
+### Convention de rattachement à la semaine
+
+`Creneau.semaineIso()` rattache un créneau **entièrement** à la semaine ISO de sa
+date de début. Un créneau du dimanche 20 h → 00 h est donc compté dans la semaine
+qui s'achève, pas dans celle qui commence. Convention assumée : elle simplifie le
+décompte et reste conservatrice tant que les créneaux de nuit sont courts.
+
+### Amplitude vs travail effectif
+
+`Creneau.getDureeMinutes()` mesure une **amplitude** (fin − début), alors que les
+articles cités portent sur le **travail effectif**. Le modèle ne représente
+aucune pause à l'intérieur d'un créneau : les deux grandeurs coïncident donc, ce
+qui revient à supposer qu'aucune pause n'est prise pendant un créneau. C'est
+précisément pourquoi les pauses sont modélisées comme des **trous entre deux
+créneaux d'un même animateur**, et non comme un attribut de créneau.
 
 ## Activation des contraintes
 

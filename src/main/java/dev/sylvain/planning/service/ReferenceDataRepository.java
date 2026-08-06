@@ -683,10 +683,12 @@ public class ReferenceDataRepository {
     public ParametresLegaux getParametresLegaux() {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement(
-                        "SELECT duree_hebdomadaire_max_minutes FROM parametres_legaux WHERE id = 1");
+                        "SELECT duree_hebdomadaire_max_minutes, duree_hebdomadaire_max_mineur_minutes "
+                                + "FROM parametres_legaux WHERE id = 1");
                 ResultSet rs = ps.executeQuery()) {
             if (rs.next()) {
-                return new ParametresLegaux(rs.getInt("duree_hebdomadaire_max_minutes"));
+                return new ParametresLegaux(rs.getInt("duree_hebdomadaire_max_minutes"),
+                        rs.getInt("duree_hebdomadaire_max_mineur_minutes"));
             }
             return new ParametresLegaux();
         } catch (SQLException e) {
@@ -697,10 +699,14 @@ public class ReferenceDataRepository {
     public void saveParametresLegaux(ParametresLegaux parametres) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement(
-                        "INSERT INTO parametres_legaux (id, duree_hebdomadaire_max_minutes) VALUES (1, ?) "
+                        "INSERT INTO parametres_legaux (id, duree_hebdomadaire_max_minutes, "
+                                + "duree_hebdomadaire_max_mineur_minutes) VALUES (1, ?, ?) "
                                 + "ON CONFLICT (id) DO UPDATE SET "
-                                + "duree_hebdomadaire_max_minutes = EXCLUDED.duree_hebdomadaire_max_minutes")) {
+                                + "duree_hebdomadaire_max_minutes = EXCLUDED.duree_hebdomadaire_max_minutes, "
+                                + "duree_hebdomadaire_max_mineur_minutes = "
+                                + "EXCLUDED.duree_hebdomadaire_max_mineur_minutes")) {
             ps.setInt(1, parametres.getDureeHebdomadaireMaxMinutes());
+            ps.setInt(2, parametres.getDureeHebdomadaireMaxMineurMinutes());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to save legal parameters", e);

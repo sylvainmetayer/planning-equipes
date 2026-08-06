@@ -156,10 +156,13 @@ Le détail règle par règle est dans [`docs/contraintes.md`](docs/contraintes.m
 
 Écrans d'ajout / modification / suppression pour :
 
-- les **animateurs** : identité, date de naissance (le statut mineur/majeur est
-  toujours recalculé, jamais saisi), statut bénévole ou salarié, compétences par
-  typologie de jeu avec niveau (débutant / autonome / référent), et jours
-  d'indisponibilité (par défaut, un animateur est disponible) ;
+- les **animateurs** : identité, date de naissance (le régime applicable — moins
+  de 16 ans, 16-18 ans, majeur — est toujours recalculé à la date du créneau,
+  jamais saisi), compétences par typologie de jeu avec niveau (débutant /
+  autonome / référent), et jours d'indisponibilité (par défaut, un animateur est
+  disponible). Il n'existe pas de statut bénévole/salarié : **tous les
+  animateurs sont rémunérés** et relèvent du même cadre légal de temps de
+  travail ;
 - les **stands** : typologies de jeux proposées, effectif minimum et maximum
   d'animateurs simultanés, restriction éventuelle aux majeurs ;
 - les **créneaux** : jour du festival, date, heures de début et de fin ;
@@ -248,4 +251,5 @@ Formats détaillés dans [`docs/import-export.md`](docs/import-export.md).
 | L'API REST | [`docs/api.md`](docs/api.md) |
 | Les imports / exports | [`docs/import-export.md`](docs/import-export.md) |
 | Contribuer (build, tests, CI, Renovate) | [`docs/developpement.md`](docs/developpement.md) |
+| L'audit de conformité RH (Code du travail) | [`docs/audit-conformite-rh.md`](docs/audit-conformite-rh.md) |
 | Les conventions suivies par les agents IA | [`AGENTS.md`](AGENTS.md) |

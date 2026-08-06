@@ -41,8 +41,13 @@ abstract class ConstraintTestBase {
             ConstraintVerifier.build(new PlanningConstraintProvider(), PlanningFestival.class, PosteAffectation.class);
 
     // Fixed reference dates so minor/adult status and day arithmetic stay deterministic.
+    // D1..D5 are consecutive days inside the same ISO week (2026-W28), so weekly
+    // aggregates group them together.
     protected static final LocalDate D1 = LocalDate.of(2026, 7, 8);
     protected static final LocalDate D2 = LocalDate.of(2026, 7, 9);
+    protected static final LocalDate D3 = LocalDate.of(2026, 7, 10);
+    protected static final LocalDate D4 = LocalDate.of(2026, 7, 11);
+    protected static final LocalDate D5 = LocalDate.of(2026, 7, 12);
     private static final LocalDate NAISSANCE_MAJEUR = LocalDate.of(2000, 1, 1);
     private static final LocalDate NAISSANCE_MINEUR = LocalDate.of(2012, 1, 1);
 
