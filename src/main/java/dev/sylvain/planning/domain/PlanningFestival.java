@@ -4,12 +4,14 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+import ai.timefold.solver.core.api.domain.solution.ConstraintWeightOverrides;
 import ai.timefold.solver.core.api.domain.solution.PlanningEntityCollectionProperty;
 import ai.timefold.solver.core.api.domain.solution.PlanningScore;
 import ai.timefold.solver.core.api.domain.solution.PlanningSolution;
 import ai.timefold.solver.core.api.domain.solution.ProblemFactCollectionProperty;
 import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
 import ai.timefold.solver.core.api.score.buildin.hardmediumsoft.HardMediumSoftScore;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @PlanningSolution
 public class PlanningFestival {
@@ -31,6 +33,13 @@ public class PlanningFestival {
 
     @ProblemFactCollectionProperty
     private List<ConstraintToggle> constraintsDesactivees = new ArrayList<>();
+
+    // Never exposed over the API: PlanningService.prepareProblem always sets
+    // this from server-side configuration before a solve. Auto-discovered by
+    // Timefold from its type alone (no annotation needed), and must never be
+    // null when a solve runs, hence the non-null default.
+    @JsonIgnore
+    private ConstraintWeightOverrides<HardMediumSoftScore> ponderationsContraintes = ConstraintWeightOverrides.none();
 
     @PlanningScore
     private HardMediumSoftScore score;
@@ -98,6 +107,14 @@ public class PlanningFestival {
 
     public void setConstraintsDesactivees(List<ConstraintToggle> constraintsDesactivees) {
         this.constraintsDesactivees = constraintsDesactivees;
+    }
+
+    public ConstraintWeightOverrides<HardMediumSoftScore> getPonderationsContraintes() {
+        return ponderationsContraintes;
+    }
+
+    public void setPonderationsContraintes(ConstraintWeightOverrides<HardMediumSoftScore> ponderationsContraintes) {
+        this.ponderationsContraintes = ponderationsContraintes;
     }
 
     public HardMediumSoftScore getScore() {

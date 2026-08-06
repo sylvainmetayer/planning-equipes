@@ -49,14 +49,27 @@ class QualiteConstraintsTest extends ConstraintTestBase {
     @Test
     void chargeDesequilibreeEstPenalisee() {
         Animateur a1 = majeurReferent("A1");
-        // A1 porte quatre postes contre un seul pour A2. NB : la contrainte tronque
-        // l'« unfairness » via intValue(), donc un écart faible (2 contre 1) donne 0 ;
-        // il faut un déséquilibre marqué pour qu'une pénalité entière apparaisse.
+        // A1 porte quatre postes contre un seul pour A2 : déséquilibre marqué.
         verify("equilibrerCharge")
                 .given(poste(standStrat, creneauMatin, a1),
                         poste(standStrat, creneauAprem, a1),
                         poste(standStrat, matin("J2-MATIN", 2, D2), a1),
                         poste(standStrat, apresMidi("J2-AM", 2, D2), a1),
+                        poste(standStrategie("STAND-2"), creneauMatin, majeurAutonome("A2")))
+                .penalizesByMoreThan(0);
+    }
+
+    @Test
+    void petitDesequilibreEstDesormaisPenalise() {
+        // A1 porte deux postes contre un seul pour A2 : avant la mise à l'échelle
+        // de l'unfairness (UNFAIRNESS_SCALE dans QualiteConstraints), ce faible
+        // écart tronquait exactement à 0 via intValue() et le solveur n'avait
+        // aucun gradient pour corriger un déséquilibre modéré. C'est exactement le
+        // piège que la mise à l'échelle corrige.
+        Animateur a1 = majeurReferent("A1");
+        verify("equilibrerCharge")
+                .given(poste(standStrat, creneauMatin, a1),
+                        poste(standStrat, creneauAprem, a1),
                         poste(standStrategie("STAND-2"), creneauMatin, majeurAutonome("A2")))
                 .penalizesByMoreThan(0);
     }

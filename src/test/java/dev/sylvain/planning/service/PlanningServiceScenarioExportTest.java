@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
 
@@ -77,7 +78,8 @@ class PlanningServiceScenarioExportTest {
     void exportingWithoutReferenceDataFails() {
         ReferenceDataService referenceDataService = new ReferenceDataService();
         referenceDataService.init();
-        PlanningService planningService = new PlanningService(3L, 2L, referenceDataService, new FeasibilityAnalyzer());
+        PlanningService planningService = new PlanningService(3L, 2L, referenceDataService, new FeasibilityAnalyzer(),
+                ConfigProvider.getConfig());
 
         assertThatThrownBy(planningService::exporterScenarioYaml).isInstanceOf(IllegalStateException.class);
     }

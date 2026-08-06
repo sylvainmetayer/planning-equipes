@@ -14,14 +14,17 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import ai.timefold.solver.core.api.domain.solution.ConstraintWeightOverrides;
 import ai.timefold.solver.core.api.score.analysis.ConstraintAnalysis;
 import ai.timefold.solver.core.api.score.analysis.ScoreAnalysis;
+import ai.timefold.solver.core.api.score.buildin.hardmediumsoft.HardMediumSoftScore;
 import ai.timefold.solver.core.api.solver.Solver;
 import ai.timefold.solver.core.api.solver.SolutionManager;
 import ai.timefold.solver.core.api.solver.SolverFactory;
 import ai.timefold.solver.core.config.score.director.ScoreDirectorFactoryConfig;
 import ai.timefold.solver.core.config.solver.termination.TerminationConfig;
 import jakarta.enterprise.context.ApplicationScoped;
+import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.LoaderOptions;
@@ -37,6 +40,7 @@ import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypologieJeu;
+import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.PlanningConstraintProvider;
 
 @ApplicationScoped
@@ -48,12 +52,14 @@ public class PlanningService {
     private final FeasibilityAnalyzer feasibilityAnalyzer;
     private final long defaultSecondsLimit;
     private final long defaultUnimprovedSecondsLimit;
+    private final ConstraintWeightOverrides<HardMediumSoftScore> constraintWeightOverrides;
 
     public PlanningService(
             @ConfigProperty(name = "planning.solver.seconds-limit", defaultValue = "120") Long secondsLimit,
             @ConfigProperty(name = "planning.solver.unimproved-seconds-limit", defaultValue = "30") Long unimprovedSecondsLimit,
             ReferenceDataService referenceDataService,
-            FeasibilityAnalyzer feasibilityAnalyzer) {
+            FeasibilityAnalyzer feasibilityAnalyzer,
+            Config config) {
         SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
         solverConfig.setScoreDirectorFactoryConfig(new ScoreDirectorFactoryConfig()
                 .withConstraintProviderClass(PlanningConstraintProvider.class));
@@ -64,6 +70,35 @@ public class PlanningService {
         this.feasibilityAnalyzer = feasibilityAnalyzer;
         this.defaultSecondsLimit = secondsLimit;
         this.defaultUnimprovedSecondsLimit = unimprovedSecondsLimit;
+        this.constraintWeightOverrides = buildConstraintWeightOverrides(config);
+    }
+
+    /**
+     * Reads {@code planning.constraint-weights.<constraintName>} for every
+     * constraint in {@link ConstraintCatalog} and turns whichever ones deviate
+     * from 1 (the {@code ONE_HARD}/{@code ONE_MEDIUM}/{@code ONE_SOFT} literal
+     * already baked into each constraint) into a {@link ConstraintWeightOverrides}
+     * that Timefold applies at solve time — retuning a constraint's importance
+     * is then a config change, not a code change. Computed once at startup since
+     * {@code application.properties} does not change at runtime.
+     */
+    private static ConstraintWeightOverrides<HardMediumSoftScore> buildConstraintWeightOverrides(Config config) {
+        Map<String, HardMediumSoftScore> overrides = new HashMap<>();
+        for (ConstraintCatalog.ConstraintDefinition definition : ConstraintCatalog.definitions()) {
+            int weight = config
+                    .getOptionalValue("planning.constraint-weights." + definition.name(), Integer.class)
+                    .orElse(1);
+            if (weight == 1) {
+                continue;
+            }
+            HardMediumSoftScore score = switch (definition.niveau()) {
+                case HARD -> HardMediumSoftScore.ofHard(weight);
+                case MEDIUM -> HardMediumSoftScore.ofMedium(weight);
+                case SOFT -> HardMediumSoftScore.ofSoft(weight);
+            };
+            overrides.put(definition.name(), score);
+        }
+        return overrides.isEmpty() ? ConstraintWeightOverrides.none() : ConstraintWeightOverrides.of(overrides);
     }
 
     private static void applyTermination(SolverConfig solverConfig, Long secondsLimit, Long unimprovedSecondsLimit) {
@@ -515,6 +550,9 @@ public class PlanningService {
                     .map(ConstraintToggle::new)
                     .toList());
         }
+        // Never sent by a caller (the field is @JsonIgnore-d on PlanningFestival),
+        // so this always overwrites the ConstraintWeightOverrides.none() default.
+        problem.setPonderationsContraintes(constraintWeightOverrides);
     }
 
     /**

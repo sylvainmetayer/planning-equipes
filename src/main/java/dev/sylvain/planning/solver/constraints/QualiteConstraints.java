@@ -1,5 +1,8 @@
 package dev.sylvain.planning.solver.constraints;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
 import ai.timefold.solver.core.api.score.buildin.hardmediumsoft.HardMediumSoftScore;
 import ai.timefold.solver.core.api.score.stream.Constraint;
 import ai.timefold.solver.core.api.score.stream.ConstraintCollectors;
@@ -46,6 +49,18 @@ public final class QualiteConstraints {
                 .asConstraint("standComplexeAvecReferent");
     }
 
+    /**
+     * Scale applied to {@code unfairness()} before truncating to an int. The
+     * measure is typically well below 1.0 for the kind of imbalance that shows
+     * up in practice, and {@code HardMediumSoftScore} only carries integers:
+     * without this factor, every such imbalance truncates to exactly 0 and the
+     * solver gets no gradient to climb to improve fairness. x10 keeps a
+     * deviation of 0.1 visible as 1 point while staying in the same order of
+     * magnitude as the other medium constraints in this class, which score 1
+     * point per individual violation.
+     */
+    private static final BigDecimal UNFAIRNESS_SCALE = BigDecimal.TEN;
+
     private Constraint equilibrerCharge(ConstraintFactory constraintFactory) {
         // loadBalance().unfairness() is 0 when every animateur carries the same
         // number of postes and grows with the deviation, giving a clean fairness
@@ -54,7 +69,10 @@ public final class QualiteConstraints {
                 .filter(poste -> poste.getAnimateur() != null)
                 .groupBy(ConstraintCollectors.loadBalance(PosteAffectation::getAnimateur))
                 .penalize(HardMediumSoftScore.ONE_MEDIUM,
-                        loadBalance -> loadBalance.unfairness().intValue())
+                        loadBalance -> loadBalance.unfairness()
+                                .multiply(UNFAIRNESS_SCALE)
+                                .setScale(0, RoundingMode.HALF_UP)
+                                .intValue())
                 .asConstraint("equilibrerCharge");
     }
 

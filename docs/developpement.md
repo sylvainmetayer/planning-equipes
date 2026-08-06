@@ -141,6 +141,7 @@ Dans `application.properties` :
 | --- | --- | --- |
 | `planning.solver.seconds-limit` | `180` (`3` en profil `%test`) | Durée maximale de résolution |
 | `planning.solver.unimproved-seconds-limit` | `0` = désactivé (`2` en profil `%test`) | Arrêt anticipé si le score n'a pas progressé ; désactivé par défaut pour laisser la recherche locale utiliser tout le budget `seconds-limit` plutôt que d'abandonner sur un optimum local à hard > 0 |
+| `planning.constraint-weights.<nomDeLaContrainte>` | `1` pour chaque contrainte | Poids de la contrainte (multiplie le hard/medium/soft qu'elle produit) ; voir [`contraintes.md`](contraintes.md#pondérer-une-contrainte) |
 
 La configuration Timefold elle-même est dans `src/main/resources/solver/solverConfig.xml`.
 Le value range `animateurRange` couvre tous les animateurs (~150) car

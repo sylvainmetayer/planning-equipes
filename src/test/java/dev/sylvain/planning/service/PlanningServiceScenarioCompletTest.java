@@ -2,6 +2,7 @@ package dev.sylvain.planning.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.domain.PlanningFestival;
@@ -30,7 +31,8 @@ class PlanningServiceScenarioCompletTest {
     void scenarioCompletNeViolateAucuneContrainteHard() {
         ReferenceDataService referenceDataService = new ReferenceDataService();
         referenceDataService.init();
-        PlanningService planningService = new PlanningService(180L, 0L, referenceDataService, new FeasibilityAnalyzer());
+        PlanningService planningService = new PlanningService(180L, 0L, referenceDataService, new FeasibilityAnalyzer(),
+                ConfigProvider.getConfig());
 
         PlanningFestival problem = planningService.construireExemple();
         PlanningFestival solved = planningService.resoudreJusquaFaisabilite(problem, SECONDS_LIMITE_SECURITE);

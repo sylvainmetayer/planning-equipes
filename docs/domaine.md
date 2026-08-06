@@ -207,6 +207,16 @@ désactivée) et pilotable depuis la page « Constraints » via
 `ConstraintToggleSupport.actif(stream, "nom")`, voir
 [`contraintes.md`](contraintes.md).
 
+## Pondération des contraintes
+
+`ponderationsContraintes` (`ConstraintWeightOverrides<HardMediumSoftScore>`,
+type natif Timefold) porte, pour les contraintes dont le poids a été surchargé
+via `application.properties`, le score à appliquer à la place du littéral
+`ONE_HARD`/`ONE_MEDIUM`/`ONE_SOFT` écrit dans le code de la contrainte. Jamais
+sérialisé côté API (`@JsonIgnore`) : `PlanningService.prepareProblem` le
+renseigne systématiquement avant chaque solve à partir de la configuration lue
+au démarrage. Détails et exemple dans [`contraintes.md`](contraintes.md#pondérer-une-contrainte).
+
 ## Mapping contraintes → modèle
 
 | Règle | Mise en œuvre |

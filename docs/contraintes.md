@@ -86,6 +86,43 @@ contraintes sont actives par défaut.
   l'IHM** — c'est exactement ce qui était arrivé à
   `eviterChangementEmplacementEloigne`.
 
+## Pondérer une contrainte
+
+Chaque contrainte pénalise avec un poids littéral (`HardMediumSoftScore.ONE_HARD` /
+`ONE_MEDIUM` / `ONE_SOFT`) dans son code — c'est la valeur par défaut, celle qui
+s'applique tant qu'aucune configuration ne la modifie.
+
+Ce défaut est surchageable sans toucher au code Java, via le mécanisme natif
+Timefold `ConstraintWeightOverrides` : `PlanningFestival` porte un champ
+`ponderationsContraintes` (jamais exposé par l'API — `@JsonIgnore` — car
+`PlanningService.prepareProblem` le renseigne systématiquement juste avant
+chaque solve, à partir de `application.properties`).
+
+- Configuration : une propriété par contrainte,
+  `planning.constraint-weights.<nomDeLaContrainte>=<entier>`, listées (à 1,
+  c'est-à-dire le comportement actuel) dans `application.properties`. Changer
+  une valeur et redémarrer suffit à repondérer une contrainte.
+- Câblage : `PlanningService` lit ces propriétés au démarrage
+  (`buildConstraintWeightOverrides`), construit un `ConstraintWeightOverrides`
+  à partir de `ConstraintCatalog` (qui fournit le niveau — dur/medium/soft —
+  de chaque nom de contrainte) et l'affecte à chaque `PlanningFestival` résolu.
+- Portée de cette itération : configuration fichier uniquement, pas d'IHM ni de
+  table dédiée (contrairement à `constraint_toggle` ci-dessus) — à étendre le
+  jour où la repondération doit être pilotable par un administrateur sans
+  redéploiement.
+
+`equilibrerCharge` (voir tableau ci-dessus) est un cas particulier : son
+`matchWeigher` met `loadBalance().unfairness()` (un `BigDecimal` typiquement
+inférieur à 1) à l'échelle ×10 avant de tronquer en `int`, sans quoi tout
+déséquilibre modéré tronquait exactement à 0 et le solveur n'avait aucun
+gradient à suivre pour améliorer l'équité. Ce facteur ×10 est lui-même un choix
+de pondération (il rapproche l'ordre de grandeur d'`equilibrerCharge` de celui
+des autres contraintes medium, qui valent 1 point par violation) — à ajuster
+via `planning.constraint-weights.equilibrerCharge` plutôt qu'en changeant le
+facteur d'échelle si le besoin est « plus/moins d'importance », et en changeant
+le facteur d'échelle (`UNFAIRNESS_SCALE` dans `QualiteConstraints`) seulement
+si le besoin est « plus/moins de granularité ».
+
 ## Ajouter une contrainte
 
 1. Implémenter la règle dans la classe de `solver/constraints/` correspondant à sa
