@@ -5,6 +5,11 @@ coding agent, Claude Code, …). **Do not recreate `CLAUDE.md` or
 `.github/copilot-instructions.md`** — they were merged into this file. If an
 instruction needs to change, change it here.
 
+Custom reviewer agents are maintained for both ecosystems:
+`.claude/agents/*.md` (Claude) and `.github/chatmodes/*.chatmode.md` (Copilot).
+When one version changes, update the other one in the same commit to keep them
+strictly synchronized.
+
 This file is written in English; user-facing documentation (`README.md`, `docs/`)
 is written in French, and domain identifiers stay in French business vocabulary.
 The Angular frontend UI (`src/main/webui`) is bilingual French/English via

@@ -256,6 +256,17 @@ Pour activer Renovate sur le dépôt : installer l'application GitHub
 [Renovate](https://github.com/apps/renovate) et la laisser ouvrir sa PR
 d'onboarding ; la configuration présente ici sera reprise telle quelle.
 
+## Synchronisation des agents IA
+
+Les profils d'agents personnalisés sont maintenus dans deux emplacements :
+
+- `/.claude/agents/*.md` pour Claude Code ;
+- `/.github/chatmodes/*.chatmode.md` pour Copilot.
+
+Toute modification d'un profil doit être reportée dans son équivalent de
+l'autre écosystème dans le **même commit**, afin de garder une synchronisation
+stricte des deux versions.
+
 ## Conventions de code
 
 - Code et commentaires en anglais ; noms de domaine en français métier.
