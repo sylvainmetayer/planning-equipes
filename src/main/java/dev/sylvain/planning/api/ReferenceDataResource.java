@@ -240,9 +240,25 @@ public class ReferenceDataResource {
         return referenceDataService.getParametresLegaux();
     }
 
+    /**
+     * Saves the legal parameters. Returns 400 with an explanation when a value
+     * exceeds its ordre public ceiling (48 h for adults, art. L3121-20; 35 h
+     * for minors, art. L3162-1) rather than letting the exception surface as a
+     * 500 — the message is shown as-is to the administrator.
+     */
     @PUT
     @Path("/parametres-legaux")
-    public ParametresLegaux updateParametresLegaux(ParametresLegaux parametres) {
-        return referenceDataService.updateParametresLegaux(parametres);
+    public Response updateParametresLegaux(ParametresLegaux parametres) {
+        try {
+            return Response.ok(referenceDataService.updateParametresLegaux(parametres)).build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ErreurValidation(e.getMessage()))
+                    .build();
+        }
+    }
+
+    /** Body of a 400 on a reference-data mutation: a single, user-facing message. */
+    public record ErreurValidation(String message) {
     }
 }

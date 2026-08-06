@@ -176,13 +176,27 @@ export interface ConstraintsView {
 
 /**
  * `/api/parametres-legaux`: admin-configurable legal parameters, consumed by
- * the `dureeHebdomadaireMax` hard constraint. Default is 48h (2880 min), the
- * weekly working-time ceiling set by the Code du travail (art. L3121-20) and
- * the Convention collective nationale de l'Animation (ÉCLAT, IDCC 1518).
+ * the `dureeHebdomadaireMax` and `dureeHebdomadaireMaxMineur` hard constraints.
+ *
+ * Both are ordre public ceilings, refused above their legal maximum by the
+ * server (`ReferenceDataService.updateParametresLegaux`); a lower, more
+ * protective value stays free.
+ *
+ * - `dureeHebdomadaireMaxMinutes`: 48 h (2880 min) by default — Code du travail
+ *   art. L3121-20, Convention collective de l'Animation (ÉCLAT, IDCC 1518).
+ * - `dureeHebdomadaireMaxMineurMinutes`: 35 h (2100 min) by default — Code du
+ *   travail art. L3162-1 (art. D4153-3 under 16).
  */
 export interface ParametresLegaux {
   dureeHebdomadaireMaxMinutes: number;
+  dureeHebdomadaireMaxMineurMinutes: number;
 }
+
+/** Ordre public ceiling for adults, in hours (Code du travail art. L3121-20). */
+export const DUREE_HEBDOMADAIRE_MAX_HEURES = 48;
+
+/** Ordre public ceiling for minors, in hours (Code du travail art. L3162-1). */
+export const DUREE_HEBDOMADAIRE_MAX_MINEUR_HEURES = 35;
 
 export type JobType = 'SOLVE' | 'ANALYZE';
 export type JobStatus = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';

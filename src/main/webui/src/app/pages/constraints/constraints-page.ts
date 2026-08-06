@@ -10,8 +10,16 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { ApiService } from '../../core/api.service';
 import { intlLocale } from '../../core/locale';
-import { ConstraintView, ConstraintsView, NiveauContrainte, ParametresLegaux } from '../../core/models';
+import {
+  DUREE_HEBDOMADAIRE_MAX_HEURES,
+  DUREE_HEBDOMADAIRE_MAX_MINEUR_HEURES,
+  ConstraintView,
+  ConstraintsView,
+  NiveauContrainte,
+  ParametresLegaux
+} from '../../core/models';
 import { SolverJobService } from '../../core/solver-job.service';
+import { ConfirmService } from '../../shared/confirm-dialog';
 import { FeasibilityBanner } from '../../shared/feasibility-banner';
 
 /** Called lazily (never at module scope, see `app.ts`'s `buildNavGroups`). */
@@ -64,12 +72,18 @@ export class ConstraintsPage {
   protected readonly parametresError = signal('');
   protected readonly parametresSaved = signal(false);
   protected readonly dureeHebdomadaireMaxHeures = signal<number | null>(null);
+  protected readonly dureeHebdomadaireMaxMineurHeures = signal<number | null>(null);
+
+  /** Ordre public ceilings, mirrored from the server-side validation. */
+  protected readonly plafondMajeurHeures = DUREE_HEBDOMADAIRE_MAX_HEURES;
+  protected readonly plafondMineurHeures = DUREE_HEBDOMADAIRE_MAX_MINEUR_HEURES;
 
   protected readonly feasibility = computed(() => this.view()?.faisabilite ?? null);
 
   protected readonly jobs = inject(SolverJobService);
 
   private readonly api = inject(ApiService);
+  private readonly confirm = inject(ConfirmService);
 
   protected readonly summary = computed(() => {
     const view = this.view();
@@ -135,27 +149,7 @@ export class ConstraintsPage {
     try {
       const parametres = await this.api.get<ParametresLegaux>('/api/parametres-legaux');
       this.dureeHebdomadaireMaxHeures.set(parametres.dureeHebdomadaireMaxMinutes / 60);
-    } catch (error) {
-      this.parametresError.set($localize`:@@common.errorPrefix:Erreur : ${error instanceof Error ? error.message : String(error)}:message:`);
-    } finally {
-      this.parametresLoading.set(false);
-    }
-  }
-
-  protected async saveParametresLegaux(): Promise<void> {
-    const heures = this.dureeHebdomadaireMaxHeures();
-    if (heures === null || heures <= 0) {
-      return;
-    }
-    this.parametresLoading.set(true);
-    this.parametresError.set('');
-    this.parametresSaved.set(false);
-    try {
-      const parametres = await this.api.put<ParametresLegaux>('/api/parametres-legaux', {
-        dureeHebdomadaireMaxMinutes: Math.round(heures * 60)
-      });
-      this.dureeHebdomadaireMaxHeures.set(parametres.dureeHebdomadaireMaxMinutes / 60);
-      this.parametresSaved.set(true);
+      this.dureeHebdomadaireMaxMineurHeures.set(parametres.dureeHebdomadaireMaxMineurMinutes / 60);
     } catch (error) {
       this.parametresError.set($localize`:@@common.errorPrefix:Erreur : ${error instanceof Error ? error.message : String(error)}:message:`);
     } finally {
@@ -164,15 +158,91 @@ export class ConstraintsPage {
   }
 
   /**
+   * Saves both weekly ceilings. The bounds mirror the server-side check
+   * (`ReferenceDataService.updateParametresLegaux`): a value above the ordre
+   * public maximum is refused here too, so the administrator gets an
+   * explanation rather than an HTTP 500. A lower value stays free — it is more
+   * protective than the law.
+   */
+  protected async saveParametresLegaux(): Promise<void> {
+    const heures = this.dureeHebdomadaireMaxHeures();
+    const heuresMineur = this.dureeHebdomadaireMaxMineurHeures();
+    if (heures === null || heures <= 0 || heuresMineur === null || heuresMineur <= 0) {
+      return;
+    }
+    if (heures > this.plafondMajeurHeures) {
+      this.parametresError.set(
+        $localize`:@@constraints.legal.error.plafondMajeur:La durée hebdomadaire maximale des majeurs ne peut pas dépasser ${this.plafondMajeurHeures}:hours: h (Code du travail art. L3121-20, disposition d'ordre public).`
+      );
+      return;
+    }
+    if (heuresMineur > this.plafondMineurHeures) {
+      this.parametresError.set(
+        $localize`:@@constraints.legal.error.plafondMineur:La durée hebdomadaire maximale des mineurs ne peut pas dépasser ${this.plafondMineurHeures}:hours: h (Code du travail art. L3162-1).`
+      );
+      return;
+    }
+    this.parametresLoading.set(true);
+    this.parametresError.set('');
+    this.parametresSaved.set(false);
+    try {
+      const parametres = await this.api.put<ParametresLegaux>('/api/parametres-legaux', {
+        dureeHebdomadaireMaxMinutes: Math.round(heures * 60),
+        dureeHebdomadaireMaxMineurMinutes: Math.round(heuresMineur * 60)
+      });
+      this.dureeHebdomadaireMaxHeures.set(parametres.dureeHebdomadaireMaxMinutes / 60);
+      this.dureeHebdomadaireMaxMineurHeures.set(parametres.dureeHebdomadaireMaxMineurMinutes / 60);
+      this.parametresSaved.set(true);
+    } catch (error) {
+      this.parametresError.set($localize`:@@common.errorPrefix:Erreur : ${error instanceof Error ? error.message : String(error)}:message:`);
+    } finally {
+      this.parametresLoading.set(false);
+    }
+  }
+
+  /** True for the constraints that carry a Code du travail obligation. */
+  private estContrainteLegale(constraint: ConstraintView): boolean {
+    return constraint.categorie.startsWith('Légal');
+  }
+
+  /**
    * Toggles a constraint on/off for the next solve. Applied optimistically so
    * the switch reacts instantly; rolled back if the save fails.
+   *
+   * Disabling a constraint of the "Légal" category means the solver may produce
+   * a plan that breaks the Code du travail while reporting a hard score of
+   * zero, so it goes through an explicit warning first. See the "limite connue"
+   * note in `docs/contraintes.md`: the toggle table records no author, reason
+   * or timestamp, so this dialog is the only trace such a decision leaves.
    */
   protected async toggleConstraint(constraint: ConstraintView, actif: boolean): Promise<void> {
+    let motif: string | null = null;
+    if (!actif && this.estContrainteLegale(constraint)) {
+      motif = await this.confirm.askWithReason({
+        title: $localize`:@@constraints.disableLegal.title:Désactiver une règle légale ?`,
+        message: $localize`:@@constraints.disableLegal.message:« ${constraint.name}:name: » applique une obligation du Code du travail. En la désactivant, le solveur pourra produire un planning illégal tout en affichant un score dur à zéro.`,
+        reasonLabel: $localize`:@@constraints.disableLegal.reason:Motif de la désactivation (enregistré en base)`,
+        confirmLabel: $localize`:@@constraints.disableLegal.confirm:Désactiver quand même`,
+        danger: true
+      });
+      if (motif === null) {
+        // The Material toggle has already flipped its own visual state; rewrite
+        // the (unchanged) value so a new view object forces it back in sync.
+        this.setConstraintActif(constraint.name, !actif);
+        return;
+      }
+    }
     this.setConstraintActif(constraint.name, actif);
     this.togglingConstraint.set(constraint.name);
     this.error.set('');
     try {
-      await this.api.put<{ actif: boolean }>(`/api/constraints/${encodeURIComponent(constraint.name)}`, { actif });
+      await this.api.put<{ actif: boolean }>(`/api/constraints/${encodeURIComponent(constraint.name)}`, {
+        actif,
+        motif,
+        // No authentication in this application: declarative, exactly like
+        // `ContrainteAdHoc.creeParUtilisateurId`.
+        modifieParUtilisateurId: 'ui'
+      });
     } catch (error) {
       this.setConstraintActif(constraint.name, !actif);
       const message = error instanceof Error ? error.message : String(error);

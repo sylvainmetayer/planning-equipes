@@ -134,8 +134,8 @@
   "calendarMonth.creneauCountOne": "{$count} time slot",
   "calendarMonth.creneauCountMany": "{$count} time slots",
   "constraints.legal.title": "Legal parameters",
-  "constraints.legal.description": "Weekly working-time cap applied by the hard constraint {$START_TAG_CODE}dureeHebdomadaireMax{$CLOSE_TAG_CODE}, for every staff member (all paid). Defaults to 48h (French Labour Code art. L3121-20 / Animation industry collective agreement).",
-  "constraints.legal.field.dureeMax": "Maximum weekly duration (hours)",
+  "constraints.legal.description": "Weekly working-time caps applied by the hard constraints {$START_TAG_CODE}dureeHebdomadaireMax{$CLOSE_TAG_CODE} (adults) and {$START_TAG_CODE}dureeHebdomadaireMaxMineur{$CLOSE_TAG_CODE}. Every staff member is paid. Both caps are public-policy ceilings: a value above the legal maximum is rejected (48h, French Labour Code art. L3121-20; 35h for minors, art. L3162-1). A lower, more protective value stays free.",
+  "constraints.legal.field.dureeMax": "Maximum weekly duration, adults (hours)",
   "common.save": "Save",
   "constraints.legal.saved": "Saved.",
   "constraints.active.title": "Active constraints",
@@ -306,5 +306,14 @@
   "emplacements.form.newTitle": "New location",
   "emplacements.submit.edit": "Update location",
   "emplacements.submit.create": "Create location",
-  "emplacements.entityLabel": "Location"
+  "emplacements.entityLabel": "Location",
+  "constraints.legal.field.dureeMaxMineur": "Maximum weekly duration, minors (hours)",
+  "constraints.legal.hint.dureeMax": "Legal maximum: 48h (art. L3121-20)",
+  "constraints.legal.hint.dureeMaxMineur": "Legal maximum: 35h (art. L3162-1)",
+  "constraints.legal.error.plafondMajeur": "The maximum weekly duration for adults cannot exceed {$hours}h (French Labour Code art. L3121-20, a public-policy provision).",
+  "constraints.legal.error.plafondMineur": "The maximum weekly duration for minors cannot exceed {$hours}h (French Labour Code art. L3162-1).",
+  "constraints.disableLegal.title": "Disable a legal rule?",
+  "constraints.disableLegal.message": "“{$name}” enforces an obligation of the French Labour Code. Disabling it lets the solver produce an illegal plan while still reporting a hard score of zero.",
+  "constraints.disableLegal.confirm": "Disable anyway",
+  "constraints.disableLegal.reason": "Reason for disabling (stored in the database)"
 }

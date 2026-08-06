@@ -66,6 +66,11 @@ public class ConstraintResource {
      * stores a toggle in the database; the constraint stays in the catalogue
      * (still shown, still described) but the solver skips it on every solve
      * until it is re-enabled.
+     *
+     * <p>Disabling also records the reason and the claimed author (constat C2
+     * of the RH compliance audit): disabling a hard legal constraint lets the
+     * solver return a plan with a hard score of zero that nonetheless breaks
+     * the Code du travail.</p>
      */
     @PUT
     @Path("/{name}")
@@ -76,7 +81,7 @@ public class ConstraintResource {
         if (!known) {
             throw new NotFoundException("Unknown constraint: " + name);
         }
-        referenceDataService.setContrainteActive(name, update.actif());
+        referenceDataService.setContrainteActive(name, update.actif(), update.motif(), update.modifieParUtilisateurId());
         return update;
     }
 
@@ -109,7 +114,16 @@ public class ConstraintResource {
             Integer matchCount) {
     }
 
-    public record ConstraintToggleUpdate(boolean actif) {
+    /**
+     * @param actif                    whether the constraint is applied on the next solve
+     * @param motif                    why it is being disabled; ignored when re-enabling.
+     *                                 Nullable so an older client keeps working
+     * @param modifieParUtilisateurId  who claims to be disabling it. There is no
+     *                                 authentication in this application, so this is
+     *                                 declarative — same caveat as
+     *                                 {@code ContrainteAdHoc.creeParUtilisateurId}
+     */
+    public record ConstraintToggleUpdate(boolean actif, String motif, String modifieParUtilisateurId) {
     }
 
     public record ConstraintsView(

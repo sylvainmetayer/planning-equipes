@@ -217,6 +217,32 @@ contraintes sont actives par défaut.
   appelé juste après le `forEach` initial (sur le flux le plus étroit possible :
   une contrainte pilotée par `ContrainteAdHoc` y branche le toggle sur les
   quelques faits ad hoc, pas sur les milliers de postes).
+### Désactiver une contrainte légale : avertissement et trace
+
+Désactiver une contrainte de catégorie « Légal » n'est pas un réglage comme un
+autre : le solveur peut alors produire un planning **contraire au Code du
+travail tout en affichant un score dur à zéro**. La page « Constraints »
+oppose donc, pour ces contraintes uniquement, une **boîte de dialogue
+d'avertissement** qui explique cette conséquence et exige la saisie d'un
+**motif** avant de laisser passer la désactivation.
+
+Le motif, l'auteur déclaré et l'horodatage sont enregistrés dans
+`constraint_toggle` (migration V16, colonnes `motif`,
+`modifie_par_utilisateur_id`, `modifie_le`), à l'image de `ContrainteAdHoc`.
+
+**Limites connues, à ne pas confondre avec une piste d'audit :**
+
+- l'application **n'a aucune authentification** : `modifie_par_utilisateur_id`
+  vaut ce que l'IHM déclare (aujourd'hui la constante `ui`, exactement comme
+  `contrainte_ad_hoc.cree_par`). Ce n'est pas une preuve d'imputabilité ;
+- `constraint_toggle` est une **table d'état, pas un journal** : réactiver une
+  contrainte supprime la ligne, donc la trace d'une désactivation passée ne
+  survit pas à son annulation. Un vrai journal (une ligne par changement,
+  jamais supprimée) reste à faire ;
+- rien n'empêche techniquement la désactivation : l'avertissement informe, il
+  ne bloque pas. Un blocage suppose de décider qui a le droit de lever une
+  règle légale — donc, à nouveau, une notion d'utilisateur.
+
 - `ConstraintToggleTest` couvre le mécanisme lui-même, une contrainte
   représentative par famille : le même jeu de données doit être pénalisé sans
   `ConstraintToggle` et valoir exactement zéro avec. **Une contrainte oubliée
@@ -260,6 +286,50 @@ via `planning.constraint-weights.equilibrerCharge` plutôt qu'en changeant le
 facteur d'échelle si le besoin est « plus/moins d'importance », et en changeant
 le facteur d'échelle (`UNFAIRNESS_SCALE` dans `QualiteConstraints`) seulement
 si le besoin est « plus/moins de granularité ».
+
+## Hors périmètre assumé
+
+Ces obligations sont réelles mais **volontairement non implémentées** dans le
+solveur. Elles sont listées ici pour que leur absence soit un choix écrit, pas
+un oubli — c'est le sens du constat D3 de l'audit
+([`audit-conformite-rh.md`](audit-conformite-rh.md)).
+
+### Durée hebdomadaire moyenne de 44 h sur 12 semaines (art. L3121-22)
+
+*« La durée hebdomadaire de travail calculée sur une période quelconque de
+douze semaines consécutives ne peut dépasser quarante-quatre heures […] »*
+(art. L3121-22, vérifié ; repris par la CCN ÉCLAT art. 5.2 *[non vérifié]*).
+
+Le festival dure 15 jours, soit 2 à 3 semaines ISO. **Le solveur ne peut pas
+calculer cette moyenne** : il ne connaît ni les 9 semaines précédentes ni les
+suivantes. C'est une limite structurelle du périmètre, pas un manque
+d'implémentation. Le contrôle relève du service RH, à partir du cumul par
+animateur et par semaine déjà exposé par la page « Heures »
+(`HeuresPlanningService`) et les exports.
+
+### Travail de nuit des majeurs (art. L3122-1 et suivants)
+
+Aucune règle ne s'applique aux majeurs travaillant la nuit : `chevaucheNuit()`
+n'est consulté que par les contraintes mineurs. Or les scénarios livrés
+comportent un créneau nocturne quotidien.
+
+La qualification de « travailleur de nuit » dépend d'un seuil d'heures et
+d'une régularité, mais aussi du contrat, d'un accord collectif ou d'une
+autorisation de l'inspection du travail — des faits que l'application ne
+détient pas. La numérotation exacte des articles applicables reste par ailleurs
+**[non vérifiée — à confirmer article par article]**. Le sujet doit donc être
+**instruit avec un juriste avant toute implémentation** ; d'ici là, le travail
+de nuit des majeurs n'est **pas** encadré par l'outil et relève d'un contrôle
+manuel.
+
+### Autres points signalés par l'audit et non couverts
+
+| Sujet | Pourquoi c'est hors périmètre |
+| --- | --- |
+| Heures supplémentaires, contingent annuel (L3121-30) | Hors d'un solveur d'affectation ; le planning produit est l'assiette du décompte, pas le décompte |
+| Nature des indisponibilités | `joursIndisponibles` est un `Set<LocalDate>` non typé : impossible de distinguer un repos légal accordé, un congé payé et une indisponibilité de convenance |
+| Autorisation d'inspection du travail pour les moins de 16 ans (L4153-3, D4153-2) | Donnée administrative absente du modèle ; signalée en documentation, à vérifier manuellement |
+| Dérogation sectorielle aux jours fériés (R3164-2) | Non instruite ; le défaut le plus protecteur s'applique (voir plus haut) |
 
 ## Ajouter une contrainte
 

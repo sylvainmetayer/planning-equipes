@@ -311,13 +311,43 @@ public class ReferenceDataService {
         return repository == null ? new ParametresLegaux() : repository.getParametresLegaux();
     }
 
+    /**
+     * Saves the legal parameters, refusing anything above the ordre public
+     * ceilings.
+     *
+     * <p>Art. <b>L3121-20</b> (48 h/week) is a disposition d'ordre public: no
+     * agreement and no configuration may exceed it, short of an exceptional
+     * administrative authorisation the application knows nothing about. Art.
+     * <b>L3162-1</b> caps young workers at 35 h. A default value that is
+     * correct protects nothing if the entry screen does not; before this check,
+     * an administrator could store 100 h/week and the solver would happily
+     * report a "valid" plan (hard score zero) that is plainly illegal.</p>
+     *
+     * <p>A <i>lower</i> value stays free: it is more protective than the law.</p>
+     */
     public ParametresLegaux updateParametresLegaux(ParametresLegaux parametres) {
-        if (parametres.getDureeHebdomadaireMaxMinutes() <= 0) {
-            throw new IllegalArgumentException("dureeHebdomadaireMaxMinutes must be positive");
-        }
+        verifierPlafond(parametres.getDureeHebdomadaireMaxMinutes(),
+                ParametresLegaux.DUREE_HEBDOMADAIRE_MAX_MINUTES_PAR_DEFAUT,
+                "dureeHebdomadaireMaxMinutes",
+                "la durée hebdomadaire maximale des majeurs ne peut pas dépasser 48 h "
+                        + "(Code du travail art. L3121-20, disposition d'ordre public)");
+        verifierPlafond(parametres.getDureeHebdomadaireMaxMineurMinutes(),
+                ParametresLegaux.DUREE_HEBDOMADAIRE_MAX_MINEUR_MINUTES_PAR_DEFAUT,
+                "dureeHebdomadaireMaxMineurMinutes",
+                "la durée hebdomadaire maximale des mineurs ne peut pas dépasser 35 h "
+                        + "(Code du travail art. L3162-1)");
         repository.saveParametresLegaux(parametres);
         markModified();
         return parametres;
+    }
+
+    private static void verifierPlafond(int valeurMinutes, int plafondMinutes, String champ, String message) {
+        if (valeurMinutes <= 0) {
+            throw new IllegalArgumentException(champ + " must be positive");
+        }
+        if (valeurMinutes > plafondMinutes) {
+            throw new IllegalArgumentException(message);
+        }
     }
 
     /* --------------------------- Constraint toggles -------------------------- */
@@ -326,9 +356,21 @@ public class ReferenceDataService {
         return repository == null ? java.util.Set.of() : repository.getContraintesDesactivees();
     }
 
-    public void setContrainteActive(String nom, boolean actif) {
+    /**
+     * Enables or disables a constraint for the next solve, recording the
+     * reason and the author when it is being <b>disabled</b>.
+     *
+     * <p>Disabling a hard legal constraint lets the solver return a plan with a
+     * hard score of zero that nonetheless breaks the Code du travail, so the
+     * decision must leave a trace (constat C2 of the RH compliance audit).
+     * <b>Known limit</b>: the application has no authentication, so
+     * {@code utilisateurId} is whatever the client claims — exactly like
+     * {@code ContrainteAdHoc.creeParUtilisateurId}. The reason and the
+     * timestamp are real; the author is not proof of accountability.</p>
+     */
+    public void setContrainteActive(String nom, boolean actif, String motif, String utilisateurId) {
         if (repository != null) {
-            repository.setContrainteActive(nom, actif);
+            repository.setContrainteActive(nom, actif, motif, utilisateurId);
             markModified();
         }
     }

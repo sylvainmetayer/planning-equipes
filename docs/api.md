@@ -45,7 +45,37 @@ connexion.
 | Méthode | Chemin | Description |
 | --- | --- | --- |
 | `GET` | `/api/constraints` | Catalogue métier des contraintes + résultat de la dernière analyse |
-| `PUT` | `/api/constraints/{name}` | Active/désactive une contrainte (`{ "actif": boolean }`) pour le prochain solve |
+| `PUT` | `/api/constraints/{name}` | Active/désactive une contrainte pour le prochain solve |
+
+Corps du `PUT /api/constraints/{name}` :
+
+```json
+{ "actif": false, "motif": "…", "modifieParUtilisateurId": "ui" }
+```
+
+`motif` et `modifieParUtilisateurId` ne sont enregistrés que lors d'une
+**désactivation** (colonnes `motif`, `modifie_par_utilisateur_id`,
+`modifie_le` de `constraint_toggle`) ; ils sont ignorés à la réactivation, qui
+supprime la ligne. Tous deux sont facultatifs — un client plus ancien continue
+de fonctionner. L'IHM les renseigne systématiquement pour les contraintes de
+catégorie « Légal », après un avertissement explicite : voir
+[`contraintes.md`](contraintes.md).
+
+## Paramètres légaux
+
+| Méthode | Chemin | Description |
+| --- | --- | --- |
+| `GET` | `/api/parametres-legaux` | Plafonds hebdomadaires de temps de travail |
+| `PUT` | `/api/parametres-legaux` | Met à jour ces plafonds |
+
+```json
+{ "dureeHebdomadaireMaxMinutes": 2880, "dureeHebdomadaireMaxMineurMinutes": 2100 }
+```
+
+Le `PUT` répond **400** avec `{ "message": "…" }` si une valeur dépasse son
+plafond d'ordre public : 48 h pour les majeurs (Code du travail art. L3121-20),
+35 h pour les mineurs (art. L3162-1). Une valeur inférieure, plus protectrice,
+est acceptée.
 
 ## Référentiels (CRUD)
 

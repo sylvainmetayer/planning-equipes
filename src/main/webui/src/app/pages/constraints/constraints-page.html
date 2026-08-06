@@ -4,16 +4,26 @@
   <mat-card-header>
     <mat-card-title i18n="@@constraints.legal.title">Paramètres légaux</mat-card-title>
     <mat-card-subtitle i18n="@@constraints.legal.description">
-      Plafond hebdomadaire de temps de travail appliqué par la contrainte forte <code>dureeHebdomadaireMax</code>, pour
-      chaque animateur (tous rémunérés). Par défaut 48h (Code du travail art. L3121-20 / Convention collective de l'Animation).
+      Plafonds hebdomadaires de temps de travail appliqués par les contraintes fortes
+      <code>dureeHebdomadaireMax</code> (majeurs) et <code>dureeHebdomadaireMaxMineur</code>. Tous les animateurs sont
+      rémunérés. Ces deux plafonds sont d'ordre public : une valeur supérieure au maximum légal est refusée
+      (48 h, Code du travail art. L3121-20 ; 35 h pour les mineurs, art. L3162-1). Une valeur inférieure, plus
+      protectrice, reste libre.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
     <form class="form-grid" (ngSubmit)="saveParametresLegaux()">
       <mat-form-field appearance="outline">
-        <mat-label i18n="@@constraints.legal.field.dureeMax">Durée hebdomadaire maximale (heures)</mat-label>
-        <input matInput type="number" min="1" step="0.5" name="dureeHebdomadaireMaxHeures"
+        <mat-label i18n="@@constraints.legal.field.dureeMax">Durée hebdomadaire maximale, majeurs (heures)</mat-label>
+        <input matInput type="number" min="1" [max]="plafondMajeurHeures" step="0.5" name="dureeHebdomadaireMaxHeures"
                [ngModel]="dureeHebdomadaireMaxHeures()" (ngModelChange)="dureeHebdomadaireMaxHeures.set($event)" />
+        <mat-hint i18n="@@constraints.legal.hint.dureeMax">Maximum légal : 48 h (art. L3121-20)</mat-hint>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@constraints.legal.field.dureeMaxMineur">Durée hebdomadaire maximale, mineurs (heures)</mat-label>
+        <input matInput type="number" min="1" [max]="plafondMineurHeures" step="0.5" name="dureeHebdomadaireMaxMineurHeures"
+               [ngModel]="dureeHebdomadaireMaxMineurHeures()" (ngModelChange)="dureeHebdomadaireMaxMineurHeures.set($event)" />
+        <mat-hint i18n="@@constraints.legal.hint.dureeMaxMineur">Maximum légal : 35 h (art. L3162-1)</mat-hint>
       </mat-form-field>
       <div class="form-actions">
         <button matButton="filled" type="submit" [disabled]="parametresLoading()">
