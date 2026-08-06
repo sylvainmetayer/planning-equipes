@@ -555,27 +555,4 @@ class LegalConstraintsTest extends ConstraintTestBase {
                 .penalizesBy(0);
     }
 
-    @Test
-    void reposQuotidienInsuffisantPourUnMajeurEstPenalise() {
-        // creneauNuit finit à minuit (jour 2, 00:00) ; matinJ2 démarre à 9h le
-        // même jour 2, soit seulement 9h de repos — sous le plancher légal de
-        // 11h (660 min) qui s'applique désormais à tout animateur, pas
-        // seulement aux mineurs.
-        Animateur majeur = majeurReferent("A1");
-        verify("reposQuotidienMinimalTousAnimateurs")
-                .given(poste(standStrat, creneauNuit, majeur),
-                        poste(standStrat, matinJ2, majeur),
-                        new ParametresLegaux())
-                .penalizesBy(120);
-    }
-
-    @Test
-    void reposQuotidienSuffisantPourUnMajeurNEstPasPenalise() {
-        Animateur majeur = majeurReferent("A1");
-        verify("reposQuotidienMinimalTousAnimateurs")
-                .given(poste(standStrat, creneauNuit, majeur),
-                        poste(standStrat, apremJ2, majeur),
-                        new ParametresLegaux())
-                .penalizesBy(0);
-    }
 }

@@ -2,6 +2,7 @@ package dev.sylvain.planning.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.domain.ParametresDecoupage;
@@ -20,7 +21,8 @@ class PlanningServiceParametresScenarioTest {
     private static PlanningService service() {
         ReferenceDataService referenceDataService = new ReferenceDataService();
         referenceDataService.init();
-        return new PlanningService(3L, 2L, referenceDataService, new FeasibilityAnalyzer());
+        return new PlanningService(3L, 2L, referenceDataService, new FeasibilityAnalyzer(),
+                ConfigProvider.getConfig());
     }
 
     @Test

@@ -205,13 +205,13 @@ scénarios), ces deux sections sont sans effet : `construireExemple` retombe
 sur les `ParametresLegaux` actuellement en base, et l'import laisse
 `ParametresDecoupage` tel quel.
 
-Deux contraintes dures dans `LegalConstraints` complètent le dispositif :
+Une contrainte dure dans `LegalConstraints` complète le dispositif :
 `pauseMinimaleEntreVacations` (l'écart entre deux vacations d'un même
-animateur le même jour doit être suffisant) et
-`reposQuotidienMinimalTousAnimateurs` (11 h de repos minimum entre la fin de la
-dernière vacation d'un jour et le début de la première le lendemain, pour tout
-animateur — généralise `reposQuotidienMineur`, qui reste spécifique aux
-mineurs et à la nuit). Voir [`contraintes.md`](contraintes.md).
+animateur le même jour doit être suffisant, 30 min par défaut). Le repos
+quotidien entre la fin de la dernière vacation d'un jour et le début de la
+première le lendemain est déjà couvert, pour tout animateur et gradué par
+tranche d'âge, par `reposQuotidienMinimal` (11 h majeur, 12 h mineur, 14 h
+avant 16 ans — art. L3131-1 / L3164-1). Voir [`contraintes.md`](contraintes.md).
 
 Une amplitude est un `Creneau` ordinaire vivant dans un `GroupeCreneau` non
 activé (le groupe source) ; les vacations générées remplacent le contenu d'un
