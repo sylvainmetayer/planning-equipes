@@ -127,9 +127,11 @@ Chaque bloc fonctionnel a **sa propre route et sa propre page**, chargée en
 | Route | Page | Contenu |
 | --- | --- | --- |
 | `/solver` (défaut) | `app/pages/solver/` | Scénario d'exemple, réinitialisation, résolution, analyse |
-| `/exports` | `app/pages/exports/` | Exports PDF et ICS du planning |
+| `/debug` | `app/pages/debug/` | Diagnostics du solveur et état interne |
+| `/data-setup` | `app/pages/data-setup/` | Configuration des données de référence |
 | `/data-transfer` | `app/pages/data-transfer/` | Export / import de dump SQL, imports CSV |
 | `/stands` | `app/pages/stands/` | CRUD des stands |
+| `/emplacements` | `app/pages/emplacements/` | CRUD des emplacements (avec sélection sur carte) |
 | `/animateurs` | `app/pages/animateurs/` | CRUD des animateurs (compétences, jours d'indisponibilité) |
 | `/creneaux` | `app/pages/creneaux/` | CRUD des créneaux |
 | `/typologies` | `app/pages/typologies/` | CRUD des typologies de jeux |
@@ -137,6 +139,11 @@ Chaque bloc fonctionnel a **sa propre route et sa propre page**, chargée en
 | `/calendar` | `app/pages/calendar-month/` | Vue mensuelle + filtres animateur / stand |
 | `/day-calendar` | `app/pages/calendar-day/` | Vue par jour du festival |
 | `/constraints` | `app/pages/constraints/` | Catalogue des contraintes + dernière analyse |
+| `/hours` | `app/pages/hours/` | Heures planifiées par animateur et par semaine |
+| `/staffing` | `app/pages/staffing/` | Besoin minimum en effectif par créneau |
+
+`/exports` redirige vers `/solver` (les exports PDF / ICS sont déclenchés depuis
+la page de résolution) ; toute route inconnue redirige également vers `/solver`.
 
 Le code est organisé par responsabilité, sans module `NgModule` (composants
 standalone) :
@@ -148,7 +155,10 @@ standalone) :
 | `app/core/api.service.ts` | Helpers `HttpClient` ; `downloadFile` renvoie un message, ne touche jamais au DOM |
 | `app/core/models.ts` | Types TypeScript des payloads de l'API |
 | `app/core/date-utils.ts` | Calculs de dates (semaine commençant lundi) |
+| `app/core/locale.ts` | Langue choisie (`fr` / `en`), persistée dans `localStorage` |
+| `app/core/slug.ts` | Dérive un identifiant stable à partir d'un nom saisi librement |
 | `app/core/planning-state.service.ts` | État planning partagé (signal) + chargement lecture seule pour les vues |
+| `app/core/planning-resolution.store.ts` | Groupe de créneaux de la dernière résolution vs groupe actif : alimente les avertissements « planning obsolète » |
 | `app/core/reference-data.store.ts` | Référentiels partagés (signals) et opérations CRUD |
 | `app/core/reference-crud.service.ts` | Enregistrement / suppression mutualisés des pages référentiels (retour utilisateur, confirmation) |
 | `app/core/solver-job.service.ts` | Suivi des jobs asynchrones : lit `/api/jobs/active` toutes les 2 s, aucun stockage navigateur |
@@ -156,6 +166,10 @@ standalone) :
 | `app/shared/job-monitor.ts` | Indicateur « une résolution est en cours » dans la barre d'outils, temps écoulé calculé par le serveur |
 | `app/shared/confirm-dialog.ts` | Dialogue Material de confirmation (remplace `window.confirm`) |
 | `app/shared/output-panel.ts` | Panneau de résultat monospace partagé par les pages d'action |
+| `app/shared/data-stale-indicator.ts` | Signale que les données de référence ont changé depuis la dernière résolution |
+| `app/shared/groupe-mismatch-banner.ts` | Signale que le groupe de créneaux actif diffère de celui de la dernière résolution |
+| `app/shared/feasibility-banner.ts` | Affiche le diagnostic de faisabilité renvoyé par le back-end |
+| `app/shared/map-picker.ts` | Sélection de coordonnées sur une carte, utilisée par le formulaire d'emplacement |
 
 Conventions :
 
@@ -179,7 +193,7 @@ Le CSS global se limite à ce que Material ne couvre pas : `src/styles.css` n'es
 qu'un agrégateur de règles `@import` et chaque partial vit sous `src/styles/`
 (`pages.css` cartes / formulaires / tableaux, `feedback.css` moniteur de job et
 variantes de snack bar, `calendar-month.css`, `calendar-day.css`,
-`constraints.css`), avec ses propres `@media`.
+`constraints.css`, `staffing.css`), avec ses propres `@media`.
 
 ## Base de données
 
