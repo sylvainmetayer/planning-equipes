@@ -133,30 +133,192 @@ class LegalConstraintsTest extends ConstraintTestBase {
                 .penalizesBy(0);
     }
 
+    // --- Art. L3131-1 / L3164-1 : repos quotidien minimal ------------------
+
     @Test
-    void mineurAvecReposInsuffisantApresUnCreneauDeNuitEstPenalise() {
-        Animateur mineur = mineurDebutant("M1");
-        verify("reposQuotidienMineur")
-                .given(poste(standStrat, creneauNuit, mineur),
-                        poste(standStrat, matinJ2, mineur))
-                .penalizesBy(1);
+    void majeurAvecMoinsDeOnzeHeuresDeReposEstPenalise() {
+        // B1 de l'audit, cas exact de scenario-complet.yaml : 20 h → 00 h puis
+        // 08 h → 12 h le lendemain, soit 8 h de repos au lieu de 11 h (L3131-1).
+        Animateur majeur = majeurReferent("A1");
+        Creneau matin8J2 = creneau("J2-8-12", 2, D2, LocalTime.of(8, 0), LocalTime.of(12, 0));
+        verify("reposQuotidienMinimal")
+                .given(poste(standStrat, creneauNuit, majeur),
+                        poste(standStrat, matin8J2, majeur))
+                .penalizesBy(3 * 60);
     }
 
     @Test
-    void mineurReprenantLApresMidiApresUneNuitNEstPasPenalise() {
-        Animateur mineur = mineurDebutant("M1");
-        verify("reposQuotidienMineur")
-                .given(poste(standStrat, creneauNuit, mineur),
-                        poste(standStrat, apremJ2, mineur))
+    void majeurAvecOnzeHeuresDeReposNEstPasPenalise() {
+        // 20 h → 00 h puis 14 h → 18 h le lendemain : 14 h de repos.
+        Animateur majeur = majeurReferent("A1");
+        verify("reposQuotidienMinimal")
+                .given(poste(standStrat, creneauNuit, majeur),
+                        poste(standStrat, apremJ2, majeur))
                 .penalizesBy(0);
     }
 
     @Test
-    void majeurNEstPasConcerneParLeReposQuotidien() {
+    void mineurDe16A18AnsExigeDouzeHeuresDeRepos() {
+        // 09 h → 13 h puis 00 h 30 → ... : ici 18 h → 22 h puis 09 h → 13 h,
+        // soit 11 h de repos : conforme pour un majeur, 60 min trop court pour
+        // un mineur (12 h, art. L3164-1).
+        Animateur mineur = mineurDebutant("M17");
+        Creneau soirJ1 = creneau("J1-18-22", 1, D1, LocalTime.of(18, 0), LocalTime.of(22, 0));
+        verify("reposQuotidienMinimal")
+                .given(poste(standStrat, soirJ1, mineur),
+                        poste(standStrat, matinJ2, mineur))
+                .penalizesBy(60);
+    }
+
+    @Test
+    void mineurDeMoinsDe16AnsExigeQuatorzeHeuresDeRepos() {
+        // Même paire de créneaux, moins de 16 ans : 14 h exigées, 11 h obtenues.
+        Animateur mineur = mineurMoinsDe16Debutant("M15");
+        Creneau soirJ1 = creneau("J1-18-22", 1, D1, LocalTime.of(18, 0), LocalTime.of(22, 0));
+        verify("reposQuotidienMinimal")
+                .given(poste(standStrat, soirJ1, mineur),
+                        poste(standStrat, matinJ2, mineur))
+                .penalizesBy(3 * 60);
+    }
+
+    @Test
+    void deuxCreneauxDuMemeJourNeDeclenchentPasLeReposQuotidien() {
         Animateur majeur = majeurReferent("A1");
-        verify("reposQuotidienMineur")
-                .given(poste(standStrat, creneauNuit, majeur),
-                        poste(standStrat, matinJ2, majeur))
+        verify("reposQuotidienMinimal")
+                .given(poste(standStrat, creneauMatin, majeur),
+                        poste(standStrat, apresMidi("J1-AM", 1, D1), majeur))
+                .penalizesBy(0);
+    }
+
+    // --- Art. L3121-18 : 10 h/jour pour un majeur --------------------------
+
+    @Test
+    void majeurDepassantDixHeuresParJourEstPenalise() {
+        // B2 de l'audit : les trois créneaux d'une journée de scenario-complet
+        // totalisent 14 h (4 + 6 + 4), soit 240 min au-dessus du plafond.
+        Animateur majeur = majeurReferent("A1");
+        Creneau matin = creneau("J1-8-12", 1, D1, LocalTime.of(8, 0), LocalTime.of(12, 0));
+        Creneau aprem = creneau("J1-14-20", 1, D1, LocalTime.of(14, 0), LocalTime.of(20, 0));
+        Creneau soiree = creneau("J1-20-00", 1, D1, LocalTime.of(20, 0), LocalTime.of(0, 0));
+        verify("dureeQuotidienneMaxMajeur")
+                .given(poste(standStrat, matin, majeur),
+                        poste(standStrat, aprem, majeur),
+                        poste(standStrat, soiree, majeur))
+                .penalizesBy(4 * 60);
+    }
+
+    @Test
+    void majeurADixHeuresParJourNEstPasPenalise() {
+        Animateur majeur = majeurReferent("A1");
+        Creneau matin = creneau("J1-8-12", 1, D1, LocalTime.of(8, 0), LocalTime.of(12, 0));
+        Creneau aprem = creneau("J1-14-20", 1, D1, LocalTime.of(14, 0), LocalTime.of(20, 0));
+        verify("dureeQuotidienneMaxMajeur")
+                .given(poste(standStrat, matin, majeur),
+                        poste(standStrat, aprem, majeur))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void mineurNEstPasConcerneParLePlafondQuotidienMajeur() {
+        Animateur mineur = mineurDebutant("M1");
+        verify("dureeQuotidienneMaxMajeur")
+                .given(poste(standStrat, journeeLongue("J1-LONG", 1, D1), mineur))
+                .penalizesBy(0);
+    }
+
+    // --- Art. L3121-16 : 6 h de travail continu / pause de 20 min ----------
+
+    @Test
+    void majeurEnchainantDeuxCreneauxSansPauseSuffisanteEstPenalise() {
+        // B6 : 14 h → 20 h puis 20 h → 00 h, aucune interruption : 10 h d'un
+        // seul tenant, soit 240 min au-dessus du maximum de 6 h.
+        Animateur majeur = majeurReferent("A1");
+        Creneau aprem = creneau("J1-14-20", 1, D1, LocalTime.of(14, 0), LocalTime.of(20, 0));
+        Creneau soiree = creneau("J1-20-00", 1, D1, LocalTime.of(20, 0), LocalTime.of(0, 0));
+        verify("travailContinuMaxMajeur")
+                .given(poste(standStrat, aprem, majeur),
+                        poste(standStrat, soiree, majeur))
+                .penalizesBy(4 * 60);
+    }
+
+    @Test
+    void unePauseDeVingtMinutesCoupeLaSequenceDuMajeur() {
+        // Même journée, mais 20 minutes d'interruption : deux séquences de
+        // 5 h 40 et 4 h, toutes deux sous le maximum de 6 h.
+        Animateur majeur = majeurReferent("A1");
+        Creneau aprem = creneau("J1-14-1940", 1, D1, LocalTime.of(14, 0), LocalTime.of(19, 40));
+        Creneau soiree = creneau("J1-20-00", 1, D1, LocalTime.of(20, 0), LocalTime.of(0, 0));
+        verify("travailContinuMaxMajeur")
+                .given(poste(standStrat, aprem, majeur),
+                        poste(standStrat, soiree, majeur))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void unePauseTropCourteNeCoupePasLaSequenceDuMajeur() {
+        // 10 minutes d'interruption : la loi exige 20 minutes consécutives, la
+        // séquence reste donc continue (6 h 10 mesurées bord à bord).
+        Animateur majeur = majeurReferent("A1");
+        Creneau debut = creneau("J1-14-17", 1, D1, LocalTime.of(14, 0), LocalTime.of(17, 0));
+        Creneau suite = creneau("J1-1710-2010", 1, D1, LocalTime.of(17, 10), LocalTime.of(20, 10));
+        verify("travailContinuMaxMajeur")
+                .given(poste(standStrat, debut, majeur),
+                        poste(standStrat, suite, majeur))
+                .penalizesBy(10);
+    }
+
+    // --- Art. L3162-3 : 4 h 30 de travail continu / pause de 30 min --------
+
+    @Test
+    void mineurSurUnCreneauDeSixHeuresEstPenalise() {
+        // B7 : le créneau 14 h → 20 h de scenario-complet.yaml, tenu par un
+        // mineur, dépasse de 1 h 30 la durée maximale de travail continu.
+        Animateur mineur = mineurDebutant("M1");
+        Creneau aprem = creneau("J1-14-20", 1, D1, LocalTime.of(14, 0), LocalTime.of(20, 0));
+        verify("travailContinuMaxMineur")
+                .given(poste(standStrat, aprem, mineur))
+                .penalizesBy(90);
+    }
+
+    @Test
+    void mineurSurQuatreHeuresTrenteNEstPasPenalise() {
+        Animateur mineur = mineurDebutant("M1");
+        Creneau aprem = creneau("J1-14-1830", 1, D1, LocalTime.of(14, 0), LocalTime.of(18, 30));
+        verify("travailContinuMaxMineur")
+                .given(poste(standStrat, aprem, mineur))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void unePauseDeTrenteMinutesCoupeLaSequenceDuMineur() {
+        Animateur mineur = mineurDebutant("M1");
+        Creneau debut = creneau("J1-9-13", 1, D1, LocalTime.of(9, 0), LocalTime.of(13, 0));
+        Creneau suite = creneau("J1-1330-1700", 1, D1, LocalTime.of(13, 30), LocalTime.of(17, 0));
+        verify("travailContinuMaxMineur")
+                .given(poste(standStrat, debut, mineur),
+                        poste(standStrat, suite, mineur))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void unePauseDeVingtMinutesNeSuffitPasAUnMineur() {
+        // 20 minutes suffisent à un majeur, pas à un mineur (30 min, L3162-3) :
+        // la séquence court de 9 h à 16 h 20, soit 7 h 20, donc 170 min de trop.
+        Animateur mineur = mineurDebutant("M1");
+        Creneau debut = creneau("J1-9-13", 1, D1, LocalTime.of(9, 0), LocalTime.of(13, 0));
+        Creneau suite = creneau("J1-1320-1620", 1, D1, LocalTime.of(13, 20), LocalTime.of(16, 20));
+        verify("travailContinuMaxMineur")
+                .given(poste(standStrat, debut, mineur),
+                        poste(standStrat, suite, mineur))
+                .penalizesBy(170);
+    }
+
+    @Test
+    void majeurNEstPasConcerneParLaLimiteDeTravailContinuDesMineurs() {
+        Animateur majeur = majeurReferent("A1");
+        Creneau aprem = creneau("J1-14-20", 1, D1, LocalTime.of(14, 0), LocalTime.of(20, 0));
+        verify("travailContinuMaxMineur")
+                .given(poste(standStrat, aprem, majeur))
                 .penalizesBy(0);
     }
 

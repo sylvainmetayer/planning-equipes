@@ -48,8 +48,10 @@ public final class ConstraintCatalog {
                     "Un mineur ne peut pas dépasser 8 heures de travail effectif sur une même journée "
                             + "(Code du travail art. L3162-1), ramenées à 7 heures avant 16 ans "
                             + "(art. D4153-3)."),
-            new ConstraintDefinition("reposQuotidienMineur", Niveau.HARD, "Légal (mineurs)",
-                    "Après un créneau de nuit, un mineur ne peut pas reprendre avant midi le lendemain (repos d'environ 12 h)."),
+            new ConstraintDefinition("travailContinuMaxMineur", Niveau.HARD, "Légal (mineurs)",
+                    "Aucune période de travail ininterrompue de plus de 4 h 30 pour un mineur : au-delà, une pause "
+                            + "d'au moins 30 minutes consécutives est obligatoire "
+                            + "(Code du travail art. L3162-3)."),
 
             new ConstraintDefinition("dureeHebdomadaireMax", Niveau.HARD, "Légal (temps de travail)",
                     "Aucun animateur majeur (tous payés, manager ou non) ne peut dépasser la durée hebdomadaire de "
@@ -59,6 +61,17 @@ public final class ConstraintCatalog {
                     "Un mineur ne peut pas dépasser 35 heures de travail effectif par semaine "
                             + "(Code du travail art. L3162-1 ; art. D4153-3 pour les 14 à moins de 16 ans employés "
                             + "pendant les vacances scolaires)."),
+            new ConstraintDefinition("dureeQuotidienneMaxMajeur", Niveau.HARD, "Légal (temps de travail)",
+                    "Un animateur majeur ne peut pas dépasser 10 heures de travail effectif sur une même journée "
+                            + "(Code du travail art. L3121-18)."),
+            new ConstraintDefinition("reposQuotidienMinimal", Niveau.HARD, "Légal (temps de travail)",
+                    "Entre deux journées travaillées, tout animateur bénéficie d'un repos quotidien minimal : "
+                            + "11 h pour un majeur (art. L3131-1), 12 h pour un mineur et 14 h avant 16 ans "
+                            + "(art. L3164-1)."),
+            new ConstraintDefinition("travailContinuMaxMajeur", Niveau.HARD, "Légal (temps de travail)",
+                    "Aucune période de travail ininterrompue de plus de 6 heures pour un majeur : au-delà, une pause "
+                            + "d'au moins 20 minutes consécutives est obligatoire "
+                            + "(Code du travail art. L3121-16)."),
 
             new ConstraintDefinition("indisponibiliteForcee", Niveau.HARD, "Contraintes ad hoc",
                     "Indisponibilité posée manuellement par l'administrateur : l'animateur ne doit jamais être affecté sur le périmètre visé."),

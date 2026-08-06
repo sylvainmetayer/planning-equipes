@@ -254,7 +254,9 @@ au démarrage. Détails et exemple dans [`contraintes.md`](contraintes.md#pondé
 | Effectif min/max | Comptage des `poste.animateur != null` groupés par `stand` + `creneau` (pas de classe de contrainte dédiée) |
 | Mineur / majeur | Toujours dérivé de `dateNaissance` à la date du créneau via `estMineurLe(LocalDate)` / `estMajeurLe(LocalDate)` — **jamais un booléen stocké**, pour éviter toute désynchronisation |
 | Moins de 16 ans / 16-18 ans | Même principe, via `estMoinsDe16AnsLe(LocalDate)` : trois régimes légaux distincts (nuit, durée quotidienne, repos quotidien) — voir [`contraintes.md`](contraintes.md) |
-| Repos quotidien, hebdo, encadrement | Regroupement des `PosteAffectation` d'un même animateur, triés par `creneau.jour` / `heureDebut` |
+| Repos quotidien | Jointure des `PosteAffectation` d'un même animateur sur `creneau.jour` adjacents (`reposQuotidienMinimal`, 11 h / 12 h / 14 h selon l'âge) |
+| Travail continu et pauses | Regroupement des `PosteAffectation` d'un même animateur **par date**, fusion des créneaux séparés par moins que la pause légale (`travailContinuMaxMajeur` / `travailContinuMaxMineur`) |
+| Encadrement d'un mineur | `ifNotExists` d'un majeur sur le même `stand` + `creneau` |
 | Stand réservé aux majeurs | `poste.stand.reserveMajeurs` vs âge de `poste.animateur` à la date du créneau |
 | Éloignement entre créneaux consécutifs | `Emplacement.distanceMetresVers(...)` (haversine) entre les emplacements des deux stands d'un même animateur sur deux créneaux consécutifs (même jour, l'un se terminant quand l'autre commence) |
 

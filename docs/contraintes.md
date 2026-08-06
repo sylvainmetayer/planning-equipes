@@ -35,7 +35,7 @@ jamais d'un booléen stocké.
 | `travailDeNuitInterditPourMineur` | L3163-1 | Pas de créneau empiétant sur la nuit légale du mineur : **20 h-6 h avant 16 ans**, **22 h-6 h de 16 à 18 ans** |
 | `dureeQuotidienneMaxMineur` | L3162-1, D4153-3 | Maximum **8 h** de travail effectif sur une même journée, **7 h avant 16 ans** |
 | `dureeHebdomadaireMaxMineur` | L3162-1, D4153-3 | Maximum 35 h de travail effectif par semaine pour un mineur |
-| `reposQuotidienMineur` | — | Après un créneau de nuit, pas de reprise avant midi le lendemain (~12 h de repos) |
+| `travailContinuMaxMineur` | L3162-3 | Aucune période de travail ininterrompue de plus de **4 h 30** ; au-delà, pause d'au moins **30 minutes consécutives** |
 
 #### Trois régimes d'âge, pas deux
 
@@ -75,6 +75,39 @@ lever relève de l'organisateur. Le modèle ne distingue pas les deux cas.
 | Contrainte | Article | Description |
 | --- | --- | --- |
 | `dureeHebdomadaireMax` | L3121-20 (ordre public) | Aucun animateur **majeur** (tous payés) ne dépasse la durée hebdomadaire maximale paramétrée (48 h par défaut) — voir `ParametresLegaux` dans [`domaine.md`](domaine.md) |
+| `dureeQuotidienneMaxMajeur` | L3121-18 | Maximum **10 h** de travail effectif sur une même journée pour un majeur |
+| `reposQuotidienMinimal` | L3131-1, L3164-1 | Entre deux journées travaillées : **11 h** consécutives pour un majeur, **12 h** pour un mineur, **14 h** avant 16 ans |
+| `travailContinuMaxMajeur` | L3121-16 | Aucune période de travail ininterrompue de plus de **6 h** ; au-delà, pause d'au moins **20 minutes consécutives** |
+
+#### Comment les pauses sont modélisées
+
+Le modèle ne représente **aucune pause à l'intérieur d'un créneau** : une pause,
+c'est le **trou entre deux créneaux d'un même animateur**. Deux créneaux séparés
+par moins que la pause légale (20 min pour un majeur, 30 min pour un mineur) ne
+sont donc pas considérés comme interrompus : ils forment une seule séquence de
+travail, mesurée du premier début à la dernière fin — les micro-trous comptent
+comme du travail, lecture volontairement protectrice.
+
+Le regroupement se fait par animateur **et par date**. Une séquence qui
+franchirait minuit est couverte par `reposQuotidienMinimal`, qui verrait un
+écart quasi nul entre le jour J et le jour J+1.
+
+**Choix d'interprétation à faire valider** : l'art. L3121-16 dit « dès que le
+temps de travail quotidien *atteint* six heures ». La pause est ici traitée
+comme due **au plus tard** à la sixième heure : une séquence peut donc
+*atteindre* 6 h sans être pénalisée, elle ne peut pas les *dépasser*. Une
+lecture plus stricte (toute journée atteignant 6 h exige qu'une pause de 20 min
+existe, ce qui rendrait un créneau isolé de 6 h non conforme) est défendable et
+**[à faire valider par un juriste]** ; elle se code en remplaçant le `>` par un
+`>=` dans `travailContinuMaxMajeur`. L'art. L3162-3, lui, dit explicitement
+« ne peut *excéder* quatre heures et demie » : aucune ambiguïté côté mineurs.
+
+`reposQuotidienMineur` a été **supprimée** au profit de `reposQuotidienMinimal`.
+Elle ne se déclenchait qu'après un créneau de nuit tenu par un mineur —
+situation que `travailDeNuitInterditPourMineur` interdit déjà — et valait donc
+zéro dans tout planning valide : une contrainte dure structurellement morte, qui
+donnait l'illusion de couvrir le repos quotidien des mineurs. Elle ne mesurait
+d'ailleurs aucune durée de repos, seulement une reprise « avant midi ».
 
 ### Dures — sécurité (`LegalConstraints`)
 

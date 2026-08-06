@@ -113,9 +113,17 @@ ainsi que le planning résolu.
 - un animateur n'anime que des stands dont il maîtrise au moins une typologie de
   jeu ;
 - un animateur ne tient jamais deux postes qui se chevauchent dans le temps ;
-- cadre légal des mineurs : pas de travail de nuit, 8 h de présence quotidienne
-  maximum, repos d'environ 12 h après un créneau de nuit, présence obligatoire
-  d'un majeur sur le même stand, et stands réservés aux majeurs respectés ;
+- cadre légal du temps de travail, pour tous : 10 h de travail par jour et 48 h
+  par semaine au maximum, 11 h de repos entre deux journées travaillées, et
+  jamais plus de 6 h de travail d'affilée sans une pause d'au moins 20 minutes ;
+- cadre légal des mineurs, plus protecteur et distinct selon qu'ils ont moins de
+  16 ans ou de 16 à 18 ans : pas de travail de nuit (à partir de 20 h avant
+  16 ans, de 22 h ensuite), 7 h ou 8 h de travail quotidien maximum, 35 h par
+  semaine, 12 h ou 14 h de repos entre deux journées, jamais plus de 4 h 30 de
+  travail d'affilée sans une pause d'au moins 30 minutes, et stands réservés aux
+  majeurs respectés ;
+- règle de sécurité posée par l'organisateur : un mineur est toujours accompagné
+  d'un majeur sur le même stand et le même créneau ;
 - les exceptions posées manuellement par l'administrateur sont traitées au même
   niveau de priorité que le cadre légal.
 

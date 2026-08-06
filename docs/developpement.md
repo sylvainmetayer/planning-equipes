@@ -183,7 +183,7 @@ tuples de paires inutiles :
 | --- | --- | --- |
 | `incompatibiliteAdHoc` | 59 508 (toutes les paires de postes d'un même créneau) | 0 tant qu'aucune incompatibilité n'est saisie |
 | `eviterRoulementStandsPremium` | 115 596 (toutes les paires de postes d'un même stand) | 0 (le scénario n'a aucun stand premium) |
-| `reposQuotidienMineur` | ~13 500 (toutes les paires de postes d'un animateur) | les seuls créneaux de nuit tenus par un mineur |
+| `reposQuotidienMineur` *(depuis remplacée par `reposQuotidienMinimal`, cf. audit RH)* | ~13 500 (toutes les paires de postes d'un animateur) | les seuls créneaux de nuit tenus par un mineur |
 | `eviterChangementEmplacementEloigne` | ~13 500 (idem) | les seuls créneaux réellement enchaînés |
 
 Effet mesuré, à trajectoire de recherche inchangée (mêmes 1220 pas de
@@ -195,6 +195,35 @@ recherche locale, mêmes scores intermédiaires et final
 | Heuristique de construction | 4 848 ms — 17 122 mouvements/s | 2 086 ms — 40 396 mouvements/s |
 | Recherche locale | 22 041 ms — 4 907 mouvements/s | 7 313 ms — 16 236 mouvements/s |
 | **Total jusqu'à faisabilité** | **22,0 s** | **7,3 s** |
+
+#### Effet des contraintes légales issues de l'audit RH
+
+Mesures faites pendant l'implémentation des correctifs de
+[`audit-conformite-rh.md`](audit-conformite-rh.md), sur la même machine et le
+même `randomSeed=0`, avec `resoudreJusquaFaisabilite` :
+
+| État | Vitesse d'évaluation | Temps jusqu'à `0hard` |
+| --- | --- | --- |
+| Avant B1/B2/B6/B7 (créneaux 4 h / 6 h / 4 h) | 6 673 mouvements/s | 31 s |
+| Après, **sans** retiming du scénario | 5 515 mouvements/s | jamais atteint (−5 hard après 400 s) |
+| Après, avec le scénario retimé en 4 h / 4 h / 4 h espacées | — | 21 s |
+
+Deux enseignements. (1) Le coût *par mouvement* des sept contraintes légales
+ajoutées est modeste (−17 %) : ce ne sont pas elles qui empêchaient la
+convergence. (2) Ce qui l'empêchait, c'est que l'ancien découpage de journée
+(matin 08 h-12 h, après-midi 14 h-20 h, soirée 20 h-00 h) devient
+**structurellement infaisable** sous les nouvelles règles : la soirée se termine
+à minuit, donc un animateur n'a droit au matin suivant qu'à partir de 11 h, et
+le vivier d'une typologie rare (ROLE : 19 sièges par créneau pour 32 animateurs
+compétents) ne suffit plus. Le scénario a donc été retimé — voir le commit
+correspondant.
+
+`EligibleAnimateurMoveFilter` a par ailleurs été étendu aux exclusions légales
+décidables sur le seul couple (poste, animateur) — mineur la nuit, mineur sur un
+stand réservé aux majeurs, créneau plus long que le plafond quotidien ou continu
+d'un mineur. Elles ne peuvent, par construction, écarter aucune solution
+faisable, et évitent au solveur de payer un calcul de score pour découvrir une
+violation certaine.
 
 Règle à suivre pour toute nouvelle contrainte : exprimer d'abord ce qui peut
 l'être en `Joiners.equal` / `lessThan` / `overlapping`, restreindre le flux
