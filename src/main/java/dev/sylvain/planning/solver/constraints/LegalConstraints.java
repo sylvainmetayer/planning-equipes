@@ -110,7 +110,8 @@ public final class LegalConstraints {
                 maxJoursTravaillesParSemaine(constraintFactory),
                 reposHebdomadaireMinimal(constraintFactory),
                 reposHebdomadaireMineur(constraintFactory),
-                travailInterditJourFerieMineur(constraintFactory)
+                travailInterditJourFerieMineur(constraintFactory),
+                pauseMinimaleEntreVacations(constraintFactory)
         };
     }
 
@@ -708,5 +709,50 @@ public final class LegalConstraints {
                         (animateur, semaine, dureeTotale, parametres) ->
                                 dureeTotale - parametres.getDureeHebdomadaireMaxMineurMinutes())
                 .asConstraint("dureeHebdomadaireMaxMineur");
+    }
+
+    /**
+     * Hard, all animateurs: with découpage automatique, one animateur can hold
+     * several postes the same day (rotating seat-tracks, or a deliberate split
+     * shift). Whatever the gap between two same-day, non-overlapping vacations,
+     * it must be at least {@link ParametresLegaux#getPauseMinimaleEntreVacationsMinutes()}
+     * — otherwise chaining vacations back to back would silently reconstitute
+     * an unbroken working day, defeating the whole point of the découpage.
+     *
+     * <p>Joined on {@code animateur} AND {@code date} (a real double hash-equal
+     * join, not a Java filter) — see {@link AffectationConstraints#pasDeChevauchementHoraire}
+     * for why a cheap join matters here: an unindexed same-animateur scan
+     * across every poste measurably slowed convergence on
+     * {@code scenario-complet.yaml}.</p>
+     */
+    private Constraint pauseMinimaleEntreVacations(ConstraintFactory constraintFactory) {
+        return ConstraintToggleSupport.actif(constraintFactory.forEachUniquePair(
+                PosteAffectation.class,
+                Joiners.equal(PosteAffectation::getAnimateur),
+                Joiners.equal(poste -> poste.getCreneau().getDate())), "pauseMinimaleEntreVacations")
+                .filter((posteA, posteB) -> posteA.getAnimateur() != null)
+                .join(ParametresLegaux.class)
+                .filter((posteA, posteB, parametres) ->
+                        ecartMinutes(posteA.getCreneau(), posteB.getCreneau()) < parametres
+                                .getPauseMinimaleEntreVacationsMinutes())
+                .penalize(HardMediumSoftScore.ONE_HARD,
+                        (posteA, posteB, parametres) -> parametres.getPauseMinimaleEntreVacationsMinutes()
+                                - ecartMinutes(posteA.getCreneau(), posteB.getCreneau()))
+                .asConstraint("pauseMinimaleEntreVacations");
+    }
+
+    /**
+     * Gap in minutes between the two créneaux, whichever comes first — i.e.
+     * {@code max(end(a) -> start(b), end(b) -> start(a))}, exactly one of
+     * which is meaningful for a non-overlapping pair (the other is negative).
+     */
+    private static int ecartMinutes(Creneau a, Creneau b) {
+        LocalDateTime debutA = LocalDateTime.of(a.getDate(), a.getHeureDebut());
+        LocalDateTime finA = debutA.plusMinutes(a.getDureeMinutes());
+        LocalDateTime debutB = LocalDateTime.of(b.getDate(), b.getHeureDebut());
+        LocalDateTime finB = debutB.plusMinutes(b.getDureeMinutes());
+        long ecartApresA = Duration.between(finA, debutB).toMinutes();
+        long ecartApresB = Duration.between(finB, debutA).toMinutes();
+        return (int) Math.max(ecartApresA, ecartApresB);
     }
 }

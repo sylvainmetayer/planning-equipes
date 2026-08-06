@@ -7,6 +7,7 @@ import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.GroupeCreneau;
+import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.PlanningService;
@@ -144,6 +145,28 @@ public class ReferenceDataResource {
         return Response.noContent().build();
     }
 
+    /** Preview of the vacations a source "amplitudes" group would generate — nothing is persisted. */
+    @GET
+    @Path("/decoupage/preview")
+    public List<Creneau> previsualiserDecoupage(@QueryParam("groupeSourceId") String groupeSourceId) {
+        return referenceDataService.previsualiserDecoupage(groupeSourceId);
+    }
+
+    /**
+     * Materializes the découpage into the target group (created if it doesn't
+     * exist yet), replacing that group's créneaux entirely.
+     */
+    @POST
+    @Path("/decoupage/generer")
+    public GroupeCreneau genererDecoupage(DecoupageRequest requete) {
+        return referenceDataService.genererDecoupage(requete.groupeSourceId(), requete.groupeCibleId(),
+                requete.nomGroupeCible(), requete.activerGroupeCible());
+    }
+
+    public record DecoupageRequest(String groupeSourceId, String groupeCibleId, String nomGroupeCible,
+            boolean activerGroupeCible) {
+    }
+
     @GET
     @Path("/animateurs")
     public List<Animateur> listAnimateurs() {
@@ -260,5 +283,17 @@ public class ReferenceDataResource {
 
     /** Body of a 400 on a reference-data mutation: a single, user-facing message. */
     public record ErreurValidation(String message) {
+    }
+
+    @GET
+    @Path("/parametres-decoupage")
+    public ParametresDecoupage getParametresDecoupage() {
+        return referenceDataService.getParametresDecoupage();
+    }
+
+    @PUT
+    @Path("/parametres-decoupage")
+    public ParametresDecoupage updateParametresDecoupage(ParametresDecoupage parametres) {
+        return referenceDataService.updateParametresDecoupage(parametres);
     }
 }

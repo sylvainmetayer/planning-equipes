@@ -87,6 +87,9 @@ public final class ConstraintCatalog {
                     "Aucune période de travail ininterrompue de plus de 6 heures pour un majeur : au-delà, une pause "
                             + "d'au moins 20 minutes consécutives est obligatoire "
                             + "(Code du travail art. L3121-16)."),
+            new ConstraintDefinition("pauseMinimaleEntreVacations", Niveau.HARD, "Légal (temps de travail)",
+                    "Entre deux vacations d'un même animateur le même jour, l'écart doit être d'au moins la pause "
+                            + "minimale paramétrée (30 min par défaut)."),
 
             new ConstraintDefinition("indisponibiliteForcee", Niveau.HARD, "Contraintes ad hoc",
                     "Indisponibilité posée manuellement par l'administrateur : l'animateur ne doit jamais être affecté sur le périmètre visé."),

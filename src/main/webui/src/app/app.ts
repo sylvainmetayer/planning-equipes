@@ -65,6 +65,7 @@ function buildNavGroups(): NavGroup[] {
       { path: '/emplacements', label: $localize`:@@nav.link.emplacements:Emplacements`, icon: 'place' },
       { path: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs`, icon: 'groups' },
       { path: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux`, icon: 'schedule' },
+      { path: '/decoupage', label: $localize`:@@nav.link.decoupage:Découpage`, icon: 'content_cut' },
       { path: '/typologies', label: $localize`:@@nav.link.typologies:Typologies`, icon: 'category' },
       {
         path: '/ad-hoc-constraints',

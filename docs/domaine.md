@@ -60,6 +60,7 @@ public class GroupeCreneau {
     private String id;
     private String nom;
     private boolean actif;       // un seul groupe actif à la fois (index unique partiel en base)
+    private String groupeSourceId; // groupe d'amplitudes source d'un découpage auto ; null si saisi/importé directement
 }
 ```
 
@@ -153,6 +154,59 @@ public class PlanningFestival {
     private HardMediumSoftScore score;
 }
 ```
+
+## Découpage automatique en vacations
+
+Un scénario « continu » (voir `scenarios/scenario-continu.yaml`) ne définit qu'une
+**amplitude** par jour — la fenêtre d'ouverture, ex. `10:00→20:00` ou `10:00→00:00`
+(journée + nocturne fusionnées) — et non des vacations individuelles. Affecter
+un animateur à un `PosteAffectation` dont le `Creneau` couvre l'amplitude entière
+lui imposerait d'être nominalement en poste 10 à 14 h d'affilée, sans pause.
+
+`VacationGeneratorService.genererVacations(List<Creneau> amplitudes, ParametresDecoupage parametres)`
+résout ce problème **à la génération**, pas au solve : il découpe chaque
+amplitude en plusieurs `Creneau` « vacation » plus courts et chevauchants (un
+relais), plutôt que de faire porter la pause au solveur. Tant que chaque
+vacation reste sous `dureeVacationMaxMinutes` (6 h par défaut — le seuil de
+l'art. L3121-16 au-delà duquel une pause devient légalement obligatoire),
+aucune vacation n'a jamais besoin de pause interne : la pause (et la pause
+repas) d'un animateur est simplement le trou entre deux de ses vacations, comme
+n'importe quel autre moment hors service — rien de plus à construire ni à
+garantir par une contrainte de couverture continue.
+
+Le chevauchement entre deux vacations consécutives (`dureeChevauchementMinutes`,
+30 min par défaut) est le mécanisme de couverture : pendant cette fenêtre, deux
+`PosteAffectation` existent sur le même stand (celui qui part, celui qui
+arrive), donc `effectifMin` reste garanti *en excédent* temporaire, jamais en
+déficit — la solvabilité du problème d'affectation ne change donc pas de
+nature par rapport à aujourd'hui, elle continue de dépendre uniquement de la
+disponibilité/compétence des animateurs (`FeasibilityAnalyzer`). Le découpeur
+tente aussi de faire tomber ce chevauchement dans une fenêtre repas
+(`fenetreRepasMidiDebut/Fin`, `fenetreRepasSoirDebut/Fin`) pour que la relève
+se fasse juste avant ou après un repas plutôt qu'en plein service.
+
+`ParametresDecoupage` (une seule ligne en base, même mécanisme que
+`ParametresLegaux`) porte ces paramètres, y compris
+`strategieCouverturePendantPause` (`FERMETURE` ou `RELEVE`) pour le cas
+résiduel où un administrateur configure un plafond de vacation au-dessus du
+seuil légal et qu'une vacation générée le dépasse malgré tout — dans ce cas
+seulement, une pause interne est insérée. Avec les valeurs par défaut, ce cas
+ne se produit jamais.
+
+Deux contraintes dures dans `LegalConstraints` complètent le dispositif :
+`pauseMinimaleEntreVacations` (l'écart entre deux vacations d'un même
+animateur le même jour doit être suffisant) et
+`reposQuotidienMinimalTousAnimateurs` (11 h de repos minimum entre la fin de la
+dernière vacation d'un jour et le début de la première le lendemain, pour tout
+animateur — généralise `reposQuotidienMineur`, qui reste spécifique aux
+mineurs et à la nuit). Voir [`contraintes.md`](contraintes.md).
+
+Une amplitude est un `Creneau` ordinaire vivant dans un `GroupeCreneau` non
+activé (le groupe source) ; les vacations générées remplacent le contenu d'un
+autre `GroupeCreneau` (le groupe cible, dont `groupeSourceId` trace sa
+provenance pour permettre de le régénérer). Le solveur ne voit jamais les
+amplitudes elles-mêmes — seul le groupe actif (les vacations) alimente
+`PlanningService.construireDepuisReferenceData`.
 
 ## Contraintes ad hoc
 
@@ -273,3 +327,7 @@ au démarrage. Détails et exemple dans [`contraintes.md`](contraintes.md#pondé
 - Le statut mineur/majeur est calculé, jamais stocké.
 - Les contraintes ad hoc restent des contraintes dures.
 - Les noms de domaine restent en français métier.
+- Un `Creneau` reste toujours l'unité de travail réellement assignable à un
+  `PosteAffectation` (une vacation) — jamais une amplitude d'ouverture brute.
+  Une amplitude est un `Creneau` ordinaire vivant dans un groupe non activé,
+  source d'un découpage automatique (voir plus haut).

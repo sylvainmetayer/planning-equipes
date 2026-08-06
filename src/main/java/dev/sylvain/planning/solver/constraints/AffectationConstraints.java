@@ -69,7 +69,10 @@ public final class AffectationConstraints {
      * exist) could both be assigned to the same person. The daily and weekly
      * caps summed their minutes correctly, but the plan was physically
      * unworkable and every rest rule added afterwards would have inherited the
-     * same blind spot.</p>
+     * same blind spot. With découpage automatique this is no longer
+     * hypothetical: one animateur legitimately holds several postes the same
+     * day on different, non-overlapping vacations (even on different stands),
+     * so only a genuine time clash may be rejected.</p>
      *
      * <p>Same-créneau double booking is just the degenerate case of an
      * overlap, so this strictly supersedes the old rule.</p>

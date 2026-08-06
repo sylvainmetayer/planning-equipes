@@ -1,3 +1,9 @@
+# Chaque jour porte 3 créneaux (MATIN/APREM/SOIREE) espacés d'au moins 30 min
+# (pauseMinimaleEntreVacations) et avec au moins 11 h entre la SOIREE d'un
+# jour et le MATIN du lendemain (reposQuotidienMinimal, art. L3131-1) —
+# sinon un animateur enchaînant deux créneaux du même jour ou consécutifs
+# viole systématiquement l'une de ces contraintes dures, ce qui a fait
+# exploser le temps de résolution (voir PlanningServiceScenarioCompletTest).
 festival:
   dateDebut: 2026-07-08
 

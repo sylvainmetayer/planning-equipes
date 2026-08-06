@@ -1,3 +1,6 @@
+# Timing identique à scenario-complet.yaml : au moins 30 min entre deux
+# créneaux du même jour, au moins 11 h entre la SOIREE d'un jour et le MATIN
+# du lendemain — voir le commentaire en tête de scenario-complet.yaml.
 festival:
   dateDebut: '2026-07-08'
 creneaux:

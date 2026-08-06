@@ -13,6 +13,13 @@ public class GroupeCreneau {
     private String id;
     private String nom;
     private boolean actif;
+    /**
+     * Id of the "amplitudes" group this group's créneaux were auto-generated
+     * from (see {@code VacationGeneratorService}), or {@code null} for a group
+     * edited/imported directly. Purely informational — enables a "régénérer"
+     * action in the découpage UI; the solver never reads it.
+     */
+    private String groupeSourceId;
 
     public GroupeCreneau() {
     }
@@ -21,6 +28,13 @@ public class GroupeCreneau {
         this.id = id;
         this.nom = nom;
         this.actif = actif;
+    }
+
+    public GroupeCreneau(String id, String nom, boolean actif, String groupeSourceId) {
+        this.id = id;
+        this.nom = nom;
+        this.actif = actif;
+        this.groupeSourceId = groupeSourceId;
     }
 
     public String getId() {
@@ -45,6 +59,14 @@ public class GroupeCreneau {
 
     public void setActif(boolean actif) {
         this.actif = actif;
+    }
+
+    public String getGroupeSourceId() {
+        return groupeSourceId;
+    }
+
+    public void setGroupeSourceId(String groupeSourceId) {
+        this.groupeSourceId = groupeSourceId;
     }
 
     @Override

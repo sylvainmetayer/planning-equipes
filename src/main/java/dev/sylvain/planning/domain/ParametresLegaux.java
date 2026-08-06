@@ -29,8 +29,28 @@ public class ParametresLegaux {
      */
     public static final int DUREE_HEBDOMADAIRE_MAX_MINEUR_MINUTES_PAR_DEFAUT = 35 * 60;
 
+    /**
+     * Minimum gap required between the end of one vacation ({@code Creneau})
+     * and the start of another one, same day, for the same animateur — so a
+     * découpage that generates several vacations per day for one seat-track
+     * never reconstitutes an unbroken working day just by chaining vacations
+     * back to back. Default: 30 min.
+     */
+    public static final int PAUSE_MINIMALE_ENTRE_VACATIONS_MINUTES_PAR_DEFAUT = 30;
+
+    /**
+     * Minimum rest required between the end of an animateur's last vacation on
+     * a calendar day and the start of their first vacation the next calendar
+     * day. Default: 11 h = 660 min, the absolute daily rest floor set by the
+     * Code du travail (art. L3131-1). Generalizes {@code reposQuotidienMineur}
+     * (night → next-day noon, minors only) to every animateur.
+     */
+    public static final int REPOS_QUOTIDIEN_MINIMAL_MINUTES_PAR_DEFAUT = 11 * 60;
+
     private int dureeHebdomadaireMaxMinutes = DUREE_HEBDOMADAIRE_MAX_MINUTES_PAR_DEFAUT;
     private int dureeHebdomadaireMaxMineurMinutes = DUREE_HEBDOMADAIRE_MAX_MINEUR_MINUTES_PAR_DEFAUT;
+    private int pauseMinimaleEntreVacationsMinutes = PAUSE_MINIMALE_ENTRE_VACATIONS_MINUTES_PAR_DEFAUT;
+    private int reposQuotidienMinimalMinutes = REPOS_QUOTIDIEN_MINIMAL_MINUTES_PAR_DEFAUT;
 
     public ParametresLegaux() {
     }
@@ -42,6 +62,13 @@ public class ParametresLegaux {
     public ParametresLegaux(int dureeHebdomadaireMaxMinutes, int dureeHebdomadaireMaxMineurMinutes) {
         this.dureeHebdomadaireMaxMinutes = dureeHebdomadaireMaxMinutes;
         this.dureeHebdomadaireMaxMineurMinutes = dureeHebdomadaireMaxMineurMinutes;
+    }
+
+    public ParametresLegaux(int dureeHebdomadaireMaxMinutes, int pauseMinimaleEntreVacationsMinutes,
+            int reposQuotidienMinimalMinutes) {
+        this.dureeHebdomadaireMaxMinutes = dureeHebdomadaireMaxMinutes;
+        this.pauseMinimaleEntreVacationsMinutes = pauseMinimaleEntreVacationsMinutes;
+        this.reposQuotidienMinimalMinutes = reposQuotidienMinimalMinutes;
     }
 
     public int getDureeHebdomadaireMaxMinutes() {
@@ -58,5 +85,21 @@ public class ParametresLegaux {
 
     public void setDureeHebdomadaireMaxMineurMinutes(int dureeHebdomadaireMaxMineurMinutes) {
         this.dureeHebdomadaireMaxMineurMinutes = dureeHebdomadaireMaxMineurMinutes;
+    }
+
+    public int getPauseMinimaleEntreVacationsMinutes() {
+        return pauseMinimaleEntreVacationsMinutes;
+    }
+
+    public void setPauseMinimaleEntreVacationsMinutes(int pauseMinimaleEntreVacationsMinutes) {
+        this.pauseMinimaleEntreVacationsMinutes = pauseMinimaleEntreVacationsMinutes;
+    }
+
+    public int getReposQuotidienMinimalMinutes() {
+        return reposQuotidienMinimalMinutes;
+    }
+
+    public void setReposQuotidienMinimalMinutes(int reposQuotidienMinimalMinutes) {
+        this.reposQuotidienMinimalMinutes = reposQuotidienMinimalMinutes;
     }
 }

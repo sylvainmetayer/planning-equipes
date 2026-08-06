@@ -25,6 +25,7 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.GroupeCreneau;
 import dev.sylvain.planning.domain.NiveauCompetence;
+import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
@@ -250,6 +251,90 @@ public class ReferenceDataRepository {
         return listCreneaux(SELECT_CRENEAU_SQL + " WHERE g.actif ORDER BY c.id");
     }
 
+    /** Timeslots of one specific group, active or not — used by the découpage generator to read a source "amplitudes" group. */
+    public List<Creneau> listCreneauxParGroupe(String groupeId) {
+        Map<Long, Creneau> byId = new LinkedHashMap<>();
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement ps = connection.prepareStatement(
+                    SELECT_CRENEAU_SQL + " WHERE g.id = ? ORDER BY c.id")) {
+                ps.setString(1, groupeId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        Creneau creneau = new Creneau(
+                                rs.getLong("id"),
+                                0,
+                                rs.getObject("date_creneau", LocalDate.class),
+                                rs.getObject("heure_debut", LocalTime.class),
+                                rs.getObject("heure_fin", LocalTime.class));
+                        creneau.setGroupe(new GroupeCreneau(
+                                rs.getString("groupe_id"), rs.getString("groupe_nom"), rs.getBoolean("groupe_actif")));
+                        byId.put(creneau.getId(), creneau);
+                    }
+                }
+            }
+            if (!byId.isEmpty()) {
+                try (PreparedStatement ps = connection.prepareStatement(
+                        "SELECT creneau_id, stand_id FROM creneau_stand_ouvert");
+                        ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        Creneau creneau = byId.get(rs.getLong("creneau_id"));
+                        if (creneau != null) {
+                            creneau.getStandsOuvertsIds().add(rs.getString("stand_id"));
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to list timeslots for group " + groupeId, e);
+        }
+        List<Creneau> creneaux = new ArrayList<>(byId.values());
+        Creneau.assignerJours(creneaux);
+        creneaux.sort(Comparator.comparingInt(Creneau::getJour)
+                .thenComparing(Creneau::getHeureDebut, Comparator.nullsLast(Comparator.naturalOrder())));
+        return creneaux;
+    }
+
+    /**
+     * Replaces every créneau of one specific group (source-amplitudes or
+     * generated-vacations), leaving every other group untouched — unlike
+     * {@link #replaceCreneaux(List)}, which is a global, all-groups CSV-import
+     * replace. Used by the découpage generator to (re)materialize a target
+     * group's vacations from a source group's amplitudes.
+     */
+    public void replaceCreneauxDuGroupe(String groupeId, List<Creneau> creneaux) {
+        try (Connection connection = dataSource.getConnection()) {
+            boolean previousAutoCommit = connection.getAutoCommit();
+            connection.setAutoCommit(false);
+            try {
+                try (PreparedStatement ps = connection.prepareStatement(
+                        "DELETE FROM poste_affectation WHERE creneau_id IN "
+                                + "(SELECT id FROM creneau WHERE groupe_creneau_id = ?)")) {
+                    ps.setString(1, groupeId);
+                    ps.executeUpdate();
+                }
+                try (PreparedStatement ps = connection.prepareStatement(
+                        "DELETE FROM creneau WHERE groupe_creneau_id = ?")) {
+                    ps.setString(1, groupeId);
+                    ps.executeUpdate();
+                }
+                GroupeCreneau groupe = new GroupeCreneau(groupeId, null, false);
+                for (Creneau creneau : creneaux) {
+                    creneau.setId(null);
+                    creneau.setGroupe(groupe);
+                    insertCreneauTx(connection, creneau);
+                }
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw e;
+            } finally {
+                connection.setAutoCommit(previousAutoCommit);
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to replace timeslots for group " + groupeId, e);
+        }
+    }
+
     private List<Creneau> listCreneaux(String sql) {
         Map<Long, Creneau> byId = new LinkedHashMap<>();
         try (Connection connection = dataSource.getConnection()) {
@@ -351,10 +436,11 @@ public class ReferenceDataRepository {
         List<GroupeCreneau> groupes = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement(
-                        "SELECT id, nom, actif FROM groupe_creneau ORDER BY nom");
+                        "SELECT id, nom, actif, groupe_source_id FROM groupe_creneau ORDER BY nom");
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                groupes.add(new GroupeCreneau(rs.getString("id"), rs.getString("nom"), rs.getBoolean("actif")));
+                groupes.add(new GroupeCreneau(rs.getString("id"), rs.getString("nom"), rs.getBoolean("actif"),
+                        rs.getString("groupe_source_id")));
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to list timeslot groups", e);
@@ -366,14 +452,19 @@ public class ReferenceDataRepository {
         return exists("groupe_creneau", id);
     }
 
-    /** Upserts id/nom only — {@code actif} is never touched here, see {@link #activerGroupeCreneau(String)}. */
+    /**
+     * Upserts id/nom/groupeSourceId only — {@code actif} is never touched
+     * here, see {@link #activerGroupeCreneau(String)}.
+     */
     public void saveGroupeCreneau(GroupeCreneau groupe) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement(
-                        "INSERT INTO groupe_creneau (id, nom, actif) VALUES (?, ?, FALSE) "
-                                + "ON CONFLICT (id) DO UPDATE SET nom = EXCLUDED.nom")) {
+                        "INSERT INTO groupe_creneau (id, nom, actif, groupe_source_id) VALUES (?, ?, FALSE, ?) "
+                                + "ON CONFLICT (id) DO UPDATE SET nom = EXCLUDED.nom, "
+                                + "groupe_source_id = EXCLUDED.groupe_source_id")) {
             ps.setString(1, groupe.getId());
             ps.setString(2, groupe.getNom());
+            ps.setString(3, groupe.getGroupeSourceId());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to save timeslot group " + groupe.getId(), e);
@@ -683,12 +774,17 @@ public class ReferenceDataRepository {
     public ParametresLegaux getParametresLegaux() {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement(
-                        "SELECT duree_hebdomadaire_max_minutes, duree_hebdomadaire_max_mineur_minutes "
+                        "SELECT duree_hebdomadaire_max_minutes, duree_hebdomadaire_max_mineur_minutes, "
+                                + "pause_minimale_entre_vacations_minutes, repos_quotidien_minimal_minutes "
                                 + "FROM parametres_legaux WHERE id = 1");
                 ResultSet rs = ps.executeQuery()) {
             if (rs.next()) {
-                return new ParametresLegaux(rs.getInt("duree_hebdomadaire_max_minutes"),
+                ParametresLegaux parametres = new ParametresLegaux(rs.getInt("duree_hebdomadaire_max_minutes"),
                         rs.getInt("duree_hebdomadaire_max_mineur_minutes"));
+                parametres.setPauseMinimaleEntreVacationsMinutes(
+                        rs.getInt("pause_minimale_entre_vacations_minutes"));
+                parametres.setReposQuotidienMinimalMinutes(rs.getInt("repos_quotidien_minimal_minutes"));
+                return parametres;
             }
             return new ParametresLegaux();
         } catch (SQLException e) {
@@ -700,16 +796,88 @@ public class ReferenceDataRepository {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement(
                         "INSERT INTO parametres_legaux (id, duree_hebdomadaire_max_minutes, "
-                                + "duree_hebdomadaire_max_mineur_minutes) VALUES (1, ?, ?) "
+                                + "duree_hebdomadaire_max_mineur_minutes, pause_minimale_entre_vacations_minutes, "
+                                + "repos_quotidien_minimal_minutes) VALUES (1, ?, ?, ?, ?) "
                                 + "ON CONFLICT (id) DO UPDATE SET "
                                 + "duree_hebdomadaire_max_minutes = EXCLUDED.duree_hebdomadaire_max_minutes, "
                                 + "duree_hebdomadaire_max_mineur_minutes = "
-                                + "EXCLUDED.duree_hebdomadaire_max_mineur_minutes")) {
+                                + "EXCLUDED.duree_hebdomadaire_max_mineur_minutes, "
+                                + "pause_minimale_entre_vacations_minutes = "
+                                + "EXCLUDED.pause_minimale_entre_vacations_minutes, "
+                                + "repos_quotidien_minimal_minutes = EXCLUDED.repos_quotidien_minimal_minutes")) {
             ps.setInt(1, parametres.getDureeHebdomadaireMaxMinutes());
             ps.setInt(2, parametres.getDureeHebdomadaireMaxMineurMinutes());
+            ps.setInt(3, parametres.getPauseMinimaleEntreVacationsMinutes());
+            ps.setInt(4, parametres.getReposQuotidienMinimalMinutes());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to save legal parameters", e);
+        }
+    }
+
+    /* --------------------------- Découpage parameters ------------------------ */
+
+    public ParametresDecoupage getParametresDecoupage() {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = connection.prepareStatement(
+                        "SELECT duree_vacation_cible_minutes, duree_vacation_min_minutes, duree_vacation_max_minutes, "
+                                + "duree_chevauchement_minutes, duree_pause_repas_minutes, fenetre_repas_midi_debut, "
+                                + "fenetre_repas_midi_fin, fenetre_repas_soir_debut, fenetre_repas_soir_fin, "
+                                + "strategie_couverture_pendant_pause FROM parametres_decoupage WHERE id = 1");
+                ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                ParametresDecoupage parametres = new ParametresDecoupage();
+                parametres.setDureeVacationCibleMinutes(rs.getInt("duree_vacation_cible_minutes"));
+                parametres.setDureeVacationMinMinutes(rs.getInt("duree_vacation_min_minutes"));
+                parametres.setDureeVacationMaxMinutes(rs.getInt("duree_vacation_max_minutes"));
+                parametres.setDureeChevauchementMinutes(rs.getInt("duree_chevauchement_minutes"));
+                parametres.setDureePauseRepasMinutes(rs.getInt("duree_pause_repas_minutes"));
+                parametres.setFenetreRepasMidiDebut(rs.getObject("fenetre_repas_midi_debut", LocalTime.class));
+                parametres.setFenetreRepasMidiFin(rs.getObject("fenetre_repas_midi_fin", LocalTime.class));
+                parametres.setFenetreRepasSoirDebut(rs.getObject("fenetre_repas_soir_debut", LocalTime.class));
+                parametres.setFenetreRepasSoirFin(rs.getObject("fenetre_repas_soir_fin", LocalTime.class));
+                parametres.setStrategieCouverturePendantPause(
+                        ParametresDecoupage.StrategieCouverturePendantPause
+                                .valueOf(rs.getString("strategie_couverture_pendant_pause")));
+                return parametres;
+            }
+            return new ParametresDecoupage();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to load découpage parameters", e);
+        }
+    }
+
+    public void saveParametresDecoupage(ParametresDecoupage parametres) {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = connection.prepareStatement(
+                        "INSERT INTO parametres_decoupage (id, duree_vacation_cible_minutes, "
+                                + "duree_vacation_min_minutes, duree_vacation_max_minutes, duree_chevauchement_minutes, "
+                                + "duree_pause_repas_minutes, fenetre_repas_midi_debut, fenetre_repas_midi_fin, "
+                                + "fenetre_repas_soir_debut, fenetre_repas_soir_fin, strategie_couverture_pendant_pause) "
+                                + "VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO UPDATE SET "
+                                + "duree_vacation_cible_minutes = EXCLUDED.duree_vacation_cible_minutes, "
+                                + "duree_vacation_min_minutes = EXCLUDED.duree_vacation_min_minutes, "
+                                + "duree_vacation_max_minutes = EXCLUDED.duree_vacation_max_minutes, "
+                                + "duree_chevauchement_minutes = EXCLUDED.duree_chevauchement_minutes, "
+                                + "duree_pause_repas_minutes = EXCLUDED.duree_pause_repas_minutes, "
+                                + "fenetre_repas_midi_debut = EXCLUDED.fenetre_repas_midi_debut, "
+                                + "fenetre_repas_midi_fin = EXCLUDED.fenetre_repas_midi_fin, "
+                                + "fenetre_repas_soir_debut = EXCLUDED.fenetre_repas_soir_debut, "
+                                + "fenetre_repas_soir_fin = EXCLUDED.fenetre_repas_soir_fin, "
+                                + "strategie_couverture_pendant_pause = EXCLUDED.strategie_couverture_pendant_pause")) {
+            ps.setInt(1, parametres.getDureeVacationCibleMinutes());
+            ps.setInt(2, parametres.getDureeVacationMinMinutes());
+            ps.setInt(3, parametres.getDureeVacationMaxMinutes());
+            ps.setInt(4, parametres.getDureeChevauchementMinutes());
+            ps.setInt(5, parametres.getDureePauseRepasMinutes());
+            ps.setObject(6, parametres.getFenetreRepasMidiDebut());
+            ps.setObject(7, parametres.getFenetreRepasMidiFin());
+            ps.setObject(8, parametres.getFenetreRepasSoirDebut());
+            ps.setObject(9, parametres.getFenetreRepasSoirFin());
+            ps.setString(10, parametres.getStrategieCouverturePendantPause().name());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to save découpage parameters", e);
         }
     }
 

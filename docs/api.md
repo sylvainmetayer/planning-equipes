@@ -105,6 +105,18 @@ Contraintes ad hoc (pas de mise à jour, on supprime et on recrée) :
 Import global du référentiel depuis un `PlanningFestival` :
 `POST /api/reference-data/import`.
 
+## Découpage automatique en vacations
+
+Découpe les amplitudes d'un groupe de créneaux source en vacations plus
+courtes et chevauchantes (voir [`domaine.md`](domaine.md#découpage-automatique-en-vacations)).
+
+| Méthode | Chemin | Description |
+| --- | --- | --- |
+| `GET` | `/api/decoupage/preview?groupeSourceId={id}` | Prévisualise les vacations générées, sans rien persister |
+| `POST` | `/api/decoupage/generer` | Matérialise les vacations dans un groupe cible (créé si besoin) : `{ "groupeSourceId", "groupeCibleId", "nomGroupeCible", "activerGroupeCible" }` |
+| `GET` | `/api/parametres-decoupage` | Paramètres de découpage courants |
+| `PUT` | `/api/parametres-decoupage` | Met à jour les paramètres de découpage |
+
 ## Import / export de données
 
 | Méthode | Chemin | Description |

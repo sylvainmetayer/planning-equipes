@@ -1,0 +1,149 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <mat-card-title i18n="@@decoupage.intro.title">Découpage automatique en vacations</mat-card-title>
+    <mat-card-subtitle i18n="@@decoupage.intro.subtitle">
+      À partir d'un groupe d'amplitudes (une seule fenêtre d'ouverture par jour, ex. un scénario "continu"), génère automatiquement des vacations de travail plus courtes et chevauchantes, jamais au-dessus du seuil légal de pause — sans créneau à saisir à la main.
+    </mat-card-subtitle>
+  </mat-card-header>
+</mat-card>
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <mat-card-title i18n="@@decoupage.parametres.title">Paramètres de découpage</mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    @if (parametres(); as p) {
+      <form class="form-grid" (ngSubmit)="sauvegarderParametres()">
+        <mat-form-field appearance="outline">
+          <mat-label i18n="@@decoupage.field.dureeCible">Durée cible d'une vacation (min)</mat-label>
+          <input matInput type="number" min="1" name="dureeVacationCibleMinutes"
+                 [ngModel]="p.dureeVacationCibleMinutes" (ngModelChange)="p.dureeVacationCibleMinutes = $event" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label i18n="@@decoupage.field.dureeMin">Durée minimale (min)</mat-label>
+          <input matInput type="number" min="1" name="dureeVacationMinMinutes"
+                 [ngModel]="p.dureeVacationMinMinutes" (ngModelChange)="p.dureeVacationMinMinutes = $event" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label i18n="@@decoupage.field.dureeMax">Durée maximale (min)</mat-label>
+          <input matInput type="number" min="1" name="dureeVacationMaxMinutes"
+                 [ngModel]="p.dureeVacationMaxMinutes" (ngModelChange)="p.dureeVacationMaxMinutes = $event" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label i18n="@@decoupage.field.chevauchement">Chevauchement de relais (min)</mat-label>
+          <input matInput type="number" min="0" name="dureeChevauchementMinutes"
+                 [ngModel]="p.dureeChevauchementMinutes" (ngModelChange)="p.dureeChevauchementMinutes = $event" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label i18n="@@decoupage.field.dureePauseRepas">Durée de la pause repas (min)</mat-label>
+          <input matInput type="number" min="0" name="dureePauseRepasMinutes"
+                 [ngModel]="p.dureePauseRepasMinutes" (ngModelChange)="p.dureePauseRepasMinutes = $event" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label i18n="@@decoupage.field.repasMidiDebut">Fenêtre repas midi — début</mat-label>
+          <input matInput type="time" name="fenetreRepasMidiDebut"
+                 [ngModel]="p.fenetreRepasMidiDebut" (ngModelChange)="p.fenetreRepasMidiDebut = $event" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label i18n="@@decoupage.field.repasMidiFin">Fenêtre repas midi — fin</mat-label>
+          <input matInput type="time" name="fenetreRepasMidiFin"
+                 [ngModel]="p.fenetreRepasMidiFin" (ngModelChange)="p.fenetreRepasMidiFin = $event" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label i18n="@@decoupage.field.repasSoirDebut">Fenêtre repas soir — début</mat-label>
+          <input matInput type="time" name="fenetreRepasSoirDebut"
+                 [ngModel]="p.fenetreRepasSoirDebut" (ngModelChange)="p.fenetreRepasSoirDebut = $event" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label i18n="@@decoupage.field.repasSoirFin">Fenêtre repas soir — fin</mat-label>
+          <input matInput type="time" name="fenetreRepasSoirFin"
+                 [ngModel]="p.fenetreRepasSoirFin" (ngModelChange)="p.fenetreRepasSoirFin = $event" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label i18n="@@decoupage.field.strategie">Couverture pendant une pause interne résiduelle</mat-label>
+          <mat-select name="strategieCouverturePendantPause"
+                      [ngModel]="p.strategieCouverturePendantPause" (ngModelChange)="p.strategieCouverturePendantPause = $event">
+            <mat-option value="FERMETURE" i18n="@@decoupage.strategie.fermeture">Fermeture du stand</mat-option>
+            <mat-option value="RELEVE" i18n="@@decoupage.strategie.releve">Poste de relève supplémentaire</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <button matButton="filled" type="submit" [disabled]="parametresLoading()">
+          @if (parametresLoading()) {
+            <mat-progress-spinner diameter="18" mode="indeterminate" />
+          } @else {
+            <mat-icon>save</mat-icon>
+          }
+          <ng-container i18n="@@decoupage.parametres.save">Enregistrer les paramètres</ng-container>
+        </button>
+      </form>
+    }
+  </mat-card-content>
+</mat-card>
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <mat-card-title i18n="@@decoupage.generer.title">Générer un découpage</mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    <form class="form-grid">
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@decoupage.field.groupeSource">Groupe source (amplitudes)</mat-label>
+        <mat-select [ngModel]="groupeSourceId()" name="groupeSourceId" (ngModelChange)="setGroupeSource($event)">
+          @for (groupe of store.groupesCreneaux(); track groupe.id) {
+            <mat-option [value]="groupe.id">{{ groupe.nom || groupe.id }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <button matButton type="button" [disabled]="!groupeSourceId() || previewLoading()" (click)="previsualiser()">
+        @if (previewLoading()) {
+          <mat-progress-spinner diameter="18" mode="indeterminate" />
+        } @else {
+          <mat-icon>visibility</mat-icon>
+        }
+        <ng-container i18n="@@decoupage.preview">Prévisualiser</ng-container>
+      </button>
+    </form>
+
+    @if (resume().length > 0) {
+      <div class="table-wrapper">
+        @for (jour of resume(); track jour.date) {
+          <p>
+            <strong>{{ jour.date }}</strong>
+            <span i18n="@@decoupage.resume.vacationCount"> — {{ jour.vacations.length }}:count: vacation(s) :</span>
+            @for (vacation of jour.vacations; track $index) {
+              <span class="vacation-chip">{{ vacation.heureDebut }}–{{ vacation.heureFin }}</span>
+            }
+          </p>
+        }
+      </div>
+    }
+
+    <form class="form-grid" (ngSubmit)="genererDecoupage()">
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@decoupage.field.groupeCibleExistant">Groupe cible existant (à régénérer)</mat-label>
+        <mat-select [ngModel]="groupeCibleExistantId()" name="groupeCibleExistantId" (ngModelChange)="setGroupeCibleExistant($event)">
+          <mat-option [value]="null" i18n="@@decoupage.field.groupeCibleNouveau">— Créer un nouveau groupe —</mat-option>
+          @for (groupe of groupesCiblePossibles(); track groupe.id) {
+            <mat-option [value]="groupe.id">{{ groupe.nom || groupe.id }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@decoupage.field.nomGroupeCible">Nom du groupe cible</mat-label>
+        <input matInput name="nomGroupeCible" [ngModel]="nomGroupeCible()" (ngModelChange)="nomGroupeCible.set($event)" />
+      </mat-form-field>
+      <mat-checkbox [ngModel]="activerGroupeCible()" name="activerGroupeCible" (ngModelChange)="activerGroupeCible.set($event)"
+                    i18n="@@decoupage.field.activer">
+        Activer ce groupe immédiatement après génération
+      </mat-checkbox>
+      <button matButton="filled" type="submit" [disabled]="!groupeSourceId() || !nomGroupeCible().trim() || genererLoading()">
+        @if (genererLoading()) {
+          <mat-progress-spinner diameter="18" mode="indeterminate" />
+        } @else {
+          <mat-icon>auto_awesome</mat-icon>
+        }
+        <ng-container i18n="@@decoupage.generer.submit">Générer les vacations</ng-container>
+      </button>
+    </form>
+  </mat-card-content>
+</mat-card>

@@ -64,6 +64,8 @@ export interface GroupeCreneau {
   id: string;
   nom: string;
   actif: boolean;
+  /** Id of the "amplitudes" group this group's vacations were auto-generated from, or `null`. */
+  groupeSourceId?: string | null;
 }
 
 /**
@@ -190,6 +192,37 @@ export interface ConstraintsView {
 export interface ParametresLegaux {
   dureeHebdomadaireMaxMinutes: number;
   dureeHebdomadaireMaxMineurMinutes: number;
+  /** Minimum gap (minutes) between two same-day vacations of one animateur. Default 30. */
+  pauseMinimaleEntreVacationsMinutes: number;
+  /** Minimum daily rest (minutes) between two calendar days, all animateurs. Default 660 (11h, art. L3131-1). */
+  reposQuotidienMinimalMinutes: number;
+}
+
+export type StrategieCouverturePendantPause = 'FERMETURE' | 'RELEVE';
+
+/**
+ * `/api/parametres-decoupage`: generation-time parameters consumed by
+ * `VacationGeneratorService` to split a day-long amplitude into shorter,
+ * overlapping work vacations. Never seen by the solver.
+ */
+export interface ParametresDecoupage {
+  dureeVacationCibleMinutes: number;
+  dureeVacationMinMinutes: number;
+  dureeVacationMaxMinutes: number;
+  dureeChevauchementMinutes: number;
+  dureePauseRepasMinutes: number;
+  fenetreRepasMidiDebut: string;
+  fenetreRepasMidiFin: string;
+  fenetreRepasSoirDebut: string;
+  fenetreRepasSoirFin: string;
+  strategieCouverturePendantPause: StrategieCouverturePendantPause;
+}
+
+export interface DecoupageRequest {
+  groupeSourceId: string;
+  groupeCibleId: string;
+  nomGroupeCible: string;
+  activerGroupeCible: boolean;
 }
 
 /** Ordre public ceiling for adults, in hours (Code du travail art. L3121-20). */

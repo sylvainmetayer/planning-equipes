@@ -8,6 +8,7 @@ import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.GroupeCreneau;
+import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.Stand;
@@ -239,6 +240,48 @@ public class ReferenceDataService {
         markModified();
     }
 
+    /* ------------------------------ Découpage ------------------------------- */
+
+    /**
+     * Generates the vacations a source "amplitudes" group would produce,
+     * without persisting anything — used by the découpage preview screen.
+     */
+    public List<Creneau> previsualiserDecoupage(String groupeSourceId) {
+        List<Creneau> amplitudes = repository.listCreneauxParGroupe(groupeSourceId);
+        if (amplitudes.isEmpty()) {
+            throw new IllegalArgumentException("Le groupe source ne contient aucune amplitude: " + groupeSourceId);
+        }
+        return VacationGeneratorService.genererVacations(amplitudes, getParametresDecoupage());
+    }
+
+    /**
+     * Materializes the vacations generated from {@code groupeSourceId}'s
+     * amplitudes into {@code groupeCibleId} (created with {@code nomGroupeCible}
+     * if it doesn't exist yet), replacing that target group's créneaux
+     * entirely — every other group, including the source, is untouched.
+     */
+    public GroupeCreneau genererDecoupage(String groupeSourceId, String groupeCibleId, String nomGroupeCible,
+            boolean activerGroupeCible) {
+        if (!repository.groupeCreneauExists(groupeSourceId)) {
+            throw new NotFoundException("Timeslot group not found: " + groupeSourceId);
+        }
+        List<Creneau> vacations = previsualiserDecoupage(groupeSourceId);
+
+        GroupeCreneau cible = repository.listGroupesCreneaux().stream()
+                .filter(g -> g.getId().equals(groupeCibleId))
+                .findFirst()
+                .orElseGet(() -> new GroupeCreneau(requiredId(groupeCibleId, "target timeslot group id"),
+                        requiredId(nomGroupeCible, "target timeslot group name"), false));
+        cible.setGroupeSourceId(groupeSourceId);
+        repository.saveGroupeCreneau(cible);
+        repository.replaceCreneauxDuGroupe(cible.getId(), vacations);
+        markModified();
+        if (activerGroupeCible) {
+            repository.activerGroupeCreneau(cible.getId());
+        }
+        return cible;
+    }
+
     /* ------------------------------ Typologies ----------------------------- */
 
     public List<TypologieItem> listTypologies() {
@@ -336,6 +379,12 @@ public class ReferenceDataService {
                 "dureeHebdomadaireMaxMineurMinutes",
                 "la durée hebdomadaire maximale des mineurs ne peut pas dépasser 35 h "
                         + "(Code du travail art. L3162-1)");
+        if (parametres.getPauseMinimaleEntreVacationsMinutes() < 0) {
+            throw new IllegalArgumentException("pauseMinimaleEntreVacationsMinutes must not be negative");
+        }
+        if (parametres.getReposQuotidienMinimalMinutes() < 0) {
+            throw new IllegalArgumentException("reposQuotidienMinimalMinutes must not be negative");
+        }
         repository.saveParametresLegaux(parametres);
         markModified();
         return parametres;
@@ -348,6 +397,29 @@ public class ReferenceDataService {
         if (valeurMinutes > plafondMinutes) {
             throw new IllegalArgumentException(message);
         }
+    }
+
+    /* --------------------------- Découpage parameters ------------------------ */
+
+    public ParametresDecoupage getParametresDecoupage() {
+        return repository == null ? new ParametresDecoupage() : repository.getParametresDecoupage();
+    }
+
+    public ParametresDecoupage updateParametresDecoupage(ParametresDecoupage parametres) {
+        if (parametres.getDureeVacationMinMinutes() <= 0 || parametres.getDureeVacationMaxMinutes() <= 0
+                || parametres.getDureeVacationCibleMinutes() <= 0) {
+            throw new IllegalArgumentException("vacation durations must be positive");
+        }
+        if (parametres.getDureeVacationMinMinutes() > parametres.getDureeVacationMaxMinutes()) {
+            throw new IllegalArgumentException(
+                    "dureeVacationMinMinutes cannot be greater than dureeVacationMaxMinutes");
+        }
+        if (parametres.getDureeChevauchementMinutes() < 0 || parametres.getDureePauseRepasMinutes() < 0) {
+            throw new IllegalArgumentException("overlap and meal-break durations must not be negative");
+        }
+        repository.saveParametresDecoupage(parametres);
+        markModified();
+        return parametres;
     }
 
     /* --------------------------- Constraint toggles -------------------------- */

@@ -163,6 +163,18 @@ l'utilisateur doit pouvoir s'en rendre compte.
 
 Le détail règle par règle est dans [`docs/contraintes.md`](docs/contraintes.md).
 
+### Découpage automatique en vacations
+
+Pour un scénario « continu » où chaque jour n'est défini que par une seule
+amplitude d'ouverture (ex. 10h-20h, ou 10h-minuit pour une journée + nocturne),
+la page « Découpage » génère automatiquement les vacations de travail réelles
+à partir de cette amplitude : plusieurs créneaux plus courts et chevauchants,
+sans jamais dépasser 6h d'affilée pour un même animateur. La pause (et la
+pause repas) de chacun est simplement le trou entre deux de ses vacations —
+rien à saisir à la main. Un aperçu montre le découpage avant de le
+matérialiser dans un groupe de créneaux dédié, activable en un clic. Le détail
+de l'algorithme est dans [`docs/domaine.md`](docs/domaine.md#découpage-automatique-en-vacations).
+
 ### Gestion des référentiels
 
 Écrans d'ajout / modification / suppression pour :

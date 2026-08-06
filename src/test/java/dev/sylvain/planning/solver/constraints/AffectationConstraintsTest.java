@@ -105,7 +105,8 @@ class AffectationConstraintsTest extends ConstraintTestBase {
 
     @Test
     void deuxCreneauxContigusNeSontPasPenalises() {
-        // Bout à bout (fin = début) : pas de chevauchement.
+        // Bout à bout (fin = début) : pas de chevauchement — c'est exactement
+        // le passage de témoin d'un relais type découpage automatique.
         Animateur a1 = majeurReferent("A1");
         Creneau avant = creneau("J1-10-14", 1, D1, LocalTime.of(10, 0), LocalTime.of(14, 0));
         Creneau apres = creneau("J1-14-18", 1, D1, LocalTime.of(14, 0), LocalTime.of(18, 0));

@@ -530,4 +530,52 @@ class LegalConstraintsTest extends ConstraintTestBase {
                         parametres)
                 .penalizesBy(0);
     }
+
+    @Test
+    void pauseEntreDeuxVacationsLeMemeJourTropCourteEstPenalisee() {
+        // creneauMatin finit à 13h ; cette vacation démarre à 13h15, soit
+        // seulement 15 min de pause — sous le plafond par défaut de 30 min.
+        Animateur majeur = majeurReferent("A1");
+        Creneau vacationProche = creneau("J1-PROCHE", 1, D1, java.time.LocalTime.of(13, 15), java.time.LocalTime.of(17, 15));
+        verify("pauseMinimaleEntreVacations")
+                .given(poste(standStrat, creneauMatin, majeur),
+                        poste(standStrat, vacationProche, majeur),
+                        new ParametresLegaux())
+                .penalizesBy(15);
+    }
+
+    @Test
+    void pauseEntreDeuxVacationsLeMemeJourSuffisanteNEstPasPenalisee() {
+        Animateur majeur = majeurReferent("A1");
+        Creneau vacationEloignee = creneau("J1-LOIN", 1, D1, java.time.LocalTime.of(13, 30), java.time.LocalTime.of(17, 30));
+        verify("pauseMinimaleEntreVacations")
+                .given(poste(standStrat, creneauMatin, majeur),
+                        poste(standStrat, vacationEloignee, majeur),
+                        new ParametresLegaux())
+                .penalizesBy(0);
+    }
+
+    @Test
+    void reposQuotidienInsuffisantPourUnMajeurEstPenalise() {
+        // creneauNuit finit à minuit (jour 2, 00:00) ; matinJ2 démarre à 9h le
+        // même jour 2, soit seulement 9h de repos — sous le plancher légal de
+        // 11h (660 min) qui s'applique désormais à tout animateur, pas
+        // seulement aux mineurs.
+        Animateur majeur = majeurReferent("A1");
+        verify("reposQuotidienMinimalTousAnimateurs")
+                .given(poste(standStrat, creneauNuit, majeur),
+                        poste(standStrat, matinJ2, majeur),
+                        new ParametresLegaux())
+                .penalizesBy(120);
+    }
+
+    @Test
+    void reposQuotidienSuffisantPourUnMajeurNEstPasPenalise() {
+        Animateur majeur = majeurReferent("A1");
+        verify("reposQuotidienMinimalTousAnimateurs")
+                .given(poste(standStrat, creneauNuit, majeur),
+                        poste(standStrat, apremJ2, majeur),
+                        new ParametresLegaux())
+                .penalizesBy(0);
+    }
 }

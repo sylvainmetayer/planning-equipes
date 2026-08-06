@@ -41,6 +41,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/creneaux/creneaux-page').then((m) => m.CreneauxPage)
   },
   {
+    path: 'decoupage',
+    title: 'Découpage — Planning Équipes',
+    loadComponent: () => import('./pages/decoupage/decoupage-page').then((m) => m.DecoupagePage)
+  },
+  {
     path: 'typologies',
     title: 'Typologies — Planning Équipes',
     loadComponent: () => import('./pages/typologies/typologies-page').then((m) => m.TypologiesPage)

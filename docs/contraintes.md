@@ -82,6 +82,7 @@ lever relève de l'organisateur. Le modèle ne distingue pas les deux cas.
 | `travailContinuMaxMajeur` | L3121-16 | Aucune période de travail ininterrompue de plus de **6 h** ; au-delà, pause d'au moins **20 minutes consécutives** |
 | `maxJoursTravaillesParSemaine` | L3132-1 | Jamais plus de **6 jours travaillés** dans la même semaine ISO |
 | `reposHebdomadaireMinimal` | L3132-2 + L3131-1 | **35 h consécutives** de repos dans chaque semaine ISO (24 h + les 11 h de repos quotidien) |
+| `pauseMinimaleEntreVacations` | — (découpage automatique) | Entre deux vacations d'un même animateur le même jour, l'écart doit être d'au moins la pause minimale paramétrée (30 min par défaut) — empêche le découpage de reconstituer une journée continue en chaînant des vacations bout à bout |
 
 #### Comment les pauses sont modélisées
 
