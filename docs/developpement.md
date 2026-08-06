@@ -165,6 +165,43 @@ les pourvant avec un animateur encore libre à ce créneau, soit en délogeant
 quelqu'un déjà affecté ailleurs à un autre créneau — ce qui suffit à ramener
 le hard score à zéro sur `scenario-complet.yaml` dans le budget existant.
 
+### Coût des contraintes : joiners indexés plutôt que `filtering`
+
+La vitesse de résolution est dominée par le nombre de tuples que les
+*constraint streams* construisent et maintiennent à chaque mouvement, pas par
+le nombre de contraintes. Un `forEachUniquePair` suivi d'un `filter` construit
+**toutes** les paires avant d'en écarter la quasi-totalité ; un `Joiners.equal`
+en fait un accès indexé.
+
+Mesuré sur `scenario-complet.yaml` (2088 postes, 150 animateurs, 36 créneaux,
+`randomSeed=0` donc trajectoire de recherche identique d'un run à l'autre), la
+reformulation de quatre contraintes en joiners indexés a supprimé ~202 000
+tuples de paires inutiles :
+
+| Contrainte | Paires construites avant | Après |
+| --- | --- | --- |
+| `incompatibiliteAdHoc` | 59 508 (toutes les paires de postes d'un même créneau) | 0 tant qu'aucune incompatibilité n'est saisie |
+| `eviterRoulementStandsPremium` | 115 596 (toutes les paires de postes d'un même stand) | 0 (le scénario n'a aucun stand premium) |
+| `reposQuotidienMineur` | ~13 500 (toutes les paires de postes d'un animateur) | les seuls créneaux de nuit tenus par un mineur |
+| `eviterChangementEmplacementEloigne` | ~13 500 (idem) | les seuls créneaux réellement enchaînés |
+
+Effet mesuré, à trajectoire de recherche inchangée (mêmes 1220 pas de
+recherche locale, mêmes scores intermédiaires et final
+`0hard/-341medium/-2742soft`) :
+
+| Phase | Avant | Après |
+| --- | --- | --- |
+| Heuristique de construction | 4 848 ms — 17 122 mouvements/s | 2 086 ms — 40 396 mouvements/s |
+| Recherche locale | 22 041 ms — 4 907 mouvements/s | 7 313 ms — 16 236 mouvements/s |
+| **Total jusqu'à faisabilité** | **22,0 s** | **7,3 s** |
+
+Règle à suivre pour toute nouvelle contrainte : exprimer d'abord ce qui peut
+l'être en `Joiners.equal` / `lessThan` / `overlapping`, restreindre le flux
+d'entrée avec un `filter` **avant** de joindre, et ne garder `Joiners.filtering`
+que pour ce qui n'est pas indexable (ici : le calcul de distance haversine et
+la comparaison de périmètre des contraintes ad hoc). La métrique à regarder est
+le *move evaluation speed* du log solveur, pas le temps écoulé.
+
 ## Configuration
 
 | Variable | Défaut | Usage |

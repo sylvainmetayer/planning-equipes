@@ -5,7 +5,6 @@ import ai.timefold.solver.core.api.score.stream.Constraint;
 import ai.timefold.solver.core.api.score.stream.ConstraintCollectors;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
 import ai.timefold.solver.core.api.score.stream.Joiners;
-import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -85,49 +84,67 @@ public final class QualiteConstraints {
                 .asConstraint("experienceRequisePourStandsPremium");
     }
 
+    /**
+     * Mirrors favoriserRotationDesStands but inverted and scoped to premium
+     * stands: prefer keeping the same (already-vetted) animateur on a
+     * high-visibility stand across timeslots instead of rotating people
+     * through it.
+     *
+     * <p>The premium test is applied <em>before</em> pairing, not after. The
+     * previous formulation paired every poste with every other poste of the
+     * same stand and only then discarded the non-premium ones: on
+     * {@code scenario-complet.yaml} that is 115 596 pair tuples built and
+     * incrementally maintained, of which zero survive the filter (the scenario
+     * has no premium stand at all). Filtering first makes the pair count
+     * proportional to the premium stands only.</p>
+     *
+     * <p>{@code lessThan} on the planning id reproduces
+     * {@code forEachUniquePair}'s "each unordered pair exactly once" semantics,
+     * so the match count is unchanged.</p>
+     */
     private Constraint eviterRoulementStandsPremium(ConstraintFactory constraintFactory) {
-        // Mirrors favoriserRotationDesStands but inverted and scoped to premium
-        // stands: prefer keeping the same (already-vetted) animateur on a
-        // high-visibility stand across timeslots instead of rotating people
-        // through it.
-        return ConstraintToggleSupport.actif(constraintFactory.forEachUniquePair(
-                PosteAffectation.class,
-                Joiners.equal(poste -> poste.getStand().getId())), "eviterRoulementStandsPremium")
-                .filter((posteA, posteB) -> posteA.getStand().isPremium()
-                        && posteA.getAnimateur() != null
-                        && posteB.getAnimateur() != null
-                        && !posteA.getAnimateur().equals(posteB.getAnimateur())
+        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
+                "eviterRoulementStandsPremium")
+                .filter(poste -> poste.getStand().isPremium())
+                .join(PosteAffectation.class,
+                        Joiners.equal(poste -> poste.getStand().getId()),
+                        Joiners.lessThan(PosteAffectation::getId))
+                .filter((posteA, posteB) -> !posteA.getAnimateur().equals(posteB.getAnimateur())
                         && !posteA.getCreneau().equals(posteB.getCreneau()))
                 .penalize(HardMediumSoftScore.ONE_MEDIUM)
                 .asConstraint("eviterRoulementStandsPremium");
     }
 
+    /**
+     * Same animateur, two back-to-back slots (same day, one ending exactly when
+     * the other starts), different stands whose emplacements are far apart: the
+     * switch costs a real trek across town, so it's penalised.
+     *
+     * <p>"Back-to-back" is expressed as indexed joiners (same day, previous
+     * slot's {@code heureFin} equal to the next slot's {@code heureDebut})
+     * instead of a predicate over every pair of postes an animateur holds. The
+     * previous formulation built ~13 500 pair tuples on
+     * {@code scenario-complet.yaml} (150 animateurs × ~14 postes each) purely to
+     * discard almost all of them; the join now only produces genuinely
+     * consecutive slots. Each qualifying pair still yields exactly one match,
+     * generated in the (previous, next) order only.</p>
+     */
     private Constraint eviterChangementEmplacementEloigne(ConstraintFactory constraintFactory) {
-        // Same animateur, two back-to-back slots (same day, one ending exactly
-        // when the other starts), different stands whose emplacements are far
-        // apart: the switch costs a real trek across town, so it's penalised.
-        return constraintFactory.forEachUniquePair(
-                PosteAffectation.class,
-                Joiners.equal(PosteAffectation::getAnimateur))
-                .filter((posteA, posteB) -> posteA.getAnimateur() != null
-                        && posteA.getStand() != null && posteB.getStand() != null
-                        && !posteA.getStand().equals(posteB.getStand())
-                        && creneauxConsecutifs(posteA.getCreneau(), posteB.getCreneau())
-                        && emplacementsEloignes(posteA.getStand(), posteB.getStand()))
+        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
+                "eviterChangementEmplacementEloigne")
+                .filter(poste -> poste.getStand() != null
+                        && poste.getStand().getEmplacement() != null
+                        && poste.getCreneau() != null
+                        && poste.getCreneau().getHeureFin() != null)
+                .join(PosteAffectation.class,
+                        Joiners.equal(PosteAffectation::getAnimateur),
+                        Joiners.equal(poste -> poste.getCreneau().getJour()),
+                        Joiners.equal(poste -> poste.getCreneau().getHeureFin(),
+                                poste -> poste.getCreneau().getHeureDebut()))
+                .filter((precedent, suivant) -> !precedent.getStand().equals(suivant.getStand())
+                        && emplacementsEloignes(precedent.getStand(), suivant.getStand()))
                 .penalize(HardMediumSoftScore.ONE_MEDIUM)
                 .asConstraint("eviterChangementEmplacementEloigne");
-    }
-
-    /** True when two slots are back-to-back on the same day: one ends exactly when the other starts. */
-    private boolean creneauxConsecutifs(Creneau a, Creneau b) {
-        if (a == null || b == null || a.getJour() != b.getJour()
-                || a.getHeureDebut() == null || a.getHeureFin() == null
-                || b.getHeureDebut() == null || b.getHeureFin() == null) {
-            return false;
-        }
-        Creneau tot = a.getHeureDebut().isBefore(b.getHeureDebut()) ? a : b;
-        Creneau suivant = tot == a ? b : a;
-        return tot.getHeureFin().equals(suivant.getHeureDebut());
     }
 
     private boolean emplacementsEloignes(Stand standA, Stand standB) {

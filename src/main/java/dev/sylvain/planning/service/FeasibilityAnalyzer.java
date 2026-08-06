@@ -17,16 +17,20 @@ import jakarta.enterprise.context.ApplicationScoped;
  * or is the problem structurally short of animateurs regardless of how long
  * the solver runs?
  *
- * <p>Every stand is generated on every créneau (see
- * {@link PlanningService#construireDepuisReferenceData()}), so the demand
- * (sum of {@code effectifMax}) is identical for each créneau; only the
- * available/competent headcount varies, mainly through
- * {@link Animateur#estIndisponibleLe(LocalDate)}. For each créneau we count
- * animateurs who are both present that day and competent for at least one
- * stand — an optimistic upper bound on how many seats that créneau could
- * fill, since it ignores which specific stand each animateur would need to
- * cover. The reported shortfall is therefore a floor: the real gap can only
- * be equal or worse.
+ * <p>The demand of a créneau is counted exactly as
+ * {@link PlanningService#construirePostes(List, List)} generates seats:
+ * {@code max(1, effectifMin)} per stand actually open on that créneau (see
+ * {@link Creneau#estStandOuvert(String)}). {@code effectifMax} is the upper
+ * capacity a stand <em>could</em> accept, not the number of seats that must be
+ * staffed, and closed stands generate no seat at all — counting either of them
+ * as demand overstates it and reports a shortfall on plannings the solver fills
+ * without trouble.
+ *
+ * <p>Against that demand we count, for each créneau, the animateurs who are
+ * both present that day and competent for at least one stand — an optimistic
+ * upper bound on how many seats that créneau could fill, since it ignores which
+ * specific stand each animateur would need to cover. The reported shortfall is
+ * therefore a floor: the real gap can only be equal or worse.
  */
 @ApplicationScoped
 public class FeasibilityAnalyzer {
@@ -36,10 +40,6 @@ public class FeasibilityAnalyzer {
         List<Stand> standsSurs = stands == null ? List.of() : stands;
         List<Creneau> creneauxSurs = creneaux == null ? List.of() : creneaux;
 
-        int demandeParCreneau = standsSurs.stream()
-                .mapToInt(stand -> Math.max(1, stand.getEffectifMax()))
-                .sum();
-
         Set<String> animateursCompetents = animateursSurs.stream()
                 .filter(animateur -> standsSurs.stream().anyMatch(animateur::possedeCompetencePour))
                 .map(Animateur::getId)
@@ -47,11 +47,15 @@ public class FeasibilityAnalyzer {
 
         CreneauManque pire = null;
         for (Creneau creneau : creneauxSurs) {
+            int demande = standsSurs.stream()
+                    .filter(stand -> creneau.estStandOuvert(stand.getId()))
+                    .mapToInt(stand -> Math.max(1, stand.getEffectifMin()))
+                    .sum();
             long capacite = animateursSurs.stream()
                     .filter(animateur -> animateursCompetents.contains(animateur.getId()))
                     .filter(animateur -> !animateur.estIndisponibleLe(creneau.getDate()))
                     .count();
-            int manque = (int) Math.max(0, demandeParCreneau - capacite);
+            int manque = (int) Math.max(0, demande - capacite);
             if (pire == null || manque > pire.manque()) {
                 pire = new CreneauManque(creneau.getId(), creneau.getDate(), creneau.getHeureDebut(),
                         creneau.getHeureFin(), manque);

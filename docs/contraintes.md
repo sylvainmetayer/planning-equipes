@@ -76,7 +76,15 @@ contraintes sont actives par défaut.
 - Solveur : l'état désactivé est injecté comme fait de planification
   `ConstraintToggle` sur `PlanningFestival` (voir `PlanningService.prepareProblem`),
   et chaque contrainte le consulte via `ConstraintToggleSupport.actif(stream, "nom")`,
-  appelé juste après le `forEach`/`forEachUniquePair` initial.
+  appelé juste après le `forEach` initial (sur le flux le plus étroit possible :
+  une contrainte pilotée par `ContrainteAdHoc` y branche le toggle sur les
+  quelques faits ad hoc, pas sur les milliers de postes).
+- `ConstraintToggleTest` couvre le mécanisme lui-même, une contrainte
+  représentative par famille : le même jeu de données doit être pénalisé sans
+  `ConstraintToggle` et valoir exactement zéro avec. **Une contrainte oubliée
+  par `ConstraintToggleSupport.actif` affiche un interrupteur sans effet dans
+  l'IHM** — c'est exactement ce qui était arrivé à
+  `eviterChangementEmplacementEloigne`.
 
 ## Ajouter une contrainte
 
@@ -88,7 +96,8 @@ contraintes sont actives par défaut.
 2. L'enregistrer dans le tableau retourné par
    `PlanningConstraintProvider.defineConstraints`.
 3. Ajouter sa description métier dans `ConstraintCatalog` (niveau + catégorie +
-   libellé) — c'est ce qui alimente l'IHM.
+   libellé) — c'est ce qui alimente l'IHM. `ConstraintCatalogTest` échoue si le
+   catalogue et le provider divergent, dans un sens comme dans l'autre.
 4. Écrire les tests :
    - un test unitaire isolé dans la classe `*ConstraintsTest` de la famille
      (via le `ConstraintVerifier`), avec au moins un cas pénalisé et un cas
@@ -99,3 +108,22 @@ contraintes sont actives par défaut.
      nominal) passe toujours.
 
    **Une contrainte n'est pas terminée tant que ces tests ne passent pas.**
+
+### Écrire une contrainte qui ne coûte pas cher
+
+Le coût d'une contrainte se mesure au nombre de tuples que son stream construit
+et maintient à chaque mouvement du solveur, pas à sa longueur. Deux réflexes :
+
+- **Restreindre avant de joindre.** Un `filter` placé après un
+  `forEachUniquePair` a déjà payé la construction de toutes les paires. Filtrer
+  d'abord (`forEach(...).filter(...).join(...)`) réduit la combinatoire à la
+  source.
+- **Préférer `Joiners.equal` / `lessThan` / `overlapping` à
+  `Joiners.filtering`.** Un joiner indexé est un accès par hachage ; un
+  `filtering` est un prédicat évalué sur chaque combinaison. `Joiners.lessThan`
+  sur le `@PlanningId` reproduit exactement la sémantique « chaque paire une
+  seule fois » de `forEachUniquePair` tout en autorisant un flux d'entrée déjà
+  filtré.
+
+Chiffres mesurés et méthode de vérification dans
+[`developpement.md`](developpement.md) (section « Réglage du solveur »).

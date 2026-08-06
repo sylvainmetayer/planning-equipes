@@ -123,10 +123,18 @@ public class PosteAffectation {
     private Stand stand;      // fixe, connu à l'avance
     private Creneau creneau;  // fixe, connu à l'avance
 
-    @PlanningVariable(valueRangeProviderRefs = "animateurRange", nullable = true)
+    @PlanningVariable(valueRangeProviderRefs = "animateurRange", allowsUnassigned = true)
     private Animateur animateur;
 }
 ```
+
+`allowsUnassigned = true` (et non l'attribut `nullable`, déprécié et voué à
+disparaître côté Timefold) : une place peut rester vide pendant la recherche et
+dans un planning infaisable ; c'est `posteDoitEtrePourvu` qui en fait une
+exigence dure. Conséquence pratique côté contraintes : `forEach(...)` **exclut**
+les postes non pourvus, seul `forEachIncludingUnassigned(...)` les voit — d'où
+son usage dans `posteDoitEtrePourvu`, et l'inutilité d'un test
+`animateur != null` après un `forEach`.
 
 ## Solution globale
 

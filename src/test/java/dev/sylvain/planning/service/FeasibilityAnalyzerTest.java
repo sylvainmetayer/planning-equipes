@@ -88,6 +88,36 @@ class FeasibilityAnalyzerTest {
     }
 
     @Test
+    void standFermeSurUnCreneauNeComptePasDansLaDemande() {
+        // Le stand exige 3 places mais n'est pas ouvert sur ce créneau : aucun
+        // poste n'est généré, donc aucune demande (cf. PlanningService.construirePostes).
+        Stand stand = stand("stand-1", 3, TypologieJeu.STRATEGIE);
+        Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
+        creneau.setStandsOuvertsIds(Set.of("un-autre-stand"));
+
+        FeasibilityReport report = analyzer.analyser(List.of(animateur("a1", TypologieJeu.STRATEGIE)),
+                List.of(stand), List.of(creneau));
+
+        assertThat(report.feasible()).isTrue();
+        assertThat(report.manqueAnimateurs()).isZero();
+    }
+
+    @Test
+    void laDemandeSuitEffectifMinPasEffectifMax() {
+        // effectifMin = 2 (deux places générées), effectifMax = 4 : deux
+        // animateurs suffisent. Compter effectifMax annoncerait un manque de 2.
+        Stand stand = new Stand("stand-1", "stand-1", Set.of(TypologieJeu.STRATEGIE), 2, 4, false);
+        Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
+
+        FeasibilityReport report = analyzer.analyser(
+                List.of(animateur("a1", TypologieJeu.STRATEGIE), animateur("a2", TypologieJeu.STRATEGIE)),
+                List.of(stand), List.of(creneau));
+
+        assertThat(report.feasible()).isTrue();
+        assertThat(report.manqueAnimateurs()).isZero();
+    }
+
+    @Test
     void emptyInputsAreFeasibleByDefault() {
         FeasibilityReport report = analyzer.analyser(List.of(), List.of(), List.of());
 
@@ -95,8 +125,14 @@ class FeasibilityAnalyzerTest {
         assertThat(report.manqueAnimateurs()).isZero();
     }
 
-    private static Stand stand(String id, int effectifMax, TypologieJeu typologie) {
-        return new Stand(id, id, Set.of(typologie), 1, effectifMax, false);
+    /**
+     * {@code effectifMin} drives the demand: it is the number of seats
+     * {@code PlanningService.construirePostes} actually generates. {@code
+     * effectifMax} is deliberately set higher so a regression back to counting
+     * it would change the expected shortfalls.
+     */
+    private static Stand stand(String id, int effectifMin, TypologieJeu typologie) {
+        return new Stand(id, id, Set.of(typologie), effectifMin, effectifMin + 2, false);
     }
 
     private static Creneau creneau(long id, LocalDate date) {

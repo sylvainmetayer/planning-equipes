@@ -13,7 +13,11 @@ public class PosteAffectation {
     private Stand stand;
     private Creneau creneau;
 
-    @PlanningVariable(valueRangeProviderRefs = "animateurRange", nullable = true)
+    /**
+     * A seat may stay empty during the search (and in an infeasible plan);
+     * {@code posteDoitEtrePourvu} is what makes filling it a hard requirement.
+     */
+    @PlanningVariable(valueRangeProviderRefs = "animateurRange", allowsUnassigned = true)
     private Animateur animateur;
 
     public PosteAffectation() {

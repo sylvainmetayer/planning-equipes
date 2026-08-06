@@ -24,24 +24,76 @@ public final class AdHocConstraints {
         };
     }
 
+    /**
+     * Driven from the (few) ad hoc facts rather than from the (thousands of)
+     * postes: with no INDISPONIBILITE_FORCEE recorded — the usual case — the
+     * stream is empty and neither the toggle lookup nor the perimeter predicate
+     * is ever evaluated.
+     */
     private Constraint indisponibiliteForcee(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class), "indisponibiliteForcee")
-                .filter(poste -> poste.getAnimateur() != null)
-                .join(ContrainteAdHoc.class, Joiners.filtering(this::violeIndisponibiliteForcee))
+        return ConstraintToggleSupport.actif(constraintFactory.forEach(ContrainteAdHoc.class), "indisponibiliteForcee")
+                .filter(contrainte -> contrainte.getType() == TypeContrainteAdHoc.INDISPONIBILITE_FORCEE)
+                .join(PosteAffectation.class, Joiners.filtering(this::violeIndisponibiliteForcee))
                 .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint("indisponibiliteForcee");
     }
 
+    /**
+     * Also driven from the ad hoc facts, and joined on the two incompatible
+     * animateur ids with indexed joiners.
+     *
+     * <p>The previous formulation paired every poste with every other poste of
+     * the same créneau before testing them against the ad hoc facts. On
+     * {@code scenario-complet.yaml} (2088 postes over 36 créneaux) that is
+     * 59 508 pair tuples built and incrementally maintained on every move —
+     * even though the reference data normally holds no INCOMPATIBILITE fact at
+     * all. Starting from the fact and indexing on {@code animateur.id} +
+     * {@code creneau.id} makes the tuple count proportional to the number of
+     * recorded incompatibilities instead, and exactly zero when there is
+     * none.</p>
+     *
+     * <p>One match per (poste of the first animateur, poste of the second
+     * animateur on the same créneau) — the same count the unordered unique-pair
+     * formulation produced, since the pair is generated once in the
+     * (first, second) order only.</p>
+     */
     private Constraint incompatibiliteAdHoc(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(constraintFactory.forEachUniquePair(
-                PosteAffectation.class,
-                Joiners.equal(PosteAffectation::getCreneau)), "incompatibiliteAdHoc")
-                .filter((posteA, posteB) -> posteA.getAnimateur() != null
-                        && posteB.getAnimateur() != null
-                        && !posteA.getAnimateur().equals(posteB.getAnimateur()))
-                .join(ContrainteAdHoc.class, Joiners.filtering(this::violeIncompatibilite))
+        return ConstraintToggleSupport.actif(constraintFactory.forEach(ContrainteAdHoc.class), "incompatibiliteAdHoc")
+                .filter(AdHocConstraints::porteSurDeuxAnimateursIncompatibles)
+                .join(PosteAffectation.class,
+                        Joiners.equal(contrainte -> idAnimateurConcerne(contrainte, 0),
+                                poste -> poste.getAnimateur().getId()))
+                .join(PosteAffectation.class,
+                        Joiners.equal((contrainte, postePremier) -> idAnimateurConcerne(contrainte, 1),
+                                poste -> poste.getAnimateur().getId()),
+                        Joiners.equal((contrainte, postePremier) -> postePremier.getCreneau(),
+                                PosteAffectation::getCreneau))
+                .filter((contrainte, postePremier, posteSecond) -> correspondAuPerimetre(contrainte, postePremier)
+                        && correspondAuPerimetre(contrainte, posteSecond))
                 .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint("incompatibiliteAdHoc");
+    }
+
+    /**
+     * True for an INCOMPATIBILITE naming two distinct, identifiable animateurs —
+     * the only shape the indexed join above can be evaluated on. A malformed
+     * fact (fewer than two animateurs, a null id, or the same animateur twice)
+     * is ignored rather than penalising an animateur against themselves.
+     */
+    private static boolean porteSurDeuxAnimateursIncompatibles(ContrainteAdHoc contrainte) {
+        if (contrainte.getType() != TypeContrainteAdHoc.INCOMPATIBILITE
+                || contrainte.getAnimateursConcernes() == null
+                || contrainte.getAnimateursConcernes().size() < 2) {
+            return false;
+        }
+        String premier = idAnimateurConcerne(contrainte, 0);
+        String second = idAnimateurConcerne(contrainte, 1);
+        return premier != null && second != null && !premier.equals(second);
+    }
+
+    private static String idAnimateurConcerne(ContrainteAdHoc contrainte, int index) {
+        Animateur animateur = contrainte.getAnimateursConcernes().get(index);
+        return animateur == null ? null : animateur.getId();
     }
 
     private Constraint affectationForcee(ConstraintFactory constraintFactory) {
@@ -52,32 +104,15 @@ public final class AdHocConstraints {
                 .asConstraint("affectationForcee");
     }
 
-    private boolean violeIndisponibiliteForcee(PosteAffectation poste, ContrainteAdHoc contrainte) {
-        return contrainte.getType() == TypeContrainteAdHoc.INDISPONIBILITE_FORCEE
-                && concerneAnimateur(contrainte, poste.getAnimateur())
+    private boolean violeIndisponibiliteForcee(ContrainteAdHoc contrainte, PosteAffectation poste) {
+        return concerneAnimateur(contrainte, poste.getAnimateur())
                 && correspondAuPerimetre(contrainte, poste);
-    }
-
-    private boolean violeIncompatibilite(PosteAffectation posteA, PosteAffectation posteB, ContrainteAdHoc contrainte) {
-        return contrainte.getType() == TypeContrainteAdHoc.INCOMPATIBILITE
-                && contrainte.getAnimateursConcernes() != null
-                && contrainte.getAnimateursConcernes().size() >= 2
-                && sontLesMemeAnimateurs(contrainte, posteA.getAnimateur(), posteB.getAnimateur())
-                && correspondAuPerimetre(contrainte, posteA)
-                && correspondAuPerimetre(contrainte, posteB);
     }
 
     private boolean satisfaitAffectationForcee(ContrainteAdHoc contrainte, PosteAffectation poste) {
         return poste.getAnimateur() != null
                 && concerneAnimateur(contrainte, poste.getAnimateur())
                 && correspondAuPerimetre(contrainte, poste);
-    }
-
-    private boolean sontLesMemeAnimateurs(ContrainteAdHoc contrainte, Animateur a, Animateur b) {
-        Animateur premier = contrainte.getAnimateursConcernes().get(0);
-        Animateur second = contrainte.getAnimateursConcernes().get(1);
-        return (correspondAnimateur(premier, a) && correspondAnimateur(second, b))
-                || (correspondAnimateur(premier, b) && correspondAnimateur(second, a));
     }
 
     private boolean concerneAnimateur(ContrainteAdHoc contrainte, Animateur animateur) {

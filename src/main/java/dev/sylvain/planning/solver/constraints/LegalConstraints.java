@@ -1,11 +1,12 @@
 package dev.sylvain.planning.solver.constraints;
 
+import java.time.LocalTime;
+
 import ai.timefold.solver.core.api.score.buildin.hardmediumsoft.HardMediumSoftScore;
 import ai.timefold.solver.core.api.score.stream.Constraint;
 import ai.timefold.solver.core.api.score.stream.ConstraintCollectors;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
 import ai.timefold.solver.core.api.score.stream.Joiners;
-import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PosteAffectation;
 
@@ -82,17 +83,30 @@ public final class LegalConstraints {
                 .asConstraint("dureeQuotidienneMaxMineur");
     }
 
+    /**
+     * A minor working a night slot must get at least ~12h of rest, so a night
+     * slot on day J forbids an early (before noon) slot on day J+1.
+     *
+     * <p>The night slot is selected first and the next day is reached through an
+     * indexed joiner, rather than pairing every poste an animateur holds and
+     * testing the pair. The previous formulation built ~13 500 pair tuples on
+     * {@code scenario-complet.yaml} (150 animateurs × ~14 postes each) and
+     * discarded virtually all of them; here the left side is restricted to the
+     * handful of night slots held by minors before any pairing happens. Each
+     * qualifying (night, next-morning) pair still yields exactly one match,
+     * since the day joiner only ever generates it in that order.</p>
+     */
     private Constraint reposQuotidienMineur(ConstraintFactory constraintFactory) {
-        // A minor working a night slot must get at least ~12h of rest, so a night
-        // slot on day J forbids an early (before noon) slot on day J+1.
-        return ConstraintToggleSupport.actif(constraintFactory.forEachUniquePair(
-                PosteAffectation.class,
-                Joiners.equal(PosteAffectation::getAnimateur)), "reposQuotidienMineur")
-                .filter((posteA, posteB) -> posteA.getAnimateur() != null
-                        && posteA.getCreneau() != null
-                        && posteB.getCreneau() != null
-                        && posteA.getAnimateur().estMineurLe(posteA.getCreneau().getDate())
-                        && reposInsuffisant(posteA.getCreneau(), posteB.getCreneau()))
+        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class), "reposQuotidienMineur")
+                .filter(poste -> poste.getCreneau() != null
+                        && poste.getCreneau().chevaucheNuit()
+                        && poste.getAnimateur().estMineurLe(poste.getCreneau().getDate()))
+                .join(PosteAffectation.class,
+                        Joiners.equal(PosteAffectation::getAnimateur),
+                        Joiners.equal(soir -> soir.getCreneau().getJour() + 1,
+                                lendemain -> lendemain.getCreneau().getJour()))
+                .filter((soir, lendemain) -> lendemain.getCreneau().getHeureDebut() != null
+                        && lendemain.getCreneau().getHeureDebut().isBefore(LocalTime.NOON))
                 .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint("reposQuotidienMineur");
     }
@@ -110,14 +124,5 @@ public final class LegalConstraints {
                         (animateur, semaine, dureeTotale, parametres) ->
                                 dureeTotale - parametres.getDureeHebdomadaireMaxMinutes())
                 .asConstraint("dureeHebdomadaireMax");
-    }
-
-    private boolean reposInsuffisant(Creneau a, Creneau b) {
-        Creneau soir = a.getJour() <= b.getJour() ? a : b;
-        Creneau lendemain = a.getJour() <= b.getJour() ? b : a;
-        return lendemain.getJour() == soir.getJour() + 1
-                && soir.chevaucheNuit()
-                && lendemain.getHeureDebut() != null
-                && lendemain.getHeureDebut().isBefore(java.time.LocalTime.NOON);
     }
 }
