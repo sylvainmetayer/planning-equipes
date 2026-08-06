@@ -39,9 +39,13 @@ public final class ConstraintCatalog {
                             + "créneau. Règle de sécurité posée par l'organisateur, pas une obligation du Code du "
                             + "travail — maintenue en contrainte dure par choix."),
             new ConstraintDefinition("travailDeNuitInterditPourMineur", Niveau.HARD, "Légal (mineurs)",
-                    "Un mineur ne peut pas être affecté sur un créneau qui empiète sur la nuit."),
+                    "Un mineur ne peut pas être affecté sur un créneau qui empiète sur sa nuit légale : "
+                            + "20 h-6 h avant 16 ans, 22 h-6 h de 16 à 18 ans "
+                            + "(Code du travail art. L3163-1)."),
             new ConstraintDefinition("dureeQuotidienneMaxMineur", Niveau.HARD, "Légal (mineurs)",
-                    "Un mineur ne peut pas dépasser 8 heures de présence sur une même journée."),
+                    "Un mineur ne peut pas dépasser 8 heures de travail effectif sur une même journée "
+                            + "(Code du travail art. L3162-1), ramenées à 7 heures avant 16 ans "
+                            + "(art. D4153-3)."),
             new ConstraintDefinition("reposQuotidienMineur", Niveau.HARD, "Légal (mineurs)",
                     "Après un créneau de nuit, un mineur ne peut pas reprendre avant midi le lendemain (repos d'environ 12 h)."),
 

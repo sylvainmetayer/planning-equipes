@@ -1,5 +1,7 @@
 package dev.sylvain.planning.solver.constraints;
 
+import java.time.LocalTime;
+
 import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.domain.Animateur;
@@ -60,6 +62,35 @@ class LegalConstraintsTest extends ConstraintTestBase {
                 .penalizesBy(0);
     }
 
+    // --- Art. L3163-1 : fenêtre de nuit selon la tranche d'âge -------------
+
+    @Test
+    void mineurDeMoinsDe16AnsEstPenaliseDes20Heures() {
+        // 20 h-22 h : nuit pour un moins de 16 ans (art. L3163-1).
+        Creneau soiree = creneau("J1-SOIREE", 1, D1, LocalTime.of(20, 0), LocalTime.of(22, 0));
+        verify("travailDeNuitInterditPourMineur")
+                .given(poste(standStrat, soiree, mineurMoinsDe16Debutant("M15")))
+                .penalizesBy(1);
+    }
+
+    @Test
+    void mineurDe16A18AnsNEstPasPenaliseEntre20HEt22H() {
+        // Même créneau, 16-18 ans : la nuit ne commence qu'à 22 h (art. L3163-1).
+        // Avant le correctif, la fenêtre 20 h était appliquée à tous les mineurs.
+        Creneau soiree = creneau("J1-SOIREE", 1, D1, LocalTime.of(20, 0), LocalTime.of(22, 0));
+        verify("travailDeNuitInterditPourMineur")
+                .given(poste(standStrat, soiree, mineurDebutant("M17")))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void mineurDe16A18AnsEstPenaliseApres22Heures() {
+        Creneau tardive = creneau("J1-TARDIVE", 1, D1, LocalTime.of(21, 0), LocalTime.of(23, 0));
+        verify("travailDeNuitInterditPourMineur")
+                .given(poste(standStrat, tardive, mineurDebutant("M17")))
+                .penalizesBy(1);
+    }
+
     @Test
     void mineurDepassantHuitHeuresParJourEstPenalise() {
         // Un créneau de 9h (540 min) dépasse de 60 min le plafond de 8h (480 min).
@@ -73,6 +104,24 @@ class LegalConstraintsTest extends ConstraintTestBase {
     void mineurSousHuitHeuresParJourNEstPasPenalise() {
         verify("dureeQuotidienneMaxMineur")
                 .given(poste(standStrat, creneauMatin, mineurDebutant("M1")))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void mineurDeMoinsDe16AnsDepassantSeptHeuresParJourEstPenalise() {
+        // Art. D4153-3 : 7 h/jour sous 16 ans. Un créneau de 9 h dépasse de 120 min,
+        // là où un 16-18 ans ne dépasserait que de 60 min (plafond de 8 h, L3162-1).
+        Creneau journee = journeeLongue("J1-LONG", 1, D1);
+        verify("dureeQuotidienneMaxMineur")
+                .given(poste(standStrat, journee, mineurMoinsDe16Debutant("M15")))
+                .penalizesBy(120);
+    }
+
+    @Test
+    void mineurDeMoinsDe16AnsSousSeptHeuresParJourNEstPasPenalise() {
+        Creneau sixHeures = creneau("J1-6H", 1, D1, LocalTime.of(9, 0), LocalTime.of(15, 0));
+        verify("dureeQuotidienneMaxMineur")
+                .given(poste(standStrat, sixHeures, mineurMoinsDe16Debutant("M15")))
                 .penalizesBy(0);
     }
 

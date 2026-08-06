@@ -40,10 +40,40 @@ public class Animateur {
                 && joursIndisponibles.contains(dateReference);
     }
 
+    /**
+     * True when the animateur is under 18 on the given date ("jeune
+     * travailleur" in the Code du travail). Always derived from
+     * {@link #dateNaissance}, never stored.
+     */
     public boolean estMineurLe(LocalDate dateReference) {
         return dateReference != null
                 && dateNaissance != null
                 && Period.between(dateNaissance, dateReference).getYears() < 18;
+    }
+
+    /**
+     * True when the animateur is under 16 on the given date.
+     *
+     * <p>French labour law knows <b>three</b> regimes, not two: under 16,
+     * 16-to-18, and adult. Treating a 15-year-old like a 17-year-old grants
+     * them 2 h less daily rest (12 h instead of 14 h, art. L3164-1), 1 h more
+     * daily work (8 h instead of 7 h, art. D4153-3) and 2 h more of legal
+     * evening availability (night starts at 22:00 instead of 20:00, art.
+     * L3163-1).</p>
+     *
+     * <p>Two further requirements for under-16s are <b>outside what the solver
+     * can check</b> and stay a manual, documented responsibility: the labour
+     * inspectorate authorisation required to employ them during school
+     * holidays (art. L4153-3, D4153-2) and the "continuous rest of at least
+     * half the total holiday period" condition of art. D4153-2.</p>
+     *
+     * <p>Like {@link #estMineurLe}, always derived from
+     * {@link #dateNaissance}, never stored.</p>
+     */
+    public boolean estMoinsDe16AnsLe(LocalDate dateReference) {
+        return dateReference != null
+                && dateNaissance != null
+                && Period.between(dateNaissance, dateReference).getYears() < 16;
     }
 
     public boolean estMajeurLe(LocalDate dateReference) {

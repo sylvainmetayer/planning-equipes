@@ -32,10 +32,36 @@ jamais d'un booléen stocké.
 | Contrainte | Article | Description |
 | --- | --- | --- |
 | `standReserveAuxMajeurs` | — (drapeau métier) | Aucun mineur sur un stand réservé aux majeurs |
-| `travailDeNuitInterditPourMineur` | L3163-1 | Pas de créneau empiétant sur la nuit pour un mineur |
-| `dureeQuotidienneMaxMineur` | L3162-1 | Maximum 8 h de travail effectif sur une même journée pour un mineur |
+| `travailDeNuitInterditPourMineur` | L3163-1 | Pas de créneau empiétant sur la nuit légale du mineur : **20 h-6 h avant 16 ans**, **22 h-6 h de 16 à 18 ans** |
+| `dureeQuotidienneMaxMineur` | L3162-1, D4153-3 | Maximum **8 h** de travail effectif sur une même journée, **7 h avant 16 ans** |
 | `dureeHebdomadaireMaxMineur` | L3162-1, D4153-3 | Maximum 35 h de travail effectif par semaine pour un mineur |
 | `reposQuotidienMineur` | — | Après un créneau de nuit, pas de reprise avant midi le lendemain (~12 h de repos) |
+
+#### Trois régimes d'âge, pas deux
+
+Le droit distingue **moins de 16 ans**, **16 à 18 ans** et **majeur**. Les deux
+premiers sont dérivés de `dateNaissance` à la date du créneau
+(`Animateur.estMoinsDe16AnsLe(LocalDate)` / `estMineurLe(LocalDate)`), **jamais
+stockés**.
+
+| Sujet | Moins de 16 ans | 16 à 18 ans | Majeur |
+| --- | --- | --- | --- |
+| Travail de nuit | 20 h-6 h (L3163-1) | 22 h-6 h (L3163-1) | non encadré par l'outil (voir hors périmètre) |
+| Durée quotidienne | 7 h (D4153-3) | 8 h (L3162-1) | 10 h (L3121-18) |
+| Durée hebdomadaire | 35 h (L3162-1, D4153-3) | 35 h (L3162-1) | 48 h (L3121-20) |
+
+Le plafond de 7 h/jour est appliqué à **tous** les moins de 16 ans, et pas
+seulement pendant les vacances scolaires : l'emploi d'un moins de 16 ans est de
+toute façon interdit hors vacances scolaires (art. L4153-1), donc le régime
+« vacances scolaires » est le seul qui puisse légitimement se présenter ici.
+L'application ne connaît aucun calendrier scolaire.
+
+**Deux obligations relatives aux moins de 16 ans restent hors du solveur** et
+doivent être vérifiées manuellement avant d'employer un animateur de cette
+tranche : l'**autorisation de l'inspection du travail** (art. L4153-3,
+D4153-2) et la règle du **repos continu au moins égal à la moitié de la durée
+des vacances** (art. D4153-2). Ni l'une ni l'autre n'est modélisable à partir
+des données dont dispose l'application.
 
 `reserveMajeurs` est un **drapeau métier** : il ne présume pas d'une
 interdiction légale. Si le stand relève des travaux réglementés interdits aux

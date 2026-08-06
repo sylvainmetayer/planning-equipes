@@ -49,7 +49,10 @@ abstract class ConstraintTestBase {
     protected static final LocalDate D4 = LocalDate.of(2026, 7, 11);
     protected static final LocalDate D5 = LocalDate.of(2026, 7, 12);
     private static final LocalDate NAISSANCE_MAJEUR = LocalDate.of(2000, 1, 1);
-    private static final LocalDate NAISSANCE_MINEUR = LocalDate.of(2012, 1, 1);
+    /** 17 years old at D1: "jeune travailleur" of the 16-to-18 bracket. */
+    private static final LocalDate NAISSANCE_MINEUR = LocalDate.of(2009, 1, 1);
+    /** 14 years old at D1: the stricter under-16 bracket (art. L3163-1, L3164-1, D4153-3). */
+    private static final LocalDate NAISSANCE_MOINS_DE_16_ANS = LocalDate.of(2012, 1, 1);
 
     private final AtomicInteger posteSequence = new AtomicInteger();
 
@@ -147,8 +150,14 @@ abstract class ConstraintTestBase {
         return animateur(id, NAISSANCE_MAJEUR, Map.of(TypologieJeu.STRATEGIE, NiveauCompetence.AUTONOME));
     }
 
+    /** Minor of the 16-to-18 bracket (8 h/day, night from 22:00, 12 h daily rest). */
     protected static Animateur mineurDebutant(String id) {
         return animateur(id, NAISSANCE_MINEUR, Map.of(TypologieJeu.STRATEGIE, NiveauCompetence.DEBUTANT));
+    }
+
+    /** Minor under 16 (7 h/day, night from 20:00, 14 h daily rest). */
+    protected static Animateur mineurMoinsDe16Debutant(String id) {
+        return animateur(id, NAISSANCE_MOINS_DE_16_ANS, Map.of(TypologieJeu.STRATEGIE, NiveauCompetence.DEBUTANT));
     }
 
     // --- Poste factory -----------------------------------------------------

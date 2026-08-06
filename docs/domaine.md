@@ -31,7 +31,8 @@ public class Animateur {
     private String id;
     private String prenom;
     private String nom;
-    private LocalDate dateNaissance;            // → mineur/majeur et tranche d'âge calculés
+    private LocalDate dateNaissance;            // → régime applicable calculé à la date du créneau :
+                                                //   moins de 16 ans / 16-18 ans / majeur — jamais stocké
     private boolean manager;                    // gère d'autres animateurs ; tous les animateurs sont payés
     private Map<TypologieJeu, NiveauCompetence> competences;
     private Set<LocalDate> joursIndisponibles;  // opt-out : dispo par défaut, on ne liste que les jours OFF
@@ -252,6 +253,7 @@ au démarrage. Détails et exemple dans [`contraintes.md`](contraintes.md#pondé
 | Disponibilité (opt-out) | `poste.creneau.date` ne doit pas figurer dans `animateur.joursIndisponibles` — cf. `Animateur.estIndisponibleLe(LocalDate)` |
 | Effectif min/max | Comptage des `poste.animateur != null` groupés par `stand` + `creneau` (pas de classe de contrainte dédiée) |
 | Mineur / majeur | Toujours dérivé de `dateNaissance` à la date du créneau via `estMineurLe(LocalDate)` / `estMajeurLe(LocalDate)` — **jamais un booléen stocké**, pour éviter toute désynchronisation |
+| Moins de 16 ans / 16-18 ans | Même principe, via `estMoinsDe16AnsLe(LocalDate)` : trois régimes légaux distincts (nuit, durée quotidienne, repos quotidien) — voir [`contraintes.md`](contraintes.md) |
 | Repos quotidien, hebdo, encadrement | Regroupement des `PosteAffectation` d'un même animateur, triés par `creneau.jour` / `heureDebut` |
 | Stand réservé aux majeurs | `poste.stand.reserveMajeurs` vs âge de `poste.animateur` à la date du créneau |
 | Éloignement entre créneaux consécutifs | `Emplacement.distanceMetresVers(...)` (haversine) entre les emplacements des deux stands d'un même animateur sur deux créneaux consécutifs (même jour, l'un se terminant quand l'autre commence) |

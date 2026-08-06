@@ -1,5 +1,6 @@
 package dev.sylvain.planning.solver.constraints;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
 
 import ai.timefold.solver.core.api.score.buildin.hardmediumsoft.HardMediumSoftScore;
@@ -7,6 +8,8 @@ import ai.timefold.solver.core.api.score.stream.Constraint;
 import ai.timefold.solver.core.api.score.stream.ConstraintCollectors;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
 import ai.timefold.solver.core.api.score.stream.Joiners;
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PosteAffectation;
 
@@ -44,7 +47,11 @@ import dev.sylvain.planning.domain.PosteAffectation;
  */
 public final class LegalConstraints {
 
+    /** Art. L3162-1: 8 h/day for a young worker aged 16 to 18. */
     private static final int DUREE_QUOTIDIENNE_MAX_MINEUR_MINUTES = 8 * 60;
+
+    /** Art. D4153-3: 7 h/day for a minor aged 14 to under 16 (school holidays). */
+    private static final int DUREE_QUOTIDIENNE_MAX_MOINS_DE_16_ANS_MINUTES = 7 * 60;
 
     public Constraint[] define(ConstraintFactory constraintFactory) {
         return new Constraint[] {
@@ -103,17 +110,52 @@ public final class LegalConstraints {
                 .asConstraint("mineurNecessiteEncadrementMajeur");
     }
 
+    /**
+     * No minor works during their legal night window.
+     *
+     * <p>Code du travail art. <b>L3163-1</b>: night work is <i>« tout travail
+     * entre 22 heures et 6 heures »</i> for young workers aged 16 to 18, and
+     * <i>« tout travail entre 20 heures et 6 heures »</i> for those under 16.
+     * The window is therefore picked per animateur and per créneau date, from
+     * {@code dateNaissance} — see {@code Creneau.chevaucheNuit(LocalTime)}.</p>
+     *
+     * <p>Until this fix the 20:00 window was applied to every minor, which is
+     * more protective than the law but excluded 16-to-18-year-olds from the
+     * 20:00-22:00 band the law allows them, needlessly shrinking the pool on a
+     * festival evening.</p>
+     */
     private Constraint travailDeNuitInterditPourMineur(ConstraintFactory constraintFactory) {
         return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
                 "travailDeNuitInterditPourMineur")
                 .filter(poste -> poste.getAnimateur() != null
                         && poste.getCreneau() != null
-                        && poste.getCreneau().chevaucheNuit()
-                        && poste.getAnimateur().estMineurLe(poste.getCreneau().getDate()))
+                        && poste.getAnimateur().estMineurLe(poste.getCreneau().getDate())
+                        && poste.getCreneau().chevaucheNuit(
+                                debutNuit(poste.getAnimateur(), poste.getCreneau().getDate())))
                 .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint("travailDeNuitInterditPourMineur");
     }
 
+    /**
+     * Daily working-time cap for minors: 8 h, lowered to 7 h under 16.
+     *
+     * <p>Code du travail art. <b>L3162-1</b>: <i>« Les jeunes travailleurs ne
+     * peuvent être employés à un travail effectif excédant huit heures par
+     * jour […] »</i>. Art. <b>D4153-3</b>, for a minor aged 14 to under 16
+     * employed during school holidays: <i>« La durée du travail du mineur ne
+     * peut excéder trente-cinq heures par semaine ni sept heures par
+     * jour. »</i></p>
+     *
+     * <p>The 7 h cap is applied to every under-16 rather than only during
+     * school holidays: employing an under-16 is forbidden outside school
+     * holidays anyway (art. L4153-1), so the holiday regime is the only one
+     * that can legitimately occur here, and applying it unconditionally is the
+     * protective default. The application has no school-calendar data.</p>
+     *
+     * <p>Note that {@code Creneau.getDureeMinutes()} measures amplitude, which
+     * equals travail effectif only because no break is modelled inside a
+     * créneau — see {@code docs/domaine.md}.</p>
+     */
     private Constraint dureeQuotidienneMaxMineur(ConstraintFactory constraintFactory) {
         return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
                 "dureeQuotidienneMaxMineur")
@@ -121,12 +163,26 @@ public final class LegalConstraints {
                         && poste.getCreneau() != null
                         && poste.getAnimateur().estMineurLe(poste.getCreneau().getDate()))
                 .groupBy(PosteAffectation::getAnimateur,
-                        poste -> poste.getCreneau().getJour(),
+                        poste -> poste.getCreneau().getDate(),
                         ConstraintCollectors.sum(poste -> poste.getCreneau().getDureeMinutes()))
-                .filter((animateur, jour, dureeTotale) -> dureeTotale > DUREE_QUOTIDIENNE_MAX_MINEUR_MINUTES)
+                .filter((animateur, date, dureeTotale) -> dureeTotale > plafondQuotidienMineur(animateur, date))
                 .penalize(HardMediumSoftScore.ONE_HARD,
-                        (animateur, jour, dureeTotale) -> dureeTotale - DUREE_QUOTIDIENNE_MAX_MINEUR_MINUTES)
+                        (animateur, date, dureeTotale) -> dureeTotale - plafondQuotidienMineur(animateur, date))
                 .asConstraint("dureeQuotidienneMaxMineur");
+    }
+
+    /** Night window start applicable to this minor on this date (art. L3163-1). */
+    private static LocalTime debutNuit(Animateur animateur, LocalDate date) {
+        return animateur.estMoinsDe16AnsLe(date)
+                ? Creneau.DEBUT_NUIT_MOINS_DE_16_ANS
+                : Creneau.DEBUT_NUIT_16_A_18_ANS;
+    }
+
+    /** Daily working-time cap applicable to this minor on this date (art. L3162-1 / D4153-3). */
+    private static int plafondQuotidienMineur(Animateur animateur, LocalDate date) {
+        return animateur.estMoinsDe16AnsLe(date)
+                ? DUREE_QUOTIDIENNE_MAX_MOINS_DE_16_ANS_MINUTES
+                : DUREE_QUOTIDIENNE_MAX_MINEUR_MINUTES;
     }
 
     /**
