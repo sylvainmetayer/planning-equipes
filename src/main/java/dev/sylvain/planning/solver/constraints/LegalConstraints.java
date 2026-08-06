@@ -26,9 +26,7 @@ import dev.sylvain.planning.domain.PosteAffectation;
  * valid plan.
  *
  * <p>Every rule here is anchored on a specific article of the French
- * <b>Code du travail</b> — each method's javadoc cites its own. The previously
- * documented source ("cahier des charges 4.1 and 4.2") pointed at an empty
- * file and is no longer referenced. Summary of the applicable texts:</p>
+ * <b>Code du travail</b> — each method's javadoc cites its own.</p>
  *
  * <table>
  * <caption>Applicable articles</caption>

@@ -36,7 +36,7 @@ importées sont rattachées au groupe « Défaut ». Voir
 [`domaine.md`](domaine.md) pour la notion de groupe de créneaux.
 
 - `manager` : `true` / `false` (colonne facultative, vide = `false`) — anime et encadre d'autres
-  animateurs ; tous les animateurs sont payés, il n'existe plus de distinction bénévole/salarié
+  animateurs ; tous les animateurs sont payés.
 - `competences` : `STRATEGIE:REFERENT|ENFANT:AUTONOME`
   (typologies : `STRATEGIE, AMBIANCE, ENFANT, COOPERATIF, ADRESSE, ROLE, ENIGME` ;
   niveaux : `DEBUTANT, AUTONOME, REFERENT`)

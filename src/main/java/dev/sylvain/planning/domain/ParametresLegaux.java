@@ -9,8 +9,7 @@ package dev.sylvain.planning.domain;
 public class ParametresLegaux {
 
     /**
-     * Absolute weekly working-time cap for every animateur, all paid (no more
-     * bénévole/salarié distinction). Default: 48 h = 2880 min, the ceiling set
+     * Absolute weekly working-time cap for every animateur, all paid. Default: 48 h = 2880 min, the ceiling set
      * by both the Code du travail (art. L3121-20, durée maximale hebdomadaire
      * absolue) and the Convention collective nationale de l'Animation (ÉCLAT,
      * IDCC 1518, art. 5.2) — editable from the "Constraints" screen.

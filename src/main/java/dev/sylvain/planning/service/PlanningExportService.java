@@ -9,15 +9,14 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.List;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import org.openpdf.text.Anchor;
 import org.openpdf.text.Chunk;
 import org.openpdf.text.Document;
 import org.openpdf.text.Element;
@@ -38,6 +37,7 @@ import org.openpdf.text.pdf.PdfPTableEvent;
 import org.openpdf.text.pdf.PdfPageEventHelper;
 import org.openpdf.text.pdf.PdfTemplate;
 import org.openpdf.text.pdf.PdfWriter;
+
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
@@ -252,7 +252,7 @@ public class PlanningExportService {
         titleCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
         titleCell.setPaddingLeft(14f);
         Paragraph brandLabel = new Paragraph();
-        Chunk brandChunk = new Chunk("PLANNING BÉNÉVOLE", BRAND_LABEL_FONT);
+        Chunk brandChunk = new Chunk("PLANNING", BRAND_LABEL_FONT);
         brandChunk.setCharacterSpacing(1.4f);
         brandLabel.add(brandChunk);
         brandLabel.setSpacingAfter(3f);

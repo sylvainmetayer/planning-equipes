@@ -171,7 +171,7 @@ Le détail règle par règle est dans [`docs/contraintes.md`](docs/contraintes.m
   de 16 ans, 16-18 ans, majeur — est toujours recalculé à la date du créneau,
   jamais saisi), compétences par typologie de jeu avec niveau (débutant /
   autonome / référent), et jours d'indisponibilité (par défaut, un animateur est
-  disponible). Il n'existe pas de statut bénévole/salarié : **tous les
+  disponible). **tous les
   animateurs sont rémunérés** et relèvent du même cadre légal de temps de
   travail ;
 - les **stands** : typologies de jeux proposées, effectif minimum et maximum

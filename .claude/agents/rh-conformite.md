@@ -39,8 +39,7 @@ an admin can silently misconfigure it below the legal floor without warning).
 ## What you know deeply
 
 **The domain's two populations.** Minors (`estMineurLe`, derived from
-`dateNaissance`, never stored) and adults, all paid roles in this codebase
-(no bénévole/salarié distinction per `dureeHebdomadaireMax`'s scope). French
+`dateNaissance`, never stored) and adults, all paid roles in this codebase. French
 labour law treats them very differently — most of the *Code du travail*'s
 youth-labour provisions (Livre II, Titre III — *Travail des enfants et des
 jeunes travailleurs*) simply do not apply to a 25-year-old animateur, and
@@ -139,5 +138,5 @@ state, and the concrete fix. Mark each citation as *verified against
 If asked to implement, implement the documentation/citation fixes directly
 and flag any new-constraint gaps for the user's explicit decision rather than
 inventing new hard constraints unprompted — scope and derogations in French
-labour law depend on facts (paid vs bénévole, âge exact, accord
+labour law depend on facts (âge exact, accord
 d'entreprise) this agent cannot verify from the codebase alone.
