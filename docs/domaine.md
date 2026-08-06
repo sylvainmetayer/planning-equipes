@@ -193,6 +193,18 @@ seuil légal et qu'une vacation générée le dépasse malgré tout — dans ce 
 seulement, une pause interne est insérée. Avec les valeurs par défaut, ce cas
 ne se produit jamais.
 
+Un fichier scénario (`scenarios/*.yaml`) peut fixer ses propres
+`parametresLegaux:` et/ou `parametresDecoupage:` en tête de fichier, avec
+uniquement les champs à surcharger (les autres gardent leur valeur par défaut
+de la classe Java, jamais celle actuellement en base) — utile pour documenter
+par un commentaire YAML *pourquoi* un scénario a besoin d'un réglage non
+standard, et pour que `POST /api/reference-data/import-scenario` réapplique
+ce réglage à chaque import plutôt que de dépendre d'une valeur laissée en
+base par une session précédente. Absentes du fichier (cas de tous les autres
+scénarios), ces deux sections sont sans effet : `construireExemple` retombe
+sur les `ParametresLegaux` actuellement en base, et l'import laisse
+`ParametresDecoupage` tel quel.
+
 Deux contraintes dures dans `LegalConstraints` complètent le dispositif :
 `pauseMinimaleEntreVacations` (l'écart entre deux vacations d'un même
 animateur le même jour doit être suffisant) et

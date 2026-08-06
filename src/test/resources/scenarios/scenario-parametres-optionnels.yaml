@@ -1,0 +1,45 @@
+festival:
+  dateDebut: 2026-07-08
+
+# Fixture for PlanningServiceParametresScenarioTest: exercises the optional
+# parametresLegaux/parametresDecoupage sections a scenario can pin, with only
+# a subset of fields overridden — the rest must fall back to each class's own
+# defaults, not to whatever the (here DB-less) ReferenceDataService returns.
+parametresLegaux:
+  reposQuotidienMinimalMinutes: 500
+
+parametresDecoupage:
+  dureeVacationMinMinutes: 250
+  strategieCouverturePendantPause: RELEVE
+
+creneaux:
+  - id: J1-MATIN
+    jour: 1
+    date: 2026-07-08
+    heureDebut: "09:00"
+    heureFin: "13:00"
+
+stands:
+  - id: STAND-STRAT
+    nom: Stand stratégie
+    typologiesProposees:
+      - STRATEGIE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+
+animateurs:
+  - id: A1
+    prenom: Alice
+    nom: Referente
+    dateNaissance: 2002-07-19
+    manager: false
+    competences:
+      STRATEGIE: REFERENT
+    joursIndisponibles: []
+
+postes:
+  - id: P1
+    standId: STAND-STRAT
+    creneauId: J1-MATIN
+    animateurId: null

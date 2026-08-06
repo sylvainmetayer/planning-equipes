@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -36,6 +37,8 @@ import dev.sylvain.planning.domain.ConstraintToggle;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.NiveauCompetence;
+import dev.sylvain.planning.domain.ParametresDecoupage;
+import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -378,15 +381,7 @@ public class PlanningService {
 
     @SuppressWarnings("unchecked")
     private PlanningFestival chargerScenarioYaml(String scenarioPath) throws IOException {
-        LoaderOptions loaderOptions = new LoaderOptions();
-        loaderOptions.setCodePointLimit(Integer.MAX_VALUE);
-        Yaml yaml = new Yaml(new org.yaml.snakeyaml.constructor.SafeConstructor(loaderOptions));
-        InputStream inputStream = getClass().getClassLoader().getResourceAsStream(scenarioPath);
-        if (inputStream == null) {
-            throw new IOException("Fichier de scénario non trouvé: " + scenarioPath);
-        }
-        
-        Map<String, Object> scenarioData = yaml.load(inputStream);
+        Map<String, Object> scenarioData = lireDonneesScenario(scenarioPath);
 
         // Charger les creneaux : le fichier YAML porte un id texte historique
         // (utilisé seulement pour relier postes/creneaux entre eux ci-dessous),
@@ -502,8 +497,116 @@ public class PlanningService {
 
         PlanningFestival festival = new PlanningFestival(dateDebut, animateurs, postes,
                 referenceDataService.snapshotContraintes());
-        festival.setParametresLegaux(List.of(referenceDataService.getParametresLegaux()));
+        festival.setParametresLegaux(List.of(
+                parseParametresLegaux(scenarioData).orElseGet(referenceDataService::getParametresLegaux)));
         return festival;
+    }
+
+    /** Shared YAML loading for {@link #chargerScenarioYaml} and the optional-section accessors below. */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> lireDonneesScenario(String scenarioPath) throws IOException {
+        LoaderOptions loaderOptions = new LoaderOptions();
+        loaderOptions.setCodePointLimit(Integer.MAX_VALUE);
+        Yaml yaml = new Yaml(new org.yaml.snakeyaml.constructor.SafeConstructor(loaderOptions));
+        InputStream inputStream = getClass().getClassLoader().getResourceAsStream(scenarioPath);
+        if (inputStream == null) {
+            throw new IOException("Fichier de scénario non trouvé: " + scenarioPath);
+        }
+        return yaml.load(inputStream);
+    }
+
+    /**
+     * Reads the optional top-level {@code parametresLegaux:} section of a
+     * scenario file, if present — lets a scenario pin the legal parameters it
+     * was authored/verified against (with a YAML comment explaining why),
+     * instead of silently depending on whatever is currently configured in the
+     * database. Absent fields within the section fall back to
+     * {@link ParametresLegaux}'s own defaults, not to the live database value,
+     * so the scenario stays fully reproducible on its own.
+     */
+    public Optional<ParametresLegaux> chargerParametresLegauxScenario(String scenarioName) {
+        try {
+            return parseParametresLegaux(lireDonneesScenario(SCENARIOS_DIR + "/" + scenarioName));
+        } catch (IOException e) {
+            throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
+        }
+    }
+
+    /**
+     * Reads the optional top-level {@code parametresDecoupage:} section of a
+     * scenario file, if present. {@link ParametresDecoupage} is
+     * generation-time-only (never a solver problem fact, see its javadoc), so
+     * unlike {@link #chargerParametresLegauxScenario} this has no place on
+     * {@link PlanningFestival} — it is read separately and applied by the
+     * scenario-import endpoint only.
+     */
+    public Optional<ParametresDecoupage> chargerParametresDecoupageScenario(String scenarioName) {
+        try {
+            return parseParametresDecoupage(lireDonneesScenario(SCENARIOS_DIR + "/" + scenarioName));
+        } catch (IOException e) {
+            throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Optional<ParametresLegaux> parseParametresLegaux(Map<String, Object> scenarioData) {
+        Map<String, Object> data = (Map<String, Object>) scenarioData.get("parametresLegaux");
+        if (data == null) {
+            return Optional.empty();
+        }
+        ParametresLegaux parametres = new ParametresLegaux();
+        if (data.get("dureeHebdomadaireMaxMinutes") != null) {
+            parametres.setDureeHebdomadaireMaxMinutes(((Number) data.get("dureeHebdomadaireMaxMinutes")).intValue());
+        }
+        if (data.get("pauseMinimaleEntreVacationsMinutes") != null) {
+            parametres.setPauseMinimaleEntreVacationsMinutes(
+                    ((Number) data.get("pauseMinimaleEntreVacationsMinutes")).intValue());
+        }
+        if (data.get("reposQuotidienMinimalMinutes") != null) {
+            parametres.setReposQuotidienMinimalMinutes(((Number) data.get("reposQuotidienMinimalMinutes")).intValue());
+        }
+        return Optional.of(parametres);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Optional<ParametresDecoupage> parseParametresDecoupage(Map<String, Object> scenarioData) {
+        Map<String, Object> data = (Map<String, Object>) scenarioData.get("parametresDecoupage");
+        if (data == null) {
+            return Optional.empty();
+        }
+        ParametresDecoupage parametres = new ParametresDecoupage();
+        if (data.get("dureeVacationCibleMinutes") != null) {
+            parametres.setDureeVacationCibleMinutes(((Number) data.get("dureeVacationCibleMinutes")).intValue());
+        }
+        if (data.get("dureeVacationMinMinutes") != null) {
+            parametres.setDureeVacationMinMinutes(((Number) data.get("dureeVacationMinMinutes")).intValue());
+        }
+        if (data.get("dureeVacationMaxMinutes") != null) {
+            parametres.setDureeVacationMaxMinutes(((Number) data.get("dureeVacationMaxMinutes")).intValue());
+        }
+        if (data.get("dureeChevauchementMinutes") != null) {
+            parametres.setDureeChevauchementMinutes(((Number) data.get("dureeChevauchementMinutes")).intValue());
+        }
+        if (data.get("dureePauseRepasMinutes") != null) {
+            parametres.setDureePauseRepasMinutes(((Number) data.get("dureePauseRepasMinutes")).intValue());
+        }
+        if (data.get("fenetreRepasMidiDebut") != null) {
+            parametres.setFenetreRepasMidiDebut(LocalTime.parse((String) data.get("fenetreRepasMidiDebut")));
+        }
+        if (data.get("fenetreRepasMidiFin") != null) {
+            parametres.setFenetreRepasMidiFin(LocalTime.parse((String) data.get("fenetreRepasMidiFin")));
+        }
+        if (data.get("fenetreRepasSoirDebut") != null) {
+            parametres.setFenetreRepasSoirDebut(LocalTime.parse((String) data.get("fenetreRepasSoirDebut")));
+        }
+        if (data.get("fenetreRepasSoirFin") != null) {
+            parametres.setFenetreRepasSoirFin(LocalTime.parse((String) data.get("fenetreRepasSoirFin")));
+        }
+        if (data.get("strategieCouverturePendantPause") != null) {
+            parametres.setStrategieCouverturePendantPause(ParametresDecoupage.StrategieCouverturePendantPause
+                    .valueOf((String) data.get("strategieCouverturePendantPause")));
+        }
+        return Optional.of(parametres);
     }
 
     public PlanningFestival resoudre(PlanningFestival problem) {

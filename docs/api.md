@@ -105,6 +105,13 @@ Contraintes ad hoc (pas de mise à jour, on supprime et on recrée) :
 Import global du référentiel depuis un `PlanningFestival` :
 `POST /api/reference-data/import`.
 
+`POST /api/reference-data/import-scenario?name={fichier}` charge un scénario
+du dossier `scenarios/` côté serveur et importe son référentiel. Si le
+fichier définit `parametresLegaux:` et/ou `parametresDecoupage:` (sections
+optionnelles, voir [`domaine.md`](domaine.md#découpage-automatique-en-vacations)),
+ces réglages sont aussi appliqués ; absents, les réglages actuellement en
+base sont laissés tels quels.
+
 ## Découpage automatique en vacations
 
 Découpe les amplitudes d'un groupe de créneaux source en vacations plus

@@ -229,12 +229,21 @@ public class ReferenceDataResource {
      * data into the database. The scenario file is parsed on the backend, so
      * the (potentially large) planning never travels to the browser and back —
      * the client only sends the desired scenario name.
+     *
+     * <p>A scenario may optionally pin {@code parametresLegaux:} and/or
+     * {@code parametresDecoupage:} — when present, they are persisted too, so
+     * the parameters a scenario was authored/verified against travel with it
+     * instead of silently depending on whatever is already configured.
+     * Absent, the current database values are left untouched.
      */
     @POST
     @Path("/reference-data/import-scenario")
     @Consumes(MediaType.WILDCARD)
     public Response importScenario(@QueryParam("name") String name) {
         referenceDataService.importFromPlanning(planningService.construireExemple(name));
+        planningService.chargerParametresLegauxScenario(name).ifPresent(referenceDataService::updateParametresLegaux);
+        planningService.chargerParametresDecoupageScenario(name)
+                .ifPresent(referenceDataService::updateParametresDecoupage);
         return Response.noContent().build();
     }
 

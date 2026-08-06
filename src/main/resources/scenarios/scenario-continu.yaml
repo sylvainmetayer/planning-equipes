@@ -1,6 +1,16 @@
 festival:
   dateDebut: 2026-08-01
 
+# Découpage: only dureeVacationMinMinutes is overridden, every other field
+# keeps ParametresDecoupage's own default. Raised from the 180 min default to
+# 250 (just past the end of the 12:00-14:00 lunch window) so decoupperEnMinutes
+# no longer snaps a relay handover into that window on 10h "continu" days
+# (10:00->20:00): that snap used to force 3 relais/jour instead of 2, needlessly
+# duplicating headcount during each overlap and contributing to the animateur
+# shortfall fixed below. See commit 092d9ae.
+parametresDecoupage:
+  dureeVacationMinMinutes: 250
+
 creneaux:
   - id: J1-JOUR
     jour: 1
