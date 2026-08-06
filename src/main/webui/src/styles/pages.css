@@ -120,6 +120,27 @@
   margin: 0 0 0.75rem;
 }
 
+.warning-banner {
+  margin-bottom: 1.25rem;
+  --mdc-outlined-card-container-color: var(--mat-sys-error-container);
+}
+
+.warning-banner mat-card-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--mat-sys-on-error-container);
+}
+
+.warning-banner mat-icon {
+  color: var(--mat-sys-error);
+  flex-shrink: 0;
+}
+
+.warning-banner p {
+  margin: 0;
+}
+
 .output-panel {
   display: block;
   margin-bottom: 1.25rem;

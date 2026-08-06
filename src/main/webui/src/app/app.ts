@@ -50,16 +50,11 @@ function buildNavGroups(): NavGroup[] {
     title: $localize`:@@nav.group.planning:Planning`,
     links: [
       { path: '/solver', label: $localize`:@@nav.link.solver:Solveur`, icon: 'play_circle' },
-      { path: '/debug', label: $localize`:@@nav.link.debug:Débogage`, icon: 'bug_report' },
+      { path: '/constraints', label: $localize`:@@nav.link.constraints:Contraintes`, icon: 'fact_check' },
       {
         path: '/data-setup',
-        label: $localize`:@@nav.link.dataSetup:Configuration des données`,
+        label: $localize`:@@nav.link.dataSetup:Données`,
         icon: 'storage'
-      },
-      {
-        path: '/data-transfer',
-        label: $localize`:@@nav.link.dataTransfer:Transfert de données`,
-        icon: 'swap_vert'
       }
     ]
   },
@@ -91,7 +86,6 @@ function buildNavGroups(): NavGroup[] {
         label: $localize`:@@nav.link.dayCalendar:Calendrier journalier`,
         icon: 'view_day'
       },
-      { path: '/constraints', label: $localize`:@@nav.link.constraints:Contraintes`, icon: 'fact_check' },
       { path: '/hours', label: $localize`:@@nav.link.hours:Heures`, icon: 'schedule' },
       {
         path: '/staffing',
@@ -106,9 +100,10 @@ function buildNavGroups(): NavGroup[] {
       {
         path: '/db',
         label: $localize`:@@nav.link.db:Base de données (pgAdmin)`,
-        icon: 'database',
+        icon: 'storage',
         external: true
-      }
+      },
+      { path: '/debug', label: $localize`:@@nav.link.debug:Débogage`, icon: 'bug_report' }
     ]
   }
   ];

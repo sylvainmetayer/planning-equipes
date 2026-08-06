@@ -1,34 +1,190 @@
+<mat-card appearance="outlined" class="warning-banner">
+  <mat-card-content>
+    <mat-icon>warning</mat-icon>
+    <p i18n="@@dataSetup.destructiveWarning">
+      Les actions de cette page sont destructrices : elles remplacent ou suppriment définitivement
+      les données de la base, sans possibilité d'annulation.
+    </p>
+  </mat-card-content>
+</mat-card>
+
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title i18n="@@nav.link.dataSetup">Configuration des données</mat-card-title>
-    <mat-card-subtitle i18n="@@dataSetup.description">
-      Initialisez la base avec un scénario d'exemple ou réinitialisez-la. Ces actions sont verrouillées pendant que le solveur est en cours d'exécution.
+    <mat-card-title i18n="@@dataSetup.database.title">Base de données</mat-card-title>
+    <mat-card-subtitle i18n="@@dataSetup.database.description">
+      Interagir avec la base de données. Ces actions sont verrouillées pendant que le solveur est en
+      cours d'exécution.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-actions class="card-actions">
+    <button
+      matButton="outlined"
+      class="danger-action"
+      [disabled]="solverBusy() || resetting()"
+      (click)="onResetDatabase()"
+    >
+      <mat-icon>delete_sweep</mat-icon>
+      <ng-container i18n="@@dataSetup.resetDatabase">Vider la base de données</ng-container>
+    </button>
+    <!-- `/db` resolves relative to whatever host serves this app; routing it to
+         pgAdmin is a deployment-side reverse-proxy concern (see app.ts). -->
+    <a matButton="outlined" href="/db" target="_blank" rel="noopener">
+      <mat-icon>storage</mat-icon>
+      <ng-container i18n="@@dataSetup.database.pgAdminLink"
+        >Accéder à la base de données (pgAdmin)</ng-container
+      >
+    </a>
+  </mat-card-actions>
+</mat-card>
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <mat-card-title i18n="@@dataSetup.scenarios.title">Scénarios</mat-card-title>
+    <mat-card-subtitle i18n="@@dataSetup.scenarios.description">
+      Ces actions sont verrouillées pendant que le solveur est en cours d'exécution.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-actions class="card-actions">
     <mat-form-field appearance="outline" class="scenario-select">
       <mat-label i18n="@@dataSetup.scenario">Scénario</mat-label>
-      <mat-select [value]="selectedScenario()" (valueChange)="onSelectScenario($event)"
-        [disabled]="solverBusy() || sampleLoading() || scenarios().length === 0">
+      <mat-select
+        [value]="selectedScenario()"
+        (valueChange)="onSelectScenario($event)"
+        [disabled]="solverBusy() || sampleLoading() || scenarios().length === 0"
+      >
         @for (name of scenarios(); track name) {
           <mat-option [value]="name">{{ name }}</mat-option>
         }
       </mat-select>
     </mat-form-field>
-    <button matButton="outlined" [disabled]="solverBusy() || sampleLoading() || scenarios().length === 0"
-      (click)="onLoadSample()">
+    <button
+      matButton="outlined"
+      [disabled]="solverBusy() || sampleLoading() || scenarios().length === 0"
+      (click)="onLoadSample()"
+    >
       <mat-icon>auto_awesome</mat-icon>
-      <ng-container i18n="@@dataSetup.loadSample">Charger le planning d'exemple</ng-container>
-    </button>
-    <button matButton="outlined" class="danger-action" [disabled]="solverBusy() || resetting()"
-      (click)="onResetDatabase()">
-      <mat-icon>delete_sweep</mat-icon>
-      <ng-container i18n="@@dataSetup.resetDatabase">Vider la base de données</ng-container>
+      <ng-container i18n="@@dataSetup.loadSample">Charger le scénario selectionné</ng-container>
     </button>
     <button matButton="outlined" [disabled]="exporting()" (click)="onExportScenario()">
       <mat-icon>file_download</mat-icon>
-      <ng-container i18n="@@dataSetup.exportScenario">Exporter les données actuelles en scénario</ng-container>
+      <ng-container i18n="@@dataSetup.exportScenario"
+        >Exporter les données actuelles en scénario</ng-container
+      >
     </button>
+  </mat-card-actions>
+</mat-card>
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <mat-card-title i18n="@@dataTransfer.sql.title">Export SQL</mat-card-title>
+    <mat-card-subtitle i18n="@@dataTransfer.sql.description">
+      Exporte ou rejoue toute la base de données sous forme de script SQL, pour partager un jeu de
+      données qui bloque le solveur.
+    </mat-card-subtitle>
+  </mat-card-header>
+  @if (solverBusy()) {
+    <mat-card-content>
+      <p class="locked-hint" i18n="@@dataTransfer.locked">
+        Les transferts sont verrouillés pendant que le solveur est en cours d'exécution.
+      </p>
+    </mat-card-content>
+  }
+  <mat-card-actions class="card-actions">
+    <button matButton="filled" [disabled]="transferLocked()" (click)="onExportSql()">
+      <mat-icon>download</mat-icon>
+      <ng-container i18n="@@dataTransfer.exportSql">Exporter le dump SQL</ng-container>
+    </button>
+    <button
+      matButton="outlined"
+      class="danger-action"
+      [disabled]="transferLocked()"
+      (click)="pickSqlFile()"
+    >
+      <mat-icon>upload</mat-icon>
+      <ng-container i18n="@@dataTransfer.importSql">Importer un dump SQL</ng-container>
+    </button>
+    <input
+      #sqlInput
+      type="file"
+      accept=".sql,application/sql,text/plain"
+      hidden
+      (change)="onSqlFileSelected($event)"
+    />
+  </mat-card-actions>
+</mat-card>
+
+<mat-card appearance="outlined" class="warning-banner">
+  <mat-card-content>
+    <mat-icon>warning</mat-icon>
+    <p i18n="@@dataSetup.csvImportWarning">
+      Cette fonctionnalité n'a pas encore été testée de manière approfondie. Merci de faire un
+      retour si vous rencontrez des problèmes.
+    </p>
+  </mat-card-content>
+</mat-card>
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <mat-card-title i18n="@@dataTransfer.csv.title">Import CSV</mat-card-title>
+    <mat-card-subtitle i18n="@@dataTransfer.csv.description">
+      Chaque import remplace toute la table et supprime les affectations existantes. Séparateur
+      <code>;</code> ou <code>,</code>, ligne d'en-tête requise, valeurs multiples séparées par
+      <code>|</code>.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <mat-list class="csv-format">
+      <mat-list-item lines="3">
+        <span matListItemTitle>animateurs</span>
+        <span matListItemLine
+          ><code>id;prenom;nom;dateNaissance;manager;competences;joursIndisponibles</code></span
+        >
+        <span matListItemLine i18n="@@dataTransfer.csv.animateursHint">
+          <code>manager</code> = true|false (facultatif, false par défaut) ·
+          <code>competences</code> = <code>STRATEGIE:REFERENT|ENFANT:AUTONOME</code> ·
+          <code>joursIndisponibles</code> =
+          <code>2026-07-02|2026-07-03</code>
+        </span>
+      </mat-list-item>
+      <mat-list-item lines="3">
+        <span matListItemTitle>stands</span>
+        <span matListItemLine
+          ><code>id;nom;typologies;effectifMin;effectifMax;reserveMajeurs;premium</code></span
+        >
+        <span matListItemLine i18n="@@dataTransfer.csv.standsHint">
+          <code>typologies</code> = <code>STRATEGIE|ENFANT</code> ·
+          <code>reserveMajeurs</code>/<code>premium</code> = true/false
+        </span>
+      </mat-list-item>
+      <mat-list-item lines="3">
+        <span matListItemTitle>creneaux</span>
+        <span matListItemLine><code>id;jour;date;heureDebut;heureFin</code></span>
+        <span matListItemLine i18n="@@dataTransfer.csv.creneauxHint"
+          ><code>date</code> = 2026-07-02 · heure = 10:00</span
+        >
+      </mat-list-item>
+    </mat-list>
+  </mat-card-content>
+  <mat-card-actions class="card-actions">
+    <button matButton="tonal" [disabled]="transferLocked()" (click)="pickCsvFile('animateurs')">
+      <mat-icon>groups</mat-icon>
+      <ng-container i18n="@@dataTransfer.importAnimateurs">Importer les animateurs</ng-container>
+    </button>
+    <button matButton="tonal" [disabled]="transferLocked()" (click)="pickCsvFile('stands')">
+      <mat-icon>storefront</mat-icon>
+      <ng-container i18n="@@dataTransfer.importStands">Importer les stands</ng-container>
+    </button>
+    <button matButton="tonal" [disabled]="transferLocked()" (click)="pickCsvFile('creneaux')">
+      <mat-icon>schedule</mat-icon>
+      <ng-container i18n="@@dataTransfer.importCreneaux">Importer les créneaux</ng-container>
+    </button>
+    <input
+      #csvInput
+      type="file"
+      accept=".csv,text/csv,text/plain"
+      hidden
+      (change)="onCsvFileSelected($event)"
+    />
   </mat-card-actions>
 </mat-card>
 

@@ -15,15 +15,11 @@ export const routes: Routes = [
   },
   {
     path: 'data-setup',
-    title: 'Data setup — Planning Équipes',
+    title: 'Data — Planning Équipes',
     loadComponent: () => import('./pages/data-setup/data-setup-page').then((m) => m.DataSetupPage)
   },
   { path: 'exports', redirectTo: 'solver' },
-  {
-    path: 'data-transfer',
-    title: 'Data transfer — Planning Équipes',
-    loadComponent: () => import('./pages/data-transfer/data-transfer-page').then((m) => m.DataTransferPage)
-  },
+  { path: 'data-transfer', redirectTo: 'data-setup' },
   {
     path: 'stands',
     title: 'Stands — Planning Équipes',

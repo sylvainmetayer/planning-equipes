@@ -128,8 +128,7 @@ Chaque bloc fonctionnel a **sa propre route et sa propre page**, chargée en
 | --- | --- | --- |
 | `/solver` (défaut) | `app/pages/solver/` | Scénario d'exemple, réinitialisation, résolution, analyse |
 | `/debug` | `app/pages/debug/` | Diagnostics du solveur et état interne |
-| `/data-setup` | `app/pages/data-setup/` | Configuration des données de référence |
-| `/data-transfer` | `app/pages/data-transfer/` | Export / import de dump SQL, imports CSV |
+| `/data-setup` | `app/pages/data-setup/` | Scénarios d'exemple, réinitialisation, export scénario, export/import de dump SQL, imports CSV |
 | `/stands` | `app/pages/stands/` | CRUD des stands |
 | `/emplacements` | `app/pages/emplacements/` | CRUD des emplacements (avec sélection sur carte) |
 | `/animateurs` | `app/pages/animateurs/` | CRUD des animateurs (compétences, jours d'indisponibilité) |
