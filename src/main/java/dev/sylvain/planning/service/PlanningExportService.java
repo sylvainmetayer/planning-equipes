@@ -2,10 +2,12 @@ package dev.sylvain.planning.service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.LinkedHashSet;
@@ -20,17 +22,21 @@ import org.openpdf.text.Chunk;
 import org.openpdf.text.Document;
 import org.openpdf.text.Element;
 import org.openpdf.text.Font;
+import org.openpdf.text.Image;
 import org.openpdf.text.PageSize;
 import org.openpdf.text.Paragraph;
 import org.openpdf.text.Phrase;
 import org.openpdf.text.Rectangle;
+import org.openpdf.text.pdf.BaseFont;
 import org.openpdf.text.pdf.ColumnText;
+import org.openpdf.text.pdf.PdfAction;
 import org.openpdf.text.pdf.PdfContentByte;
 import org.openpdf.text.pdf.PdfPCell;
 import org.openpdf.text.pdf.PdfPCellEvent;
 import org.openpdf.text.pdf.PdfPTable;
 import org.openpdf.text.pdf.PdfPTableEvent;
 import org.openpdf.text.pdf.PdfPageEventHelper;
+import org.openpdf.text.pdf.PdfTemplate;
 import org.openpdf.text.pdf.PdfWriter;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
@@ -52,22 +58,25 @@ public class PlanningExportService {
     private static final DateTimeFormatter ICS_LOCAL_DATE_TIME = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss");
     private static final DateTimeFormatter GENERATED_AT_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-    // --- Palette: warm paper-white cards, terracotta for morning slots, mauve for afternoon/evening ones ---
-    private static final java.awt.Color HEADLINE = new java.awt.Color(35, 31, 29);
-    private static final java.awt.Color MUTED = new java.awt.Color(120, 120, 122);
-    private static final java.awt.Color BORDER = new java.awt.Color(226, 224, 221);
-    private static final java.awt.Color CARD_BACKGROUND = java.awt.Color.WHITE;
-    private static final java.awt.Color LABEL_MORNING = new java.awt.Color(178, 94, 36);
-    private static final java.awt.Color LABEL_EVENING = new java.awt.Color(122, 91, 168);
-    private static final java.awt.Color PILL_MORNING_BG = new java.awt.Color(252, 231, 205);
-    private static final java.awt.Color PILL_EVENING_BG = new java.awt.Color(232, 227, 246);
+    private static final String LOGO_RESOURCE = "/branding/logo.png";
+    private static final String STRIP_RESOURCE = "/branding/bandeau.png";
 
-    // --- Fonts: serif for names/dates/counters, sans for small caps labels and body text ---
-    private static final Font BRAND_LABEL_FONT = new Font(Font.HELVETICA, 8.5f, Font.BOLD, LABEL_MORNING);
-    private static final Font NAME_FONT = new Font(Font.TIMES_ROMAN, 23, Font.BOLD, HEADLINE);
-    private static final Font STAT_NUMBER_FONT = new Font(Font.TIMES_ROMAN, 19, Font.BOLD, HEADLINE);
-    private static final Font STAT_LABEL_FONT = new Font(Font.HELVETICA, 7.5f, Font.NORMAL, MUTED);
-    private static final Font DATE_FONT = new Font(Font.TIMES_ROMAN, 13, Font.BOLD, HEADLINE);
+    // --- Palette, sampled from the festival brand mark: crimson red, golden yellow, warm dark ink ---
+    private static final java.awt.Color HEADLINE = new java.awt.Color(43, 33, 24);
+    private static final java.awt.Color MUTED = new java.awt.Color(146, 121, 87);
+    private static final java.awt.Color RED = new java.awt.Color(200, 29, 37);
+    private static final java.awt.Color YELLOW = new java.awt.Color(255, 214, 62);
+    private static final java.awt.Color CARD_BACKGROUND = java.awt.Color.WHITE;
+    private static final java.awt.Color PILL_BACKGROUND = new java.awt.Color(250, 235, 208);
+
+    // --- Fonts: bold rounded sans for headline figures, plain sans for supporting text ---
+    private static final Font BRAND_LABEL_FONT = new Font(Font.HELVETICA, 8.5f, Font.BOLD, RED);
+    private static final Font NAME_FONT = new Font(Font.HELVETICA, 24, Font.BOLD, HEADLINE);
+    private static final Font STAT_NUMBER_FONT = new Font(Font.HELVETICA, 19, Font.BOLD, HEADLINE);
+    private static final Font STAT_LABEL_FONT = new Font(Font.HELVETICA, 7.5f, Font.BOLD, HEADLINE);
+    private static final Font DATE_FONT = new Font(Font.HELVETICA, 13, Font.BOLD, HEADLINE);
+    private static final Font BADGE_FONT = new Font(Font.HELVETICA, 7.5f, Font.BOLD, java.awt.Color.WHITE);
+    private static final Font TIME_FONT = new Font(Font.HELVETICA, 8.5f, Font.BOLD, MUTED);
     private static final Font STAND_FONT = new Font(Font.HELVETICA, 10.5f, Font.BOLD, HEADLINE);
     private static final Font LOCATION_FONT = new Font(Font.HELVETICA, 9, Font.NORMAL, MUTED);
     private static final Font EMPTY_STATE_FONT = new Font(Font.HELVETICA, 10, Font.ITALIC, MUTED);
@@ -194,9 +203,11 @@ public class PlanningExportService {
 
     private byte[] buildPdf(String animateurName, List<PosteAffectation> postes) {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        Document document = new Document(PageSize.A4.rotate(), 40, 40, 36, 40);
+        Document document = new Document(PageSize.A4, 40, 40, 40, 54);
         PdfWriter writer = PdfWriter.getInstance(document, output);
-        writer.setPageEvent(new FooterEvent());
+        String generatedAt = "Festival — Centre-ville · généré le "
+                + GENERATED_AT_FORMAT.format(Instant.now().atZone(ZoneOffset.systemDefault()));
+        writer.setPageEvent(new FooterEvent(generatedAt));
         document.open();
 
         addHeader(document, animateurName, postes);
@@ -214,12 +225,32 @@ public class PlanningExportService {
     }
 
     private void addHeader(Document document, String animateurName, List<PosteAffectation> postes) {
-        PdfPTable header = new PdfPTable(new float[] { 3f, 2f });
-        header.setWidthPercentage(100);
+        float pageWidth = document.getPageSize().getWidth();
+        float pageHeight = document.getPageSize().getHeight();
+
+        Image strip = loadImage(STRIP_RESOURCE);
+        float stripWidth = 210f;
+        strip.scaleToFit(stripWidth, stripWidth * strip.getHeight() / strip.getWidth());
+        strip.setAbsolutePosition(pageWidth - 22f - strip.getScaledWidth(), pageHeight - 20f - strip.getScaledHeight());
+        document.add(strip);
+
+        Image logo = loadImage(LOGO_RESOURCE);
+        logo.scaleToFit(46f, 46f);
+
+        PdfPTable header = new PdfPTable(new float[] { 46f, 320f });
+        header.setTotalWidth(document.getPageSize().getWidth() - document.leftMargin() - document.rightMargin());
+        header.setLockedWidth(true);
+
+        PdfPCell logoCell = new PdfPCell(logo, false);
+        logoCell.setBorder(Rectangle.NO_BORDER);
+        logoCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        logoCell.setPadding(0f);
+        header.addCell(logoCell);
 
         PdfPCell titleCell = new PdfPCell();
         titleCell.setBorder(Rectangle.NO_BORDER);
-        titleCell.setVerticalAlignment(Element.ALIGN_BOTTOM);
+        titleCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        titleCell.setPaddingLeft(14f);
         Paragraph brandLabel = new Paragraph();
         Chunk brandChunk = new Chunk("PLANNING BÉNÉVOLE", BRAND_LABEL_FONT);
         brandChunk.setCharacterSpacing(1.4f);
@@ -230,37 +261,42 @@ public class PlanningExportService {
         titleCell.addElement(name);
         header.addCell(titleCell);
 
-        PdfPCell statsCell = new PdfPCell();
-        statsCell.setBorder(Rectangle.NO_BORDER);
-        statsCell.setVerticalAlignment(Element.ALIGN_BOTTOM);
-        statsCell.addElement(statBlock(postes));
-        header.addCell(statsCell);
-
-        header.setSpacingAfter(24f);
+        header.setSpacingAfter(22f);
         document.add(header);
+
+        PdfPTable stats = statBlock(postes);
+        stats.setSpacingAfter(24f);
+        document.add(stats);
     }
 
     private PdfPTable statBlock(List<PosteAffectation> postes) {
-        PdfPTable table = new PdfPTable(3);
+        PdfPTable table = new PdfPTable(new float[] { 10f, 0.6f, 10f, 0.6f, 10f });
         table.setWidthPercentage(100);
-        table.addCell(statCell(distinctCreneauCount(postes), "CRÉNEAUX", false));
-        table.addCell(statCell(distinctStandCount(postes), "STANDS", true));
-        table.addCell(statCell(distinctDayCount(postes), "JOURS", true));
+        table.addCell(statCell(distinctCreneauCount(postes), "CRÉNEAUX"));
+        table.addCell(gapCell());
+        table.addCell(statCell(distinctStandCount(postes), "STANDS"));
+        table.addCell(gapCell());
+        table.addCell(statCell(distinctDayCount(postes), "JOURS"));
         return table;
     }
 
-    private PdfPCell statCell(int value, String label, boolean divider) {
+    private PdfPCell gapCell() {
         PdfPCell cell = new PdfPCell();
-        cell.setBorder(divider ? Rectangle.LEFT : Rectangle.NO_BORDER);
-        cell.setBorderColor(BORDER);
-        cell.setBorderWidthLeft(0.75f);
+        cell.setBorder(Rectangle.NO_BORDER);
+        return cell;
+    }
+
+    private PdfPCell statCell(int value, String label) {
+        PdfPCell cell = new PdfPCell();
+        cell.setBorder(Rectangle.NO_BORDER);
         cell.setHorizontalAlignment(Element.ALIGN_CENTER);
         cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
-        cell.setPadding(4f);
+        cell.setPadding(14f);
+        cell.setCellEvent(new RoundedCellFillEvent(YELLOW, 10f));
 
         Paragraph number = new Paragraph(String.valueOf(value), STAT_NUMBER_FONT);
         number.setAlignment(Element.ALIGN_CENTER);
-        number.setSpacingAfter(1f);
+        number.setSpacingAfter(2f);
 
         Paragraph labelParagraph = new Paragraph();
         labelParagraph.setAlignment(Element.ALIGN_CENTER);
@@ -310,58 +346,80 @@ public class PlanningExportService {
         return paragraph;
     }
 
-    /** One rounded card per assignment: day/date, a time-of-day pill, the stand and its location. */
+    /** One rounded card per assignment: day/date with a "JOURx" badge, a time pill, the stand and its location. */
     private PdfPTable buildAssignmentCard(PosteAffectation poste) {
         Creneau creneau = poste.getCreneau();
-        boolean morning = creneau.getHeureDebut().getHour() < 12;
-        java.awt.Color accent = morning ? LABEL_MORNING : LABEL_EVENING;
-        java.awt.Color pillBackground = morning ? PILL_MORNING_BG : PILL_EVENING_BG;
 
-        PdfPTable card = new PdfPTable(new float[] { 2.4f, 1.6f, 2.6f, 2.3f });
+        PdfPTable card = new PdfPTable(new float[] { 2.4f, 1.8f, 2.5f, 2.3f });
         card.setWidthPercentage(100);
         card.setSpacingAfter(9f);
         card.getDefaultCell().setBorder(Rectangle.NO_BORDER);
-        card.setTableEvent(new RoundedBackgroundEvent(CARD_BACKGROUND, BORDER, 8f));
+        card.setTableEvent(new RoundedBackgroundEvent(CARD_BACKGROUND, RED, 10f));
 
-        card.addCell(dayCell(creneau, accent));
-        card.addCell(timePillCell(creneau, accent, pillBackground));
+        card.addCell(dayCell(creneau));
+        card.addCell(timePillCell(creneau));
         card.addCell(standCell(poste.getStand()));
         card.addCell(locationCell(poste.getStand()));
         return card;
     }
 
-    private PdfPCell dayCell(Creneau creneau, java.awt.Color accent) {
+    private PdfPCell dayCell(Creneau creneau) {
         PdfPCell cell = new PdfPCell();
         cell.setBorder(Rectangle.NO_BORDER);
         cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
         cell.setPadding(14f);
 
-        Paragraph label = new Paragraph();
-        Chunk labelChunk = new Chunk("JOUR " + creneau.getJour(), new Font(Font.HELVETICA, 8f, Font.BOLD, accent));
-        labelChunk.setCharacterSpacing(1.2f);
-        label.add(labelChunk);
-        label.setSpacingAfter(3f);
+        cell.addElement(dayBadge(creneau.getJour()));
 
         Paragraph date = new Paragraph(formatFrenchDayDate(creneau.getDate()), DATE_FONT);
+        date.setSpacingBefore(7f);
 
-        cell.addElement(label);
         cell.addElement(date);
         return cell;
     }
 
-    private PdfPCell timePillCell(Creneau creneau, java.awt.Color textColor, java.awt.Color background) {
-        String text = creneau.getHeureDebut().format(TIME_FORMAT) + " - " + creneau.getHeureFin().format(TIME_FORMAT);
-        Font pillFont = new Font(Font.HELVETICA, 8.5f, Font.BOLD, textColor);
-        float textWidth = pillFont.getCalculatedBaseFont(false).getWidthPoint(text, pillFont.getCalculatedSize());
-        float pillWidth = textWidth + 20f;
-        float pillHeight = 20f;
+    /** A small pill-shaped "JOURx" badge, sized to hug its own text rather than stretching to the column width. */
+    private PdfPTable dayBadge(int jour) {
+        String text = "JOUR" + jour;
+        float characterSpacing = 0.6f;
+        BaseFont baseFont = BADGE_FONT.getCalculatedBaseFont(false);
+        float textWidth = baseFont.getWidthPoint(text, BADGE_FONT.getCalculatedSize()) + characterSpacing * text.length();
+        float pillHeight = 15f;
+        float pillWidth = textWidth + 18f;
 
-        PdfPCell cell = new PdfPCell(new Phrase(text, pillFont));
+        PdfPTable table = new PdfPTable(1);
+        table.setTotalWidth(pillWidth);
+        table.setLockedWidth(true);
+        table.setHorizontalAlignment(Element.ALIGN_LEFT);
+
+        PdfPCell cell = new PdfPCell();
+        cell.setBorder(Rectangle.NO_BORDER);
+        cell.setFixedHeight(pillHeight);
+        cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+        cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        cell.setCellEvent(new RoundedCellFillEvent(RED, pillHeight / 2f));
+        Chunk chunk = new Chunk(text, BADGE_FONT);
+        chunk.setCharacterSpacing(characterSpacing);
+        cell.setPhrase(new Phrase(chunk));
+        table.addCell(cell);
+        return table;
+    }
+
+    private PdfPCell timePillCell(Creneau creneau) {
+        String text = creneau.getHeureDebut().format(TIME_FORMAT) + " - " + creneau.getHeureFin().format(TIME_FORMAT);
+        BaseFont baseFont = TIME_FONT.getCalculatedBaseFont(false);
+        float textWidth = baseFont.getWidthPoint(text, TIME_FONT.getCalculatedSize());
+        float iconDiameter = 8f;
+        float iconGap = 5f;
+        float pillHeight = 20f;
+        float pillWidth = iconDiameter + iconGap + textWidth + 24f;
+
+        PdfPCell cell = new PdfPCell();
         cell.setBorder(Rectangle.NO_BORDER);
         cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
         cell.setHorizontalAlignment(Element.ALIGN_CENTER);
         cell.setPadding(14f);
-        cell.setCellEvent(new PillBackgroundEvent(background, pillWidth, pillHeight));
+        cell.setCellEvent(new TimePillEvent(text, PILL_BACKGROUND, MUTED, pillWidth, pillHeight, iconDiameter, iconGap));
         return cell;
     }
 
@@ -373,7 +431,7 @@ public class PlanningExportService {
         return cell;
     }
 
-    /** Location name, kept as a clickable OpenStreetMap link when the stand's emplacement is geocoded. */
+    /** Location name with a pin icon, kept clickable to OpenStreetMap when the stand's emplacement is geocoded. */
     private PdfPCell locationCell(Stand stand) {
         PdfPCell cell = new PdfPCell();
         cell.setBorder(Rectangle.NO_BORDER);
@@ -381,19 +439,13 @@ public class PlanningExportService {
         cell.setHorizontalAlignment(Element.ALIGN_RIGHT);
         cell.setPadding(14f);
 
-        Paragraph paragraph = new Paragraph();
-        paragraph.setAlignment(Element.ALIGN_RIGHT);
         Emplacement emplacement = stand.getEmplacement();
         if (emplacement != null && emplacement.getNom() != null && !emplacement.getNom().isBlank()) {
-            if (emplacement.getLatitude() != null && emplacement.getLongitude() != null) {
-                Anchor link = new Anchor(emplacement.getNom(), LOCATION_FONT);
-                link.setReference(osmUrl(emplacement));
-                paragraph.add(link);
-            } else {
-                paragraph.add(new Chunk(emplacement.getNom(), LOCATION_FONT));
-            }
+            String url = emplacement.getLatitude() != null && emplacement.getLongitude() != null
+                    ? osmUrl(emplacement)
+                    : null;
+            cell.setCellEvent(new LocationPinEvent(emplacement.getNom(), LOCATION_FONT, MUTED, 7f, 4f, url));
         }
-        cell.addElement(paragraph);
         return cell;
     }
 
@@ -431,7 +483,174 @@ public class PlanningExportService {
                 .replace("\n", "\\n");
     }
 
-    /** Draws a single seamless rounded rectangle behind a whole (single-row) table, used for cards and pills. */
+    /** Loads a PNG bundled under {@code src/main/resources} (not the webui's own public/ folder, which isn't on the Java classpath). */
+    private Image loadImage(String resourcePath) {
+        try (InputStream in = getClass().getResourceAsStream(resourcePath)) {
+            if (in == null) {
+                throw new IOException("Missing classpath resource: " + resourcePath);
+            }
+            return Image.getInstance(in.readAllBytes());
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to load image " + resourcePath, e);
+        }
+    }
+
+    /** Draws a small clock face (circle + two hands) used ahead of a time-slot pill's text. */
+    private static void drawClockIcon(PdfContentByte canvas, float centerX, float centerY, float radius, java.awt.Color color) {
+        canvas.saveState();
+        canvas.setColorStroke(color);
+        canvas.setLineWidth(0.8f);
+        canvas.circle(centerX, centerY, radius);
+        canvas.stroke();
+        canvas.moveTo(centerX, centerY);
+        canvas.lineTo(centerX, centerY + radius * 0.55f);
+        canvas.moveTo(centerX, centerY);
+        canvas.lineTo(centerX + radius * 0.5f, centerY - radius * 0.15f);
+        canvas.stroke();
+        canvas.restoreState();
+    }
+
+    /** Draws a small outlined map-pin (circle head, pointed tail, center dot) used ahead of a location's text. */
+    private static void drawPinIcon(PdfContentByte canvas, float centerX, float centerY, float radius, java.awt.Color color) {
+        float headCenterY = centerY + radius * 0.55f;
+        canvas.saveState();
+        canvas.setColorStroke(color);
+        canvas.setLineWidth(0.8f);
+        canvas.circle(centerX, headCenterY, radius);
+        canvas.stroke();
+        canvas.moveTo(centerX - radius * 0.75f, headCenterY - radius * 0.6f);
+        canvas.lineTo(centerX, headCenterY - radius * 2.1f);
+        canvas.lineTo(centerX + radius * 0.75f, headCenterY - radius * 0.6f);
+        canvas.stroke();
+        canvas.setColorFill(color);
+        canvas.circle(centerX, headCenterY, radius * 0.28f);
+        canvas.fill();
+        canvas.restoreState();
+    }
+
+    /** Fills a cell's own box with a rounded rectangle, used for stat tiles and pill badges. */
+    private static final class RoundedCellFillEvent implements PdfPCellEvent {
+        private final java.awt.Color fill;
+        private final float radius;
+
+        RoundedCellFillEvent(java.awt.Color fill, float radius) {
+            this.fill = fill;
+            this.radius = radius;
+        }
+
+        @Override
+        public void cellLayout(PdfPCell cell, Rectangle position, PdfContentByte[] canvases) {
+            PdfContentByte background = canvases[PdfPTable.BACKGROUNDCANVAS];
+            background.saveState();
+            background.setColorFill(fill);
+            background.roundRectangle(position.getLeft(), position.getBottom(), position.getWidth(), position.getHeight(),
+                    radius);
+            background.fill();
+            background.restoreState();
+        }
+    }
+
+    /** Draws a centered pill (background + clock icon + text) sized to its own content, ignoring the cell's own padding. */
+    private static final class TimePillEvent implements PdfPCellEvent {
+        private final String text;
+        private final java.awt.Color background;
+        private final java.awt.Color contentColor;
+        private final float pillWidth;
+        private final float pillHeight;
+        private final float iconDiameter;
+        private final float iconGap;
+
+        TimePillEvent(String text, java.awt.Color background, java.awt.Color contentColor, float pillWidth,
+                float pillHeight, float iconDiameter, float iconGap) {
+            this.text = text;
+            this.background = background;
+            this.contentColor = contentColor;
+            this.pillWidth = pillWidth;
+            this.pillHeight = pillHeight;
+            this.iconDiameter = iconDiameter;
+            this.iconGap = iconGap;
+        }
+
+        @Override
+        public void cellLayout(PdfPCell cell, Rectangle position, PdfContentByte[] canvases) {
+            float left = position.getLeft() + (position.getWidth() - pillWidth) / 2f;
+            float bottom = position.getBottom() + (position.getHeight() - pillHeight) / 2f;
+            float centerY = bottom + pillHeight / 2f;
+
+            PdfContentByte background2 = canvases[PdfPTable.BACKGROUNDCANVAS];
+            background2.saveState();
+            background2.setColorFill(background);
+            background2.roundRectangle(left, bottom, pillWidth, pillHeight, pillHeight / 2f);
+            background2.fill();
+            background2.restoreState();
+
+            BaseFont baseFont = TIME_FONT.getCalculatedBaseFont(false);
+            float textWidth = baseFont.getWidthPoint(text, TIME_FONT.getCalculatedSize());
+            float contentLeft = left + (pillWidth - (iconDiameter + iconGap + textWidth)) / 2f;
+
+            PdfContentByte line = canvases[PdfPTable.LINECANVAS];
+            drawClockIcon(line, contentLeft + iconDiameter / 2f, centerY, iconDiameter / 2f, contentColor);
+
+            PdfContentByte textCanvas = canvases[PdfPTable.TEXTCANVAS];
+            textCanvas.saveState();
+            textCanvas.beginText();
+            textCanvas.setFontAndSize(baseFont, TIME_FONT.getCalculatedSize());
+            textCanvas.setColorFill(contentColor);
+            textCanvas.setTextMatrix(contentLeft + iconDiameter + iconGap, centerY - TIME_FONT.getCalculatedSize() * 0.35f);
+            textCanvas.showText(text);
+            textCanvas.endText();
+            textCanvas.restoreState();
+        }
+    }
+
+    /** Draws a right-aligned pin icon + location name as a single unit, clickable when a URL is supplied. */
+    private static final class LocationPinEvent implements PdfPCellEvent {
+        private final String text;
+        private final Font font;
+        private final java.awt.Color color;
+        private final float iconDiameter;
+        private final float iconGap;
+        private final String url;
+
+        LocationPinEvent(String text, Font font, java.awt.Color color, float iconDiameter, float iconGap, String url) {
+            this.text = text;
+            this.font = font;
+            this.color = color;
+            this.iconDiameter = iconDiameter;
+            this.iconGap = iconGap;
+            this.url = url;
+        }
+
+        @Override
+        public void cellLayout(PdfPCell cell, Rectangle position, PdfContentByte[] canvases) {
+            BaseFont baseFont = font.getCalculatedBaseFont(false);
+            float textWidth = baseFont.getWidthPoint(text, font.getCalculatedSize());
+            float right = position.getRight() - 14f;
+            float centerY = position.getBottom() + position.getHeight() / 2f;
+            float textLeft = right - textWidth;
+            float iconCenterX = textLeft - iconGap - iconDiameter / 2f;
+
+            PdfContentByte line = canvases[PdfPTable.LINECANVAS];
+            drawPinIcon(line, iconCenterX, centerY, iconDiameter / 2f, color);
+
+            PdfContentByte textCanvas = canvases[PdfPTable.TEXTCANVAS];
+            textCanvas.saveState();
+            textCanvas.beginText();
+            textCanvas.setFontAndSize(baseFont, font.getCalculatedSize());
+            textCanvas.setColorFill(color);
+            textCanvas.setTextMatrix(textLeft, centerY - font.getCalculatedSize() * 0.35f);
+            textCanvas.showText(text);
+            textCanvas.endText();
+            textCanvas.restoreState();
+
+            if (url != null) {
+                float left = iconCenterX - iconDiameter / 2f - 2f;
+                textCanvas.setAction(new PdfAction(url), left, position.getBottom(), right + 2f, position.getTop());
+            }
+        }
+    }
+
+    /** Draws a single seamless rounded rectangle behind a whole (single-row) table, used for the assignment cards. */
     private static final class RoundedBackgroundEvent implements PdfPTableEvent {
         private final java.awt.Color fill;
         private final java.awt.Color border;
@@ -465,62 +684,51 @@ public class PlanningExportService {
                 PdfContentByte line = canvases[PdfPTable.LINECANVAS];
                 line.saveState();
                 line.setColorStroke(border);
-                line.setLineWidth(0.75f);
-                line.roundRectangle(left + 0.4f, bottom + 0.4f, right - left - 0.8f, top - bottom - 0.8f, radius);
+                line.setLineWidth(1f);
+                line.roundRectangle(left + 0.5f, bottom + 0.5f, right - left - 1f, top - bottom - 1f, radius);
                 line.stroke();
                 line.restoreState();
             }
         }
     }
 
-    /** Draws a pill-shaped background centered within a cell, sized to fit the given content box exactly. */
-    private static final class PillBackgroundEvent implements PdfPCellEvent {
-        private final java.awt.Color fill;
-        private final float width;
-        private final float height;
-
-        PillBackgroundEvent(java.awt.Color fill, float width, float height) {
-            this.fill = fill;
-            this.width = width;
-            this.height = height;
-        }
-
-        @Override
-        public void cellLayout(PdfPCell cell, Rectangle position, PdfContentByte[] canvases) {
-            float left = position.getLeft() + (position.getWidth() - width) / 2f;
-            float bottom = position.getBottom() + (position.getHeight() - height) / 2f;
-
-            PdfContentByte background = canvases[PdfPTable.BACKGROUNDCANVAS];
-            background.saveState();
-            background.setColorFill(fill);
-            background.roundRectangle(left, bottom, width, height, height / 2f);
-            background.fill();
-            background.restoreState();
-        }
-    }
-
-    /** Draws a thin rule and a "planning-equipes · généré le ..." / "Page X" footer at the bottom of every page. */
+    /** Draws the "généré le ..." footer and a "Page x/y" counter, back-filled once the total page count is known. */
     private static final class FooterEvent extends PdfPageEventHelper {
+        private final String generatedAtText;
+        private final List<PdfTemplate> pageCounterTemplates = new ArrayList<>();
+
+        FooterEvent(String generatedAtText) {
+            this.generatedAtText = generatedAtText;
+        }
+
         @Override
         public void onEndPage(PdfWriter writer, Document document) {
             Rectangle page = document.getPageSize();
             float y = document.bottomMargin() - 18;
 
             PdfContentByte canvas = writer.getDirectContent();
-            canvas.setColorStroke(BORDER);
-            canvas.setLineWidth(0.5f);
-            canvas.moveTo(document.leftMargin(), y + 12);
-            canvas.lineTo(page.getWidth() - document.rightMargin(), y + 12);
-            canvas.stroke();
+            Phrase generated = new Phrase(generatedAtText, FOOTER_FONT);
+            ColumnText.showTextAligned(canvas, Element.ALIGN_LEFT, generated, document.leftMargin(), y, 0);
 
-            String generatedAt = "planning-equipes · généré le "
-                    + GENERATED_AT_FORMAT.format(Instant.now().atZone(ZoneOffset.systemDefault()));
-            Phrase footer = new Phrase(generatedAt, FOOTER_FONT);
-            ColumnText.showTextAligned(canvas, Element.ALIGN_LEFT, footer, document.leftMargin(), y, 0);
+            float templateWidth = 70f;
+            PdfTemplate template = canvas.createTemplate(templateWidth, 12f);
+            canvas.addTemplate(template, page.getWidth() - document.rightMargin() - templateWidth, y - 3f);
+            pageCounterTemplates.add(template);
+        }
 
-            Phrase pageNumber = new Phrase("Page " + writer.getPageNumber(), FOOTER_FONT);
-            ColumnText.showTextAligned(canvas, Element.ALIGN_RIGHT, pageNumber, page.getWidth() - document.rightMargin(),
-                    y, 0);
+        @Override
+        public void onCloseDocument(PdfWriter writer, Document document) {
+            int totalPages = writer.getPageNumber();
+            BaseFont baseFont = FOOTER_FONT.getCalculatedBaseFont(false);
+            for (int i = 0; i < pageCounterTemplates.size(); i++) {
+                PdfTemplate template = pageCounterTemplates.get(i);
+                String text = "Page " + (i + 1) + "/" + totalPages;
+                template.beginText();
+                template.setFontAndSize(baseFont, FOOTER_FONT.getSize());
+                template.setColorFill(MUTED);
+                template.showTextAligned(Element.ALIGN_RIGHT, text, 70f, 3f, 0);
+                template.endText();
+            }
         }
     }
 }
