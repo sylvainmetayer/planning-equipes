@@ -398,6 +398,35 @@ class LegalConstraintsTest extends ConstraintTestBase {
                 .penalizesBy(0);
     }
 
+    // --- Art. L3164-6 : jours fériés --------------------------------------
+
+    @Test
+    void mineurTravaillantLeQuatorzeJuilletEstPenalise() {
+        // B8 : les scénarios livrés courent en juillet 2026 et couvrent le
+        // 14 juillet (art. L3164-6, liste de l'art. L3133-1).
+        Creneau quatorzeJuillet = creneau("FETE-NAT", 7, java.time.LocalDate.of(2026, 7, 14),
+                LocalTime.of(11, 0), LocalTime.of(15, 0));
+        verify("travailInterditJourFerieMineur")
+                .given(poste(standStrat, quatorzeJuillet, mineurDebutant("M1")))
+                .penalizesBy(1);
+    }
+
+    @Test
+    void majeurTravaillantLeQuatorzeJuilletNEstPasPenalise() {
+        Creneau quatorzeJuillet = creneau("FETE-NAT", 7, java.time.LocalDate.of(2026, 7, 14),
+                LocalTime.of(11, 0), LocalTime.of(15, 0));
+        verify("travailInterditJourFerieMineur")
+                .given(poste(standStrat, quatorzeJuillet, majeurReferent("A1")))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void mineurTravaillantUnJourOrdinaireNEstPasPenalise() {
+        verify("travailInterditJourFerieMineur")
+                .given(poste(standStrat, creneauMatin, mineurDebutant("M1")))
+                .penalizesBy(0);
+    }
+
     // --- Art. L3132-1 / L3132-2 / L3164-2 : repos hebdomadaire -------------
 
     /** Créneau court (11 h → 15 h) du jour J de la semaine ISO 2026-W29. */

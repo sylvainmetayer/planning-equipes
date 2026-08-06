@@ -123,7 +123,8 @@ ainsi que le planning résolu.
   16 ans, de 22 h ensuite), 7 h ou 8 h de travail quotidien maximum, 35 h par
   semaine, 12 h ou 14 h de repos entre deux journées, jamais plus de 4 h 30 de
   travail d'affilée sans une pause d'au moins 30 minutes, deux jours de repos
-  consécutifs par semaine, et stands réservés aux majeurs respectés ;
+  consécutifs par semaine, aucun travail les jours fériés, et stands réservés
+  aux majeurs respectés ;
 - règle de sécurité posée par l'organisateur : un mineur est toujours accompagné
   d'un majeur sur le même stand et le même créneau ;
 - les exceptions posées manuellement par l'administrateur sont traitées au même

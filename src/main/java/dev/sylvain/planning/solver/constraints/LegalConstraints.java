@@ -17,6 +17,7 @@ import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
 import ai.timefold.solver.core.api.score.stream.Joiners;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.JoursFeries;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PosteAffectation;
 
@@ -110,7 +111,8 @@ public final class LegalConstraints {
                 travailContinuMaxMineur(constraintFactory),
                 maxJoursTravaillesParSemaine(constraintFactory),
                 reposHebdomadaireMinimal(constraintFactory),
-                reposHebdomadaireMineur(constraintFactory)
+                reposHebdomadaireMineur(constraintFactory),
+                travailInterditJourFerieMineur(constraintFactory)
         };
     }
 
@@ -490,6 +492,36 @@ public final class LegalConstraints {
                         (animateur, semaine, jours) -> JOURS_REPOS_CONSECUTIFS_MINEUR
                                 - plusLongueSerieDeJoursLibres(jours))
                 .asConstraint("reposHebdomadaireMineur");
+    }
+
+    /**
+     * No minor works on a public holiday.
+     *
+     * <p>Code du travail art. <b>L3164-6</b>: <i>« Les jeunes travailleurs ne
+     * peuvent travailler les jours de fête reconnus par la loi. »</i> The list
+     * of those days is art. L3133-1, computed by {@link JoursFeries}.</p>
+     *
+     * <p><b>No derogation is implemented.</b> Art. R3164-2 opens sectoral
+     * derogations set by decree; whether event management / animation is among
+     * them is <b>[non vérifié — à faire valider par un juriste]</b>. The most
+     * protective default therefore applies — a plain ban — and the derogation
+     * is deliberately left uncoded and unconfigurable until instructed. See
+     * {@link JoursFeries} for the other scope decisions (Alsace-Moselle,
+     * outre-mer).</p>
+     *
+     * <p>Not hypothetical on the shipped data: the scenarios run through July
+     * 2026 and cover 14 July.</p>
+     */
+    private Constraint travailInterditJourFerieMineur(ConstraintFactory constraintFactory) {
+        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
+                "travailInterditJourFerieMineur")
+                .filter(poste -> poste.getAnimateur() != null
+                        && poste.getCreneau() != null
+                        && poste.getCreneau().getDate() != null
+                        && poste.getAnimateur().estMineurLe(poste.getCreneau().getDate())
+                        && JoursFeries.estFerieEnFrance(poste.getCreneau().getDate()))
+                .penalize(HardMediumSoftScore.ONE_HARD)
+                .asConstraint("travailInterditJourFerieMineur");
     }
 
     /* ------------------------------ helpers ------------------------------- */

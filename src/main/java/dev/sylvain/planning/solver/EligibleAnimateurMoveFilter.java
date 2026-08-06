@@ -8,6 +8,7 @@ import ai.timefold.solver.core.impl.heuristic.selector.move.generic.ChangeMove;
 import ai.timefold.solver.core.impl.heuristic.selector.move.generic.SwapMove;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.JoursFeries;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
 
@@ -41,6 +42,7 @@ public final class EligibleAnimateurMoveFilter {
      *
      * <p>Mirrors, in order: {@code competenceCompatible},
      * {@code animateurDisponible}, {@code standReserveAuxMajeurs},
+     * {@code travailInterditJourFerieMineur},
      * {@code travailDeNuitInterditPourMineur}, {@code dureeQuotidienneMaxMineur}
      * and {@code travailContinuMaxMineur} (the last two only in their
      * single-créneau form). Keep this list and {@code LegalConstraints} in
@@ -65,6 +67,7 @@ public final class EligibleAnimateurMoveFilter {
                 : Creneau.DEBUT_NUIT_16_A_18_ANS;
         int plafondQuotidien = moinsDe16Ans ? DUREE_QUOTIDIENNE_MAX_MOINS_DE_16_ANS : DUREE_QUOTIDIENNE_MAX_MINEUR;
         return !poste.getStand().isReserveMajeurs()
+                && !JoursFeries.estFerieEnFrance(creneau.getDate())
                 && !creneau.chevaucheNuit(debutNuit)
                 && creneau.getDureeMinutes() <= plafondQuotidien
                 && creneau.getDureeMinutes() <= TRAVAIL_CONTINU_MAX_MINEUR;

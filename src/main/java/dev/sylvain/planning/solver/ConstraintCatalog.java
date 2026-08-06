@@ -48,6 +48,10 @@ public final class ConstraintCatalog {
                     "Un mineur ne peut pas dépasser 8 heures de travail effectif sur une même journée "
                             + "(Code du travail art. L3162-1), ramenées à 7 heures avant 16 ans "
                             + "(art. D4153-3)."),
+            new ConstraintDefinition("travailInterditJourFerieMineur", Niveau.HARD, "Légal (mineurs)",
+                    "Un mineur ne peut pas travailler un jour férié légal "
+                            + "(Code du travail art. L3164-6, liste de l'art. L3133-1). Aucune dérogation "
+                            + "sectorielle n'est appliquée : celle de l'art. R3164-2 reste à instruire."),
             new ConstraintDefinition("reposHebdomadaireMineur", Niveau.HARD, "Légal (mineurs)",
                     "Un mineur bénéficie de deux jours de repos consécutifs par semaine "
                             + "(Code du travail art. L3164-2). Les dérogations conventionnelles supposent un accord "

@@ -37,6 +37,7 @@ jamais d'un booléen stocké.
 | `dureeHebdomadaireMaxMineur` | L3162-1, D4153-3 | Maximum 35 h de travail effectif par semaine pour un mineur |
 | `travailContinuMaxMineur` | L3162-3 | Aucune période de travail ininterrompue de plus de **4 h 30** ; au-delà, pause d'au moins **30 minutes consécutives** |
 | `reposHebdomadaireMineur` | L3164-2 | **Deux jours de repos consécutifs** par semaine ISO |
+| `travailInterditJourFerieMineur` | L3164-6 (liste : L3133-1) | Aucun mineur ne travaille un **jour férié légal** |
 
 #### Trois régimes d'âge, pas deux
 
@@ -104,6 +105,27 @@ existe, ce qui rendrait un créneau isolé de 6 h non conforme) est défendable 
 **[à faire valider par un juriste]** ; elle se code en remplaçant le `>` par un
 `>=` dans `travailContinuMaxMajeur`. L'art. L3162-3, lui, dit explicitement
 « ne peut *excéder* quatre heures et demie » : aucune ambiguïté côté mineurs.
+
+#### Jours fériés : périmètre assumé
+
+La liste appliquée est celle de l'art. **L3133-1** (11 jours), calculée par
+`JoursFeries` — dates fixes plus les fêtes mobiles dérivées de Pâques (lundi de
+Pâques, Ascension, lundi de Pentecôte) par le comput grégorien.
+
+- **Aucune dérogation sectorielle n'est implémentée.** L'art. **R3164-2** ouvre
+  des dérogations dans des secteurs fixés par décret ; savoir si
+  l'événementiel / l'animation en fait partie **n'a pas été établi**
+  *[non vérifié — à faire valider ; à instruire par un juriste avant tout
+  codage]*. Le comportement retenu est donc l'interdiction pure, sans
+  dérogation et sans paramétrage possible : coder une dérogation sur une base
+  non vérifiée serait pire que de ne pas la coder.
+- **Métropole hors Alsace-Moselle.** Le Vendredi saint et le 26 décembre ne
+  sont fériés que dans le Haut-Rhin, le Bas-Rhin et la Moselle. Le modèle ne
+  porte aucune notion de région : ils sont volontairement exclus plutôt
+  qu'appliqués partout. Les ajouter suppose d'abord une région sur le festival
+  ou sur le stand.
+- L'abolition de l'esclavage (départements d'outre-mer) est hors périmètre pour
+  la même raison.
 
 #### Repos hebdomadaire : conventions de calcul
 
