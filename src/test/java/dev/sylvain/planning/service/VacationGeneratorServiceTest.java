@@ -85,6 +85,25 @@ class VacationGeneratorServiceTest {
     }
 
     @Test
+    void aucuneVacationNeTombeSousLeMinimumMemeQuandLeDernierRelaisApprocheLaFenetreRepas() {
+        // 10:00 -> 20:00 : 10h d'amplitude (scénario continu, jour sans
+        // nocturne). Le relais du soir est attiré vers la fenêtre repas
+        // 19h-21h, ce qui — sans garde-fou — laissait un reliquat de 18h30 à
+        // 20h00, une vacation de 90 min bien sous le minimum configuré (3h).
+        Creneau amplitude = amplitude(LocalTime.of(10, 0), LocalTime.of(20, 0));
+        ParametresDecoupage parametres = new ParametresDecoupage();
+
+        List<Creneau> vacations = VacationGeneratorService.genererVacations(List.of(amplitude), parametres);
+
+        for (Creneau vacation : vacations) {
+            assertThat(vacation.getDureeMinutes())
+                    .isGreaterThanOrEqualTo(parametres.getDureeVacationMinMinutes())
+                    .isLessThanOrEqualTo(parametres.getDureeVacationMaxMinutes());
+        }
+        assertThat(vacations.get(vacations.size() - 1).getHeureFin()).isEqualTo(LocalTime.of(20, 0));
+    }
+
+    @Test
     void aucuneVacationNeDepasseLePlafondMemeSurUneAmplitudeNonDivisibleProprement() {
         // 22h d'amplitude, plafond par défaut de 6h : force plusieurs relais.
         Creneau amplitude = amplitude(LocalTime.of(8, 0), LocalTime.of(6, 0));
@@ -120,6 +139,32 @@ class VacationGeneratorServiceTest {
             assertThat(vacation.getDureeMinutes())
                     .isLessThanOrEqualTo(VacationGeneratorService.SEUIL_PAUSE_LEGALE_MINUTES);
         }
+    }
+
+    @Test
+    void strategieReleveCouvreLaPauseInterneAuLieuDeFermerLeStand() {
+        // Même scénario que ci-dessus (plafond de 8h > seuil légal), mais avec
+        // la stratégie RELEVE : une troisième vacation, courte, doit couvrir
+        // exactement la pause pour que le stand reste ouvert.
+        Creneau amplitude = amplitude(LocalTime.of(10, 0), LocalTime.of(18, 0)); // 8h
+        ParametresDecoupage parametres = new ParametresDecoupage();
+        parametres.setDureeVacationMaxMinutes(8 * 60);
+        parametres.setDureeVacationCibleMinutes(8 * 60);
+        parametres.setStrategieCouverturePendantPause(
+                ParametresDecoupage.StrategieCouverturePendantPause.RELEVE);
+
+        List<Creneau> vacations = VacationGeneratorService.genererVacations(List.of(amplitude), parametres);
+
+        assertThat(vacations).hasSize(3);
+        Creneau avantPause = vacations.get(0);
+        Creneau releve = vacations.get(1);
+        Creneau apresPause = vacations.get(2);
+        assertThat(avantPause.getHeureFin()).isEqualTo(LocalTime.of(14, 0));
+        assertThat(apresPause.getHeureDebut()).isEqualTo(LocalTime.of(14, 45));
+        // La relève comble exactement le trou : aucune interruption de
+        // couverture du stand.
+        assertThat(releve.getHeureDebut()).isEqualTo(avantPause.getHeureFin());
+        assertThat(releve.getHeureFin()).isEqualTo(apresPause.getHeureDebut());
     }
 
     @Test

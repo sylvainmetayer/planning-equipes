@@ -100,6 +100,14 @@ public final class VacationGeneratorService {
                     break;
                 }
             }
+            // Ne jamais laisser un reliquat plus court que le minimum après ce
+            // relais : sans ce garde-fou, un cut proche de borneHaute (par ex.
+            // pour tomber dans une fenêtre repas) peut réduire la dernière
+            // vacation de l'amplitude à quelques dizaines de minutes.
+            int resteApresRelais = duree - (fin - chevauchement);
+            if (resteApresRelais > 0 && resteApresRelais < min) {
+                fin = Math.max(fin - (min - resteApresRelais), borneBasse);
+            }
             segments.add(new int[] { courant, fin });
             courant = fin - chevauchement;
         }
@@ -114,7 +122,9 @@ public final class VacationGeneratorService {
      * <= SEUIL_PAUSE_LEGALE_MINUTES}. Splits the offending segment into two,
      * separated by a pause (a meal break if one overlaps the split point,
      * otherwise the 20-min legal minimum), snapped into any meal window that
-     * intersects the segment.
+     * intersects the segment. When {@link ParametresDecoupage.StrategieCouverturePendantPause#RELEVE}
+     * is configured, a third short vacation covering exactly the pause window
+     * is added so the stand stays staffed instead of closing.
      */
     private static List<int[]> appliquerPauseLegaleSiNecessaire(int[] segment, Creneau amplitude,
             ParametresDecoupage parametres) {
@@ -138,6 +148,10 @@ public final class VacationGeneratorService {
         int pauseFin = Math.min(segment[1], pauseDebut + dureePause);
         List<int[]> resultat = new ArrayList<>();
         resultat.add(new int[] { segment[0], pauseDebut });
+        if (parametres.getStrategieCouverturePendantPause() == ParametresDecoupage.StrategieCouverturePendantPause.RELEVE
+                && pauseFin > pauseDebut) {
+            resultat.add(new int[] { pauseDebut, pauseFin });
+        }
         resultat.add(new int[] { pauseFin, segment[1] });
         return resultat;
     }

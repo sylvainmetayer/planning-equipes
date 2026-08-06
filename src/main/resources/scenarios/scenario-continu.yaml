@@ -273,9 +273,8 @@ animateurs:
     manager: false
     competences:
       ADRESSE: AUTONOME
-    joursIndisponibles:
-      - 2026-07-09
-      - 2026-07-10
+      AMBIANCE: AUTONOME
+    joursIndisponibles: []
   - id: A2
     prenom: Jules
     nom: Roux
@@ -284,10 +283,8 @@ animateurs:
     competences:
       AMBIANCE: AUTONOME
     joursIndisponibles:
-      - 2026-07-10
-      - 2026-07-11
-      - 2026-07-12
       - 2026-07-13
+      - 2026-07-12
   - id: A3
     prenom: Berenice
     nom: Richard
@@ -295,23 +292,18 @@ animateurs:
     manager: false
     competences:
       ADRESSE: REFERENT
-    joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-18
-      - 2026-07-19
+      ROLE: AUTONOME
+    joursIndisponibles: []
   - id: A4
     prenom: Iris
     nom: Henry
     dateNaissance: 1996-12-10
     manager: false
     competences:
-      COOPERATIF: AUTONOME
       ADRESSE: DEBUTANT
+      COOPERATIF: AUTONOME
     joursIndisponibles:
-      - 2026-07-09
       - 2026-07-16
-      - 2026-07-17
-      - 2026-07-18
   - id: A5
     prenom: Adrien
     nom: Petit
@@ -320,18 +312,16 @@ animateurs:
     competences:
       ROLE: AUTONOME
     joursIndisponibles:
-      - 2026-07-14
       - 2026-07-15
+      - 2026-07-14
       - 2026-07-16
-      - 2026-07-17
-      - 2026-07-18
-      - 2026-07-19
   - id: A6
     prenom: Karim
     nom: Michel
     dateNaissance: 1995-07-02
     manager: true
     competences:
+      ROLE: AUTONOME
       COOPERATIF: DEBUTANT
     joursIndisponibles: []
   - id: A7
@@ -340,13 +330,13 @@ animateurs:
     dateNaissance: 1960-02-01
     manager: false
     competences:
-      STRATEGIE: DEBUTANT
-      ENIGME: DEBUTANT
       ADRESSE: REFERENT
+      ENIGME: DEBUTANT
+      STRATEGIE: DEBUTANT
+      ROLE: AUTONOME
     joursIndisponibles:
       - 2026-07-15
       - 2026-07-16
-      - 2026-07-17
   - id: A8
     prenom: Thibault
     nom: Simon
@@ -354,10 +344,8 @@ animateurs:
     manager: false
     competences:
       STRATEGIE: AUTONOME
-    joursIndisponibles:
-      - 2026-07-17
-      - 2026-07-18
-      - 2026-07-19
+      ROLE: AUTONOME
+    joursIndisponibles: []
   - id: A9
     prenom: Noemie
     nom: Muller
@@ -366,6 +354,7 @@ animateurs:
     competences:
       STRATEGIE: AUTONOME
       AMBIANCE: DEBUTANT
+      ROLE: AUTONOME
     joursIndisponibles:
       - 2026-07-19
   - id: A10
@@ -374,12 +363,11 @@ animateurs:
     dateNaissance: 1992-01-23
     manager: false
     competences:
-      ENIGME: DEBUTANT
       ADRESSE: DEBUTANT
+      ENIGME: DEBUTANT
       AMBIANCE: AUTONOME
-    joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-09
+      ROLE: AUTONOME
+    joursIndisponibles: []
   - id: A11
     prenom: Olivier
     nom: Fontaine
@@ -387,32 +375,29 @@ animateurs:
     manager: false
     competences:
       AMBIANCE: DEBUTANT
-    joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-09
-      - 2026-07-10
+      ROLE: AUTONOME
+    joursIndisponibles: []
   - id: A12
     prenom: Jules
     nom: Fontaine
     dateNaissance: 1960-08-20
     manager: false
     competences:
-      COOPERATIF: REFERENT
       ADRESSE: AUTONOME
       ENIGME: AUTONOME
-    joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-18
-      - 2026-07-19
+      ROLE: AUTONOME
+      COOPERATIF: REFERENT
+    joursIndisponibles: []
   - id: A13
     prenom: William
     nom: Moreau
     dateNaissance: 1982-09-24
     manager: false
     competences:
+      ADRESSE: AUTONOME
+      ENIGME: DEBUTANT
       AMBIANCE: DEBUTANT
       COOPERATIF: AUTONOME
-      ENIGME: DEBUTANT
     joursIndisponibles:
       - 2026-07-19
   - id: A14
@@ -421,15 +406,11 @@ animateurs:
     dateNaissance: 2010-08-23
     manager: false
     competences:
-      AMBIANCE: AUTONOME
       ADRESSE: AUTONOME
+      AMBIANCE: AUTONOME
     joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-09
-      - 2026-07-10
-      - 2026-07-11
-      - 2026-07-12
       - 2026-07-13
+      - 2026-07-12
   - id: A15
     prenom: William
     nom: Roux
@@ -437,6 +418,7 @@ animateurs:
     manager: false
     competences:
       ENIGME: AUTONOME
+      ROLE: AUTONOME
     joursIndisponibles: []
   - id: A16
     prenom: Jules
@@ -444,6 +426,7 @@ animateurs:
     dateNaissance: 1978-11-23
     manager: false
     competences:
+      ADRESSE: AUTONOME
       STRATEGIE: DEBUTANT
     joursIndisponibles:
       - 2026-07-19
@@ -462,10 +445,9 @@ animateurs:
     dateNaissance: 1992-11-19
     manager: false
     competences:
+      ROLE: AUTONOME
       COOPERATIF: DEBUTANT
-    joursIndisponibles:
-      - 2026-07-17
-      - 2026-07-18
+    joursIndisponibles: []
   - id: A19
     prenom: Wafa
     nom: Blanc
@@ -474,20 +456,19 @@ animateurs:
     competences:
       ADRESSE: AUTONOME
       ROLE: DEBUTANT
-    joursIndisponibles:
-      - 2026-07-08
+      AMBIANCE: AUTONOME
+    joursIndisponibles: []
   - id: A20
     prenom: Olivier
     nom: Fontaine
     dateNaissance: 1963-03-10
     manager: false
     competences:
-      COOPERATIF: REFERENT
       STRATEGIE: REFERENT
       AMBIANCE: AUTONOME
+      ROLE: AUTONOME
+      COOPERATIF: REFERENT
     joursIndisponibles:
-      - 2026-07-10
-      - 2026-07-11
       - 2026-07-12
   - id: A21
     prenom: Gabrielle
@@ -495,23 +476,21 @@ animateurs:
     dateNaissance: 1990-12-10
     manager: false
     competences:
+      ADRESSE: AUTONOME
       ROLE: AUTONOME
-      COOPERATIF: AUTONOME
       AMBIANCE: DEBUTANT
-    joursIndisponibles:
-      - 2026-07-08
+      COOPERATIF: AUTONOME
+    joursIndisponibles: []
   - id: A22
     prenom: Valentine
     nom: Perrin
     dateNaissance: 1974-07-11
     manager: false
     competences:
-      ENIGME: DEBUTANT
       ADRESSE: DEBUTANT
-    joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-18
-      - 2026-07-19
+      ENIGME: DEBUTANT
+      ROLE: AUTONOME
+    joursIndisponibles: []
   - id: A23
     prenom: Diane
     nom: Morin
@@ -520,22 +499,20 @@ animateurs:
     competences:
       ADRESSE: AUTONOME
       ENFANT: AUTONOME
-    joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-09
-      - 2026-07-10
+      ROLE: AUTONOME
+    joursIndisponibles: []
   - id: A24
     prenom: Quitterie
     nom: Blanc
     dateNaissance: 1968-02-21
     manager: false
     competences:
+      ADRESSE: AUTONOME
       ENIGME: DEBUTANT
       COOPERATIF: DEBUTANT
     joursIndisponibles:
       - 2026-07-15
       - 2026-07-16
-      - 2026-07-17
   - id: A25
     prenom: Remi
     nom: Lefebvre
@@ -543,6 +520,7 @@ animateurs:
     manager: false
     competences:
       ENFANT: AUTONOME
+      ROLE: AUTONOME
     joursIndisponibles: []
   - id: A26
     prenom: Chloe
@@ -550,9 +528,9 @@ animateurs:
     dateNaissance: 1980-08-08
     manager: false
     competences:
+      ADRESSE: AUTONOME
       ROLE: DEBUTANT
     joursIndisponibles:
-      - 2026-07-18
       - 2026-07-19
   - id: A27
     prenom: Pauline
@@ -562,15 +540,15 @@ animateurs:
     competences:
       ADRESSE: AUTONOME
       STRATEGIE: AUTONOME
-    joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-09
+      ROLE: AUTONOME
+    joursIndisponibles: []
   - id: A28
     prenom: Perrine
     nom: Rousseau
     dateNaissance: 1973-12-28
     manager: false
     competences:
+      ADRESSE: AUTONOME
       AMBIANCE: DEBUTANT
       COOPERATIF: AUTONOME
     joursIndisponibles:
@@ -581,11 +559,11 @@ animateurs:
     dateNaissance: 1973-10-20
     manager: false
     competences:
-      STRATEGIE: DEBUTANT
       ADRESSE: DEBUTANT
       ENFANT: AUTONOME
+      STRATEGIE: DEBUTANT
+      ROLE: AUTONOME
     joursIndisponibles:
-      - 2026-07-08
       - 2026-07-19
   - id: A30
     prenom: Florian
@@ -593,33 +571,29 @@ animateurs:
     dateNaissance: 2006-04-13
     manager: false
     competences:
+      ADRESSE: AUTONOME
       STRATEGIE: DEBUTANT
-    joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-17
-      - 2026-07-18
+    joursIndisponibles: []
   - id: A31
     prenom: Noemie
     nom: Garcia
     dateNaissance: 1985-02-14
     manager: false
     competences:
+      ADRESSE: AUTONOME
       COOPERATIF: AUTONOME
-    joursIndisponibles:
-      - 2026-07-09
-      - 2026-07-10
-      - 2026-07-17
+    joursIndisponibles: []
   - id: A32
     prenom: Emma
     nom: Richard
     dateNaissance: 1968-08-15
     manager: false
     competences:
-      COOPERATIF: AUTONOME
-      ROLE: REFERENT
       ADRESSE: DEBUTANT
+      ROLE: REFERENT
+      AMBIANCE: AUTONOME
+      COOPERATIF: AUTONOME
     joursIndisponibles:
-      - 2026-07-18
       - 2026-07-19
   - id: A33
     prenom: Fabien
@@ -629,10 +603,8 @@ animateurs:
     competences:
       ADRESSE: AUTONOME
       ENIGME: DEBUTANT
-    joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-09
-      - 2026-07-10
+      AMBIANCE: AUTONOME
+    joursIndisponibles: []
   - id: A34
     prenom: Victor
     nom: Blanc
@@ -641,8 +613,8 @@ animateurs:
     competences:
       STRATEGIE: DEBUTANT
       ENFANT: REFERENT
+      ROLE: AUTONOME
     joursIndisponibles:
-      - 2026-07-08
       - 2026-07-19
   - id: A35
     prenom: Marc
@@ -652,11 +624,7 @@ animateurs:
     competences:
       ADRESSE: AUTONOME
       ENIGME: DEBUTANT
-    joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-09
-      - 2026-07-10
-      - 2026-07-11
+    joursIndisponibles: []
   - id: A36
     prenom: Bruno
     nom: Simon
@@ -664,6 +632,7 @@ animateurs:
     manager: false
     competences:
       STRATEGIE: DEBUTANT
+      ROLE: AUTONOME
     joursIndisponibles: []
   - id: A37
     prenom: Elise
@@ -673,20 +642,17 @@ animateurs:
     competences:
       ENFANT: DEBUTANT
     joursIndisponibles:
-      - 2026-07-10
-      - 2026-07-11
-      - 2026-07-12
       - 2026-07-13
+      - 2026-07-12
   - id: A38
     prenom: Ugo
     nom: Mathieu
     dateNaissance: 1983-09-16
     manager: false
     competences:
+      ADRESSE: AUTONOME
       ENFANT: DEBUTANT
     joursIndisponibles:
-      - 2026-07-10
-      - 2026-07-11
       - 2026-07-12
   - id: A39
     prenom: Laura
@@ -694,8 +660,9 @@ animateurs:
     dateNaissance: 2002-02-11
     manager: false
     competences:
-      COOPERATIF: AUTONOME
       ADRESSE: DEBUTANT
+      ROLE: AUTONOME
+      COOPERATIF: AUTONOME
     joursIndisponibles: []
   - id: A40
     prenom: Jules
@@ -707,9 +674,6 @@ animateurs:
       ROLE: DEBUTANT
       COOPERATIF: DEBUTANT
     joursIndisponibles:
-      - 2026-07-09
-      - 2026-07-10
-      - 2026-07-11
       - 2026-07-12
   - id: A41
     prenom: Xavier
@@ -718,6 +682,7 @@ animateurs:
     manager: false
     competences:
       ENFANT: DEBUTANT
+      ROLE: AUTONOME
     joursIndisponibles: []
   - id: A42
     prenom: Umberto
@@ -725,36 +690,31 @@ animateurs:
     dateNaissance: 1972-01-27
     manager: false
     competences:
+      ADRESSE: AUTONOME
       STRATEGIE: REFERENT
-    joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-18
-      - 2026-07-19
+    joursIndisponibles: []
   - id: A43
     prenom: Romane
     nom: Garcia
     dateNaissance: 2002-01-10
     manager: false
     competences:
-      COOPERATIF: REFERENT
-      AMBIANCE: REFERENT
+      ADRESSE: AUTONOME
       ROLE: AUTONOME
-    joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-17
-      - 2026-07-18
+      AMBIANCE: REFERENT
+      COOPERATIF: REFERENT
+    joursIndisponibles: []
   - id: A44
     prenom: Marc
     nom: Laurent
     dateNaissance: 2004-07-17
     manager: false
     competences:
-      ENFANT: DEBUTANT
       ADRESSE: REFERENT
+      ENFANT: DEBUTANT
       ROLE: DEBUTANT
-    joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-09
+      AMBIANCE: AUTONOME
+    joursIndisponibles: []
   - id: A45
     prenom: Sarah
     nom: Rousseau
@@ -762,8 +722,8 @@ animateurs:
     manager: false
     competences:
       ADRESSE: AUTONOME
-      AMBIANCE: DEBUTANT
       STRATEGIE: AUTONOME
+      AMBIANCE: DEBUTANT
     joursIndisponibles:
       - 2026-07-19
   - id: A46
@@ -774,39 +734,38 @@ animateurs:
     competences:
       ADRESSE: DEBUTANT
       ROLE: DEBUTANT
-    joursIndisponibles:
-      - 2026-07-08
+      AMBIANCE: AUTONOME
+    joursIndisponibles: []
   - id: A47
     prenom: Marc
     nom: Henry
     dateNaissance: 1988-05-21
     manager: true
     competences:
+      ADRESSE: AUTONOME
       ROLE: AUTONOME
     joursIndisponibles:
       - 2026-07-15
       - 2026-07-16
-      - 2026-07-17
   - id: A48
     prenom: Diane
     nom: Rousseau
     dateNaissance: 1977-03-28
     manager: false
     competences:
-      AMBIANCE: DEBUTANT
       STRATEGIE: AUTONOME
-    joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-18
-      - 2026-07-19
+      ENFANT: AUTONOME
+      AMBIANCE: DEBUTANT
+    joursIndisponibles: []
   - id: A49
     prenom: Karim
     nom: Lefebvre
     dateNaissance: 1963-05-23
     manager: true
     competences:
-      ENFANT: DEBUTANT
       ADRESSE: REFERENT
+      ENFANT: DEBUTANT
+      ROLE: AUTONOME
     joursIndisponibles: []
   - id: A50
     prenom: Bruno
@@ -816,11 +775,6 @@ animateurs:
     competences:
       COOPERATIF: DEBUTANT
     joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-09
-      - 2026-07-10
-      - 2026-07-11
-      - 2026-07-18
       - 2026-07-19
   - id: A51
     prenom: Iris
@@ -831,20 +785,19 @@ animateurs:
       ADRESSE: AUTONOME
       AMBIANCE: DEBUTANT
     joursIndisponibles:
-      - 2026-07-13
-      - 2026-07-14
       - 2026-07-15
+      - 2026-07-14
+      - 2026-07-13
       - 2026-07-16
-      - 2026-07-17
   - id: A52
     prenom: Bruno
     nom: Durand
     dateNaissance: 2002-10-02
     manager: false
     competences:
+      ADRESSE: AUTONOME
       AMBIANCE: AUTONOME
-    joursIndisponibles:
-      - 2026-07-08
+    joursIndisponibles: []
   - id: A53
     prenom: Elise
     nom: Durand
@@ -852,6 +805,7 @@ animateurs:
     manager: false
     competences:
       ADRESSE: AUTONOME
+      AMBIANCE: AUTONOME
     joursIndisponibles:
       - 2026-07-19
   - id: A54
@@ -860,10 +814,10 @@ animateurs:
     dateNaissance: 1989-05-12
     manager: false
     competences:
-      COOPERATIF: REFERENT
       STRATEGIE: AUTONOME
+      ROLE: AUTONOME
+      COOPERATIF: REFERENT
     joursIndisponibles:
-      - 2026-07-18
       - 2026-07-19
   - id: A55
     prenom: Chloe
@@ -872,9 +826,8 @@ animateurs:
     manager: true
     competences:
       ENIGME: AUTONOME
+      AMBIANCE: AUTONOME
     joursIndisponibles:
-      - 2026-07-10
-      - 2026-07-11
       - 2026-07-12
   - id: A56
     prenom: Laura
@@ -882,8 +835,9 @@ animateurs:
     dateNaissance: 1975-03-08
     manager: true
     competences:
-      ENFANT: AUTONOME
+      ADRESSE: AUTONOME
       ENIGME: DEBUTANT
+      ENFANT: AUTONOME
       ROLE: REFERENT
     joursIndisponibles: []
   - id: A57
@@ -892,33 +846,30 @@ animateurs:
     dateNaissance: 2004-05-06
     manager: false
     competences:
-      ENIGME: DEBUTANT
-      COOPERATIF: AUTONOME
       ADRESSE: DEBUTANT
-    joursIndisponibles:
-      - 2026-07-09
-      - 2026-07-10
-      - 2026-07-11
+      ENIGME: DEBUTANT
+      ENFANT: AUTONOME
+      COOPERATIF: AUTONOME
+    joursIndisponibles: []
   - id: A58
     prenom: Yasmine
     nom: Dubois
     dateNaissance: 1990-04-23
     manager: true
     competences:
+      ADRESSE: AUTONOME
       AMBIANCE: AUTONOME
       COOPERATIF: AUTONOME
-    joursIndisponibles:
-      - 2026-07-08
+    joursIndisponibles: []
   - id: A59
     prenom: Xavier
     nom: Leroy
     dateNaissance: 1962-11-16
     manager: false
     competences:
+      ROLE: AUTONOME
       COOPERATIF: DEBUTANT
-    joursIndisponibles:
-      - 2026-07-17
-      - 2026-07-18
+    joursIndisponibles: []
   - id: A60
     prenom: Iris
     nom: Richard
@@ -927,10 +878,8 @@ animateurs:
     competences:
       COOPERATIF: AUTONOME
     joursIndisponibles:
-      - 2026-07-10
-      - 2026-07-11
-      - 2026-07-12
       - 2026-07-13
+      - 2026-07-12
   - id: A61
     prenom: Sarah
     nom: Morin
@@ -939,9 +888,6 @@ animateurs:
     competences:
       ROLE: AUTONOME
     joursIndisponibles:
-      - 2026-07-09
-      - 2026-07-10
-      - 2026-07-11
       - 2026-07-12
   - id: A62
     prenom: Simon
@@ -950,6 +896,7 @@ animateurs:
     manager: false
     competences:
       ENFANT: DEBUTANT
+      ROLE: AUTONOME
     joursIndisponibles: []
   - id: A63
     prenom: Xavier
@@ -957,11 +904,11 @@ animateurs:
     dateNaissance: 2001-05-22
     manager: false
     competences:
-      ROLE: DEBUTANT
-      ENFANT: DEBUTANT
       ADRESSE: DEBUTANT
+      ENFANT: DEBUTANT
+      ROLE: DEBUTANT
+      AMBIANCE: AUTONOME
     joursIndisponibles:
-      - 2026-07-08
       - 2026-07-19
   - id: A64
     prenom: Jules
@@ -969,25 +916,21 @@ animateurs:
     dateNaissance: 1982-11-16
     manager: false
     competences:
-      COOPERATIF: DEBUTANT
+      ENFANT: AUTONOME
       AMBIANCE: DEBUTANT
-    joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-09
-      - 2026-07-18
+      COOPERATIF: DEBUTANT
+    joursIndisponibles: []
   - id: A65
     prenom: Fabien
     nom: Garcia
     dateNaissance: 2001-04-07
     manager: false
     competences:
-      ROLE: AUTONOME
-      ENFANT: DEBUTANT
       ADRESSE: DEBUTANT
-    joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-17
-      - 2026-07-18
+      ENFANT: DEBUTANT
+      ENIGME: AUTONOME
+      ROLE: AUTONOME
+    joursIndisponibles: []
   - id: A66
     prenom: Zoe
     nom: David
@@ -995,13 +938,7 @@ animateurs:
     manager: false
     competences:
       ROLE: AUTONOME
-    joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-09
-      - 2026-07-10
-      - 2026-07-17
-      - 2026-07-18
-      - 2026-07-19
+    joursIndisponibles: []
   - id: A67
     prenom: Ugo
     nom: Nicolas
@@ -1011,10 +948,9 @@ animateurs:
       ENIGME: REFERENT
       ENFANT: AUTONOME
     joursIndisponibles:
-      - 2026-07-14
       - 2026-07-15
+      - 2026-07-14
       - 2026-07-16
-      - 2026-07-17
   - id: A68
     prenom: Xavier
     nom: Leroy
@@ -1023,12 +959,10 @@ animateurs:
     competences:
       COOPERATIF: AUTONOME
     joursIndisponibles:
-      - 2026-07-14
       - 2026-07-15
-      - 2026-07-16
-      - 2026-07-17
-      - 2026-07-18
+      - 2026-07-14
       - 2026-07-19
+      - 2026-07-16
   - id: A69
     prenom: Perrine
     nom: Blanc
@@ -1037,8 +971,7 @@ animateurs:
     competences:
       ROLE: AUTONOME
       AMBIANCE: DEBUTANT
-    joursIndisponibles:
-      - 2026-07-08
+    joursIndisponibles: []
   - id: A70
     prenom: Ines
     nom: Lefebvre
@@ -1047,10 +980,9 @@ animateurs:
     competences:
       ENIGME: AUTONOME
     joursIndisponibles:
-      - 2026-07-14
       - 2026-07-15
+      - 2026-07-14
       - 2026-07-16
-      - 2026-07-17
   - id: A71
     prenom: Julien
     nom: Roux
@@ -1058,22 +990,20 @@ animateurs:
     manager: false
     competences:
       ENFANT: AUTONOME
+      ENIGME: AUTONOME
     joursIndisponibles:
       - 2026-07-16
-      - 2026-07-17
-      - 2026-07-18
   - id: A72
     prenom: Hicham
     nom: Dubois
     dateNaissance: 1972-11-03
     manager: false
     competences:
-      ENFANT: REFERENT
       STRATEGIE: DEBUTANT
+      ENFANT: REFERENT
+      ROLE: AUTONOME
       COOPERATIF: DEBUTANT
-    joursIndisponibles:
-      - 2026-07-10
-      - 2026-07-11
+    joursIndisponibles: []
   - id: A73
     prenom: Ugo
     nom: Leroy
@@ -1082,10 +1012,8 @@ animateurs:
     competences:
       AMBIANCE: DEBUTANT
     joursIndisponibles:
-      - 2026-07-10
-      - 2026-07-11
-      - 2026-07-12
       - 2026-07-13
+      - 2026-07-12
   - id: A74
     prenom: Marc
     nom: Muller
@@ -1093,10 +1021,9 @@ animateurs:
     manager: true
     competences:
       STRATEGIE: AUTONOME
+      ENFANT: AUTONOME
       AMBIANCE: AUTONOME
     joursIndisponibles:
-      - 2026-07-10
-      - 2026-07-11
       - 2026-07-12
   - id: A75
     prenom: Sarah
@@ -1104,11 +1031,9 @@ animateurs:
     dateNaissance: 1961-02-19
     manager: true
     competences:
+      ENFANT: AUTONOME
       ROLE: REFERENT
-    joursIndisponibles:
-      - 2026-07-09
-      - 2026-07-10
-      - 2026-07-11
+    joursIndisponibles: []
   - id: A76
     prenom: Adrien
     nom: Thomas
@@ -1118,8 +1043,6 @@ animateurs:
       ENIGME: DEBUTANT
       STRATEGIE: REFERENT
     joursIndisponibles:
-      - 2026-07-17
-      - 2026-07-18
       - 2026-07-19
   - id: A77
     prenom: Emma
@@ -1128,8 +1051,8 @@ animateurs:
     manager: false
     competences:
       ENIGME: REFERENT
+      ROLE: AUTONOME
     joursIndisponibles:
-      - 2026-07-18
       - 2026-07-19
   - id: A78
     prenom: William
@@ -1139,9 +1062,8 @@ animateurs:
     competences:
       ENFANT: DEBUTANT
       AMBIANCE: AUTONOME
-    joursIndisponibles:
-      - 2026-07-11
-      - 2026-07-17
+      ROLE: AUTONOME
+    joursIndisponibles: []
   - id: A79
     prenom: Yasmine
     nom: Laurent
@@ -1150,10 +1072,8 @@ animateurs:
     competences:
       ADRESSE: AUTONOME
       STRATEGIE: DEBUTANT
-    joursIndisponibles:
-      - 2026-07-09
-      - 2026-07-10
-      - 2026-07-11
+      ENIGME: AUTONOME
+    joursIndisponibles: []
   - id: A80
     prenom: Julien
     nom: Henry
@@ -1163,10 +1083,6 @@ animateurs:
       ADRESSE: DEBUTANT
       STRATEGIE: DEBUTANT
     joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-09
-      - 2026-07-10
-      - 2026-07-11
       - 2026-07-12
   - id: A81
     prenom: Laura
@@ -1174,10 +1090,10 @@ animateurs:
     dateNaissance: 1969-04-21
     manager: false
     competences:
-      AMBIANCE: AUTONOME
       ENFANT: DEBUTANT
+      AMBIANCE: AUTONOME
+      ROLE: AUTONOME
     joursIndisponibles:
-      - 2026-07-18
       - 2026-07-19
   - id: A82
     prenom: Gaelle
@@ -1186,6 +1102,7 @@ animateurs:
     manager: true
     competences:
       ENFANT: AUTONOME
+      ROLE: AUTONOME
     joursIndisponibles: []
   - id: A83
     prenom: Yasmine
@@ -1194,51 +1111,42 @@ animateurs:
     manager: false
     competences:
       ENIGME: DEBUTANT
+      STRATEGIE: AUTONOME
     joursIndisponibles:
       - 2026-07-15
       - 2026-07-16
-      - 2026-07-17
   - id: A84
     prenom: Elise
     nom: Moreau
     dateNaissance: 2010-09-19
     manager: false
     competences:
-      ROLE: DEBUTANT
       ADRESSE: AUTONOME
+      ROLE: DEBUTANT
       AMBIANCE: DEBUTANT
     joursIndisponibles:
-      - 2026-07-08
       - 2026-07-16
-      - 2026-07-17
-      - 2026-07-18
-      - 2026-07-19
   - id: A85
     prenom: Hugo
     nom: Michel
     dateNaissance: 2010-02-19
     manager: false
     competences:
-      ENIGME: REFERENT
       ADRESSE: REFERENT
-    joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-09
-      - 2026-07-10
+      ENIGME: REFERENT
+    joursIndisponibles: []
   - id: A86
     prenom: Mathis
     nom: Rousseau
     dateNaissance: 2009-04-27
     manager: false
     competences:
-      ENIGME: REFERENT
       ADRESSE: REFERENT
+      ENIGME: REFERENT
     joursIndisponibles:
       - 2026-07-15
-      - 2026-07-16
-      - 2026-07-17
-      - 2026-07-18
       - 2026-07-19
+      - 2026-07-16
   - id: A87
     prenom: Elise
     nom: Vincent
@@ -1246,30 +1154,29 @@ animateurs:
     manager: false
     competences:
       ENFANT: DEBUTANT
+      ENIGME: AUTONOME
     joursIndisponibles:
       - 2026-07-15
       - 2026-07-16
-      - 2026-07-17
   - id: A88
     prenom: Oscar
     nom: Leroy
     dateNaissance: 1989-12-23
     manager: false
     competences:
-      COOPERATIF: AUTONOME
       ENFANT: DEBUTANT
-    joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-09
-      - 2026-07-10
+      ENIGME: AUTONOME
+      COOPERATIF: AUTONOME
+    joursIndisponibles: []
   - id: A89
     prenom: Florian
     nom: Moreau
     dateNaissance: 1982-07-13
     manager: false
     competences:
-      ROLE: DEBUTANT
       ADRESSE: AUTONOME
+      ENFANT: AUTONOME
+      ROLE: DEBUTANT
       AMBIANCE: AUTONOME
     joursIndisponibles: []
   - id: A90
@@ -1279,9 +1186,8 @@ animateurs:
     manager: false
     competences:
       ENIGME: DEBUTANT
-    joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-09
+      ROLE: AUTONOME
+    joursIndisponibles: []
   - id: A91
     prenom: Tania
     nom: Richard
@@ -1299,10 +1205,8 @@ animateurs:
     manager: true
     competences:
       ADRESSE: DEBUTANT
-    joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-18
-      - 2026-07-19
+      ENIGME: AUTONOME
+    joursIndisponibles: []
   - id: A93
     prenom: Remi
     nom: Simon
@@ -1310,10 +1214,7 @@ animateurs:
     manager: false
     competences:
       STRATEGIE: REFERENT
-    joursIndisponibles:
-      - 2026-07-09
-      - 2026-07-17
-      - 2026-07-18
+    joursIndisponibles: []
   - id: A94
     prenom: Lea
     nom: David
@@ -1322,10 +1223,7 @@ animateurs:
     competences:
       ADRESSE: REFERENT
       STRATEGIE: REFERENT
-    joursIndisponibles:
-      - 2026-07-09
-      - 2026-07-10
-      - 2026-07-18
+    joursIndisponibles: []
   - id: A95
     prenom: Yasmine
     nom: Robert
@@ -1333,6 +1231,7 @@ animateurs:
     manager: true
     competences:
       ADRESSE: REFERENT
+      ROLE: AUTONOME
     joursIndisponibles: []
   - id: A96
     prenom: Quitterie
@@ -1341,10 +1240,8 @@ animateurs:
     manager: false
     competences:
       ENFANT: DEBUTANT
-    joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-09
-      - 2026-07-19
+      STRATEGIE: AUTONOME
+    joursIndisponibles: []
   - id: A97
     prenom: Berenice
     nom: Nicolas
@@ -1352,32 +1249,28 @@ animateurs:
     manager: false
     competences:
       STRATEGIE: DEBUTANT
-    joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-09
+      ROLE: AUTONOME
+    joursIndisponibles: []
   - id: A98
     prenom: Wafa
     nom: Laurent
     dateNaissance: 1971-10-22
     manager: false
     competences:
+      STRATEGIE: DEBUTANT
       ENFANT: AUTONOME
       COOPERATIF: DEBUTANT
-      STRATEGIE: DEBUTANT
     joursIndisponibles:
-      - 2026-07-10
       - 2026-07-16
-      - 2026-07-17
   - id: A99
     prenom: Perrine
     nom: Roux
     dateNaissance: 1976-12-10
     manager: false
     competences:
+      ROLE: AUTONOME
       COOPERATIF: DEBUTANT
-    joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-09
+    joursIndisponibles: []
   - id: A100
     prenom: Ugo
     nom: Fontaine
@@ -1386,20 +1279,16 @@ animateurs:
     competences:
       STRATEGIE: DEBUTANT
       ROLE: DEBUTANT
-    joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-09
-      - 2026-07-10
-      - 2026-07-11
-      - 2026-07-19
+    joursIndisponibles: []
   - id: A101
     prenom: Remi
     nom: Morin
     dateNaissance: 1958-02-13
     manager: false
     competences:
-      STRATEGIE: REFERENT
       ADRESSE: DEBUTANT
+      STRATEGIE: REFERENT
+      ROLE: AUTONOME
     joursIndisponibles: []
   - id: A102
     prenom: Remi
@@ -1407,12 +1296,10 @@ animateurs:
     dateNaissance: 1967-12-20
     manager: true
     competences:
+      ENIGME: DEBUTANT
       STRATEGIE: DEBUTANT
       ROLE: AUTONOME
-      ENIGME: DEBUTANT
     joursIndisponibles:
-      - 2026-07-17
-      - 2026-07-18
       - 2026-07-19
   - id: A103
     prenom: Victor
@@ -1420,19 +1307,17 @@ animateurs:
     dateNaissance: 1995-07-21
     manager: false
     competences:
+      STRATEGIE: AUTONOME
       AMBIANCE: DEBUTANT
-    joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-18
-      - 2026-07-19
+    joursIndisponibles: []
   - id: A104
     prenom: Berenice
     nom: Richard
     dateNaissance: 2010-04-23
     manager: false
     competences:
-      ENFANT: DEBUTANT
       ENIGME: AUTONOME
+      ENFANT: DEBUTANT
     joursIndisponibles: []
   - id: A105
     prenom: Remi
@@ -1440,26 +1325,22 @@ animateurs:
     dateNaissance: 2000-08-06
     manager: true
     competences:
+      STRATEGIE: AUTONOME
       ROLE: REFERENT
       AMBIANCE: DEBUTANT
       COOPERATIF: AUTONOME
     joursIndisponibles:
       - 2026-07-16
-      - 2026-07-17
-      - 2026-07-18
   - id: A106
     prenom: Oscar
     nom: Bertrand
     dateNaissance: 1986-08-26
     manager: false
     competences:
-      STRATEGIE: AUTONOME
       ADRESSE: DEBUTANT
+      STRATEGIE: AUTONOME
       AMBIANCE: AUTONOME
-    joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-18
-      - 2026-07-19
+    joursIndisponibles: []
   - id: A107
     prenom: Umberto
     nom: Blanc
@@ -1468,11 +1349,7 @@ animateurs:
     competences:
       ENIGME: DEBUTANT
       COOPERATIF: REFERENT
-    joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-09
-      - 2026-07-10
-      - 2026-07-11
+    joursIndisponibles: []
   - id: A108
     prenom: Gabrielle
     nom: Henry
@@ -1491,8 +1368,9 @@ animateurs:
     manager: true
     competences:
       ADRESSE: REFERENT
-      COOPERATIF: AUTONOME
       ENFANT: AUTONOME
+      AMBIANCE: AUTONOME
+      COOPERATIF: AUTONOME
     joursIndisponibles:
       - 2026-07-19
   - id: A110
@@ -1507,28 +1385,24 @@ animateurs:
     joursIndisponibles:
       - 2026-07-15
       - 2026-07-16
-      - 2026-07-17
   - id: A111
     prenom: Oscar
     nom: Fontaine
     dateNaissance: 1979-07-19
     manager: true
     competences:
+      ROLE: AUTONOME
       COOPERATIF: AUTONOME
-    joursIndisponibles:
-      - 2026-07-10
-      - 2026-07-11
+    joursIndisponibles: []
   - id: A112
     prenom: Emma
     nom: Lefebvre
     dateNaissance: 1994-11-23
     manager: false
     competences:
-      COOPERATIF: AUTONOME
       ENFANT: DEBUTANT
+      COOPERATIF: AUTONOME
     joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-18
       - 2026-07-19
   - id: A113
     prenom: Iris
@@ -1536,6 +1410,7 @@ animateurs:
     dateNaissance: 1985-10-11
     manager: false
     competences:
+      ADRESSE: AUTONOME
       ENIGME: DEBUTANT
       ENFANT: AUTONOME
       COOPERATIF: AUTONOME
@@ -1549,31 +1424,26 @@ animateurs:
     competences:
       ENIGME: DEBUTANT
       COOPERATIF: REFERENT
-    joursIndisponibles:
-      - 2026-07-09
-      - 2026-07-10
-      - 2026-07-18
+    joursIndisponibles: []
   - id: A115
     prenom: Quentin
     nom: Laurent
     dateNaissance: 2010-06-28
     manager: false
     competences:
-      AMBIANCE: AUTONOME
       ADRESSE: AUTONOME
       ROLE: REFERENT
-    joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-09
-      - 2026-07-19
+      AMBIANCE: AUTONOME
+    joursIndisponibles: []
   - id: A116
     prenom: Adrien
     nom: Richard
     dateNaissance: 2007-03-24
     manager: false
     competences:
-      ROLE: AUTONOME
       ENIGME: DEBUTANT
+      ROLE: AUTONOME
+      AMBIANCE: AUTONOME
     joursIndisponibles:
       - 2026-07-19
   - id: A117
@@ -1583,10 +1453,7 @@ animateurs:
     manager: false
     competences:
       ENIGME: DEBUTANT
-    joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-09
-      - 2026-07-19
+    joursIndisponibles: []
   - id: A118
     prenom: Hicham
     nom: Henry
@@ -1597,9 +1464,6 @@ animateurs:
       ENFANT: DEBUTANT
       COOPERATIF: DEBUTANT
     joursIndisponibles:
-      - 2026-07-09
-      - 2026-07-10
-      - 2026-07-11
       - 2026-07-12
   - id: A119
     prenom: Florian
@@ -1608,6 +1472,7 @@ animateurs:
     manager: true
     competences:
       STRATEGIE: DEBUTANT
+      AMBIANCE: AUTONOME
     joursIndisponibles:
       - 2026-07-19
   - id: A120
@@ -1617,6 +1482,7 @@ animateurs:
     manager: false
     competences:
       STRATEGIE: AUTONOME
+      ROLE: AUTONOME
     joursIndisponibles: []
   - id: A121
     prenom: Emma
@@ -1625,6 +1491,7 @@ animateurs:
     manager: false
     competences:
       ENIGME: AUTONOME
+      AMBIANCE: AUTONOME
     joursIndisponibles:
       - 2026-07-19
   - id: A122
@@ -1635,35 +1502,28 @@ animateurs:
     competences:
       ADRESSE: REFERENT
       ROLE: AUTONOME
-    joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-09
+      AMBIANCE: AUTONOME
+    joursIndisponibles: []
   - id: A123
     prenom: William
     nom: Morin
     dateNaissance: 1988-06-14
     manager: false
     competences:
+      ADRESSE: AUTONOME
       ENIGME: DEBUTANT
       ROLE: DEBUTANT
-    joursIndisponibles:
-      - 2026-07-09
-      - 2026-07-10
+    joursIndisponibles: []
   - id: A124
     prenom: William
     nom: Robert
     dateNaissance: 2009-10-08
     manager: false
     competences:
-      STRATEGIE: DEBUTANT
       ADRESSE: REFERENT
+      STRATEGIE: DEBUTANT
     joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-09
-      - 2026-07-10
-      - 2026-07-11
       - 2026-07-12
-      - 2026-07-19
   - id: A125
     prenom: Victor
     nom: Rousseau
@@ -1671,21 +1531,16 @@ animateurs:
     manager: false
     competences:
       ENFANT: AUTONOME
-    joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-09
+    joursIndisponibles: []
   - id: A126
     prenom: Romane
     nom: Henry
     dateNaissance: 1965-10-03
     manager: true
     competences:
-      COOPERATIF: DEBUTANT
       ENFANT: DEBUTANT
-    joursIndisponibles:
-      - 2026-07-10
-      - 2026-07-11
-      - 2026-07-17
+      COOPERATIF: DEBUTANT
+    joursIndisponibles: []
   - id: A127
     prenom: Julien
     nom: Perrin
@@ -1694,8 +1549,6 @@ animateurs:
     competences:
       ENFANT: AUTONOME
     joursIndisponibles:
-      - 2026-07-10
-      - 2026-07-11
       - 2026-07-12
   - id: A128
     prenom: Sarah
@@ -1703,12 +1556,9 @@ animateurs:
     dateNaissance: 1979-11-01
     manager: true
     competences:
-      ROLE: DEBUTANT
       ENIGME: DEBUTANT
-    joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-09
-      - 2026-07-10
+      ROLE: DEBUTANT
+    joursIndisponibles: []
   - id: A129
     prenom: Bruno
     nom: Roux
@@ -1716,20 +1566,17 @@ animateurs:
     manager: false
     competences:
       STRATEGIE: AUTONOME
-    joursIndisponibles:
-      - 2026-07-09
-      - 2026-07-10
+      ROLE: AUTONOME
+    joursIndisponibles: []
   - id: A130
     prenom: Ugo
     nom: Nicolas
     dateNaissance: 1962-01-25
     manager: false
     competences:
-      COOPERATIF: AUTONOME
       ENFANT: REFERENT
+      COOPERATIF: AUTONOME
     joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-18
       - 2026-07-19
   - id: A131
     prenom: Marc
@@ -1740,31 +1587,26 @@ animateurs:
       ENIGME: REFERENT
       COOPERATIF: AUTONOME
     joursIndisponibles:
-      - 2026-07-10
-      - 2026-07-11
-      - 2026-07-12
       - 2026-07-13
+      - 2026-07-12
   - id: A132
     prenom: Chloe
     nom: Roux
     dateNaissance: 1960-11-02
     manager: true
     competences:
-      COOPERATIF: AUTONOME
       ENFANT: DEBUTANT
-    joursIndisponibles:
-      - 2026-07-09
-      - 2026-07-10
-      - 2026-07-18
+      COOPERATIF: AUTONOME
+    joursIndisponibles: []
   - id: A133
     prenom: Perrine
     nom: Mathieu
     dateNaissance: 1998-12-24
     manager: true
     competences:
+      ADRESSE: AUTONOME
       ROLE: AUTONOME
     joursIndisponibles:
-      - 2026-07-18
       - 2026-07-19
   - id: A134
     prenom: Pauline
@@ -1777,18 +1619,15 @@ animateurs:
       AMBIANCE: AUTONOME
     joursIndisponibles:
       - 2026-07-16
-      - 2026-07-17
-      - 2026-07-18
   - id: A135
     prenom: Emma
     nom: Henry
     dateNaissance: 1973-02-10
     manager: false
     competences:
+      ADRESSE: AUTONOME
       ROLE: REFERENT
-    joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-09
+    joursIndisponibles: []
   - id: A136
     prenom: Victor
     nom: Perrin
@@ -1797,10 +1636,7 @@ animateurs:
     competences:
       ADRESSE: DEBUTANT
       ROLE: AUTONOME
-    joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-09
-      - 2026-07-19
+    joursIndisponibles: []
   - id: A137
     prenom: Umberto
     nom: Blanc
@@ -1810,8 +1646,6 @@ animateurs:
       ENIGME: DEBUTANT
       ENFANT: DEBUTANT
     joursIndisponibles:
-      - 2026-07-10
-      - 2026-07-11
       - 2026-07-12
   - id: A138
     prenom: Tania
@@ -1821,11 +1655,9 @@ animateurs:
     competences:
       STRATEGIE: AUTONOME
     joursIndisponibles:
-      - 2026-07-10
-      - 2026-07-11
-      - 2026-07-12
-      - 2026-07-13
       - 2026-07-14
+      - 2026-07-13
+      - 2026-07-12
   - id: A139
     prenom: Hicham
     nom: Thomas
@@ -1834,13 +1666,10 @@ animateurs:
     competences:
       ENFANT: AUTONOME
     joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-14
       - 2026-07-15
-      - 2026-07-16
-      - 2026-07-17
-      - 2026-07-18
+      - 2026-07-14
       - 2026-07-19
+      - 2026-07-16
   - id: A140
     prenom: Jules
     nom: Bertrand
@@ -1849,9 +1678,7 @@ animateurs:
     competences:
       ADRESSE: DEBUTANT
       AMBIANCE: DEBUTANT
-    joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-09
+    joursIndisponibles: []
   - id: A141
     prenom: Julien
     nom: Perrin
@@ -1860,6 +1687,7 @@ animateurs:
     competences:
       ENIGME: AUTONOME
       ENFANT: DEBUTANT
+      ROLE: AUTONOME
     joursIndisponibles: []
   - id: A142
     prenom: Laura
@@ -1868,12 +1696,9 @@ animateurs:
     manager: false
     competences:
       ENIGME: AUTONOME
-      COOPERATIF: AUTONOME
       ENFANT: DEBUTANT
-    joursIndisponibles:
-      - 2026-07-09
-      - 2026-07-10
-      - 2026-07-11
+      COOPERATIF: AUTONOME
+    joursIndisponibles: []
   - id: A143
     prenom: Zoe
     nom: Perrin
@@ -1882,7 +1707,6 @@ animateurs:
     competences:
       STRATEGIE: AUTONOME
     joursIndisponibles:
-      - 2026-07-18
       - 2026-07-19
   - id: A144
     prenom: Berenice
@@ -1892,6 +1716,7 @@ animateurs:
     competences:
       ENFANT: DEBUTANT
       AMBIANCE: AUTONOME
+      ROLE: AUTONOME
     joursIndisponibles: []
   - id: A145
     prenom: Simon
@@ -1899,12 +1724,10 @@ animateurs:
     dateNaissance: 1964-10-24
     manager: false
     competences:
-      ENFANT: AUTONOME
       STRATEGIE: AUTONOME
+      ENFANT: AUTONOME
       COOPERATIF: AUTONOME
     joursIndisponibles:
-      - 2026-07-17
-      - 2026-07-18
       - 2026-07-19
   - id: A146
     prenom: Yanis
@@ -1912,24 +1735,22 @@ animateurs:
     dateNaissance: 1980-12-21
     manager: true
     competences:
-      ROLE: AUTONOME
-      ENFANT: AUTONOME
+      ADRESSE: AUTONOME
       STRATEGIE: DEBUTANT
-    joursIndisponibles:
-      - 2026-07-09
-      - 2026-07-10
+      ENFANT: AUTONOME
+      ROLE: AUTONOME
+    joursIndisponibles: []
   - id: A147
     prenom: Perrine
     nom: Perrin
     dateNaissance: 1991-05-26
     manager: true
     competences:
-      COOPERATIF: AUTONOME
       ENIGME: AUTONOME
       AMBIANCE: DEBUTANT
-    joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-09
+      ROLE: AUTONOME
+      COOPERATIF: AUTONOME
+    joursIndisponibles: []
   - id: A148
     prenom: Diane
     nom: Blanc
@@ -1939,10 +1760,8 @@ animateurs:
       ENFANT: AUTONOME
       AMBIANCE: DEBUTANT
     joursIndisponibles:
-      - 2026-07-10
-      - 2026-07-11
-      - 2026-07-12
       - 2026-07-13
+      - 2026-07-12
   - id: A149
     prenom: Cedric
     nom: Guerin
@@ -1952,11 +1771,10 @@ animateurs:
       ENIGME: DEBUTANT
       COOPERATIF: AUTONOME
     joursIndisponibles:
-      - 2026-07-13
-      - 2026-07-14
       - 2026-07-15
+      - 2026-07-14
+      - 2026-07-13
       - 2026-07-16
-      - 2026-07-17
   - id: A150
     prenom: Yanis
     nom: David
@@ -1965,12 +1783,7 @@ animateurs:
     competences:
       ROLE: REFERENT
     joursIndisponibles:
-      - 2026-07-08
-      - 2026-07-09
       - 2026-07-16
-      - 2026-07-17
-      - 2026-07-18
-      - 2026-07-19
 postes:
   - id: P1
     standId: STAND-01
