@@ -22,7 +22,18 @@
   <mat-label i18n="@@animateurs.field.dateNaissance">Date de naissance</mat-label>
   <input matInput name="dateNaissance" type="date"
          [ngModel]="draft().dateNaissance" (ngModelChange)="patch({ dateNaissance: $event })" />
+  <mat-hint i18n="@@animateurs.hint.dateNaissance">
+    Détermine le régime légal appliqué (moins de 16 ans / 16-18 ans / majeur), recalculé à la date de chaque créneau.
+  </mat-hint>
 </mat-form-field>
+@if (moinsDe16Ans()) {
+  <p class="form-warning" i18n="@@animateurs.warning.moinsDe16Ans">
+    Cet animateur a moins de 16 ans. Le planning appliquera automatiquement les règles renforcées (7 h par jour,
+    35 h par semaine, nuit dès 20 h, 14 h de repos quotidien), mais deux obligations restent à vérifier hors de
+    l'application : l'autorisation de l'inspection du travail (art. L4153-3 et D4153-2) et le repos continu au moins
+    égal à la moitié de la durée des vacances scolaires (art. D4153-2).
+  </p>
+}
 <mat-checkbox name="manager" [disabled]="editingLocked()"
               [ngModel]="draft().manager" (ngModelChange)="patch({ manager: $event })"
               i18n="@@animateurs.field.manager">

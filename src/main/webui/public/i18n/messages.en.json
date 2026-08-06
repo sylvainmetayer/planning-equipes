@@ -315,5 +315,7 @@
   "constraints.disableLegal.title": "Disable a legal rule?",
   "constraints.disableLegal.message": "“{$name}” enforces an obligation of the French Labour Code. Disabling it lets the solver produce an illegal plan while still reporting a hard score of zero.",
   "constraints.disableLegal.confirm": "Disable anyway",
-  "constraints.disableLegal.reason": "Reason for disabling (stored in the database)"
+  "constraints.disableLegal.reason": "Reason for disabling (stored in the database)",
+  "animateurs.hint.dateNaissance": "Determines the legal regime applied (under 16 / 16-to-18 / adult), re-derived at the date of each time slot.",
+  "animateurs.warning.moinsDe16Ans": "This staff member is under 16. The schedule will automatically apply the stricter rules (7h a day, 35h a week, night from 8pm, 14h of daily rest), but two obligations still have to be checked outside the application: the labour inspectorate authorisation (French Labour Code art. L4153-3 and D4153-2) and the continuous rest of at least half the school holiday period (art. D4153-2)."
 }

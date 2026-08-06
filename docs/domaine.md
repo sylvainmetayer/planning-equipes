@@ -185,6 +185,13 @@ contraintes dures légales** — jamais reclassées en medium/soft.
 `ReferenceDataService` injecte les contraintes ad hoc dans un `PlanningFestival`
 résolu si aucune n'a été fournie.
 
+**Une affectation forcée ne passe pas au-dessus du cadre légal.** Puisqu'elle
+est évaluée au même rang dur qu'une règle du Code du travail, une
+`AFFECTATION_FORCEE` contraire à une règle légale ne produit pas un planning
+illégal : elle produit un planning **infaisable** (`hardScore < 0`), que le
+solveur signale au lieu de le livrer. C'est le comportement voulu — mais il
+n'était écrit nulle part, et un lecteur pressé pouvait croire l'inverse.
+
 ## Paramètres légaux
 
 `ParametresLegaux` est un fait de problème (`@ProblemFactCollectionProperty` sur

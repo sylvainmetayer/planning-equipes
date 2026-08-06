@@ -165,3 +165,18 @@
     flex-wrap: wrap;
   }
 }
+
+/*
+ * Inline warning inside a form: used where a field's value triggers a legal
+ * obligation the application cannot check itself (e.g. an animateur under 16).
+ */
+.form-warning {
+  margin: 0 0 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border-left: 3px solid var(--mat-sys-error);
+  border-radius: 0.25rem;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+  font-size: 0.85rem;
+  line-height: 1.35;
+}

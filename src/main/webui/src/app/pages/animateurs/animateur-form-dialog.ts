@@ -84,6 +84,25 @@ export class AnimateurFormDialog {
       : $localize`:@@animateurs.submit.create:Créer l'animateur`
   );
 
+  /**
+   * True when the birth date puts the animateur under 16 <i>today</i>. Only a
+   * data-entry hint: the rules themselves re-derive the age bracket at each
+   * créneau's date (see `Animateur.estMoinsDe16AnsLe`), and nothing about the
+   * bracket is ever stored.
+   */
+  protected readonly moinsDe16Ans = computed(() => {
+    const naissance = this.draft().dateNaissance;
+    if (!naissance) {
+      return false;
+    }
+    const date = new Date(naissance);
+    if (Number.isNaN(date.getTime())) {
+      return false;
+    }
+    const seizeAns = new Date(date.getFullYear() + 16, date.getMonth(), date.getDate());
+    return seizeAns > new Date();
+  });
+
   protected patch(patch: Partial<AnimateurDraft>): void {
     this.draft.update((draft) => ({ ...draft, ...patch }));
   }
