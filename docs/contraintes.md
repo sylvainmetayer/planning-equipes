@@ -22,7 +22,7 @@ Source : `solver/ConstraintCatalog.java` (description métier) et
 | `posteDoitEtrePourvu` | Chaque place ouverte sur un stand doit être pourvue par un animateur |
 | `animateurDisponible` | Pas d'affectation un jour déclaré indisponible |
 | `competenceCompatible` | L'animateur maîtrise au moins une typologie proposée par le stand |
-| `pasDeDoubleAffectationSurMemeCreneau` | Un seul poste par animateur et par créneau |
+| `pasDeChevauchementHoraire` | Un animateur ne tient jamais deux postes dont les créneaux se **chevauchent dans le temps** (le double poste sur un même créneau n'en est que le cas dégénéré) |
 
 ### Dures — cadre légal mineurs (`LegalConstraints`)
 

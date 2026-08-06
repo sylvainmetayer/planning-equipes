@@ -1,5 +1,6 @@
 package dev.sylvain.planning.solver.constraints;
 
+import java.time.LocalTime;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
@@ -64,7 +65,7 @@ class AffectationConstraintsTest extends ConstraintTestBase {
     @Test
     void doubleAffectationSurMemeCreneauEstPenalisee() {
         Animateur a1 = majeurReferent("A1");
-        verify("pasDeDoubleAffectationSurMemeCreneau")
+        verify("pasDeChevauchementHoraire")
                 .given(poste(standStrat, creneauMatin, a1),
                         poste(standStrategie("STAND-2"), creneauMatin, a1))
                 .penalizesBy(1);
@@ -72,7 +73,7 @@ class AffectationConstraintsTest extends ConstraintTestBase {
 
     @Test
     void deuxAnimateursSurMemeCreneauNeSontPasPenalises() {
-        verify("pasDeDoubleAffectationSurMemeCreneau")
+        verify("pasDeChevauchementHoraire")
                 .given(poste(standStrat, creneauMatin, majeurReferent("A1")),
                         poste(standStrat, creneauMatin, majeurReferent("A2")))
                 .penalizesBy(0);
@@ -81,9 +82,49 @@ class AffectationConstraintsTest extends ConstraintTestBase {
     @Test
     void memeAnimateurSurCreneauxDifferentsNEstPasPenalise() {
         Animateur a1 = majeurReferent("A1");
-        verify("pasDeDoubleAffectationSurMemeCreneau")
+        verify("pasDeChevauchementHoraire")
                 .given(poste(standStrat, creneauMatin, a1),
                         poste(standStrat, creneauAprem, a1))
                 .penalizesBy(0);
+    }
+
+    // --- B10 : deux créneaux distincts qui se recouvrent -------------------
+
+    @Test
+    void deuxCreneauxDistinctsQuiSeChevauchentSontPenalises() {
+        // Cas exact cité par l'audit : 10 h-14 h et 12 h-16 h, deux créneaux
+        // différents, donc invisibles pour l'ancienne comparaison d'identité.
+        Animateur a1 = majeurReferent("A1");
+        Creneau matinee = creneau("J1-10-14", 1, D1, LocalTime.of(10, 0), LocalTime.of(14, 0));
+        Creneau midi = creneau("J1-12-16", 1, D1, LocalTime.of(12, 0), LocalTime.of(16, 0));
+        verify("pasDeChevauchementHoraire")
+                .given(poste(standStrat, matinee, a1),
+                        poste(standStrategie("STAND-2"), midi, a1))
+                .penalizesBy(1);
+    }
+
+    @Test
+    void deuxCreneauxContigusNeSontPasPenalises() {
+        // Bout à bout (fin = début) : pas de chevauchement.
+        Animateur a1 = majeurReferent("A1");
+        Creneau avant = creneau("J1-10-14", 1, D1, LocalTime.of(10, 0), LocalTime.of(14, 0));
+        Creneau apres = creneau("J1-14-18", 1, D1, LocalTime.of(14, 0), LocalTime.of(18, 0));
+        verify("pasDeChevauchementHoraire")
+                .given(poste(standStrat, avant, a1),
+                        poste(standStrategie("STAND-2"), apres, a1))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void creneauFranchissantMinuitChevauchantLeLendemainEstPenalise() {
+        // 20 h → 00 h le jour J recouvre 23 h → 01 h : la fin du créneau de nuit
+        // doit être calculée sur le jour suivant, pas avant son propre début.
+        Animateur a1 = majeurReferent("A1");
+        Creneau nuitJ1 = creneau("J1-NUIT-CH", 1, D1, LocalTime.of(20, 0), LocalTime.of(0, 0));
+        Creneau tardJ1 = creneau("J1-TARD-CH", 1, D1, LocalTime.of(23, 0), LocalTime.of(1, 0));
+        verify("pasDeChevauchementHoraire")
+                .given(poste(standStrat, nuitJ1, a1),
+                        poste(standStrategie("STAND-2"), tardJ1, a1))
+                .penalizesBy(1);
     }
 }

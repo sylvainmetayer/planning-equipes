@@ -112,7 +112,7 @@ ainsi que le planning résolu.
 - aucun animateur n'est affecté un jour qu'il a déclaré indisponible ;
 - un animateur n'anime que des stands dont il maîtrise au moins une typologie de
   jeu ;
-- un animateur ne tient qu'un seul poste par créneau ;
+- un animateur ne tient jamais deux postes qui se chevauchent dans le temps ;
 - cadre légal des mineurs : pas de travail de nuit, 8 h de présence quotidienne
   maximum, repos d'environ 12 h après un créneau de nuit, présence obligatoire
   d'un majeur sur le même stand, et stands réservés aux majeurs respectés ;

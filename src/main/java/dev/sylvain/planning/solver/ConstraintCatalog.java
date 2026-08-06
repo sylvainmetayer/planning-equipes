@@ -26,8 +26,10 @@ public final class ConstraintCatalog {
                     "Un animateur ne peut pas être affecté un jour qu'il a déclaré indisponible."),
             new ConstraintDefinition("competenceCompatible", Niveau.HARD, "Affectation",
                     "L'animateur doit maîtriser au moins une typologie de jeu proposée par le stand."),
-            new ConstraintDefinition("pasDeDoubleAffectationSurMemeCreneau", Niveau.HARD, "Affectation",
-                    "Un animateur ne peut tenir qu'un seul poste sur un créneau donné."),
+            new ConstraintDefinition("pasDeChevauchementHoraire", Niveau.HARD, "Affectation",
+                    "Un animateur ne peut pas tenir deux postes dont les créneaux se chevauchent dans le temps "
+                            + "(y compris deux créneaux distincts qui se recouvrent, et pas seulement deux postes "
+                            + "sur le même créneau)."),
 
             new ConstraintDefinition("standReserveAuxMajeurs", Niveau.HARD, "Légal (mineurs)",
                     "Les stands réservés aux majeurs ne peuvent accueillir aucun mineur."),
