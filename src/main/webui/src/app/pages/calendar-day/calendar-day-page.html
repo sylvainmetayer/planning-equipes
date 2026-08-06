@@ -47,7 +47,7 @@
               @if (slot.stands.length === 0) {
                 <div class="day-slot-empty" i18n="@@calendarDay.noStand">Aucun stand</div>
               } @else {
-                @for (stand of slot.stands; track stand.standNom) {
+                @for (stand of slot.stands; track stand.standId) {
                   <div class="day-stand" [class.empty-slot]="stand.names.length === 0">
                     <strong>{{ stand.standNom }}</strong>
                     <span>{{ stand.names.length === 0 ? unassignedLabel : stand.names.join(', ') }}</span>

@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { ApiService } from '../../core/api.service';
 import { ResetSummary } from '../../core/models';
+import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
@@ -20,7 +21,8 @@ import { OutputPanel } from '../../shared/output-panel';
 @Component({
   selector: 'app-data-setup-page',
   imports: [MatCardModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatSelectModule, OutputPanel],
-  templateUrl: './data-setup-page.html'
+  templateUrl: './data-setup-page.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DataSetupPage {
   protected readonly output = signal('');
@@ -38,6 +40,10 @@ export class DataSetupPage {
   private readonly api = inject(ApiService);
   private readonly planningState = inject(PlanningStateService);
   private readonly referenceData = inject(ReferenceDataStore);
+  // Seeding or emptying the database moves both the resolved groupe de
+  // créneaux and the "data edited since the last solve" stamp: refresh the
+  // store the toolbar warnings read, or they keep showing the previous dataset.
+  private readonly resolution = inject(PlanningResolutionStore);
   private readonly confirm = inject(ConfirmService);
   private readonly jobs = inject(SolverJobService);
 
@@ -83,7 +89,7 @@ export class DataSetupPage {
         ? `/api/reference-data/import-scenario?name=${encodeURIComponent(name)}`
         : '/api/reference-data/import-scenario';
       await this.api.post(url, {});
-      await this.referenceData.reload();
+      await Promise.all([this.referenceData.reload(), this.resolution.reload()]);
       // Nothing is solved yet, and no planning is built in the browser: the
       // problem is assembled server-side when the user launches a solve. The
       // display pages fall back to the persisted planning until then, so a very
@@ -119,7 +125,7 @@ export class DataSetupPage {
     try {
       await this.api.post<ResetSummary>('/api/planning/reset', {});
       this.planningState.set(null);
-      await this.referenceData.reload();
+      await Promise.all([this.referenceData.reload(), this.resolution.reload()]);
       this.output.set(
         $localize`:@@dataSetup.resetDone:Base de données vidée. Chargez un planning d'exemple pour la repeupler.`
       );

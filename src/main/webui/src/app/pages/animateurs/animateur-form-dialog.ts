@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -55,7 +55,8 @@ export interface AnimateurFormData {
     MatIconModule,
     MatTooltipModule
   ],
-  templateUrl: './animateur-form-dialog.html'
+  templateUrl: './animateur-form-dialog.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AnimateurFormDialog {
   protected readonly niveaux = NIVEAUX;

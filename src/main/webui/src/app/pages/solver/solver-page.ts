@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -22,7 +22,8 @@ import { OutputPanel } from '../../shared/output-panel';
 @Component({
   selector: 'app-solver-page',
   imports: [MatCardModule, MatButtonModule, MatIconModule, FeasibilityBanner, OutputPanel],
-  templateUrl: './solver-page.html'
+  templateUrl: './solver-page.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SolverPage {
   protected readonly output = signal('');
@@ -58,10 +59,14 @@ export class SolverPage {
     // Results are pushed by the job service, whoever started the job: a solve
     // launched from another browser also lands here when it completes, already
     // analyzed.
-    this.jobs.onResult('SOLVE', (result) => {
-      this.applySolveResult(result as PlanningDiagnostic);
-      void this.loadLastRun();
-    });
+    // Unregistered on destroy: this page is lazy-loaded and rebuilt on every
+    // navigation, so keeping the handler would stack one more copy per visit.
+    inject(DestroyRef).onDestroy(
+      this.jobs.onResult('SOLVE', (result) => {
+        this.applySolveResult(result as PlanningDiagnostic);
+        void this.loadLastRun();
+      })
+    );
     // Explains why the solver buttons are locked when the job comes from
     // somewhere else (another tab, another browser, a private window).
     effect(() => {

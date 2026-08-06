@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { PlanningResolutionStore } from '../core/planning-resolution.store';
@@ -31,7 +31,8 @@ import { PlanningResolutionStore } from '../core/planning-resolution.store';
       margin-right: 0.5rem;
       cursor: help;
     }
-  `
+  `,
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DataStaleIndicator {
   protected readonly resolution = inject(PlanningResolutionStore);

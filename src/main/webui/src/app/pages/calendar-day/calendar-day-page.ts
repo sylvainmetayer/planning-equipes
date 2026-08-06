@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -8,6 +8,8 @@ import { PlanningStateService } from '../../core/planning-state.service';
 import { Creneau, PersistenceStatus, PosteAffectation, Stand } from '../../core/models';
 
 interface StandLine {
+  /** Identity of the line: two distinct stands may well share the same name. */
+  standId: string;
   standNom: string;
   names: string[];
 }
@@ -32,7 +34,8 @@ interface DayCard {
 @Component({
   selector: 'app-calendar-day-page',
   imports: [MatCardModule, MatButtonModule, MatIconModule, MatProgressBarModule],
-  templateUrl: './calendar-day-page.html'
+  templateUrl: './calendar-day-page.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CalendarDayPage {
   protected readonly loading = signal(false);
@@ -122,7 +125,11 @@ function buildDays(postes: PosteAffectation[]): DayCard[] {
           heureDebut: creneau.heureDebut,
           heureFin: creneau.heureFin,
           stands: Array.from(assignments.get(creneau.id)?.values() ?? [])
-            .map((entry) => ({ standNom: entry.stand.nom || entry.stand.id, names: entry.names }))
+            .map((entry) => ({
+              standId: entry.stand.id,
+              standNom: entry.stand.nom || entry.stand.id,
+              names: entry.names
+            }))
             .sort((left, right) => left.standNom.localeCompare(right.standNom))
         }))
     }));

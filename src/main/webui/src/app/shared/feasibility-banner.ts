@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { FeasibilityReport } from '../core/models';
@@ -39,7 +39,8 @@ import { FeasibilityReport } from '../core/models';
     .feasibility-banner p {
       margin: 0;
     }
-  `
+  `,
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class FeasibilityBanner {
   readonly report = input<FeasibilityReport | null>(null);

@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -51,7 +51,8 @@ export interface AdHocConstraintFormData {
 @Component({
   selector: 'app-ad-hoc-constraint-form-dialog',
   imports: [FormsModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatButtonModule, MatIconModule],
-  templateUrl: './ad-hoc-constraint-form-dialog.html'
+  templateUrl: './ad-hoc-constraint-form-dialog.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AdHocConstraintFormDialog {
   protected readonly types = contrainteTypes();

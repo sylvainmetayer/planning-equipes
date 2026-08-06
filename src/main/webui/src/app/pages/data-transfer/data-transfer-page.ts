@@ -1,10 +1,11 @@
-import { Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { ApiService } from '../../core/api.service';
 import { ImportSummary } from '../../core/models';
+import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
@@ -20,7 +21,8 @@ type CsvEntity = 'animateurs' | 'stands' | 'creneaux';
 @Component({
   selector: 'app-data-transfer-page',
   imports: [MatCardModule, MatButtonModule, MatIconModule, MatListModule, OutputPanel],
-  templateUrl: './data-transfer-page.html'
+  templateUrl: './data-transfer-page.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DataTransferPage {
   protected readonly output = signal('');
@@ -33,6 +35,7 @@ export class DataTransferPage {
   private readonly csvInput = viewChild.required<ElementRef<HTMLInputElement>>('csvInput');
   private readonly api = inject(ApiService);
   private readonly referenceData = inject(ReferenceDataStore);
+  private readonly resolution = inject(PlanningResolutionStore);
   private readonly planningState = inject(PlanningStateService);
   private readonly confirm = inject(ConfirmService);
 
@@ -124,10 +127,12 @@ export class DataTransferPage {
     }
   }
 
-  // A bulk import invalidates whatever planning was displayed.
+  // A bulk import invalidates whatever planning was displayed, and moves both
+  // the resolved groupe de créneaux and the "data edited since the last solve"
+  // stamp the toolbar warnings are computed from.
   private async refreshAfterImport(): Promise<void> {
     this.planningState.set(null);
-    await this.referenceData.reload();
+    await Promise.all([this.referenceData.reload(), this.resolution.reload()]);
   }
 }
 

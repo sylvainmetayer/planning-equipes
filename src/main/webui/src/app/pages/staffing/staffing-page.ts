@@ -1,5 +1,5 @@
 import { DecimalPipe } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
@@ -21,7 +21,8 @@ import { computeStaffingSummary, CreneauStaffing } from './staffing';
 @Component({
   selector: 'app-staffing-page',
   imports: [MatCardModule, MatIconModule, MatTableModule, MatTooltipModule, DecimalPipe],
-  templateUrl: './staffing-page.html'
+  templateUrl: './staffing-page.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class StaffingPage {
   protected readonly store = inject(ReferenceDataStore);

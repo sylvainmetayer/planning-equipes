@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { PlanningResolutionStore } from '../core/planning-resolution.store';
@@ -42,7 +42,8 @@ import { PlanningResolutionStore } from '../core/planning-resolution.store';
     .groupe-mismatch-banner p {
       margin: 0;
     }
-  `
+  `,
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class GroupeMismatchBanner {
   private readonly resolution = inject(PlanningResolutionStore);

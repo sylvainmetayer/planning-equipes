@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -42,7 +42,8 @@ export interface StandFormData {
     MatIconModule,
     MatTooltipModule
   ],
-  templateUrl: './stand-form-dialog.html'
+  templateUrl: './stand-form-dialog.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class StandFormDialog {
   protected readonly store = inject(ReferenceDataStore);

@@ -5,15 +5,14 @@
 
 import {
   AfterViewInit,
+  ChangeDetectionStrategy,
   Component,
   ElementRef,
-  EventEmitter,
-  Input,
-  OnChanges,
   OnDestroy,
-  Output,
-  SimpleChanges,
-  ViewChild
+  effect,
+  input,
+  output,
+  viewChild
 } from '@angular/core';
 import * as L from 'leaflet';
 
@@ -40,75 +39,82 @@ export interface MapPosition {
 @Component({
   selector: 'app-map-picker',
   templateUrl: './map-picker.html',
-  styleUrl: './map-picker.css'
+  styleUrl: './map-picker.css',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class MapPicker implements AfterViewInit, OnChanges, OnDestroy {
-  @Input() latitude: number | null = null;
-  @Input() longitude: number | null = null;
-  @Input() disabled = false;
-  @Output() readonly positionChange = new EventEmitter<MapPosition>();
+export class MapPicker implements AfterViewInit, OnDestroy {
+  readonly latitude = input<number | null>(null);
+  readonly longitude = input<number | null>(null);
+  readonly disabled = input(false);
+  readonly positionChange = output<MapPosition>();
 
-  @ViewChild('mapHost', { static: true }) private readonly mapHost!: ElementRef<HTMLDivElement>;
+  private readonly mapHost = viewChild.required<ElementRef<HTMLDivElement>>('mapHost');
 
   private map?: L.Map;
   private marker?: L.Marker;
   private ready = false;
 
+  constructor() {
+    // Keeps the marker in sync when latitude/longitude are set from outside
+    // (the numeric inputs next to this component), without re-emitting
+    // positionChange — that would create a feedback loop with the inputs.
+    // Both inputs are read before the readiness guard so the effect keeps
+    // tracking them when it runs before the map exists.
+    effect(() => {
+      const latitude = this.latitude();
+      const longitude = this.longitude();
+      if (!this.ready || !this.map || latitude == null || longitude == null) {
+        return;
+      }
+      this.placeMarker(latitude, longitude);
+      this.map.panTo([latitude, longitude]);
+    });
+    effect(() => {
+      const disabled = this.disabled();
+      if (!this.ready || !this.marker) {
+        return;
+      }
+      if (disabled) {
+        this.marker.dragging?.disable();
+      } else {
+        this.marker.dragging?.enable();
+      }
+    });
+  }
+
   ngAfterViewInit(): void {
-    const hasPosition = this.hasPosition();
-    this.map = L.map(this.mapHost.nativeElement).setView(
-      hasPosition ? this.currentLatLng() : DEFAULT_CENTER,
-      hasPosition ? POINT_ZOOM : DEFAULT_ZOOM
+    const position = this.currentPosition();
+    this.map = L.map(this.mapHost().nativeElement).setView(
+      position ?? DEFAULT_CENTER,
+      position ? POINT_ZOOM : DEFAULT_ZOOM
     );
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       maxZoom: 19
     }).addTo(this.map);
-    if (hasPosition) {
-      this.placeMarker(this.latitude!, this.longitude!);
+    if (position) {
+      this.placeMarker(position[0], position[1]);
     }
     this.map.on('click', (event: L.LeafletMouseEvent) => {
-      if (this.disabled) {
+      if (this.disabled()) {
         return;
       }
       this.placeMarker(event.latlng.lat, event.latlng.lng);
-      this.positionChange.emit({ latitude: event.latlng.lat, longitude: event.latlng.lng });
+      this.emit(event.latlng.lat, event.latlng.lng);
     });
-    // Marks init as done only after this callback runs; ngOnChanges fires
-    // before ngAfterViewInit on first change, when there's no map yet to sync.
+    // Marks init as done only after this callback runs; the sync effects fire
+    // before ngAfterViewInit on the first pass, when there's no map yet.
     this.ready = true;
-  }
-
-  // Keeps the marker in sync when latitude/longitude are set from outside
-  // (the numeric inputs next to this component), without re-emitting
-  // positionChange — that would create a feedback loop with the inputs.
-  ngOnChanges(changes: SimpleChanges): void {
-    if (!this.ready || !this.map) {
-      return;
-    }
-    if ((changes['latitude'] || changes['longitude']) && this.hasPosition()) {
-      this.placeMarker(this.latitude!, this.longitude!);
-      this.map.panTo(this.currentLatLng());
-    }
-    if (changes['disabled'] && this.marker) {
-      if (this.disabled) {
-        this.marker.dragging?.disable();
-      } else {
-        this.marker.dragging?.enable();
-      }
-    }
   }
 
   ngOnDestroy(): void {
     this.map?.remove();
   }
 
-  private hasPosition(): boolean {
-    return this.latitude != null && this.longitude != null;
-  }
-
-  private currentLatLng(): L.LatLngTuple {
-    return [this.latitude!, this.longitude!];
+  private currentPosition(): L.LatLngTuple | null {
+    const latitude = this.latitude();
+    const longitude = this.longitude();
+    return latitude != null && longitude != null ? [latitude, longitude] : null;
   }
 
   private placeMarker(lat: number, lng: number): void {
@@ -116,10 +122,17 @@ export class MapPicker implements AfterViewInit, OnChanges, OnDestroy {
       this.marker.setLatLng([lat, lng]);
       return;
     }
-    this.marker = L.marker([lat, lng], { draggable: !this.disabled }).addTo(this.map!);
+    this.marker = L.marker([lat, lng], { draggable: !this.disabled() }).addTo(this.map!);
     this.marker.on('dragend', () => {
       const position = this.marker!.getLatLng();
-      this.positionChange.emit({ latitude: position.lat, longitude: position.lng });
+      this.emit(position.lat, position.lng);
     });
+  }
+
+  // Leaflet callbacks run outside Angular's knowledge; the app is zoneless, so
+  // the value has to travel through an output() for the parent's signal write
+  // — and the resulting render — to happen at all.
+  private emit(latitude: number, longitude: number): void {
+    this.positionChange.emit({ latitude, longitude });
   }
 }

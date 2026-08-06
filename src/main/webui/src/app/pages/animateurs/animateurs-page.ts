@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
@@ -19,7 +19,8 @@ import { AnimateurFormData, AnimateurFormDialog } from './animateur-form-dialog'
 @Component({
   selector: 'app-animateurs-page',
   imports: [MatCardModule, MatButtonModule, MatIconModule, MatTableModule, MatTooltipModule],
-  templateUrl: './animateurs-page.html'
+  templateUrl: './animateurs-page.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AnimateursPage {
   protected readonly columns = ['id', 'nom', 'manager', 'competences', 'indisponibilites', 'actions'];

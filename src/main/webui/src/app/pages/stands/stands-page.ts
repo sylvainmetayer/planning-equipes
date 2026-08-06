@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
@@ -15,7 +15,8 @@ import { StandFormData, StandFormDialog } from './stand-form-dialog';
 @Component({
   selector: 'app-stands-page',
   imports: [MatCardModule, MatButtonModule, MatIconModule, MatTableModule, MatTooltipModule],
-  templateUrl: './stands-page.html'
+  templateUrl: './stands-page.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class StandsPage {
   protected readonly columns = ['id', 'nom', 'effectif', 'typologies', 'emplacement', 'actions'];

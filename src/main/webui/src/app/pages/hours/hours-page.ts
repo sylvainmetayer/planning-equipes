@@ -1,5 +1,5 @@
 import { DecimalPipe } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -19,7 +19,8 @@ import { OutputPanel } from '../../shared/output-panel';
 @Component({
   selector: 'app-hours-page',
   imports: [MatCardModule, MatButtonModule, MatIconModule, MatTableModule, MatSortModule, DecimalPipe, OutputPanel],
-  templateUrl: './hours-page.html'
+  templateUrl: './hours-page.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class HoursPage {
   protected readonly output = signal('');
@@ -57,11 +58,6 @@ export class HoursPage {
     } finally {
       this.busy.set(false);
     }
-  }
-
-  protected hoursFor(animateurId: string, semaine: string): number {
-    const ligne = this.rapport()?.animateurs.find((a) => a.animateurId === animateurId);
-    return ligne?.heuresParSemaine[semaine] ?? 0;
   }
 
   protected async onExportCsv(): Promise<void> {

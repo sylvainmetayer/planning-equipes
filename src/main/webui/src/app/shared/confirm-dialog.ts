@@ -1,7 +1,7 @@
 // Material replacement for window.confirm: a dialog, plus a service exposing it
 // as an awaitable boolean so pages keep their linear async flow.
 
-import { Component, Injectable, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Injectable, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import {
   MAT_DIALOG_DATA,
@@ -30,7 +30,8 @@ export interface ConfirmData {
         {{ data.confirmLabel ?? defaultConfirmLabel }}
       </button>
     </mat-dialog-actions>
-  `
+  `,
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ConfirmDialog {
   protected readonly dialogRef = inject<MatDialogRef<ConfirmDialog, boolean>>(MatDialogRef);

@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -20,7 +20,8 @@ import { APP_VERSION, REPO_URL } from '../../version';
 @Component({
   selector: 'app-debug-page',
   imports: [MatCardModule, MatButtonModule, MatIconModule, MatProgressBarModule, OutputPanel],
-  templateUrl: './debug-page.html'
+  templateUrl: './debug-page.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DebugPage {
   protected readonly loading = signal(false);

@@ -3,6 +3,7 @@
 
 import { Injectable, inject } from '@angular/core';
 import { NotificationService } from './notification.service';
+import { PlanningResolutionStore } from './planning-resolution.store';
 import { ReferenceDataStore } from './reference-data.store';
 import { ConfirmService } from '../shared/confirm-dialog';
 
@@ -11,6 +12,7 @@ export class ReferenceCrudService {
   private readonly store = inject(ReferenceDataStore);
   private readonly notifications = inject(NotificationService);
   private readonly confirm = inject(ConfirmService);
+  private readonly resolution = inject(PlanningResolutionStore);
 
   /** Loads every collection; failures are reported but never thrown to the view. */
   async reload(): Promise<void> {
@@ -45,6 +47,7 @@ export class ReferenceCrudService {
     }
     try {
       await this.store.save(resource, payload, editingId);
+      this.refreshResolution();
       this.notifications.notify({
         title: editingId
           ? $localize`:@@crud.updated:Modification de ${label}:label: ${payload.id}:id: effectuée.`
@@ -72,6 +75,7 @@ export class ReferenceCrudService {
     }
     try {
       await this.store.remove(resource, id);
+      this.refreshResolution();
       this.notifications.notify({
         title: $localize`:@@crud.deleted:Suppression de ${label}:label: ${id}:id: effectuée.`,
         variant: 'success',
@@ -82,6 +86,17 @@ export class ReferenceCrudService {
       this.reportError(error);
       return false;
     }
+  }
+
+  /**
+   * The backend stamps "reference data last edited at" on every write, and the
+   * toolbar indicator compares it to the last solve. Without this refresh the
+   * warning would only appear on the next full page load — that is, long after
+   * the edit that made the persisted planning stale. Fire-and-forget: it is a
+   * hint, never a reason to fail the save the user just made.
+   */
+  private refreshResolution(): void {
+    void this.resolution.reload().catch(() => undefined);
   }
 
   reportError(error: unknown): void {

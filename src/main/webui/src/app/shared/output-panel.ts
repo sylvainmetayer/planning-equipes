@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 
 /** Monospaced result panel shared by the action pages. */
@@ -13,7 +13,8 @@ import { MatCardModule } from '@angular/material/card';
         </mat-card-content>
       </mat-card>
     }
-  `
+  `,
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class OutputPanel {
   readonly text = input('');

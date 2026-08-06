@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { SolverJobService, elapsedSeconds, formatDuration } from '../core/solver-job.service';
@@ -18,7 +18,8 @@ import { SolverJobService, elapsedSeconds, formatDuration } from '../core/solver
         <mat-progress-bar class="job-monitor-bar" mode="indeterminate" />
       </span>
     }
-  `
+  `,
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class JobMonitor {
   private readonly jobs = inject(SolverJobService);

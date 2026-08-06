@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
@@ -15,7 +15,8 @@ import { TypologieFormData, TypologieFormDialog } from './typologie-form-dialog'
 @Component({
   selector: 'app-typologies-page',
   imports: [MatCardModule, MatButtonModule, MatIconModule, MatTableModule, MatTooltipModule],
-  templateUrl: './typologies-page.html'
+  templateUrl: './typologies-page.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TypologiesPage {
   protected readonly columns = ['id', 'label', 'actions'];

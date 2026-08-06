@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -33,7 +33,8 @@ import { CreneauFormData, CreneauFormDialog } from './creneau-form-dialog';
     MatIconModule,
     MatTooltipModule
   ],
-  templateUrl: './creneaux-page.html'
+  templateUrl: './creneaux-page.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CreneauxPage {
   protected readonly store = inject(ReferenceDataStore);

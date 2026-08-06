@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -51,7 +51,8 @@ interface ConstraintGroup {
     MatSlideToggleModule,
     FeasibilityBanner
   ],
-  templateUrl: './constraints-page.html'
+  templateUrl: './constraints-page.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ConstraintsPage {
   protected readonly loading = signal(false);
@@ -100,7 +101,9 @@ export class ConstraintsPage {
     void this.loadParametresLegaux();
     // The refresh button launches an ANALYZE job (see refresh() below); once
     // it completes, whichever browser started it, reload the scored view.
-    this.jobs.onResult('ANALYZE', () => void this.loadConstraints());
+    // Unregistered on destroy: this page is lazy-loaded and rebuilt on every
+    // navigation, so keeping the handler would stack one more copy per visit.
+    inject(DestroyRef).onDestroy(this.jobs.onResult('ANALYZE', () => void this.loadConstraints()));
   }
 
   private async loadConstraints(): Promise<void> {

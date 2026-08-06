@@ -29,7 +29,7 @@
               <td mat-cell *matCellDef="let row"><strong>{{ row.total | number: '1.1-1' }} h</strong></td>
             } @else {
               <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ col }}</th>
-              <td mat-cell *matCellDef="let row">{{ hoursFor(row.animateurId, col) | number: '1.1-1' }} h</td>
+              <td mat-cell *matCellDef="let row">{{ (row.heuresParSemaine[col] ?? 0) | number: '1.1-1' }} h</td>
             }
           </ng-container>
         }

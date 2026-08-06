@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
@@ -31,7 +31,8 @@ function contrainteTypeLabel(value: TypeContrainteAdHoc): string {
 @Component({
   selector: 'app-ad-hoc-constraints-page',
   imports: [MatCardModule, MatButtonModule, MatIconModule, MatTableModule, MatTooltipModule],
-  templateUrl: './ad-hoc-constraints-page.html'
+  templateUrl: './ad-hoc-constraints-page.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AdHocConstraintsPage {
   protected readonly columns = ['id', 'type', 'animateurs', 'portee', 'raison', 'actions'];

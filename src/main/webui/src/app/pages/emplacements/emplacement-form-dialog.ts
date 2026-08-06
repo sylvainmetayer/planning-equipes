@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -25,7 +25,8 @@ export interface EmplacementFormData {
 @Component({
   selector: 'app-emplacement-form-dialog',
   imports: [FormsModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule, MapPicker],
-  templateUrl: './emplacement-form-dialog.html'
+  templateUrl: './emplacement-form-dialog.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EmplacementFormDialog {
   protected readonly jobs = inject(SolverJobService);

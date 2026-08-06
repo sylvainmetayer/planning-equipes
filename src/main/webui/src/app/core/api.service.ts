@@ -3,7 +3,7 @@
 // Every method returns a promise so components can use async/await, and every
 // failure is normalised into an Error carrying a readable message.
 
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, firstValueFrom } from 'rxjs';
 
@@ -13,6 +13,24 @@ export class ApiService {
 
   get<T>(url: string): Promise<T> {
     return this.run(this.http.get<T>(url));
+  }
+
+  /**
+   * GET returning the whole response, for the callers that must tell an empty
+   * 204 from a body (`/api/jobs/active` answers 204 when the solver is idle).
+   */
+  getResponse<T>(url: string): Promise<HttpResponse<T>> {
+    return this.run(this.http.get<T>(url, { observe: 'response' }));
+  }
+
+  /**
+   * POST rejecting with the untouched `HttpErrorResponse` instead of the
+   * flattened Error, for the callers that must read the status and the body of
+   * a failure — the solver job service turns a 409 into "this other job is
+   * already running" using the conflicting job carried in the body.
+   */
+  postPreservingHttpError<T>(url: string, body: unknown): Promise<T> {
+    return firstValueFrom(this.http.post<T>(url, body));
   }
 
   post<T>(url: string, body: unknown): Promise<T> {

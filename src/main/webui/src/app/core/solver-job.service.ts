@@ -8,9 +8,8 @@
 // locks the solver buttons and shows the same elapsed time in another browser,
 // in a private window, or after clearing the local storage.
 
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
 import { ApiService, toError } from './api.service';
 import { NotificationService } from './notification.service';
 import { JobType, JobView, PlanningDiagnostic, PlanningFestival } from './models';
@@ -80,11 +79,12 @@ export class SolverJobService {
   });
 
   private readonly api = inject(ApiService);
-  private readonly http = inject(HttpClient);
   private readonly notifications = inject(NotificationService);
   private readonly stateKnown = signal(false);
   private readonly resultHandlers = new Map<JobType, ResultHandler[]>();
   private started = false;
+  /** Non-null only while a job runs: see {@link updateTicker}. */
+  private tickHandle: ReturnType<typeof setInterval> | null = null;
 
   /** Starts the shared polling loop. Called once by the app shell. */
   start(): void {
@@ -94,22 +94,31 @@ export class SolverJobService {
     this.started = true;
     void this.sync();
     setInterval(() => void this.sync(), POLL_INTERVAL_MS);
-    setInterval(() => this.now.set(Date.now()), 1000);
   }
 
   /**
-   * Registers what to do with the payload of a finished job. Results are always
-   * dispatched, whoever started the job: a solve launched from another browser
-   * also updates this one when it completes. Multiple independent callers can
+   * Registers what to do with the payload of a finished job, and returns the
+   * function unregistering it — a lazy-loaded page is instantiated again on
+   * every navigation, so a handler that is never removed would pile up (and
+   * keep the destroyed component alive). Results are always dispatched,
+   * whoever started the job: a solve launched from another browser also
+   * updates this one when it completes. Multiple independent callers can
    * subscribe to the same job type (e.g. the app shell and the page showing it).
    */
-  onResult(type: JobType, handler: ResultHandler): void {
+  onResult(type: JobType, handler: ResultHandler): () => void {
     const handlers = this.resultHandlers.get(type);
     if (handlers) {
       handlers.push(handler);
     } else {
       this.resultHandlers.set(type, [handler]);
     }
+    return () => {
+      const registered = this.resultHandlers.get(type);
+      const index = registered?.indexOf(handler) ?? -1;
+      if (registered && index >= 0) {
+        registered.splice(index, 1);
+      }
+    };
   }
 
   /**
@@ -144,8 +153,8 @@ export class SolverJobService {
   }
 
   /** Every job, newest-submitted first — used for history (e.g. last run date), not polled. */
-  async listJobs(): Promise<JobView[]> {
-    return firstValueFrom(this.http.get<JobView[]>('/api/jobs'));
+  listJobs(): Promise<JobView[]> {
+    return this.api.get<JobView[]>('/api/jobs');
   }
 
   private async submit(endpoint: string, payload: unknown, type: JobType, seconds?: number): Promise<JobView> {
@@ -153,7 +162,8 @@ export class SolverJobService {
     const url = seconds ? `${endpoint}?seconds=${encodeURIComponent(seconds)}` : endpoint;
     let job: JobView;
     try {
-      job = await firstValueFrom(this.http.post<JobView>(url, payload));
+      // Raw errors: the 409 branch below needs the status and the body.
+      job = await this.api.postPreservingHttpError<JobView>(url, payload);
     } catch (error) {
       throw this.explainSubmitFailure(error);
     }
@@ -197,17 +207,33 @@ export class SolverJobService {
     if (!this.stateKnown()) {
       this.stateKnown.set(true);
     }
+    this.updateTicker();
   }
 
   /** 204 means idle, undefined means "could not ask". */
   private async fetchActiveJob(): Promise<JobView | null | undefined> {
     try {
-      const response = await firstValueFrom(
-        this.http.get<JobView>('/api/jobs/active', { observe: 'response' })
-      );
+      const response = await this.api.getResponse<JobView>('/api/jobs/active');
       return response.status === 204 ? null : response.body;
     } catch {
       return undefined;
+    }
+  }
+
+  /**
+   * Runs the one-second clock only while a job is running. It exists solely to
+   * refresh the displayed duration, and every write schedules a change
+   * detection pass in this zoneless app — ticking on an idle solver would keep
+   * re-rendering whatever page is open, forever, for nothing.
+   */
+  private updateTicker(): void {
+    const running = this.activeJob() !== null;
+    if (running && this.tickHandle === null) {
+      this.now.set(Date.now());
+      this.tickHandle = setInterval(() => this.now.set(Date.now()), 1000);
+    } else if (!running && this.tickHandle !== null) {
+      clearInterval(this.tickHandle);
+      this.tickHandle = null;
     }
   }
 
@@ -231,6 +257,9 @@ export class SolverJobService {
       mine
     };
     this.activeJob.set(entry);
+    // A submit() adopts its job without waiting for the next poll: start the
+    // duration clock right away rather than up to two seconds later.
+    this.updateTicker();
     if (!entry.mine) {
       const duration = formatDuration(job.elapsedSeconds);
       this.notifications.notify({
@@ -266,7 +295,8 @@ export class SolverJobService {
       variant: 'success',
       desktop: true
     });
-    this.resultHandlers.get(job.type)?.forEach((handler) => handler(job.result));
+    // Iterate a copy: a handler may unregister itself (or its page) while running.
+    [...(this.resultHandlers.get(job.type) ?? [])].forEach((handler) => handler(job.result));
   }
 }
 

@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
@@ -15,7 +15,8 @@ import { EmplacementFormData, EmplacementFormDialog } from './emplacement-form-d
 @Component({
   selector: 'app-emplacements-page',
   imports: [MatCardModule, MatButtonModule, MatIconModule, MatTableModule, MatTooltipModule],
-  templateUrl: './emplacements-page.html'
+  templateUrl: './emplacements-page.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EmplacementsPage {
   protected readonly columns = ['id', 'nom', 'coordonnees', 'actions'];

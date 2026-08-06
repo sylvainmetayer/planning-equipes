@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
@@ -21,6 +21,8 @@ import {
 } from '../../core/date-utils';
 
 interface StandLine {
+  /** Identity of the line: two distinct stands may well share the same name. */
+  standId: string;
   standNom: string;
   names: string[];
 }
@@ -65,7 +67,8 @@ const ALL = 'ALL';
     MatListModule,
     MatDividerModule
   ],
-  templateUrl: './calendar-month-page.html'
+  templateUrl: './calendar-month-page.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CalendarMonthPage {
   protected readonly error = signal('');
@@ -162,12 +165,13 @@ export class CalendarMonthPage {
     });
   });
 
-  /** Monday-start abbreviations for the calendar header, in the current UI locale. */
-  protected weekdayAbbreviations(): string[] {
-    const formatter = new Intl.DateTimeFormat(intlLocale(), { weekday: 'short' });
-    // 2024-01-01 was a Monday: a stable reference week, independent of the displayed month.
-    return Array.from({ length: 7 }, (_, index) => formatter.format(new Date(2024, 0, 1 + index)));
-  }
+  /**
+   * Monday-start abbreviations for the calendar header, in the current UI
+   * locale. Built once: the locale is fixed for the session (switching it
+   * reloads the page), and a template function would rebuild the array — and
+   * seven `Intl` formats — on every change detection pass.
+   */
+  protected readonly weekdayAbbreviations = buildWeekdayAbbreviations();
 
   protected creneauCountLabel(count: number): string {
     return count === 1
@@ -237,6 +241,12 @@ export class CalendarMonthPage {
   }
 }
 
+function buildWeekdayAbbreviations(): string[] {
+  const formatter = new Intl.DateTimeFormat(intlLocale(), { weekday: 'short' });
+  // 2024-01-01 was a Monday: a stable reference week, independent of the displayed month.
+  return Array.from({ length: 7 }, (_, index) => formatter.format(new Date(2024, 0, 1 + index)));
+}
+
 function buildAssignmentsByDate(postes: PosteAffectation[]): Map<string, SlotEntry[]> {
   const byDate = new Map<string, Map<number, SlotEntry & { standMap: Map<string, StandLine> }>>();
 
@@ -265,7 +275,7 @@ function buildAssignmentsByDate(postes: PosteAffectation[]): Map<string, SlotEnt
     }
     let line = slot.standMap.get(stand.id);
     if (!line) {
-      line = { standNom: stand.nom || stand.id, names: [] };
+      line = { standId: stand.id, standNom: stand.nom || stand.id, names: [] };
       slot.standMap.set(stand.id, line);
     }
     if (poste.animateur) {

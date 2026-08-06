@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -41,7 +41,8 @@ export interface CreneauFormData {
     MatButtonModule,
     MatIconModule
   ],
-  templateUrl: './creneau-form-dialog.html'
+  templateUrl: './creneau-form-dialog.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CreneauFormDialog {
   protected readonly jobs = inject(SolverJobService);

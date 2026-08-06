@@ -1,5 +1,5 @@
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, linkedSignal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
@@ -135,7 +135,8 @@ function buildNavGroups(): NavGroup[] {
     GroupeMismatchBanner
   ],
   templateUrl: './app.html',
-  styleUrl: './app.css'
+  styleUrl: './app.css',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class App {
   protected readonly navGroups = buildNavGroups();
@@ -152,7 +153,13 @@ export class App {
 
   /** The drawer overlays the content on small screens, docks on large ones. */
   protected readonly drawerMode = computed<'over' | 'side'>(() => (this.handset() ? 'over' : 'side'));
-  protected readonly drawerOpen = signal(true);
+  /**
+   * The drawer follows the viewport, but stays user-controllable afterwards:
+   * `linkedSignal` is exactly that — derived until written, reset by the next
+   * breakpoint change. An `effect` writing this signal would do the same for
+   * one more scheduling round-trip and an untraceable write.
+   */
+  protected readonly drawerOpen = linkedSignal(() => !this.handset());
 
   constructor() {
     // Starts polling the server-side solver lock for the whole session.
@@ -161,9 +168,7 @@ export class App {
     // every screen, including ones that never touch ReferenceDataStore (e.g.
     // the calendars). Refreshed after every solve, wherever it was started.
     void this.resolution.reload();
-    this.jobs.onResult('SOLVE', () => void this.resolution.reload());
-    // The drawer follows the viewport, but stays user-controllable afterwards.
-    effect(() => this.drawerOpen.set(!this.handset()));
+    inject(DestroyRef).onDestroy(this.jobs.onResult('SOLVE', () => void this.resolution.reload()));
   }
 
   protected toggleDrawer(): void {

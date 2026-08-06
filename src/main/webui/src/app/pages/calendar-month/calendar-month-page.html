@@ -53,7 +53,7 @@
     }
 
     <div class="calendar-weekdays" aria-hidden="true">
-      @for (weekday of weekdayAbbreviations(); track weekday) {
+      @for (weekday of weekdayAbbreviations; track weekday) {
         <span>{{ weekday }}</span>
       }
     </div>
@@ -95,7 +95,7 @@
       <mat-list>
         @for (slot of daySlots(); track slot.creneauId) {
           <div matSubheader>{{ slot.heureDebut }} – {{ slot.heureFin }}</div>
-          @for (stand of slot.stands; track stand.standNom) {
+          @for (stand of slot.stands; track stand.standId) {
             <mat-list-item [class.empty-slot]="stand.names.length === 0">
               <mat-icon matListItemIcon>storefront</mat-icon>
               <span matListItemTitle>{{ stand.standNom }}</span>
