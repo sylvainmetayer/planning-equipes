@@ -48,6 +48,10 @@ public final class ConstraintCatalog {
                     "Un mineur ne peut pas dépasser 8 heures de travail effectif sur une même journée "
                             + "(Code du travail art. L3162-1), ramenées à 7 heures avant 16 ans "
                             + "(art. D4153-3)."),
+            new ConstraintDefinition("reposHebdomadaireMineur", Niveau.HARD, "Légal (mineurs)",
+                    "Un mineur bénéficie de deux jours de repos consécutifs par semaine "
+                            + "(Code du travail art. L3164-2). Les dérogations conventionnelles supposent un accord "
+                            + "étendu ou une autorisation de l'inspection du travail : elles ne sont pas présumées."),
             new ConstraintDefinition("travailContinuMaxMineur", Niveau.HARD, "Légal (mineurs)",
                     "Aucune période de travail ininterrompue de plus de 4 h 30 pour un mineur : au-delà, une pause "
                             + "d'au moins 30 minutes consécutives est obligatoire "
@@ -68,6 +72,13 @@ public final class ConstraintCatalog {
                     "Entre deux journées travaillées, tout animateur bénéficie d'un repos quotidien minimal : "
                             + "11 h pour un majeur (art. L3131-1), 12 h pour un mineur et 14 h avant 16 ans "
                             + "(art. L3164-1)."),
+            new ConstraintDefinition("maxJoursTravaillesParSemaine", Niveau.HARD, "Légal (temps de travail)",
+                    "Aucun animateur ne peut travailler plus de six jours dans la même semaine "
+                            + "(Code du travail art. L3132-1)."),
+            new ConstraintDefinition("reposHebdomadaireMinimal", Niveau.HARD, "Légal (temps de travail)",
+                    "Chaque animateur bénéficie, dans chaque semaine, d'un repos hebdomadaire de 35 heures "
+                            + "consécutives : 24 heures (art. L3132-2) auxquelles s'ajoutent les 11 heures de repos "
+                            + "quotidien (art. L3131-1)."),
             new ConstraintDefinition("travailContinuMaxMajeur", Niveau.HARD, "Légal (temps de travail)",
                     "Aucune période de travail ininterrompue de plus de 6 heures pour un majeur : au-delà, une pause "
                             + "d'au moins 20 minutes consécutives est obligatoire "

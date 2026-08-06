@@ -36,6 +36,7 @@ jamais d'un booléen stocké.
 | `dureeQuotidienneMaxMineur` | L3162-1, D4153-3 | Maximum **8 h** de travail effectif sur une même journée, **7 h avant 16 ans** |
 | `dureeHebdomadaireMaxMineur` | L3162-1, D4153-3 | Maximum 35 h de travail effectif par semaine pour un mineur |
 | `travailContinuMaxMineur` | L3162-3 | Aucune période de travail ininterrompue de plus de **4 h 30** ; au-delà, pause d'au moins **30 minutes consécutives** |
+| `reposHebdomadaireMineur` | L3164-2 | **Deux jours de repos consécutifs** par semaine ISO |
 
 #### Trois régimes d'âge, pas deux
 
@@ -78,6 +79,8 @@ lever relève de l'organisateur. Le modèle ne distingue pas les deux cas.
 | `dureeQuotidienneMaxMajeur` | L3121-18 | Maximum **10 h** de travail effectif sur une même journée pour un majeur |
 | `reposQuotidienMinimal` | L3131-1, L3164-1 | Entre deux journées travaillées : **11 h** consécutives pour un majeur, **12 h** pour un mineur, **14 h** avant 16 ans |
 | `travailContinuMaxMajeur` | L3121-16 | Aucune période de travail ininterrompue de plus de **6 h** ; au-delà, pause d'au moins **20 minutes consécutives** |
+| `maxJoursTravaillesParSemaine` | L3132-1 | Jamais plus de **6 jours travaillés** dans la même semaine ISO |
+| `reposHebdomadaireMinimal` | L3132-2 + L3131-1 | **35 h consécutives** de repos dans chaque semaine ISO (24 h + les 11 h de repos quotidien) |
 
 #### Comment les pauses sont modélisées
 
@@ -101,6 +104,31 @@ existe, ce qui rendrait un créneau isolé de 6 h non conforme) est défendable 
 **[à faire valider par un juriste]** ; elle se code en remplaçant le `>` par un
 `>=` dans `travailContinuMaxMajeur`. L'art. L3162-3, lui, dit explicitement
 « ne peut *excéder* quatre heures et demie » : aucune ambiguïté côté mineurs.
+
+#### Repos hebdomadaire : conventions de calcul
+
+Le repos hebdomadaire est évalué **par semaine ISO** (lundi 00 h → lundi
+suivant 00 h), la même fenêtre que `Creneau.semaineIso()` et que les plafonds
+hebdomadaires.
+
+- Le temps libre **avant la première** et **après la dernière** affectation de
+  la semaine compte, borné à la fenêtre. Une semaine que le festival ne couvre
+  que partiellement est donc satisfaite par construction : l'animateur est
+  réellement libre ces jours-là.
+- **Approximation connue** : un repos à cheval sur la frontière
+  dimanche/lundi est compté deux fois, tronqué dans chaque semaine, au lieu
+  d'une fois en entier. Le résultat est donc **plus strict** que la loi, jamais
+  plus laxiste.
+- Pour les mineurs, les deux jours de repos sont comptés en **jours
+  calendaires** de la semaine ISO, pas en heures : c'est la lecture littérale
+  de l'art. L3164-2.
+
+Les **dérogations conventionnelles** au repos hebdomadaire des mineurs (repos
+ramené à 36 heures consécutives pour les jeunes libérés de l'obligation
+scolaire) supposent un accord collectif étendu ou une autorisation de
+l'inspection du travail. L'application ne connaît ni l'un ni l'autre et ne les
+présume pas : le défaut sûr (deux jours consécutifs) s'applique toujours. Toute
+dérogation devra être une **donnée saisie** avant d'être codée.
 
 `reposQuotidienMineur` a été **supprimée** au profit de `reposQuotidienMinimal`.
 Elle ne se déclenchait qu'après un créneau de nuit tenu par un mineur —

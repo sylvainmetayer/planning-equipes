@@ -1,11 +1,14 @@
 package dev.sylvain.planning.solver.constraints;
 
+import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.temporal.TemporalAdjusters;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 
 import ai.timefold.solver.core.api.score.buildin.hardmediumsoft.HardMediumSoftScore;
 import ai.timefold.solver.core.api.score.stream.Constraint;
@@ -81,6 +84,18 @@ public final class LegalConstraints {
     /** Art. L3162-3: the break that interrupts a young worker's stretch lasts at least 30 min. */
     private static final int PAUSE_MIN_MINEUR_MINUTES = 30;
 
+    /** Art. L3132-1: no more than six worked days in the same week. */
+    private static final int JOURS_TRAVAILLES_MAX_PAR_SEMAINE = 6;
+
+    /**
+     * Art. L3132-2 + L3131-1: 24 consecutive hours of weekly rest, on top of the
+     * 11 h of daily rest — i.e. 35 consecutive hours.
+     */
+    private static final int REPOS_HEBDOMADAIRE_MIN_MINUTES = 35 * 60;
+
+    /** Art. L3164-2: two consecutive rest days per week for young workers. */
+    private static final int JOURS_REPOS_CONSECUTIFS_MINEUR = 2;
+
     public Constraint[] define(ConstraintFactory constraintFactory) {
         return new Constraint[] {
                 standReserveAuxMajeurs(constraintFactory),
@@ -92,7 +107,10 @@ public final class LegalConstraints {
                 dureeQuotidienneMaxMajeur(constraintFactory),
                 reposQuotidienMinimal(constraintFactory),
                 travailContinuMaxMajeur(constraintFactory),
-                travailContinuMaxMineur(constraintFactory)
+                travailContinuMaxMineur(constraintFactory),
+                maxJoursTravaillesParSemaine(constraintFactory),
+                reposHebdomadaireMinimal(constraintFactory),
+                reposHebdomadaireMineur(constraintFactory)
         };
     }
 
@@ -380,6 +398,100 @@ public final class LegalConstraints {
                 .asConstraint("travailContinuMaxMineur");
     }
 
+    /**
+     * No animateur works more than six days in the same ISO week.
+     *
+     * <p>Code du travail art. <b>L3132-1</b>: <i>« Il est interdit de faire
+     * travailler un même salarié plus de six jours par semaine. »</i></p>
+     *
+     * <p>The festival runs 15 days, i.e. more than two calendar weeks: without
+     * this rule an animateur could be scheduled every single day. The weekly
+     * hours cap does not stand in the way — 7 days × 6 h 45 = 47 h 15 satisfies
+     * a 48 h ceiling on seven worked days.</p>
+     */
+    private Constraint maxJoursTravaillesParSemaine(ConstraintFactory constraintFactory) {
+        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
+                "maxJoursTravaillesParSemaine")
+                .filter(poste -> poste.getAnimateur() != null && horaireConnu(poste))
+                .groupBy(PosteAffectation::getAnimateur,
+                        poste -> poste.getCreneau().semaineIso(),
+                        ConstraintCollectors.countDistinct(poste -> poste.getCreneau().getDate()))
+                .filter((animateur, semaine, jours) -> jours > JOURS_TRAVAILLES_MAX_PAR_SEMAINE)
+                .penalize(HardMediumSoftScore.ONE_HARD,
+                        (animateur, semaine, jours) -> jours - JOURS_TRAVAILLES_MAX_PAR_SEMAINE)
+                .asConstraint("maxJoursTravaillesParSemaine");
+    }
+
+    /**
+     * Every animateur gets 35 consecutive hours of rest inside each ISO week.
+     *
+     * <p>Code du travail art. <b>L3132-2</b>: <i>« Le repos hebdomadaire a une
+     * durée minimale de vingt-quatre heures consécutives auxquelles s'ajoutent
+     * les heures consécutives de repos quotidien prévu au chapitre Ier. »</i>
+     * The daily rest of art. L3131-1 being 11 h, the floor is 24 + 11 = 35
+     * consecutive hours.</p>
+     *
+     * <p>Measured inside the ISO week window (Monday 00:00 → next Monday 00:00),
+     * which is also the window used by {@code Creneau.semaineIso()} and by the
+     * weekly hour caps. Gaps considered include the one before the first
+     * assignment and the one after the last, both clamped to the window — so a
+     * week the festival only partially covers is satisfied by construction,
+     * which is correct: the animateur really is free on those days.</p>
+     *
+     * <p><b>Known approximation</b>: rest is evaluated week by week, so a rest
+     * period straddling the Sunday/Monday boundary is counted twice, once
+     * truncated in each week, instead of once at full length. The result is
+     * <i>stricter</i> than the law, never laxer.</p>
+     */
+    private Constraint reposHebdomadaireMinimal(ConstraintFactory constraintFactory) {
+        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
+                "reposHebdomadaireMinimal")
+                .filter(poste -> poste.getAnimateur() != null && horaireConnu(poste))
+                .groupBy(PosteAffectation::getAnimateur,
+                        poste -> poste.getCreneau().semaineIso(),
+                        ConstraintCollectors.toList())
+                .filter((animateur, semaine, postes) -> plusLongReposMinutes(postes)
+                        < REPOS_HEBDOMADAIRE_MIN_MINUTES)
+                .penalize(HardMediumSoftScore.ONE_HARD,
+                        (animateur, semaine, postes) -> REPOS_HEBDOMADAIRE_MIN_MINUTES
+                                - plusLongReposMinutes(postes))
+                .asConstraint("reposHebdomadaireMinimal");
+    }
+
+    /**
+     * A minor gets two <i>consecutive</i> rest days inside each ISO week.
+     *
+     * <p>Code du travail art. <b>L3164-2</b>: <i>« Les jeunes travailleurs ont
+     * droit à deux jours de repos consécutifs par semaine. »</i></p>
+     *
+     * <p>Conventional derogations exist (weekly rest reduced to 36 consecutive
+     * hours for young workers released from compulsory schooling), but they
+     * require an extended collective agreement or a labour-inspectorate
+     * authorisation — facts the application does not hold and must not presume.
+     * The safe default (two consecutive days) is therefore applied
+     * unconditionally; any derogation must become entered data before it can be
+     * coded.</p>
+     *
+     * <p>Counted in <b>calendar days</b> inside the ISO week: days of that week
+     * the festival does not cover are free days like any other, so a week only
+     * partially covered is satisfied by construction.</p>
+     */
+    private Constraint reposHebdomadaireMineur(ConstraintFactory constraintFactory) {
+        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
+                "reposHebdomadaireMineur")
+                .filter(poste -> poste.getAnimateur() != null && horaireConnu(poste)
+                        && poste.getAnimateur().estMineurLe(poste.getCreneau().getDate()))
+                .groupBy(PosteAffectation::getAnimateur,
+                        poste -> poste.getCreneau().semaineIso(),
+                        ConstraintCollectors.toSet(poste -> poste.getCreneau().getDate()))
+                .filter((animateur, semaine, jours) -> plusLongueSerieDeJoursLibres(jours)
+                        < JOURS_REPOS_CONSECUTIFS_MINEUR)
+                .penalize(HardMediumSoftScore.ONE_HARD,
+                        (animateur, semaine, jours) -> JOURS_REPOS_CONSECUTIFS_MINEUR
+                                - plusLongueSerieDeJoursLibres(jours))
+                .asConstraint("reposHebdomadaireMineur");
+    }
+
     /* ------------------------------ helpers ------------------------------- */
 
     private static boolean horaireConnu(PosteAffectation poste) {
@@ -412,6 +524,59 @@ public final class LegalConstraints {
     /** Rest, in minutes, between the end of {@code veille} and the start of {@code lendemain}. */
     private static int ecartMinutes(PosteAffectation veille, PosteAffectation lendemain) {
         return (int) Duration.between(fin(veille), debut(lendemain)).toMinutes();
+    }
+
+    /** Monday 00:00 of the ISO week the date belongs to. */
+    private static LocalDateTime debutSemaine(LocalDate date) {
+        return date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).atStartOfDay();
+    }
+
+    /**
+     * Longest rest, in minutes, inside the ISO week of the given assignments —
+     * counting the free time before the first one and after the last one, both
+     * clamped to the week window.
+     */
+    private static int plusLongReposMinutes(List<PosteAffectation> postes) {
+        List<PosteAffectation> tries = postes.stream()
+                .sorted(Comparator.comparing(LegalConstraints::debut))
+                .toList();
+        LocalDateTime debutSemaine = debutSemaine(tries.get(0).getCreneau().getDate());
+        LocalDateTime finSemaine = debutSemaine.plusDays(7);
+        long plusLong = 0;
+        LocalDateTime curseur = debutSemaine;
+        for (PosteAffectation poste : tries) {
+            LocalDateTime debut = debut(poste);
+            if (debut.isAfter(curseur)) {
+                plusLong = Math.max(plusLong, Duration.between(curseur, debut).toMinutes());
+            }
+            LocalDateTime fin = fin(poste);
+            if (fin.isAfter(curseur)) {
+                curseur = fin;
+            }
+        }
+        if (finSemaine.isAfter(curseur)) {
+            plusLong = Math.max(plusLong, Duration.between(curseur, finSemaine).toMinutes());
+        }
+        return (int) plusLong;
+    }
+
+    /**
+     * Longest run of consecutive calendar days of the ISO week on which none of
+     * the given dates falls — i.e. the longest stretch of days off.
+     */
+    private static int plusLongueSerieDeJoursLibres(Set<LocalDate> joursTravailles) {
+        LocalDate lundi = debutSemaine(joursTravailles.iterator().next()).toLocalDate();
+        int plusLongue = 0;
+        int courante = 0;
+        for (int i = 0; i < 7; i++) {
+            if (joursTravailles.contains(lundi.plusDays(i))) {
+                courante = 0;
+            } else {
+                courante++;
+                plusLongue = Math.max(plusLongue, courante);
+            }
+        }
+        return plusLongue;
     }
 
     /**

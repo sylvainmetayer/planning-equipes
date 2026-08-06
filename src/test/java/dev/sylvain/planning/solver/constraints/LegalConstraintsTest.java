@@ -398,6 +398,98 @@ class LegalConstraintsTest extends ConstraintTestBase {
                 .penalizesBy(0);
     }
 
+    // --- Art. L3132-1 / L3132-2 / L3164-2 : repos hebdomadaire -------------
+
+    /** Créneau court (11 h → 15 h) du jour J de la semaine ISO 2026-W29. */
+    private Creneau jourSemaine29(int offsetDepuisLundi) {
+        java.time.LocalDate lundi = java.time.LocalDate.of(2026, 7, 13);
+        return creneau("W29-J" + offsetDepuisLundi, 6 + offsetDepuisLundi, lundi.plusDays(offsetDepuisLundi),
+                LocalTime.of(11, 0), LocalTime.of(15, 0));
+    }
+
+    @Test
+    void septJoursTravaillesDansLaSemaineEstPenalise() {
+        // B4 : le festival dure 15 jours ; rien n'empêchait d'affecter un
+        // animateur sept jours d'affilée (art. L3132-1).
+        Animateur majeur = majeurReferent("A1");
+        Object[] postes = new Object[7];
+        for (int i = 0; i < 7; i++) {
+            postes[i] = poste(standStrat, jourSemaine29(i), majeur);
+        }
+        verify("maxJoursTravaillesParSemaine").given(postes).penalizesBy(1);
+    }
+
+    @Test
+    void sixJoursTravaillesDansLaSemaineNEstPasPenalise() {
+        Animateur majeur = majeurReferent("A1");
+        Object[] postes = new Object[6];
+        for (int i = 0; i < 6; i++) {
+            postes[i] = poste(standStrat, jourSemaine29(i), majeur);
+        }
+        verify("maxJoursTravaillesParSemaine").given(postes).penalizesBy(0);
+    }
+
+    @Test
+    void semaineSansTrenteCinqHeuresDeReposConsecutivesEstPenalisee() {
+        // Sept jours de 11 h à 15 h : le plus long repos est de 20 h
+        // (15 h → 11 h le lendemain), soit 900 min sous le minimum de 35 h.
+        Animateur majeur = majeurReferent("A1");
+        Object[] postes = new Object[7];
+        for (int i = 0; i < 7; i++) {
+            postes[i] = poste(standStrat, jourSemaine29(i), majeur);
+        }
+        verify("reposHebdomadaireMinimal").given(postes).penalizesBy(35 * 60 - 20 * 60);
+    }
+
+    @Test
+    void semaineAvecUnJourEtDemiDeReposNEstPasPenalisee() {
+        // Travail lundi à vendredi, puis rien : de vendredi 15 h au lundi
+        // suivant 00 h, largement plus de 35 h consécutives.
+        Animateur majeur = majeurReferent("A1");
+        Object[] postes = new Object[5];
+        for (int i = 0; i < 5; i++) {
+            postes[i] = poste(standStrat, jourSemaine29(i), majeur);
+        }
+        verify("reposHebdomadaireMinimal").given(postes).penalizesBy(0);
+    }
+
+    @Test
+    void mineurSansDeuxJoursDeReposConsecutifsEstPenalise() {
+        // Travail lundi, mardi, jeudi, vendredi, dimanche : les jours libres
+        // (mercredi, samedi) ne sont jamais consécutifs (art. L3164-2).
+        Animateur mineur = mineurDebutant("M1");
+        verify("reposHebdomadaireMineur")
+                .given(poste(standStrat, jourSemaine29(0), mineur),
+                        poste(standStrat, jourSemaine29(1), mineur),
+                        poste(standStrat, jourSemaine29(3), mineur),
+                        poste(standStrat, jourSemaine29(4), mineur),
+                        poste(standStrat, jourSemaine29(6), mineur))
+                .penalizesBy(1);
+    }
+
+    @Test
+    void mineurAvecDeuxJoursDeReposConsecutifsNEstPasPenalise() {
+        // Travail lundi à vendredi, samedi et dimanche libres.
+        Animateur mineur = mineurDebutant("M1");
+        verify("reposHebdomadaireMineur")
+                .given(poste(standStrat, jourSemaine29(0), mineur),
+                        poste(standStrat, jourSemaine29(1), mineur),
+                        poste(standStrat, jourSemaine29(2), mineur),
+                        poste(standStrat, jourSemaine29(3), mineur),
+                        poste(standStrat, jourSemaine29(4), mineur))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void majeurNEstPasConcerneParLeReposHebdomadaireDesMineurs() {
+        Animateur majeur = majeurReferent("A1");
+        Object[] postes = new Object[7];
+        for (int i = 0; i < 7; i++) {
+            postes[i] = poste(standStrat, jourSemaine29(i), majeur);
+        }
+        verify("reposHebdomadaireMineur").given(postes).penalizesBy(0);
+    }
+
     @Test
     void deuxAnimateursDistinctsNeSontPasCumulesEnsemble() {
         Animateur a1 = majeurReferent("A1");
