@@ -8,6 +8,8 @@
 
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { FeasibilityReport } from './models';
+import { hardScoreNegativeMessage } from '../shared/feasibility-messages';
 
 const SNACK_TIMEOUT_MS = 9000;
 const STORAGE_KEY = 'planning-equipes.notifications';
@@ -100,6 +102,34 @@ export class NotificationService {
     };
     this.notifications.update((list) => [entry, ...list].slice(0, MAX_NOTIFICATIONS));
     this.persist();
+  }
+
+  /**
+   * Logs a post-solve/analyze feasibility issue to the Notifications page, so
+   * it stays reviewable even for whoever isn't looking at the Solveur or
+   * Contraintes page when the background job completes — both already show
+   * the same wording inline via `app-feasibility-banner`, so this is always
+   * `silent` to avoid a duplicate toast on top of that persisted banner.
+   * No-op when the result is actually feasible.
+   */
+  notifyFeasibility(faisabilite: FeasibilityReport | null, hardScore: number | null): void {
+    if (faisabilite && !faisabilite.feasible) {
+      this.notify({
+        title: $localize`:@@feasibility.notification.notFeasible:Planning non totalement réalisable`,
+        message: faisabilite.message,
+        variant: 'warning',
+        silent: true
+      });
+      return;
+    }
+    if (hardScore !== null && hardScore < 0) {
+      this.notify({
+        title: $localize`:@@feasibility.notification.hardScoreNegative:Planning non totalement réalisable`,
+        message: hardScoreNegativeMessage(hardScore),
+        variant: 'error',
+        silent: true
+      });
+    }
   }
 
   markRead(id: string): void {

@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { FeasibilityReport } from '../core/models';
+import { hardScoreNegativeMessage } from './feasibility-messages';
 
 /** A still-violated hard constraint to list under the post-solve warning. */
 export interface HardIssue {
@@ -89,6 +90,6 @@ export class FeasibilityBanner {
     if (hardScore === null || hardScore >= 0) {
       return null;
     }
-    return $localize`:@@feasibility.hardScoreNegative:Ce planning n'est pas totalement réalisable : le solveur n'a pas réussi à ramener le score dur à zéro (score dur ${hardScore}:hardScore:). Essayez d'augmenter l'effectif disponible ou compétent, d'assouplir le découpage des vacations (durée min/max, stratégie de couverture pendant la pause) ou de revoir les disponibilités déclarées, puis relancez une résolution. Le détail des règles encore en défaut (ci-dessous si listées, ou page Contraintes) précise la valeur légale ou métier à respecter.`;
+    return hardScoreNegativeMessage(hardScore);
   });
 }

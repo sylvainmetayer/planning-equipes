@@ -54,7 +54,10 @@ describe('SolverJobService', () => {
         provideZonelessChangeDetection(),
         SolverJobService,
         { provide: ApiService, useValue: api },
-        { provide: NotificationService, useValue: { notify: vi.fn(), requestDesktopPermission: vi.fn() } }
+        {
+          provide: NotificationService,
+          useValue: { notify: vi.fn(), notifyFeasibility: vi.fn(), requestDesktopPermission: vi.fn() }
+        }
       ]
     });
     service = TestBed.inject(SolverJobService);

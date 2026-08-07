@@ -127,6 +127,8 @@ export class ConstraintsPage {
     void this.loadParametresLegaux();
     // The refresh button launches an ANALYZE job (see refresh() below); once
     // it completes, whichever browser started it, reload the scored view.
+    // SolverJobService.reportFinishedJob already raises the feasibility
+    // notification itself (it must run whether or not this page is mounted).
     // Unregistered on destroy: this page is lazy-loaded and rebuilt on every
     // navigation, so keeping the handler would stack one more copy per visit.
     inject(DestroyRef).onDestroy(this.jobs.onResult('ANALYZE', () => void this.loadConstraints()));

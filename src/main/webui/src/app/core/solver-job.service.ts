@@ -295,6 +295,14 @@ export class SolverJobService {
       variant: 'success',
       desktop: true
     });
+    // Raised here rather than by the SOLVE/ANALYZE page's onResult handler:
+    // that handler only exists while its page is mounted, so a solve finishing
+    // after the user navigated away would otherwise never surface this. This
+    // runs unconditionally, whichever page (if any) is open when the job ends.
+    const diagnostic = job.result as PlanningDiagnostic | null;
+    if (diagnostic) {
+      this.notifications.notifyFeasibility(diagnostic.faisabilite, diagnostic.hardScore);
+    }
     // Iterate a copy: a handler may unregister itself (or its page) while running.
     [...(this.resultHandlers.get(job.type) ?? [])].forEach((handler) => handler(job.result));
   }
