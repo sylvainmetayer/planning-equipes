@@ -2,6 +2,8 @@ package dev.sylvain.planning.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.LocalTime;
+
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.Test;
 
@@ -54,6 +56,10 @@ class PlanningServiceParametresScenarioTest {
                 .isEqualTo(ParametresDecoupage.StrategieCouverturePendantPause.RELEVE);
         assertThat(decoupage.getDureeVacationMaxMinutes())
                 .isEqualTo(ParametresDecoupage.DUREE_VACATION_MAX_MINUTES_PAR_DEFAUT);
+        // Regression: an unquoted HH:MM:SS scalar is read by SnakeYAML as a
+        // sexagesimal Number (43830 = 12*3600 + 30*60), not a String — a naive
+        // (String) cast throws ClassCastException instead of parsing it.
+        assertThat(decoupage.getFenetreRepasMidiDebut()).isEqualTo(LocalTime.of(12, 30));
     }
 
     @Test

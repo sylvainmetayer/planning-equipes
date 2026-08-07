@@ -8,8 +8,20 @@ import { FeasibilityReport, PlanningDiagnostic } from '../../core/models';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { SolverJobService } from '../../core/solver-job.service';
-import { FeasibilityBanner } from '../../shared/feasibility-banner';
+import { FeasibilityBanner, HardIssue } from '../../shared/feasibility-banner';
 import { OutputPanel } from '../../shared/output-panel';
+
+/**
+ * A constraint's raw score string looks like `-14hard/0medium/0soft`
+ * ({@link https://timefold.ai HardMediumSoftScore#toString}); extracts the
+ * leading hard component so still-violated hard rules can be picked out of a
+ * {@link PlanningDiagnostic.contraintes} list, which (unlike `ConstraintView`
+ * on the Contraintes page) doesn't carry the constraint's `niveau`.
+ */
+function hardPart(score: string): number {
+  const match = /^(-?\d+)hard/.exec(score);
+  return match ? Number(match[1]) : 0;
+}
 
 /**
  * Solver page: launches the background solve job, and exports the resulting
@@ -28,6 +40,8 @@ import { OutputPanel } from '../../shared/output-panel';
 export class SolverPage {
   protected readonly output = signal('');
   protected readonly feasibility = signal<FeasibilityReport | null>(null);
+  protected readonly hardScore = signal<number | null>(null);
+  protected readonly hardIssues = signal<HardIssue[]>([]);
   protected readonly exportBusy = signal(false);
 
   /** The server-side lock, not a local flag: it also covers other browsers. */
@@ -86,6 +100,8 @@ export class SolverPage {
     }
     this.output.set($localize`:@@solver.submitting:Envoi de la résolution au solveur en arrière-plan...`);
     this.feasibility.set(null);
+    this.hardScore.set(null);
+    this.hardIssues.set([]);
     try {
       // The problem is built server-side from the reference data: no planning is
       // uploaded, so even a very large scenario can be solved without hitting the
@@ -146,6 +162,12 @@ export class SolverPage {
     // sure they pick up the freshly solved one rather than a stale in-memory copy.
     this.planningState.set(null);
     this.feasibility.set(diagnostic.faisabilite);
+    this.hardScore.set(diagnostic.hardScore);
+    this.hardIssues.set(
+      diagnostic.contraintes
+        .filter((constraint) => hardPart(constraint.score) < 0)
+        .map((constraint) => ({ name: constraint.name, matchCount: constraint.matchCount }))
+    );
     this.output.set(JSON.stringify(diagnostic, null, 2));
   }
 }

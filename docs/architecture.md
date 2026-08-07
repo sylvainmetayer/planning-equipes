@@ -167,7 +167,8 @@ standalone) :
 | `app/shared/output-panel.ts` | Panneau de résultat monospace partagé par les pages d'action |
 | `app/shared/data-stale-indicator.ts` | Signale que les données de référence ont changé depuis la dernière résolution |
 | `app/shared/groupe-mismatch-banner.ts` | Signale que le groupe de créneaux actif diffère de celui de la dernière résolution |
-| `app/shared/feasibility-banner.ts` | Affiche le diagnostic de faisabilité renvoyé par le back-end |
+| `app/shared/feasibility-banner.ts` | Alerte si le plan n'est pas fiable : soit la capacité pré-résolution (`FeasibilityReport`), soit le score dur réellement atteint (`hardScore` < 0 après résolution, y compris quand la capacité pré-résolution disait « réalisable ») |
+| `app/shared/violation-details-dialog.ts` | Modale « qui/quoi/quand » listant chaque violation d'une contrainte dure (page Contraintes), à partir de `ConstraintView.violations` |
 | `app/shared/map-picker.ts` | Sélection de coordonnées sur une carte, utilisée par le formulaire d'emplacement |
 
 Conventions :

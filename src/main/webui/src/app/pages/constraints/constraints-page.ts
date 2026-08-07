@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -21,6 +22,7 @@ import {
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { FeasibilityBanner } from '../../shared/feasibility-banner';
+import { ViolationDetailsDialog } from '../../shared/violation-details-dialog';
 
 /** Called lazily (never at module scope, see `app.ts`'s `buildNavGroups`). */
 function niveauLabel(niveau: NiveauContrainte): string {
@@ -79,11 +81,19 @@ export class ConstraintsPage {
   protected readonly plafondMineurHeures = DUREE_HEBDOMADAIRE_MAX_MINEUR_HEURES;
 
   protected readonly feasibility = computed(() => this.view()?.faisabilite ?? null);
+  protected readonly hardScore = computed(() => this.view()?.hardScore ?? null);
+  protected readonly hardIssues = computed(
+    () =>
+      this.view()?.contraintes
+        .filter((constraint) => constraint.niveau === 'HARD' && (constraint.matchCount ?? 0) > 0)
+        .map((constraint) => ({ name: constraint.name, matchCount: constraint.matchCount ?? 0 })) ?? []
+  );
 
   protected readonly jobs = inject(SolverJobService);
 
   private readonly api = inject(ApiService);
   private readonly confirm = inject(ConfirmService);
+  private readonly dialog = inject(MatDialog);
 
   protected readonly summary = computed(() => {
     const view = this.view();
@@ -280,6 +290,19 @@ export class ConstraintsPage {
       return 'constraint-result constraint-result-empty';
     }
     return `constraint-result ${(constraint.matchCount ?? 0) > 0 ? 'constraint-result-hit' : 'constraint-result-clean'}`;
+  }
+
+  /** Opens the who/what/when detail popup — only ever called for a HARD constraint with matches (see the template). */
+  protected showViolations(constraint: ConstraintView): void {
+    this.dialog.open(ViolationDetailsDialog, {
+      data: {
+        constraintName: constraint.name,
+        description: constraint.description,
+        matchCount: constraint.matchCount ?? constraint.violations.length,
+        violations: constraint.violations
+      },
+      width: '36rem'
+    });
   }
 
   protected resultLabel(constraint: ConstraintView): string {

@@ -58,6 +58,7 @@ public class ConstraintResource {
                 analysis == null ? null : analysis.diagnostic().score(),
                 analysis == null ? null : analysis.diagnostic().postesNonPourvus(),
                 analysis == null ? null : analysis.diagnostic().faisabilite(),
+                analysis == null ? null : analysis.diagnostic().hardScore(),
                 constraints);
     }
 
@@ -94,7 +95,8 @@ public class ConstraintResource {
                 definition.description(),
                 !desactivees.contains(definition.name()),
                 diagnostic == null ? null : diagnostic.score(),
-                diagnostic == null ? null : diagnostic.matchCount());
+                diagnostic == null ? null : diagnostic.matchCount(),
+                diagnostic == null ? List.of() : diagnostic.violations());
     }
 
     /**
@@ -103,6 +105,10 @@ public class ConstraintResource {
      *                    analysis, {@code null} when never analysed
      * @param matchCount  number of times the rule matched (i.e. was violated
      *                    or rewarded) on that same run
+     * @param violations  one human-readable line per match, only for
+     *                    constraints enforced at {@code Niveau.HARD} — always
+     *                    empty for medium/soft ones (see
+     *                    {@code PlanningService.HARD_CONSTRAINT_NAMES})
      */
     public record ConstraintView(
             String name,
@@ -111,7 +117,8 @@ public class ConstraintResource {
             String description,
             boolean actif,
             String score,
-            Integer matchCount) {
+            Integer matchCount,
+            List<String> violations) {
     }
 
     /**
@@ -126,11 +133,23 @@ public class ConstraintResource {
     public record ConstraintToggleUpdate(boolean actif, String motif, String modifieParUtilisateurId) {
     }
 
+    /**
+     * @param hardScore the hard score actually reached by the last analysed
+     *                  solve, {@code null} when never analysed. Distinct from
+     *                  {@code faisabilite}: that field is a cheap, optimistic
+     *                  pre-solve capacity estimate that can say "réalisable"
+     *                  for a plan the solver still could not bring to zero
+     *                  hard (see {@code FeasibilityAnalyzer}'s javadoc) — the
+     *                  UI must check {@code hardScore == 0}, not just
+     *                  {@code faisabilite.feasible}, to know whether the plan
+     *                  actually in hand is fully legal/staffed.
+     */
     public record ConstraintsView(
             Instant analysedAt,
             String scoreGlobal,
             Integer postesNonPourvus,
             FeasibilityReport faisabilite,
+            Integer hardScore,
             List<ConstraintView> contraintes) {
     }
 }

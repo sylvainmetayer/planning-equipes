@@ -121,6 +121,8 @@ export interface ConstraintDiagnostic {
   name: string;
   score: string;
   matchCount: number;
+  /** One human-readable line per match, only populated for HARD constraints. */
+  violations: string[];
 }
 
 /** The créneau where the animateur shortfall is worst, when infeasible. */
@@ -150,12 +152,20 @@ export interface FeasibilityReport {
  * créneaux/postes) — that payload can reach several dozens of MB and is
  * consulted through the dedicated screens instead, which load it from
  * `/api/planning/persisted`.
+ *
+ * `hardScore` is the hard score actually reached by this solve, distinct from
+ * `faisabilite`: the latter is a cheap, optimistic pre-solve capacity estimate
+ * that can say "réalisable" for a plan the solver still could not bring to
+ * zero hard (see the backend `FeasibilityAnalyzer` javadoc). Whether the plan
+ * actually in hand is fully legal/staffed is `hardScore === 0`, not
+ * `faisabilite?.feasible`.
  */
 export interface PlanningDiagnostic {
   score: string;
   postesNonPourvus: number;
   contraintes: ConstraintDiagnostic[];
   faisabilite: FeasibilityReport | null;
+  hardScore: number;
 }
 
 export interface ConstraintView {
@@ -166,6 +176,8 @@ export interface ConstraintView {
   actif: boolean;
   score: string | null;
   matchCount: number | null;
+  /** One human-readable line per match, only populated for HARD constraints. */
+  violations: string[];
 }
 
 export interface ConstraintsView {
@@ -173,6 +185,8 @@ export interface ConstraintsView {
   scoreGlobal: string | null;
   postesNonPourvus: number | null;
   faisabilite: FeasibilityReport | null;
+  /** Hard score of the last analysed solve; see {@link PlanningDiagnostic.hardScore}. */
+  hardScore: number | null;
   contraintes: ConstraintView[];
 }
 

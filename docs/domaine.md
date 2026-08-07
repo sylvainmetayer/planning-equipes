@@ -178,12 +178,25 @@ Le chevauchement entre deux vacations consécutives (`dureeChevauchementMinutes`
 30 min par défaut) est le mécanisme de couverture : pendant cette fenêtre, deux
 `PosteAffectation` existent sur le même stand (celui qui part, celui qui
 arrive), donc `effectifMin` reste garanti *en excédent* temporaire, jamais en
-déficit — la solvabilité du problème d'affectation ne change donc pas de
-nature par rapport à aujourd'hui, elle continue de dépendre uniquement de la
-disponibilité/compétence des animateurs (`FeasibilityAnalyzer`). Le découpeur
-tente aussi de faire tomber ce chevauchement dans une fenêtre repas
-(`fenetreRepasMidiDebut/Fin`, `fenetreRepasSoirDebut/Fin`) pour que la relève
-se fasse juste avant ou après un repas plutôt qu'en plein service.
+déficit. Le découpeur tente aussi de faire tomber ce chevauchement dans une
+fenêtre repas (`fenetreRepasMidiDebut/Fin`, `fenetreRepasSoirDebut/Fin`) pour
+que la relève se fasse juste avant ou après un repas plutôt qu'en plein
+service.
+
+**Attention, nuance sur la solvabilité** : la disponibilité/compétence des
+animateurs reste la condition nécessaire, mais elle n'est plus suffisante dès
+que le découpage crée des pics de demande *simultanée* — typiquement un
+`dureeVacationMinMinutes` bas (plus de relais/jour) et/ou
+`strategieCouverturePendantPause: RELEVE` (une vacation de relève de plus par
+pause, sur *chaque* stand concerné, concentrée sur la même fenêtre horaire).
+`FeasibilityAnalyzer` ne voit pas ce pic : c'est une estimation optimiste,
+pré-résolution, au niveau du besoin agrégé par jour (voir sa javadoc) — elle
+peut répondre « réalisable » alors que le solveur ne parvient pas à ramener le
+score dur à zéro dans le budget de résolution, précisément parce que trop de
+stands réclament un animateur compétent supplémentaire au même quart d'heure.
+Le signal fiable après résolution est le score dur réel
+(`PlanningDiagnostic.hardScore`), pas `faisabilite.feasible` seul — voir le
+bandeau `app-feasibility-banner`, qui affiche désormais les deux.
 
 `ParametresDecoupage` (une seule ligne en base, même mécanisme que
 `ParametresLegaux`) porte ces paramètres, y compris

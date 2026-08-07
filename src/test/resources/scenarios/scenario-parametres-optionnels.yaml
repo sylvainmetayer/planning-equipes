@@ -11,6 +11,10 @@ parametresLegaux:
 parametresDecoupage:
   dureeVacationMinMinutes: 250
   strategieCouverturePendantPause: RELEVE
+  # Deliberately unquoted: SnakeYAML's YAML 1.1 resolver reads an unquoted
+  # HH:MM:SS scalar as sexagesimal (a Number), not a string — this exercises
+  # that parsing path, not just the quoted "HH:MM" créneaux below.
+  fenetreRepasMidiDebut: 12:30:00
 
 creneaux:
   - id: J1-MATIN

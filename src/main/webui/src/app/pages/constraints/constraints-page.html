@@ -1,4 +1,4 @@
-<app-feasibility-banner [report]="feasibility()" />
+<app-feasibility-banner [report]="feasibility()" [hardScore]="hardScore()" [hardIssues]="hardIssues()" />
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
@@ -103,6 +103,11 @@
                 </mat-slide-toggle>
               </div>
               <p [class]="resultClass(constraint)">{{ resultLabel(constraint) }}</p>
+              @if (constraint.violations.length > 0) {
+                <button matButton (click)="showViolations(constraint)" i18n="@@constraints.showViolations">
+                  Voir le détail ({{ constraint.violations.length }})
+                </button>
+              }
             </mat-card-content>
           </mat-card>
         }

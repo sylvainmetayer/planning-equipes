@@ -17,8 +17,11 @@ import java.util.stream.Collectors;
 
 import ai.timefold.solver.core.api.domain.solution.ConstraintWeightOverrides;
 import ai.timefold.solver.core.api.score.analysis.ConstraintAnalysis;
+import ai.timefold.solver.core.api.score.analysis.MatchAnalysis;
 import ai.timefold.solver.core.api.score.analysis.ScoreAnalysis;
 import ai.timefold.solver.core.api.score.buildin.hardmediumsoft.HardMediumSoftScore;
+import ai.timefold.solver.core.api.score.stream.ConstraintJustification;
+import ai.timefold.solver.core.api.score.stream.DefaultConstraintJustification;
 import ai.timefold.solver.core.api.solver.Solver;
 import ai.timefold.solver.core.api.solver.SolutionManager;
 import ai.timefold.solver.core.api.solver.SolverFactory;
@@ -120,6 +123,21 @@ public class PlanningService {
 
     /** Default scenario loaded when the caller does not pick one. */
     static final String DEFAULT_SCENARIO = "scenario-complet.yaml";
+
+    /**
+     * Names of every constraint enforced at {@link ConstraintCatalog.Niveau#HARD}.
+     * {@link #diagnostiquer} only builds per-match {@code violations} for these:
+     * a soft constraint like {@code favoriserRotationDesStands} can have
+     * thousands of matches, which would bloat the diagnostic payload for a
+     * detail nobody blocking on a failed solve needs to see.
+     */
+    private static final Set<String> HARD_CONSTRAINT_NAMES = ConstraintCatalog.definitions().stream()
+            .filter(definition -> definition.niveau() == ConstraintCatalog.Niveau.HARD)
+            .map(ConstraintCatalog.ConstraintDefinition::name)
+            .collect(Collectors.toUnmodifiableSet());
+
+    /** Caps the per-constraint violation list: a UI detail view, not a full dump. */
+    private static final int MAX_VIOLATIONS_PAR_CONTRAINTE = 100;
 
     public PlanningFestival construireExemple() {
         return construireExemple(DEFAULT_SCENARIO);
@@ -591,22 +609,38 @@ public class PlanningService {
             parametres.setDureePauseRepasMinutes(((Number) data.get("dureePauseRepasMinutes")).intValue());
         }
         if (data.get("fenetreRepasMidiDebut") != null) {
-            parametres.setFenetreRepasMidiDebut(LocalTime.parse((String) data.get("fenetreRepasMidiDebut")));
+            parametres.setFenetreRepasMidiDebut(parseLocalTime(data.get("fenetreRepasMidiDebut")));
         }
         if (data.get("fenetreRepasMidiFin") != null) {
-            parametres.setFenetreRepasMidiFin(LocalTime.parse((String) data.get("fenetreRepasMidiFin")));
+            parametres.setFenetreRepasMidiFin(parseLocalTime(data.get("fenetreRepasMidiFin")));
         }
         if (data.get("fenetreRepasSoirDebut") != null) {
-            parametres.setFenetreRepasSoirDebut(LocalTime.parse((String) data.get("fenetreRepasSoirDebut")));
+            parametres.setFenetreRepasSoirDebut(parseLocalTime(data.get("fenetreRepasSoirDebut")));
         }
         if (data.get("fenetreRepasSoirFin") != null) {
-            parametres.setFenetreRepasSoirFin(LocalTime.parse((String) data.get("fenetreRepasSoirFin")));
+            parametres.setFenetreRepasSoirFin(parseLocalTime(data.get("fenetreRepasSoirFin")));
         }
         if (data.get("strategieCouverturePendantPause") != null) {
             parametres.setStrategieCouverturePendantPause(ParametresDecoupage.StrategieCouverturePendantPause
                     .valueOf((String) data.get("strategieCouverturePendantPause")));
         }
         return Optional.of(parametres);
+    }
+
+    /**
+     * SnakeYAML's default (YAML 1.1) resolver reads an unquoted {@code HH:MM:SS}
+     * scalar as sexagesimal ({@code H*3600 + M*60 + S}), not as a string — so a
+     * scenario author who doesn't think to quote {@code fenetreRepasMidiDebut:
+     * 12:00:00} hands this parser an {@link Integer} (43200), not
+     * {@code "12:00:00"}. Both forms are accepted here since the sexagesimal
+     * value happens to equal the second-of-day, same as {@link LocalTime}'s own
+     * representation.
+     */
+    private static LocalTime parseLocalTime(Object value) {
+        if (value instanceof Number number) {
+            return LocalTime.ofSecondOfDay(number.longValue());
+        }
+        return LocalTime.parse(value.toString());
     }
 
     public PlanningFestival resoudre(PlanningFestival problem) {
@@ -678,10 +712,15 @@ public class PlanningService {
         ScoreAnalysis<?> analysis = solutionManager.analyze(solved);
         List<ConstraintDiagnostic> constraintDiagnostics = new ArrayList<>();
         for (ConstraintAnalysis<?> ca : analysis.constraintAnalyses()) {
+            String name = ca.constraintRef().constraintName();
+            List<String> violations = HARD_CONSTRAINT_NAMES.contains(name)
+                    ? formatViolations(ca.matches())
+                    : List.of();
             constraintDiagnostics.add(new ConstraintDiagnostic(
-                    ca.constraintRef().constraintName(),
+                    name,
                     String.valueOf(ca.score()),
-                    ca.matchCount()));
+                    ca.matchCount(),
+                    violations));
         }
         constraintDiagnostics.sort((a, b) -> Integer.compare(b.matchCount, a.matchCount));
         int unassigned = (int) solved.getPostes().stream()
@@ -689,8 +728,31 @@ public class PlanningService {
                 .count();
         FeasibilityAnalyzer.FeasibilityReport faisabilite = feasibilityAnalyzer.analyser(
                 solved.getAnimateurs(), distinctStands(solved), distinctCreneaux(solved));
+        int hardScore = solved.getScore() == null ? 0 : solved.getScore().hardScore();
         return new PlanningDiagnostic(String.valueOf(solved.getScore()), unassigned, constraintDiagnostics,
-                faisabilite);
+                faisabilite, hardScore);
+    }
+
+    /**
+     * One line per match, human-readable (see {@link ViolationFormatter}) —
+     * e.g. "Sarah Rousseau (A45)" for a {@code reposHebdomadaireMineur} hit, or
+     * "Stand tir à l'arc — 2026-07-16 12:30-15:30" for an unfilled
+     * {@code posteDoitEtrePourvu} seat. Capped at {@link #MAX_VIOLATIONS_PAR_CONTRAINTE}:
+     * this feeds a UI detail popup, not an export.
+     */
+    private static List<String> formatViolations(List<? extends MatchAnalysis<?>> matches) {
+        return matches.stream()
+                .limit(MAX_VIOLATIONS_PAR_CONTRAINTE)
+                .map(match -> ViolationFormatter.describe(factsOf(match)))
+                .toList();
+    }
+
+    private static List<Object> factsOf(MatchAnalysis<?> match) {
+        ConstraintJustification justification = match.justification();
+        if (justification instanceof DefaultConstraintJustification defaultJustification) {
+            return defaultJustification.getFacts();
+        }
+        return List.of(justification);
     }
 
     private static List<Stand> distinctStands(PlanningFestival solved) {
@@ -724,7 +786,15 @@ public class PlanningService {
         return SolverFactory.create(solverConfig);
     }
 
-    public record ConstraintDiagnostic(String name, String score, int matchCount) {
+    /**
+     * @param violations one human-readable line per match (see
+     *                    {@link ViolationFormatter}), populated only for
+     *                    constraints enforced at
+     *                    {@link ConstraintCatalog.Niveau#HARD} — empty for
+     *                    medium/soft ones, which can run into the thousands
+     *                    of matches (see {@link #HARD_CONSTRAINT_NAMES}).
+     */
+    public record ConstraintDiagnostic(String name, String score, int matchCount, List<String> violations) {
     }
 
     /**
@@ -733,12 +803,23 @@ public class PlanningService {
      * itself (animateurs/stands/créneaux/postes) — that payload can reach several
      * dozens of MB and is consulted through the dedicated screens instead, which
      * load it from {@code /api/planning/persisted}.
+     *
+     * <p>{@code hardScore} is the actually-reached hard score, distinct from
+     * {@code faisabilite}: the latter is a cheap, optimistic pre-solve capacity
+     * estimate (see {@link FeasibilityAnalyzer}'s javadoc — it can under-report a
+     * shortfall it didn't account for, e.g. one only created by the vacation
+     * découpage or by a legal constraint on minors) and can say "réalisable"
+     * for a plan the solver still could not bring to zero hard within its time
+     * budget. Callers that need to know whether the plan actually in hand is
+     * fully legal/staffed must check {@code hardScore == 0}, not just
+     * {@code faisabilite.feasible()}.</p>
      */
     public record PlanningDiagnostic(
             String score,
             int postesNonPourvus,
             List<ConstraintDiagnostic> contraintes,
-            FeasibilityAnalyzer.FeasibilityReport faisabilite) {
+            FeasibilityAnalyzer.FeasibilityReport faisabilite,
+            int hardScore) {
     }
 
     private LocalDate parseLocalDate(Object value, String fieldName) {
