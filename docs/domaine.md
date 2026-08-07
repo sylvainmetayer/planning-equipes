@@ -207,16 +207,20 @@ seulement, une pause interne est insérée. Avec les valeurs par défaut, ce cas
 ne se produit jamais.
 
 Un fichier scénario (`scenarios/*.yaml`) peut fixer ses propres
-`parametresLegaux:` et/ou `parametresDecoupage:` en tête de fichier, avec
-uniquement les champs à surcharger (les autres gardent leur valeur par défaut
-de la classe Java, jamais celle actuellement en base) — utile pour documenter
-par un commentaire YAML *pourquoi* un scénario a besoin d'un réglage non
-standard, et pour que `POST /api/reference-data/import-scenario` réapplique
-ce réglage à chaque import plutôt que de dépendre d'une valeur laissée en
-base par une session précédente. Absentes du fichier (cas de tous les autres
-scénarios), ces deux sections sont sans effet : `construireExemple` retombe
+`parametresLegaux:`, `parametresDecoupage:` et/ou `parametresSolveur:` en tête
+de fichier, avec uniquement les champs à surcharger (les autres gardent leur
+valeur par défaut de la classe Java, jamais celle actuellement en base) —
+utile pour documenter par un commentaire YAML *pourquoi* un scénario a besoin
+d'un réglage non standard, et pour que `POST /api/reference-data/import-scenario`
+réapplique ce réglage à chaque import plutôt que de dépendre d'une valeur
+laissée en base par une session précédente. `parametresSolveur.dureeResolutionSecondes`
+permet en particulier à un gros scénario (ex. `scenario-complet.yaml`, ~8 min
+pour atteindre un bon score) d'auto-configurer la durée de résolution
+(onglet Débogage) plutôt que de dépendre d'une valeur laissée par un scénario
+précédent, plus rapide. Absentes du fichier (cas de tous les autres
+scénarios), ces trois sections sont sans effet : `construireExemple` retombe
 sur les `ParametresLegaux` actuellement en base, et l'import laisse
-`ParametresDecoupage` tel quel.
+`ParametresDecoupage`/`ParametresSolveur` tels quels.
 
 Une contrainte dure dans `LegalConstraints` complète le dispositif :
 `pauseMinimaleEntreVacations` (l'écart entre deux vacations d'un même

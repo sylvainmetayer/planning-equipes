@@ -9,14 +9,16 @@ import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PlanningFestival;
 
 /**
  * Exercises the optional {@code parametresLegaux:} / {@code parametresDecoupage:}
- * scenario sections: absent, a scenario keeps depending on whatever is
- * currently configured (unchanged behavior); present, only the fields it
- * names are overridden, everything else falls back to the domain class's own
- * defaults rather than to the (here DB-less) ReferenceDataService.
+ * / {@code parametresSolveur:} scenario sections: absent, a scenario keeps
+ * depending on whatever is currently configured (unchanged behavior);
+ * present, only the fields it names are overridden, everything else falls
+ * back to the domain class's own defaults rather than to the (here DB-less)
+ * ReferenceDataService.
  */
 class PlanningServiceParametresScenarioTest {
 
@@ -33,6 +35,7 @@ class PlanningServiceParametresScenarioTest {
 
         assertThat(service.chargerParametresLegauxScenario("scenario.yml")).isEmpty();
         assertThat(service.chargerParametresDecoupageScenario("scenario.yml")).isEmpty();
+        assertThat(service.chargerParametresSolveurScenario("scenario.yml")).isEmpty();
     }
 
     @Test
@@ -60,6 +63,10 @@ class PlanningServiceParametresScenarioTest {
         // sexagesimal Number (43830 = 12*3600 + 30*60), not a String — a naive
         // (String) cast throws ClassCastException instead of parsing it.
         assertThat(decoupage.getFenetreRepasMidiDebut()).isEqualTo(LocalTime.of(12, 30));
+
+        ParametresSolveur solveur = service.chargerParametresSolveurScenario("scenario-parametres-optionnels.yaml")
+                .orElseThrow();
+        assertThat(solveur.getDureeResolutionSecondes()).isEqualTo(400);
     }
 
     @Test

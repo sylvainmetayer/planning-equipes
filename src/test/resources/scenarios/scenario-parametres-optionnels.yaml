@@ -2,9 +2,10 @@ festival:
   dateDebut: 2026-07-08
 
 # Fixture for PlanningServiceParametresScenarioTest: exercises the optional
-# parametresLegaux/parametresDecoupage sections a scenario can pin, with only
-# a subset of fields overridden — the rest must fall back to each class's own
-# defaults, not to whatever the (here DB-less) ReferenceDataService returns.
+# parametresLegaux/parametresDecoupage/parametresSolveur sections a scenario
+# can pin, with only a subset of fields overridden — the rest must fall back
+# to each class's own defaults, not to whatever the (here DB-less)
+# ReferenceDataService returns.
 parametresLegaux:
   reposQuotidienMinimalMinutes: 500
 
@@ -15,6 +16,9 @@ parametresDecoupage:
   # HH:MM:SS scalar as sexagesimal (a Number), not a string — this exercises
   # that parsing path, not just the quoted "HH:MM" créneaux below.
   fenetreRepasMidiDebut: 12:30:00
+
+parametresSolveur:
+  dureeResolutionSecondes: 400
 
 creneaux:
   - id: J1-MATIN

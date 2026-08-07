@@ -42,6 +42,7 @@ import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -566,6 +567,23 @@ public class PlanningService {
         }
     }
 
+    /**
+     * Reads the optional top-level {@code parametresSolveur:} section of a
+     * scenario file, if present — lets a large/slow scenario pin the
+     * termination duration it actually needs (e.g. {@code scenario-complet.yaml}
+     * takes ~8 min to reach a good score) instead of relying on whichever
+     * duration is currently configured in the Débogage tab. Absent, the
+     * current database value is left untouched, same as
+     * {@link #chargerParametresDecoupageScenario}.
+     */
+    public Optional<ParametresSolveur> chargerParametresSolveurScenario(String scenarioName) {
+        try {
+            return parseParametresSolveur(lireDonneesScenario(SCENARIOS_DIR + "/" + scenarioName));
+        } catch (IOException e) {
+            throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
+        }
+    }
+
     @SuppressWarnings("unchecked")
     private static Optional<ParametresLegaux> parseParametresLegaux(Map<String, Object> scenarioData) {
         Map<String, Object> data = (Map<String, Object>) scenarioData.get("parametresLegaux");
@@ -625,6 +643,15 @@ public class PlanningService {
                     .valueOf((String) data.get("strategieCouverturePendantPause")));
         }
         return Optional.of(parametres);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Optional<ParametresSolveur> parseParametresSolveur(Map<String, Object> scenarioData) {
+        Map<String, Object> data = (Map<String, Object>) scenarioData.get("parametresSolveur");
+        if (data == null || data.get("dureeResolutionSecondes") == null) {
+            return Optional.empty();
+        }
+        return Optional.of(new ParametresSolveur(((Number) data.get("dureeResolutionSecondes")).intValue()));
     }
 
     /**

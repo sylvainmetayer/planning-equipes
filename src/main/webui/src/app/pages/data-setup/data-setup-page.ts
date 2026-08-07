@@ -11,6 +11,7 @@ import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
+import { SolverSettingsService } from '../../core/solver-settings.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { OutputPanel } from '../../shared/output-panel';
 
@@ -64,6 +65,7 @@ export class DataSetupPage {
   private readonly resolution = inject(PlanningResolutionStore);
   private readonly confirm = inject(ConfirmService);
   private readonly jobs = inject(SolverJobService);
+  private readonly solverSettings = inject(SolverSettingsService);
 
   /** Entity awaiting the file picked in the shared CSV file input. */
   private pendingCsvEntity: CsvEntity | null = null;
@@ -266,10 +268,12 @@ export class DataSetupPage {
 
   // A seed, reset or bulk import invalidates whatever planning was displayed,
   // and moves both the resolved groupe de créneaux and the "data edited since
-  // the last solve" stamp the toolbar warnings are computed from.
+  // the last solve" stamp the toolbar warnings are computed from. A scenario
+  // may also have pinned its own solver duration (see import-scenario), so
+  // the Débogage tab's value is refreshed too — harmless when unchanged.
   private async refreshAfterImport(): Promise<void> {
     this.planningState.set(null);
-    await Promise.all([this.referenceData.reload(), this.resolution.reload()]);
+    await Promise.all([this.referenceData.reload(), this.resolution.reload(), this.solverSettings.refresh()]);
   }
 }
 

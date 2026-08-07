@@ -7,6 +7,12 @@
 festival:
   dateDebut: 2026-07-08
 
+# 2088 postes: reaching a good score takes ~8 min, well above the 180 s
+# Débogage default — pin it here so importing this scenario auto-configures
+# the solver's termination duration instead of under-timing every solve.
+parametresSolveur:
+  dureeResolutionSecondes: 480
+
 creneaux:
   - id: J1-MATIN
     jour: 1

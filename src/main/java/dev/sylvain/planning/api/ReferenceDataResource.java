@@ -231,11 +231,15 @@ public class ReferenceDataResource {
      * the (potentially large) planning never travels to the browser and back —
      * the client only sends the desired scenario name.
      *
-     * <p>A scenario may optionally pin {@code parametresLegaux:} and/or
-     * {@code parametresDecoupage:} — when present, they are persisted too, so
-     * the parameters a scenario was authored/verified against travel with it
-     * instead of silently depending on whatever is already configured.
-     * Absent, the current database values are left untouched.
+     * <p>A scenario may optionally pin {@code parametresLegaux:},
+     * {@code parametresDecoupage:} and/or {@code parametresSolveur:} — when
+     * present, they are persisted too, so the parameters a scenario was
+     * authored/verified against travel with it instead of silently depending
+     * on whatever is already configured. {@code parametresSolveur} in
+     * particular lets a large scenario auto-configure the termination
+     * duration it actually needs (Débogage tab), instead of leaving the
+     * caller to guess or under-time a solve. Absent, the current database
+     * values are left untouched.
      */
     @POST
     @Path("/reference-data/import-scenario")
@@ -245,6 +249,7 @@ public class ReferenceDataResource {
         planningService.chargerParametresLegauxScenario(name).ifPresent(referenceDataService::updateParametresLegaux);
         planningService.chargerParametresDecoupageScenario(name)
                 .ifPresent(referenceDataService::updateParametresDecoupage);
+        planningService.chargerParametresSolveurScenario(name).ifPresent(referenceDataService::updateParametresSolveur);
         return Response.noContent().build();
     }
 
