@@ -166,18 +166,4 @@ class VacationGeneratorServiceTest {
         assertThat(releve.getHeureDebut()).isEqualTo(avantPause.getHeureFin());
         assertThat(releve.getHeureFin()).isEqualTo(apresPause.getHeureDebut());
     }
-
-    @Test
-    void chaqueVacationHeriteDesStandsOuvertsDeLAmplitude() {
-        Creneau amplitude = amplitude(LocalTime.of(10, 0), LocalTime.of(0, 0));
-        amplitude.setStandsOuvertsIds(Set.of("STAND-A"));
-
-        List<Creneau> vacations = VacationGeneratorService.genererVacations(
-                List.of(amplitude), new ParametresDecoupage());
-
-        assertThat(vacations).isNotEmpty();
-        for (Creneau vacation : vacations) {
-            assertThat(vacation.getStandsOuvertsIds()).containsExactly("STAND-A");
-        }
-    }
 }

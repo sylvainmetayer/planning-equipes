@@ -167,4 +167,18 @@ abstract class ConstraintTestBase {
         p.setAnimateur(animateur);
         return p;
     }
+
+    /**
+     * A poste covering only part of {@code creneau} — the case created by a
+     * partial stand closure (issue #60): {@code creneau} is still the real,
+     * persisted créneau, but {@link PosteAffectation#getHeureDebutEffective()}
+     * narrows the time this specific poste actually spans.
+     */
+    protected PosteAffectation posteAvecFenetreEffective(Stand stand, Creneau creneau, Animateur animateur,
+            LocalTime debutEffectif, LocalTime finEffective) {
+        PosteAffectation p = poste(stand, creneau, animateur);
+        p.setHeureDebutEffective(debutEffectif);
+        p.setHeureFinEffective(finEffective);
+        return p;
+    }
 }

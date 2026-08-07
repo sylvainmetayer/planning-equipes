@@ -114,38 +114,6 @@ export class CreneauxPage {
     await this.crud.remove('creneaux', creneau.id, $localize`:@@creneaux.entityLabel:Créneau`);
   }
 
-  /** Empty (or full) list means "every stand is open" — the default. */
-  protected isStandOuvert(creneau: Creneau, standId: string): boolean {
-    const ids = creneau.standsOuvertsIds ?? [];
-    return ids.length === 0 || ids.includes(standId);
-  }
-
-  protected standsOuvertsLabel(creneau: Creneau): string {
-    const ids = creneau.standsOuvertsIds ?? [];
-    if (ids.length === 0) {
-      return $localize`:@@creneaux.allOpen:Tous les stands sont ouverts`;
-    }
-    const closed = this.store.stands().length - ids.length;
-    if (closed <= 0) {
-      return $localize`:@@creneaux.allOpen:Tous les stands sont ouverts`;
-    }
-    return closed === 1
-      ? $localize`:@@creneaux.closedOne:${closed}:count: stand fermé`
-      : $localize`:@@creneaux.closedMany:${closed}:count: stands fermés`;
-  }
-
-  /** Toggling saves immediately: this checklist edits persisted state directly, not the draft form. */
-  protected async toggleStandOuvert(creneau: Creneau, standId: string, checked: boolean): Promise<void> {
-    if (this.editingLocked()) {
-      return;
-    }
-    const allIds = this.store.stands().map((stand) => stand.id);
-    const current = creneau.standsOuvertsIds && creneau.standsOuvertsIds.length > 0 ? creneau.standsOuvertsIds : allIds;
-    const next = checked ? Array.from(new Set([...current, standId])) : current.filter((id) => id !== standId);
-    const standsOuvertsIds = next.length >= allIds.length ? [] : next;
-    await this.crud.save('creneaux', { ...creneau, standsOuvertsIds }, creneau.id, $localize`:@@creneaux.entityLabel:Créneau`);
-  }
-
   /** Activates a timeslot group; checking one implicitly deactivates every other one, so an already-active row is a no-op. */
   protected async activerGroupe(groupe: GroupeCreneau): Promise<void> {
     if (groupe.actif || this.editingLocked() || this.groupeEnCours()) {

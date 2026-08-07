@@ -4,11 +4,12 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.IsoFields;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.Set;
 
 public class Creneau {
 
@@ -17,8 +18,6 @@ public class Creneau {
     private LocalDate date;
     private LocalTime heureDebut;
     private LocalTime heureFin;
-    /** Empty = every stand is open on this timeslot (the default). */
-    private Set<String> standsOuvertsIds = new HashSet<>();
     /** Planning ("groupe de créneaux") this slot belongs to; nullable defensively, always set once persisted. */
     private GroupeCreneau groupe;
 
@@ -97,14 +96,6 @@ public class Creneau {
         this.heureFin = heureFin;
     }
 
-    public Set<String> getStandsOuvertsIds() {
-        return standsOuvertsIds;
-    }
-
-    public void setStandsOuvertsIds(Set<String> standsOuvertsIds) {
-        this.standsOuvertsIds = standsOuvertsIds != null ? standsOuvertsIds : new HashSet<>();
-    }
-
     public GroupeCreneau getGroupe() {
         return groupe;
     }
@@ -113,9 +104,95 @@ public class Creneau {
         this.groupe = groupe;
     }
 
-    /** True when the given stand is open on this timeslot (open-by-default). */
-    public boolean estStandOuvert(String standId) {
-        return standsOuvertsIds.isEmpty() || standsOuvertsIds.contains(standId);
+    /**
+     * Open sub-intervals of this slot for {@code stand}, as
+     * {@code [debutMinutes, finMinutes)} pairs measured from this slot's own
+     * start ({@link #getHeureDebut()} on {@link #getDate()}).
+     *
+     * <ul>
+     * <li>A single pair {@code [0, getDureeMinutes()]} means the stand is
+     * open for the whole slot — the default, and by far the common case (no
+     * {@link IndisponibiliteStand} overlaps it at all).</li>
+     * <li>An empty list means the stand is closed for the whole slot.</li>
+     * <li>More than one pair means a closure sits strictly inside the slot,
+     * splitting it into several open stretches (e.g. a 9h-14h slot closed
+     * 11h-13h yields {@code [0,120)} and {@code [240,300)]}).</li>
+     * </ul>
+     *
+     * <p>An {@link IndisponibiliteStand} counts against this slot only when
+     * its {@code date} is this slot's start date or the following calendar
+     * day — the latter covers a closure that falls after midnight inside a
+     * slot crossing midnight (e.g. a 20:00-02:00 slot closed 00:30-01:30 on
+     * the next day), mirroring how {@link #getDureeMinutes()} itself treats a
+     * slot ending at or before its start as crossing into the next day. A
+     * closure window that isn't {@link IndisponibiliteStand#estValide()} (own
+     * {@code heureFin} not strictly after its {@code heureDebut}) is ignored
+     * defensively — closures may not themselves cross midnight, see
+     * {@link IndisponibiliteStand}.</p>
+     */
+    public List<int[]> segmentsOuvertsMinutes(Stand stand) {
+        int dureeMinutes = getDureeMinutes();
+        if (dureeMinutes <= 0) {
+            return List.of();
+        }
+        List<int[]> fermeturesSecondes = fermeturesEnSecondes(stand, dureeMinutes * 60);
+        if (fermeturesSecondes.isEmpty()) {
+            return List.of(new int[] {0, dureeMinutes});
+        }
+        fermeturesSecondes.sort(Comparator.comparingInt(f -> f[0]));
+        List<int[]> ouverts = new ArrayList<>();
+        int curseur = 0;
+        for (int[] fermeture : fermeturesSecondes) {
+            int debut = Math.max(curseur, fermeture[0]);
+            if (debut > curseur) {
+                ouverts.add(new int[] {curseur / 60, debut / 60});
+            }
+            curseur = Math.max(curseur, fermeture[1]);
+        }
+        if (curseur < dureeMinutes * 60) {
+            ouverts.add(new int[] {curseur / 60, dureeMinutes});
+        }
+        return ouverts;
+    }
+
+    /** Closure windows of {@code stand} overlapping this slot, clamped to {@code [0, dureeSecondes]} and expressed in seconds since this slot's start. */
+    private List<int[]> fermeturesEnSecondes(Stand stand, int dureeSecondes) {
+        if (stand == null || stand.getIndisponibilites().isEmpty() || heureDebut == null || date == null) {
+            return List.of();
+        }
+        int debutSlotSecondes = heureDebut.toSecondOfDay();
+        List<int[]> fermetures = new ArrayList<>();
+        for (IndisponibiliteStand indispo : stand.getIndisponibilites()) {
+            if (!indispo.estValide()) {
+                continue;
+            }
+            int decalageJour;
+            if (indispo.getDate().equals(date)) {
+                decalageJour = 0;
+            } else if (indispo.getDate().equals(date.plusDays(1))) {
+                decalageJour = SECONDES_PAR_JOUR;
+            } else {
+                continue;
+            }
+            int indispoDebut = decalageJour + indispo.getHeureDebut().toSecondOfDay() - debutSlotSecondes;
+            int indispoFin = decalageJour + indispo.getHeureFin().toSecondOfDay() - debutSlotSecondes;
+            int debut = Math.max(0, indispoDebut);
+            int fin = Math.min(dureeSecondes, indispoFin);
+            if (fin > debut) {
+                fermetures.add(new int[] {debut, fin});
+            }
+        }
+        return fermetures;
+    }
+
+    /** True when at least part of this slot is open for {@code stand} (open-by-default). */
+    public boolean estStandOuvert(Stand stand) {
+        return !segmentsOuvertsMinutes(stand).isEmpty();
+    }
+
+    /** True when {@code stand} is closed for this slot's entire duration. */
+    public boolean estStandFermeIntegralement(Stand stand) {
+        return getDureeMinutes() > 0 && segmentsOuvertsMinutes(stand).isEmpty();
     }
 
     /**

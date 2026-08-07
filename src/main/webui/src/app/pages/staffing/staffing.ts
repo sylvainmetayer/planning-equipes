@@ -68,13 +68,37 @@ function splitMajeursMineurs(seats: number, reserveMajeurs: boolean): { majeurs:
   return { majeurs, mineurs: seats - majeurs };
 }
 
-function openStandsFor(creneau: Creneau, stands: Stand[], standsById: Map<string, Stand>): Stand[] {
-  if (creneau.standsOuvertsIds.length === 0) {
-    return stands;
+/**
+ * True when {@code stand} is closed for the whole créneau (some overlapping
+ * {@link IndisponibiliteStand} windows fully cover it). Mirrors the backend's
+ * conservative simplification (`FeasibilityAnalyzer`/`Creneau.estStandOuvert`):
+ * a stand only partially closed still counts as "open" for this coarse
+ * peak/workload estimate, since a précise per-minute demand isn't worth the
+ * complexity here — see `Creneau#segmentsOuvertsMinutes` on the backend for
+ * the precise version used at actual poste-generation time.
+ */
+function estFermeIntegralement(stand: Stand, creneau: Creneau): boolean {
+  const dureeCreneau = dureeMinutes(creneau);
+  if (dureeCreneau <= 0 || !stand.indisponibilites?.length) {
+    return false;
   }
-  return creneau.standsOuvertsIds
-    .map((id) => standsById.get(id))
-    .filter((stand): stand is Stand => !!stand);
+  const debutCreneau = toMinutesSinceMidnight(creneau.heureDebut);
+  let fermetureMinutes = 0;
+  for (const indispo of stand.indisponibilites) {
+    if (indispo.date !== creneau.date || !indispo.heureDebut || !indispo.heureFin) {
+      continue;
+    }
+    const debut = Math.max(0, toMinutesSinceMidnight(indispo.heureDebut) - debutCreneau);
+    const fin = Math.min(dureeCreneau, toMinutesSinceMidnight(indispo.heureFin) - debutCreneau);
+    if (fin > debut) {
+      fermetureMinutes += fin - debut;
+    }
+  }
+  return fermetureMinutes >= dureeCreneau;
+}
+
+function openStandsFor(creneau: Creneau, stands: Stand[]): Stand[] {
+  return stands.filter((stand) => !estFermeIntegralement(stand, creneau));
 }
 
 /** Mirrors the backend's `Creneau.getDureeMinutes()`: handles a slot crossing midnight. */
@@ -110,11 +134,9 @@ export function computeStaffingSummary(
   creneaux: Creneau[],
   dureeHebdomadaireMaxMinutes = DUREE_HEBDOMADAIRE_MAX_MINUTES_PAR_DEFAUT
 ): StaffingSummary {
-  const standsById = new Map(stands.map((stand) => [stand.id, stand]));
-
   const parCreneau = creneaux
     .map((creneau) => {
-      const openStands = openStandsFor(creneau, stands, standsById);
+      const openStands = openStandsFor(creneau, stands);
       let total = 0;
       let majeurs = 0;
       let mineurs = 0;

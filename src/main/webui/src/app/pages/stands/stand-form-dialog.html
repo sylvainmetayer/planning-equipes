@@ -58,11 +58,51 @@
               i18n="@@stands.field.premium">
   Premium (stand éditeur)
 </mat-checkbox>
+<div class="span-2">
+  <h3 i18n="@@stands.indisponibilites.title">Fermetures</h3>
+  <p class="empty-hint" i18n="@@stands.indisponibilites.hint">Le stand est ouvert sur chaque créneau par défaut. Ajoutez une fermeture pour le fermer tout ou partie d'un créneau (ex : fermé de 14h à 16h).</p>
+  @for (indispo of draft().indisponibilites; track $index) {
+    <div class="indisponibilite-row">
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@stands.indisponibilites.date">Date</mat-label>
+        <input matInput type="date" required
+               [ngModel]="indispo.date" (ngModelChange)="patchIndisponibilite($index, { date: $event })" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@stands.indisponibilites.heureDebut">Début</mat-label>
+        <input matInput type="time" required
+               [ngModel]="indispo.heureDebut" (ngModelChange)="patchIndisponibilite($index, { heureDebut: $event })" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@stands.indisponibilites.heureFin">Fin</mat-label>
+        <input matInput type="time" required
+               [ngModel]="indispo.heureFin" (ngModelChange)="patchIndisponibilite($index, { heureFin: $event })" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@stands.indisponibilites.motif">Motif (optionnel)</mat-label>
+        <input matInput
+               [ngModel]="indispo.motif" (ngModelChange)="patchIndisponibilite($index, { motif: $event })" />
+      </mat-form-field>
+      <button matIconButton type="button" i18n-matTooltip="@@common.delete" matTooltip="Supprimer"
+              i18n-aria-label="@@common.delete" aria-label="Supprimer" class="danger-action"
+              [disabled]="editingLocked()" (click)="retirerIndisponibilite($index)">
+        <mat-icon>delete</mat-icon>
+      </button>
+    </div>
+  }
+  @if (indisponibiliteInvalide()) {
+    <p class="field-error" i18n="@@stands.indisponibilites.invalid">Chaque fermeture doit avoir une date et une heure de fin strictement après l'heure de début.</p>
+  }
+  <button matButton type="button" [disabled]="editingLocked()" (click)="ajouterIndisponibilite()">
+    <mat-icon>add</mat-icon>
+    <ng-container i18n="@@stands.indisponibilites.add">Ajouter une fermeture</ng-container>
+  </button>
+</div>
 </fieldset>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button matButton type="button" (click)="dialogRef.close(false)" i18n="@@common.cancel">Annuler</button>
-  <button matButton="filled" type="submit" [disabled]="effectifInvalid() || editingLocked()">
+  <button matButton="filled" type="submit" [disabled]="effectifInvalid() || indisponibiliteInvalide() || editingLocked()">
     <mat-icon>save</mat-icon>
     {{ submitLabel() }}
   </button>

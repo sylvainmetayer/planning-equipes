@@ -23,7 +23,6 @@ public class Creneau {
     private LocalDate date;
     private LocalTime heureDebut;
     private LocalTime heureFin;
-    private Set<String> standsOuvertsIds;  // vide = tous les stands ouverts (défaut) ; sinon liste exclusive
     private GroupeCreneau groupe; // planning ("groupe de créneaux") auquel ce créneau appartient
 }
 
@@ -47,6 +46,15 @@ public class Stand {
     private boolean reserveMajeurs;             // stand interdit aux mineurs
     private boolean premium;                    // stand éditeur : continuité + expérience privilégiées
     private Emplacement emplacement;            // lieu physique (kiosque, mairie, ...) ; nullable
+    private List<IndisponibiliteStand> indisponibilites;  // vide = toujours ouvert (défaut) — voir plus bas
+}
+
+public class IndisponibiliteStand {
+    private Long id;              // entier auto-généré par la base
+    private LocalDate date;
+    private LocalTime heureDebut;
+    private LocalTime heureFin;   // doit être strictement après heureDebut : ne peut pas traverser minuit
+    private String motif;         // libre, informatif — jamais lu par le solveur
 }
 
 public class Emplacement {
@@ -108,10 +116,24 @@ stand × créneau : si un stand a besoin de 2 personnes sur un créneau, deux
 instances sont générées à l'initialisation (seed / scénario), en respectant
 `Stand.effectifMin` / `effectifMax`. Un poste non pourvu garde `animateur = null`.
 
-Un stand est ouvert sur tous les créneaux par défaut. Si `Creneau.standsOuvertsIds`
-n'est pas vide, seuls les stands listés y génèrent des postes (voir
-`PlanningService.construirePostes`) — les autres stands sont simplement fermés
-sur ce créneau, sans poste ni pénalité associée. En amont, `construirePostes`
+Un stand est ouvert sur tous les créneaux par défaut. Ses fermetures
+(`Stand.indisponibilites`) sont indépendantes du découpage en créneaux : une
+fermeture peut ne couvrir qu'une partie d'un créneau (ex. fermé de 14 h à 16 h
+dans un créneau 9 h-19 h). `Creneau.segmentsOuvertsMinutes(Stand)` calcule les
+sous-intervalles encore ouverts d'un créneau donné pour un stand donné, en
+soustrayant l'union de ses fermetures qui le chevauchent :
+
+- aucune fermeture ne chevauche le créneau → un seul segment couvrant le
+  créneau entier (cas par défaut, largement majoritaire) ;
+- une fermeture couvre le créneau en entier → liste vide, le stand est fermé
+  sur tout le créneau ;
+- une fermeture ne couvre qu'une partie du créneau → un ou deux segments
+  ouverts restants (un si la fermeture touche un bord du créneau, deux si elle
+  est en plein milieu).
+
+`PlanningService.construirePostes` génère un poste par place à pourvoir et par
+segment ouvert (voir plus bas) — un stand fermé sur tout un créneau n'y génère
+simplement aucun poste, sans pénalité associée. En amont, `construirePostes`
 ne reçoit que les créneaux du `GroupeCreneau` actif
 (`referenceDataService.listCreneauxGroupeActif()`) : les créneaux d'un groupe
 inactif ne génèrent aucun poste tant que ce groupe n'est pas activé.
@@ -124,11 +146,28 @@ public class PosteAffectation {
 
     private Stand stand;      // fixe, connu à l'avance
     private Creneau creneau;  // fixe, connu à l'avance
+    private LocalTime heureDebutEffective;  // nullable — fenêtre réellement couverte, si fermeture partielle
+    private LocalTime heureFinEffective;    // nullable — idem
 
     @PlanningVariable(valueRangeProviderRefs = "animateurRange", allowsUnassigned = true)
     private Animateur animateur;
 }
 ```
+
+`heureDebutEffective`/`heureFinEffective` restent `null` dans l'immense
+majorité des cas (stand ouvert sur tout le créneau) ; ils ne sont renseignés
+que pour un poste issu d'un segment partiel. Ce n'est **pas** un sous-créneau
+séparé : `poste_affectation.creneau_id` est une clé étrangère vers un créneau
+réel et persisté (voir `V11__creneau_numeric_id.sql`), donc un poste ne peut
+jamais référencer un créneau synthétique créé à la volée pour représenter
+uniquement le segment ouvert. La fenêtre effective vit donc sur le poste
+lui-même, en complément du créneau plutôt qu'à sa place —
+`PosteAffectation.heureDebutEffectif()` / `heureFinEffectif()` /
+`getDureeEffectiveMinutes()` retombent sur les valeurs du créneau quand
+l'override est absent, donc tout code qui les utilise se comporte
+identiquement à avant #60 dans le cas non partiel. Voir
+[`contraintes.md`](contraintes.md#indisponibilité-partielle-dun-stand) pour
+l'impact sur les contraintes.
 
 `allowsUnassigned = true` (et non l'attribut `nullable`, déprécié et voué à
 disparaître côté Timefold) : une place peut rester vide pendant la recherche et

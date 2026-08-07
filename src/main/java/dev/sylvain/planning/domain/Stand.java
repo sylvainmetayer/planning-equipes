@@ -1,6 +1,8 @@
 package dev.sylvain.planning.domain;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -15,6 +17,12 @@ public class Stand {
     private boolean premium;
     /** Physical location the stand is set up at; nullable (not every stand is geocoded). */
     private Emplacement emplacement;
+    /**
+     * Closure windows for this stand, e.g. "closed 14:00-16:00 on 2026-07-18"
+     * — possibly only part of a créneau. Empty = the stand is open on every
+     * créneau (the default). See {@link Creneau#segmentsOuvertsMinutes(Stand)}.
+     */
+    private List<IndisponibiliteStand> indisponibilites = new ArrayList<>();
 
     public Stand() {
     }
@@ -98,6 +106,14 @@ public class Stand {
 
     public void setEmplacement(Emplacement emplacement) {
         this.emplacement = emplacement;
+    }
+
+    public List<IndisponibiliteStand> getIndisponibilites() {
+        return indisponibilites;
+    }
+
+    public void setIndisponibilites(List<IndisponibiliteStand> indisponibilites) {
+        this.indisponibilites = indisponibilites != null ? indisponibilites : new ArrayList<>();
     }
 
     @Override

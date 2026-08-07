@@ -207,9 +207,9 @@ public class PlanningService {
 
     /**
      * One {@link PosteAffectation} per required seat ({@code stand.effectifMin})
-     * on every stand × timeslot where the stand is open (see
-     * {@link Creneau#estStandOuvert(String)}), all seats unassigned. Package-
-     * private and static so it can be unit-tested without a database.
+     * on every stand × timeslot × open segment (see
+     * {@link Creneau#segmentsOuvertsMinutes(Stand)}), all seats unassigned.
+     * Package-private and static so it can be unit-tested without a database.
      *
      * <p>Uses {@code effectifMin}, not {@code effectifMax}: {@code effectifMax}
      * is the upper capacity a stand could accept, not the number of seats that
@@ -222,6 +222,15 @@ public class PlanningService {
      * silently inflated every solve started from "Lancer le solveur" into a
      * substantially bigger, harder problem than the one actually staffed
      * for — the real reason it kept stalling short of hard-feasibility.</p>
+     *
+     * <p>A stand closed for only part of a créneau (see
+     * {@link dev.sylvain.planning.domain.IndisponibiliteStand})
+     * still generates a poste for the créneau's open remainder(s), each one
+     * carrying an effective time-window override
+     * ({@link PosteAffectation#getHeureDebutEffective()}) narrower than the
+     * créneau itself — the poste still references the real, persisted créneau
+     * (a hard requirement of {@code poste_affectation.creneau_id}'s foreign
+     * key), so it cannot be split into a synthetic sub-créneau instead.</p>
      */
     static List<PosteAffectation> construirePostes(List<Stand> stands, List<Creneau> creneaux) {
         List<PosteAffectation> postes = new ArrayList<>();
@@ -229,15 +238,27 @@ public class PlanningService {
         for (Stand stand : stands) {
             int seats = Math.max(1, stand.getEffectifMin());
             for (Creneau creneau : creneaux) {
-                if (!creneau.estStandOuvert(stand.getId())) {
-                    continue;
-                }
-                for (int seat = 0; seat < seats; seat++) {
-                    postes.add(new PosteAffectation("poste-" + (counter++), stand, creneau));
+                List<int[]> segments = creneau.segmentsOuvertsMinutes(stand);
+                boolean creneauEntierOuvert = segments.size() == 1 && segments.get(0)[0] == 0
+                        && segments.get(0)[1] == creneau.getDureeMinutes();
+                for (int[] segment : segments) {
+                    for (int seat = 0; seat < seats; seat++) {
+                        PosteAffectation poste = new PosteAffectation("poste-" + (counter++), stand, creneau);
+                        if (!creneauEntierOuvert) {
+                            poste.setHeureDebutEffective(decaler(creneau.getHeureDebut(), segment[0]));
+                            poste.setHeureFinEffective(decaler(creneau.getHeureDebut(), segment[1]));
+                        }
+                        postes.add(poste);
+                    }
                 }
             }
         }
         return postes;
+    }
+
+    /** {@code heureDebut} shifted forward by {@code minutes}, wrapping past midnight. */
+    private static LocalTime decaler(LocalTime heureDebut, int minutes) {
+        return LocalTime.ofSecondOfDay(Math.floorMod(heureDebut.toSecondOfDay() + minutes * 60L, 24 * 3600L));
     }
 
     /**

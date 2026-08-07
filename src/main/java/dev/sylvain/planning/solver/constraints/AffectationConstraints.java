@@ -102,16 +102,25 @@ public final class AffectationConstraints {
                 && poste.getCreneau().getHeureDebut() != null;
     }
 
+    /**
+     * Start instant of the time this poste actually covers — narrowed by
+     * {@link PosteAffectation#getHeureDebutEffective()} when the stand is only
+     * partially closed on this créneau, so two postes whose effective windows
+     * don't actually overlap (e.g. different stands, a closure sitting between
+     * them) are correctly not flagged here — see
+     * {@code Creneau#segmentsOuvertsMinutes}.
+     */
     private static LocalDateTime debutCreneau(PosteAffectation poste) {
-        return LocalDateTime.of(poste.getCreneau().getDate(), poste.getCreneau().getHeureDebut());
+        return LocalDateTime.of(poste.getCreneau().getDate(), poste.heureDebutEffectif());
     }
 
     /**
-     * End instant of the slot, derived from {@code getDureeMinutes()} so a
-     * créneau crossing midnight (20:00 → 00:00) ends the next calendar day
-     * rather than before it started.
+     * End instant of the effective window, derived from
+     * {@link PosteAffectation#getDureeEffectiveMinutes()} so a window crossing
+     * midnight (20:00 → 00:00) ends the next calendar day rather than before
+     * it started.
      */
     private static LocalDateTime finCreneau(PosteAffectation poste) {
-        return debutCreneau(poste).plusMinutes(poste.getCreneau().getDureeMinutes());
+        return debutCreneau(poste).plusMinutes(poste.getDureeEffectiveMinutes());
     }
 }

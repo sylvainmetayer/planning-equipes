@@ -33,6 +33,18 @@ export interface Stand {
   premium: boolean;
   /** Physical location (kiosque, mairie, ...), nullable. */
   emplacement: Emplacement | null;
+  /** Closure windows, e.g. "closed 14:00-16:00 on 2026-07-18". Empty = always open (the default). */
+  indisponibilites: IndisponibiliteStand[];
+}
+
+/** A single closure window of a stand — possibly only part of a créneau (issue #60). */
+export interface IndisponibiliteStand {
+  id: number | null;
+  date: string;
+  heureDebut: string;
+  heureFin: string;
+  /** Free-text reason, nullable — purely informative, never read by the solver. */
+  motif: string | null;
 }
 
 /** Editable GPS-located place a stand can be tied to (`/api/emplacements`). */
@@ -49,8 +61,6 @@ export interface Creneau {
   date: string;
   heureDebut: string;
   heureFin: string;
-  /** Empty = every stand is open on this timeslot (the default). */
-  standsOuvertsIds: string[];
   /** Planning ("groupe de créneaux") this slot belongs to. */
   groupe: GroupeCreneau | null;
 }

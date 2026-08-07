@@ -20,7 +20,6 @@ interface CreneauDraft {
   date: string;
   heureDebut: string;
   heureFin: string;
-  standsOuvertsIds: string[];
   groupeId: string;
   nouveauGroupeNom: string;
 }
@@ -29,7 +28,7 @@ export interface CreneauFormData {
   creneau: Creneau | null;
 }
 
-/** Add/edit dialog for a timeslot: festival day, date, hours and planning group. Per-stand overrides stay on the page's checklist. */
+/** Add/edit dialog for a timeslot: festival day, date, hours and planning group. Stand availability is edited from the stand itself (see stands page). */
 @Component({
   selector: 'app-creneau-form-dialog',
   imports: [
@@ -91,7 +90,6 @@ export class CreneauFormDialog {
       date: draft.date,
       heureDebut: draft.heureDebut,
       heureFin: draft.heureFin,
-      standsOuvertsIds: draft.standsOuvertsIds,
       groupe: { id: groupeId, nom: '', actif: false }
     };
     if (editingId != null) {
@@ -132,7 +130,6 @@ function toDraft(creneau: Creneau | null, activeGroupeId: string): CreneauDraft 
       date: '',
       heureDebut: '',
       heureFin: '',
-      standsOuvertsIds: [],
       groupeId: activeGroupeId,
       nouveauGroupeNom: ''
     };
@@ -141,7 +138,6 @@ function toDraft(creneau: Creneau | null, activeGroupeId: string): CreneauDraft 
     date: creneau.date ?? '',
     heureDebut: creneau.heureDebut ?? '',
     heureFin: creneau.heureFin ?? '',
-    standsOuvertsIds: [...(creneau.standsOuvertsIds ?? [])],
     groupeId: creneau.groupe?.id ?? activeGroupeId,
     nouveauGroupeNom: ''
   };

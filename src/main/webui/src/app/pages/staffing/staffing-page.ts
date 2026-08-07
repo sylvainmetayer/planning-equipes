@@ -12,7 +12,7 @@ import { computeStaffingSummary, CreneauStaffing } from './staffing';
 
 /**
  * Staffing-need calculator: from the configured stands and créneaux alone
- * (effectifMin, reserveMajeurs, standsOuvertsIds) plus the legal weekly-hour
+ * (effectifMin, reserveMajeurs, indisponibilites) plus the legal weekly-hour
  * cap, computes two lower bounds on the number of animateurs to recruit —
  * peak concurrent seats, and total workload divided by the legal cap — and
  * keeps the larger one. See `computeStaffingSummary` for the methodology and

@@ -121,7 +121,7 @@ public class FeasibilityAnalyzer {
         List<CauseInfaisabilite> causes = new ArrayList<>();
         for (Creneau creneau : creneaux) {
             List<Stand> standsOuverts = stands.stream()
-                    .filter(stand -> creneau.estStandOuvert(stand.getId()))
+                    .filter(stand -> creneau.estStandOuvert(stand))
                     .toList();
             int demande = standsOuverts.stream()
                     .mapToInt(stand -> Math.max(1, stand.getEffectifMin()))

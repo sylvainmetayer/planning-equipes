@@ -173,6 +173,15 @@ public final class LegalConstraints {
      * more protective than the law but excluded 16-to-18-year-olds from the
      * 20:00-22:00 band the law allows them, needlessly shrinking the pool on a
      * festival evening.</p>
+     *
+     * <p>Deliberately checked against the créneau's <i>full</i> window, not
+     * {@link PosteAffectation#getHeureDebutEffective()}: unlike the duration
+     * and rest-window helpers below, narrowing this check to a partial-closure
+     * poste's actual sub-window would only ever make the constraint <i>more
+     * permissive</i>, and a safety rule for minors should never become laxer
+     * as an incidental side effect of an unrelated stand-availability
+     * feature. Conservative in the same spirit as {@code semaineIso()}'s
+     * "attributed to start date" simplification.</p>
      */
     private Constraint travailDeNuitInterditPourMineur(ConstraintFactory constraintFactory) {
         return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
@@ -214,7 +223,7 @@ public final class LegalConstraints {
                         && poste.getAnimateur().estMineurLe(poste.getCreneau().getDate()))
                 .groupBy(PosteAffectation::getAnimateur,
                         poste -> poste.getCreneau().getDate(),
-                        ConstraintCollectors.sum(poste -> poste.getCreneau().getDureeMinutes()))
+                        ConstraintCollectors.sum(PosteAffectation::getDureeEffectiveMinutes))
                 .filter((animateur, date, dureeTotale) -> dureeTotale > plafondQuotidienMineur(animateur, date))
                 .penalize(HardMediumSoftScore.ONE_HARD,
                         (animateur, date, dureeTotale) -> dureeTotale - plafondQuotidienMineur(animateur, date))
@@ -310,7 +319,7 @@ public final class LegalConstraints {
                         && poste.getAnimateur().estMajeurLe(poste.getCreneau().getDate()))
                 .groupBy(PosteAffectation::getAnimateur,
                         poste -> poste.getCreneau().getDate(),
-                        ConstraintCollectors.sum(poste -> poste.getCreneau().getDureeMinutes()))
+                        ConstraintCollectors.sum(PosteAffectation::getDureeEffectiveMinutes))
                 .filter((animateur, date, dureeTotale) -> dureeTotale > DUREE_QUOTIDIENNE_MAX_MAJEUR_MINUTES)
                 .penalize(HardMediumSoftScore.ONE_HARD,
                         (animateur, date, dureeTotale) -> dureeTotale - DUREE_QUOTIDIENNE_MAX_MAJEUR_MINUTES)
@@ -531,13 +540,20 @@ public final class LegalConstraints {
                 && poste.getCreneau().getHeureDebut() != null;
     }
 
+    /**
+     * Start instant of the time this poste actually covers — the créneau's
+     * own start, narrowed by {@link PosteAffectation#getHeureDebutEffective()}
+     * when the stand is only partially closed on this créneau (see
+     * {@code Creneau#segmentsOuvertsMinutes}). The date always comes from the
+     * créneau: a partial closure narrows the clock time, never the day.
+     */
     private static LocalDateTime debut(PosteAffectation poste) {
-        return LocalDateTime.of(poste.getCreneau().getDate(), poste.getCreneau().getHeureDebut());
+        return LocalDateTime.of(poste.getCreneau().getDate(), poste.heureDebutEffectif());
     }
 
-    /** End instant, derived from the duration so a slot crossing midnight ends the next day. */
+    /** End instant, derived from the effective duration so a window crossing midnight ends the next day. */
     private static LocalDateTime fin(PosteAffectation poste) {
-        return debut(poste).plusMinutes(poste.getCreneau().getDureeMinutes());
+        return debut(poste).plusMinutes(poste.getDureeEffectiveMinutes());
     }
 
     /** Minimum consecutive daily rest applicable to this animateur (art. L3131-1 / L3164-1). */
@@ -670,7 +686,7 @@ public final class LegalConstraints {
                         && poste.getAnimateur().estMajeurLe(poste.getCreneau().getDate()))
                 .groupBy(PosteAffectation::getAnimateur,
                         poste -> poste.getCreneau().semaineIso(),
-                        ConstraintCollectors.sum(poste -> poste.getCreneau().getDureeMinutes()))
+                        ConstraintCollectors.sum(PosteAffectation::getDureeEffectiveMinutes))
                 .join(ParametresLegaux.class)
                 .filter((animateur, semaine, dureeTotale, parametres) ->
                         dureeTotale > parametres.getDureeHebdomadaireMaxMinutes())
@@ -701,7 +717,7 @@ public final class LegalConstraints {
                         && poste.getAnimateur().estMineurLe(poste.getCreneau().getDate()))
                 .groupBy(PosteAffectation::getAnimateur,
                         poste -> poste.getCreneau().semaineIso(),
-                        ConstraintCollectors.sum(poste -> poste.getCreneau().getDureeMinutes()))
+                        ConstraintCollectors.sum(PosteAffectation::getDureeEffectiveMinutes))
                 .join(ParametresLegaux.class)
                 .filter((animateur, semaine, dureeTotale, parametres) ->
                         dureeTotale > parametres.getDureeHebdomadaireMaxMineurMinutes())
@@ -733,26 +749,24 @@ public final class LegalConstraints {
                 .filter((posteA, posteB) -> posteA.getAnimateur() != null)
                 .join(ParametresLegaux.class)
                 .filter((posteA, posteB, parametres) ->
-                        ecartMinutes(posteA.getCreneau(), posteB.getCreneau()) < parametres
-                                .getPauseMinimaleEntreVacationsMinutes())
+                        ecartSymetriqueMinutes(posteA, posteB) < parametres.getPauseMinimaleEntreVacationsMinutes())
                 .penalize(HardMediumSoftScore.ONE_HARD,
                         (posteA, posteB, parametres) -> parametres.getPauseMinimaleEntreVacationsMinutes()
-                                - ecartMinutes(posteA.getCreneau(), posteB.getCreneau()))
+                                - ecartSymetriqueMinutes(posteA, posteB))
                 .asConstraint("pauseMinimaleEntreVacations");
     }
 
     /**
-     * Gap in minutes between the two créneaux, whichever comes first — i.e.
-     * {@code max(end(a) -> start(b), end(b) -> start(a))}, exactly one of
-     * which is meaningful for a non-overlapping pair (the other is negative).
+     * Gap in minutes between the effective windows of the two postes,
+     * whichever comes first — i.e. {@code max(end(a) -> start(b), end(b) ->
+     * start(a))}, exactly one of which is meaningful for a non-overlapping
+     * pair (the other is negative). Unlike {@link #ecartMinutes(PosteAffectation,
+     * PosteAffectation)}, the pair here is unordered ({@code forEachUniquePair}),
+     * hence the symmetric max instead of a fixed veille→lendemain direction.
      */
-    private static int ecartMinutes(Creneau a, Creneau b) {
-        LocalDateTime debutA = LocalDateTime.of(a.getDate(), a.getHeureDebut());
-        LocalDateTime finA = debutA.plusMinutes(a.getDureeMinutes());
-        LocalDateTime debutB = LocalDateTime.of(b.getDate(), b.getHeureDebut());
-        LocalDateTime finB = debutB.plusMinutes(b.getDureeMinutes());
-        long ecartApresA = Duration.between(finA, debutB).toMinutes();
-        long ecartApresB = Duration.between(finB, debutA).toMinutes();
+    private static int ecartSymetriqueMinutes(PosteAffectation a, PosteAffectation b) {
+        long ecartApresA = Duration.between(fin(a), debut(b)).toMinutes();
+        long ecartApresB = Duration.between(fin(b), debut(a)).toMinutes();
         return (int) Math.max(ecartApresA, ecartApresB);
     }
 }

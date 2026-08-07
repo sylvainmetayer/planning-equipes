@@ -128,4 +128,26 @@ class AffectationConstraintsTest extends ConstraintTestBase {
                         poste(standStrategie("STAND-2"), tardJ1, a1))
                 .penalizesBy(1);
     }
+
+    /**
+     * Issue #60: a stand closed in the middle of a créneau splits it into two
+     * open segments, each becoming its own poste with a narrowed effective
+     * window — but both postes still reference the very same {@code Creneau}
+     * object (a hard requirement: {@code poste_affectation.creneau_id} is a
+     * foreign key to a real, persisted créneau, so it can't be split into two
+     * separate créneau rows). Without reading the effective window here, both
+     * postes would resolve to the identical full-créneau interval and always
+     * be flagged as a double-booking, even though the animateur genuinely
+     * works the two segments back-to-back around the closure.
+     */
+    @Test
+    void memeAnimateurSurDeuxSegmentsOuvertsDuMemeCreneauNEstPasPenalise() {
+        Animateur a1 = majeurReferent("A1");
+        // 9h-14h créneau closed 11h-13h for STAND-STRAT: two open segments, 9-11 and 13-14.
+        Creneau creneau = creneau("J1-9-14", 1, D1, LocalTime.of(9, 0), LocalTime.of(14, 0));
+        verify("pasDeChevauchementHoraire")
+                .given(posteAvecFenetreEffective(standStrat, creneau, a1, LocalTime.of(9, 0), LocalTime.of(11, 0)),
+                        posteAvecFenetreEffective(standStrat, creneau, a1, LocalTime.of(13, 0), LocalTime.of(14, 0)))
+                .penalizesBy(0);
+    }
 }

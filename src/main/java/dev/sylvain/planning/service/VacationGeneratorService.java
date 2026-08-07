@@ -41,8 +41,10 @@ public final class VacationGeneratorService {
      * Generates the vacations for every amplitude. Amplitudes shorter than or
      * equal to {@code dureeVacationMaxMinutes} pass through untouched (nothing
      * to split). Every generated {@link Creneau} carries a fresh {@code null}
-     * id (left for the caller/repository to assign) and inherits the source
-     * amplitude's {@code standsOuvertsIds}.
+     * id (left for the caller/repository to assign). Stand availability no
+     * longer needs inheriting here: it now lives on the {@code Stand} itself
+     * (see {@code IndisponibiliteStand}), so it applies uniformly whichever
+     * créneau — amplitude or vacation — ends up referencing that stand.
      */
     public static List<Creneau> genererVacations(List<Creneau> amplitudes, ParametresDecoupage parametres) {
         List<Creneau> vacations = new ArrayList<>();
@@ -201,8 +203,6 @@ public final class VacationGeneratorService {
         if (debutLendemain && date != null) {
             date = date.plusDays(1);
         }
-        Creneau vacation = new Creneau(null, 0, date, heureDebut, heureFin);
-        vacation.setStandsOuvertsIds(new java.util.HashSet<>(amplitude.getStandsOuvertsIds()));
-        return vacation;
+        return new Creneau(null, 0, date, heureDebut, heureFin);
     }
 }

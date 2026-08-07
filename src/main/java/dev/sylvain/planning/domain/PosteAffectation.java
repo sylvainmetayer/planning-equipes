@@ -1,5 +1,7 @@
 package dev.sylvain.planning.domain;
 
+import java.time.LocalTime;
+
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
@@ -12,6 +14,17 @@ public class PosteAffectation {
     private String id;
     private Stand stand;
     private Creneau creneau;
+    /**
+     * Narrower time window this poste actually covers within {@link #creneau},
+     * when the stand is only partially closed on that créneau (see
+     * {@code Creneau#segmentsOuvertsMinutes}). {@code null} — the overwhelming
+     * common case — means the poste covers the créneau's full window; the
+     * override can never be persisted as its own créneau row because
+     * {@code poste_affectation.creneau_id} is a foreign key to a real,
+     * pre-existing créneau, so it lives here instead.
+     */
+    private LocalTime heureDebutEffective;
+    private LocalTime heureFinEffective;
 
     /**
      * A seat may stay empty during the search (and in an infeasible plan);
@@ -59,5 +72,48 @@ public class PosteAffectation {
 
     public void setAnimateur(Animateur animateur) {
         this.animateur = animateur;
+    }
+
+    public LocalTime getHeureDebutEffective() {
+        return heureDebutEffective;
+    }
+
+    public void setHeureDebutEffective(LocalTime heureDebutEffective) {
+        this.heureDebutEffective = heureDebutEffective;
+    }
+
+    public LocalTime getHeureFinEffective() {
+        return heureFinEffective;
+    }
+
+    public void setHeureFinEffective(LocalTime heureFinEffective) {
+        this.heureFinEffective = heureFinEffective;
+    }
+
+    /** Start time this poste actually covers: the override if set, else the créneau's own start. */
+    public LocalTime heureDebutEffectif() {
+        return heureDebutEffective != null ? heureDebutEffective : (creneau != null ? creneau.getHeureDebut() : null);
+    }
+
+    /** End time this poste actually covers: the override if set, else the créneau's own end. */
+    public LocalTime heureFinEffectif() {
+        return heureFinEffective != null ? heureFinEffective : (creneau != null ? creneau.getHeureFin() : null);
+    }
+
+    /**
+     * Duration in minutes this poste actually covers, handling a window
+     * crossing midnight the same way {@code Creneau#getDureeMinutes()} does.
+     * Equals {@code creneau.getDureeMinutes()} unless an override narrows it.
+     */
+    public int getDureeEffectiveMinutes() {
+        LocalTime debut = heureDebutEffectif();
+        LocalTime fin = heureFinEffectif();
+        if (debut == null || fin == null) {
+            return 0;
+        }
+        int debutSecondes = debut.toSecondOfDay();
+        int finSecondes = fin.toSecondOfDay();
+        int secondes = finSecondes > debutSecondes ? finSecondes - debutSecondes : (24 * 3600 - debutSecondes) + finSecondes;
+        return secondes / 60;
     }
 }

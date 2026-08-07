@@ -8,6 +8,7 @@ import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.GroupeCreneau;
+import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresSolveur;
@@ -74,6 +75,7 @@ public class ReferenceDataService {
     public Stand createStand(Stand stand) {
         stand.setId(requiredId(stand.getId(), "stand id"));
         validateEffectifs(stand);
+        validateIndisponibilites(stand);
         repository.saveStand(stand);
         markModified();
         return stand;
@@ -85,6 +87,7 @@ public class ReferenceDataService {
         }
         stand.setId(id);
         validateEffectifs(stand);
+        validateIndisponibilites(stand);
         repository.saveStand(stand);
         markModified();
         return stand;
@@ -95,6 +98,24 @@ public class ReferenceDataService {
             throw new IllegalArgumentException(
                     "effectifMin (" + stand.getEffectifMin() + ") cannot be greater than effectifMax ("
                             + stand.getEffectifMax() + ")");
+        }
+    }
+
+    /** Every closure window must be a genuine, same-day interval — see {@code IndisponibiliteStand}. */
+    private void validateIndisponibilites(Stand stand) {
+        if (stand.getIndisponibilites() == null) {
+            return;
+        }
+        for (IndisponibiliteStand indispo : stand.getIndisponibilites()) {
+            if (indispo.getDate() == null || indispo.getHeureDebut() == null || indispo.getHeureFin() == null) {
+                throw new IllegalArgumentException("Une indisponibilité de stand requiert une date, une heure de "
+                        + "début et une heure de fin");
+            }
+            if (!indispo.getHeureFin().isAfter(indispo.getHeureDebut())) {
+                throw new IllegalArgumentException(
+                        "heureFin (" + indispo.getHeureFin() + ") doit être après heureDebut (" + indispo.getHeureDebut()
+                                + ") — une indisponibilité ne peut pas chevaucher minuit, entrez-en deux");
+            }
         }
     }
 

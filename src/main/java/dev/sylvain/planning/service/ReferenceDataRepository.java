@@ -24,6 +24,7 @@ import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.GroupeCreneau;
+import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
@@ -117,6 +118,22 @@ public class ReferenceDataRepository {
                     }
                 }
             }
+            try (PreparedStatement ps = connection.prepareStatement(
+                    "SELECT id, stand_id, date_indisponibilite, heure_debut, heure_fin, motif "
+                            + "FROM stand_indisponibilite ORDER BY id");
+                    ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Stand stand = byId.get(rs.getString("stand_id"));
+                    if (stand != null) {
+                        stand.getIndisponibilites().add(new IndisponibiliteStand(
+                                rs.getLong("id"),
+                                rs.getObject("date_indisponibilite", LocalDate.class),
+                                rs.getObject("heure_debut", LocalTime.class),
+                                rs.getObject("heure_fin", LocalTime.class),
+                                rs.getString("motif")));
+                    }
+                }
+            }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to list stands", e);
         }
@@ -187,6 +204,26 @@ public class ReferenceDataRepository {
                 for (TypologieJeu typologie : stand.getTypologiesProposees()) {
                     ins.setString(1, stand.getId());
                     ins.setString(2, typologie.name());
+                    ins.addBatch();
+                }
+                ins.executeBatch();
+            }
+        }
+        try (PreparedStatement del = connection.prepareStatement(
+                "DELETE FROM stand_indisponibilite WHERE stand_id = ?")) {
+            del.setString(1, stand.getId());
+            del.executeUpdate();
+        }
+        if (stand.getIndisponibilites() != null && !stand.getIndisponibilites().isEmpty()) {
+            try (PreparedStatement ins = connection.prepareStatement(
+                    "INSERT INTO stand_indisponibilite (stand_id, date_indisponibilite, heure_debut, heure_fin, motif) "
+                            + "VALUES (?, ?, ?, ?, ?)")) {
+                for (IndisponibiliteStand indispo : stand.getIndisponibilites()) {
+                    ins.setString(1, stand.getId());
+                    ins.setObject(2, indispo.getDate());
+                    ins.setObject(3, indispo.getHeureDebut());
+                    ins.setObject(4, indispo.getHeureFin());
+                    ins.setString(5, indispo.getMotif());
                     ins.addBatch();
                 }
                 ins.executeBatch();
@@ -273,18 +310,6 @@ public class ReferenceDataRepository {
                     }
                 }
             }
-            if (!byId.isEmpty()) {
-                try (PreparedStatement ps = connection.prepareStatement(
-                        "SELECT creneau_id, stand_id FROM creneau_stand_ouvert");
-                        ResultSet rs = ps.executeQuery()) {
-                    while (rs.next()) {
-                        Creneau creneau = byId.get(rs.getLong("creneau_id"));
-                        if (creneau != null) {
-                            creneau.getStandsOuvertsIds().add(rs.getString("stand_id"));
-                        }
-                    }
-                }
-            }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to list timeslots for group " + groupeId, e);
         }
@@ -351,18 +376,6 @@ public class ReferenceDataRepository {
                     creneau.setGroupe(new GroupeCreneau(
                             rs.getString("groupe_id"), rs.getString("groupe_nom"), rs.getBoolean("groupe_actif")));
                     byId.put(creneau.getId(), creneau);
-                }
-            }
-            if (!byId.isEmpty()) {
-                try (PreparedStatement ps = connection.prepareStatement(
-                        "SELECT creneau_id, stand_id FROM creneau_stand_ouvert");
-                        ResultSet rs = ps.executeQuery()) {
-                    while (rs.next()) {
-                        Creneau creneau = byId.get(rs.getLong("creneau_id"));
-                        if (creneau != null) {
-                            creneau.getStandsOuvertsIds().add(rs.getString("stand_id"));
-                        }
-                    }
                 }
             }
         } catch (SQLException e) {
@@ -980,7 +993,7 @@ public class ReferenceDataRepository {
 
     /** Replaces every stand (and the assignments pointing at them). */
     public void replaceStands(List<Stand> stands) {
-        replaceInTransaction(List.of("poste_affectation", "stand_typologie", "stand"), connection -> {
+        replaceInTransaction(List.of("poste_affectation", "stand_typologie", "stand_indisponibilite", "stand"), connection -> {
             for (Stand stand : stands) {
                 upsertStand(connection, stand);
             }
@@ -1069,8 +1082,8 @@ public class ReferenceDataRepository {
             connection.setAutoCommit(false);
             try {
                 for (String table : List.of("contrainte_animateur", "contrainte_ad_hoc", "poste_affectation",
-                        "stand_typologie", "animateur_competence", "animateur_jour_indispo", "stand",
-                        "animateur")) {
+                        "stand_typologie", "stand_indisponibilite", "animateur_competence", "animateur_jour_indispo",
+                        "stand", "animateur")) {
                     try (PreparedStatement ps = connection.prepareStatement("DELETE FROM " + table)) {
                         ps.executeUpdate();
                     }
@@ -1154,7 +1167,6 @@ public class ReferenceDataRepository {
                 creneau.setId(id);
             }
         }
-        writeStandsOuverts(connection, creneau);
         return creneau.getId();
     }
 
@@ -1169,26 +1181,6 @@ public class ReferenceDataRepository {
             ps.setString(4, groupeId);
             ps.setLong(5, creneau.getId());
             ps.executeUpdate();
-        }
-        writeStandsOuverts(connection, creneau);
-    }
-
-    private void writeStandsOuverts(Connection connection, Creneau creneau) throws SQLException {
-        try (PreparedStatement del = connection.prepareStatement(
-                "DELETE FROM creneau_stand_ouvert WHERE creneau_id = ?")) {
-            del.setLong(1, creneau.getId());
-            del.executeUpdate();
-        }
-        if (creneau.getStandsOuvertsIds() != null && !creneau.getStandsOuvertsIds().isEmpty()) {
-            try (PreparedStatement ins = connection.prepareStatement(
-                    "INSERT INTO creneau_stand_ouvert (creneau_id, stand_id) VALUES (?, ?)")) {
-                for (String standId : creneau.getStandsOuvertsIds()) {
-                    ins.setLong(1, creneau.getId());
-                    ins.setString(2, standId);
-                    ins.addBatch();
-                }
-                ins.executeBatch();
-            }
         }
     }
 

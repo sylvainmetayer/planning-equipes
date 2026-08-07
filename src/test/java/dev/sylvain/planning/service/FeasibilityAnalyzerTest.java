@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypologieJeu;
@@ -206,11 +207,13 @@ class FeasibilityAnalyzerTest {
 
     @Test
     void standFermeSurUnCreneauNeComptePasDansLaDemande() {
-        // Le stand exige 3 places mais n'est pas ouvert sur ce créneau : aucun
-        // poste n'est généré, donc aucune demande (cf. PlanningService.construirePostes).
+        // Le stand exige 3 places mais est fermé (indisponibilité couvrant tout
+        // le créneau) : aucun poste n'est généré, donc aucune demande (cf.
+        // PlanningService.construirePostes).
         Stand stand = stand("stand-1", 3, TypologieJeu.STRATEGIE);
         Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
-        creneau.setStandsOuvertsIds(Set.of("un-autre-stand"));
+        stand.setIndisponibilites(List.of(
+                new IndisponibiliteStand(null, creneau.getDate(), creneau.getHeureDebut(), creneau.getHeureFin(), null)));
 
         FeasibilityReport report = analyzer.analyser(List.of(animateur("a1", TypologieJeu.STRATEGIE)),
                 List.of(stand), List.of(creneau));

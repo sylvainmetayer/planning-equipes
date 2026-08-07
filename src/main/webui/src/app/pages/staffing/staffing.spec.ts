@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Creneau, Stand } from '../../core/models';
+import { Creneau, IndisponibiliteStand, Stand } from '../../core/models';
 import { computeStaffingSummary } from './staffing';
 
 function stand(overrides: Partial<Stand> & { id: string }): Stand {
@@ -11,6 +11,7 @@ function stand(overrides: Partial<Stand> & { id: string }): Stand {
     reserveMajeurs: false,
     premium: false,
     emplacement: null,
+    indisponibilites: [],
     ...overrides
   };
 }
@@ -21,10 +22,14 @@ function creneau(overrides: Partial<Creneau> & { id: number }): Creneau {
     date: '2026-08-01',
     heureDebut: '09:00',
     heureFin: '12:00',
-    standsOuvertsIds: [],
     groupe: null,
     ...overrides
   };
+}
+
+/** Closure covering a créneau's whole [heureDebut, heureFin) window on its date. */
+function fermetureIntegrale(creneau: Creneau): IndisponibiliteStand {
+  return { id: null, date: creneau.date, heureDebut: creneau.heureDebut, heureFin: creneau.heureFin, motif: null };
 }
 
 describe('computeStaffingSummary — per-créneau seats', () => {
@@ -48,23 +53,37 @@ describe('computeStaffingSummary — per-créneau seats', () => {
     expect(summary.parCreneau[0]).toMatchObject({ total: 1, majeurs: 1, mineurs: 0 });
   });
 
-  it('restricts open stands to standsOuvertsIds when non-empty, and all stands when empty', () => {
-    const stands = [stand({ id: 's1', effectifMin: 2 }), stand({ id: 's2', effectifMin: 5 })];
-    const summary = computeStaffingSummary(stands, [
-      creneau({ id: 1, standsOuvertsIds: ['s1'] }),
-      creneau({ id: 2, standsOuvertsIds: [] })
-    ]);
+  it('excludes a stand closed for the whole créneau from the demand', () => {
+    const c1 = creneau({ id: 1 });
+    const c2 = creneau({ id: 2, date: '2026-08-02' });
+    const s1 = stand({ id: 's1', effectifMin: 2 });
+    const s2 = stand({ id: 's2', effectifMin: 5, indisponibilites: [fermetureIntegrale(c1)] });
+    const summary = computeStaffingSummary([s1, s2], [c1, c2]);
     const restricted = summary.parCreneau.find((row) => row.creneauId === 1);
     const all = summary.parCreneau.find((row) => row.creneauId === 2);
     expect(restricted).toMatchObject({ standsOuverts: 1, total: 2 });
     expect(all).toMatchObject({ standsOuverts: 2, total: 7 });
   });
 
-  it('ignores stand ids in standsOuvertsIds that no longer exist', () => {
-    const summary = computeStaffingSummary(
-      [stand({ id: 's1', effectifMin: 2 })],
-      [creneau({ id: 1, standsOuvertsIds: ['s1', 'ghost'] })]
-    );
+  it('still counts a stand only partially closed for the créneau — this coarse estimate is not per-minute', () => {
+    const c1 = creneau({ id: 1, heureDebut: '09:00', heureFin: '14:00' });
+    const s1 = stand({
+      id: 's1',
+      effectifMin: 2,
+      indisponibilites: [{ id: null, date: c1.date, heureDebut: '11:00', heureFin: '13:00', motif: null }]
+    });
+    const summary = computeStaffingSummary([s1], [c1]);
+    expect(summary.parCreneau[0]).toMatchObject({ standsOuverts: 1, total: 2 });
+  });
+
+  it('ignores a closure dated on a different day than the créneau', () => {
+    const c1 = creneau({ id: 1, date: '2026-08-01' });
+    const s1 = stand({
+      id: 's1',
+      effectifMin: 2,
+      indisponibilites: [{ id: null, date: '2026-08-09', heureDebut: '09:00', heureFin: '12:00', motif: null }]
+    });
+    const summary = computeStaffingSummary([s1], [c1]);
     expect(summary.parCreneau[0]).toMatchObject({ standsOuverts: 1, total: 2 });
   });
 
@@ -95,8 +114,8 @@ describe('computeStaffingSummary — peak vs workload bound', () => {
   it('picks the busiest créneau as the peak bound, not the sum across créneaux', () => {
     const stands = [stand({ id: 's1', effectifMin: 2 })];
     const summary = computeStaffingSummary(stands, [
-      creneau({ id: 1, date: '2026-08-01', standsOuvertsIds: ['s1'] }),
-      creneau({ id: 2, date: '2026-08-02', standsOuvertsIds: ['s1'] })
+      creneau({ id: 1, date: '2026-08-01' }),
+      creneau({ id: 2, date: '2026-08-02' })
     ]);
     expect(summary.peakTotal).toBe(2);
   });
@@ -112,8 +131,7 @@ describe('computeStaffingSummary — peak vs workload bound', () => {
         id: i,
         date: i % 2 === 0 ? '2027-02-15' : '2027-02-16',
         heureDebut: '08:00',
-        heureFin: '12:00',
-        standsOuvertsIds: ['s1']
+        heureFin: '12:00'
       })
     );
     const summary = computeStaffingSummary(stands, creneaux, 48 * 60);

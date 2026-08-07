@@ -218,6 +218,22 @@ class LegalConstraintsTest extends ConstraintTestBase {
                 .penalizesBy(0);
     }
 
+    /**
+     * Issue #60: a poste narrowed by a partial stand closure must count only
+     * its effective minutes towards the daily cap, not the full créneau — a
+     * 12 h créneau (6:00-18:00, 720 min) alone would breach the 10 h cap by
+     * 120 min, but this poste only actually covers 6:00-12:00 (360 min).
+     */
+    @Test
+    void fermeturePartielleNeCompteQueLaDureeEffectivePourLePlafondQuotidien() {
+        Animateur majeur = majeurReferent("A1");
+        Creneau journeeLongue = creneau("J1-6-18", 1, D1, LocalTime.of(6, 0), LocalTime.of(18, 0));
+        verify("dureeQuotidienneMaxMajeur")
+                .given(posteAvecFenetreEffective(standStrat, journeeLongue, majeur,
+                        LocalTime.of(6, 0), LocalTime.of(12, 0)))
+                .penalizesBy(0);
+    }
+
     @Test
     void mineurNEstPasConcerneParLePlafondQuotidienMajeur() {
         Animateur mineur = mineurDebutant("M1");

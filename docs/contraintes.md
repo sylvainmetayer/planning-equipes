@@ -24,6 +24,41 @@ Source : `solver/ConstraintCatalog.java` (description métier) et
 | `competenceCompatible` | L'animateur maîtrise au moins une typologie proposée par le stand |
 | `pasDeChevauchementHoraire` | Un animateur ne tient jamais deux postes dont les créneaux se **chevauchent dans le temps** (le double poste sur un même créneau n'en est que le cas dégénéré) |
 
+#### Indisponibilité partielle d'un stand
+
+Un stand fermé pour **une partie seulement** d'un créneau (ex. fermé de 14 h à
+16 h dans un créneau 9 h-19 h, voir [`domaine.md`](domaine.md)) génère un poste
+par segment encore ouvert, chacun portant une fenêtre horaire *effective*
+(`PosteAffectation.heureDebutEffective`/`heureFinEffective`) plus étroite que
+le créneau — `posteDoitEtrePourvu` s'applique alors à ces postes réduits, donc
+personne n'est jamais exigé sur la plage fermée sans qu'une pénalité ne soit
+créée pour autant (comme pour une fermeture totale).
+
+Deux familles de contraintes lisent explicitement cette fenêtre effective
+plutôt que celle, plus large, du créneau — les autres restent volontairement
+calées sur le créneau entier :
+
+- **`pasDeChevauchementHoraire`** compare les fenêtres effectives : deux postes
+  du même animateur, sur deux segments d'un même créneau qui ne se recouvrent
+  pas réellement dans le temps, ne sont pas signalés à tort comme un double
+  emploi.
+- **Les cumuls d'heures** (`dureeQuotidienneMaxMineur`, `dureeQuotidienneMaxMajeur`,
+  `dureeHebdomadaireMax`, `dureeHebdomadaireMaxMineur`) et **le repos
+  quotidien/entre-vacations** (`reposQuotidienMinimal`, `pauseMinimaleEntreVacations`)
+  utilisent la durée effective du poste, pas celle du créneau : un poste
+  réduit par une fermeture partielle ne compte que le temps réellement couvert
+  dans les plafonds légaux, et le repos qui suit démarre à la fin de ce temps
+  réel — jamais plus tard qu'avant #60 pour un poste sans fermeture (la fenêtre
+  effective retombe alors sur celle du créneau).
+- **`travailDeNuitInterditPourMineur`** reste volontairement calé sur la
+  fenêtre **entière** du créneau, pas la fenêtre effective : une règle de
+  sécurité pour mineurs ne doit jamais devenir *plus permissive* comme effet de
+  bord d'une fonctionnalité de disponibilité de stand.
+
+Ce mécanisme ne crée jamais de créneau supplémentaire : `poste_affectation.creneau_id`
+reste une clé étrangère vers le créneau réel, la fenêtre effective vit sur le
+poste. Voir `PlanningService.construirePostes` et `Creneau.segmentsOuvertsMinutes`.
+
 ### Dures — cadre légal mineurs (`LegalConstraints`)
 
 Toutes ces règles sont dérivées de `dateNaissance` **à la date du créneau**,

@@ -36,7 +36,7 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
     <mat-card-title i18n="@@creneaux.list.title">Créneaux ({{ creneauxAffiches().length }})</mat-card-title>
-    <mat-card-subtitle i18n="@@creneaux.form.description">Chaque stand est ouvert sur chaque créneau par défaut ; à modifier créneau par créneau ci-dessous.</mat-card-subtitle>
+    <mat-card-subtitle i18n="@@creneaux.form.description">Chaque stand est ouvert sur chaque créneau par défaut ; les fermetures se déclarent depuis la fiche du stand.</mat-card-subtitle>
   </mat-card-header>
   <mat-card-actions class="card-actions">
     <button matButton="filled" type="button" [disabled]="editingLocked()" (click)="openCreate()">
@@ -65,7 +65,6 @@
               }
             </mat-panel-title>
             <mat-panel-description>
-              {{ standsOuvertsLabel(creneau) }}
               <span class="row-actions">
                 <button matIconButton i18n-matTooltip="@@common.edit" matTooltip="Modifier" i18n-aria-label="@@common.edit" aria-label="Modifier" [disabled]="editingLocked()"
                         (click)="edit(creneau); $event.stopPropagation()">
@@ -81,15 +80,6 @@
           @if (editingLocked()) {
             <p class="locked-hint" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
           }
-          <p class="empty-hint" i18n="@@creneaux.checklist.hint">Décochez un stand pour le fermer sur ce créneau. Laissez tous les stands cochés (ou aucun) pour les garder tous ouverts.</p>
-          <div class="stand-checklist">
-            @for (stand of store.stands(); track stand.id) {
-              <mat-checkbox [checked]="isStandOuvert(creneau, stand.id)" [disabled]="editingLocked()"
-                            (change)="toggleStandOuvert(creneau, stand.id, $event.checked)">
-                {{ stand.nom || stand.id }}
-              </mat-checkbox>
-            }
-          </div>
         </mat-expansion-panel>
       }
     </mat-accordion>

@@ -18,6 +18,7 @@ import javax.sql.DataSource;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.GroupeCreneau;
+import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
@@ -133,6 +134,7 @@ public class PlanningPersistenceService {
             ps.executeBatch();
         }
         rewriteStandTypologies(connection, distinctStands);
+        rewriteStandIndisponibilites(connection, distinctStands);
 
         String upsertCreneau = "INSERT INTO creneau (id, date_creneau, heure_debut, heure_fin) "
                 + "VALUES (?, ?, ?, ?) ON CONFLICT (id) DO UPDATE SET "
@@ -182,6 +184,31 @@ public class PlanningPersistenceService {
                     for (TypologieJeu typologie : stand.getTypologiesProposees()) {
                         insert.setString(1, stand.getId());
                         insert.setString(2, typologie.name());
+                        insert.addBatch();
+                    }
+                }
+            }
+            delete.executeBatch();
+            insert.executeBatch();
+        }
+    }
+
+    private void rewriteStandIndisponibilites(Connection connection, List<Stand> stands) throws SQLException {
+        try (PreparedStatement delete = connection
+                        .prepareStatement("DELETE FROM stand_indisponibilite WHERE stand_id = ?");
+                PreparedStatement insert = connection.prepareStatement(
+                        "INSERT INTO stand_indisponibilite (stand_id, date_indisponibilite, heure_debut, heure_fin, motif) "
+                                + "VALUES (?, ?, ?, ?, ?)")) {
+            for (Stand stand : stands) {
+                delete.setString(1, stand.getId());
+                delete.addBatch();
+                if (stand.getIndisponibilites() != null) {
+                    for (IndisponibiliteStand indispo : stand.getIndisponibilites()) {
+                        insert.setString(1, stand.getId());
+                        insert.setObject(2, indispo.getDate());
+                        insert.setObject(3, indispo.getHeureDebut());
+                        insert.setObject(4, indispo.getHeureFin());
+                        insert.setString(5, indispo.getMotif());
                         insert.addBatch();
                     }
                 }

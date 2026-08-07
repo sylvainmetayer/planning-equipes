@@ -11,7 +11,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
-import { Stand } from '../../core/models';
+import { IndisponibiliteStand, Stand } from '../../core/models';
 
 interface StandDraft {
   id: string;
@@ -22,6 +22,7 @@ interface StandDraft {
   premium: boolean;
   typologiesProposees: string[];
   emplacementId: string | null;
+  indisponibilites: IndisponibiliteStand[];
 }
 
 export interface StandFormData {
@@ -69,12 +70,40 @@ export class StandFormDialog {
     this.editingId() ? $localize`:@@stands.submit.edit:Modifier le stand` : $localize`:@@stands.submit.create:Créer le stand`
   );
 
+  /** Any closure whose end time isn't strictly after its start time — the backend rejects these outright. */
+  protected readonly indisponibiliteInvalide = computed(() =>
+    this.draft().indisponibilites.some(
+      (indispo) => !indispo.date || !indispo.heureDebut || !indispo.heureFin || indispo.heureFin <= indispo.heureDebut
+    )
+  );
+
   protected patch(patch: Partial<StandDraft>): void {
     this.draft.update((draft) => ({ ...draft, ...patch }));
   }
 
+  protected ajouterIndisponibilite(): void {
+    this.draft.update((draft) => ({
+      ...draft,
+      indisponibilites: [...draft.indisponibilites, { id: null, date: '', heureDebut: '', heureFin: '', motif: null }]
+    }));
+  }
+
+  protected patchIndisponibilite(index: number, patch: Partial<IndisponibiliteStand>): void {
+    this.draft.update((draft) => ({
+      ...draft,
+      indisponibilites: draft.indisponibilites.map((indispo, i) => (i === index ? { ...indispo, ...patch } : indispo))
+    }));
+  }
+
+  protected retirerIndisponibilite(index: number): void {
+    this.draft.update((draft) => ({
+      ...draft,
+      indisponibilites: draft.indisponibilites.filter((_, i) => i !== index)
+    }));
+  }
+
   protected async save(): Promise<void> {
-    if (this.effectifInvalid()) {
+    if (this.effectifInvalid() || this.indisponibiliteInvalide()) {
       return;
     }
     const draft = this.draft();
@@ -88,7 +117,8 @@ export class StandFormDialog {
       premium: draft.premium,
       emplacement: draft.emplacementId
         ? (this.store.emplacements().find((e) => e.id === draft.emplacementId) ?? null)
-        : null
+        : null,
+      indisponibilites: draft.indisponibilites
     };
     if (await this.crud.save('stands', stand, this.editingId(), $localize`:@@stands.entityLabel:Stand`)) {
       this.dialogRef.close(true);
@@ -106,7 +136,8 @@ function toDraft(stand: Stand | null): StandDraft {
       reserveMajeurs: false,
       premium: false,
       typologiesProposees: [],
-      emplacementId: null
+      emplacementId: null,
+      indisponibilites: []
     };
   }
   return {
@@ -117,6 +148,7 @@ function toDraft(stand: Stand | null): StandDraft {
     reserveMajeurs: Boolean(stand.reserveMajeurs),
     premium: Boolean(stand.premium),
     typologiesProposees: [...(stand.typologiesProposees ?? [])],
-    emplacementId: stand.emplacement?.id ?? null
+    emplacementId: stand.emplacement?.id ?? null,
+    indisponibilites: (stand.indisponibilites ?? []).map((indispo) => ({ ...indispo }))
   };
 }
