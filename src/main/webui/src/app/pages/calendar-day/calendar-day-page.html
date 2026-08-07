@@ -55,7 +55,7 @@
                 <div class="day-slot-empty" i18n="@@calendarDay.noStand">Aucun stand</div>
               } @else {
                 @for (stand of slot.stands; track stand.standId + stand.heureDebut) {
-                  <div class="day-stand" [class.empty-slot]="stand.names.length === 0" [class.understaffed-slot]="isUnderstaffed(stand)">
+                  <div class="day-stand" [class.empty-slot]="stand.entries.length === 0" [class.understaffed-slot]="isUnderstaffed(stand)">
                     <strong>{{ stand.standNom }}</strong>
                     @if (stand.heureDebut !== slot.heureDebut || stand.heureFin !== slot.heureFin) {
                       <span class="day-stand-partial" i18n="@@calendarDay.partiallyClosed">
@@ -67,7 +67,21 @@
                         warning
                       </mat-icon>
                     }
-                    <span>{{ stand.names.length === 0 ? unassignedLabel : stand.names.join(', ') }}</span>
+                    @if (stand.entries.length === 0) {
+                      <span>{{ unassignedLabel }}</span>
+                    } @else {
+                      <span>
+                        @for (entry of stand.entries; track entry.poste.id; let isLast = $last) {
+                          <button
+                            type="button"
+                            class="affectation-link"
+                            [title]="pourquoiLuiLabel"
+                            (click)="openExplanation(entry.poste)"
+                          >{{ entry.label }}</button
+                          >{{ isLast ? '' : ', ' }}
+                        }
+                      </span>
+                    }
                   </div>
                 }
               }

@@ -6,6 +6,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -852,6 +853,139 @@ public class PlanningService {
     public PlanningDiagnostic analyser(PlanningFestival problem, Long secondsLimitOverride) {
         PlanningFestival solved = resoudre(problem, secondsLimitOverride);
         return diagnostiquer(solved);
+    }
+
+    /**
+     * Every constraint definition indexed by name, for {@link #expliquerAffectation}
+     * and {@link #simulerSwap} to attach the business-facing niveau/catégorie/
+     * description to a raw {@code ConstraintAnalysis} without a linear scan.
+     */
+    private static final Map<String, ConstraintCatalog.ConstraintDefinition> DEFINITIONS_PAR_NOM =
+            ConstraintCatalog.definitions().stream()
+                    .collect(Collectors.toUnmodifiableMap(ConstraintCatalog.ConstraintDefinition::name,
+                            java.util.function.Function.identity()));
+
+    /**
+     * Per-assignment explainability ("Pourquoi lui ?"): every constraint match
+     * of the already-solved {@code solved} planning whose justification facts
+     * involve {@code posteId}, split into violated / not violated for that one
+     * poste. "Respected" only means no violation was found for this poste, not
+     * that the constraint is even applicable to it — the UI must present it as
+     * such rather than as a positive endorsement.
+     */
+    public AffectationExplanation expliquerAffectation(PlanningFestival solved, String posteId) {
+        PosteAffectation poste = trouverPoste(solved, posteId);
+        ScoreAnalysis<?> analysis = solutionManager.analyze(solved);
+        String animateurId = poste.getAnimateur() == null ? null : poste.getAnimateur().getId();
+        return new AffectationExplanation(posteId, animateurId, (HardMediumSoftScore) analysis.score(),
+                impactsPour(analysis, poste, true), impactsPour(analysis, poste, false));
+    }
+
+    /**
+     * Simulates giving {@code posteId} to {@code animateurCandidatId} instead
+     * of its current occupant, and reports the resulting score delta plus how
+     * that poste's own violated constraints change. The candidate substitution
+     * is applied to {@code solved} only for the duration of the second
+     * {@code analyze} call and reverted immediately after (the caller's object
+     * graph is a throwaway per-request payload, never shared/cached, so a
+     * temporary in-place mutation is safe and avoids a full deep copy of a
+     * planning that can hold thousands of postes).
+     */
+    public SwapSimulation simulerSwap(PlanningFestival solved, String posteId, String animateurCandidatId) {
+        PosteAffectation poste = trouverPoste(solved, posteId);
+        Animateur candidat = trouverAnimateur(solved, animateurCandidatId);
+        Animateur actuel = poste.getAnimateur();
+
+        ScoreAnalysis<?> avant = solutionManager.analyze(solved);
+        List<ContrainteImpact> violeesAvant = impactsPour(avant, poste, true);
+
+        ScoreAnalysis<?> apres;
+        poste.setAnimateur(candidat);
+        try {
+            apres = solutionManager.analyze(solved);
+        } finally {
+            poste.setAnimateur(actuel);
+        }
+        List<ContrainteImpact> violeesApres = impactsPour(apres, poste, true);
+
+        HardMediumSoftScore scoreAvant = (HardMediumSoftScore) avant.score();
+        HardMediumSoftScore scoreApres = (HardMediumSoftScore) apres.score();
+        return new SwapSimulation(posteId, actuel == null ? null : actuel.getId(), animateurCandidatId,
+                scoreAvant, scoreApres, scoreApres.subtract(scoreAvant), violeesAvant, violeesApres);
+    }
+
+    /** @return one {@link ContrainteImpact} per constraint that matches (violées) or does not (respectées) for {@code poste}. */
+    private static List<ContrainteImpact> impactsPour(ScoreAnalysis<?> analysis, PosteAffectation poste, boolean violees) {
+        List<ContrainteImpact> impacts = new ArrayList<>();
+        for (ConstraintAnalysis<?> ca : analysis.constraintAnalyses()) {
+            List<? extends MatchAnalysis<?>> matches = ca.matches().stream()
+                    .filter(match -> concerne(match, poste))
+                    .toList();
+            if (matches.isEmpty() == violees) {
+                continue;
+            }
+            ConstraintCatalog.ConstraintDefinition definition = DEFINITIONS_PAR_NOM.get(ca.constraintRef().constraintName());
+            impacts.add(new ContrainteImpact(
+                    ca.constraintRef().constraintName(),
+                    definition == null ? null : definition.niveau().name(),
+                    definition == null ? null : definition.categorie(),
+                    definition == null ? null : definition.description(),
+                    matches.size(),
+                    formatViolations(matches)));
+        }
+        return impacts;
+    }
+
+    /** True when {@code poste} itself appears among a match's justification facts, flattening any collection fact. */
+    private static boolean concerne(MatchAnalysis<?> match, PosteAffectation poste) {
+        return factsOf(match).stream().anyMatch(fact -> concerneFait(fact, poste));
+    }
+
+    private static boolean concerneFait(Object fact, PosteAffectation poste) {
+        if (fact instanceof Collection<?> collection) {
+            return collection.stream().anyMatch(element -> concerneFait(element, poste));
+        }
+        return fact == poste;
+    }
+
+    private static PosteAffectation trouverPoste(PlanningFestival solved, String posteId) {
+        return solved.getPostes().stream()
+                .filter(poste -> poste.getId().equals(posteId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Poste inconnu: " + posteId));
+    }
+
+    private static Animateur trouverAnimateur(PlanningFestival solved, String animateurId) {
+        return solved.getAnimateurs().stream()
+                .filter(animateur -> animateur.getId().equals(animateurId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Animateur inconnu: " + animateurId));
+    }
+
+    /**
+     * One constraint's impact on a single poste: either one of the violations
+     * it is party to (see {@link #expliquerAffectation}), or an entry meaning
+     * this constraint had no match involving that poste.
+     *
+     * @param details one human-readable line per match (see {@link ViolationFormatter}), empty when not violated
+     */
+    public record ContrainteImpact(String name, String niveau, String categorie, String description,
+            int matchCount, List<String> details) {
+    }
+
+    /** @param animateurId the poste's current occupant, {@code null} when unassigned */
+    public record AffectationExplanation(String posteId, String animateurId, HardMediumSoftScore score,
+            List<ContrainteImpact> contraintesViolees, List<ContrainteImpact> contraintesRespectees) {
+    }
+
+    /**
+     * @param animateurActuelId    the poste's occupant before the simulation, {@code null} when unassigned
+     * @param animateurCandidatId  the animateur substituted in for the simulation
+     * @param delta                {@code scoreApres - scoreAvant}: positive/less-negative means the swap improves the score
+     */
+    public record SwapSimulation(String posteId, String animateurActuelId, String animateurCandidatId,
+            HardMediumSoftScore scoreAvant, HardMediumSoftScore scoreApres, HardMediumSoftScore delta,
+            List<ContrainteImpact> contraintesVioleesAvant, List<ContrainteImpact> contraintesVioleesApres) {
     }
 
     /**

@@ -73,7 +73,7 @@ dans [`domaine.md`](domaine.md).
 
 | Service | Rôle |
 | --- | --- |
-| `PlanningService` | Construit la `SolverFactory` depuis `solver/solverConfig.xml`, charge `scenario.yml`, expose `construireExemple()` / `resoudre()` |
+| `PlanningService` | Construit la `SolverFactory` depuis `solver/solverConfig.xml`, charge `scenario.yml`, expose `construireExemple()` / `resoudre()` / `analyser()`, et l'explicabilité par affectation (`expliquerAffectation()`, `simulerSwap()`) |
 | `SolverJobService` | Résolutions et analyses asynchrones ; porte le verrou « un seul solveur à la fois », partagé par tous les clients |
 | `ConstraintAnalysisStore` | Mémorise le résultat de la dernière analyse pour l'onglet « Constraints » |
 | `ReferenceDataService` / `ReferenceDataRepository` | CRUD référentiels (stands, créneaux, animateurs, typologies, contraintes ad hoc) |
@@ -84,8 +84,8 @@ dans [`domaine.md`](domaine.md).
 ### `api/`
 
 Ressources JAX-RS : `PlanningResource`, `SolverJobResource`, `ReferenceDataResource`,
-`ConstraintResource`, `DatabaseResource`, `PlanningExportResource`. Voir
-[`api.md`](api.md).
+`ConstraintResource`, `AffectationExplanationResource`, `CsvImportResource`,
+`DatabaseResource`, `PlanningExportResource`. Voir [`api.md`](api.md).
 
 ## Frontend
 
@@ -166,6 +166,7 @@ standalone) :
 | `app/core/reference-crud.service.ts` | Enregistrement / suppression mutualisés des pages référentiels (retour utilisateur, confirmation) |
 | `app/core/solver-job.service.ts` | Suivi des jobs asynchrones : lit `/api/jobs/active` toutes les 2 s, aucun stockage navigateur |
 | `app/core/notification.service.ts` | Notifications via `MatSnackBar` (+ notifications système) |
+| `app/core/affectation-explanation.service.ts` | Appelle `/api/postes/{id}/explication` et `/api/postes/{id}/simulation-swap` (« Pourquoi lui ? ») |
 | `app/shared/job-monitor.ts` | Indicateur « une résolution est en cours » dans la barre d'outils, temps écoulé calculé par le serveur |
 | `app/shared/confirm-dialog.ts` | Dialogue Material de confirmation (remplace `window.confirm`) |
 | `app/shared/output-panel.ts` | Panneau de résultat monospace partagé par les pages d'action |
@@ -174,6 +175,7 @@ standalone) :
 | `app/shared/feasibility-banner.ts` | Alerte si le plan n'est pas fiable : soit la capacité pré-résolution (`FeasibilityReport`, avec ses causes les plus graves), soit le score dur réellement atteint (`hardScore` < 0 après résolution, y compris quand la capacité pré-résolution disait « réalisable ») |
 | `app/shared/problem-summary-banner.ts` | Bannière de synthèse (nombre de problèmes par gravité) sur la page Solveur, avec un lien vers la page Problèmes |
 | `app/shared/violation-details-dialog.ts` | Modale « qui/quoi/quand » listant chaque violation d'une contrainte dure (page Contraintes), à partir de `ConstraintView.violations` |
+| `app/shared/affectation-explanation-dialog.ts` | Modale « Pourquoi lui ? » : contraintes violées/respectées pour un poste, et simulation de remplacement (calendrier journalier) |
 | `app/shared/map-picker.ts` | Sélection de coordonnées sur une carte, utilisée par le formulaire d'emplacement |
 
 Conventions :

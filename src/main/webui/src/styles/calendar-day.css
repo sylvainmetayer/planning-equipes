@@ -58,3 +58,20 @@
 .understaffed-icon {
   color: var(--mat-sys-error);
 }
+
+/* One assigned name, clickable to open "Pourquoi lui ?" (see AffectationExplanationDialog). */
+.affectation-link {
+  font: inherit;
+  color: var(--mat-sys-primary);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+}
+
+.affectation-link:hover,
+.affectation-link:focus-visible {
+  text-decoration-style: solid;
+}

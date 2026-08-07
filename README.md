@@ -169,6 +169,12 @@ l'utilisateur doit pouvoir s'en rendre compte.
 
 Le détail règle par règle est dans [`docs/contraintes.md`](docs/contraintes.md).
 
+Ce diagnostic global se complète d'une explicabilité individuelle : un clic
+sur un animateur affecté, dans le calendrier journalier, ouvre le détail
+« Pourquoi lui ? » — les règles violées ou non pour ce poste précis, et une
+simulation à la demande du delta de score si ce poste était donné à un autre
+animateur compétent, sans rien changer au planning en cours.
+
 ### Découpage automatique en vacations
 
 Pour un scénario « continu » où chaque jour n'est défini que par une seule

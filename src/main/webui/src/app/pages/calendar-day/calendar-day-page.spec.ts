@@ -29,6 +29,10 @@ function poste(overrides: Partial<PosteAffectation> & { id: string }): PosteAffe
   return { stand: null, creneau: null, animateur: null, ...overrides };
 }
 
+function labels(line: { entries: { label: string }[] }): string[] {
+  return line.entries.map((entry) => entry.label);
+}
+
 describe('buildDays — issue #60 partial-closure regression', () => {
   it('groups every name on one line when nothing narrows the créneau', () => {
     const c1 = creneau({ id: 1 });
@@ -39,11 +43,9 @@ describe('buildDays — issue #60 partial-closure regression', () => {
     ]);
 
     expect(days[0].slots[0].stands).toHaveLength(1);
-    expect(days[0].slots[0].stands[0]).toMatchObject({
-      heureDebut: '13:40',
-      heureFin: '19:00',
-      names: ['Oscar', 'Ines']
-    });
+    const line = days[0].slots[0].stands[0];
+    expect(line).toMatchObject({ heureDebut: '13:40', heureFin: '19:00' });
+    expect(labels(line)).toEqual(['Oscar', 'Ines']);
   });
 
   it('splits into two lines when a partial stand closure narrows some postes but not others', () => {
@@ -74,12 +76,12 @@ describe('buildDays — issue #60 partial-closure regression', () => {
 
     const lines = days[0].slots[0].stands;
     expect(lines).toHaveLength(2);
-    expect(lines).toContainEqual(
-      expect.objectContaining({ heureDebut: '13:40', heureFin: '14:00', names: ['Ines'] })
-    );
-    expect(lines).toContainEqual(
-      expect.objectContaining({ heureDebut: '16:00', heureFin: '19:00', names: ['Oscar'] })
-    );
+    const ines = lines.find((line) => line.heureDebut === '13:40');
+    const oscar = lines.find((line) => line.heureDebut === '16:00');
+    expect(ines).toMatchObject({ heureFin: '14:00' });
+    expect(labels(ines!)).toEqual(['Ines']);
+    expect(oscar).toMatchObject({ heureFin: '19:00' });
+    expect(labels(oscar!)).toEqual(['Oscar']);
     // Neither line ever claims the full créneau span the closure cuts through.
     expect(lines.every((line) => !(line.heureDebut === '13:40' && line.heureFin === '19:00'))).toBe(true);
   });
@@ -96,16 +98,16 @@ describe('buildDays — understaffing indicator', () => {
   it('carries the stand effectifMin on each line, so a partially-staffed stand can be flagged', () => {
     // Regression for the reported DEV case: 17/07/2026 Stand Stratégie 16,
     // 18h30-00h, effectifMin 2 but only one animateur assigned — the line
-    // must carry enough data (names.length < effectifMin) for the template
+    // must carry enough data (entries.length < effectifMin) for the template
     // to flag it, not just the fully-unassigned case already shown in red.
     const c1 = creneau({ id: 1, heureDebut: '18:30', heureFin: '00:00' });
     const s1 = stand('Stratégie 16', 2);
     const days = buildDays([poste({ id: 'p1', creneau: c1, stand: s1, animateur: animateur('Oscar') })]);
 
     const line = days[0].slots[0].stands[0];
-    expect(line.names).toEqual(['Oscar']);
+    expect(labels(line)).toEqual(['Oscar']);
     expect(line.effectifMin).toBe(2);
-    expect(line.names.length).toBeLessThan(line.effectifMin);
+    expect(line.entries.length).toBeLessThan(line.effectifMin);
   });
 
   it('a fully-staffed stand is not understaffed', () => {
@@ -117,7 +119,7 @@ describe('buildDays — understaffing indicator', () => {
     ]);
 
     const line = days[0].slots[0].stands[0];
-    expect(line.names.length).toBeGreaterThanOrEqual(line.effectifMin);
+    expect(line.entries.length).toBeGreaterThanOrEqual(line.effectifMin);
   });
 
   it('flags the whole day card when any of its stand-lines is understaffed, visible without opening it', () => {

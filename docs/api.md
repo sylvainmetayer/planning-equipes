@@ -68,6 +68,25 @@ de fonctionner. L'IHM les renseigne systématiquement pour les contraintes de
 catégorie « Légal », après un avertissement explicite : voir
 [`contraintes.md`](contraintes.md).
 
+## Explicabilité par affectation
+
+Explicabilité individuelle (« Pourquoi lui ? »), complémentaire du diagnostic
+global de `/api/solve/analyze` : au lieu du score global, ces routes ciblent
+un seul `PosteAffectation` du planning envoyé en corps de requête (déjà
+résolu — jamais re-résolu ici, contrairement à `/api/solve/analyze`).
+
+| Méthode | Chemin | Description |
+| --- | --- | --- |
+| `POST` | `/api/postes/{posteId}/explication` | Contraintes violées / respectées pour ce poste, avec le score global |
+| `POST` | `/api/postes/{posteId}/simulation-swap?animateurId={id}` | Simule le remplacement de l'occupant actuel du poste par `animateurId` : score avant/après, delta, et contraintes violées avant/après pour ce même poste |
+
+Les deux renvoient `404` avec `{ "message": "…" }` si `posteId` ou
+`animateurId` ne figure pas dans le planning envoyé. « Respectée » signifie
+seulement qu'aucune violation n'a été trouvée pour ce poste précis, pas que la
+contrainte s'applique nécessairement à lui — l'IHM ne doit pas la présenter
+comme un satisfecit positif. `simulation-swap` ne persiste rien : c'est une
+simulation en mémoire, à usage d'aide à la décision uniquement.
+
 ## Faisabilité
 
 | Méthode | Chemin | Description |
