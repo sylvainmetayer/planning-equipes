@@ -72,6 +72,12 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 | `DB_URL` | `jdbc:postgresql://localhost:5432/festival` | Connexion PostgreSQL |
 | `DB_USER` / `DB_PASSWORD` | `festival` / `festival` | Identifiants base |
 | `HTTP_PORT` | `8080` | Port HTTP exposé |
+| `SENTRY_DSN` | *(vide = désactivé)* | Suivi d'erreurs (Bugsink ou tout endpoint compatible Sentry) |
+| `SENTRY_ENVIRONMENT` | `local` | Étiquette d'environnement jointe aux erreurs remontées |
+| `POSTHOG_API_KEY` | *(vide = désactivé)* | Analytics d'usage (PostHog) |
+| `POSTHOG_HOST` | `https://eu.i.posthog.com` | Hôte d'ingestion PostHog |
+
+Détails et mise en place : [`docs/observabilite.md`](docs/observabilite.md).
 
 ### Lancer les tests
 

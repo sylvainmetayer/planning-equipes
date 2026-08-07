@@ -334,3 +334,11 @@ export interface PersistenceStatus {
 export interface ImportSummary {
   message: string;
 }
+
+/** `/api/config`: observability keys, blank when the matching feature is disabled server-side. */
+export interface ObservabilityConfig {
+  sentryDsn: string;
+  sentryEnvironment: string;
+  posthogApiKey: string;
+  posthogHost: string;
+}

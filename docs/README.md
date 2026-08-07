@@ -12,6 +12,7 @@ fonctionnalités métier) : **tout ajout de documentation technique se fait ici*
 | [`api.md`](api.md) | Endpoints REST exposés par le service Quarkus |
 | [`import-export.md`](import-export.md) | Formats d'import / export : CSV, dump SQL, PDF, ICS |
 | [`developpement.md`](developpement.md) | Build, tests, CI, Podman, réglage du solveur, mises à jour Renovate |
+| [`observabilite.md`](observabilite.md) | Suivi d'erreurs (Bugsink) et analytics d'usage (PostHog) en production : choix, intégration, variables d'environnement |
 | [`audit-conformite-rh.md`](audit-conformite-rh.md) | Audit de conformité RH du référentiel de contraintes (Code du travail, CCN ÉCLAT) — constats, articles et suites données |
 | [`product_owner_report.md`](product_owner_report.md) | Rapport de toilettage du backlog GitHub Issues — issues fermées, priorisation, points d'attention |
 

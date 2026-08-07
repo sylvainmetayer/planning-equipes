@@ -13,6 +13,12 @@ services:
       DB_USER: festival
       DB_PASSWORD: festival
       HTTP_PORT: 8080
+      # Observability, both opt-in: blank (the default) disables error
+      # reporting / analytics entirely. See docs/observabilite.md.
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}
+      POSTHOG_API_KEY: ${POSTHOG_API_KEY:-}
+      POSTHOG_HOST: ${POSTHOG_HOST:-https://eu.i.posthog.com}
     depends_on:
       postgres:
         condition: service_healthy

@@ -17,6 +17,7 @@
         <quarkus.platform.version>3.38.0</quarkus.platform.version>
         <timefold.solver.version>1.33.0</timefold.solver.version>
         <quinoa.version>2.8.3</quinoa.version>
+        <sentry.version>8.16.0</sentry.version>
         <skipITs>true</skipITs>
         <surefire-plugin.version>3.5.6</surefire-plugin.version>
         <!-- Silences a JDK 25 native-access warning from JNA (loaded by
@@ -77,6 +78,15 @@
             <groupId>io.quarkiverse.quinoa</groupId>
             <artifactId>quarkus-quinoa</artifactId>
             <version>${quinoa.version}</version>
+        </dependency>
+        <!-- Error tracking. No Quarkus extension exists for Sentry, so this is
+             the plain Java SDK, initialized manually (see SentryInitializer)
+             and pointed at a Sentry-protocol-compatible ingest endpoint
+             (Bugsink) via the SENTRY_DSN env var. -->
+        <dependency>
+            <groupId>io.sentry</groupId>
+            <artifactId>sentry</artifactId>
+            <version>${sentry.version}</version>
         </dependency>
 
         <dependency>

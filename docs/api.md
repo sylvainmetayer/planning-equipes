@@ -3,6 +3,12 @@
 Toutes les ressources sont exposées par le service Quarkus sous `/api`, au format
 JSON sauf mention contraire.
 
+## Configuration
+
+| Méthode | Chemin | Description |
+| --- | --- | --- |
+| `GET` | `/api/config` | Configuration d'observabilité lue par le frontend au démarrage (DSN Sentry/Bugsink, clé PostHog) — voir [`observabilite.md`](observabilite.md) |
+
 ## Planning
 
 | Méthode | Chemin | Description |
