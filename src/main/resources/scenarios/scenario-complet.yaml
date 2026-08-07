@@ -587,7 +587,8 @@ animateurs:
     competences:
       ENFANT: REFERENT
       AMBIANCE: DEBUTANT
-    joursIndisponibles: []
+    joursIndisponibles:
+      - 2026-07-15
   - id: A18
     prenom: Emma
     nom: Blanc
@@ -897,6 +898,7 @@ animateurs:
       AMBIANCE: DEBUTANT
       STRATEGIE: AUTONOME
     joursIndisponibles:
+      - 2026-07-15
       - 2026-07-19
   - id: A46
     prenom: Yanis
@@ -1171,6 +1173,7 @@ animateurs:
       AMBIANCE: DEBUTANT
     joursIndisponibles:
       - 2026-07-08
+      - 2026-07-15
   - id: A70
     prenom: Ines
     nom: Lefebvre
@@ -1300,6 +1303,7 @@ animateurs:
       - 2026-07-10
       - 2026-07-11
       - 2026-07-12
+      - 2026-07-15
   - id: A81
     prenom: Laura
     nom: Fontaine
@@ -1357,6 +1361,7 @@ animateurs:
       - 2026-07-08
       - 2026-07-09
       - 2026-07-10
+      - 2026-07-15
   - id: A86
     prenom: Mathis
     nom: Rousseau
@@ -1423,7 +1428,8 @@ animateurs:
       ADRESSE: AUTONOME
       ENIGME: AUTONOME
       ENFANT: DEBUTANT
-    joursIndisponibles: []
+    joursIndisponibles:
+      - 2026-07-15
   - id: A92
     prenom: Gabrielle
     nom: Muller
@@ -1523,6 +1529,7 @@ animateurs:
       - 2026-07-09
       - 2026-07-10
       - 2026-07-11
+      - 2026-07-15
       - 2026-07-19
   - id: A101
     prenom: Remi
@@ -1565,7 +1572,8 @@ animateurs:
     competences:
       ENFANT: DEBUTANT
       ENIGME: AUTONOME
-    joursIndisponibles: []
+    joursIndisponibles:
+      - 2026-07-15
   - id: A105
     prenom: Remi
     nom: Richard
@@ -1615,6 +1623,7 @@ animateurs:
       STRATEGIE: DEBUTANT
       COOPERATIF: DEBUTANT
     joursIndisponibles:
+      - 2026-07-15
       - 2026-07-19
   - id: A109
     prenom: Wafa
@@ -1697,6 +1706,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-08
       - 2026-07-09
+      - 2026-07-15
       - 2026-07-19
   - id: A116
     prenom: Adrien
@@ -1795,6 +1805,7 @@ animateurs:
       - 2026-07-10
       - 2026-07-11
       - 2026-07-12
+      - 2026-07-15
       - 2026-07-19
   - id: A125
     prenom: Victor
@@ -1806,6 +1817,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-08
       - 2026-07-09
+      - 2026-07-15
   - id: A126
     prenom: Romane
     nom: Henry
@@ -1984,6 +1996,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-08
       - 2026-07-09
+      - 2026-07-15
   - id: A141
     prenom: Julien
     nom: Perrin
