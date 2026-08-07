@@ -26,7 +26,17 @@
             </a>
           } @else {
             <a mat-list-item [routerLink]="link.path" routerLinkActive="active-link" (click)="onNavigate()">
-              <mat-icon matListItemIcon>{{ link.icon }}</mat-icon>
+              @if (link.badge === 'notifications') {
+                <mat-icon
+                  matListItemIcon
+                  [matBadge]="notificationBadgeContent()"
+                  [matBadgeHidden]="notifications.unreadCount() === 0"
+                  [matBadgeColor]="hasUnreadAlert() ? 'warn' : 'accent'"
+                  [matBadgeDescription]="notificationBadgeDescription()"
+                >{{ link.icon }}</mat-icon>
+              } @else {
+                <mat-icon matListItemIcon>{{ link.icon }}</mat-icon>
+              }
               <span matListItemTitle>{{ link.label }}</span>
             </a>
           }

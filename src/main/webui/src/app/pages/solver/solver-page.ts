@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { ApiService } from '../../core/api.service';
 import { intlLocale } from '../../core/locale';
 import { FeasibilityReport, PlanningDiagnostic } from '../../core/models';
+import { NotificationService } from '../../core/notification.service';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { SolverJobService } from '../../core/solver-job.service';
@@ -67,6 +68,7 @@ export class SolverPage {
   private readonly api = inject(ApiService);
   private readonly planningState = inject(PlanningStateService);
   private readonly jobs = inject(SolverJobService);
+  private readonly notifications = inject(NotificationService);
 
   constructor() {
     void this.loadLastRun();
@@ -163,12 +165,28 @@ export class SolverPage {
     this.planningState.set(null);
     this.feasibility.set(diagnostic.faisabilite);
     this.hardScore.set(diagnostic.hardScore);
-    this.hardIssues.set(
-      diagnostic.contraintes
-        .filter((constraint) => hardPart(constraint.score) < 0)
-        .map((constraint) => ({ name: constraint.name, matchCount: constraint.matchCount }))
-    );
+    const hardIssues = diagnostic.contraintes
+      .filter((constraint) => hardPart(constraint.score) < 0)
+      .map((constraint) => ({ name: constraint.name, matchCount: constraint.matchCount }));
+    this.hardIssues.set(hardIssues);
     this.output.set(JSON.stringify(diagnostic, null, 2));
+    // Already shown inline by the feasibility banner: logged silently so it
+    // stays reviewable from the Notifications page without a duplicate toast.
+    if (diagnostic.faisabilite && !diagnostic.faisabilite.feasible) {
+      this.notifications.notify({
+        title: $localize`:@@solver.notification.notFeasible:Planning non totalement réalisable`,
+        message: diagnostic.faisabilite.message,
+        variant: 'warning',
+        silent: true
+      });
+    } else if (diagnostic.hardScore < 0) {
+      this.notifications.notify({
+        title: $localize`:@@solver.notification.hardScoreNegative:Contraintes dures non respectées (score dur ${diagnostic.hardScore}:hardScore:)`,
+        message: hardIssues.map((issue) => `${issue.name} (${issue.matchCount})`).join(', '),
+        variant: 'error',
+        silent: true
+      });
+    }
   }
 }
 

@@ -13,6 +13,23 @@
         <ng-container i18n="@@common.refresh">Actualiser</ng-container>
       </button>
     </div>
+    <p class="debug-version" i18n="@@debug.testNotifications.hint">
+      Génère une notification de test (visible ici en toast, puis dans l'onglet Notifications) :
+    </p>
+    <div class="calendar-toolbar">
+      <button matButton="outlined" type="button" (click)="sendTestNotification('info')">
+        <mat-icon>info</mat-icon>
+        <ng-container i18n="@@debug.testNotification.info">Info</ng-container>
+      </button>
+      <button matButton="outlined" type="button" (click)="sendTestNotification('warning')">
+        <mat-icon>warning</mat-icon>
+        <ng-container i18n="@@debug.testNotification.warning">Warning</ng-container>
+      </button>
+      <button matButton="outlined" type="button" (click)="sendTestNotification('alert')">
+        <mat-icon>error</mat-icon>
+        <ng-container i18n="@@debug.testNotification.alert">Alert</ng-container>
+      </button>
+    </div>
     <p class="debug-version">
       <ng-container i18n="@@debug.version">Version :</ng-container>
       <a [href]="repoUrl + '/commit/' + appVersion" target="_blank" rel="noopener">{{ appVersion }}</a>

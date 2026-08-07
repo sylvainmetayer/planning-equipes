@@ -1,0 +1,41 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <mat-card-title i18n="@@notifications.list.title">Notifications ({{ notifications.notifications().length }})</mat-card-title>
+    <mat-card-subtitle i18n="@@notifications.description">
+      Historique des avertissements et informations remontés par l'application (résolutions, contraintes non
+      respectées, erreurs) : conservé ici même après la disparition du message temporaire.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-actions class="card-actions">
+    <button matButton type="button" [disabled]="notifications.unreadCount() === 0" (click)="notifications.markAllRead()">
+      <mat-icon>done_all</mat-icon>
+      <ng-container i18n="@@notifications.markAllRead">Tout marquer comme lu</ng-container>
+    </button>
+    <button matButton type="button" [disabled]="notifications.notifications().length === 0" (click)="notifications.clear()">
+      <mat-icon>delete_sweep</mat-icon>
+      <ng-container i18n="@@notifications.clear">Effacer l'historique</ng-container>
+    </button>
+  </mat-card-actions>
+  <mat-card-content>
+    @if (notifications.notifications().length === 0) {
+      <p class="empty-hint" i18n="@@notifications.empty">Aucune notification pour le moment.</p>
+    } @else {
+      <mat-list class="notification-list">
+        @for (notification of notifications.notifications(); track notification.id) {
+          <mat-list-item
+            class="notification-item notification-item-{{ notification.severity }}"
+            [class.notification-item-unread]="!notification.read"
+            (click)="notifications.markRead(notification.id)"
+          >
+            <mat-icon matListItemIcon>{{ icon(notification.severity) }}</mat-icon>
+            <span matListItemTitle>{{ notification.title }}</span>
+            @if (notification.message) {
+              <span matListItemLine>{{ notification.message }}</span>
+            }
+            <span matListItemMeta class="notification-timestamp">{{ formattedTimestamp(notification.timestamp) }}</span>
+          </mat-list-item>
+        }
+      </mat-list>
+    }
+  </mat-card-content>
+</mat-card>

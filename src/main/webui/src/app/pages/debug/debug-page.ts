@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ApiService } from '../../core/api.service';
 import { ConstraintsView } from '../../core/models';
+import { NotificationService } from '../../core/notification.service';
 import { OutputPanel } from '../../shared/output-panel';
 import { APP_VERSION, REPO_URL } from '../../version';
 
@@ -31,6 +32,7 @@ export class DebugPage {
   protected readonly repoUrl = REPO_URL;
 
   private readonly api = inject(ApiService);
+  private readonly notifications = inject(NotificationService);
 
   constructor() {
     void this.refresh();
@@ -49,5 +51,15 @@ export class DebugPage {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  /** Exercises the info/warning/alert path end-to-end: snack bar and the persisted Notifications log. */
+  protected sendTestNotification(severity: 'info' | 'warning' | 'alert'): void {
+    const variant = severity === 'alert' ? 'error' : severity;
+    this.notifications.notify({
+      title: $localize`:@@debug.testNotification.title:Notification de test (${severity}:severity:)`,
+      message: $localize`:@@debug.testNotification.message:Générée depuis la page Débogage.`,
+      variant
+    });
   }
 }

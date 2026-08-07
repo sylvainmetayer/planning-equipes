@@ -1,6 +1,7 @@
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, linkedSignal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
@@ -10,6 +11,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { map } from 'rxjs';
 import { AppLocale, getStoredLocale, setStoredLocaleAndReload } from './core/locale';
+import { NotificationService } from './core/notification.service';
 import { PlanningResolutionStore } from './core/planning-resolution.store';
 import { SolverJobService } from './core/solver-job.service';
 import { DataStaleIndicator } from './shared/data-stale-indicator';
@@ -28,6 +30,8 @@ interface NavLink {
    * only exposes a dev-only pgAdmin on :5050, unrelated to this link).
    */
   external?: boolean;
+  /** Shows the unread notification count as a mat-badge on this link only. */
+  badge?: 'notifications';
 }
 
 interface NavGroup {
@@ -50,6 +54,12 @@ function buildNavGroups(): NavGroup[] {
     title: $localize`:@@nav.group.planning:Planning`,
     links: [
       { path: '/solver', label: $localize`:@@nav.link.solver:Solveur`, icon: 'play_circle' },
+      {
+        path: '/notifications',
+        label: $localize`:@@nav.link.notifications:Notifications`,
+        icon: 'notifications',
+        badge: 'notifications'
+      },
       { path: '/constraints', label: $localize`:@@nav.link.constraints:Contraintes`, icon: 'fact_check' },
       {
         path: '/data-setup',
@@ -125,6 +135,7 @@ function buildNavGroups(): NavGroup[] {
     MatListModule,
     MatIconModule,
     MatButtonModule,
+    MatBadgeModule,
     MatDividerModule,
     JobMonitor,
     DataStaleIndicator,
@@ -138,7 +149,21 @@ export class App {
   protected readonly navGroups = buildNavGroups();
   protected readonly jobs = inject(SolverJobService);
   protected readonly resolution = inject(PlanningResolutionStore);
+  protected readonly notifications = inject(NotificationService);
   protected readonly locale: AppLocale = getStoredLocale();
+
+  /** True while at least one unread notification is severity 'alert': overrides the badge count with a warning glyph. */
+  protected readonly hasUnreadAlert = computed(() =>
+    this.notifications.notifications().some((notification) => notification.severity === 'alert' && !notification.read)
+  );
+  protected readonly notificationBadgeContent = computed(() =>
+    this.hasUnreadAlert() ? '⚠' : String(this.notifications.unreadCount())
+  );
+  protected readonly notificationBadgeDescription = computed(() =>
+    this.hasUnreadAlert()
+      ? $localize`:@@nav.notificationsBadge.alert:Alerte non lue`
+      : $localize`:@@nav.notificationsBadge.count:${this.notifications.unreadCount()}:count: notification(s) non lue(s)`
+  );
 
   private readonly handset = toSignal(
     inject(BreakpointObserver)

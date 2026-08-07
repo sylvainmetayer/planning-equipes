@@ -48,6 +48,29 @@
   color: var(--mat-sys-tertiary);
 }
 
+/* Notifications page: severity-coloured icon per row, bold title while unread. */
+.notification-item-info mat-icon[matListItemIcon] {
+  color: var(--mat-sys-primary);
+}
+
+.notification-item-warning mat-icon[matListItemIcon] {
+  color: var(--mat-sys-tertiary);
+}
+
+.notification-item-alert mat-icon[matListItemIcon] {
+  color: var(--mat-sys-error);
+}
+
+.notification-item-unread [matListItemTitle] {
+  font-weight: 600;
+}
+
+.notification-timestamp {
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+  white-space: nowrap;
+}
+
 @media (max-width: 740px) {
   .job-monitor-bar {
     display: none;

@@ -14,6 +14,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/debug/debug-page').then((m) => m.DebugPage)
   },
   {
+    path: 'notifications',
+    title: 'Notifications — Planning Équipes',
+    loadComponent: () => import('./pages/notifications/notifications-page').then((m) => m.NotificationsPage)
+  },
+  {
     path: 'data-setup',
     title: 'Data — Planning Équipes',
     loadComponent: () => import('./pages/data-setup/data-setup-page').then((m) => m.DataSetupPage)
