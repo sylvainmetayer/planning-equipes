@@ -22,7 +22,7 @@
         <td mat-cell *matCellDef="let animateur">{{ animateur.prenom }} {{ animateur.nom }}</td>
       </ng-container>
       <ng-container matColumnDef="majorite">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header i18n="@@animateurs.column.majorite">Majeur / mineur</th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header i18n="@@animateurs.column.majorite">Majeur</th>
         <td mat-cell *matCellDef="let animateur">{{ majoriteLabel(animateur) }}</td>
       </ng-container>
       <ng-container matColumnDef="manager">

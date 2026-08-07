@@ -6,11 +6,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { Animateur } from '../../core/models';
 import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
-import { Animateur } from '../../core/models';
 import { AnimateurFormData, AnimateurFormDialog } from './animateur-form-dialog';
 
 /**
@@ -91,10 +91,10 @@ export class AnimateursPage {
   protected majoriteLabel(animateur: Animateur): string {
     const statut = majorite(animateur);
     if (statut === 'majeur') {
-      return $localize`:@@animateurs.majorite.majeur:Majeur`;
+      return $localize`:@@animateurs.majorite.majeur:Oui`;
     }
     if (statut === 'mineur') {
-      return $localize`:@@animateurs.majorite.mineur:Mineur`;
+      return $localize`:@@animateurs.majorite.mineur:Non`;
     }
     return '—';
   }
