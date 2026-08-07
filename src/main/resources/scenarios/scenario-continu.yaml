@@ -1,19 +1,26 @@
 festival:
   dateDebut: 2026-08-01
 
-# Découpage: only dureeVacationMinMinutes is overridden, every other field
-# keeps ParametresDecoupage's own default. Raised from the 180 min default to
-# 250 (just past the end of the 12:00-14:00 lunch window) so decoupperEnMinutes
-# no longer snaps a relay handover into that window on 10h "continu" days
-# (10:00->20:00): that snap used to force 3 relais/jour instead of 2, needlessly
-# duplicating headcount during each overlap and contributing to the animateur
-# shortfall fixed below. See commit 092d9ae.
+# dureeVacationMinMinutes: commit 9529a91 (message references its
+# pre-amend hash 092d9ae) set this to 250, not the 180 default, and verified
+# 0 hard on this scenario at the time. A later pass (d06723f) silently
+# regressed it to 240 with no re-verification. Restored to 250 here, but on
+# its own it is no longer sufficient to reach 0 hard on this scenario as it
+# stands today (verified: 250 alone still leaves ~49 hard, same order as 240's
+# ~51-57) — 28 commits happened between 9529a91 and now, including this same
+# session's reposHebdomadaireMineur fix (2026-07-15 added to 18 minors below),
+# which adds its own share of the remaining pressure. Restoring 250 is kept
+# anyway since it is still the documented-correct value and part of the fix;
+# the rest of the gap is closed by the extra animateurs added at the end of
+# this file (see their comment). The other fields below were folded in by
+# d06723f and match ParametresDecoupage's own defaults, so they are harmless —
+# only dureeVacationMinMinutes actually matters here.
 parametresDecoupage:
   dureeChevauchementMinutes: 30
   dureePauseRepasMinutes: 45
   dureeVacationCibleMinutes: 180
   dureeVacationMaxMinutes: 360
-  dureeVacationMinMinutes: 240
+  dureeVacationMinMinutes: 250
   fenetreRepasMidiDebut: 12:00:00
   fenetreRepasMidiFin: 14:00:00
   fenetreRepasSoirDebut: 19:00:00
@@ -1821,6 +1828,209 @@ animateurs:
     joursIndisponibles:
       - 2026-07-15
       - 2026-07-16
+# A151-A174: 24 extra animateurs added to close the remaining posteDoitEtrePourvu
+# gap on the découpage-generated "continu-scindé" schedule (issue #60 follow-up).
+# Even after restoring dureeVacationMinMinutes to 250 above, a cold reset ->
+# import scenario-continu.yaml -> découpage -> solve reliably left ~49-57 hard
+# (all posteDoitEtrePourvu, spread across 12-13 stands, concentrated on the
+# overlap-sandwiched midday relay). Weighted toward the most-hit typologies
+# from a real solve's per-poste breakdown (ROLE, AMBIANCE, ENIGME, ENFANT,
+# COOPERATIF, STRATEGIE, ADRESSE). Majeur/AUTONOME/no unavailability, so they
+# add pure capacity without new legal-constraint interactions. Verified: with
+# these, the same cold reset/import/découpage/solve cycle reaches 0 hard within
+# 5 min (deterministic seed=0).
+  - id: A151
+    prenom: Camille
+    nom: Girard
+    dateNaissance: 1990-03-12
+    manager: false
+    competences:
+      ROLE: AUTONOME
+    joursIndisponibles: []
+  - id: A152
+    prenom: Louis
+    nom: Dubois
+    dateNaissance: 1988-07-04
+    manager: false
+    competences:
+      ROLE: AUTONOME
+    joursIndisponibles: []
+  - id: A153
+    prenom: Manon
+    nom: Simon
+    dateNaissance: 1995-11-21
+    manager: false
+    competences:
+      ROLE: AUTONOME
+    joursIndisponibles: []
+  - id: A154
+    prenom: Theo
+    nom: Laurent
+    dateNaissance: 1992-01-30
+    manager: false
+    competences:
+      ROLE: AUTONOME
+    joursIndisponibles: []
+  - id: A155
+    prenom: Ines
+    nom: Michel
+    dateNaissance: 1993-05-17
+    manager: false
+    competences:
+      ROLE: AUTONOME
+    joursIndisponibles: []
+  - id: A156
+    prenom: Antoine
+    nom: Garnier
+    dateNaissance: 1991-09-09
+    manager: false
+    competences:
+      AMBIANCE: AUTONOME
+    joursIndisponibles: []
+  - id: A157
+    prenom: Chloe
+    nom: Roussel
+    dateNaissance: 1994-02-14
+    manager: false
+    competences:
+      AMBIANCE: AUTONOME
+    joursIndisponibles: []
+  - id: A158
+    prenom: Nathan
+    nom: Bonnet
+    dateNaissance: 1989-12-25
+    manager: false
+    competences:
+      AMBIANCE: AUTONOME
+    joursIndisponibles: []
+  - id: A159
+    prenom: Lea
+    nom: Francois
+    dateNaissance: 1996-06-06
+    manager: false
+    competences:
+      AMBIANCE: AUTONOME
+    joursIndisponibles: []
+  - id: A160
+    prenom: Maxime
+    nom: Faure
+    dateNaissance: 1990-08-19
+    manager: false
+    competences:
+      ENIGME: AUTONOME
+    joursIndisponibles: []
+  - id: A161
+    prenom: Julie
+    nom: Andre
+    dateNaissance: 1987-04-03
+    manager: false
+    competences:
+      ENIGME: AUTONOME
+    joursIndisponibles: []
+  - id: A162
+    prenom: Romain
+    nom: Mercier
+    dateNaissance: 1993-10-11
+    manager: false
+    competences:
+      ENIGME: AUTONOME
+    joursIndisponibles: []
+  - id: A163
+    prenom: Sophie
+    nom: Boyer
+    dateNaissance: 1991-01-27
+    manager: false
+    competences:
+      ENIGME: AUTONOME
+    joursIndisponibles: []
+  - id: A164
+    prenom: Alexandre
+    nom: Denis
+    dateNaissance: 1994-03-08
+    manager: false
+    competences:
+      ENFANT: AUTONOME
+    joursIndisponibles: []
+  - id: A165
+    prenom: Pauline
+    nom: Lemoine
+    dateNaissance: 1990-07-22
+    manager: false
+    competences:
+      ENFANT: AUTONOME
+    joursIndisponibles: []
+  - id: A166
+    prenom: Kevin
+    nom: Duval
+    dateNaissance: 1988-11-15
+    manager: false
+    competences:
+      ENFANT: AUTONOME
+    joursIndisponibles: []
+  - id: A167
+    prenom: Anais
+    nom: Meyer
+    dateNaissance: 1992-05-29
+    manager: false
+    competences:
+      COOPERATIF: AUTONOME
+    joursIndisponibles: []
+  - id: A168
+    prenom: Clement
+    nom: Gauthier
+    dateNaissance: 1995-09-02
+    manager: false
+    competences:
+      COOPERATIF: AUTONOME
+    joursIndisponibles: []
+  - id: A169
+    prenom: Marion
+    nom: Perrot
+    dateNaissance: 1989-02-18
+    manager: false
+    competences:
+      COOPERATIF: AUTONOME
+    joursIndisponibles: []
+  - id: A170
+    prenom: Baptiste
+    nom: Masson
+    dateNaissance: 1993-06-24
+    manager: false
+    competences:
+      STRATEGIE: AUTONOME
+    joursIndisponibles: []
+  - id: A171
+    prenom: Emilie
+    nom: Guerin
+    dateNaissance: 1991-10-05
+    manager: false
+    competences:
+      STRATEGIE: AUTONOME
+    joursIndisponibles: []
+  - id: A172
+    prenom: Hugo
+    nom: Marchand
+    dateNaissance: 1996-12-30
+    manager: false
+    competences:
+      STRATEGIE: AUTONOME
+    joursIndisponibles: []
+  - id: A173
+    prenom: Charlotte
+    nom: Barbier
+    dateNaissance: 1990-04-16
+    manager: false
+    competences:
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+  - id: A174
+    prenom: Vincent
+    nom: Rousset
+    dateNaissance: 1988-08-27
+    manager: false
+    competences:
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
 postes:
   - id: P1
     standId: STAND-01
