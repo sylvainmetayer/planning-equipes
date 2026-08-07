@@ -102,8 +102,8 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   in the toolbar.
 - **One route = one page = one block.** Routes: `/solver` (default), `/exports`,
   `/data-transfer`, `/stands`, `/animateurs`, `/creneaux`, `/typologies`,
-  `/ad-hoc-constraints`, `/calendar`, `/day-calendar`, `/constraints`, `/hours`,
-  `/staffing`. Adding a functional block means adding a route and a
+  `/ad-hoc-constraints`, `/calendar`, `/day-calendar`, `/constraints`,
+  `/problemes`, `/hours`, `/staffing`. Adding a functional block means adding a route and a
   `app/pages/<block>/` folder, never
   a new section inside an existing page.
 - Layout: `app/core/` holds shared services (`api.service.ts` — the only place
@@ -127,7 +127,8 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `src/styles.css` is a thin aggregator of `@import` rules only and the partials
   live in `src/styles/` (`pages.css` for the shared card/form/table scaffolding,
   `feedback.css` for the job monitor and snack-bar variants,
-  `calendar-month.css`, `calendar-day.css`, `constraints.css`), each holding its
+  `calendar-month.css`, `calendar-day.css`, `constraints.css`,
+  `problemes.css`), each holding its
   own `@media` rules. Add new styles as new partials; don't recreate a monolithic
   stylesheet and don't restyle what a Material component already themes.
 - Keep the frontend dependency-light: Angular, its CLI, Angular Material and

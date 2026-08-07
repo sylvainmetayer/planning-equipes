@@ -11,11 +11,12 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
+import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { slugify } from '../../core/slug';
-import { Creneau, GroupeCreneau } from '../../core/models';
+import { CauseInfaisabilite, Creneau, GroupeCreneau } from '../../core/models';
 import { CreneauFormData, CreneauFormDialog } from './creneau-form-dialog';
 
 /** Timeslots CRUD: festival day, date and hours of every schedulable slot, organized in switchable "groupes de créneaux" (alternate plannings). */
@@ -42,6 +43,7 @@ export class CreneauxPage {
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
   protected readonly editingLocked = computed(() => this.jobs.solverBusy());
 
+  private readonly problemes = inject(ProblemesStore);
   private readonly crud = inject(ReferenceCrudService);
   private readonly dialog = inject(MatDialog);
   private readonly resolution = inject(PlanningResolutionStore);
@@ -65,8 +67,30 @@ export class CreneauxPage {
     return [...creneaux].sort((a, b) => (a.groupe?.nom ?? a.groupe?.id ?? '').localeCompare(b.groupe?.nom ?? b.groupe?.id ?? ''));
   });
 
+  /**
+   * Créneau id → the feasibility cause naming it, re-keyed on the numeric id so
+   * a row is a plain map lookup. The report carries `creneauId` as a string
+   * while `Creneau.id` is a number, hence the `String(...)` normalisation here
+   * rather than in every template.
+   */
+  protected readonly causeParCreneau = computed<Map<number, CauseInfaisabilite>>(() => {
+    const parId = this.problemes.causeParCreneauId();
+    const index = new Map<number, CauseInfaisabilite>();
+    if (parId.size === 0) {
+      return index;
+    }
+    for (const creneau of this.store.creneaux()) {
+      const cause = parId.get(String(creneau.id));
+      if (cause) {
+        index.set(creneau.id, cause);
+      }
+    }
+    return index;
+  });
+
   constructor() {
     void this.crud.reload();
+    void this.problemes.reloadFeasibility();
   }
 
   protected openCreate(): void {

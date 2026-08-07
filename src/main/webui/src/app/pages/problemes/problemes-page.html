@@ -1,0 +1,87 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <mat-card-title i18n="@@problemes.title">Problèmes</mat-card-title>
+    <mat-card-subtitle i18n="@@problemes.description">
+      Tout ce qui bloque ou dégrade le planning, du plus bloquant au moins grave : les causes
+      d'infaisabilité détectées sur les données actuelles (sans résolution) et les règles encore en
+      défaut lors de la dernière analyse.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <div class="calendar-toolbar">
+      <button matButton="tonal" type="button" [disabled]="store.loading()" (click)="refresh()">
+        <mat-icon>refresh</mat-icon>
+        <ng-container i18n="@@common.refresh">Actualiser</ng-container>
+      </button>
+      <span class="calendar-meta">{{ resumeFaisabilite() }}</span>
+    </div>
+    <p class="calendar-meta">{{ resumeAnalyse() }}</p>
+    @if (store.loading()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    @if (store.error()) {
+      <p class="calendar-empty">{{ store.error() }}</p>
+    }
+  </mat-card-content>
+</mat-card>
+
+@if (comptage().total > 0) {
+  <mat-card appearance="outlined" class="page-card">
+    <mat-card-content class="probleme-counts">
+      <span class="probleme-badge probleme-badge-bloquant"
+        >{{ comptage().bloquants }}&nbsp;<ng-container i18n="@@problemes.niveau.bloquant"
+          >Bloquant</ng-container
+        ></span
+      >
+      <span class="probleme-badge probleme-badge-avertissement"
+        >{{ comptage().avertissements }}&nbsp;<ng-container i18n="@@problemes.niveau.avertissement"
+          >Avertissement</ng-container
+        ></span
+      >
+      <span class="probleme-badge probleme-badge-mineur"
+        >{{ comptage().mineurs }}&nbsp;<ng-container i18n="@@problemes.niveau.mineur"
+          >Mineur</ng-container
+        ></span
+      >
+    </mat-card-content>
+  </mat-card>
+}
+
+@for (probleme of problemes(); track probleme.id) {
+  <mat-card appearance="outlined" class="page-card probleme-card">
+    <mat-card-content>
+      <div class="probleme-header">
+        <mat-chip-set>
+          <mat-chip [class]="probleme.badgeClass" [highlighted]="probleme.niveau === 'BLOQUANT'">
+            {{ probleme.niveauLabel }}
+          </mat-chip>
+        </mat-chip-set>
+        <strong>{{ probleme.titre }}</strong>
+      </div>
+      <p class="probleme-message">{{ probleme.message }}</p>
+      @if (probleme.details.length > 0) {
+        <ul class="probleme-details">
+          <!-- Static list per problem, and two violation lines can be identical: index is the safe key. -->
+          @for (detail of probleme.details; track $index) {
+            <li>{{ detail }}</li>
+          }
+        </ul>
+      }
+    </mat-card-content>
+  </mat-card>
+} @empty {
+  <mat-card appearance="outlined" class="page-card">
+    <mat-card-content>
+      <p class="empty-hint" i18n="@@problemes.empty">
+        Aucun problème détecté sur les données actuelles ni sur la dernière analyse.
+      </p>
+    </mat-card-content>
+  </mat-card>
+}
+
+@if (causesRestantes() > 0) {
+  <p class="empty-hint" i18n="@@problemes.causesTronquees">
+    {{ causesRestantes() }} cause(s) d'infaisabilité supplémentaire(s) ne sont pas listées : le
+    serveur ne renvoie que les plus graves.
+  </p>
+}

@@ -128,6 +128,7 @@ Chaque bloc fonctionnel a **sa propre route et sa propre page**, chargée en
 | --- | --- | --- |
 | `/solver` (défaut) | `app/pages/solver/` | Scénario d'exemple, réinitialisation, résolution, analyse |
 | `/debug` | `app/pages/debug/` | Diagnostics du solveur et état interne |
+| `/problemes` | `app/pages/problemes/` | Vue centralisée des problèmes, triés par gravité : causes d'infaisabilité (`GET /api/feasibility`, sans résolution) + règles en défaut de la dernière analyse |
 | `/data-setup` | `app/pages/data-setup/` | Scénarios d'exemple, réinitialisation, export scénario, export/import de dump SQL, imports CSV |
 | `/stands` | `app/pages/stands/` | CRUD des stands |
 | `/emplacements` | `app/pages/emplacements/` | CRUD des emplacements (avec sélection sur carte) |
@@ -158,6 +159,8 @@ standalone) :
 | `app/core/slug.ts` | Dérive un identifiant stable à partir d'un nom saisi librement |
 | `app/core/planning-state.service.ts` | État planning partagé (signal) + chargement lecture seule pour les vues |
 | `app/core/planning-resolution.store.ts` | Groupe de créneaux de la dernière résolution vs groupe actif : alimente les avertissements « planning obsolète » |
+| `app/core/problemes.ts` | Fusion pure des deux sources de problèmes (causes d'infaisabilité + contraintes en défaut) en une liste triée par gravité |
+| `app/core/problemes.store.ts` | État partagé du diagnostic : `GET /api/feasibility` (avant toute résolution) et `GET /api/constraints`, plus les index utilisés par les badges des tableaux |
 | `app/core/reference-data.store.ts` | Référentiels partagés (signals) et opérations CRUD |
 | `app/core/reference-crud.service.ts` | Enregistrement / suppression mutualisés des pages référentiels (retour utilisateur, confirmation) |
 | `app/core/solver-job.service.ts` | Suivi des jobs asynchrones : lit `/api/jobs/active` toutes les 2 s, aucun stockage navigateur |
@@ -167,7 +170,8 @@ standalone) :
 | `app/shared/output-panel.ts` | Panneau de résultat monospace partagé par les pages d'action |
 | `app/shared/data-stale-indicator.ts` | Signale que les données de référence ont changé depuis la dernière résolution |
 | `app/shared/groupe-mismatch-banner.ts` | Signale que le groupe de créneaux actif diffère de celui de la dernière résolution |
-| `app/shared/feasibility-banner.ts` | Alerte si le plan n'est pas fiable : soit la capacité pré-résolution (`FeasibilityReport`), soit le score dur réellement atteint (`hardScore` < 0 après résolution, y compris quand la capacité pré-résolution disait « réalisable ») |
+| `app/shared/feasibility-banner.ts` | Alerte si le plan n'est pas fiable : soit la capacité pré-résolution (`FeasibilityReport`, avec ses causes les plus graves), soit le score dur réellement atteint (`hardScore` < 0 après résolution, y compris quand la capacité pré-résolution disait « réalisable ») |
+| `app/shared/problem-summary-banner.ts` | Bannière de synthèse (nombre de problèmes par gravité) sur la page Solveur, avec un lien vers la page Problèmes |
 | `app/shared/violation-details-dialog.ts` | Modale « qui/quoi/quand » listant chaque violation d'une contrainte dure (page Contraintes), à partir de `ConstraintView.violations` |
 | `app/shared/map-picker.ts` | Sélection de coordonnées sur une carte, utilisée par le formulaire d'emplacement |
 
@@ -193,7 +197,7 @@ Le CSS global se limite à ce que Material ne couvre pas : `src/styles.css` n'es
 qu'un agrégateur de règles `@import` et chaque partial vit sous `src/styles/`
 (`pages.css` cartes / formulaires / tableaux, `feedback.css` moniteur de job et
 variantes de snack bar, `calendar-month.css`, `calendar-day.css`,
-`constraints.css`, `staffing.css`), avec ses propres `@media`.
+`constraints.css`, `problemes.css`, `staffing.css`), avec ses propres `@media`.
 
 ## Base de données
 

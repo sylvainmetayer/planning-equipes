@@ -125,24 +125,60 @@ export interface ConstraintDiagnostic {
   violations: string[];
 }
 
-/** The créneau where the animateur shortfall is worst, when infeasible. */
-export interface CreneauManque {
-  creneauId: string;
+/**
+ * Why a planning cannot be filled, in business terms:
+ * - `CRENEAU_SOUS_EFFECTIF`: an open créneau demands more seats than there are
+ *   competent and available animateurs for it;
+ * - `STAND_SANS_ANIMATEUR_COMPETENT`: no animateur in the whole roster carries
+ *   the competence a stand requires (structural, day-independent).
+ */
+export type TypeCauseInfaisabilite = 'CRENEAU_SOUS_EFFECTIF' | 'STAND_SANS_ANIMATEUR_COMPETENT';
+
+/** `CRITIQUE` = no coverage possible at all; `ELEVE` = partial coverage only. */
+export type SeveriteInfaisabilite = 'CRITIQUE' | 'ELEVE';
+
+/**
+ * One ranked reason the plan is not feasible, carrying the concrete entities
+ * involved so the UI can badge the matching rows.
+ *
+ * `creneauId` is declared as a string because it is only ever compared or
+ * displayed here; the backend serialises a `Long`, so always normalise both
+ * sides with `String(...)` before matching it against `Creneau.id` (a number).
+ * `demande`/`capacite`/`manque` are `-1` for `STAND_SANS_ANIMATEUR_COMPETENT`,
+ * where they carry no meaning.
+ */
+export interface CauseInfaisabilite {
+  type: TypeCauseInfaisabilite;
+  severite: SeveriteInfaisabilite;
+  /** Ready-to-display French sentence, built server-side. */
+  message: string;
+  creneauId: string | null;
   date: string | null;
   heureDebut: string | null;
   heureFin: string | null;
+  /** Always at least one stand. */
+  standIds: string[];
+  demande: number;
+  capacite: number;
   manque: number;
 }
 
 /**
  * Plain-language capacity check: is there even a theoretical chance to fill
  * every seat, regardless of solver time? `message` is ready to show as-is to
- * a non-technical user.
+ * a non-technical user, and `causes` details it, sorted most severe first and
+ * capped server-side — `totalCauses` counts them all, so the UI can say
+ * "+N autres".
+ *
+ * Available without solving, from `GET /api/feasibility`, and also embedded in
+ * the post-solve diagnostics.
  */
 export interface FeasibilityReport {
   feasible: boolean;
+  /** Worst single-créneau shortfall, `0` when no créneau is short-staffed. */
   manqueAnimateurs: number;
-  creneauLePlusCritique: CreneauManque | null;
+  causes: CauseInfaisabilite[];
+  totalCauses: number;
   message: string;
 }
 

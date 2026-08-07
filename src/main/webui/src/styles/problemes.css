@@ -1,0 +1,108 @@
+/* Problem list and its severity chips, plus the alert badges the reference
+   tables and the Solveur summary banner reuse. Same colour tokens as the
+   constraint level badges (constraints.css), so a "bloquant" problem reads
+   exactly like a HARD constraint. */
+
+.probleme-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.probleme-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--mat-sys-corner-small);
+  padding: 0.15rem 0.6rem;
+  font: var(--mat-sys-label-large);
+}
+
+.probleme-badge-bloquant {
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+  --mdc-chip-elevated-container-color: var(--mat-sys-error-container);
+  --mdc-chip-label-text-color: var(--mat-sys-on-error-container);
+}
+
+.probleme-badge-avertissement {
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+  --mdc-chip-elevated-container-color: var(--mat-sys-tertiary-container);
+  --mdc-chip-label-text-color: var(--mat-sys-on-tertiary-container);
+}
+
+.probleme-badge-mineur {
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+  --mdc-chip-elevated-container-color: var(--mat-sys-secondary-container);
+  --mdc-chip-label-text-color: var(--mat-sys-on-secondary-container);
+}
+
+.probleme-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.probleme-message {
+  font: var(--mat-sys-body-medium);
+  margin: 0;
+}
+
+.probleme-details {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
+/* Aggregate banner on the Solveur page. */
+.probleme-summary {
+  display: block;
+  margin-bottom: 1.25rem;
+  --mdc-outlined-card-container-color: var(--mat-sys-tertiary-container);
+}
+
+.probleme-summary.probleme-summary-bloquant {
+  --mdc-outlined-card-container-color: var(--mat-sys-error-container);
+}
+
+.probleme-summary mat-card-content {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  color: var(--mat-sys-on-tertiary-container);
+}
+
+.probleme-summary.probleme-summary-bloquant mat-card-content {
+  color: var(--mat-sys-on-error-container);
+}
+
+.probleme-summary p {
+  margin: 0;
+  flex: 1 1 16rem;
+}
+
+.probleme-summary mat-icon {
+  flex-shrink: 0;
+  color: var(--mat-sys-error);
+}
+
+/* Row-level alert marker in the reference tables. */
+.row-problem-icon {
+  color: var(--mat-sys-error);
+  vertical-align: middle;
+  font-size: 1.125rem;
+  width: 1.125rem;
+  height: 1.125rem;
+  margin-left: 0.35rem;
+}
+
+@media (max-width: 599px) {
+  .probleme-summary mat-card-content {
+    align-items: flex-start;
+  }
+}

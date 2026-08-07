@@ -9,10 +9,12 @@ import { ApiService } from '../../core/api.service';
 import { ImportSummary, ResetSummary } from '../../core/models';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { PlanningStateService } from '../../core/planning-state.service';
+import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
+import { FeasibilityBanner } from '../../shared/feasibility-banner';
 import { OutputPanel } from '../../shared/output-panel';
 
 type CsvEntity = 'animateurs' | 'stands' | 'creneaux';
@@ -22,6 +24,11 @@ type CsvEntity = 'animateurs' | 'stands' | 'creneaux';
  * transfers data via SQL dump or CSV. All actions rebuild or replace part of
  * the dataset, so they are locked while any solver job (solve or analysis)
  * is running for the server.
+ *
+ * Also the last screen before a solve is launched, so it runs the solver-free
+ * feasibility check (`GET /api/feasibility`) on entry and after every action
+ * that rewrites the dataset: a structurally impossible planning is called out
+ * here rather than after a fruitless solve.
  */
 @Component({
   selector: 'app-data-setup-page',
@@ -32,6 +39,7 @@ type CsvEntity = 'animateurs' | 'stands' | 'creneaux';
     MatFormFieldModule,
     MatSelectModule,
     MatListModule,
+    FeasibilityBanner,
     OutputPanel
   ],
   templateUrl: './data-setup-page.html',
@@ -55,6 +63,9 @@ export class DataSetupPage {
 
   private readonly sqlInput = viewChild.required<ElementRef<HTMLInputElement>>('sqlInput');
   private readonly csvInput = viewChild.required<ElementRef<HTMLInputElement>>('csvInput');
+  /** Pre-solve diagnostic shown by the banner at the top of the page. */
+  protected readonly problemes = inject(ProblemesStore);
+
   private readonly api = inject(ApiService);
   private readonly planningState = inject(PlanningStateService);
   private readonly referenceData = inject(ReferenceDataStore);
@@ -72,6 +83,7 @@ export class DataSetupPage {
 
   constructor() {
     void this.loadScenarioList();
+    void this.problemes.reloadFeasibility();
   }
 
   // Fills the dropdown with the scenario files exposed by the backend. Selects
@@ -271,9 +283,16 @@ export class DataSetupPage {
   // the last solve" stamp the toolbar warnings are computed from. A scenario
   // may also have pinned its own solver duration (see import-scenario), so
   // the Débogage tab's value is refreshed too — harmless when unchanged.
+  // The feasibility diagnostic is recomputed from the new dataset for the same
+  // reason: it is about to drive the decision to launch a solve.
   private async refreshAfterImport(): Promise<void> {
     this.planningState.set(null);
-    await Promise.all([this.referenceData.reload(), this.resolution.reload(), this.solverSettings.refresh()]);
+    await Promise.all([
+      this.referenceData.reload(),
+      this.resolution.reload(),
+      this.solverSettings.refresh(),
+      this.problemes.reloadFeasibility()
+    ]);
   }
 }
 

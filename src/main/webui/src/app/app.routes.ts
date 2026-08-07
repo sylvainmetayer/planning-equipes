@@ -19,6 +19,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/notifications/notifications-page').then((m) => m.NotificationsPage)
   },
   {
+    path: 'problemes',
+    title: 'Problems — Planning Équipes',
+    loadComponent: () => import('./pages/problemes/problemes-page').then((m) => m.ProblemesPage)
+  },
+  {
     path: 'data-setup',
     title: 'Data — Planning Équipes',
     loadComponent: () => import('./pages/data-setup/data-setup-page').then((m) => m.DataSetupPage)

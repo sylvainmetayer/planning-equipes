@@ -58,7 +58,12 @@
       @for (creneau of creneauxAffiches(); track creneau.id) {
         <mat-expansion-panel>
           <mat-expansion-panel-header>
-            <mat-panel-title>J{{ creneau.jour }} · {{ creneau.date }} {{ creneau.heureDebut }}–{{ creneau.heureFin }} · {{ creneau.groupe?.nom || creneau.groupe?.id }}</mat-panel-title>
+            <mat-panel-title>
+              J{{ creneau.jour }} · {{ creneau.date }} {{ creneau.heureDebut }}–{{ creneau.heureFin }} · {{ creneau.groupe?.nom || creneau.groupe?.id }}
+              @if (causeParCreneau().get(creneau.id); as cause) {
+                <mat-icon class="row-problem-icon" [matTooltip]="cause.message" [attr.aria-label]="cause.message">warning</mat-icon>
+              }
+            </mat-panel-title>
             <mat-panel-description>
               {{ standsOuvertsLabel(creneau) }}
               <span class="row-actions">

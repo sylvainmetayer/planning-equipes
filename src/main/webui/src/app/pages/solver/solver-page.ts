@@ -7,10 +7,12 @@ import { intlLocale } from '../../core/locale';
 import { FeasibilityReport, PlanningDiagnostic } from '../../core/models';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { PlanningStateService } from '../../core/planning-state.service';
+import { ProblemesStore } from '../../core/problemes.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';
 import { FeasibilityBanner, HardIssue } from '../../shared/feasibility-banner';
 import { OutputPanel } from '../../shared/output-panel';
+import { ProblemSummaryBanner } from '../../shared/problem-summary-banner';
 
 /**
  * A constraint's raw score string looks like `-14hard/0medium/0soft`
@@ -34,7 +36,7 @@ function hardPart(score: string): number {
  */
 @Component({
   selector: 'app-solver-page',
-  imports: [MatCardModule, MatButtonModule, MatIconModule, FeasibilityBanner, OutputPanel],
+  imports: [MatCardModule, MatButtonModule, MatIconModule, FeasibilityBanner, ProblemSummaryBanner, OutputPanel],
   templateUrl: './solver-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -65,6 +67,13 @@ export class SolverPage {
   /** True once reference data was edited after the last solve: its result may be stale. */
   protected readonly dataStale = computed(() => this.resolution.dataStale());
 
+  /**
+   * Aggregate of the pre-solve capacity causes and of the last analysis' still
+   * violated rules, summarised in the banner at the top of the page and detailed
+   * on the Problèmes page.
+   */
+  protected readonly problemes = inject(ProblemesStore);
+
   private readonly api = inject(ApiService);
   private readonly planningState = inject(PlanningStateService);
   private readonly jobs = inject(SolverJobService);
@@ -72,6 +81,7 @@ export class SolverPage {
 
   constructor() {
     void this.loadLastRun();
+    void this.problemes.reload();
     // Results are pushed by the job service, whoever started the job: a solve
     // launched from another browser also lands here when it completes, already
     // analyzed.
@@ -81,6 +91,9 @@ export class SolverPage {
       this.jobs.onResult('SOLVE', (result) => {
         this.applySolveResult(result as PlanningDiagnostic);
         void this.loadLastRun();
+        // The solve rewrote both problem sources server-side (fresh feasibility
+        // input and a new constraint analysis): re-read them for the summary.
+        void this.problemes.reload();
       })
     );
     // Explains why the solver buttons are locked when the job comes from

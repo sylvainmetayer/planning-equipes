@@ -60,6 +60,7 @@ function buildNavGroups(): NavGroup[] {
         icon: 'notifications',
         badge: 'notifications'
       },
+      { path: '/problemes', label: $localize`:@@nav.link.problemes:Problèmes`, icon: 'report_problem' },
       { path: '/constraints', label: $localize`:@@nav.link.constraints:Contraintes`, icon: 'fact_check' },
       {
         path: '/data-setup',

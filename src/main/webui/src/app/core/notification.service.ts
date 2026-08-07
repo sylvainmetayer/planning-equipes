@@ -116,7 +116,7 @@ export class NotificationService {
     if (faisabilite && !faisabilite.feasible) {
       this.notify({
         title: $localize`:@@feasibility.notification.notFeasible:Planning non totalement réalisable`,
-        message: faisabilite.message,
+        message: this.feasibilityMessage(faisabilite),
         variant: 'warning',
         silent: true
       });
@@ -130,6 +130,22 @@ export class NotificationService {
         silent: true
       });
     }
+  }
+
+  /**
+   * The server-built summary, followed by how many causes back it and by the
+   * worst one — the log entry must stand on its own, away from the banner that
+   * lists them all.
+   */
+  private feasibilityMessage(faisabilite: FeasibilityReport): string {
+    const causes = faisabilite.causes ?? [];
+    if (faisabilite.totalCauses <= 0 || causes.length === 0) {
+      return faisabilite.message;
+    }
+    const total = faisabilite.totalCauses;
+    const premiere = causes[0].message;
+    const detail = $localize`:@@feasibility.notification.causes:${total}:count: cause(s) identifiée(s), la plus grave : ${premiere}:cause:`;
+    return `${faisabilite.message} ${detail}`;
   }
 
   markRead(id: string): void {
