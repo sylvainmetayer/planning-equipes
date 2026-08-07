@@ -457,7 +457,8 @@ animateurs:
     competences:
       ENFANT: REFERENT
       AMBIANCE: DEBUTANT
-    joursIndisponibles: []
+    joursIndisponibles:
+      - 2026-07-15
   - id: A18
     prenom: Emma
     nom: Blanc
@@ -744,6 +745,7 @@ animateurs:
       STRATEGIE: AUTONOME
       AMBIANCE: DEBUTANT
     joursIndisponibles:
+      - 2026-07-15
       - 2026-07-19
   - id: A46
     prenom: Yanis
@@ -794,6 +796,7 @@ animateurs:
     competences:
       COOPERATIF: DEBUTANT
     joursIndisponibles:
+      - 2026-07-15
       - 2026-07-19
   - id: A51
     prenom: Iris
@@ -957,7 +960,8 @@ animateurs:
     manager: false
     competences:
       ROLE: AUTONOME
-    joursIndisponibles: []
+    joursIndisponibles:
+      - 2026-07-15
   - id: A67
     prenom: Ugo
     nom: Nicolas
@@ -990,7 +994,8 @@ animateurs:
     competences:
       ROLE: AUTONOME
       AMBIANCE: DEBUTANT
-    joursIndisponibles: []
+    joursIndisponibles:
+      - 2026-07-15
   - id: A70
     prenom: Ines
     nom: Lefebvre
@@ -1103,6 +1108,7 @@ animateurs:
       STRATEGIE: DEBUTANT
     joursIndisponibles:
       - 2026-07-12
+      - 2026-07-15
   - id: A81
     prenom: Laura
     nom: Fontaine
@@ -1144,6 +1150,7 @@ animateurs:
       ROLE: DEBUTANT
       AMBIANCE: DEBUTANT
     joursIndisponibles:
+      - 2026-07-15
       - 2026-07-16
   - id: A85
     prenom: Hugo
@@ -1153,7 +1160,8 @@ animateurs:
     competences:
       ADRESSE: REFERENT
       ENIGME: REFERENT
-    joursIndisponibles: []
+    joursIndisponibles:
+      - 2026-07-15
   - id: A86
     prenom: Mathis
     nom: Rousseau
@@ -1216,7 +1224,8 @@ animateurs:
       ADRESSE: AUTONOME
       ENIGME: AUTONOME
       ENFANT: DEBUTANT
-    joursIndisponibles: []
+    joursIndisponibles:
+      - 2026-07-15
   - id: A92
     prenom: Gabrielle
     nom: Muller
@@ -1298,7 +1307,8 @@ animateurs:
     competences:
       STRATEGIE: DEBUTANT
       ROLE: DEBUTANT
-    joursIndisponibles: []
+    joursIndisponibles:
+      - 2026-07-15
   - id: A101
     prenom: Remi
     nom: Morin
@@ -1337,7 +1347,8 @@ animateurs:
     competences:
       ENIGME: AUTONOME
       ENFANT: DEBUTANT
-    joursIndisponibles: []
+    joursIndisponibles:
+      - 2026-07-15
   - id: A105
     prenom: Remi
     nom: Richard
@@ -1379,6 +1390,7 @@ animateurs:
       STRATEGIE: DEBUTANT
       COOPERATIF: DEBUTANT
     joursIndisponibles:
+      - 2026-07-15
       - 2026-07-19
   - id: A109
     prenom: Wafa
@@ -1453,7 +1465,8 @@ animateurs:
       ADRESSE: AUTONOME
       ROLE: REFERENT
       AMBIANCE: AUTONOME
-    joursIndisponibles: []
+    joursIndisponibles:
+      - 2026-07-15
   - id: A116
     prenom: Adrien
     nom: Richard
@@ -1543,6 +1556,7 @@ animateurs:
       STRATEGIE: DEBUTANT
     joursIndisponibles:
       - 2026-07-12
+      - 2026-07-15
   - id: A125
     prenom: Victor
     nom: Rousseau
@@ -1550,7 +1564,8 @@ animateurs:
     manager: false
     competences:
       ENFANT: AUTONOME
-    joursIndisponibles: []
+    joursIndisponibles:
+      - 2026-07-15
   - id: A126
     prenom: Romane
     nom: Henry
@@ -1697,7 +1712,8 @@ animateurs:
     competences:
       ADRESSE: DEBUTANT
       AMBIANCE: DEBUTANT
-    joursIndisponibles: []
+    joursIndisponibles:
+      - 2026-07-15
   - id: A141
     prenom: Julien
     nom: Perrin
@@ -1726,6 +1742,7 @@ animateurs:
     competences:
       STRATEGIE: AUTONOME
     joursIndisponibles:
+      - 2026-07-15
       - 2026-07-19
   - id: A144
     prenom: Berenice
@@ -1802,6 +1819,7 @@ animateurs:
     competences:
       ROLE: REFERENT
     joursIndisponibles:
+      - 2026-07-15
       - 2026-07-16
 postes:
   - id: P1
