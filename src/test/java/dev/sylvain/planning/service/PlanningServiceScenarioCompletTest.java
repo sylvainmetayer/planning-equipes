@@ -31,7 +31,7 @@ class PlanningServiceScenarioCompletTest {
     void scenarioCompletNeViolateAucuneContrainteHard() {
         ReferenceDataService referenceDataService = new ReferenceDataService();
         referenceDataService.init();
-        PlanningService planningService = new PlanningService(180L, 0L, referenceDataService, new FeasibilityAnalyzer(),
+        PlanningService planningService = new PlanningService(420L, 0L, referenceDataService, new FeasibilityAnalyzer(),
                 ConfigProvider.getConfig());
 
         PlanningFestival problem = planningService.construireExemple();
