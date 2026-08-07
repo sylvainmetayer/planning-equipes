@@ -278,7 +278,7 @@
   "staffing.peakBound.description": " — open seats at the busiest time slot, assuming a staff member can work any time slot of the festival.",
   "staffing.workloadBound.label": "Workload / legal cap: {$INTERPOLATION}",
   "staffing.workloadBound.description": " — {$INTERPOLATION} person-hours to cover in total, spread over {$INTERPOLATION_1} ISO week(s) at {$INTERPOLATION_2} h maximum per staff member per week (legal maximum weekly duration).",
-  "staffing.caveat": "Both minimums stay optimistic: they assume a perfect split, without accounting for each staff member's skills or how real unavailability actually overlaps. On the application's reference scenario, the workload cap gave 102 staff whereas 150 were needed for a truly feasible schedule (hard score zero) — the peak time slot alone gave only 58, with 920 out of 2088 seats unfilled once tested. There is no universal margin to apply here: once real staff are entered, check actual feasibility on the “Constraints” page.",
+  "staffing.caveat": "Both minimums stay optimistic: they assume a perfect split, without accounting for each staff member's skills or how real unavailability actually overlaps. There is no universal margin to apply here: once real staff are entered, check actual feasibility on the “Constraints” page.",
   "stands.form.description": "A stand has a headcount for every time slot, between its minimum and maximum headcount.",
   "stands.field.effectifMin": "Minimum headcount",
   "stands.field.effectifMax": "Maximum headcount",
