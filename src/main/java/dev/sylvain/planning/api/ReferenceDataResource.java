@@ -9,6 +9,7 @@ import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.GroupeCreneau;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.ReferenceDataService;
@@ -304,5 +305,24 @@ public class ReferenceDataResource {
     @Path("/parametres-decoupage")
     public ParametresDecoupage updateParametresDecoupage(ParametresDecoupage parametres) {
         return referenceDataService.updateParametresDecoupage(parametres);
+    }
+
+    @GET
+    @Path("/parametres-solveur")
+    public ParametresSolveur getParametresSolveur() {
+        return referenceDataService.getParametresSolveur();
+    }
+
+    /** Saves the solver's default termination duration (Débogage tab). Returns 400 when the value isn't positive. */
+    @PUT
+    @Path("/parametres-solveur")
+    public Response updateParametresSolveur(ParametresSolveur parametres) {
+        try {
+            return Response.ok(referenceDataService.updateParametresSolveur(parametres)).build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ErreurValidation(e.getMessage()))
+                    .build();
+        }
     }
 }

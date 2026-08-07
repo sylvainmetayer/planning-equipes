@@ -77,6 +77,21 @@ plafond d'ordre public : 48 h pour les majeurs (Code du travail art. L3121-20),
 35 h pour les mineurs (art. L3162-1). Une valeur inférieure, plus protectrice,
 est acceptée.
 
+## Paramètres du solveur
+
+| Méthode | Chemin | Description |
+| --- | --- | --- |
+| `GET` | `/api/parametres-solveur` | Durée de résolution par défaut (onglet Débogage) |
+| `PUT` | `/api/parametres-solveur` | Met à jour cette durée |
+
+```json
+{ "dureeResolutionSecondes": 180 }
+```
+
+Persistée côté serveur (et non en `localStorage`) : la même valeur est lue et
+modifiée depuis n'importe quel navigateur. Le `PUT` répond **400** avec
+`{ "message": "…" }` si la valeur n'est pas strictement positive.
+
 ## Référentiels (CRUD)
 
 Même schéma pour chaque référentiel : `GET` (liste), `POST` (création),

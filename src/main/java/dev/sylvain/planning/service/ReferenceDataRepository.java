@@ -27,6 +27,7 @@ import dev.sylvain.planning.domain.GroupeCreneau;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -878,6 +879,35 @@ public class ReferenceDataRepository {
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to save découpage parameters", e);
+        }
+    }
+
+    /* ---------------------------- Solver parameters --------------------------- */
+
+    public ParametresSolveur getParametresSolveur() {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = connection
+                        .prepareStatement("SELECT duree_resolution_secondes FROM parametres_solveur WHERE id = 1");
+                ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return new ParametresSolveur(rs.getInt("duree_resolution_secondes"));
+            }
+            return new ParametresSolveur();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to load solver parameters", e);
+        }
+    }
+
+    public void saveParametresSolveur(ParametresSolveur parametres) {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = connection.prepareStatement(
+                        "INSERT INTO parametres_solveur (id, duree_resolution_secondes) VALUES (1, ?) "
+                                + "ON CONFLICT (id) DO UPDATE SET "
+                                + "duree_resolution_secondes = EXCLUDED.duree_resolution_secondes")) {
+            ps.setInt(1, parametres.getDureeResolutionSecondes());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to save solver parameters", e);
         }
     }
 

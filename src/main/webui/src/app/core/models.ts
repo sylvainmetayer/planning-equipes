@@ -232,6 +232,15 @@ export interface ParametresDecoupage {
   strategieCouverturePendantPause: StrategieCouverturePendantPause;
 }
 
+/**
+ * `/api/parametres-solveur`: the solver's default termination duration, set
+ * from the Débogage tab. Persisted server-side (not localStorage) so every
+ * browser reads and writes the same value.
+ */
+export interface ParametresSolveur {
+  dureeResolutionSecondes: number;
+}
+
 export interface DecoupageRequest {
   groupeSourceId: string;
   groupeCibleId: string;

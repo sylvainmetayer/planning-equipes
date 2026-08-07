@@ -41,7 +41,15 @@
 /* Wide enough that the label and hint never wrap onto the following mat-divider. */
 .debug-solver-duration {
   display: block;
-  width: 24rem;
+  width: 14rem;
+  max-width: 100%;
+  margin-bottom: 1rem;
+}
+
+/* Sits right of .debug-solver-duration, so the value and its unit (s/min/h) read as one control. */
+.debug-solver-duration-unit {
+  display: block;
+  width: 9rem;
   max-width: 100%;
   margin-bottom: 1rem;
 }

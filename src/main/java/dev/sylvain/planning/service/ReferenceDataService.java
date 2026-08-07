@@ -10,6 +10,7 @@ import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.GroupeCreneau;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.Stand;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -419,6 +420,26 @@ public class ReferenceDataService {
         }
         repository.saveParametresDecoupage(parametres);
         markModified();
+        return parametres;
+    }
+
+    /* --------------------------- Solver parameters ---------------------------- */
+
+    public ParametresSolveur getParametresSolveur() {
+        return repository == null ? new ParametresSolveur() : repository.getParametresSolveur();
+    }
+
+    /**
+     * Saves the solver's default termination duration (Débogage tab). Not a
+     * problem fact and not tracked by {@link ReferenceDataChangeTracker}: it
+     * only changes how long a solve/analyze runs, not the reference data fed
+     * to it.
+     */
+    public ParametresSolveur updateParametresSolveur(ParametresSolveur parametres) {
+        if (parametres.getDureeResolutionSecondes() <= 0) {
+            throw new IllegalArgumentException("dureeResolutionSecondes must be positive");
+        }
+        repository.saveParametresSolveur(parametres);
         return parametres;
     }
 
