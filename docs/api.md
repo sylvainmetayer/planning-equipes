@@ -61,6 +61,66 @@ de fonctionner. L'IHM les renseigne systématiquement pour les contraintes de
 catégorie « Légal », après un avertissement explicite : voir
 [`contraintes.md`](contraintes.md).
 
+## Faisabilité
+
+| Méthode | Chemin | Description |
+| --- | --- | --- |
+| `GET` | `/api/feasibility` | Diagnostic d'infaisabilité calculé sur les données de référence actuelles, **sans lancer le solveur** |
+
+Le diagnostic est un simple calcul de capacité (aucune résolution, réponse
+immédiate) : l'écran de préparation des données peut donc l'afficher avant même
+de lancer une résolution de plusieurs minutes. Les créneaux pris en compte sont
+ceux du **groupe actif**, comme pour une résolution.
+
+```json
+{
+  "feasible": false,
+  "manqueAnimateurs": 2,
+  "causes": [
+    {
+      "type": "STAND_SANS_ANIMATEUR_COMPETENT",
+      "severite": "CRITIQUE",
+      "message": "Aucun animateur ne possède la compétence requise pour le stand « Tir à l'arc » : il ne peut être tenu sur aucun créneau.",
+      "creneauId": null,
+      "date": null,
+      "heureDebut": null,
+      "heureFin": null,
+      "standIds": ["STAND-TIR"],
+      "demande": -1,
+      "capacite": -1,
+      "manque": -1
+    }
+  ],
+  "totalCauses": 7,
+  "message": "Ce planning n'est pas réalisable avec les animateurs actuels : …"
+}
+```
+
+| Champ | Description |
+| --- | --- |
+| `feasible` | `true` si aucune cause bloquante n'a été détectée |
+| `manqueAnimateurs` | Manque le plus élevé constaté sur un créneau (`0` si aucun) |
+| `causes` | Causes classées de la plus bloquante à la moins bloquante, **plafonnées aux 10 premières** |
+| `totalCauses` | Nombre total de causes **avant** plafonnement (permet d'afficher « +N autres ») |
+| `message` | Phrase de synthèse prête à afficher |
+
+Deux types de causes (`type`) :
+
+| Type | Sévérité | Signification |
+| --- | --- | --- |
+| `STAND_SANS_ANIMATEUR_COMPETENT` | toujours `CRITIQUE` | Aucun animateur du référentiel n'a la compétence du stand : il ne peut être tenu aucun jour. `creneauId`/`date`/`heureDebut`/`heureFin` sont `null` et le triplet `demande`/`capacite`/`manque` vaut `-1` (non pertinent) |
+| `CRENEAU_SOUS_EFFECTIF` | `CRITIQUE` si `manque >= demande`, sinon `ELEVE` | Les animateurs compétents et disponibles ce jour-là ne suffisent pas à couvrir les postes ouverts sur le créneau |
+
+Le tri place les causes `CRITIQUE` avant les `ELEVE`, les stands sans animateur
+compétent avant les créneaux sous-effectif, puis les manques décroissants.
+
+Le même rapport est également renvoyé, après résolution, dans le champ
+`faisabilite` de `GET /api/constraints` : celui-ci reflète les données de la
+dernière analyse, alors que `GET /api/feasibility` reflète toujours le
+référentiel courant. Comme il s'agit d'une estimation **optimiste** (elle ignore
+quel stand précis chaque animateur pourrait tenir), `feasible: true` ne garantit
+pas un score dur nul après résolution — voir [`domaine.md`](domaine.md).
+
 ## Paramètres légaux
 
 | Méthode | Chemin | Description |

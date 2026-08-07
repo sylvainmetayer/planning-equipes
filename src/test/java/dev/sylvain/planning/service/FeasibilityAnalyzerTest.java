@@ -14,7 +14,10 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypologieJeu;
+import dev.sylvain.planning.service.FeasibilityAnalyzer.CauseInfaisabilite;
 import dev.sylvain.planning.service.FeasibilityAnalyzer.FeasibilityReport;
+import dev.sylvain.planning.service.FeasibilityAnalyzer.SeveriteInfaisabilite;
+import dev.sylvain.planning.service.FeasibilityAnalyzer.TypeCauseInfaisabilite;
 
 class FeasibilityAnalyzerTest {
 
@@ -32,7 +35,8 @@ class FeasibilityAnalyzerTest {
 
         assertThat(report.feasible()).isTrue();
         assertThat(report.manqueAnimateurs()).isZero();
-        assertThat(report.creneauLePlusCritique()).isNull();
+        assertThat(report.causes()).isEmpty();
+        assertThat(report.totalCauses()).isZero();
     }
 
     @Test
@@ -47,10 +51,24 @@ class FeasibilityAnalyzerTest {
         assertThat(report.feasible()).isFalse();
         assertThat(report.manqueAnimateurs()).isEqualTo(3);
         assertThat(report.message()).contains("3 animateurs");
+        assertThat(report.totalCauses()).isEqualTo(1);
+
+        CauseInfaisabilite cause = report.causes().getFirst();
+        assertThat(cause.type()).isEqualTo(TypeCauseInfaisabilite.CRENEAU_SOUS_EFFECTIF);
+        assertThat(cause.severite()).isEqualTo(SeveriteInfaisabilite.ELEVE);
+        assertThat(cause.creneauId()).isEqualTo(1L);
+        assertThat(cause.date()).isEqualTo(LocalDate.of(2026, 8, 1));
+        assertThat(cause.heureDebut()).isEqualTo(LocalTime.of(10, 0));
+        assertThat(cause.heureFin()).isEqualTo(LocalTime.of(12, 0));
+        assertThat(cause.standIds()).containsExactly("stand-1");
+        assertThat(cause.demande()).isEqualTo(5);
+        assertThat(cause.capacite()).isEqualTo(2);
+        assertThat(cause.manque()).isEqualTo(3);
+        assertThat(cause.message()).contains("2026-08-01 10:00-12:00").contains("il manque 3 animateurs");
     }
 
     @Test
-    void reportsTheCreneauWithTheWorstShortfall() {
+    void reportsEveryCreneauInShortfallRankedByGravity() {
         Stand stand = stand("stand-1", 3, TypologieJeu.STRATEGIE);
         LocalDate samedi = LocalDate.of(2026, 8, 1);
         LocalDate dimanche = LocalDate.of(2026, 8, 2);
@@ -59,16 +77,115 @@ class FeasibilityAnalyzerTest {
 
         Animateur a1 = animateur("a1", TypologieJeu.STRATEGIE);
         Animateur a2 = animateur("a2", TypologieJeu.STRATEGIE);
-        Animateur a3 = animateur("a3", TypologieJeu.STRATEGIE);
         a1.setJoursIndisponibles(Set.of(samedi));
-        a2.setJoursIndisponibles(Set.of(samedi));
+        // Le samedi : 1 animateur pour 3 places (manque 2) ; le dimanche : 2
+        // animateurs pour 3 places (manque 1). Les deux créneaux doivent
+        // apparaître, le plus critique en premier.
 
-        FeasibilityReport report = analyzer.analyser(List.of(a1, a2, a3), List.of(stand),
-                List.of(creneauSamedi, creneauDimanche));
+        FeasibilityReport report = analyzer.analyser(List.of(a1, a2), List.of(stand),
+                List.of(creneauDimanche, creneauSamedi));
 
         assertThat(report.feasible()).isFalse();
         assertThat(report.manqueAnimateurs()).isEqualTo(2);
-        assertThat(report.creneauLePlusCritique().date()).isEqualTo(samedi);
+        assertThat(report.totalCauses()).isEqualTo(2);
+        assertThat(report.causes()).hasSize(2);
+        assertThat(report.causes()).extracting(CauseInfaisabilite::date).containsExactly(samedi, dimanche);
+        assertThat(report.causes()).extracting(CauseInfaisabilite::manque).containsExactly(2, 1);
+    }
+
+    @Test
+    void severiteCritiqueQuandAucunePlaceNePeutEtreCouverte() {
+        Stand stand = stand("stand-1", 2, TypologieJeu.STRATEGIE);
+        LocalDate samedi = LocalDate.of(2026, 8, 1);
+        LocalDate dimanche = LocalDate.of(2026, 8, 2);
+        Creneau creneauSamedi = creneau(1, samedi);
+        Creneau creneauDimanche = creneau(2, dimanche);
+
+        Animateur a1 = animateur("a1", TypologieJeu.STRATEGIE);
+        a1.setJoursIndisponibles(Set.of(samedi));
+
+        FeasibilityReport report = analyzer.analyser(List.of(a1), List.of(stand),
+                List.of(creneauSamedi, creneauDimanche));
+
+        // Samedi : personne, donc manque (2) >= demande (2) -> CRITIQUE, et en
+        // tête de liste. Dimanche : un animateur sur deux places -> ELEVE.
+        assertThat(report.causes()).extracting(CauseInfaisabilite::severite)
+                .containsExactly(SeveriteInfaisabilite.CRITIQUE, SeveriteInfaisabilite.ELEVE);
+        assertThat(report.causes().getFirst().date()).isEqualTo(samedi);
+        assertThat(report.causes().getFirst().capacite()).isZero();
+    }
+
+    @Test
+    void standSansAucunAnimateurCompetentEstUneCauseCritique() {
+        Stand couvert = stand("stand-1", 1, TypologieJeu.STRATEGIE);
+        Stand orphelin = stand("stand-2", 1, TypologieJeu.ADRESSE);
+        Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
+        Animateur a1 = animateur("a1", TypologieJeu.STRATEGIE);
+        Animateur a2 = animateur("a2", TypologieJeu.STRATEGIE);
+
+        FeasibilityReport report = analyzer.analyser(List.of(a1, a2), List.of(couvert, orphelin), List.of(creneau));
+
+        // La capacité brute suffit (2 animateurs pour 2 places), mais aucun
+        // d'eux ne peut tenir le stand « stand-2 » : le planning reste infaisable.
+        assertThat(report.feasible()).isFalse();
+        assertThat(report.manqueAnimateurs()).isZero();
+        assertThat(report.totalCauses()).isEqualTo(1);
+
+        CauseInfaisabilite cause = report.causes().getFirst();
+        assertThat(cause.type()).isEqualTo(TypeCauseInfaisabilite.STAND_SANS_ANIMATEUR_COMPETENT);
+        assertThat(cause.severite()).isEqualTo(SeveriteInfaisabilite.CRITIQUE);
+        assertThat(cause.standIds()).containsExactly("stand-2");
+        assertThat(cause.creneauId()).isNull();
+        assertThat(cause.date()).isNull();
+        assertThat(cause.heureDebut()).isNull();
+        assertThat(cause.heureFin()).isNull();
+        assertThat(cause.demande()).isEqualTo(-1);
+        assertThat(cause.capacite()).isEqualTo(-1);
+        assertThat(cause.manque()).isEqualTo(-1);
+        assertThat(report.message()).contains("1 cause bloquante");
+    }
+
+    @Test
+    void leStandSansCompetenceEstClasseAvantLesCreneauxSousEffectif() {
+        // Les deux causes sont CRITIQUE (le créneau n'a aucun animateur
+        // disponible) : c'est bien le type qui départage.
+        Stand orphelin = stand("stand-orphelin", 1, TypologieJeu.ADRESSE);
+        Stand couvert = stand("stand-couvert", 2, TypologieJeu.STRATEGIE);
+        LocalDate jour = LocalDate.of(2026, 8, 1);
+        Creneau creneau = creneau(1, jour);
+        Animateur absent = animateur("a1", TypologieJeu.STRATEGIE);
+        absent.setJoursIndisponibles(Set.of(jour));
+
+        FeasibilityReport report = analyzer.analyser(List.of(absent), List.of(orphelin, couvert), List.of(creneau));
+
+        assertThat(report.totalCauses()).isEqualTo(2);
+        assertThat(report.causes()).extracting(CauseInfaisabilite::severite)
+                .containsExactly(SeveriteInfaisabilite.CRITIQUE, SeveriteInfaisabilite.CRITIQUE);
+        assertThat(report.causes()).extracting(CauseInfaisabilite::type).containsExactly(
+                TypeCauseInfaisabilite.STAND_SANS_ANIMATEUR_COMPETENT,
+                TypeCauseInfaisabilite.CRENEAU_SOUS_EFFECTIF);
+    }
+
+    @Test
+    void laListeDesCausesEstPlafonneeMaisTotalCausesResteExhaustif() {
+        Stand stand = stand("stand-1", 2, TypologieJeu.STRATEGIE);
+        List<Creneau> creneaux = new java.util.ArrayList<>();
+        Set<LocalDate> jours = new java.util.HashSet<>();
+        for (int jour = 1; jour <= 14; jour++) {
+            LocalDate date = LocalDate.of(2026, 8, jour);
+            creneaux.add(creneau(jour, date));
+            jours.add(date);
+        }
+        // Un animateur compétent (sinon le stand déclencherait en plus une
+        // cause STAND_SANS_ANIMATEUR_COMPETENT), mais absent tout le festival.
+        Animateur absent = animateur("a1", TypologieJeu.STRATEGIE);
+        absent.setJoursIndisponibles(jours);
+
+        FeasibilityReport report = analyzer.analyser(List.of(absent), List.of(stand), creneaux);
+
+        assertThat(report.totalCauses()).isEqualTo(14);
+        assertThat(report.causes()).hasSize(10);
+        assertThat(report.message()).contains("14 causes bloquantes");
     }
 
     @Test
@@ -100,6 +217,7 @@ class FeasibilityAnalyzerTest {
 
         assertThat(report.feasible()).isTrue();
         assertThat(report.manqueAnimateurs()).isZero();
+        assertThat(report.causes()).isEmpty();
     }
 
     @Test
@@ -123,6 +241,8 @@ class FeasibilityAnalyzerTest {
 
         assertThat(report.feasible()).isTrue();
         assertThat(report.manqueAnimateurs()).isZero();
+        assertThat(report.causes()).isEmpty();
+        assertThat(report.totalCauses()).isZero();
     }
 
     /**
