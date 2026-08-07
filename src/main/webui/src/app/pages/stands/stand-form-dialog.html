@@ -65,22 +65,22 @@
     <div class="indisponibilite-row">
       <mat-form-field appearance="outline">
         <mat-label i18n="@@stands.indisponibilites.date">Date</mat-label>
-        <input matInput type="date" required
+        <input matInput type="date" required [name]="'indispoDate' + $index"
                [ngModel]="indispo.date" (ngModelChange)="patchIndisponibilite($index, { date: $event })" />
       </mat-form-field>
       <mat-form-field appearance="outline">
         <mat-label i18n="@@stands.indisponibilites.heureDebut">Début</mat-label>
-        <input matInput type="time" required
+        <input matInput type="time" required [name]="'indispoHeureDebut' + $index"
                [ngModel]="indispo.heureDebut" (ngModelChange)="patchIndisponibilite($index, { heureDebut: $event })" />
       </mat-form-field>
       <mat-form-field appearance="outline">
         <mat-label i18n="@@stands.indisponibilites.heureFin">Fin</mat-label>
-        <input matInput type="time" required
+        <input matInput type="time" required [name]="'indispoHeureFin' + $index"
                [ngModel]="indispo.heureFin" (ngModelChange)="patchIndisponibilite($index, { heureFin: $event })" />
       </mat-form-field>
       <mat-form-field appearance="outline">
         <mat-label i18n="@@stands.indisponibilites.motif">Motif (optionnel)</mat-label>
-        <input matInput
+        <input matInput [name]="'indispoMotif' + $index"
                [ngModel]="indispo.motif" (ngModelChange)="patchIndisponibilite($index, { motif: $event })" />
       </mat-form-field>
       <button matIconButton type="button" i18n-matTooltip="@@common.delete" matTooltip="Supprimer"
