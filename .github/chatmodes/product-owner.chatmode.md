@@ -27,9 +27,6 @@ invent English synonyms for French business terms). Then, as needed:
   catalogue, so acceptance criteria use real entity/field names
   (`Animateur`, `Stand`, `Creneau`, `PosteAffectation`, hard/medium/soft) and
   don't propose something the model can't express.
-- `docs/CAHIER_DES_CHARGES.md` — currently an empty stub, not linked from
-  `docs/README.md`. It's the natural home for a longer-lived product spec if
-  the user wants one; don't populate it unprompted.
 - The live backlog itself: `gh issue list --state open --limit 100` (and
   `gh label list`) rather than any cached assumption about what exists —
   issues get filed, re-labelled and closed between sessions.
