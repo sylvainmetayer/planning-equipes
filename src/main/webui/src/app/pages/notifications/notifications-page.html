@@ -20,22 +20,28 @@
     @if (notifications.notifications().length === 0) {
       <p class="empty-hint" i18n="@@notifications.empty">Aucune notification pour le moment.</p>
     } @else {
-      <mat-list class="notification-list">
+      <div class="notification-list">
         @for (notification of notifications.notifications(); track notification.id) {
-          <mat-list-item
+          <div
             class="notification-item notification-item-{{ notification.severity }}"
             [class.notification-item-unread]="!notification.read"
+            role="button"
+            tabindex="0"
             (click)="notifications.markRead(notification.id)"
+            (keydown.enter)="notifications.markRead(notification.id)"
+            (keydown.space)="notifications.markRead(notification.id)"
           >
-            <mat-icon matListItemIcon>{{ icon(notification.severity) }}</mat-icon>
-            <span matListItemTitle>{{ notification.title }}</span>
-            @if (notification.message) {
-              <span matListItemLine>{{ notification.message }}</span>
-            }
-            <span matListItemMeta class="notification-timestamp">{{ formattedTimestamp(notification.timestamp) }}</span>
-          </mat-list-item>
+            <mat-icon class="notification-icon">{{ icon(notification.severity) }}</mat-icon>
+            <div class="notification-body">
+              <span class="notification-title">{{ notification.title }}</span>
+              @if (notification.message) {
+                <span class="notification-message">{{ notification.message }}</span>
+              }
+            </div>
+            <span class="notification-timestamp">{{ formattedTimestamp(notification.timestamp) }}</span>
+          </div>
         }
-      </mat-list>
+      </div>
     }
   </mat-card-content>
 </mat-card>

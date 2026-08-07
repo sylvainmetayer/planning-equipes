@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
-import { MatListModule } from '@angular/material/list';
 import { intlLocale } from '../../core/locale';
 import { AppNotification, NotificationService, NotificationSeverity } from '../../core/notification.service';
 
@@ -21,7 +20,7 @@ const SEVERITY_ICONS: Record<NotificationSeverity, string> = {
  */
 @Component({
   selector: 'app-notifications-page',
-  imports: [MatCardModule, MatButtonModule, MatIconModule, MatListModule],
+  imports: [MatCardModule, MatButtonModule, MatIconModule],
   templateUrl: './notifications-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })

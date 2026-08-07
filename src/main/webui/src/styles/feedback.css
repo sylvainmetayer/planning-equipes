@@ -48,24 +48,79 @@
   color: var(--mat-sys-tertiary);
 }
 
-/* Notifications page: severity-coloured icon per row, bold title while unread. */
-.notification-item-info mat-icon[matListItemIcon] {
+/* Notifications page. A plain flex layout rather than mat-list/mat-list-item:
+   Material's list item is single/two-line by design (fixed height, clipped
+   text), which doesn't fit messages of arbitrary length — they were getting
+   truncated instead of wrapping. */
+.notification-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.notification-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 12px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.notification-item:last-child {
+  border-bottom: none;
+}
+
+.notification-item:hover {
+  background-color: var(--mat-sys-surface-variant);
+}
+
+.notification-item:focus-visible {
+  outline: 2px solid var(--mat-sys-primary);
+  outline-offset: -2px;
+}
+
+.notification-icon {
+  flex: none;
+  margin-top: 0.125rem;
+}
+
+.notification-item-info .notification-icon {
   color: var(--mat-sys-primary);
 }
 
-.notification-item-warning mat-icon[matListItemIcon] {
+.notification-item-warning .notification-icon {
   color: var(--mat-sys-tertiary);
 }
 
-.notification-item-alert mat-icon[matListItemIcon] {
+.notification-item-alert .notification-icon {
   color: var(--mat-sys-error);
 }
 
-.notification-item-unread [matListItemTitle] {
+.notification-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.notification-title {
+  font: var(--mat-sys-body-large);
+}
+
+.notification-item-unread .notification-title {
   font-weight: 600;
 }
 
+.notification-message {
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-medium);
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
 .notification-timestamp {
+  flex: none;
   color: var(--mat-sys-on-surface-variant);
   font: var(--mat-sys-body-small);
   white-space: nowrap;

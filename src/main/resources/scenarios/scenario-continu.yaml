@@ -9,7 +9,16 @@ festival:
 # duplicating headcount during each overlap and contributing to the animateur
 # shortfall fixed below. See commit 092d9ae.
 parametresDecoupage:
-  dureeVacationMinMinutes: 250
+  dureeChevauchementMinutes: 30
+  dureePauseRepasMinutes: 45
+  dureeVacationCibleMinutes: 180
+  dureeVacationMaxMinutes: 360
+  dureeVacationMinMinutes: 240
+  fenetreRepasMidiDebut: 12:00:00
+  fenetreRepasMidiFin: 14:00:00
+  fenetreRepasSoirDebut: 19:00:00
+  fenetreRepasSoirFin: 21:00:00
+  strategieCouverturePendantPause: RELEVE
 
 creneaux:
   - id: J1-JOUR
