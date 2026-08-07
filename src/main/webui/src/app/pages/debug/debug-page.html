@@ -13,6 +13,24 @@
         <ng-container i18n="@@common.refresh">Actualiser</ng-container>
       </button>
     </div>
+    <mat-form-field appearance="outline" class="debug-solver-duration">
+      <mat-label i18n="@@debug.solverDuration.label">Durée de résolution du solver (minutes)</mat-label>
+      <input
+        matInput
+        type="number"
+        min="0.5"
+        step="0.5"
+        name="solverDurationMinutes"
+        [ngModel]="solverDurationMinutes()"
+        (ngModelChange)="onSolverDurationMinutesChange($event)"
+      />
+      <mat-hint i18n="@@debug.solverDuration.hint">
+        Durée maximale allouée au solveur Timefold pour une résolution ou une analyse. Par défaut : 3 min.
+      </mat-hint>
+    </mat-form-field>
+
+    <mat-divider />
+
     <p class="debug-version" i18n="@@debug.testNotifications.hint">
       Génère une notification de test (visible ici en toast, puis dans l'onglet Notifications) :
     </p>

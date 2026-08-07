@@ -9,6 +9,7 @@ import { NotificationService } from '../../core/notification.service';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { SolverJobService } from '../../core/solver-job.service';
+import { SolverSettingsService } from '../../core/solver-settings.service';
 import { FeasibilityBanner, HardIssue } from '../../shared/feasibility-banner';
 import { OutputPanel } from '../../shared/output-panel';
 
@@ -69,6 +70,7 @@ export class SolverPage {
   private readonly planningState = inject(PlanningStateService);
   private readonly jobs = inject(SolverJobService);
   private readonly notifications = inject(NotificationService);
+  private readonly solverSettings = inject(SolverSettingsService);
 
   constructor() {
     void this.loadLastRun();
@@ -108,7 +110,7 @@ export class SolverPage {
       // The problem is built server-side from the reference data: no planning is
       // uploaded, so even a very large scenario can be solved without hitting the
       // HTTP body limit (which would fail with a network error).
-      await this.jobs.submitSolveFromReferenceData();
+      await this.jobs.submitSolveFromReferenceData(this.solverSettings.secondsLimit());
       this.output.set(
         $localize`:@@solver.submitted:Résolution avec Timefold sur le serveur, puis analyse automatique du résultat. Vous pouvez continuer à naviguer ; une notification apparaîtra à chaque étape, ici et dans tout autre navigateur observant ce serveur.`
       );

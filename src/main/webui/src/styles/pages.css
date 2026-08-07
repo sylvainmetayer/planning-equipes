@@ -38,6 +38,14 @@
   min-width: 16rem;
 }
 
+/* Wide enough that the label and hint never wrap onto the following mat-divider. */
+.debug-solver-duration {
+  display: block;
+  width: 24rem;
+  max-width: 100%;
+  margin-bottom: 1rem;
+}
+
 .subform {
   border: 1px solid var(--mat-sys-outline-variant);
   border-radius: var(--mat-sys-corner-medium);

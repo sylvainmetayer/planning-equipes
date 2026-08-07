@@ -20,6 +20,7 @@ import {
   ParametresLegaux
 } from '../../core/models';
 import { SolverJobService } from '../../core/solver-job.service';
+import { SolverSettingsService } from '../../core/solver-settings.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { FeasibilityBanner } from '../../shared/feasibility-banner';
 import { ViolationDetailsDialog } from '../../shared/violation-details-dialog';
@@ -94,6 +95,7 @@ export class ConstraintsPage {
   private readonly api = inject(ApiService);
   private readonly confirm = inject(ConfirmService);
   private readonly dialog = inject(MatDialog);
+  private readonly solverSettings = inject(SolverSettingsService);
 
   protected readonly summary = computed(() => {
     const view = this.view();
@@ -147,7 +149,7 @@ export class ConstraintsPage {
   protected async refresh(): Promise<void> {
     this.error.set('');
     try {
-      await this.jobs.submitAnalyzeFromReferenceData();
+      await this.jobs.submitAnalyzeFromReferenceData(this.solverSettings.secondsLimit());
     } catch (error) {
       this.error.set($localize`:@@common.errorPrefix:Erreur : ${error instanceof Error ? error.message : String(error)}:message:`);
     }

@@ -239,6 +239,8 @@
   "dataTransfer.importCsvMessage": "{$fileName} replaces every row of {$entity} and deletes existing assignments.",
   "dataTransfer.importingAs": "Importing {$fileName} as {$entity}...",
   "debug.description": "Raw diagnostic of the last solve or analysis: overall score, unfilled seats, feasibility, and score/match count per constraint (without staff/time slots/seats).",
+  "debug.solverDuration.label": "Solver resolution duration (minutes)",
+  "debug.solverDuration.hint": "Maximum time allotted to the Timefold solver for a solve or analysis. Default: 3 min.",
   "debug.empty": "No solve or analysis for this session yet.",
   "debug.version": "Version:",
   "debug.repoLink": "GitHub repository",

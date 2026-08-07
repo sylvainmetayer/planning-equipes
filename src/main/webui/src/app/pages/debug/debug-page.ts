@@ -1,11 +1,16 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ApiService } from '../../core/api.service';
 import { ConstraintsView } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
+import { SolverSettingsService } from '../../core/solver-settings.service';
 import { OutputPanel } from '../../shared/output-panel';
 import { APP_VERSION, REPO_URL } from '../../version';
 
@@ -20,7 +25,17 @@ import { APP_VERSION, REPO_URL } from '../../version';
  */
 @Component({
   selector: 'app-debug-page',
-  imports: [MatCardModule, MatButtonModule, MatIconModule, MatProgressBarModule, OutputPanel],
+  imports: [
+    FormsModule,
+    MatCardModule,
+    MatButtonModule,
+    MatDividerModule,
+    MatFormFieldModule,
+    MatIconModule,
+    MatInputModule,
+    MatProgressBarModule,
+    OutputPanel
+  ],
   templateUrl: './debug-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -31,8 +46,12 @@ export class DebugPage {
   protected readonly appVersion = APP_VERSION;
   protected readonly repoUrl = REPO_URL;
 
+  /** Minutes, derived from the seconds stored by {@link SolverSettingsService} — the unit solvers/backend use. */
+  protected readonly solverDurationMinutes = computed(() => this.solverSettings.secondsLimit() / 60);
+
   private readonly api = inject(ApiService);
   private readonly notifications = inject(NotificationService);
+  private readonly solverSettings = inject(SolverSettingsService);
 
   constructor() {
     void this.refresh();
@@ -51,6 +70,10 @@ export class DebugPage {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  protected onSolverDurationMinutesChange(minutes: number): void {
+    this.solverSettings.setSecondsLimit(minutes * 60);
   }
 
   /** Exercises the info/warning/alert path end-to-end: snack bar and the persisted Notifications log. */
