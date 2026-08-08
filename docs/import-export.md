@@ -93,4 +93,9 @@ Générés **côté serveur** — pas de génération dans le navigateur :
   le stand a un emplacement portent aussi les champs `LOCATION` (nom du lieu)
   et `GEO` (latitude/longitude) quand ils sont disponibles.
 
+Les deux affichent l'horaire *effectif* du poste (`PosteAffectation.heureDebutEffective`/
+`heureFinEffective`), pas celui, plus large, de son créneau : un poste réduit
+par une fermeture partielle de stand (issue #60, voir [`domaine.md`](domaine.md))
+montre à l'animateur les heures qu'il couvre réellement, pas la plage fermée.
+
 Endpoints correspondants dans [`api.md`](api.md).

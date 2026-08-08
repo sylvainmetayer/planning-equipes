@@ -37,3 +37,9 @@
   font: var(--mat-sys-body-small);
   padding: 0.125rem 0;
 }
+
+/** A stand-line whose window is narrower than its créneau (a partial closure, issue #60). */
+.day-stand-partial {
+  color: var(--mat-sys-error);
+  font-style: italic;
+}

@@ -47,9 +47,14 @@
               @if (slot.stands.length === 0) {
                 <div class="day-slot-empty" i18n="@@calendarDay.noStand">Aucun stand</div>
               } @else {
-                @for (stand of slot.stands; track stand.standId) {
+                @for (stand of slot.stands; track stand.standId + stand.heureDebut) {
                   <div class="day-stand" [class.empty-slot]="stand.names.length === 0">
                     <strong>{{ stand.standNom }}</strong>
+                    @if (stand.heureDebut !== slot.heureDebut || stand.heureFin !== slot.heureFin) {
+                      <span class="day-stand-partial" i18n="@@calendarDay.partiallyClosed">
+                        (ouvert {{ stand.heureDebut }} – {{ stand.heureFin }} seulement)
+                      </span>
+                    }
                     <span>{{ stand.names.length === 0 ? unassignedLabel : stand.names.join(', ') }}</span>
                   </div>
                 }

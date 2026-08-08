@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -167,11 +168,11 @@ public class PlanningExportService {
                     .append("UID:").append(uid).append("\r\n")
                     .append("DTSTAMP:").append(ICS_UTC_DATE_TIME.format(Instant.now())).append("\r\n")
                     .append("DTSTART;TZID=").append(FESTIVAL_TIMEZONE).append(":")
-                    .append(poste.getCreneau().getDate().atTime(poste.getCreneau().getHeureDebut())
+                    .append(poste.getCreneau().getDate().atTime(poste.heureDebutEffectif())
                             .format(ICS_LOCAL_DATE_TIME))
                     .append("\r\n")
                     .append("DTEND;TZID=").append(FESTIVAL_TIMEZONE).append(":")
-                    .append(poste.getCreneau().getDate().atTime(poste.getCreneau().getHeureFin())
+                    .append(poste.getCreneau().getDate().atTime(poste.heureFinEffectif())
                             .format(ICS_LOCAL_DATE_TIME))
                     .append("\r\n")
                     .append("SUMMARY:").append(escapeIcs(poste.getStand().getNom())).append("\r\n")
@@ -357,7 +358,7 @@ public class PlanningExportService {
         card.setTableEvent(new RoundedBackgroundEvent(CARD_BACKGROUND, RED, 10f));
 
         card.addCell(dayCell(creneau));
-        card.addCell(timePillCell(creneau));
+        card.addCell(timePillCell(poste.heureDebutEffectif(), poste.heureFinEffectif()));
         card.addCell(standCell(poste.getStand()));
         card.addCell(locationCell(poste.getStand()));
         return card;
@@ -405,8 +406,8 @@ public class PlanningExportService {
         return table;
     }
 
-    private PdfPCell timePillCell(Creneau creneau) {
-        String text = creneau.getHeureDebut().format(TIME_FORMAT) + " - " + creneau.getHeureFin().format(TIME_FORMAT);
+    private PdfPCell timePillCell(LocalTime heureDebut, LocalTime heureFin) {
+        String text = heureDebut.format(TIME_FORMAT) + " - " + heureFin.format(TIME_FORMAT);
         BaseFont baseFont = TIME_FONT.getCalculatedBaseFont(false);
         float textWidth = baseFont.getWidthPoint(text, TIME_FONT.getCalculatedSize());
         float iconDiameter = 8f;

@@ -119,6 +119,13 @@ export interface PosteAffectation {
   stand: Stand | null;
   creneau: Creneau | null;
   animateur: Animateur | null;
+  /**
+   * Narrower window this poste actually covers within `creneau`, when the
+   * stand is only partially closed on that créneau (issue #60). Null/absent
+   * in the overwhelming common case — fall back to `creneau.heureDebut`/`heureFin`.
+   */
+  heureDebutEffective?: string | null;
+  heureFinEffective?: string | null;
 }
 
 export interface ContrainteAdHoc {

@@ -16,8 +16,11 @@ import jakarta.enterprise.context.ApplicationScoped;
 /**
  * Hours planned per animateur, grouped by ISO calendar week (from
  * {@code Creneau.date}) plus a grand total. Reuses
- * {@link dev.sylvain.planning.domain.Creneau#getDureeMinutes()}
- * so the midnight-crossing edge case is handled in exactly one place.
+ * {@link dev.sylvain.planning.domain.PosteAffectation#getDureeEffectiveMinutes()}
+ * so the midnight-crossing edge case (delegated to {@code Creneau.getDureeMinutes()}
+ * when a poste has no effective-window override) is handled in exactly one
+ * place, and a poste narrowed by a partial stand closure (issue #60) counts
+ * only the time actually staffed, not its créneau's full span.
  */
 @ApplicationScoped
 public class HeuresPlanningService {
@@ -33,7 +36,7 @@ public class HeuresPlanningService {
             }
             String animateurId = poste.getAnimateur().getId();
             String semaine = poste.getCreneau().semaineIso();
-            double heures = poste.getCreneau().getDureeMinutes() / 60.0;
+            double heures = poste.getDureeEffectiveMinutes() / 60.0;
 
             semaines.add(semaine);
             heuresParAnimateurEtSemaine

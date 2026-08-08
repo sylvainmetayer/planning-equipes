@@ -11,6 +11,15 @@ interface StandLine {
   /** Identity of the line: two distinct stands may well share the same name. */
   standId: string;
   standNom: string;
+  /**
+   * The window actually staffed by `names` — the poste's effective window if
+   * a partial stand closure (issue #60) narrowed it, otherwise the créneau's
+   * own hours. Two segments of the same stand and créneau (one on each side
+   * of a mid-créneau closure) become two separate lines, each with its own
+   * window.
+   */
+  heureDebut: string;
+  heureFin: string;
   names: string[];
 }
 
@@ -79,9 +88,12 @@ export class CalendarDayPage {
   }
 }
 
-function buildDays(postes: PosteAffectation[]): DayCard[] {
+export function buildDays(postes: PosteAffectation[]): DayCard[] {
   const days = new Map<number, { jour: number; date: string | null; creneaux: Map<number, Creneau> }>();
-  const assignments = new Map<number, Map<string, { stand: Stand; names: string[] }>>();
+  const assignments = new Map<
+    number,
+    Map<string, { stand: Stand; heureDebut: string; heureFin: string; names: string[] }>
+  >();
 
   postes.forEach((poste) => {
     const creneau = poste.creneau;
@@ -96,15 +108,22 @@ function buildDays(postes: PosteAffectation[]): DayCard[] {
     }
     day.creneaux.set(creneau.id, creneau);
 
+    // A poste's own window if a partial closure (issue #60) narrowed it,
+    // otherwise the créneau's full hours — two segments of the same stand
+    // and créneau become two separate lines, each keyed by its own window.
+    const heureDebut = poste.heureDebutEffective ?? creneau.heureDebut;
+    const heureFin = poste.heureFinEffective ?? creneau.heureFin;
+
     let standMap = assignments.get(creneau.id);
     if (!standMap) {
       standMap = new Map();
       assignments.set(creneau.id, standMap);
     }
-    let entry = standMap.get(stand.id);
+    const key = `${stand.id}::${heureDebut}::${heureFin}`;
+    let entry = standMap.get(key);
     if (!entry) {
-      entry = { stand, names: [] };
-      standMap.set(stand.id, entry);
+      entry = { stand, heureDebut, heureFin, names: [] };
+      standMap.set(key, entry);
     }
     if (poste.animateur) {
       entry.names.push(`${poste.animateur.prenom ?? ''} ${poste.animateur.nom ?? ''}`.trim());
@@ -128,9 +147,13 @@ function buildDays(postes: PosteAffectation[]): DayCard[] {
             .map((entry) => ({
               standId: entry.stand.id,
               standNom: entry.stand.nom || entry.stand.id,
+              heureDebut: entry.heureDebut,
+              heureFin: entry.heureFin,
               names: entry.names
             }))
-            .sort((left, right) => left.standNom.localeCompare(right.standNom))
+            .sort(
+              (left, right) => left.standNom.localeCompare(right.standNom) || left.heureDebut.localeCompare(right.heureDebut)
+            )
         }))
     }));
 }

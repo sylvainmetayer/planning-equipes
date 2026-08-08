@@ -105,6 +105,33 @@ class PlanningExportServiceTest {
         assertThat(countOccurrences(ics, "GEO:")).isEqualTo(1);
     }
 
+    /**
+     * Regression: exporting a poste narrowed by a partial stand closure
+     * (issue #60) must use its effective window, not its créneau's full
+     * span — the bug reported live (Oscar Fontaine's PDF showing him working
+     * the whole 13:40-19:00 créneau on a stand closed 14:00-16:00 inside it).
+     * The PDF card uses the exact same {@code PosteAffectation} accessor
+     * ({@code heureDebutEffectif()}/{@code heureFinEffectif()}) exercised
+     * here through ICS, where the resulting text is easy to assert on.
+     */
+    @Test
+    void exportAnimateurIcsUsesThePosteEffectiveWindowNotTheCreneauFullSpan() {
+        Stand stand = new Stand("STAND-1", "Stand", java.util.Set.of(), 1, 1, false);
+        Creneau creneau = new Creneau(1L, 1, LocalDate.of(2026, 7, 10), LocalTime.of(13, 40), LocalTime.of(19, 0));
+        Animateur oscar = new Animateur("A-OSCAR", "Oscar", "Fontaine", LocalDate.of(1990, 1, 1), false);
+        PosteAffectation poste = new PosteAffectation("P1", stand, creneau);
+        poste.setAnimateur(oscar);
+        poste.setHeureDebutEffective(LocalTime.of(16, 0));
+        poste.setHeureFinEffective(LocalTime.of(19, 0));
+        PlanningFestival planning = new PlanningFestival(creneau.getDate(), List.of(oscar), List.of(poste));
+
+        String ics = service.exportAnimateurIcs(planning, "A-OSCAR");
+
+        assertThat(ics).contains("DTSTART;TZID=Europe/Paris:20260710T160000");
+        assertThat(ics).contains("DTEND;TZID=Europe/Paris:20260710T190000");
+        assertThat(ics).doesNotContain("T134000");
+    }
+
     @Test
     void exportAnimateurPdfRendersAGeocodedStandWithoutError() throws IOException {
         PlanningFestival planning = fakePlanning();

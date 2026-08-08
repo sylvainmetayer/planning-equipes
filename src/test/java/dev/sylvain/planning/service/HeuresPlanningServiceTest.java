@@ -54,6 +54,30 @@ class HeuresPlanningServiceTest {
         assertThat(ligne.total()).isCloseTo(11.0, within(0.01));
     }
 
+    /**
+     * Regression: a poste narrowed by a partial stand closure (issue #60)
+     * must count only the time actually staffed, not its créneau's full span
+     * — the bug reported live (Oscar Fontaine shown working the whole
+     * 13:40-19:00 créneau on a stand closed 14:00-16:00 inside it).
+     */
+    @Test
+    void countsOnlyTheEffectiveWindowWhenAPosteIsNarrowedByAPartialClosure() {
+        Stand stand = new Stand("STAND-1", "Stand", java.util.Set.of(), 1, 1, false);
+        Creneau creneau = new Creneau(1L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(13, 40), LocalTime.of(19, 0));
+        Animateur oscar = new Animateur("A-OSCAR", "Oscar", "Fontaine", LocalDate.of(1990, 1, 1), false);
+
+        PosteAffectation poste = new PosteAffectation("P1", stand, creneau);
+        poste.setAnimateur(oscar);
+        poste.setHeureDebutEffective(LocalTime.of(16, 0));
+        poste.setHeureFinEffective(LocalTime.of(19, 0));
+
+        PlanningFestival planning = new PlanningFestival(creneau.getDate(), List.of(oscar), List.of(poste));
+
+        HeuresRapport rapport = service.calculer(planning);
+
+        assertThat(rapport.animateurs().get(0).total()).isCloseTo(3.0, within(0.01));
+    }
+
     @Test
     void csvHasOneColumnPerWeekPlusTotal() {
         Stand stand = new Stand("STAND-1", "Stand", java.util.Set.of(), 1, 1, false);

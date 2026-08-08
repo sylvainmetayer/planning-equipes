@@ -95,10 +95,17 @@
       <mat-list>
         @for (slot of daySlots(); track slot.creneauId) {
           <div matSubheader>{{ slot.heureDebut }} – {{ slot.heureFin }}</div>
-          @for (stand of slot.stands; track stand.standId) {
+          @for (stand of slot.stands; track stand.standId + stand.heureDebut) {
             <mat-list-item [class.empty-slot]="stand.names.length === 0">
               <mat-icon matListItemIcon>storefront</mat-icon>
-              <span matListItemTitle>{{ stand.standNom }}</span>
+              <span matListItemTitle>
+                {{ stand.standNom }}
+                @if (stand.heureDebut !== slot.heureDebut || stand.heureFin !== slot.heureFin) {
+                  <span class="day-stand-partial" i18n="@@calendarDay.partiallyClosed">
+                    (ouvert {{ stand.heureDebut }} – {{ stand.heureFin }} seulement)
+                  </span>
+                }
+              </span>
               <span matListItemLine>
                 {{ stand.names.length === 0 ? unassignedLabel : stand.names.join(', ') }}
               </span>

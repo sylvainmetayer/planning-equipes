@@ -24,6 +24,15 @@ interface StandLine {
   /** Identity of the line: two distinct stands may well share the same name. */
   standId: string;
   standNom: string;
+  /**
+   * The window actually staffed by `names` — the poste's effective window if
+   * a partial stand closure (issue #60) narrowed it, otherwise the créneau's
+   * own hours. Two segments of the same stand and créneau (one on each side
+   * of a mid-créneau closure) become two separate lines, each with its own
+   * window.
+   */
+  heureDebut: string;
+  heureFin: string;
   names: string[];
 }
 
@@ -247,7 +256,7 @@ function buildWeekdayAbbreviations(): string[] {
   return Array.from({ length: 7 }, (_, index) => formatter.format(new Date(2024, 0, 1 + index)));
 }
 
-function buildAssignmentsByDate(postes: PosteAffectation[]): Map<string, SlotEntry[]> {
+export function buildAssignmentsByDate(postes: PosteAffectation[]): Map<string, SlotEntry[]> {
   const byDate = new Map<string, Map<number, SlotEntry & { standMap: Map<string, StandLine> }>>();
 
   postes.forEach((poste) => {
@@ -273,10 +282,13 @@ function buildAssignmentsByDate(postes: PosteAffectation[]): Map<string, SlotEnt
       };
       slots.set(creneau.id, slot);
     }
-    let line = slot.standMap.get(stand.id);
+    const heureDebut = poste.heureDebutEffective ?? creneau.heureDebut;
+    const heureFin = poste.heureFinEffective ?? creneau.heureFin;
+    const lineKey = `${stand.id}::${heureDebut}::${heureFin}`;
+    let line = slot.standMap.get(lineKey);
     if (!line) {
-      line = { standId: stand.id, standNom: stand.nom || stand.id, names: [] };
-      slot.standMap.set(stand.id, line);
+      line = { standId: stand.id, standNom: stand.nom || stand.id, heureDebut, heureFin, names: [] };
+      slot.standMap.set(lineKey, line);
     }
     if (poste.animateur) {
       line.names.push(`${poste.animateur.prenom ?? ''} ${poste.animateur.nom ?? ''}`.trim());
@@ -291,8 +303,8 @@ function buildAssignmentsByDate(postes: PosteAffectation[]): Map<string, SlotEnt
         heureDebut: slot.heureDebut,
         heureFin: slot.heureFin,
         jour: slot.jour,
-        stands: Array.from(slot.standMap.values()).sort((left, right) =>
-          left.standNom.localeCompare(right.standNom)
+        stands: Array.from(slot.standMap.values()).sort(
+          (left, right) => left.standNom.localeCompare(right.standNom) || left.heureDebut.localeCompare(right.heureDebut)
         )
       }))
       .sort((left, right) => `${left.heureDebut}`.localeCompare(`${right.heureDebut}`));
