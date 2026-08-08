@@ -20,9 +20,18 @@ public class Stand {
     /**
      * Closure windows for this stand, e.g. "closed 14:00-16:00 on 2026-07-18"
      * — possibly only part of a créneau. Empty = the stand is open on every
-     * créneau (the default). See {@link Creneau#segmentsOuvertsMinutes(Stand)}.
+     * créneau (the default), unless {@link #ouvertures} says otherwise for
+     * that day. See {@link Creneau#segmentsOuvertsMinutes(Stand)}.
      */
     private List<IndisponibiliteStand> indisponibilites = new ArrayList<>();
+    /**
+     * Opening windows for this stand — the inverse of {@link #indisponibilites},
+     * for a stand normally closed and only staffed during specific windows.
+     * Empty = no day is opening-only (the default). A day can never carry
+     * both an entry here and one in {@link #indisponibilites}; see
+     * {@link OuvertureStand}'s javadoc for the three-state rule this implies.
+     */
+    private List<OuvertureStand> ouvertures = new ArrayList<>();
 
     public Stand() {
     }
@@ -114,6 +123,14 @@ public class Stand {
 
     public void setIndisponibilites(List<IndisponibiliteStand> indisponibilites) {
         this.indisponibilites = indisponibilites != null ? indisponibilites : new ArrayList<>();
+    }
+
+    public List<OuvertureStand> getOuvertures() {
+        return ouvertures;
+    }
+
+    public void setOuvertures(List<OuvertureStand> ouvertures) {
+        this.ouvertures = ouvertures != null ? ouvertures : new ArrayList<>();
     }
 
     @Override

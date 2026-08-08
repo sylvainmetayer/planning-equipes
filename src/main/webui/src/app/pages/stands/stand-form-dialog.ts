@@ -11,7 +11,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
-import { IndisponibiliteStand, Stand } from '../../core/models';
+import { IndisponibiliteStand, OuvertureStand, Stand } from '../../core/models';
 
 interface StandDraft {
   id: string;
@@ -23,6 +23,7 @@ interface StandDraft {
   typologiesProposees: string[];
   emplacementId: string | null;
   indisponibilites: IndisponibiliteStand[];
+  ouvertures: OuvertureStand[];
 }
 
 export interface StandFormData {
@@ -77,6 +78,21 @@ export class StandFormDialog {
     )
   );
 
+  /** Any opening whose end time isn't strictly after its start time — the backend rejects these outright. */
+  protected readonly ouvertureInvalide = computed(() =>
+    this.draft().ouvertures.some(
+      (ouverture) =>
+        !ouverture.date || !ouverture.heureDebut || !ouverture.heureFin || ouverture.heureFin <= ouverture.heureDebut
+    )
+  );
+
+  /** A day can't carry both a closure and an opening — the backend rejects this outright. */
+  protected readonly conflitOuvertureFermeture = computed(() => {
+    const draft = this.draft();
+    const joursFermeture = new Set(draft.indisponibilites.map((indispo) => indispo.date).filter(Boolean));
+    return draft.ouvertures.some((ouverture) => ouverture.date && joursFermeture.has(ouverture.date));
+  });
+
   protected patch(patch: Partial<StandDraft>): void {
     this.draft.update((draft) => ({ ...draft, ...patch }));
   }
@@ -102,8 +118,34 @@ export class StandFormDialog {
     }));
   }
 
+  protected ajouterOuverture(): void {
+    this.draft.update((draft) => ({
+      ...draft,
+      ouvertures: [...draft.ouvertures, { id: null, date: '', heureDebut: '', heureFin: '', motif: null }]
+    }));
+  }
+
+  protected patchOuverture(index: number, patch: Partial<OuvertureStand>): void {
+    this.draft.update((draft) => ({
+      ...draft,
+      ouvertures: draft.ouvertures.map((ouverture, i) => (i === index ? { ...ouverture, ...patch } : ouverture))
+    }));
+  }
+
+  protected retirerOuverture(index: number): void {
+    this.draft.update((draft) => ({
+      ...draft,
+      ouvertures: draft.ouvertures.filter((_, i) => i !== index)
+    }));
+  }
+
   protected async save(): Promise<void> {
-    if (this.effectifInvalid() || this.indisponibiliteInvalide()) {
+    if (
+      this.effectifInvalid() ||
+      this.indisponibiliteInvalide() ||
+      this.ouvertureInvalide() ||
+      this.conflitOuvertureFermeture()
+    ) {
       return;
     }
     const draft = this.draft();
@@ -118,7 +160,8 @@ export class StandFormDialog {
       emplacement: draft.emplacementId
         ? (this.store.emplacements().find((e) => e.id === draft.emplacementId) ?? null)
         : null,
-      indisponibilites: draft.indisponibilites
+      indisponibilites: draft.indisponibilites,
+      ouvertures: draft.ouvertures
     };
     if (await this.crud.save('stands', stand, this.editingId(), $localize`:@@stands.entityLabel:Stand`)) {
       this.dialogRef.close(true);
@@ -137,7 +180,8 @@ function toDraft(stand: Stand | null): StandDraft {
       premium: false,
       typologiesProposees: [],
       emplacementId: null,
-      indisponibilites: []
+      indisponibilites: [],
+      ouvertures: []
     };
   }
   return {
@@ -149,6 +193,7 @@ function toDraft(stand: Stand | null): StandDraft {
     premium: Boolean(stand.premium),
     typologiesProposees: [...(stand.typologiesProposees ?? [])],
     emplacementId: stand.emplacement?.id ?? null,
-    indisponibilites: (stand.indisponibilites ?? []).map((indispo) => ({ ...indispo }))
+    indisponibilites: (stand.indisponibilites ?? []).map((indispo) => ({ ...indispo })),
+    ouvertures: (stand.ouvertures ?? []).map((ouverture) => ({ ...ouverture }))
   };
 }

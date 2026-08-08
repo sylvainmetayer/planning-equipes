@@ -33,12 +33,32 @@ export interface Stand {
   premium: boolean;
   /** Physical location (kiosque, mairie, ...), nullable. */
   emplacement: Emplacement | null;
-  /** Closure windows, e.g. "closed 14:00-16:00 on 2026-07-18". Empty = always open (the default). */
+  /**
+   * Closure windows, e.g. "closed 14:00-16:00 on 2026-07-18". Empty = always
+   * open (the default), unless `ouvertures` says otherwise for that day.
+   */
   indisponibilites: IndisponibiliteStand[];
+  /**
+   * Opening windows — the inverse of `indisponibilites`, for a stand normally
+   * closed and only staffed during specific windows. Empty = no day is
+   * opening-only (the default). A day can never have both an entry here and
+   * one in `indisponibilites`.
+   */
+  ouvertures: OuvertureStand[];
 }
 
 /** A single closure window of a stand — possibly only part of a créneau (issue #60). */
 export interface IndisponibiliteStand {
+  id: number | null;
+  date: string;
+  heureDebut: string;
+  heureFin: string;
+  /** Free-text reason, nullable — purely informative, never read by the solver. */
+  motif: string | null;
+}
+
+/** A single opening window of a stand — the inverse of `IndisponibiliteStand`. */
+export interface OuvertureStand {
   id: number | null;
   date: string;
   heureDebut: string;

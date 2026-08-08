@@ -27,8 +27,10 @@ Source : `solver/ConstraintCatalog.java` (description métier) et
 #### Indisponibilité partielle d'un stand
 
 Un stand fermé pour **une partie seulement** d'un créneau (ex. fermé de 14 h à
-16 h dans un créneau 9 h-19 h, voir [`domaine.md`](domaine.md)) génère un poste
-par segment encore ouvert, chacun portant une fenêtre horaire *effective*
+16 h dans un créneau 9 h-19 h) — ou, à l'inverse, normalement fermé et n'ouvrant
+que sur des fenêtres précises (`Stand.ouvertures`, voir [`domaine.md`](domaine.md)
+pour la règle des trois états par jour) — génère un poste par segment encore
+ouvert, chacun portant une fenêtre horaire *effective*
 (`PosteAffectation.heureDebutEffective`/`heureFinEffective`) plus étroite que
 le créneau — `posteDoitEtrePourvu` s'applique alors à ces postes réduits, donc
 personne n'est jamais exigé sur la plage fermée sans qu'une pénalité ne soit

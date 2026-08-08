@@ -14,7 +14,8 @@ function stand(id: string, effectifMax: number): Stand {
     reserveMajeurs: false,
     premium: false,
     emplacement: null,
-    indisponibilites: []
+    indisponibilites: [],
+    ouvertures: []
   };
 }
 

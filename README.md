@@ -195,7 +195,10 @@ de l'algorithme est dans [`docs/domaine.md`](docs/domaine.md#découpage-automati
 - les **stands** : typologies de jeux proposées, effectif minimum et maximum
   d'animateurs simultanés, restriction éventuelle aux majeurs, et fermetures
   (un stand est ouvert sur chaque créneau par défaut ; une fermeture peut ne
-  couvrir qu'une partie d'un créneau, ex. fermé de 14 h à 16 h) ;
+  couvrir qu'une partie d'un créneau, ex. fermé de 14 h à 16 h) — ou, à
+  l'inverse pour un stand normalement fermé, des **ouvertures** ponctuelles
+  (ex. ouvert seulement de 20 h à 23 h), pour éviter de saisir une fermeture
+  sur chaque autre créneau du festival ;
 - les **créneaux** : jour du festival, date, heures de début et de fin ;
 - les **typologies de jeux**.
 

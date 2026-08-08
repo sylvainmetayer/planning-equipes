@@ -106,9 +106,120 @@ class CreneauTest {
         assertThat(creneau.segmentsOuvertsMinutes(stand)).containsExactly(new int[] {0, 300});
     }
 
+    // --- OuvertureStand: the inverse mechanic (issue #60 follow-up) --------
+
+    @Test
+    void ouvertureCouvrantToutLeCreneauLeLaisseEntierementOuvert() {
+        Creneau creneau = new Creneau(1L, 1, JOUR, LocalTime.of(9, 0), LocalTime.of(14, 0));
+        Stand stand = ouvrir(LocalTime.of(9, 0), LocalTime.of(14, 0));
+
+        assertThat(creneau.segmentsOuvertsMinutes(stand)).containsExactly(new int[] {0, 300});
+        assertThat(creneau.estStandOuvert(stand)).isTrue();
+        assertThat(creneau.estStandFermeIntegralement(stand)).isFalse();
+    }
+
+    @Test
+    void ouvertureAuMilieuNeLaisseQueCeSegmentOuvert() {
+        // Inverse de fermetureAuMilieuLaisseDeuxSegmentsOuverts : une ouverture
+        // ne couvrant qu'une partie du créneau ferme tout le reste par défaut.
+        Creneau creneau = new Creneau(1L, 1, JOUR, LocalTime.of(9, 0), LocalTime.of(14, 0));
+        Stand stand = ouvrir(LocalTime.of(11, 0), LocalTime.of(13, 0));
+
+        assertThat(creneau.segmentsOuvertsMinutes(stand)).containsExactly(new int[] {120, 240});
+        assertThat(creneau.estStandOuvert(stand)).isTrue();
+        assertThat(creneau.estStandFermeIntegralement(stand)).isFalse();
+    }
+
+    @Test
+    void ouvertureSansChevauchementFermeLeCreneauIntegralement() {
+        Creneau creneau = new Creneau(1L, 1, JOUR, LocalTime.of(9, 0), LocalTime.of(14, 0));
+        // Le stand n'ouvre que le soir : aucun chevauchement avec ce créneau.
+        Stand stand = ouvrir(LocalTime.of(20, 0), LocalTime.of(23, 0));
+
+        assertThat(creneau.segmentsOuvertsMinutes(stand)).isEmpty();
+        assertThat(creneau.estStandOuvert(stand)).isFalse();
+        assertThat(creneau.estStandFermeIntegralement(stand)).isTrue();
+    }
+
+    @Test
+    void deuxOuverturesSeChevauchantSontFusionnees() {
+        Creneau creneau = new Creneau(1L, 1, JOUR, LocalTime.of(9, 0), LocalTime.of(18, 0));
+        Stand stand = new Stand("S", "S", java.util.Set.of(), 1, 1, false);
+        stand.setOuvertures(List.of(
+                new OuvertureStand(null, JOUR, LocalTime.of(10, 0), LocalTime.of(13, 0), null),
+                new OuvertureStand(null, JOUR, LocalTime.of(12, 0), LocalTime.of(15, 0), null)));
+
+        assertThat(creneau.segmentsOuvertsMinutes(stand)).containsExactly(new int[] {60, 360});
+    }
+
+    @Test
+    void ouvertureDebordantLeCreneauEstClampee() {
+        Creneau creneau = new Creneau(1L, 1, JOUR, LocalTime.of(9, 0), LocalTime.of(14, 0));
+        Stand stand = ouvrir(LocalTime.of(8, 0), LocalTime.of(15, 0));
+
+        assertThat(creneau.segmentsOuvertsMinutes(stand)).containsExactly(new int[] {0, 300});
+    }
+
+    @Test
+    void ouvertureSurUneAutreDateEstIgnoree() {
+        Creneau creneau = new Creneau(1L, 1, JOUR, LocalTime.of(9, 0), LocalTime.of(14, 0));
+        Stand stand = new Stand("S", "S", java.util.Set.of(), 1, 1, false);
+        stand.setOuvertures(List.of(
+                new OuvertureStand(null, JOUR.plusDays(5), LocalTime.of(9, 0), LocalTime.of(14, 0), null)));
+
+        // Pas d'ouverture ce jour-là (et pas de fermeture non plus) : ouvert par défaut.
+        assertThat(creneau.segmentsOuvertsMinutes(stand)).containsExactly(new int[] {0, 300});
+    }
+
+    @Test
+    void ouvertureApresMinuitDansUnCreneauQuiTraverseMinuit() {
+        Creneau creneau = new Creneau(1L, 1, JOUR, LocalTime.of(20, 0), LocalTime.of(2, 0));
+        Stand stand = new Stand("S", "S", java.util.Set.of(), 1, 1, false);
+        stand.setOuvertures(List.of(
+                new OuvertureStand(null, JOUR.plusDays(1), LocalTime.of(0, 30), LocalTime.of(1, 30), null)));
+
+        assertThat(creneau.segmentsOuvertsMinutes(stand)).containsExactly(new int[] {270, 330});
+    }
+
+    @Test
+    void ouvertureInvalideEstIgnoreeDefensivement() {
+        Creneau creneau = new Creneau(1L, 1, JOUR, LocalTime.of(9, 0), LocalTime.of(14, 0));
+        Stand stand = new Stand("S", "S", java.util.Set.of(), 1, 1, false);
+        // heureFin avant heureDebut : ne doit jamais ouvrir le créneau — un
+        // stand sans ouverture valide ce jour-là reste ouvert par défaut.
+        stand.setOuvertures(List.of(
+                new OuvertureStand(null, JOUR, LocalTime.of(13, 0), LocalTime.of(11, 0), null)));
+
+        assertThat(creneau.segmentsOuvertsMinutes(stand)).containsExactly(new int[] {0, 300});
+    }
+
+    /**
+     * A stand can be in "opening" mode one day and "closure" mode another
+     * without the two interfering — the per-day branch only looks at
+     * {@link OuvertureStand} entries matching that day's date.
+     */
+    @Test
+    void ouvertureUnJourEtFermetureUnAutreJourNeSeMelangentPas() {
+        Creneau creneauOuvert = new Creneau(1L, 1, JOUR, LocalTime.of(9, 0), LocalTime.of(20, 0));
+        Creneau creneauFerme = new Creneau(2L, 2, JOUR.plusDays(1), LocalTime.of(9, 0), LocalTime.of(20, 0));
+        Stand stand = new Stand("S", "S", java.util.Set.of(), 1, 1, false);
+        stand.setOuvertures(List.of(new OuvertureStand(null, JOUR, LocalTime.of(18, 0), LocalTime.of(20, 0), null)));
+        stand.setIndisponibilites(List.of(
+                new IndisponibiliteStand(null, JOUR.plusDays(1), LocalTime.of(9, 0), LocalTime.of(11, 0), null)));
+
+        assertThat(creneauOuvert.segmentsOuvertsMinutes(stand)).containsExactly(new int[] {540, 660});
+        assertThat(creneauFerme.segmentsOuvertsMinutes(stand)).containsExactly(new int[] {120, 660});
+    }
+
     private static Stand fermer(LocalTime debut, LocalTime fin) {
         Stand stand = new Stand("S", "S", java.util.Set.of(), 1, 1, false);
         stand.setIndisponibilites(List.of(new IndisponibiliteStand(null, JOUR, debut, fin, null)));
+        return stand;
+    }
+
+    private static Stand ouvrir(LocalTime debut, LocalTime fin) {
+        Stand stand = new Stand("S", "S", java.util.Set.of(), 1, 1, false);
+        stand.setOuvertures(List.of(new OuvertureStand(null, JOUR, debut, fin, null)));
         return stand;
     }
 }

@@ -98,11 +98,60 @@
     <ng-container i18n="@@stands.indisponibilites.add">Ajouter une fermeture</ng-container>
   </button>
 </div>
+<div class="span-2">
+  <h3 i18n="@@stands.ouvertures.title">Ouvertures</h3>
+  <p class="empty-hint" i18n="@@stands.ouvertures.hint">
+    À utiliser à la place des fermetures pour un stand normalement fermé, ouvert seulement sur des créneaux
+    précis (ex : ouvert de 20h à 23h). Un jour ne peut pas avoir à la fois une fermeture et une ouverture.
+  </p>
+  @for (ouverture of draft().ouvertures; track $index) {
+    <div class="indisponibilite-row">
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@stands.ouvertures.date">Date</mat-label>
+        <input matInput type="date" required [name]="'ouvertureDate' + $index"
+               [ngModel]="ouverture.date" (ngModelChange)="patchOuverture($index, { date: $event })" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@stands.ouvertures.heureDebut">Début</mat-label>
+        <input matInput type="time" required [name]="'ouvertureHeureDebut' + $index"
+               [ngModel]="ouverture.heureDebut" (ngModelChange)="patchOuverture($index, { heureDebut: $event })" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@stands.ouvertures.heureFin">Fin</mat-label>
+        <input matInput type="time" required [name]="'ouvertureHeureFin' + $index"
+               [ngModel]="ouverture.heureFin" (ngModelChange)="patchOuverture($index, { heureFin: $event })" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@stands.ouvertures.motif">Motif (optionnel)</mat-label>
+        <input matInput [name]="'ouvertureMotif' + $index"
+               [ngModel]="ouverture.motif" (ngModelChange)="patchOuverture($index, { motif: $event })" />
+      </mat-form-field>
+      <button matIconButton type="button" i18n-matTooltip="@@common.delete" matTooltip="Supprimer"
+              i18n-aria-label="@@common.delete" aria-label="Supprimer" class="danger-action"
+              [disabled]="editingLocked()" (click)="retirerOuverture($index)">
+        <mat-icon>delete</mat-icon>
+      </button>
+    </div>
+  }
+  @if (ouvertureInvalide()) {
+    <p class="field-error" i18n="@@stands.ouvertures.invalid">Chaque ouverture doit avoir une date et une heure de fin strictement après l'heure de début.</p>
+  }
+  @if (conflitOuvertureFermeture()) {
+    <p class="field-error" i18n="@@stands.ouvertures.conflict">
+      Un même jour ne peut pas avoir à la fois une fermeture et une ouverture.
+    </p>
+  }
+  <button matButton type="button" [disabled]="editingLocked()" (click)="ajouterOuverture()">
+    <mat-icon>add</mat-icon>
+    <ng-container i18n="@@stands.ouvertures.add">Ajouter une ouverture</ng-container>
+  </button>
+</div>
 </fieldset>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button matButton type="button" (click)="dialogRef.close(false)" i18n="@@common.cancel">Annuler</button>
-  <button matButton="filled" type="submit" [disabled]="effectifInvalid() || indisponibiliteInvalide() || editingLocked()">
+  <button matButton="filled" type="submit"
+          [disabled]="effectifInvalid() || indisponibiliteInvalide() || ouvertureInvalide() || conflitOuvertureFermeture() || editingLocked()">
     <mat-icon>save</mat-icon>
     {{ submitLabel() }}
   </button>

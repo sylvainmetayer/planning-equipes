@@ -47,6 +47,7 @@ public class Stand {
     private boolean premium;                    // stand éditeur : continuité + expérience privilégiées
     private Emplacement emplacement;            // lieu physique (kiosque, mairie, ...) ; nullable
     private List<IndisponibiliteStand> indisponibilites;  // vide = toujours ouvert (défaut) — voir plus bas
+    private List<OuvertureStand> ouvertures;    // inverse des fermetures — voir plus bas
 }
 
 public class IndisponibiliteStand {
@@ -55,6 +56,11 @@ public class IndisponibiliteStand {
     private LocalTime heureDebut;
     private LocalTime heureFin;   // doit être strictement après heureDebut : ne peut pas traverser minuit
     private String motif;         // libre, informatif — jamais lu par le solveur
+}
+
+public class OuvertureStand {
+    // Même forme qu'IndisponibiliteStand — id/date/heureDebut/heureFin/motif,
+    // mêmes règles (heureFin strictement après heureDebut) — mais sens inverse.
 }
 
 public class Emplacement {
@@ -116,20 +122,34 @@ stand × créneau : si un stand a besoin de 2 personnes sur un créneau, deux
 instances sont générées à l'initialisation (seed / scénario), en respectant
 `Stand.effectifMin` / `effectifMax`. Un poste non pourvu garde `animateur = null`.
 
-Un stand est ouvert sur tous les créneaux par défaut. Ses fermetures
-(`Stand.indisponibilites`) sont indépendantes du découpage en créneaux : une
-fermeture peut ne couvrir qu'une partie d'un créneau (ex. fermé de 14 h à 16 h
-dans un créneau 9 h-19 h). `Creneau.segmentsOuvertsMinutes(Stand)` calcule les
-sous-intervalles encore ouverts d'un créneau donné pour un stand donné, en
-soustrayant l'union de ses fermetures qui le chevauchent :
+Un stand est ouvert sur tous les créneaux par défaut. Chaque jour calendaire
+est dans l'un de trois états, décidé indépendamment jour par jour
+(`Creneau.segmentsOuvertsMinutes(Stand)`) :
 
-- aucune fermeture ne chevauche le créneau → un seul segment couvrant le
-  créneau entier (cas par défaut, largement majoritaire) ;
-- une fermeture couvre le créneau en entier → liste vide, le stand est fermé
-  sur tout le créneau ;
-- une fermeture ne couvre qu'une partie du créneau → un ou deux segments
-  ouverts restants (un si la fermeture touche un bord du créneau, deux si elle
-  est en plein milieu).
+- **aucune `IndisponibiliteStand` ni `OuvertureStand` ce jour-là** → ouvert
+  par défaut, sans restriction (cas largement majoritaire) ;
+- **au moins une `IndisponibiliteStand` ce jour-là** → ouvert par défaut,
+  fermé uniquement sur les fenêtres listées. Une fermeture peut ne couvrir
+  qu'une partie d'un créneau (ex. fermé de 14 h à 16 h dans un créneau
+  9 h-19 h) — le calcul soustrait l'union des fermetures qui le chevauchent :
+  aucune fermeture ne chevauche le créneau → un seul segment couvrant le
+  créneau entier ; une fermeture le couvre en entier → liste vide, fermé sur
+  tout le créneau ; une fermeture ne couvre qu'une partie → un ou deux
+  segments ouverts restants (un si elle touche un bord, deux si elle est en
+  plein milieu) ;
+- **au moins une `OuvertureStand` ce jour-là** → **fermé par défaut**, ouvert
+  uniquement sur les fenêtres listées (l'inverse d'une fermeture). Pensé pour
+  faciliter la saisie d'un stand normalement fermé et ouvert seulement sur des
+  créneaux précis (ex. un stand du soir, ouvert de 20 h à 23 h) : plutôt que de
+  saisir une fermeture sur chaque autre créneau du festival, une seule
+  ouverture suffit. Le calcul est l'union (fusionnée si deux fenêtres se
+  chevauchent ou se touchent) des ouvertures qui chevauchent le créneau,
+  clampée à ses bornes — liste vide si aucune ne le chevauche, y compris si le
+  stand ouvre ce jour-là mais pas sur ce créneau précis (fermé, donc, pour ce
+  créneau-là). Toute `IndisponibiliteStand` de ce même jour est ignorée : un
+  jour ne peut structurellement pas avoir les deux à la fois —
+  `ReferenceDataService` le refuse à l'écriture (`createStand`/`updateStand`),
+  ce qui évite d'avoir à arbitrer un conflit ici.
 
 `PlanningService.construirePostes` génère un poste par place à pourvoir et par
 segment ouvert (voir plus bas) — un stand fermé sur tout un créneau n'y génère

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Creneau, IndisponibiliteStand, Stand } from '../../core/models';
+import { Creneau, IndisponibiliteStand, OuvertureStand, Stand } from '../../core/models';
 import { computeStaffingSummary } from './staffing';
 
 function stand(overrides: Partial<Stand> & { id: string }): Stand {
@@ -12,6 +12,7 @@ function stand(overrides: Partial<Stand> & { id: string }): Stand {
     premium: false,
     emplacement: null,
     indisponibilites: [],
+    ouvertures: [],
     ...overrides
   };
 }
@@ -29,6 +30,11 @@ function creneau(overrides: Partial<Creneau> & { id: number }): Creneau {
 
 /** Closure covering a créneau's whole [heureDebut, heureFin) window on its date. */
 function fermetureIntegrale(creneau: Creneau): IndisponibiliteStand {
+  return { id: null, date: creneau.date, heureDebut: creneau.heureDebut, heureFin: creneau.heureFin, motif: null };
+}
+
+/** Opening covering a créneau's whole [heureDebut, heureFin) window on its date. */
+function ouvertureIntegrale(creneau: Creneau): OuvertureStand {
   return { id: null, date: creneau.date, heureDebut: creneau.heureDebut, heureFin: creneau.heureFin, motif: null };
 }
 
@@ -82,6 +88,40 @@ describe('computeStaffingSummary — per-créneau seats', () => {
       id: 's1',
       effectifMin: 2,
       indisponibilites: [{ id: null, date: '2026-08-09', heureDebut: '09:00', heureFin: '12:00', motif: null }]
+    });
+    const summary = computeStaffingSummary([s1], [c1]);
+    expect(summary.parCreneau[0]).toMatchObject({ standsOuverts: 1, total: 2 });
+  });
+
+  it('excludes a stand with an opening that day but no overlap with the créneau (closed-by-default)', () => {
+    const c1 = creneau({ id: 1, date: '2026-08-01', heureDebut: '09:00', heureFin: '12:00' });
+    const s1 = stand({ id: 's1', effectifMin: 2 });
+    const s2 = stand({
+      id: 's2',
+      effectifMin: 5,
+      ouvertures: [{ id: null, date: c1.date, heureDebut: '20:00', heureFin: '23:00', motif: null }]
+    });
+    const summary = computeStaffingSummary([s1, s2], [c1]);
+    expect(summary.parCreneau[0]).toMatchObject({ standsOuverts: 1, total: 2 });
+  });
+
+  it('still counts a stand whose opening overlaps the créneau, even partially', () => {
+    const c1 = creneau({ id: 1, date: '2026-08-01', heureDebut: '09:00', heureFin: '14:00' });
+    const s1 = stand({
+      id: 's1',
+      effectifMin: 2,
+      ouvertures: [ouvertureIntegrale(c1)]
+    });
+    const summary = computeStaffingSummary([s1], [c1]);
+    expect(summary.parCreneau[0]).toMatchObject({ standsOuverts: 1, total: 2 });
+  });
+
+  it('ignores an opening dated on a different day than the créneau — the stand stays open by default', () => {
+    const c1 = creneau({ id: 1, date: '2026-08-01' });
+    const s1 = stand({
+      id: 's1',
+      effectifMin: 2,
+      ouvertures: [{ id: null, date: '2026-08-09', heureDebut: '09:00', heureFin: '12:00', motif: null }]
     });
     const summary = computeStaffingSummary([s1], [c1]);
     expect(summary.parCreneau[0]).toMatchObject({ standsOuverts: 1, total: 2 });

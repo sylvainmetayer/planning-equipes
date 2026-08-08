@@ -1,7 +1,12 @@
 package dev.sylvain.planning.service;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
@@ -9,6 +14,7 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.GroupeCreneau;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
+import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresSolveur;
@@ -76,6 +82,8 @@ public class ReferenceDataService {
         stand.setId(requiredId(stand.getId(), "stand id"));
         validateEffectifs(stand);
         validateIndisponibilites(stand);
+        validateOuvertures(stand);
+        validateModesExclusifsParJour(stand);
         repository.saveStand(stand);
         markModified();
         return stand;
@@ -88,6 +96,8 @@ public class ReferenceDataService {
         stand.setId(id);
         validateEffectifs(stand);
         validateIndisponibilites(stand);
+        validateOuvertures(stand);
+        validateModesExclusifsParJour(stand);
         repository.saveStand(stand);
         markModified();
         return stand;
@@ -116,6 +126,48 @@ public class ReferenceDataService {
                         "heureFin (" + indispo.getHeureFin() + ") doit être après heureDebut (" + indispo.getHeureDebut()
                                 + ") — une indisponibilité ne peut pas chevaucher minuit, entrez-en deux");
             }
+        }
+    }
+
+    /** Every opening window must be a genuine, same-day interval — see {@code OuvertureStand}. */
+    private void validateOuvertures(Stand stand) {
+        if (stand.getOuvertures() == null) {
+            return;
+        }
+        for (OuvertureStand ouverture : stand.getOuvertures()) {
+            if (ouverture.getDate() == null || ouverture.getHeureDebut() == null || ouverture.getHeureFin() == null) {
+                throw new IllegalArgumentException(
+                        "Une ouverture de stand requiert une date, une heure de début et une heure de fin");
+            }
+            if (!ouverture.getHeureFin().isAfter(ouverture.getHeureDebut())) {
+                throw new IllegalArgumentException(
+                        "heureFin (" + ouverture.getHeureFin() + ") doit être après heureDebut ("
+                                + ouverture.getHeureDebut() + ") — une ouverture ne peut pas chevaucher minuit, "
+                                + "entrez-en deux");
+            }
+        }
+    }
+
+    /**
+     * A day can never carry both a closure and an opening window: mixing the
+     * two modes for one day is ambiguous (which one does the solver honour?),
+     * so it is rejected here rather than silently picking one — see
+     * {@code OuvertureStand}'s javadoc for the three-state rule this protects.
+     */
+    private void validateModesExclusifsParJour(Stand stand) {
+        Set<LocalDate> joursFermeture = stand.getIndisponibilites().stream()
+                .map(IndisponibiliteStand::getDate)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Set<LocalDate> joursOuverture = stand.getOuvertures().stream()
+                .map(OuvertureStand::getDate)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Set<LocalDate> conflits = new TreeSet<>(joursFermeture);
+        conflits.retainAll(joursOuverture);
+        if (!conflits.isEmpty()) {
+            throw new IllegalArgumentException("Un jour ne peut pas avoir à la fois une fermeture et une ouverture "
+                    + "pour le stand " + stand.getId() + " : " + conflits);
         }
     }
 

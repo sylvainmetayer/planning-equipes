@@ -26,6 +26,7 @@ import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.GroupeCreneau;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.NiveauCompetence;
+import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresSolveur;
@@ -134,6 +135,22 @@ public class ReferenceDataRepository {
                     }
                 }
             }
+            try (PreparedStatement ps = connection.prepareStatement(
+                    "SELECT id, stand_id, date_ouverture, heure_debut, heure_fin, motif "
+                            + "FROM stand_ouverture ORDER BY id");
+                    ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Stand stand = byId.get(rs.getString("stand_id"));
+                    if (stand != null) {
+                        stand.getOuvertures().add(new OuvertureStand(
+                                rs.getLong("id"),
+                                rs.getObject("date_ouverture", LocalDate.class),
+                                rs.getObject("heure_debut", LocalTime.class),
+                                rs.getObject("heure_fin", LocalTime.class),
+                                rs.getString("motif")));
+                    }
+                }
+            }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to list stands", e);
         }
@@ -224,6 +241,26 @@ public class ReferenceDataRepository {
                     ins.setObject(3, indispo.getHeureDebut());
                     ins.setObject(4, indispo.getHeureFin());
                     ins.setString(5, indispo.getMotif());
+                    ins.addBatch();
+                }
+                ins.executeBatch();
+            }
+        }
+        try (PreparedStatement del = connection.prepareStatement(
+                "DELETE FROM stand_ouverture WHERE stand_id = ?")) {
+            del.setString(1, stand.getId());
+            del.executeUpdate();
+        }
+        if (stand.getOuvertures() != null && !stand.getOuvertures().isEmpty()) {
+            try (PreparedStatement ins = connection.prepareStatement(
+                    "INSERT INTO stand_ouverture (stand_id, date_ouverture, heure_debut, heure_fin, motif) "
+                            + "VALUES (?, ?, ?, ?, ?)")) {
+                for (OuvertureStand ouverture : stand.getOuvertures()) {
+                    ins.setString(1, stand.getId());
+                    ins.setObject(2, ouverture.getDate());
+                    ins.setObject(3, ouverture.getHeureDebut());
+                    ins.setObject(4, ouverture.getHeureFin());
+                    ins.setString(5, ouverture.getMotif());
                     ins.addBatch();
                 }
                 ins.executeBatch();
@@ -993,14 +1030,16 @@ public class ReferenceDataRepository {
 
     /** Replaces every stand (and the assignments pointing at them). */
     public void replaceStands(List<Stand> stands) {
-        replaceInTransaction(List.of("poste_affectation", "stand_typologie", "stand_indisponibilite", "stand"), connection -> {
-            for (Stand stand : stands) {
-                upsertStand(connection, stand);
-            }
-            for (TypologieItem typologie : derivedTypologies(stands, List.of())) {
-                upsertTypologie(connection, typologie);
-            }
-        }, "Failed to import stands");
+        replaceInTransaction(
+                List.of("poste_affectation", "stand_typologie", "stand_indisponibilite", "stand_ouverture", "stand"),
+                connection -> {
+                    for (Stand stand : stands) {
+                        upsertStand(connection, stand);
+                    }
+                    for (TypologieItem typologie : derivedTypologies(stands, List.of())) {
+                        upsertTypologie(connection, typologie);
+                    }
+                }, "Failed to import stands");
     }
 
     /** Replaces every timeslot (and the assignments pointing at them). */
@@ -1082,8 +1121,8 @@ public class ReferenceDataRepository {
             connection.setAutoCommit(false);
             try {
                 for (String table : List.of("contrainte_animateur", "contrainte_ad_hoc", "poste_affectation",
-                        "stand_typologie", "stand_indisponibilite", "animateur_competence", "animateur_jour_indispo",
-                        "stand", "animateur")) {
+                        "stand_typologie", "stand_indisponibilite", "stand_ouverture", "animateur_competence",
+                        "animateur_jour_indispo", "stand", "animateur")) {
                     try (PreparedStatement ps = connection.prepareStatement("DELETE FROM " + table)) {
                         ps.executeUpdate();
                     }

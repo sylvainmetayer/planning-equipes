@@ -21,6 +21,7 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.GroupeCreneau;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.NiveauCompetence;
+import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -136,6 +137,7 @@ public class PlanningPersistenceService {
         }
         rewriteStandTypologies(connection, distinctStands);
         rewriteStandIndisponibilites(connection, distinctStands);
+        rewriteStandOuvertures(connection, distinctStands);
 
         String upsertCreneau = "INSERT INTO creneau (id, date_creneau, heure_debut, heure_fin) "
                 + "VALUES (?, ?, ?, ?) ON CONFLICT (id) DO UPDATE SET "
@@ -210,6 +212,31 @@ public class PlanningPersistenceService {
                         insert.setObject(3, indispo.getHeureDebut());
                         insert.setObject(4, indispo.getHeureFin());
                         insert.setString(5, indispo.getMotif());
+                        insert.addBatch();
+                    }
+                }
+            }
+            delete.executeBatch();
+            insert.executeBatch();
+        }
+    }
+
+    private void rewriteStandOuvertures(Connection connection, List<Stand> stands) throws SQLException {
+        try (PreparedStatement delete = connection
+                        .prepareStatement("DELETE FROM stand_ouverture WHERE stand_id = ?");
+                PreparedStatement insert = connection.prepareStatement(
+                        "INSERT INTO stand_ouverture (stand_id, date_ouverture, heure_debut, heure_fin, motif) "
+                                + "VALUES (?, ?, ?, ?, ?)")) {
+            for (Stand stand : stands) {
+                delete.setString(1, stand.getId());
+                delete.addBatch();
+                if (stand.getOuvertures() != null) {
+                    for (OuvertureStand ouverture : stand.getOuvertures()) {
+                        insert.setString(1, stand.getId());
+                        insert.setObject(2, ouverture.getDate());
+                        insert.setObject(3, ouverture.getHeureDebut());
+                        insert.setObject(4, ouverture.getHeureFin());
+                        insert.setString(5, ouverture.getMotif());
                         insert.addBatch();
                     }
                 }

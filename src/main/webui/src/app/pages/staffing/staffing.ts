@@ -69,20 +69,41 @@ function splitMajeursMineurs(seats: number, reserveMajeurs: boolean): { majeurs:
 }
 
 /**
- * True when {@code stand} is closed for the whole créneau (some overlapping
- * {@link IndisponibiliteStand} windows fully cover it). Mirrors the backend's
- * conservative simplification (`FeasibilityAnalyzer`/`Creneau.estStandOuvert`):
- * a stand only partially closed still counts as "open" for this coarse
- * peak/workload estimate, since a précise per-minute demand isn't worth the
- * complexity here — see `Creneau#segmentsOuvertsMinutes` on the backend for
- * the precise version used at actual poste-generation time.
+ * True when {@code stand} is closed for the whole créneau. Mirrors the
+ * backend's conservative simplification (`FeasibilityAnalyzer`/
+ * `Creneau.estStandOuvert`): a stand only partially closed (or partially
+ * open, for a stand using `ouvertures`) still counts as "open" for this
+ * coarse peak/workload estimate, since a précise per-minute demand isn't
+ * worth the complexity here — see `Creneau#segmentsOuvertsMinutes` on the
+ * backend for the precise version used at actual poste-generation time.
+ *
+ * <p>Same three-state rule as the backend: a stand with an `ouvertures` entry
+ * on the créneau's date is closed-by-default that day (open only where an
+ * opening window overlaps); otherwise it's open-by-default, closed only where
+ * an `indisponibilites` window overlaps.</p>
  */
 function estFermeIntegralement(stand: Stand, creneau: Creneau): boolean {
   const dureeCreneau = dureeMinutes(creneau);
-  if (dureeCreneau <= 0 || !stand.indisponibilites?.length) {
+  if (dureeCreneau <= 0) {
     return false;
   }
   const debutCreneau = toMinutesSinceMidnight(creneau.heureDebut);
+
+  const ouverturesDuJour = (stand.ouvertures ?? []).filter((ouverture) => ouverture.date === creneau.date);
+  if (ouverturesDuJour.length > 0) {
+    return !ouverturesDuJour.some((ouverture) => {
+      if (!ouverture.heureDebut || !ouverture.heureFin) {
+        return false;
+      }
+      const debut = Math.max(0, toMinutesSinceMidnight(ouverture.heureDebut) - debutCreneau);
+      const fin = Math.min(dureeCreneau, toMinutesSinceMidnight(ouverture.heureFin) - debutCreneau);
+      return fin > debut;
+    });
+  }
+
+  if (!stand.indisponibilites?.length) {
+    return false;
+  }
   let fermetureMinutes = 0;
   for (const indispo of stand.indisponibilites) {
     if (indispo.date !== creneau.date || !indispo.heureDebut || !indispo.heureFin) {
