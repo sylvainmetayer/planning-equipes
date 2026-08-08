@@ -420,14 +420,20 @@ public class PlanningService {
         return lower.endsWith(".yaml") || lower.endsWith(".yml");
     }
 
-    @SuppressWarnings("unchecked")
     private PlanningFestival chargerScenarioYaml(String scenarioPath) throws IOException {
-        Map<String, Object> scenarioData = lireDonneesScenario(scenarioPath);
+        return construirePlanningDepuisDonnees(lireDonneesScenario(scenarioPath));
+    }
+
+    @SuppressWarnings("unchecked")
+    private PlanningFestival construirePlanningDepuisDonnees(Map<String, Object> scenarioData) {
         ReferenceScenario reference = chargerReferenceScenario(scenarioData);
 
         // Charger les postes
         List<PosteAffectation> postes = new ArrayList<>();
         List<Map<String, Object>> postesList = (List<Map<String, Object>>) scenarioData.get("postes");
+        if (postesList == null) {
+            throw new IllegalArgumentException("Section 'postes' manquante");
+        }
         for (Map<String, Object> posteData : postesList) {
             String id = (String) posteData.get("id");
             String standId = (String) posteData.get("standId");
@@ -445,6 +451,59 @@ public class PlanningService {
         festival.setParametresLegaux(List.of(
                 parseParametresLegaux(scenarioData).orElseGet(referenceDataService::getParametresLegaux)));
         return festival;
+    }
+
+    /**
+     * Parses a scenario YAML file uploaded by a user (same shape as the files
+     * under {@link #SCENARIOS_DIR}, typically produced by "Exporter les
+     * données actuelles en scénario") into the same result the
+     * {@code import-scenario} endpoint applies for a built-in scenario name —
+     * without ever touching the classpath. Used by the "Importer un fichier"
+     * button on the Scénarios page.
+     *
+     * <p>Every failure (malformed YAML, a missing/mistyped section) is
+     * reported as an {@link IllegalArgumentException} carrying a message
+     * meant to be shown to the user as-is, rather than surfacing the raw
+     * {@link org.yaml.snakeyaml.error.YAMLException}/{@link ClassCastException}/
+     * {@link NullPointerException} a malformed file triggers deep inside
+     * {@link #construirePlanningDepuisDonnees}.</p>
+     */
+    public ScenarioImporte construireDepuisTexteScenario(String yamlContent) {
+        if (yamlContent == null || yamlContent.isBlank()) {
+            throw new IllegalArgumentException("Le fichier est vide.");
+        }
+        Map<String, Object> scenarioData;
+        try {
+            scenarioData = parserYaml(
+                    new java.io.ByteArrayInputStream(yamlContent.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        } catch (RuntimeException e) {
+            throw new IllegalArgumentException("YAML invalide : " + messageOu(e), e);
+        }
+        if (scenarioData == null) {
+            throw new IllegalArgumentException("Le fichier ne contient aucune donnée.");
+        }
+        PlanningFestival planning;
+        try {
+            planning = construirePlanningDepuisDonnees(scenarioData);
+        } catch (RuntimeException e) {
+            throw new IllegalArgumentException("Scénario invalide : " + messageOu(e), e);
+        }
+        return new ScenarioImporte(planning, parseParametresLegaux(scenarioData),
+                parseParametresDecoupage(scenarioData), parseParametresSolveur(scenarioData));
+    }
+
+    private static String messageOu(RuntimeException e) {
+        return e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+    }
+
+    /**
+     * Result of {@link #construireDepuisTexteScenario}: the built planning plus
+     * whichever optional parameter sections the file pinned, mirroring what
+     * {@code POST /reference-data/import-scenario} applies for a named
+     * built-in scenario.
+     */
+    public record ScenarioImporte(PlanningFestival planning, Optional<ParametresLegaux> parametresLegaux,
+            Optional<ParametresDecoupage> parametresDecoupage, Optional<ParametresSolveur> parametresSolveur) {
     }
 
     /**
@@ -579,15 +638,23 @@ public class PlanningService {
     }
 
     /** Shared YAML loading for {@link #chargerScenarioYaml} and the optional-section accessors below. */
-    @SuppressWarnings("unchecked")
     private Map<String, Object> lireDonneesScenario(String scenarioPath) throws IOException {
-        LoaderOptions loaderOptions = new LoaderOptions();
-        loaderOptions.setCodePointLimit(Integer.MAX_VALUE);
-        Yaml yaml = new Yaml(new org.yaml.snakeyaml.constructor.SafeConstructor(loaderOptions));
         InputStream inputStream = getClass().getClassLoader().getResourceAsStream(scenarioPath);
         if (inputStream == null) {
             throw new IOException("Fichier de scénario non trouvé: " + scenarioPath);
         }
+        return parserYaml(inputStream);
+    }
+
+    /**
+     * Parses a scenario's raw YAML bytes, from the classpath ({@link #lireDonneesScenario})
+     * or from a user-uploaded file ({@link #construireDepuisTexteScenario}).
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> parserYaml(InputStream inputStream) {
+        LoaderOptions loaderOptions = new LoaderOptions();
+        loaderOptions.setCodePointLimit(Integer.MAX_VALUE);
+        Yaml yaml = new Yaml(new org.yaml.snakeyaml.constructor.SafeConstructor(loaderOptions));
         return yaml.load(inputStream);
     }
 
@@ -629,7 +696,7 @@ public class PlanningService {
      * scenario file, if present — lets a large/slow scenario pin the
      * termination duration it actually needs (e.g. {@code scenario-complet.yaml}
      * takes ~8 min to reach a good score) instead of relying on whichever
-     * duration is currently configured in the Débogage tab. Absent, the
+     * duration is currently configured in the Données tab. Absent, the
      * current database value is left untouched, same as
      * {@link #chargerParametresDecoupageScenario}.
      */

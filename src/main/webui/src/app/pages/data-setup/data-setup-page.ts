@@ -87,6 +87,7 @@ export class DataSetupPage {
   protected readonly resetting = signal(false);
   protected readonly exporting = signal(false);
   protected readonly transferBusy = signal(false);
+  protected readonly scenarioFileImporting = signal(false);
 
   /** Scenario files offered by the backend, and the one currently selected. */
   protected readonly scenarios = signal<string[]>([]);
@@ -121,6 +122,7 @@ export class DataSetupPage {
   protected readonly transferLocked = computed(() => this.transferBusy() || this.solverBusy());
 
   private readonly sqlInput = viewChild.required<ElementRef<HTMLInputElement>>('sqlInput');
+  private readonly scenarioFileInput = viewChild.required<ElementRef<HTMLInputElement>>('scenarioFileInput');
   /** Pre-solve diagnostic shown by the banner at the top of the page. */
   protected readonly problemes = inject(ProblemesStore);
 
@@ -284,6 +286,41 @@ export class DataSetupPage {
       this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
     } finally {
       this.exporting.set(false);
+    }
+  }
+
+  protected pickScenarioFile(): void {
+    this.scenarioFileInput().nativeElement.click();
+  }
+
+  // Unlike onSqlFileSelected/onCsvFileSelected (removed), no confirm dialog:
+  // a scenario import already replaces animateurs/stands the same way
+  // "Charger le scénario sélectionné" does, without asking either — this
+  // button is the same action, just sourced from disk instead of a bundled
+  // name.
+  protected async onScenarioFileSelected(event: Event): Promise<void> {
+    const file = takeFile(event);
+    if (!file) {
+      return;
+    }
+    this.scenarioFileImporting.set(true);
+    this.output.set($localize`:@@dataSetup.importingScenarioFile:Import de ${file.name}:fileName: en cours...`);
+    try {
+      await this.api.postRaw('/api/reference-data/import-scenario-fichier', await file.text(), 'application/x-yaml');
+      await this.refreshAfterImport();
+      this.output.set(
+        $localize`:@@dataSetup.scenarioFileImported:Scénario ${file.name}:fileName: importé. Les données de référence sont peuplées et modifiables depuis les pages de référence.`
+      );
+    } catch (error) {
+      const errorMessage = message(error);
+      this.output.set($localize`:@@common.errorPrefix:Erreur : ${errorMessage}:message:`);
+      this.notifications.notify({
+        title: $localize`:@@dataSetup.importScenarioFileInvalid:Fichier scénario invalide`,
+        message: errorMessage,
+        variant: 'error'
+      });
+    } finally {
+      this.scenarioFileImporting.set(false);
     }
   }
 

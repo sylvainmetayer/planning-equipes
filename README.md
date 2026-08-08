@@ -267,7 +267,9 @@ dures : elles ne sont jamais contournées silencieusement.
   Calendar, Apple Calendar ou Outlook (également disponible en archive ZIP pour
   l'ensemble des animateurs) ;
 - **Export / import d'un dump SQL** complet, pour dupliquer ou restaurer un jeu de
-  données.
+  données ;
+- **Import d'un fichier scénario YAML** depuis le poste de l'utilisateur,
+  avec notification détaillée en cas de fichier invalide.
 
 Formats détaillés dans [`docs/import-export.md`](docs/import-export.md).
 

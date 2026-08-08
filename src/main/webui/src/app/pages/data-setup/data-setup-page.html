@@ -125,6 +125,22 @@
         >Exporter les données actuelles en scénario</ng-container
       >
     </button>
+    <button
+      matButton="outlined"
+      class="danger-action"
+      [disabled]="transferLocked() || scenarioFileImporting()"
+      (click)="pickScenarioFile()"
+    >
+      <mat-icon>upload_file</mat-icon>
+      <ng-container i18n="@@dataSetup.importScenarioFile">Importer un fichier</ng-container>
+    </button>
+    <input
+      #scenarioFileInput
+      type="file"
+      accept=".yaml,.yml,application/x-yaml,text/yaml,text/plain"
+      hidden
+      (change)="onScenarioFileSelected($event)"
+    />
   </mat-card-actions>
 </mat-card>
 

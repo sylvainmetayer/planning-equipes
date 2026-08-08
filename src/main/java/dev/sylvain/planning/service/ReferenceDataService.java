@@ -503,7 +503,7 @@ public class ReferenceDataService {
     }
 
     /**
-     * Saves the solver's default termination duration (Débogage tab). Not a
+     * Saves the solver's default termination duration (Données tab). Not a
      * problem fact and not tracked by {@link ReferenceDataChangeTracker}: it
      * only changes how long a solve/analyze runs, not the reference data fed
      * to it.

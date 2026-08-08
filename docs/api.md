@@ -196,6 +196,14 @@ sont aussi appliqués — `parametresSolveur.dureeResolutionSecondes` reconfigur
 la durée de résolution (onglet Données) ; absents, les réglages actuellement
 en base sont laissés tels quels.
 
+`POST /api/reference-data/import-scenario-fichier` fait la même chose pour un
+scénario envoyé en corps de requête (bouton « Importer un fichier » de
+l'onglet Données), plutôt qu'un nom de fichier du dossier `scenarios/` —
+même format YAML, typiquement celui produit par « Exporter les données
+actuelles en scénario ». Un fichier invalide (YAML mal formé, section
+manquante) renvoie `400` avec `{"message": "…"}` décrivant l'erreur, sans
+rien importer.
+
 ## Découpage automatique en vacations
 
 Découpe les amplitudes d'un groupe de créneaux source en vacations plus

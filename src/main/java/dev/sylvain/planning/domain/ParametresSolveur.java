@@ -1,7 +1,7 @@
 package dev.sylvain.planning.domain;
 
 /**
- * Admin-configurable solver termination duration (Débogage tab). Never seen
+ * Admin-configurable solver termination duration (Données tab). Never seen
  * by the solver as a problem fact — it is only read back by the frontend to
  * build the {@code ?seconds=} query param on a solve/analyze request, so
  * every browser sends the same value instead of a per-browser one.

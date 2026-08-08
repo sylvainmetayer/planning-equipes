@@ -237,7 +237,7 @@ public class ReferenceDataResource {
      * authored/verified against travel with it instead of silently depending
      * on whatever is already configured. {@code parametresSolveur} in
      * particular lets a large scenario auto-configure the termination
-     * duration it actually needs (Débogage tab), instead of leaving the
+     * duration it actually needs (Données tab), instead of leaving the
      * caller to guess or under-time a solve. Absent, the current database
      * values are left untouched.
      */
@@ -251,6 +251,33 @@ public class ReferenceDataResource {
                 .ifPresent(referenceDataService::updateParametresDecoupage);
         planningService.chargerParametresSolveurScenario(name).ifPresent(referenceDataService::updateParametresSolveur);
         return Response.noContent().build();
+    }
+
+    /**
+     * Same import as {@link #importScenario}, but for a scenario YAML file
+     * uploaded from the user's own machine rather than one bundled under
+     * {@code src/main/resources/scenarios} — the "Importer un fichier" button
+     * on the Scénarios page, for a file produced by "Exporter les données
+     * actuelles en scénario" (or hand-authored in the same shape). Returns
+     * 400 with the parsing/validation error as-is when the file is invalid,
+     * instead of importing nothing silently.
+     */
+    @POST
+    @Path("/reference-data/import-scenario-fichier")
+    @Consumes(MediaType.WILDCARD)
+    public Response importScenarioFichier(String yamlContent) {
+        try {
+            PlanningService.ScenarioImporte importe = planningService.construireDepuisTexteScenario(yamlContent);
+            referenceDataService.importFromPlanning(importe.planning());
+            importe.parametresLegaux().ifPresent(referenceDataService::updateParametresLegaux);
+            importe.parametresDecoupage().ifPresent(referenceDataService::updateParametresDecoupage);
+            importe.parametresSolveur().ifPresent(referenceDataService::updateParametresSolveur);
+            return Response.noContent().build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ErreurValidation(e.getMessage()))
+                    .build();
+        }
     }
 
     @GET
@@ -318,7 +345,7 @@ public class ReferenceDataResource {
         return referenceDataService.getParametresSolveur();
     }
 
-    /** Saves the solver's default termination duration (Débogage tab). Returns 400 when the value isn't positive. */
+    /** Saves the solver's default termination duration (Données tab). Returns 400 when the value isn't positive. */
     @PUT
     @Path("/parametres-solveur")
     public Response updateParametresSolveur(ParametresSolveur parametres) {

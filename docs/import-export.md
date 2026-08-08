@@ -34,6 +34,14 @@ remplacement :
   supprimées en totalité à chaque import, quel que soit le groupe, puisqu'elles
   n'ont pas de notion de groupe propre.
 
+Le bouton « Importer un fichier » de la page Data setup fait la même chose
+(`POST /api/reference-data/import-scenario-fichier`) à partir d'un fichier
+YAML choisi sur le poste de l'utilisateur, plutôt qu'un scénario nommé du
+dossier `scenarios/` — typiquement celui produit par « Exporter les données
+actuelles en scénario », ou un fichier écrit à la main dans le même format.
+Un fichier invalide (YAML mal formé, section obligatoire manquante) n'importe
+rien et affiche une notification avec le détail de l'erreur.
+
 ## Exports de planning (PDF / ICS)
 
 Générés **côté serveur** — pas de génération dans le navigateur :
