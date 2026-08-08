@@ -275,7 +275,7 @@ réapplique ce réglage à chaque import plutôt que de dépendre d'une valeur
 laissée en base par une session précédente. `parametresSolveur.dureeResolutionSecondes`
 permet en particulier à un gros scénario (ex. `scenario-complet.yaml`, ~8 min
 pour atteindre un bon score) d'auto-configurer la durée de résolution
-(onglet Débogage) plutôt que de dépendre d'une valeur laissée par un scénario
+(onglet Données) plutôt que de dépendre d'une valeur laissée par un scénario
 précédent, plus rapide. Absentes du fichier (cas de tous les autres
 scénarios), ces trois sections sont sans effet : `construireExemple` retombe
 sur les `ParametresLegaux` actuellement en base, et l'import laisse

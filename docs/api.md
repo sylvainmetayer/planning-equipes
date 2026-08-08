@@ -147,7 +147,7 @@ est acceptée.
 
 | Méthode | Chemin | Description |
 | --- | --- | --- |
-| `GET` | `/api/parametres-solveur` | Durée de résolution par défaut (onglet Débogage) |
+| `GET` | `/api/parametres-solveur` | Durée de résolution par défaut (onglet Données) |
 | `PUT` | `/api/parametres-solveur` | Met à jour cette durée |
 
 ```json
@@ -192,7 +192,7 @@ fichier définit `parametresLegaux:`, `parametresDecoupage:` et/ou
 `parametresSolveur:` (sections optionnelles, voir
 [`domaine.md`](domaine.md#découpage-automatique-en-vacations)), ces réglages
 sont aussi appliqués — `parametresSolveur.dureeResolutionSecondes` reconfigure
-la durée de résolution (onglet Débogage) ; absents, les réglages actuellement
+la durée de résolution (onglet Données) ; absents, les réglages actuellement
 en base sont laissés tels quels.
 
 ## Découpage automatique en vacations

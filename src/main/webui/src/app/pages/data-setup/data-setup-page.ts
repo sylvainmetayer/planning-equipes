@@ -1,12 +1,15 @@
 import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
 import { MatListModule } from '@angular/material/list';
 import { MatSelectModule } from '@angular/material/select';
 import { ApiService } from '../../core/api.service';
 import { ImportSummary, ResetSummary } from '../../core/models';
+import { NotificationService } from '../../core/notification.service';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { ProblemesStore } from '../../core/problemes.store';
@@ -18,6 +21,41 @@ import { FeasibilityBanner } from '../../shared/feasibility-banner';
 import { OutputPanel } from '../../shared/output-panel';
 
 type CsvEntity = 'animateurs' | 'stands' | 'creneaux';
+
+/** Unit the Data setup page edits the solver duration in — always converted to/from seconds for the API. */
+export type SolverDurationUnit = 'SECONDES' | 'MINUTES' | 'HEURES';
+
+const SOLVER_DURATION_UNIT_FACTORS: Record<SolverDurationUnit, number> = {
+  SECONDES: 1,
+  MINUTES: 60,
+  HEURES: 3600
+};
+
+/** Per-unit `<input type="number">` granularity: whole seconds, half-minutes, quarter-hours. */
+const SOLVER_DURATION_UNIT_STEP: Record<SolverDurationUnit, number> = {
+  SECONDES: 1,
+  MINUTES: 0.5,
+  HEURES: 0.25
+};
+
+function secondsToValue(seconds: number, unit: SolverDurationUnit): number {
+  return seconds / SOLVER_DURATION_UNIT_FACTORS[unit];
+}
+
+function valueToSeconds(value: number, unit: SolverDurationUnit): number {
+  return value * SOLVER_DURATION_UNIT_FACTORS[unit];
+}
+
+/** Picks the largest unit that represents `seconds` as a whole number, so e.g. 180s shows as "3 min", not "0.05 h". */
+function bestUnitFor(seconds: number): SolverDurationUnit {
+  if (seconds !== 0 && seconds % SOLVER_DURATION_UNIT_FACTORS.HEURES === 0) {
+    return 'HEURES';
+  }
+  if (seconds % SOLVER_DURATION_UNIT_FACTORS.MINUTES === 0) {
+    return 'MINUTES';
+  }
+  return 'SECONDES';
+}
 
 /**
  * Data page: seeds/resets the database, exports it as a scenario file, and
@@ -33,10 +71,12 @@ type CsvEntity = 'animateurs' | 'stands' | 'creneaux';
 @Component({
   selector: 'app-data-setup-page',
   imports: [
+    FormsModule,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
     MatFormFieldModule,
+    MatInputModule,
     MatSelectModule,
     MatListModule,
     FeasibilityBanner,
@@ -55,6 +95,29 @@ export class DataSetupPage {
   /** Scenario files offered by the backend, and the one currently selected. */
   protected readonly scenarios = signal<string[]>([]);
   protected readonly selectedScenario = signal<string | null>(null);
+
+  protected readonly solverDurationLoading = signal(false);
+  protected readonly solverDurationSaving = signal(false);
+  protected readonly solverDurationError = signal('');
+
+  /**
+   * Editable value + unit for the duration persisted server-side as seconds
+   * (`/api/parametres-solveur`), only sent back when the user clicks
+   * "Enregistrer" — an unsaved value never silently applies. Tracked against
+   * {@link solverDurationSecondsSaved} rather than {@link SolverSettingsService}
+   * directly, since that signal is fetched asynchronously and may not be
+   * loaded yet when this field initializes.
+   */
+  protected readonly solverDurationUnit = signal<SolverDurationUnit>('MINUTES');
+  protected readonly solverDurationValueDraft = signal(0);
+  protected readonly solverDurationSecondsSaved = signal(0);
+  protected readonly solverDurationSecondsDraft = computed(() =>
+    valueToSeconds(this.solverDurationValueDraft(), this.solverDurationUnit())
+  );
+  protected readonly solverDurationDirty = computed(
+    () => Math.round(this.solverDurationSecondsDraft()) !== this.solverDurationSecondsSaved()
+  );
+  protected readonly solverDurationStep = computed(() => SOLVER_DURATION_UNIT_STEP[this.solverDurationUnit()]);
 
   /** The server-side solver lock: also covers a solve/analysis from another browser. */
   protected readonly solverBusy = computed(() => this.jobs.solverBusy());
@@ -77,6 +140,7 @@ export class DataSetupPage {
   private readonly confirm = inject(ConfirmService);
   private readonly jobs = inject(SolverJobService);
   private readonly solverSettings = inject(SolverSettingsService);
+  private readonly notifications = inject(NotificationService);
 
   /** Entity awaiting the file picked in the shared CSV file input. */
   private pendingCsvEntity: CsvEntity | null = null;
@@ -84,6 +148,7 @@ export class DataSetupPage {
   constructor() {
     void this.loadScenarioList();
     void this.problemes.reloadFeasibility();
+    void this.loadSolverDuration();
   }
 
   // Fills the dropdown with the scenario files exposed by the backend. Selects
@@ -104,6 +169,56 @@ export class DataSetupPage {
 
   protected onSelectScenario(name: string): void {
     this.selectedScenario.set(name);
+  }
+
+  private async loadSolverDuration(): Promise<void> {
+    this.solverDurationLoading.set(true);
+    this.solverDurationError.set('');
+    try {
+      await this.solverSettings.refresh();
+      const seconds = this.solverSettings.secondsLimit();
+      this.applySolverDurationSeconds(seconds, bestUnitFor(seconds));
+    } catch (error) {
+      this.solverDurationError.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
+    } finally {
+      this.solverDurationLoading.set(false);
+    }
+  }
+
+  protected onSolverDurationValueDraftChange(value: number): void {
+    this.solverDurationValueDraft.set(value);
+  }
+
+  /** Switching unit re-expresses the current draft value, it never resets it (e.g. 3 min → 180 s, not back to 0). */
+  protected onSolverDurationUnitChange(unit: SolverDurationUnit): void {
+    const seconds = this.solverDurationSecondsDraft();
+    this.solverDurationUnit.set(unit);
+    this.solverDurationValueDraft.set(secondsToValue(seconds, unit));
+  }
+
+  protected async saveSolverDuration(): Promise<void> {
+    this.solverDurationSaving.set(true);
+    this.solverDurationError.set('');
+    try {
+      await this.solverSettings.setSecondsLimit(this.solverDurationSecondsDraft());
+      this.applySolverDurationSeconds(this.solverSettings.secondsLimit(), this.solverDurationUnit());
+      this.notifications.notify({
+        title: $localize`:@@dataSetup.solverDuration.saved:Durée de résolution enregistrée`,
+        message: $localize`:@@dataSetup.solverDuration.savedHint:Appliquée à tous les navigateurs.`,
+        variant: 'success'
+      });
+    } catch (error) {
+      this.solverDurationError.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
+    } finally {
+      this.solverDurationSaving.set(false);
+    }
+  }
+
+  /** Syncs draft + saved state from a seconds value freshly read from (or written to) the server, in the given unit. */
+  private applySolverDurationSeconds(seconds: number, unit: SolverDurationUnit): void {
+    this.solverDurationUnit.set(unit);
+    this.solverDurationValueDraft.set(secondsToValue(seconds, unit));
+    this.solverDurationSecondsSaved.set(Math.round(seconds));
   }
 
   protected async onLoadSample(): Promise<void> {
@@ -282,7 +397,7 @@ export class DataSetupPage {
   // and moves both the resolved groupe de créneaux and the "data edited since
   // the last solve" stamp the toolbar warnings are computed from. A scenario
   // may also have pinned its own solver duration (see import-scenario), so
-  // the Débogage tab's value is refreshed too — harmless when unchanged.
+  // the field on this page is refreshed too — harmless when unchanged.
   // The feasibility diagnostic is recomputed from the new dataset for the same
   // reason: it is about to drive the decision to launch a solve.
   private async refreshAfterImport(): Promise<void> {
