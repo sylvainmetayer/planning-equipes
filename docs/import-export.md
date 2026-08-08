@@ -12,52 +12,6 @@ toutes les tables métier), téléchargeable depuis l'IHM.
 seules les instructions `INSERT` / `DELETE` / `TRUNCATE` sur les tables métier
 sont acceptées, tout le reste est rejeté (400).
 
-## Import CSV
-
-Un import **remplace l'intégralité** de la table concernée et supprime les
-affectations existantes (elles référenceraient des lignes disparues).
-
-Règles de format :
-
-- ligne d'en-tête obligatoire ;
-- séparateur `;` ou `,` (détecté automatiquement) ;
-- valeurs multiples séparées par `|` ;
-- dates ISO `yyyy-MM-dd`, heures ISO `HH:mm`.
-
-| Entité | Colonnes |
-| --- | --- |
-| `animateurs` | `id;prenom;nom;dateNaissance;manager;competences;joursIndisponibles` |
-| `stands` | `id;nom;typologies;effectifMin;effectifMax;reserveMajeurs;premium` |
-| `creneaux` | `date;heureDebut;heureFin` (id généré, jour calculé) |
-
-Un import `creneaux` remplace la table dans son intégralité, **tous groupes
-de créneaux confondus** — pas seulement ceux du groupe actif — et les lignes
-importées sont rattachées au groupe « Défaut ». Voir
-[`domaine.md`](domaine.md) pour la notion de groupe de créneaux.
-
-- `manager` : `true` / `false` (colonne facultative, vide = `false`) — anime et encadre d'autres
-  animateurs ; tous les animateurs sont payés.
-- `competences` : `STRATEGIE:REFERENT|ENFANT:AUTONOME`
-  (typologies : `STRATEGIE, AMBIANCE, ENFANT, COOPERATIF, ADRESSE, ROLE, ENIGME` ;
-  niveaux : `DEBUTANT, AUTONOME, REFERENT`)
-- `joursIndisponibles` : `2026-07-02|2026-07-03` (colonne facultative, vide = toujours disponible)
-- `typologies` : `STRATEGIE|ENFANT`
-- `reserveMajeurs` : `true` / `false` (`1`, `oui`, `yes` acceptés)
-- `premium` : `true` / `false` (colonne facultative, vide = `false`) — stand éditeur/vedette :
-  le solveur évite d'y faire tourner le personnel et privilégie les animateurs expérimentés
-  (`AUTONOME`/`REFERENT`)
-
-Exemple :
-
-```csv
-id;prenom;nom;dateNaissance;manager;competences;joursIndisponibles
-A-1;Ada;Lovelace;1990-05-04;true;STRATEGIE:REFERENT|ENFANT:AUTONOME;2026-07-02
-A-2;Alan;Turing;2010-01-15;false;;
-```
-
-Une ligne invalide annule tout l'import et renvoie un message précisant le numéro
-de ligne et la colonne fautive.
-
 ## Chargement de scénario
 
 `POST /api/reference-data/import-scenario?name=...` (bouton « Charger le

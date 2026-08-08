@@ -78,14 +78,14 @@ dans [`domaine.md`](domaine.md).
 | `ConstraintAnalysisStore` | Mémorise le résultat de la dernière analyse pour l'onglet « Constraints » |
 | `ReferenceDataService` / `ReferenceDataRepository` | CRUD référentiels (stands, créneaux, animateurs, typologies, contraintes ad hoc) |
 | `PlanningPersistenceService` | Lecture / écriture du planning persisté |
-| `CsvImportService`, `DatabaseDumpService` | Imports CSV et export / import de dump SQL |
+| `DatabaseDumpService` | Export / import de dump SQL |
 | `PlanningExportService` | Génération PDF (OpenPDF) et ICS, **côté serveur uniquement** |
 
 ### `api/`
 
 Ressources JAX-RS : `PlanningResource`, `SolverJobResource`, `ReferenceDataResource`,
-`ConstraintResource`, `CsvImportResource`, `DatabaseResource`,
-`PlanningExportResource`. Voir [`api.md`](api.md).
+`ConstraintResource`, `DatabaseResource`, `PlanningExportResource`. Voir
+[`api.md`](api.md).
 
 ## Frontend
 
@@ -129,7 +129,7 @@ Chaque bloc fonctionnel a **sa propre route et sa propre page**, chargée en
 | `/solver` (défaut) | `app/pages/solver/` | Scénario d'exemple, réinitialisation, résolution, analyse |
 | `/debug` | `app/pages/debug/` | Diagnostics du solveur et état interne |
 | `/problemes` | `app/pages/problemes/` | Vue centralisée des problèmes, triés par gravité : causes d'infaisabilité (`GET /api/feasibility`, sans résolution) + règles en défaut de la dernière analyse |
-| `/data-setup` | `app/pages/data-setup/` | Scénarios d'exemple, réinitialisation, export scénario, export/import de dump SQL, imports CSV |
+| `/data-setup` | `app/pages/data-setup/` | Scénarios d'exemple, réinitialisation, export scénario, export/import de dump SQL, durée de résolution du solveur |
 | `/stands` | `app/pages/stands/` | CRUD des stands |
 | `/emplacements` | `app/pages/emplacements/` | CRUD des emplacements (avec sélection sur carte) |
 | `/animateurs` | `app/pages/animateurs/` | CRUD des animateurs (compétences, jours d'indisponibilité) |

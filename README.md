@@ -266,8 +266,6 @@ dures : elles ne sont jamais contournées silencieusement.
 - **Export ICS** du planning individuel, importable directement dans Google
   Calendar, Apple Calendar ou Outlook (également disponible en archive ZIP pour
   l'ensemble des animateurs) ;
-- **Import CSV** en masse des animateurs, stands et créneaux — indispensable à
-  l'échelle de 150 profils ;
 - **Export / import d'un dump SQL** complet, pour dupliquer ou restaurer un jeu de
   données.
 

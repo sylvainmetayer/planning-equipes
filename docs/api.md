@@ -214,7 +214,6 @@ courtes et chevauchantes (voir [`domaine.md`](domaine.md#découpage-automatique-
 | --- | --- | --- |
 | `GET` | `/api/database/export` | Dump SQL autonome de toutes les tables métier |
 | `POST` | `/api/database/import` | Rejoue un dump SQL dans une transaction unique |
-| `POST` | `/api/import/csv/{animateurs\|stands\|creneaux}` | Import CSV d'un référentiel |
 
 Détail des formats : [`import-export.md`](import-export.md).
 

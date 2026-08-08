@@ -5,7 +5,6 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatListModule } from '@angular/material/list';
 import { MatSelectModule } from '@angular/material/select';
 import { ApiService } from '../../core/api.service';
 import { ImportSummary, ResetSummary } from '../../core/models';
@@ -19,8 +18,6 @@ import { SolverSettingsService } from '../../core/solver-settings.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { FeasibilityBanner } from '../../shared/feasibility-banner';
 import { OutputPanel } from '../../shared/output-panel';
-
-type CsvEntity = 'animateurs' | 'stands' | 'creneaux';
 
 /** Unit the Data setup page edits the solver duration in — always converted to/from seconds for the API. */
 export type SolverDurationUnit = 'SECONDES' | 'MINUTES' | 'HEURES';
@@ -59,9 +56,9 @@ function bestUnitFor(seconds: number): SolverDurationUnit {
 
 /**
  * Data page: seeds/resets the database, exports it as a scenario file, and
- * transfers data via SQL dump or CSV. All actions rebuild or replace part of
- * the dataset, so they are locked while any solver job (solve or analysis)
- * is running for the server.
+ * transfers data via SQL dump. All actions rebuild or replace part of the
+ * dataset, so they are locked while any solver job (solve or analysis) is
+ * running for the server.
  *
  * Also the last screen before a solve is launched, so it runs the solver-free
  * feasibility check (`GET /api/feasibility`) on entry and after every action
@@ -78,7 +75,6 @@ function bestUnitFor(seconds: number): SolverDurationUnit {
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
-    MatListModule,
     FeasibilityBanner,
     OutputPanel
   ],
@@ -125,7 +121,6 @@ export class DataSetupPage {
   protected readonly transferLocked = computed(() => this.transferBusy() || this.solverBusy());
 
   private readonly sqlInput = viewChild.required<ElementRef<HTMLInputElement>>('sqlInput');
-  private readonly csvInput = viewChild.required<ElementRef<HTMLInputElement>>('csvInput');
   /** Pre-solve diagnostic shown by the banner at the top of the page. */
   protected readonly problemes = inject(ProblemesStore);
 
@@ -141,9 +136,6 @@ export class DataSetupPage {
   private readonly jobs = inject(SolverJobService);
   private readonly solverSettings = inject(SolverSettingsService);
   private readonly notifications = inject(NotificationService);
-
-  /** Entity awaiting the file picked in the shared CSV file input. */
-  private pendingCsvEntity: CsvEntity | null = null;
 
   constructor() {
     void this.loadScenarioList();
@@ -311,11 +303,6 @@ export class DataSetupPage {
     this.sqlInput().nativeElement.click();
   }
 
-  protected pickCsvFile(entity: CsvEntity): void {
-    this.pendingCsvEntity = entity;
-    this.csvInput().nativeElement.click();
-  }
-
   protected async onSqlFileSelected(event: Event): Promise<void> {
     const file = takeFile(event);
     if (!file) {
@@ -337,39 +324,6 @@ export class DataSetupPage {
         '/api/database/import',
         await file.text(),
         'application/sql'
-      );
-      await this.refreshAfterImport();
-      this.output.set(summary.message);
-    } catch (error) {
-      this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
-    } finally {
-      this.transferBusy.set(false);
-    }
-  }
-
-  protected async onCsvFileSelected(event: Event): Promise<void> {
-    const entity = this.pendingCsvEntity;
-    const file = takeFile(event);
-    this.pendingCsvEntity = null;
-    if (!file || !entity) {
-      return;
-    }
-    const confirmed = await this.confirm.ask({
-      title: $localize`:@@dataTransfer.importCsvTitle:Importer ${entity}:entity: depuis un CSV ?`,
-      message: $localize`:@@dataTransfer.importCsvMessage:${file.name}:fileName: remplace toutes les lignes de ${entity}:entity: et supprime les affectations existantes.`,
-      confirmLabel: $localize`:@@dataTransfer.importAction:Importer`,
-      danger: true
-    });
-    if (!confirmed) {
-      return;
-    }
-    this.transferBusy.set(true);
-    this.output.set($localize`:@@dataTransfer.importingAs:Import de ${file.name}:fileName: en tant que ${entity}:entity:...`);
-    try {
-      const summary = await this.api.postRaw<ImportSummary>(
-        `/api/import/csv/${entity}`,
-        await file.text(),
-        'text/csv'
       );
       await this.refreshAfterImport();
       this.output.set(summary.message);

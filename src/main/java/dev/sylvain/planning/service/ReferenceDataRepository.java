@@ -359,10 +359,9 @@ public class ReferenceDataRepository {
 
     /**
      * Replaces every créneau of one specific group (source-amplitudes or
-     * generated-vacations), leaving every other group untouched — unlike
-     * {@link #replaceCreneaux(List)}, which is a global, all-groups CSV-import
-     * replace. Used by the découpage generator to (re)materialize a target
-     * group's vacations from a source group's amplitudes.
+     * generated-vacations), leaving every other group untouched. Used by the
+     * découpage generator to (re)materialize a target group's vacations from
+     * a source group's amplitudes.
      */
     public void replaceCreneauxDuGroupe(String groupeId, List<Creneau> creneaux) {
         try (Connection connection = dataSource.getConnection()) {
@@ -1008,75 +1007,6 @@ public class ReferenceDataRepository {
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to save constraint toggle", e);
         }
-    }
-
-    /* ------------------------------ CSV replace ----------------------------- */
-
-    /**
-     * Replaces every animator with the imported list. Assignments are dropped
-     * as well: they reference animators that may no longer exist.
-     */
-    public void replaceAnimateurs(List<Animateur> animateurs) {
-        replaceInTransaction(List.of("poste_affectation", "animateur_competence", "animateur_jour_indispo",
-                "contrainte_animateur", "animateur"), connection -> {
-                    for (Animateur animateur : animateurs) {
-                        upsertAnimateur(connection, animateur);
-                    }
-                    for (TypologieItem typologie : derivedTypologies(List.of(), animateurs)) {
-                        upsertTypologie(connection, typologie);
-                    }
-                }, "Failed to import animateurs");
-    }
-
-    /** Replaces every stand (and the assignments pointing at them). */
-    public void replaceStands(List<Stand> stands) {
-        replaceInTransaction(
-                List.of("poste_affectation", "stand_typologie", "stand_indisponibilite", "stand_ouverture", "stand"),
-                connection -> {
-                    for (Stand stand : stands) {
-                        upsertStand(connection, stand);
-                    }
-                    for (TypologieItem typologie : derivedTypologies(stands, List.of())) {
-                        upsertTypologie(connection, typologie);
-                    }
-                }, "Failed to import stands");
-    }
-
-    /** Replaces every timeslot (and the assignments pointing at them). */
-    public void replaceCreneaux(List<Creneau> creneaux) {
-        replaceInTransaction(List.of("poste_affectation", "creneau"), connection -> {
-            for (Creneau creneau : creneaux) {
-                insertCreneauTx(connection, creneau);
-            }
-        }, "Failed to import creneaux");
-    }
-
-    private void replaceInTransaction(List<String> tablesToClear, ConnectionWork work, String errorMessage) {
-        try (Connection connection = dataSource.getConnection()) {
-            boolean previousAutoCommit = connection.getAutoCommit();
-            connection.setAutoCommit(false);
-            try {
-                for (String table : tablesToClear) {
-                    try (PreparedStatement ps = connection.prepareStatement("DELETE FROM " + table)) {
-                        ps.executeUpdate();
-                    }
-                }
-                work.execute(connection);
-                connection.commit();
-            } catch (SQLException e) {
-                connection.rollback();
-                throw e;
-            } finally {
-                connection.setAutoCommit(previousAutoCommit);
-            }
-        } catch (SQLException e) {
-            throw new IllegalStateException(errorMessage, e);
-        }
-    }
-
-    @FunctionalInterface
-    private interface ConnectionWork {
-        void execute(Connection connection) throws SQLException;
     }
 
     /* -------------------------------- Import ------------------------------- */
