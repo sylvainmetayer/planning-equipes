@@ -55,6 +55,16 @@ change.
 | `SENTRY_DSN` | *(vide)* | DSN du projet Bugsink (ou tout endpoint compatible Sentry). Vide = désactivé, backend et frontend. |
 | `SENTRY_ENVIRONMENT` | `local` | Étiquette d'environnement (`production`, `staging`, …) jointe à chaque erreur remontée. |
 
+### Vérifier le câblage
+
+L'onglet Débogage propose deux boutons, « Exception front » et « Exception
+back », qui génèrent chacun une exception de test — respectivement une
+exception JS non rattrapée côté navigateur (`ErrorHandler` Angular) et un
+appel à `POST /api/debug/test-exception`, qui lève systématiquement côté
+serveur pour passer par `GlobalExceptionMapper`. Utile pour confirmer qu'un
+DSN fraîchement configuré remonte bien jusqu'à Bugsink/Sentry, sans attendre
+un vrai bug.
+
 ## Analytics d'usage (PostHog)
 
 ### Mise en place de PostHog

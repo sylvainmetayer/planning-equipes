@@ -30,6 +30,19 @@
         <ng-container i18n="@@debug.testNotification.alert">Alert</ng-container>
       </button>
     </div>
+    <p class="debug-version" i18n="@@debug.testException.hint">
+      Génère une exception de test, pour vérifier que le suivi d'erreurs (Sentry/Bugsink) est bien branché :
+    </p>
+    <div class="calendar-toolbar">
+      <button matButton="outlined" type="button" (click)="triggerFrontException()">
+        <mat-icon>bug_report</mat-icon>
+        <ng-container i18n="@@debug.testException.front">Exception front</ng-container>
+      </button>
+      <button matButton="outlined" type="button" (click)="triggerBackException()">
+        <mat-icon>bug_report</mat-icon>
+        <ng-container i18n="@@debug.testException.back">Exception back</ng-container>
+      </button>
+    </div>
     <p class="debug-version">
       <ng-container i18n="@@debug.version">Version :</ng-container>
       <a [href]="repoUrl + '/commit/' + appVersion" target="_blank" rel="noopener">{{ appVersion }}</a>
