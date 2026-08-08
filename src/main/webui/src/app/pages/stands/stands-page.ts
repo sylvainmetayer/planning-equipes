@@ -26,7 +26,7 @@ import { StandFormData, StandFormDialog } from './stand-form-dialog';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class StandsPage {
-  protected readonly columns = ['id', 'nom', 'effectif', 'typologies', 'emplacement', 'fermetures', 'actions'];
+  protected readonly columns = ['id', 'nom', 'effectif', 'typologies', 'emplacement', 'fermetures', 'ouvertures', 'actions'];
   protected readonly store = inject(ReferenceDataStore);
   protected readonly jobs = inject(SolverJobService);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
