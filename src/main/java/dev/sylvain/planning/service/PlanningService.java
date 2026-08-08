@@ -39,6 +39,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ConstraintToggle;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
+import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
@@ -422,11 +423,53 @@ public class PlanningService {
     @SuppressWarnings("unchecked")
     private PlanningFestival chargerScenarioYaml(String scenarioPath) throws IOException {
         Map<String, Object> scenarioData = lireDonneesScenario(scenarioPath);
+        ReferenceScenario reference = chargerReferenceScenario(scenarioData);
 
+        // Charger les postes
+        List<PosteAffectation> postes = new ArrayList<>();
+        List<Map<String, Object>> postesList = (List<Map<String, Object>>) scenarioData.get("postes");
+        for (Map<String, Object> posteData : postesList) {
+            String id = (String) posteData.get("id");
+            String standId = (String) posteData.get("standId");
+            String creneauId = (String) posteData.get("creneauId");
+
+            Stand stand = reference.standsParId().get(standId);
+            Creneau creneau = reference.creneauxParId().get(creneauId);
+
+            PosteAffectation poste = new PosteAffectation(id, stand, creneau);
+            postes.add(poste);
+        }
+
+        PlanningFestival festival = new PlanningFestival(reference.dateDebut(), reference.animateurs(), postes,
+                referenceDataService.snapshotContraintes());
+        festival.setParametresLegaux(List.of(
+                parseParametresLegaux(scenarioData).orElseGet(referenceDataService::getParametresLegaux)));
+        return festival;
+    }
+
+    /**
+     * Loads a scenario's raw stands/animateurs/creneaux, ignoring any
+     * hand-authored {@code postes:} list — unlike {@link #construireExemple},
+     * which uses that list as-is. For tests that need to run découpage (see
+     * {@link VacationGeneratorService}) on the raw créneaux themselves before
+     * building postes via {@link #construirePostes}, the way
+     * {@link #construireDepuisReferenceData} does against the database.
+     */
+    ReferenceScenario chargerReferenceScenario(String scenarioName) throws IOException {
+        return chargerReferenceScenario(lireDonneesScenario(SCENARIOS_DIR + "/" + scenarioName));
+    }
+
+    /** {@code creneaux}/{@code stands}/{@code animateurs} sections of a scenario file, parsed and cross-linked. */
+    record ReferenceScenario(LocalDate dateDebut, Map<String, Creneau> creneauxParId, Map<String, Stand> standsParId,
+            List<Animateur> animateurs) {
+    }
+
+    @SuppressWarnings("unchecked")
+    private ReferenceScenario chargerReferenceScenario(Map<String, Object> scenarioData) {
         // Charger les creneaux : le fichier YAML porte un id texte historique
-        // (utilisé seulement pour relier postes/creneaux entre eux ci-dessous),
-        // remplacé ici par un id numérique synthétique ; jour est recalculé
-        // (voir Creneau.assignerJours), la valeur du fichier est ignorée.
+        // (utilisé seulement pour relier postes/creneaux entre eux), remplacé
+        // ici par un id numérique synthétique ; jour est recalculé (voir
+        // Creneau.assignerJours), la valeur du fichier est ignorée.
         Map<String, Creneau> creneauxMap = new HashMap<>();
         long compteurCreneauId = 1;
         List<Map<String, Object>> creneauxList = (List<Map<String, Object>>) scenarioData.get("creneaux");
@@ -481,9 +524,21 @@ public class PlanningService {
             if (emplacementId != null) {
                 stand.setEmplacement(emplacementsMap.get(emplacementId));
             }
+            List<Map<String, Object>> indisponibilitesData = (List<Map<String, Object>>) standData.get("indisponibilites");
+            if (indisponibilitesData != null) {
+                List<IndisponibiliteStand> indisponibilites = new ArrayList<>();
+                for (Map<String, Object> indispoData : indisponibilitesData) {
+                    LocalDate date = parseLocalDate(indispoData.get("date"), "stands.indisponibilites.date");
+                    LocalTime heureDebut = LocalTime.parse((String) indispoData.get("heureDebut"));
+                    LocalTime heureFin = LocalTime.parse((String) indispoData.get("heureFin"));
+                    String motif = (String) indispoData.get("motif");
+                    indisponibilites.add(new IndisponibiliteStand(null, date, heureDebut, heureFin, motif));
+                }
+                stand.setIndisponibilites(indisponibilites);
+            }
             standsMap.put(id, stand);
         }
-        
+
         // Charger les animateurs
         List<Animateur> animateurs = new ArrayList<>();
         List<Map<String, Object>> animateursList = (List<Map<String, Object>>) scenarioData.get("animateurs");
@@ -495,7 +550,7 @@ public class PlanningService {
             boolean manager = Boolean.TRUE.equals(animateurData.get("manager"));
 
             Animateur animateur = new Animateur(id, prenom, nom, dateNaissance, manager);
-            
+
             // Charger les compétences
             Map<String, String> competencesData = (Map<String, String>) animateurData.get("competences");
             Map<TypologieJeu, NiveauCompetence> competences = new HashMap<>();
@@ -503,7 +558,7 @@ public class PlanningService {
                 competences.put(TypologieJeu.valueOf(entry.getKey()), NiveauCompetence.valueOf(entry.getValue()));
             }
             animateur.setCompetences(competences);
-            
+
             // Charger les jours d'indisponibilité (opt-out: available by default)
             List<Object> joursOffData = (List<Object>) animateurData.get("joursIndisponibles");
             Set<LocalDate> joursIndisponibles = joursOffData == null
@@ -515,31 +570,12 @@ public class PlanningService {
 
             animateurs.add(animateur);
         }
-        
-        // Charger les postes
-        List<PosteAffectation> postes = new ArrayList<>();
-        List<Map<String, Object>> postesList = (List<Map<String, Object>>) scenarioData.get("postes");
-        for (Map<String, Object> posteData : postesList) {
-            String id = (String) posteData.get("id");
-            String standId = (String) posteData.get("standId");
-            String creneauId = (String) posteData.get("creneauId");
-            
-            Stand stand = standsMap.get(standId);
-            Creneau creneau = creneauxMap.get(creneauId);
-            
-            PosteAffectation poste = new PosteAffectation(id, stand, creneau);
-            postes.add(poste);
-        }
-        
+
         LocalDate dateDebut = parseLocalDate(
             ((Map<String, Object>) scenarioData.get("festival")).get("dateDebut"),
             "festival.dateDebut");
 
-        PlanningFestival festival = new PlanningFestival(dateDebut, animateurs, postes,
-                referenceDataService.snapshotContraintes());
-        festival.setParametresLegaux(List.of(
-                parseParametresLegaux(scenarioData).orElseGet(referenceDataService::getParametresLegaux)));
-        return festival;
+        return new ReferenceScenario(dateDebut, creneauxMap, standsMap, animateurs);
     }
 
     /** Shared YAML loading for {@link #chargerScenarioYaml} and the optional-section accessors below. */
