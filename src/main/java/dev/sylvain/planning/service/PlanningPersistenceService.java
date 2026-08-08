@@ -8,6 +8,7 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -260,8 +261,9 @@ public class PlanningPersistenceService {
             statement.executeUpdate("DELETE FROM poste_affectation");
         }
 
-        String insert = "INSERT INTO poste_affectation (id, stand_id, creneau_id, animateur_id) "
-                + "VALUES (?, ?, ?, ?)";
+        String insert = "INSERT INTO poste_affectation "
+                + "(id, stand_id, creneau_id, animateur_id, heure_debut_effective, heure_fin_effective) "
+                + "VALUES (?, ?, ?, ?, ?, ?)";
         int count = 0;
         try (PreparedStatement ps = connection.prepareStatement(insert)) {
             for (PosteAffectation poste : postes) {
@@ -272,6 +274,8 @@ public class PlanningPersistenceService {
                 ps.setString(2, poste.getStand().getId());
                 ps.setLong(3, poste.getCreneau().getId());
                 ps.setString(4, poste.getAnimateur() != null ? poste.getAnimateur().getId() : null);
+                ps.setObject(5, poste.getHeureDebutEffective());
+                ps.setObject(6, poste.getHeureFinEffective());
                 ps.addBatch();
                 count++;
             }
@@ -361,7 +365,8 @@ public class PlanningPersistenceService {
         Map<Long, Creneau> creneauxById = indexById(referenceDataService.listCreneaux(), Creneau::getId);
 
         List<PosteAffectation> postes = new ArrayList<>();
-        String sql = "SELECT id, stand_id, creneau_id, animateur_id FROM poste_affectation ORDER BY id";
+        String sql = "SELECT id, stand_id, creneau_id, animateur_id, heure_debut_effective, heure_fin_effective "
+                + "FROM poste_affectation ORDER BY id";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {
@@ -376,6 +381,8 @@ public class PlanningPersistenceService {
                 if (animateurId != null) {
                     poste.setAnimateur(animateursById.get(animateurId));
                 }
+                poste.setHeureDebutEffective(rs.getObject("heure_debut_effective", LocalTime.class));
+                poste.setHeureFinEffective(rs.getObject("heure_fin_effective", LocalTime.class));
                 postes.add(poste);
             }
         } catch (SQLException e) {
