@@ -1,6 +1,6 @@
 // Regression: filtering the month calendar by animateur must not flag a
 // fully-staffed stand as understaffed just because the filter hid its other
-// animateurs from `names` — reported live at
+// animateurs from `entries` — reported live at
 // /calendar?month=2026-07&animateur=A5, where every créneau was actually
 // correctly staffed but nearly all of them showed the warning once filtered
 // down to a single animateur. Needs TestBed (ActivatedRoute/Router), unlike
@@ -16,9 +16,13 @@ import { CalendarMonthPage } from './calendar-month-page';
 
 interface StandLineView {
   standId: string;
-  names: string[];
+  entries: { label: string }[];
   totalAssigned: number;
   effectifMin: number;
+}
+
+function labels(line: StandLineView): string[] {
+  return line.entries.map((entry) => entry.label);
 }
 
 interface SlotEntryView {
@@ -71,7 +75,7 @@ function setUp(postes: PosteAffectation[], queryParams: Record<string, string> =
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
-      { provide: PlanningStateService, useValue: { loadForDisplay: vi.fn(async () => ({ postes })) } },
+      { provide: PlanningStateService, useValue: { loadForDisplay: vi.fn(async () => ({ animateurs: [], postes })) } },
       { provide: Router, useValue: { navigate: vi.fn(async () => true) } },
       { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } } }
     ]
@@ -106,7 +110,7 @@ describe('CalendarMonthPage — understaffing vs. animateur filter', () => {
     await fixture.whenStable();
 
     const line = page.daySlots()[0].stands[0];
-    expect(line.names).toEqual(['A1']); // display still narrows to the filtered animateur...
+    expect(labels(line)).toEqual(['A1']); // display still narrows to the filtered animateur...
     expect(line.totalAssigned).toBe(2); // ...but the true headcount used for the flag does not.
   });
 
@@ -131,11 +135,11 @@ describe('CalendarMonthPage — understaffing vs. animateur filter', () => {
     await fixture.whenStable();
 
     const line = page.daySlots()[0].stands[0];
-    expect(line.names).toEqual(['A1']);
+    expect(labels(line)).toEqual(['A1']);
     expect(line.totalAssigned).toBe(2); // 2 assigned out of 3 required: still understaffed, correctly.
   });
 
-  it('stand-only filtering never needs correcting: names.length already equals the true headcount', async () => {
+  it('stand-only filtering never needs correcting: entries.length already equals the true headcount', async () => {
     const s1 = stand('S1', 2);
     const s2 = stand('S2', 1);
     const c1 = creneau(1, '2026-07-17');

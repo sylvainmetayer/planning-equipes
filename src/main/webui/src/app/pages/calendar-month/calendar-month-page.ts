@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatDialog } from '@angular/material/dialog';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -11,7 +12,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, Router } from '@angular/router';
 import { intlLocale } from '../../core/locale';
 import { PlanningStateService } from '../../core/planning-state.service';
-import { PosteAffectation } from '../../core/models';
+import { Animateur, PlanningFestival, PosteAffectation, Stand } from '../../core/models';
+import { AffectationExplanationDialog } from '../../shared/affectation-explanation-dialog';
 import {
   buildMonthCells,
   getMonthStart,
@@ -24,12 +26,17 @@ import {
   uniqueById
 } from '../../core/date-utils';
 
+interface AssignedEntry {
+  poste: PosteAffectation;
+  label: string;
+}
+
 interface StandLine {
   /** Identity of the line: two distinct stands may well share the same name. */
   standId: string;
   standNom: string;
   /**
-   * The window actually staffed by `names` — the poste's effective window if
+   * The window actually staffed by `entries` — the poste's effective window if
    * a partial stand closure (issue #60) narrowed it, otherwise the créneau's
    * own hours. Two segments of the same stand and créneau (one on each side
    * of a mid-créneau closure) become two separate lines, each with its own
@@ -37,13 +44,14 @@ interface StandLine {
    */
   heureDebut: string;
   heureFin: string;
-  names: string[];
-  /** The stand's required headcount for this line, to flag understaffing (some but not enough names). */
+  /** One per filled seat, narrowed by the animateur/stand filters like the rest of the line — see `totalAssigned` for the unfiltered headcount. */
+  entries: AssignedEntry[];
+  /** The stand's required headcount for this line, to flag understaffing (some but not enough entries). */
   effectifMin: number;
   /**
    * Total animateurs actually assigned to this line, ignoring the
-   * animateur/stand filters — `names.length` once those filters have
-   * narrowed `names` down to a subset would otherwise flag a fully-staffed
+   * animateur/stand filters — `entries.length` once those filters have
+   * narrowed `entries` down to a subset would otherwise flag a fully-staffed
    * stand as understaffed just because the filter hid its other animateurs.
    */
   totalAssigned: number;
@@ -98,7 +106,8 @@ const ALL = 'ALL';
 export class CalendarMonthPage {
   protected readonly error = signal('');
   protected readonly loading = signal(false);
-  protected readonly postes = signal<PosteAffectation[]>([]);
+  protected readonly planning = signal<PlanningFestival | null>(null);
+  protected readonly postes = computed<PosteAffectation[]>(() => this.planning()?.postes ?? []);
   protected readonly loaded = signal(false);
 
   protected readonly month = signal(getMonthStart(new Date()));
@@ -109,10 +118,12 @@ export class CalendarMonthPage {
   private readonly planningState = inject(PlanningStateService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly dialog = inject(MatDialog);
 
   protected readonly dayDetailsFallback = $localize`:@@calendarMonth.dayDetails:Détails du jour`;
   protected readonly unassignedLabel = $localize`:@@calendarMonth.unassigned:(non assigné)`;
   protected readonly cellUnderstaffedTooltip = $localize`:@@calendarMonth.cellUnderstaffed:Au moins un stand en sous-effectif ce jour-là`;
+  protected readonly pourquoiLuiLabel = $localize`:@@affectationExplanation.tooltip:Pourquoi lui ?`;
 
   protected readonly monthLabel = computed(() =>
     this.month().toLocaleDateString(intlLocale(), { month: 'long', year: 'numeric' })
@@ -149,13 +160,13 @@ export class CalendarMonthPage {
     const filteredView = buildAssignmentsByDate(filtered);
     if (animateurId === ALL) {
       // The stand filter alone never drops other animateurs from a line, so
-      // names.length (== totalAssigned here) is already accurate.
+      // entries.length (== totalAssigned here) is already accurate.
       return filteredView;
     }
-    // The animateur filter narrows `names` down to just that person, which
+    // The animateur filter narrows `entries` down to just that person, which
     // would otherwise make a fully-staffed stand (e.g. 2/2) look
     // understaffed once filtered to only one of the two. totalAssigned is
-    // corrected from the full, unfiltered roster; `names` itself stays
+    // corrected from the full, unfiltered roster; `entries` itself stays
     // filtered — showing only the matching animateur per line is the point.
     return withTrueHeadcounts(filteredView, buildAssignmentsByDate(allPostes));
   });
@@ -271,11 +282,10 @@ export class CalendarMonthPage {
     this.loading.set(true);
     this.error.set('');
     try {
-      const planning = await this.planningState.loadForDisplay();
-      this.postes.set(planning.postes ?? []);
+      this.planning.set(await this.planningState.loadForDisplay());
       this.loaded.set(true);
     } catch (error) {
-      this.postes.set([]);
+      this.planning.set(null);
       const message = error instanceof Error ? error.message : String(error);
       this.error.set($localize`:@@common.errorPrefix:Erreur : ${message}:message:`);
     } finally {
@@ -327,6 +337,25 @@ export class CalendarMonthPage {
   protected understaffedTooltip(stand: StandLine): string {
     return $localize`:@@calendarDay.understaffed:Sous-effectif : ${stand.totalAssigned}:count: / ${stand.effectifMin}:min: animateur(s) affecté(s)`;
   }
+
+  /** Opens the "Pourquoi lui ?" dialog for one filled seat, offering every other competent animateur as a swap candidate. */
+  protected openExplanation(poste: PosteAffectation): void {
+    const planning = this.planning();
+    if (!planning) {
+      return;
+    }
+    const candidats = (planning.animateurs ?? []).filter(
+      (animateur) => animateur.id !== poste.animateur?.id && poste.stand && estCompetent(animateur, poste.stand)
+    );
+    this.dialog.open(AffectationExplanationDialog, {
+      data: { poste, planning, candidats },
+      width: '32rem'
+    });
+  }
+}
+
+function estCompetent(animateur: Animateur, stand: Stand): boolean {
+  return stand.typologiesProposees.some((typologie) => typologie in (animateur.competences ?? {}));
 }
 
 /** True for a stand-line with some, but fewer than `effectifMin`, animateurs actually assigned — fully unassigned (0) is already flagged separately. */
@@ -345,10 +374,10 @@ function standLineKey(line: StandLine): string {
 
 /**
  * Replaces every line's `totalAssigned` in `filtered` with the matching
- * line's from `truth` (same date + créneau + stand-line), leaving `names`
+ * line's from `truth` (same date + créneau + stand-line), leaving `entries`
  * and everything else untouched. Used when the animateur filter has
  * narrowed `filtered`'s postes: without this, `totalAssigned` would equal
- * `names.length` of the filtered subset instead of the stand's real
+ * `entries.length` of the filtered subset instead of the stand's real
  * headcount.
  */
 function withTrueHeadcounts(filtered: Map<string, SlotEntry[]>, truth: Map<string, SlotEntry[]>): Map<string, SlotEntry[]> {
@@ -436,14 +465,15 @@ export function buildAssignmentsByDate(postes: PosteAffectation[]): Map<string, 
         standNom: stand.nom || stand.id,
         heureDebut,
         heureFin,
-        names: [],
+        entries: [],
         effectifMin: Math.max(1, stand.effectifMin),
-        totalAssigned: 0 // recomputed from `names.length` once every poste is accounted for, below.
+        totalAssigned: 0 // recomputed from `entries.length` once every poste is accounted for, below.
       };
       slot.standMap.set(lineKey, line);
     }
     if (poste.animateur) {
-      line.names.push(`${poste.animateur.prenom ?? ''} ${poste.animateur.nom ?? ''}`.trim());
+      const label = `${poste.animateur.prenom ?? ''} ${poste.animateur.nom ?? ''}`.trim();
+      line.entries.push({ poste, label });
     }
   });
 
@@ -456,7 +486,7 @@ export function buildAssignmentsByDate(postes: PosteAffectation[]): Map<string, 
         heureFin: slot.heureFin,
         jour: slot.jour,
         stands: Array.from(slot.standMap.values())
-          .map((line) => ({ ...line, totalAssigned: line.names.length }))
+          .map((line) => ({ ...line, totalAssigned: line.entries.length }))
           .sort(
             (left, right) => left.standNom.localeCompare(right.standNom) || left.heureDebut.localeCompare(right.heureDebut)
           )

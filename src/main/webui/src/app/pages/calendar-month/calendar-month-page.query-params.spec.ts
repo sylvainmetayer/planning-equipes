@@ -25,7 +25,7 @@ function setUp(queryParams: Record<string, string>) {
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
-      { provide: PlanningStateService, useValue: { loadForDisplay: vi.fn(async () => ({ postes: [] })) } },
+      { provide: PlanningStateService, useValue: { loadForDisplay: vi.fn(async () => ({ animateurs: [], postes: [] })) } },
       { provide: Router, useValue: { navigate } },
       { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } } }
     ]

@@ -175,7 +175,7 @@ standalone) :
 | `app/shared/feasibility-banner.ts` | Alerte si le plan n'est pas fiable : soit la capacité pré-résolution (`FeasibilityReport`, avec ses causes les plus graves), soit le score dur réellement atteint (`hardScore` < 0 après résolution, y compris quand la capacité pré-résolution disait « réalisable ») |
 | `app/shared/problem-summary-banner.ts` | Bannière de synthèse (nombre de problèmes par gravité) sur la page Solveur, avec un lien vers la page Problèmes |
 | `app/shared/violation-details-dialog.ts` | Modale « qui/quoi/quand » listant chaque violation d'une contrainte dure (page Contraintes), à partir de `ConstraintView.violations` |
-| `app/shared/affectation-explanation-dialog.ts` | Modale « Pourquoi lui ? » : contraintes violées/respectées pour un poste, et simulation de remplacement (calendrier journalier) |
+| `app/shared/affectation-explanation-dialog.ts` | Modale « Pourquoi lui ? » : contraintes violées/respectées pour un poste, et simulation de remplacement (calendriers journalier et des affectations) |
 | `app/shared/map-picker.ts` | Sélection de coordonnées sur une carte, utilisée par le formulaire d'emplacement |
 
 Conventions :
