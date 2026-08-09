@@ -3,9 +3,11 @@ import {
   buildMonthCells,
   getMonthStart,
   parseDateKey,
+  parseMonthKey,
   pickDefaultDateKey,
   shiftMonth,
   toDateKey,
+  toMonthKey,
   uniqueById
 } from './date-utils';
 
@@ -48,6 +50,31 @@ describe('toDateKey / parseDateKey', () => {
     expect(date.getFullYear()).toBe(2026);
     expect(date.getMonth()).toBe(6);
     expect(date.getDate()).toBe(8);
+  });
+});
+
+describe('toMonthKey / parseMonthKey', () => {
+  it('formats a date as a zero-padded yyyy-MM key', () => {
+    expect(toMonthKey(new Date(2026, 6, 8))).toBe('2026-07');
+  });
+
+  it('is the inverse of parseMonthKey', () => {
+    const key = '2026-01';
+    expect(toMonthKey(parseMonthKey(key)!)).toBe(key);
+  });
+
+  it('parses a key into the first day of that month', () => {
+    const date = parseMonthKey('2026-07')!;
+    expect(date.getFullYear()).toBe(2026);
+    expect(date.getMonth()).toBe(6);
+    expect(date.getDate()).toBe(1);
+  });
+
+  it('rejects a malformed key (e.g. a hand-edited URL) instead of returning an invalid date', () => {
+    expect(parseMonthKey('not-a-month')).toBeNull();
+    expect(parseMonthKey('2026-13')).toBeNull();
+    expect(parseMonthKey('2026-07-08')).toBeNull();
+    expect(parseMonthKey('')).toBeNull();
   });
 });
 

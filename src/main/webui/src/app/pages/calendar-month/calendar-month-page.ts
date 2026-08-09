@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
@@ -8,6 +8,7 @@ import { MatListModule } from '@angular/material/list';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { ActivatedRoute, Router } from '@angular/router';
 import { intlLocale } from '../../core/locale';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { PosteAffectation } from '../../core/models';
@@ -15,9 +16,11 @@ import {
   buildMonthCells,
   getMonthStart,
   parseDateKey,
+  parseMonthKey,
   pickDefaultDateKey,
   shiftMonth,
   toDateKey,
+  toMonthKey,
   uniqueById
 } from '../../core/date-utils';
 
@@ -97,6 +100,8 @@ export class CalendarMonthPage {
   protected readonly standFilter = signal(ALL);
 
   private readonly planningState = inject(PlanningStateService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   protected readonly dayDetailsFallback = $localize`:@@calendarMonth.dayDetails:Détails du jour`;
   protected readonly unassignedLabel = $localize`:@@calendarMonth.unassigned:(non assigné)`;
@@ -147,9 +152,7 @@ export class CalendarMonthPage {
     if (keys.length === 0) {
       return null;
     }
-    const month = this.month();
-    const monthKey = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}`;
-    return pickDefaultDateKey(keys, monthKey);
+    return pickDefaultDateKey(keys, toMonthKey(this.month()));
   });
 
   protected readonly cells = computed<MonthCell[]>(() => {
@@ -203,7 +206,44 @@ export class CalendarMonthPage {
   });
 
   constructor() {
+    this.seedStateFromQueryParams();
     void this.refresh();
+    // Keeps month/day/filters in the URL so a refresh (F5) restores the view
+    // instead of resetting it — replaceUrl avoids piling up a history entry
+    // per click while browsing (month nav, day/filter changes all go through
+    // the same effect).
+    effect(() => this.syncQueryParams());
+  }
+
+  private seedStateFromQueryParams(): void {
+    const params = this.route.snapshot.queryParamMap;
+    const month = params.get('month');
+    const parsedMonth = month ? parseMonthKey(month) : null;
+    if (parsedMonth) {
+      this.month.set(parsedMonth);
+    }
+    const date = params.get('date');
+    if (date) {
+      this.selectedDateKey.set(date);
+    }
+    const animateur = params.get('animateur');
+    if (animateur) {
+      this.animateurFilter.set(animateur);
+    }
+    const stand = params.get('stand');
+    if (stand) {
+      this.standFilter.set(stand);
+    }
+  }
+
+  private syncQueryParams(): void {
+    const queryParams = {
+      month: toMonthKey(this.month()),
+      date: this.selectedDateKey(),
+      animateur: this.animateurFilter() === ALL ? null : this.animateurFilter(),
+      stand: this.standFilter() === ALL ? null : this.standFilter()
+    };
+    void this.router.navigate([], { relativeTo: this.route, queryParams, replaceUrl: true });
   }
 
   protected async refresh(): Promise<void> {

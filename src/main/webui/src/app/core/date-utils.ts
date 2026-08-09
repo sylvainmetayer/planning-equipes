@@ -19,6 +19,23 @@ export function parseDateKey(dateKey: string): Date {
   return new Date(year, month - 1, day);
 }
 
+export function toMonthKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
+/** Inverse of {@link toMonthKey}; `null` for anything that isn't a well-formed yyyy-MM key (e.g. a hand-edited URL). */
+export function parseMonthKey(monthKey: string): Date | null {
+  const match = /^(\d{4})-(\d{2})$/.exec(monthKey);
+  if (!match) {
+    return null;
+  }
+  const month = Number(match[2]);
+  if (month < 1 || month > 12) {
+    return null;
+  }
+  return new Date(Number(match[1]), month - 1, 1);
+}
+
 /** Six weeks of cells, starting on the Monday before the first of the month. */
 export function buildMonthCells(monthDate: Date): Date[] {
   const start = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
