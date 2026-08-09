@@ -16,6 +16,9 @@
       <ng-container i18n="@@hours.exportCsv">Exporter en CSV</ng-container>
     </button>
   </mat-card-actions>
+  @if (busy()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
   @if (rapport(); as report) {
     <mat-card-content class="table-wrapper">
       <table mat-table [dataSource]="sortedAnimateurs()" matSort [matSortActive]="sort().active" [matSortDirection]="sort().direction" (matSortChange)="sort.set($event)">

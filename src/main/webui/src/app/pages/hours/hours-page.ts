@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { ApiService } from '../../core/api.service';
@@ -18,7 +19,16 @@ import { OutputPanel } from '../../shared/output-panel';
  */
 @Component({
   selector: 'app-hours-page',
-  imports: [MatCardModule, MatButtonModule, MatIconModule, MatTableModule, MatSortModule, DecimalPipe, OutputPanel],
+  imports: [
+    MatCardModule,
+    MatButtonModule,
+    MatIconModule,
+    MatProgressBarModule,
+    MatTableModule,
+    MatSortModule,
+    DecimalPipe,
+    OutputPanel
+  ],
   templateUrl: './hours-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
