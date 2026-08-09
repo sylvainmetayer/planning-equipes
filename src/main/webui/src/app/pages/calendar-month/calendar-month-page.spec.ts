@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Animateur, Creneau, PosteAffectation, Stand } from '../../core/models';
-import { buildAssignmentsByDate, hasUnderstaffedStand } from './calendar-month-page';
+import { buildAssignmentsByDate, disambiguateLabels, hasUnderstaffedStand } from './calendar-month-page';
 
 function creneau(overrides: Partial<Creneau> & { id: number }): Creneau {
   return { jour: 1, date: '2026-08-01', heureDebut: '13:40', heureFin: '19:00', groupe: null, ...overrides };
@@ -103,5 +103,43 @@ describe('buildAssignmentsByDate — understaffing indicator', () => {
     ]);
 
     expect(hasUnderstaffedStand(byDate.get('2026-07-17'))).toBe(false);
+  });
+});
+
+describe('disambiguateLabels', () => {
+  it('leaves unique labels untouched', () => {
+    const options = disambiguateLabels([
+      { value: 'A1', label: 'Ada Lovelace' },
+      { value: 'A2', label: 'Alan Turing' }
+    ]);
+
+    expect(options).toEqual([
+      { value: 'A1', label: 'Ada Lovelace' },
+      { value: 'A2', label: 'Alan Turing' }
+    ]);
+  });
+
+  it('appends the id to every option sharing a label with another one', () => {
+    // Regression: the roster enforces no uniqueness on "Prénom Nom" — two
+    // different animateurs named "Yasmine Laurent" (A79, A83) made the
+    // filter dropdown's "Yasmine Laurent" entry pick just one of them
+    // silently, so selecting the wrong one looked like the understaffing
+    // flag itself was broken (it wasn't — the filter was just on the
+    // fully-staffed namesake, not the understaffed one).
+    const options = disambiguateLabels([
+      { value: 'A79', label: 'Yasmine Laurent' },
+      { value: 'A83', label: 'Yasmine Laurent' },
+      { value: 'A1', label: 'Ada Lovelace' }
+    ]);
+
+    expect(options).toEqual([
+      { value: 'A79', label: 'Yasmine Laurent (A79)' },
+      { value: 'A83', label: 'Yasmine Laurent (A83)' },
+      { value: 'A1', label: 'Ada Lovelace' }
+    ]);
+  });
+
+  it('handles an empty list', () => {
+    expect(disambiguateLabels([])).toEqual([]);
   });
 });

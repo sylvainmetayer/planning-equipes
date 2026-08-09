@@ -67,7 +67,7 @@ interface MonthCell {
   understaffed: boolean;
 }
 
-interface FilterOption {
+export interface FilterOption {
   value: string;
   label: string;
 }
@@ -119,18 +119,20 @@ export class CalendarMonthPage {
   );
 
   protected readonly animateurOptions = computed<FilterOption[]>(() =>
-    uniqueById(this.postes().map((poste) => poste.animateur).filter((animateur) => !!animateur))
-      .map((animateur) => ({
-        value: animateur.id,
-        label: `${animateur.prenom ?? ''} ${animateur.nom ?? ''}`.trim()
-      }))
-      .sort((left, right) => left.label.localeCompare(right.label))
+    disambiguateLabels(
+      uniqueById(this.postes().map((poste) => poste.animateur).filter((animateur) => !!animateur)).map(
+        (animateur) => ({ value: animateur.id, label: `${animateur.prenom ?? ''} ${animateur.nom ?? ''}`.trim() })
+      )
+    ).sort((left, right) => left.label.localeCompare(right.label))
   );
 
   protected readonly standOptions = computed<FilterOption[]>(() =>
-    uniqueById(this.postes().map((poste) => poste.stand).filter((stand) => !!stand))
-      .map((stand) => ({ value: stand.id, label: stand.nom || stand.id }))
-      .sort((left, right) => left.label.localeCompare(right.label))
+    disambiguateLabels(
+      uniqueById(this.postes().map((poste) => poste.stand).filter((stand) => !!stand)).map((stand) => ({
+        value: stand.id,
+        label: stand.nom || stand.id
+      }))
+    ).sort((left, right) => left.label.localeCompare(right.label))
   );
 
   /** Assignments of the filtered postes, grouped by date then by timeslot. */
@@ -370,6 +372,26 @@ function withTrueHeadcounts(filtered: Map<string, SlotEntry[]>, truth: Map<strin
     );
   });
   return result;
+}
+
+/**
+ * Appends the id to any option whose label collides with another one's — two
+ * animateurs can share the exact same "Prénom Nom" (the roster has no
+ * uniqueness rule on it), and an unqualified "Yasmine Laurent" in the filter
+ * dropdown silently picks *one specific* animateur out of however many share
+ * that name. Filtering by the wrong same-named animateur previously looked
+ * like the understaffing flag itself was broken (issue: selecting the
+ * understaffed one's name showed no warning) when it was really just
+ * filtering on their same-named colleague instead.
+ */
+export function disambiguateLabels(options: FilterOption[]): FilterOption[] {
+  const counts = new Map<string, number>();
+  for (const option of options) {
+    counts.set(option.label, (counts.get(option.label) ?? 0) + 1);
+  }
+  return options.map((option) =>
+    (counts.get(option.label) ?? 0) > 1 ? { ...option, label: `${option.label} (${option.value})` } : option
+  );
 }
 
 function buildWeekdayAbbreviations(): string[] {
