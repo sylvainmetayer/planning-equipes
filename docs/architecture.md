@@ -126,7 +126,7 @@ Chaque bloc fonctionnel a **sa propre route et sa propre page**, chargée en
 
 | Route | Page | Contenu |
 | --- | --- | --- |
-| `/solver` (défaut) | `app/pages/solver/` | Scénario d'exemple, réinitialisation, résolution, analyse |
+| `/` (défaut) | `app/pages/solver/` | Scénario d'exemple, réinitialisation, résolution, analyse |
 | `/debug` | `app/pages/debug/` | Diagnostics du solveur et état interne |
 | `/problemes` | `app/pages/problemes/` | Vue centralisée des problèmes, triés par gravité : causes d'infaisabilité (`GET /api/feasibility`, sans résolution) + règles en défaut de la dernière analyse |
 | `/data-setup` | `app/pages/data-setup/` | Scénarios d'exemple, réinitialisation, export scénario, export/import de dump SQL, durée de résolution du solveur |
@@ -142,8 +142,9 @@ Chaque bloc fonctionnel a **sa propre route et sa propre page**, chargée en
 | `/hours` | `app/pages/hours/` | Heures planifiées par animateur et par semaine |
 | `/staffing` | `app/pages/staffing/` | Besoin minimum en effectif par créneau |
 
-`/exports` redirige vers `/solver` (les exports PDF / ICS sont déclenchés depuis
-la page de résolution) ; toute route inconnue redirige également vers `/solver`.
+`/exports` et `/solver` (son ancienne route) redirigent vers `/` (les exports
+PDF / ICS sont déclenchés depuis la page de résolution) ; toute route inconnue
+redirige également vers `/`.
 
 Le code est organisé par responsabilité, sans module `NgModule` (composants
 standalone) :

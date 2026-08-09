@@ -53,7 +53,7 @@ function buildNavGroups(): NavGroup[] {
   {
     title: $localize`:@@nav.group.planning:Planning`,
     links: [
-      { path: '/solver', label: $localize`:@@nav.link.solver:Solveur`, icon: 'play_circle' },
+      { path: '/', label: $localize`:@@nav.link.solver:Solveur`, icon: 'play_circle' },
       {
         path: '/notifications',
         label: $localize`:@@nav.link.notifications:Notifications`,

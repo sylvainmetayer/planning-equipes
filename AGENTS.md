@@ -119,13 +119,14 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
 - Shell: `app/app.ts` renders a `mat-toolbar` + `mat-sidenav` with the navigation
   grouped in Planning / Reference data / Views, and the solver `app-job-monitor`
   in the toolbar.
-- **One route = one page = one block.** Routes: `/solver` (default), `/debug`,
-  `/notifications`, `/data-setup`, `/stands`, `/emplacements`, `/animateurs`,
-  `/creneaux`, `/decoupage`, `/typologies`, `/ad-hoc-constraints`, `/calendar`,
-  `/day-calendar`, `/constraints`, `/problemes`, `/hours`, `/staffing`
-  (`/exports` and `/data-transfer` are legacy redirects, kept for old
-  bookmarks/links). Adding a functional block means adding a route and a
-  `app/pages/<block>/` folder, never a new section inside an existing page.
+- **One route = one page = one block.** Routes: `/` (default, the solver page),
+  `/debug`, `/notifications`, `/data-setup`, `/stands`, `/emplacements`,
+  `/animateurs`, `/creneaux`, `/decoupage`, `/typologies`,
+  `/ad-hoc-constraints`, `/calendar`, `/day-calendar`, `/constraints`,
+  `/problemes`, `/hours`, `/staffing` (`/solver`, `/exports` and
+  `/data-transfer` are legacy redirects, kept for old bookmarks/links).
+  Adding a functional block means adding a route and a `app/pages/<block>/`
+  folder, never a new section inside an existing page.
 - Layout: `app/core/` holds shared services (`api.service.ts` — the only place
   doing HTTP, `downloadFile` returns a status string and never touches the DOM;
   `models.ts`; `date-utils.ts`, week starts Monday; `planning-state.service.ts`;

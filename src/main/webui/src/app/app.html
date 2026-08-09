@@ -25,7 +25,8 @@
               <span matListItemTitle>{{ link.label }}</span>
             </a>
           } @else {
-            <a mat-list-item [routerLink]="link.path" routerLinkActive="active-link" (click)="onNavigate()">
+            <a mat-list-item [routerLink]="link.path" routerLinkActive="active-link"
+               [routerLinkActiveOptions]="{ exact: link.path === '/' }" (click)="onNavigate()">
               @if (link.badge === 'notifications') {
                 <mat-icon
                   matListItemIcon

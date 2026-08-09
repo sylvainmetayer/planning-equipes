@@ -2,9 +2,8 @@ import { Routes } from '@angular/router';
 
 /** One route per functional block; every page is lazy-loaded. */
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'solver' },
   {
-    path: 'solver',
+    path: '',
     title: 'Solver — Planning Équipes',
     loadComponent: () => import('./pages/solver/solver-page').then((m) => m.SolverPage)
   },
@@ -28,7 +27,8 @@ export const routes: Routes = [
     title: 'Data — Planning Équipes',
     loadComponent: () => import('./pages/data-setup/data-setup-page').then((m) => m.DataSetupPage)
   },
-  { path: 'exports', redirectTo: 'solver' },
+  { path: 'exports', redirectTo: '' },
+  { path: 'solver', redirectTo: '' },
   { path: 'data-transfer', redirectTo: 'data-setup' },
   {
     path: 'stands',
@@ -90,5 +90,5 @@ export const routes: Routes = [
     title: 'Staffing need — Planning Équipes',
     loadComponent: () => import('./pages/staffing/staffing-page').then((m) => m.StaffingPage)
   },
-  { path: '**', redirectTo: 'solver' }
+  { path: '**', redirectTo: '' }
 ];
