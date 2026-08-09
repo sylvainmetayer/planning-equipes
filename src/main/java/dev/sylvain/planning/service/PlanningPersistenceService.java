@@ -63,9 +63,11 @@ public class PlanningPersistenceService {
 
     /**
      * Empties the database: wipes every planning table (stands, timeslots,
-     * animators, assignments and constraints) without loading any scenario.
-     * Typologies are kept: they are seeded by the Flyway migrations, not by a
-     * scenario. Used by the "Reset BDD" admin action to start from scratch.
+     * animators, assignments and constraints) without loading any scenario,
+     * and resets the timeslot groups ({@code groupe_creneau}) back to the
+     * single default group. Typologies are kept: they are seeded by the
+     * Flyway migrations, not by a scenario. Used by the "Reset BDD" admin
+     * action to start from scratch.
      */
     public void clearDatabase() {
         inTransaction(connection -> {
@@ -78,8 +80,9 @@ public class PlanningPersistenceService {
         try (Statement statement = connection.createStatement()) {
             statement.executeUpdate("TRUNCATE TABLE poste_affectation, planning_resolution, contrainte_animateur, "
                     + "contrainte_ad_hoc, stand_typologie, animateur_competence, animateur_jour_indispo, "
-                    + "stand, creneau, animateur "
+                    + "stand, creneau, animateur, groupe_creneau "
                     + "CASCADE");
+            statement.executeUpdate("INSERT INTO groupe_creneau (id, nom, actif) VALUES ('DEFAUT', 'Défaut', TRUE)");
         }
     }
 

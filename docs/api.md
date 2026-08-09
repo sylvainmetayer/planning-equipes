@@ -17,7 +17,7 @@ JSON sauf mention contraire.
 | `GET` | `/api/planning/sample` | Jeu d'exemple construit depuis `scenario.yml` (non résolu) |
 | `POST` | `/api/solve` | Résout un `PlanningFestival` envoyé en JSON (synchrone) |
 | `POST` | `/api/solve/analyze` | Analyse un planning : score et contraintes violées |
-| `POST` | `/api/planning/reset` | Recharge le scénario d'exemple en base **sans** résolution (bouton « Reset BDD ») |
+| `POST` | `/api/planning/reset` | Vide la base (stands, créneaux, animateurs, affectations, contraintes) sans charger de scénario ; les groupes de créneaux sont réinitialisés au seul groupe `DEFAUT` actif (bouton « Reset BDD ») |
 | `GET` | `/api/planning/persisted` | Planning persisté en base, lecture seule (utilisé par les vues calendrier, qui ne déclenchent jamais de résolution) |
 | `GET` | `/api/planning/persisted/count` | Nombre d'affectations persistées |
 | `GET` | `/api/planning/persisted/resolution` | Groupe de créneaux et date de la dernière résolution persistée (`solved: false` si aucune résolution n'a encore eu lieu), plus `derniereModificationDonnees` : date de la dernière modification d'une donnée de référence (`null` si aucune depuis le démarrage du serveur) |
