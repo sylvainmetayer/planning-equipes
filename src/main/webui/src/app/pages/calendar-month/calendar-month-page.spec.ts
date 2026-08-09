@@ -6,13 +6,13 @@ function creneau(overrides: Partial<Creneau> & { id: number }): Creneau {
   return { jour: 1, date: '2026-08-01', heureDebut: '13:40', heureFin: '19:00', groupe: null, ...overrides };
 }
 
-function stand(id: string): Stand {
+function stand(id: string, effectifMin = 1): Stand {
   return {
     id,
     nom: id,
     typologiesProposees: [],
-    effectifMin: 1,
-    effectifMax: 1,
+    effectifMin,
+    effectifMax: Math.max(1, effectifMin),
     reserveMajeurs: false,
     premium: false,
     emplacement: null,
@@ -68,5 +68,20 @@ describe('buildAssignmentsByDate — issue #60 partial-closure regression', () =
     const byDate = buildAssignmentsByDate([poste({ id: 'p1', creneau: c1, stand: stand('S1'), animateur: animateur('A') })]);
 
     expect(byDate.get('2026-08-01')![0].stands[0]).toMatchObject({ heureDebut: '09:00', heureFin: '12:00' });
+  });
+});
+
+describe('buildAssignmentsByDate — understaffing indicator', () => {
+  it('carries the stand effectifMin on each line, so a partially-staffed stand can be flagged', () => {
+    // Regression for the reported DEV case: 17/07/2026 Stand Stratégie 16,
+    // 18h30-00h, effectifMin 2 but only one animateur assigned.
+    const c1 = creneau({ id: 1, date: '2026-07-17', heureDebut: '18:30', heureFin: '00:00' });
+    const s1 = stand('Stratégie 16', 2);
+    const byDate = buildAssignmentsByDate([poste({ id: 'p1', creneau: c1, stand: s1, animateur: animateur('Oscar') })]);
+
+    const line = byDate.get('2026-07-17')![0].stands[0];
+    expect(line.names).toEqual(['Oscar']);
+    expect(line.effectifMin).toBe(2);
+    expect(line.names.length).toBeLessThan(line.effectifMin);
   });
 });

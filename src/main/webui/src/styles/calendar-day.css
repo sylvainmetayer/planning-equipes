@@ -43,3 +43,13 @@
   color: var(--mat-sys-error);
   font-style: italic;
 }
+
+/** Some, but fewer than effectifMin, animateurs assigned — distinct from fully unassigned (.empty-slot). */
+.understaffed-slot {
+  color: var(--mat-sys-error);
+  font-weight: 500;
+}
+
+.understaffed-icon {
+  color: var(--mat-sys-error);
+}

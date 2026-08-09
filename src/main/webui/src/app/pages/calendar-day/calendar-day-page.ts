@@ -3,6 +3,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ApiService } from '../../core/api.service';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { Creneau, PersistenceStatus, PosteAffectation, Stand } from '../../core/models';
@@ -21,6 +22,8 @@ interface StandLine {
   heureDebut: string;
   heureFin: string;
   names: string[];
+  /** The stand's required headcount for this line, to flag understaffing (some but not enough names). */
+  effectifMin: number;
 }
 
 interface SlotCard {
@@ -42,7 +45,7 @@ interface DayCard {
  */
 @Component({
   selector: 'app-calendar-day-page',
-  imports: [MatCardModule, MatButtonModule, MatIconModule, MatProgressBarModule],
+  imports: [MatCardModule, MatButtonModule, MatIconModule, MatProgressBarModule, MatTooltipModule],
   templateUrl: './calendar-day-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -85,6 +88,15 @@ export class CalendarDayPage {
     } catch {
       this.persistedCount.set($localize`:@@job.scoreUnavailable:n/d`);
     }
+  }
+
+  /** True for a stand-line with some, but fewer than `effectifMin`, animateurs — fully unassigned (0) is already flagged separately. */
+  protected isUnderstaffed(stand: StandLine): boolean {
+    return stand.names.length > 0 && stand.names.length < stand.effectifMin;
+  }
+
+  protected understaffedTooltip(stand: StandLine): string {
+    return $localize`:@@calendarDay.understaffed:Sous-effectif : ${stand.names.length}:count: / ${stand.effectifMin}:min: animateur(s) affecté(s)`;
   }
 }
 
@@ -149,7 +161,8 @@ export function buildDays(postes: PosteAffectation[]): DayCard[] {
               standNom: entry.stand.nom || entry.stand.id,
               heureDebut: entry.heureDebut,
               heureFin: entry.heureFin,
-              names: entry.names
+              names: entry.names,
+              effectifMin: Math.max(1, entry.stand.effectifMin)
             }))
             .sort(
               (left, right) => left.standNom.localeCompare(right.standNom) || left.heureDebut.localeCompare(right.heureDebut)

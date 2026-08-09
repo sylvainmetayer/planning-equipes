@@ -7,6 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { intlLocale } from '../../core/locale';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { PosteAffectation } from '../../core/models';
@@ -34,6 +35,8 @@ interface StandLine {
   heureDebut: string;
   heureFin: string;
   names: string[];
+  /** The stand's required headcount for this line, to flag understaffing (some but not enough names). */
+  effectifMin: number;
 }
 
 interface SlotEntry {
@@ -74,7 +77,8 @@ const ALL = 'ALL';
     MatSelectModule,
     MatProgressBarModule,
     MatListModule,
-    MatDividerModule
+    MatDividerModule,
+    MatTooltipModule
   ],
   templateUrl: './calendar-month-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -248,6 +252,15 @@ export class CalendarMonthPage {
       this.month.set(getMonthStart(parseDateKey(cell.dateKey)));
     }
   }
+
+  /** True for a stand-line with some, but fewer than `effectifMin`, animateurs — fully unassigned (0) is already flagged separately. */
+  protected isUnderstaffed(stand: StandLine): boolean {
+    return stand.names.length > 0 && stand.names.length < stand.effectifMin;
+  }
+
+  protected understaffedTooltip(stand: StandLine): string {
+    return $localize`:@@calendarDay.understaffed:Sous-effectif : ${stand.names.length}:count: / ${stand.effectifMin}:min: animateur(s) affecté(s)`;
+  }
 }
 
 function buildWeekdayAbbreviations(): string[] {
@@ -287,7 +300,14 @@ export function buildAssignmentsByDate(postes: PosteAffectation[]): Map<string, 
     const lineKey = `${stand.id}::${heureDebut}::${heureFin}`;
     let line = slot.standMap.get(lineKey);
     if (!line) {
-      line = { standId: stand.id, standNom: stand.nom || stand.id, heureDebut, heureFin, names: [] };
+      line = {
+        standId: stand.id,
+        standNom: stand.nom || stand.id,
+        heureDebut,
+        heureFin,
+        names: [],
+        effectifMin: Math.max(1, stand.effectifMin)
+      };
       slot.standMap.set(lineKey, line);
     }
     if (poste.animateur) {
