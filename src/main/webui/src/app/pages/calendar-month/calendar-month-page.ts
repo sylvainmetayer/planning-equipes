@@ -40,6 +40,13 @@ interface StandLine {
   names: string[];
   /** The stand's required headcount for this line, to flag understaffing (some but not enough names). */
   effectifMin: number;
+  /**
+   * Total animateurs actually assigned to this line, ignoring the
+   * animateur/stand filters — `names.length` once those filters have
+   * narrowed `names` down to a subset would otherwise flag a fully-staffed
+   * stand as understaffed just because the filter hid its other animateurs.
+   */
+  totalAssigned: number;
 }
 
 interface SlotEntry {
@@ -130,13 +137,25 @@ export class CalendarMonthPage {
   private readonly assignmentsByDate = computed(() => {
     const animateurId = this.animateurFilter();
     const standId = this.standFilter();
-    const filtered = this.postes().filter((poste) => {
+    const allPostes = this.postes();
+    const filtered = allPostes.filter((poste) => {
       if (standId !== ALL && poste.stand?.id !== standId) {
         return false;
       }
       return animateurId === ALL || poste.animateur?.id === animateurId;
     });
-    return buildAssignmentsByDate(filtered);
+    const filteredView = buildAssignmentsByDate(filtered);
+    if (animateurId === ALL) {
+      // The stand filter alone never drops other animateurs from a line, so
+      // names.length (== totalAssigned here) is already accurate.
+      return filteredView;
+    }
+    // The animateur filter narrows `names` down to just that person, which
+    // would otherwise make a fully-staffed stand (e.g. 2/2) look
+    // understaffed once filtered to only one of the two. totalAssigned is
+    // corrected from the full, unfiltered roster; `names` itself stays
+    // filtered — showing only the matching animateur per line is the point.
+    return withTrueHeadcounts(filteredView, buildAssignmentsByDate(allPostes));
   });
 
   protected readonly hasData = computed(() => this.assignmentsByDate().size > 0);
@@ -304,18 +323,53 @@ export class CalendarMonthPage {
   }
 
   protected understaffedTooltip(stand: StandLine): string {
-    return $localize`:@@calendarDay.understaffed:Sous-effectif : ${stand.names.length}:count: / ${stand.effectifMin}:min: animateur(s) affecté(s)`;
+    return $localize`:@@calendarDay.understaffed:Sous-effectif : ${stand.totalAssigned}:count: / ${stand.effectifMin}:min: animateur(s) affecté(s)`;
   }
 }
 
-/** True for a stand-line with some, but fewer than `effectifMin`, animateurs — fully unassigned (0) is already flagged separately. */
+/** True for a stand-line with some, but fewer than `effectifMin`, animateurs actually assigned — fully unassigned (0) is already flagged separately. */
 function isStandLineUnderstaffed(stand: StandLine): boolean {
-  return stand.names.length > 0 && stand.names.length < stand.effectifMin;
+  return stand.totalAssigned > 0 && stand.totalAssigned < stand.effectifMin;
 }
 
 /** True when any stand-line across any créneau of `slots` is understaffed — drives the month grid's day-cell indicator. */
 export function hasUnderstaffedStand(slots: SlotEntry[] | undefined): boolean {
   return (slots ?? []).some((slot) => slot.stands.some(isStandLineUnderstaffed));
+}
+
+function standLineKey(line: StandLine): string {
+  return `${line.standId}::${line.heureDebut}::${line.heureFin}`;
+}
+
+/**
+ * Replaces every line's `totalAssigned` in `filtered` with the matching
+ * line's from `truth` (same date + créneau + stand-line), leaving `names`
+ * and everything else untouched. Used when the animateur filter has
+ * narrowed `filtered`'s postes: without this, `totalAssigned` would equal
+ * `names.length` of the filtered subset instead of the stand's real
+ * headcount.
+ */
+function withTrueHeadcounts(filtered: Map<string, SlotEntry[]>, truth: Map<string, SlotEntry[]>): Map<string, SlotEntry[]> {
+  const result = new Map<string, SlotEntry[]>();
+  filtered.forEach((slots, dateKey) => {
+    const truthSlotsByCreneau = new Map((truth.get(dateKey) ?? []).map((slot) => [slot.creneauId, slot]));
+    result.set(
+      dateKey,
+      slots.map((slot) => {
+        const truthLinesByKey = new Map(
+          (truthSlotsByCreneau.get(slot.creneauId)?.stands ?? []).map((line) => [standLineKey(line), line])
+        );
+        return {
+          ...slot,
+          stands: slot.stands.map((line) => ({
+            ...line,
+            totalAssigned: truthLinesByKey.get(standLineKey(line))?.totalAssigned ?? line.totalAssigned
+          }))
+        };
+      })
+    );
+  });
+  return result;
 }
 
 function buildWeekdayAbbreviations(): string[] {
@@ -361,7 +415,8 @@ export function buildAssignmentsByDate(postes: PosteAffectation[]): Map<string, 
         heureDebut,
         heureFin,
         names: [],
-        effectifMin: Math.max(1, stand.effectifMin)
+        effectifMin: Math.max(1, stand.effectifMin),
+        totalAssigned: 0 // recomputed from `names.length` once every poste is accounted for, below.
       };
       slot.standMap.set(lineKey, line);
     }
@@ -378,9 +433,11 @@ export function buildAssignmentsByDate(postes: PosteAffectation[]): Map<string, 
         heureDebut: slot.heureDebut,
         heureFin: slot.heureFin,
         jour: slot.jour,
-        stands: Array.from(slot.standMap.values()).sort(
-          (left, right) => left.standNom.localeCompare(right.standNom) || left.heureDebut.localeCompare(right.heureDebut)
-        )
+        stands: Array.from(slot.standMap.values())
+          .map((line) => ({ ...line, totalAssigned: line.names.length }))
+          .sort(
+            (left, right) => left.standNom.localeCompare(right.standNom) || left.heureDebut.localeCompare(right.heureDebut)
+          )
       }))
       .sort((left, right) => `${left.heureDebut}`.localeCompare(`${right.heureDebut}`));
     result.set(dateKey, entries);
