@@ -49,7 +49,7 @@ Frontend Angular (sources dans `src/main/webui`) :
 cd src/main/webui
 npm install                            # dépendances (une seule fois)
 npm run build                          # build de production dans dist/planning-equipes-ui/browser
-npm start                              # ng serve seul sur http://localhost:4200 (API non proxifiée)
+npm start                              # ng serve seul sur http://localhost:4200 (API proxifiée vers :8080, voir proxy.conf.json)
 npm test                               # tests unitaires (Vitest) : watch en terminal, une passe en CI
 ```
 
@@ -60,6 +60,26 @@ il est désactivé sur le profil `%test` pour ne pas ralentir les tests unitaire
 
 `skipITs` vaut `true` par défaut dans le `pom.xml` : les tests `*IT` (failsafe)
 ne s'exécutent qu'avec `-DskipITs=false`.
+
+### Limitation connue : F5 / lien profond en mode dev sur :8080
+
+Naviguer directement (F5, lien profond, favori) vers une route Angular autre
+que `/` via **http://localhost:8080** (le proxy Quinoa) renvoie un 404 en mode
+`quarkus:dev` — bug amont non résolu de Quinoa
+([#666](https://github.com/quarkiverse/quarkus-quinoa/issues/666),
+[#91](https://github.com/quarkiverse/quarkus-quinoa/issues/91)) : pour
+distinguer un fichier statique manquant d'une route SPA, Quinoa retire l'en-tête
+`Accept` de ses requêtes internes vers `ng serve`, ce qui désactive au passage
+le fallback historique (`historyApiFallback`) qu'Angular CLI utilise pour
+servir `index.html`. **N'affecte pas la production** (Quarkus sert alors les
+fichiers statiques directement, sans ce proxy).
+
+Contournement pour tester un lien profond ou un F5 en dev : ouvrir
+**http://localhost:4200** directement (`ng serve`, lancé automatiquement par
+`quarkus:dev`) plutôt que `:8080` — son propre serveur de dev gère le fallback
+SPA correctement, et `proxy.conf.json` redirige `/api/*` vers le backend
+(`:8080`) donc les appels API fonctionnent aussi. Le hot-reload frontend reste
+actif dans les deux cas.
 
 ## Internationalisation (i18n) du frontend
 

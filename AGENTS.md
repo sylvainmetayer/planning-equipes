@@ -65,9 +65,13 @@ blocking the turn on a foreground wait or a manual sleep/poll loop: both cost
 real wall-clock time for nothing and, over a sleep-poll loop specifically,
 burn tokens on repeated status checks for no benefit over one notification.
 - Frontend only (from `src/main/webui`): `npm install`, `npm run build`,
-  `npm start` (`ng serve` on 4200), `npm test` (Vitest unit tests, Node/jsdom,
-  one pass in CI / watch in a terminal). `quarkus:dev` already starts and
-  proxies the dev server.
+  `npm start` (`ng serve` on 4200, `proxy.conf.json` forwards `/api/*` to
+  `:8080`), `npm test` (Vitest unit tests, Node/jsdom, one pass in CI / watch
+  in a terminal). `quarkus:dev` already starts and proxies the dev server —
+  but a direct navigation (curl, F5, deep link) to any route but `/` on
+  `:8080` 404s in dev mode (upstream Quinoa bug, doesn't affect production);
+  test deep links against `:4200` directly instead — see
+  `docs/developpement.md`.
 - Toolchain pinned in `mise.toml` (`temurin-25`, `maven 3.9.9`, `node 24`); the
   Maven build downloads its own Node through Quinoa, so CI/Docker need none.
 
