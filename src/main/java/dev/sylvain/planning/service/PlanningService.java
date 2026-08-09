@@ -43,6 +43,8 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.NiveauCompetence;
+import dev.sylvain.planning.domain.NiveauEffort;
+import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresSolveur;
@@ -321,6 +323,9 @@ public class PlanningService {
             item.put("effectifMax", stand.getEffectifMax());
             item.put("reserveMajeurs", stand.isReserveMajeurs());
             item.put("premium", stand.isPremium());
+            item.put("niveauEffort", stand.getNiveauEffort().name());
+            item.put("indisponibilites", indisponibilitesYaml(stand.getIndisponibilites()));
+            item.put("ouvertures", ouverturesYaml(stand.getOuvertures()));
             standsYaml.add(item);
         }
 
@@ -372,6 +377,34 @@ public class PlanningService {
 
     private static String asString(Object value) {
         return value == null ? null : value.toString();
+    }
+
+    /** Serializes a stand's {@link IndisponibiliteStand} closures to the shape {@link #chargerReferenceScenario} reads back. */
+    private static List<Map<String, Object>> indisponibilitesYaml(List<IndisponibiliteStand> indisponibilites) {
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (IndisponibiliteStand indispo : indisponibilites) {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("date", asString(indispo.getDate()));
+            item.put("heureDebut", asString(indispo.getHeureDebut()));
+            item.put("heureFin", asString(indispo.getHeureFin()));
+            item.put("motif", indispo.getMotif());
+            result.add(item);
+        }
+        return result;
+    }
+
+    /** Serializes a stand's {@link OuvertureStand} openings to the shape {@link #chargerReferenceScenario} reads back. */
+    private static List<Map<String, Object>> ouverturesYaml(List<OuvertureStand> ouvertures) {
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (OuvertureStand ouverture : ouvertures) {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("date", asString(ouverture.getDate()));
+            item.put("heureDebut", asString(ouverture.getHeureDebut()));
+            item.put("heureFin", asString(ouverture.getHeureFin()));
+            item.put("motif", ouverture.getMotif());
+            result.add(item);
+        }
+        return result;
     }
 
     /**
@@ -581,6 +614,8 @@ public class PlanningService {
             boolean premium = (Boolean) standData.getOrDefault("premium", false);
 
             Stand stand = new Stand(id, nom, typologies, effectifMin, effectifMax, reserveMajeurs, premium);
+            String niveauEffortStr = (String) standData.getOrDefault("niveauEffort", NiveauEffort.NORMAL.name());
+            stand.setNiveauEffort(NiveauEffort.valueOf(niveauEffortStr));
             String emplacementId = (String) standData.get("emplacementId");
             if (emplacementId != null) {
                 stand.setEmplacement(emplacementsMap.get(emplacementId));
@@ -596,6 +631,18 @@ public class PlanningService {
                     indisponibilites.add(new IndisponibiliteStand(null, date, heureDebut, heureFin, motif));
                 }
                 stand.setIndisponibilites(indisponibilites);
+            }
+            List<Map<String, Object>> ouverturesData = (List<Map<String, Object>>) standData.get("ouvertures");
+            if (ouverturesData != null) {
+                List<OuvertureStand> ouvertures = new ArrayList<>();
+                for (Map<String, Object> ouvertureData : ouverturesData) {
+                    LocalDate date = parseLocalDate(ouvertureData.get("date"), "stands.ouvertures.date");
+                    LocalTime heureDebut = LocalTime.parse((String) ouvertureData.get("heureDebut"));
+                    LocalTime heureFin = LocalTime.parse((String) ouvertureData.get("heureFin"));
+                    String motif = (String) ouvertureData.get("motif");
+                    ouvertures.add(new OuvertureStand(null, date, heureDebut, heureFin, motif));
+                }
+                stand.setOuvertures(ouvertures);
             }
             standsMap.put(id, stand);
         }

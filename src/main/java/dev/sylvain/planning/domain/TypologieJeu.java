@@ -7,5 +7,7 @@ public enum TypologieJeu {
     COOPERATIF,
     ADRESSE,
     ROLE,
-    ENIGME
+    ENIGME,
+    /** Animation de rue mobile (ex. stand « Homme-jeu ») plutôt qu'un genre de jeu à proprement parler. */
+    HOMME_JEU
 }

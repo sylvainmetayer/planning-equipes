@@ -50,7 +50,8 @@ export class StandsPage {
   protected effectifSuffix(stand: Stand): string {
     const majeurs = stand.reserveMajeurs ? $localize`:@@stands.suffix.majeurs: · majeurs` : '';
     const premium = stand.premium ? $localize`:@@stands.suffix.premium: · premium` : '';
-    return `${majeurs}${premium}`;
+    const epuisant = stand.niveauEffort === 'EPUISANT' ? $localize`:@@stands.suffix.epuisant: · épuisant` : '';
+    return `${majeurs}${premium}${epuisant}`;
   }
 
   protected emplacementLabel(stand: Stand): string {

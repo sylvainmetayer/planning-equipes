@@ -15,6 +15,8 @@ public class Stand {
     private int effectifMax;
     private boolean reserveMajeurs;
     private boolean premium;
+    /** Physical-effort tier; drives rest-after-effort and pénibilité-fairness constraints in QualiteConstraints/PreferenceConstraints. */
+    private NiveauEffort niveauEffort = NiveauEffort.NORMAL;
     /** Physical location the stand is set up at; nullable (not every stand is geocoded). */
     private Emplacement emplacement;
     /**
@@ -107,6 +109,14 @@ public class Stand {
 
     public void setPremium(boolean premium) {
         this.premium = premium;
+    }
+
+    public NiveauEffort getNiveauEffort() {
+        return niveauEffort;
+    }
+
+    public void setNiveauEffort(NiveauEffort niveauEffort) {
+        this.niveauEffort = niveauEffort != null ? niveauEffort : NiveauEffort.NORMAL;
     }
 
     public Emplacement getEmplacement() {

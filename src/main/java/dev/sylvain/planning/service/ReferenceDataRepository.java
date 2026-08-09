@@ -26,6 +26,7 @@ import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.GroupeCreneau;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.NiveauCompetence;
+import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
@@ -88,7 +89,7 @@ public class ReferenceDataRepository {
         Map<String, Stand> byId = new LinkedHashMap<>();
         try (Connection connection = dataSource.getConnection()) {
             try (PreparedStatement ps = connection.prepareStatement(
-                    "SELECT s.id, s.nom, s.effectif_min, s.effectif_max, s.reserve_majeurs, s.premium, "
+                    "SELECT s.id, s.nom, s.effectif_min, s.effectif_max, s.reserve_majeurs, s.premium, s.niveau_effort, "
                             + "e.id AS emplacement_id, e.nom AS emplacement_nom, e.latitude AS emplacement_latitude, "
                             + "e.longitude AS emplacement_longitude "
                             + "FROM stand s LEFT JOIN emplacement e ON e.id = s.emplacement_id ORDER BY s.id");
@@ -101,6 +102,7 @@ public class ReferenceDataRepository {
                     stand.setEffectifMax(rs.getInt("effectif_max"));
                     stand.setReserveMajeurs(rs.getBoolean("reserve_majeurs"));
                     stand.setPremium(rs.getBoolean("premium"));
+                    stand.setNiveauEffort(NiveauEffort.valueOf(rs.getString("niveau_effort")));
                     String emplacementId = rs.getString("emplacement_id");
                     if (emplacementId != null) {
                         stand.setEmplacement(new Emplacement(emplacementId, rs.getString("emplacement_nom"),
@@ -197,11 +199,12 @@ public class ReferenceDataRepository {
 
     private void upsertStand(Connection connection, Stand stand) throws SQLException {
         try (PreparedStatement ps = connection.prepareStatement(
-                "INSERT INTO stand (id, nom, effectif_min, effectif_max, reserve_majeurs, premium, emplacement_id) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?) "
+                "INSERT INTO stand (id, nom, effectif_min, effectif_max, reserve_majeurs, premium, emplacement_id, "
+                        + "niveau_effort) VALUES (?, ?, ?, ?, ?, ?, ?, ?) "
                         + "ON CONFLICT (id) DO UPDATE SET nom = EXCLUDED.nom, effectif_min = EXCLUDED.effectif_min, "
                         + "effectif_max = EXCLUDED.effectif_max, reserve_majeurs = EXCLUDED.reserve_majeurs, "
-                        + "premium = EXCLUDED.premium, emplacement_id = EXCLUDED.emplacement_id")) {
+                        + "premium = EXCLUDED.premium, emplacement_id = EXCLUDED.emplacement_id, "
+                        + "niveau_effort = EXCLUDED.niveau_effort")) {
             ps.setString(1, stand.getId());
             ps.setString(2, stand.getNom());
             ps.setInt(3, stand.getEffectifMin());
@@ -209,6 +212,7 @@ public class ReferenceDataRepository {
             ps.setBoolean(5, stand.isReserveMajeurs());
             ps.setBoolean(6, stand.isPremium());
             ps.setString(7, stand.getEmplacement() != null ? stand.getEmplacement().getId() : null);
+            ps.setString(8, stand.getNiveauEffort().name());
             ps.executeUpdate();
         }
         try (PreparedStatement del = connection.prepareStatement("DELETE FROM stand_typologie WHERE stand_id = ?")) {

@@ -179,4 +179,40 @@ class QualiteConstraintsTest extends ConstraintTestBase {
                         poste(standStrategie("STAND-B"), suite, a1))
                 .penalizesBy(0);
     }
+
+    @Test
+    void enchainerDeuxStandsEpuisantsSansReposEstPenalise() {
+        Stand standEpuisant1 = standEpuisant("STAND-EPUISANT-1");
+        Stand standEpuisant2 = standEpuisant("STAND-EPUISANT-2");
+        Creneau matin = creneau("J1-MATIN5", 1, D1, LocalTime.of(9, 0), LocalTime.of(13, 0));
+        Creneau suite = creneau("J1-SUITE5", 1, D1, LocalTime.of(13, 0), LocalTime.of(17, 0));
+        Animateur a1 = majeurReferent("A1");
+        verify("eviterEnchainementStandsEpuisants")
+                .given(poste(standEpuisant1, matin, a1),
+                        poste(standEpuisant2, suite, a1))
+                .penalizesBy(1);
+    }
+
+    @Test
+    void enchainerStandEpuisantPuisStandNormalNEstPasPenalise() {
+        Stand standEpuisant = standEpuisant("STAND-EPUISANT-3");
+        Creneau matin = creneau("J1-MATIN6", 1, D1, LocalTime.of(9, 0), LocalTime.of(13, 0));
+        Creneau suite = creneau("J1-SUITE6", 1, D1, LocalTime.of(13, 0), LocalTime.of(17, 0));
+        Animateur a1 = majeurReferent("A1");
+        verify("eviterEnchainementStandsEpuisants")
+                .given(poste(standEpuisant, matin, a1),
+                        poste(standStrat, suite, a1))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void deuxStandsEpuisantsSansCreneauxConsecutifsNEstPasPenalise() {
+        Stand standEpuisant1 = standEpuisant("STAND-EPUISANT-4");
+        Stand standEpuisant2 = standEpuisant("STAND-EPUISANT-5");
+        Animateur a1 = majeurReferent("A1");
+        verify("eviterEnchainementStandsEpuisants")
+                .given(poste(standEpuisant1, creneauMatin, a1),
+                        poste(standEpuisant2, creneauAprem, a1))
+                .penalizesBy(0);
+    }
 }

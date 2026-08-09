@@ -111,11 +111,16 @@ public final class ConstraintCatalog {
             new ConstraintDefinition("eviterChangementEmplacementEloigne", Niveau.MEDIUM, "Qualité d'organisation",
                     "Entre deux créneaux consécutifs, éviter de faire basculer un animateur vers un stand dont "
                             + "l'emplacement est éloigné (> 300 m à vol d'oiseau) de celui du créneau précédent."),
+            new ConstraintDefinition("eviterEnchainementStandsEpuisants", Niveau.MEDIUM, "Qualité d'organisation",
+                    "Entre deux créneaux consécutifs, éviter d'enchaîner un animateur sur deux stands physiquement "
+                            + "épuisants sans repos ni stand plus facile entre les deux."),
 
             new ConstraintDefinition("favoriserRotationDesStands", Niveau.SOFT, "Préférences",
                     "Éviter d'affecter plusieurs fois le même animateur sur le même stand : on privilégie la rotation."),
             new ConstraintDefinition("favoriserMixiteDesNiveaux", Niveau.SOFT, "Préférences",
-                    "Quand un référent est présent sur un créneau, y associer un débutant pour favoriser la montée en compétence."));
+                    "Quand un référent est présent sur un créneau, y associer un débutant pour favoriser la montée en compétence."),
+            new ConstraintDefinition("equilibrerCreneauxPenibles", Niveau.SOFT, "Préférences",
+                    "Répartir équitablement entre animateurs les créneaux pénibles (stands épuisants ou premium)."));
 
     private ConstraintCatalog() {
     }

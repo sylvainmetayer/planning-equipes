@@ -58,6 +58,14 @@
               i18n="@@stands.field.premium">
   Premium (stand éditeur)
 </mat-checkbox>
+<mat-checkbox name="epuisant" [disabled]="editingLocked()"
+              i18n-matTooltip="@@stands.niveauEffort.tooltip"
+              matTooltip="Stand physiquement épuisant : le solveur évite d'enchaîner deux créneaux épuisants sans repos et équilibre ces créneaux entre animateurs."
+              [ngModel]="draft().niveauEffort === 'EPUISANT'"
+              (ngModelChange)="patch({ niveauEffort: $event ? 'EPUISANT' : 'NORMAL' })"
+              i18n="@@stands.field.niveauEffort">
+  Épuisant physiquement
+</mat-checkbox>
 <div class="span-2">
   <h3 i18n="@@stands.indisponibilites.title">Fermetures</h3>
   <p class="empty-hint" i18n="@@stands.indisponibilites.hint">Le stand est ouvert sur chaque créneau par défaut. Ajoutez une fermeture pour le fermer tout ou partie d'un créneau (ex : fermé de 14h à 16h).</p>

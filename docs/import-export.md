@@ -42,6 +42,14 @@ actuelles en scénario », ou un fichier écrit à la main dans le même format.
 Un fichier invalide (YAML mal formé, section obligatoire manquante) n'importe
 rien et affiche une notification avec le détail de l'erreur.
 
+Le format YAML d'un stand couvre `typologiesProposees`, `effectifMin/Max`,
+`reserveMajeurs`, `premium`, `niveauEffort` (`NORMAL` par défaut si absent —
+voir [`domaine.md`](domaine.md)) ainsi que ses fenêtres `indisponibilites`
+(fermetures) et `ouvertures`, dans les deux sens : « Exporter les données
+actuelles en scénario » les écrit, l'import (nommé ou fichier) les relit à
+l'identique. `emplacementId` reste import seulement — l'export n'écrit pas
+encore la section `emplacements` correspondante, à traiter séparément.
+
 ## Exports de planning (PDF / ICS)
 
 Générés **côté serveur** — pas de génération dans le navigateur :

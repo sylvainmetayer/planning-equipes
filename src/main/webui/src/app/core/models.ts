@@ -2,6 +2,7 @@
 // Domain names stay in the French business vocabulary of the backend.
 
 export type NiveauCompetence = 'DEBUTANT' | 'AUTONOME' | 'REFERENT';
+export type NiveauEffort = 'NORMAL' | 'EPUISANT';
 export type TypeContrainteAdHoc = 'INDISPONIBILITE_FORCEE' | 'INCOMPATIBILITE' | 'AFFECTATION_FORCEE';
 export type NiveauContrainte = 'HARD' | 'MEDIUM' | 'SOFT';
 
@@ -31,6 +32,8 @@ export interface Stand {
   reserveMajeurs: boolean;
   /** Editor/publisher-tier stand: the solver avoids rotating staff and favors experienced animateurs. */
   premium: boolean;
+  /** Physical-effort tier: EPUISANT drives rest-after-effort and pénibilité-fairness balancing. */
+  niveauEffort: NiveauEffort;
   /** Physical location (kiosque, mairie, ...), nullable. */
   emplacement: Emplacement | null;
   /**

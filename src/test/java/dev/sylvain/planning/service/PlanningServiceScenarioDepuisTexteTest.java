@@ -8,10 +8,15 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
+
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.Test;
 
+import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.Stand;
 
 /**
  * {@link PlanningService#construireDepuisTexteScenario}: the "Importer un
@@ -66,6 +71,84 @@ class PlanningServiceScenarioDepuisTexteTest {
         assertThat(importe.parametresDecoupage()).isPresent();
         assertThat(importe.parametresSolveur()).isPresent();
         assertThat(importe.parametresSolveur().orElseThrow().getDureeResolutionSecondes()).isEqualTo(400);
+    }
+
+    @Test
+    void chargeNiveauEffortIndisponibilitesEtOuverturesDuStand() {
+        PlanningService service = service();
+        String yaml = """
+                festival:
+                  dateDebut: 2026-08-14
+
+                creneaux:
+                  - id: J1-MATIN
+                    jour: 1
+                    date: 2026-08-14
+                    heureDebut: "09:00"
+                    heureFin: "13:00"
+
+                stands:
+                  - id: HOMME-JEU
+                    nom: Homme-jeu
+                    typologiesProposees:
+                      - HOMME_JEU
+                    effectifMin: 1
+                    effectifMax: 1
+                    reserveMajeurs: false
+                    premium: false
+                    niveauEffort: EPUISANT
+                    indisponibilites:
+                      - date: 2026-08-14
+                        heureDebut: "14:00"
+                        heureFin: "16:00"
+                        motif: Pause
+                    ouvertures:
+                      - date: 2026-08-15
+                        heureDebut: "20:00"
+                        heureFin: "23:00"
+                        motif: null
+
+                animateurs:
+                  - id: A1
+                    prenom: Alice
+                    nom: Referente
+                    dateNaissance: 2002-07-19
+                    manager: false
+                    competences:
+                      HOMME_JEU: REFERENT
+                    joursIndisponibles: []
+
+                postes:
+                  - id: P1
+                    standId: HOMME-JEU
+                    creneauId: J1-MATIN
+                    animateurId: null
+                """;
+
+        PlanningFestival planning = service.construireDepuisTexteScenario(yaml).planning();
+        Stand stand = planning.getPostes().get(0).getStand();
+
+        assertThat(stand.getNiveauEffort()).isEqualTo(NiveauEffort.EPUISANT);
+        assertThat(stand.getIndisponibilites()).hasSize(1);
+        assertThat(stand.getIndisponibilites().get(0).getDate()).isEqualTo(LocalDate.of(2026, 8, 14));
+        assertThat(stand.getIndisponibilites().get(0).getHeureDebut()).isEqualTo(LocalTime.of(14, 0));
+        assertThat(stand.getIndisponibilites().get(0).getHeureFin()).isEqualTo(LocalTime.of(16, 0));
+        assertThat(stand.getIndisponibilites().get(0).getMotif()).isEqualTo("Pause");
+        assertThat(stand.getOuvertures()).hasSize(1);
+        assertThat(stand.getOuvertures().get(0).getDate()).isEqualTo(LocalDate.of(2026, 8, 15));
+        assertThat(stand.getOuvertures().get(0).getHeureDebut()).isEqualTo(LocalTime.of(20, 0));
+        assertThat(stand.getOuvertures().get(0).getHeureFin()).isEqualTo(LocalTime.of(23, 0));
+    }
+
+    @Test
+    void defautNiveauEffortNormalQuandAbsentDuScenario() {
+        PlanningService service = service();
+        String yaml = scenarioYamlText("scenario.yml");
+
+        PlanningFestival planning = service.construireDepuisTexteScenario(yaml).planning();
+
+        assertThat(planning.getPostes()).isNotEmpty();
+        assertThat(planning.getPostes().get(0).getStand().getNiveauEffort()).isEqualTo(NiveauEffort.NORMAL);
     }
 
     @Test

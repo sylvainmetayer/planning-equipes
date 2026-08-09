@@ -141,6 +141,10 @@ ainsi que le planning résolu.
 - au moins un animateur référent par stand et par créneau ;
 - charge de travail équilibrée entre animateurs ;
 - pas plus de mineurs que de majeurs sur un même stand et créneau ;
+- repos (ou stand plus facile) après un créneau sur un stand physiquement
+  épuisant, plutôt qu'un enchaînement direct vers un autre stand épuisant ;
+- répartition équitable des créneaux pénibles (stands épuisants ou premium)
+  entre animateurs ;
 - rotation des stands d'un animateur au fil du festival ;
 - mixité des niveaux (associer un débutant à un référent).
 

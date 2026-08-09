@@ -9,6 +9,7 @@ import ai.timefold.solver.core.api.score.stream.ConstraintCollectors;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
 import ai.timefold.solver.core.api.score.stream.Joiners;
 import dev.sylvain.planning.domain.Emplacement;
+import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 
@@ -33,7 +34,8 @@ public final class QualiteConstraints {
                 repartitionMineursParCreneau(constraintFactory),
                 experienceRequisePourStandsPremium(constraintFactory),
                 eviterRoulementStandsPremium(constraintFactory),
-                eviterChangementEmplacementEloigne(constraintFactory)
+                eviterChangementEmplacementEloigne(constraintFactory),
+                eviterEnchainementStandsEpuisants(constraintFactory)
         };
     }
 
@@ -163,6 +165,31 @@ public final class QualiteConstraints {
                         && emplacementsEloignes(precedent.getStand(), suivant.getStand()))
                 .penalize(HardMediumSoftScore.ONE_MEDIUM)
                 .asConstraint("eviterChangementEmplacementEloigne");
+    }
+
+    /**
+     * Same animateur, two back-to-back slots (same day, one ending exactly when
+     * the other starts), both on a physically exhausting stand
+     * ({@link NiveauEffort#EPUISANT}, e.g. "Homme-jeu"): no rest and no easier
+     * stand in between, so the enchaînement is penalised. Mirrors
+     * {@link #eviterChangementEmplacementEloigne}'s join shape.
+     */
+    private Constraint eviterEnchainementStandsEpuisants(ConstraintFactory constraintFactory) {
+        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
+                "eviterEnchainementStandsEpuisants")
+                .filter(poste -> poste.getStand() != null
+                        && poste.getStand().getNiveauEffort() == NiveauEffort.EPUISANT
+                        && poste.getCreneau() != null
+                        && poste.getCreneau().getHeureFin() != null)
+                .join(PosteAffectation.class,
+                        Joiners.equal(PosteAffectation::getAnimateur),
+                        Joiners.equal(poste -> poste.getCreneau().getJour()),
+                        Joiners.equal(poste -> poste.getCreneau().getHeureFin(),
+                                poste -> poste.getCreneau().getHeureDebut()))
+                .filter((precedent, suivant) -> suivant.getStand() != null
+                        && suivant.getStand().getNiveauEffort() == NiveauEffort.EPUISANT)
+                .penalize(HardMediumSoftScore.ONE_MEDIUM)
+                .asConstraint("eviterEnchainementStandsEpuisants");
     }
 
     private boolean emplacementsEloignes(Stand standA, Stand standB) {

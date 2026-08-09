@@ -15,6 +15,7 @@ function stand(id: string, effectifMin = 1): Stand {
     effectifMax: Math.max(1, effectifMin),
     reserveMajeurs: false,
     premium: false,
+    niveauEffort: 'NORMAL',
     emplacement: null,
     indisponibilites: [],
     ouvertures: []

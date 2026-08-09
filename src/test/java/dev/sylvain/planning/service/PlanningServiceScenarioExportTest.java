@@ -15,7 +15,10 @@ import org.yaml.snakeyaml.Yaml;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.NiveauCompetence;
+import dev.sylvain.planning.domain.NiveauEffort;
+import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypologieJeu;
@@ -39,6 +42,16 @@ class PlanningServiceScenarioExportTest {
     void exportedYamlRoundTripsThroughAParser() {
         animateur.setCompetences(Map.of(TypologieJeu.STRATEGIE, NiveauCompetence.REFERENT));
         animateur.setJoursIndisponibles(Set.of(LocalDate.of(2026, 8, 15)));
+        stand.setNiveauEffort(NiveauEffort.EPUISANT);
+        stand.setIndisponibilites(List.of(
+                new IndisponibiliteStand(1L, LocalDate.of(2026, 8, 14), LocalTime.of(14, 0), LocalTime.of(16, 0), "Pause")));
+        // A date clearly unrelated to the créneau's day (2026-08-14) and the day
+        // after (2026-08-15, which Creneau#segmentsOuvertsMinutes also treats as
+        // relevant for a créneau crossing into it) — an ouverture on either would
+        // switch the stand to closed-by-default for this créneau's day and starve
+        // construirePostes of a poste to build below.
+        stand.setOuvertures(List.of(
+                new OuvertureStand(2L, LocalDate.of(2026, 8, 20), LocalTime.of(20, 0), LocalTime.of(23, 0), null)));
         List<PosteAffectation> postes = PlanningService.construirePostes(List.of(stand), List.of(creneau));
 
         String yaml = PlanningService.construireScenarioYaml(List.of(animateur), List.of(stand), List.of(creneau), postes);
@@ -57,8 +70,23 @@ class PlanningServiceScenarioExportTest {
         assertThat(stands).hasSize(1);
         assertThat(stands.get(0)).containsEntry("id", "STAND-A")
                 .containsEntry("effectifMin", 1)
-                .containsEntry("effectifMax", 2);
+                .containsEntry("effectifMax", 2)
+                .containsEntry("niveauEffort", "EPUISANT");
         assertThat((List<String>) stands.get(0).get("typologiesProposees")).containsExactly("STRATEGIE");
+
+        List<Map<String, Object>> indisponibilites = (List<Map<String, Object>>) stands.get(0).get("indisponibilites");
+        assertThat(indisponibilites).hasSize(1);
+        assertThat(indisponibilites.get(0)).containsEntry("date", "2026-08-14")
+                .containsEntry("heureDebut", "14:00")
+                .containsEntry("heureFin", "16:00")
+                .containsEntry("motif", "Pause");
+
+        List<Map<String, Object>> ouvertures = (List<Map<String, Object>>) stands.get(0).get("ouvertures");
+        assertThat(ouvertures).hasSize(1);
+        assertThat(ouvertures.get(0)).containsEntry("date", "2026-08-20")
+                .containsEntry("heureDebut", "20:00")
+                .containsEntry("heureFin", "23:00")
+                .containsEntry("motif", null);
 
         List<Map<String, Object>> animateurs = (List<Map<String, Object>>) parsed.get("animateurs");
         assertThat(animateurs).hasSize(1);

@@ -11,7 +11,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
-import { IndisponibiliteStand, OuvertureStand, Stand } from '../../core/models';
+import { IndisponibiliteStand, NiveauEffort, OuvertureStand, Stand } from '../../core/models';
 
 interface StandDraft {
   id: string;
@@ -20,6 +20,7 @@ interface StandDraft {
   effectifMax: number;
   reserveMajeurs: boolean;
   premium: boolean;
+  niveauEffort: NiveauEffort;
   typologiesProposees: string[];
   emplacementId: string | null;
   indisponibilites: IndisponibiliteStand[];
@@ -157,6 +158,7 @@ export class StandFormDialog {
       effectifMax: Number(draft.effectifMax) || 0,
       reserveMajeurs: draft.reserveMajeurs,
       premium: draft.premium,
+      niveauEffort: draft.niveauEffort,
       emplacement: draft.emplacementId
         ? (this.store.emplacements().find((e) => e.id === draft.emplacementId) ?? null)
         : null,
@@ -178,6 +180,7 @@ function toDraft(stand: Stand | null): StandDraft {
       effectifMax: 1,
       reserveMajeurs: false,
       premium: false,
+      niveauEffort: 'NORMAL',
       typologiesProposees: [],
       emplacementId: null,
       indisponibilites: [],
@@ -191,6 +194,7 @@ function toDraft(stand: Stand | null): StandDraft {
     effectifMax: stand.effectifMax,
     reserveMajeurs: Boolean(stand.reserveMajeurs),
     premium: Boolean(stand.premium),
+    niveauEffort: stand.niveauEffort ?? 'NORMAL',
     typologiesProposees: [...(stand.typologiesProposees ?? [])],
     emplacementId: stand.emplacement?.id ?? null,
     indisponibilites: (stand.indisponibilites ?? []).map((indispo) => ({ ...indispo })),

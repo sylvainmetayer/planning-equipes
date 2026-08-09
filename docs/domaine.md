@@ -10,11 +10,16 @@ non métier sont en anglais.
 
 ```java
 public enum TypologieJeu {
-    STRATEGIE, AMBIANCE, ENFANT, COOPERATIF, ADRESSE, ROLE, ENIGME
+    STRATEGIE, AMBIANCE, ENFANT, COOPERATIF, ADRESSE, ROLE, ENIGME,
+    HOMME_JEU  // animation de rue mobile, pas un genre de jeu — voir note ci-dessous
 }
 
 public enum NiveauCompetence {
     DEBUTANT, AUTONOME, REFERENT
+}
+
+public enum NiveauEffort {
+    NORMAL, EPUISANT  // deux niveaux pour le moment — voir note ci-dessous
 }
 
 public class Creneau {
@@ -45,6 +50,7 @@ public class Stand {
     private int effectifMax;
     private boolean reserveMajeurs;             // stand interdit aux mineurs
     private boolean premium;                    // stand éditeur : continuité + expérience privilégiées
+    private NiveauEffort niveauEffort;          // défaut NORMAL ; EPUISANT déclenche repos post-créneau + équilibrage
     private Emplacement emplacement;            // lieu physique (kiosque, mairie, ...) ; nullable
     private List<IndisponibiliteStand> indisponibilites;  // vide = toujours ouvert (défaut) — voir plus bas
     private List<OuvertureStand> ouvertures;    // inverse des fermetures — voir plus bas
@@ -77,6 +83,24 @@ public class GroupeCreneau {
     private String groupeSourceId; // groupe d'amplitudes source d'un découpage auto ; null si saisi/importé directement
 }
 ```
+
+`HOMME_JEU` (issue #93) est une compétence d'*animation de rue* (le stand
+mobile « Homme-jeu », un animateur qui déambule en ville plutôt qu'un jeu
+tenu à poste fixe), pas un genre de jeu comme les six autres littéraux.
+Réutiliser `TypologieJeu` plutôt que créer un second axe de compétences est
+une simplification assumée : elle branche gratuitement sur le mécanisme
+d'éligibilité existant (`Animateur.estEligiblePour`) au prix d'un mélange
+conceptuel mineur entre « genre de jeu » et « compétence transverse ».
+
+`NiveauEffort` (issues #93/#79) qualifie la pénibilité physique d'un `Stand` ;
+`EPUISANT` est le cas du stand « Homme-jeu ». Deux niveaux seulement pour
+l'instant (pas de `FACILE` explicite) : la contrainte de repos post-créneau
+(`eviterEnchainementStandsEpuisants`) ne peut donc que *pénaliser*
+l'enchaînement de deux créneaux `EPUISANT`, pas *récompenser* un enchaînement
+vers un stand facile. Ce même champ, combiné à `premium`, alimente aussi
+`equilibrerCreneauxPenibles` (issue #79) : les deux tickets partagent une
+seule notion de pénibilité plutôt que d'en poser deux en parallèle. Voir
+[`contraintes.md`](contraintes.md).
 
 Un `Emplacement` est un référentiel éditable indépendamment (page « Emplacements »),
 géré comme `Stand`/`Creneau`/`Animateur` (CRUD, pas de logique métier propre hormis

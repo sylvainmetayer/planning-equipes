@@ -18,6 +18,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.NiveauCompetence;
+import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -127,6 +128,12 @@ abstract class ConstraintTestBase {
     protected static Stand standAvecEmplacement(String id, Emplacement emplacement) {
         Stand stand = standStrategie(id);
         stand.setEmplacement(emplacement);
+        return stand;
+    }
+
+    protected static Stand standEpuisant(String id) {
+        Stand stand = stand(id, false, TypologieJeu.HOMME_JEU);
+        stand.setNiveauEffort(NiveauEffort.EPUISANT);
         return stand;
     }
 

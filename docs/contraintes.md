@@ -229,6 +229,7 @@ opposable au même titre qu'une règle légale.
 | `experienceRequisePourStandsPremium` | Un stand premium ne devrait pas être tenu par un débutant |
 | `eviterRoulementStandsPremium` | Sur un stand premium, éviter de faire tourner plusieurs animateurs différents |
 | `eviterChangementEmplacementEloigne` | Entre deux créneaux consécutifs, éviter de basculer un animateur vers un stand dont l'emplacement est éloigné (> 300 m) |
+| `eviterEnchainementStandsEpuisants` | Entre deux créneaux consécutifs, éviter d'enchaîner un animateur sur deux stands physiquement épuisants (`Stand.niveauEffort = EPUISANT`) sans repos ni stand plus facile entre les deux |
 
 ### Soft — préférences (`PreferenceConstraints`)
 
@@ -236,6 +237,7 @@ opposable au même titre qu'une règle légale.
 | --- | --- |
 | `favoriserRotationDesStands` | Éviter de réaffecter le même animateur au même stand |
 | `favoriserMixiteDesNiveaux` | Associer un débutant à un référent pour la montée en compétence |
+| `equilibrerCreneauxPenibles` | Répartir équitablement entre animateurs les créneaux « pénibles » (stands épuisants ou premium) |
 
 ## Activer / désactiver une contrainte
 
@@ -324,6 +326,13 @@ via `planning.constraint-weights.equilibrerCharge` plutôt qu'en changeant le
 facteur d'échelle si le besoin est « plus/moins d'importance », et en changeant
 le facteur d'échelle (`UNFAIRNESS_SCALE` dans `QualiteConstraints`) seulement
 si le besoin est « plus/moins de granularité ».
+
+`equilibrerCreneauxPenibles` (issue #79) applique la même technique de mise à
+l'échelle (sa propre constante `UNFAIRNESS_SCALE`, dans `PreferenceConstraints`),
+mais sur le sous-ensemble des postes dont le stand est épuisant
+(`niveauEffort = EPUISANT`, voir `NiveauEffort` dans
+[`domaine.md`](domaine.md)) ou premium — pas sur tous les postes comme
+`equilibrerCharge`.
 
 ## Hors périmètre assumé
 

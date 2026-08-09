@@ -53,6 +53,7 @@ function stand(id: string, effectifMin: number): Stand {
     effectifMax: effectifMin,
     reserveMajeurs: false,
     premium: false,
+    niveauEffort: 'NORMAL',
     emplacement: null,
     indisponibilites: [],
     ouvertures: []
