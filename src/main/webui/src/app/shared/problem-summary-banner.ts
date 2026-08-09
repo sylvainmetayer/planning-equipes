@@ -10,18 +10,19 @@ import { compterProblemes, Probleme } from '../core/problemes';
  * analysed solve — how many problems, split by severity — plus a way in to the
  * Problèmes page, which lists them all.
  *
- * Silent when there is nothing to report, like `app-feasibility-banner`: the
- * nominal path stays free of noise.
+ * Silent unless at least one problem is blocking, like `app-feasibility-banner`:
+ * warnings and minor issues alone are not worth interrupting the nominal path
+ * for, and are still visible on the Problèmes page.
  */
 @Component({
   selector: 'app-problem-summary-banner',
   imports: [MatCardModule, MatIconModule, MatButtonModule, RouterLink],
   template: `
-    @if (resume(); as resume) {
-      <mat-card appearance="outlined" class="probleme-summary" [class.probleme-summary-bloquant]="resume.bloquant">
+    @if (texte(); as texte) {
+      <mat-card appearance="outlined" class="probleme-summary probleme-summary-bloquant">
         <mat-card-content>
-          <mat-icon>{{ resume.bloquant ? 'error' : 'warning' }}</mat-icon>
-          <p>{{ resume.texte }}</p>
+          <mat-icon>error</mat-icon>
+          <p>{{ texte }}</p>
           <a matButton="tonal" routerLink="/problemes" i18n="@@problemes.summary.link">Voir les problèmes</a>
         </mat-card-content>
       </mat-card>
@@ -32,18 +33,15 @@ import { compterProblemes, Probleme } from '../core/problemes';
 export class ProblemSummaryBanner {
   readonly problemes = input<Probleme[]>([]);
 
-  protected readonly resume = computed(() => {
+  protected readonly texte = computed(() => {
     const comptage = compterProblemes(this.problemes());
-    if (comptage.total === 0) {
+    if (comptage.bloquants === 0) {
       return null;
     }
     const total = comptage.total;
     const bloquants = comptage.bloquants;
     const avertissements = comptage.avertissements;
     const mineurs = comptage.mineurs;
-    return {
-      bloquant: comptage.bloquants > 0,
-      texte: $localize`:@@problemes.summary.counts:${total}:total: problème(s) : ${bloquants}:bloquants: bloquant(s), ${avertissements}:avertissements: avertissement(s), ${mineurs}:mineurs: mineur(s).`
-    };
+    return $localize`:@@problemes.summary.counts:${total}:total: problème(s) : ${bloquants}:bloquants: bloquant(s), ${avertissements}:avertissements: avertissement(s), ${mineurs}:mineurs: mineur(s).`;
   });
 }
