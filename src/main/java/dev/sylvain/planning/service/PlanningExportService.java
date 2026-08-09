@@ -75,7 +75,10 @@ public class PlanningExportService {
     private static final Font NAME_FONT = new Font(Font.HELVETICA, 24, Font.BOLD, HEADLINE);
     private static final Font STAT_NUMBER_FONT = new Font(Font.HELVETICA, 19, Font.BOLD, HEADLINE);
     private static final Font STAT_LABEL_FONT = new Font(Font.HELVETICA, 7.5f, Font.BOLD, HEADLINE);
+    private static final Font STAT_SUBLABEL_FONT = new Font(Font.HELVETICA, 6.5f, Font.BOLD, MUTED);
     private static final Font DATE_FONT = new Font(Font.HELVETICA, 13, Font.BOLD, HEADLINE);
+    private static final Font CALLOUT_TITLE_FONT = new Font(Font.HELVETICA, 8.5f, Font.BOLD, RED);
+    private static final Font CALLOUT_TEXT_FONT = new Font(Font.HELVETICA, 10.5f, Font.NORMAL, HEADLINE);
     private static final Font BADGE_FONT = new Font(Font.HELVETICA, 7.5f, Font.BOLD, java.awt.Color.WHITE);
     private static final Font TIME_FONT = new Font(Font.HELVETICA, 8.5f, Font.BOLD, MUTED);
     private static final Font STAND_FONT = new Font(Font.HELVETICA, 10.5f, Font.BOLD, HEADLINE);
@@ -216,6 +219,7 @@ public class PlanningExportService {
         if (postes.isEmpty()) {
             document.add(emptyState());
         } else {
+            document.add(buildStandsAffectesCard(postes));
             for (PosteAffectation poste : postes) {
                 document.add(buildAssignmentCard(poste));
             }
@@ -273,11 +277,12 @@ public class PlanningExportService {
     private PdfPTable statBlock(List<PosteAffectation> postes) {
         PdfPTable table = new PdfPTable(new float[] { 10f, 0.6f, 10f, 0.6f, 10f });
         table.setWidthPercentage(100);
-        table.addCell(statCell(distinctCreneauCount(postes), "CRÉNEAUX"));
+        table.addCell(statCell(distinctCreneauCount(postes), "CRÉNEAUX", null));
         table.addCell(gapCell());
-        table.addCell(statCell(distinctStandCount(postes), "STANDS"));
+        table.addCell(statCell(distinctStandCount(postes), "STANDS", null));
         table.addCell(gapCell());
-        table.addCell(statCell(distinctDayCount(postes), "JOURS"));
+        String heuresSubLabel = String.format(Locale.FRENCH, "TOTAL %.1f H TRAVAILLÉES", totalHeures(postes));
+        table.addCell(statCell(distinctDayCount(postes), "JOURS", heuresSubLabel));
         return table;
     }
 
@@ -287,7 +292,8 @@ public class PlanningExportService {
         return cell;
     }
 
-    private PdfPCell statCell(int value, String label) {
+    /** @param subLabel extra line below the main label (e.g. total hours), omitted when {@code null}. */
+    private PdfPCell statCell(int value, String label, String subLabel) {
         PdfPCell cell = new PdfPCell();
         cell.setBorder(Rectangle.NO_BORDER);
         cell.setHorizontalAlignment(Element.ALIGN_CENTER);
@@ -307,7 +313,68 @@ public class PlanningExportService {
 
         cell.addElement(number);
         cell.addElement(labelParagraph);
+
+        if (subLabel != null) {
+            Paragraph subLabelParagraph = new Paragraph();
+            subLabelParagraph.setAlignment(Element.ALIGN_CENTER);
+            subLabelParagraph.setSpacingBefore(3f);
+            Chunk subLabelChunk = new Chunk(subLabel, STAT_SUBLABEL_FONT);
+            subLabelChunk.setCharacterSpacing(0.6f);
+            subLabelParagraph.add(subLabelChunk);
+            cell.addElement(subLabelParagraph);
+        }
         return cell;
+    }
+
+    private double totalHeures(List<PosteAffectation> postes) {
+        int totalMinutes = 0;
+        for (PosteAffectation poste : postes) {
+            totalMinutes += poste.getDureeEffectiveMinutes();
+        }
+        return totalMinutes / 60.0;
+    }
+
+    /**
+     * Rounded callout listing every stand this animateur is assigned to at
+     * least once over the whole event, in the order they first come up
+     * chronologically. Placed between the stat block and the day-by-day
+     * planning so the animateur can see at a glance which stands to revise.
+     */
+    private PdfPTable buildStandsAffectesCard(List<PosteAffectation> postes) {
+        PdfPTable card = new PdfPTable(1);
+        card.setWidthPercentage(100);
+        card.setSpacingAfter(18f);
+        card.getDefaultCell().setBorder(Rectangle.NO_BORDER);
+        card.setTableEvent(new RoundedBackgroundEvent(CARD_BACKGROUND, RED, 10f));
+
+        PdfPCell cell = new PdfPCell();
+        cell.setBorder(Rectangle.NO_BORDER);
+        cell.setPadding(14f);
+
+        Paragraph title = new Paragraph();
+        Chunk titleChunk = new Chunk("VOS STANDS AFFECTÉS", CALLOUT_TITLE_FONT);
+        titleChunk.setCharacterSpacing(1.1f);
+        title.add(titleChunk);
+        title.setSpacingAfter(5f);
+        cell.addElement(title);
+
+        cell.addElement(new Paragraph(String.join("  ·  ", distinctStandNames(postes)), CALLOUT_TEXT_FONT));
+
+        card.addCell(cell);
+        return card;
+    }
+
+    /** Stand names this animateur is assigned to, deduplicated, in first-appearance (chronological) order. */
+    private List<String> distinctStandNames(List<PosteAffectation> postes) {
+        List<String> names = new ArrayList<>();
+        Set<String> seenIds = new LinkedHashSet<>();
+        for (PosteAffectation poste : postes) {
+            Stand stand = poste.getStand();
+            if (stand != null && seenIds.add(stand.getId())) {
+                names.add(stand.getNom());
+            }
+        }
+        return names;
     }
 
     private int distinctStandCount(List<PosteAffectation> postes) {
