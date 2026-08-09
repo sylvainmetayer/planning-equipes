@@ -278,7 +278,15 @@ démarrage. **Un changement de schéma = un nouveau fichier versionné** ; ne ja
   ~25-75 s chacun) : ils sont exclus par défaut via la propriété
   `test.excludedGroups` du `pom.xml` et ne se lancent qu'en local avec
   `./mvnw test -Pscenario-tests` (profil `scenario-tests`). Voir
-  `AGENTS.md` (« Costly test jobs ») pour la marche à suivre côté agent.
+  `AGENTS.md` (« Costly test jobs ») pour la marche à suivre côté agent. La
+  phase `package` de `mvn verify` active Quinoa (désactivé seulement sur le
+  profil `%test`), qui télécharge son propre binaire Node et lance
+  `npm ci` à chaque run sans cache : le job `test` met donc en cache
+  `.quinoa` (binaire Node, clé sur `application.properties` où la version est
+  épinglée) et `src/main/webui/node_modules` (clé sur `package-lock.json`)
+  séparément de la mise en cache npm du job `frontend` (celle-ci passe par
+  `actions/setup-node`, qui ne s'applique pas ici — ce job n'installe pas de
+  Node système, Quinoa utilise le sien).
 - `.github/workflows/docker-ghcr.yml` — publication de l'image sur GHCR, en
   multi-arch (`linux/amd64`, `linux/arm64` via QEMU) pour un déploiement natif
   sur Raspberry Pi. Ne se déclenche **que** sur un push `main` ou un tag de

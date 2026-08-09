@@ -29,6 +29,26 @@ jobs:
           java-version: '25'
           cache: maven
 
+      # `mvn verify`'s package phase runs quarkus:build, which activates
+      # Quinoa (only disabled on the %test profile, not on package/verify) —
+      # it downloads its own pinned Node binary and runs `npm ci` for the
+      # frontend on every run otherwise. Both live outside src/main/webui's
+      # node_modules cache-by-lockfile story (the frontend job's own
+      # `actions/setup-node` `cache: npm` doesn't apply here: this job never
+      # sets up a system Node, Quinoa uses its own isolated one), so they're
+      # cached separately, keyed on what actually invalidates each one.
+      - name: Cache Quinoa's Node.js binary
+        uses: actions/cache@v4
+        with:
+          path: .quinoa
+          key: quinoa-node-${{ runner.os }}-${{ hashFiles('src/main/resources/application.properties') }}
+
+      - name: Cache Quinoa's npm ci output (frontend node_modules)
+        uses: actions/cache@v4
+        with:
+          path: src/main/webui/node_modules
+          key: quinoa-node-modules-${{ runner.os }}-${{ hashFiles('src/main/webui/package-lock.json') }}
+
       # Unit tests, then integration tests (*IT) against the packaged app
       # (skipITs defaults to true in the pom). PostgreSQL is provided by
       # Quarkus dev services (Docker is preinstalled on GitHub runners), so no
