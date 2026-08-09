@@ -20,7 +20,7 @@ import jakarta.ws.rs.core.MediaType;
  * field of {@code GET /api/constraints} — that one reflects the data of the
  * last analysed solve, this one always reflects the current referential.
  */
-@Path("/api/feasibility")
+@Path("/feasibility")
 @Produces(MediaType.APPLICATION_JSON)
 public class FeasibilityResource {
 

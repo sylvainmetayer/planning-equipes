@@ -21,7 +21,7 @@ import jakarta.ws.rs.core.Response;
  * and lets the caller simulate handing that same poste to a different
  * animateur to see the score impact before actually changing anything.
  */
-@Path("/api/postes")
+@Path("/postes")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class AffectationExplanationResource {

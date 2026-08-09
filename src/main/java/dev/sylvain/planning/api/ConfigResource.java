@@ -19,7 +19,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  * build time. Blank when unset, which the frontend treats as "disabled" —
  * see docs/observabilite.md.
  */
-@Path("/api/config")
+@Path("/config")
 @Produces(MediaType.APPLICATION_JSON)
 public class ConfigResource {
 

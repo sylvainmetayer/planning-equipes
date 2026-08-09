@@ -12,7 +12,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-@Path("/api/planning/export")
+@Path("/planning/export")
 @Consumes(MediaType.APPLICATION_JSON)
 public class PlanningExportResource {
 

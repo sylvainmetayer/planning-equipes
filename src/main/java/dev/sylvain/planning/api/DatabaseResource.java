@@ -18,7 +18,7 @@ import jakarta.ws.rs.core.Response;
  * Download and replay the whole dataset as a SQL script, so a problematic
  * dataset can be shared and reloaded when analysing a planning.
  */
-@Path("/api/database")
+@Path("/database")
 public class DatabaseResource {
 
     @Inject

@@ -29,7 +29,7 @@ import jakarta.ws.rs.core.MediaType;
  * level it is enforced, whether it is active, and how it scored during the
  * last analysis.
  */
-@Path("/api/constraints")
+@Path("/constraints")
 @Produces(MediaType.APPLICATION_JSON)
 public class ConstraintResource {
 

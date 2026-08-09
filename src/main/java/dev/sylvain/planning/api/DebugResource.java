@@ -11,7 +11,7 @@ import jakarta.ws.rs.Path;
  * meaningful business operation, only a way to verify error tracking is
  * actually wired up in a given environment.
  */
-@Path("/api/debug/test-exception")
+@Path("/debug/test-exception")
 public class DebugResource {
 
     @POST

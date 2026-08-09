@@ -25,7 +25,7 @@ import jakarta.ws.rs.core.Response;
  * analyze as a background job and lets the browser poll for the result instead
  * of holding an HTTP request open for minutes.
  */
-@Path("/api")
+@Path("/")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class SolverJobResource {

@@ -12,7 +12,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-@Path("/api/planning/hours")
+@Path("/planning/hours")
 @Consumes(MediaType.APPLICATION_JSON)
 public class PlanningHoursResource {
 
