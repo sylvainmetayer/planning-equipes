@@ -11,6 +11,11 @@
   display: block;
 }
 
+/* At-a-glance flag on the day-card header: at least one understaffed stand-line that day. */
+.day-card.has-understaffed {
+  --mdc-outlined-card-container-color: var(--mat-sys-error-container);
+}
+
 .day-slot + .day-slot {
   margin-top: 0.75rem;
   padding-top: 0.75rem;

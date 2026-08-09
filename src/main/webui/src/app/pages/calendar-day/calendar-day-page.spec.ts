@@ -119,4 +119,23 @@ describe('buildDays — understaffing indicator', () => {
     const line = days[0].slots[0].stands[0];
     expect(line.names.length).toBeGreaterThanOrEqual(line.effectifMin);
   });
+
+  it('flags the whole day card when any of its stand-lines is understaffed, visible without opening it', () => {
+    const c1 = creneau({ id: 1, jour: 1 });
+    const days = buildDays([
+      poste({ id: 'p1', creneau: c1, stand: stand('Stratégie 16', 2), animateur: animateur('Oscar') })
+    ]);
+
+    expect(days[0].understaffed).toBe(true);
+  });
+
+  it('does not flag a day whose stands are all fully staffed or fully unassigned', () => {
+    const c1 = creneau({ id: 1, jour: 1 });
+    const days = buildDays([
+      poste({ id: 'p1', creneau: c1, stand: stand('S1', 1), animateur: animateur('A') }),
+      poste({ id: 'p2', creneau: c1, stand: stand('S2', 1) })
+    ]);
+
+    expect(days[0].understaffed).toBe(false);
+  });
 });

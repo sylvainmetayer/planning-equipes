@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Animateur, Creneau, PosteAffectation, Stand } from '../../core/models';
-import { buildAssignmentsByDate } from './calendar-month-page';
+import { buildAssignmentsByDate, hasUnderstaffedStand } from './calendar-month-page';
 
 function creneau(overrides: Partial<Creneau> & { id: number }): Creneau {
   return { jour: 1, date: '2026-08-01', heureDebut: '13:40', heureFin: '19:00', groupe: null, ...overrides };
@@ -83,5 +83,25 @@ describe('buildAssignmentsByDate — understaffing indicator', () => {
     expect(line.names).toEqual(['Oscar']);
     expect(line.effectifMin).toBe(2);
     expect(line.names.length).toBeLessThan(line.effectifMin);
+  });
+
+  it('hasUnderstaffedStand flags the month-grid day cell without opening the day', () => {
+    const c1 = creneau({ id: 1, date: '2026-07-17' });
+    const byDate = buildAssignmentsByDate([
+      poste({ id: 'p1', creneau: c1, stand: stand('Stratégie 16', 2), animateur: animateur('Oscar') })
+    ]);
+
+    expect(hasUnderstaffedStand(byDate.get('2026-07-17'))).toBe(true);
+    expect(hasUnderstaffedStand(byDate.get('2099-01-01'))).toBe(false);
+  });
+
+  it('hasUnderstaffedStand ignores a day whose stands are fully staffed or fully unassigned', () => {
+    const c1 = creneau({ id: 1, date: '2026-07-17' });
+    const byDate = buildAssignmentsByDate([
+      poste({ id: 'p1', creneau: c1, stand: stand('S1', 1), animateur: animateur('A') }),
+      poste({ id: 'p2', creneau: c1, stand: stand('S2', 1) })
+    ]);
+
+    expect(hasUnderstaffedStand(byDate.get('2026-07-17'))).toBe(false);
   });
 });

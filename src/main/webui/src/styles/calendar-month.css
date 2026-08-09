@@ -82,7 +82,15 @@
   border-color: var(--mat-sys-primary);
 }
 
+/* At-a-glance flag on the month grid: at least one understaffed stand-line that day. */
+.calendar-day-cell.has-understaffed {
+  border-color: var(--mat-sys-error);
+}
+
 .calendar-day-number {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
   font: var(--mat-sys-title-small);
 }
 

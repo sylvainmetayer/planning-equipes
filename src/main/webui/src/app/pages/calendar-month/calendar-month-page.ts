@@ -53,6 +53,8 @@ interface MonthCell {
   otherMonth: boolean;
   today: boolean;
   count: number;
+  /** True when any stand-line on this date has some, but fewer than effectifMin, animateurs. */
+  understaffed: boolean;
 }
 
 interface FilterOption {
@@ -98,6 +100,7 @@ export class CalendarMonthPage {
 
   protected readonly dayDetailsFallback = $localize`:@@calendarMonth.dayDetails:Détails du jour`;
   protected readonly unassignedLabel = $localize`:@@calendarMonth.unassigned:(non assigné)`;
+  protected readonly cellUnderstaffedTooltip = $localize`:@@calendarMonth.cellUnderstaffed:Au moins un stand en sous-effectif ce jour-là`;
 
   protected readonly monthLabel = computed(() =>
     this.month().toLocaleDateString(intlLocale(), { month: 'long', year: 'numeric' })
@@ -155,12 +158,14 @@ export class CalendarMonthPage {
     const todayKey = toDateKey(new Date());
     return buildMonthCells(month).map((cellDate) => {
       const dateKey = toDateKey(cellDate);
+      const slots = assignments.get(dateKey);
       return {
         dateKey,
         dayNumber: cellDate.getDate(),
         otherMonth: cellDate.getMonth() !== month.getMonth(),
         today: dateKey === todayKey,
-        count: assignments.get(dateKey)?.length ?? 0
+        count: slots?.length ?? 0,
+        understaffed: hasUnderstaffedStand(slots)
       };
     });
   });
@@ -255,12 +260,22 @@ export class CalendarMonthPage {
 
   /** True for a stand-line with some, but fewer than `effectifMin`, animateurs — fully unassigned (0) is already flagged separately. */
   protected isUnderstaffed(stand: StandLine): boolean {
-    return stand.names.length > 0 && stand.names.length < stand.effectifMin;
+    return isStandLineUnderstaffed(stand);
   }
 
   protected understaffedTooltip(stand: StandLine): string {
     return $localize`:@@calendarDay.understaffed:Sous-effectif : ${stand.names.length}:count: / ${stand.effectifMin}:min: animateur(s) affecté(s)`;
   }
+}
+
+/** True for a stand-line with some, but fewer than `effectifMin`, animateurs — fully unassigned (0) is already flagged separately. */
+function isStandLineUnderstaffed(stand: StandLine): boolean {
+  return stand.names.length > 0 && stand.names.length < stand.effectifMin;
+}
+
+/** True when any stand-line across any créneau of `slots` is understaffed — drives the month grid's day-cell indicator. */
+export function hasUnderstaffedStand(slots: SlotEntry[] | undefined): boolean {
+  return (slots ?? []).some((slot) => slot.stands.some(isStandLineUnderstaffed));
 }
 
 function buildWeekdayAbbreviations(): string[] {

@@ -69,8 +69,16 @@
                   [class.is-other-month]="cell.otherMonth"
                   [class.is-today]="cell.today"
                   [class.is-selected]="cell.dateKey === effectiveDateKey()"
+                  [class.has-understaffed]="cell.understaffed"
                   (click)="selectDay(cell)">
-            <div class="calendar-day-number">{{ cell.dayNumber }}</div>
+            <div class="calendar-day-number">
+              {{ cell.dayNumber }}
+              @if (cell.understaffed) {
+                <mat-icon inline class="understaffed-icon" [matTooltip]="cellUnderstaffedTooltip" [attr.aria-label]="cellUnderstaffedTooltip">
+                  warning
+                </mat-icon>
+              }
+            </div>
             <div class="calendar-day-meta">
               <span>{{ creneauCountLabel(cell.count) }}</span>
               <span class="calendar-dot" [class.has-events]="cell.count > 0"></span>

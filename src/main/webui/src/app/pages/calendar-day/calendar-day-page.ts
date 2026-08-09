@@ -37,6 +37,8 @@ interface DayCard {
   jour: number;
   title: string;
   slots: SlotCard[];
+  /** True when any stand-line on this day has some, but fewer than effectifMin, animateurs — shown on the card header, at a glance. */
+  understaffed: boolean;
 }
 
 /**
@@ -92,12 +94,19 @@ export class CalendarDayPage {
 
   /** True for a stand-line with some, but fewer than `effectifMin`, animateurs — fully unassigned (0) is already flagged separately. */
   protected isUnderstaffed(stand: StandLine): boolean {
-    return stand.names.length > 0 && stand.names.length < stand.effectifMin;
+    return isStandLineUnderstaffed(stand);
   }
 
   protected understaffedTooltip(stand: StandLine): string {
     return $localize`:@@calendarDay.understaffed:Sous-effectif : ${stand.names.length}:count: / ${stand.effectifMin}:min: animateur(s) affecté(s)`;
   }
+
+  protected readonly dayUnderstaffedTooltip = $localize`:@@calendarMonth.cellUnderstaffed:Au moins un stand en sous-effectif ce jour-là`;
+}
+
+/** True for a stand-line with some, but fewer than `effectifMin`, animateurs — fully unassigned (0) is already flagged separately. */
+function isStandLineUnderstaffed(stand: StandLine): boolean {
+  return stand.names.length > 0 && stand.names.length < stand.effectifMin;
 }
 
 export function buildDays(postes: PosteAffectation[]): DayCard[] {
@@ -144,12 +153,8 @@ export function buildDays(postes: PosteAffectation[]): DayCard[] {
 
   return Array.from(days.values())
     .sort((left, right) => left.jour - right.jour)
-    .map((day) => ({
-      jour: day.jour,
-      title: day.date
-        ? $localize`:@@calendarDay.dayTitleWithDate:Jour ${day.jour}:jour: — ${day.date}:date:`
-        : $localize`:@@calendarDay.dayTitle:Jour ${day.jour}:jour:`,
-      slots: Array.from(day.creneaux.values())
+    .map((day) => {
+      const slots = Array.from(day.creneaux.values())
         .sort((left, right) => `${left.heureDebut}`.localeCompare(`${right.heureDebut}`))
         .map((creneau) => ({
           creneauId: creneau.id,
@@ -167,6 +172,14 @@ export function buildDays(postes: PosteAffectation[]): DayCard[] {
             .sort(
               (left, right) => left.standNom.localeCompare(right.standNom) || left.heureDebut.localeCompare(right.heureDebut)
             )
-        }))
-    }));
+        }));
+      return {
+        jour: day.jour,
+        title: day.date
+          ? $localize`:@@calendarDay.dayTitleWithDate:Jour ${day.jour}:jour: — ${day.date}:date:`
+          : $localize`:@@calendarDay.dayTitle:Jour ${day.jour}:jour:`,
+        slots,
+        understaffed: slots.some((slot) => slot.stands.some(isStandLineUnderstaffed))
+      };
+    });
 }
