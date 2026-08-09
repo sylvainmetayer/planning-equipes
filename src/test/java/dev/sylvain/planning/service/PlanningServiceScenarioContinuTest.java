@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.List;
 
 import org.eclipse.microprofile.config.ConfigProvider;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.domain.Creneau;
@@ -27,7 +28,15 @@ import dev.sylvain.planning.domain.Stand;
  * like {@link PlanningServiceScenarioCompletTest}, so it needs no database
  * and can give the solver the time this scenario size actually takes,
  * unconstrained by the %test profile's short solver budget.
+ *
+ * <p>Tagged {@code scenario-lent} (~75s for both tests): excluded from the
+ * default {@code ./mvnw test}/CI run (see the {@code scenario-tests} Maven
+ * profile in {@code pom.xml}) and only run with
+ * {@code ./mvnw test -Pscenario-tests}. Run it in the background (not a
+ * blocking foreground wait) when triggered from an agent session — see
+ * AGENTS.md's "Costly test jobs" section.</p>
  */
+@Tag("scenario-lent")
 class PlanningServiceScenarioContinuTest {
 
     // Empirically verified: 3/3 independent cold reset/import/découpage/solve

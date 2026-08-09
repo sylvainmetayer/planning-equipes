@@ -38,13 +38,32 @@ Read before working on constraints or the domain model:
 
 - Dev server: `./mvnw quarkus:dev` (needs Postgres; `docker compose up postgres`
   or Quarkus dev services)
-- Full test suite: `./mvnw test`
+- Full test suite (fast — excludes `scenario-lent`, see below): `./mvnw test`
 - Single class: `./mvnw test -Dtest=PlanningHardConstraintsTest`
 - Single method:
   `./mvnw test -Dtest=PlanningHardConstraintsTest#generatedPlanningDoesNotViolateAnyHardConstraintOnNominalCase`
 - Integration tests (`*IT.java`, failsafe, `skipITs=true` by default):
   `./mvnw verify -DskipITs=false`
 - Full stack: `docker compose --profile app up --build`
+
+### Costly test jobs
+
+`PlanningServiceScenarioCompletTest` and `PlanningServiceScenarioContinuTest`
+solve a ~2000-poste scenario to hard-feasibility and take ~25s/~75s
+respectively — tagged `@Tag("scenario-lent")`, excluded from the default
+`./mvnw test`/`./mvnw verify` run via the `test.excludedGroups` property in
+`pom.xml`, and **not run in CI** (`.github/workflows/tests.yml` uses the
+default exclusion). Run them explicitly with `./mvnw test -Pscenario-tests`
+(the profile clears the exclusion), optionally narrowed with `-Dtest=...`.
+Add the same tag to any future test in this weight class instead of letting
+it slow down the default loop.
+
+When an agent session needs to run this profile (or any other job on this
+order of a minute or more — a `docker build`, a long solve), launch it as a
+background command and let the harness notify on completion instead of
+blocking the turn on a foreground wait or a manual sleep/poll loop: both cost
+real wall-clock time for nothing and, over a sleep-poll loop specifically,
+burn tokens on repeated status checks for no benefit over one notification.
 - Frontend only (from `src/main/webui`): `npm install`, `npm run build`,
   `npm start` (`ng serve` on 4200), `npm test` (Vitest unit tests, Node/jsdom,
   one pass in CI / watch in a terminal). `quarkus:dev` already starts and
@@ -71,11 +90,11 @@ Single Quarkus service, no separate solver microservice. Package root:
 - `service/` — `PlanningService` (SolverFactory from `solver/solverConfig.xml`,
   loads `scenario.yml` via SnakeYAML), `SolverJobService` (async solve/analyze),
   `ConstraintAnalysisStore`, `ReferenceDataService` / `ReferenceDataRepository`,
-  `PlanningPersistenceService`, `CsvImportService`, `DatabaseDumpService`,
+  `PlanningPersistenceService`, `DatabaseDumpService`,
   `PlanningExportService` (PDF/ICS, server-side only).
 - `api/` — JAX-RS resources: `PlanningResource`, `SolverJobResource`,
-  `ReferenceDataResource`, `ConstraintResource`, `CsvImportResource`,
-  `DatabaseResource`, `PlanningExportResource`. Endpoint list in `docs/api.md`.
+  `ReferenceDataResource`, `ConstraintResource`, `DatabaseResource`,
+  `PlanningExportResource`. Endpoint list in `docs/api.md`.
 - Persistence: PostgreSQL + Flyway migrations in
   `src/main/resources/db/migration/`. Schema change = **new versioned file**;
   never edit an applied migration.
@@ -100,12 +119,13 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
 - Shell: `app/app.ts` renders a `mat-toolbar` + `mat-sidenav` with the navigation
   grouped in Planning / Reference data / Views, and the solver `app-job-monitor`
   in the toolbar.
-- **One route = one page = one block.** Routes: `/solver` (default), `/exports`,
-  `/data-transfer`, `/stands`, `/animateurs`, `/creneaux`, `/typologies`,
-  `/ad-hoc-constraints`, `/calendar`, `/day-calendar`, `/constraints`,
-  `/problemes`, `/hours`, `/staffing`. Adding a functional block means adding a route and a
-  `app/pages/<block>/` folder, never
-  a new section inside an existing page.
+- **One route = one page = one block.** Routes: `/solver` (default), `/debug`,
+  `/notifications`, `/data-setup`, `/stands`, `/emplacements`, `/animateurs`,
+  `/creneaux`, `/decoupage`, `/typologies`, `/ad-hoc-constraints`, `/calendar`,
+  `/day-calendar`, `/constraints`, `/problemes`, `/hours`, `/staffing`
+  (`/exports` and `/data-transfer` are legacy redirects, kept for old
+  bookmarks/links). Adding a functional block means adding a route and a
+  `app/pages/<block>/` folder, never a new section inside an existing page.
 - Layout: `app/core/` holds shared services (`api.service.ts` — the only place
   doing HTTP, `downloadFile` returns a status string and never touches the DOM;
   `models.ts`; `date-utils.ts`, week starts Monday; `planning-state.service.ts`;

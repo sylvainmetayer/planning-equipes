@@ -20,6 +20,14 @@
         <sentry.version>8.16.0</sentry.version>
         <skipITs>true</skipITs>
         <surefire-plugin.version>3.5.6</surefire-plugin.version>
+        <!-- Full-scale scenario regression tests (@Tag("scenario-lent"):
+             PlanningServiceScenarioCompletTest, PlanningServiceScenarioContinuTest)
+             solve a ~2000-poste problem to hard-feasibility and take ~25-75s
+             each — excluded from the default `./mvnw test`/CI run so the
+             everyday inner loop stays fast; run them explicitly with
+             `./mvnw test -Pscenario-tests` (see the scenario-tests profile
+             below), which clears this property. -->
+        <test.excludedGroups>scenario-lent</test.excludedGroups>
         <!-- Silences a JDK 25 native-access warning from JNA (loaded by
              Quarkus's interactive dev-mode console) in the JVM forked by
              quarkus:dev, quarkus:test and quarkus:run. Quarkus 3.28+ already
@@ -143,6 +151,7 @@
                 <version>${surefire-plugin.version}</version>
                 <configuration>
                     <argLine>@{argLine} ${jvm.args}</argLine>
+                    <excludedGroups>${test.excludedGroups}</excludedGroups>
                     <systemPropertyVariables>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                         <maven.home>${maven.home}</maven.home>
@@ -183,6 +192,16 @@
             <properties>
                 <skipITs>false</skipITs>
                 <quarkus.native.enabled>true</quarkus.native.enabled>
+            </properties>
+        </profile>
+        <!-- Opt-in: runs the @Tag("scenario-lent") full-scale scenario tests
+             the default build excludes (see test.excludedGroups above). Not
+             activated by CI — use ./mvnw test -Pscenario-tests locally, or in
+             the background from an agent session (AGENTS.md). -->
+        <profile>
+            <id>scenario-tests</id>
+            <properties>
+                <test.excludedGroups></test.excludedGroups>
             </properties>
         </profile>
     </profiles>

@@ -252,10 +252,18 @@ démarrage. **Un changement de schéma = un nouveau fichier versionné** ; ne ja
 - `.github/workflows/tests.yml` — deux jobs sur chaque push `main` et chaque
   pull request : `test` (`./mvnw verify -DskipITs=false`, avec upload des
   rapports surefire/failsafe) et `frontend` (`npm ci` puis `npm test` sur
-  `src/main/webui`, Node 24).
+  `src/main/webui`, Node 24). Le job `test` n'exécute **pas** les tests de
+  scénario grande échelle (`@Tag("scenario-lent")`,
+  `PlanningServiceScenarioCompletTest`/`PlanningServiceScenarioContinuTest`,
+  ~25-75 s chacun) : ils sont exclus par défaut via la propriété
+  `test.excludedGroups` du `pom.xml` et ne se lancent qu'en local avec
+  `./mvnw test -Pscenario-tests` (profil `scenario-tests`). Voir
+  `AGENTS.md` (« Costly test jobs ») pour la marche à suivre côté agent.
 - `.github/workflows/docker-ghcr.yml` — publication de l'image sur GHCR, en
   multi-arch (`linux/amd64`, `linux/arm64` via QEMU) pour un déploiement natif
-  sur Raspberry Pi.
+  sur Raspberry Pi. Sur une pull request (jamais poussée sur le registre), le
+  build reste `linux/amd64` uniquement et saute l'émulation QEMU — seul un
+  push sur `main`/une release paie le coût du build multi-arch complet.
 
 ## Mises à jour de dépendances (Renovate)
 
