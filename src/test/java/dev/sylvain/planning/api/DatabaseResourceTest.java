@@ -106,6 +106,105 @@ class DatabaseResourceTest {
     }
 
     @Test
+    void exportedDumpIncludesParametresAndSurvivesReplay() {
+        given()
+                .when().post("/api/planning/reset")
+                .then()
+                .statusCode(200);
+
+        given()
+                .when().post("/api/reference-data/import-scenario?name=scenario.yml")
+                .then()
+                .statusCode(204);
+
+        given()
+                .contentType(ContentType.JSON)
+                .body("{\"dureeHebdomadaireMaxMinutes\":2760,\"dureeHebdomadaireMaxMineurMinutes\":2100,"
+                        + "\"pauseMinimaleEntreVacationsMinutes\":45,\"reposQuotidienMinimalMinutes\":660}")
+                .when().put("/api/parametres-legaux")
+                .then()
+                .statusCode(200);
+
+        given()
+                .contentType(ContentType.JSON)
+                .body("{\"dureeResolutionSecondes\":42}")
+                .when().put("/api/parametres-solveur")
+                .then()
+                .statusCode(200);
+
+        given()
+                .contentType(ContentType.JSON)
+                .body("{\"actif\":false,\"motif\":\"test\",\"modifieParUtilisateurId\":\"ui\"}")
+                .when().put("/api/constraints/dureeHebdomadaireMax")
+                .then()
+                .statusCode(200);
+
+        String dump = given()
+                .when().get("/api/database/export")
+                .then()
+                .statusCode(200)
+                .extract().asString();
+        assertThat(dump)
+                .contains("INSERT INTO parametres_legaux (").contains("2760")
+                .contains("INSERT INTO parametres_decoupage (")
+                .contains("INSERT INTO parametres_solveur (").contains("42")
+                .contains("INSERT INTO constraint_toggle (").contains("dureeHebdomadaireMax");
+
+        sqlRequest(dump)
+                .when().post("/api/database/import")
+                .then()
+                .statusCode(200)
+                .body("statements", greaterThan(0));
+
+        given()
+                .when().get("/api/parametres-legaux")
+                .then()
+                .statusCode(200)
+                .body("dureeHebdomadaireMaxMinutes", equalTo(2760));
+
+        given()
+                .when().get("/api/parametres-solveur")
+                .then()
+                .statusCode(200)
+                .body("dureeResolutionSecondes", equalTo(42));
+    }
+
+    @Test
+    void exportedDumpRestoresIdentitySequencesSoNewRowsDoNotCollide() {
+        given()
+                .when().post("/api/planning/reset")
+                .then()
+                .statusCode(200);
+
+        given()
+                .when().post("/api/reference-data/import-scenario?name=scenario.yml")
+                .then()
+                .statusCode(204);
+
+        String dump = given()
+                .when().get("/api/database/export")
+                .then()
+                .statusCode(200)
+                .extract().asString();
+
+        sqlRequest(dump)
+                .when().post("/api/database/import")
+                .then()
+                .statusCode(200)
+                .body("statements", greaterThan(0));
+
+        // A new créneau created after the replay must get a fresh id, not one
+        // that collides with a row the dump just re-inserted with an explicit
+        // identity value (see resyncIdentitySequences).
+        given()
+                .contentType(ContentType.JSON)
+                .body("{\"date\":\"2099-01-01\",\"heureDebut\":\"09:00:00\",\"heureFin\":\"10:00:00\"}")
+                .when().post("/api/creneaux")
+                .then()
+                .statusCode(200);
+    }
+
+    @Test
     void importRejectsStatementsOutsideTheAllowedScope() {
         sqlRequest("DROP TABLE animateur;")
                 .when().post("/api/database/import")
