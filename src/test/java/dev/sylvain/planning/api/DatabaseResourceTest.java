@@ -73,6 +73,39 @@ class DatabaseResourceTest {
     }
 
     @Test
+    void exportedDumpIncludesGroupeCreneauSoCreneauForeignKeysReplay() {
+        given()
+                .when().post("/api/planning/reset")
+                .then()
+                .statusCode(200);
+
+        given()
+                .when().post("/api/reference-data/import-scenario?name=scenario.yml")
+                .then()
+                .statusCode(204);
+
+        given()
+                .contentType(ContentType.JSON)
+                .body("{\"id\":\"CONTINU\",\"nom\":\"Continu\"}")
+                .when().post("/api/groupes-creneaux")
+                .then()
+                .statusCode(200);
+
+        String dump = given()
+                .when().get("/api/database/export")
+                .then()
+                .statusCode(200)
+                .extract().asString();
+        assertThat(dump).contains("INSERT INTO groupe_creneau (").contains("'CONTINU'");
+
+        sqlRequest(dump)
+                .when().post("/api/database/import")
+                .then()
+                .statusCode(200)
+                .body("statements", greaterThan(0));
+    }
+
+    @Test
     void importRejectsStatementsOutsideTheAllowedScope() {
         sqlRequest("DROP TABLE animateur;")
                 .when().post("/api/database/import")

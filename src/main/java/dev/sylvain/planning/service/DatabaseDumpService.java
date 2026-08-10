@@ -41,6 +41,7 @@ public class DatabaseDumpService {
             "typologie",
             "animateur",
             "stand",
+            "groupe_creneau",
             "creneau",
             "animateur_competence",
             "animateur_jour_indispo",
