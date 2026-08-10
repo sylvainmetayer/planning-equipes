@@ -3,6 +3,13 @@
 Toutes les ressources sont exposées par le service Quarkus sous `/api`, au format
 JSON sauf mention contraire.
 
+## Documentation OpenAPI
+
+| Méthode | Chemin | Description |
+| --- | --- | --- |
+| `GET` | `/q/openapi` | Spécification OpenAPI générée automatiquement par Quarkus (YAML par défaut) |
+| `GET` | `/q/swagger-ui` | Interface Swagger UI pour explorer et tester les endpoints |
+
 ## Configuration
 
 | Méthode | Chemin | Description |
