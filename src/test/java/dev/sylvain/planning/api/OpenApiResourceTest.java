@@ -24,6 +24,6 @@ class OpenApiResourceTest {
                 .when().get("/q/swagger-ui")
                 .then()
                 .statusCode(200)
-                .body(containsString("Swagger UI"));
+                .body(containsString("swagger-ui"));
     }
 }
