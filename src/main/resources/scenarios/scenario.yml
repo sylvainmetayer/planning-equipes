@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
 festival:
   dateDebut: 2026-07-08
   

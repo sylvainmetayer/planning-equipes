@@ -61,6 +61,47 @@ devient le groupe actif. Une notification prévient alors l'opérateur du nom du
 groupe activé. Absente, l'import se comporte comme ci-dessus. Voir
 [`domaine.md`](domaine.md#découpage-automatique-en-vacations).
 
+## Schéma de validation d'un fichier de scénario
+
+[`docs/schema/scenario-schema.json`](schema/scenario-schema.json) décrit la
+structure attendue d'un fichier de scénario (sections `festival`, `creneaux`,
+`stands`, `animateurs`, `postes`, et les sections optionnelles
+`parametresLegaux`, `parametresDecoupage`, `parametresSolveur`) : types de
+champs, sections/champs obligatoires, durées non négatives, valeurs d'enum
+(`TypologieJeu`, `NiveauCompetence`, `StrategieCouverturePendantPause`).
+
+Le schéma n'est pas écrit à la main : il est **généré** à partir des DTOs
+Jackson + Bean Validation de `dev.sylvain.planning.scenario.dto`
+(`ScenarioDto` et les classes qu'il référence), pour qu'il ne puisse pas
+diverger de ce que ces DTOs acceptent. Les fichiers de scénario livrés dans
+`src/main/resources/scenarios/` pointent vers lui via un commentaire
+`# yaml-language-server: $schema=...` en tête de fichier, ce qui active
+l'auto-complétion et la validation à l'édition dans les éditeurs équipés de
+l'extension YAML (ex. redhat.vscode-yaml).
+
+Après avoir modifié un DTO de scénario, régénérer le schéma et committer le
+fichier obtenu :
+
+```bash
+./mvnw process-classes -Pgenerate-schema
+```
+
+Un fichier peut aussi être validé en ligne de commande, indépendamment de
+l'IHM, via `ScenarioValidator` :
+
+```bash
+./mvnw compile exec:java \
+  -Dexec.mainClass=dev.sylvain.planning.scenario.ScenarioValidator \
+  -Dexec.args=src/main/resources/scenarios/scenario.yml
+```
+
+Ce validateur et ce schéma ne couvrent que la forme du fichier (types, champs
+requis, plages de valeurs) : ils ne remplacent pas le chargement réel par
+`PlanningService`, qui reste plus permissif sur certains points (ex.
+`creneaux[].jour` et `postes[].animateurId` sont acceptés mais ignorés à
+l'import) et seul à vérifier les références croisées (`standId`/`creneauId`
+d'un poste correspondant bien à un stand/créneau déclaré).
+
 ## Exports de planning (PDF / ICS)
 
 Générés **côté serveur** — pas de génération dans le navigateur :

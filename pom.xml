@@ -18,6 +18,12 @@
         <timefold.solver.version>1.34.0</timefold.solver.version>
         <quinoa.version>2.8.4</quinoa.version>
         <sentry.version>8.52.0</sentry.version>
+        <!-- Kept aligned with the jackson-databind version Flyway pulls in
+             transitively (see quarkus-flyway), so the YAML/JSR-310 modules
+             used by the scenario DTOs (dev.sylvain.planning.scenario) stay
+             on the same Jackson release as the rest of the classpath. -->
+        <jackson-yaml.version>2.22.0</jackson-yaml.version>
+        <jsonschema-generator.version>4.38.0</jsonschema-generator.version>
         <skipITs>true</skipITs>
         <surefire-plugin.version>3.5.6</surefire-plugin.version>
         <!-- Full-scale scenario regression tests (@Tag("scenario-lent"):
@@ -84,6 +90,52 @@
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
             <version>2.6</version>
+        </dependency>
+        <!-- dev.sylvain.planning.scenario: standalone
+             scenario-file DTOs, validated with Bean Validation and used to
+             derive the JSON
+             Schema published at docs/schema/scenario-schema.json (see
+             docs/import-export.md and the generate-schema Maven profile).
+             Plain Jakarta Bean Validation + reference impl, not the
+             quarkus-hibernate-validator extension, since this tool runs
+             standalone via exec:java and doesn't need CDI/Quarkus
+             augmentation. Versions come from the Quarkus BOM above. -->
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate.validator</groupId>
+            <artifactId>hibernate-validator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.expressly</groupId>
+            <artifactId>expressly</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
+            <version>${jackson-yaml.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>${jackson-yaml.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.victools</groupId>
+            <artifactId>jsonschema-generator</artifactId>
+            <version>${jsonschema-generator.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.victools</groupId>
+            <artifactId>jsonschema-module-jackson</artifactId>
+            <version>${jsonschema-generator.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.victools</groupId>
+            <artifactId>jsonschema-module-jakarta-validation</artifactId>
+            <version>${jsonschema-generator.version}</version>
         </dependency>
         <!-- Builds and serves the Angular frontend of src/main/webui. -->
         <dependency>
@@ -207,6 +259,36 @@
             <properties>
                 <test.excludedGroups></test.excludedGroups>
             </properties>
+        </profile>
+        <!-- Opt-in: regenerates docs/schema/scenario-schema.json from the
+             dev.sylvain.planning.scenario.dto classes (see
+             ScenarioSchemaGenerator and docs/import-export.md). Not run by
+             the default build or CI — use
+             ./mvnw process-classes -Pgenerate-schema after changing a
+             scenario DTO, and commit the regenerated file. -->
+        <profile>
+            <id>generate-schema</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.5.0</version>
+                        <executions>
+                            <execution>
+                                <id>generate-scenario-schema</id>
+                                <phase>process-classes</phase>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                                <configuration>
+                                    <mainClass>dev.sylvain.planning.scenario.ScenarioSchemaGenerator</mainClass>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
 </project>

@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
 # Identical to scenario-continu.yaml (see PlanningServiceScenarioContinuTest),
 # except three stands each carry one partial-créneau closure
 # (IndisponibiliteStand, issue #60) on a different mid-festival day: STAND-01

@@ -1,0 +1,323 @@
+{
+  "$schema" : "https://json-schema.org/draft/2020-12/schema",
+  "$defs" : {
+    "AnimateurDto" : {
+      "type" : "object",
+      "properties" : {
+        "competences" : {
+          "$ref" : "#/$defs/Map(TypologieJeu,NiveauCompetence)"
+        },
+        "dateNaissance" : {
+          "$ref" : "#/$defs/LocalDate"
+        },
+        "id" : {
+          "type" : "string",
+          "minLength" : 1
+        },
+        "joursIndisponibles" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/$defs/LocalDate"
+          }
+        },
+        "manager" : {
+          "type" : "boolean"
+        },
+        "nom" : {
+          "type" : "string",
+          "minLength" : 1
+        },
+        "prenom" : {
+          "type" : "string",
+          "minLength" : 1
+        }
+      },
+      "required" : [ "competences", "dateNaissance", "id", "nom", "prenom" ]
+    },
+    "CreneauDto" : {
+      "type" : "object",
+      "properties" : {
+        "date" : {
+          "$ref" : "#/$defs/LocalDate"
+        },
+        "heureDebut" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "heureFin" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "id" : {
+          "type" : "string",
+          "minLength" : 1
+        },
+        "jour" : {
+          "type" : "integer",
+          "format" : "int32"
+        }
+      },
+      "required" : [ "date", "heureDebut", "heureFin", "id" ]
+    },
+    "EmplacementDto" : {
+      "type" : "object",
+      "properties" : {
+        "id" : {
+          "type" : "string",
+          "minLength" : 1
+        },
+        "latitude" : {
+          "type" : "number",
+          "format" : "double"
+        },
+        "longitude" : {
+          "type" : "number",
+          "format" : "double"
+        },
+        "nom" : {
+          "type" : "string",
+          "minLength" : 1
+        }
+      },
+      "required" : [ "id", "nom" ]
+    },
+    "FestivalDto" : {
+      "type" : "object",
+      "properties" : {
+        "dateDebut" : {
+          "$ref" : "#/$defs/LocalDate"
+        }
+      },
+      "required" : [ "dateDebut" ]
+    },
+    "IndisponibiliteStandDto" : {
+      "type" : "object",
+      "properties" : {
+        "date" : {
+          "$ref" : "#/$defs/LocalDate"
+        },
+        "heureDebut" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "heureFin" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "motif" : {
+          "type" : "string"
+        }
+      },
+      "required" : [ "date", "heureDebut", "heureFin" ]
+    },
+    "LocalDate" : {
+      "type" : "string",
+      "format" : "date"
+    },
+    "LocalTime" : {
+      "type" : "string",
+      "pattern" : "^([01]\\d|2[0-3]):[0-5]\\d(:[0-5]\\d)?$"
+    },
+    "Map(TypologieJeu,NiveauCompetence)" : {
+      "type" : "object",
+      "additionalProperties" : {
+        "$ref" : "#/$defs/NiveauCompetence"
+      }
+    },
+    "NiveauCompetence" : {
+      "type" : "string",
+      "enum" : [ "DEBUTANT", "AUTONOME", "REFERENT" ]
+    },
+    "ParametresDecoupageDto" : {
+      "type" : "object",
+      "properties" : {
+        "dureeChevauchementMinutes" : {
+          "type" : "integer",
+          "format" : "int32",
+          "minimum" : 0
+        },
+        "dureePauseRepasMinutes" : {
+          "type" : "integer",
+          "format" : "int32",
+          "minimum" : 0
+        },
+        "dureeVacationCibleMinutes" : {
+          "type" : "integer",
+          "format" : "int32",
+          "exclusiveMinimum" : 0
+        },
+        "dureeVacationMaxMinutes" : {
+          "type" : "integer",
+          "format" : "int32",
+          "exclusiveMinimum" : 0
+        },
+        "dureeVacationMinMinutes" : {
+          "type" : "integer",
+          "format" : "int32",
+          "exclusiveMinimum" : 0
+        },
+        "fenetreRepasMidiDebut" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "fenetreRepasMidiFin" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "fenetreRepasSoirDebut" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "fenetreRepasSoirFin" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "strategieCouverturePendantPause" : {
+          "$ref" : "#/$defs/StrategieCouverturePendantPause"
+        }
+      }
+    },
+    "ParametresLegauxDto" : {
+      "type" : "object",
+      "properties" : {
+        "dureeHebdomadaireMaxMinutes" : {
+          "type" : "integer",
+          "format" : "int32",
+          "exclusiveMinimum" : 0
+        },
+        "pauseMinimaleEntreVacationsMinutes" : {
+          "type" : "integer",
+          "format" : "int32",
+          "minimum" : 0
+        },
+        "reposQuotidienMinimalMinutes" : {
+          "type" : "integer",
+          "format" : "int32",
+          "minimum" : 0
+        }
+      }
+    },
+    "ParametresSolveurDto" : {
+      "type" : "object",
+      "properties" : {
+        "dureeResolutionSecondes" : {
+          "type" : "integer",
+          "format" : "int32",
+          "exclusiveMinimum" : 0
+        }
+      }
+    },
+    "PosteDto" : {
+      "type" : "object",
+      "properties" : {
+        "animateurId" : {
+          "type" : "string"
+        },
+        "creneauId" : {
+          "type" : "string",
+          "minLength" : 1
+        },
+        "id" : {
+          "type" : "string",
+          "minLength" : 1
+        },
+        "standId" : {
+          "type" : "string",
+          "minLength" : 1
+        }
+      },
+      "required" : [ "creneauId", "id", "standId" ]
+    },
+    "StandDto" : {
+      "type" : "object",
+      "properties" : {
+        "effectifMax" : {
+          "type" : "integer",
+          "format" : "int32",
+          "minimum" : 0
+        },
+        "effectifMin" : {
+          "type" : "integer",
+          "format" : "int32",
+          "minimum" : 0
+        },
+        "emplacementId" : {
+          "type" : "string"
+        },
+        "id" : {
+          "type" : "string",
+          "minLength" : 1
+        },
+        "indisponibilites" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/$defs/IndisponibiliteStandDto"
+          }
+        },
+        "nom" : {
+          "type" : "string",
+          "minLength" : 1
+        },
+        "premium" : {
+          "type" : "boolean"
+        },
+        "reserveMajeurs" : {
+          "type" : "boolean"
+        },
+        "typologiesProposees" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/$defs/TypologieJeu"
+          }
+        }
+      },
+      "required" : [ "id", "nom", "typologiesProposees" ]
+    },
+    "StrategieCouverturePendantPause" : {
+      "type" : "string",
+      "enum" : [ "FERMETURE", "RELEVE" ]
+    },
+    "TypologieJeu" : {
+      "type" : "string",
+      "enum" : [ "STRATEGIE", "AMBIANCE", "ENFANT", "COOPERATIF", "ADRESSE", "ROLE", "ENIGME" ]
+    }
+  },
+  "type" : "object",
+  "properties" : {
+    "animateurs" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/$defs/AnimateurDto"
+      }
+    },
+    "creneaux" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/$defs/CreneauDto"
+      }
+    },
+    "emplacements" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/$defs/EmplacementDto"
+      }
+    },
+    "festival" : {
+      "$ref" : "#/$defs/FestivalDto"
+    },
+    "parametresDecoupage" : {
+      "$ref" : "#/$defs/ParametresDecoupageDto"
+    },
+    "parametresLegaux" : {
+      "$ref" : "#/$defs/ParametresLegauxDto"
+    },
+    "parametresSolveur" : {
+      "$ref" : "#/$defs/ParametresSolveurDto"
+    },
+    "postes" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/$defs/PosteDto"
+      }
+    },
+    "stands" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/$defs/StandDto"
+      }
+    }
+  },
+  "required" : [ "animateurs", "creneaux", "festival", "postes", "stands" ]
+}
