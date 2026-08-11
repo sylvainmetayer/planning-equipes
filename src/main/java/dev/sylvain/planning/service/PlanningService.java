@@ -478,6 +478,19 @@ public class PlanningService {
             Creneau creneau = reference.creneauxParId().get(creneauId);
 
             PosteAffectation poste = new PosteAffectation(id, stand, creneau);
+            // Mirrors construirePostes(): a hand-authored poste can still name a
+            // créneau the stand is only partially open for (IndisponibiliteStand /
+            // OuvertureStand), so narrow its effective window the same way instead
+            // of silently using the créneau's full amplitude.
+            List<int[]> segments = creneau.segmentsOuvertsMinutes(stand);
+            if (segments.size() == 1) {
+                int[] segment = segments.get(0);
+                boolean creneauEntierOuvert = segment[0] == 0 && segment[1] == creneau.getDureeMinutes();
+                if (!creneauEntierOuvert) {
+                    poste.setHeureDebutEffective(decaler(creneau.getHeureDebut(), segment[0]));
+                    poste.setHeureFinEffective(decaler(creneau.getHeureDebut(), segment[1]));
+                }
+            }
             postes.add(poste);
         }
 

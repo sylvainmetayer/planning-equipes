@@ -7,9 +7,11 @@
 festival:
   dateDebut: 2026-07-08
 
-# 2088 postes: reaching a good score takes ~8 min, well above the 180 s
-# Débogage default — pin it here so importing this scenario auto-configures
-# the solver's termination duration instead of under-timing every solve.
+# 2112 postes (2088 + 24 for the Homme-jeu stand, issue #93): reaching a good
+# score takes ~6-8 min, well above the 180 s Débogage default — pin it here
+# so importing this scenario auto-configures the solver's termination
+# duration instead of under-timing every solve. Verified: 0 hard reached in
+# 383 s with the current poste count, so 480 s keeps its margin.
 parametresSolveur:
   dureeResolutionSecondes: 480
 
@@ -229,6 +231,8 @@ emplacements:
     latitude: 46.6472
     longitude: 2.2518
 
+  - id: CENTRE-VILLE
+    nom: Centre-ville
 stands:
   - id: STAND-01
     nom: Stand Jeu de rôle 01
@@ -397,6 +401,88 @@ stands:
     reserveMajeurs: false
     emplacementId: PLACE-11-NOVEMBRE
 
+  - id: HOMME-JEU
+    nom: Homme-jeu
+    typologiesProposees:
+      - HOMME_JEU
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    emplacementId: CENTRE-VILLE
+    niveauEffort: EPUISANT
+    ouvertures:
+      - date: 2026-07-08
+        heureDebut: "14:00"
+        heureFin: "15:00"
+      - date: 2026-07-08
+        heureDebut: "15:30"
+        heureFin: "16:00"
+      - date: 2026-07-09
+        heureDebut: "14:00"
+        heureFin: "15:00"
+      - date: 2026-07-09
+        heureDebut: "15:30"
+        heureFin: "16:00"
+      - date: 2026-07-10
+        heureDebut: "14:00"
+        heureFin: "15:00"
+      - date: 2026-07-10
+        heureDebut: "15:30"
+        heureFin: "16:00"
+      - date: 2026-07-11
+        heureDebut: "14:00"
+        heureFin: "15:00"
+      - date: 2026-07-11
+        heureDebut: "15:30"
+        heureFin: "16:00"
+      - date: 2026-07-12
+        heureDebut: "14:00"
+        heureFin: "15:00"
+      - date: 2026-07-12
+        heureDebut: "15:30"
+        heureFin: "16:00"
+      - date: 2026-07-13
+        heureDebut: "14:00"
+        heureFin: "15:00"
+      - date: 2026-07-13
+        heureDebut: "15:30"
+        heureFin: "16:00"
+      - date: 2026-07-14
+        heureDebut: "14:00"
+        heureFin: "15:00"
+      - date: 2026-07-14
+        heureDebut: "15:30"
+        heureFin: "16:00"
+      - date: 2026-07-15
+        heureDebut: "14:00"
+        heureFin: "15:00"
+      - date: 2026-07-15
+        heureDebut: "15:30"
+        heureFin: "16:00"
+      - date: 2026-07-16
+        heureDebut: "14:00"
+        heureFin: "15:00"
+      - date: 2026-07-16
+        heureDebut: "15:30"
+        heureFin: "16:00"
+      - date: 2026-07-17
+        heureDebut: "14:00"
+        heureFin: "15:00"
+      - date: 2026-07-17
+        heureDebut: "15:30"
+        heureFin: "16:00"
+      - date: 2026-07-18
+        heureDebut: "14:00"
+        heureFin: "15:00"
+      - date: 2026-07-18
+        heureDebut: "15:30"
+        heureFin: "16:00"
+      - date: 2026-07-19
+        heureDebut: "14:00"
+        heureFin: "15:00"
+      - date: 2026-07-19
+        heureDebut: "15:30"
+        heureFin: "16:00"
 animateurs:
   - id: A1
     prenom: Nina
@@ -2116,6 +2202,34 @@ animateurs:
       - 2026-07-17
       - 2026-07-18
       - 2026-07-19
+  - id: A151
+    prenom: Hugo
+    nom: Centre-ville
+    dateNaissance: 1989-09-09
+    manager: false
+    competences:
+      HOMME_JEU: AUTONOME
+    joursIndisponibles:
+      - 2026-07-09
+      - 2026-07-11
+      - 2026-07-13
+      - 2026-07-15
+      - 2026-07-17
+      - 2026-07-19
+  - id: A152
+    prenom: Lea
+    nom: Centre-ville
+    dateNaissance: 1989-09-09
+    manager: false
+    competences:
+      HOMME_JEU: AUTONOME
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-10
+      - 2026-07-12
+      - 2026-07-14
+      - 2026-07-16
+      - 2026-07-18
 postes:
   - id: P1
     standId: STAND-01
@@ -10468,4 +10582,101 @@ postes:
   - id: P2088
     standId: STAND-20
     creneauId: J12-SOIREE
+    animateurId:
+
+  - id: P-HOMME-JEU-J1-MATIN
+    standId: HOMME-JEU
+    creneauId: J1-MATIN
+    animateurId:
+  - id: P-HOMME-JEU-J1-APREM
+    standId: HOMME-JEU
+    creneauId: J1-APREM
+    animateurId:
+  - id: P-HOMME-JEU-J2-MATIN
+    standId: HOMME-JEU
+    creneauId: J2-MATIN
+    animateurId:
+  - id: P-HOMME-JEU-J2-APREM
+    standId: HOMME-JEU
+    creneauId: J2-APREM
+    animateurId:
+  - id: P-HOMME-JEU-J3-MATIN
+    standId: HOMME-JEU
+    creneauId: J3-MATIN
+    animateurId:
+  - id: P-HOMME-JEU-J3-APREM
+    standId: HOMME-JEU
+    creneauId: J3-APREM
+    animateurId:
+  - id: P-HOMME-JEU-J4-MATIN
+    standId: HOMME-JEU
+    creneauId: J4-MATIN
+    animateurId:
+  - id: P-HOMME-JEU-J4-APREM
+    standId: HOMME-JEU
+    creneauId: J4-APREM
+    animateurId:
+  - id: P-HOMME-JEU-J5-MATIN
+    standId: HOMME-JEU
+    creneauId: J5-MATIN
+    animateurId:
+  - id: P-HOMME-JEU-J5-APREM
+    standId: HOMME-JEU
+    creneauId: J5-APREM
+    animateurId:
+  - id: P-HOMME-JEU-J6-MATIN
+    standId: HOMME-JEU
+    creneauId: J6-MATIN
+    animateurId:
+  - id: P-HOMME-JEU-J6-APREM
+    standId: HOMME-JEU
+    creneauId: J6-APREM
+    animateurId:
+  - id: P-HOMME-JEU-J7-MATIN
+    standId: HOMME-JEU
+    creneauId: J7-MATIN
+    animateurId:
+  - id: P-HOMME-JEU-J7-APREM
+    standId: HOMME-JEU
+    creneauId: J7-APREM
+    animateurId:
+  - id: P-HOMME-JEU-J8-MATIN
+    standId: HOMME-JEU
+    creneauId: J8-MATIN
+    animateurId:
+  - id: P-HOMME-JEU-J8-APREM
+    standId: HOMME-JEU
+    creneauId: J8-APREM
+    animateurId:
+  - id: P-HOMME-JEU-J9-MATIN
+    standId: HOMME-JEU
+    creneauId: J9-MATIN
+    animateurId:
+  - id: P-HOMME-JEU-J9-APREM
+    standId: HOMME-JEU
+    creneauId: J9-APREM
+    animateurId:
+  - id: P-HOMME-JEU-J10-MATIN
+    standId: HOMME-JEU
+    creneauId: J10-MATIN
+    animateurId:
+  - id: P-HOMME-JEU-J10-APREM
+    standId: HOMME-JEU
+    creneauId: J10-APREM
+    animateurId:
+  - id: P-HOMME-JEU-J11-MATIN
+    standId: HOMME-JEU
+    creneauId: J11-MATIN
+    animateurId:
+  - id: P-HOMME-JEU-J11-APREM
+    standId: HOMME-JEU
+    creneauId: J11-APREM
+    animateurId:
+  - id: P-HOMME-JEU-J12-MATIN
+    standId: HOMME-JEU
+    creneauId: J12-MATIN
+    animateurId:
+  - id: P-HOMME-JEU-J12-APREM
+    standId: HOMME-JEU
+    creneauId: J12-APREM
     animateurId:

@@ -129,6 +129,8 @@ emplacements:
     latitude: 46.6472
     longitude: 2.2518
 
+  - id: CENTRE-VILLE
+    nom: Centre-ville
 stands:
   - id: STAND-01
     nom: Stand Jeu de rôle 01
@@ -312,6 +314,52 @@ stands:
     reserveMajeurs: false
     emplacementId: PLACE-11-NOVEMBRE
 
+  - id: HOMME-JEU
+    nom: Homme-jeu
+    typologiesProposees:
+      - HOMME_JEU
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    emplacementId: CENTRE-VILLE
+    niveauEffort: EPUISANT
+    ouvertures:
+      - date: 2026-07-08
+        heureDebut: "14:00"
+        heureFin: "16:00"
+      - date: 2026-07-09
+        heureDebut: "14:00"
+        heureFin: "16:00"
+      - date: 2026-07-10
+        heureDebut: "14:00"
+        heureFin: "16:00"
+      - date: 2026-07-11
+        heureDebut: "14:00"
+        heureFin: "16:00"
+      - date: 2026-07-12
+        heureDebut: "14:00"
+        heureFin: "16:00"
+      - date: 2026-07-13
+        heureDebut: "14:00"
+        heureFin: "16:00"
+      - date: 2026-07-14
+        heureDebut: "14:00"
+        heureFin: "16:00"
+      - date: 2026-07-15
+        heureDebut: "14:00"
+        heureFin: "16:00"
+      - date: 2026-07-16
+        heureDebut: "14:00"
+        heureFin: "16:00"
+      - date: 2026-07-17
+        heureDebut: "14:00"
+        heureFin: "16:00"
+      - date: 2026-07-18
+        heureDebut: "14:00"
+        heureFin: "16:00"
+      - date: 2026-07-19
+        heureDebut: "14:00"
+        heureFin: "16:00"
 animateurs:
   - id: A1
     prenom: Nina
@@ -319,6 +367,7 @@ animateurs:
     dateNaissance: 1965-11-03
     manager: false
     competences:
+      HOMME_JEU: AUTONOME
       ADRESSE: AUTONOME
       AMBIANCE: AUTONOME
     joursIndisponibles: []
@@ -338,6 +387,7 @@ animateurs:
     dateNaissance: 1962-12-09
     manager: false
     competences:
+      HOMME_JEU: REFERENT
       ADRESSE: REFERENT
       ROLE: AUTONOME
     joursIndisponibles: []
@@ -368,6 +418,7 @@ animateurs:
     dateNaissance: 1995-07-02
     manager: true
     competences:
+      HOMME_JEU: DEBUTANT
       ROLE: AUTONOME
       COOPERATIF: DEBUTANT
     joursIndisponibles: []
@@ -390,6 +441,7 @@ animateurs:
     dateNaissance: 1968-05-17
     manager: false
     competences:
+      HOMME_JEU: AUTONOME
       STRATEGIE: AUTONOME
       ROLE: AUTONOME
     joursIndisponibles: []
@@ -410,6 +462,7 @@ animateurs:
     dateNaissance: 1992-01-23
     manager: false
     competences:
+      HOMME_JEU: AUTONOME
       ADRESSE: DEBUTANT
       ENIGME: DEBUTANT
       AMBIANCE: AUTONOME
@@ -421,6 +474,7 @@ animateurs:
     dateNaissance: 1960-04-22
     manager: false
     competences:
+      HOMME_JEU: DEBUTANT
       AMBIANCE: DEBUTANT
       ROLE: AUTONOME
     joursIndisponibles: []
@@ -430,6 +484,7 @@ animateurs:
     dateNaissance: 1960-08-20
     manager: false
     competences:
+      HOMME_JEU: REFERENT
       ADRESSE: AUTONOME
       ENIGME: AUTONOME
       ROLE: AUTONOME
@@ -464,6 +519,7 @@ animateurs:
     dateNaissance: 1985-02-17
     manager: false
     competences:
+      HOMME_JEU: DEBUTANT
       ENIGME: AUTONOME
       ROLE: AUTONOME
     joursIndisponibles: []
@@ -493,6 +549,7 @@ animateurs:
     dateNaissance: 1992-11-19
     manager: false
     competences:
+      HOMME_JEU: AUTONOME
       ROLE: AUTONOME
       COOPERATIF: DEBUTANT
     joursIndisponibles: []
@@ -502,6 +559,7 @@ animateurs:
     dateNaissance: 1972-01-25
     manager: false
     competences:
+      HOMME_JEU: AUTONOME
       ADRESSE: AUTONOME
       ROLE: DEBUTANT
       AMBIANCE: AUTONOME
@@ -2052,6 +2110,62 @@ animateurs:
     competences:
       ADRESSE: AUTONOME
     joursIndisponibles: []
+  - id: A175
+    prenom: Hugo
+    nom: Centre-ville
+    dateNaissance: 1988-04-12
+    manager: false
+    competences:
+      HOMME_JEU: AUTONOME
+    joursIndisponibles:
+      - 2026-07-09
+      - 2026-07-11
+      - 2026-07-13
+      - 2026-07-15
+      - 2026-07-17
+      - 2026-07-19
+  - id: A176
+    prenom: Lea
+    nom: Centre-ville
+    dateNaissance: 1988-04-12
+    manager: false
+    competences:
+      HOMME_JEU: AUTONOME
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-10
+      - 2026-07-12
+      - 2026-07-14
+      - 2026-07-16
+      - 2026-07-18
+  - id: A177
+    prenom: Marie
+    nom: Centre-ville
+    dateNaissance: 1991-06-03
+    manager: false
+    competences:
+      HOMME_JEU: AUTONOME
+    joursIndisponibles:
+      - 2026-07-09
+      - 2026-07-11
+      - 2026-07-13
+      - 2026-07-15
+      - 2026-07-17
+      - 2026-07-19
+  - id: A178
+    prenom: Tom
+    nom: Centre-ville
+    dateNaissance: 1991-06-03
+    manager: false
+    competences:
+      HOMME_JEU: AUTONOME
+    joursIndisponibles:
+      - 2026-07-08
+      - 2026-07-10
+      - 2026-07-12
+      - 2026-07-14
+      - 2026-07-16
+      - 2026-07-18
 postes:
   - id: P1
     standId: STAND-01
@@ -5763,5 +5877,54 @@ postes:
     animateurId:
   - id: P928
     standId: STAND-20
+    creneauId: J12-JOUR
+    animateurId:
+
+  - id: P-HOMME-JEU-J1
+    standId: HOMME-JEU
+    creneauId: J1-JOUR
+    animateurId:
+  - id: P-HOMME-JEU-J2
+    standId: HOMME-JEU
+    creneauId: J2-JOUR
+    animateurId:
+  - id: P-HOMME-JEU-J3
+    standId: HOMME-JEU
+    creneauId: J3-JOUR
+    animateurId:
+  - id: P-HOMME-JEU-J4
+    standId: HOMME-JEU
+    creneauId: J4-JOUR
+    animateurId:
+  - id: P-HOMME-JEU-J5
+    standId: HOMME-JEU
+    creneauId: J5-JOUR
+    animateurId:
+  - id: P-HOMME-JEU-J6
+    standId: HOMME-JEU
+    creneauId: J6-JOUR
+    animateurId:
+  - id: P-HOMME-JEU-J7
+    standId: HOMME-JEU
+    creneauId: J7-JOUR
+    animateurId:
+  - id: P-HOMME-JEU-J8
+    standId: HOMME-JEU
+    creneauId: J8-JOUR
+    animateurId:
+  - id: P-HOMME-JEU-J9
+    standId: HOMME-JEU
+    creneauId: J9-JOUR
+    animateurId:
+  - id: P-HOMME-JEU-J10
+    standId: HOMME-JEU
+    creneauId: J10-JOUR
+    animateurId:
+  - id: P-HOMME-JEU-J11
+    standId: HOMME-JEU
+    creneauId: J11-JOUR
+    animateurId:
+  - id: P-HOMME-JEU-J12
+    standId: HOMME-JEU
     creneauId: J12-JOUR
     animateurId:

@@ -13,6 +13,10 @@ creneaux:
     heureDebut: "14:00"
     heureFin: "18:00"
 
+emplacements:
+  - id: CENTRE-VILLE
+    nom: Centre-ville
+
 stands:
   - id: STAND-STRAT
     nom: Stand stratégie
@@ -21,6 +25,19 @@ stands:
     effectifMin: 1
     effectifMax: 1
     reserveMajeurs: false
+  - id: HOMME-JEU
+    nom: Homme-jeu
+    typologiesProposees:
+      - HOMME_JEU
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    emplacementId: CENTRE-VILLE
+    niveauEffort: EPUISANT
+    ouvertures:
+      - date: 2026-07-08
+        heureDebut: "14:00"
+        heureFin: "16:00"
 
 animateurs:
   - id: A1
@@ -30,6 +47,7 @@ animateurs:
     manager: false
     competences:
       STRATEGIE: REFERENT
+      HOMME_JEU: AUTONOME
     joursIndisponibles: []
   - id: A2
     prenom: Bruno
@@ -38,6 +56,7 @@ animateurs:
     manager: false
     competences:
       STRATEGIE: AUTONOME
+      HOMME_JEU: DEBUTANT
     joursIndisponibles: []
   - id: A3
     prenom: Chloe
@@ -55,5 +74,9 @@ postes:
     animateurId: null
   - id: P2
     standId: STAND-STRAT
+    creneauId: J1-AM
+    animateurId: null
+  - id: P-HOMME-JEU-J1
+    standId: HOMME-JEU
     creneauId: J1-AM
     animateurId: null
