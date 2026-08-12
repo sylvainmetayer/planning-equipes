@@ -105,6 +105,43 @@ class SolverJobResourceTest {
                 .statusCode(404);
     }
 
+    /**
+     * Stops a solve started by mistake: cancel terminates the underlying
+     * Timefold solver early, and the job still transitions to CANCELLED
+     * (rather than hanging or being killed) once the current run unwinds.
+     */
+    @Test
+    void cancelStopsARunningSolveJob() throws InterruptedException {
+        String planningJson = sampleplanning();
+
+        String jobId = given()
+                .contentType("application/json")
+                .body(planningJson)
+                .when().post("/api/solve/async")
+                .then()
+                .statusCode(202)
+                .extract().path("id");
+
+        given().when().post("/api/jobs/" + jobId + "/cancel")
+                .then()
+                .statusCode(200)
+                .body("id", equalTo(jobId));
+
+        JsonPath job = pollUntilFinished(jobId);
+        assertThat(job.getString("status")).isEqualTo("CANCELLED");
+
+        given().when().get("/api/jobs/active")
+                .then()
+                .statusCode(204);
+    }
+
+    @Test
+    void cancelUnknownJobReturnsNotFound() {
+        given().when().post("/api/jobs/does-not-exist/cancel")
+                .then()
+                .statusCode(404);
+    }
+
     @Test
     void unknownJobReturnsNotFound() {
         given().when().get("/api/jobs/does-not-exist")

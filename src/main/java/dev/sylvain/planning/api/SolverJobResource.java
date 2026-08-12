@@ -144,6 +144,20 @@ public class SolverJobResource {
         }
     }
 
+    /**
+     * Stops a job started by mistake. A running solve/analyze is terminated
+     * early (the Timefold solver returns its best solution so far, which is
+     * still persisted/analyzed as usual) instead of being killed outright.
+     */
+    @POST
+    @Path("/jobs/{id}/cancel")
+    @Consumes(MediaType.WILDCARD)
+    public Response cancelJob(@PathParam("id") String id) {
+        return solverJobService.cancel(id)
+                .map(job -> Response.ok(JobView.withoutResult(job)).build())
+                .orElseGet(() -> Response.status(Response.Status.NOT_FOUND).build());
+    }
+
     public record JobView(
             String id,
             String type,

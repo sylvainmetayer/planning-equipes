@@ -152,6 +152,16 @@ export class SolverJobService {
     return this.submit('/api/solve/analyze/async/reference-data', {}, 'ANALYZE', seconds);
   }
 
+  /**
+   * Stops a job started by mistake. The server terminates the underlying
+   * solver early (it still persists/analyzes whatever it found so far) rather
+   * than killing it outright, so the job ends up CANCELLED through the normal
+   * polling flow.
+   */
+  async cancel(jobId: string): Promise<void> {
+    await this.api.post(`/api/jobs/${encodeURIComponent(jobId)}/cancel`, {});
+  }
+
   /** Every job, newest-submitted first — used for history (e.g. last run date), not polled. */
   listJobs(): Promise<JobView[]> {
     return this.api.get<JobView[]>('/api/jobs');

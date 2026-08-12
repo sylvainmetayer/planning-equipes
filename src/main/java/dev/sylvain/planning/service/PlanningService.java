@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import ai.timefold.solver.core.api.domain.solution.ConstraintWeightOverrides;
@@ -800,8 +801,23 @@ public class PlanningService {
     }
 
     public PlanningFestival resoudre(PlanningFestival problem, Long secondsLimitOverride) {
+        return resoudre(problem, secondsLimitOverride, null);
+    }
+
+    /**
+     * Same as {@link #resoudre(PlanningFestival, Long)}, but hands the freshly
+     * built {@link Solver} to {@code onSolverReady} before blocking on
+     * {@code solve()} — the only way a caller running this on a background
+     * thread (see {@code SolverJobService}) can later call
+     * {@link Solver#terminateEarly()} to stop a solve started by mistake.
+     */
+    public PlanningFestival resoudre(PlanningFestival problem, Long secondsLimitOverride,
+            Consumer<Solver<PlanningFestival>> onSolverReady) {
         prepareProblem(problem);
         Solver<PlanningFestival> solver = resolveSolverFactory(secondsLimitOverride).buildSolver();
+        if (onSolverReady != null) {
+            onSolverReady.accept(solver);
+        }
         return solver.solve(problem);
     }
 
@@ -851,7 +867,16 @@ public class PlanningService {
      * did not converge to zero hard.
      */
     public PlanningDiagnostic analyser(PlanningFestival problem, Long secondsLimitOverride) {
-        PlanningFestival solved = resoudre(problem, secondsLimitOverride);
+        return analyser(problem, secondsLimitOverride, null);
+    }
+
+    /**
+     * Same as {@link #analyser(PlanningFestival, Long)}, but exposes the
+     * {@link Solver} it builds so a background caller can stop it early.
+     */
+    public PlanningDiagnostic analyser(PlanningFestival problem, Long secondsLimitOverride,
+            Consumer<Solver<PlanningFestival>> onSolverReady) {
+        PlanningFestival solved = resoudre(problem, secondsLimitOverride, onSolverReady);
         return diagnostiquer(solved);
     }
 

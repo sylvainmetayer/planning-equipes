@@ -14,6 +14,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import ai.timefold.solver.core.api.solver.Solver;
 import dev.sylvain.planning.domain.PlanningFestival;
 import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -74,8 +75,8 @@ public class SolverJobService {
      * stays limited to the diagnostic.
      */
     public SolverJob submitSolve(PlanningFestival problem, Long secondsLimit) {
-        return submit(JobType.SOLVE, secondsLimit, () -> {
-            PlanningFestival solved = planningService.resoudre(problem, secondsLimit);
+        return submit(JobType.SOLVE, secondsLimit, job -> {
+            PlanningFestival solved = planningService.resoudre(problem, secondsLimit, job::attachSolver);
             persistenceService.persist(solved);
             PlanningService.PlanningDiagnostic diagnostic = planningService.diagnostiquer(solved);
             analysisStore.record(diagnostic);
@@ -84,8 +85,9 @@ public class SolverJobService {
     }
 
     public SolverJob submitAnalyze(PlanningFestival problem, Long secondsLimit) {
-        return submit(JobType.ANALYZE, secondsLimit, () -> {
-            PlanningService.PlanningDiagnostic diagnostic = planningService.analyser(problem, secondsLimit);
+        return submit(JobType.ANALYZE, secondsLimit, job -> {
+            PlanningService.PlanningDiagnostic diagnostic =
+                    planningService.analyser(problem, secondsLimit, job::attachSolver);
             analysisStore.record(diagnostic);
             return diagnostic;
         });
@@ -112,9 +114,18 @@ public class SolverJobService {
         }
         job.markRunning();
         try {
-            job.markCompleted(task.execute());
+            Object result = task.execute(job);
+            if (job.isCancelRequested()) {
+                job.markCancelled(result);
+            } else {
+                job.markCompleted(result);
+            }
         } catch (Exception e) {
-            job.markFailed(e);
+            if (job.isCancelRequested()) {
+                job.markCancelled(null);
+            } else {
+                job.markFailed(e);
+            }
         }
     }
 
@@ -142,7 +153,7 @@ public class SolverJobService {
     /**
      * Forgets a finished job (or cancels one still queued). A running job is
      * refused: dropping it would release the server-side solver lock while the
-     * solver keeps working.
+     * solver keeps working. Use {@link #cancel} to stop a running job instead.
      */
     public synchronized boolean forget(String jobId) {
         SolverJob job = jobs.get(jobId);
@@ -156,6 +167,28 @@ public class SolverJobService {
         }
         jobs.remove(jobId);
         return true;
+    }
+
+    /**
+     * Stops a solver job started by mistake: a queued job is cancelled outright,
+     * a running one has its underlying Timefold {@link Solver} terminated early
+     * (it returns the best solution found so far, which is then still persisted
+     * and analyzed, same as a normal run reaching its time limit) so the job
+     * transitions to {@link JobStatus#CANCELLED} rather than being killed. A
+     * job that already finished is left untouched. Returns the job, or empty if
+     * {@code jobId} is unknown.
+     */
+    public synchronized Optional<SolverJob> cancel(String jobId) {
+        SolverJob job = jobs.get(jobId);
+        if (job == null) {
+            return Optional.empty();
+        }
+        if (job.getStatus() == JobStatus.PENDING) {
+            job.markCancelledIfPending();
+        } else if (job.getStatus() == JobStatus.RUNNING) {
+            job.requestCancel();
+        }
+        return Optional.of(job);
     }
 
     private void purgeExpiredJobs() {
@@ -177,7 +210,7 @@ public class SolverJobService {
 
     @FunctionalInterface
     private interface JobTask {
-        Object execute();
+        Object execute(SolverJob job);
     }
 
     /** Raised when a solve or analyze is requested while another one runs. */
@@ -219,6 +252,8 @@ public class SolverJobService {
         private volatile Instant finishedAt;
         private volatile Object result;
         private volatile String error;
+        private volatile boolean cancelRequested;
+        private volatile Solver<PlanningFestival> solver;
 
         private SolverJob(String id, JobType type, Long secondsLimit) {
             this.id = id;
@@ -248,6 +283,38 @@ public class SolverJobService {
                 status = JobStatus.CANCELLED;
                 finishedAt = Instant.now();
             }
+        }
+
+        private void markCancelled(Object value) {
+            result = value;
+            finishedAt = Instant.now();
+            status = JobStatus.CANCELLED;
+        }
+
+        /**
+         * Called once by {@link PlanningService#resoudre} right after building
+         * the {@link Solver}, before it blocks on {@code solve()}. Terminates it
+         * immediately if a cancel was already requested (the narrow race window
+         * between {@link #requestCancel()} and this call).
+         */
+        private void attachSolver(Solver<PlanningFestival> solver) {
+            this.solver = solver;
+            if (cancelRequested) {
+                solver.terminateEarly();
+            }
+        }
+
+        /** Stops the solver as soon as it exists, and flags the job as cancelled. */
+        private void requestCancel() {
+            cancelRequested = true;
+            Solver<PlanningFestival> currentSolver = solver;
+            if (currentSolver != null) {
+                currentSolver.terminateEarly();
+            }
+        }
+
+        private boolean isCancelRequested() {
+            return cancelRequested;
         }
 
         public boolean isFinished() {
