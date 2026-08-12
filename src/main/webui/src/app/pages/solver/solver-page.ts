@@ -1,11 +1,16 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { ApiService } from '../../core/api.service';
 import { intlLocale } from '../../core/locale';
 import { FeasibilityReport, PlanningDiagnostic } from '../../core/models';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
+import { NotificationService } from '../../core/notification.service';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { ProblemesStore } from '../../core/problemes.store';
 import { SolverJobService } from '../../core/solver-job.service';
@@ -26,6 +31,41 @@ function hardPart(score: string): number {
   return match ? Number(match[1]) : 0;
 }
 
+/** Unit the solver page edits the solver duration in — always converted to/from seconds for the API. */
+export type SolverDurationUnit = 'SECONDES' | 'MINUTES' | 'HEURES';
+
+const SOLVER_DURATION_UNIT_FACTORS: Record<SolverDurationUnit, number> = {
+  SECONDES: 1,
+  MINUTES: 60,
+  HEURES: 3600
+};
+
+/** Per-unit `<input type="number">` granularity: whole seconds, half-minutes, quarter-hours. */
+const SOLVER_DURATION_UNIT_STEP: Record<SolverDurationUnit, number> = {
+  SECONDES: 1,
+  MINUTES: 0.5,
+  HEURES: 0.25
+};
+
+function secondsToValue(seconds: number, unit: SolverDurationUnit): number {
+  return seconds / SOLVER_DURATION_UNIT_FACTORS[unit];
+}
+
+function valueToSeconds(value: number, unit: SolverDurationUnit): number {
+  return value * SOLVER_DURATION_UNIT_FACTORS[unit];
+}
+
+/** Picks the largest unit that represents `seconds` as a whole number, so e.g. 180s shows as "3 min", not "0.05 h". */
+function bestUnitFor(seconds: number): SolverDurationUnit {
+  if (seconds !== 0 && seconds % SOLVER_DURATION_UNIT_FACTORS.HEURES === 0) {
+    return 'HEURES';
+  }
+  if (seconds % SOLVER_DURATION_UNIT_FACTORS.MINUTES === 0) {
+    return 'MINUTES';
+  }
+  return 'SECONDES';
+}
+
 /**
  * Solver page: launches the background solve job, and exports the resulting
  * planning (PDF + ICS bundled in one ZIP). The server always analyzes the
@@ -36,7 +76,18 @@ function hardPart(score: string): number {
  */
 @Component({
   selector: 'app-solver-page',
-  imports: [MatCardModule, MatButtonModule, MatIconModule, FeasibilityBanner, ProblemSummaryBanner, OutputPanel],
+  imports: [
+    FormsModule,
+    MatCardModule,
+    MatButtonModule,
+    MatIconModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    FeasibilityBanner,
+    ProblemSummaryBanner,
+    OutputPanel
+  ],
   templateUrl: './solver-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -46,6 +97,26 @@ export class SolverPage {
   protected readonly hardScore = signal<number | null>(null);
   protected readonly hardIssues = signal<HardIssue[]>([]);
   protected readonly exportBusy = signal(false);
+
+  protected readonly solverDurationLoading = signal(false);
+  protected readonly solverDurationSaving = signal(false);
+  protected readonly solverDurationError = signal('');
+
+  /**
+   * Editable value + unit for the duration persisted server-side as seconds
+   * (`/api/parametres-solveur`), only sent back when the user clicks
+   * "Enregistrer" — an unsaved value never silently applies.
+   */
+  protected readonly solverDurationUnit = signal<SolverDurationUnit>('MINUTES');
+  protected readonly solverDurationValueDraft = signal(0);
+  protected readonly solverDurationSecondsSaved = signal(0);
+  protected readonly solverDurationSecondsDraft = computed(() =>
+    valueToSeconds(this.solverDurationValueDraft(), this.solverDurationUnit())
+  );
+  protected readonly solverDurationDirty = computed(
+    () => Math.round(this.solverDurationSecondsDraft()) !== this.solverDurationSecondsSaved()
+  );
+  protected readonly solverDurationStep = computed(() => SOLVER_DURATION_UNIT_STEP[this.solverDurationUnit()]);
 
   /** The server-side lock, not a local flag: it also covers other browsers. */
   protected readonly solverBusy = computed(() => this.jobs.solverBusy());
@@ -78,10 +149,12 @@ export class SolverPage {
   private readonly planningState = inject(PlanningStateService);
   private readonly jobs = inject(SolverJobService);
   private readonly solverSettings = inject(SolverSettingsService);
+  private readonly notifications = inject(NotificationService);
 
   constructor() {
     void this.loadLastRun();
     void this.problemes.reload();
+    void this.loadSolverDuration();
     // Results are pushed by the job service, whoever started the job: a solve
     // launched from another browser also lands here when it completes, already
     // analyzed.
@@ -107,6 +180,56 @@ export class SolverPage {
         );
       }
     });
+  }
+
+  private async loadSolverDuration(): Promise<void> {
+    this.solverDurationLoading.set(true);
+    this.solverDurationError.set('');
+    try {
+      await this.solverSettings.refresh();
+      const seconds = this.solverSettings.secondsLimit();
+      this.applySolverDurationSeconds(seconds, bestUnitFor(seconds));
+    } catch (error) {
+      this.solverDurationError.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
+    } finally {
+      this.solverDurationLoading.set(false);
+    }
+  }
+
+  protected onSolverDurationValueDraftChange(value: number): void {
+    this.solverDurationValueDraft.set(value);
+  }
+
+  /** Switching unit re-expresses the current draft value, it never resets it (e.g. 3 min → 180 s, not back to 0). */
+  protected onSolverDurationUnitChange(unit: SolverDurationUnit): void {
+    const seconds = this.solverDurationSecondsDraft();
+    this.solverDurationUnit.set(unit);
+    this.solverDurationValueDraft.set(secondsToValue(seconds, unit));
+  }
+
+  protected async saveSolverDuration(): Promise<void> {
+    this.solverDurationSaving.set(true);
+    this.solverDurationError.set('');
+    try {
+      await this.solverSettings.setSecondsLimit(this.solverDurationSecondsDraft());
+      this.applySolverDurationSeconds(this.solverSettings.secondsLimit(), this.solverDurationUnit());
+      this.notifications.notify({
+        title: $localize`:@@dataSetup.solverDuration.saved:Durée de résolution enregistrée`,
+        message: $localize`:@@dataSetup.solverDuration.savedHint:Appliquée à tous les navigateurs.`,
+        variant: 'success'
+      });
+    } catch (error) {
+      this.solverDurationError.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
+    } finally {
+      this.solverDurationSaving.set(false);
+    }
+  }
+
+  /** Syncs draft + saved state from a seconds value freshly read from (or written to) the server, in the given unit. */
+  private applySolverDurationSeconds(seconds: number, unit: SolverDurationUnit): void {
+    this.solverDurationUnit.set(unit);
+    this.solverDurationValueDraft.set(secondsToValue(seconds, unit));
+    this.solverDurationSecondsSaved.set(Math.round(seconds));
   }
 
   protected async onTimefoldSolve(): Promise<void> {
