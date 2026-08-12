@@ -1,15 +1,18 @@
 package dev.sylvain.planning.api;
 
 import java.util.List;
+import java.util.Optional;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.DecoupageAutoConfig;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.GroupeCreneau;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresSolveur;
+import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.ReferenceDataService;
@@ -240,16 +243,28 @@ public class ReferenceDataResource {
      * duration it actually needs (Données tab), instead of leaving the
      * caller to guess or under-time a solve. Absent, the current database
      * values are left untouched.
+     *
+     * <p>A scenario may also pin {@code decoupageAuto:} (see
+     * {@link DecoupageAutoConfig}), applied after {@code parametresDecoupage:}
+     * so the découpage it triggers already runs against the parameters the
+     * scenario itself pinned — sparing the operator the manual "Découpage"
+     * screen round-trip after every import of that scenario.
      */
     @POST
     @Path("/reference-data/import-scenario")
     @Consumes(MediaType.WILDCARD)
     public Response importScenario(@QueryParam("name") String name) {
-        referenceDataService.importFromPlanning(planningService.construireExemple(name));
         planningService.chargerParametresLegauxScenario(name).ifPresent(referenceDataService::updateParametresLegaux);
         planningService.chargerParametresDecoupageScenario(name)
                 .ifPresent(referenceDataService::updateParametresDecoupage);
         planningService.chargerParametresSolveurScenario(name).ifPresent(referenceDataService::updateParametresSolveur);
+        PlanningFestival planning = planningService.construireExemple(name);
+        Optional<DecoupageAutoConfig> decoupageAuto = planningService.chargerDecoupageAutoScenario(name);
+        if (decoupageAuto.isPresent()) {
+            referenceDataService.appliquerDecoupageAutomatique(planning, decoupageAuto.get());
+        } else {
+            referenceDataService.importFromPlanning(planning);
+        }
         return Response.noContent().build();
     }
 
@@ -268,10 +283,14 @@ public class ReferenceDataResource {
     public Response importScenarioFichier(String yamlContent) {
         try {
             PlanningService.ScenarioImporte importe = planningService.construireDepuisTexteScenario(yamlContent);
-            referenceDataService.importFromPlanning(importe.planning());
             importe.parametresLegaux().ifPresent(referenceDataService::updateParametresLegaux);
             importe.parametresDecoupage().ifPresent(referenceDataService::updateParametresDecoupage);
             importe.parametresSolveur().ifPresent(referenceDataService::updateParametresSolveur);
+            if (importe.decoupageAuto().isPresent()) {
+                referenceDataService.appliquerDecoupageAutomatique(importe.planning(), importe.decoupageAuto().get());
+            } else {
+                referenceDataService.importFromPlanning(importe.planning());
+            }
             return Response.noContent().build();
         } catch (IllegalArgumentException e) {
             return Response.status(Response.Status.BAD_REQUEST)

@@ -1,0 +1,84 @@
+package dev.sylvain.planning.api;
+
+import static io.restassured.RestAssured.given;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.List;
+import java.util.Map;
+
+import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.Test;
+
+/**
+ * The optional {@code decoupageAuto:} scenario section (issue #110): a
+ * scenario written straight in "amplitudes" (one long opening window per day)
+ * can ask its import to auto-slice itself into vacations, sparing the
+ * operator the manual "Découpage" screen round-trip. {@code scenario-decoupage-auto.yaml}
+ * (test fixture) carries a single 14h amplitude — same shape as
+ * {@code VacationGeneratorServiceTest}'s "continu" case — which
+ * {@code VacationGeneratorService} always relay-splits into exactly 3
+ * vacations under default {@code parametresDecoupage}.
+ */
+@QuarkusTest
+class ReferenceDataResourceDecoupageAutoTest {
+
+    @Test
+    void importScenarioAvecDecoupageAutoDecoupeEtActiveLeGroupeCible() {
+        given().when().post("/api/planning/reset").then().statusCode(200);
+
+        given()
+                .when().post("/api/reference-data/import-scenario?name=scenario-decoupage-auto.yaml")
+                .then()
+                .statusCode(204);
+
+        List<Map<String, Object>> groupes = given()
+                .when().get("/api/groupes-creneaux")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath().getList("$");
+
+        Map<String, Object> source = groupes.stream()
+                .filter(g -> "Amplitudes import auto".equals(g.get("nom")))
+                .findFirst()
+                .orElseThrow();
+        Map<String, Object> cible = groupes.stream()
+                .filter(g -> "Vacations import auto".equals(g.get("nom")))
+                .findFirst()
+                .orElseThrow();
+
+        assertThat(source.get("actif")).isEqualTo(false);
+        assertThat(cible.get("actif")).isEqualTo(true);
+        assertThat(cible.get("groupeSourceId")).isEqualTo(source.get("id"));
+
+        // Le groupe cible actif porte les vacations générées : le solveur les
+        // consomme via /api/creneaux (scopé au groupe actif) — /api/creneaux
+        // lui-même liste tous les groupes, ce test filtre donc sur le nom.
+        List<Map<String, Object>> creneaux = given()
+                .when().get("/api/creneaux")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath().getList("$");
+        long creneauxCible = creneaux.stream()
+                .filter(c -> "Vacations import auto".equals(((Map<?, ?>) c.get("groupe")).get("nom")))
+                .count();
+        assertThat(creneauxCible).isEqualTo(3);
+    }
+
+    @Test
+    void importScenarioSansDecoupageAutoNeCreeAucunGroupeSupplementaire() {
+        given().when().post("/api/planning/reset").then().statusCode(200);
+
+        given()
+                .when().post("/api/reference-data/import-scenario?name=scenario.yml")
+                .then()
+                .statusCode(204);
+
+        List<Map<String, Object>> groupes = given()
+                .when().get("/api/groupes-creneaux")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath().getList("$");
+
+        assertThat(groupes).noneMatch(g -> "Amplitudes import auto".equals(g.get("nom")));
+    }
+}

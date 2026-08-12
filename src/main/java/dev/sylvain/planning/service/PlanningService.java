@@ -40,6 +40,7 @@ import ai.timefold.solver.core.config.solver.SolverConfig;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ConstraintToggle;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.DecoupageAutoConfig;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.NiveauCompetence;
@@ -537,7 +538,8 @@ public class PlanningService {
             throw new IllegalArgumentException("Scénario invalide : " + messageOu(e), e);
         }
         return new ScenarioImporte(planning, parseParametresLegaux(scenarioData),
-                parseParametresDecoupage(scenarioData), parseParametresSolveur(scenarioData));
+                parseParametresDecoupage(scenarioData), parseParametresSolveur(scenarioData),
+                parseDecoupageAuto(scenarioData));
     }
 
     private static String messageOu(RuntimeException e) {
@@ -551,7 +553,8 @@ public class PlanningService {
      * built-in scenario.
      */
     public record ScenarioImporte(PlanningFestival planning, Optional<ParametresLegaux> parametresLegaux,
-            Optional<ParametresDecoupage> parametresDecoupage, Optional<ParametresSolveur> parametresSolveur) {
+            Optional<ParametresDecoupage> parametresDecoupage, Optional<ParametresSolveur> parametresSolveur,
+            Optional<DecoupageAutoConfig> decoupageAuto) {
     }
 
     /**
@@ -770,6 +773,22 @@ public class PlanningService {
         }
     }
 
+    /**
+     * Reads the optional top-level {@code decoupageAuto:} section of a
+     * scenario file, if present — lets a scenario written straight in
+     * "amplitudes" (one long opening window per day, e.g. {@code scenario-continu.yaml})
+     * ask its import to auto-slice itself into vacations instead of leaving
+     * the operator to run the "Découpage" screen by hand afterwards. See
+     * {@link DecoupageAutoConfig}.
+     */
+    public Optional<DecoupageAutoConfig> chargerDecoupageAutoScenario(String scenarioName) {
+        try {
+            return parseDecoupageAuto(lireDonneesScenario(SCENARIOS_DIR + "/" + scenarioName));
+        } catch (IOException e) {
+            throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
+        }
+    }
+
     @SuppressWarnings("unchecked")
     private static Optional<ParametresLegaux> parseParametresLegaux(Map<String, Object> scenarioData) {
         Map<String, Object> data = (Map<String, Object>) scenarioData.get("parametresLegaux");
@@ -838,6 +857,16 @@ public class PlanningService {
             return Optional.empty();
         }
         return Optional.of(new ParametresSolveur(((Number) data.get("dureeResolutionSecondes")).intValue()));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Optional<DecoupageAutoConfig> parseDecoupageAuto(Map<String, Object> scenarioData) {
+        Map<String, Object> data = (Map<String, Object>) scenarioData.get("decoupageAuto");
+        if (data == null) {
+            return Optional.empty();
+        }
+        return Optional.of(new DecoupageAutoConfig((String) data.get("groupeSourceNom"),
+                (String) data.get("groupeCibleNom")));
     }
 
     /**

@@ -1,8 +1,11 @@
 package dev.sylvain.planning.service;
 
+import java.text.Normalizer;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
@@ -11,6 +14,7 @@ import java.util.stream.Collectors;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.DecoupageAutoConfig;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.GroupeCreneau;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
@@ -354,6 +358,68 @@ public class ReferenceDataService {
             repository.activerGroupeCreneau(cible.getId());
         }
         return cible;
+    }
+
+    /**
+     * Applies a scenario's optional {@code decoupageAuto:} section right after
+     * its raw reference data is imported: lands the scenario's créneaux
+     * (amplitudes) into a source group named {@link DecoupageAutoConfig#groupeSourceNom()}
+     * (created if needed), runs the day-to-vacations découpage against it, and
+     * activates the resulting target group named
+     * {@link DecoupageAutoConfig#groupeCibleNom()} — sparing the operator the
+     * manual "Découpage" screen round-trip after every import of that
+     * scenario. Both group ids are derived from their name the same way the
+     * découpage screen derives one from a free-typed name (see the frontend's
+     * {@code slugify}), reusing an existing group of that name if one already
+     * exists instead of creating a duplicate.
+     */
+    public GroupeCreneau appliquerDecoupageAutomatique(PlanningFestival planning, DecoupageAutoConfig config) {
+        GroupeCreneau source = assurerGroupeCreneauParNom(config.groupeSourceNom());
+        activerGroupeCreneau(source.getId());
+        importFromPlanning(planning);
+        String groupeCibleId = resolveGroupeIdParNom(config.groupeCibleNom());
+        return genererDecoupage(source.getId(), groupeCibleId, config.groupeCibleNom(), true);
+    }
+
+    /** Finds a timeslot group by name (case-insensitive), or creates one otherwise. */
+    private GroupeCreneau assurerGroupeCreneauParNom(String nom) {
+        List<GroupeCreneau> existants = listGroupesCreneaux();
+        return existants.stream()
+                .filter(groupe -> nom.equalsIgnoreCase(groupe.getNom()))
+                .findFirst()
+                .orElseGet(() -> createGroupeCreneau(new GroupeCreneau(slugifyGroupeId(nom, existants), nom, false)));
+    }
+
+    /** Resolves the id a timeslot group named {@code nom} already has, or the id it would get if created. */
+    private String resolveGroupeIdParNom(String nom) {
+        List<GroupeCreneau> existants = listGroupesCreneaux();
+        return existants.stream()
+                .filter(groupe -> nom.equalsIgnoreCase(groupe.getNom()))
+                .map(GroupeCreneau::getId)
+                .findFirst()
+                .orElseGet(() -> slugifyGroupeId(nom, existants));
+    }
+
+    /**
+     * Derives a stable id from a free-typed name — accents stripped,
+     * uppercased, non-alphanumeric runs collapsed to a dash — suffixed with
+     * {@code -2}, {@code -3}... until it doesn't collide with an existing
+     * group id. Mirrors the frontend's {@code slugify} (see {@code slug.ts}),
+     * used there for the same purpose on the découpage screen.
+     */
+    private static String slugifyGroupeId(String nom, List<GroupeCreneau> groupesExistants) {
+        String sansAccents = Normalizer.normalize(nom, Normalizer.Form.NFD).replaceAll("\\p{M}", "");
+        String base = sansAccents.toUpperCase(Locale.ROOT).replaceAll("[^A-Z0-9]+", "-").replaceAll("^-+|-+$", "");
+        if (base.isBlank()) {
+            base = "GROUPE";
+        }
+        Set<String> idsExistants = groupesExistants.stream().map(GroupeCreneau::getId)
+                .collect(Collectors.toCollection(HashSet::new));
+        String id = base;
+        for (int suffixe = 2; idsExistants.contains(id); suffixe++) {
+            id = base + "-" + suffixe;
+        }
+        return id;
     }
 
     /* ------------------------------ Typologies ----------------------------- */

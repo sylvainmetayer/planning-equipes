@@ -7,6 +7,7 @@ import java.time.LocalTime;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.Test;
 
+import dev.sylvain.planning.domain.DecoupageAutoConfig;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresSolveur;
@@ -36,6 +37,7 @@ class PlanningServiceParametresScenarioTest {
         assertThat(service.chargerParametresLegauxScenario("scenario.yml")).isEmpty();
         assertThat(service.chargerParametresDecoupageScenario("scenario.yml")).isEmpty();
         assertThat(service.chargerParametresSolveurScenario("scenario.yml")).isEmpty();
+        assertThat(service.chargerDecoupageAutoScenario("scenario.yml")).isEmpty();
     }
 
     @Test
@@ -77,5 +79,16 @@ class PlanningServiceParametresScenarioTest {
 
         assertThat(festival.getParametresLegaux()).hasSize(1);
         assertThat(festival.getParametresLegaux().get(0).getReposQuotidienMinimalMinutes()).isEqualTo(500);
+    }
+
+    @Test
+    void scenarioAvecDecoupageAutoExposeLesNomsDeGroupes() {
+        PlanningService service = service();
+
+        DecoupageAutoConfig decoupageAuto = service.chargerDecoupageAutoScenario("scenario-decoupage-auto.yaml")
+                .orElseThrow();
+
+        assertThat(decoupageAuto.groupeSourceNom()).isEqualTo("Amplitudes import auto");
+        assertThat(decoupageAuto.groupeCibleNom()).isEqualTo("Vacations import auto");
     }
 }

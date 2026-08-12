@@ -50,6 +50,16 @@ actuelles en scénario » les écrit, l'import (nommé ou fichier) les relit à
 l'identique. `emplacementId` reste import seulement — l'export n'écrit pas
 encore la section `emplacements` correspondante, à traiter séparément.
 
+Un scénario écrit directement en amplitudes (ex. `scenario-continu.yaml`) peut
+fixer une section `decoupageAuto: { groupeSourceNom, groupeCibleNom }` en tête
+de fichier pour que ces deux imports (nom ou fichier) déclenchent eux-mêmes le
+découpage en vacations plutôt que de laisser l'opérateur repasser par l'écran
+« Découpage » : les créneaux importés atterrissent dans un groupe source
+`groupeSourceNom` (créé si besoin, jamais activé), le découpage tourne dessus
+et le groupe cible `groupeCibleNom` (créé si besoin) reçoit les vacations et
+devient le groupe actif. Absente, l'import se comporte comme ci-dessus. Voir
+[`domaine.md`](domaine.md#découpage-automatique-en-vacations).
+
 ## Exports de planning (PDF / ICS)
 
 Générés **côté serveur** — pas de génération dans le navigateur :

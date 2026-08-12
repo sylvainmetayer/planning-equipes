@@ -305,6 +305,20 @@ scénarios), ces trois sections sont sans effet : `construireExemple` retombe
 sur les `ParametresLegaux` actuellement en base, et l'import laisse
 `ParametresDecoupage`/`ParametresSolveur` tels quels.
 
+Un scénario écrit directement en amplitudes peut aussi fixer une section
+`decoupageAuto:` (`groupeSourceNom:` + `groupeCibleNom:`) pour que son import
+déclenche lui-même ce découpage plutôt que de laisser l'opérateur repasser par
+l'écran « Découpage » ensuite (issue #110) : les créneaux importés atterrissent
+dans un groupe source portant `groupeSourceNom` (créé si besoin), le découpage
+tourne dessus avec les `parametresDecoupage:` déjà appliqués à ce moment-là, et
+le groupe cible `groupeCibleNom` (créé si besoin) reçoit les vacations et est
+activé. Chaque nom de groupe est résolu vers un groupe existant du même nom le
+cas échéant, sinon vers un id dérivé du nom (même mécanisme que le `slugify`
+de l'écran Découpage). Absente (cas de tous les scénarios `scenario-*.yaml`
+fournis, qui listent leurs `postes:` directement sur les créneaux découpés),
+l'import se comporte comme avant : les créneaux du scénario remplacent ceux du
+groupe actif.
+
 Une contrainte dure dans `LegalConstraints` complète le dispositif :
 `pauseMinimaleEntreVacations` (l'écart entre deux vacations d'un même
 animateur le même jour doit être suffisant, 30 min par défaut). Le repos
