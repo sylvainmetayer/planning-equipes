@@ -14,7 +14,7 @@ JSON sauf mention contraire.
 
 | Méthode | Chemin | Description |
 | --- | --- | --- |
-| `GET` | `/api/config` | Configuration d'observabilité lue par le frontend au démarrage (DSN Sentry/Bugsink, clé PostHog) — voir [`observabilite.md`](observabilite.md) |
+| `GET` | `/api/config` | Configuration d'observabilité lue par le frontend au démarrage (DSN Sentry/Bugsink, clé PostHog, token Cloudflare Web Analytics) — voir [`observabilite.md`](observabilite.md) |
 | `POST` | `/api/debug/test-exception` | Lève systématiquement une exception de test, pour vérifier le suivi d'erreurs (bouton « Exception back » de l'onglet Débogage) — voir [`observabilite.md`](observabilite.md) |
 
 ## Planning

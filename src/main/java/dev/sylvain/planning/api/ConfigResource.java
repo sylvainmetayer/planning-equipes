@@ -11,9 +11,9 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 /**
  * Runtime configuration the frontend needs before it can call anything else:
  * where to send error reports (Sentry-protocol DSN, typically a Bugsink
- * instance) and product-analytics events (PostHog). Both are client-facing
- * keys by design (a Sentry DSN and a PostHog project API key are meant to be
- * embedded in browser code, unlike a secret), which is what lets a single
+ * instance) and analytics events (PostHog / Cloudflare Web Analytics). All are
+ * client-facing keys by design (a Sentry DSN and analytics project tokens are
+ * meant to be embedded in browser code, unlike a secret), which is what lets a single
  * build serve every environment: the values live in server-side env vars
  * (see docker-compose.yml) instead of being baked into the Angular bundle at
  * build time. Blank when unset, which the frontend treats as "disabled" —
@@ -39,9 +39,17 @@ public class ConfigResource {
     @ConfigProperty(name = "observability.posthog.host", defaultValue = "https://eu.i.posthog.com")
     String posthogHost;
 
+    @ConfigProperty(name = "observability.cloudflare.web-analytics-token")
+    Optional<String> cloudflareWebAnalyticsToken;
+
     @GET
     public ConfigView get() {
-        return new ConfigView(sentryDsn.orElse(""), sentryEnvironment, posthogApiKey.orElse(""), posthogHost);
+        return new ConfigView(
+                sentryDsn.orElse(""),
+                sentryEnvironment,
+                posthogApiKey.orElse(""),
+                posthogHost,
+                cloudflareWebAnalyticsToken.orElse(""));
     }
 
     /**
@@ -49,7 +57,13 @@ public class ConfigResource {
      * @param sentryEnvironment  tag attached to every reported error/transaction
      * @param posthogApiKey      empty disables PostHog analytics
      * @param posthogHost        PostHog ingestion host (EU by default for RGPD)
+     * @param cloudflareWebAnalyticsToken empty disables Cloudflare Web Analytics
      */
-    public record ConfigView(String sentryDsn, String sentryEnvironment, String posthogApiKey, String posthogHost) {
+    public record ConfigView(
+            String sentryDsn,
+            String sentryEnvironment,
+            String posthogApiKey,
+            String posthogHost,
+            String cloudflareWebAnalyticsToken) {
     }
 }

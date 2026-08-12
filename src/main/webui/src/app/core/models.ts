@@ -422,4 +422,5 @@ export interface ObservabilityConfig {
   sentryEnvironment: string;
   posthogApiKey: string;
   posthogHost: string;
+  cloudflareWebAnalyticsToken: string;
 }

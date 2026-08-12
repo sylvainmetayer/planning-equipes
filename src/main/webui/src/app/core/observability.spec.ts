@@ -1,12 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { loadObservabilityConfig, observabilityProviders } from './observability';
+import { initObservability, loadObservabilityConfig, observabilityProviders } from './observability';
 import { ObservabilityConfig } from './models';
 
 const CONFIG: ObservabilityConfig = {
   sentryDsn: 'https://key@bugsink.example.com/1',
   sentryEnvironment: 'production',
   posthogApiKey: 'phc_test',
-  posthogHost: 'https://eu.i.posthog.com'
+  posthogHost: 'https://eu.i.posthog.com',
+  cloudflareWebAnalyticsToken: '987d563a0f264bbbb484df80ab2ab0f8'
 };
 
 describe('loadObservabilityConfig', () => {
@@ -28,7 +29,8 @@ describe('loadObservabilityConfig', () => {
       sentryDsn: '',
       sentryEnvironment: 'local',
       posthogApiKey: '',
-      posthogHost: ''
+      posthogHost: '',
+      cloudflareWebAnalyticsToken: ''
     });
   });
 
@@ -38,7 +40,8 @@ describe('loadObservabilityConfig', () => {
       sentryDsn: '',
       sentryEnvironment: 'local',
       posthogApiKey: '',
-      posthogHost: ''
+      posthogHost: '',
+      cloudflareWebAnalyticsToken: ''
     });
   });
 });
@@ -50,5 +53,41 @@ describe('observabilityProviders', () => {
 
   it("registers Sentry's ErrorHandler when a DSN is configured", () => {
     expect(observabilityProviders(CONFIG)).toHaveLength(1);
+  });
+});
+
+
+describe('initObservability', () => {
+  afterEach(() => {
+    document.head.innerHTML = '';
+  });
+
+  it('injects Cloudflare Web Analytics when a token is configured', () => {
+    initObservability({
+      ...CONFIG,
+      sentryDsn: '',
+      posthogApiKey: ''
+    });
+
+    const script = document.head.querySelector('script[data-cf-beacon]');
+    expect(script).not.toBeNull();
+    expect(script?.getAttribute('type')).toBe('module');
+    expect(script?.getAttribute('src')).toBe('https://static.cloudflareinsights.com/beacon.min.js');
+    expect(script?.getAttribute('data-cf-beacon')).toBe(
+      JSON.stringify({ token: CONFIG.cloudflareWebAnalyticsToken })
+    );
+  });
+
+  it('does not inject duplicate Cloudflare scripts', () => {
+    const config = {
+      ...CONFIG,
+      sentryDsn: '',
+      posthogApiKey: ''
+    };
+
+    initObservability(config);
+    initObservability(config);
+
+    expect(document.head.querySelectorAll('script[data-cf-beacon]')).toHaveLength(1);
   });
 });

@@ -1,5 +1,6 @@
 // Error tracking (Sentry-protocol, typically a Bugsink instance) and product
-// analytics (PostHog) for the frontend. Both stay off unless the server-side
+// analytics (PostHog + Cloudflare Web Analytics) for the frontend. All stay
+// off unless the server-side
 // env vars are set: see docs/observabilite.md.
 
 import { ErrorHandler, Provider } from '@angular/core';
@@ -13,7 +14,8 @@ const DISABLED_CONFIG: ObservabilityConfig = {
   sentryDsn: '',
   sentryEnvironment: 'local',
   posthogApiKey: '',
-  posthogHost: ''
+  posthogHost: '',
+  cloudflareWebAnalyticsToken: ''
 };
 
 /**
@@ -51,6 +53,13 @@ export function initObservability(config: ObservabilityConfig): void {
       // full page load, which the plain pageview default does not see.
       capture_pageview: 'history_change'
     });
+  }
+  if (config.cloudflareWebAnalyticsToken && !document.querySelector('script[data-cf-beacon]')) {
+    const script = document.createElement('script');
+    script.type = 'module';
+    script.src = 'https://static.cloudflareinsights.com/beacon.min.js';
+    script.dataset['cfBeacon'] = JSON.stringify({ token: config.cloudflareWebAnalyticsToken });
+    document.head.append(script);
   }
 }
 
