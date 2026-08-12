@@ -221,6 +221,8 @@
   "dataSetup.lockedByJob": "{$description} Data setup is locked until it finishes.",
   "dataSetup.exportScenario": "Export current data as a scenario",
   "dataSetup.exportingScenario": "Exporting current data as a scenario file...",
+  "dataSetup.decoupageAuto.applied": "Automatic split applied",
+  "dataSetup.decoupageAuto.appliedHint": "The timeslot group “{$groupeCibleNom}” was generated and activated.",
   "dataTransfer.sql.title": "SQL export",
   "dataTransfer.sql.description": "Export or replay the whole database as a SQL script, to share a dataset that blocks the solver.",
   "dataTransfer.locked": "Transfers are locked while the solver is running.",

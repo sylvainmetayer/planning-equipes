@@ -312,7 +312,8 @@ l'écran « Découpage » ensuite (issue #110) : les créneaux importés atterri
 dans un groupe source portant `groupeSourceNom` (créé si besoin), le découpage
 tourne dessus avec les `parametresDecoupage:` déjà appliqués à ce moment-là, et
 le groupe cible `groupeCibleNom` (créé si besoin) reçoit les vacations et est
-activé. Chaque nom de groupe est résolu vers un groupe existant du même nom le
+activé — une notification prévient l'opérateur du groupe désormais actif.
+Chaque nom de groupe est résolu vers un groupe existant du même nom le
 cas échéant, sinon vers un id dérivé du nom (même mécanisme que le `slugify`
 de l'écran Découpage). Absente (cas de tous les scénarios `scenario-*.yaml`
 fournis, qui listent leurs `postes:` directement sur les créneaux découpés),

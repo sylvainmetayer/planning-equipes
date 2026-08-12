@@ -248,7 +248,11 @@ public class ReferenceDataResource {
      * {@link DecoupageAutoConfig}), applied after {@code parametresDecoupage:}
      * so the découpage it triggers already runs against the parameters the
      * scenario itself pinned — sparing the operator the manual "Découpage"
-     * screen round-trip after every import of that scenario.
+     * screen round-trip after every import of that scenario. When it does,
+     * this returns 200 with an {@link ImportScenarioResult} carrying the
+     * target group's name instead of the usual 204, so the frontend can
+     * notify the operator that the group it just activated holds the
+     * auto-generated vacations.
      */
     @POST
     @Path("/reference-data/import-scenario")
@@ -262,9 +266,9 @@ public class ReferenceDataResource {
         Optional<DecoupageAutoConfig> decoupageAuto = planningService.chargerDecoupageAutoScenario(name);
         if (decoupageAuto.isPresent()) {
             referenceDataService.appliquerDecoupageAutomatique(planning, decoupageAuto.get());
-        } else {
-            referenceDataService.importFromPlanning(planning);
+            return Response.ok(new ImportScenarioResult(decoupageAuto.get().groupeCibleNom())).build();
         }
+        referenceDataService.importFromPlanning(planning);
         return Response.noContent().build();
     }
 
@@ -288,15 +292,25 @@ public class ReferenceDataResource {
             importe.parametresSolveur().ifPresent(referenceDataService::updateParametresSolveur);
             if (importe.decoupageAuto().isPresent()) {
                 referenceDataService.appliquerDecoupageAutomatique(importe.planning(), importe.decoupageAuto().get());
-            } else {
-                referenceDataService.importFromPlanning(importe.planning());
+                return Response.ok(new ImportScenarioResult(importe.decoupageAuto().get().groupeCibleNom())).build();
             }
+            referenceDataService.importFromPlanning(importe.planning());
             return Response.noContent().build();
         } catch (IllegalArgumentException e) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(new ErreurValidation(e.getMessage()))
                     .build();
         }
+    }
+
+    /**
+     * Body returned by {@link #importScenario} and {@link #importScenarioFichier}
+     * when the scenario carried a {@code decoupageAuto:} section, so the
+     * frontend can notify the operator that the import was auto-sliced and
+     * which timeslot group now holds (and is active with) the resulting
+     * vacations — sparing them a silent group switch under the hood.
+     */
+    public record ImportScenarioResult(String decoupageAutoGroupeCibleNom) {
     }
 
     @GET

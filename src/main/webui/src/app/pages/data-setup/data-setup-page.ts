@@ -5,7 +5,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { ApiService } from '../../core/api.service';
-import { ImportSummary, ResetSummary } from '../../core/models';
+import { ImportSummary, ImportScenarioResult, ResetSummary } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { PlanningStateService } from '../../core/planning-state.service';
@@ -119,11 +119,12 @@ export class DataSetupPage {
       const url = name
         ? `/api/reference-data/import-scenario?name=${encodeURIComponent(name)}`
         : '/api/reference-data/import-scenario';
-      await this.api.post(url, {});
+      const result = await this.api.post<ImportScenarioResult | null>(url, {});
       await this.refreshAfterImport();
       this.output.set(
         $localize`:@@dataSetup.sampleLoaded:Planning d'exemple chargé. Les données de référence sont peuplées et modifiables depuis les pages de référence.`
       );
+      this.notifyDecoupageAuto(result);
     } catch (error) {
       this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
     } finally {
@@ -193,11 +194,16 @@ export class DataSetupPage {
     this.scenarioFileImporting.set(true);
     this.output.set($localize`:@@dataSetup.importingScenarioFile:Import de ${file.name}:fileName: en cours...`);
     try {
-      await this.api.postRaw('/api/reference-data/import-scenario-fichier', await file.text(), 'application/x-yaml');
+      const result = await this.api.postRaw<ImportScenarioResult | null>(
+        '/api/reference-data/import-scenario-fichier',
+        await file.text(),
+        'application/x-yaml'
+      );
       await this.refreshAfterImport();
       this.output.set(
         $localize`:@@dataSetup.scenarioFileImported:Scénario ${file.name}:fileName: importé. Les données de référence sont peuplées et modifiables depuis les pages de référence.`
       );
+      this.notifyDecoupageAuto(result);
     } catch (error) {
       const errorMessage = message(error);
       this.output.set($localize`:@@common.errorPrefix:Erreur : ${errorMessage}:message:`);
@@ -209,6 +215,21 @@ export class DataSetupPage {
     } finally {
       this.scenarioFileImporting.set(false);
     }
+  }
+
+  // Surfaces the scenario's decoupageAuto section, when present: the import
+  // silently switched the active timeslot group to the auto-generated
+  // vacations, so the operator is told which one without having to check the
+  // Découpage page themselves.
+  private notifyDecoupageAuto(result: ImportScenarioResult | null): void {
+    if (!result?.decoupageAutoGroupeCibleNom) {
+      return;
+    }
+    this.notifications.notify({
+      title: $localize`:@@dataSetup.decoupageAuto.applied:Découpage automatique appliqué`,
+      message: $localize`:@@dataSetup.decoupageAuto.appliedHint:Le groupe de créneaux « ${result.decoupageAutoGroupeCibleNom}:groupeCibleNom: » a été généré et activé.`,
+      variant: 'info'
+    });
   }
 
   protected async onExportSql(): Promise<void> {

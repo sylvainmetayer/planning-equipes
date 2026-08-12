@@ -57,7 +57,8 @@ découpage en vacations plutôt que de laisser l'opérateur repasser par l'écra
 « Découpage » : les créneaux importés atterrissent dans un groupe source
 `groupeSourceNom` (créé si besoin, jamais activé), le découpage tourne dessus
 et le groupe cible `groupeCibleNom` (créé si besoin) reçoit les vacations et
-devient le groupe actif. Absente, l'import se comporte comme ci-dessus. Voir
+devient le groupe actif. Une notification prévient alors l'opérateur du nom du
+groupe activé. Absente, l'import se comporte comme ci-dessus. Voir
 [`domaine.md`](domaine.md#découpage-automatique-en-vacations).
 
 ## Exports de planning (PDF / ICS)

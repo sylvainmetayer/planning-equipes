@@ -2,6 +2,7 @@ package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 
 import java.util.List;
 import java.util.Map;
@@ -29,7 +30,8 @@ class ReferenceDataResourceDecoupageAutoTest {
         given()
                 .when().post("/api/reference-data/import-scenario?name=scenario-decoupage-auto.yaml")
                 .then()
-                .statusCode(204);
+                .statusCode(200)
+                .body("decoupageAutoGroupeCibleNom", equalTo("Vacations import auto"));
 
         List<Map<String, Object>> groupes = given()
                 .when().get("/api/groupes-creneaux")

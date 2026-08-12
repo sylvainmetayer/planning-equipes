@@ -419,6 +419,15 @@ export interface ImportSummary {
   message: string;
 }
 
+/**
+ * Body returned by `/api/reference-data/import-scenario` and
+ * `.../import-scenario-fichier` when the scenario carried a `decoupageAuto:`
+ * section — `null`/absent otherwise, in which case the import ran plain.
+ */
+export interface ImportScenarioResult {
+  decoupageAutoGroupeCibleNom: string | null;
+}
+
 /** `/api/config`: observability keys, blank when the matching feature is disabled server-side. */
 export interface ObservabilityConfig {
   sentryDsn: string;
