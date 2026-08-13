@@ -20,5 +20,6 @@ public record ScenarioDto(
         @NotNull List<@Valid PosteDto> postes,
         @Valid ParametresLegauxDto parametresLegaux,
         @Valid ParametresDecoupageDto parametresDecoupage,
-        @Valid ParametresSolveurDto parametresSolveur) {
+        @Valid ParametresSolveurDto parametresSolveur,
+        @Valid DecoupageAutoDto decoupageAuto) {
 }

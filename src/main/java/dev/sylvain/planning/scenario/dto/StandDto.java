@@ -1,5 +1,6 @@
 package dev.sylvain.planning.scenario.dto;
 
+import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.TypologieJeu;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -16,5 +17,7 @@ public record StandDto(
         Boolean reserveMajeurs,
         Boolean premium,
         String emplacementId,
-        List<@Valid IndisponibiliteStandDto> indisponibilites) {
+        List<@Valid IndisponibiliteStandDto> indisponibilites,
+        NiveauEffort niveauEffort,
+        List<@Valid OuvertureStandDto> ouvertures) {
 }

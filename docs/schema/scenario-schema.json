@@ -57,6 +57,20 @@
       },
       "required" : [ "date", "heureDebut", "heureFin", "id" ]
     },
+    "DecoupageAutoDto" : {
+      "type" : "object",
+      "properties" : {
+        "groupeCibleNom" : {
+          "type" : "string",
+          "minLength" : 1
+        },
+        "groupeSourceNom" : {
+          "type" : "string",
+          "minLength" : 1
+        }
+      },
+      "required" : [ "groupeCibleNom", "groupeSourceNom" ]
+    },
     "EmplacementDto" : {
       "type" : "object",
       "properties" : {
@@ -123,6 +137,28 @@
     "NiveauCompetence" : {
       "type" : "string",
       "enum" : [ "DEBUTANT", "AUTONOME", "REFERENT" ]
+    },
+    "NiveauEffort" : {
+      "type" : "string",
+      "enum" : [ "NORMAL", "EPUISANT" ]
+    },
+    "OuvertureStandDto" : {
+      "type" : "object",
+      "properties" : {
+        "date" : {
+          "$ref" : "#/$defs/LocalDate"
+        },
+        "heureDebut" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "heureFin" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "motif" : {
+          "type" : "string"
+        }
+      },
+      "required" : [ "date", "heureDebut", "heureFin" ]
     },
     "ParametresDecoupageDto" : {
       "type" : "object",
@@ -246,9 +282,18 @@
             "$ref" : "#/$defs/IndisponibiliteStandDto"
           }
         },
+        "niveauEffort" : {
+          "$ref" : "#/$defs/NiveauEffort"
+        },
         "nom" : {
           "type" : "string",
           "minLength" : 1
+        },
+        "ouvertures" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/$defs/OuvertureStandDto"
+          }
         },
         "premium" : {
           "type" : "boolean"
@@ -271,7 +316,7 @@
     },
     "TypologieJeu" : {
       "type" : "string",
-      "enum" : [ "STRATEGIE", "AMBIANCE", "ENFANT", "COOPERATIF", "ADRESSE", "ROLE", "ENIGME" ]
+      "enum" : [ "STRATEGIE", "AMBIANCE", "ENFANT", "COOPERATIF", "ADRESSE", "ROLE", "ENIGME", "HOMME_JEU" ]
     }
   },
   "type" : "object",
@@ -287,6 +332,9 @@
       "items" : {
         "$ref" : "#/$defs/CreneauDto"
       }
+    },
+    "decoupageAuto" : {
+      "$ref" : "#/$defs/DecoupageAutoDto"
     },
     "emplacements" : {
       "type" : "array",

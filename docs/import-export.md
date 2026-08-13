@@ -65,10 +65,12 @@ groupe activé. Absente, l'import se comporte comme ci-dessus. Voir
 
 [`docs/schema/scenario-schema.json`](schema/scenario-schema.json) décrit la
 structure attendue d'un fichier de scénario (sections `festival`, `creneaux`,
-`stands`, `animateurs`, `postes`, et les sections optionnelles
-`parametresLegaux`, `parametresDecoupage`, `parametresSolveur`) : types de
+`stands` — dont `niveauEffort` et `ouvertures` par stand —, `animateurs`,
+`postes`, et les sections optionnelles `parametresLegaux`,
+`parametresDecoupage`, `parametresSolveur`, `decoupageAuto`) : types de
 champs, sections/champs obligatoires, durées non négatives, valeurs d'enum
-(`TypologieJeu`, `NiveauCompetence`, `StrategieCouverturePendantPause`).
+(`TypologieJeu`, `NiveauCompetence`, `NiveauEffort`,
+`StrategieCouverturePendantPause`).
 
 Le schéma n'est pas écrit à la main : il est **généré** à partir des DTOs
 Jackson + Bean Validation de `dev.sylvain.planning.scenario.dto`
