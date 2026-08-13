@@ -1,0 +1,82 @@
+/* Per-animateur timeline (issue #69): one horizontal amplitude bar per
+   festival day, with vacations and the gaps (pauses/travel) between them. */
+
+.timeline-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.timeline-animateur-select {
+  display: block;
+  width: 20rem;
+  max-width: 100%;
+  margin-bottom: -1.25rem;
+}
+
+.timeline-day-card {
+  margin-bottom: 1rem;
+}
+
+.timeline-track {
+  position: relative;
+  height: 2.5rem;
+  border-radius: var(--mat-sys-corner-small);
+  background: var(--mat-sys-surface-container-low);
+  margin: 0.5rem 0;
+}
+
+.timeline-block {
+  position: absolute;
+  top: 0.25rem;
+  bottom: 0.25rem;
+  min-width: 2px;
+  overflow: hidden;
+  border-radius: var(--mat-sys-corner-extra-small);
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+  border: 1px solid var(--mat-sys-surface);
+  display: flex;
+  align-items: center;
+  padding: 0 0.375rem;
+  cursor: default;
+}
+
+.timeline-block-label {
+  font: var(--mat-sys-label-small);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.timeline-gap {
+  position: absolute;
+  top: 0.25rem;
+  bottom: 0.25rem;
+  background: repeating-linear-gradient(
+    45deg,
+    var(--mat-sys-surface-container-highest),
+    var(--mat-sys-surface-container-highest) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+}
+
+.timeline-block-list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem 1rem;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.timeline-block-list-time {
+  font-weight: 500;
+  color: var(--mat-sys-on-surface);
+  margin-right: 0.25rem;
+}

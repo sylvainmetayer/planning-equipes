@@ -1,0 +1,81 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <mat-card-title i18n="@@nav.link.timeline">Timeline animateur</mat-card-title>
+    <mat-card-subtitle i18n="@@timeline.subtitle">
+      Amplitude journalière, vacations et pauses/déplacements d'un animateur, jour par jour.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <div class="timeline-toolbar">
+      <mat-form-field appearance="outline" class="timeline-animateur-select">
+        <mat-label i18n="@@timeline.selectAnimateur">Animateur</mat-label>
+        <mat-select [value]="selectedAnimateurId()" (valueChange)="selectAnimateur($event)">
+          @for (option of animateurOptions(); track option.id) {
+            <mat-option [value]="option.id">{{ option.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <button matButton="tonal" type="button" [disabled]="loading()" (click)="refresh()">
+        <mat-icon>refresh</mat-icon>
+        <ng-container i18n="@@common.refresh">Actualiser</ng-container>
+      </button>
+    </div>
+    @if (loading()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    @if (error()) {
+      <p class="empty-hint">{{ error() }}</p>
+    }
+  </mat-card-content>
+</mat-card>
+
+@if (!error() && !loading()) {
+  @if (animateurOptions().length === 0) {
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-content>
+        <p class="empty-hint" i18n="@@timeline.empty">Aucune donnée de planning disponible pour le moment. Lancez une résolution depuis la page Solveur.</p>
+      </mat-card-content>
+    </mat-card>
+  } @else if (days().length === 0) {
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-content>
+        <p class="empty-hint" i18n="@@timeline.noAssignment">Cet animateur n'a aucun poste dans le planning actuel.</p>
+      </mat-card-content>
+    </mat-card>
+  } @else {
+    @for (day of days(); track day.jour) {
+      <mat-card appearance="outlined" class="page-card timeline-day-card">
+        <mat-card-header>
+          <mat-card-title>{{ day.title }}</mat-card-title>
+          <mat-card-subtitle>{{ day.amplitudeLabel }}</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="timeline-track">
+            @for (gap of day.gaps; track $index) {
+              <div class="timeline-gap" [style.left.%]="gap.offsetPercent" [style.width.%]="gap.widthPercent" [matTooltip]="gapTooltip(gap)" [attr.aria-label]="gapTooltip(gap)"></div>
+            }
+            @for (block of day.blocks; track block.posteId) {
+              <div
+                class="timeline-block"
+                [style.left.%]="block.offsetPercent"
+                [style.width.%]="block.widthPercent"
+                [matTooltip]="block.standNom + ' : ' + block.heureDebut + ' – ' + block.heureFin"
+                [attr.aria-label]="block.standNom + ' : ' + block.heureDebut + ' – ' + block.heureFin"
+              >
+                <span class="timeline-block-label">{{ block.standNom }}</span>
+              </div>
+            }
+          </div>
+          <ul class="timeline-block-list">
+            @for (block of day.blocks; track block.posteId) {
+              <li>
+                <span class="timeline-block-list-time">{{ block.heureDebut }} – {{ block.heureFin }}</span>
+                {{ block.standNom }}
+              </li>
+            }
+          </ul>
+        </mat-card-content>
+      </mat-card>
+    }
+  }
+}

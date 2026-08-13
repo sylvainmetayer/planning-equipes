@@ -268,6 +268,9 @@ dures : elles ne sont jamais contournées silencieusement.
 - **Heatmap de charge**, par jour croisé avec le stand (places pourvues /
   requises, pour repérer les trous de couverture) ou avec l'animateur (nombre
   de postes par jour, pour repérer les surcharges) ;
+- **Timeline individuelle par animateur** : amplitude journalière, vacations et
+  pauses/déplacements entre elles, jour par jour — utile en réparation
+  manuelle d'un planning ;
 - **Page « Constraints »** : catalogue des règles actives et résultat de la
   dernière analyse, avec le score du planning et les contraintes en défaut — ce
   qui permet d'identifier précisément ce qui bloque quand aucun planning

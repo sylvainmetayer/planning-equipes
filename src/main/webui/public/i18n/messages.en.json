@@ -24,6 +24,7 @@
   "nav.link.hours": "Hours",
   "nav.link.staffing": "Staffing needs",
   "nav.link.heatmap": "Load heatmap",
+  "nav.link.timeline": "Staff timeline",
   "nav.group.tools": "Tools",
   "nav.link.db": "Database (pgAdmin)",
   "nav.link.yamlValidator": "YAML Validator",
@@ -395,5 +396,14 @@
   "heatmap.stand.tooltipNone": "{$stand} — {$day}: no time slot",
   "heatmap.stand.tooltip": "{$stand} — {$day}: {$filled} / {$total} seat(s) filled",
   "heatmap.animateur.tooltipNone": "{$animateur} — {$day}: no seat",
-  "heatmap.animateur.tooltip": "{$animateur} — {$day}: {$count} seat(s)"
+  "heatmap.animateur.tooltip": "{$animateur} — {$day}: {$count} seat(s)",
+  "timeline.subtitle": "Daily amplitude, vacations and pauses/travel for one staff member, day by day.",
+  "timeline.selectAnimateur": "Staff member",
+  "timeline.empty": "No schedule data available yet. Run a solve from the Solver page.",
+  "timeline.noAssignment": "This staff member has no seat in the current schedule.",
+  "timeline.gap.tooltip": "Break or travel: {$duree}",
+  "timeline.amplitude": "{$debut} – {$fin} ({$duree})",
+  "timeline.duration.minutesOnly": "{$minutes} min",
+  "timeline.duration.hoursOnly": "{$hours} h",
+  "timeline.duration.hoursAndMinutes": "{$hours} h {$minutes}"
 }

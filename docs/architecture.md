@@ -142,6 +142,7 @@ Chaque bloc fonctionnel a **sa propre route et sa propre page**, chargée en
 | `/hours` | `app/pages/hours/` | Heures planifiées par animateur et par semaine |
 | `/staffing` | `app/pages/staffing/` | Besoin minimum en effectif par créneau |
 | `/heatmap` | `app/pages/heatmap/` | Heatmap de charge par jour, croisée avec le stand (trous de couverture) ou l'animateur (surcharge) |
+| `/timeline` | `app/pages/animateur-timeline/` | Timeline individuelle d'un animateur : amplitude, vacations et pauses/déplacements jour par jour |
 
 `/exports` et `/solver` (son ancienne route) redirigent vers `/` (les exports
 PDF / ICS sont déclenchés depuis la page de résolution) ; toute route inconnue
@@ -201,7 +202,8 @@ Le CSS global se limite à ce que Material ne couvre pas : `src/styles.css` n'es
 qu'un agrégateur de règles `@import` et chaque partial vit sous `src/styles/`
 (`pages.css` cartes / formulaires / tableaux, `feedback.css` moniteur de job et
 variantes de snack bar, `calendar-month.css`, `calendar-day.css`,
-`constraints.css`, `problemes.css`, `staffing.css`, `heatmap.css`), avec ses propres `@media`.
+`constraints.css`, `problemes.css`, `staffing.css`, `heatmap.css`,
+`animateur-timeline.css`), avec ses propres `@media`.
 
 ## Base de données
 

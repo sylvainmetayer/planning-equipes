@@ -108,6 +108,11 @@ function buildNavGroups(): NavGroup[] {
         path: '/heatmap',
         label: $localize`:@@nav.link.heatmap:Heatmap de charge`,
         icon: 'grid_view'
+      },
+      {
+        path: '/timeline',
+        label: $localize`:@@nav.link.timeline:Timeline animateur`,
+        icon: 'timeline'
       }
     ]
   },

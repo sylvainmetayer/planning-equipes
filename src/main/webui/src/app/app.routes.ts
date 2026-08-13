@@ -100,5 +100,11 @@ export const routes: Routes = [
     title: 'Load heatmap — Planning Équipes',
     loadComponent: () => import('./pages/heatmap/heatmap-page').then((m) => m.HeatmapPage)
   },
+  {
+    path: 'timeline',
+    title: 'Animateur timeline — Planning Équipes',
+    loadComponent: () =>
+      import('./pages/animateur-timeline/animateur-timeline-page').then((m) => m.AnimateurTimelinePage)
+  },
   { path: '**', redirectTo: '' }
 ];
