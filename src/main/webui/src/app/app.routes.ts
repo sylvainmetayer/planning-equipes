@@ -13,6 +13,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/debug/debug-page').then((m) => m.DebugPage)
   },
   {
+    path: 'validateur-yaml',
+    title: 'Validateur YAML — Planning Équipes',
+    loadComponent: () => import('./pages/yaml-validator/yaml-validator-page').then((m) => m.YamlValidatorPage)
+  },
+  {
     path: 'notifications',
     title: 'Notifications — Planning Équipes',
     loadComponent: () => import('./pages/notifications/notifications-page').then((m) => m.NotificationsPage)

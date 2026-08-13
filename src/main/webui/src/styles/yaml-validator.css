@@ -1,0 +1,25 @@
+.yaml-validator-result {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+  font: var(--mat-sys-body-medium);
+}
+
+.yaml-validator-result.is-valid {
+  color: var(--mat-sys-primary);
+}
+
+.yaml-validator-result.is-invalid {
+  color: var(--mat-sys-error);
+}
+
+.yaml-validator-errors {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.yaml-validator-errors li {
+  margin-bottom: 0.25rem;
+  font-family: var(--mat-sys-code, monospace);
+}

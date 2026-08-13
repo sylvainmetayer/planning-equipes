@@ -230,6 +230,16 @@ actuelles en scénario ». Un fichier invalide (YAML mal formé, section
 manquante) renvoie `400` avec `{"message": "…"}` décrivant l'erreur, sans
 rien importer.
 
+`POST /api/reference-data/valider-scenario-fichier` valide la **structure**
+d'un fichier YAML (types, sections/champs requis, plages de valeurs — voir
+[`docs/schema/scenario-schema.json`](schema/scenario-schema.json) et
+`ScenarioValidator`) sans rien importer ni persister — c'est l'endpoint de
+l'outil « Validateur YAML ». Toujours **200**, y compris pour un fichier
+vide ou un YAML mal formé : `{"valide": bool, "erreurs": ["…", …]}`, une
+liste vide signifiant que le fichier est valide. Ne remplace pas les
+vérifications de références croisées (`standId`/`creneauId` d'un poste)
+qu'effectue `import-scenario-fichier` sur un import réel.
+
 ## Découpage automatique en vacations
 
 Découpe les amplitudes d'un groupe de créneaux source en vacations plus

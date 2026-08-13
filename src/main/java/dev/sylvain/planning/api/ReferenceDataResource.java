@@ -1,5 +1,6 @@
 package dev.sylvain.planning.api;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,6 +15,7 @@ import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.scenario.ScenarioValidator;
 import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.ReferenceDataService;
 import dev.sylvain.planning.service.ReferenceDataService.TypologieItem;
@@ -311,6 +313,41 @@ public class ReferenceDataResource {
      * vacations — sparing them a silent group switch under the hood.
      */
     public record ImportScenarioResult(String decoupageAutoGroupeCibleNom) {
+    }
+
+    /**
+     * Validates a scenario YAML file's structure (types, required fields,
+     * value ranges — see docs/schema/scenario-schema.json) without importing
+     * anything: the "Validateur YAML" tool page. Always 200 — a malformed or
+     * structurally invalid file surfaces as entries in {@code erreurs}
+     * rather than an HTTP error, since this is a diagnostic report, not a
+     * mutation. Delegates to the standalone {@link ScenarioValidator}, so it
+     * only checks the same shape the JSON Schema describes: it does not
+     * replicate the cross-reference checks (e.g. a poste's standId actually
+     * matching a declared stand) that {@link #importScenarioFichier} performs
+     * on a real import.
+     */
+    @POST
+    @Path("/reference-data/valider-scenario-fichier")
+    @Consumes(MediaType.WILDCARD)
+    public ScenarioValidationResult validerScenarioFichier(String yamlContent) {
+        List<String> erreurs = validerScenario(yamlContent);
+        return new ScenarioValidationResult(erreurs.isEmpty(), erreurs);
+    }
+
+    private static List<String> validerScenario(String yamlContent) {
+        if (yamlContent == null || yamlContent.isBlank()) {
+            return List.of("Le fichier est vide.");
+        }
+        try {
+            return ScenarioValidator.valider(yamlContent);
+        } catch (IOException e) {
+            String message = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+            return List.of("YAML invalide : " + message);
+        }
+    }
+
+    public record ScenarioValidationResult(boolean valide, List<String> erreurs) {
     }
 
     @GET

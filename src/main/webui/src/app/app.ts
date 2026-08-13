@@ -115,7 +115,8 @@ function buildNavGroups(): NavGroup[] {
         icon: 'storage',
         external: true
       },
-      { path: '/debug', label: $localize`:@@nav.link.debug:Débogage`, icon: 'bug_report' }
+      { path: '/debug', label: $localize`:@@nav.link.debug:Débogage`, icon: 'bug_report' },
+      { path: '/validateur-yaml', label: $localize`:@@nav.link.yamlValidator:Validateur YAML`, icon: 'rule' }
     ]
   }
   ];

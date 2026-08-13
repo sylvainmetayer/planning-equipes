@@ -1,0 +1,52 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <mat-card-title i18n="@@nav.link.yamlValidator">Validateur YAML</mat-card-title>
+    <mat-card-subtitle i18n="@@yamlValidator.description">
+      Vérifie la structure d'un fichier de scénario (types, champs requis, plages de valeurs) sans rien
+      importer ni persister. Ne remplace pas les vérifications de références croisées faites à l'import
+      réel (bouton « Importer un fichier » de l'onglet Données).
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-actions class="card-actions">
+    <button matButton="outlined" type="button" [disabled]="validating()" (click)="pickFile()">
+      <mat-icon>upload_file</mat-icon>
+      <ng-container i18n="@@yamlValidator.pickFile">Choisir un fichier YAML</ng-container>
+    </button>
+    <input
+      #fileInput
+      type="file"
+      accept=".yaml,.yml,application/x-yaml,text/yaml,text/plain"
+      hidden
+      (change)="onFileSelected($event)"
+    />
+  </mat-card-actions>
+  <mat-card-content>
+    @if (validating()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    @if (error()) {
+      <p class="calendar-empty">{{ error() }}</p>
+    }
+    @if (!validating() && result(); as validationResult) {
+      @if (validationResult.valide) {
+        <p class="yaml-validator-result is-valid">
+          <mat-icon>check_circle</mat-icon>
+          <span>{{ summary() }}</span>
+        </p>
+      } @else {
+        <p class="yaml-validator-result is-invalid">
+          <mat-icon>error</mat-icon>
+          <span>{{ summary() }}</span>
+        </p>
+        <ul class="yaml-validator-errors">
+          @for (erreur of validationResult.erreurs; track erreur) {
+            <li>{{ erreur }}</li>
+          }
+        </ul>
+      }
+    }
+    @if (!validating() && !result() && !error()) {
+      <p class="empty-hint" i18n="@@yamlValidator.empty">Aucun fichier analysé pour le moment.</p>
+    }
+  </mat-card-content>
+</mat-card>
