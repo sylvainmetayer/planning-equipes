@@ -202,6 +202,14 @@ Même schéma pour chaque référentiel : `GET` (liste), `POST` (création),
 prochain solve et désactive tous les autres (un seul groupe actif à la
 fois).
 
+Les typologies de jeux sont un référentiel comme les autres, pas un enum figé
+côté serveur : `stands.typologiesProposees` et
+`animateurs.competences` référencent des `id` de `/api/typologies` (contrainte
+`FOREIGN KEY` en base). `POST`/`PUT /api/stands`|`/api/animateurs` répondent
+**400** si un `id` de typologie référencé n'existe pas encore, et
+`DELETE /api/typologies/{id}` répond **400** si la typologie est encore
+utilisée par au moins un stand ou animateur.
+
 Contraintes ad hoc (pas de mise à jour, on supprime et on recrée) :
 
 | Méthode | Chemin |

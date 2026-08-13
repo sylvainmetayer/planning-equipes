@@ -15,7 +15,8 @@ public class Animateur {
     private String nom;
     private LocalDate dateNaissance;
     private boolean manager;
-    private Map<TypologieJeu, NiveauCompetence> competences = new HashMap<>();
+    /** Keys reference the {@code typologie} referential table (CRUD-managed), not a fixed enum. */
+    private Map<String, NiveauCompetence> competences = new HashMap<>();
     private Set<LocalDate> joursIndisponibles = new HashSet<>();
 
     public Animateur() {
@@ -137,11 +138,11 @@ public class Animateur {
         this.manager = manager;
     }
 
-    public Map<TypologieJeu, NiveauCompetence> getCompetences() {
+    public Map<String, NiveauCompetence> getCompetences() {
         return competences;
     }
 
-    public void setCompetences(Map<TypologieJeu, NiveauCompetence> competences) {
+    public void setCompetences(Map<String, NiveauCompetence> competences) {
         this.competences = competences;
     }
 

@@ -21,7 +21,6 @@ import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.domain.TypologieJeu;
 
 /**
  * Exercises {@link PlanningService#construireScenarioYaml} directly
@@ -33,14 +32,14 @@ import dev.sylvain.planning.domain.TypologieJeu;
  */
 class PlanningServiceScenarioExportTest {
 
-    private final Stand stand = new Stand("STAND-A", "Stand A", Set.of(TypologieJeu.STRATEGIE), 1, 2, false);
+    private final Stand stand = new Stand("STAND-A", "Stand A", Set.of("STRATEGIE"), 1, 2, false);
     private final Creneau creneau = new Creneau(1L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
     private final Animateur animateur = new Animateur("A1", "Alice", "Referente", LocalDate.of(2000, 1, 1), false);
 
     @Test
     @SuppressWarnings("unchecked")
     void exportedYamlRoundTripsThroughAParser() {
-        animateur.setCompetences(Map.of(TypologieJeu.STRATEGIE, NiveauCompetence.REFERENT));
+        animateur.setCompetences(Map.of("STRATEGIE", NiveauCompetence.REFERENT));
         animateur.setJoursIndisponibles(Set.of(LocalDate.of(2026, 8, 15)));
         stand.setNiveauEffort(NiveauEffort.EPUISANT);
         stand.setIndisponibilites(List.of(

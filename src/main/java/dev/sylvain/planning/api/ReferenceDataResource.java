@@ -51,14 +51,26 @@ public class ReferenceDataResource {
 
     @POST
     @Path("/stands")
-    public Stand createStand(Stand stand) {
-        return referenceDataService.createStand(stand);
+    public Response createStand(Stand stand) {
+        try {
+            return Response.ok(referenceDataService.createStand(stand)).build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ErreurValidation(e.getMessage()))
+                    .build();
+        }
     }
 
     @PUT
     @Path("/stands/{id}")
-    public Stand updateStand(@PathParam("id") String id, Stand stand) {
-        return referenceDataService.updateStand(id, stand);
+    public Response updateStand(@PathParam("id") String id, Stand stand) {
+        try {
+            return Response.ok(referenceDataService.updateStand(id, stand)).build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ErreurValidation(e.getMessage()))
+                    .build();
+        }
     }
 
     @DELETE
@@ -181,14 +193,26 @@ public class ReferenceDataResource {
 
     @POST
     @Path("/animateurs")
-    public Animateur createAnimateur(Animateur animateur) {
-        return referenceDataService.createAnimateur(animateur);
+    public Response createAnimateur(Animateur animateur) {
+        try {
+            return Response.ok(referenceDataService.createAnimateur(animateur)).build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ErreurValidation(e.getMessage()))
+                    .build();
+        }
     }
 
     @PUT
     @Path("/animateurs/{id}")
-    public Animateur updateAnimateur(@PathParam("id") String id, Animateur animateur) {
-        return referenceDataService.updateAnimateur(id, animateur);
+    public Response updateAnimateur(@PathParam("id") String id, Animateur animateur) {
+        try {
+            return Response.ok(referenceDataService.updateAnimateur(id, animateur)).build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ErreurValidation(e.getMessage()))
+                    .build();
+        }
     }
 
     @DELETE
@@ -216,11 +240,18 @@ public class ReferenceDataResource {
         return referenceDataService.updateTypologie(id, typologie);
     }
 
+    /** Returns 400 (rather than a raw FK-violation 500) when the typologie is still assigned to a stand/animateur. */
     @DELETE
     @Path("/typologies/{id}")
     public Response deleteTypologie(@PathParam("id") String id) {
-        referenceDataService.deleteTypologie(id);
-        return Response.noContent().build();
+        try {
+            referenceDataService.deleteTypologie(id);
+            return Response.noContent().build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ErreurValidation(e.getMessage()))
+                    .build();
+        }
     }
 
     @POST

@@ -14,7 +14,6 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.domain.TypologieJeu;
 import dev.sylvain.planning.service.FeasibilityAnalyzer.CauseInfaisabilite;
 import dev.sylvain.planning.service.FeasibilityAnalyzer.FeasibilityReport;
 import dev.sylvain.planning.service.FeasibilityAnalyzer.SeveriteInfaisabilite;
@@ -26,11 +25,11 @@ class FeasibilityAnalyzerTest {
 
     @Test
     void feasibleWhenEnoughCompetentAvailableAnimateurs() {
-        Stand stand = stand("stand-1", 2, TypologieJeu.STRATEGIE);
+        Stand stand = stand("stand-1", 2, "STRATEGIE");
         Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
-        Animateur a1 = animateur("a1", TypologieJeu.STRATEGIE);
-        Animateur a2 = animateur("a2", TypologieJeu.STRATEGIE);
-        Animateur a3 = animateur("a3", TypologieJeu.STRATEGIE);
+        Animateur a1 = animateur("a1", "STRATEGIE");
+        Animateur a2 = animateur("a2", "STRATEGIE");
+        Animateur a3 = animateur("a3", "STRATEGIE");
 
         FeasibilityReport report = analyzer.analyser(List.of(a1, a2, a3), List.of(stand), List.of(creneau));
 
@@ -42,10 +41,10 @@ class FeasibilityAnalyzerTest {
 
     @Test
     void infeasibleWhenNotEnoughCompetentAnimateurs() {
-        Stand stand = stand("stand-1", 5, TypologieJeu.STRATEGIE);
+        Stand stand = stand("stand-1", 5, "STRATEGIE");
         Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
-        Animateur a1 = animateur("a1", TypologieJeu.STRATEGIE);
-        Animateur a2 = animateur("a2", TypologieJeu.STRATEGIE);
+        Animateur a1 = animateur("a1", "STRATEGIE");
+        Animateur a2 = animateur("a2", "STRATEGIE");
 
         FeasibilityReport report = analyzer.analyser(List.of(a1, a2), List.of(stand), List.of(creneau));
 
@@ -70,14 +69,14 @@ class FeasibilityAnalyzerTest {
 
     @Test
     void reportsEveryCreneauInShortfallRankedByGravity() {
-        Stand stand = stand("stand-1", 3, TypologieJeu.STRATEGIE);
+        Stand stand = stand("stand-1", 3, "STRATEGIE");
         LocalDate samedi = LocalDate.of(2026, 8, 1);
         LocalDate dimanche = LocalDate.of(2026, 8, 2);
         Creneau creneauSamedi = creneau(1, samedi);
         Creneau creneauDimanche = creneau(2, dimanche);
 
-        Animateur a1 = animateur("a1", TypologieJeu.STRATEGIE);
-        Animateur a2 = animateur("a2", TypologieJeu.STRATEGIE);
+        Animateur a1 = animateur("a1", "STRATEGIE");
+        Animateur a2 = animateur("a2", "STRATEGIE");
         a1.setJoursIndisponibles(Set.of(samedi));
         // Le samedi : 1 animateur pour 3 places (manque 2) ; le dimanche : 2
         // animateurs pour 3 places (manque 1). Les deux créneaux doivent
@@ -96,13 +95,13 @@ class FeasibilityAnalyzerTest {
 
     @Test
     void severiteCritiqueQuandAucunePlaceNePeutEtreCouverte() {
-        Stand stand = stand("stand-1", 2, TypologieJeu.STRATEGIE);
+        Stand stand = stand("stand-1", 2, "STRATEGIE");
         LocalDate samedi = LocalDate.of(2026, 8, 1);
         LocalDate dimanche = LocalDate.of(2026, 8, 2);
         Creneau creneauSamedi = creneau(1, samedi);
         Creneau creneauDimanche = creneau(2, dimanche);
 
-        Animateur a1 = animateur("a1", TypologieJeu.STRATEGIE);
+        Animateur a1 = animateur("a1", "STRATEGIE");
         a1.setJoursIndisponibles(Set.of(samedi));
 
         FeasibilityReport report = analyzer.analyser(List.of(a1), List.of(stand),
@@ -118,11 +117,11 @@ class FeasibilityAnalyzerTest {
 
     @Test
     void standSansAucunAnimateurCompetentEstUneCauseCritique() {
-        Stand couvert = stand("stand-1", 1, TypologieJeu.STRATEGIE);
-        Stand orphelin = stand("stand-2", 1, TypologieJeu.ADRESSE);
+        Stand couvert = stand("stand-1", 1, "STRATEGIE");
+        Stand orphelin = stand("stand-2", 1, "ADRESSE");
         Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
-        Animateur a1 = animateur("a1", TypologieJeu.STRATEGIE);
-        Animateur a2 = animateur("a2", TypologieJeu.STRATEGIE);
+        Animateur a1 = animateur("a1", "STRATEGIE");
+        Animateur a2 = animateur("a2", "STRATEGIE");
 
         FeasibilityReport report = analyzer.analyser(List.of(a1, a2), List.of(couvert, orphelin), List.of(creneau));
 
@@ -150,11 +149,11 @@ class FeasibilityAnalyzerTest {
     void leStandSansCompetenceEstClasseAvantLesCreneauxSousEffectif() {
         // Les deux causes sont CRITIQUE (le créneau n'a aucun animateur
         // disponible) : c'est bien le type qui départage.
-        Stand orphelin = stand("stand-orphelin", 1, TypologieJeu.ADRESSE);
-        Stand couvert = stand("stand-couvert", 2, TypologieJeu.STRATEGIE);
+        Stand orphelin = stand("stand-orphelin", 1, "ADRESSE");
+        Stand couvert = stand("stand-couvert", 2, "STRATEGIE");
         LocalDate jour = LocalDate.of(2026, 8, 1);
         Creneau creneau = creneau(1, jour);
-        Animateur absent = animateur("a1", TypologieJeu.STRATEGIE);
+        Animateur absent = animateur("a1", "STRATEGIE");
         absent.setJoursIndisponibles(Set.of(jour));
 
         FeasibilityReport report = analyzer.analyser(List.of(absent), List.of(orphelin, couvert), List.of(creneau));
@@ -169,7 +168,7 @@ class FeasibilityAnalyzerTest {
 
     @Test
     void laListeDesCausesEstPlafonneeMaisTotalCausesResteExhaustif() {
-        Stand stand = stand("stand-1", 2, TypologieJeu.STRATEGIE);
+        Stand stand = stand("stand-1", 2, "STRATEGIE");
         List<Creneau> creneaux = new java.util.ArrayList<>();
         Set<LocalDate> jours = new java.util.HashSet<>();
         for (int jour = 1; jour <= 14; jour++) {
@@ -179,7 +178,7 @@ class FeasibilityAnalyzerTest {
         }
         // Un animateur compétent (sinon le stand déclencherait en plus une
         // cause STAND_SANS_ANIMATEUR_COMPETENT), mais absent tout le festival.
-        Animateur absent = animateur("a1", TypologieJeu.STRATEGIE);
+        Animateur absent = animateur("a1", "STRATEGIE");
         absent.setJoursIndisponibles(jours);
 
         FeasibilityReport report = analyzer.analyser(List.of(absent), List.of(stand), creneaux);
@@ -191,10 +190,10 @@ class FeasibilityAnalyzerTest {
 
     @Test
     void animateurWithoutMatchingCompetenceDoesNotCountTowardsCapacity() {
-        Stand stand = stand("stand-1", 1, TypologieJeu.STRATEGIE);
+        Stand stand = stand("stand-1", 1, "STRATEGIE");
         Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
-        Animateur competent = animateur("a1", TypologieJeu.STRATEGIE);
-        Animateur incompetent = animateur("a2", TypologieJeu.ADRESSE);
+        Animateur competent = animateur("a1", "STRATEGIE");
+        Animateur incompetent = animateur("a2", "ADRESSE");
 
         FeasibilityReport avecUnCompetent = analyzer.analyser(List.of(competent, incompetent), List.of(stand),
                 List.of(creneau));
@@ -210,12 +209,12 @@ class FeasibilityAnalyzerTest {
         // Le stand exige 3 places mais est fermé (indisponibilité couvrant tout
         // le créneau) : aucun poste n'est généré, donc aucune demande (cf.
         // PlanningService.construirePostes).
-        Stand stand = stand("stand-1", 3, TypologieJeu.STRATEGIE);
+        Stand stand = stand("stand-1", 3, "STRATEGIE");
         Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
         stand.setIndisponibilites(List.of(
                 new IndisponibiliteStand(null, creneau.getDate(), creneau.getHeureDebut(), creneau.getHeureFin(), null)));
 
-        FeasibilityReport report = analyzer.analyser(List.of(animateur("a1", TypologieJeu.STRATEGIE)),
+        FeasibilityReport report = analyzer.analyser(List.of(animateur("a1", "STRATEGIE")),
                 List.of(stand), List.of(creneau));
 
         assertThat(report.feasible()).isTrue();
@@ -227,11 +226,11 @@ class FeasibilityAnalyzerTest {
     void laDemandeSuitEffectifMinPasEffectifMax() {
         // effectifMin = 2 (deux places générées), effectifMax = 4 : deux
         // animateurs suffisent. Compter effectifMax annoncerait un manque de 2.
-        Stand stand = new Stand("stand-1", "stand-1", Set.of(TypologieJeu.STRATEGIE), 2, 4, false);
+        Stand stand = new Stand("stand-1", "stand-1", Set.of("STRATEGIE"), 2, 4, false);
         Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
 
         FeasibilityReport report = analyzer.analyser(
-                List.of(animateur("a1", TypologieJeu.STRATEGIE), animateur("a2", TypologieJeu.STRATEGIE)),
+                List.of(animateur("a1", "STRATEGIE"), animateur("a2", "STRATEGIE")),
                 List.of(stand), List.of(creneau));
 
         assertThat(report.feasible()).isTrue();
@@ -254,7 +253,7 @@ class FeasibilityAnalyzerTest {
      * effectifMax} is deliberately set higher so a regression back to counting
      * it would change the expected shortfalls.
      */
-    private static Stand stand(String id, int effectifMin, TypologieJeu typologie) {
+    private static Stand stand(String id, int effectifMin, String typologie) {
         return new Stand(id, id, Set.of(typologie), effectifMin, effectifMin + 2, false);
     }
 
@@ -262,7 +261,7 @@ class FeasibilityAnalyzerTest {
         return new Creneau(id, 1, date, LocalTime.of(10, 0), LocalTime.of(12, 0));
     }
 
-    private static Animateur animateur(String id, TypologieJeu typologie) {
+    private static Animateur animateur(String id, String typologie) {
         Animateur animateur = new Animateur(id, id, id, LocalDate.of(1990, 1, 1), false);
         animateur.setCompetences(java.util.Map.of(typologie, NiveauCompetence.AUTONOME));
         return animateur;

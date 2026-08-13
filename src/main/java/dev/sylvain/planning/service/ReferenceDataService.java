@@ -56,6 +56,7 @@ public class ReferenceDataService {
 
     public Animateur createAnimateur(Animateur animateur) {
         animateur.setId(requiredId(animateur.getId(), "animateur id"));
+        validateCompetences(animateur);
         repository.saveAnimateur(animateur);
         markModified();
         return animateur;
@@ -66,9 +67,18 @@ public class ReferenceDataService {
             throw new NotFoundException("Animateur not found: " + id);
         }
         animateur.setId(id);
+        validateCompetences(animateur);
         repository.saveAnimateur(animateur);
         markModified();
         return animateur;
+    }
+
+    /** Every competence key must reference an existing typologie — see {@link #validateTypologies(Stand)}. */
+    private void validateCompetences(Animateur animateur) {
+        if (animateur.getCompetences() == null) {
+            return;
+        }
+        validateTypologieIds(animateur.getCompetences().keySet());
     }
 
     public void deleteAnimateur(String id) {
@@ -88,6 +98,7 @@ public class ReferenceDataService {
         validateIndisponibilites(stand);
         validateOuvertures(stand);
         validateModesExclusifsParJour(stand);
+        validateTypologies(stand);
         repository.saveStand(stand);
         markModified();
         return stand;
@@ -102,9 +113,28 @@ public class ReferenceDataService {
         validateIndisponibilites(stand);
         validateOuvertures(stand);
         validateModesExclusifsParJour(stand);
+        validateTypologies(stand);
         repository.saveStand(stand);
         markModified();
         return stand;
+    }
+
+    /** Every proposed typologie must reference an id already present in the {@code typologie} referential. */
+    private void validateTypologies(Stand stand) {
+        if (stand.getTypologiesProposees() == null) {
+            return;
+        }
+        validateTypologieIds(stand.getTypologiesProposees());
+    }
+
+    private void validateTypologieIds(Set<String> ids) {
+        Set<String> inconnues = ids.stream()
+                .filter(id -> !repository.typologieExists(id))
+                .collect(Collectors.toCollection(TreeSet::new));
+        if (!inconnues.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Typologie(s) inconnue(s) : " + inconnues + " — créez-les d'abord via /api/typologies");
+        }
     }
 
     private void validateEffectifs(Stand stand) {
@@ -447,6 +477,10 @@ public class ReferenceDataService {
     }
 
     public void deleteTypologie(String id) {
+        if (repository.typologieEnUsage(id)) {
+            throw new IllegalArgumentException(
+                    "Typologie " + id + " utilisée par au moins un stand ou animateur — retirez-la d'abord");
+        }
         repository.deleteTypologie(id);
         markModified();
     }

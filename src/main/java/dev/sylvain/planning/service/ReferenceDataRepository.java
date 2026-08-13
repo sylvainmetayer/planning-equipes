@@ -35,7 +35,6 @@ import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
-import dev.sylvain.planning.domain.TypologieJeu;
 import dev.sylvain.planning.service.ReferenceDataService.TypologieItem;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -117,7 +116,7 @@ public class ReferenceDataRepository {
                 while (rs.next()) {
                     Stand stand = byId.get(rs.getString("stand_id"));
                     if (stand != null) {
-                        stand.getTypologiesProposees().add(TypologieJeu.valueOf(rs.getString("typologie")));
+                        stand.getTypologiesProposees().add(rs.getString("typologie"));
                     }
                 }
             }
@@ -222,9 +221,9 @@ public class ReferenceDataRepository {
         if (stand.getTypologiesProposees() != null && !stand.getTypologiesProposees().isEmpty()) {
             try (PreparedStatement ins = connection.prepareStatement(
                     "INSERT INTO stand_typologie (stand_id, typologie) VALUES (?, ?)")) {
-                for (TypologieJeu typologie : stand.getTypologiesProposees()) {
+                for (String typologie : stand.getTypologiesProposees()) {
                     ins.setString(1, stand.getId());
-                    ins.setString(2, typologie.name());
+                    ins.setString(2, typologie);
                     ins.addBatch();
                 }
                 ins.executeBatch();
@@ -582,7 +581,7 @@ public class ReferenceDataRepository {
                     Animateur animateur = byId.get(rs.getString("animateur_id"));
                     if (animateur != null) {
                         animateur.getCompetences().put(
-                                TypologieJeu.valueOf(rs.getString("typologie")),
+                                rs.getString("typologie"),
                                 NiveauCompetence.valueOf(rs.getString("niveau")));
                     }
                 }
@@ -648,9 +647,9 @@ public class ReferenceDataRepository {
         if (animateur.getCompetences() != null && !animateur.getCompetences().isEmpty()) {
             try (PreparedStatement ins = connection.prepareStatement(
                     "INSERT INTO animateur_competence (animateur_id, typologie, niveau) VALUES (?, ?, ?)")) {
-                for (Map.Entry<TypologieJeu, NiveauCompetence> entry : animateur.getCompetences().entrySet()) {
+                for (Map.Entry<String, NiveauCompetence> entry : animateur.getCompetences().entrySet()) {
                     ins.setString(1, animateur.getId());
-                    ins.setString(2, entry.getKey().name());
+                    ins.setString(2, entry.getKey());
                     ins.setString(3, entry.getValue().name());
                     ins.addBatch();
                 }
@@ -705,6 +704,21 @@ public class ReferenceDataRepository {
 
     public void deleteTypologie(String id) {
         delete("DELETE FROM typologie WHERE id = ?", id);
+    }
+
+    public boolean typologieEnUsage(String id) {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = connection.prepareStatement(
+                        "SELECT 1 WHERE EXISTS (SELECT 1 FROM stand_typologie WHERE typologie = ?) "
+                                + "OR EXISTS (SELECT 1 FROM animateur_competence WHERE typologie = ?)")) {
+            ps.setString(1, id);
+            ps.setString(2, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to check typologie usage " + id, e);
+        }
     }
 
     private void upsertTypologie(Connection connection, TypologieItem typologie) throws SQLException {
@@ -1083,6 +1097,9 @@ public class ReferenceDataRepository {
                 for (Emplacement emplacement : emplacementsById.values()) {
                     upsertEmplacementTx(connection, emplacement);
                 }
+                for (TypologieItem typologie : derivedTypologies(standsById.values(), animateurs)) {
+                    upsertTypologie(connection, typologie);
+                }
                 for (Stand stand : standsById.values()) {
                     upsertStand(connection, stand);
                 }
@@ -1101,9 +1118,6 @@ public class ReferenceDataRepository {
                         }
                         upsertContrainte(connection, contrainte);
                     }
-                }
-                for (TypologieItem typologie : derivedTypologies(standsById.values(), animateurs)) {
-                    upsertTypologie(connection, typologie);
                 }
                 connection.commit();
             } catch (SQLException e) {
@@ -1158,7 +1172,7 @@ public class ReferenceDataRepository {
     }
 
     private List<TypologieItem> derivedTypologies(Iterable<Stand> stands, List<Animateur> animateurs) {
-        java.util.LinkedHashSet<TypologieJeu> vues = new java.util.LinkedHashSet<>();
+        java.util.LinkedHashSet<String> vues = new java.util.LinkedHashSet<>();
         stands.forEach(stand -> {
             if (stand.getTypologiesProposees() != null) {
                 vues.addAll(stand.getTypologiesProposees());
@@ -1169,7 +1183,7 @@ public class ReferenceDataRepository {
                 vues.addAll(animateur.getCompetences().keySet());
             }
         });
-        return vues.stream().map(t -> new TypologieItem(t.name(), t.name())).toList();
+        return vues.stream().map(t -> new TypologieItem(t, t)).toList();
     }
 
     /* -------------------------------- Helpers ------------------------------ */

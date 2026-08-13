@@ -15,7 +15,6 @@ import org.junit.jupiter.api.Test;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.domain.TypologieJeu;
 
 /**
  * {@link ReferenceDataService#createStand} / {@link ReferenceDataService#updateStand}
@@ -89,6 +88,6 @@ class ReferenceDataServiceStandTest {
     }
 
     private static Stand stand(String id) {
-        return new Stand(id, id, Set.of(TypologieJeu.STRATEGIE), 1, 1, false);
+        return new Stand(id, id, Set.of("STRATEGIE"), 1, 1, false);
     }
 }

@@ -10,7 +10,8 @@ public class Stand {
 
     private String id;
     private String nom;
-    private Set<TypologieJeu> typologiesProposees = new HashSet<>();
+    /** Ids referencing the {@code typologie} referential table (CRUD-managed), not a fixed enum. */
+    private Set<String> typologiesProposees = new HashSet<>();
     private int effectifMin;
     private int effectifMax;
     private boolean reserveMajeurs;
@@ -38,12 +39,12 @@ public class Stand {
     public Stand() {
     }
 
-    public Stand(String id, String nom, Set<TypologieJeu> typologiesProposees, int effectifMin, int effectifMax,
+    public Stand(String id, String nom, Set<String> typologiesProposees, int effectifMin, int effectifMax,
             boolean reserveMajeurs) {
         this(id, nom, typologiesProposees, effectifMin, effectifMax, reserveMajeurs, false);
     }
 
-    public Stand(String id, String nom, Set<TypologieJeu> typologiesProposees, int effectifMin, int effectifMax,
+    public Stand(String id, String nom, Set<String> typologiesProposees, int effectifMin, int effectifMax,
             boolean reserveMajeurs, boolean premium) {
         this.id = id;
         this.nom = nom;
@@ -70,11 +71,11 @@ public class Stand {
         this.nom = nom;
     }
 
-    public Set<TypologieJeu> getTypologiesProposees() {
+    public Set<String> getTypologiesProposees() {
         return typologiesProposees;
     }
 
-    public void setTypologiesProposees(Set<TypologieJeu> typologiesProposees) {
+    public void setTypologiesProposees(Set<String> typologiesProposees) {
         this.typologiesProposees = typologiesProposees;
     }
 

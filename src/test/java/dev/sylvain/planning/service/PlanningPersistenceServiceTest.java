@@ -12,7 +12,6 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.domain.TypologieJeu;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
@@ -52,7 +51,7 @@ class PlanningPersistenceServiceTest {
     @Test
     void effectiveWindowSurvivesPersistAndReload() {
         Stand stand = referenceDataService.createStand(
-                new Stand("STAND-EFFWIN", "Stand effectif", Set.of(TypologieJeu.STRATEGIE), 1, 1, false));
+                new Stand("STAND-EFFWIN", "Stand effectif", Set.of("STRATEGIE"), 1, 1, false));
         Creneau creneau = referenceDataService.createCreneau(
                 new Creneau(null, 1, LocalDate.of(2026, 7, 14), LocalTime.of(13, 40), LocalTime.of(17, 50)));
         Animateur animateur = referenceDataService.createAnimateur(

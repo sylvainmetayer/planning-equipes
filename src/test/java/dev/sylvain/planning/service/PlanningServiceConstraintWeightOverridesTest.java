@@ -19,7 +19,6 @@ import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.domain.TypologieJeu;
 
 /**
  * Confirms a {@code planning.constraint-weights.<name>} property reaches the
@@ -42,10 +41,10 @@ class PlanningServiceConstraintWeightOverridesTest {
         PlanningService planningService = new PlanningService(2L, 1L, referenceDataService,
                 new FeasibilityAnalyzer(), config);
 
-        Stand stand = new Stand("S1", "S1", Set.of(TypologieJeu.STRATEGIE), 1, 1, false);
+        Stand stand = new Stand("S1", "S1", Set.of("STRATEGIE"), 1, 1, false);
         Creneau creneau = new Creneau(1L, 1, LocalDate.of(2026, 7, 8), LocalTime.of(9, 0), LocalTime.of(13, 0));
         Animateur debutant = new Animateur("D1", "D1", "D1", LocalDate.of(2000, 1, 1), false);
-        debutant.setCompetences(Map.of(TypologieJeu.STRATEGIE, NiveauCompetence.DEBUTANT));
+        debutant.setCompetences(Map.of("STRATEGIE", NiveauCompetence.DEBUTANT));
         PosteAffectation poste = new PosteAffectation("P1", stand, creneau);
         poste.setAnimateur(debutant);
 

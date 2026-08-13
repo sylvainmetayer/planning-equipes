@@ -25,7 +25,6 @@ import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.domain.TypologieJeu;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -187,9 +186,9 @@ public class PlanningPersistenceService {
                 delete.setString(1, stand.getId());
                 delete.addBatch();
                 if (stand.getTypologiesProposees() != null) {
-                    for (TypologieJeu typologie : stand.getTypologiesProposees()) {
+                    for (String typologie : stand.getTypologiesProposees()) {
                         insert.setString(1, stand.getId());
-                        insert.setString(2, typologie.name());
+                        insert.setString(2, typologie);
                         insert.addBatch();
                     }
                 }
@@ -264,9 +263,9 @@ public class PlanningPersistenceService {
                 deleteJour.setString(1, animateur.getId());
                 deleteJour.addBatch();
                 if (animateur.getCompetences() != null) {
-                    for (Map.Entry<TypologieJeu, NiveauCompetence> entry : animateur.getCompetences().entrySet()) {
+                    for (Map.Entry<String, NiveauCompetence> entry : animateur.getCompetences().entrySet()) {
                         insertComp.setString(1, animateur.getId());
-                        insertComp.setString(2, entry.getKey().name());
+                        insertComp.setString(2, entry.getKey());
                         insertComp.setString(3, entry.getValue().name());
                         insertComp.addBatch();
                     }

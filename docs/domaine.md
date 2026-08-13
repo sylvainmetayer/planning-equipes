@@ -2,18 +2,24 @@
 
 Pattern standard Timefold de « shift rostering », à respecter tel quel pour rester
 compatible avec `HardMediumSoftScore`. Les noms de classes et de champs restent en
-**vocabulaire métier français** (`Animateur`, `Creneau`, `TypologieJeu`,
+**vocabulaire métier français** (`Animateur`, `Creneau`, `typologie`,
 `joursIndisponibles`) pour rester alignés avec la documentation métier ; les commentaires et identifiants
 non métier sont en anglais.
 
 ## Données de référence (non modifiées par le solveur)
 
-```java
-public enum TypologieJeu {
-    STRATEGIE, AMBIANCE, ENFANT, COOPERATIF, ADRESSE, ROLE, ENIGME,
-    HOMME_JEU  // animation de rue mobile, pas un genre de jeu — voir note ci-dessous
-}
+Les typologies de jeu (« catégories ») ne sont **pas** un enum Java figé : ce sont
+des lignes CRUD de la table `typologie` (`id`, `label`), gérées via
+`/api/typologies` et la page `/typologies`. `Stand.typologiesProposees` et
+`Animateur.competences` référencent ces `id` par simple `String` (validé contre la
+table par `ReferenceDataService`, et par une contrainte `FOREIGN KEY` en base —
+migration `V27__typologie_foreign_keys.sql`), ce qui permet d'ajouter, renommer ou
+supprimer une typologie sans toucher au code. Sept catégories « genre de jeu »
+(`STRATEGIE`, `AMBIANCE`, `ENFANT`, `COOPERATIF`, `ADRESSE`, `ROLE`, `ENIGME`) plus
+`HOMME_JEU` sont seedées par les migrations `V3`/`V24` pour qu'une base neuve les
+propose d'office, mais rien n'empêche d'en ajouter d'autres depuis l'UI.
 
+```java
 public enum NiveauCompetence {
     DEBUTANT, AUTONOME, REFERENT
 }
@@ -38,14 +44,14 @@ public class Animateur {
     private LocalDate dateNaissance;            // → régime applicable calculé à la date du créneau :
                                                 //   moins de 16 ans / 16-18 ans / majeur — jamais stocké
     private boolean manager;                    // gère d'autres animateurs ; tous les animateurs sont payés
-    private Map<TypologieJeu, NiveauCompetence> competences;
+    private Map<String, NiveauCompetence> competences;  // clé = id de typologie (table typologie)
     private Set<LocalDate> joursIndisponibles;  // opt-out : dispo par défaut, on ne liste que les jours OFF
 }
 
 public class Stand {
     private String id;
     private String nom;
-    private Set<TypologieJeu> typologiesProposees;
+    private Set<String> typologiesProposees;    // ids de typologie (table typologie)
     private int effectifMin;
     private int effectifMax;
     private boolean reserveMajeurs;             // stand interdit aux mineurs
@@ -86,11 +92,11 @@ public class GroupeCreneau {
 
 `HOMME_JEU` (issue #93) est une compétence d'*animation de rue* (le stand
 mobile « Homme-jeu », un animateur qui déambule en ville plutôt qu'un jeu
-tenu à poste fixe), pas un genre de jeu comme les six autres littéraux.
-Réutiliser `TypologieJeu` plutôt que créer un second axe de compétences est
-une simplification assumée : elle branche gratuitement sur le mécanisme
-d'éligibilité existant (`Animateur.estEligiblePour`) au prix d'un mélange
-conceptuel mineur entre « genre de jeu » et « compétence transverse ».
+tenu à poste fixe), pas un genre de jeu comme les autres typologies seedées.
+Réutiliser le même axe « typologie » plutôt que créer un second système de
+compétences est une simplification assumée : elle branche gratuitement sur le
+mécanisme d'éligibilité existant (`Animateur.estEligiblePour`) au prix d'un
+mélange conceptuel mineur entre « genre de jeu » et « compétence transverse ».
 
 `NiveauEffort` (issues #93/#79) qualifie la pénibilité physique d'un `Stand` ;
 `EPUISANT` est le cas du stand « Homme-jeu ». Deux niveaux seulement pour

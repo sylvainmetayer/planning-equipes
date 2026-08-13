@@ -191,8 +191,12 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   the nominal scenario — extend this style of test whenever a new hard constraint
   is introduced, and don't consider the change done until it passes.
 - Domain class/field names stay in French business vocabulary (`Animateur`,
-  `Creneau`, `TypologieJeu`, `joursIndisponibles`) to match the spec; code
+  `Creneau`, `typologie`, `joursIndisponibles`) to match the spec; code
   comments and non-domain identifiers are in English.
+- Typologies de jeu are a CRUD referential (`typologie` table, `/api/typologies`),
+  not a Java enum — `Stand.typologiesProposees`/`Animateur.competences` reference
+  ids validated against that table (FK-enforced), so new categories can be
+  created from the `/typologies` admin page without a code change.
 
 ## Documentation rules (keep this structure)
 

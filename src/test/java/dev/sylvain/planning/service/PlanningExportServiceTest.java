@@ -24,7 +24,6 @@ import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.domain.TypologieJeu;
 
 /**
  * Exercises PDF/ICS export against a small hand-built planning, without a
@@ -165,11 +164,11 @@ class PlanningExportServiceTest {
      * couple of unassigned postes to exercise the "UNASSIGNED"/empty-state paths.
      */
     private PlanningFestival fakePlanning() {
-        Stand standStrategie = new Stand("STAND-1", "Stratèges Associés", typologies(TypologieJeu.STRATEGIE), 1, 2, false);
-        Stand standPremium = new Stand("STAND-2", "Éditeur Vedette", typologies(TypologieJeu.AMBIANCE), 1, 2, false, true);
+        Stand standStrategie = new Stand("STAND-1", "Stratèges Associés", typologies("STRATEGIE"), 1, 2, false);
+        Stand standPremium = new Stand("STAND-2", "Éditeur Vedette", typologies("AMBIANCE"), 1, 2, false, true);
         standPremium.setEmplacement(new Emplacement("EMP-1", "Kiosque Central", 48.8566, 2.3522));
-        Stand standAdultes = new Stand("STAND-3", "Loup-Garou Nocturne", typologies(TypologieJeu.ROLE), 1, 1, true);
-        Stand standEnfant = new Stand("STAND-4", "Coin des Petits", typologies(TypologieJeu.ENFANT), 1, 2, false);
+        Stand standAdultes = new Stand("STAND-3", "Loup-Garou Nocturne", typologies("ROLE"), 1, 1, true);
+        Stand standEnfant = new Stand("STAND-4", "Coin des Petits", typologies("ENFANT"), 1, 2, false);
 
         Creneau matinJ1 = new Creneau(1L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
         Creneau apremJ1 = new Creneau(2L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(14, 0), LocalTime.of(18, 0));
@@ -203,15 +202,16 @@ class PlanningExportServiceTest {
 
     private Animateur animateur(String id, String prenom, String nom, NiveauCompetence niveau) {
         Animateur animateur = new Animateur(id, prenom, nom, LocalDate.of(1995, 1, 1), false);
-        Map<TypologieJeu, NiveauCompetence> competences = new HashMap<>();
-        for (TypologieJeu typologie : TypologieJeu.values()) {
+        Map<String, NiveauCompetence> competences = new HashMap<>();
+        for (String typologie : List.of("STRATEGIE", "AMBIANCE", "ENFANT", "COOPERATIF", "ADRESSE", "ROLE", "ENIGME",
+                "HOMME_JEU")) {
             competences.put(typologie, niveau);
         }
         animateur.setCompetences(competences);
         return animateur;
     }
 
-    private Set<TypologieJeu> typologies(TypologieJeu... typologies) {
+    private Set<String> typologies(String... typologies) {
         return new HashSet<>(List.of(typologies));
     }
 }

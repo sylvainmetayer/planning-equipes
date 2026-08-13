@@ -52,7 +52,6 @@ import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.domain.TypologieJeu;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.PlanningConstraintProvider;
 
@@ -317,9 +316,7 @@ public class PlanningService {
             Map<String, Object> item = new LinkedHashMap<>();
             item.put("id", stand.getId());
             item.put("nom", stand.getNom());
-            item.put("typologiesProposees", stand.getTypologiesProposees().stream()
-                    .map(Enum::name)
-                    .collect(Collectors.toList()));
+            item.put("typologiesProposees", new ArrayList<>(stand.getTypologiesProposees()));
             item.put("effectifMin", stand.getEffectifMin());
             item.put("effectifMax", stand.getEffectifMax());
             item.put("reserveMajeurs", stand.isReserveMajeurs());
@@ -341,7 +338,7 @@ public class PlanningService {
             Map<String, String> competences = new LinkedHashMap<>();
             if (animateur.getCompetences() != null) {
                 animateur.getCompetences()
-                        .forEach((typologie, niveau) -> competences.put(typologie.name(), niveau.name()));
+                        .forEach((typologie, niveau) -> competences.put(typologie, niveau.name()));
             }
             item.put("competences", competences);
             List<String> joursIndisponibles = animateur.getJoursIndisponibles() == null
@@ -621,9 +618,7 @@ public class PlanningService {
             String id = (String) standData.get("id");
             String nom = (String) standData.get("nom");
             List<String> typologiesStr = (List<String>) standData.get("typologiesProposees");
-            Set<TypologieJeu> typologies = typologiesStr.stream()
-                    .map(TypologieJeu::valueOf)
-                    .collect(Collectors.toSet());
+            Set<String> typologies = new java.util.HashSet<>(typologiesStr);
             int effectifMin = ((Number) standData.get("effectifMin")).intValue();
             int effectifMax = ((Number) standData.get("effectifMax")).intValue();
             boolean reserveMajeurs = (Boolean) standData.getOrDefault("reserveMajeurs", false);
@@ -677,9 +672,9 @@ public class PlanningService {
 
             // Charger les compétences
             Map<String, String> competencesData = (Map<String, String>) animateurData.get("competences");
-            Map<TypologieJeu, NiveauCompetence> competences = new HashMap<>();
+            Map<String, NiveauCompetence> competences = new HashMap<>();
             for (Map.Entry<String, String> entry : competencesData.entrySet()) {
-                competences.put(TypologieJeu.valueOf(entry.getKey()), NiveauCompetence.valueOf(entry.getValue()));
+                competences.put(entry.getKey(), NiveauCompetence.valueOf(entry.getValue()));
             }
             animateur.setCompetences(competences);
 

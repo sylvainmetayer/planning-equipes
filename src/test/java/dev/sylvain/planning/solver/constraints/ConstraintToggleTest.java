@@ -11,7 +11,6 @@ import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
-import dev.sylvain.planning.domain.TypologieJeu;
 
 /**
  * Covers the disable-a-constraint mechanism itself, one representative
@@ -26,8 +25,8 @@ import dev.sylvain.planning.domain.TypologieJeu;
 class ConstraintToggleTest extends ConstraintTestBase {
 
     private final Stand standStrat = standStrategie("STAND-STRAT");
-    private final Stand standAdresse = stand("STAND-ADRESSE", false, TypologieJeu.ADRESSE);
-    private final Stand standMajeurs = stand("STAND-MAJ", true, TypologieJeu.STRATEGIE);
+    private final Stand standAdresse = stand("STAND-ADRESSE", false, "ADRESSE");
+    private final Stand standMajeurs = stand("STAND-MAJ", true, "STRATEGIE");
     private final Creneau creneauMatin = matin("J1-MATIN", 1, D1);
     private final Creneau creneauAprem = apresMidi("J1-AM", 1, D1);
 

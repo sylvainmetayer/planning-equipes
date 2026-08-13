@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.domain.TypologieJeu;
 
 class AffectationConstraintsTest extends ConstraintTestBase {
 
@@ -49,7 +48,7 @@ class AffectationConstraintsTest extends ConstraintTestBase {
     @Test
     void competenceAbsenteEstPenalisee() {
         Animateur sansCompetenceStrategie = animateur("A1", D1.minusYears(30),
-                java.util.Map.of(TypologieJeu.AMBIANCE, dev.sylvain.planning.domain.NiveauCompetence.AUTONOME));
+                java.util.Map.of("AMBIANCE", dev.sylvain.planning.domain.NiveauCompetence.AUTONOME));
         verify("competenceCompatible")
                 .given(poste(standStrat, creneauMatin, sansCompetenceStrategie))
                 .penalizesBy(1);

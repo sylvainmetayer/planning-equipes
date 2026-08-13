@@ -22,7 +22,6 @@ import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.domain.TypologieJeu;
 import dev.sylvain.planning.solver.PlanningConstraintProvider;
 
 /**
@@ -110,17 +109,17 @@ abstract class ConstraintTestBase {
 
     // --- Stand factories ---------------------------------------------------
 
-    protected static Stand stand(String id, boolean reserveMajeurs, TypologieJeu... typologies) {
+    protected static Stand stand(String id, boolean reserveMajeurs, String... typologies) {
         return new Stand(id, id, new java.util.HashSet<>(java.util.List.of(typologies)),
                 1, 3, reserveMajeurs);
     }
 
     protected static Stand standStrategie(String id) {
-        return stand(id, false, TypologieJeu.STRATEGIE);
+        return stand(id, false, "STRATEGIE");
     }
 
     protected static Stand standPremium(String id) {
-        Stand stand = stand(id, false, TypologieJeu.STRATEGIE);
+        Stand stand = stand(id, false, "STRATEGIE");
         stand.setPremium(true);
         return stand;
     }
@@ -132,7 +131,7 @@ abstract class ConstraintTestBase {
     }
 
     protected static Stand standEpuisant(String id) {
-        Stand stand = stand(id, false, TypologieJeu.HOMME_JEU);
+        Stand stand = stand(id, false, "HOMME_JEU");
         stand.setNiveauEffort(NiveauEffort.EPUISANT);
         return stand;
     }
@@ -143,28 +142,28 @@ abstract class ConstraintTestBase {
 
     // --- Animateur factories ----------------------------------------------
 
-    protected static Animateur animateur(String id, LocalDate naissance, Map<TypologieJeu, NiveauCompetence> comp) {
+    protected static Animateur animateur(String id, LocalDate naissance, Map<String, NiveauCompetence> comp) {
         Animateur a = new Animateur(id, id, id, naissance, false);
         a.setCompetences(new HashMap<>(comp));
         return a;
     }
 
     protected static Animateur majeurReferent(String id) {
-        return animateur(id, NAISSANCE_MAJEUR, Map.of(TypologieJeu.STRATEGIE, NiveauCompetence.REFERENT));
+        return animateur(id, NAISSANCE_MAJEUR, Map.of("STRATEGIE", NiveauCompetence.REFERENT));
     }
 
     protected static Animateur majeurAutonome(String id) {
-        return animateur(id, NAISSANCE_MAJEUR, Map.of(TypologieJeu.STRATEGIE, NiveauCompetence.AUTONOME));
+        return animateur(id, NAISSANCE_MAJEUR, Map.of("STRATEGIE", NiveauCompetence.AUTONOME));
     }
 
     /** Minor of the 16-to-18 bracket (8 h/day, night from 22:00, 12 h daily rest). */
     protected static Animateur mineurDebutant(String id) {
-        return animateur(id, NAISSANCE_MINEUR, Map.of(TypologieJeu.STRATEGIE, NiveauCompetence.DEBUTANT));
+        return animateur(id, NAISSANCE_MINEUR, Map.of("STRATEGIE", NiveauCompetence.DEBUTANT));
     }
 
     /** Minor under 16 (7 h/day, night from 20:00, 14 h daily rest). */
     protected static Animateur mineurMoinsDe16Debutant(String id) {
-        return animateur(id, NAISSANCE_MOINS_DE_16_ANS, Map.of(TypologieJeu.STRATEGIE, NiveauCompetence.DEBUTANT));
+        return animateur(id, NAISSANCE_MOINS_DE_16_ANS, Map.of("STRATEGIE", NiveauCompetence.DEBUTANT));
     }
 
     // --- Poste factory -----------------------------------------------------

@@ -8,12 +8,11 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.domain.TypologieJeu;
 
 class LegalConstraintsTest extends ConstraintTestBase {
 
     private final Stand standStrat = standStrategie("STAND-STRAT");
-    private final Stand standMajeurs = stand("STAND-MAJ", true, TypologieJeu.STRATEGIE);
+    private final Stand standMajeurs = stand("STAND-MAJ", true, "STRATEGIE");
     private final Creneau creneauMatin = matin("J1-MATIN", 1, D1);
     private final Creneau creneauNuit = nuit("J1-NUIT", 1, D1);
     private final Creneau matinJ2 = matin("J2-MATIN", 2, D2);
