@@ -1,0 +1,14 @@
+/* Solver page: problem-size stat tiles (reuses .staffing-stat) plus the product formula below them. */
+
+.solver-volumetry {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.solver-volumetry-formula {
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+  margin: 0;
+}

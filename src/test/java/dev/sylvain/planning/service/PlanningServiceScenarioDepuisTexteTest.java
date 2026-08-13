@@ -165,6 +165,19 @@ class PlanningServiceScenarioDepuisTexteTest {
     }
 
     @Test
+    void genereLesPostesQuandLaSectionEstAbsenteDuFichier() {
+        PlanningService service = service();
+        String yaml = scenarioYamlText("scenario-sans-postes.yaml");
+
+        PlanningFestival planning = service.construireDepuisTexteScenario(yaml).planning();
+
+        // 2 créneaux x (STAND-A effectifMin 2 + STAND-B effectifMin 1) = 6.
+        assertThat(planning.getPostes()).hasSize(6);
+        assertThat(planning.getPostes()).filteredOn(poste -> "STAND-A".equals(poste.getStand().getId())).hasSize(4);
+        assertThat(planning.getPostes()).filteredOn(poste -> "STAND-B".equals(poste.getStand().getId())).hasSize(2);
+    }
+
+    @Test
     void rejetteUnFichierVideAvecUnMessageLisible() {
         PlanningService service = service();
 

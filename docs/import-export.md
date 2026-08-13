@@ -50,6 +50,16 @@ actuelles en scénario » les écrit, l'import (nommé ou fichier) les relit à
 l'identique. `emplacementId` reste import seulement — l'export n'écrit pas
 encore la section `emplacements` correspondante, à traiter séparément.
 
+La section `postes` (un poste par place à pourvoir, référençant un
+`standId`/`creneauId`) est optionnelle : absente du fichier, elle est générée
+automatiquement à partir des stands et créneaux importés, avec les mêmes
+règles que « Lancer le solveur » depuis les données de référence — un poste
+par place (`stand.effectifMin`, pas `effectifMax`) sur chaque créneau ×
+segment réellement ouvert (voir `PlanningService.construirePostes`). Fournir
+la section reste possible pour un staffing qui s'écarte de cette règle
+(certains scénarios, ex. `scenario-complet.yaml`, l'énumèrent explicitement) ;
+dans ce cas elle est reprise telle quelle.
+
 Un scénario écrit directement en amplitudes (ex. `scenario-continu.yaml`) peut
 fixer une section `decoupageAuto: { groupeSourceNom, groupeCibleNom }` en tête
 de fichier pour que ces deux imports (nom ou fichier) déclenchent eux-mêmes le
@@ -64,12 +74,12 @@ groupe activé. Absente, l'import se comporte comme ci-dessus. Voir
 ## Schéma de validation d'un fichier de scénario
 
 [`docs/schema/scenario-schema.json`](schema/scenario-schema.json) décrit la
-structure attendue d'un fichier de scénario (sections `festival`, `creneaux`,
-`stands` — dont `niveauEffort` et `ouvertures` par stand —, `animateurs`,
-`postes`, et les sections optionnelles `parametresLegaux`,
-`parametresDecoupage`, `parametresSolveur`, `decoupageAuto`) : types de
-champs, sections/champs obligatoires, durées non négatives, valeurs d'enum
-(`TypologieJeu`, `NiveauCompetence`, `NiveauEffort`,
+structure attendue d'un fichier de scénario (sections obligatoires `festival`,
+`creneaux`, `stands` — dont `niveauEffort` et `ouvertures` par stand —,
+`animateurs`, et les sections optionnelles `postes` (voir plus haut),
+`parametresLegaux`, `parametresDecoupage`, `parametresSolveur`,
+`decoupageAuto`) : types de champs, sections/champs obligatoires, durées non
+négatives, valeurs d'enum (`TypologieJeu`, `NiveauCompetence`, `NiveauEffort`,
 `StrategieCouverturePendantPause`).
 
 Le schéma n'est pas écrit à la main : il est **généré** à partir des DTOs

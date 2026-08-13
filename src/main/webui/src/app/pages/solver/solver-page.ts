@@ -1,3 +1,4 @@
+import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -13,6 +14,8 @@ import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { ProblemesStore } from '../../core/problemes.store';
+import { ReferenceCrudService } from '../../core/reference-crud.service';
+import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';
 import { FeasibilityBanner, HardIssue } from '../../shared/feasibility-banner';
@@ -84,6 +87,7 @@ function bestUnitFor(seconds: number): SolverDurationUnit {
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
+    DecimalPipe,
     FeasibilityBanner,
     ProblemSummaryBanner,
     OutputPanel
@@ -145,16 +149,41 @@ export class SolverPage {
    */
   protected readonly problemes = inject(ProblemesStore);
 
+  /**
+   * Volumetry of the problem Timefold is about to explore, recomputed live as
+   * `referenceData`'s signals change (a CRUD edit, a sample load, a CSV/SQL
+   * import...). `créneauTotal` only counts the active groupe de créneaux'
+   * slots, mirroring `PlanningService`/`listCreneauxGroupeActif` on the
+   * backend: the other groupes are alternate plannings, not part of what
+   * gets solved.
+   */
+  private readonly referenceData = inject(ReferenceDataStore);
+  protected readonly animateurTotal = computed(() => this.referenceData.animateurs().length);
+  protected readonly standTotal = computed(() => this.referenceData.stands().length);
+  protected readonly typologieTotal = computed(() => this.referenceData.typologies().length);
+  private readonly activeGroupeId = computed(
+    () => this.referenceData.groupesCreneaux().find((groupe) => groupe.actif)?.id ?? null
+  );
+  protected readonly creneauTotal = computed(
+    () => this.referenceData.creneaux().filter((creneau) => creneau.groupe?.id === this.activeGroupeId()).length
+  );
+  /** Number of (animateur, stand, créneau, typologie) combinations Timefold's search space is built from. */
+  protected readonly complexiteEstimee = computed(
+    () => this.animateurTotal() * this.standTotal() * this.creneauTotal() * this.typologieTotal()
+  );
+
   private readonly api = inject(ApiService);
   private readonly planningState = inject(PlanningStateService);
   private readonly jobs = inject(SolverJobService);
   private readonly solverSettings = inject(SolverSettingsService);
   private readonly notifications = inject(NotificationService);
+  private readonly crud = inject(ReferenceCrudService);
 
   constructor() {
     void this.loadLastRun();
     void this.problemes.reload();
     void this.loadSolverDuration();
+    void this.crud.reload();
     // Results are pushed by the job service, whoever started the job: a solve
     // launched from another browser also lands here when it completes, already
     // analyzed.

@@ -465,35 +465,41 @@ public class PlanningService {
     private PlanningFestival construirePlanningDepuisDonnees(Map<String, Object> scenarioData) {
         ReferenceScenario reference = chargerReferenceScenario(scenarioData);
 
-        // Charger les postes
-        List<PosteAffectation> postes = new ArrayList<>();
+        // Charger les postes : repris tels quels du fichier si la section est
+        // présente, sinon générés à partir des stands/créneaux (mêmes règles que
+        // construireDepuisReferenceData) — un fichier n'a plus besoin d'énumérer
+        // ses postes à la main pour être importé.
         List<Map<String, Object>> postesList = (List<Map<String, Object>>) scenarioData.get("postes");
+        List<PosteAffectation> postes;
         if (postesList == null) {
-            throw new IllegalArgumentException("Section 'postes' manquante");
-        }
-        for (Map<String, Object> posteData : postesList) {
-            String id = (String) posteData.get("id");
-            String standId = (String) posteData.get("standId");
-            String creneauId = (String) posteData.get("creneauId");
+            postes = construirePostes(new ArrayList<>(reference.standsParId().values()),
+                    new ArrayList<>(reference.creneauxParId().values()));
+        } else {
+            postes = new ArrayList<>();
+            for (Map<String, Object> posteData : postesList) {
+                String id = (String) posteData.get("id");
+                String standId = (String) posteData.get("standId");
+                String creneauId = (String) posteData.get("creneauId");
 
-            Stand stand = reference.standsParId().get(standId);
-            Creneau creneau = reference.creneauxParId().get(creneauId);
+                Stand stand = reference.standsParId().get(standId);
+                Creneau creneau = reference.creneauxParId().get(creneauId);
 
-            PosteAffectation poste = new PosteAffectation(id, stand, creneau);
-            // Mirrors construirePostes(): a hand-authored poste can still name a
-            // créneau the stand is only partially open for (IndisponibiliteStand /
-            // OuvertureStand), so narrow its effective window the same way instead
-            // of silently using the créneau's full amplitude.
-            List<int[]> segments = creneau.segmentsOuvertsMinutes(stand);
-            if (segments.size() == 1) {
-                int[] segment = segments.get(0);
-                boolean creneauEntierOuvert = segment[0] == 0 && segment[1] == creneau.getDureeMinutes();
-                if (!creneauEntierOuvert) {
-                    poste.setHeureDebutEffective(decaler(creneau.getHeureDebut(), segment[0]));
-                    poste.setHeureFinEffective(decaler(creneau.getHeureDebut(), segment[1]));
+                PosteAffectation poste = new PosteAffectation(id, stand, creneau);
+                // Mirrors construirePostes(): a hand-authored poste can still name a
+                // créneau the stand is only partially open for (IndisponibiliteStand /
+                // OuvertureStand), so narrow its effective window the same way instead
+                // of silently using the créneau's full amplitude.
+                List<int[]> segments = creneau.segmentsOuvertsMinutes(stand);
+                if (segments.size() == 1) {
+                    int[] segment = segments.get(0);
+                    boolean creneauEntierOuvert = segment[0] == 0 && segment[1] == creneau.getDureeMinutes();
+                    if (!creneauEntierOuvert) {
+                        poste.setHeureDebutEffective(decaler(creneau.getHeureDebut(), segment[0]));
+                        poste.setHeureFinEffective(decaler(creneau.getHeureDebut(), segment[1]));
+                    }
                 }
+                postes.add(poste);
             }
-            postes.add(poste);
         }
 
         PlanningFestival festival = new PlanningFestival(reference.dateDebut(), reference.animateurs(), postes,

@@ -369,5 +369,5 @@
       }
     }
   },
-  "required" : [ "animateurs", "creneaux", "festival", "postes", "stands" ]
+  "required" : [ "animateurs", "creneaux", "festival", "stands" ]
 }
