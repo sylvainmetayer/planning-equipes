@@ -5,7 +5,7 @@
       "type" : "object",
       "properties" : {
         "competences" : {
-          "$ref" : "#/$defs/Map(TypologieJeu,NiveauCompetence)"
+          "$ref" : "#/$defs/Map(String,NiveauCompetence)"
         },
         "dateNaissance" : {
           "$ref" : "#/$defs/LocalDate"
@@ -128,7 +128,7 @@
       "type" : "string",
       "pattern" : "^([01]\\d|2[0-3]):[0-5]\\d(:[0-5]\\d)?$"
     },
-    "Map(TypologieJeu,NiveauCompetence)" : {
+    "Map(String,NiveauCompetence)" : {
       "type" : "object",
       "additionalProperties" : {
         "$ref" : "#/$defs/NiveauCompetence"
@@ -304,7 +304,7 @@
         "typologiesProposees" : {
           "type" : "array",
           "items" : {
-            "$ref" : "#/$defs/TypologieJeu"
+            "type" : "string"
           }
         }
       },
@@ -313,10 +313,6 @@
     "StrategieCouverturePendantPause" : {
       "type" : "string",
       "enum" : [ "FERMETURE", "RELEVE" ]
-    },
-    "TypologieJeu" : {
-      "type" : "string",
-      "enum" : [ "STRATEGIE", "AMBIANCE", "ENFANT", "COOPERATIF", "ADRESSE", "ROLE", "ENIGME", "HOMME_JEU" ]
     }
   },
   "type" : "object",

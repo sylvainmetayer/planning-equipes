@@ -1,7 +1,6 @@
 package dev.sylvain.planning.scenario.dto;
 
 import dev.sylvain.planning.domain.NiveauEffort;
-import dev.sylvain.planning.domain.TypologieJeu;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -11,7 +10,7 @@ import java.util.List;
 public record StandDto(
         @NotBlank String id,
         @NotBlank String nom,
-        @NotNull List<TypologieJeu> typologiesProposees,
+        @NotNull List<String> typologiesProposees,
         @PositiveOrZero int effectifMin,
         @PositiveOrZero int effectifMax,
         Boolean reserveMajeurs,
