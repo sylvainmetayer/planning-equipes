@@ -30,6 +30,12 @@
         "prenom" : {
           "type" : "string",
           "minLength" : 1
+        },
+        "souhaits" : {
+          "type" : "array",
+          "items" : {
+            "type" : "string"
+          }
         }
       },
       "required" : [ "competences", "dateNaissance", "id", "nom", "prenom" ]

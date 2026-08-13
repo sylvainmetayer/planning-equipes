@@ -68,10 +68,8 @@ export function niveauProblemeLabel(niveau: NiveauProbleme): string {
   }
 }
 
-export function typeCauseLabel(cause: CauseInfaisabilite): string {
-  return cause.type === 'STAND_SANS_ANIMATEUR_COMPETENT'
-    ? $localize`:@@problemes.cause.standSansCompetence:Stand sans animateur compétent`
-    : $localize`:@@problemes.cause.creneauSousEffectif:Créneau en sous-effectif`;
+export function typeCauseLabel(): string {
+  return $localize`:@@problemes.cause.creneauSousEffectif:Créneau en sous-effectif`;
 }
 
 /** Créneau and stands named by a cause, as printable lines. */
@@ -118,7 +116,7 @@ export function construireProblemes(
       id: `cause-${index}`,
       niveau: niveauDeCause(cause.severite),
       source: 'FAISABILITE',
-      titre: typeCauseLabel(cause),
+      titre: typeCauseLabel(),
       message: cause.message,
       details: detailsDeCause(cause)
     });

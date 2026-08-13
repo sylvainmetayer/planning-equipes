@@ -42,10 +42,10 @@
 
 <div class="span-2 subform">
   <div class="subform-header">
-    <h3 i18n="@@animateurs.competences.title">Compétences</h3>
+    <h3 i18n="@@animateurs.appreciation.title">Appréciation</h3>
     <button matButton type="button" (click)="addCompetence()">
       <mat-icon>add</mat-icon>
-      <ng-container i18n="@@animateurs.competences.add">Ajouter une compétence</ng-container>
+      <ng-container i18n="@@animateurs.appreciation.add">Ajouter une appréciation</ng-container>
     </button>
   </div>
   @for (competence of draft().competences; track $index) {
@@ -68,14 +68,30 @@
           }
         </mat-select>
       </mat-form-field>
-      <button matIconButton type="button" i18n-matTooltip="@@animateurs.competences.remove" matTooltip="Retirer cette compétence" i18n-aria-label="@@animateurs.competences.remove" aria-label="Retirer cette compétence" class="danger-action"
+      <button matIconButton type="button" i18n-matTooltip="@@animateurs.appreciation.remove" matTooltip="Retirer cette appréciation" i18n-aria-label="@@animateurs.appreciation.remove" aria-label="Retirer cette appréciation" class="danger-action"
               (click)="removeCompetence($index)">
         <mat-icon>delete</mat-icon>
       </button>
     </div>
   } @empty {
-    <p class="empty-hint" i18n="@@animateurs.competences.empty">Aucune compétence déclarée.</p>
+    <p class="empty-hint" i18n="@@animateurs.appreciation.empty">Aucune appréciation déclarée.</p>
   }
+</div>
+
+<div class="span-2 subform">
+  <div class="subform-header">
+    <h3 i18n="@@animateurs.souhaits.title">Souhaits</h3>
+  </div>
+  <p class="empty-hint" i18n="@@animateurs.souhaits.hint">Typologies de stand sur lesquelles l'animateur aimerait être affecté.</p>
+  <mat-form-field appearance="outline" class="span-2">
+    <mat-label i18n="@@animateurs.souhaits.typologies">Typologies souhaitées</mat-label>
+    <mat-select name="souhaits" multiple [disabled]="editingLocked()"
+                [ngModel]="draft().souhaits" (ngModelChange)="patch({ souhaits: $event })">
+      @for (typologie of store.typologies(); track typologie.id) {
+        <mat-option [value]="typologie.id">{{ typologie.label || typologie.id }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
 </div>
 
 <div class="span-2 subform">

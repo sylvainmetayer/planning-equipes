@@ -21,8 +21,11 @@ Source : `solver/ConstraintCatalog.java` (description métier) et
 | --- | --- |
 | `posteDoitEtrePourvu` | Chaque place ouverte sur un stand doit être pourvue par un animateur |
 | `animateurDisponible` | Pas d'affectation un jour déclaré indisponible |
-| `competenceCompatible` | L'animateur maîtrise au moins une typologie proposée par le stand |
 | `pasDeChevauchementHoraire` | Un animateur ne tient jamais deux postes dont les créneaux se **chevauchent dans le temps** (le double poste sur un même créneau n'en est que le cas dégénéré) |
+
+La compétence (rebaptisée **appréciation** côté frontend) n'est plus une
+contrainte dure : voir `appreciationIncompatible` dans la table medium
+ci-dessous.
 
 #### Indisponibilité partielle d'un stand
 
@@ -230,6 +233,17 @@ opposable au même titre qu'une règle légale.
 | `eviterRoulementStandsPremium` | Sur un stand premium, éviter de faire tourner plusieurs animateurs différents |
 | `eviterChangementEmplacementEloigne` | Entre deux créneaux consécutifs, éviter de basculer un animateur vers un stand dont l'emplacement est éloigné (> 300 m) |
 | `eviterEnchainementStandsEpuisants` | Entre deux créneaux consécutifs, éviter d'enchaîner un animateur sur deux stands physiquement épuisants (`Stand.niveauEffort = EPUISANT`) sans repos ni stand plus facile entre les deux |
+| `appreciationIncompatible` | L'appréciation de l'administrateur (`Animateur.competences`) ne couvre aucune typologie proposée par le stand — ex-contrainte dure `competenceCompatible`, assouplie car il s'agit d'une appréciation métier faite après formation, pas d'une qualification objective |
+| `souhaitsIncompatibles` | Aucune des typologies proposées par le stand ne figure dans les souhaits déclarés de l'animateur (`Animateur.souhaits`) |
+| `limiterTypologiesDistinctesParAnimateur` | Un animateur devrait idéalement intervenir sur une ou deux typologies de jeu distinctes sur l'ensemble du planning (au-delà de 2, pénalité proportionnelle au dépassement) |
+
+`appreciationIncompatible` et `souhaitsIncompatibles` sont volontairement deux
+contraintes medium séparées, pas une seule agrégée : ça permet de les
+activer/pondérer indépendamment. Le poids par défaut de
+`appreciationIncompatible` est surchargé à 3 dans `application.properties`
+(contre 1 pour `souhaitsIncompatibles`), pour que le solveur élimine toujours
+en priorité un écart d'appréciation avant d'optimiser la satisfaction des
+souhaits — voir « Pondérer une contrainte » plus bas.
 
 ### Soft — préférences (`PreferenceConstraints`)
 

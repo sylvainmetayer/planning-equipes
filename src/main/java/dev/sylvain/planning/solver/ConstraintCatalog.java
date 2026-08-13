@@ -24,8 +24,6 @@ public final class ConstraintCatalog {
                     "Chaque place ouverte sur un stand doit être pourvue par un animateur."),
             new ConstraintDefinition("animateurDisponible", Niveau.HARD, "Affectation",
                     "Un animateur ne peut pas être affecté un jour qu'il a déclaré indisponible."),
-            new ConstraintDefinition("competenceCompatible", Niveau.HARD, "Affectation",
-                    "L'animateur doit maîtriser au moins une typologie de jeu proposée par le stand."),
             new ConstraintDefinition("pasDeChevauchementHoraire", Niveau.HARD, "Affectation",
                     "Un animateur ne peut pas tenir deux postes dont les créneaux se chevauchent dans le temps "
                             + "(y compris deux créneaux distincts qui se recouvrent, et pas seulement deux postes "
@@ -114,6 +112,14 @@ public final class ConstraintCatalog {
             new ConstraintDefinition("eviterEnchainementStandsEpuisants", Niveau.MEDIUM, "Qualité d'organisation",
                     "Entre deux créneaux consécutifs, éviter d'enchaîner un animateur sur deux stands physiquement "
                             + "épuisants sans repos ni stand plus facile entre les deux."),
+            new ConstraintDefinition("appreciationIncompatible", Niveau.MEDIUM, "Qualité d'organisation",
+                    "L'appréciation de l'administrateur ne couvre aucune typologie de jeu proposée par le stand."),
+            new ConstraintDefinition("souhaitsIncompatibles", Niveau.MEDIUM, "Qualité d'organisation",
+                    "Aucune des typologies de jeu proposées par le stand ne figure dans les souhaits déclarés de "
+                            + "l'animateur."),
+            new ConstraintDefinition("limiterTypologiesDistinctesParAnimateur", Niveau.MEDIUM, "Qualité d'organisation",
+                    "Un animateur devrait idéalement intervenir sur une ou deux typologies de jeu sur l'ensemble "
+                            + "du planning."),
 
             new ConstraintDefinition("favoriserRotationDesStands", Niveau.SOFT, "Préférences",
                     "Éviter d'affecter plusieurs fois le même animateur sur le même stand : on privilégie la rotation."),

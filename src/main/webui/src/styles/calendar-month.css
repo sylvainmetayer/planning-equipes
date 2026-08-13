@@ -87,6 +87,18 @@
   border-color: var(--mat-sys-error);
 }
 
+/*
+ * At-a-glance flag on the month grid: at least one filled seat that day lacks
+ * the administrator's appreciation for its stand. Distinct color from
+ * .has-understaffed (amber vs. red): this is a medium, non-blocking penalty,
+ * not the "stand not fully covered" signal. Only shown when the cell isn't
+ * already flagged understaffed, so the more severe signal always wins the
+ * border color.
+ */
+.calendar-day-cell.has-appreciation-mismatch:not(.has-understaffed) {
+  border-color: var(--mat-sys-tertiary);
+}
+
 .calendar-day-number {
   display: flex;
   align-items: center;
@@ -124,6 +136,10 @@
 .empty-slot {
   color: var(--mat-sys-error);
 }
+
+/* .appreciation-mismatch-slot / .appreciation-mismatch-icon are defined once
+   in calendar-day.css and apply globally here too, same convention as
+   .understaffed-slot / .understaffed-icon above. */
 
 @media (max-width: 900px) {
   .calendar-filters {

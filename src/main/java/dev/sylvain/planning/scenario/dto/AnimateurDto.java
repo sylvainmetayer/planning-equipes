@@ -14,5 +14,6 @@ public record AnimateurDto(
         @NotNull LocalDate dateNaissance,
         Boolean manager,
         @NotNull Map<String, NiveauCompetence> competences,
-        List<LocalDate> joursIndisponibles) {
+        List<LocalDate> joursIndisponibles,
+        List<String> souhaits) {
 }

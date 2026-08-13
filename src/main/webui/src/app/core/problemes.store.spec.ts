@@ -159,10 +159,7 @@ describe('ProblemesStore', () => {
 
     it('keys créneaux by their stringified id and skips causes without one', async () => {
       api.responses = {
-        '/api/feasibility': report([
-          cause({ creneauId: '12' }),
-          cause({ type: 'STAND_SANS_ANIMATEUR_COMPETENT', severite: 'CRITIQUE', creneauId: null, date: null })
-        ])
+        '/api/feasibility': report([cause({ creneauId: '12' }), cause({ creneauId: null, date: null })])
       };
       await store.reloadFeasibility();
       expect([...store.causeParCreneauId().keys()]).toEqual(['12']);

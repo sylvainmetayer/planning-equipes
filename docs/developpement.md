@@ -165,12 +165,16 @@ Dans `application.properties` :
 
 La configuration Timefold elle-même est dans `src/main/resources/solver/solverConfig.xml`.
 Le value range `animateurRange` couvre tous les animateurs (~150) car
-l'éligibilité dépend du poste visé (compétence du stand, disponibilité à la
-date), pas d'une propriété statique de l'animateur : `EligibleAnimateurMoveFilter`
+l'éligibilité dépend du poste visé (disponibilité à la date, règles légales
+mineurs), pas d'une propriété statique de l'animateur : `EligibleAnimateurMoveFilter`
 rejette les change/swap moves manifestement invalides avant tout calcul de
 score, ce qui multiplie par ~3 le débit de la recherche locale sur le scénario
 complet (150 animateurs / 2088 postes) et est déterminant sur du matériel
-contraint (Raspberry Pi).
+contraint (Raspberry Pi). La compétence (appréciation) n'en fait plus partie
+depuis sa bascule en contrainte medium (`appreciationIncompatible`) : un
+animateur sans appréciation reste un mouvement structurellement valide, juste
+pénalisé, donc le filtre ne peut plus l'exclure sans rendre certaines
+solutions optimales inatteignables.
 
 Le `unionMoveSelector` de la recherche locale combine deux paires de
 sélecteurs change/swap à poids égal (`fixedProbabilityWeight`) : une paire
@@ -180,7 +184,7 @@ sélection uniforme sur ~2000+ postes ne retombe qu'exceptionnellement sur les
 quelques postes encore vides, et le solveur plafonnait avec 1 à plusieurs
 dizaines de violations `posteDoitEtrePourvu` même après tout le budget de
 180 s, alors que `FeasibilityAnalyzer` confirmait un scénario réalisable
-(assez d'animateurs compétents et disponibles). Ce second groupe force une
+(assez d'animateurs disponibles). Ce second groupe force une
 part constante des mouvements à cibler directement ces postes vides — soit en
 les pourvant avec un animateur encore libre à ce créneau, soit en délogeant
 quelqu'un déjà affecté ailleurs à un autre créneau — ce qui suffit à ramener

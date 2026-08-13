@@ -5,7 +5,6 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import dev.sylvain.planning.domain.Animateur;
@@ -22,15 +21,9 @@ import jakarta.enterprise.context.ApplicationScoped;
  * <p>The result is a ranked list of blocking causes
  * ({@link CauseInfaisabilite}), each carrying a severity and the concrete
  * entities involved, so the setup screen can display them before any solve is
- * launched. Two kinds of causes are detected:
- *
- * <ul>
- * <li>{@link TypeCauseInfaisabilite#CRENEAU_SOUS_EFFECTIF} — the demand of a
- * créneau exceeds the number of animateurs able to serve it;</li>
- * <li>{@link TypeCauseInfaisabilite#STAND_SANS_ANIMATEUR_COMPETENT} — no
- * animateur in the whole roster has a competence matching a stand, which makes
- * that stand impossible to staff on <em>any</em> day.</li>
- * </ul>
+ * launched. The only kind of cause detected is
+ * {@link TypeCauseInfaisabilite#CRENEAU_SOUS_EFFECTIF} — the demand of a
+ * créneau exceeds the number of animateurs available to serve it.
  *
  * <p>The demand of a créneau is counted exactly as
  * {@link PlanningService#construirePostes(List, List)} generates seats:
@@ -41,11 +34,19 @@ import jakarta.enterprise.context.ApplicationScoped;
  * as demand overstates it and reports a shortfall on plannings the solver fills
  * without trouble.
  *
- * <p>Against that demand we count, for each créneau, the animateurs who are
- * both present that day and competent for at least one stand — an optimistic
- * upper bound on how many seats that créneau could fill, since it ignores which
- * specific stand each animateur would need to cover. The reported shortfall is
- * therefore a floor: the real gap can only be equal or worse.
+ * <p>Against that demand we count, for each créneau, every animateur present
+ * that day — an optimistic upper bound on how many seats that créneau could
+ * fill, since it ignores which specific stand each animateur would need to
+ * cover. The reported shortfall is therefore a floor: the real gap can only be
+ * equal or worse.
+ *
+ * <p>Competence is deliberately <b>not</b> part of this capacity count: the
+ * business treats it as an administrator's post-formation appreciation,
+ * enforced only as a medium constraint
+ * ({@code QualiteConstraints.appreciationIncompatible}), so any available
+ * animateur can literally be assigned to any stand — an appreciation mismatch
+ * is a quality penalty visible on the calendar and the constraint score, never
+ * a pre-solve blocking cause.</p>
  */
 @ApplicationScoped
 public class FeasibilityAnalyzer {
@@ -58,14 +59,11 @@ public class FeasibilityAnalyzer {
 
     /**
      * Causes are ranked so the first ones are the most blocking: CRITIQUE
-     * before ELEVE, structurally impossible stands before under-staffed
-     * créneaux (a stand nobody can hold will never be filled, however long the
-     * solver runs), then by decreasing shortfall, and finally by créneau id so
+     * before ELEVE, then by decreasing shortfall, and finally by créneau id so
      * two runs on the same data return the same order.
      */
     private static final Comparator<CauseInfaisabilite> ORDRE_CAUSES = Comparator
             .<CauseInfaisabilite, SeveriteInfaisabilite>comparing(CauseInfaisabilite::severite)
-            .thenComparingInt(FeasibilityAnalyzer::rangType)
             .thenComparing(CauseInfaisabilite::manque, Comparator.reverseOrder())
             .thenComparingLong(cause -> cause.creneauId() == null ? Long.MIN_VALUE : cause.creneauId());
 
@@ -74,14 +72,7 @@ public class FeasibilityAnalyzer {
         List<Stand> standsSurs = stands == null ? List.of() : stands;
         List<Creneau> creneauxSurs = creneaux == null ? List.of() : creneaux;
 
-        Set<String> animateursCompetents = animateursSurs.stream()
-                .filter(animateur -> standsSurs.stream().anyMatch(animateur::possedeCompetencePour))
-                .map(Animateur::getId)
-                .collect(Collectors.toSet());
-
-        List<CauseInfaisabilite> causes = new ArrayList<>();
-        causes.addAll(standsSansAnimateurCompetent(animateursSurs, standsSurs));
-        causes.addAll(creneauxSousEffectif(animateursSurs, standsSurs, creneauxSurs, animateursCompetents));
+        List<CauseInfaisabilite> causes = new ArrayList<>(creneauxSousEffectif(animateursSurs, standsSurs, creneauxSurs));
         causes.sort(ORDRE_CAUSES);
 
         int manqueAnimateurs = causes.stream()
@@ -97,27 +88,8 @@ public class FeasibilityAnalyzer {
                 construireMessage(feasible, manqueAnimateurs, totalCauses, topCauses));
     }
 
-    /**
-     * A stand nobody in the roster is competent for: structural and
-     * day-independent, hence always {@link SeveriteInfaisabilite#CRITIQUE}.
-     * The demand/capacity triplet is meaningless here and reported as -1.
-     */
-    private List<CauseInfaisabilite> standsSansAnimateurCompetent(List<Animateur> animateurs, List<Stand> stands) {
-        return stands.stream()
-                .filter(stand -> animateurs.stream().noneMatch(animateur -> animateur.possedeCompetencePour(stand)))
-                .map(stand -> new CauseInfaisabilite(
-                        TypeCauseInfaisabilite.STAND_SANS_ANIMATEUR_COMPETENT,
-                        SeveriteInfaisabilite.CRITIQUE,
-                        "Aucun animateur ne possède la compétence requise pour le stand « " + nomStand(stand)
-                                + " » : il ne peut être tenu sur aucun créneau.",
-                        null, null, null, null,
-                        List.of(stand.getId()),
-                        -1, -1, -1))
-                .toList();
-    }
-
     private List<CauseInfaisabilite> creneauxSousEffectif(List<Animateur> animateurs, List<Stand> stands,
-            List<Creneau> creneaux, Set<String> animateursCompetents) {
+            List<Creneau> creneaux) {
         List<CauseInfaisabilite> causes = new ArrayList<>();
         for (Creneau creneau : creneaux) {
             List<Stand> standsOuverts = stands.stream()
@@ -127,7 +99,6 @@ public class FeasibilityAnalyzer {
                     .mapToInt(stand -> Math.max(1, stand.getEffectifMin()))
                     .sum();
             long capacite = animateurs.stream()
-                    .filter(animateur -> animateursCompetents.contains(animateur.getId()))
                     .filter(animateur -> !animateur.estIndisponibleLe(creneau.getDate()))
                     .count();
             int manque = (int) Math.max(0, demande - capacite);
@@ -149,8 +120,7 @@ public class FeasibilityAnalyzer {
     private String construireMessage(boolean feasible, int manque, int totalCauses,
             List<CauseInfaisabilite> topCauses) {
         if (feasible) {
-            return "Le planning est réalisable : il y a assez d'animateurs disponibles et compétents "
-                    + "pour couvrir chaque créneau.";
+            return "Le planning est réalisable : il y a assez d'animateurs disponibles pour couvrir chaque créneau.";
         }
         String causesPhrase = totalCauses > 1
                 ? totalCauses + " causes bloquantes ont été détectées"
@@ -161,16 +131,6 @@ public class FeasibilityAnalyzer {
         }
         return "Ce planning n'est pas réalisable avec les animateurs actuels : il manque au moins " + manque + " "
                 + motAnimateur(manque) + " sur un créneau, et " + causesPhrase + ".";
-    }
-
-    /**
-     * Tie-break rank inside a severity level, independent of the declaration
-     * order of {@link TypeCauseInfaisabilite}: a stand nobody is competent for
-     * outranks an under-staffed créneau, because no amount of solving time
-     * fixes it and it is not comparable on {@code manque} (which is -1 there).
-     */
-    private static int rangType(CauseInfaisabilite cause) {
-        return cause.type() == TypeCauseInfaisabilite.STAND_SANS_ANIMATEUR_COMPETENT ? 0 : 1;
     }
 
     private static String motAnimateur(int manque) {
@@ -209,8 +169,7 @@ public class FeasibilityAnalyzer {
 
     /** Kind of blocking cause detected before any solve. */
     public enum TypeCauseInfaisabilite {
-        CRENEAU_SOUS_EFFECTIF,
-        STAND_SANS_ANIMATEUR_COMPETENT
+        CRENEAU_SOUS_EFFECTIF
     }
 
     /**
@@ -226,17 +185,10 @@ public class FeasibilityAnalyzer {
      * One blocking cause, ready to display.
      *
      * @param message    French sentence describing the cause
-     * @param creneauId  {@code null} for {@code STAND_SANS_ANIMATEUR_COMPETENT}
-     * @param date       {@code null} for {@code STAND_SANS_ANIMATEUR_COMPETENT}
-     * @param heureDebut {@code null} when not applicable
-     * @param heureFin   {@code null} when not applicable
      * @param standIds   stands concerned, always at least one
-     * @param demande    seats to fill, {@code -1} when not meaningful
-     *                   ({@code STAND_SANS_ANIMATEUR_COMPETENT})
-     * @param capacite   animateurs able to fill them, {@code -1} when not
-     *                   meaningful
-     * @param manque     {@code demande - capacite}, {@code -1} when not
-     *                   meaningful
+     * @param demande    seats to fill
+     * @param capacite   animateurs able to fill them
+     * @param manque     {@code demande - capacite}
      */
     public record CauseInfaisabilite(
             TypeCauseInfaisabilite type,

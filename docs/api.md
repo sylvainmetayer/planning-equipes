@@ -111,17 +111,17 @@ ceux du **groupe actif**, comme pour une résolution.
   "manqueAnimateurs": 2,
   "causes": [
     {
-      "type": "STAND_SANS_ANIMATEUR_COMPETENT",
-      "severite": "CRITIQUE",
-      "message": "Aucun animateur ne possède la compétence requise pour le stand « Tir à l'arc » : il ne peut être tenu sur aucun créneau.",
-      "creneauId": null,
-      "date": null,
-      "heureDebut": null,
-      "heureFin": null,
+      "type": "CRENEAU_SOUS_EFFECTIF",
+      "severite": "ELEVE",
+      "message": "Le 2026-07-18 12:30-15:30, il manque 2 animateurs pour couvrir Tir à l'arc.",
+      "creneauId": 42,
+      "date": "2026-07-18",
+      "heureDebut": "12:30",
+      "heureFin": "15:30",
       "standIds": ["STAND-TIR"],
-      "demande": -1,
-      "capacite": -1,
-      "manque": -1
+      "demande": 6,
+      "capacite": 4,
+      "manque": 2
     }
   ],
   "totalCauses": 7,
@@ -137,15 +137,21 @@ ceux du **groupe actif**, comme pour une résolution.
 | `totalCauses` | Nombre total de causes **avant** plafonnement (permet d'afficher « +N autres ») |
 | `message` | Phrase de synthèse prête à afficher |
 
-Deux types de causes (`type`) :
+Un seul type de cause (`type`) existe :
 
 | Type | Sévérité | Signification |
 | --- | --- | --- |
-| `STAND_SANS_ANIMATEUR_COMPETENT` | toujours `CRITIQUE` | Aucun animateur du référentiel n'a la compétence du stand : il ne peut être tenu aucun jour. `creneauId`/`date`/`heureDebut`/`heureFin` sont `null` et le triplet `demande`/`capacite`/`manque` vaut `-1` (non pertinent) |
-| `CRENEAU_SOUS_EFFECTIF` | `CRITIQUE` si `manque >= demande`, sinon `ELEVE` | Les animateurs compétents et disponibles ce jour-là ne suffisent pas à couvrir les postes ouverts sur le créneau |
+| `CRENEAU_SOUS_EFFECTIF` | `CRITIQUE` si `manque >= demande`, sinon `ELEVE` | Les animateurs disponibles ce jour-là ne suffisent pas à couvrir les postes ouverts sur le créneau |
 
-Le tri place les causes `CRITIQUE` avant les `ELEVE`, les stands sans animateur
-compétent avant les créneaux sous-effectif, puis les manques décroissants.
+La compétence (appréciation de l'administrateur) n'entre **pas** dans ce calcul
+de capacité : depuis sa bascule en contrainte medium (`appreciationIncompatible`,
+voir [`contraintes.md`](contraintes.md)), n'importe quel animateur disponible
+peut littéralement être affecté à n'importe quel stand — un écart d'appréciation
+est signalé après résolution (score medium, badge calendrier), jamais comme une
+cause bloquante avant résolution.
+
+Le tri place les causes `CRITIQUE` avant les `ELEVE`, puis les manques
+décroissants.
 
 Le même rapport est également renvoyé, après résolution, dans le champ
 `faisabilite` de `GET /api/constraints` : celui-ci reflète les données de la

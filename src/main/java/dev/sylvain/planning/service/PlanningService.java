@@ -348,6 +348,10 @@ public class PlanningService {
                             .map(PlanningService::asString)
                             .collect(Collectors.toList());
             item.put("joursIndisponibles", joursIndisponibles);
+            List<String> souhaits = animateur.getSouhaits() == null
+                    ? List.of()
+                    : new ArrayList<>(animateur.getSouhaits());
+            item.put("souhaits", souhaits);
             animateursYaml.add(item);
         }
 
@@ -686,6 +690,15 @@ public class PlanningService {
                             .map(value -> parseLocalDate(value, "animateurs.joursIndisponibles"))
                             .collect(Collectors.toCollection(java.util.HashSet::new));
             animateur.setJoursIndisponibles(joursIndisponibles);
+
+            // Charger les souhaits (typologies de stand souhaitées, sans niveau ni priorité)
+            List<Object> souhaitsData = (List<Object>) animateurData.get("souhaits");
+            Set<String> souhaits = souhaitsData == null
+                    ? new java.util.HashSet<>()
+                    : souhaitsData.stream()
+                            .map(value -> (String) value)
+                            .collect(Collectors.toCollection(java.util.HashSet::new));
+            animateur.setSouhaits(souhaits);
 
             animateurs.add(animateur);
         }

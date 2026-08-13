@@ -73,6 +73,8 @@ interface MonthCell {
   count: number;
   /** True when any stand-line on this date has some, but fewer than effectifMin, animateurs. */
   understaffed: boolean;
+  /** True when any filled seat on this date lacks the administrator's appreciation for its stand. */
+  appreciationMismatch: boolean;
 }
 
 export interface FilterOption {
@@ -123,6 +125,8 @@ export class CalendarMonthPage {
   protected readonly dayDetailsFallback = $localize`:@@calendarMonth.dayDetails:Détails du jour`;
   protected readonly unassignedLabel = $localize`:@@calendarMonth.unassigned:(non assigné)`;
   protected readonly cellUnderstaffedTooltip = $localize`:@@calendarMonth.cellUnderstaffed:Au moins un stand en sous-effectif ce jour-là`;
+  protected readonly cellAppreciationMismatchTooltip = $localize`:@@calendarMonth.cellAppreciationMismatch:Au moins un stand avec un écart d'appréciation ce jour-là`;
+  protected readonly appreciationMismatchTooltip = $localize`:@@calendarDay.appreciationMismatch:Appréciation non couverte : au moins un animateur affecté n'a pas d'appréciation sur une typologie de ce stand`;
   protected readonly pourquoiLuiLabel = $localize`:@@affectationExplanation.tooltip:Pourquoi lui ?`;
 
   protected readonly monthLabel = computed(() =>
@@ -200,7 +204,8 @@ export class CalendarMonthPage {
         otherMonth: cellDate.getMonth() !== month.getMonth(),
         today: dateKey === todayKey,
         count: slots?.length ?? 0,
-        understaffed: hasUnderstaffedStand(slots)
+        understaffed: hasUnderstaffedStand(slots),
+        appreciationMismatch: hasAppreciationMismatch(slots)
       };
     });
   });
@@ -338,6 +343,11 @@ export class CalendarMonthPage {
     return $localize`:@@calendarDay.understaffed:Sous-effectif : ${stand.totalAssigned}:count: / ${stand.effectifMin}:min: animateur(s) affecté(s)`;
   }
 
+  /** True for a stand-line with at least one filled seat lacking the administrator's appreciation for it. */
+  protected hasAppreciationMismatch(stand: StandLine): boolean {
+    return isStandLineSansAppreciation(stand);
+  }
+
   /** Opens the "Pourquoi lui ?" dialog for one filled seat, offering every other competent animateur as a swap candidate. */
   protected openExplanation(poste: PosteAffectation): void {
     const planning = this.planning();
@@ -345,7 +355,8 @@ export class CalendarMonthPage {
       return;
     }
     const candidats = (planning.animateurs ?? []).filter(
-      (animateur) => animateur.id !== poste.animateur?.id && poste.stand && estCompetent(animateur, poste.stand)
+      (animateur) =>
+        animateur.id !== poste.animateur?.id && poste.stand && aUneAppreciationPour(animateur, poste.stand)
     );
     this.dialog.open(AffectationExplanationDialog, {
       data: { poste, planning, candidats },
@@ -354,7 +365,7 @@ export class CalendarMonthPage {
   }
 }
 
-function estCompetent(animateur: Animateur, stand: Stand): boolean {
+function aUneAppreciationPour(animateur: Animateur, stand: Stand): boolean {
   return stand.typologiesProposees.some((typologie) => typologie in (animateur.competences ?? {}));
 }
 
@@ -366,6 +377,18 @@ function isStandLineUnderstaffed(stand: StandLine): boolean {
 /** True when any stand-line across any créneau of `slots` is understaffed — drives the month grid's day-cell indicator. */
 export function hasUnderstaffedStand(slots: SlotEntry[] | undefined): boolean {
   return (slots ?? []).some((slot) => slot.stands.some(isStandLineUnderstaffed));
+}
+
+/** True for a stand-line with at least one filled seat whose animateur has no appreciation on this stand's typologies. */
+function isStandLineSansAppreciation(stand: StandLine): boolean {
+  return stand.entries.some(
+    (entry) => entry.poste.animateur && entry.poste.stand && !aUneAppreciationPour(entry.poste.animateur, entry.poste.stand)
+  );
+}
+
+/** True when any stand-line across any créneau of `slots` has an appreciation mismatch — drives the month grid's day-cell indicator. */
+export function hasAppreciationMismatch(slots: SlotEntry[] | undefined): boolean {
+  return (slots ?? []).some((slot) => slot.stands.some(isStandLineSansAppreciation));
 }
 
 function standLineKey(line: StandLine): string {

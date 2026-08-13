@@ -47,6 +47,8 @@ interface DayCard {
   slots: SlotCard[];
   /** True when any stand-line on this day has some, but fewer than effectifMin, animateurs — shown on the card header, at a glance. */
   understaffed: boolean;
+  /** True when any filled seat this day lacks the administrator's appreciation for its stand — shown on the card header, at a glance. */
+  appreciationMismatch: boolean;
 }
 
 /**
@@ -112,6 +114,15 @@ export class CalendarDayPage {
 
   protected readonly dayUnderstaffedTooltip = $localize`:@@calendarMonth.cellUnderstaffed:Au moins un stand en sous-effectif ce jour-là`;
 
+  /** True for a stand-line with at least one filled seat lacking the administrator's appreciation for it. */
+  protected hasAppreciationMismatch(stand: StandLine): boolean {
+    return isStandLineSansAppreciation(stand);
+  }
+
+  protected appreciationMismatchTooltip = $localize`:@@calendarDay.appreciationMismatch:Appréciation non couverte : au moins un animateur affecté n'a pas d'appréciation sur une typologie de ce stand`;
+
+  protected readonly dayAppreciationMismatchTooltip = $localize`:@@calendarMonth.cellAppreciationMismatch:Au moins un stand avec un écart d'appréciation ce jour-là`;
+
   /** Opens the "Pourquoi lui ?" dialog for one filled seat, offering every other competent animateur as a swap candidate. */
   protected openExplanation(poste: PosteAffectation): void {
     const planning = this.planning();
@@ -119,7 +130,8 @@ export class CalendarDayPage {
       return;
     }
     const candidats = (planning.animateurs ?? []).filter(
-      (animateur) => animateur.id !== poste.animateur?.id && poste.stand && estCompetent(animateur, poste.stand)
+      (animateur) =>
+        animateur.id !== poste.animateur?.id && poste.stand && aUneAppreciationPour(animateur, poste.stand)
     );
     this.dialog.open(AffectationExplanationDialog, {
       data: { poste, planning, candidats },
@@ -128,13 +140,25 @@ export class CalendarDayPage {
   }
 }
 
-function estCompetent(animateur: Animateur, stand: Stand): boolean {
+function aUneAppreciationPour(animateur: Animateur, stand: Stand): boolean {
   return stand.typologiesProposees.some((typologie) => typologie in (animateur.competences ?? {}));
 }
 
 /** True for a stand-line with some, but fewer than `effectifMin`, animateurs — fully unassigned (0) is already flagged separately. */
 function isStandLineUnderstaffed(stand: StandLine): boolean {
   return stand.entries.length > 0 && stand.entries.length < stand.effectifMin;
+}
+
+/** True for a stand-line with at least one filled seat whose animateur has no appreciation on this stand's typologies. */
+function isStandLineSansAppreciation(stand: StandLine): boolean {
+  return stand.entries.some(
+    (entry) => entry.poste.animateur && entry.poste.stand && !aUneAppreciationPour(entry.poste.animateur, entry.poste.stand)
+  );
+}
+
+/** True when any stand-line across any créneau of `slots` has an appreciation mismatch — drives the day-card's indicator. */
+function hasAppreciationMismatchIn(slots: SlotCard[]): boolean {
+  return slots.some((slot) => slot.stands.some(isStandLineSansAppreciation));
 }
 
 export function buildDays(postes: PosteAffectation[]): DayCard[] {
@@ -208,7 +232,8 @@ export function buildDays(postes: PosteAffectation[]): DayCard[] {
           ? $localize`:@@calendarDay.dayTitleWithDate:Jour ${day.jour}:jour: — ${day.date}:date:`
           : $localize`:@@calendarDay.dayTitle:Jour ${day.jour}:jour:`,
         slots,
-        understaffed: slots.some((slot) => slot.stands.some(isStandLineUnderstaffed))
+        understaffed: slots.some((slot) => slot.stands.some(isStandLineUnderstaffed)),
+        appreciationMismatch: hasAppreciationMismatchIn(slots)
       };
     });
 }

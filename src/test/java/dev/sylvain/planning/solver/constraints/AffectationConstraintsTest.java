@@ -46,22 +46,6 @@ class AffectationConstraintsTest extends ConstraintTestBase {
     }
 
     @Test
-    void competenceAbsenteEstPenalisee() {
-        Animateur sansCompetenceStrategie = animateur("A1", D1.minusYears(30),
-                java.util.Map.of("AMBIANCE", dev.sylvain.planning.domain.NiveauCompetence.AUTONOME));
-        verify("competenceCompatible")
-                .given(poste(standStrat, creneauMatin, sansCompetenceStrategie))
-                .penalizesBy(1);
-    }
-
-    @Test
-    void competencePresenteNEstPasPenalisee() {
-        verify("competenceCompatible")
-                .given(poste(standStrat, creneauMatin, majeurReferent("A1")))
-                .penalizesBy(0);
-    }
-
-    @Test
     void doubleAffectationSurMemeCreneauEstPenalisee() {
         Animateur a1 = majeurReferent("A1");
         verify("pasDeChevauchementHoraire")

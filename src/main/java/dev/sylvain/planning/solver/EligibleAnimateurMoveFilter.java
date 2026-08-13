@@ -14,13 +14,13 @@ import dev.sylvain.planning.domain.PosteAffectation;
 
 /**
  * The {@code animateurRange} value range spans every animateur (~150), because
- * eligibility depends on the target poste (stand competence, date
- * availability), not on a static property of the animateur. Without this
- * filter, the construction heuristic and local search spend most of their
- * moves on obviously-hard-invalid assignments (wrong competence, declared
- * unavailable) and pay for a full incremental score calculation to find that
- * out. Rejecting them here, before scoring, is what keeps solving fast enough
- * on constrained hardware (e.g. a Raspberry Pi) for the full ~150
+ * eligibility depends on the target poste (date availability, legal minor
+ * rules), not on a static property of the animateur. Without this filter, the
+ * construction heuristic and local search spend most of their moves on
+ * obviously-hard-invalid assignments (declared unavailable, under-age on a
+ * night slot...) and pay for a full incremental score calculation to find
+ * that out. Rejecting them here, before scoring, is what keeps solving fast
+ * enough on constrained hardware (e.g. a Raspberry Pi) for the full ~150
  * animateurs / 2000+ postes scenario.
  */
 public final class EligibleAnimateurMoveFilter {
@@ -40,22 +40,26 @@ public final class EligibleAnimateurMoveFilter {
      * assignments (daily/weekly caps, rest, breaks, adult supervision): those
      * are the score's job, not the filter's.</p>
      *
-     * <p>Mirrors, in order: {@code competenceCompatible},
-     * {@code animateurDisponible}, {@code standReserveAuxMajeurs},
-     * {@code travailInterditJourFerieMineur},
+     * <p>Mirrors, in order: {@code animateurDisponible},
+     * {@code standReserveAuxMajeurs}, {@code travailInterditJourFerieMineur},
      * {@code travailDeNuitInterditPourMineur}, {@code dureeQuotidienneMaxMineur}
      * and {@code travailContinuMaxMineur} (the last two only in their
      * single-créneau form). Keep this list and {@code LegalConstraints} in
      * sync: a filter stricter than the constraints would hide feasible
      * solutions.</p>
+     *
+     * <p>Competence is deliberately <b>not</b> excluded here: the business now
+     * treats it as an administrator's appreciation, enforced only as a medium
+     * constraint ({@code QualiteConstraints.appreciationIncompatible}), so an
+     * animateur without a matching appreciation is a valid — just penalised —
+     * assignment, one this filter must let through.</p>
      */
     private static boolean estEligible(PosteAffectation poste, Animateur animateur) {
         if (animateur == null) {
             return true;
         }
         Creneau creneau = poste.getCreneau();
-        if (!animateur.possedeCompetencePour(poste.getStand())
-                || animateur.estIndisponibleLe(creneau.getDate())) {
+        if (animateur.estIndisponibleLe(creneau.getDate())) {
             return false;
         }
         if (!animateur.estMineurLe(creneau.getDate())) {

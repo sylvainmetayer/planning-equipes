@@ -16,6 +16,17 @@
   --mdc-outlined-card-container-color: var(--mat-sys-error-container);
 }
 
+/*
+ * At-a-glance flag on the day-card header: at least one filled seat that day
+ * lacks the administrator's appreciation for its stand. Deliberately a
+ * distinct icon/color from .has-understaffed (amber vs. red): this is a
+ * medium, non-blocking penalty (the slot is staffed, just sub-optimally), not
+ * the "stand not fully covered" signal.
+ */
+.day-card.has-appreciation-mismatch:not(.has-understaffed) {
+  --mdc-outlined-card-container-color: var(--mat-sys-tertiary-container);
+}
+
 .day-slot + .day-slot {
   margin-top: 0.75rem;
   padding-top: 0.75rem;
@@ -57,6 +68,21 @@
 
 .understaffed-icon {
   color: var(--mat-sys-error);
+}
+
+/**
+ * A filled seat whose animateur has no appreciation on the stand's
+ * typologies — a medium, non-blocking penalty. Amber/tertiary, deliberately
+ * distinct from the red .understaffed-slot/.understaffed-icon so the two
+ * severities aren't confused at a glance.
+ */
+.appreciation-mismatch-slot {
+  color: var(--mat-sys-tertiary);
+  font-weight: 500;
+}
+
+.appreciation-mismatch-icon {
+  color: var(--mat-sys-tertiary);
 }
 
 /* One assigned name, clickable to open "Pourquoi lui ?" (see AffectationExplanationDialog). */

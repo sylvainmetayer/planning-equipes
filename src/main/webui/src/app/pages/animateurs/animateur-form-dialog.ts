@@ -28,6 +28,7 @@ interface AnimateurDraft {
   dateNaissance: string;
   manager: boolean;
   competences: CompetenceRow[];
+  souhaits: string[];
   joursIndisponibles: string[];
 }
 
@@ -122,6 +123,7 @@ export class AnimateurFormDialog {
       dateNaissance: draft.dateNaissance || null,
       manager: draft.manager,
       competences,
+      souhaits: draft.souhaits,
       joursIndisponibles: draft.joursIndisponibles
     };
     if (await this.crud.save('animateurs', animateur, this.editingId(), $localize`:@@animateurs.entityLabel:Animateur`)) {
@@ -179,7 +181,16 @@ export class AnimateurFormDialog {
 
 function toDraft(animateur: Animateur | null): AnimateurDraft {
   if (!animateur) {
-    return { id: '', prenom: '', nom: '', dateNaissance: '', manager: false, competences: [], joursIndisponibles: [] };
+    return {
+      id: '',
+      prenom: '',
+      nom: '',
+      dateNaissance: '',
+      manager: false,
+      competences: [],
+      souhaits: [],
+      joursIndisponibles: []
+    };
   }
   return {
     id: animateur.id,
@@ -188,6 +199,7 @@ function toDraft(animateur: Animateur | null): AnimateurDraft {
     dateNaissance: animateur.dateNaissance ?? '',
     manager: animateur.manager ?? false,
     competences: Object.entries(animateur.competences ?? {}).map(([typologie, niveau]) => ({ typologie, niveau })),
+    souhaits: [...(animateur.souhaits ?? [])],
     joursIndisponibles: [...(animateur.joursIndisponibles ?? [])]
   };
 }

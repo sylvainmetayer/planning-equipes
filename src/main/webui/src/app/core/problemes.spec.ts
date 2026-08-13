@@ -107,27 +107,6 @@ describe('construireProblemes', () => {
     expect(probleme.details[2]).toContain('2');
   });
 
-  it('details a stand-wide cause without any créneau line', () => {
-    const [probleme] = construireProblemes(
-      report([
-        cause({
-          type: 'STAND_SANS_ANIMATEUR_COMPETENT',
-          severite: 'CRITIQUE',
-          creneauId: null,
-          date: null,
-          heureDebut: null,
-          heureFin: null,
-          demande: -1,
-          capacite: -1,
-          manque: -1,
-          standIds: ['echecs']
-        })
-      ])
-    );
-    expect(probleme.details).toHaveLength(1);
-    expect(probleme.details[0]).toContain('echecs');
-  });
-
   it('lists the violation lines of a HARD constraint, and the match count otherwise', () => {
     const [dur, moyen] = construireProblemes(null, [
       contrainte({ violations: ['Alice : 52 h', 'Bob : 51 h'] }),

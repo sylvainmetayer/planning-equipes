@@ -596,6 +596,16 @@ public class ReferenceDataRepository {
                     }
                 }
             }
+            try (PreparedStatement ps = connection.prepareStatement(
+                    "SELECT animateur_id, typologie FROM animateur_souhait");
+                    ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Animateur animateur = byId.get(rs.getString("animateur_id"));
+                    if (animateur != null) {
+                        animateur.getSouhaits().add(rs.getString("typologie"));
+                    }
+                }
+            }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to list animators", e);
         }
@@ -672,6 +682,22 @@ public class ReferenceDataRepository {
                 ins.executeBatch();
             }
         }
+        try (PreparedStatement del = connection.prepareStatement(
+                "DELETE FROM animateur_souhait WHERE animateur_id = ?")) {
+            del.setString(1, animateur.getId());
+            del.executeUpdate();
+        }
+        if (animateur.getSouhaits() != null && !animateur.getSouhaits().isEmpty()) {
+            try (PreparedStatement ins = connection.prepareStatement(
+                    "INSERT INTO animateur_souhait (animateur_id, typologie) VALUES (?, ?)")) {
+                for (String typologie : animateur.getSouhaits()) {
+                    ins.setString(1, animateur.getId());
+                    ins.setString(2, typologie);
+                    ins.addBatch();
+                }
+                ins.executeBatch();
+            }
+        }
     }
 
     /* ------------------------------ Typologies ----------------------------- */
@@ -710,9 +736,11 @@ public class ReferenceDataRepository {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement(
                         "SELECT 1 WHERE EXISTS (SELECT 1 FROM stand_typologie WHERE typologie = ?) "
-                                + "OR EXISTS (SELECT 1 FROM animateur_competence WHERE typologie = ?)")) {
+                                + "OR EXISTS (SELECT 1 FROM animateur_competence WHERE typologie = ?) "
+                                + "OR EXISTS (SELECT 1 FROM animateur_souhait WHERE typologie = ?)")) {
             ps.setString(1, id);
             ps.setString(2, id);
+            ps.setString(3, id);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
             }
@@ -1070,7 +1098,7 @@ public class ReferenceDataRepository {
             try {
                 for (String table : List.of("contrainte_animateur", "contrainte_ad_hoc", "poste_affectation",
                         "stand_typologie", "stand_indisponibilite", "stand_ouverture", "animateur_competence",
-                        "animateur_jour_indispo", "stand", "animateur")) {
+                        "animateur_jour_indispo", "animateur_souhait", "stand", "animateur")) {
                     try (PreparedStatement ps = connection.prepareStatement("DELETE FROM " + table)) {
                         ps.executeUpdate();
                     }
@@ -1179,8 +1207,14 @@ public class ReferenceDataRepository {
             }
         });
         animateurs.forEach(animateur -> {
-            if (animateur != null && animateur.getCompetences() != null) {
+            if (animateur == null) {
+                return;
+            }
+            if (animateur.getCompetences() != null) {
                 vues.addAll(animateur.getCompetences().keySet());
+            }
+            if (animateur.getSouhaits() != null) {
+                vues.addAll(animateur.getSouhaits());
             }
         });
         return vues.stream().map(t -> new TypologieItem(t, t)).toList();

@@ -57,6 +57,7 @@ public class ReferenceDataService {
     public Animateur createAnimateur(Animateur animateur) {
         animateur.setId(requiredId(animateur.getId(), "animateur id"));
         validateCompetences(animateur);
+        validateSouhaits(animateur);
         repository.saveAnimateur(animateur);
         markModified();
         return animateur;
@@ -68,6 +69,7 @@ public class ReferenceDataService {
         }
         animateur.setId(id);
         validateCompetences(animateur);
+        validateSouhaits(animateur);
         repository.saveAnimateur(animateur);
         markModified();
         return animateur;
@@ -79,6 +81,14 @@ public class ReferenceDataService {
             return;
         }
         validateTypologieIds(animateur.getCompetences().keySet());
+    }
+
+    /** Every wished typologie must reference an existing typologie — see {@link #validateTypologies(Stand)}. */
+    private void validateSouhaits(Animateur animateur) {
+        if (animateur.getSouhaits() == null) {
+            return;
+        }
+        validateTypologieIds(animateur.getSouhaits());
     }
 
     public void deleteAnimateur(String id) {

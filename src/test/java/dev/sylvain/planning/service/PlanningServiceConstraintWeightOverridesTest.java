@@ -45,6 +45,10 @@ class PlanningServiceConstraintWeightOverridesTest {
         Creneau creneau = new Creneau(1L, 1, LocalDate.of(2026, 7, 8), LocalTime.of(9, 0), LocalTime.of(13, 0));
         Animateur debutant = new Animateur("D1", "D1", "D1", LocalDate.of(2000, 1, 1), false);
         debutant.setCompetences(Map.of("STRATEGIE", NiveauCompetence.DEBUTANT));
+        // Appreciated and wished on STRATEGIE, so neither appreciationIncompatible
+        // nor souhaitsIncompatibles fires here: this test isolates
+        // standComplexeAvecReferent's weight override alone.
+        debutant.setSouhaits(Set.of("STRATEGIE"));
         PosteAffectation poste = new PosteAffectation("P1", stand, creneau);
         poste.setAnimateur(debutant);
 

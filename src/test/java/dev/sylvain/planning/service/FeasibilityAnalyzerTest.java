@@ -116,7 +116,11 @@ class FeasibilityAnalyzerTest {
     }
 
     @Test
-    void standSansAucunAnimateurCompetentEstUneCauseCritique() {
+    void standSansAucunAnimateurCompetentNEstPlusUneCause() {
+        // Compétence désormais medium (appréciation), pas une exigence de
+        // couverture : un animateur disponible mais sans appréciation sur
+        // « stand-2 » compte quand même pour la capacité, et le planning reste
+        // faisable au sens de FeasibilityAnalyzer.
         Stand couvert = stand("stand-1", 1, "STRATEGIE");
         Stand orphelin = stand("stand-2", 1, "ADRESSE");
         Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
@@ -125,45 +129,8 @@ class FeasibilityAnalyzerTest {
 
         FeasibilityReport report = analyzer.analyser(List.of(a1, a2), List.of(couvert, orphelin), List.of(creneau));
 
-        // La capacité brute suffit (2 animateurs pour 2 places), mais aucun
-        // d'eux ne peut tenir le stand « stand-2 » : le planning reste infaisable.
-        assertThat(report.feasible()).isFalse();
-        assertThat(report.manqueAnimateurs()).isZero();
-        assertThat(report.totalCauses()).isEqualTo(1);
-
-        CauseInfaisabilite cause = report.causes().getFirst();
-        assertThat(cause.type()).isEqualTo(TypeCauseInfaisabilite.STAND_SANS_ANIMATEUR_COMPETENT);
-        assertThat(cause.severite()).isEqualTo(SeveriteInfaisabilite.CRITIQUE);
-        assertThat(cause.standIds()).containsExactly("stand-2");
-        assertThat(cause.creneauId()).isNull();
-        assertThat(cause.date()).isNull();
-        assertThat(cause.heureDebut()).isNull();
-        assertThat(cause.heureFin()).isNull();
-        assertThat(cause.demande()).isEqualTo(-1);
-        assertThat(cause.capacite()).isEqualTo(-1);
-        assertThat(cause.manque()).isEqualTo(-1);
-        assertThat(report.message()).contains("1 cause bloquante");
-    }
-
-    @Test
-    void leStandSansCompetenceEstClasseAvantLesCreneauxSousEffectif() {
-        // Les deux causes sont CRITIQUE (le créneau n'a aucun animateur
-        // disponible) : c'est bien le type qui départage.
-        Stand orphelin = stand("stand-orphelin", 1, "ADRESSE");
-        Stand couvert = stand("stand-couvert", 2, "STRATEGIE");
-        LocalDate jour = LocalDate.of(2026, 8, 1);
-        Creneau creneau = creneau(1, jour);
-        Animateur absent = animateur("a1", "STRATEGIE");
-        absent.setJoursIndisponibles(Set.of(jour));
-
-        FeasibilityReport report = analyzer.analyser(List.of(absent), List.of(orphelin, couvert), List.of(creneau));
-
-        assertThat(report.totalCauses()).isEqualTo(2);
-        assertThat(report.causes()).extracting(CauseInfaisabilite::severite)
-                .containsExactly(SeveriteInfaisabilite.CRITIQUE, SeveriteInfaisabilite.CRITIQUE);
-        assertThat(report.causes()).extracting(CauseInfaisabilite::type).containsExactly(
-                TypeCauseInfaisabilite.STAND_SANS_ANIMATEUR_COMPETENT,
-                TypeCauseInfaisabilite.CRENEAU_SOUS_EFFECTIF);
+        assertThat(report.feasible()).isTrue();
+        assertThat(report.totalCauses()).isZero();
     }
 
     @Test
@@ -176,8 +143,7 @@ class FeasibilityAnalyzerTest {
             creneaux.add(creneau(jour, date));
             jours.add(date);
         }
-        // Un animateur compétent (sinon le stand déclencherait en plus une
-        // cause STAND_SANS_ANIMATEUR_COMPETENT), mais absent tout le festival.
+        // Absent tout le festival : aucun jour ne compte dans la capacité.
         Animateur absent = animateur("a1", "STRATEGIE");
         absent.setJoursIndisponibles(jours);
 
@@ -189,19 +155,18 @@ class FeasibilityAnalyzerTest {
     }
 
     @Test
-    void animateurWithoutMatchingCompetenceDoesNotCountTowardsCapacity() {
+    void animateurWithoutMatchingCompetenceStillCountsTowardsCapacity() {
+        // Compétence = appréciation medium désormais, plus une exigence de
+        // couverture : un animateur disponible mais non "compétent" pour le
+        // stand compte quand même dans la capacité brute.
         Stand stand = stand("stand-1", 1, "STRATEGIE");
         Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
-        Animateur competent = animateur("a1", "STRATEGIE");
         Animateur incompetent = animateur("a2", "ADRESSE");
 
-        FeasibilityReport avecUnCompetent = analyzer.analyser(List.of(competent, incompetent), List.of(stand),
-                List.of(creneau));
-        assertThat(avecUnCompetent.feasible()).isTrue();
+        FeasibilityReport report = analyzer.analyser(List.of(incompetent), List.of(stand), List.of(creneau));
 
-        FeasibilityReport sansCompetent = analyzer.analyser(List.of(incompetent), List.of(stand), List.of(creneau));
-        assertThat(sansCompetent.feasible()).isFalse();
-        assertThat(sansCompetent.manqueAnimateurs()).isEqualTo(1);
+        assertThat(report.feasible()).isTrue();
+        assertThat(report.manqueAnimateurs()).isZero();
     }
 
     @Test

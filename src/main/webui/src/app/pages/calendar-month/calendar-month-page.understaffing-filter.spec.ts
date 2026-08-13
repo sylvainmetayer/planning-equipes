@@ -61,7 +61,7 @@ function stand(id: string, effectifMin: number): Stand {
 }
 
 function animateur(id: string): Animateur {
-  return { id, prenom: id, nom: '', dateNaissance: '2000-01-01', manager: false, competences: {}, joursIndisponibles: [] };
+  return { id, prenom: id, nom: '', dateNaissance: '2000-01-01', manager: false, competences: {}, souhaits: [], joursIndisponibles: [] };
 }
 
 function creneau(id: number, date: string): Creneau {

@@ -21,6 +21,7 @@ function animateur(id: string, joursIndisponibles: string[]): Animateur {
     dateNaissance: '1990-01-01',
     manager: false,
     competences: {},
+    souhaits: [],
     joursIndisponibles
   };
 }

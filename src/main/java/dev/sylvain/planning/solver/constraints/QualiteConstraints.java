@@ -2,12 +2,15 @@ package dev.sylvain.planning.solver.constraints;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.HashSet;
+import java.util.Set;
 
 import ai.timefold.solver.core.api.score.buildin.hardmediumsoft.HardMediumSoftScore;
 import ai.timefold.solver.core.api.score.stream.Constraint;
 import ai.timefold.solver.core.api.score.stream.ConstraintCollectors;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
 import ai.timefold.solver.core.api.score.stream.Joiners;
+import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.PosteAffectation;
@@ -35,7 +38,10 @@ public final class QualiteConstraints {
                 experienceRequisePourStandsPremium(constraintFactory),
                 eviterRoulementStandsPremium(constraintFactory),
                 eviterChangementEmplacementEloigne(constraintFactory),
-                eviterEnchainementStandsEpuisants(constraintFactory)
+                eviterEnchainementStandsEpuisants(constraintFactory),
+                appreciationIncompatible(constraintFactory),
+                souhaitsIncompatibles(constraintFactory),
+                limiterTypologiesDistinctesParAnimateur(constraintFactory)
         };
     }
 
@@ -190,6 +196,72 @@ public final class QualiteConstraints {
                         && suivant.getStand().getNiveauEffort() == NiveauEffort.EPUISANT)
                 .penalize(HardMediumSoftScore.ONE_MEDIUM)
                 .asConstraint("eviterEnchainementStandsEpuisants");
+    }
+
+    /**
+     * The former hard {@code competenceCompatible} rule, downgraded to
+     * medium: an appreciation mismatch is now a strongly penalised quality
+     * issue, not a blocking one — the administrator's appreciation is
+     * privileged over the animateur's wish via a higher weight in
+     * {@code application.properties} ({@code planning.constraint-weights.
+     * appreciationIncompatible}), not in this literal.
+     */
+    private Constraint appreciationIncompatible(ConstraintFactory constraintFactory) {
+        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
+                "appreciationIncompatible")
+                .filter(poste -> poste.getAnimateur() != null
+                        && !poste.getAnimateur().possedeCompetencePour(poste.getStand()))
+                .penalize(HardMediumSoftScore.ONE_MEDIUM)
+                .asConstraint("appreciationIncompatible");
+    }
+
+    /**
+     * Mirrors {@link #appreciationIncompatible} but on the animateur's
+     * declared wishes rather than the administrator's appreciation — weighted
+     * lower ({@code planning.constraint-weights.souhaitsIncompatibles}) so
+     * the solver privileges the real appreciation when the two disagree.
+     */
+    private Constraint souhaitsIncompatibles(ConstraintFactory constraintFactory) {
+        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
+                "souhaitsIncompatibles")
+                .filter(poste -> poste.getAnimateur() != null
+                        && !poste.getAnimateur().aSouhaitePour(poste.getStand()))
+                .penalize(HardMediumSoftScore.ONE_MEDIUM)
+                .asConstraint("souhaitsIncompatibles");
+    }
+
+    /** Typologies the animateur is appreciated for that this poste's stand actually offers. */
+    private static Set<String> typologiesApprecieesDuPoste(PosteAffectation poste) {
+        Animateur animateur = poste.getAnimateur();
+        Stand stand = poste.getStand();
+        Set<String> intersection = new HashSet<>(stand.getTypologiesProposees());
+        intersection.retainAll(animateur.getCompetences().keySet());
+        return intersection;
+    }
+
+    /**
+     * Below this count of distinct typologies mastered across an animateur's
+     * whole planning, no penalty applies — the business considers 1-2
+     * typologies the ideal case (5 is the cited bad example).
+     */
+    private static final int TYPOLOGIES_DISTINCTES_SANS_PENALITE = 2;
+
+    /**
+     * An animateur spread across too many distinct typologies of jeu over the
+     * whole planning is penalised, proportionally to how far past the
+     * threshold they are — the same gradient logic as {@link #equilibrerCharge}.
+     */
+    private Constraint limiterTypologiesDistinctesParAnimateur(ConstraintFactory constraintFactory) {
+        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
+                "limiterTypologiesDistinctesParAnimateur")
+                .filter(poste -> poste.getAnimateur() != null && poste.getStand() != null)
+                .flatten(QualiteConstraints::typologiesApprecieesDuPoste)
+                .groupBy((poste, typologie) -> poste.getAnimateur(),
+                        ConstraintCollectors.toSet((poste, typologie) -> typologie))
+                .filter((animateur, typologies) -> typologies.size() > TYPOLOGIES_DISTINCTES_SANS_PENALITE)
+                .penalize(HardMediumSoftScore.ONE_MEDIUM,
+                        (animateur, typologies) -> typologies.size() - TYPOLOGIES_DISTINCTES_SANS_PENALITE)
+                .asConstraint("limiterTypologiesDistinctesParAnimateur");
     }
 
     private boolean emplacementsEloignes(Stand standA, Stand standB) {

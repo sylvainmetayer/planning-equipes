@@ -148,6 +148,13 @@ abstract class ConstraintTestBase {
         return a;
     }
 
+    protected static Animateur animateurAvecSouhaits(String id, LocalDate naissance,
+            Map<String, NiveauCompetence> comp, String... souhaits) {
+        Animateur a = animateur(id, naissance, comp);
+        a.setSouhaits(new java.util.HashSet<>(java.util.List.of(souhaits)));
+        return a;
+    }
+
     protected static Animateur majeurReferent(String id) {
         return animateur(id, NAISSANCE_MAJEUR, Map.of("STRATEGIE", NiveauCompetence.REFERENT));
     }

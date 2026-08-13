@@ -1,12 +1,14 @@
 package dev.sylvain.planning.solver.constraints;
 
 import java.time.LocalTime;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
+import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.Stand;
 
 class QualiteConstraintsTest extends ConstraintTestBase {
@@ -214,5 +216,82 @@ class QualiteConstraintsTest extends ConstraintTestBase {
                 .given(poste(standEpuisant1, creneauMatin, a1),
                         poste(standEpuisant2, creneauAprem, a1))
                 .penalizesBy(0);
+    }
+
+    @Test
+    void appreciationAbsenteEstPenalisee() {
+        Animateur sansAppreciationStrategie = animateur("A1", D1.minusYears(30),
+                Map.of("AMBIANCE", NiveauCompetence.AUTONOME));
+        verify("appreciationIncompatible")
+                .given(poste(standStrat, creneauMatin, sansAppreciationStrategie))
+                .penalizesBy(1);
+    }
+
+    @Test
+    void appreciationPresenteNEstPasPenalisee() {
+        verify("appreciationIncompatible")
+                .given(poste(standStrat, creneauMatin, majeurReferent("A1")))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void souhaitAbsentEstPenalise() {
+        Animateur sansSouhaitStrategie = animateurAvecSouhaits("A1", D1.minusYears(30),
+                Map.of("STRATEGIE", NiveauCompetence.AUTONOME), "AMBIANCE");
+        verify("souhaitsIncompatibles")
+                .given(poste(standStrat, creneauMatin, sansSouhaitStrategie))
+                .penalizesBy(1);
+    }
+
+    @Test
+    void souhaitPresentNEstPasPenalise() {
+        Animateur souhaiteStrategie = animateurAvecSouhaits("A1", D1.minusYears(30),
+                Map.of("STRATEGIE", NiveauCompetence.AUTONOME), "STRATEGIE");
+        verify("souhaitsIncompatibles")
+                .given(poste(standStrat, creneauMatin, souhaiteStrategie))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void deuxTypologiesDistinctesNeSontPasPenalisees() {
+        Animateur a1 = animateur("A1", D1.minusYears(30), Map.of(
+                "STRATEGIE", NiveauCompetence.AUTONOME,
+                "AMBIANCE", NiveauCompetence.AUTONOME));
+        verify("limiterTypologiesDistinctesParAnimateur")
+                .given(poste(standStrategie("STAND-STRAT-2"), creneauMatin, a1),
+                        poste(stand("STAND-AMBIANCE", false, "AMBIANCE"), creneauAprem, a1))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void troisTypologiesDistinctesSontPenaliseesUnPoint() {
+        Animateur a1 = animateur("A1", D1.minusYears(30), Map.of(
+                "STRATEGIE", NiveauCompetence.AUTONOME,
+                "AMBIANCE", NiveauCompetence.AUTONOME,
+                "ENIGME", NiveauCompetence.AUTONOME));
+        verify("limiterTypologiesDistinctesParAnimateur")
+                .given(poste(standStrategie("STAND-STRAT-3"), creneauMatin, a1),
+                        poste(stand("STAND-AMBIANCE-3", false, "AMBIANCE"), creneauAprem, a1),
+                        poste(stand("STAND-ENIGME-3", false, "ENIGME"), matin("J2-MATIN3", 2, D2), a1))
+                .penalizesBy(1);
+    }
+
+    @Test
+    void cinqTypologiesDistinctesSontPenaliseesTroisPoints() {
+        // Reprend l'exemple métier cité pour justifier la contrainte : un
+        // animateur maîtrisant 5 typologies différentes est un mauvais cas.
+        Animateur a1 = animateur("A1", D1.minusYears(30), Map.of(
+                "STRATEGIE", NiveauCompetence.AUTONOME,
+                "AMBIANCE", NiveauCompetence.AUTONOME,
+                "ENIGME", NiveauCompetence.AUTONOME,
+                "ADRESSE", NiveauCompetence.AUTONOME,
+                "ROLE", NiveauCompetence.AUTONOME));
+        verify("limiterTypologiesDistinctesParAnimateur")
+                .given(poste(standStrategie("STAND-STRAT-5"), creneauMatin, a1),
+                        poste(stand("STAND-AMBIANCE-5", false, "AMBIANCE"), creneauAprem, a1),
+                        poste(stand("STAND-ENIGME-5", false, "ENIGME"), matin("J2-MATIN5", 2, D2), a1),
+                        poste(stand("STAND-ADRESSE-5", false, "ADRESSE"), apresMidi("J2-AM5", 2, D2), a1),
+                        poste(stand("STAND-ROLE-5", false, "ROLE"), matin("J3-MATIN5", 3, D3), a1))
+                .penalizesBy(3);
     }
 }

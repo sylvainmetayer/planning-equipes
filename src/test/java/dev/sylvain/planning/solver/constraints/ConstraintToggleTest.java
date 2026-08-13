@@ -31,15 +31,30 @@ class ConstraintToggleTest extends ConstraintTestBase {
     private final Creneau creneauAprem = apresMidi("J1-AM", 1, D1);
 
     @Test
-    void competenceCompatiblePeutEtreDesactivee() {
-        // majeurAutonome ne maîtrise que STRATEGIE : incompétent sur un stand ADRESSE.
-        verify("competenceCompatible")
+    void animateurDisponiblePeutEtreDesactivee() {
+        Animateur indisponible = majeurReferent("A1");
+        indisponible.setJoursIndisponibles(java.util.Set.of(D1));
+
+        verify("animateurDisponible")
+                .given(poste(standStrat, creneauMatin, indisponible))
+                .penalizesBy(1);
+
+        verify("animateurDisponible")
+                .given(poste(standStrat, creneauMatin, indisponible),
+                        new ConstraintToggle("animateurDisponible"))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void appreciationIncompatiblePeutEtreDesactivee() {
+        // majeurAutonome ne maîtrise que STRATEGIE : sans appréciation sur un stand ADRESSE.
+        verify("appreciationIncompatible")
                 .given(poste(standAdresse, creneauMatin, majeurAutonome("A1")))
                 .penalizesBy(1);
 
-        verify("competenceCompatible")
+        verify("appreciationIncompatible")
                 .given(poste(standAdresse, creneauMatin, majeurAutonome("A1")),
-                        new ConstraintToggle("competenceCompatible"))
+                        new ConstraintToggle("appreciationIncompatible"))
                 .penalizesBy(0);
     }
 
@@ -108,7 +123,7 @@ class ConstraintToggleTest extends ConstraintTestBase {
     void unToggleSurUneAutreContrainteNeDesactivePasCelleCi() {
         verify("standReserveAuxMajeurs")
                 .given(poste(standMajeurs, creneauMatin, mineurDebutant("M1")),
-                        new ConstraintToggle("competenceCompatible"))
+                        new ConstraintToggle("appreciationIncompatible"))
                 .penalizesBy(1);
     }
 }

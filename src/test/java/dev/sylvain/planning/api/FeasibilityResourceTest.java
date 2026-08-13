@@ -40,20 +40,21 @@ class FeasibilityResourceTest {
         assertThat(report.getString("message")).isNotBlank();
         assertThat(report.getInt("manqueAnimateurs")).isGreaterThanOrEqualTo(0);
         for (int index = 0; index < causes.size(); index++) {
-            assertThat(report.getString("causes[" + index + "].type"))
-                    .isIn("CRENEAU_SOUS_EFFECTIF", "STAND_SANS_ANIMATEUR_COMPETENT");
+            assertThat(report.getString("causes[" + index + "].type")).isEqualTo("CRENEAU_SOUS_EFFECTIF");
             assertThat(report.getString("causes[" + index + "].severite")).isIn("CRITIQUE", "ELEVE");
             assertThat(report.getList("causes[" + index + "].standIds")).isNotEmpty();
         }
     }
 
     /**
-     * A stand whose typologie nobody masters is structurally impossible to
-     * staff: it must be reported as CRITIQUE and ranked first, without waiting
-     * for a solver run to fail.
+     * A créneau with open seats but literally nobody in the roster is
+     * structurally impossible to staff: it must be reported as CRITIQUE and
+     * ranked first, without waiting for a solver run to fail. Competence
+     * (appreciation) no longer gates this: it is a medium constraint, not a
+     * coverage requirement.
      */
     @Test
-    void standSansAnimateurCompetentRemonteEnCauseCritique() {
+    void creneauSansAucunAnimateurRemonteEnCauseCritique() {
         given().when().post("/api/planning/reset").then().statusCode(200);
 
         given()
@@ -91,12 +92,14 @@ class FeasibilityResourceTest {
                 .then()
                 .statusCode(200)
                 .body("feasible", equalTo(false))
-                .body("causes[0].type", equalTo("STAND_SANS_ANIMATEUR_COMPETENT"))
+                .body("causes[0].type", equalTo("CRENEAU_SOUS_EFFECTIF"))
                 .body("causes[0].severite", equalTo("CRITIQUE"))
                 .body("causes[0].standIds[0]", equalTo("STAND-FEASIBILITY"))
-                .body("causes[0].creneauId", org.hamcrest.Matchers.nullValue())
-                .body("causes[0].manque", equalTo(-1))
-                .body("totalCauses", equalTo(2));
+                .body("causes[0].creneauId", notNullValue())
+                .body("causes[0].demande", equalTo(2))
+                .body("causes[0].capacite", equalTo(0))
+                .body("causes[0].manque", equalTo(2))
+                .body("totalCauses", equalTo(1));
 
         // Leave a coherent dataset behind for the other test classes.
         seedScenario();

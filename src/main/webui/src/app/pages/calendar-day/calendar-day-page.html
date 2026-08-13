@@ -33,13 +33,18 @@
 } @else {
   <div class="day-calendar-grid">
     @for (day of days(); track day.jour) {
-      <mat-card appearance="outlined" class="day-card" [class.has-understaffed]="day.understaffed">
+      <mat-card appearance="outlined" class="day-card" [class.has-understaffed]="day.understaffed" [class.has-appreciation-mismatch]="day.appreciationMismatch">
         <mat-card-header>
           <mat-card-title>
             {{ day.title }}
             @if (day.understaffed) {
               <mat-icon inline class="understaffed-icon" [matTooltip]="dayUnderstaffedTooltip" [attr.aria-label]="dayUnderstaffedTooltip">
                 warning
+              </mat-icon>
+            }
+            @if (day.appreciationMismatch) {
+              <mat-icon inline class="appreciation-mismatch-icon" [matTooltip]="dayAppreciationMismatchTooltip" [attr.aria-label]="dayAppreciationMismatchTooltip">
+                psychology
               </mat-icon>
             }
           </mat-card-title>
@@ -55,7 +60,7 @@
                 <div class="day-slot-empty" i18n="@@calendarDay.noStand">Aucun stand</div>
               } @else {
                 @for (stand of slot.stands; track stand.standId + stand.heureDebut) {
-                  <div class="day-stand" [class.empty-slot]="stand.entries.length === 0" [class.understaffed-slot]="isUnderstaffed(stand)">
+                  <div class="day-stand" [class.empty-slot]="stand.entries.length === 0" [class.understaffed-slot]="isUnderstaffed(stand)" [class.appreciation-mismatch-slot]="hasAppreciationMismatch(stand)">
                     <strong>{{ stand.standNom }}</strong>
                     @if (stand.heureDebut !== slot.heureDebut || stand.heureFin !== slot.heureFin) {
                       <span class="day-stand-partial" i18n="@@calendarDay.partiallyClosed">
@@ -65,6 +70,11 @@
                     @if (isUnderstaffed(stand)) {
                       <mat-icon inline class="understaffed-icon" [matTooltip]="understaffedTooltip(stand)" [attr.aria-label]="understaffedTooltip(stand)">
                         warning
+                      </mat-icon>
+                    }
+                    @if (hasAppreciationMismatch(stand)) {
+                      <mat-icon inline class="appreciation-mismatch-icon" [matTooltip]="appreciationMismatchTooltip" [attr.aria-label]="appreciationMismatchTooltip">
+                        psychology
                       </mat-icon>
                     }
                     @if (stand.entries.length === 0) {

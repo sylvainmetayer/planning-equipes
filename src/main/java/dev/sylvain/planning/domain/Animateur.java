@@ -17,6 +17,8 @@ public class Animateur {
     private boolean manager;
     /** Keys reference the {@code typologie} referential table (CRUD-managed), not a fixed enum. */
     private Map<String, NiveauCompetence> competences = new HashMap<>();
+    /** Ids referencing the {@code typologie} referential table — stand typologies the animateur wishes to be assigned to. */
+    private Set<String> souhaits = new HashSet<>();
     private Set<LocalDate> joursIndisponibles = new HashSet<>();
 
     public Animateur() {
@@ -97,6 +99,11 @@ public class Animateur {
                 .anyMatch(typologie -> competences.get(typologie) == NiveauCompetence.DEBUTANT);
     }
 
+    /** True when at least one typologie proposée by the stand is among the animateur's declared wishes. */
+    public boolean aSouhaitePour(Stand stand) {
+        return stand.getTypologiesProposees().stream().anyMatch(souhaits::contains);
+    }
+
     public String getId() {
         return id;
     }
@@ -144,6 +151,14 @@ public class Animateur {
 
     public void setCompetences(Map<String, NiveauCompetence> competences) {
         this.competences = competences;
+    }
+
+    public Set<String> getSouhaits() {
+        return souhaits;
+    }
+
+    public void setSouhaits(Set<String> souhaits) {
+        this.souhaits = souhaits != null ? souhaits : new HashSet<>();
     }
 
     public Set<LocalDate> getJoursIndisponibles() {

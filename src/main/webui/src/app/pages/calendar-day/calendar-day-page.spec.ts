@@ -23,7 +23,7 @@ function stand(id: string, effectifMin = 1): Stand {
 }
 
 function animateur(id: string): Animateur {
-  return { id, prenom: id, nom: '', dateNaissance: '2000-01-01', manager: false, competences: {}, joursIndisponibles: [] };
+  return { id, prenom: id, nom: '', dateNaissance: '2000-01-01', manager: false, competences: {}, souhaits: [], joursIndisponibles: [] };
 }
 
 function poste(overrides: Partial<PosteAffectation> & { id: string }): PosteAffectation {

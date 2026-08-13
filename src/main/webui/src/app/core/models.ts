@@ -19,7 +19,10 @@ export interface Animateur {
   dateNaissance: string | null;
   /** Manages other animateurs; every animateur (manager or not) is paid. */
   manager: boolean;
+  /** Administrator's appreciation, after formation — shown as "Appréciation" in the UI. */
   competences: Record<string, NiveauCompetence>;
+  /** Stand typologies the animateur wishes to be assigned to — unordered, no priority. */
+  souhaits: string[];
   joursIndisponibles: string[];
 }
 
@@ -168,11 +171,12 @@ export interface ConstraintDiagnostic {
 /**
  * Why a planning cannot be filled, in business terms:
  * - `CRENEAU_SOUS_EFFECTIF`: an open créneau demands more seats than there are
- *   competent and available animateurs for it;
- * - `STAND_SANS_ANIMATEUR_COMPETENT`: no animateur in the whole roster carries
- *   the competence a stand requires (structural, day-independent).
+ *   available animateurs for it. Competence (appreciation) is no longer part
+ *   of this capacity check: it is a medium constraint now, not a coverage
+ *   requirement — any available animateur can literally be assigned to any
+ *   stand, just penalised on a mismatch.
  */
-export type TypeCauseInfaisabilite = 'CRENEAU_SOUS_EFFECTIF' | 'STAND_SANS_ANIMATEUR_COMPETENT';
+export type TypeCauseInfaisabilite = 'CRENEAU_SOUS_EFFECTIF';
 
 /** `CRITIQUE` = no coverage possible at all; `ELEVE` = partial coverage only. */
 export type SeveriteInfaisabilite = 'CRITIQUE' | 'ELEVE';
@@ -184,8 +188,6 @@ export type SeveriteInfaisabilite = 'CRITIQUE' | 'ELEVE';
  * `creneauId` is declared as a string because it is only ever compared or
  * displayed here; the backend serialises a `Long`, so always normalise both
  * sides with `String(...)` before matching it against `Creneau.id` (a number).
- * `demande`/`capacite`/`manque` are `-1` for `STAND_SANS_ANIMATEUR_COMPETENT`,
- * where they carry no meaning.
  */
 export interface CauseInfaisabilite {
   type: TypeCauseInfaisabilite;

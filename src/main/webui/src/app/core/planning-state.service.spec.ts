@@ -32,6 +32,7 @@ function animateur(id: string): Animateur {
     dateNaissance: '2000-01-01',
     manager: false,
     competences: { STRATEGIE: 'REFERENT' },
+    souhaits: [],
     joursIndisponibles: []
   };
 }

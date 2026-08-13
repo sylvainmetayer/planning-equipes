@@ -44,7 +44,10 @@ public class Animateur {
     private LocalDate dateNaissance;            // → régime applicable calculé à la date du créneau :
                                                 //   moins de 16 ans / 16-18 ans / majeur — jamais stocké
     private boolean manager;                    // gère d'autres animateurs ; tous les animateurs sont payés
-    private Map<String, NiveauCompetence> competences;  // clé = id de typologie (table typologie)
+    private Map<String, NiveauCompetence> competences;  // clé = id de typologie (table typologie) ; appréciation de
+                                                          //   l'administrateur (nom Java inchangé, « Appréciation »
+                                                          //   côté frontend) — voir contraintes.md
+    private Set<String> souhaits;               // ids de typologie souhaités par l'animateur, sans niveau ni priorité
     private Set<LocalDate> joursIndisponibles;  // opt-out : dispo par défaut, on ne liste que les jours OFF
 }
 
@@ -443,7 +446,8 @@ au démarrage. Détails et exemple dans [`contraintes.md`](contraintes.md#pondé
 
 | Règle | Mise en œuvre |
 | --- | --- |
-| Compétence | `poste.animateur.competences` doit contenir une typologie présente dans `poste.stand.typologiesProposees` |
+| Appréciation (réelle, medium) | `poste.animateur.competences` (= « Appréciation » côté frontend) devrait contenir une typologie présente dans `poste.stand.typologiesProposees` — `appreciationIncompatible`, poids fort |
+| Souhaits (medium) | `poste.animateur.souhaits` devrait contenir une typologie présente dans `poste.stand.typologiesProposees` — `souhaitsIncompatibles`, poids faible (privilégie le réel sur le souhaité) |
 | Disponibilité (opt-out) | `poste.creneau.date` ne doit pas figurer dans `animateur.joursIndisponibles` — cf. `Animateur.estIndisponibleLe(LocalDate)` |
 | Effectif min/max | Comptage des `poste.animateur != null` groupés par `stand` + `creneau` (pas de classe de contrainte dédiée) |
 | Mineur / majeur | Toujours dérivé de `dateNaissance` à la date du créneau via `estMineurLe(LocalDate)` / `estMajeurLe(LocalDate)` — **jamais un booléen stocké**, pour éviter toute désynchronisation |
@@ -457,6 +461,7 @@ au démarrage. Détails et exemple dans [`contraintes.md`](contraintes.md#pondé
 ## Invariants à ne pas casser
 
 - Un `PosteAffectation` = une place, jamais un couple stand × créneau.
+- `Animateur.souhaits` est un `Set` sans ordre ni priorité — ne pas le transformer en liste ordonnée.
 - Le statut mineur/majeur est calculé, jamais stocké.
 - Les contraintes ad hoc restent des contraintes dures.
 - Les noms de domaine restent en français métier.

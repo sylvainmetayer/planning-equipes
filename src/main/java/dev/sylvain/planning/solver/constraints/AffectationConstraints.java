@@ -11,9 +11,14 @@ import dev.sylvain.planning.domain.PosteAffectation;
 
 /**
  * Core assignment hard constraints: every mandatory seat must be filled by an
- * available, competent animateur, and nobody can hold two seats whose créneaux
- * overlap in time. These map to the documented assignment rules (effectif,
- * disponibilite, competence).
+ * available animateur, and nobody can hold two seats whose créneaux overlap in
+ * time. These map to the documented assignment rules (effectif, disponibilite).
+ *
+ * <p>Competence used to be enforced here too ({@code competenceCompatible}),
+ * but the business now treats it as an administrator's post-formation
+ * appreciation rather than a hard qualification: an animateur without a
+ * matching appreciation can still be assigned, just penalised — see
+ * {@code QualiteConstraints.appreciationIncompatible}.</p>
  */
 public final class AffectationConstraints {
 
@@ -21,7 +26,6 @@ public final class AffectationConstraints {
         return new Constraint[] {
                 posteDoitEtrePourvu(constraintFactory),
                 animateurDisponible(constraintFactory),
-                competenceCompatible(constraintFactory),
                 pasDeChevauchementHoraire(constraintFactory)
         };
     }
@@ -48,14 +52,6 @@ public final class AffectationConstraints {
                 })
                 .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint("animateurDisponible");
-    }
-
-    private Constraint competenceCompatible(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class), "competenceCompatible")
-                .filter(poste -> poste.getAnimateur() != null
-                        && !poste.getAnimateur().possedeCompetencePour(poste.getStand()))
-                .penalize(HardMediumSoftScore.ONE_HARD)
-                .asConstraint("competenceCompatible");
     }
 
     /**
