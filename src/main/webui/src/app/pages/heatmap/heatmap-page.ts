@@ -1,0 +1,256 @@
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { PlanningStateService } from '../../core/planning-state.service';
+import { PlanningFestival, PosteAffectation } from '../../core/models';
+
+export type HeatmapView = 'stand' | 'animateur';
+
+export type HeatmapLevel = 'none' | 'ok' | 'warning' | 'critical';
+
+export interface HeatmapDayColumn {
+  jour: number;
+  date: string | null;
+  label: string;
+}
+
+export interface HeatmapCell {
+  jour: number;
+  level: HeatmapLevel;
+  label: string;
+  tooltip: string;
+}
+
+export interface HeatmapRow {
+  id: string;
+  label: string;
+  /** Total load across the whole period — stands sort alphabetically instead, see {@link buildStandHeatmap}. */
+  total: number;
+  cells: HeatmapCell[];
+}
+
+export interface HeatmapTable {
+  days: HeatmapDayColumn[];
+  rows: HeatmapRow[];
+}
+
+/**
+ * Read-only heatmap for issue #68: at-a-glance load per day, crossed with
+ * either stand (coverage gaps: filled vs. required seats) or animateur
+ * (overload: how many postes land on the same day). Aggregated client-side
+ * from `PlanningFestival.postes`, the same read-only data source and pattern
+ * (`planningState.loadForDisplay()` + a pure builder function) as
+ * `calendar-day-page.ts`'s `buildDays()` — no dedicated backend endpoint exists.
+ */
+@Component({
+  selector: 'app-heatmap-page',
+  imports: [
+    MatCardModule,
+    MatButtonModule,
+    MatButtonToggleModule,
+    MatIconModule,
+    MatProgressBarModule,
+    MatTooltipModule,
+    MatFormFieldModule,
+    MatInputModule,
+    FormsModule
+  ],
+  templateUrl: './heatmap-page.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class HeatmapPage {
+  protected readonly loading = signal(false);
+  protected readonly error = signal('');
+  protected readonly planning = signal<PlanningFestival | null>(null);
+  protected readonly view = signal<HeatmapView>('stand');
+  protected readonly animateurFilter = signal('');
+  protected readonly standColumnLabel = $localize`:@@heatmap.column.stand:Stand`;
+  protected readonly animateurColumnLabel = $localize`:@@heatmap.column.animateur:Animateur`;
+
+  private readonly planningState = inject(PlanningStateService);
+
+  private readonly postes = computed(() => this.planning()?.postes ?? []);
+
+  protected readonly standTable = computed<HeatmapTable>(() => buildStandHeatmap(this.postes()));
+
+  protected readonly animateurTable = computed<HeatmapTable>(() => {
+    const table = buildAnimateurHeatmap(this.postes());
+    const query = this.animateurFilter().trim().toLocaleLowerCase();
+    if (!query) {
+      return table;
+    }
+    return { days: table.days, rows: table.rows.filter((row) => row.label.toLocaleLowerCase().includes(query)) };
+  });
+
+  protected readonly activeTable = computed<HeatmapTable>(() =>
+    this.view() === 'stand' ? this.standTable() : this.animateurTable()
+  );
+
+  constructor() {
+    void this.refresh();
+  }
+
+  protected async refresh(): Promise<void> {
+    this.loading.set(true);
+    this.error.set('');
+    try {
+      this.planning.set(await this.planningState.loadForDisplay());
+    } catch (error) {
+      this.planning.set(null);
+      const message = error instanceof Error ? error.message : String(error);
+      this.error.set($localize`:@@common.errorPrefix:Erreur : ${message}:message:`);
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  protected setView(view: HeatmapView): void {
+    this.view.set(view);
+  }
+}
+
+/** Coverage heatmap: one row per stand, sorted alphabetically like the other calendar views. */
+export function buildStandHeatmap(postes: PosteAffectation[]): HeatmapTable {
+  const days = buildDayColumns(postes);
+  const stands = new Map<string, string>();
+  const counts = new Map<string, Map<number, { total: number; filled: number }>>();
+
+  postes.forEach((poste) => {
+    const stand = poste.stand;
+    const creneau = poste.creneau;
+    if (!stand || !creneau) {
+      return;
+    }
+    stands.set(stand.id, stand.nom || stand.id);
+    let byDay = counts.get(stand.id);
+    if (!byDay) {
+      byDay = new Map();
+      counts.set(stand.id, byDay);
+    }
+    const cell = byDay.get(creneau.jour) ?? { total: 0, filled: 0 };
+    cell.total += 1;
+    if (poste.animateur) {
+      cell.filled += 1;
+    }
+    byDay.set(creneau.jour, cell);
+  });
+
+  const rows: HeatmapRow[] = Array.from(stands.entries())
+    .sort((left, right) => left[1].localeCompare(right[1]))
+    .map(([standId, standNom]) => {
+      const byDay = counts.get(standId);
+      let total = 0;
+      const cells = days.map((day) => {
+        const cell = byDay?.get(day.jour);
+        if (!cell || cell.total === 0) {
+          return { jour: day.jour, level: 'none' as const, label: '', tooltip: standDayTooltip(standNom, day, null) };
+        }
+        total += cell.total - cell.filled;
+        const level: HeatmapLevel = cell.filled === 0 ? 'critical' : cell.filled < cell.total ? 'warning' : 'ok';
+        return {
+          jour: day.jour,
+          level,
+          label: `${cell.filled}/${cell.total}`,
+          tooltip: standDayTooltip(standNom, day, cell)
+        };
+      });
+      return { id: standId, label: standNom, total, cells };
+    });
+
+  return { days, rows };
+}
+
+/** Load heatmap: one row per animateur with at least one poste, ranked by total postes (heaviest first). */
+export function buildAnimateurHeatmap(postes: PosteAffectation[]): HeatmapTable {
+  const days = buildDayColumns(postes);
+  const animateurs = new Map<string, string>();
+  const counts = new Map<string, Map<number, number>>();
+
+  postes.forEach((poste) => {
+    const animateur = poste.animateur;
+    const creneau = poste.creneau;
+    if (!animateur || !creneau) {
+      return;
+    }
+    animateurs.set(animateur.id, `${animateur.prenom ?? ''} ${animateur.nom ?? ''}`.trim() || animateur.id);
+    let byDay = counts.get(animateur.id);
+    if (!byDay) {
+      byDay = new Map();
+      counts.set(animateur.id, byDay);
+    }
+    byDay.set(creneau.jour, (byDay.get(creneau.jour) ?? 0) + 1);
+  });
+
+  const rows: HeatmapRow[] = Array.from(animateurs.entries()).map(([animateurId, label]) => {
+    const byDay = counts.get(animateurId);
+    let total = 0;
+    const cells = days.map((day) => {
+      const count = byDay?.get(day.jour) ?? 0;
+      total += count;
+      return {
+        jour: day.jour,
+        level: animateurLoadLevel(count),
+        label: count > 0 ? String(count) : '',
+        tooltip: animateurDayTooltip(label, day, count)
+      };
+    });
+    return { id: animateurId, label, total, cells };
+  });
+
+  return { days, rows: rows.sort((left, right) => right.total - left.total || left.label.localeCompare(right.label)) };
+}
+
+function animateurLoadLevel(count: number): HeatmapLevel {
+  if (count === 0) {
+    return 'none';
+  }
+  if (count === 1) {
+    return 'ok';
+  }
+  return count === 2 ? 'warning' : 'critical';
+}
+
+function buildDayColumns(postes: PosteAffectation[]): HeatmapDayColumn[] {
+  const days = new Map<number, string | null>();
+  postes.forEach((poste) => {
+    const creneau = poste.creneau;
+    if (!creneau) {
+      return;
+    }
+    if (!days.has(creneau.jour) || (!days.get(creneau.jour) && creneau.date)) {
+      days.set(creneau.jour, creneau.date ?? null);
+    }
+  });
+  return Array.from(days.entries())
+    .sort((left, right) => left[0] - right[0])
+    .map(([jour, date]) => ({ jour, date, label: $localize`:@@heatmap.dayColumn:J${jour}:jour:` }));
+}
+
+function standDayTooltip(standNom: string, day: HeatmapDayColumn, cell: { total: number; filled: number } | null): string {
+  const dayLabel = dayLabelForTooltip(day);
+  if (!cell || cell.total === 0) {
+    return $localize`:@@heatmap.stand.tooltipNone:${standNom}:stand: — ${dayLabel}:day: : pas de créneau`;
+  }
+  return $localize`:@@heatmap.stand.tooltip:${standNom}:stand: — ${dayLabel}:day: : ${cell.filled}:filled: / ${cell.total}:total: poste(s) pourvu(s)`;
+}
+
+function animateurDayTooltip(label: string, day: HeatmapDayColumn, count: number): string {
+  const dayLabel = dayLabelForTooltip(day);
+  if (count === 0) {
+    return $localize`:@@heatmap.animateur.tooltipNone:${label}:animateur: — ${dayLabel}:day: : aucun poste`;
+  }
+  return $localize`:@@heatmap.animateur.tooltip:${label}:animateur: — ${dayLabel}:day: : ${count}:count: poste(s)`;
+}
+
+function dayLabelForTooltip(day: HeatmapDayColumn): string {
+  return day.date
+    ? $localize`:@@calendarDay.dayTitleWithDate:Jour ${day.jour}:jour: — ${day.date}:date:`
+    : $localize`:@@calendarDay.dayTitle:Jour ${day.jour}:jour:`;
+}

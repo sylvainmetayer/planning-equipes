@@ -95,5 +95,10 @@ export const routes: Routes = [
     title: 'Staffing need — Planning Équipes',
     loadComponent: () => import('./pages/staffing/staffing-page').then((m) => m.StaffingPage)
   },
+  {
+    path: 'heatmap',
+    title: 'Load heatmap — Planning Équipes',
+    loadComponent: () => import('./pages/heatmap/heatmap-page').then((m) => m.HeatmapPage)
+  },
   { path: '**', redirectTo: '' }
 ];

@@ -265,6 +265,9 @@ dures : elles ne sont jamais contournées silencieusement.
 - **Calendrier mensuel** avec filtres par animateur et par stand, et détail des
   affectations au clic sur une journée ;
 - **Vue par jour**, stand par stand et créneau par créneau ;
+- **Heatmap de charge**, par jour croisé avec le stand (places pourvues /
+  requises, pour repérer les trous de couverture) ou avec l'animateur (nombre
+  de postes par jour, pour repérer les surcharges) ;
 - **Page « Constraints »** : catalogue des règles actives et résultat de la
   dernière analyse, avec le score du planning et les contraintes en défaut — ce
   qui permet d'identifier précisément ce qui bloque quand aucun planning

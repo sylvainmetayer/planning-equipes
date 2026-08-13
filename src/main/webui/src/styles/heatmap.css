@@ -1,0 +1,92 @@
+/* Load heatmap (issue #68): day x stand/animateur matrix, color-coded to spot
+   coverage gaps and overload at a glance. */
+
+.heatmap-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.heatmap-filter {
+  display: block;
+  width: 16rem;
+  max-width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.heatmap-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  margin-bottom: 0.5rem;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.heatmap-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.heatmap-swatch {
+  display: inline-block;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: var(--mat-sys-corner-extra-small);
+  border: 1px solid var(--mat-sys-outline-variant);
+}
+
+.heatmap-table {
+  border-collapse: collapse;
+  white-space: nowrap;
+}
+
+.heatmap-row-header {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--mat-sys-surface);
+  text-align: left;
+  font: var(--mat-sys-label-medium);
+  padding: 0.375rem 0.75rem;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.heatmap-day-header {
+  font: var(--mat-sys-label-medium);
+  padding: 0.375rem 0.5rem;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  text-align: center;
+}
+
+.heatmap-cell {
+  min-width: 3rem;
+  text-align: center;
+  padding: 0.375rem 0.5rem;
+  font: var(--mat-sys-body-small);
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.heatmap-cell-none {
+  color: var(--mat-sys-on-surface-variant);
+  opacity: 0.5;
+}
+
+.heatmap-cell-ok {
+  background: var(--mat-sys-surface-container-low);
+}
+
+.heatmap-cell-warning {
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+  font-weight: 500;
+}
+
+.heatmap-cell-critical {
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+  font-weight: 600;
+}

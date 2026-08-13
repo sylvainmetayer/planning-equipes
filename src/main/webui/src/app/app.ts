@@ -103,6 +103,11 @@ function buildNavGroups(): NavGroup[] {
         path: '/staffing',
         label: $localize`:@@nav.link.staffing:Besoin en animateurs`,
         icon: 'engineering'
+      },
+      {
+        path: '/heatmap',
+        label: $localize`:@@nav.link.heatmap:Heatmap de charge`,
+        icon: 'grid_view'
       }
     ]
   },
