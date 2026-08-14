@@ -236,6 +236,19 @@ opposable au même titre qu'une règle légale.
 | `appreciationIncompatible` | L'appréciation de l'administrateur (`Animateur.competences`) ne couvre aucune typologie proposée par le stand — ex-contrainte dure `competenceCompatible`, assouplie car il s'agit d'une appréciation métier faite après formation, pas d'une qualification objective |
 | `souhaitsIncompatibles` | Aucune des typologies proposées par le stand ne figure dans les souhaits déclarés de l'animateur (`Animateur.souhaits`) |
 | `limiterTypologiesDistinctesParAnimateur` | Un animateur devrait idéalement intervenir sur une ou deux typologies de jeu distinctes sur l'ensemble du planning (au-delà de 2, pénalité proportionnelle au dépassement) |
+| `maxJoursConsecutifsTravailles` | Un animateur ne devrait pas travailler plus de six jours consécutifs sans au moins un jour de repos — moins est possible, plus ne devrait pas l'être (pénalité proportionnelle au dépassement) |
+
+`maxJoursConsecutifsTravailles` n'est adossée à aucun article identifié du
+Code du travail : `maxJoursTravaillesParSemaine` (dur, art. L3132-1) borne
+déjà le nombre de jours travaillés à l'intérieur de chaque semaine ISO, mais
+une série peut chevaucher deux semaines (ex. jeu-ven-sam-dim-lun-mar-mer : six
+jours dans chacune des deux semaines ISO concernées, mais sept d'affilée)
+sans déclencher la contrainte dure. `maxJoursConsecutifsTravailles` capture
+directement cette série glissante, indépendamment du découpage en semaines,
+mais reste classée qualité d'organisation (medium) tant que sa base légale
+n'est pas établie. Son poids est surchargé à 5 dans `application.properties`
+(contre 1 pour la plupart des autres contraintes medium), pour que le solveur
+l'élimine en priorité sur le reste de la famille « Qualité d'organisation ».
 
 `appreciationIncompatible` et `souhaitsIncompatibles` sont volontairement deux
 contraintes medium séparées, pas une seule agrégée : ça permet de les

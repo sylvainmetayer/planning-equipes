@@ -120,6 +120,9 @@ public final class ConstraintCatalog {
             new ConstraintDefinition("limiterTypologiesDistinctesParAnimateur", Niveau.MEDIUM, "Qualité d'organisation",
                     "Un animateur devrait idéalement intervenir sur une ou deux typologies de jeu sur l'ensemble "
                             + "du planning."),
+            new ConstraintDefinition("maxJoursConsecutifsTravailles", Niveau.MEDIUM, "Qualité d'organisation",
+                    "Un animateur ne devrait pas travailler plus de six jours consécutifs sans au moins un jour "
+                            + "de repos : moins est possible, plus ne devrait pas l'être."),
 
             new ConstraintDefinition("favoriserRotationDesStands", Niveau.SOFT, "Préférences",
                     "Éviter d'affecter plusieurs fois le même animateur sur le même stand : on privilégie la rotation."),

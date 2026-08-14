@@ -1,5 +1,6 @@
 package dev.sylvain.planning.solver.constraints;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Map;
 
@@ -293,5 +294,49 @@ class QualiteConstraintsTest extends ConstraintTestBase {
                         poste(stand("STAND-ADRESSE-5", false, "ADRESSE"), apresMidi("J2-AM5", 2, D2), a1),
                         poste(stand("STAND-ROLE-5", false, "ROLE"), matin("J3-MATIN5", 3, D3), a1))
                 .penalizesBy(3);
+    }
+
+    // --- maxJoursConsecutifsTravailles --------------------------------------
+
+    /** Créneau court (9 h - 13 h) du jour {@code offset + 1}, offset calendar days after D1. */
+    private Creneau jourConsecutif(int offset) {
+        return creneau("JC-" + offset, offset + 1, D1.plusDays(offset), LocalTime.of(9, 0), LocalTime.of(13, 0));
+    }
+
+    @Test
+    void septJoursConsecutifsTravaillesEstPenalise() {
+        Animateur a1 = majeurReferent("A1");
+        Object[] postes = new Object[7];
+        for (int i = 0; i < 7; i++) {
+            postes[i] = poste(standStrat, jourConsecutif(i), a1);
+        }
+        verify("maxJoursConsecutifsTravailles").given(postes).penalizesBy(1);
+    }
+
+    @Test
+    void sixJoursConsecutifsTravaillesNEstPasPenalise() {
+        Animateur a1 = majeurReferent("A1");
+        Object[] postes = new Object[6];
+        for (int i = 0; i < 6; i++) {
+            postes[i] = poste(standStrat, jourConsecutif(i), a1);
+        }
+        verify("maxJoursConsecutifsTravailles").given(postes).penalizesBy(0);
+    }
+
+    @Test
+    void sixJoursTravaillesUnJourDeReposPuisSixJoursNEstPasPenalise() {
+        // A rest day resets the run: 6 + 6 with a gap between must not be
+        // confused with 12 (or even 7) days in a row.
+        Animateur a1 = majeurReferent("A1");
+        Object[] postes = new Object[12];
+        int index = 0;
+        for (int i = 0; i < 6; i++) {
+            postes[index++] = poste(standStrat, jourConsecutif(i), a1);
+        }
+        // offset 6 (day 7) is a rest day: deliberately skipped.
+        for (int i = 7; i < 13; i++) {
+            postes[index++] = poste(standStrat, jourConsecutif(i), a1);
+        }
+        verify("maxJoursConsecutifsTravailles").given(postes).penalizesBy(0);
     }
 }

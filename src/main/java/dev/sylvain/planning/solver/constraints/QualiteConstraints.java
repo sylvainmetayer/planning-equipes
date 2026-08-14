@@ -3,6 +3,7 @@ package dev.sylvain.planning.solver.constraints;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import ai.timefold.solver.core.api.score.buildin.hardmediumsoft.HardMediumSoftScore;
@@ -18,8 +19,9 @@ import dev.sylvain.planning.domain.Stand;
 
 /**
  * Medium constraints: strongly penalised but non-blocking organisational
- * quality rules: referent coverage on complex stands, balanced workload, and
- * avoiding a majority of minors on a single slot.
+ * quality rules: referent coverage on complex stands, balanced workload,
+ * avoiding a majority of minors on a single slot, and capping consecutive
+ * worked days.
  */
 public final class QualiteConstraints {
 
@@ -41,7 +43,8 @@ public final class QualiteConstraints {
                 eviterEnchainementStandsEpuisants(constraintFactory),
                 appreciationIncompatible(constraintFactory),
                 souhaitsIncompatibles(constraintFactory),
-                limiterTypologiesDistinctesParAnimateur(constraintFactory)
+                limiterTypologiesDistinctesParAnimateur(constraintFactory),
+                maxJoursConsecutifsTravailles(constraintFactory)
         };
     }
 
@@ -262,6 +265,57 @@ public final class QualiteConstraints {
                 .penalize(HardMediumSoftScore.ONE_MEDIUM,
                         (animateur, typologies) -> typologies.size() - TYPOLOGIES_DISTINCTES_SANS_PENALITE)
                 .asConstraint("limiterTypologiesDistinctesParAnimateur");
+    }
+
+    /**
+     * Above this many consecutive worked days, at least one rest day is due —
+     * fewer is fine, more is not. Not a Code du travail article: the six-day
+     * ISO-week ceiling ({@code maxJoursTravaillesParSemaine}) already lets a
+     * run straddle a week boundary (e.g. Thu-Fri-Sat-Sun-Mon-Tue-Wed = 6 days
+     * in each of two different ISO weeks, but 7 in a row). This constraint
+     * catches that straddling run directly, uncoupled from the week grid, but
+     * is kept as an organisational-quality medium rather than a legal hard
+     * rule since the underlying legal basis for a rolling (non-weekly) count
+     * is not established.
+     */
+    private static final int JOURS_CONSECUTIFS_TRAVAILLES_MAX = 6;
+
+    /**
+     * No animateur works more than {@link #JOURS_CONSECUTIFS_TRAVAILLES_MAX}
+     * calendar days in a row.
+     *
+     * <p>Grouped on {@code getJour()} rather than the calendar date: adjacent
+     * calendar days always get adjacent {@code jour} numbers (see
+     * {@code Creneau.assignerJours}), so a longest-run scan over the sorted
+     * set of distinct worked {@code jour} values is exactly a longest run of
+     * consecutive calendar days, without any date arithmetic.</p>
+     */
+    private Constraint maxJoursConsecutifsTravailles(ConstraintFactory constraintFactory) {
+        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
+                "maxJoursConsecutifsTravailles")
+                .filter(poste -> poste.getAnimateur() != null && poste.getCreneau() != null)
+                .groupBy(PosteAffectation::getAnimateur,
+                        ConstraintCollectors.toSet(poste -> poste.getCreneau().getJour()))
+                .filter((animateur, jours) -> plusLongueSequenceConsecutive(jours)
+                        > JOURS_CONSECUTIFS_TRAVAILLES_MAX)
+                .penalize(HardMediumSoftScore.ONE_MEDIUM,
+                        (animateur, jours) -> plusLongueSequenceConsecutive(jours)
+                                - JOURS_CONSECUTIFS_TRAVAILLES_MAX)
+                .asConstraint("maxJoursConsecutifsTravailles");
+    }
+
+    /** Longest run of consecutive integers inside the set. */
+    private static int plusLongueSequenceConsecutive(Set<Integer> jours) {
+        List<Integer> tries = jours.stream().sorted().toList();
+        int plusLongue = 0;
+        int courante = 0;
+        int precedent = Integer.MIN_VALUE;
+        for (int jour : tries) {
+            courante = jour == precedent + 1 ? courante + 1 : 1;
+            plusLongue = Math.max(plusLongue, courante);
+            precedent = jour;
+        }
+        return plusLongue;
     }
 
     private boolean emplacementsEloignes(Stand standA, Stand standB) {
