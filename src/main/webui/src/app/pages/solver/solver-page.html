@@ -14,24 +14,27 @@
         <div class="staffing-stat-label" i18n="@@solver.volumetry.animateurs">Animateurs</div>
       </mat-card>
       <mat-card appearance="outlined" class="staffing-stat">
-        <div class="staffing-stat-value">{{ standTotal() }}</div>
-        <div class="staffing-stat-label" i18n="@@solver.volumetry.stands">Stands</div>
+        <div class="staffing-stat-value">{{ posteTotal() }}</div>
+        <div class="staffing-stat-label" i18n="@@solver.volumetry.postes">Postes à pourvoir</div>
       </mat-card>
       <mat-card appearance="outlined" class="staffing-stat">
         <div class="staffing-stat-value">{{ creneauTotal() }}</div>
         <div class="staffing-stat-label" i18n="@@solver.volumetry.creneaux">Créneaux</div>
       </mat-card>
       <mat-card appearance="outlined" class="staffing-stat">
-        <div class="staffing-stat-value">{{ typologieTotal() }}</div>
-        <div class="staffing-stat-label" i18n="@@solver.volumetry.typologies">Typologies</div>
+        <div class="staffing-stat-value">{{ contrainteAdHocTotal() }}</div>
+        <div class="staffing-stat-label" i18n="@@solver.volumetry.contraintesAdHoc">Contraintes ad hoc</div>
       </mat-card>
     </div>
     <p class="solver-volumetry-formula">
       <ng-container i18n="@@solver.volumetry.formula">
-        {{ animateurTotal() }} animateurs × {{ standTotal() }} stands × {{ creneauTotal() }} créneaux × {{ typologieTotal() }} typologies
-        = {{ complexiteEstimee() | number }}
+        Timefold doit affecter {{ animateurTotal() }} animateurs sur {{ posteTotal() }} postes ({{ creneauTotal() }} créneaux), sous {{ contrainteAdHocTotal() }} contraintes ad hoc supplémentaires
       </ng-container>
-      <strong i18n="@@solver.volumetry.formulaLabel"> combinaisons possibles — complexité estimée du problème soumis à Timefold.</strong>
+      @if (ordreDeGrandeur() > 0) {
+        <strong i18n="@@solver.volumetry.formulaLabel">
+          &nbsp;— environ 10^{{ ordreDeGrandeur() }} combinaisons possibles (ordre de grandeur du « problem scale » Timefold).
+        </strong>
+      }
     </p>
   </mat-card-content>
 </mat-card>

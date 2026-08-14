@@ -146,6 +146,18 @@ export interface ContrainteAdHoc {
   creeLe?: string;
 }
 
+/**
+ * Real scale of the problem the next solve will build, from `/api/planning/volumetrie`
+ * (mirrors what Timefold's own "Problem scale" log line reports): `posteCount` is one
+ * entry per required seat, not per stand, and `contrainteAdHocCount` are the extra
+ * ad hoc rules layered on top.
+ */
+export interface Volumetrie {
+  animateurCount: number;
+  posteCount: number;
+  contrainteAdHocCount: number;
+}
+
 export interface HardMediumSoftScore {
   hardScore: number;
   mediumScore: number;

@@ -22,6 +22,7 @@ JSON sauf mention contraire.
 | Méthode | Chemin | Description |
 | --- | --- | --- |
 | `GET` | `/api/planning/sample` | Jeu d'exemple construit depuis `scenario.yml` (non résolu) |
+| `GET` | `/api/planning/volumetrie` | Volumétrie réelle du prochain solve : nombre d'animateurs (value count Timefold), de postes à pourvoir (entity count Timefold, un par siège requis et non par stand) et de contraintes ad hoc actives ; tout à 0 si aucune donnée de référence n'est chargée |
 | `POST` | `/api/solve` | Résout un `PlanningFestival` envoyé en JSON (synchrone) |
 | `POST` | `/api/solve/analyze` | Analyse un planning : score et contraintes violées |
 | `POST` | `/api/planning/reset` | Vide la base (stands, créneaux, animateurs, affectations, contraintes) sans charger de scénario ; les groupes de créneaux sont réinitialisés au seul groupe `DEFAUT` actif (bouton « Reset BDD ») |

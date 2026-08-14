@@ -202,6 +202,42 @@ class PlanningResourceTest {
     }
 
     @Test
+    void volumetrieMatchesThePlanningActuallyBuiltForASolve() {
+        given()
+                .when().post("/api/reference-data/import-scenario?name=scenario.yml")
+                .then()
+                .statusCode(204);
+
+        JsonPath sample = JsonPath.from(given()
+                .when().get("/api/planning/sample?name=scenario.yml")
+                .then()
+                .statusCode(200)
+                .extract().asString());
+
+        // Not stands.size() x créneaux.size(): entity count is one poste per
+        // required seat, so it must match what a real solve builds.
+        given()
+                .when().get("/api/planning/volumetrie")
+                .then()
+                .statusCode(200)
+                .body("animateurCount", equalTo(sample.getList("animateurs").size()))
+                .body("posteCount", equalTo(sample.getList("postes").size()));
+    }
+
+    @Test
+    void volumetrieIsAllZeroWithoutReferenceData() {
+        given().when().post("/api/planning/reset").then().statusCode(200);
+
+        given()
+                .when().get("/api/planning/volumetrie")
+                .then()
+                .statusCode(200)
+                .body("animateurCount", equalTo(0))
+                .body("posteCount", equalTo(0))
+                .body("contrainteAdHocCount", equalTo(0));
+    }
+
+    @Test
     void resetEmptiesTheDatabase() {
         // Seed some data first so the reset has something to wipe. Uses the tiny
         // scenario so the solve (which persists the assignments) stays fast.

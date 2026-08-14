@@ -1,4 +1,3 @@
-import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -87,7 +86,6 @@ function bestUnitFor(seconds: number): SolverDurationUnit {
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
-    DecimalPipe,
     FeasibilityBanner,
     ProblemSummaryBanner,
     OutputPanel
@@ -152,25 +150,35 @@ export class SolverPage {
   /**
    * Volumetry of the problem Timefold is about to explore, recomputed live as
    * `referenceData`'s signals change (a CRUD edit, a sample load, a CSV/SQL
-   * import...). `créneauTotal` only counts the active groupe de créneaux'
-   * slots, mirroring `PlanningService`/`listCreneauxGroupeActif` on the
-   * backend: the other groupes are alternate plannings, not part of what
-   * gets solved.
+   * import...). `animateurTotal`/`posteTotal`/`contrainteAdHocTotal` come from
+   * `/api/planning/volumetrie`, built server-side the exact same way an actual
+   * solve is (one poste per required seat, not per stand) so they never drift
+   * from what the solver logs report. `créneauTotal` only counts the active
+   * groupe de créneaux' slots, mirroring `PlanningService`/`listCreneauxGroupeActif`
+   * on the backend: the other groupes are alternate plannings, not part of
+   * what gets solved.
    */
   private readonly referenceData = inject(ReferenceDataStore);
-  protected readonly animateurTotal = computed(() => this.referenceData.animateurs().length);
-  protected readonly standTotal = computed(() => this.referenceData.stands().length);
-  protected readonly typologieTotal = computed(() => this.referenceData.typologies().length);
+  protected readonly animateurTotal = computed(() => this.referenceData.volumetrie().animateurCount);
+  protected readonly posteTotal = computed(() => this.referenceData.volumetrie().posteCount);
+  protected readonly contrainteAdHocTotal = computed(() => this.referenceData.volumetrie().contrainteAdHocCount);
   private readonly activeGroupeId = computed(
     () => this.referenceData.groupesCreneaux().find((groupe) => groupe.actif)?.id ?? null
   );
   protected readonly creneauTotal = computed(
     () => this.referenceData.creneaux().filter((creneau) => creneau.groupe?.id === this.activeGroupeId()).length
   );
-  /** Number of (animateur, stand, créneau, typologie) combinations Timefold's search space is built from. */
-  protected readonly complexiteEstimee = computed(
-    () => this.animateurTotal() * this.standTotal() * this.creneauTotal() * this.typologieTotal()
-  );
+  /**
+   * Order of magnitude of Timefold's own "approximate problem scale"
+   * (valueCount ^ entityCount, not a product of the counts above — a plain
+   * product would be off by thousands of orders of magnitude and isn't worth
+   * displaying as a number).
+   */
+  protected readonly ordreDeGrandeur = computed(() => {
+    const animateurs = this.animateurTotal();
+    const postes = this.posteTotal();
+    return animateurs > 1 && postes > 0 ? Math.round(postes * Math.log10(animateurs)) : 0;
+  });
 
   private readonly api = inject(ApiService);
   private readonly planningState = inject(PlanningStateService);

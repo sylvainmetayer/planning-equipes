@@ -3,7 +3,7 @@
 
 import { Injectable, inject, signal } from '@angular/core';
 import { ApiService } from './api.service';
-import { Animateur, ContrainteAdHoc, Creneau, Emplacement, GroupeCreneau, Stand, TypologieItem } from './models';
+import { Animateur, ContrainteAdHoc, Creneau, Emplacement, GroupeCreneau, Stand, TypologieItem, Volumetrie } from './models';
 
 @Injectable({ providedIn: 'root' })
 export class ReferenceDataStore {
@@ -14,19 +14,23 @@ export class ReferenceDataStore {
   readonly stands = signal<Stand[]>([]);
   readonly emplacements = signal<Emplacement[]>([]);
   readonly contraintes = signal<ContrainteAdHoc[]>([]);
+  /** Real problem scale for the next solve; see {@link Volumetrie}. */
+  readonly volumetrie = signal<Volumetrie>({ animateurCount: 0, posteCount: 0, contrainteAdHocCount: 0 });
 
   private readonly api = inject(ApiService);
 
   async reload(): Promise<void> {
-    const [typologies, creneaux, groupesCreneaux, animateurs, stands, emplacements, contraintes] = await Promise.all([
-      this.api.get<TypologieItem[]>('/api/typologies'),
-      this.api.get<Creneau[]>('/api/creneaux'),
-      this.api.get<GroupeCreneau[]>('/api/groupes-creneaux'),
-      this.api.get<Animateur[]>('/api/animateurs'),
-      this.api.get<Stand[]>('/api/stands'),
-      this.api.get<Emplacement[]>('/api/emplacements'),
-      this.api.get<ContrainteAdHoc[]>('/api/contraintes-ad-hoc')
-    ]);
+    const [typologies, creneaux, groupesCreneaux, animateurs, stands, emplacements, contraintes, volumetrie] =
+      await Promise.all([
+        this.api.get<TypologieItem[]>('/api/typologies'),
+        this.api.get<Creneau[]>('/api/creneaux'),
+        this.api.get<GroupeCreneau[]>('/api/groupes-creneaux'),
+        this.api.get<Animateur[]>('/api/animateurs'),
+        this.api.get<Stand[]>('/api/stands'),
+        this.api.get<Emplacement[]>('/api/emplacements'),
+        this.api.get<ContrainteAdHoc[]>('/api/contraintes-ad-hoc'),
+        this.api.get<Volumetrie>('/api/planning/volumetrie')
+      ]);
     this.typologies.set(typologies);
     this.creneaux.set(creneaux);
     this.groupesCreneaux.set(groupesCreneaux);
@@ -34,6 +38,7 @@ export class ReferenceDataStore {
     this.stands.set(stands);
     this.emplacements.set(emplacements);
     this.contraintes.set(contraintes);
+    this.volumetrie.set(volumetrie);
   }
 
   /** Creates or updates an entity, then refreshes every collection. */

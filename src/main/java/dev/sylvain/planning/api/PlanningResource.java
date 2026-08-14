@@ -71,6 +71,30 @@ public class PlanningResource {
                 .build();
     }
 
+    /**
+     * Real scale of the problem the next solve will build, computed the exact
+     * same way {@code construireDepuisReferenceData} does for an actual solve
+     * ({@code postes.size()} is Timefold's entity count, {@code animateurs.size()}
+     * its value count) — so this never drifts from what the solver logs report,
+     * unlike a naive stands × créneaux guess would. Returns all-zero rather than
+     * an error when reference data isn't loaded yet, since this only feeds a
+     * read-only summary card, not an actual solve.
+     */
+    @GET
+    @Path("/planning/volumetrie")
+    public VolumetrieView volumetrie() {
+        try {
+            PlanningFestival festival = planningService.construireDepuisReferenceData();
+            return new VolumetrieView(festival.getAnimateurs().size(), festival.getPostes().size(),
+                    festival.getContraintesAdHoc().size());
+        } catch (IllegalStateException e) {
+            return new VolumetrieView(0, 0, 0);
+        }
+    }
+
+    public record VolumetrieView(int animateurCount, int posteCount, int contrainteAdHocCount) {
+    }
+
     @POST
     @Path("/solve")
     public PlanningFestival solve(PlanningFestival planningFestival,
