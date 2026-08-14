@@ -260,11 +260,28 @@ résout ce problème **à la génération**, pas au solve : il découpe chaque
 amplitude en plusieurs `Creneau` « vacation » plus courts et chevauchants (un
 relais), plutôt que de faire porter la pause au solveur. Tant que chaque
 vacation reste sous `dureeVacationMaxMinutes` (6 h par défaut — le seuil de
-l'art. L3121-16 au-delà duquel une pause devient légalement obligatoire),
-aucune vacation n'a jamais besoin de pause interne : la pause (et la pause
-repas) d'un animateur est simplement le trou entre deux de ses vacations, comme
-n'importe quel autre moment hors service — rien de plus à construire ni à
-garantir par une contrainte de couverture continue.
+l'art. L3121-16 au-delà duquel une pause devient légalement obligatoire) **et**
+ne recouvre pas entièrement une fenêtre repas, elle n'a besoin d'aucune pause
+interne : la pause (et la pause repas) d'un animateur est simplement le trou
+entre deux de ses vacations, comme n'importe quel autre moment hors service.
+
+Mais `dureeVacationMinMinutes` peut, à lui seul, empêcher un relais de tomber
+*avant* le début d'une fenêtre repas (le premier relais possible d'une journée
+ouvrant à 10h avec un minimum de 3h ne peut pas se produire avant 13h, alors
+que la fenêtre déjeuner commence à midi) : la seule coupe qui reste possible
+tombe alors *après* la fin de la fenêtre, ce qui fait travailler l'animateur
+seul sur cette vacation sans interruption pendant tout le repas. `dureeVacationMaxMinutes`
+seul ne détecte rien de tel puisque la vacation reste sous le plafond (ex.
+10:00-14:00, 4h). `VacationGeneratorService#appliquerPauseLegaleSiNecessaire`
+détecte donc aussi ce cas — une vacation qui engloutit une fenêtre repas
+entière de son début à sa fin — et y insère une vraie coupure, quelle que soit
+sa durée totale, la coupant en deux avec un trou de `dureePauseRepasMinutes`
+au milieu. Exception : quand la fenêtre n'est englobée que parce qu'elle est
+tronquée par l'heure de fermeture de l'amplitude (ex. une amplitude qui ferme
+à 20h alors que la fenêtre dîner nominale va jusqu'à 21h), aucune coupure
+n'est forcée — la journée de l'animateur se termine simplement dans la
+fenêtre, comme n'importe quelle fin de service, plutôt que de créer une
+vacation résiduelle de quelques minutes juste avant la fermeture.
 
 Le chevauchement entre deux vacations consécutives (`dureeChevauchementMinutes`,
 30 min par défaut) est le mécanisme de couverture : pendant cette fenêtre, deux
@@ -292,11 +309,17 @@ bandeau `app-feasibility-banner`, qui affiche désormais les deux.
 
 `ParametresDecoupage` (une seule ligne en base, même mécanisme que
 `ParametresLegaux`) porte ces paramètres, y compris
-`strategieCouverturePendantPause` (`FERMETURE` ou `RELEVE`) pour le cas
-résiduel où un administrateur configure un plafond de vacation au-dessus du
-seuil légal et qu'une vacation générée le dépasse malgré tout — dans ce cas
-seulement, une pause interne est insérée. Avec les valeurs par défaut, ce cas
-ne se produit jamais.
+`strategieCouverturePendantPause` (`FERMETURE` ou `RELEVE`) qui régit toute
+pause interne insérée — que ce soit parce qu'un administrateur a configuré un
+plafond de vacation au-dessus du seuil légal et qu'une vacation générée le
+dépasse malgré tout, ou parce qu'une vacation (de n'importe quelle durée)
+engloutit entièrement une fenêtre repas (cas ci-dessus). `FERMETURE` (par
+défaut) ferme simplement le stand pendant la pause ; `RELEVE` y ajoute une
+vacation courte supplémentaire pour garder le stand ouvert — à utiliser avec
+prudence sur un scénario déjà tendu en solvabilité, voir la nuance
+ci-dessus : une vacation de relève de plus par pause, sur *chaque* stand
+concerné, concentrée sur la même fenêtre horaire, est justement le genre de
+pic de demande simultanée qui fait caler le solveur.
 
 Un fichier scénario (`scenarios/*.yaml`) peut fixer ses propres
 `parametresLegaux:`, `parametresDecoupage:` et/ou `parametresSolveur:` en tête

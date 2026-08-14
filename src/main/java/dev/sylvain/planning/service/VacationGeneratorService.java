@@ -15,16 +15,20 @@ import dev.sylvain.planning.domain.ParametresDecoupage;
  * (one amplitude per day, e.g. 10:00→00:00) never forces a single animateur
  * to be nominally in-post for the whole opening window.
  *
- * <p>The relay pattern is the whole mechanism: consecutive vacations overlap
+ * <p>The relay pattern is the main mechanism: consecutive vacations overlap
  * by {@link ParametresDecoupage#getDureeChevauchementMinutes()}, so during a
  * handover two {@code PosteAffectation} exist on the same stand at once —
  * coverage is never in deficit, only briefly in surplus. As long as every
  * vacation stays at or under {@code dureeVacationMaxMinutes} (6h by default,
  * strictly under the art. L3121-16 threshold at which a break becomes legally
- * mandatory), no vacation ever needs an internal pause: the pause/repas an
- * animateur gets is simply the gap between two of their vacations the same
- * day, exactly like any other day off-shift — nothing else to construct or
- * guarantee. See {@code docs/domaine.md} for the full rationale.</p>
+ * mandatory) <b>and</b> doesn't itself swallow a whole meal window, no vacation
+ * needs an internal pause: the pause/repas an animateur gets is simply the gap
+ * between two of their vacations the same day, exactly like any other day
+ * off-shift. When a single vacation would otherwise entirely cover a meal
+ * window (e.g. a 10:00-14:10 first-of-the-day slot spanning all of
+ * 12:00-14:00), {@link #appliquerPauseLegaleSiNecessaire} splits it around a
+ * real internal break instead, so the animateur working it alone still gets
+ * to eat. See {@code docs/domaine.md} for the full rationale.</p>
  */
 public final class VacationGeneratorService {
 
@@ -117,24 +121,36 @@ public final class VacationGeneratorService {
     }
 
     /**
-     * Only triggers when an admin has configured {@code dureeVacationMaxMinutes}
-     * above the legal threshold and a segment actually landed above it — with
-     * the default configuration this never runs, since every segment produced
-     * by {@link #decouperEnMinutes} is already {@code <= dureeVacationMaxMinutes
-     * <= SEUIL_PAUSE_LEGALE_MINUTES}. Splits the offending segment into two,
-     * separated by a pause (a meal break if one overlaps the split point,
-     * otherwise the 20-min legal minimum), snapped into any meal window that
-     * intersects the segment. When {@link ParametresDecoupage.StrategieCouverturePendantPause#RELEVE}
-     * is configured, a third short vacation covering exactly the pause window
-     * is added so the stand stays staffed instead of closing.
+     * Triggers in two cases: an admin has configured {@code dureeVacationMaxMinutes}
+     * above the legal threshold and a segment actually landed above it (with
+     * the default configuration this arm never fires, since every segment
+     * produced by {@link #decouperEnMinutes} is already
+     * {@code <= dureeVacationMaxMinutes <= SEUIL_PAUSE_LEGALE_MINUTES}); or a
+     * segment — whatever its length — entirely swallows a meal window instead
+     * of ending inside or before it, which happens whenever
+     * {@code dureeVacationMinMinutes} keeps the earliest possible cut past the
+     * window's start (see class javadoc). Relying only on the 6 h threshold
+     * left that second case with no break at all: an animateur alone on a
+     * single ~4-5 h vacation that happens to straddle noon worked straight
+     * through lunch, because their "break" — the gap before their next
+     * vacation, if any — never actually fell inside the meal window.
+     *
+     * <p>Splits the offending segment into two, separated by a pause (a meal
+     * break if one overlaps the split point, otherwise the 20-min legal
+     * minimum), snapped into any meal window that intersects the segment. When
+     * {@link ParametresDecoupage.StrategieCouverturePendantPause#RELEVE} is
+     * configured, a third short vacation covering exactly the pause window is
+     * added so the stand stays staffed instead of closing.</p>
      */
     private static List<int[]> appliquerPauseLegaleSiNecessaire(int[] segment, Creneau amplitude,
             ParametresDecoupage parametres) {
         int longueur = segment[1] - segment[0];
-        if (longueur <= SEUIL_PAUSE_LEGALE_MINUTES) {
+        List<int[]> fenetresRepas = fenetresRepasEnMinutes(amplitude, parametres);
+        boolean depasseSeuilLegal = longueur > SEUIL_PAUSE_LEGALE_MINUTES;
+        if (!depasseSeuilLegal
+                && !contientUneFenetreRepasEntiere(segment, fenetresRepasNonTronqueesEnMinutes(amplitude, parametres))) {
             return List.of(segment);
         }
-        List<int[]> fenetresRepas = fenetresRepasEnMinutes(amplitude, parametres);
         int milieu = segment[0] + longueur / 2;
         int pauseDebut = milieu;
         int dureePause = DUREE_PAUSE_LEGALE_MINUTES;
@@ -158,25 +174,68 @@ public final class VacationGeneratorService {
         return resultat;
     }
 
+    /**
+     * True when {@code segment} covers a meal window from before its start to
+     * after its end — i.e. the window would be entirely worked, not merely
+     * touched at one edge. A segment that only ends at/after a window's start
+     * (the normal relay-near-lunch case) does not count: that's the window
+     * being used as a handover point, not swallowed whole.
+     *
+     * <p>{@code fenetresRepas} must be the <b>un</b>truncated windows (see
+     * {@link #fenetresRepasNonTronqueesEnMinutes}): a window truncated by the
+     * amplitude's own closing time (e.g. the evening window on a day that
+     * shuts at 20:00, well before its 21:00 nominal end) would otherwise
+     * always look "fully contained" by the amplitude's last segment, forcing
+     * a pointless split that leaves a token few minutes of "vacation" right
+     * before closing. A day that simply ends inside — or exactly at — a meal
+     * window needs no internal break: whoever's on it goes off-shift for the
+     * day at that point, same as the gap-between-vacations case.</p>
+     */
+    private static boolean contientUneFenetreRepasEntiere(int[] segment, List<int[]> fenetresRepas) {
+        for (int[] fenetre : fenetresRepas) {
+            if (fenetre[1] > fenetre[0] && segment[0] <= fenetre[0] && segment[1] >= fenetre[1]) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static List<int[]> fenetresRepasEnMinutes(Creneau amplitude, ParametresDecoupage parametres) {
         List<int[]> fenetres = new ArrayList<>();
         int duree = amplitude.getDureeMinutes();
         ajouterFenetreSiDansAmplitude(fenetres, amplitude.getHeureDebut(), duree,
-                parametres.getFenetreRepasMidiDebut(), parametres.getFenetreRepasMidiFin());
+                parametres.getFenetreRepasMidiDebut(), parametres.getFenetreRepasMidiFin(), true);
         ajouterFenetreSiDansAmplitude(fenetres, amplitude.getHeureDebut(), duree,
-                parametres.getFenetreRepasSoirDebut(), parametres.getFenetreRepasSoirFin());
+                parametres.getFenetreRepasSoirDebut(), parametres.getFenetreRepasSoirFin(), true);
+        return fenetres;
+    }
+
+    /**
+     * Same windows as {@link #fenetresRepasEnMinutes}, but not clipped to the
+     * amplitude's own duration — used only by
+     * {@link #contientUneFenetreRepasEntiere} so a window truncated by
+     * closing time never registers as "fully contained". Still dropped
+     * entirely when it doesn't start within the amplitude at all.
+     */
+    private static List<int[]> fenetresRepasNonTronqueesEnMinutes(Creneau amplitude, ParametresDecoupage parametres) {
+        List<int[]> fenetres = new ArrayList<>();
+        int duree = amplitude.getDureeMinutes();
+        ajouterFenetreSiDansAmplitude(fenetres, amplitude.getHeureDebut(), duree,
+                parametres.getFenetreRepasMidiDebut(), parametres.getFenetreRepasMidiFin(), false);
+        ajouterFenetreSiDansAmplitude(fenetres, amplitude.getHeureDebut(), duree,
+                parametres.getFenetreRepasSoirDebut(), parametres.getFenetreRepasSoirFin(), false);
         return fenetres;
     }
 
     private static void ajouterFenetreSiDansAmplitude(List<int[]> fenetres, LocalTime heureDebutAmplitude,
-            int dureeAmplitude, LocalTime debutFenetre, LocalTime finFenetre) {
+            int dureeAmplitude, LocalTime debutFenetre, LocalTime finFenetre, boolean tronquerAFinAmplitude) {
         int offsetDebut = minutesDepuis(heureDebutAmplitude, debutFenetre);
         int offsetFin = minutesDepuis(heureDebutAmplitude, finFenetre);
         if (offsetFin <= offsetDebut) {
             offsetFin += 24 * 60;
         }
         if (offsetDebut < dureeAmplitude) {
-            fenetres.add(new int[] { offsetDebut, Math.min(offsetFin, dureeAmplitude) });
+            fenetres.add(new int[] { offsetDebut, tronquerAFinAmplitude ? Math.min(offsetFin, dureeAmplitude) : offsetFin });
         }
     }
 

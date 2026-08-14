@@ -29,8 +29,8 @@ class VacationGeneratorServiceTest {
     }
 
     @Test
-    void amplitudeCourteResteEnUneSeuleVacation() {
-        Creneau amplitude = amplitude(LocalTime.of(10, 0), LocalTime.of(15, 0)); // 5h, sous le plafond de 6h
+    void amplitudeCourteSansFenetreRepasEntiereResteEnUneSeuleVacation() {
+        Creneau amplitude = amplitude(LocalTime.of(10, 0), LocalTime.of(11, 30)); // 1h30, sous le plafond et ne touche aucune fenêtre repas
 
         List<Creneau> vacations = VacationGeneratorService.genererVacations(
                 List.of(amplitude), new ParametresDecoupage());
@@ -38,8 +38,33 @@ class VacationGeneratorServiceTest {
         assertThat(vacations).hasSize(1);
         Creneau vacation = vacations.get(0);
         assertThat(vacation.getHeureDebut()).isEqualTo(LocalTime.of(10, 0));
-        assertThat(vacation.getHeureFin()).isEqualTo(LocalTime.of(15, 0));
+        assertThat(vacation.getHeureFin()).isEqualTo(LocalTime.of(11, 30));
         assertThat(vacation.getDate()).isEqualTo(JOUR);
+    }
+
+    @Test
+    void amplitudeCourteQuiEngloutitLaFenetreRepasEstQuandMemeCoupeePourLaPause() {
+        // Bug réel observé : une amplitude de 5h (10:00-15:00), largement sous le
+        // plafond de 6h, ne déclenchait jamais de pause interne — l'animateur
+        // seul sur cette unique vacation travaillait tout le service de midi
+        // sans manger, la "pause" du mécanisme de relais ne s'appliquant que
+        // s'il enchaînait une deuxième vacation le même jour.
+        Creneau amplitude = amplitude(LocalTime.of(10, 0), LocalTime.of(15, 0)); // 5h, sous le plafond de 6h
+
+        List<Creneau> vacations = VacationGeneratorService.genererVacations(
+                List.of(amplitude), new ParametresDecoupage());
+
+        assertThat(vacations).hasSize(2);
+        Creneau avantPause = vacations.get(0);
+        Creneau apresPause = vacations.get(1);
+        assertThat(avantPause.getHeureDebut()).isEqualTo(LocalTime.of(10, 0));
+        assertThat(avantPause.getHeureFin()).isEqualTo(LocalTime.of(12, 30));
+        assertThat(apresPause.getHeureDebut()).isEqualTo(LocalTime.of(13, 15));
+        assertThat(apresPause.getHeureFin()).isEqualTo(LocalTime.of(15, 0));
+        // 45 min de vraie coupure entre les deux, alignée sur la fenêtre repas
+        // de midi par défaut (12h-14h).
+        assertThat(java.time.Duration.between(avantPause.getHeureFin(), apresPause.getHeureDebut()).toMinutes())
+                .isEqualTo(45);
     }
 
     @Test
@@ -50,38 +75,46 @@ class VacationGeneratorServiceTest {
 
         List<Creneau> vacations = VacationGeneratorService.genererVacations(List.of(amplitude), parametres);
 
-        assertThat(vacations).hasSize(3);
+        // 5 vacations, pas 3 : les deux premiers relais (10:00-14:00 puis
+        // 13:30-19:00) et le dernier (18:30-00:00) englobaient chacun une
+        // fenêtre repas entière — midi pour le premier, dîner pour le
+        // dernier — donc chacun est coupé en deux par une vraie pause. Le
+        // relais du milieu (13:30-19:00) ne fait qu'effleurer le début de la
+        // fenêtre dîner (19h) sans l'englober, donc reste entier.
+        assertThat(vacations).hasSize(5);
 
-        // Aucune vacation ne dépasse le plafond configuré (6h par défaut) : la
-        // pause/pause-repas de chaque animateur est le trou entre deux
-        // vacations, jamais une coupure à construire à l'intérieur de l'une
-        // d'elles.
+        // Aucune vacation ne dépasse le plafond configuré (6h par défaut).
         for (Creneau vacation : vacations) {
-            assertThat(vacation.getDureeMinutes())
-                    .isLessThanOrEqualTo(parametres.getDureeVacationMaxMinutes())
-                    .isGreaterThanOrEqualTo(parametres.getDureeVacationMinMinutes());
+            assertThat(vacation.getDureeMinutes()).isLessThanOrEqualTo(parametres.getDureeVacationMaxMinutes());
         }
 
-        Creneau premiere = vacations.get(0);
-        Creneau deuxieme = vacations.get(1);
-        Creneau troisieme = vacations.get(2);
+        Creneau avantDejeuner = vacations.get(0);
+        Creneau apresDejeuner = vacations.get(1);
+        Creneau relaisMilieu = vacations.get(2);
+        Creneau avantDiner = vacations.get(3);
+        Creneau apresDiner = vacations.get(4);
 
         // La première vacation démarre à l'ouverture, la dernière finit à la
-        // fermeture (minuit) : toute l'amplitude est couverte sans trou.
-        assertThat(premiere.getHeureDebut()).isEqualTo(LocalTime.of(10, 0));
-        assertThat(troisieme.getHeureFin()).isEqualTo(LocalTime.of(0, 0));
+        // fermeture (minuit) : toute l'amplitude est couverte, coupures repas
+        // mises à part.
+        assertThat(avantDejeuner.getHeureDebut()).isEqualTo(LocalTime.of(10, 0));
+        assertThat(apresDiner.getHeureFin()).isEqualTo(LocalTime.of(0, 0));
 
-        // Chevauchement de relais de 30 min entre vacations consécutives :
+        // Vraie pause déjeuner (45 min par défaut) entre les deux premières.
+        assertThat(avantDejeuner.getHeureFin()).isEqualTo(LocalTime.of(12, 0));
+        assertThat(apresDejeuner.getHeureDebut()).isEqualTo(LocalTime.of(12, 45));
+
+        // Chevauchement de relais de 30 min avec le segment du milieu :
         // pendant cette fenêtre, deux PosteAffectation existent sur le même
         // stand, donc la couverture n'est jamais en déficit.
-        assertThat(deuxieme.getHeureDebut()).isBefore(premiere.getHeureFin());
-        assertThat(troisieme.getHeureDebut()).isBefore(deuxieme.getHeureFin());
+        assertThat(relaisMilieu.getHeureDebut()).isBefore(apresDejeuner.getHeureFin());
+        assertThat(relaisMilieu.getHeureFin()).isEqualTo(LocalTime.of(19, 0));
 
-        // Les relais tombent près des fenêtres repas par défaut (12h-14h,
-        // 19h-21h) : la relève se fait juste après le déjeuner et juste avant
-        // le dîner, jamais en plein service.
-        assertThat(premiere.getHeureFin()).isEqualTo(LocalTime.of(14, 0));
-        assertThat(deuxieme.getHeureFin()).isEqualTo(LocalTime.of(19, 0));
+        // Vraie pause dîner (45 min) sur le dernier segment, qui chevauche le
+        // milieu et englobe entièrement la fenêtre dîner (19h-21h).
+        assertThat(avantDiner.getHeureDebut()).isBefore(relaisMilieu.getHeureFin());
+        assertThat(avantDiner.getHeureFin()).isEqualTo(LocalTime.of(21, 0));
+        assertThat(apresDiner.getHeureDebut()).isEqualTo(LocalTime.of(21, 45));
     }
 
     @Test
@@ -95,12 +128,19 @@ class VacationGeneratorServiceTest {
 
         List<Creneau> vacations = VacationGeneratorService.genererVacations(List.of(amplitude), parametres);
 
+        // Le dernier segment (17:00-20:00) n'est *pas* coupé pour une pause
+        // dîner : la fenêtre 19h-21h est tronquée par la fermeture (20h), donc
+        // moins de la moitié en reste dans l'amplitude — forcer une coupure
+        // là ne ferait que laisser un reliquat de quelques minutes juste avant
+        // la fermeture, sans aucun intérêt. Le premier segment (10:00-14:00),
+        // lui, englobe entièrement la fenêtre déjeuner et est bien coupé pour
+        // une vraie pause repas, donc descend sous le minimum — attendu.
         for (Creneau vacation : vacations) {
-            assertThat(vacation.getDureeMinutes())
-                    .isGreaterThanOrEqualTo(parametres.getDureeVacationMinMinutes())
-                    .isLessThanOrEqualTo(parametres.getDureeVacationMaxMinutes());
+            assertThat(vacation.getDureeMinutes()).isLessThanOrEqualTo(parametres.getDureeVacationMaxMinutes());
         }
         assertThat(vacations.get(vacations.size() - 1).getHeureFin()).isEqualTo(LocalTime.of(20, 0));
+        assertThat(vacations.get(vacations.size() - 1).getDureeMinutes())
+                .isGreaterThanOrEqualTo(parametres.getDureeVacationMinMinutes());
     }
 
     @Test
