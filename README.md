@@ -77,8 +77,11 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 | `SENTRY_ENVIRONMENT` | `local` | Étiquette d'environnement jointe aux erreurs remontées |
 | `POSTHOG_API_KEY` | *(vide = désactivé)* | Analytics d'usage (PostHog) |
 | `POSTHOG_HOST` | `https://eu.i.posthog.com` | Hôte d'ingestion PostHog |
+| `PLANNING_MCP_API_KEY` | *(vide = MCP inutilisable)* | Clé API attendue pour authentifier le serveur MCP |
+| `PLANNING_MCP_API_KEY_HEADER` | `X-MCP-Api-Key` | En-tête HTTP portant la clé (ou `Authorization: Bearer <clé>`) |
 
-Détails et mise en place : [`docs/observabilite.md`](docs/observabilite.md).
+Détails et mise en place : [`docs/observabilite.md`](docs/observabilite.md) (Sentry/PostHog),
+[`docs/mcp.md`](docs/mcp.md) (serveur MCP).
 
 ### Lancer les tests
 
@@ -277,6 +280,17 @@ dures : elles ne sont jamais contournées silencieusement.
   dernière analyse, avec le score du planning et les contraintes en défaut — ce
   qui permet d'identifier précisément ce qui bloque quand aucun planning
   satisfaisant n'est trouvé.
+
+### Assistant IA
+
+Un serveur MCP permet à un assistant IA de consulter et piloter
+l'application en langage naturel : consulter les animateurs (sans jamais
+exposer nom, prénom ou date de naissance — uniquement l'id et le statut
+majeur/mineur), les créneaux, les stands et les contraintes, activer ou
+désactiver une contrainte, lancer ou arrêter une résolution, et récupérer le
+détail des contraintes légales encore violées après un calcul. Protégé par
+une clé API, désactivé tant qu'aucune clé n'est configurée. Détails dans
+[`docs/mcp.md`](docs/mcp.md).
 
 ### Restitution et échanges de données
 

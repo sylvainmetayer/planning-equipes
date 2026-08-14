@@ -24,6 +24,7 @@
              on the same Jackson release as the rest of the classpath. -->
         <jackson-yaml.version>2.22.0</jackson-yaml.version>
         <jsonschema-generator.version>4.38.0</jsonschema-generator.version>
+        <mcp-server.version>1.13.1</mcp-server.version>
         <skipITs>true</skipITs>
         <surefire-plugin.version>3.5.6</surefire-plugin.version>
         <!-- Full-scale scenario regression tests (@Tag("scenario-lent"):
@@ -71,6 +72,16 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-arc</artifactId>
+        </dependency>
+        <!-- Backs the MCP API-key check (dev.sylvain.planning.mcp):
+             quarkus.http.auth.permission.* policies are the only mechanism that
+             gates a path regardless of which extension mounted it (a plain
+             io.quarkus.vertx.http.runtime.filters.Filter bean does not see
+             requests routed by quarkus-mcp-server-http, which registers its
+             own routes ahead of the global filter chain). -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-security</artifactId>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -136,6 +147,18 @@
             <groupId>com.github.victools</groupId>
             <artifactId>jsonschema-module-jakarta-validation</artifactId>
             <version>${jsonschema-generator.version}</version>
+        </dependency>
+        <!-- MCP (Model Context Protocol) server: exposes a curated,
+             privacy-filtered set of tools (see dev.sylvain.planning.mcp)
+             so an AI assistant can query/drive the planning app in natural
+             language. Streamable-HTTP transport, so it rides the existing
+             Quarkus HTTP server instead of opening a separate stdio process
+             ("quarkus-mcp-server-sse" is the older SSE-only transport,
+             relocated to this artifact as of 1.13.x). -->
+        <dependency>
+            <groupId>io.quarkiverse.mcp</groupId>
+            <artifactId>quarkus-mcp-server-http</artifactId>
+            <version>${mcp-server.version}</version>
         </dependency>
         <!-- Builds and serves the Angular frontend of src/main/webui. -->
         <dependency>

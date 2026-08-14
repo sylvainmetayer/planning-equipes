@@ -19,6 +19,10 @@ services:
       SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}
       POSTHOG_API_KEY: ${POSTHOG_API_KEY:-}
       POSTHOG_HOST: ${POSTHOG_HOST:-https://eu.i.posthog.com}
+      # MCP server, opt-in: blank (the default) makes every /mcp request fail
+      # authentication. See docs/mcp.md.
+      PLANNING_MCP_API_KEY: ${PLANNING_MCP_API_KEY:-}
+      PLANNING_MCP_API_KEY_HEADER: ${PLANNING_MCP_API_KEY_HEADER:-X-MCP-Api-Key}
     depends_on:
       postgres:
         condition: service_healthy

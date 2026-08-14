@@ -10,6 +10,9 @@ JSON sauf mention contraire.
 | `GET` | `/q/openapi` | Spécification OpenAPI générée automatiquement par Quarkus (YAML par défaut) |
 | `GET` | `/q/swagger-ui` | Interface Swagger UI pour explorer et tester les endpoints |
 
+Le service expose aussi un serveur MCP (`/mcp`), pour piloter l'application en
+langage naturel depuis un assistant IA : voir [`mcp.md`](mcp.md).
+
 ## Configuration
 
 | Méthode | Chemin | Description |

@@ -24,6 +24,7 @@ PostgreSQL (+ migrations Flyway)
 | Exports | OpenPDF (PDF), génération ICS maison | Toujours côté serveur |
 | Conteneurisation | Docker Compose (app, postgres, pgadmin) | Config par variables d'environnement |
 | Outillage | `mise.toml` (`temurin-25`, Maven 3.9.9, Node 24) | Toolchain épinglée ; Quinoa télécharge Node au build si absent |
+| MCP | Quarkiverse `quarkus-mcp-server-http` (streamable HTTP) | Assistant IA en langage naturel, voir [`mcp.md`](mcp.md) |
 
 ## Arborescence
 
@@ -34,6 +35,7 @@ docs/                           → toute la documentation technique
 src/main/java/.../solver/
   ├── api/                      → ressources JAX-RS
   ├── domain/                   → modèle Timefold
+  ├── mcp/                      → outils MCP (assistant IA), voir mcp.md
   ├── service/                  → services métier, persistance, exports, jobs
   └── solver/                   → configuration et contraintes du solveur
 src/main/webui/                 → application Angular (sources, package.json)
@@ -86,6 +88,15 @@ dans [`domaine.md`](domaine.md).
 Ressources JAX-RS : `PlanningResource`, `SolverJobResource`, `ReferenceDataResource`,
 `ConstraintResource`, `AffectationExplanationResource`, `CsvImportResource`,
 `DatabaseResource`, `PlanningExportResource`. Voir [`api.md`](api.md).
+
+### `mcp/`
+
+Outils MCP (`@Tool`) exposés à un assistant IA, en délégant aux services
+métier ci-dessus sans dupliquer de logique : `AnimateurMcpTools` (filtré
+confidentialité), `ReferentielMcpTools` (créneaux/stands), `ContrainteMcpTools`,
+`SolveurMcpTools`. Authentification par clé API :
+`McpApiKeyAuthenticationMechanism` / `McpApiKeyIdentityProvider`. Voir
+[`mcp.md`](mcp.md).
 
 ## Frontend
 
