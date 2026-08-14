@@ -9,7 +9,12 @@
   border-color: var(--mat-sys-primary);
 }
 
-.form-grid {
+/* Element-qualified selector: Angular injects Material's own
+   `.mat-mdc-dialog-content { display: block }` after this stylesheet, and at
+   equal specificity the later rule wins, silently turning the grid back into
+   block flow. Qualifying by tag name outranks it regardless of injection order. */
+mat-dialog-content.form-grid,
+form.form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0 1rem;
