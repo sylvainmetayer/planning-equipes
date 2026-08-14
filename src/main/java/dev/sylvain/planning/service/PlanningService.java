@@ -546,7 +546,7 @@ public class PlanningService {
         }
         return new ScenarioImporte(planning, parseParametresLegaux(scenarioData),
                 parseParametresDecoupage(scenarioData), parseParametresSolveur(scenarioData),
-                parseDecoupageAuto(scenarioData));
+                parseDecoupageAuto(scenarioData), parseTypologies(scenarioData));
     }
 
     private static String messageOu(RuntimeException e) {
@@ -561,7 +561,7 @@ public class PlanningService {
      */
     public record ScenarioImporte(PlanningFestival planning, Optional<ParametresLegaux> parametresLegaux,
             Optional<ParametresDecoupage> parametresDecoupage, Optional<ParametresSolveur> parametresSolveur,
-            Optional<DecoupageAutoConfig> decoupageAuto) {
+            Optional<DecoupageAutoConfig> decoupageAuto, List<ReferenceDataService.TypologieItem> typologies) {
     }
 
     /**
@@ -803,6 +803,24 @@ public class PlanningService {
         }
     }
 
+    /**
+     * Reads the optional top-level {@code typologies:} section of a scenario
+     * file, if present — a list of {@code {id, label}} pairs let the scenario
+     * define its own typologie referential entries (e.g. {@code ENF} ->
+     * {@code "Enfance"}) up front, instead of leaving every id a stand or
+     * animateur references to fall back to the id-as-its-own-label default
+     * {@code ReferenceDataRepository#importFromPlanning} derives on the fly.
+     * Empty (not absent) when the section is missing, since a list has no
+     * natural "absent" distinct from "empty".
+     */
+    public List<ReferenceDataService.TypologieItem> chargerTypologiesScenario(String scenarioName) {
+        try {
+            return parseTypologies(lireDonneesScenario(SCENARIOS_DIR + "/" + scenarioName));
+        } catch (IOException e) {
+            throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
+        }
+    }
+
     @SuppressWarnings("unchecked")
     private static Optional<ParametresLegaux> parseParametresLegaux(Map<String, Object> scenarioData) {
         Map<String, Object> data = (Map<String, Object>) scenarioData.get("parametresLegaux");
@@ -881,6 +899,20 @@ public class PlanningService {
         }
         return Optional.of(new DecoupageAutoConfig((String) data.get("groupeSourceNom"),
                 (String) data.get("groupeCibleNom")));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<ReferenceDataService.TypologieItem> parseTypologies(Map<String, Object> scenarioData) {
+        List<Map<String, Object>> data = (List<Map<String, Object>>) scenarioData.get("typologies");
+        if (data == null) {
+            return List.of();
+        }
+        List<ReferenceDataService.TypologieItem> typologies = new ArrayList<>();
+        for (Map<String, Object> typologieData : data) {
+            typologies.add(new ReferenceDataService.TypologieItem(
+                    (String) typologieData.get("id"), (String) typologieData.get("label")));
+        }
+        return typologies;
     }
 
     /**

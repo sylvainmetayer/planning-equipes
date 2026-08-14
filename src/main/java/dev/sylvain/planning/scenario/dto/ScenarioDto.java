@@ -15,6 +15,7 @@ public record ScenarioDto(
         @NotNull @Valid FestivalDto festival,
         @NotNull List<@Valid CreneauDto> creneaux,
         List<@Valid EmplacementDto> emplacements,
+        List<@Valid TypologieDto> typologies,
         @NotNull List<@Valid StandDto> stands,
         @NotNull List<@Valid AnimateurDto> animateurs,
         // Absent: PlanningService.construirePlanningDepuisDonnees generates the

@@ -329,6 +329,16 @@ fournis, qui listent leurs `postes:` directement sur les créneaux découpés),
 l'import se comporte comme avant : les créneaux du scénario remplacent ceux du
 groupe actif.
 
+Un scénario peut aussi fixer une section `typologies:` (liste de `{ id,
+label }`) pour donner un libellé humain aux ids de typologie qu'il référence
+(`stands[].typologiesProposees`, `animateurs[].competences`/`souhaits`) —
+voir [`import-export.md`](import-export.md#chargement-de-scénario) pour le
+détail de l'ordre d'application (après l'import du référentiel lui-même, pour
+ne pas être écrasée par le libellé-egal-à-l'id que dérive automatiquement
+`ReferenceDataRepository#importFromPlanning` pour tout id non déclaré ici).
+Absente, chaque id non déjà présent dans le référentiel `typologie` se voit
+créé avec ce libellé-egal-à-l'id par défaut.
+
 Une contrainte dure dans `LegalConstraints` complète le dispositif :
 `pauseMinimaleEntreVacations` (l'écart entre deux vacations d'un même
 animateur le même jour doit être suffisant, 30 min par défaut). Le repos

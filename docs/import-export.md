@@ -71,6 +71,18 @@ devient le groupe actif. Une notification prévient alors l'opérateur du nom du
 groupe activé. Absente, l'import se comporte comme ci-dessus. Voir
 [`domaine.md`](domaine.md#découpage-automatique-en-vacations).
 
+Les typologies (`typologiesProposees` d'un stand, `competences`/`souhaits`
+d'un animateur) référencent le référentiel `typologie` (id + libellé,
+CRUD-managé via `/api/typologies` — plus un enum figé). Tout id de typologie
+que le fichier référence sans le déclarer explicitement se voit créé à
+l'import avec un libellé identique à son id (ex. id `ENF` -> libellé `ENF`).
+Une section `typologies: [{ id, label }, ...]` optionnelle en tête de fichier
+permet de fixer un vrai libellé pour ces ids (ex. `ENF` -> `Enfance`) : elle
+est appliquée après l'import de la planification elle-même, pour ne pas être
+écrasée par la création automatique ci-dessus. Une typologie déjà présente en
+base (créée par un import précédent ou via l'écran de gestion) voit son
+libellé mis à jour si le scénario la redéclare.
+
 ## Schéma de validation d'un fichier de scénario
 
 [`docs/schema/scenario-schema.json`](schema/scenario-schema.json) décrit la
@@ -78,9 +90,12 @@ structure attendue d'un fichier de scénario (sections obligatoires `festival`,
 `creneaux`, `stands` — dont `niveauEffort` et `ouvertures` par stand —,
 `animateurs`, et les sections optionnelles `postes` (voir plus haut),
 `parametresLegaux`, `parametresDecoupage`, `parametresSolveur`,
-`decoupageAuto`) : types de champs, sections/champs obligatoires, durées non
-négatives, valeurs d'enum (`TypologieJeu`, `NiveauCompetence`, `NiveauEffort`,
-`StrategieCouverturePendantPause`).
+`decoupageAuto`, `typologies`) : types de champs, sections/champs
+obligatoires, durées non négatives, valeurs d'enum (`NiveauCompetence`,
+`NiveauEffort`, `StrategieCouverturePendantPause`). Les ids de typologie
+eux-mêmes (`typologiesProposees`, `competences`, `souhaits`, et la section
+`typologies`) sont de simples chaînes, pas un enum : le référentiel
+`typologie` est CRUD-managé, pas figé dans le code.
 
 Le schéma n'est pas écrit à la main : il est **généré** à partir des DTOs
 Jackson + Bean Validation de `dev.sylvain.planning.scenario.dto`

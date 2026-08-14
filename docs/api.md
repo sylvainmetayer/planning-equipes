@@ -235,7 +235,11 @@ fichier définit `parametresLegaux:`, `parametresDecoupage:` et/ou
 [`domaine.md`](domaine.md#découpage-automatique-en-vacations)), ces réglages
 sont aussi appliqués — `parametresSolveur.dureeResolutionSecondes` reconfigure
 la durée de résolution (onglet Données) ; absents, les réglages actuellement
-en base sont laissés tels quels.
+en base sont laissés tels quels. Une section `typologies: [{ id, label }, …]`
+optionnelle fixe le libellé du référentiel `typologie` (voir
+[`import-export.md`](import-export.md#chargement-de-scénario)) pour les ids
+que le fichier utilise, au lieu de laisser l'import leur donner un libellé
+identique à leur id.
 
 `POST /api/reference-data/import-scenario-fichier` fait la même chose pour un
 scénario envoyé en corps de requête (bouton « Importer un fichier » de

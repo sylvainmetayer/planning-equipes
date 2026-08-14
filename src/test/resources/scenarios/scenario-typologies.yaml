@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+festival:
+  dateDebut: 2026-07-08
+
+# Fixture for ReferenceDataResourceTypologiesTest: STRATEGIE is a seeded
+# typologie (V3__reference_crud.sql, label == id by default) redeclared here
+# with a real label, to prove the explicit label overwrites it. JEUX_VIDEO is
+# only referenced by the stand below (never declared here) so it must fall
+# back to the id-as-its-own-label default the import derives on the fly.
+typologies:
+  - id: STRATEGIE
+    label: "Stratégie"
+
+creneaux:
+  - id: J1
+    jour: 1
+    date: 2026-07-08
+    heureDebut: "09:00"
+    heureFin: "18:00"
+
+stands:
+  - id: STAND-A
+    nom: Stand A
+    typologiesProposees:
+      - STRATEGIE
+      - JEUX_VIDEO
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+
+animateurs:
+  - id: A1
+    prenom: Alice
+    nom: Referente
+    dateNaissance: 2002-07-19
+    manager: false
+    competences:
+      STRATEGIE: REFERENT
+    joursIndisponibles: []

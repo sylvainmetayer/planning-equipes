@@ -299,10 +299,25 @@ public class ReferenceDataResource {
         Optional<DecoupageAutoConfig> decoupageAuto = planningService.chargerDecoupageAutoScenario(name);
         if (decoupageAuto.isPresent()) {
             referenceDataService.appliquerDecoupageAutomatique(planning, decoupageAuto.get());
+            appliquerTypologiesScenario(name);
             return Response.ok(new ImportScenarioResult(decoupageAuto.get().groupeCibleNom())).build();
         }
         referenceDataService.importFromPlanning(planning);
+        appliquerTypologiesScenario(name);
         return Response.noContent().build();
+    }
+
+    /**
+     * Applies the scenario's optional {@code typologies:} section, if any,
+     * <b>after</b> the planning itself has been imported: {@code
+     * ReferenceDataRepository#importFromPlanning} auto-derives an id-as-its-
+     * own-label typologie entry for every id a stand/animateur references and
+     * unconditionally overwrites any existing label when it does — so an
+     * explicit {@code {id, label}} pair from the scenario must be applied
+     * afterwards to actually stick, not before.
+     */
+    private void appliquerTypologiesScenario(String name) {
+        planningService.chargerTypologiesScenario(name).forEach(referenceDataService::createTypologie);
     }
 
     /**
@@ -325,9 +340,11 @@ public class ReferenceDataResource {
             importe.parametresSolveur().ifPresent(referenceDataService::updateParametresSolveur);
             if (importe.decoupageAuto().isPresent()) {
                 referenceDataService.appliquerDecoupageAutomatique(importe.planning(), importe.decoupageAuto().get());
+                importe.typologies().forEach(referenceDataService::createTypologie);
                 return Response.ok(new ImportScenarioResult(importe.decoupageAuto().get().groupeCibleNom())).build();
             }
             referenceDataService.importFromPlanning(importe.planning());
+            importe.typologies().forEach(referenceDataService::createTypologie);
             return Response.noContent().build();
         } catch (IllegalArgumentException e) {
             return Response.status(Response.Status.BAD_REQUEST)
