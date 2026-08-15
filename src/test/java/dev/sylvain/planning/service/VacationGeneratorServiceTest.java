@@ -263,4 +263,82 @@ class VacationGeneratorServiceTest {
         }
         assertThat(premieresFins).hasSizeGreaterThan(1);
     }
+
+    /**
+     * The property the staggering actually needs: <b>every</b> famille relays
+     * at its own instant, not merely "at least two of them differ". The
+     * earlier implementation shifted the target before the range clamp, and a
+     * clamp has two edges — familles pushed past either edge all snapped back
+     * onto that same edge, so several familles kept relaying together. That is
+     * what doubled the seat count at the changeover instant on real data.
+     */
+    @Test
+    void chaqueFamilleReleveAUnInstantDistinct() {
+        Creneau amplitude = amplitude(LocalTime.of(10, 0), LocalTime.of(0, 0));
+        ParametresDecoupage parametres = new ParametresDecoupage();
+        parametres.setNombreFamillesDecalage(4);
+        parametres.setDureeDecalageMaxMinutes(60);
+
+        List<Creneau> vacations = VacationGeneratorService.genererVacations(List.of(amplitude), parametres);
+
+        Set<LocalTime> premieresFins = new java.util.HashSet<>();
+        for (int famille = 0; famille < 4; famille++) {
+            int f = famille;
+            premieresFins.add(vacations.stream()
+                    .filter(v -> v.getFamille() == f)
+                    .min(java.util.Comparator.comparing(Creneau::getHeureDebut))
+                    .orElseThrow()
+                    .getHeureFin());
+        }
+        assertThat(premieresFins).as("une heure de relais distincte par famille").hasSize(4);
+    }
+
+    /**
+     * The fan is spread <i>inside</i> the meal window, never outside it: the
+     * handover still happens around a meal for every famille, which is the
+     * whole point of snapping to the window in the first place.
+     */
+    @Test
+    void lEventailDesFamillesResteDansLaFenetreRepas() {
+        Creneau amplitude = amplitude(LocalTime.of(10, 0), LocalTime.of(0, 0));
+        ParametresDecoupage parametres = new ParametresDecoupage();
+        parametres.setNombreFamillesDecalage(4);
+        parametres.setDureeDecalageMaxMinutes(60);
+
+        List<Creneau> vacations = VacationGeneratorService.genererVacations(List.of(amplitude), parametres);
+
+        for (int famille = 0; famille < 4; famille++) {
+            int f = famille;
+            LocalTime premierRelais = vacations.stream()
+                    .filter(v -> v.getFamille() == f)
+                    .min(java.util.Comparator.comparing(Creneau::getHeureDebut))
+                    .orElseThrow()
+                    .getHeureFin();
+            assertThat(premierRelais)
+                    .as("relais de la famille %d dans la fenêtre déjeuner", f)
+                    .isBetween(parametres.getFenetreRepasMidiDebut(), parametres.getFenetreRepasMidiFin());
+        }
+    }
+
+    /**
+     * Backward compatibility is exact, not approximate: with the default
+     * single famille the fan is inert and the cut lands where it always did,
+     * whatever {@code dureeDecalageMaxMinutes} happens to be set to.
+     */
+    @Test
+    void uneSeuleFamilleIgnoreCompletementLEtalement() {
+        Creneau amplitude = amplitude(LocalTime.of(10, 0), LocalTime.of(0, 0));
+        ParametresDecoupage sansEtalement = new ParametresDecoupage();
+        ParametresDecoupage avecEtalement = new ParametresDecoupage();
+        avecEtalement.setNombreFamillesDecalage(1);
+        avecEtalement.setDureeDecalageMaxMinutes(240);
+
+        List<Creneau> reference = VacationGeneratorService.genererVacations(List.of(amplitude), sansEtalement);
+        List<Creneau> avec = VacationGeneratorService.genererVacations(List.of(amplitude), avecEtalement);
+
+        assertThat(avec).extracting(Creneau::getHeureDebut, Creneau::getHeureFin)
+                .containsExactlyElementsOf(reference.stream()
+                        .map(v -> org.assertj.core.groups.Tuple.tuple(v.getHeureDebut(), v.getHeureFin()))
+                        .toList());
+    }
 }

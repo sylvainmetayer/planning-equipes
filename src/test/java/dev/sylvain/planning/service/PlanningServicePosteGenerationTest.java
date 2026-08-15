@@ -4,8 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 
@@ -103,11 +106,53 @@ class PlanningServicePosteGenerationTest {
         // deux (sinon on aurait 4 postes, pas 2 : le produit cartésien
         // complet d'avant l'introduction du décalage).
         assertThat(postes).hasSize(2);
-        int familleStandA = Math.floorMod(standA.getId().hashCode(), 2);
-        int familleStandB = Math.floorMod(standB.getId().hashCode(), 2);
-        for (PosteAffectation poste : postes) {
-            int familleAttendue = poste.getStand().getId().equals(standA.getId()) ? familleStandA : familleStandB;
-            assertThat(poste.getCreneau().getFamille()).isEqualTo(familleAttendue);
+        assertThat(postes).extracting(p -> p.getStand().getId() + "->" + p.getCreneau().getFamille())
+                .containsExactlyInAnyOrder("STAND-A->0", "STAND-B->1");
+    }
+
+    /**
+     * Familles must be <b>balanced</b>, not merely deterministic: the
+     * staggering only breaks the simultaneity peak if each grid variant
+     * carries a comparable share of the demand. The hash this replaces put
+     * 36 of 91 seats on one famille out of four on the reference scenario —
+     * see {@code PlanningService#repartirStandsParFamille}.
+     */
+    @Test
+    void lesStandsSontRepartisEquitablementEntreLesFamilles() {
+        List<Stand> stands = new ArrayList<>();
+        for (int i = 0; i < 63; i++) {
+            stands.add(new Stand("STAND-" + i, "S" + i, Set.of(), 1, 1, false));
         }
+        List<Creneau> creneaux = new ArrayList<>();
+        for (int famille = 0; famille < 4; famille++) {
+            Creneau creneau = new Creneau(100L + famille, 1, LocalDate.of(2026, 8, 14),
+                    LocalTime.of(9, 0), LocalTime.of(13, 0));
+            creneau.setFamille(famille);
+            creneaux.add(creneau);
+        }
+
+        Map<Integer, Long> parFamille = PlanningService.construirePostes(stands, creneaux).stream()
+                .collect(Collectors.groupingBy(p -> p.getCreneau().getFamille(), Collectors.counting()));
+
+        assertThat(parFamille).hasSize(4);
+        long min = parFamille.values().stream().mapToLong(Long::longValue).min().orElseThrow();
+        long max = parFamille.values().stream().mapToLong(Long::longValue).max().orElseThrow();
+        assertThat(max - min).as("écart entre la plus grosse et la plus petite famille").isLessThanOrEqualTo(1);
+    }
+
+    /** Same stands in a different order must land on the same familles. */
+    @Test
+    void laRepartitionParFamilleEstStableQuelQueSoitLOrdreDesStands() {
+        Creneau famille0 = new Creneau(10L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
+        Creneau famille1 = new Creneau(11L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
+        famille1.setFamille(1);
+        List<Creneau> creneaux = List.of(famille0, famille1);
+
+        Map<String, Integer> ordreDirect = PlanningService.construirePostes(List.of(standA, standB), creneaux).stream()
+                .collect(Collectors.toMap(p -> p.getStand().getId(), p -> p.getCreneau().getFamille()));
+        Map<String, Integer> ordreInverse = PlanningService.construirePostes(List.of(standB, standA), creneaux).stream()
+                .collect(Collectors.toMap(p -> p.getStand().getId(), p -> p.getCreneau().getFamille()));
+
+        assertThat(ordreInverse).isEqualTo(ordreDirect);
     }
 }

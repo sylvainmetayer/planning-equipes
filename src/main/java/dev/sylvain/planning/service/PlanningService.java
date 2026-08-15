@@ -239,21 +239,23 @@ public class PlanningService {
      *
      * <p>When {@code creneaux} contains more than one relay-grid "famille"
      * (see {@link VacationGeneratorService#genererVacations}), each stand is
-     * deterministically assigned to exactly one — {@code hash(stand.id) mod
-     * nombreFamilles} — and only ever paired against that famille's créneaux,
-     * instead of the full cross product. Whichever family a stand lands on is
-     * stable across regenerations (a plain hash of its own id, nothing else),
-     * so re-running découpage doesn't reshuffle which stands share a grid.
+     * deterministically assigned to exactly one (see
+     * {@link #repartirStandsParFamille}) and only ever paired against that
+     * famille's créneaux, instead of the full cross product. Whichever family a
+     * stand lands on is stable across regenerations (it depends only on the set
+     * of stand ids), so re-running découpage doesn't reshuffle which stands
+     * share a grid.
      * With a single famille (the default, {@code famille} always 0) this is
      * exactly the historical unfiltered cross product.</p>
      */
     static List<PosteAffectation> construirePostes(List<Stand> stands, List<Creneau> creneaux) {
         int nombreFamilles = creneaux.stream().mapToInt(Creneau::getFamille).max().orElse(0) + 1;
+        Map<String, Integer> familleParStand = repartirStandsParFamille(stands, nombreFamilles);
         List<PosteAffectation> postes = new ArrayList<>();
         int counter = 0;
         for (Stand stand : stands) {
             int seats = Math.max(1, stand.getEffectifMin());
-            int familleStand = Math.floorMod(stand.getId().hashCode(), nombreFamilles);
+            int familleStand = familleParStand.get(stand.getId());
             for (Creneau creneau : creneaux) {
                 if (creneau.getFamille() != familleStand) {
                     continue;
@@ -274,6 +276,30 @@ public class PlanningService {
             }
         }
         return postes;
+    }
+
+    /**
+     * Assigns every stand to exactly one relay-grid famille, round-robin over
+     * the stands sorted by id. Deterministic and stable across regenerations
+     * (it depends on nothing but the set of stand ids), just like the hash it
+     * replaces — but <b>balanced</b>, which the hash was not.
+     *
+     * <p>{@code floorMod(id.hashCode(), n)} spreads ids pseudo-randomly, and on
+     * a roster this small that is visibly lumpy: on the reference scenario it
+     * put 36 of the 91 seats on a single famille out of four (19/21/36/15).
+     * That famille alone then changed crew at one instant with 40% of the whole
+     * festival's demand behind it, which is exactly the simultaneity peak the
+     * staggering exists to break — the mechanism was working against itself.
+     * Round-robin over sorted ids gives buckets that differ by at most one
+     * stand.</p>
+     */
+    private static Map<String, Integer> repartirStandsParFamille(List<Stand> stands, int nombreFamilles) {
+        List<String> ids = stands.stream().map(Stand::getId).sorted().toList();
+        Map<String, Integer> familles = new HashMap<>();
+        for (int i = 0; i < ids.size(); i++) {
+            familles.put(ids.get(i), i % nombreFamilles);
+        }
+        return familles;
     }
 
     /** {@code heureDebut} shifted forward by {@code minutes}, wrapping past midnight. */

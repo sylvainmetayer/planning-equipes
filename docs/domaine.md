@@ -298,6 +298,17 @@ que le découpage crée des pics de demande *simultanée* — typiquement un
 `dureeVacationMinMinutes` bas (plus de relais/jour) et/ou
 `strategieCouverturePendantPause: RELEVE` (une vacation de relève de plus par
 pause, sur *chaque* stand concerné, concentrée sur la même fenêtre horaire).
+Le chevauchement de relais est lui-même une source de pic, et la principale :
+pendant sa durée, *chaque* stand qui relève compte double. Si tous les stands
+relèvent au même instant — ce qui arrive dès que la grille de vacations est
+synchronisée, voir `docs/optimisation-solveur.md` — le nombre de sièges à pourvoir
+double à cet instant précis. Sur le scénario de référence, 86 sièges réellement
+ouverts devenaient 172 à pourvoir à 18:30, pour 153 animateurs : infaisable par
+construction, sans la moindre pénurie d'animateurs. Deux leviers désamorcent ce
+pic : `nombreFamillesDecalage` (grilles décalées, chaque stand n'en suivant
+qu'une, donc les relèves s'étalent) et `dureeChevauchementMinutes` (durée
+pendant laquelle le stand compte double).
+
 `FeasibilityAnalyzer` ne voit pas ce pic : c'est une estimation optimiste,
 pré-résolution, au niveau du besoin agrégé par jour (voir sa javadoc) — elle
 peut répondre « réalisable » alors que le solveur ne parvient pas à ramener le
