@@ -10,6 +10,13 @@ export type NiveauContrainte = 'HARD' | 'MEDIUM' | 'SOFT';
 export interface TypologieItem {
   id: string;
   label: string;
+  /**
+   * The single "ninja" typologie of the referential: animateurs who hold it are
+   * polyvalent — the solver may dispatch them on any stand, and keeps some of
+   * them free as a buffer against last-minute absences. Promoting one typologie
+   * demotes the previous holder server-side.
+   */
+  ninja?: boolean;
 }
 
 export interface Animateur {

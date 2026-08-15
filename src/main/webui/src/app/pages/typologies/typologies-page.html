@@ -7,6 +7,17 @@
       <mat-icon>add</mat-icon>
       <ng-container i18n="@@common.add">Ajouter</ng-container>
     </button>
+    <mat-form-field appearance="outline" class="ninja-select">
+      <mat-label i18n="@@typologies.field.ninja">Typologie ninja</mat-label>
+      <mat-select name="ninja" [disabled]="editingLocked()" [ngModel]="typologieNinjaId()"
+                  (ngModelChange)="setNinja($event)">
+        <mat-option [value]="null" i18n="@@typologies.field.noNinja">Aucune</mat-option>
+        @for (typologie of store.typologies(); track typologie.id) {
+          <mat-option [value]="typologie.id">{{ typologie.label || typologie.id }}</mat-option>
+        }
+      </mat-select>
+      <mat-hint i18n="@@typologies.field.ninjaHint">Un animateur qui possède cette typologie sait s'adapter : il peut être affecté à n'importe quel stand.</mat-hint>
+    </mat-form-field>
   </mat-card-actions>
   <mat-card-content class="table-wrapper">
     <table mat-table [dataSource]="store.typologies()">
@@ -17,6 +28,15 @@
       <ng-container matColumnDef="label">
         <th mat-header-cell *matHeaderCellDef i18n="@@typologies.field.label">Libellé</th>
         <td mat-cell *matCellDef="let typologie">{{ typologie.label }}</td>
+      </ng-container>
+      <ng-container matColumnDef="ninja">
+        <th mat-header-cell *matHeaderCellDef i18n="@@typologies.field.ninja">Typologie ninja</th>
+        <td mat-cell *matCellDef="let typologie">
+          @if (typologie.ninja) {
+            <mat-icon i18n-matTooltip="@@typologies.field.ninjaHint" matTooltip="Un animateur qui possède cette typologie sait s'adapter : il peut être affecté à n'importe quel stand."
+                      i18n-aria-label="@@typologies.field.ninja" aria-label="Typologie ninja">bolt</mat-icon>
+          }
+        </td>
       </ng-container>
       <ng-container matColumnDef="actions">
         <th mat-header-cell *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>

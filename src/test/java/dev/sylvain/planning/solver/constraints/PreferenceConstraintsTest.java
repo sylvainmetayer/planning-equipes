@@ -65,6 +65,47 @@ class PreferenceConstraintsTest extends ConstraintTestBase {
     }
 
     @Test
+    void seulPolyvalentOccupeSurUnCreneauEstPenalise() {
+        // The only ninja works this créneau: no polyvalent left to patch an absence.
+        Animateur ninja = ninja("N1");
+        verify("preserverBufferPolyvalents")
+                .given(ninja, poste(standStrat, creneauMatin, ninja))
+                .penalizesBy(1);
+    }
+
+    @Test
+    void unPolyvalentLibreSuffitAConstituerLeBuffer() {
+        Animateur occupe = ninja("N1");
+        Animateur libre = ninja("N2");
+        verify("preserverBufferPolyvalents")
+                .given(occupe, libre, poste(standStrat, creneauMatin, occupe))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void polyvalentSurPlusieursPostesDuMemeCreneauNestCompteQuUneFois() {
+        // Two seats, one and the same ninja: still exactly one polyvalent busy,
+        // so a second ninja keeps the buffer satisfied.
+        Animateur occupe = ninja("N1");
+        Animateur libre = ninja("N2");
+        verify("preserverBufferPolyvalents")
+                .given(occupe, libre,
+                        poste(standStrat, creneauMatin, occupe),
+                        poste(standAutre, creneauMatin, occupe))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void sansTypologieNinjaAucunePenalite() {
+        // No typologie flagged ninja in the referential: nobody is polyvalent and
+        // the constraint must stay silent rather than penalising every créneau.
+        Animateur a1 = majeurReferent("A1");
+        verify("preserverBufferPolyvalents")
+                .given(a1, poste(standStrat, creneauMatin, a1))
+                .penalizesBy(0);
+    }
+
+    @Test
     void standPremiumEstComptabiliseDansLequilibrage() {
         Stand premium = standPremium("STAND-PREMIUM");
         Animateur a1 = majeurReferent("A1");

@@ -20,6 +20,15 @@ public class Animateur {
     /** Ids referencing the {@code typologie} referential table — stand typologies the animateur wishes to be assigned to. */
     private Set<String> souhaits = new HashSet<>();
     private Set<LocalDate> joursIndisponibles = new HashSet<>();
+    /**
+     * Derived, never stored on the animateur: true when {@link #competences}
+     * contains the typologie flagged "ninja" in the referential. A ninja knows
+     * how to adapt, so the solver may dispatch them on any stand — see
+     * {@link #possedeCompetencePour(Stand)} — and keeps some of them in reserve
+     * (contrainte {@code preserverBufferPolyvalents}). Set when the problem is
+     * built, from the referential's single ninja typologie.
+     */
+    private boolean ninja;
 
     public Animateur() {
     }
@@ -85,8 +94,12 @@ public class Animateur {
                 && !estMineurLe(dateReference);
     }
 
+    /**
+     * A ninja adapts to any stand, so they are competent everywhere; anyone else
+     * needs at least one competence among the stand's typologies.
+     */
     public boolean possedeCompetencePour(Stand stand) {
-        return stand.getTypologiesProposees().stream().anyMatch(competences::containsKey);
+        return ninja || stand.getTypologiesProposees().stream().anyMatch(competences::containsKey);
     }
 
     public boolean estReferentPour(Stand stand) {
@@ -143,6 +156,23 @@ public class Animateur {
 
     public void setManager(boolean manager) {
         this.manager = manager;
+    }
+
+    /** True when the animateur holds the referential's ninja typologie — see {@link #ninja}. */
+    public boolean isNinja() {
+        return ninja;
+    }
+
+    public void setNinja(boolean ninja) {
+        this.ninja = ninja;
+    }
+
+    /**
+     * Recomputes {@link #ninja} from the referential's ninja typologie id
+     * ({@code null} when no typologie carries the flag).
+     */
+    public void appliquerTypologieNinja(String typologieNinja) {
+        this.ninja = typologieNinja != null && competences != null && competences.containsKey(typologieNinja);
     }
 
     public Map<String, NiveauCompetence> getCompetences() {

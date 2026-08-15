@@ -49,7 +49,9 @@ export class TypologieFormDialog {
 
   protected async save(): Promise<void> {
     const draft = this.draft();
-    const typologie: TypologieItem = { id: draft.id.trim(), label: draft.label.trim() };
+    // ninja is carried over untouched: it is set from the list page's dedicated
+    // select (only one typologie may hold it), and a PUT replaces the whole row.
+    const typologie: TypologieItem = { id: draft.id.trim(), label: draft.label.trim(), ninja: draft.ninja ?? false };
     if (await this.crud.save('typologies', typologie, this.editingId(), $localize`:@@typologies.entityLabel:Typologie`)) {
       this.dialogRef.close(true);
     }
@@ -57,5 +59,7 @@ export class TypologieFormDialog {
 }
 
 function toDraft(typologie: TypologieItem | null): TypologieItem {
-  return typologie ? { id: typologie.id, label: typologie.label ?? '' } : { id: '', label: '' };
+  return typologie
+    ? { id: typologie.id, label: typologie.label ?? '', ninja: typologie.ninja ?? false }
+    : { id: '', label: '', ninja: false };
 }

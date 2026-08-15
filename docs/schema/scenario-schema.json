@@ -340,6 +340,9 @@
         "label" : {
           "type" : "string",
           "minLength" : 1
+        },
+        "ninja" : {
+          "type" : "boolean"
         }
       },
       "required" : [ "id", "label" ]

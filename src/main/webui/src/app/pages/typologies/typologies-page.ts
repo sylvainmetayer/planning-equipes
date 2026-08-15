@@ -1,8 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
@@ -14,12 +17,21 @@ import { TypologieFormData, TypologieFormDialog } from './typologie-form-dialog'
 /** Typologies CRUD: the game families a stand can propose and an animator master. */
 @Component({
   selector: 'app-typologies-page',
-  imports: [MatCardModule, MatButtonModule, MatIconModule, MatTableModule, MatTooltipModule],
+  imports: [
+    FormsModule,
+    MatCardModule,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatIconModule,
+    MatSelectModule,
+    MatTableModule,
+    MatTooltipModule
+  ],
   templateUrl: './typologies-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TypologiesPage {
-  protected readonly columns = ['id', 'label', 'actions'];
+  protected readonly columns = ['id', 'label', 'ninja', 'actions'];
   protected readonly store = inject(ReferenceDataStore);
   protected readonly jobs = inject(SolverJobService);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
@@ -30,6 +42,35 @@ export class TypologiesPage {
 
   constructor() {
     void this.crud.reload();
+  }
+
+  /** Id of the typologie currently flagged ninja — at most one, `null` when none. */
+  protected readonly typologieNinjaId = computed(
+    () => this.store.typologies().find((typologie) => typologie.ninja)?.id ?? null
+  );
+
+  /**
+   * Promotes `id` as the single ninja typologie, or clears the flag altogether
+   * when `id` is `null`. Only the newly selected typologie is sent: the server
+   * demotes the previous holder in the same transaction (a partial unique index
+   * makes two ninjas impossible anyway).
+   */
+  protected async setNinja(id: string | null): Promise<void> {
+    const label = $localize`:@@typologies.entityLabel:Typologie`;
+    const courante = this.store.typologies().find((typologie) => typologie.ninja) ?? null;
+    if ((courante?.id ?? null) === id) {
+      return;
+    }
+    if (id === null) {
+      if (courante) {
+        await this.crud.save('typologies', { ...courante, ninja: false }, courante.id, label);
+      }
+      return;
+    }
+    const cible = this.store.typologies().find((typologie) => typologie.id === id);
+    if (cible) {
+      await this.crud.save('typologies', { ...cible, ninja: true }, cible.id, label);
+    }
   }
 
   protected openCreate(): void {

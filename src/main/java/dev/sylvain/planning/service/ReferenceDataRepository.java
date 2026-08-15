@@ -14,6 +14,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -608,6 +609,19 @@ public class ReferenceDataRepository {
                     }
                 }
             }
+            // Polyvalence is carried by the referential, not by the animateur row:
+            // holding the ninja typologie is what makes an animateur dispatchable
+            // on any stand, so the flag is derived here once competences are known.
+            String typologieNinja = null;
+            try (PreparedStatement ps = connection.prepareStatement("SELECT id FROM typologie WHERE ninja LIMIT 1");
+                    ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    typologieNinja = rs.getString("id");
+                }
+            }
+            for (Animateur animateur : byId.values()) {
+                animateur.appliquerTypologieNinja(typologieNinja);
+            }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to list animators", e);
         }
@@ -707,15 +721,27 @@ public class ReferenceDataRepository {
     public List<TypologieItem> listTypologies() {
         List<TypologieItem> typologies = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = connection.prepareStatement("SELECT id, label FROM typologie ORDER BY id");
+                PreparedStatement ps = connection
+                        .prepareStatement("SELECT id, label, ninja FROM typologie ORDER BY id");
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                typologies.add(new TypologieItem(rs.getString("id"), rs.getString("label")));
+                typologies.add(new TypologieItem(rs.getString("id"), rs.getString("label"), rs.getBoolean("ninja")));
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to list typologies", e);
         }
         return typologies;
+    }
+
+    /** Id of the single typologie flagged ninja, empty when the referential has none. */
+    public Optional<String> findTypologieNinja() {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = connection.prepareStatement("SELECT id FROM typologie WHERE ninja LIMIT 1");
+                ResultSet rs = ps.executeQuery()) {
+            return rs.next() ? Optional.of(rs.getString("id")) : Optional.empty();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to read the ninja typology", e);
+        }
     }
 
     public boolean typologieExists(String id) {
@@ -724,7 +750,24 @@ public class ReferenceDataRepository {
 
     public void saveTypologie(TypologieItem typologie) {
         try (Connection connection = dataSource.getConnection()) {
-            upsertTypologie(connection, typologie);
+            connection.setAutoCommit(false);
+            try {
+                // Only one typologie may be ninja: demote the previous holder in the
+                // same transaction, otherwise the partial unique index of V30 rejects
+                // the insert and the user sees a raw constraint violation.
+                if (typologie.ninja()) {
+                    try (PreparedStatement ps = connection
+                            .prepareStatement("UPDATE typologie SET ninja = FALSE WHERE ninja AND id <> ?")) {
+                        ps.setString(1, typologie.id());
+                        ps.executeUpdate();
+                    }
+                }
+                upsertTypologie(connection, typologie);
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw e;
+            }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to save typology " + typologie.id(), e);
         }
@@ -753,7 +796,25 @@ public class ReferenceDataRepository {
 
     private void upsertTypologie(Connection connection, TypologieItem typologie) throws SQLException {
         try (PreparedStatement ps = connection.prepareStatement(
-                "INSERT INTO typologie (id, label) VALUES (?, ?) ON CONFLICT (id) DO UPDATE SET label = EXCLUDED.label")) {
+                "INSERT INTO typologie (id, label, ninja) VALUES (?, ?, ?) "
+                        + "ON CONFLICT (id) DO UPDATE SET label = EXCLUDED.label, ninja = EXCLUDED.ninja")) {
+            ps.setString(1, typologie.id());
+            ps.setString(2, typologie.label());
+            ps.setBoolean(3, typologie.ninja());
+            ps.executeUpdate();
+        }
+    }
+
+    /**
+     * Upsert used for the typologies {@link #importFromPlanning} derives from the
+     * ids stands and animateurs reference. Unlike {@link #upsertTypologie} it
+     * leaves {@code ninja} alone: an import must not silently demote the ninja
+     * typologie just because the derived item carries the default {@code false}.
+     */
+    private void upsertTypologieDerivee(Connection connection, TypologieItem typologie) throws SQLException {
+        try (PreparedStatement ps = connection.prepareStatement(
+                "INSERT INTO typologie (id, label, ninja) VALUES (?, ?, FALSE) "
+                        + "ON CONFLICT (id) DO UPDATE SET label = EXCLUDED.label")) {
             ps.setString(1, typologie.id());
             ps.setString(2, typologie.label());
             ps.executeUpdate();
@@ -1136,7 +1197,7 @@ public class ReferenceDataRepository {
                     upsertEmplacementTx(connection, emplacement);
                 }
                 for (TypologieItem typologie : derivedTypologies(standsById.values(), animateurs)) {
-                    upsertTypologie(connection, typologie);
+                    upsertTypologieDerivee(connection, typologie);
                 }
                 for (Stand stand : standsById.values()) {
                     upsertStand(connection, stand);

@@ -750,6 +750,16 @@ public class PlanningService {
             animateurs.add(animateur);
         }
 
+        // A scenario carries its own typologie referential, so the ninja typologie
+        // comes from the file itself — the database one may not be loaded yet (or
+        // may describe a different festival entirely).
+        String typologieNinja = parseTypologies(scenarioData).stream()
+                .filter(ReferenceDataService.TypologieItem::ninja)
+                .map(ReferenceDataService.TypologieItem::id)
+                .findFirst()
+                .orElse(null);
+        animateurs.forEach(animateur -> animateur.appliquerTypologieNinja(typologieNinja));
+
         LocalDate dateDebut = parseLocalDate(
             ((Map<String, Object>) scenarioData.get("festival")).get("dateDebut"),
             "festival.dateDebut");
@@ -957,7 +967,8 @@ public class PlanningService {
         List<ReferenceDataService.TypologieItem> typologies = new ArrayList<>();
         for (Map<String, Object> typologieData : data) {
             typologies.add(new ReferenceDataService.TypologieItem(
-                    (String) typologieData.get("id"), (String) typologieData.get("label")));
+                    (String) typologieData.get("id"), (String) typologieData.get("label"),
+                    Boolean.TRUE.equals(typologieData.get("ninja"))));
         }
         return typologies;
     }

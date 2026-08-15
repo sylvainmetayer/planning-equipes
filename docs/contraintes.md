@@ -264,6 +264,29 @@ souhaits — voir « Pondérer une contrainte » plus bas.
 | --- | --- |
 | `favoriserMixiteDesNiveaux` | Associer un débutant à un référent pour la montée en compétence |
 | `equilibrerCreneauxPenibles` | Répartir équitablement entre animateurs les créneaux « pénibles » (stands épuisants ou premium) |
+| `preserverBufferPolyvalents` | Garder au moins un animateur polyvalent (porteur de la typologie « ninja ») libre sur chaque créneau, pour pouvoir réparer le planning en cas d'absence de dernière minute |
+
+#### Typologie « ninja » et buffer de polyvalents
+
+Une seule typologie du référentiel peut être marquée **ninja** (case à cocher
+« Typologie ninja » sur la page Typologies, colonne `typologie.ninja` en base,
+unicité garantie par un index unique partiel — migration V30). Un animateur qui
+possède cette typologie dans ses compétences est dit **polyvalent** : il sait
+s'adapter, donc
+
+- `Animateur.possedeCompetencePour(stand)` renvoie vrai pour **n'importe quel**
+  stand — il n'est jamais pénalisé par `appreciationIncompatible` ;
+- il est exclu de `limiterTypologiesDistinctesParAnimateur` : le disperser sur
+  plusieurs typologies est précisément sa raison d'être ;
+- `preserverBufferPolyvalents` pénalise chaque créneau où il ne reste aucun
+  polyvalent libre (pénalité = déficit par rapport au minimum, aujourd'hui 1).
+
+Cette dernière contrainte est **volontairement en tension** avec
+`equilibrerCharge` (medium) : un polyvalent laissé libre pour rester en réserve
+déséquilibre mécaniquement la charge. L'arbitrage est assumé par les niveaux —
+soft contre medium, donc l'équilibrage l'emporte sauf à égalité par ailleurs.
+Tant qu'aucune typologie n'est marquée ninja, personne n'est polyvalent et la
+contrainte ne coûte rien (elle ne pénalise jamais un planning « sans ninja »).
 
 > **Retirée : `favoriserRotationDesStands`.** Elle pénalisait chaque paire de
 > postes tenus par le même animateur sur le même stand, pour favoriser la

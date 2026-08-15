@@ -217,6 +217,11 @@ côté serveur : `stands.typologiesProposees` et
 `DELETE /api/typologies/{id}` répond **400** si la typologie est encore
 utilisée par au moins un stand ou animateur.
 
+Un item de `/api/typologies` porte `{ id, label, ninja }`. `ninja` désigne la
+typologie des profils polyvalents : `POST`/`PUT` avec `ninja: true` retire
+automatiquement le drapeau de la typologie qui le portait (au plus une à la
+fois) — voir [`contraintes.md`](contraintes.md#typologie-ninja-et-buffer-de-polyvalents).
+
 Contraintes ad hoc (pas de mise à jour, on supprime et on recrée) :
 
 | Méthode | Chemin |
@@ -235,7 +240,7 @@ fichier définit `parametresLegaux:`, `parametresDecoupage:` et/ou
 [`domaine.md`](domaine.md#découpage-automatique-en-vacations)), ces réglages
 sont aussi appliqués — `parametresSolveur.dureeResolutionSecondes` reconfigure
 la durée de résolution (onglet Données) ; absents, les réglages actuellement
-en base sont laissés tels quels. Une section `typologies: [{ id, label }, …]`
+en base sont laissés tels quels. Une section `typologies: [{ id, label, ninja? }, …]`
 optionnelle fixe le libellé du référentiel `typologie` (voir
 [`import-export.md`](import-export.md#chargement-de-scénario)) pour les ids
 que le fichier utilise, au lieu de laisser l'import leur donner un libellé

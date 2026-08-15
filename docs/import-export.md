@@ -83,6 +83,12 @@ est appliquée après l'import de la planification elle-même, pour ne pas être
 base (créée par un import précédent ou via l'écran de gestion) voit son
 libellé mis à jour si le scénario la redéclare.
 
+Chaque entrée de cette section accepte un champ optionnel `ninja: true` pour
+désigner la typologie « ninja » du référentiel (au plus une : la déclarer
+retire le drapeau de la précédente). L'**export** ne réécrit pas la section
+`typologies:` : comme les libellés personnalisés, le drapeau ninja n'est pas
+conservé par un aller-retour export/import et doit être redéclaré à la main.
+
 ## Schéma de validation d'un fichier de scénario
 
 [`docs/schema/scenario-schema.json`](schema/scenario-schema.json) décrit la

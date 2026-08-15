@@ -53,6 +53,52 @@ class ReferenceDataResourceTypologiesTest {
     }
 
     @Test
+    void importScenarioAppliqueLaTypologieNinjaDeclaree() {
+        given().when().post("/api/planning/reset").then().statusCode(200);
+
+        given()
+                .when().post("/api/reference-data/import-scenario?name=scenario-typologies.yaml")
+                .then()
+                .statusCode(204);
+
+        assertThat(typologiesNinja()).containsExactly("STRATEGIE");
+    }
+
+    @Test
+    void designerUneNouvelleTypologieNinjaRetrogradeLaPrecedente() {
+        given().when().post("/api/planning/reset").then().statusCode(200);
+        given()
+                .when().post("/api/reference-data/import-scenario?name=scenario-typologies.yaml")
+                .then()
+                .statusCode(204);
+        assertThat(typologiesNinja()).containsExactly("STRATEGIE");
+
+        // Only one typologie may be ninja at a time: promoting another one must
+        // demote the previous holder rather than fail on the unique index.
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("id", "JEUX_VIDEO", "label", "Jeux vidéo", "ninja", true))
+                .when().put("/api/typologies/JEUX_VIDEO")
+                .then()
+                .statusCode(200);
+
+        assertThat(typologiesNinja()).containsExactly("JEUX_VIDEO");
+    }
+
+    /** Ids of the typologies currently flagged ninja — expected to hold at most one. */
+    private static List<String> typologiesNinja() {
+        List<Map<String, Object>> typologies = given()
+                .when().get("/api/typologies")
+                .then()
+                .statusCode(200)
+                .extract().jsonPath().getList("$");
+        return typologies.stream()
+                .filter(t -> Boolean.TRUE.equals(t.get("ninja")))
+                .map(t -> (String) t.get("id"))
+                .toList();
+    }
+
+    @Test
     void importScenarioFichierAppliqueLesLibellesDeTypologiesDeclares() throws Exception {
         given().when().post("/api/planning/reset").then().statusCode(200);
 

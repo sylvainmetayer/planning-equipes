@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -470,7 +471,7 @@ public class ReferenceDataService {
 
     public TypologieItem createTypologie(TypologieItem typologie) {
         String id = requiredId(typologie.id(), "typology id");
-        TypologieItem created = new TypologieItem(id, typologie.label());
+        TypologieItem created = new TypologieItem(id, typologie.label(), typologie.ninja());
         repository.saveTypologie(created);
         markModified();
         return created;
@@ -480,10 +481,18 @@ public class ReferenceDataService {
         if (!repository.typologieExists(id)) {
             throw new NotFoundException("Typology not found: " + id);
         }
-        TypologieItem updated = new TypologieItem(id, typologie.label());
+        TypologieItem updated = new TypologieItem(id, typologie.label(), typologie.ninja());
         repository.saveTypologie(updated);
         markModified();
         return updated;
+    }
+
+    /**
+     * Id of the typologie flagged ninja, if any. Animateurs holding it are the
+     * versatile profiles the solver may dispatch on any stand.
+     */
+    public Optional<String> typologieNinja() {
+        return repository == null ? Optional.empty() : repository.findTypologieNinja();
     }
 
     public void deleteTypologie(String id) {
@@ -664,11 +673,23 @@ public class ReferenceDataService {
         }
     }
 
-    public record TypologieItem(String id, String label) {
+    /**
+     * A referential typologie. {@code ninja} marks the single typologie whose
+     * holders are considered versatile: they are eligible for any stand and are
+     * the pool the "buffer de polyvalents" soft constraint keeps some slack on.
+     * At most one typologie of the referential carries the flag — the service
+     * clears the previous one on save, and a partial unique index (V30) backs
+     * the rule up in the database.
+     */
+    public record TypologieItem(String id, String label, boolean ninja) {
         public TypologieItem {
             if (label == null || label.isBlank()) {
                 label = id;
             }
+        }
+
+        public TypologieItem(String id, String label) {
+            this(id, label, false);
         }
     }
 }

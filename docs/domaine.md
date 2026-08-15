@@ -19,6 +19,15 @@ supprimer une typologie sans toucher au code. Sept catégories « genre de jeu �
 `HOMME_JEU` sont seedées par les migrations `V3`/`V24` pour qu'une base neuve les
 propose d'office, mais rien n'empêche d'en ajouter d'autres depuis l'UI.
 
+Une (et une seule) typologie peut porter le drapeau **ninja**
+(`typologie.ninja`, migration `V30`, unicité garantie par un index unique
+partiel ; sélecteur « Typologie ninja » sur la page `/typologies`). Un animateur
+qui la possède dans ses `competences` est **polyvalent** : le solveur le
+considère compétent pour n'importe quel stand et garde ce vivier partiellement
+libre en réserve — voir [`contraintes.md`](contraintes.md#typologie-ninja-et-buffer-de-polyvalents).
+Le drapeau n'est pas stocké sur l'animateur : il est dérivé au chargement du
+problème (`Animateur.appliquerTypologieNinja`).
+
 ```java
 public enum NiveauCompetence {
     DEBUTANT, AUTONOME, REFERENT
@@ -364,7 +373,7 @@ l'import se comporte comme avant : les créneaux du scénario remplacent ceux du
 groupe actif.
 
 Un scénario peut aussi fixer une section `typologies:` (liste de `{ id,
-label }`) pour donner un libellé humain aux ids de typologie qu'il référence
+label, ninja? }`) pour donner un libellé humain aux ids de typologie qu'il référence
 (`stands[].typologiesProposees`, `animateurs[].competences`/`souhaits`) —
 voir [`import-export.md`](import-export.md#chargement-de-scénario) pour le
 détail de l'ordre d'application (après l'import du référentiel lui-même, pour
@@ -492,6 +501,7 @@ au démarrage. Détails et exemple dans [`contraintes.md`](contraintes.md#pondé
 | --- | --- |
 | Appréciation (réelle, medium) | `poste.animateur.competences` (= « Appréciation » côté frontend) devrait contenir une typologie présente dans `poste.stand.typologiesProposees` — `appreciationIncompatible`, poids fort |
 | Souhaits (medium) | `poste.animateur.souhaits` devrait contenir une typologie présente dans `poste.stand.typologiesProposees` — `souhaitsIncompatibles`, poids faible (privilégie le réel sur le souhaité) |
+| Polyvalence (« ninja ») | `animateur.competences` contient la typologie marquée `ninja` → `Animateur.isNinja()` : compétent partout, exclu de `limiterTypologiesDistinctesParAnimateur`, et gardé partiellement libre par `preserverBufferPolyvalents` (soft) |
 | Disponibilité (opt-out) | `poste.creneau.date` ne doit pas figurer dans `animateur.joursIndisponibles` — cf. `Animateur.estIndisponibleLe(LocalDate)` |
 | Effectif min/max | Comptage des `poste.animateur != null` groupés par `stand` + `creneau` (pas de classe de contrainte dédiée) |
 | Mineur / majeur | Toujours dérivé de `dateNaissance` à la date du créneau via `estMineurLe(LocalDate)` / `estMajeurLe(LocalDate)` — **jamais un booléen stocké**, pour éviter toute désynchronisation |

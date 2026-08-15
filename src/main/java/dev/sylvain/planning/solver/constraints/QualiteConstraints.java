@@ -261,7 +261,10 @@ public final class QualiteConstraints {
     private Constraint limiterTypologiesDistinctesParAnimateur(ConstraintFactory constraintFactory) {
         return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
                 "limiterTypologiesDistinctesParAnimateur")
-                .filter(poste -> poste.getAnimateur() != null && poste.getStand() != null)
+                // A ninja is versatile by definition: spreading them across many
+                // typologies is what they are there for, so the cap doesn't apply.
+                .filter(poste -> poste.getAnimateur() != null && poste.getStand() != null
+                        && !poste.getAnimateur().isNinja())
                 .flatten(QualiteConstraints::typologiesApprecieesDuPoste)
                 .groupBy((poste, typologie) -> poste.getAnimateur(),
                         ConstraintCollectors.toSet((poste, typologie) -> typologie))

@@ -127,7 +127,10 @@ public final class ConstraintCatalog {
             new ConstraintDefinition("favoriserMixiteDesNiveaux", Niveau.SOFT, "Préférences",
                     "Quand un référent est présent sur un créneau, y associer un débutant pour favoriser la montée en compétence."),
             new ConstraintDefinition("equilibrerCreneauxPenibles", Niveau.SOFT, "Préférences",
-                    "Répartir équitablement entre animateurs les créneaux pénibles (stands épuisants ou premium)."));
+                    "Répartir équitablement entre animateurs les créneaux pénibles (stands épuisants ou premium)."),
+            new ConstraintDefinition("preserverBufferPolyvalents", Niveau.SOFT, "Préférences",
+                    "Garder au moins un animateur polyvalent (typologie ninja) libre sur chaque créneau, pour pouvoir "
+                            + "réparer le planning en cas d'absence de dernière minute."));
 
     private ConstraintCatalog() {
     }

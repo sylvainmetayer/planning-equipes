@@ -163,6 +163,21 @@ abstract class ConstraintTestBase {
         return animateur(id, NAISSANCE_MAJEUR, Map.of("STRATEGIE", NiveauCompetence.AUTONOME));
     }
 
+    /** Typologie flagged "ninja" in the referential for the tests below. */
+    protected static final String TYPOLOGIE_NINJA = "JOKER";
+
+    /**
+     * Polyvalent animateur: holds the referential's ninja typologie, so the
+     * solver may dispatch them on any stand and the "buffer de polyvalents"
+     * constraint counts them. Mirrors what
+     * {@link Animateur#appliquerTypologieNinja(String)} derives at load time.
+     */
+    protected static Animateur ninja(String id) {
+        Animateur a = animateur(id, NAISSANCE_MAJEUR, Map.of(TYPOLOGIE_NINJA, NiveauCompetence.AUTONOME));
+        a.appliquerTypologieNinja(TYPOLOGIE_NINJA);
+        return a;
+    }
+
     /** Minor of the 16-to-18 bracket (8 h/day, night from 22:00, 12 h daily rest). */
     protected static Animateur mineurDebutant(String id) {
         return animateur(id, NAISSANCE_MINEUR, Map.of("STRATEGIE", NiveauCompetence.DEBUTANT));

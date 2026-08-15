@@ -7,6 +7,7 @@ import ai.timefold.solver.core.api.score.buildin.hardmediumsoft.HardMediumSoftSc
 import ai.timefold.solver.core.api.score.stream.Constraint;
 import ai.timefold.solver.core.api.score.stream.ConstraintCollectors;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
+import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -28,10 +29,19 @@ public final class PreferenceConstraints {
      */
     private static final BigDecimal UNFAIRNESS_SCALE = BigDecimal.TEN;
 
+    /**
+     * How many polyvalent (ninja) animateurs should stay unassigned on any given
+     * créneau, so a last-minute absence can be patched by someone who can take
+     * over any stand. One is enough to make a plan repairable without freezing a
+     * whole reserve of animateurs.
+     */
+    private static final int POLYVALENTS_LIBRES_MIN = 1;
+
     public Constraint[] define(ConstraintFactory constraintFactory) {
         return new Constraint[] {
                 favoriserMixiteDesNiveaux(constraintFactory),
-                equilibrerCreneauxPenibles(constraintFactory)
+                equilibrerCreneauxPenibles(constraintFactory),
+                preserverBufferPolyvalents(constraintFactory)
         };
     }
 
@@ -66,6 +76,40 @@ public final class PreferenceConstraints {
                                 .setScale(0, RoundingMode.HALF_UP)
                                 .intValue())
                 .asConstraint("equilibrerCreneauxPenibles");
+    }
+
+    /**
+     * Robustness to last-minute absences (issue #83): on every créneau, keep at
+     * least {@link #POLYVALENTS_LIBRES_MIN} polyvalent animateur — one holding
+     * the referential's "ninja" typologie — free rather than saturating the very
+     * profiles able to replace anyone on any stand.
+     *
+     * <p>Counted against the whole ninja pool of the problem
+     * ({@code forEach(Animateur.class)}) rather than against the postes alone,
+     * so "free" really means "not assigned anywhere on that créneau". When the
+     * referential defines no ninja typologie nobody is polyvalent, the left-hand
+     * stream stays empty and the constraint costs nothing.</p>
+     *
+     * <p>Deliberately in tension with {@code QualiteConstraints.equilibrerCharge}:
+     * a polyvalent left idle to stay in reserve is, mechanically, a workload
+     * imbalance. Soft against medium, so the balance wins unless everything else
+     * is equal — see {@code docs/contraintes.md}.</p>
+     */
+    private Constraint preserverBufferPolyvalents(ConstraintFactory constraintFactory) {
+        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
+                "preserverBufferPolyvalents")
+                .filter(poste -> poste.getAnimateur() != null
+                        && poste.getAnimateur().isNinja()
+                        && poste.getCreneau() != null)
+                .groupBy(PosteAffectation::getCreneau,
+                        ConstraintCollectors.countDistinct(PosteAffectation::getAnimateur))
+                .join(constraintFactory.forEach(Animateur.class)
+                        .filter(Animateur::isNinja)
+                        .groupBy(ConstraintCollectors.count()))
+                .filter((creneau, occupes, total) -> total - occupes < POLYVALENTS_LIBRES_MIN)
+                .penalize(HardMediumSoftScore.ONE_SOFT,
+                        (creneau, occupes, total) -> POLYVALENTS_LIBRES_MIN - (total - occupes))
+                .asConstraint("preserverBufferPolyvalents");
     }
 
     private boolean estPenible(Stand stand) {

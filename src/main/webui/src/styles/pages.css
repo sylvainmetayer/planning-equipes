@@ -43,6 +43,11 @@ form.form-grid {
   min-width: 16rem;
 }
 
+/* Ninja typologie picker sits inline with the "Ajouter" button on the Typologies page. */
+.ninja-select {
+  min-width: 18rem;
+}
+
 /* Wide enough that the label and hint never wrap onto the following mat-divider. */
 .solver-duration {
   display: block;

@@ -296,6 +296,30 @@ class QualiteConstraintsTest extends ConstraintTestBase {
                 .penalizesBy(3);
     }
 
+    @Test
+    void polyvalentNEstPasPenalisePourSesTypologiesDistinctes() {
+        // Being spread across many typologies is exactly a ninja's job, so the
+        // cap that penalises three distinct typologies doesn't apply to them.
+        Animateur polyvalent = ninja("N1");
+        polyvalent.getCompetences().put("STRATEGIE", NiveauCompetence.AUTONOME);
+        polyvalent.getCompetences().put("AMBIANCE", NiveauCompetence.AUTONOME);
+        polyvalent.getCompetences().put("ENIGME", NiveauCompetence.AUTONOME);
+        verify("limiterTypologiesDistinctesParAnimateur")
+                .given(poste(standStrategie("STAND-STRAT-N"), creneauMatin, polyvalent),
+                        poste(stand("STAND-AMBIANCE-N", false, "AMBIANCE"), creneauAprem, polyvalent),
+                        poste(stand("STAND-ENIGME-N", false, "ENIGME"), matin("J2-MATIN-N", 2, D2), polyvalent))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void polyvalentSansCompetenceSurLeStandNEstPasPenalise() {
+        // A ninja adapts to any stand: no "appréciation" mismatch even on a
+        // typologie they hold no competence for.
+        verify("appreciationIncompatible")
+                .given(poste(standStrat, creneauMatin, ninja("N1")))
+                .penalizesBy(0);
+    }
+
     // --- maxJoursConsecutifsTravailles --------------------------------------
 
     /** Créneau court (9 h - 13 h) du jour {@code offset + 1}, offset calendar days after D1. */
