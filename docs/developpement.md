@@ -141,6 +141,34 @@ On distingue trois familles de tests :
   `app/shared/`. Ils ne sont **pas** branchés sur la phase de test Maven (Quinoa
   reste désactivé sur `%test`) ; ils tournent dans un job CI dédié.
 
+### Mesurer la couverture
+
+```bash
+./mvnw test -Pcoverage     # puis ouvrir target/site/jacoco/index.html
+```
+
+Profil **opt-in**, comme `scenario-tests` et `generate-schema` : ni le build par
+défaut ni la CI ne l'activent, l'instrumentation JaCoCo n'ayant d'intérêt que
+lorsqu'on cherche activement des trous. Référence actuelle : **82,8 %**
+d'instructions, avec `solver/constraints` à 99,3 % et `solver` à 98,6 %, contre
+68 % pour `api` et 80 % pour `service` — ce dernier dominé par
+`ReferenceDataRepository`, du code d'accès aux données dont le test coûte cher
+pour ce qu'il protège.
+
+Le pourcentage n'est pas un objectif en soi : les tests d'accesseurs le font
+monter sans rien protéger. Deux garde-fous valent mieux qu'un point de
+couverture, et sont d'ailleurs nés de bugs réels de ce dépôt :
+
+- `ScenarioSchemaGeneratorTest` échoue dès que `docs/schema/scenario-schema.json`
+  diverge des DTO. Le schéma se régénère par un profil opt-in que rien
+  n'obligeait à lancer : deux champs ajoutés à `ParametresDecoupageDto` sont
+  restés absents du schéma publié, et un éditeur validant un scénario contre
+  lui signalait deux clés parfaitement valides comme inconnues.
+- `ReferenceDataResourceDecoupageAutoFamillesTest` verrouille l'ordre
+  d'application `parametresDecoupage` **puis** `decoupageAuto` à l'import.
+  Inversé, un scénario qui épingle son propre découpage verrait ses vacations
+  générées avec la configuration du serveur — sans erreur visible.
+
 Avec Podman (rootless), exposer la socket compatible Docker :
 
 ```bash
