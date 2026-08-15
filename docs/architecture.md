@@ -92,11 +92,16 @@ Ressources JAX-RS : `PlanningResource`, `SolverJobResource`, `ReferenceDataResou
 ### `mcp/`
 
 Outils MCP (`@Tool`) exposés à un assistant IA, en délégant aux services
-métier ci-dessus sans dupliquer de logique : `AnimateurMcpTools` (filtré
-confidentialité), `ReferentielMcpTools` (créneaux/stands), `ContrainteMcpTools`,
-`SolveurMcpTools`. Authentification par clé API :
-`McpApiKeyAuthenticationMechanism` / `McpApiKeyIdentityProvider`. Voir
-[`mcp.md`](mcp.md).
+métier ci-dessus sans dupliquer de logique. Couvre l'ensemble des endpoints
+REST (CRUD des référentiels compris) : `AnimateurMcpTools` (filtré
+confidentialité), `StandMcpTools` (stands/emplacements/typologies),
+`CreneauMcpTools` (créneaux/groupes/découpage), `ParametresMcpTools`
+(paramètres légaux, découpage, solveur, contraintes ad hoc),
+`ScenarioMcpTools`, `PlanningMcpTools`, `ContrainteMcpTools`,
+`SolveurMcpTools`. Confidentialité : `AnonymisationViolations` +
+test structurel `McpConfidentialiteStructurelleTest`. Authentification par
+clé API : `McpApiKeyAuthenticationMechanism` / `McpApiKeyIdentityProvider`.
+Voir [`mcp.md`](mcp.md).
 
 ## Frontend
 

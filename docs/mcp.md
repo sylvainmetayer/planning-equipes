@@ -2,12 +2,11 @@
 
 Le service Quarkus expose un serveur [MCP](https://modelcontextprotocol.io/)
 (Model Context Protocol) qui permet à un assistant IA de consulter et piloter
-l'application en langage naturel : consulter les animateurs, créneaux,
-stands et contraintes, activer/désactiver une contrainte, lancer ou arrêter
-le solveur, et récupérer le résultat d'une résolution. Issue d'origine :
-[#107](https://github.com/sylvainmetayer/planning-equipes/issues/107) — une
-intégration volontairement bornée à un jeu d'outils curé plutôt qu'un accès
-CRUD complet sur toutes les données de référence.
+l'application en langage naturel. Issue d'origine :
+[#107](https://github.com/sylvainmetayer/planning-equipes/issues/107), dont le
+commentaire de suivi fixe le périmètre retenu ici : **tous les endpoints
+peuvent être implémentés via MCP, la seule contrainte conservée est la
+confidentialité des données animateurs**.
 
 ## Transport et endpoints
 
@@ -37,8 +36,8 @@ La clé peut aussi être présentée via `Authorization: Bearer <clé>`.
 
 **Sécurisé par défaut** : tant que `planning.mcp.api-key` n'est pas positionnée,
 aucune requête vers `/mcp` ne peut s'authentifier (401 systématique) — le
-serveur MCP peut déclencher une résolution et lire les données animateurs, une
-exposition non authentifiée serait pire qu'un refus de servir.
+serveur MCP peut vider la base, modifier les référentiels et déclencher une
+résolution, une exposition non authentifiée serait pire qu'un refus de servir.
 
 Implémentation : `McpApiKeyAuthenticationMechanism` +
 `McpApiKeyIdentityProvider` (package
@@ -52,37 +51,120 @@ tout chemin quelle que soit l'extension qui l'a monté.
 
 ## Confidentialité des données animateur
 
-**Exigence de l'issue #107** : les nom, prénom et date de naissance des
-animateurs ne doivent jamais sortir par MCP. Seuls sortent l'id et le statut
-majeur/mineur (dérivé de la date de naissance, jamais la date elle-même), plus
-les attributs de planification non identifiants (compétences, souhaits,
-jours indisponibles, statut manager). Voir `AnimateurMcpTools.AnimateurView`.
+**Seule restriction conservée par l'issue #107** : les nom, prénom et date de
+naissance des animateurs ne sortent jamais par MCP. Seuls sortent l'id, le
+statut majeur/mineur et moins-de-16-ans (dérivés de la date de naissance,
+jamais la date elle-même) et les attributs de planification non identifiants
+(compétences, souhaits, jours indisponibles, statut manager).
+
+Trois mécanismes la garantissent :
+
+1. **Des vues, jamais les objets de domaine.** Chaque outil renvoie un `record`
+   dédié (`AnimateurView`, `AffectationView`, `HeuresAnimateurView`…) qui ne
+   possède structurellement aucun accesseur vers un champ personnel.
+2. **Anonymisation des messages de violation.** Les lignes lisibles produites
+   par `ViolationFormatter` pour l'interface web désignent un animateur par
+   « Prénom Nom (id) » ; `AnonymisationViolations` les réécrit en
+   « animateur id » avant toute sortie MCP.
+3. **Un test structurel de non-régression.**
+   `McpConfidentialiteStructurelleTest` parcourt par réflexion *tous* les
+   `@Tool` du package et échoue si l'un d'eux expose la classe `Animateur` ou
+   un champ `prenom`/`dateNaissance`, y compris à travers les génériques — un
+   nouvel outil mal filtré casse le build sans avoir à y penser.
+
+Corollaire côté écriture : `modifier_animateur` fusionne au lieu de remplacer
+(contrairement à `PUT /api/animateurs/{id}`). Un assistant qui ne peut pas lire
+nom/prénom/date de naissance ne peut pas les renvoyer non plus : un remplacement
+complet les effacerait à chaque modification.
 
 ## Outils exposés
 
+### Animateurs (filtrés confidentialité)
+
 | Outil | Description |
 | --- | --- |
-| `lister_animateurs` | Animateurs (id, statut majeur/mineur, compétences, souhaits, indisponibilités) — sans données personnelles |
-| `consulter_animateur` | Un animateur par id — même filtrage |
-| `lister_creneaux` | Créneaux du groupe de créneaux actif |
-| `lister_stands` | Stands (typologies, effectifs, réserve majeurs/premium, niveau d'effort) |
-| `lister_contraintes` | Catalogue des contraintes + résultat de la dernière analyse |
+| `lister_animateurs` / `consulter_animateur` | Id, statut majeur/mineur, compétences, souhaits, indisponibilités |
+| `creer_animateur` | Création ; nom/prénom/date de naissance facultatifs et jamais relus |
+| `modifier_animateur` | Fusion : les champs omis conservent leur valeur en base |
+| `supprimer_animateur` | Suppression |
+
+### Stands, emplacements, typologies
+
+| Outil | Description |
+| --- | --- |
+| `lister_stands` / `consulter_stand` | Typologies, effectifs, réserve majeurs/premium, effort, emplacement, plages |
+| `creer_stand` / `modifier_stand` / `supprimer_stand` | CRUD, modification par fusion |
+| `ajouter_fermeture_stand` / `ajouter_ouverture_stand` / `effacer_plages_stand` | Plages de fermeture et d'ouverture d'un stand |
+| `lister_emplacements` / `creer_emplacement` / `modifier_emplacement` / `supprimer_emplacement` | Emplacements géographiques |
+| `lister_typologies` / `creer_typologie` / `modifier_typologie` / `supprimer_typologie` | Référentiel des typologies de jeu |
+
+### Créneaux, groupes et découpage
+
+| Outil | Description |
+| --- | --- |
+| `lister_creneaux` / `lister_tous_les_creneaux` | Créneaux du groupe actif, ou tous groupes confondus |
+| `creer_creneau` / `modifier_creneau` / `supprimer_creneau` | CRUD des créneaux |
+| `lister_groupes_creneaux` / `creer_groupe_creneaux` / `modifier_groupe_creneaux` / `supprimer_groupe_creneaux` | Groupes de créneaux |
+| `activer_groupe_creneaux` | Choisit le groupe sur lequel portera la prochaine résolution |
+| `previsualiser_decoupage` / `generer_decoupage` | Découpage des amplitudes en vacations |
+
+### Paramètres et contraintes
+
+| Outil | Description |
+| --- | --- |
+| `lister_contraintes` | Catalogue métier + résultat de la dernière analyse |
 | `activer_contrainte` / `desactiver_contrainte` | Active/désactive une contrainte pour le prochain solve |
-| `lancer_solveur` / `lancer_analyse` | Lance une résolution/analyse en tâche de fond depuis les données de référence persistées |
-| `arreter_solveur` | Arrête le job en cours |
-| `statut_solveur` / `lister_jobs` | État d'un job ou de tous les jobs |
-| `resultats_animateur` | Postes affectés à un animateur, d'après le dernier planning persisté |
-| `expliquer_echec_contraintes_dures` | Détail des contraintes HARD encore violées lors de la dernière analyse, avec message de chaque violation — répond au besoin de l'issue #107 de connaître les erreurs exactes d'un run avec contraintes dures |
+| `consulter_parametres_legaux` / `modifier_parametres_legaux` | Durées maximales, pauses, repos |
+| `consulter_parametres_decoupage` / `modifier_parametres_decoupage` | Paramètres de génération des vacations |
+| `consulter_parametres_solveur` / `modifier_parametres_solveur` | Durée de résolution par défaut |
+| `lister_contraintes_ad_hoc` / `creer_contrainte_ad_hoc` / `supprimer_contrainte_ad_hoc` | Contraintes au cas par cas (animateurs désignés par id) |
+
+### Scénarios et données
+
+| Outil | Description |
+| --- | --- |
+| `lister_scenarios` | Scénarios livrés avec l'application |
+| `importer_scenario` / `importer_scenario_yaml` | Import d'un scénario livré ou d'un contenu YAML (destructif) |
+| `valider_scenario_yaml` | Validation structurelle d'un YAML sans rien importer |
+| `reinitialiser_donnees` | Vide entièrement la base (destructif) |
+
+### Solveur et résultats
+
+| Outil | Description |
+| --- | --- |
+| `lancer_solveur` / `lancer_analyse` | Résolution/analyse en tâche de fond depuis les données de référence |
+| `arreter_solveur` / `statut_solveur` / `lister_jobs` / `supprimer_job` | Pilotage et historique des jobs |
+| `volumetrie` | Taille réelle du problème que construirait la prochaine résolution |
+| `analyser_faisabilite` | Diagnostic de capacité avant résolution, sans lancer de solve |
+| `etat_planning` | Groupe résolu, date de résolution, affectations persistées, fraîcheur des données |
+| `lister_affectations` | Affectations persistées, filtrables par stand, créneau, animateur ou non-pourvus |
+| `resultats_animateur` | Postes affectés à un animateur donné |
+| `heures_travaillees` | Heures par animateur (id seul) et par semaine ISO |
+| `expliquer_affectation` / `simuler_swap` | Explication du score d'un poste, simulation d'un échange |
+| `expliquer_echec_contraintes_dures` | Contraintes HARD encore violées lors de la dernière analyse, messages anonymisés |
 
 Chaque outil délègue au service métier existant (`ReferenceDataService`,
-`SolverJobService`, `PlanningService`, `ConstraintAnalysisStore`) — aucune
-logique n'est dupliquée, voir le package
-`dev.sylvain.planning.mcp`.
+`SolverJobService`, `PlanningService`, `PlanningPersistenceService`,
+`HeuresPlanningService`, `FeasibilityAnalyzer`, `ConstraintAnalysisStore`) —
+aucune logique n'est dupliquée, voir le package
+`dev.sylvain.planning.mcp`. Les outils d'import de scénario
+délèguent à `ReferenceDataResource`, qui possède l'orchestration
+(paramètres épinglés, puis planning, puis `decoupageAuto:` et `typologies:`)
+dont l'ordre est significatif.
+
+Les endpoints qui exigent un `PlanningFestival` complet dans leur corps
+(`/api/solve`, `/api/planning/hours`, `/api/postes/{id}/explication`…) sont
+exposés ici en travaillant sur le **dernier planning persisté** : un assistant
+n'a aucun moyen réaliste d'envoyer une charge utile de plusieurs dizaines de
+Mo.
 
 ## Hors périmètre (volontairement)
 
-L'issue évoque aussi l'ajout/édition de personnes, créneaux et stands en
-langage naturel. Cette première intégration se limite à la consultation et
-aux actions déjà exposées par l'API REST (toggle contrainte, pilotage
-solveur) ; le CRUD complet des référentiels via MCP n'est pas implémenté ici
-et reste un prolongement possible.
+| Endpoint REST | Pourquoi pas d'outil MCP |
+| --- | --- |
+| `GET /api/planning/export-scenario` | Le YAML exporté contient prénom, nom et date de naissance de chaque animateur (il doit être ré-importable) — exactement ce que l'issue #107 interdit de faire sortir. |
+| `GET /api/database/export`, `POST /api/database/import` | Le dump SQL contient toutes les données personnelles ; c'est de plus un fichier binaire/volumineux destiné à une sauvegarde, pas à une conversation. |
+| `POST /api/planning/export/pdf/*`, `/ics/*`, `/api/planning/hours/export` | Exports binaires ou CSV nominatifs, destinés au téléchargement depuis l'interface. |
+| `GET /api/config` | Clés publiques destinées au navigateur (Sentry, PostHog) : aucun intérêt pour un assistant. |
+| `POST /api/debug/test-exception` | Endpoint de test de la remontée d'erreurs. |
+| `GET /api/planning/sample`, `GET /api/planning/persisted` | Renvoient un `PlanningFestival` entier (plusieurs dizaines de Mo, avec les données personnelles) ; `lister_affectations` et `lister_scenarios` couvrent le besoin en restant filtrés. |

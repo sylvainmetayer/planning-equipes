@@ -99,6 +99,12 @@ Single Quarkus service, no separate solver microservice. Package root:
 - `api/` — JAX-RS resources: `PlanningResource`, `SolverJobResource`,
   `ReferenceDataResource`, `ConstraintResource`, `DatabaseResource`,
   `PlanningExportResource`. Endpoint list in `docs/api.md`.
+- `mcp/` — MCP tools (`@Tool`) exposing the same capabilities to an AI
+  assistant, delegating to the services above. One hard rule: animateur
+  nom/prénom/dateNaissance never leave over MCP (issue #107) — return
+  dedicated view records, never domain objects, and run violation messages
+  through `AnonymisationViolations`. `McpConfidentialiteStructurelleTest`
+  enforces it reflectively over every tool. See `docs/mcp.md`.
 - Persistence: PostgreSQL + Flyway migrations in
   `src/main/resources/db/migration/`. Schema change = **new versioned file**;
   never edit an applied migration.

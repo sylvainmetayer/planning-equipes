@@ -284,12 +284,15 @@ dures : elles ne sont jamais contournées silencieusement.
 ### Assistant IA
 
 Un serveur MCP permet à un assistant IA de consulter et piloter
-l'application en langage naturel : consulter les animateurs (sans jamais
-exposer nom, prénom ou date de naissance — uniquement l'id et le statut
-majeur/mineur), les créneaux, les stands et les contraintes, activer ou
-désactiver une contrainte, lancer ou arrêter une résolution, et récupérer le
-détail des contraintes légales encore violées après un calcul. Protégé par
-une clé API, désactivé tant qu'aucune clé n'est configurée. Détails dans
+l'application en langage naturel : ajouter ou modifier des animateurs, des
+stands, des créneaux et des typologies, régler les paramètres légaux et de
+découpage, importer un scénario, activer ou désactiver une contrainte, lancer
+ou arrêter une résolution, puis explorer le planning obtenu (heures
+travaillées, explication d'une affectation, simulation d'un échange, détail
+des contraintes légales encore violées). Les données personnelles des
+animateurs — nom, prénom, date de naissance — ne sortent jamais par ce canal :
+seuls circulent l'identifiant et le statut majeur/mineur. Protégé par une clé
+API, désactivé tant qu'aucune clé n'est configurée. Détails dans
 [`docs/mcp.md`](docs/mcp.md).
 
 ### Restitution et échanges de données

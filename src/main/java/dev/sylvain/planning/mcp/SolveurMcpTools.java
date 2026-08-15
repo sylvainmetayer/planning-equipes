@@ -100,6 +100,14 @@ public class SolveurMcpTools {
                 .toList();
     }
 
+    @Tool(description = "Supprime un job terminé de l'historique. Un job encore en cours doit d'abord être arrêté.")
+    SuppressionResult supprimer_job(@ToolArg(description = "Id du job") String jobId) {
+        if (!solverJobService.forget(jobId)) {
+            throw new NoSuchElementException("Job introuvable ou encore en cours : " + jobId);
+        }
+        return new SuppressionResult(jobId, true);
+    }
+
     @Tool(description = "Détaille les contraintes de niveau HARD encore violées lors de la dernière analyse "
             + "(solve ou analyze), avec le message de chaque violation. Liste vide si la dernière analyse est "
             + "entièrement faisable, ou s'il n'y a jamais eu d'analyse.")
@@ -114,7 +122,8 @@ public class SolveurMcpTools {
                 .toList();
         return analysis.diagnostic().contraintes().stream()
                 .filter(diagnostic -> hardNames.contains(diagnostic.name()) && diagnostic.matchCount() > 0)
-                .map(diagnostic -> new ViolationHardView(diagnostic.name(), diagnostic.matchCount(), diagnostic.violations()))
+                .map(diagnostic -> new ViolationHardView(diagnostic.name(), diagnostic.matchCount(),
+                        AnonymisationViolations.anonymiser(diagnostic.violations())))
                 .toList();
     }
 

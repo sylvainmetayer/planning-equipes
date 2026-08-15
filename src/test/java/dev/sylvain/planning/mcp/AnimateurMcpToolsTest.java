@@ -30,6 +30,8 @@ class AnimateurMcpToolsTest {
 
         assertThat(view.id()).isEqualTo("A-1");
         assertThat(view.statut()).isEqualTo("mineur");
+        // Troisième régime du droit du travail : 16-18 ans, distinct des moins de 16 ans.
+        assertThat(view.moinsDe16Ans()).isFalse();
         assertThat(view.manager()).isFalse();
         assertThat(view.competences()).containsEntry("cirque", NiveauCompetence.AUTONOME);
         assertThat(view.souhaits()).containsExactly("cirque");
@@ -51,6 +53,7 @@ class AnimateurMcpToolsTest {
         // toute régression qui en ajouterait un ferait échouer cette liste de composants.
         assertThat(AnimateurView.class.getRecordComponents())
                 .extracting(component -> component.getName().toLowerCase())
-                .containsExactlyInAnyOrder("id", "statut", "manager", "competences", "souhaits", "joursindisponibles");
+                .containsExactlyInAnyOrder("id", "statut", "moinsde16ans", "manager", "competences", "souhaits",
+                        "joursindisponibles");
     }
 }
