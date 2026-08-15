@@ -15,6 +15,7 @@ import { NotificationService } from './core/notification.service';
 import { PlanningResolutionStore } from './core/planning-resolution.store';
 import { SolverJobService } from './core/solver-job.service';
 import { DataStaleIndicator } from './shared/data-stale-indicator';
+import { GroupeActuelBar } from './shared/groupe-actuel-bar';
 import { GroupeMismatchBanner } from './shared/groupe-mismatch-banner';
 import { JobMonitor } from './shared/job-monitor';
 
@@ -163,6 +164,7 @@ function buildNavGroups(): NavGroup[] {
     MatDividerModule,
     JobMonitor,
     DataStaleIndicator,
+    GroupeActuelBar,
     GroupeMismatchBanner
   ],
   templateUrl: './app.html',
