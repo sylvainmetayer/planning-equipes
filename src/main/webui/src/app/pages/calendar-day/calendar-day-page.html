@@ -47,6 +47,11 @@
                 psychology
               </mat-icon>
             }
+            @if (estJourVerrouille(day)) {
+              <mat-icon inline class="verrouille-icon" [matTooltip]="verrouilleTooltip" [attr.aria-label]="verrouilleTooltip">
+                lock
+              </mat-icon>
+            }
           </mat-card-title>
         </mat-card-header>
         <mat-card-content>
@@ -75,6 +80,11 @@
                     @if (hasAppreciationMismatch(stand)) {
                       <mat-icon inline class="appreciation-mismatch-icon" [matTooltip]="appreciationMismatchTooltip" [attr.aria-label]="appreciationMismatchTooltip">
                         psychology
+                      </mat-icon>
+                    }
+                    @if (estLigneVerrouillee(slot, stand)) {
+                      <mat-icon inline class="verrouille-icon" [matTooltip]="verrouilleTooltip" [attr.aria-label]="verrouilleTooltip">
+                        lock
                       </mat-icon>
                     }
                     @if (stand.entries.length === 0) {

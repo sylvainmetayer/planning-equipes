@@ -213,6 +213,9 @@ public class PosteAffectation {
 
     @PlanningVariable(valueRangeProviderRefs = "animateurRange", allowsUnassigned = true)
     private Animateur animateur;
+
+    @PlanningPin
+    private boolean verrouille;  // place validée par l'utilisateur, figée pour le solveur
 }
 ```
 
@@ -230,6 +233,37 @@ l'override est absent, donc tout code qui les utilise se comporte
 identiquement à avant #60 dans le cas non partiel. Voir
 [`contraintes.md`](contraintes.md#indisponibilité-partielle-dun-stand) pour
 l'impact sur les contraintes.
+
+### Verrouillage partiel du planning
+
+`verrouille` (`@PlanningPin`) marque une place **validée par l'utilisateur et
+figée** : aucun move, ni en construction heuristique ni en recherche locale, ne
+peut changer son animateur. Le champ n'est jamais positionné par le solveur ni
+persisté sur `poste_affectation` : il est recalculé à chaque construction du
+problème (`PlanningService.construireDepuisReferenceData`) à partir des
+verrous enregistrés dans la table `verrouillage_planning`
+(`VerrouillagePlanning`, voir [`api.md`](api.md#verrouillages-du-planning)).
+
+Un verrou porte sur un **animateur**, un **stand**, une **journée** ou un
+**créneau**, et n'appartient qu'à un `GroupeCreneau` : changer de groupe actif,
+c'est changer de planning, donc les verrous des autres groupes restent en base
+mais dormants.
+
+Deux règles encadrent le mécanisme :
+
+- **une place non pourvue n'est jamais figée.** Les places couvertes par un
+  verrou sont d'abord réamorcées avec l'animateur que la dernière résolution
+  persistée leur avait donné ; celles qui étaient vides restent vides et
+  mobiles, sinon geler un trou le rendrait définitivement non pourvu ;
+- **une place figée est scorée normalement.** Un verrou peut donc laisser une
+  violation visible dans le planning — c'est volontaire, il ne désactive
+  silencieusement aucune règle.
+
+Épingler ne suffit pas pour le verrouillage d'un **animateur** : cela fige les
+places qu'il tient, mais laisserait le solveur lui en attribuer de nouvelles
+ailleurs. C'est la contrainte dure `animateurVerrouilleFige` (voir
+[`contraintes.md`](contraintes.md)) qui l'interdit, à partir des
+`VerrouillagePlanning` transmis comme faits du problème.
 
 `allowsUnassigned = true` (et non l'attribut `nullable`, déprécié et voué à
 disparaître côté Timefold) : une place peut rester vide pendant la recherche et

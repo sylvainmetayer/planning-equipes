@@ -3,6 +3,7 @@ package dev.sylvain.planning.domain;
 import java.time.LocalTime;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
+import ai.timefold.solver.core.api.domain.entity.PlanningPin;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
 import dev.sylvain.planning.solver.PosteAffectationDifficultyComparatorFactory;
@@ -32,6 +33,21 @@ public class PosteAffectation {
      */
     @PlanningVariable(valueRangeProviderRefs = "animateurRange", allowsUnassigned = true)
     private Animateur animateur;
+
+    /**
+     * Seat validated by the user and frozen: no move (construction heuristic or
+     * local search) may change its {@link #animateur}. Set at problem-building
+     * time from the persisted
+     * {@link dev.sylvain.planning.domain.VerrouillagePlanning}
+     * rows, never by the solver, and never on an empty seat — pinning a hole
+     * would make it permanently unfillable.
+     *
+     * <p>A pinned seat is still scored normally: a lock can therefore leave a
+     * visible violation in the plan, deliberately, rather than silently
+     * disabling the rules around it.</p>
+     */
+    @PlanningPin
+    private boolean verrouille;
 
     public PosteAffectation() {
     }
@@ -72,6 +88,14 @@ public class PosteAffectation {
 
     public void setAnimateur(Animateur animateur) {
         this.animateur = animateur;
+    }
+
+    public boolean isVerrouille() {
+        return verrouille;
+    }
+
+    public void setVerrouille(boolean verrouille) {
+        this.verrouille = verrouille;
     }
 
     public LocalTime getHeureDebutEffective() {

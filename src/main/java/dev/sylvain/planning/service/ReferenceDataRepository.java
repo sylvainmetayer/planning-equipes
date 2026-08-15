@@ -36,6 +36,8 @@ import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
+import dev.sylvain.planning.domain.TypeVerrouillage;
+import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.service.ReferenceDataService.TypologieItem;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -928,6 +930,89 @@ public class ReferenceDataRepository {
         }
     }
 
+    /* --------------------------- Planning locks ----------------------------- */
+
+    private static final String SELECT_VERROUILLAGE_SQL =
+            "SELECT id, type, groupe_creneau_id, animateur_id, stand_id, creneau_id, jour, raison, cree_le "
+                    + "FROM verrouillage_planning";
+
+    /** Every lock, all groups included, most recent first. */
+    public List<VerrouillagePlanning> listVerrouillages() {
+        return queryVerrouillages(SELECT_VERROUILLAGE_SQL + " ORDER BY cree_le DESC, id", null);
+    }
+
+    /** The locks of one groupe de créneaux — the only ones a solve applies. */
+    public List<VerrouillagePlanning> listVerrouillagesGroupe(String groupeCreneauId) {
+        return queryVerrouillages(SELECT_VERROUILLAGE_SQL + " WHERE groupe_creneau_id = ? ORDER BY cree_le DESC, id",
+                groupeCreneauId);
+    }
+
+    private List<VerrouillagePlanning> queryVerrouillages(String sql, String parameter) {
+        List<VerrouillagePlanning> verrouillages = new ArrayList<>();
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = connection.prepareStatement(sql)) {
+            if (parameter != null) {
+                ps.setString(1, parameter);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    verrouillages.add(readVerrouillage(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to list planning locks", e);
+        }
+        return verrouillages;
+    }
+
+    private static VerrouillagePlanning readVerrouillage(ResultSet rs) throws SQLException {
+        VerrouillagePlanning verrouillage = new VerrouillagePlanning(
+                rs.getString("id"), TypeVerrouillage.valueOf(rs.getString("type")));
+        verrouillage.setGroupeCreneauId(rs.getString("groupe_creneau_id"));
+        verrouillage.setAnimateurId(rs.getString("animateur_id"));
+        verrouillage.setStandId(rs.getString("stand_id"));
+        long creneauId = rs.getLong("creneau_id");
+        if (!rs.wasNull()) {
+            verrouillage.setCreneauId(creneauId);
+        }
+        verrouillage.setJour(rs.getObject("jour", LocalDate.class));
+        verrouillage.setRaison(rs.getString("raison"));
+        Timestamp creeLe = rs.getTimestamp("cree_le");
+        verrouillage.setCreeLe(creeLe != null ? creeLe.toInstant() : null);
+        return verrouillage;
+    }
+
+    /**
+     * Inserts the lock, or does nothing if that exact target is already frozen
+     * for the group (see {@code idx_verrouillage_planning_cible}) — locking
+     * twice is not an error, it is already locked.
+     */
+    public void saveVerrouillage(VerrouillagePlanning verrouillage) {
+        String sql = "INSERT INTO verrouillage_planning "
+                + "(id, type, groupe_creneau_id, animateur_id, stand_id, creneau_id, jour, raison, cree_le) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING";
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, verrouillage.getId());
+            ps.setString(2, verrouillage.getType() != null ? verrouillage.getType().name() : null);
+            ps.setString(3, verrouillage.getGroupeCreneauId());
+            ps.setString(4, verrouillage.getAnimateurId());
+            ps.setString(5, verrouillage.getStandId());
+            ps.setObject(6, verrouillage.getCreneauId());
+            ps.setObject(7, verrouillage.getJour());
+            ps.setString(8, verrouillage.getRaison());
+            Instant creeLe = verrouillage.getCreeLe() != null ? verrouillage.getCreeLe() : Instant.now();
+            ps.setTimestamp(9, Timestamp.from(creeLe));
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to save planning lock " + verrouillage.getId(), e);
+        }
+    }
+
+    public void deleteVerrouillage(String id) {
+        delete("DELETE FROM verrouillage_planning WHERE id = ?", id);
+    }
+
     /* --------------------------- Legal parameters --------------------------- */
 
     public ParametresLegaux getParametresLegaux() {
@@ -1167,7 +1252,13 @@ public class ReferenceDataRepository {
             String groupeActifId = groupeActifId(connection);
             connection.setAutoCommit(false);
             try {
-                for (String table : List.of("contrainte_animateur", "contrainte_ad_hoc", "poste_affectation",
+                // verrouillage_planning goes with the assignments it freezes: the
+                // whole reference dataset is being replaced, so the validated
+                // planning those locks protected no longer exists. (Locks on a
+                // stand/animateur/créneau would cascade away anyway; a JOUR lock
+                // would otherwise survive as a stale freeze.)
+                for (String table : List.of("contrainte_animateur", "contrainte_ad_hoc", "verrouillage_planning",
+                        "poste_affectation",
                         "stand_typologie", "stand_indisponibilite", "stand_ouverture", "animateur_competence",
                         "animateur_jour_indispo", "animateur_souhait", "stand", "animateur")) {
                     try (PreparedStatement ps = connection.prepareStatement("DELETE FROM " + table)) {
@@ -1225,6 +1316,19 @@ public class ReferenceDataRepository {
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to import reference data from planning", e);
+        }
+    }
+
+    /**
+     * Id of the groupe de créneaux currently active, falling back to the
+     * seeded default group when no row is flagged (the same fallback the
+     * import path uses). Public because planning locks are scoped to it.
+     */
+    public String groupeCreneauActifId() {
+        try (Connection connection = dataSource.getConnection()) {
+            return groupeActifId(connection);
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to read the active timeslot group", e);
         }
     }
 

@@ -62,6 +62,7 @@ abstract class ConstraintTestBase {
                         new AffectationConstraints().define(factory),
                         new LegalConstraints().define(factory),
                         new AdHocConstraints().define(factory),
+                        new VerrouillageConstraints().define(factory),
                         new QualiteConstraints().define(factory),
                         new PreferenceConstraints().define(factory))
                 .flatMap(Stream::of)

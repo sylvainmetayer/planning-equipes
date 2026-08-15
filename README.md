@@ -79,6 +79,7 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 | `POSTHOG_HOST` | `https://eu.i.posthog.com` | Hôte d'ingestion PostHog |
 | `PLANNING_MCP_API_KEY` | *(vide = MCP inutilisable)* | Clé API attendue pour authentifier le serveur MCP |
 | `PLANNING_MCP_API_KEY_HEADER` | `X-MCP-Api-Key` | En-tête HTTP portant la clé (ou `Authorization: Bearer <clé>`) |
+| `PLANNING_MCP_REQUIRED_HEADERS` | *(vide)* | En-têtes supplémentaires exigés en plus de la clé, `Nom=valeur` séparés par des virgules (déploiement derrière un proxy type Pangolin) |
 
 Détails et mise en place : [`docs/observabilite.md`](docs/observabilite.md) (Sentry/PostHog),
 [`docs/mcp.md`](docs/mcp.md) (serveur MCP).
@@ -263,6 +264,27 @@ avec une raison tracée :
 
 Ces exceptions sont traitées par le moteur au même niveau que les contraintes
 dures : elles ne sont jamais contournées silencieusement.
+
+### Verrouillage partiel du planning
+
+Quand une partie du planning a été validée, on peut la **geler** pour que la
+prochaine résolution ne la remette pas en cause et n'optimise que le reste :
+
+- **un animateur** — son planning est considéré satisfaisant : ses postes ne
+  bougent plus et aucun poste supplémentaire ne lui est attribué ;
+- **un stand** — sur l'ensemble de ses créneaux ;
+- **une journée** — tous les créneaux de la journée ;
+- **un créneau** en particulier.
+
+Une place restée non pourvue n'est jamais gelée : elle resterait vide
+définitivement. Les places gelées continuent d'être évaluées par les règles
+métier, donc un verrouillage peut laisser une alerte visible plutôt que de
+masquer un problème.
+
+Les verrous se gèrent depuis la page « Verrouillages » et sont signalés par un
+cadenas dans les calendriers. Ils appartiennent au planning (groupe de
+créneaux) pour lequel ils ont été posés : basculer sur un planning alternatif
+les laisse en sommeil sans les perdre.
 
 ### Consultation du planning
 

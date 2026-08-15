@@ -153,6 +153,27 @@ export interface ContrainteAdHoc {
   creeLe?: string;
 }
 
+/** What a {@link VerrouillagePlanning} freezes (issue #87). */
+export type TypeVerrouillage = 'ANIMATEUR' | 'STAND' | 'JOUR' | 'CRENEAU';
+
+/**
+ * A validated part of the planning the solver must not touch again
+ * (`/api/verrouillages`). Exactly one target field is set, matching `type`,
+ * and the lock only applies to its own `groupeCreneauId`.
+ */
+export interface VerrouillagePlanning {
+  id: string;
+  type: TypeVerrouillage;
+  groupeCreneauId: string;
+  animateurId: string | null;
+  standId: string | null;
+  creneauId: number | null;
+  /** ISO date, for a `JOUR` lock. */
+  jour: string | null;
+  raison: string | null;
+  creeLe?: string;
+}
+
 /**
  * Real scale of the problem the next solve will build, from `/api/planning/volumetrie`
  * (mirrors what Timefold's own "Problem scale" log line reports): `posteCount` is one

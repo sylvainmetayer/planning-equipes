@@ -12,6 +12,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, Router } from '@angular/router';
 import { intlLocale } from '../../core/locale';
 import { PlanningStateService } from '../../core/planning-state.service';
+import { VerrouillageStore } from '../../core/verrouillage.store';
 import { Animateur, PlanningFestival, PosteAffectation, Stand } from '../../core/models';
 import { AffectationExplanationDialog } from '../../shared/affectation-explanation-dialog';
 import {
@@ -117,6 +118,7 @@ export class CalendarMonthPage {
   protected readonly animateurFilter = signal(ALL);
   protected readonly standFilter = signal(ALL);
 
+  protected readonly verrous = inject(VerrouillageStore);
   private readonly planningState = inject(PlanningStateService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -245,12 +247,27 @@ export class CalendarMonthPage {
   constructor() {
     this.seedStateFromQueryParams();
     void this.refresh();
+    // Fire-and-forget: the padlocks are an indicator, never a reason to fail
+    // the calendar the user came to read.
+    void this.verrous.reload().catch(() => undefined);
     // Keeps month/day/filters in the URL so a refresh (F5) restores the view
     // instead of resetting it — replaceUrl avoids piling up a history entry
     // per click while browsing (month nav, day/filter changes all go through
     // the same effect).
     effect(() => this.syncQueryParams());
   }
+
+  /** True when the whole date is frozen by a JOUR lock on the active groupe de créneaux. */
+  protected estJourVerrouille(dateKey: string): boolean {
+    return this.verrous.estJourVerrouille(dateKey);
+  }
+
+  /** True when this stand-line is frozen, either by its stand or by its créneau. */
+  protected estLigneVerrouillee(slot: SlotEntry, stand: StandLine): boolean {
+    return this.verrous.estStandVerrouille(stand.standId) || this.verrous.estCreneauVerrouille(slot.creneauId);
+  }
+
+  protected readonly verrouilleTooltip = $localize`:@@verrouillages.indicator:Verrouillé : ces affectations ne bougeront plus à la prochaine résolution`;
 
   private seedStateFromQueryParams(): void {
     const params = this.route.snapshot.queryParamMap;

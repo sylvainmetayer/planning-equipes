@@ -96,6 +96,10 @@ public final class ConstraintCatalog {
             new ConstraintDefinition("affectationForcee", Niveau.HARD, "Contraintes ad hoc",
                     "Affectation imposée par l'administrateur : l'animateur doit être présent sur le créneau ou le stand visé."),
 
+            new ConstraintDefinition("animateurVerrouilleFige", Niveau.HARD, "Verrouillage du planning",
+                    "Le planning d'un animateur verrouillé ne bouge plus : ses postes validés sont figés et "
+                            + "le solveur ne peut plus lui en attribuer de nouveaux."),
+
             new ConstraintDefinition("standComplexeAvecReferent", Niveau.MEDIUM, "Qualité d'organisation",
                     "Chaque stand devrait compter au moins un référent sur chaque créneau."),
             new ConstraintDefinition("equilibrerCharge", Niveau.MEDIUM, "Qualité d'organisation",

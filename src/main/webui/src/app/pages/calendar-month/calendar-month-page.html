@@ -84,6 +84,11 @@
                   psychology
                 </mat-icon>
               }
+              @if (estJourVerrouille(cell.dateKey)) {
+                <mat-icon inline class="verrouille-icon" [matTooltip]="verrouilleTooltip" [attr.aria-label]="verrouilleTooltip">
+                  lock
+                </mat-icon>
+              }
             </div>
             <div class="calendar-day-meta">
               <span>{{ creneauCountLabel(cell.count) }}</span>
@@ -127,6 +132,11 @@
                 @if (hasAppreciationMismatch(stand)) {
                   <mat-icon inline class="appreciation-mismatch-icon" [matTooltip]="appreciationMismatchTooltip" [attr.aria-label]="appreciationMismatchTooltip">
                     psychology
+                  </mat-icon>
+                }
+                @if (estLigneVerrouillee(slot, stand)) {
+                  <mat-icon inline class="verrouille-icon" [matTooltip]="verrouilleTooltip" [attr.aria-label]="verrouilleTooltip">
+                    lock
                   </mat-icon>
                 }
               </span>

@@ -222,6 +222,28 @@ opposable au même titre qu'une règle légale.
 | `incompatibiliteAdHoc` | Deux animateurs incompatibles ne travaillent jamais sur le même créneau |
 | `affectationForcee` | L'animateur doit être présent sur le créneau ou le stand visé |
 
+### Dures — verrouillage du planning (`VerrouillageConstraints`)
+
+| Contrainte | Description |
+| --- | --- |
+| `animateurVerrouilleFige` | Le planning d'un animateur verrouillé ne bouge plus : le solveur ne peut pas lui attribuer un poste supplémentaire |
+
+Geler une **journée**, un **stand** ou un **créneau** ne demande aucune
+contrainte : les places couvertes sont épinglées (`@PlanningPin` sur
+`PosteAffectation.verrouille`) avant la résolution, donc aucun move ne peut les
+toucher. Voir [`domaine.md`](domaine.md#verrouillage-partiel-du-planning) pour
+le mécanisme complet.
+
+Geler un **animateur** demande en plus cette contrainte : l'épinglage fige les
+places qu'il tient déjà, mais laisserait le solveur lui en donner de nouvelles
+ailleurs. Seules les places **non épinglées** sont pénalisées ; pénaliser ses
+places validées mettrait une violation dure permanente dans tous les plannings.
+
+Interaction avec les autres contraintes : une place épinglée est **scorée
+normalement**. Un verrou peut donc laisser une violation visible (par exemple
+un dépassement d'heures figé par l'utilisateur) plutôt que de désactiver
+silencieusement les règles autour de lui.
+
 ### Medium — qualité d'organisation (`QualiteConstraints`)
 
 | Contrainte | Description |

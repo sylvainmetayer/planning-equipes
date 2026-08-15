@@ -10,6 +10,7 @@ import dev.sylvain.planning.solver.constraints.AffectationConstraints;
 import dev.sylvain.planning.solver.constraints.LegalConstraints;
 import dev.sylvain.planning.solver.constraints.PreferenceConstraints;
 import dev.sylvain.planning.solver.constraints.QualiteConstraints;
+import dev.sylvain.planning.solver.constraints.VerrouillageConstraints;
 
 /**
  * Aggregates every constraint definition. The actual rules live in dedicated
@@ -18,6 +19,7 @@ import dev.sylvain.planning.solver.constraints.QualiteConstraints;
  *   <li>{@link AffectationConstraints} — core assignment (hard)</li>
  *   <li>{@link LegalConstraints} — legal protection of minors (hard)</li>
  *   <li>{@link AdHocConstraints} — administrative exceptions (hard)</li>
+ *   <li>{@link VerrouillageConstraints} — partial planning locks (hard)</li>
  *   <li>{@link QualiteConstraints} — organisational quality (medium)</li>
  *   <li>{@link PreferenceConstraints} — soft preferences (soft)</li>
  * </ul>
@@ -30,6 +32,7 @@ public class PlanningConstraintProvider implements ConstraintProvider {
                 new AffectationConstraints().define(constraintFactory),
                 new LegalConstraints().define(constraintFactory),
                 new AdHocConstraints().define(constraintFactory),
+                new VerrouillageConstraints().define(constraintFactory),
                 new QualiteConstraints().define(constraintFactory),
                 new PreferenceConstraints().define(constraintFactory))
                 .flatMap(Stream::of)

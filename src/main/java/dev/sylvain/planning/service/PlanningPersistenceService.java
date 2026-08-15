@@ -78,7 +78,8 @@ public class PlanningPersistenceService {
     private void clearPlanningTables(Connection connection) throws SQLException {
         try (Statement statement = connection.createStatement()) {
             statement.executeUpdate("TRUNCATE TABLE poste_affectation, planning_resolution, contrainte_animateur, "
-                    + "contrainte_ad_hoc, stand_typologie, animateur_competence, animateur_jour_indispo, "
+                    + "contrainte_ad_hoc, verrouillage_planning, stand_typologie, animateur_competence, "
+                    + "animateur_jour_indispo, "
                     + "stand, creneau, animateur, groupe_creneau "
                     + "CASCADE");
             statement.executeUpdate("INSERT INTO groupe_creneau (id, nom, actif) VALUES ('DEFAUT', 'Défaut', TRUE)");
@@ -379,6 +380,42 @@ public class PlanningPersistenceService {
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to count persisted assignments", e);
         }
+    }
+
+    /**
+     * The animateurs of the last persisted solve, grouped by stand × créneau
+     * (see {@link #cleStandCreneau}) and ordered by poste id. Empty seats are
+     * skipped: a lock never freezes a hole.
+     *
+     * <p>Deliberately keyed on stand × créneau rather than on the poste id:
+     * {@code PlanningService.construirePostes} renumbers its seats
+     * ({@code poste-0}, {@code poste-1}, …) on every build, so adding a single
+     * stand shifts every subsequent id. Seats of the same stand and créneau are
+     * interchangeable anyway, so re-seeding them positionally restores the same
+     * plan without depending on ids surviving a reference-data change.</p>
+     */
+    public Map<String, List<String>> chargerAnimateursParStandCreneau() {
+        Map<String, List<String>> parStandCreneau = new java.util.LinkedHashMap<>();
+        String sql = "SELECT stand_id, creneau_id, animateur_id FROM poste_affectation "
+                + "WHERE animateur_id IS NOT NULL ORDER BY id";
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = connection.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                parStandCreneau
+                        .computeIfAbsent(cleStandCreneau(rs.getString("stand_id"), rs.getLong("creneau_id")),
+                                key -> new ArrayList<>())
+                        .add(rs.getString("animateur_id"));
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to load persisted assignments", e);
+        }
+        return parStandCreneau;
+    }
+
+    /** Grouping key of {@link #chargerAnimateursParStandCreneau()}. */
+    public static String cleStandCreneau(String standId, long creneauId) {
+        return standId + "#" + creneauId;
     }
 
     /**

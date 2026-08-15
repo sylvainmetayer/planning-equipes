@@ -53,6 +53,7 @@ public class DatabaseDumpService {
             "poste_affectation",
             "contrainte_ad_hoc",
             "contrainte_animateur",
+            "verrouillage_planning",
             "planning_resolution",
             "parametres_legaux",
             "parametres_decoupage",

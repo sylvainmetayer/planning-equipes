@@ -71,6 +71,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/ad-hoc-constraints/ad-hoc-constraints-page').then((m) => m.AdHocConstraintsPage)
   },
   {
+    path: 'verrouillages',
+    title: 'Planning locks — Planning Équipes',
+    loadComponent: () => import('./pages/verrouillages/verrouillages-page').then((m) => m.VerrouillagesPage)
+  },
+  {
     path: 'calendar',
     title: 'Assignment calendar — Planning Équipes',
     loadComponent: () => import('./pages/calendar-month/calendar-month-page').then((m) => m.CalendarMonthPage)

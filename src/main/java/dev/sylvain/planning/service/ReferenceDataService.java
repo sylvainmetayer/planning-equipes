@@ -10,6 +10,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import dev.sylvain.planning.domain.Animateur;
@@ -25,6 +26,7 @@ import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.domain.VerrouillagePlanning;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.NotFoundException;
@@ -527,6 +529,101 @@ public class ReferenceDataService {
 
     public List<ContrainteAdHoc> snapshotContraintes() {
         return repository == null ? List.of() : repository.listContraintes();
+    }
+
+    /* --------------------------- Planning locks ----------------------------- */
+
+    public List<VerrouillagePlanning> listVerrouillages() {
+        return repository == null ? List.of() : repository.listVerrouillages();
+    }
+
+    /**
+     * The locks a solve must apply: those recorded for the groupe de créneaux
+     * currently active. Locks kept for another group stay in the table, dormant
+     * until that group is activated again.
+     */
+    public List<VerrouillagePlanning> snapshotVerrouillagesGroupeActif() {
+        if (repository == null) {
+            return List.of();
+        }
+        return repository.listVerrouillagesGroupe(repository.groupeCreneauActifId());
+    }
+
+    /**
+     * Records a lock, defaulting its group to the active one and rejecting a
+     * target that does not match the type or does not exist. Locking an already
+     * locked target is a no-op, not an error.
+     */
+    public VerrouillagePlanning createVerrouillage(VerrouillagePlanning verrouillage) {
+        if (verrouillage.getType() == null) {
+            throw new IllegalArgumentException("Type de verrouillage manquant");
+        }
+        normaliserCible(verrouillage);
+        if (verrouillage.getGroupeCreneauId() == null || verrouillage.getGroupeCreneauId().isBlank()) {
+            verrouillage.setGroupeCreneauId(repository.groupeCreneauActifId());
+        }
+        if (verrouillage.getId() == null || verrouillage.getId().isBlank()) {
+            verrouillage.setId(UUID.randomUUID().toString());
+        }
+        if (verrouillage.getCreeLe() == null) {
+            verrouillage.setCreeLe(Instant.now());
+        }
+        repository.saveVerrouillage(verrouillage);
+        markModified();
+        return verrouillage;
+    }
+
+    /**
+     * Keeps only the target column the type expects — a payload carrying two
+     * targets would be ambiguous, and the check constraint would reject it with
+     * a raw SQL error instead of a usable message.
+     */
+    private void normaliserCible(VerrouillagePlanning verrouillage) {
+        switch (verrouillage.getType()) {
+            case ANIMATEUR -> {
+                String animateurId = requiredId(verrouillage.getAnimateurId(), "animateur id");
+                if (!repository.animateurExists(animateurId)) {
+                    throw new IllegalArgumentException("Animateur inconnu : " + animateurId);
+                }
+                verrouillage.setStandId(null);
+                verrouillage.setCreneauId(null);
+                verrouillage.setJour(null);
+            }
+            case STAND -> {
+                String standId = requiredId(verrouillage.getStandId(), "stand id");
+                if (!repository.standExists(standId)) {
+                    throw new IllegalArgumentException("Stand inconnu : " + standId);
+                }
+                verrouillage.setAnimateurId(null);
+                verrouillage.setCreneauId(null);
+                verrouillage.setJour(null);
+            }
+            case CRENEAU -> {
+                Long creneauId = verrouillage.getCreneauId();
+                if (creneauId == null) {
+                    throw new IllegalArgumentException("Missing créneau id");
+                }
+                if (!repository.creneauExists(creneauId)) {
+                    throw new IllegalArgumentException("Créneau inconnu : " + creneauId);
+                }
+                verrouillage.setAnimateurId(null);
+                verrouillage.setStandId(null);
+                verrouillage.setJour(null);
+            }
+            case JOUR -> {
+                if (verrouillage.getJour() == null) {
+                    throw new IllegalArgumentException("Missing jour");
+                }
+                verrouillage.setAnimateurId(null);
+                verrouillage.setStandId(null);
+                verrouillage.setCreneauId(null);
+            }
+        }
+    }
+
+    public void deleteVerrouillage(String id) {
+        repository.deleteVerrouillage(id);
+        markModified();
     }
 
     /**

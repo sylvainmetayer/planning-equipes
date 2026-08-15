@@ -1,0 +1,138 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <mat-card-title i18n="@@verrouillages.form.title">Verrouiller une partie du planning</mat-card-title>
+    <mat-card-subtitle i18n="@@verrouillages.form.subtitle">
+      Une cible verrouillée est figée : à la prochaine résolution, les affectations déjà enregistrées qu'elle couvre
+      sont conservées telles quelles, et seul le reste du planning est réoptimisé. Un poste non pourvu n'est jamais
+      figé.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <form class="form-grid" (ngSubmit)="verrouiller()">
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@verrouillages.field.type">Type</mat-label>
+        <mat-select [ngModel]="type()" (ngModelChange)="type.set($event)" [disabled]="editingLocked()">
+          @for (option of types; track option.value) {
+            <mat-option [value]="option.value">{{ option.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      @switch (type()) {
+        @case ('ANIMATEUR') {
+          <mat-form-field appearance="outline">
+            <mat-label i18n="@@verrouillages.field.animateur">Animateur</mat-label>
+            <mat-select [ngModel]="animateurId()" (ngModelChange)="animateurId.set($event)" [disabled]="editingLocked()">
+              @for (animateur of store.animateurs(); track animateur.id) {
+                <mat-option [value]="animateur.id">{{ animateur.prenom }} {{ animateur.nom }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        }
+        @case ('STAND') {
+          <mat-form-field appearance="outline">
+            <mat-label i18n="@@verrouillages.field.stand">Stand</mat-label>
+            <mat-select [ngModel]="standId()" (ngModelChange)="standId.set($event)" [disabled]="editingLocked()">
+              @for (stand of store.stands(); track stand.id) {
+                <mat-option [value]="stand.id">{{ stand.nom || stand.id }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        }
+        @case ('JOUR') {
+          <mat-form-field appearance="outline">
+            <mat-label i18n="@@verrouillages.field.jour">Journée</mat-label>
+            <mat-select [ngModel]="jour()" (ngModelChange)="jour.set($event)" [disabled]="editingLocked()">
+              @for (date of jours(); track date) {
+                <mat-option [value]="date">{{ date }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        }
+        @case ('CRENEAU') {
+          <mat-form-field appearance="outline">
+            <mat-label i18n="@@verrouillages.field.creneau">Créneau</mat-label>
+            <mat-select [ngModel]="creneauId()" (ngModelChange)="creneauId.set($event)" [disabled]="editingLocked()">
+              @for (creneau of store.creneaux(); track creneau.id) {
+                <mat-option [value]="creneau.id">
+                  {{ creneau.date }} {{ creneau.heureDebut }}–{{ creneau.heureFin }}
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        }
+      }
+
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@verrouillages.field.raison">Raison (optionnel)</mat-label>
+        <input matInput [ngModel]="raison()" (ngModelChange)="raison.set($event)" [disabled]="editingLocked()" />
+      </mat-form-field>
+    </form>
+  </mat-card-content>
+  <mat-card-actions class="card-actions">
+    <button matButton="filled" type="button" [disabled]="editingLocked() || !cibleRenseignee()" (click)="verrouiller()">
+      <mat-icon>lock</mat-icon>
+      <ng-container i18n="@@verrouillages.action.lock">Verrouiller</ng-container>
+    </button>
+    <button matButton="tonal" type="button" (click)="reload()">
+      <mat-icon>refresh</mat-icon>
+      <ng-container i18n="@@common.refresh">Actualiser</ng-container>
+    </button>
+  </mat-card-actions>
+</mat-card>
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <mat-card-title i18n="@@verrouillages.list.title">Verrouillages ({{ rows().length }})</mat-card-title>
+  </mat-card-header>
+  <mat-card-content class="table-wrapper">
+    <table mat-table [dataSource]="rows()">
+      <ng-container matColumnDef="type">
+        <th mat-header-cell *matHeaderCellDef i18n="@@verrouillages.field.type">Type</th>
+        <td mat-cell *matCellDef="let row">
+          <mat-icon inline>lock</mat-icon>
+          {{ row.typeLabel }}
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="cible">
+        <th mat-header-cell *matHeaderCellDef i18n="@@verrouillages.field.cible">Cible</th>
+        <td mat-cell *matCellDef="let row">{{ row.cibleLabel }}</td>
+      </ng-container>
+      <ng-container matColumnDef="raison">
+        <th mat-header-cell *matHeaderCellDef i18n="@@verrouillages.field.raison">Raison (optionnel)</th>
+        <td mat-cell *matCellDef="let row">{{ row.raison || '—' }}</td>
+      </ng-container>
+      <ng-container matColumnDef="groupe">
+        <th mat-header-cell *matHeaderCellDef i18n="@@verrouillages.field.groupe">Groupe de créneaux</th>
+        <td mat-cell *matCellDef="let row">
+          {{ row.groupeCreneauId }}
+          @if (!row.actif) {
+            <span class="empty-hint" i18n="@@verrouillages.dormant">(dormant : autre groupe que le groupe actif)</span>
+          }
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>
+        <td mat-cell *matCellDef="let row" class="row-actions">
+          <button
+            matIconButton
+            i18n-matTooltip="@@verrouillages.action.unlock"
+            matTooltip="Déverrouiller"
+            i18n-aria-label="@@verrouillages.action.unlock"
+            aria-label="Déverrouiller"
+            class="danger-action"
+            [disabled]="editingLocked()"
+            (click)="deverrouiller(row)"
+          >
+            <mat-icon>lock_open</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="columns"></tr>
+      <tr mat-row *matRowDef="let row; columns: columns"></tr>
+    </table>
+    @if (rows().length === 0) {
+      <p class="empty-hint" i18n="@@verrouillages.empty">Aucun verrouillage : le solveur peut réoptimiser tout le planning.</p>
+    }
+  </mat-card-content>
+</mat-card>

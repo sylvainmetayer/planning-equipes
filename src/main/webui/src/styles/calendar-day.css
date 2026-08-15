@@ -101,3 +101,11 @@
 .affectation-link:focus-visible {
   text-decoration-style: solid;
 }
+
+/* Padlock marking a day, a stand or a créneau frozen by a planning lock
+ * (issue #87). Shared by both calendars — neutral on purpose: unlike the
+ * understaffing and appreciation markers it reports a deliberate user choice,
+ * not a problem to fix. */
+.verrouille-icon {
+  color: var(--mat-sys-on-surface-variant);
+}

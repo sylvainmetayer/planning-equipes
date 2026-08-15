@@ -34,6 +34,16 @@ public class PlanningFestival {
     @ProblemFactCollectionProperty
     private List<ConstraintToggle> constraintsDesactivees = new ArrayList<>();
 
+    /**
+     * Locks applying to this solve, already filtered on the active groupe de
+     * créneaux. Most of their effect is applied before the solve, by pinning
+     * the covered seats; they travel as facts only so
+     * {@code VerrouillageConstraints} can forbid giving a frozen animateur a
+     * new seat.
+     */
+    @ProblemFactCollectionProperty
+    private List<VerrouillagePlanning> verrouillages = new ArrayList<>();
+
     // Never exposed over the API: PlanningService.prepareProblem always sets
     // this from server-side configuration before a solve. Auto-discovered by
     // Timefold from its type alone (no annotation needed), and must never be
@@ -107,6 +117,14 @@ public class PlanningFestival {
 
     public void setConstraintsDesactivees(List<ConstraintToggle> constraintsDesactivees) {
         this.constraintsDesactivees = constraintsDesactivees;
+    }
+
+    public List<VerrouillagePlanning> getVerrouillages() {
+        return verrouillages;
+    }
+
+    public void setVerrouillages(List<VerrouillagePlanning> verrouillages) {
+        this.verrouillages = verrouillages;
     }
 
     public ConstraintWeightOverrides<HardMediumSoftScore> getPonderationsContraintes() {

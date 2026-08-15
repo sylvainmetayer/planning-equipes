@@ -82,6 +82,11 @@ function buildNavGroups(): NavGroup[] {
         path: '/ad-hoc-constraints',
         label: $localize`:@@nav.link.adHocConstraints:Contraintes ad hoc`,
         icon: 'rule'
+      },
+      {
+        path: '/verrouillages',
+        label: $localize`:@@nav.link.verrouillages:Verrouillages`,
+        icon: 'lock'
       }
     ]
   },

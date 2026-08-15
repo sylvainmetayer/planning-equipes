@@ -30,6 +30,7 @@ import ai.timefold.solver.core.api.solver.SolverFactory;
 import ai.timefold.solver.core.config.score.director.ScoreDirectorFactoryConfig;
 import ai.timefold.solver.core.config.solver.termination.TerminationConfig;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.yaml.snakeyaml.DumperOptions;
@@ -52,6 +53,8 @@ import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.domain.TypeVerrouillage;
+import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.PlanningConstraintProvider;
 
@@ -65,6 +68,14 @@ public class PlanningService {
     private final long defaultSecondsLimit;
     private final long defaultUnimprovedSecondsLimit;
     private final ConstraintWeightOverrides<HardMediumSoftScore> constraintWeightOverrides;
+
+    /**
+     * Field-injected rather than a constructor parameter: the plain (non-CDI)
+     * tests build this service with {@code new} and never exercise the locks,
+     * so it stays null there — {@link #appliquerVerrouillages} guards on it.
+     */
+    @Inject
+    PlanningPersistenceService planningPersistenceService;
 
     public PlanningService(
             @ConfigProperty(name = "planning.solver.seconds-limit", defaultValue = "120") Long secondsLimit,
@@ -199,6 +210,8 @@ public class PlanningService {
                             + "des animateurs et des créneaux d'abord.");
         }
         List<PosteAffectation> postes = construirePostes(stands, creneaux);
+        List<VerrouillagePlanning> verrouillages = referenceDataService.snapshotVerrouillagesGroupeActif();
+        appliquerVerrouillages(postes, animateurs, verrouillages);
         LocalDate dateDebut = creneaux.stream()
                 .map(Creneau::getDate)
                 .filter(java.util.Objects::nonNull)
@@ -207,7 +220,71 @@ public class PlanningService {
         PlanningFestival festival = new PlanningFestival(dateDebut, animateurs, postes,
                 referenceDataService.snapshotContraintes());
         festival.setParametresLegaux(List.of(referenceDataService.getParametresLegaux()));
+        festival.setVerrouillages(verrouillages);
         return festival;
+    }
+
+    /**
+     * Freezes the seats covered by the active group's locks (issue #87): each
+     * one is re-seeded with the animateur the last persisted solve gave it and
+     * pinned ({@link PosteAffectation#setVerrouille}), so no move can change it
+     * while the rest of the plan is re-optimised from scratch.
+     *
+     * <p>Only a seat that <em>was</em> staffed can be frozen: an empty seat is
+     * left unassigned and movable, because pinning a hole would make it
+     * permanently unfillable. For the same reason, a lock recorded before any
+     * solve has been persisted simply freezes nothing.</p>
+     *
+     * <p>Seats are re-seeded before the locks are evaluated because a
+     * {@link TypeVerrouillage#ANIMATEUR} lock is expressed in terms of who
+     * holds the seat; anything seeded but not covered by a lock is cleared
+     * again, leaving the unlocked part of the problem exactly as it was
+     * before.</p>
+     */
+    private void appliquerVerrouillages(List<PosteAffectation> postes, List<Animateur> animateurs,
+            List<VerrouillagePlanning> verrouillages) {
+        if (verrouillages.isEmpty() || planningPersistenceService == null) {
+            return;
+        }
+        appliquerVerrouillages(postes, animateurs, verrouillages,
+                planningPersistenceService.chargerAnimateursParStandCreneau());
+    }
+
+    /**
+     * The pinning itself, taking the persisted assignments as a parameter:
+     * package-private and static so it can be unit-tested without a database,
+     * like {@link #construirePostes}.
+     */
+    static void appliquerVerrouillages(List<PosteAffectation> postes, List<Animateur> animateurs,
+            List<VerrouillagePlanning> verrouillages, Map<String, List<String>> animateursPersistes) {
+        if (verrouillages.isEmpty() || animateursPersistes.isEmpty()) {
+            return;
+        }
+        Map<String, Animateur> animateursParId = new HashMap<>();
+        for (Animateur animateur : animateurs) {
+            animateursParId.put(animateur.getId(), animateur);
+        }
+        Map<String, Integer> prochaineePlace = new HashMap<>();
+        for (PosteAffectation poste : postes) {
+            if (poste.getStand() == null || poste.getCreneau() == null) {
+                continue;
+            }
+            String cle = PlanningPersistenceService.cleStandCreneau(
+                    poste.getStand().getId(), poste.getCreneau().getId());
+            List<String> tenants = animateursPersistes.getOrDefault(cle, List.of());
+            int place = prochaineePlace.merge(cle, 1, Integer::sum) - 1;
+            if (place < tenants.size()) {
+                poste.setAnimateur(animateursParId.get(tenants.get(place)));
+            }
+            if (poste.getAnimateur() == null) {
+                continue;
+            }
+            boolean gele = verrouillages.stream().anyMatch(verrouillage -> verrouillage.couvre(poste));
+            poste.setVerrouille(gele);
+            if (!gele) {
+                poste.setAnimateur(null);
+            }
+        }
     }
 
     /**

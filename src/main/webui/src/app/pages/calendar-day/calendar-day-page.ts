@@ -7,6 +7,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ApiService } from '../../core/api.service';
 import { PlanningStateService } from '../../core/planning-state.service';
+import { VerrouillageStore } from '../../core/verrouillage.store';
 import { Animateur, Creneau, PersistenceStatus, PlanningFestival, PosteAffectation, Stand } from '../../core/models';
 import { AffectationExplanationDialog } from '../../shared/affectation-explanation-dialog';
 
@@ -43,6 +44,8 @@ interface SlotCard {
 
 interface DayCard {
   jour: number;
+  /** ISO date of the day, to match a JOUR lock; null when the créneaux carry none. */
+  date: string | null;
   title: string;
   slots: SlotCard[];
   /** True when any stand-line on this day has some, but fewer than effectifMin, animateurs — shown on the card header, at a glance. */
@@ -69,6 +72,8 @@ export class CalendarDayPage {
   protected readonly unassignedLabel = $localize`:@@calendarMonth.unassigned:(non assigné)`;
   protected readonly pourquoiLuiLabel = $localize`:@@affectationExplanation.tooltip:Pourquoi lui ?`;
 
+  protected readonly verrous = inject(VerrouillageStore);
+
   private readonly api = inject(ApiService);
   private readonly planningState = inject(PlanningStateService);
   private readonly dialog = inject(MatDialog);
@@ -77,7 +82,22 @@ export class CalendarDayPage {
 
   constructor() {
     void this.refresh();
+    // Fire-and-forget: the padlocks are an indicator, never a reason to fail
+    // the calendar the user came to read.
+    void this.verrous.reload().catch(() => undefined);
   }
+
+  /** True when the whole day is frozen by a JOUR lock on the active groupe de créneaux. */
+  protected estJourVerrouille(day: DayCard): boolean {
+    return this.verrous.estJourVerrouille(day.date);
+  }
+
+  /** True when this stand-line is frozen, either by its stand or by its créneau. */
+  protected estLigneVerrouillee(slot: SlotCard, stand: StandLine): boolean {
+    return this.verrous.estStandVerrouille(stand.standId) || this.verrous.estCreneauVerrouille(slot.creneauId);
+  }
+
+  protected readonly verrouilleTooltip = $localize`:@@verrouillages.indicator:Verrouillé : ces affectations ne bougeront plus à la prochaine résolution`;
 
   protected async refresh(): Promise<void> {
     this.loading.set(true);
@@ -228,6 +248,7 @@ export function buildDays(postes: PosteAffectation[]): DayCard[] {
         }));
       return {
         jour: day.jour,
+        date: day.date,
         title: day.date
           ? $localize`:@@calendarDay.dayTitleWithDate:Jour ${day.jour}:jour: — ${day.date}:date:`
           : $localize`:@@calendarDay.dayTitle:Jour ${day.jour}:jour:`,

@@ -233,6 +233,35 @@ Contraintes ad hoc (pas de mise à jour, on supprime et on recrée) :
 | `POST` | `/api/contraintes-ad-hoc` |
 | `DELETE` | `/api/contraintes-ad-hoc/{id}` |
 
+### Verrouillages du planning
+
+Parties du planning validées par l'utilisateur et que le solveur ne doit plus
+modifier (voir [`domaine.md`](domaine.md#verrouillage-partiel-du-planning)).
+Comme les contraintes ad hoc, un verrou est un état : on ne le met pas à jour,
+on le supprime et on le recrée.
+
+| Méthode | Chemin |
+| --- | --- |
+| `GET` | `/api/verrouillages` |
+| `POST` | `/api/verrouillages` |
+| `DELETE` | `/api/verrouillages/{id}` |
+
+`GET` renvoie les verrous de **tous** les groupes de créneaux, du plus récent
+au plus ancien ; seuls ceux du groupe actif sont appliqués par la résolution.
+
+Corps du `POST` : `type` (`ANIMATEUR`, `STAND`, `JOUR` ou `CRENEAU`) et la
+**seule** cible correspondante — `animateurId`, `standId`, `jour` (date ISO) ou
+`creneauId`. `raison` est optionnelle, `groupeCreneauId` vaut par défaut le
+groupe actif et `id` un UUID généré. Une cible déjà verrouillée sur le même
+groupe renvoie `200` sans créer de doublon ; un type sans cible correspondante,
+ou une cible inconnue, renvoie `400 {"message": "..."}`.
+
+```bash
+curl -X POST http://localhost:8080/api/verrouillages \
+  -H 'Content-Type: application/json' \
+  -d '{"type":"JOUR","jour":"2026-07-12","raison":"Journée validée avec les responsables"}'
+```
+
 Import global du référentiel depuis un `PlanningFestival` :
 `POST /api/reference-data/import`.
 

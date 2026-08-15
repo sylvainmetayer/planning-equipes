@@ -31,6 +31,7 @@ l'application n'a pas).
 | --- | --- | --- |
 | `planning.mcp.api-key` (`PLANNING_MCP_API_KEY`) | vide | Clé attendue. Vide = MCP inutilisable (voir ci-dessous). |
 | `planning.mcp.api-key-header` (`PLANNING_MCP_API_KEY_HEADER`) | `X-MCP-Api-Key` | Nom de l'en-tête HTTP porteur de la clé. |
+| `planning.mcp.required-headers` (`PLANNING_MCP_REQUIRED_HEADERS`) | vide | En-têtes supplémentaires exigés **en plus** de la clé (voir « Derrière un proxy »). |
 
 La clé peut aussi être présentée via `Authorization: Bearer <clé>`.
 
@@ -48,6 +49,68 @@ Implémentation : `McpApiKeyAuthenticationMechanism` +
 Vert.x standard, donc un tel filtre ne voit jamais ces requêtes. Le moteur de
 politiques `quarkus.http.auth.permission.*`, lui, s'applique uniformément à
 tout chemin quelle que soit l'extension qui l'a monté.
+
+## Derrière un proxy d'accès (Pangolin, en-têtes personnalisés)
+
+Quand l'application est déployée derrière un proxy d'accès type
+[Pangolin](https://docs.pangolin.net/manage/access-control/links#use-the-access-token),
+le proxy s'intercale avant le serveur MCP et exige son propre jeton. Le trajet
+d'une requête est donc : client MCP → proxy (jeton d'accès) → application (clé
+API). Deux réglages, indépendants l'un de l'autre.
+
+### Côté client : envoyer les en-têtes du proxy
+
+Le client MCP doit joindre le jeton du proxy à *chaque* requête, en plus de la
+clé API. Pangolin attend par défaut deux en-têtes (`P-Access-Token-Id` et
+`P-Access-Token`) ; certains déploiements les renomment, se référer à la
+configuration de l'instance.
+
+```json
+{
+  "mcpServers": {
+    "planning-equipes": {
+      "type": "http",
+      "url": "https://planning.exemple.fr/mcp",
+      "headers": {
+        "X-MCP-Api-Key": "<clé PLANNING_MCP_API_KEY>",
+        "P-Access-Token-Id": "<id du jeton Pangolin>",
+        "P-Access-Token": "<jeton Pangolin>"
+      }
+    }
+  }
+}
+```
+
+Utiliser l'en-tête dédié `X-MCP-Api-Key` plutôt que `Authorization: Bearer`
+dans ce cas de figure : un proxy d'accès consomme fréquemment `Authorization`
+pour son propre compte, et la clé n'arriverait alors jamais à l'application.
+
+Pangolin accepte aussi le jeton en query string
+(`?p_token=<id>.<jeton>`), utile pour un client qui ne sait pas ajouter
+d'en-têtes ; le chemin `/mcp` et la clé API restent inchangés.
+
+### Côté serveur : exiger ces en-têtes en plus de la clé
+
+`planning.mcp.required-headers` liste des paires `Nom-Header=valeur` séparées par
+des virgules (virgule littérale à échapper en `\,`), exigées en plus de la clé
+API — la comparaison est exacte et à temps constant, et une paire absente ou
+différente donne 401 comme une clé invalide.
+
+```bash
+PLANNING_MCP_REQUIRED_HEADERS='P-Access-Token-Id=<id>,P-Access-Token=<jeton>'
+```
+
+C'est de la défense en profondeur : elle protège l'origine si celle-ci reste
+joignable sans passer par le proxy. Elle est **facultative et vide par
+défaut** — un déploiement sans proxy n'a rien à changer.
+
+Deux pièges :
+
+- ne lister que des en-têtes que le proxy **retransmet** ; un proxy qui les
+  consomme et les retire ferait échouer toutes les requêtes ;
+- une entrée sans `=`, ou avec une valeur vide, n'est jamais satisfaite (échec
+  fermé, cohérent avec `planning.mcp.api-key`) : ce n'est pas un moyen d'exiger la
+  simple présence d'un en-tête.
 
 ## Confidentialité des données animateur
 

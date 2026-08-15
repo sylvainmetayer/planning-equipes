@@ -2,6 +2,7 @@ package dev.sylvain.planning.mcp;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -52,6 +53,9 @@ public class McpApiKeyAuthenticationMechanism implements HttpAuthenticationMecha
     @ConfigProperty(name = "planning.mcp.api-key-header", defaultValue = "X-MCP-Api-Key")
     String headerName;
 
+    @ConfigProperty(name = "planning.mcp.required-headers")
+    Optional<List<String>> requiredHeaders;
+
     @Override
     public Uni<SecurityIdentity> authenticate(RoutingContext context, IdentityProviderManager identityProviderManager) {
         if (!context.request().path().startsWith("/mcp")) {
@@ -60,7 +64,36 @@ public class McpApiKeyAuthenticationMechanism implements HttpAuthenticationMecha
         if (apiKey.isEmpty() || apiKey.get().isBlank() || !clesEgales(apiKey.get(), clePresentee(context))) {
             return Uni.createFrom().nullItem();
         }
+        if (!enTetesRequisPresents(context)) {
+            return Uni.createFrom().nullItem();
+        }
         return identityProviderManager.authenticate(new TrustedAuthenticationRequest(PRINCIPAL));
+    }
+
+    /**
+     * Additional, opt-in {@code Nom-Header=valeur} pairs that must accompany the API key —
+     * for a deployment sitting behind a reverse proxy that identifies callers
+     * by a custom header (Pangolin's {@code P-Access-Token-Id} /
+     * {@code P-Access-Token}, for instance). Empty by default, so an ordinary
+     * deployment is unaffected; when set, the origin stays protected even if
+     * someone reaches it without going through the proxy. Only enable it for
+     * headers the proxy <em>forwards</em>: a proxy that consumes and strips
+     * them would make every request fail here.
+     *
+     * <p>Fails closed like the API key itself: an entry with no {@code =}, or
+     * a blank expected value, can never be matched, rather than degrading to
+     * "header optional".
+     */
+    private boolean enTetesRequisPresents(RoutingContext context) {
+        if (requiredHeaders.isEmpty()) {
+            return true;
+        }
+        return requiredHeaders.get().stream().allMatch(paire -> {
+            int separateur = paire.indexOf('=');
+            String nom = separateur < 0 ? paire.trim() : paire.substring(0, separateur).trim();
+            String valeurAttendue = separateur < 0 ? "" : paire.substring(separateur + 1);
+            return clesEgales(valeurAttendue, context.request().getHeader(nom));
+        });
     }
 
     @Override
