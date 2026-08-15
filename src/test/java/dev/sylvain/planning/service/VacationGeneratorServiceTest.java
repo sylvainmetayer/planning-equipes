@@ -294,6 +294,45 @@ class VacationGeneratorServiceTest {
     }
 
     /**
+     * The regression that actually cost a solve: the <b>second</b> relay of a
+     * long day, the one that falls in the evening meal window.
+     *
+     * <p>The first staggering attempt offset the target before the range clamp.
+     * On a 10:00→00:00 amplitude the first cut lands in the lunch window and
+     * does spread — which is all the earlier tests checked — but the second
+     * cut's target then falls <i>below</i> the 19:00 evening window, and a
+     * clamp has two edges: every famille was snapped back up to 19:00 exactly.
+     * Every stand changed crew at the same instant, both crews on the clock at
+     * once, and the seat count doubled at 18:30. Checking only the first relay
+     * would have called that fix a success.
+     */
+    @Test
+    void leSecondRelaisDuneJourneeLongueEstLuiAussiEtaleParFamille() {
+        Creneau amplitude = amplitude(LocalTime.of(10, 0), LocalTime.of(0, 0));
+        ParametresDecoupage parametres = new ParametresDecoupage();
+        parametres.setNombreFamillesDecalage(4);
+        parametres.setDureeDecalageMaxMinutes(60);
+
+        List<Creneau> vacations = VacationGeneratorService.genererVacations(List.of(amplitude), parametres);
+
+        Set<LocalTime> secondsRelais = new java.util.HashSet<>();
+        for (int famille = 0; famille < 4; famille++) {
+            int f = famille;
+            List<LocalTime> finsTriees = vacations.stream()
+                    .filter(v -> v.getFamille() == f)
+                    .sorted(java.util.Comparator.comparing(Creneau::getHeureDebut))
+                    .map(Creneau::getHeureFin)
+                    .distinct()
+                    .toList();
+            assertThat(finsTriees).as("famille %d doit avoir au moins deux relais", f).hasSizeGreaterThan(1);
+            secondsRelais.add(finsTriees.get(1));
+        }
+        assertThat(secondsRelais)
+                .as("le second relais doit tomber à un instant distinct par famille, pas s'écraser sur un bord de fenêtre")
+                .hasSize(4);
+    }
+
+    /**
      * The fan is spread <i>inside</i> the meal window, never outside it: the
      * handover still happens around a meal for every famille, which is the
      * whole point of snapping to the window in the first place.

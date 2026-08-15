@@ -13,6 +13,10 @@ parametresLegaux:
 parametresDecoupage:
   dureeVacationMinMinutes: 250
   strategieCouverturePendantPause: RELEVE
+  # Champs du découpage par familles décalées : présents dans le DTO et lus par
+  # l'importeur depuis leur introduction, mais qu'aucune fixture n'exerçait.
+  nombreFamillesDecalage: 3
+  dureeDecalageMaxMinutes: 75
   # Deliberately unquoted: SnakeYAML's YAML 1.1 resolver reads an unquoted
   # HH:MM:SS scalar as sexagesimal (a Number), not a string — this exercises
   # that parsing path, not just the quoted "HH:MM" créneaux below.

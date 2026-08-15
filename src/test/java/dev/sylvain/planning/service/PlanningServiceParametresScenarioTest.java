@@ -65,6 +65,12 @@ class PlanningServiceParametresScenarioTest {
         // sexagesimal Number (43830 = 12*3600 + 30*60), not a String — a naive
         // (String) cast throws ClassCastException instead of parsing it.
         assertThat(decoupage.getFenetreRepasMidiDebut()).isEqualTo(LocalTime.of(12, 30));
+        // Découpage par familles décalées : le paramétrage qui rend un scénario
+        // dense faisable (voir docs/optimisation-solveur.md) doit pouvoir être
+        // épinglé dans le scénario lui-même, pas seulement réglé à la main
+        // après import.
+        assertThat(decoupage.getNombreFamillesDecalage()).isEqualTo(3);
+        assertThat(decoupage.getDureeDecalageMaxMinutes()).isEqualTo(75);
 
         ParametresSolveur solveur = service.chargerParametresSolveurScenario("scenario-parametres-optionnels.yaml")
                 .orElseThrow();
