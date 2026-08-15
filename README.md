@@ -293,8 +293,10 @@ les laisse en sommeil sans les perdre.
 - **Vue par jour**, stand par stand et créneau par créneau ;
 - **Heatmap de charge**, par jour croisé avec le stand (places pourvues /
   requises, pour repérer les trous de couverture) ou avec l'animateur (nombre
-  de postes par jour, pour repérer les surcharges) ;
-- **Timeline individuelle par animateur** : amplitude journalière, vacations et
+  de postes par jour, pour repérer les surcharges — le survol du nom d'un
+  animateur liste les stands distincts sur lesquels il intervient) ;
+- **Timeline individuelle par animateur** : récapitulatif des stands à couvrir
+  (nombre et dénomination) puis amplitude journalière, vacations et
   pauses/déplacements entre elles, jour par jour — utile en réparation
   manuelle d'un planning, avec export PDF ou ICS du planning de l'animateur
   affiché ;

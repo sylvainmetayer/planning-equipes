@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Animateur, Creneau, PosteAffectation, Stand } from '../../core/models';
-import { buildAnimateurOptions, buildAnimateurTimeline, exportFilename } from './animateur-timeline-page';
+import { buildAnimateurOptions, buildAnimateurTimeline, buildStandsSummary, exportFilename } from './animateur-timeline-page';
 
 function creneau(overrides: Partial<Creneau> & { id: number; jour: number }): Creneau {
   return { date: '2026-08-01', heureDebut: '09:00', heureFin: '12:00', groupe: null, ...overrides };
@@ -159,5 +159,24 @@ describe('exportFilename', () => {
   it('falls back on the id and strips path separators when the label is unusable', () => {
     expect(exportFilename([], 'a/b', 'ics')).toBe('planning-a-b.ics');
     expect(exportFilename([{ id: 'id-1', label: '///' }], 'id-1', 'pdf')).toBe('planning-animateur.pdf');
+  });
+});
+
+describe('buildStandsSummary', () => {
+  it('counts each stand once even when the animateur returns to it on several days', () => {
+    const days = buildAnimateurTimeline(
+      [
+        poste({ id: 'p1', creneau: creneau({ id: 1, jour: 1 }), stand: stand('Zebre'), animateur: animateur('id-1', 'Jean', 'Dupont') }),
+        poste({ id: 'p2', creneau: creneau({ id: 2, jour: 2 }), stand: stand('Alpha'), animateur: animateur('id-1', 'Jean', 'Dupont') }),
+        poste({ id: 'p3', creneau: creneau({ id: 3, jour: 3 }), stand: stand('Alpha'), animateur: animateur('id-1', 'Jean', 'Dupont') })
+      ],
+      'id-1'
+    );
+
+    expect(buildStandsSummary(days)).toEqual({ count: 2, noms: ['Alpha', 'Zebre'] });
+  });
+
+  it('returns an empty summary when the animateur has no day at all', () => {
+    expect(buildStandsSummary([])).toEqual({ count: 0, noms: [] });
   });
 });

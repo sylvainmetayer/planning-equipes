@@ -80,3 +80,24 @@
   color: var(--mat-sys-on-surface);
   margin-right: 0.25rem;
 }
+
+.timeline-stands-card {
+  margin-bottom: 1rem;
+}
+
+.timeline-stands-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.timeline-stand-chip {
+  border-radius: var(--mat-sys-corner-small);
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+  font: var(--mat-sys-label-medium);
+  padding: 0.25rem 0.625rem;
+}

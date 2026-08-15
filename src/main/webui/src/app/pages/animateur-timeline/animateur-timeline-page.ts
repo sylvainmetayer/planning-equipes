@@ -34,6 +34,12 @@ export interface TimelineGap {
   widthPercent: number;
 }
 
+/** Distinct stands the animateur works on over the whole festival, for the header recap. */
+export interface TimelineStandsSummary {
+  count: number;
+  noms: string[];
+}
+
 export interface TimelineDay {
   jour: number;
   title: string;
@@ -88,6 +94,13 @@ export class AnimateurTimelinePage {
       return [];
     }
     return buildAnimateurTimeline(this.planning()?.postes ?? [], animateurId);
+  });
+
+  protected readonly standsSummary = computed<TimelineStandsSummary>(() => buildStandsSummary(this.days()));
+
+  protected readonly standsSummaryLabel = computed(() => {
+    const summary = this.standsSummary();
+    return $localize`:@@timeline.stands.count:${summary.count}:count: stand(s) au total`;
   });
 
   constructor() {
@@ -191,6 +204,18 @@ export function exportFilename(options: AnimateurOption[], animateurId: string, 
   const label = options.find((option) => option.id === animateurId)?.label ?? animateurId;
   const safeLabel = label.replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, '') || 'animateur';
   return `planning-${safeLabel}.${format}`;
+}
+
+/**
+ * Distinct stands across every day, sorted alphabetically: an animateur usually
+ * comes back to the same stand several times, so the raw block count would
+ * overstate how many different places they have to learn.
+ */
+export function buildStandsSummary(days: TimelineDay[]): TimelineStandsSummary {
+  const noms = new Set<string>();
+  days.forEach((day) => day.blocks.forEach((block) => block.standNom && noms.add(block.standNom)));
+  const sorted = Array.from(noms).sort((left, right) => left.localeCompare(right));
+  return { count: sorted.length, noms: sorted };
 }
 
 /** One entry per festival day the animateur works, sorted chronologically. */

@@ -121,4 +121,21 @@ describe('buildAnimateurHeatmap', () => {
 
     expect(table.rows.map((row) => row.id)).toEqual(['Heavy', 'Light']);
   });
+
+  it('lists the distinct stands of an animateur in the row-header tooltip, alphabetically and without duplicates', () => {
+    const table = buildAnimateurHeatmap([
+      poste({ id: 'p1', creneau: creneau({ id: 1, jour: 1 }), stand: stand('Zebre'), animateur: animateur('A') }),
+      poste({ id: 'p2', creneau: creneau({ id: 2, jour: 2 }), stand: stand('Alpha'), animateur: animateur('A') }),
+      poste({ id: 'p3', creneau: creneau({ id: 3, jour: 3 }), stand: stand('Alpha'), animateur: animateur('A') })
+    ]);
+
+    expect(table.rows[0].headerTooltip).toContain('2');
+    expect(table.rows[0].headerTooltip).toContain('Alpha, Zebre');
+  });
+
+  it('leaves the stand rows without a header tooltip', () => {
+    const table = buildStandHeatmap([poste({ id: 'p1', creneau: creneau({ id: 1, jour: 1 }), stand: stand('S1') })]);
+
+    expect(table.rows[0].headerTooltip).toBe('');
+  });
 });

@@ -33,6 +33,8 @@ export interface HeatmapRow {
   label: string;
   /** Total load across the whole period — stands sort alphabetically instead, see {@link buildStandHeatmap}. */
   total: number;
+  /** Row-header tooltip, empty when there is nothing more to say than the label itself. */
+  headerTooltip: string;
   cells: HeatmapCell[];
 }
 
@@ -161,7 +163,7 @@ export function buildStandHeatmap(postes: PosteAffectation[]): HeatmapTable {
           tooltip: standDayTooltip(standNom, day, cell)
         };
       });
-      return { id: standId, label: standNom, total, cells };
+      return { id: standId, label: standNom, total, headerTooltip: '', cells };
     });
 
   return { days, rows };
@@ -172,6 +174,7 @@ export function buildAnimateurHeatmap(postes: PosteAffectation[]): HeatmapTable 
   const days = buildDayColumns(postes);
   const animateurs = new Map<string, string>();
   const counts = new Map<string, Map<number, number>>();
+  const standsByAnimateur = new Map<string, Set<string>>();
 
   postes.forEach((poste) => {
     const animateur = poste.animateur;
@@ -180,6 +183,15 @@ export function buildAnimateurHeatmap(postes: PosteAffectation[]): HeatmapTable 
       return;
     }
     animateurs.set(animateur.id, `${animateur.prenom ?? ''} ${animateur.nom ?? ''}`.trim() || animateur.id);
+    const standNom = poste.stand?.nom || poste.stand?.id;
+    if (standNom) {
+      let stands = standsByAnimateur.get(animateur.id);
+      if (!stands) {
+        stands = new Set();
+        standsByAnimateur.set(animateur.id, stands);
+      }
+      stands.add(standNom);
+    }
     let byDay = counts.get(animateur.id);
     if (!byDay) {
       byDay = new Map();
@@ -201,10 +213,30 @@ export function buildAnimateurHeatmap(postes: PosteAffectation[]): HeatmapTable 
         tooltip: animateurDayTooltip(label, day, count)
       };
     });
-    return { id: animateurId, label, total, cells };
+    return {
+      id: animateurId,
+      label,
+      total,
+      headerTooltip: animateurStandsTooltip(standsByAnimateur.get(animateurId)),
+      cells
+    };
   });
 
   return { days, rows: rows.sort((left, right) => right.total - left.total || left.label.localeCompare(right.label)) };
+}
+
+/**
+ * Row-header tooltip listing the distinct stands the animateur works on — the
+ * daily cells only count postes, which says nothing about how many different
+ * stands they have to cover over the festival.
+ */
+function animateurStandsTooltip(stands: Set<string> | undefined): string {
+  const noms = Array.from(stands ?? []).sort((left, right) => left.localeCompare(right));
+  if (noms.length === 0) {
+    return $localize`:@@heatmap.animateur.standsNone:Aucun stand affecté`;
+  }
+  const liste = noms.join(', ');
+  return $localize`:@@heatmap.animateur.stands:${noms.length}:count: stand(s) : ${liste}:stands:`;
 }
 
 function animateurLoadLevel(count: number): HeatmapLevel {

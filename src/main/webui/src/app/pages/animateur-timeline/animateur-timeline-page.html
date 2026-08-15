@@ -65,6 +65,19 @@
       </mat-card-content>
     </mat-card>
   } @else {
+    <mat-card appearance="outlined" class="page-card timeline-stands-card">
+      <mat-card-header>
+        <mat-card-title i18n="@@timeline.stands.title">Stands à couvrir</mat-card-title>
+        <mat-card-subtitle>{{ standsSummaryLabel() }}</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <ul class="timeline-stands-list">
+          @for (nom of standsSummary().noms; track nom) {
+            <li class="timeline-stand-chip">{{ nom }}</li>
+          }
+        </ul>
+      </mat-card-content>
+    </mat-card>
     @for (day of days(); track day.jour) {
       <mat-card appearance="outlined" class="page-card timeline-day-card">
         <mat-card-header>

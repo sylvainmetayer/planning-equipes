@@ -66,7 +66,12 @@
             <tbody>
               @for (row of activeTable().rows; track row.id) {
                 <tr>
-                  <th class="heatmap-row-header" scope="row">{{ row.label }}</th>
+                  <th
+                    class="heatmap-row-header"
+                    scope="row"
+                    [matTooltip]="row.headerTooltip"
+                    [attr.aria-label]="row.headerTooltip ? row.label + ' — ' + row.headerTooltip : null"
+                  >{{ row.label }}</th>
                   @for (cell of row.cells; track cell.jour) {
                     <td
                       class="heatmap-cell"
