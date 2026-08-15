@@ -7,7 +7,9 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, Router } from '@angular/router';
+import { ApiService } from '../../core/api.service';
 import { uniqueById } from '../../core/date-utils';
+import { NotificationService } from '../../core/notification.service';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { Animateur, PlanningFestival, PosteAffectation } from '../../core/models';
 
@@ -67,10 +69,13 @@ export interface TimelineDay {
 })
 export class AnimateurTimelinePage {
   protected readonly loading = signal(false);
+  protected readonly exportBusy = signal(false);
   protected readonly error = signal('');
   protected readonly planning = signal<PlanningFestival | null>(null);
   protected readonly selectedAnimateurId = signal<string | null>(null);
 
+  private readonly api = inject(ApiService);
+  private readonly notifications = inject(NotificationService);
   private readonly planningState = inject(PlanningStateService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -118,6 +123,46 @@ export class AnimateurTimelinePage {
     this.selectedAnimateurId.set(animateurId);
   }
 
+  protected exportPdf(): Promise<void> {
+    return this.export('pdf', 'application/pdf');
+  }
+
+  protected exportIcs(): Promise<void> {
+    return this.export('ics', 'text/calendar');
+  }
+
+  /**
+   * Same server-side exports as the global archive of the Solveur page
+   * (`/api/planning/export/{pdf,ics}/animateur/{id}`), but for the animateur
+   * currently displayed only — the planning is POSTed as the request body, so
+   * what gets exported is exactly what the timeline shows.
+   */
+  private async export(format: 'pdf' | 'ics', contentType: string): Promise<void> {
+    const animateurId = this.selectedAnimateurId();
+    if (!animateurId || this.exportBusy()) {
+      return;
+    }
+    this.exportBusy.set(true);
+    try {
+      const planning = await this.planningState.require();
+      const filename = exportFilename(this.animateurOptions(), animateurId, format);
+      const url = `/api/planning/export/${format}/animateur/${encodeURIComponent(animateurId)}`;
+      this.notifications.notify({
+        title: await this.api.downloadPost(url, filename, planning, contentType),
+        variant: 'success'
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.notifications.notify({
+        title: $localize`:@@timeline.exportFailed:Export impossible`,
+        message,
+        variant: 'error'
+      });
+    } finally {
+      this.exportBusy.set(false);
+    }
+  }
+
   protected gapTooltip(gap: TimelineGap): string {
     return $localize`:@@timeline.gap.tooltip:Pause ou déplacement : ${formatDuration(gap.dureeMinutes)}:duree:`;
   }
@@ -136,6 +181,16 @@ export function buildAnimateurOptions(postes: PosteAffectation[]): AnimateurOpti
       return { id: animateur.id, label: (counts.get(label) ?? 0) > 1 ? `${label} (${animateur.id})` : label };
     })
     .sort((left, right) => left.label.localeCompare(right.label));
+}
+
+/**
+ * `planning-Jeanne-Dupont.pdf` rather than the raw id, so a downloaded file
+ * stays readable — every character a file system may choke on is folded to `-`.
+ */
+export function exportFilename(options: AnimateurOption[], animateurId: string, format: 'pdf' | 'ics'): string {
+  const label = options.find((option) => option.id === animateurId)?.label ?? animateurId;
+  const safeLabel = label.replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, '') || 'animateur';
+  return `planning-${safeLabel}.${format}`;
 }
 
 /** One entry per festival day the animateur works, sorted chronologically. */

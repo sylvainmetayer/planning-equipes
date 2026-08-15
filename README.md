@@ -62,8 +62,9 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
    ouverts sur l'application, qui voient le calcul en cours et son temps écoulé.
 4. Consulter le résultat dans **Assignment calendar** (vue mensuelle) ou
    **Day calendar** (vue par jour), et le respect des règles dans **Constraints**.
-5. Exporter les plannings individuels en PDF ou en ICS depuis la page
-   **Exports**.
+5. Exporter les plannings individuels en PDF ou en ICS : l'archive complète
+   depuis la page **Solveur**, ou le planning d'un seul animateur depuis la page
+   **Timeline animateur**.
 
 ### Configuration
 
@@ -270,7 +271,8 @@ dures : elles ne sont jamais contournées silencieusement.
   de postes par jour, pour repérer les surcharges) ;
 - **Timeline individuelle par animateur** : amplitude journalière, vacations et
   pauses/déplacements entre elles, jour par jour — utile en réparation
-  manuelle d'un planning ;
+  manuelle d'un planning, avec export PDF ou ICS du planning de l'animateur
+  affiché ;
 - **Page « Constraints »** : catalogue des règles actives et résultat de la
   dernière analyse, avec le score du planning et les contraintes en défaut — ce
   qui permet d'identifier précisément ce qui bloque quand aucun planning

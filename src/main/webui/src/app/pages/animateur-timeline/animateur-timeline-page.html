@@ -19,6 +19,28 @@
         <mat-icon>refresh</mat-icon>
         <ng-container i18n="@@common.refresh">Actualiser</ng-container>
       </button>
+      <button
+        matButton="tonal"
+        type="button"
+        [disabled]="loading() || exportBusy() || !selectedAnimateurId()"
+        (click)="exportPdf()"
+        matTooltip="Planning individuel de cet animateur au format PDF"
+        i18n-matTooltip="@@timeline.exportPdf.tooltip"
+      >
+        <mat-icon>picture_as_pdf</mat-icon>
+        <ng-container i18n="@@timeline.exportPdf">Exporter le PDF</ng-container>
+      </button>
+      <button
+        matButton="tonal"
+        type="button"
+        [disabled]="loading() || exportBusy() || !selectedAnimateurId()"
+        (click)="exportIcs()"
+        matTooltip="Planning individuel de cet animateur au format calendrier (ICS)"
+        i18n-matTooltip="@@timeline.exportIcs.tooltip"
+      >
+        <mat-icon>event</mat-icon>
+        <ng-container i18n="@@timeline.exportIcs">Exporter l'ICS</ng-container>
+      </button>
     </div>
     @if (loading()) {
       <mat-progress-bar mode="indeterminate" />

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Animateur, Creneau, PosteAffectation, Stand } from '../../core/models';
-import { buildAnimateurOptions, buildAnimateurTimeline } from './animateur-timeline-page';
+import { buildAnimateurOptions, buildAnimateurTimeline, exportFilename } from './animateur-timeline-page';
 
 function creneau(overrides: Partial<Creneau> & { id: number; jour: number }): Creneau {
   return { date: '2026-08-01', heureDebut: '09:00', heureFin: '12:00', groupe: null, ...overrides };
@@ -147,5 +147,17 @@ describe('buildAnimateurOptions', () => {
     ]);
 
     expect(options.map((option) => option.label)).toEqual(['Jean Dupont (id-1)', 'Jean Dupont (id-2)']);
+  });
+});
+
+describe('exportFilename', () => {
+  it('builds a readable filename from the animateur display name', () => {
+    expect(exportFilename([{ id: 'id-1', label: 'Jeanne Dupont' }], 'id-1', 'pdf')).toBe('planning-Jeanne-Dupont.pdf');
+    expect(exportFilename([{ id: 'id-1', label: 'Jeanne Dupont' }], 'id-1', 'ics')).toBe('planning-Jeanne-Dupont.ics');
+  });
+
+  it('falls back on the id and strips path separators when the label is unusable', () => {
+    expect(exportFilename([], 'a/b', 'ics')).toBe('planning-a-b.ics');
+    expect(exportFilename([{ id: 'id-1', label: '///' }], 'id-1', 'pdf')).toBe('planning-animateur.pdf');
   });
 });
