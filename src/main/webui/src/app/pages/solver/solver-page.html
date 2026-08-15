@@ -32,7 +32,8 @@
       </ng-container>
       @if (ordreDeGrandeur() > 0) {
         <strong i18n="@@solver.volumetry.formulaLabel">
-          &nbsp;— environ 10^{{ ordreDeGrandeur() }} combinaisons possibles (ordre de grandeur du « problem scale » Timefold).
+          &nbsp;— soit un espace de recherche d'environ 10^{{ ordreDeGrandeur() }} affectations théoriques
+          (« problem scale » ≈ {{ ordreDeGrandeur() }} au sens Timefold), avant élimination des affectations impossibles.
         </strong>
       }
     </p>

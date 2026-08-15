@@ -169,10 +169,17 @@ export class SolverPage {
     () => this.referenceData.creneaux().filter((creneau) => creneau.groupe?.id === this.activeGroupeId()).length
   );
   /**
-   * Order of magnitude of Timefold's own "approximate problem scale"
-   * (valueCount ^ entityCount, not a product of the counts above — a plain
-   * product would be off by thousands of orders of magnitude and isn't worth
-   * displaying as a number).
+   * Timefold's own "approximate problem scale": log10 of the search space size,
+   * i.e. `entityCount * log10(valueCount)` (valueCount ^ entityCount, not a
+   * product of the counts above — a plain product would be off by thousands of
+   * orders of magnitude and isn't worth displaying as a number).
+   *
+   * This is a naive upper bound: it counts every assignment, including the ones
+   * no constraint would ever allow (an animateur on several postes of the same
+   * créneau, or on a day they are not available). Narrowing it does not help —
+   * one-poste-per-créneau exclusivity only removes ~44 orders of magnitude, and
+   * even assuming 10 eligible animateurs per poste still leaves 10^2823. Hence
+   * the wording in the template: "espace de recherche", not "combinaisons".
    */
   protected readonly ordreDeGrandeur = computed(() => {
     const animateurs = this.animateurTotal();
