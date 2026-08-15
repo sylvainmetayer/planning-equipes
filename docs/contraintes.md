@@ -262,9 +262,19 @@ souhaits — voir « Pondérer une contrainte » plus bas.
 
 | Contrainte | Description |
 | --- | --- |
-| `favoriserRotationDesStands` | Éviter de réaffecter le même animateur au même stand |
 | `favoriserMixiteDesNiveaux` | Associer un débutant à un référent pour la montée en compétence |
 | `equilibrerCreneauxPenibles` | Répartir équitablement entre animateurs les créneaux « pénibles » (stands épuisants ou premium) |
+
+> **Retirée : `favoriserRotationDesStands`.** Elle pénalisait chaque paire de
+> postes tenus par le même animateur sur le même stand, pour favoriser la
+> rotation. Supprimée parce qu'elle entrait en conflit avec deux règles de
+> niveau supérieur qui, elles, poussent à la stabilité :
+> `eviterRoulementStandsPremium` (privilégier la continuité sur un stand
+> premium) et `limiterTypologiesDistinctesParAnimateur` (rester sur une ou deux
+> typologies). Le niveau MEDIUM l'emportant sur le SOFT, elle ne faisait de
+> toute façon que du bruit dans le score. Plus rien n'exprime aujourd'hui de
+> préférence pour la variété des stands : si le besoin revient, le rétablir
+> suppose d'abord d'arbitrer contre ces deux règles.
 
 ## Activer / désactiver une contrainte
 

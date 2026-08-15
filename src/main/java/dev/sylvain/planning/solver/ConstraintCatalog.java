@@ -124,8 +124,6 @@ public final class ConstraintCatalog {
                     "Un animateur ne devrait pas travailler plus de six jours consécutifs sans au moins un jour "
                             + "de repos : moins est possible, plus ne devrait pas l'être."),
 
-            new ConstraintDefinition("favoriserRotationDesStands", Niveau.SOFT, "Préférences",
-                    "Éviter d'affecter plusieurs fois le même animateur sur le même stand : on privilégie la rotation."),
             new ConstraintDefinition("favoriserMixiteDesNiveaux", Niveau.SOFT, "Préférences",
                     "Quand un référent est présent sur un créneau, y associer un débutant pour favoriser la montée en compétence."),
             new ConstraintDefinition("equilibrerCreneauxPenibles", Niveau.SOFT, "Préférences",

@@ -114,10 +114,14 @@ public final class QualiteConstraints {
     }
 
     /**
-     * Mirrors favoriserRotationDesStands but inverted and scoped to premium
-     * stands: prefer keeping the same (already-vetted) animateur on a
-     * high-visibility stand across timeslots instead of rotating people
-     * through it.
+     * On a premium stand, prefer keeping the same (already-vetted) animateur
+     * across timeslots instead of rotating people through it.
+     *
+     * <p>Used to be described as the mirror image of a
+     * {@code favoriserRotationDesStands} soft constraint, which pushed the
+     * other way on every stand; that one has since been removed, so this is
+     * now the only rule expressing a preference about repeating a stand — and
+     * it only ever speaks about premium ones.</p>
      *
      * <p>The premium test is applied <em>before</em> pairing, not after. The
      * previous formulation paired every poste with every other poste of the

@@ -105,17 +105,16 @@ class ConstraintToggleTest extends ConstraintTestBase {
                 .penalizesBy(0);
     }
 
+    /** Le niveau SOFT est gaté comme les autres — un cas par niveau de score. */
     @Test
-    void favoriserRotationDesStandsPeutEtreDesactivee() {
-        Animateur a1 = majeurReferent("A1");
-
-        verify("favoriserRotationDesStands")
-                .given(poste(standStrat, creneauMatin, a1), poste(standStrat, creneauAprem, a1))
+    void favoriserMixiteDesNiveauxPeutEtreDesactivee() {
+        verify("favoriserMixiteDesNiveaux")
+                .given(poste(standStrat, creneauMatin, majeurReferent("A1")))
                 .penalizesBy(1);
 
-        verify("favoriserRotationDesStands")
-                .given(poste(standStrat, creneauMatin, a1), poste(standStrat, creneauAprem, a1),
-                        new ConstraintToggle("favoriserRotationDesStands"))
+        verify("favoriserMixiteDesNiveaux")
+                .given(poste(standStrat, creneauMatin, majeurReferent("A1")),
+                        new ConstraintToggle("favoriserMixiteDesNiveaux"))
                 .penalizesBy(0);
     }
 

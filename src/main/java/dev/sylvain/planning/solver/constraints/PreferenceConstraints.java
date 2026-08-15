@@ -30,39 +30,9 @@ public final class PreferenceConstraints {
 
     public Constraint[] define(ConstraintFactory constraintFactory) {
         return new Constraint[] {
-                favoriserRotationDesStands(constraintFactory),
                 favoriserMixiteDesNiveaux(constraintFactory),
                 equilibrerCreneauxPenibles(constraintFactory)
         };
-    }
-
-    /**
-     * One soft point per <i>pair</i> of postes the same animateur holds on the
-     * same stand, so repeating a stand costs quadratically and rotation is
-     * preferred.
-     *
-     * <p>Counted with {@code groupBy(...count())} and the closed form
-     * {@code k(k-1)/2} rather than materialising the pairs with
-     * {@code forEachUniquePair}: the penalty is identical by construction, but
-     * the stream maintains one tuple per (animateur, stand) instead of one per
-     * pair — on the reference scenario, ~1300-2000 pair tuples incrementally
-     * maintained on every move collapse to a few hundred counts.</p>
-     *
-     * <p><b>Note for the constraint-analysis panel:</b> {@code matchCount} now
-     * reports the number of repeated (animateur, stand) couples, not the number
-     * of pairs. The score contribution is unchanged; only the way it is
-     * itemised is coarser.</p>
-     */
-    private Constraint favoriserRotationDesStands(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
-                "favoriserRotationDesStands")
-                .groupBy(PosteAffectation::getAnimateur,
-                        poste -> poste.getStand().getId(),
-                        ConstraintCollectors.count())
-                .filter((animateur, standId, nombrePostes) -> nombrePostes > 1)
-                .penalize(HardMediumSoftScore.ONE_SOFT,
-                        (animateur, standId, nombrePostes) -> nombrePostes * (nombrePostes - 1) / 2)
-                .asConstraint("favoriserRotationDesStands");
     }
 
     private Constraint favoriserMixiteDesNiveaux(ConstraintFactory constraintFactory) {

@@ -1,6 +1,5 @@
 package dev.sylvain.planning.solver.constraints;
 
-import java.time.LocalTime;
 import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.domain.Animateur;
@@ -13,41 +12,6 @@ class PreferenceConstraintsTest extends ConstraintTestBase {
     private final Stand standAutre = standStrategie("STAND-AUTRE");
     private final Creneau creneauMatin = matin("J1-MATIN", 1, D1);
     private final Creneau creneauAprem = apresMidi("J1-AM", 1, D1);
-
-    @Test
-    void memeStandRepeteEstPenaliseEnSoft() {
-        Animateur a1 = majeurReferent("A1");
-        verify("favoriserRotationDesStands")
-                .given(poste(standStrat, creneauMatin, a1),
-                        poste(standStrat, creneauAprem, a1))
-                .penalizesBy(1);
-    }
-
-    /**
-     * Three postes on the same stand cost three pairs, not three points: the
-     * penalty is the number of unordered pairs, {@code k(k-1)/2}. Locks the
-     * closed-form count against the {@code forEachUniquePair} formulation it
-     * replaces — with k=2 alone (the only case previously covered) the two
-     * formulas are indistinguishable.
-     */
-    @Test
-    void troisPostesSurLeMemeStandCoutentTroisPaires() {
-        Animateur a1 = majeurReferent("A1");
-        verify("favoriserRotationDesStands")
-                .given(poste(standStrat, creneauMatin, a1),
-                        poste(standStrat, creneauAprem, a1),
-                        poste(standStrat, creneau("J1-SOIR", 1, D1, LocalTime.of(18, 30), LocalTime.of(22, 0)), a1))
-                .penalizesBy(3);
-    }
-
-    @Test
-    void rotationSurDeuxStandsDifferentsNEstPasPenalisee() {
-        Animateur a1 = majeurReferent("A1");
-        verify("favoriserRotationDesStands")
-                .given(poste(standStrat, creneauMatin, a1),
-                        poste(standAutre, creneauAprem, a1))
-                .penalizesBy(0);
-    }
 
     @Test
     void referentSansDebutantEstPenaliseEnSoft() {

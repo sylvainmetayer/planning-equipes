@@ -133,7 +133,7 @@ public class PlanningService {
     /**
      * Names of every constraint enforced at {@link ConstraintCatalog.Niveau#HARD}.
      * {@link #diagnostiquer} only builds per-match {@code violations} for these:
-     * a soft constraint like {@code favoriserRotationDesStands} can have
+     * a soft or medium constraint like {@code souhaitsIncompatibles} can have
      * thousands of matches, which would bloat the diagnostic payload for a
      * detail nobody blocking on a failed solve needs to see.
      */
