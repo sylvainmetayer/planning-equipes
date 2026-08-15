@@ -77,17 +77,7 @@ function buildNavGroups(): NavGroup[] {
       { path: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs`, icon: 'groups' },
       { path: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux`, icon: 'schedule' },
       { path: '/decoupage', label: $localize`:@@nav.link.decoupage:Découpage`, icon: 'content_cut' },
-      { path: '/typologies', label: $localize`:@@nav.link.typologies:Typologies`, icon: 'category' },
-      {
-        path: '/ad-hoc-constraints',
-        label: $localize`:@@nav.link.adHocConstraints:Contraintes ad hoc`,
-        icon: 'rule'
-      },
-      {
-        path: '/verrouillages',
-        label: $localize`:@@nav.link.verrouillages:Verrouillages`,
-        icon: 'lock'
-      }
+      { path: '/typologies', label: $localize`:@@nav.link.typologies:Typologies`, icon: 'category' }
     ]
   },
   {
@@ -132,6 +122,23 @@ function buildNavGroups(): NavGroup[] {
       },
       { path: '/debug', label: $localize`:@@nav.link.debug:Débogage`, icon: 'bug_report' },
       { path: '/validateur-yaml', label: $localize`:@@nav.link.yamlValidator:Validateur YAML`, icon: 'rule' }
+    ]
+  },
+  {
+    // Pages backed by features that are not finished yet: each one shows an
+    // `app-work-in-progress-banner` telling the user so.
+    title: $localize`:@@nav.group.workInProgress:En cours de développement`,
+    links: [
+      {
+        path: '/ad-hoc-constraints',
+        label: $localize`:@@nav.link.adHocConstraints:Contraintes ad hoc`,
+        icon: 'rule'
+      },
+      {
+        path: '/verrouillages',
+        label: $localize`:@@nav.link.verrouillages:Verrouillages`,
+        icon: 'lock'
+      }
     ]
   }
   ];

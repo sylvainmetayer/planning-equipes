@@ -9,6 +9,7 @@ import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ContrainteAdHoc, TypeContrainteAdHoc } from '../../core/models';
+import { WorkInProgressBanner } from '../../shared/work-in-progress-banner';
 import { AdHocConstraintFormData, AdHocConstraintFormDialog } from './ad-hoc-constraint-form-dialog';
 
 /** Called lazily (never at module scope, see `app.ts`'s `buildNavGroups`). */
@@ -30,7 +31,7 @@ function contrainteTypeLabel(value: TypeContrainteAdHoc): string {
  */
 @Component({
   selector: 'app-ad-hoc-constraints-page',
-  imports: [MatCardModule, MatButtonModule, MatIconModule, MatTableModule, MatTooltipModule],
+  imports: [MatCardModule, MatButtonModule, MatIconModule, MatTableModule, MatTooltipModule, WorkInProgressBanner],
   templateUrl: './ad-hoc-constraints-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })

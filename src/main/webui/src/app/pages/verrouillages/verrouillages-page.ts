@@ -14,6 +14,7 @@ import { SolverJobService } from '../../core/solver-job.service';
 import { VerrouillageStore } from '../../core/verrouillage.store';
 import { TypeVerrouillage, VerrouillagePlanning } from '../../core/models';
 import { ConfirmService } from '../../shared/confirm-dialog';
+import { WorkInProgressBanner } from '../../shared/work-in-progress-banner';
 
 const TYPE_VALUES: TypeVerrouillage[] = ['ANIMATEUR', 'STAND', 'JOUR', 'CRENEAU'];
 
@@ -55,7 +56,8 @@ interface VerrouillageRow extends VerrouillagePlanning {
     MatInputModule,
     MatSelectModule,
     MatTableModule,
-    MatTooltipModule
+    MatTooltipModule,
+    WorkInProgressBanner
   ],
   templateUrl: './verrouillages-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush

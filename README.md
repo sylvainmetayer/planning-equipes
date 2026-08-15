@@ -265,6 +265,11 @@ avec une raison tracée :
 Ces exceptions sont traitées par le moteur au même niveau que les contraintes
 dures : elles ne sont jamais contournées silencieusement.
 
+La page « Contraintes ad hoc » est rangée dans la section « En cours de
+développement » de la navigation et affiche un bandeau d'avertissement : la
+fonctionnalité est utilisable, mais son comportement et les données saisies
+peuvent encore évoluer.
+
 ### Verrouillage partiel du planning
 
 Quand une partie du planning a été validée, on peut la **geler** pour que la
@@ -285,6 +290,9 @@ Les verrous se gèrent depuis la page « Verrouillages » et sont signalés par 
 cadenas dans les calendriers. Ils appartiennent au planning (groupe de
 créneaux) pour lequel ils ont été posés : basculer sur un planning alternatif
 les laisse en sommeil sans les perdre.
+
+Comme les contraintes ad hoc, cette page est rangée dans la section « En cours
+de développement » de la navigation et affiche un bandeau d'avertissement.
 
 ### Consultation du planning
 

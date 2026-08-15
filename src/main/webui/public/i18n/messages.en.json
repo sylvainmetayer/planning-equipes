@@ -29,6 +29,8 @@
   "nav.group.tools": "Tools",
   "nav.link.db": "Database (pgAdmin)",
   "nav.link.yamlValidator": "YAML Validator",
+  "nav.group.workInProgress": "Under development",
+  "workInProgress.message": "This feature is still under development: its behaviour and the data entered here may still change, and the solver result may not take it into account.",
   "yamlValidator.description": "Checks a scenario file's structure (types, required fields, value ranges) without importing or persisting anything. Does not replace the cross-reference checks done on a real import (\"Import a file\" button on the Data tab).",
   "yamlValidator.pickFile": "Choose a YAML file",
   "yamlValidator.valid": "{$fileName} is valid.",
