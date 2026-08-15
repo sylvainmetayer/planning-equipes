@@ -8,7 +8,28 @@
         diagnose the local-optimum problem below in the first place. Remove if
         solution diversity across repeated solves is ever wanted back.
     -->
+    <!--
+        Timefold 1.x defaults to PHASE_ASSERT, which re-runs a full score
+        recalculation to check for score corruption at every phase boundary and
+        keeps the intrusive bookkeeping needed to do so. REPRODUCIBLE keeps the
+        fixed-seed determinism below (same seed, same plan) without paying for
+        those checks. If score corruption is ever suspected, set this back to
+        PHASE_ASSERT (or FULL_ASSERT to pinpoint the guilty move).
+
+        Element order is imposed by the XSD (SolverConfig's propOrder):
+        environmentMode, then randomSeed, then moveThreadCount.
+    -->
+    <environmentMode>REPRODUCIBLE</environmentMode>
+
     <randomSeed>0</randomSeed>
+
+    <!--
+        No <moveThreadCount>: multi-threaded incremental solving requires
+        Timefold Solver Enterprise Edition (commercial). Measured here — the
+        solver refuses to start with "Enterprise Edition could not be loaded".
+        The 8 cores of the host stay unusable by the solver as a result.
+    -->
+
 
     <solutionClass>dev.sylvain.planning.domain.PlanningFestival</solutionClass>
     <entityClass>dev.sylvain.planning.domain.PosteAffectation</entityClass>

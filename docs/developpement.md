@@ -256,6 +256,26 @@ que pour ce qui n'est pas indexable (ici : le calcul de distance haversine et
 la comparaison de périmètre des contraintes ad hoc). La métrique à regarder est
 le *move evaluation speed* du log solveur, pas le temps écoulé.
 
+### Mode d'environnement et parallélisme
+
+`solverConfig.xml` fixe `<environmentMode>REPRODUCIBLE</environmentMode>`.
+Timefold 1.x démarre sinon en `PHASE_ASSERT`, qui recalcule intégralement le
+score à chaque frontière de phase pour détecter une corruption : mesuré à
+**+7,4 %** de *move evaluation speed* une fois retiré (4074 → 4377/s sur le
+scénario de référence). Le déterminisme reste assuré par `<randomSeed>`. En
+contrepartie la détection de corruption de score est désactivée — en cas de
+doute, repasser à `PHASE_ASSERT`, ou `FULL_ASSERT` pour identifier le move
+fautif.
+
+Il n'y a **pas** de `<moveThreadCount>` : la résolution incrémentale
+multi-thread appartient à Timefold Solver *Enterprise Edition*, produit
+commercial. Avec `timefold-solver-core` seul, le solveur refuse de démarrer si
+le paramètre est présent (« Enterprise Edition could not be loaded »). Les
+cœurs disponibles restent donc inexploités, et c'est le plafond de performance
+principal du déploiement — inutile de chercher à le contourner côté
+contraintes. Détail des mesures dans
+[`revue-contraintes.md`](revue-contraintes.md).
+
 ## Configuration
 
 | Variable | Défaut | Usage |

@@ -15,6 +15,8 @@ fonctionnalités métier) : **tout ajout de documentation technique se fait ici*
 | [`observabilite.md`](observabilite.md) | Suivi d'erreurs (Bugsink) et analytics d'usage (PostHog) en production : choix, intégration, variables d'environnement |
 | [`audit-conformite-rh.md`](audit-conformite-rh.md) | Audit de conformité RH du référentiel de contraintes (Code du travail, CCN ÉCLAT) — constats, articles et suites données |
 | [`product_owner_report.md`](product_owner_report.md) | Rapport de toilettage du backlog GitHub Issues — issues fermées, priorisation, points d'attention |
+| [`optimisation-solveur.md`](optimisation-solveur.md) | Investigation du déficit de couverture sur un scénario dense : cause racine (pic de simultanéité fabriqué par le découpage), bornes de faisabilité calculables sans solveur, réglage retenu |
+| [`revue-contraintes.md`](revue-contraintes.md) | Revue de performance des 35 contraintes et de la configuration du solveur — pistes mesurées, appliquées ou écartées |
 
 La mémoire destinée aux agents IA (Copilot, Claude Code, …) est centralisée dans
 un fichier unique à la racine : [`../AGENTS.md`](../AGENTS.md).
