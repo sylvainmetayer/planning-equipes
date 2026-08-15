@@ -206,4 +206,61 @@ class VacationGeneratorServiceTest {
         assertThat(releve.getHeureDebut()).isEqualTo(avantPause.getHeureFin());
         assertThat(releve.getHeureFin()).isEqualTo(apresPause.getHeureDebut());
     }
+
+    @Test
+    void sansDecalageToutesLesVacationsSontTagueesFamilleZero() {
+        // Comportement par défaut (nombreFamillesDecalage=1) : aucun
+        // changement de comportement, chaque vacation générée porte la
+        // famille 0 — c'est ce qui garantit la compatibilité ascendante côté
+        // PlanningService#construirePostes (une seule famille => pas de
+        // filtrage par stand).
+        Creneau amplitude = amplitude(LocalTime.of(10, 0), LocalTime.of(0, 0));
+
+        List<Creneau> vacations = VacationGeneratorService.genererVacations(
+                List.of(amplitude), new ParametresDecoupage());
+
+        assertThat(vacations).allSatisfy(v -> assertThat(v.getFamille()).isZero());
+    }
+
+    @Test
+    void decalageEtaleLesCoupuresDeRelaisEntreFamillesDistinctes() {
+        // Reproduit le "mur de 14h" observé en pratique : sur une amplitude
+        // de 14h (10:00->00:00, jour continu), le premier relais vise
+        // toujours la fin de la fenêtre déjeuner (14:00) quelle que soit
+        // l'amplitude, car la cible de 5h dépasse systématiquement la
+        // fenêtre. Avec 4 familles décalées de ±45 min, au moins une famille
+        // doit couper à un autre instant que 14:00.
+        Creneau amplitude = amplitude(LocalTime.of(10, 0), LocalTime.of(0, 0));
+        ParametresDecoupage parametres = new ParametresDecoupage();
+        parametres.setNombreFamillesDecalage(4);
+        parametres.setDureeDecalageMaxMinutes(150);
+
+        List<Creneau> vacations = VacationGeneratorService.genererVacations(List.of(amplitude), parametres);
+
+        // 4 familles, chacune tranchant l'amplitude indépendamment (5
+        // vacations par famille sans décalage, voir le test "journée
+        // continue" ci-dessus) : la famille 0..3 doit apparaître, et chaque
+        // vacation générée reste dans les bornes de l'amplitude et sous le
+        // plafond légal.
+        Set<Integer> famillesVues = new java.util.HashSet<>();
+        for (Creneau vacation : vacations) {
+            famillesVues.add(vacation.getFamille());
+            assertThat(vacation.getDureeMinutes()).isLessThanOrEqualTo(parametres.getDureeVacationMaxMinutes());
+        }
+        assertThat(famillesVues).containsExactlyInAnyOrder(0, 1, 2, 3);
+
+        // Premières fins de vacation (le "premier relais") par famille :
+        // au moins deux valeurs distinctes, la preuve que le décalage change
+        // effectivement où tombe la coupure au lieu de tout aligner sur 14h.
+        Set<LocalTime> premieresFins = new java.util.HashSet<>();
+        for (int famille = 0; famille < 4; famille++) {
+            int f = famille;
+            premieresFins.add(vacations.stream()
+                    .filter(v -> v.getFamille() == f)
+                    .min(java.util.Comparator.comparing(Creneau::getHeureDebut))
+                    .orElseThrow()
+                    .getHeureFin());
+        }
+        assertThat(premieresFins).hasSizeGreaterThan(1);
+    }
 }

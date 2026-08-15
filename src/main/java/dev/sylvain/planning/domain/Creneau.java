@@ -20,6 +20,15 @@ public class Creneau {
     private LocalTime heureFin;
     /** Planning ("groupe de créneaux") this slot belongs to; nullable defensively, always set once persisted. */
     private GroupeCreneau groupe;
+    /**
+     * Which time-staggered relay-grid variant this slot belongs to, when
+     * {@code VacationGeneratorService} generated several instead of one
+     * shared grid (see {@link ParametresDecoupage#getNombreFamillesDecalage()}).
+     * Always {@code 0} for amplitude créneaux and for vacations generated
+     * without staggering — poste generation only filters by famille when a
+     * group actually contains more than one.
+     */
+    private int famille;
 
     public Creneau() {
     }
@@ -102,6 +111,14 @@ public class Creneau {
 
     public void setGroupe(GroupeCreneau groupe) {
         this.groupe = groupe;
+    }
+
+    public int getFamille() {
+        return famille;
+    }
+
+    public void setFamille(int famille) {
+        this.famille = famille;
     }
 
     /**

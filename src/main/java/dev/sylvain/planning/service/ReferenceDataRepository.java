@@ -316,7 +316,7 @@ public class ReferenceDataRepository {
     /* ------------------------------ Timeslots ------------------------------ */
 
     private static final String SELECT_CRENEAU_SQL =
-            "SELECT c.id, c.date_creneau, c.heure_debut, c.heure_fin, "
+            "SELECT c.id, c.date_creneau, c.heure_debut, c.heure_fin, c.famille, "
                     + "g.id AS groupe_id, g.nom AS groupe_nom, g.actif AS groupe_actif "
                     + "FROM creneau c JOIN groupe_creneau g ON g.id = c.groupe_creneau_id";
 
@@ -344,6 +344,7 @@ public class ReferenceDataRepository {
                                 rs.getObject("date_creneau", LocalDate.class),
                                 rs.getObject("heure_debut", LocalTime.class),
                                 rs.getObject("heure_fin", LocalTime.class));
+                        creneau.setFamille(rs.getInt("famille"));
                         creneau.setGroupe(new GroupeCreneau(
                                 rs.getString("groupe_id"), rs.getString("groupe_nom"), rs.getBoolean("groupe_actif")));
                         byId.put(creneau.getId(), creneau);
@@ -412,6 +413,7 @@ public class ReferenceDataRepository {
                             rs.getObject("date_creneau", LocalDate.class),
                             rs.getObject("heure_debut", LocalTime.class),
                             rs.getObject("heure_fin", LocalTime.class));
+                    creneau.setFamille(rs.getInt("famille"));
                     creneau.setGroupe(new GroupeCreneau(
                             rs.getString("groupe_id"), rs.getString("groupe_nom"), rs.getBoolean("groupe_actif")));
                     byId.put(creneau.getId(), creneau);
@@ -919,7 +921,8 @@ public class ReferenceDataRepository {
                         "SELECT duree_vacation_cible_minutes, duree_vacation_min_minutes, duree_vacation_max_minutes, "
                                 + "duree_chevauchement_minutes, duree_pause_repas_minutes, fenetre_repas_midi_debut, "
                                 + "fenetre_repas_midi_fin, fenetre_repas_soir_debut, fenetre_repas_soir_fin, "
-                                + "strategie_couverture_pendant_pause FROM parametres_decoupage WHERE id = 1");
+                                + "strategie_couverture_pendant_pause, nombre_familles_decalage, "
+                                + "duree_decalage_max_minutes FROM parametres_decoupage WHERE id = 1");
                 ResultSet rs = ps.executeQuery()) {
             if (rs.next()) {
                 ParametresDecoupage parametres = new ParametresDecoupage();
@@ -935,6 +938,8 @@ public class ReferenceDataRepository {
                 parametres.setStrategieCouverturePendantPause(
                         ParametresDecoupage.StrategieCouverturePendantPause
                                 .valueOf(rs.getString("strategie_couverture_pendant_pause")));
+                parametres.setNombreFamillesDecalage(rs.getInt("nombre_familles_decalage"));
+                parametres.setDureeDecalageMaxMinutes(rs.getInt("duree_decalage_max_minutes"));
                 return parametres;
             }
             return new ParametresDecoupage();
@@ -949,8 +954,9 @@ public class ReferenceDataRepository {
                         "INSERT INTO parametres_decoupage (id, duree_vacation_cible_minutes, "
                                 + "duree_vacation_min_minutes, duree_vacation_max_minutes, duree_chevauchement_minutes, "
                                 + "duree_pause_repas_minutes, fenetre_repas_midi_debut, fenetre_repas_midi_fin, "
-                                + "fenetre_repas_soir_debut, fenetre_repas_soir_fin, strategie_couverture_pendant_pause) "
-                                + "VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO UPDATE SET "
+                                + "fenetre_repas_soir_debut, fenetre_repas_soir_fin, strategie_couverture_pendant_pause, "
+                                + "nombre_familles_decalage, duree_decalage_max_minutes) "
+                                + "VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO UPDATE SET "
                                 + "duree_vacation_cible_minutes = EXCLUDED.duree_vacation_cible_minutes, "
                                 + "duree_vacation_min_minutes = EXCLUDED.duree_vacation_min_minutes, "
                                 + "duree_vacation_max_minutes = EXCLUDED.duree_vacation_max_minutes, "
@@ -960,7 +966,9 @@ public class ReferenceDataRepository {
                                 + "fenetre_repas_midi_fin = EXCLUDED.fenetre_repas_midi_fin, "
                                 + "fenetre_repas_soir_debut = EXCLUDED.fenetre_repas_soir_debut, "
                                 + "fenetre_repas_soir_fin = EXCLUDED.fenetre_repas_soir_fin, "
-                                + "strategie_couverture_pendant_pause = EXCLUDED.strategie_couverture_pendant_pause")) {
+                                + "strategie_couverture_pendant_pause = EXCLUDED.strategie_couverture_pendant_pause, "
+                                + "nombre_familles_decalage = EXCLUDED.nombre_familles_decalage, "
+                                + "duree_decalage_max_minutes = EXCLUDED.duree_decalage_max_minutes")) {
             ps.setInt(1, parametres.getDureeVacationCibleMinutes());
             ps.setInt(2, parametres.getDureeVacationMinMinutes());
             ps.setInt(3, parametres.getDureeVacationMaxMinutes());
@@ -971,6 +979,8 @@ public class ReferenceDataRepository {
             ps.setObject(8, parametres.getFenetreRepasSoirDebut());
             ps.setObject(9, parametres.getFenetreRepasSoirFin());
             ps.setString(10, parametres.getStrategieCouverturePendantPause().name());
+            ps.setInt(11, parametres.getNombreFamillesDecalage());
+            ps.setInt(12, parametres.getDureeDecalageMaxMinutes());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to save découpage parameters", e);
@@ -1170,12 +1180,13 @@ public class ReferenceDataRepository {
         // fall back to the seeded default group rather than fail the NOT NULL FK.
         String groupeId = creneau.getGroupe() != null ? creneau.getGroupe().getId() : "DEFAUT";
         try (PreparedStatement ps = connection.prepareStatement(
-                "INSERT INTO creneau (date_creneau, heure_debut, heure_fin, groupe_creneau_id) "
-                        + "VALUES (?, ?, ?, ?) RETURNING id")) {
+                "INSERT INTO creneau (date_creneau, heure_debut, heure_fin, groupe_creneau_id, famille) "
+                        + "VALUES (?, ?, ?, ?, ?) RETURNING id")) {
             ps.setObject(1, creneau.getDate());
             ps.setObject(2, creneau.getHeureDebut());
             ps.setObject(3, creneau.getHeureFin());
             ps.setString(4, groupeId);
+            ps.setInt(5, creneau.getFamille());
             try (ResultSet rs = ps.executeQuery()) {
                 rs.next();
                 long id = rs.getLong("id");
@@ -1188,13 +1199,14 @@ public class ReferenceDataRepository {
     private void updateCreneauTx(Connection connection, Creneau creneau) throws SQLException {
         String groupeId = creneau.getGroupe() != null ? creneau.getGroupe().getId() : "DEFAUT";
         try (PreparedStatement ps = connection.prepareStatement(
-                "UPDATE creneau SET date_creneau = ?, heure_debut = ?, heure_fin = ?, groupe_creneau_id = ? "
+                "UPDATE creneau SET date_creneau = ?, heure_debut = ?, heure_fin = ?, groupe_creneau_id = ?, famille = ? "
                         + "WHERE id = ?")) {
             ps.setObject(1, creneau.getDate());
             ps.setObject(2, creneau.getHeureDebut());
             ps.setObject(3, creneau.getHeureFin());
             ps.setString(4, groupeId);
-            ps.setLong(5, creneau.getId());
+            ps.setInt(5, creneau.getFamille());
+            ps.setLong(6, creneau.getId());
             ps.executeUpdate();
         }
     }

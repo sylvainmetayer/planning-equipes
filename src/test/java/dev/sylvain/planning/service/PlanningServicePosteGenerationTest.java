@@ -82,4 +82,32 @@ class PlanningServicePosteGenerationTest {
 
         assertThat(postes).hasSize(2);
     }
+
+    /**
+     * When the créneau list spans more than one "famille" (staggered
+     * relay-grid variant, see {@link VacationGeneratorService}), each stand
+     * must be paired only against its own famille's créneaux — never both —
+     * so the cross product stays {@code stands × 1 famille}, not
+     * {@code stands × nombreFamilles}.
+     */
+    @Test
+    void standNestPaireQuAvecLaFamilleDeCreneauxQuiLuiEstAssignee() {
+        Creneau creneauFamille0 = new Creneau(10L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
+        Creneau creneauFamille1 = new Creneau(11L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
+        creneauFamille1.setFamille(1);
+
+        List<PosteAffectation> postes = PlanningService.construirePostes(
+                List.of(standA, standB), List.of(creneauFamille0, creneauFamille1));
+
+        // Chaque stand n'apparaît que sur UNE des deux familles, jamais les
+        // deux (sinon on aurait 4 postes, pas 2 : le produit cartésien
+        // complet d'avant l'introduction du décalage).
+        assertThat(postes).hasSize(2);
+        int familleStandA = Math.floorMod(standA.getId().hashCode(), 2);
+        int familleStandB = Math.floorMod(standB.getId().hashCode(), 2);
+        for (PosteAffectation poste : postes) {
+            int familleAttendue = poste.getStand().getId().equals(standA.getId()) ? familleStandA : familleStandB;
+            assertThat(poste.getCreneau().getFamille()).isEqualTo(familleAttendue);
+        }
+    }
 }

@@ -15,5 +15,7 @@ public record ParametresDecoupageDto(
         LocalTime fenetreRepasMidiFin,
         LocalTime fenetreRepasSoirDebut,
         LocalTime fenetreRepasSoirFin,
-        StrategieCouverturePendantPause strategieCouverturePendantPause) {
+        StrategieCouverturePendantPause strategieCouverturePendantPause,
+        @Positive Integer nombreFamillesDecalage,
+        @PositiveOrZero Integer dureeDecalageMaxMinutes) {
 }

@@ -49,18 +49,61 @@ public final class VacationGeneratorService {
      * longer needs inheriting here: it now lives on the {@code Stand} itself
      * (see {@code IndisponibiliteStand}), so it applies uniformly whichever
      * créneau — amplitude or vacation — ends up referencing that stand.
+     *
+     * <p>When {@link ParametresDecoupage#getNombreFamillesDecalage()} is
+     * greater than 1, each amplitude is sliced once per "famille" instead of
+     * once overall, each with its internal relay cuts offset by a different
+     * amount (see {@link #decalageMinutes}) and tagged via
+     * {@link Creneau#setFamille(int)}. A shared grid otherwise snaps every
+     * amplitude's handover to the same clock minute (a target vacation length
+     * that overshoots a meal window's end always clamps to that same end,
+     * whatever the amplitude), which piles every stand's crew change onto a
+     * handful of instants and forces overlaps that a staggered grid avoids —
+     * see {@code docs/domaine.md}. Poste generation then assigns each stand to
+     * exactly one famille, so it only ever sees that variant's créneaux.</p>
      */
     public static List<Creneau> genererVacations(List<Creneau> amplitudes, ParametresDecoupage parametres) {
+        int nombreFamilles = Math.max(1, parametres.getNombreFamillesDecalage());
         List<Creneau> vacations = new ArrayList<>();
         for (Creneau amplitude : amplitudes) {
-            vacations.addAll(decouperAmplitude(amplitude, parametres));
+            for (int famille = 0; famille < nombreFamilles; famille++) {
+                int decalage = decalageMinutes(famille, nombreFamilles, parametres.getDureeDecalageMaxMinutes());
+                List<Creneau> tranche = decouperAmplitude(amplitude, parametres, decalage);
+                for (Creneau vacation : tranche) {
+                    vacation.setFamille(famille);
+                }
+                vacations.addAll(tranche);
+            }
         }
         return vacations;
     }
 
-    private static List<Creneau> decouperAmplitude(Creneau amplitude, ParametresDecoupage parametres) {
+    /**
+     * Offset for {@code famille} among {@code nombreFamilles} evenly-spaced
+     * variants spanning {@code [-max, 0]} (e.g. 4 familles and a 90-minute
+     * max give 0, -30, -60, -90). Always 0 for a single famille, whatever
+     * {@code max} is set to.
+     *
+     * <p>Deliberately one-sided rather than symmetric: {@code cibleFin}
+     * (target + décalage) almost always <i>overshoots</i> the nearest meal
+     * window's end already (a 5h target from a 10:00 opening reaches past a
+     * 12:00-14:00 window every time), so a <i>positive</i> offset only pushes
+     * it further past that ceiling and gets silently re-clamped back to the
+     * exact same instant — wasted budget. Every negative variant, by
+     * contrast, has a chance of landing inside the window instead of at its
+     * edge, which is the whole point of staggering.</p>
+     */
+    private static int decalageMinutes(int famille, int nombreFamilles, int max) {
+        if (nombreFamilles <= 1 || max == 0) {
+            return 0;
+        }
+        return Math.round(-1f * famille / (nombreFamilles - 1) * max);
+    }
+
+    private static List<Creneau> decouperAmplitude(Creneau amplitude, ParametresDecoupage parametres, int decalageMinutes) {
         int duree = amplitude.getDureeMinutes();
-        List<int[]> segmentsBruts = decouperEnMinutes(duree, parametres, fenetresRepasEnMinutes(amplitude, parametres));
+        List<int[]> segmentsBruts = decouperEnMinutes(duree, parametres, fenetresRepasEnMinutes(amplitude, parametres),
+                decalageMinutes);
         List<int[]> segments = new ArrayList<>();
         for (int[] segment : segmentsBruts) {
             segments.addAll(appliquerPauseLegaleSiNecessaire(segment, amplitude, parametres));
@@ -80,8 +123,16 @@ public final class VacationGeneratorService {
      * right after a meal rather than in the middle of it. The next vacation
      * then starts {@code dureeChevauchementMinutes} before the current one
      * ends, which is the whole coverage guarantee — see class javadoc.
+     *
+     * <p>{@code decalageMinutes} shifts every intermediate cut's preferred
+     * target ({@code cibleFin}) by a fixed amount, earlier or later, before
+     * the usual {@code [min, max]} clamp and meal-window snap apply — see
+     * {@link #genererVacations}. It never touches the first cut's start
+     * (always the amplitude's own opening) or the final segment's end
+     * (always the amplitude's own closing).</p>
      */
-    private static List<int[]> decouperEnMinutes(int duree, ParametresDecoupage parametres, List<int[]> fenetresRepas) {
+    private static List<int[]> decouperEnMinutes(int duree, ParametresDecoupage parametres, List<int[]> fenetresRepas,
+            int decalageMinutes) {
         List<int[]> segments = new ArrayList<>();
         int max = parametres.getDureeVacationMaxMinutes();
         int min = parametres.getDureeVacationMinMinutes();
@@ -94,7 +145,7 @@ public final class VacationGeneratorService {
                 segments.add(new int[] { courant, duree });
                 break;
             }
-            int cibleFin = courant + cible;
+            int cibleFin = courant + cible + decalageMinutes;
             int borneBasse = courant + min;
             int borneHaute = courant + max;
             int fin = clamp(cibleFin, borneBasse, borneHaute);

@@ -236,13 +236,28 @@ public class PlanningService {
      * créneau itself — the poste still references the real, persisted créneau
      * (a hard requirement of {@code poste_affectation.creneau_id}'s foreign
      * key), so it cannot be split into a synthetic sub-créneau instead.</p>
+     *
+     * <p>When {@code creneaux} contains more than one relay-grid "famille"
+     * (see {@link VacationGeneratorService#genererVacations}), each stand is
+     * deterministically assigned to exactly one — {@code hash(stand.id) mod
+     * nombreFamilles} — and only ever paired against that famille's créneaux,
+     * instead of the full cross product. Whichever family a stand lands on is
+     * stable across regenerations (a plain hash of its own id, nothing else),
+     * so re-running découpage doesn't reshuffle which stands share a grid.
+     * With a single famille (the default, {@code famille} always 0) this is
+     * exactly the historical unfiltered cross product.</p>
      */
     static List<PosteAffectation> construirePostes(List<Stand> stands, List<Creneau> creneaux) {
+        int nombreFamilles = creneaux.stream().mapToInt(Creneau::getFamille).max().orElse(0) + 1;
         List<PosteAffectation> postes = new ArrayList<>();
         int counter = 0;
         for (Stand stand : stands) {
             int seats = Math.max(1, stand.getEffectifMin());
+            int familleStand = Math.floorMod(stand.getId().hashCode(), nombreFamilles);
             for (Creneau creneau : creneaux) {
+                if (creneau.getFamille() != familleStand) {
+                    continue;
+                }
                 List<int[]> segments = creneau.segmentsOuvertsMinutes(stand);
                 boolean creneauEntierOuvert = segments.size() == 1 && segments.get(0)[0] == 0
                         && segments.get(0)[1] == creneau.getDureeMinutes();
@@ -878,6 +893,12 @@ public class PlanningService {
         if (data.get("strategieCouverturePendantPause") != null) {
             parametres.setStrategieCouverturePendantPause(ParametresDecoupage.StrategieCouverturePendantPause
                     .valueOf((String) data.get("strategieCouverturePendantPause")));
+        }
+        if (data.get("nombreFamillesDecalage") != null) {
+            parametres.setNombreFamillesDecalage(((Number) data.get("nombreFamillesDecalage")).intValue());
+        }
+        if (data.get("dureeDecalageMaxMinutes") != null) {
+            parametres.setDureeDecalageMaxMinutes(((Number) data.get("dureeDecalageMaxMinutes")).intValue());
         }
         return Optional.of(parametres);
     }

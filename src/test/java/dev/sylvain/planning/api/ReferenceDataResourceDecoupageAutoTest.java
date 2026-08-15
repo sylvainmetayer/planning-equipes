@@ -17,8 +17,9 @@ import org.junit.jupiter.api.Test;
  * operator the manual "Découpage" screen round-trip. {@code scenario-decoupage-auto.yaml}
  * (test fixture) carries a single 14h amplitude — same shape as
  * {@code VacationGeneratorServiceTest}'s "continu" case — which
- * {@code VacationGeneratorService} always relay-splits into exactly 3
- * vacations under default {@code parametresDecoupage}.
+ * {@code VacationGeneratorService} always relay-splits into exactly 5
+ * vacations under default {@code parametresDecoupage} (two real meal
+ * breaks, each splitting an otherwise-3-vacation relay chain in two).
  */
 @QuarkusTest
 class ReferenceDataResourceDecoupageAutoTest {
@@ -63,7 +64,7 @@ class ReferenceDataResourceDecoupageAutoTest {
         long creneauxCible = creneaux.stream()
                 .filter(c -> "Vacations import auto".equals(((Map<?, ?>) c.get("groupe")).get("nom")))
                 .count();
-        assertThat(creneauxCible).isEqualTo(3);
+        assertThat(creneauxCible).isEqualTo(5);
     }
 
     @Test
