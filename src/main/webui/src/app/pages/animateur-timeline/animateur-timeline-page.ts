@@ -11,7 +11,8 @@ import { ApiService } from '../../core/api.service';
 import { uniqueById } from '../../core/date-utils';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningStateService } from '../../core/planning-state.service';
-import { Animateur, PlanningFestival, PosteAffectation } from '../../core/models';
+import { Animateur, PlanningFestival, PosteAffectation, TypologieItem } from '../../core/models';
+import { standTypologies, typologieColorClass, typologieLabel, typologieLabels, typologiePrincipale } from '../../core/typologie-colors';
 
 export interface AnimateurOption {
   id: string;
@@ -21,6 +22,8 @@ export interface AnimateurOption {
 export interface TimelineBlock {
   posteId: string;
   standNom: string;
+  /** Typologie ids proposed by the stand — drives the colour of the recap chips. */
+  typologies: string[];
   heureDebut: string;
   heureFin: string;
   /** Position within the day's amplitude bar, as a 0-100 percentage. */
@@ -34,10 +37,29 @@ export interface TimelineGap {
   widthPercent: number;
 }
 
+/** One chip of the "Stands à couvrir" recap, coloured after the stand's typologie. */
+export interface TimelineStandChip {
+  nom: string;
+  /** Display labels of every typologie the stand proposes, sorted. */
+  typologies: string[];
+  colorClass: string;
+  tooltip: string;
+}
+
+/** One entry of the typologie colour legend shown above the stand chips. */
+export interface TimelineTypologieLegendItem {
+  id: string;
+  label: string;
+  colorClass: string;
+}
+
 /** Distinct stands the animateur works on over the whole festival, for the header recap. */
 export interface TimelineStandsSummary {
   count: number;
-  noms: string[];
+  /** Distinct game typologies across those stands — a stand may propose several. */
+  typologieCount: number;
+  stands: TimelineStandChip[];
+  legend: TimelineTypologieLegendItem[];
 }
 
 export interface TimelineDay {
@@ -79,6 +101,8 @@ export class AnimateurTimelinePage {
   protected readonly error = signal('');
   protected readonly planning = signal<PlanningFestival | null>(null);
   protected readonly selectedAnimateurId = signal<string | null>(null);
+  /** Typologie referential, only used to turn ids into display labels. */
+  protected readonly typologies = signal<TypologieItem[]>([]);
 
   private readonly api = inject(ApiService);
   private readonly notifications = inject(NotificationService);
@@ -96,11 +120,13 @@ export class AnimateurTimelinePage {
     return buildAnimateurTimeline(this.planning()?.postes ?? [], animateurId);
   });
 
-  protected readonly standsSummary = computed<TimelineStandsSummary>(() => buildStandsSummary(this.days()));
+  protected readonly standsSummary = computed<TimelineStandsSummary>(() =>
+    buildStandsSummary(this.days(), typologieLabels(this.typologies()))
+  );
 
   protected readonly standsSummaryLabel = computed(() => {
     const summary = this.standsSummary();
-    return $localize`:@@timeline.stands.count:${summary.count}:count: stand(s) au total`;
+    return $localize`:@@timeline.stands.count:${summary.count}:count: stand(s) au total, ${summary.typologieCount}:typologieCount: typologie(s) de jeu`;
   });
 
   constructor() {
@@ -118,7 +144,14 @@ export class AnimateurTimelinePage {
     this.loading.set(true);
     this.error.set('');
     try {
-      this.planning.set(await this.planningState.loadForDisplay());
+      const [planning, typologies] = await Promise.all([
+        this.planningState.loadForDisplay(),
+        // Labels only: a missing referential degrades the chips to raw ids
+        // rather than failing the whole timeline.
+        this.api.get<TypologieItem[]>('/api/typologies').catch(() => [])
+      ]);
+      this.planning.set(planning);
+      this.typologies.set(typologies);
       const options = this.animateurOptions();
       if (!this.selectedAnimateurId() || !options.some((option) => option.id === this.selectedAnimateurId())) {
         this.selectedAnimateurId.set(options[0]?.id ?? null);
@@ -209,13 +242,49 @@ export function exportFilename(options: AnimateurOption[], animateurId: string, 
 /**
  * Distinct stands across every day, sorted alphabetically: an animateur usually
  * comes back to the same stand several times, so the raw block count would
- * overstate how many different places they have to learn.
+ * overstate how many different places they have to learn. Same reasoning for
+ * the typologie count: two stands of the same typologie are one game family to
+ * learn, not two, so it is the second number that says how varied the job is.
  */
-export function buildStandsSummary(days: TimelineDay[]): TimelineStandsSummary {
-  const noms = new Set<string>();
-  days.forEach((day) => day.blocks.forEach((block) => block.standNom && noms.add(block.standNom)));
-  const sorted = Array.from(noms).sort((left, right) => left.localeCompare(right));
-  return { count: sorted.length, noms: sorted };
+export function buildStandsSummary(days: TimelineDay[], labels: Map<string, string> = new Map()): TimelineStandsSummary {
+  const typologiesByStand = new Map<string, Set<string>>();
+  days.forEach((day) =>
+    day.blocks.forEach((block) => {
+      if (!block.standNom) {
+        return;
+      }
+      let typologies = typologiesByStand.get(block.standNom);
+      if (!typologies) {
+        typologies = new Set();
+        typologiesByStand.set(block.standNom, typologies);
+      }
+      block.typologies.forEach((typologie) => typologies!.add(typologie));
+    })
+  );
+
+  const allTypologies = new Set<string>();
+  const stands = Array.from(typologiesByStand.entries())
+    .sort((left, right) => left[0].localeCompare(right[0]))
+    .map(([nom, typologies]) => {
+      typologies.forEach((typologie) => allTypologies.add(typologie));
+      const ids = Array.from(typologies).sort((left, right) => left.localeCompare(right));
+      const noms = ids.map((id) => typologieLabel(labels, id)).sort((left, right) => left.localeCompare(right));
+      return {
+        nom,
+        typologies: noms,
+        colorClass: typologieColorClass(typologiePrincipale(ids)),
+        tooltip:
+          noms.length === 0
+            ? $localize`:@@timeline.stands.typologieNone:${nom}:stand: — aucune typologie renseignée`
+            : $localize`:@@timeline.stands.typologieTooltip:${nom}:stand: — typologie(s) : ${noms.join(', ')}:typologies:`
+      };
+    });
+
+  const legend = Array.from(allTypologies)
+    .map((id) => ({ id, label: typologieLabel(labels, id), colorClass: typologieColorClass(id) }))
+    .sort((left, right) => left.label.localeCompare(right.label));
+
+  return { count: stands.length, typologieCount: allTypologies.size, stands, legend };
 }
 
 /** One entry per festival day the animateur works, sorted chronologically. */
@@ -248,6 +317,7 @@ function buildTimelineDay(jour: number, date: string | null, postes: PosteAffect
       return {
         posteId: poste.id,
         standNom: poste.stand?.nom || poste.stand?.id || '',
+        typologies: standTypologies(poste.stand),
         heureDebut,
         heureFin,
         startMinutes: minutesOfDay(heureDebut),
@@ -263,6 +333,7 @@ function buildTimelineDay(jour: number, date: string | null, postes: PosteAffect
   const blocks: TimelineBlock[] = spans.map((span) => ({
     posteId: span.posteId,
     standNom: span.standNom,
+    typologies: span.typologies,
     heureDebut: span.heureDebut,
     heureFin: span.heureFin,
     offsetPercent: ((span.startMinutes - amplitudeDebutMinutes) / range) * 100,

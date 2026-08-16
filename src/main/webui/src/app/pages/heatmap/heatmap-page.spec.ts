@@ -6,11 +6,11 @@ function creneau(overrides: Partial<Creneau> & { id: number; jour: number }): Cr
   return { date: '2026-08-01', heureDebut: '13:40', heureFin: '19:00', groupe: null, ...overrides };
 }
 
-function stand(id: string): Stand {
+function stand(id: string, typologiesProposees: string[] = []): Stand {
   return {
     id,
     nom: id,
-    typologiesProposees: [],
+    typologiesProposees,
     effectifMin: 1,
     effectifMax: 1,
     reserveMajeurs: false,
@@ -131,6 +131,28 @@ describe('buildAnimateurHeatmap', () => {
 
     expect(table.rows[0].headerTooltip).toContain('2');
     expect(table.rows[0].headerTooltip).toContain('Alpha, Zebre');
+  });
+
+  it('adds the distinct game typologies of those stands to the tooltip, with one coloured badge each', () => {
+    const table = buildAnimateurHeatmap(
+      [
+        poste({ id: 'p1', creneau: creneau({ id: 1, jour: 1 }), stand: stand('Alpha', ['AMBIANCE']), animateur: animateur('A') }),
+        poste({ id: 'p2', creneau: creneau({ id: 2, jour: 2 }), stand: stand('Beta', ['AMBIANCE', 'STRATEGIE']), animateur: animateur('A') })
+      ],
+      new Map([['AMBIANCE', 'Ambiance'], ['STRATEGIE', 'Stratégie']])
+    );
+
+    expect(table.rows[0].typologies.map((typologie) => typologie.label)).toEqual(['Ambiance', 'Stratégie']);
+    expect(table.rows[0].typologies[0].colorClass).not.toBe(table.rows[0].typologies[1].colorClass);
+    expect(table.rows[0].headerTooltip).toContain('Ambiance, Stratégie');
+  });
+
+  it('leaves an animateur without any stand typologie without a badge', () => {
+    const table = buildAnimateurHeatmap([
+      poste({ id: 'p1', creneau: creneau({ id: 1, jour: 1 }), stand: stand('Alpha'), animateur: animateur('A') })
+    ]);
+
+    expect(table.rows[0].typologies).toEqual([]);
   });
 
   it('leaves the stand rows without a header tooltip', () => {

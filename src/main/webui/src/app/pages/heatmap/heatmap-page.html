@@ -71,7 +71,16 @@
                     scope="row"
                     [matTooltip]="row.headerTooltip"
                     [attr.aria-label]="row.headerTooltip ? row.label + ' — ' + row.headerTooltip : null"
-                  >{{ row.label }}</th>
+                  >
+                    <span class="heatmap-row-label">{{ row.label }}</span>
+                    @if (row.typologies.length > 0) {
+                      <span class="heatmap-typologie-dots">
+                        @for (typologie of row.typologies; track typologie.id) {
+                          <span class="typologie-dot" [class]="typologie.colorClass" [matTooltip]="typologie.label"></span>
+                        }
+                      </span>
+                    }
+                  </th>
                   @for (cell of row.cells; track cell.jour) {
                     <td
                       class="heatmap-cell"

@@ -193,6 +193,7 @@ standalone) :
 | `app/core/table-selection.ts` | Sélection multiple d'un tableau : lignes cochées, états de la case d'en-tête, intersection avec les lignes affichées |
 | `app/core/bulk-edit.ts` | Briques des modifications en masse : modes « ne pas modifier / ajouter / retirer / remplacer » appliqués à une ligne |
 | `app/core/entity-labels.ts` | Libellés au pluriel des référentiels, utilisés par les actions de masse |
+| `app/core/typologie-colors.ts` | Couleur stable d'une typologie de jeu (dérivée de son id, pas d'un rang) et libellés associés, partagés par la heatmap et la timeline |
 | `app/core/solver-job.service.ts` | Suivi des jobs asynchrones : lit `/api/jobs/active` toutes les 2 s, aucun stockage navigateur |
 | `app/core/notification.service.ts` | Notifications via `MatSnackBar` (+ notifications système) |
 | `app/core/affectation-explanation.service.ts` | Appelle `/api/postes/{id}/explication` et `/api/postes/{id}/simulation-swap` (« Pourquoi lui ? ») |
@@ -231,8 +232,9 @@ Le CSS global se limite à ce que Material ne couvre pas : `src/styles.css` n'es
 qu'un agrégateur de règles `@import` et chaque partial vit sous `src/styles/`
 (`pages.css` cartes / formulaires / tableaux, `feedback.css` moniteur de job et
 variantes de snack bar, `calendar-month.css`, `calendar-day.css`,
-`constraints.css`, `problemes.css`, `staffing.css`, `heatmap.css`,
-`animateur-timeline.css`), avec ses propres `@media`.
+`constraints.css`, `problemes.css`, `staffing.css`, `typologie-colors.css`
+— la palette catégorielle des typologies de jeu, partagée par la heatmap et la
+timeline —, `heatmap.css`, `animateur-timeline.css`), avec ses propres `@media`.
 
 ## Base de données
 

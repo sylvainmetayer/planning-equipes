@@ -6,11 +6,11 @@ function creneau(overrides: Partial<Creneau> & { id: number; jour: number }): Cr
   return { date: '2026-08-01', heureDebut: '09:00', heureFin: '12:00', groupe: null, ...overrides };
 }
 
-function stand(id: string): Stand {
+function stand(id: string, typologiesProposees: string[] = []): Stand {
   return {
     id,
     nom: id,
-    typologiesProposees: [],
+    typologiesProposees,
     effectifMin: 1,
     effectifMax: 1,
     reserveMajeurs: false,
@@ -173,10 +173,45 @@ describe('buildStandsSummary', () => {
       'id-1'
     );
 
-    expect(buildStandsSummary(days)).toEqual({ count: 2, noms: ['Alpha', 'Zebre'] });
+    expect(buildStandsSummary(days).count).toBe(2);
+    expect(buildStandsSummary(days).stands.map((stand) => stand.nom)).toEqual(['Alpha', 'Zebre']);
   });
 
   it('returns an empty summary when the animateur has no day at all', () => {
-    expect(buildStandsSummary([])).toEqual({ count: 0, noms: [] });
+    expect(buildStandsSummary([])).toEqual({ count: 0, typologieCount: 0, stands: [], legend: [] });
+  });
+
+  it('counts each game typologie once across every stand covered', () => {
+    const days = buildAnimateurTimeline(
+      [
+        poste({ id: 'p1', creneau: creneau({ id: 1, jour: 1 }), stand: stand('Zebre', ['AMBIANCE']), animateur: animateur('id-1') }),
+        poste({ id: 'p2', creneau: creneau({ id: 2, jour: 2 }), stand: stand('Alpha', ['AMBIANCE', 'STRATEGIE']), animateur: animateur('id-1') })
+      ],
+      'id-1'
+    );
+
+    const summary = buildStandsSummary(days, new Map([['AMBIANCE', 'Ambiance'], ['STRATEGIE', 'Stratégie']]));
+
+    expect(summary.count).toBe(2);
+    expect(summary.typologieCount).toBe(2);
+    expect(summary.legend.map((item) => item.label)).toEqual(['Ambiance', 'Stratégie']);
+    expect(summary.stands[0].typologies).toEqual(['Ambiance', 'Stratégie']);
+    expect(summary.stands[0].tooltip).toContain('Ambiance, Stratégie');
+  });
+
+  it('gives every stand of the same typologie the same colour, and a stand without typologie the neutral one', () => {
+    const days = buildAnimateurTimeline(
+      [
+        poste({ id: 'p1', creneau: creneau({ id: 1, jour: 1 }), stand: stand('Alpha', ['AMBIANCE']), animateur: animateur('id-1') }),
+        poste({ id: 'p2', creneau: creneau({ id: 2, jour: 2 }), stand: stand('Beta', ['AMBIANCE']), animateur: animateur('id-1') }),
+        poste({ id: 'p3', creneau: creneau({ id: 3, jour: 3 }), stand: stand('Gamma'), animateur: animateur('id-1') })
+      ],
+      'id-1'
+    );
+
+    const summary = buildStandsSummary(days);
+
+    expect(summary.stands[0].colorClass).toBe(summary.stands[1].colorClass);
+    expect(summary.stands[2].colorClass).toBe('typologie-color-none');
   });
 });

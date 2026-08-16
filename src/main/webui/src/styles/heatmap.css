@@ -55,6 +55,16 @@
   border-bottom: 1px solid var(--mat-sys-outline-variant);
 }
 
+/* Typologie dots sit on the row-header line, right of the name: one per game
+   typologie the animateur's stands span. Colours from typologie-colors.css. */
+.heatmap-typologie-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+
 .heatmap-day-header {
   font: var(--mat-sys-label-medium);
   padding: 0.375rem 0.5rem;

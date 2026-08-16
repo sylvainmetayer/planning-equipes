@@ -1,0 +1,60 @@
+/* Categorical palette of the game typologies, shared by every view that colours
+   a stand after its typologie (animateur timeline, load heatmap). Eight hues
+   picked far enough apart to stay distinguishable side by side, each paired with
+   a text colour dark enough to read on it. The bucket a typologie lands in is
+   computed in `core/typologie-colors.ts`. */
+
+.typologie-color-0 {
+  background: #d7e3fc;
+  color: #16305c;
+}
+
+.typologie-color-1 {
+  background: #d9efd8;
+  color: #1d4620;
+}
+
+.typologie-color-2 {
+  background: #fde3cf;
+  color: #6a3410;
+}
+
+.typologie-color-3 {
+  background: #ecdcf5;
+  color: #472159;
+}
+
+.typologie-color-4 {
+  background: #fbdce4;
+  color: #6b1f36;
+}
+
+.typologie-color-5 {
+  background: #d2ecef;
+  color: #12454c;
+}
+
+.typologie-color-6 {
+  background: #f6e7bf;
+  color: #5a4410;
+}
+
+.typologie-color-7 {
+  background: #e0e2e6;
+  color: #33373d;
+}
+
+.typologie-color-none {
+  background: var(--mat-sys-surface-container-highest);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/* Small round swatch used in legends and in the heatmap row headers. */
+.typologie-dot {
+  display: inline-block;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  border: 1px solid var(--mat-sys-outline-variant);
+  flex: none;
+}

@@ -8,8 +8,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { ApiService } from '../../core/api.service';
 import { PlanningStateService } from '../../core/planning-state.service';
-import { PlanningFestival, PosteAffectation } from '../../core/models';
+import { PlanningFestival, PosteAffectation, TypologieItem } from '../../core/models';
+import { standTypologies, typologieColorClass, typologieLabel, typologieLabels } from '../../core/typologie-colors';
 
 export type HeatmapView = 'stand' | 'animateur';
 
@@ -28,6 +30,13 @@ export interface HeatmapCell {
   tooltip: string;
 }
 
+/** A coloured dot shown next to a row label, one per game typologie covered. */
+export interface HeatmapTypologieBadge {
+  id: string;
+  label: string;
+  colorClass: string;
+}
+
 export interface HeatmapRow {
   id: string;
   label: string;
@@ -35,6 +44,8 @@ export interface HeatmapRow {
   total: number;
   /** Row-header tooltip, empty when there is nothing more to say than the label itself. */
   headerTooltip: string;
+  /** Distinct typologies of the stands covered by this row; empty in the stand view. */
+  typologies: HeatmapTypologieBadge[];
   cells: HeatmapCell[];
 }
 
@@ -75,7 +86,10 @@ export class HeatmapPage {
   protected readonly animateurFilter = signal('');
   protected readonly standColumnLabel = $localize`:@@heatmap.column.stand:Stand`;
   protected readonly animateurColumnLabel = $localize`:@@heatmap.column.animateur:Animateur`;
+  /** Typologie referential, only used to turn ids into display labels. */
+  protected readonly typologies = signal<TypologieItem[]>([]);
 
+  private readonly api = inject(ApiService);
   private readonly planningState = inject(PlanningStateService);
 
   private readonly postes = computed(() => this.planning()?.postes ?? []);
@@ -83,7 +97,7 @@ export class HeatmapPage {
   protected readonly standTable = computed<HeatmapTable>(() => buildStandHeatmap(this.postes()));
 
   protected readonly animateurTable = computed<HeatmapTable>(() => {
-    const table = buildAnimateurHeatmap(this.postes());
+    const table = buildAnimateurHeatmap(this.postes(), typologieLabels(this.typologies()));
     const query = this.animateurFilter().trim().toLocaleLowerCase();
     if (!query) {
       return table;
@@ -103,7 +117,14 @@ export class HeatmapPage {
     this.loading.set(true);
     this.error.set('');
     try {
-      this.planning.set(await this.planningState.loadForDisplay());
+      const [planning, typologies] = await Promise.all([
+        this.planningState.loadForDisplay(),
+        // Labels only: a missing referential degrades the badges to raw ids
+        // rather than failing the whole heatmap.
+        this.api.get<TypologieItem[]>('/api/typologies').catch(() => [])
+      ]);
+      this.planning.set(planning);
+      this.typologies.set(typologies);
     } catch (error) {
       this.planning.set(null);
       const message = error instanceof Error ? error.message : String(error);
@@ -163,18 +184,19 @@ export function buildStandHeatmap(postes: PosteAffectation[]): HeatmapTable {
           tooltip: standDayTooltip(standNom, day, cell)
         };
       });
-      return { id: standId, label: standNom, total, headerTooltip: '', cells };
+      return { id: standId, label: standNom, total, headerTooltip: '', typologies: [], cells };
     });
 
   return { days, rows };
 }
 
 /** Load heatmap: one row per animateur with at least one poste, ranked by total postes (heaviest first). */
-export function buildAnimateurHeatmap(postes: PosteAffectation[]): HeatmapTable {
+export function buildAnimateurHeatmap(postes: PosteAffectation[], labels: Map<string, string> = new Map()): HeatmapTable {
   const days = buildDayColumns(postes);
   const animateurs = new Map<string, string>();
   const counts = new Map<string, Map<number, number>>();
   const standsByAnimateur = new Map<string, Set<string>>();
+  const typologiesByAnimateur = new Map<string, Set<string>>();
 
   postes.forEach((poste) => {
     const animateur = poste.animateur;
@@ -192,6 +214,12 @@ export function buildAnimateurHeatmap(postes: PosteAffectation[]): HeatmapTable 
       }
       stands.add(standNom);
     }
+    let typologies = typologiesByAnimateur.get(animateur.id);
+    if (!typologies) {
+      typologies = new Set();
+      typologiesByAnimateur.set(animateur.id, typologies);
+    }
+    standTypologies(poste.stand).forEach((typologie) => typologies!.add(typologie));
     let byDay = counts.get(animateur.id);
     if (!byDay) {
       byDay = new Map();
@@ -213,11 +241,13 @@ export function buildAnimateurHeatmap(postes: PosteAffectation[]): HeatmapTable 
         tooltip: animateurDayTooltip(label, day, count)
       };
     });
+    const typologies = buildTypologieBadges(typologiesByAnimateur.get(animateurId), labels);
     return {
       id: animateurId,
       label,
       total,
-      headerTooltip: animateurStandsTooltip(standsByAnimateur.get(animateurId)),
+      headerTooltip: animateurStandsTooltip(standsByAnimateur.get(animateurId), typologies),
+      typologies,
       cells
     };
   });
@@ -225,18 +255,32 @@ export function buildAnimateurHeatmap(postes: PosteAffectation[]): HeatmapTable 
   return { days, rows: rows.sort((left, right) => right.total - left.total || left.label.localeCompare(right.label)) };
 }
 
+/** Distinct typologies of an animateur's stands, sorted by label, with their colour. */
+function buildTypologieBadges(typologies: Set<string> | undefined, labels: Map<string, string>): HeatmapTypologieBadge[] {
+  return Array.from(typologies ?? [])
+    .map((id) => ({ id, label: typologieLabel(labels, id), colorClass: typologieColorClass(id) }))
+    .sort((left, right) => left.label.localeCompare(right.label));
+}
+
 /**
- * Row-header tooltip listing the distinct stands the animateur works on — the
- * daily cells only count postes, which says nothing about how many different
- * stands they have to cover over the festival.
+ * Row-header tooltip listing the distinct stands the animateur works on and the
+ * game typologies they span — the daily cells only count postes, which says
+ * nothing about how many different stands they have to cover over the festival,
+ * nor how many different games they have to learn.
  */
-function animateurStandsTooltip(stands: Set<string> | undefined): string {
+function animateurStandsTooltip(stands: Set<string> | undefined, typologies: HeatmapTypologieBadge[]): string {
   const noms = Array.from(stands ?? []).sort((left, right) => left.localeCompare(right));
   if (noms.length === 0) {
     return $localize`:@@heatmap.animateur.standsNone:Aucun stand affecté`;
   }
   const liste = noms.join(', ');
-  return $localize`:@@heatmap.animateur.stands:${noms.length}:count: stand(s) : ${liste}:stands:`;
+  const standsLabel = $localize`:@@heatmap.animateur.stands:${noms.length}:count: stand(s) : ${liste}:stands:`;
+  if (typologies.length === 0) {
+    return standsLabel;
+  }
+  const listeTypologies = typologies.map((typologie) => typologie.label).join(', ');
+  const typologiesLabel = $localize`:@@heatmap.animateur.typologies:${typologies.length}:count: typologie(s) de jeu : ${listeTypologies}:typologies:`;
+  return `${standsLabel} — ${typologiesLabel}`;
 }
 
 function animateurLoadLevel(count: number): HeatmapLevel {

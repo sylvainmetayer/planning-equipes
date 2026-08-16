@@ -71,9 +71,18 @@
         <mat-card-subtitle>{{ standsSummaryLabel() }}</mat-card-subtitle>
       </mat-card-header>
       <mat-card-content>
+        @if (standsSummary().legend.length > 0) {
+          <ul class="timeline-typologie-legend">
+            @for (item of standsSummary().legend; track item.id) {
+              <li class="timeline-typologie-legend-item">
+                <span class="typologie-dot" [class]="item.colorClass"></span>{{ item.label }}
+              </li>
+            }
+          </ul>
+        }
         <ul class="timeline-stands-list">
-          @for (nom of standsSummary().noms; track nom) {
-            <li class="timeline-stand-chip">{{ nom }}</li>
+          @for (stand of standsSummary().stands; track stand.nom) {
+            <li class="timeline-stand-chip" [class]="stand.colorClass" [matTooltip]="stand.tooltip" [attr.aria-label]="stand.tooltip">{{ stand.nom }}</li>
           }
         </ul>
       </mat-card-content>
