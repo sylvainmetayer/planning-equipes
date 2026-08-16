@@ -140,12 +140,20 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
 - Layout: `app/core/` holds shared services (`api.service.ts` — the only place
   doing HTTP, `downloadFile` returns a status string and never touches the DOM;
   `models.ts`; `date-utils.ts`, week starts Monday; `planning-state.service.ts`;
-  `reference-data.store.ts`; `reference-crud.service.ts` — save/delete plus
-  snack-bar feedback shared by the five reference pages;
+  `reference-data.store.ts`; `reference-crud.service.ts` — save/delete, single
+  or in bulk, plus snack-bar feedback shared by the five reference pages;
+  `table-selection.ts` — multi-row selection of those pages, always intersected
+  with the displayed rows; `bulk-edit.ts` — the "leave unchanged / add / remove
+  / replace" modes a bulk edit applies to one row; `entity-labels.ts` — plural
+  entity labels of the bulk actions;
   `solver-job.service.ts`; `notification.service.ts`, backed by `MatSnackBar`),
   `app/shared/` holds cross-page components (`job-monitor.ts`,
-  `confirm-dialog.ts` — replaces `window.confirm`, `output-panel.ts`), and
-  `app/pages/<page>/` holds one folder per route.
+  `confirm-dialog.ts` — replaces `window.confirm`, `output-panel.ts`,
+  `bulk-actions-bar.ts`), and `app/pages/<page>/` holds one folder per route.
+- Bulk edits go through one dialog per entity (`<entity>-bulk-edit-dialog.ts`),
+  whose rules live in a plain `<entity>-bulk-edit.ts` next to it so they are
+  unit-tested without rendering. Every field defaults to "ne pas modifier": a
+  bulk edit only writes what the user explicitly filled in.
 - State flows one way: the solver page pushes the solved planning into
   `PlanningStateService`, calendars read it back read-only and never start a
   solve. Components don't call `fetch` directly.

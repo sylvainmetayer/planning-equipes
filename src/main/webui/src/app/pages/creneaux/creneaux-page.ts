@@ -10,16 +10,26 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { labelCreneauxPluriel } from '../../core/entity-labels';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
+import { TableSelection } from '../../core/table-selection';
 import { slugify } from '../../core/slug';
 import { CauseInfaisabilite, Creneau, GroupeCreneau } from '../../core/models';
+import { BulkActionsBar } from '../../shared/bulk-actions-bar';
+import { CreneauBulkEditData, CreneauBulkEditDialog } from './creneau-bulk-edit-dialog';
 import { CreneauFormData, CreneauFormDialog } from './creneau-form-dialog';
 
-/** Timeslots CRUD: festival day, date and hours of every schedulable slot, organized in switchable "groupes de créneaux" (alternate plannings). */
+/**
+ * Timeslots CRUD: festival day, date and hours of every schedulable slot,
+ * organized in switchable "groupes de créneaux" (alternate plannings).
+ *
+ * Slots are multi-selectable, for a bulk delete or to move a whole batch to
+ * another group / realign its hours.
+ */
 @Component({
   selector: 'app-creneaux-page',
   imports: [
@@ -32,7 +42,8 @@ import { CreneauFormData, CreneauFormDialog } from './creneau-form-dialog';
     MatSelectModule,
     MatButtonModule,
     MatIconModule,
-    MatTooltipModule
+    MatTooltipModule,
+    BulkActionsBar
   ],
   templateUrl: './creneaux-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -66,6 +77,11 @@ export class CreneauxPage {
     const creneaux = groupeId ? this.store.creneaux().filter((c) => c.groupe?.id === groupeId) : this.store.creneaux();
     return [...creneaux].sort((a, b) => (a.groupe?.nom ?? a.groupe?.id ?? '').localeCompare(b.groupe?.nom ?? b.groupe?.id ?? ''));
   });
+
+  /** Keyed on the displayed slots, so the group filter also narrows "tout sélectionner". */
+  protected readonly selection = new TableSelection<number>(
+    computed(() => this.creneauxAffiches().map((creneau) => creneau.id))
+  );
 
   /**
    * Créneau id → the feasibility cause naming it, re-keyed on the numeric id so
@@ -112,6 +128,20 @@ export class CreneauxPage {
 
   protected async remove(creneau: Creneau): Promise<void> {
     await this.crud.remove('creneaux', creneau.id, $localize`:@@creneaux.entityLabel:Créneau`);
+  }
+
+  protected async removeSelection(): Promise<void> {
+    await this.crud.removeMany('creneaux', this.selection.selectedIds(), labelCreneauxPluriel());
+  }
+
+  protected editSelection(): void {
+    const selectionnes = new Set(this.selection.selectedIds());
+    this.dialog.open<CreneauBulkEditDialog, CreneauBulkEditData, boolean>(CreneauBulkEditDialog, {
+      data: { creneaux: this.store.creneaux().filter((creneau) => selectionnes.has(creneau.id)) },
+      width: '40rem',
+      maxWidth: '95vw',
+      autoFocus: 'first-tabbable'
+    });
   }
 
   /** Activates a timeslot group; checking one implicitly deactivates every other one, so an already-active row is a no-op. */

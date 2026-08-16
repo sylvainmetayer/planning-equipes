@@ -1,0 +1,56 @@
+<h2 mat-dialog-title>{{ formTitle }}</h2>
+<form (ngSubmit)="save()">
+<mat-dialog-content>
+<fieldset class="form-fieldset" [disabled]="editingLocked()">
+@if (editingLocked()) {
+  <p class="locked-hint" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
+}
+<p class="bulk-hint" i18n="@@bulk.hint">Seuls les champs renseignés ci-dessous sont modifiés ; les autres gardent la valeur propre à chaque ligne.</p>
+
+<div class="bulk-field">
+  <h3 i18n="@@creneaux.field.groupe">Groupe de créneaux</h3>
+  <div class="bulk-field-row">
+    <mat-form-field appearance="outline">
+      <mat-label i18n="@@creneaux.field.groupe">Groupe de créneaux</mat-label>
+      <mat-select name="groupeId" [ngModel]="patch().groupeId" (ngModelChange)="update({ groupeId: $event })">
+        <mat-option [value]="null" i18n="@@bulk.mode.inchange">Ne pas modifier</mat-option>
+        @for (groupe of store.groupesCreneaux(); track groupe.id) {
+          <mat-option [value]="groupe.id">{{ groupe.nom || groupe.id }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+</div>
+
+<div class="bulk-field">
+  <h3 i18n="@@creneaux.bulk.horaires">Horaires</h3>
+  <p class="bulk-hint" i18n="@@bulk.hint.emptyKeeps">Laissez un champ vide pour conserver la valeur de chaque ligne.</p>
+  <div class="bulk-field-row">
+    <mat-form-field appearance="outline">
+      <mat-label i18n="@@creneaux.field.heureDebut">Début</mat-label>
+      <input matInput name="heureDebut" type="time"
+             [ngModel]="patch().heureDebut" (ngModelChange)="update({ heureDebut: $event })" />
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label i18n="@@creneaux.field.heureFin">Fin</mat-label>
+      <input matInput name="heureFin" type="time"
+             [ngModel]="patch().heureFin" (ngModelChange)="update({ heureFin: $event })" />
+    </mat-form-field>
+  </div>
+  @if (creneauxInvalides().length) {
+    <p class="field-error" i18n="@@creneaux.bulk.horairesInvalides">
+      Certains créneaux sélectionnés finiraient avant de commencer avec ces horaires.
+    </p>
+  }
+</div>
+</fieldset>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="dialogRef.close(false)" i18n="@@common.cancel">Annuler</button>
+  <button matButton="filled" type="submit"
+          [disabled]="editingLocked() || rienAModifier() || creneauxInvalides().length > 0 || enCours()">
+    <mat-icon>save</mat-icon>
+    <ng-container i18n="@@bulk.apply">Appliquer à la sélection</ng-container>
+  </button>
+</mat-dialog-actions>
+</form>

@@ -1,16 +1,21 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Animateur } from '../../core/models';
+import { labelAnimateursPluriel } from '../../core/entity-labels';
 import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
+import { TableSelection } from '../../core/table-selection';
+import { BulkActionsBar } from '../../shared/bulk-actions-bar';
+import { AnimateurBulkEditData, AnimateurBulkEditDialog } from './animateur-bulk-edit-dialog';
 import { AnimateurFormData, AnimateurFormDialog } from './animateur-form-dialog';
 
 /**
@@ -21,15 +26,27 @@ import { AnimateurFormData, AnimateurFormDialog } from './animateur-form-dialog'
  * An animateur declared unavailable on a day that carries a CRITIQUE
  * feasibility cause is flagged: that single unavailability is one of the
  * reasons the day cannot be staffed at all.
+ *
+ * Rows are multi-selectable, for a bulk delete or a bulk edit of the fields
+ * animateurs share (appréciation, souhaits, manager, indisponibilités).
  */
 @Component({
   selector: 'app-animateurs-page',
-  imports: [MatCardModule, MatButtonModule, MatIconModule, MatTableModule, MatSortModule, MatTooltipModule],
+  imports: [
+    MatCardModule,
+    MatButtonModule,
+    MatCheckboxModule,
+    MatIconModule,
+    MatTableModule,
+    MatSortModule,
+    MatTooltipModule,
+    BulkActionsBar
+  ],
   templateUrl: './animateurs-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AnimateursPage {
-  protected readonly columns = ['id', 'nom', 'majorite', 'manager', 'competences', 'indisponibilites', 'actions'];
+  protected readonly columns = ['select', 'id', 'nom', 'majorite', 'manager', 'competences', 'indisponibilites', 'actions'];
   protected readonly sort = signal<Sort>({ active: '', direction: '' });
   protected readonly sortedAnimateurs = computed(() => {
     const animateurs = this.store.animateurs();
@@ -45,6 +62,11 @@ export class AnimateursPage {
   protected readonly jobs = inject(SolverJobService);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
   protected readonly editingLocked = computed(() => this.jobs.solverBusy());
+
+  /** Keyed on the sorted rows, so "tout sélectionner" follows what the table shows. */
+  protected readonly selection = new TableSelection<string>(
+    computed(() => this.sortedAnimateurs().map((animateur) => animateur.id))
+  );
 
   private readonly problemes = inject(ProblemesStore);
   private readonly crud = inject(ReferenceCrudService);
@@ -118,6 +140,20 @@ export class AnimateursPage {
 
   protected async remove(animateur: Animateur): Promise<void> {
     await this.crud.remove('animateurs', animateur.id, $localize`:@@animateurs.entityLabel:Animateur`);
+  }
+
+  protected async removeSelection(): Promise<void> {
+    await this.crud.removeMany('animateurs', this.selection.selectedIds(), labelAnimateursPluriel());
+  }
+
+  protected editSelection(): void {
+    const selectionnes = new Set(this.selection.selectedIds());
+    this.dialog.open<AnimateurBulkEditDialog, AnimateurBulkEditData, boolean>(AnimateurBulkEditDialog, {
+      data: { animateurs: this.store.animateurs().filter((animateur) => selectionnes.has(animateur.id)) },
+      width: '48rem',
+      maxWidth: '95vw',
+      autoFocus: 'first-tabbable'
+    });
   }
 }
 

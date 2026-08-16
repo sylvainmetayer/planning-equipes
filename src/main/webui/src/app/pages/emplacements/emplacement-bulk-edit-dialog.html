@@ -1,0 +1,53 @@
+<h2 mat-dialog-title>{{ formTitle }}</h2>
+<form (ngSubmit)="save()">
+<mat-dialog-content>
+<fieldset class="form-fieldset" [disabled]="editingLocked()">
+@if (editingLocked()) {
+  <p class="locked-hint" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
+}
+<p class="bulk-hint" i18n="@@emplacements.bulk.hint">
+  Le point choisi est appliqué à tous les emplacements sélectionnés ; leurs noms restent inchangés.
+</p>
+
+<div class="bulk-field">
+  <h3 i18n="@@emplacements.column.coordonnees">Coordonnées</h3>
+  <div class="bulk-field-row">
+    <mat-form-field appearance="outline">
+      <mat-label i18n="@@bulk.action">Action</mat-label>
+      <mat-select name="coordonneesMode" [ngModel]="patch().coordonnees.mode"
+                  (ngModelChange)="updateCoordonnees({ mode: $event })">
+        @for (mode of modesCoordonnees; track mode.value) {
+          <mat-option [value]="mode.value">{{ mode.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label i18n="@@emplacements.field.latitude">Latitude</mat-label>
+      <input matInput name="latitude" type="number" step="any" min="-90" max="90"
+             [disabled]="patch().coordonnees.mode !== 'DEFINIR'"
+             [ngModel]="patch().coordonnees.latitude" (ngModelChange)="updateNombre('latitude', $event)" />
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label i18n="@@emplacements.field.longitude">Longitude</mat-label>
+      <input matInput name="longitude" type="number" step="any" min="-180" max="180"
+             [disabled]="patch().coordonnees.mode !== 'DEFINIR'"
+             [ngModel]="patch().coordonnees.longitude" (ngModelChange)="updateNombre('longitude', $event)" />
+    </mat-form-field>
+  </div>
+  @if (patch().coordonnees.mode !== 'EFFACER') {
+    <app-map-picker
+      [latitude]="patch().coordonnees.latitude" [longitude]="patch().coordonnees.longitude"
+      [disabled]="editingLocked()"
+      (positionChange)="onPositionChange($event)" />
+  }
+</div>
+</fieldset>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="dialogRef.close(false)" i18n="@@common.cancel">Annuler</button>
+  <button matButton="filled" type="submit" [disabled]="editingLocked() || rienAModifier() || enCours()">
+    <mat-icon>save</mat-icon>
+    <ng-container i18n="@@bulk.apply">Appliquer à la sélection</ng-container>
+  </button>
+</mat-dialog-actions>
+</form>

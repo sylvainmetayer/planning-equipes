@@ -1,0 +1,114 @@
+<h2 mat-dialog-title>{{ formTitle }}</h2>
+<form (ngSubmit)="save()">
+<mat-dialog-content>
+<fieldset class="form-fieldset" [disabled]="editingLocked()">
+@if (editingLocked()) {
+  <p class="locked-hint" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
+}
+<p class="bulk-hint" i18n="@@bulk.hint">Seuls les champs renseignés ci-dessous sont modifiés ; les autres gardent la valeur propre à chaque ligne.</p>
+
+<div class="bulk-field">
+  <h3 i18n="@@animateurs.field.manager">Manager</h3>
+  <div class="bulk-field-row">
+    <mat-form-field appearance="outline">
+      <mat-label i18n="@@bulk.action">Action</mat-label>
+      <mat-select name="manager" [ngModel]="patch().manager" (ngModelChange)="update({ manager: $event })">
+        @for (mode of modesBooleen; track mode.value) {
+          <mat-option [value]="mode.value">{{ mode.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+</div>
+
+<div class="bulk-field">
+  <h3 i18n="@@animateurs.appreciation.title">Appréciation</h3>
+  <div class="bulk-field-row">
+    <mat-form-field appearance="outline">
+      <mat-label i18n="@@bulk.action">Action</mat-label>
+      <mat-select name="competenceMode" [ngModel]="patch().competence.mode"
+                  (ngModelChange)="update({ competence: { mode: $event, typologie: patch().competence.typologie, niveau: patch().competence.niveau } })">
+        @for (mode of modesEntree; track mode.value) {
+          <mat-option [value]="mode.value">{{ mode.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label i18n="@@animateurs.competences.typologie">Typologie</mat-label>
+      <mat-select name="competenceTypologie" [disabled]="patch().competence.mode === 'AUCUN'"
+                  [ngModel]="patch().competence.typologie"
+                  (ngModelChange)="update({ competence: { mode: patch().competence.mode, typologie: $event, niveau: patch().competence.niveau } })">
+        @for (typologie of store.typologies(); track typologie.id) {
+          <mat-option [value]="typologie.id">{{ typologie.label || typologie.id }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label i18n="@@animateurs.competences.niveau">Niveau</mat-label>
+      <mat-select name="competenceNiveau" [disabled]="patch().competence.mode !== 'AJOUTER'"
+                  [ngModel]="patch().competence.niveau"
+                  (ngModelChange)="update({ competence: { mode: patch().competence.mode, typologie: patch().competence.typologie, niveau: $event } })">
+        @for (niveau of niveaux; track niveau) {
+          <mat-option [value]="niveau">{{ niveau }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+</div>
+
+<div class="bulk-field">
+  <h3 i18n="@@animateurs.souhaits.title">Souhaits</h3>
+  <p class="bulk-hint" i18n="@@animateurs.souhaits.hint">Typologies de stand sur lesquelles l'animateur aimerait être affecté.</p>
+  <div class="bulk-field-row">
+    <mat-form-field appearance="outline">
+      <mat-label i18n="@@bulk.action">Action</mat-label>
+      <mat-select name="souhaitsMode" [ngModel]="patch().souhaits.mode"
+                  (ngModelChange)="update({ souhaits: { mode: $event, typologies: patch().souhaits.typologies } })">
+        @for (mode of modesListe; track mode.value) {
+          <mat-option [value]="mode.value">{{ mode.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label i18n="@@animateurs.souhaits.typologies">Typologies souhaitées</mat-label>
+      <mat-select name="souhaitsTypologies" multiple [disabled]="patch().souhaits.mode === 'AUCUN'"
+                  [ngModel]="patch().souhaits.typologies"
+                  (ngModelChange)="update({ souhaits: { mode: patch().souhaits.mode, typologies: $event } })">
+        @for (typologie of store.typologies(); track typologie.id) {
+          <mat-option [value]="typologie.id">{{ typologie.label || typologie.id }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+</div>
+
+<div class="bulk-field">
+  <h3 i18n="@@animateurs.indispo.title">Jours d'indisponibilité</h3>
+  <div class="bulk-field-row">
+    <mat-form-field appearance="outline">
+      <mat-label i18n="@@bulk.action">Action</mat-label>
+      <mat-select name="indispoMode" [ngModel]="patch().indisponibilite.mode"
+                  (ngModelChange)="update({ indisponibilite: { mode: $event, jour: patch().indisponibilite.jour } })">
+        @for (mode of modesEntree; track mode.value) {
+          <mat-option [value]="mode.value">{{ mode.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label i18n="@@animateurs.indispo.jour">Jour</mat-label>
+      <input matInput name="indispoJour" type="date" [disabled]="patch().indisponibilite.mode === 'AUCUN'"
+             [ngModel]="patch().indisponibilite.jour"
+             (ngModelChange)="update({ indisponibilite: { mode: patch().indisponibilite.mode, jour: $event } })" />
+    </mat-form-field>
+  </div>
+</div>
+</fieldset>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="dialogRef.close(false)" i18n="@@common.cancel">Annuler</button>
+  <button matButton="filled" type="submit" [disabled]="editingLocked() || rienAModifier() || enCours()">
+    <mat-icon>save</mat-icon>
+    <ng-container i18n="@@bulk.apply">Appliquer à la sélection</ng-container>
+  </button>
+</mat-dialog-actions>
+</form>

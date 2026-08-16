@@ -10,7 +10,23 @@
     </button>
   </mat-card-actions>
   <mat-card-content class="table-wrapper">
+    @if (selection.hasSelection()) {
+      <app-bulk-actions-bar [count]="selection.count()" [disabled]="editingLocked()"
+                            (edit)="editSelection()" (remove)="removeSelection()" (clear)="selection.clear()" />
+    }
     <table mat-table [dataSource]="store.stands()">
+      <ng-container matColumnDef="select">
+        <th mat-header-cell *matHeaderCellDef>
+          <mat-checkbox i18n-aria-label="@@bulk.selectAll" aria-label="Tout sélectionner"
+                        [checked]="selection.allSelected()" [indeterminate]="selection.partiallySelected()"
+                        (change)="selection.toggleAll()"></mat-checkbox>
+        </th>
+        <td mat-cell *matCellDef="let stand">
+          <mat-checkbox i18n-aria-label="@@bulk.selectRow" aria-label="Sélectionner la ligne"
+                        [checked]="selection.isSelected(stand.id)"
+                        (change)="selection.toggle(stand.id)"></mat-checkbox>
+        </td>
+      </ng-container>
       <ng-container matColumnDef="id">
         <th mat-header-cell *matHeaderCellDef i18n="@@common.id">Id</th>
         <td mat-cell *matCellDef="let stand">{{ stand.id }}</td>

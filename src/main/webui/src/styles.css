@@ -1,6 +1,7 @@
 /* Global stylesheet aggregator: only the rules Material does not already cover.
    Import order matters: shared page layout first, then the view-specific grids. */
 @import url('./styles/pages.css');
+@import url('./styles/bulk-actions.css');
 @import url('./styles/feedback.css');
 @import url('./styles/calendar-month.css');
 @import url('./styles/calendar-day.css');

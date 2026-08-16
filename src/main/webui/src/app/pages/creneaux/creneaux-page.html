@@ -54,11 +54,24 @@
     </mat-form-field>
   </mat-card-actions>
   <mat-card-content>
+    @if (creneauxAffiches().length) {
+      <mat-checkbox class="bulk-select-inline"
+                    [checked]="selection.allSelected()" [indeterminate]="selection.partiallySelected()"
+                    (change)="selection.toggleAll()" i18n="@@bulk.selectAll">Tout sélectionner</mat-checkbox>
+    }
+    @if (selection.hasSelection()) {
+      <app-bulk-actions-bar [count]="selection.count()" [disabled]="editingLocked()"
+                            (edit)="editSelection()" (remove)="removeSelection()" (clear)="selection.clear()" />
+    }
     <mat-accordion class="table-wrapper">
       @for (creneau of creneauxAffiches(); track creneau.id) {
         <mat-expansion-panel>
           <mat-expansion-panel-header>
             <mat-panel-title>
+              <mat-checkbox class="bulk-select-inline" i18n-aria-label="@@bulk.selectRow" aria-label="Sélectionner la ligne"
+                            [checked]="selection.isSelected(creneau.id)"
+                            (click)="$event.stopPropagation()"
+                            (change)="selection.toggle(creneau.id)"></mat-checkbox>
               J{{ creneau.jour }} · {{ creneau.date }} {{ creneau.heureDebut }}–{{ creneau.heureFin }} · {{ creneau.groupe?.nom || creneau.groupe?.id }}
               @if (causeParCreneau().get(creneau.id); as cause) {
                 <mat-icon class="row-problem-icon" [matTooltip]="cause.message" [attr.aria-label]="cause.message">warning</mat-icon>

@@ -4,8 +4,11 @@
 import { Injectable, inject } from '@angular/core';
 import { NotificationService } from './notification.service';
 import { PlanningResolutionStore } from './planning-resolution.store';
-import { ReferenceDataStore } from './reference-data.store';
+import { BulkResult, ReferenceDataStore } from './reference-data.store';
 import { ConfirmService } from '../shared/confirm-dialog';
+
+/** Failures detailed in the snack bar before it degrades to a plain count. */
+const MAX_ECHECS_DETAILLES = 3;
 
 @Injectable({ providedIn: 'root' })
 export class ReferenceCrudService {
@@ -86,6 +89,103 @@ export class ReferenceCrudService {
       this.reportError(error);
       return false;
     }
+  }
+
+  /**
+   * Deletes a whole selection after a single confirmation, and returns how many
+   * rows were actually deleted. A row the server refuses (a typologie still
+   * assigned, …) does not cancel the rest of the batch: it is reported next to
+   * the successes so the user knows exactly what is left.
+   */
+  async removeMany(
+    resource: string,
+    ids: readonly (string | number)[],
+    labelPluriel: string
+  ): Promise<number> {
+    if (ids.length === 0) {
+      return 0;
+    }
+    const count = ids.length;
+    const confirmed = await this.confirm.ask({
+      title: $localize`:@@crud.deleteManyTitle:Supprimer ${count}:count: ${labelPluriel}:label: ?`,
+      message: $localize`:@@crud.deleteMessage:Cette action est irréversible.`,
+      confirmLabel: $localize`:@@crud.deleteConfirm:Supprimer`,
+      danger: true
+    });
+    if (!confirmed) {
+      return 0;
+    }
+    try {
+      const result = await this.store.removeMany(resource, ids);
+      this.refreshResolution();
+      this.reportBulk(
+        result,
+        (nombre) => $localize`:@@crud.deletedMany:Suppression de ${nombre}:count: ${labelPluriel}:label: effectuée.`,
+        (nombre) => $localize`:@@crud.deleteManyFailed:${nombre}:count: ${labelPluriel}:label: n'ont pas pu être supprimés.`
+      );
+      return result.succes.length;
+    } catch (error) {
+      this.reportError(error);
+      return 0;
+    }
+  }
+
+  /**
+   * Persists a whole selection already patched by the caller (bulk edit), and
+   * returns how many rows were actually saved. Same all-or-some semantics as
+   * {@link removeMany}: one rejected row never rolls back the others.
+   */
+  async saveMany<T extends { id: string | number }>(
+    resource: string,
+    payloads: readonly T[],
+    labelPluriel: string
+  ): Promise<number> {
+    if (payloads.length === 0) {
+      return 0;
+    }
+    try {
+      const result = await this.store.saveMany(resource, payloads);
+      this.refreshResolution();
+      this.reportBulk(
+        result,
+        (nombre) => $localize`:@@crud.updatedMany:Modification de ${nombre}:count: ${labelPluriel}:label: effectuée.`,
+        (nombre) => $localize`:@@crud.updateManyFailed:${nombre}:count: ${labelPluriel}:label: n'ont pas pu être modifiés.`
+      );
+      return result.succes.length;
+    } catch (error) {
+      this.reportError(error);
+      return 0;
+    }
+  }
+
+  /**
+   * One snack bar per batch: a success when everything went through, an error
+   * carrying the first failing ids otherwise — a batch of fifty must not open
+   * fifty snack bars.
+   */
+  private reportBulk(
+    result: BulkResult,
+    successTitle: (count: number) => string,
+    failureTitle: (count: number) => string
+  ): void {
+    if (result.echecs.length === 0) {
+      this.notifications.notify({
+        title: successTitle(result.succes.length),
+        variant: 'success',
+        timeout: 4000
+      });
+      return;
+    }
+    const details = result.echecs
+      .slice(0, MAX_ECHECS_DETAILLES)
+      .map((echec) => `${echec.id} : ${echec.message}`)
+      .join(' · ');
+    const restants = result.echecs.length - MAX_ECHECS_DETAILLES;
+    this.notifications.notify({
+      title: failureTitle(result.echecs.length),
+      message: restants > 0 ? `${details} · ${$localize`:@@crud.bulkMoreErrors:et ${restants}:count: autre(s)`}` : details,
+      variant: 'error'
+    });
   }
 
   /**

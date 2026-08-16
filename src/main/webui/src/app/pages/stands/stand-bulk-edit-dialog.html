@@ -1,0 +1,120 @@
+<h2 mat-dialog-title>{{ formTitle }}</h2>
+<form (ngSubmit)="save()">
+<mat-dialog-content>
+<fieldset class="form-fieldset" [disabled]="editingLocked()">
+@if (editingLocked()) {
+  <p class="locked-hint" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
+}
+<p class="bulk-hint" i18n="@@bulk.hint">Seuls les champs renseignés ci-dessous sont modifiés ; les autres gardent la valeur propre à chaque ligne.</p>
+
+<div class="bulk-field">
+  <h3 i18n="@@stands.field.emplacement">Emplacement</h3>
+  <div class="bulk-field-row">
+    <mat-form-field appearance="outline">
+      <mat-label i18n="@@bulk.action">Action</mat-label>
+      <mat-select name="emplacementMode" [ngModel]="patch().emplacement.mode"
+                  (ngModelChange)="update({ emplacement: { mode: $event, emplacementId: patch().emplacement.emplacementId } })">
+        @for (mode of modesEmplacement; track mode.value) {
+          <mat-option [value]="mode.value">{{ mode.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label i18n="@@stands.field.emplacement">Emplacement</mat-label>
+      <mat-select name="emplacementId" [disabled]="patch().emplacement.mode !== 'DEFINIR'"
+                  [ngModel]="patch().emplacement.emplacementId"
+                  (ngModelChange)="update({ emplacement: { mode: patch().emplacement.mode, emplacementId: $event } })">
+        @for (emplacement of store.emplacements(); track emplacement.id) {
+          <mat-option [value]="emplacement.id">{{ emplacement.nom || emplacement.id }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+</div>
+
+<div class="bulk-field">
+  <h3 i18n="@@stands.column.typologies">Typologies</h3>
+  <div class="bulk-field-row">
+    <mat-form-field appearance="outline">
+      <mat-label i18n="@@bulk.action">Action</mat-label>
+      <mat-select name="typologiesMode" [ngModel]="patch().typologies.mode"
+                  (ngModelChange)="update({ typologies: { mode: $event, typologies: patch().typologies.typologies } })">
+        @for (mode of modesListe; track mode.value) {
+          <mat-option [value]="mode.value">{{ mode.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label i18n="@@stands.field.typologies">Typologies de jeu</mat-label>
+      <mat-select name="typologies" multiple [disabled]="patch().typologies.mode === 'AUCUN'"
+                  [ngModel]="patch().typologies.typologies"
+                  (ngModelChange)="update({ typologies: { mode: patch().typologies.mode, typologies: $event } })">
+        @for (typologie of store.typologies(); track typologie.id) {
+          <mat-option [value]="typologie.id">{{ typologie.label || typologie.id }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+</div>
+
+<div class="bulk-field">
+  <h3 i18n="@@stands.column.effectif">Effectif</h3>
+  <p class="bulk-hint" i18n="@@bulk.hint.emptyKeeps">Laissez un champ vide pour conserver la valeur de chaque ligne.</p>
+  <div class="bulk-field-row">
+    <mat-form-field appearance="outline">
+      <mat-label i18n="@@stands.field.effectifMin">Effectif minimum</mat-label>
+      <input matInput name="effectifMin" type="number" min="0"
+             [ngModel]="patch().effectifMin" (ngModelChange)="updateEffectif('effectifMin', $event)" />
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label i18n="@@stands.field.effectifMax">Effectif maximum</mat-label>
+      <input matInput name="effectifMax" type="number" min="0"
+             [ngModel]="patch().effectifMax" (ngModelChange)="updateEffectif('effectifMax', $event)" />
+    </mat-form-field>
+  </div>
+  @if (standsInvalides().length) {
+    <p class="field-error">{{ effectifInvalideMessage() }}</p>
+  }
+</div>
+
+<div class="bulk-field">
+  <h3 i18n="@@stands.bulk.indicateurs">Indicateurs</h3>
+  <div class="bulk-field-row">
+    <mat-form-field appearance="outline">
+      <mat-label i18n="@@stands.field.reserveMajeurs">Réservé aux majeurs</mat-label>
+      <mat-select name="reserveMajeurs" [ngModel]="patch().reserveMajeurs"
+                  (ngModelChange)="update({ reserveMajeurs: $event })">
+        @for (mode of modesBooleen; track mode.value) {
+          <mat-option [value]="mode.value">{{ mode.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label i18n="@@stands.field.premium">Premium (stand éditeur)</mat-label>
+      <mat-select name="premium" [ngModel]="patch().premium" (ngModelChange)="update({ premium: $event })">
+        @for (mode of modesBooleen; track mode.value) {
+          <mat-option [value]="mode.value">{{ mode.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label i18n="@@stands.bulk.niveauEffort">Niveau d'effort</mat-label>
+      <mat-select name="niveauEffort" [ngModel]="patch().niveauEffort" (ngModelChange)="update({ niveauEffort: $event })">
+        @for (niveau of niveauxEffort; track niveau.value) {
+          <mat-option [value]="niveau.value">{{ niveau.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+</div>
+</fieldset>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="dialogRef.close(false)" i18n="@@common.cancel">Annuler</button>
+  <button matButton="filled" type="submit"
+          [disabled]="editingLocked() || rienAModifier() || standsInvalides().length > 0 || enCours()">
+    <mat-icon>save</mat-icon>
+    <ng-container i18n="@@bulk.apply">Appliquer à la sélection</ng-container>
+  </button>
+</mat-dialog-actions>
+</form>

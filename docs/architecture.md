@@ -180,8 +180,11 @@ standalone) :
 | `app/core/planning-resolution.store.ts` | Groupe de créneaux de la dernière résolution vs groupe actif : alimente les avertissements « planning obsolète » |
 | `app/core/problemes.ts` | Fusion pure des deux sources de problèmes (causes d'infaisabilité + contraintes en défaut) en une liste triée par gravité |
 | `app/core/problemes.store.ts` | État partagé du diagnostic : `GET /api/feasibility` (avant toute résolution) et `GET /api/constraints`, plus les index utilisés par les badges des tableaux |
-| `app/core/reference-data.store.ts` | Référentiels partagés (signals) et opérations CRUD |
-| `app/core/reference-crud.service.ts` | Enregistrement / suppression mutualisés des pages référentiels (retour utilisateur, confirmation) |
+| `app/core/reference-data.store.ts` | Référentiels partagés (signals) et opérations CRUD, unitaires ou par lot (un seul rechargement par lot) |
+| `app/core/reference-crud.service.ts` | Enregistrement / suppression mutualisés des pages référentiels, unitaires ou par lot (retour utilisateur, confirmation unique) |
+| `app/core/table-selection.ts` | Sélection multiple d'un tableau : lignes cochées, états de la case d'en-tête, intersection avec les lignes affichées |
+| `app/core/bulk-edit.ts` | Briques des modifications en masse : modes « ne pas modifier / ajouter / retirer / remplacer » appliqués à une ligne |
+| `app/core/entity-labels.ts` | Libellés au pluriel des référentiels, utilisés par les actions de masse |
 | `app/core/solver-job.service.ts` | Suivi des jobs asynchrones : lit `/api/jobs/active` toutes les 2 s, aucun stockage navigateur |
 | `app/core/notification.service.ts` | Notifications via `MatSnackBar` (+ notifications système) |
 | `app/core/affectation-explanation.service.ts` | Appelle `/api/postes/{id}/explication` et `/api/postes/{id}/simulation-swap` (« Pourquoi lui ? ») |
@@ -195,6 +198,7 @@ standalone) :
 | `app/shared/violation-details-dialog.ts` | Modale « qui/quoi/quand » listant chaque violation d'une contrainte dure (page Contraintes), à partir de `ConstraintView.violations` |
 | `app/shared/affectation-explanation-dialog.ts` | Modale « Pourquoi lui ? » : contraintes violées/respectées pour un poste, et simulation de remplacement (calendriers journalier et des affectations) |
 | `app/shared/map-picker.ts` | Sélection de coordonnées sur une carte, utilisée par le formulaire d'emplacement |
+| `app/shared/bulk-actions-bar.ts` | Barre d'actions d'une sélection multiple (nombre sélectionné, modifier, supprimer, tout désélectionner) |
 
 Conventions :
 

@@ -1,0 +1,59 @@
+/* Multi-row selection on the reference-data pages: action bar and row checkboxes. */
+
+.bulk-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  padding: 0.5rem 0.75rem;
+  margin: 0 0 0.75rem;
+  border-radius: var(--mat-sys-corner-medium);
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}
+
+.bulk-bar-count {
+  font: var(--mat-sys-title-small);
+  margin-right: auto;
+}
+
+/* Keeps the checkbox column as narrow as its control, whatever the row content. */
+.table-wrapper .mat-column-select {
+  width: 3rem;
+  padding-right: 0;
+}
+
+/* Selection checkbox of a créneau, inside its expansion panel header. */
+.bulk-select-inline {
+  margin-right: 0.75rem;
+}
+
+/* Bulk edit dialog: one bordered block per field, each with its own "leave unchanged" switch. */
+.bulk-field {
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+  padding: 0.75rem 1rem 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.bulk-field h3 {
+  font: var(--mat-sys-title-small);
+  margin: 0 0 0.5rem;
+}
+
+.bulk-field-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.bulk-field-row mat-form-field {
+  flex: 1 1 12rem;
+}
+
+.bulk-hint {
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+  margin: 0 0 0.75rem;
+}

@@ -9,6 +9,7 @@ import { ApiService } from '../../core/api.service';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
+import { TableSelection } from '../../core/table-selection';
 import { TypologiesPage } from './typologies-page';
 import type { TypologieItem } from '../../core/models';
 
@@ -16,15 +17,22 @@ import type { TypologieItem } from '../../core/models';
 type PageInternals = {
   typologieNinjaId: Signal<string | null>;
   setNinja: (id: string | null) => Promise<void>;
+  selection: TableSelection<string>;
+  removeSelection: () => Promise<void>;
 };
 
 describe('TypologiesPage ninja picker', () => {
   let referenceData: ReferenceDataStore;
-  const crud = { reload: vi.fn(async () => undefined), save: vi.fn(async () => true) };
+  const crud = {
+    reload: vi.fn(async () => undefined),
+    save: vi.fn(async () => true),
+    removeMany: vi.fn(async () => 0)
+  };
 
   beforeEach(() => {
     crud.reload.mockClear();
     crud.save.mockClear();
+    crud.removeMany.mockClear();
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
@@ -99,5 +107,35 @@ describe('TypologiesPage ninja picker', () => {
     await page.setNinja(null);
 
     expect(crud.save).not.toHaveBeenCalled();
+  });
+
+  describe('multi-selection', () => {
+    it('supprime exactement les lignes cochées', async () => {
+      const page = createPage([
+        { id: 'STRATEGIE', label: 'Stratégie' },
+        { id: 'JOKER', label: 'Joker' },
+        { id: 'AMBIANCE', label: 'Ambiance' }
+      ]);
+
+      page.selection.toggle('STRATEGIE');
+      page.selection.toggle('AMBIANCE');
+      await page.removeSelection();
+
+      expect(crud.removeMany).toHaveBeenCalledWith('typologies', ['STRATEGIE', 'AMBIANCE'], expect.anything());
+    });
+
+    // Le référentiel est rechargé après chaque écriture : une ligne disparue
+    // ne doit plus peser sur la sélection.
+    it('oublie une typologie supprimée entre-temps', () => {
+      const page = createPage([
+        { id: 'STRATEGIE', label: 'Stratégie' },
+        { id: 'JOKER', label: 'Joker' }
+      ]);
+      page.selection.toggleAll();
+
+      referenceData.typologies.set([{ id: 'JOKER', label: 'Joker' }]);
+
+      expect(page.selection.selectedIds()).toEqual(['JOKER']);
+    });
   });
 });

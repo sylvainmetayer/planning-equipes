@@ -11,6 +11,14 @@ class FakeStore {
   reload = vi.fn(async () => undefined);
   save = vi.fn(async (_resource: string, _payload: unknown, _editingId: unknown) => undefined);
   remove = vi.fn(async (_resource: string, _id: unknown) => undefined);
+  removeMany = vi.fn(async (_resource: string, ids: readonly (string | number)[]) => ({
+    succes: [...ids],
+    echecs: [] as { id: string | number; message: string }[]
+  }));
+  saveMany = vi.fn(async (_resource: string, payloads: readonly { id: string | number }[]) => ({
+    succes: payloads.map((payload) => payload.id),
+    echecs: [] as { id: string | number; message: string }[]
+  }));
 }
 
 class FakeNotifications {
@@ -137,6 +145,65 @@ describe('ReferenceCrudService', () => {
       expect(ok).toBe(false);
       expect(notifications.notify).toHaveBeenCalledWith(
         expect.objectContaining({ variant: 'error', message: 'référencé ailleurs' })
+      );
+    });
+  });
+
+  describe('removeMany', () => {
+    it('supprime toute la sélection après une seule confirmation', async () => {
+      const supprimes = await service.removeMany('stands', ['S1', 'S2'], 'stands');
+
+      expect(supprimes).toBe(2);
+      expect(confirm.ask).toHaveBeenCalledTimes(1);
+      expect(store.removeMany).toHaveBeenCalledWith('stands', ['S1', 'S2']);
+      expect(notifications.notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'success' }));
+    });
+
+    it('ne touche à rien quand la confirmation est refusée', async () => {
+      confirm.reponse = false;
+
+      expect(await service.removeMany('stands', ['S1'], 'stands')).toBe(0);
+      expect(store.removeMany).not.toHaveBeenCalled();
+    });
+
+    it('ne demande rien sur une sélection vide', async () => {
+      expect(await service.removeMany('stands', [], 'stands')).toBe(0);
+      expect(confirm.ask).not.toHaveBeenCalled();
+    });
+
+    // Une ligne refusée par le serveur (typologie encore utilisée, ...) ne doit
+    // pas annuler la suppression des autres : le lot continue et le rapport
+    // détaille ce qui reste.
+    it('rapporte les échecs sans perdre les suppressions réussies', async () => {
+      store.removeMany.mockResolvedValueOnce({
+        succes: ['S1'],
+        echecs: [{ id: 'S2', message: 'encore référencé' }]
+      });
+
+      const supprimes = await service.removeMany('stands', ['S1', 'S2'], 'stands');
+
+      expect(supprimes).toBe(1);
+      expect(notifications.notify).toHaveBeenCalledWith(
+        expect.objectContaining({ variant: 'error', message: expect.stringContaining('encore référencé') })
+      );
+    });
+  });
+
+  describe('saveMany', () => {
+    it('enregistre toute la sélection sans confirmation', async () => {
+      const enregistres = await service.saveMany('animateurs', [{ id: 'a' }, { id: 'b' }], 'animateurs');
+
+      expect(enregistres).toBe(2);
+      expect(confirm.ask).not.toHaveBeenCalled();
+      expect(notifications.notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'success' }));
+    });
+
+    it('retourne 0 et notifie quand le store échoue', async () => {
+      store.saveMany.mockRejectedValueOnce(new Error('indisponible'));
+
+      expect(await service.saveMany('animateurs', [{ id: 'a' }], 'animateurs')).toBe(0);
+      expect(notifications.notify).toHaveBeenCalledWith(
+        expect.objectContaining({ variant: 'error', message: 'indisponible' })
       );
     });
   });

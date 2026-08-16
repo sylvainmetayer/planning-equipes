@@ -216,7 +216,26 @@ de l'algorithme est dans [`docs/domaine.md`](docs/domaine.md#découpage-automati
   (ex. ouvert seulement de 20 h à 23 h), pour éviter de saisir une fermeture
   sur chaque autre créneau du festival ;
 - les **créneaux** : jour du festival, date, heures de début et de fin ;
+- les **emplacements** : lieux géolocalisés (kiosque, mairie…) auxquels un stand
+  peut être rattaché ;
 - les **typologies de jeux**.
+
+Chaque écran permet de **cocher plusieurs lignes** pour les traiter d'un seul
+geste : suppression multiple (après une confirmation unique — une ligne refusée
+par le serveur, par exemple une typologie encore utilisée, n'annule pas les
+autres), et modification en masse des champs partagés. Chaque champ d'une
+modification en masse vaut « ne pas modifier » par défaut : seuls les champs
+réellement renseignés sont écrits, les autres gardent la valeur propre à chaque
+ligne. Sont modifiables ainsi :
+
+- pour les **animateurs** : l'appréciation sur une typologie (ajout / retrait),
+  les souhaits, le statut manager et un jour d'indisponibilité commun ;
+- pour les **stands** : l'emplacement, les typologies proposées, l'effectif
+  minimum / maximum et les indicateurs (majeurs, premium, niveau d'effort) ;
+- pour les **créneaux** : le groupe de créneaux (déplacement d'un lot vers un
+  planning alternatif) et les horaires ;
+- pour les **emplacements** : les coordonnées GPS, saisies ou pointées sur la
+  carte, appliquées à toute la sélection.
 
 ### Estimation du besoin en animateurs
 
