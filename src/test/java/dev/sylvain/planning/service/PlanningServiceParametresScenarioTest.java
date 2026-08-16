@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.LocalTime;
 
@@ -96,5 +97,36 @@ class PlanningServiceParametresScenarioTest {
 
         assertThat(decoupageAuto.groupeSourceNom()).isEqualTo("Amplitudes import auto");
         assertThat(decoupageAuto.groupeCibleNom()).isEqualTo("Vacations import auto");
+    }
+
+    /**
+     * Un nom absent ou vide (import sans scénario sélectionné) doit retomber
+     * sur le scénario par défaut, comme {@code construireExemple} : concaténé
+     * tel quel il visait {@code scenarios/null}, ou pire le dossier
+     * {@code scenarios/} lui-même, dont le listing se parse en simple chaîne
+     * YAML et cassait l'import en ClassCastException.
+     */
+    @Test
+    void nomDeScenarioAbsentOuVideRetombeSurLeScenarioParDefaut() {
+        PlanningService service = service();
+
+        for (String nom : new String[] { null, "", "   " }) {
+            assertThat(service.chargerParametresLegauxScenario(nom).isPresent())
+                    .isEqualTo(service.chargerParametresLegauxScenario(PlanningService.DEFAULT_SCENARIO).isPresent());
+            assertThat(service.chargerParametresDecoupageScenario(nom)).isNotNull();
+            assertThat(service.chargerParametresSolveurScenario(nom)).isNotNull();
+            assertThat(service.chargerDecoupageAutoScenario(nom)).isNotNull();
+            assertThat(service.chargerTypologiesScenario(nom))
+                    .isEqualTo(service.chargerTypologiesScenario(PlanningService.DEFAULT_SCENARIO));
+        }
+    }
+
+    @Test
+    void nomDeScenarioAvecComposantDeCheminEstRejete() {
+        PlanningService service = service();
+
+        assertThatThrownBy(() -> service.chargerParametresLegauxScenario("../application.properties"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Nom de scénario invalide");
     }
 }

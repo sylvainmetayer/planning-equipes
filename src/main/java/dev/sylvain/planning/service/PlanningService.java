@@ -166,15 +166,28 @@ public class PlanningService {
      * is rejected so callers cannot escape the scenarios folder.
      */
     public PlanningFestival construireExemple(String scenarioName) {
+        try {
+            return chargerScenarioYaml(cheminScenario(scenarioName));
+        } catch (IOException e) {
+            throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
+        }
+    }
+
+    /**
+     * Resolves a scenario name to its classpath path. Shared by every scenario
+     * accessor so they all apply the same two rules: an absent or blank name
+     * falls back to {@link #DEFAULT_SCENARIO} — concatenating it raw would ask
+     * for {@code scenarios/null}, or worse for {@code scenarios/} itself, whose
+     * directory listing parses as a plain YAML string and blows up later as a
+     * {@code ClassCastException} — and any path component is rejected so
+     * callers cannot escape the scenarios folder.
+     */
+    private static String cheminScenario(String scenarioName) {
         String name = (scenarioName == null || scenarioName.isBlank()) ? DEFAULT_SCENARIO : scenarioName;
         if (name.contains("/") || name.contains("\\") || name.contains("..")) {
             throw new IllegalArgumentException("Nom de scénario invalide: " + name);
         }
-        try {
-            return chargerScenarioYaml(SCENARIOS_DIR + "/" + name);
-        } catch (IOException e) {
-            throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
-        }
+        return SCENARIOS_DIR + "/" + name;
     }
 
     /**
@@ -650,11 +663,8 @@ public class PlanningService {
         try {
             scenarioData = parserYaml(
                     new java.io.ByteArrayInputStream(yamlContent.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
-        } catch (RuntimeException e) {
+        } catch (RuntimeException | IOException e) {
             throw new IllegalArgumentException("YAML invalide : " + messageOu(e), e);
-        }
-        if (scenarioData == null) {
-            throw new IllegalArgumentException("Le fichier ne contient aucune donnée.");
         }
         PlanningFestival planning;
         try {
@@ -667,7 +677,7 @@ public class PlanningService {
                 parseDecoupageAuto(scenarioData), parseTypologies(scenarioData));
     }
 
-    private static String messageOu(RuntimeException e) {
+    private static String messageOu(Exception e) {
         return e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
     }
 
@@ -691,7 +701,7 @@ public class PlanningService {
      * {@link #construireDepuisReferenceData} does against the database.
      */
     ReferenceScenario chargerReferenceScenario(String scenarioName) throws IOException {
-        return chargerReferenceScenario(lireDonneesScenario(SCENARIOS_DIR + "/" + scenarioName));
+        return chargerReferenceScenario(lireDonneesScenario(cheminScenario(scenarioName)));
     }
 
     /** {@code creneaux}/{@code stands}/{@code animateurs} sections of a scenario file, parsed and cross-linked. */
@@ -858,11 +868,18 @@ public class PlanningService {
      * or from a user-uploaded file ({@link #construireDepuisTexteScenario}).
      */
     @SuppressWarnings("unchecked")
-    private Map<String, Object> parserYaml(InputStream inputStream) {
+    private Map<String, Object> parserYaml(InputStream inputStream) throws IOException {
         LoaderOptions loaderOptions = new LoaderOptions();
         loaderOptions.setCodePointLimit(Integer.MAX_VALUE);
         Yaml yaml = new Yaml(new org.yaml.snakeyaml.constructor.SafeConstructor(loaderOptions));
-        return yaml.load(inputStream);
+        Object contenu = yaml.load(inputStream);
+        // An empty file loads as null, and anything that is not a mapping (a bare
+        // scalar, a list) would only surface much later as a ClassCastException
+        // deep in a parseXxx: say what is actually wrong with the file instead.
+        if (!(contenu instanceof Map)) {
+            throw new IOException("Le fichier de scénario n'est pas un document YAML valide (mapping attendu)");
+        }
+        return (Map<String, Object>) contenu;
     }
 
     /**
@@ -876,7 +893,7 @@ public class PlanningService {
      */
     public Optional<ParametresLegaux> chargerParametresLegauxScenario(String scenarioName) {
         try {
-            return parseParametresLegaux(lireDonneesScenario(SCENARIOS_DIR + "/" + scenarioName));
+            return parseParametresLegaux(lireDonneesScenario(cheminScenario(scenarioName)));
         } catch (IOException e) {
             throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
         }
@@ -892,7 +909,7 @@ public class PlanningService {
      */
     public Optional<ParametresDecoupage> chargerParametresDecoupageScenario(String scenarioName) {
         try {
-            return parseParametresDecoupage(lireDonneesScenario(SCENARIOS_DIR + "/" + scenarioName));
+            return parseParametresDecoupage(lireDonneesScenario(cheminScenario(scenarioName)));
         } catch (IOException e) {
             throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
         }
@@ -909,7 +926,7 @@ public class PlanningService {
      */
     public Optional<ParametresSolveur> chargerParametresSolveurScenario(String scenarioName) {
         try {
-            return parseParametresSolveur(lireDonneesScenario(SCENARIOS_DIR + "/" + scenarioName));
+            return parseParametresSolveur(lireDonneesScenario(cheminScenario(scenarioName)));
         } catch (IOException e) {
             throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
         }
@@ -925,7 +942,7 @@ public class PlanningService {
      */
     public Optional<DecoupageAutoConfig> chargerDecoupageAutoScenario(String scenarioName) {
         try {
-            return parseDecoupageAuto(lireDonneesScenario(SCENARIOS_DIR + "/" + scenarioName));
+            return parseDecoupageAuto(lireDonneesScenario(cheminScenario(scenarioName)));
         } catch (IOException e) {
             throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
         }
@@ -943,7 +960,7 @@ public class PlanningService {
      */
     public List<ReferenceDataService.TypologieItem> chargerTypologiesScenario(String scenarioName) {
         try {
-            return parseTypologies(lireDonneesScenario(SCENARIOS_DIR + "/" + scenarioName));
+            return parseTypologies(lireDonneesScenario(cheminScenario(scenarioName)));
         } catch (IOException e) {
             throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
         }
