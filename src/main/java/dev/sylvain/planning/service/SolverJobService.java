@@ -32,7 +32,11 @@ import jakarta.inject.Inject;
  * <p>The "a solver run is in progress" state lives here, not in the browser:
  * only one solve or analyze may run at a time for the whole server, so any
  * client (other browser, private window) sees the same lock and the same
- * elapsed time through {@code GET /api/jobs/active}.</p>
+ * elapsed time through {@code GET /api/jobs/active}. That lock stays
+ * <b>global</b> now that the referential is partitioned into groups: a lock per
+ * group would put two Timefold solvers on the same JVM at once, which the
+ * current memory sizing does not anticipate. Each job does record the group it
+ * was submitted for, and writes its result there.</p>
  */
 @ApplicationScoped
 public class SolverJobService {
@@ -61,6 +65,9 @@ public class SolverJobService {
 
     @Inject
     ConstraintAnalysisStore analysisStore;
+
+    @Inject
+    GroupeContext groupeContext;
 
     private final Map<String, SolverJob> jobs = new ConcurrentHashMap<>();
     private final ExecutorService executor = Executors.newFixedThreadPool(2, new SolverThreadFactory());
@@ -102,7 +109,12 @@ public class SolverJobService {
         findActive().ifPresent(active -> {
             throw new SolverBusyException(active);
         });
-        SolverJob job = new SolverJob(UUID.randomUUID().toString(), type, secondsLimit);
+        // Captured here, on the request thread: the worker has no request of
+        // its own to read the X-Groupe-Id header from, and the job must keep
+        // writing to the group it was launched for even if the browser has
+        // switched to another one in the meantime.
+        SolverJob job = new SolverJob(UUID.randomUUID().toString(), type, secondsLimit,
+                groupeContext.groupeIdCourant());
         jobs.put(job.getId(), job);
         executor.submit(() -> run(job, task));
         return job;
@@ -114,7 +126,7 @@ public class SolverJobService {
         }
         job.markRunning();
         try {
-            Object result = task.execute(job);
+            Object result = groupeContext.executeDans(job.getGroupeId(), () -> task.execute(job));
             if (job.isCancelRequested()) {
                 job.markCancelled(result);
             } else {
@@ -246,6 +258,8 @@ public class SolverJobService {
         private final String id;
         private final JobType type;
         private final Long secondsLimit;
+        /** Group this job was submitted for, and the one its result is written to. */
+        private final String groupeId;
         private final Instant submittedAt = Instant.now();
         private volatile JobStatus status = JobStatus.PENDING;
         private volatile Instant startedAt;
@@ -255,10 +269,11 @@ public class SolverJobService {
         private volatile boolean cancelRequested;
         private volatile Solver<PlanningFestival> solver;
 
-        private SolverJob(String id, JobType type, Long secondsLimit) {
+        private SolverJob(String id, JobType type, Long secondsLimit, String groupeId) {
             this.id = id;
             this.type = type;
             this.secondsLimit = secondsLimit;
+            this.groupeId = groupeId;
         }
 
         private void markRunning() {
@@ -341,6 +356,10 @@ public class SolverJobService {
 
         public Long getSecondsLimit() {
             return secondsLimit;
+        }
+
+        public String getGroupeId() {
+            return groupeId;
         }
 
         public Instant getSubmittedAt() {

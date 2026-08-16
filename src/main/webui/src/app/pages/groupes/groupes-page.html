@@ -1,0 +1,96 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <mat-card-title i18n="@@groupes.intro.title">Groupes</mat-card-title>
+    <mat-card-subtitle i18n="@@groupes.intro.subtitle">
+      Un groupe est une édition complète — « Année 2025 », « Année 2026 » — avec ses propres stands, animateurs, typologies, emplacements, créneaux, paramètres et planning résolu. Rien ne circule de l'un à l'autre. Le groupe affiché en haut de l'écran est celui que <em>cet onglet</em> consulte : un autre onglet peut travailler ailleurs.
+    </mat-card-subtitle>
+  </mat-card-header>
+</mat-card>
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <mat-card-title i18n="@@groupes.create.title">Nouveau groupe</mat-card-title>
+    <mat-card-subtitle i18n="@@groupes.create.subtitle">
+      Vide, ou copie d'un groupe existant. La copie reprend tout le référentiel mais jamais les affectations : « 2026 = 2025 moins le planning résolu ».
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <form class="form-grid" (ngSubmit)="creer()">
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@groupes.field.nom">Nom</mat-label>
+        <input matInput name="nom" [ngModel]="nouveauNom()" (ngModelChange)="nouveauNom.set($event)"
+               placeholder="Année 2026" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@groupes.field.source">Copier depuis</mat-label>
+        <select matNativeControl name="source" [ngModel]="sourceDuplication()"
+                (ngModelChange)="sourceDuplication.set($event || null)">
+          <option value="" i18n="@@groupes.source.aucune">Groupe vide</option>
+          @for (groupe of store.groupes(); track groupe.id) {
+            <option [value]="groupe.id">{{ groupe.nom }}</option>
+          }
+        </select>
+      </mat-form-field>
+      <button matButton="filled" type="submit" [disabled]="enCours() || nouveauNom().trim().length === 0">
+        <mat-icon>add</mat-icon>
+        <ng-container i18n="@@common.add">Ajouter</ng-container>
+      </button>
+    </form>
+  </mat-card-content>
+</mat-card>
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <mat-card-title i18n="@@groupes.list.title">Groupes ({{ store.groupes().length }})</mat-card-title>
+  </mat-card-header>
+  <mat-card-content class="table-wrapper">
+    <table mat-table [dataSource]="store.groupes()">
+      <ng-container matColumnDef="nom">
+        <th mat-header-cell *matHeaderCellDef i18n="@@groupes.field.nom">Nom</th>
+        <td mat-cell *matCellDef="let groupe">
+          <input class="groupe-nom-input" [value]="groupe.nom" [disabled]="enCours()"
+                 i18n-aria-label="@@groupes.field.nom" aria-label="Nom"
+                 (change)="renommer(groupe, $any($event.target).value)" />
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="id">
+        <th mat-header-cell *matHeaderCellDef i18n="@@common.id">Id</th>
+        <td mat-cell *matCellDef="let groupe">{{ groupe.id }}</td>
+      </ng-container>
+      <ng-container matColumnDef="etat">
+        <th mat-header-cell *matHeaderCellDef i18n="@@groupes.field.etat">État</th>
+        <td mat-cell *matCellDef="let groupe">
+          @if (groupe.id === courantId()) {
+            <span class="groupe-badge" i18n="@@groupes.badge.courant">Consulté ici</span>
+          }
+          @if (groupe.defaut) {
+            <span class="groupe-badge" i18n="@@groupes.badge.defaut">Par défaut</span>
+          }
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>
+        <td mat-cell *matCellDef="let groupe" class="row-actions">
+          <button matIconButton i18n-matTooltip="@@groupes.action.basculer" matTooltip="Travailler dans ce groupe"
+                  i18n-aria-label="@@groupes.action.basculer" aria-label="Travailler dans ce groupe"
+                  [disabled]="enCours() || groupe.id === courantId()" (click)="basculer(groupe)">
+            <mat-icon>login</mat-icon>
+          </button>
+          <button matIconButton i18n-matTooltip="@@groupes.action.defaut" matTooltip="Faire de ce groupe le groupe par défaut"
+                  i18n-aria-label="@@groupes.action.defaut" aria-label="Faire de ce groupe le groupe par défaut"
+                  [disabled]="enCours() || groupe.defaut" (click)="definirParDefaut(groupe)">
+            <mat-icon>flag</mat-icon>
+          </button>
+          <button matIconButton i18n-matTooltip="@@common.delete" matTooltip="Supprimer"
+                  i18n-aria-label="@@common.delete" aria-label="Supprimer" class="danger-action"
+                  [disabled]="enCours() || groupe.defaut || groupe.id === courantId() || store.groupes().length <= 1"
+                  (click)="supprimer(groupe)">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="columns"></tr>
+      <tr mat-row *matRowDef="let row; columns: columns"></tr>
+    </table>
+  </mat-card-content>
+</mat-card>

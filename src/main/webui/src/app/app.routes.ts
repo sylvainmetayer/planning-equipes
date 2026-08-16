@@ -32,6 +32,11 @@ export const routes: Routes = [
     title: 'Data — Planning Équipes',
     loadComponent: () => import('./pages/data-setup/data-setup-page').then((m) => m.DataSetupPage)
   },
+  {
+    path: 'groupes',
+    title: 'Groupes — Planning Équipes',
+    loadComponent: () => import('./pages/groupes/groupes-page').then((m) => m.GroupesPage)
+  },
   { path: 'exports', redirectTo: '' },
   { path: 'solver', redirectTo: '' },
   { path: 'data-transfer', redirectTo: 'data-setup' },

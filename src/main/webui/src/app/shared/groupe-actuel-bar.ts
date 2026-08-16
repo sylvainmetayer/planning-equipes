@@ -1,18 +1,16 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
-import { ApiService } from '../core/api.service';
-import { PlanningResolutionStore } from '../core/planning-resolution.store';
-import { GroupeCreneau } from '../core/models';
+import { RouterLink } from '@angular/router';
+import { GroupeStore } from '../core/groupe.store';
+import { Groupe } from '../core/models';
 
 /**
- * Persistent strip under the toolbar naming the group every screen is
- * currently reading from, with a one-click switcher. The active group already
- * decides which créneaux the solver sees, and is meant to widen into a full
- * scope over the whole referential (see `docs/groupes.md`) — which makes
- * "which group am I looking at?" a question every page depends on, so it is
- * answered once in the shell instead of on the créneaux page only.
+ * Persistent strip under the toolbar naming the edition (`groupe`) every screen
+ * is currently reading from, with a one-click switcher. Every page's data
+ * depends on that answer, so it is given once in the shell instead of on any
+ * one page — see `docs/groupes.md`.
  *
  * Switching reloads the page rather than refreshing the stores: it swaps the
  * data behind *every* open screen at once, and a full reload is the only way
@@ -21,7 +19,7 @@ import { GroupeCreneau } from '../core/models';
  */
 @Component({
   selector: 'app-groupe-actuel-bar',
-  imports: [MatButtonModule, MatIconModule, MatMenuModule],
+  imports: [MatButtonModule, MatIconModule, MatMenuModule, RouterLink],
   template: `
     @if (groupeActuel(); as groupe) {
       <div class="groupe-actuel-bar" role="status">
@@ -30,24 +28,32 @@ import { GroupeCreneau } from '../core/models';
           <span i18n="@@groupeActuel.label">Groupe actuel :</span>
           <strong>{{ groupe.nom }}</strong>
         </span>
-        @if (autresGroupes().length > 0) {
-          <button
+        <span class="groupe-actuel-bar-actions">
+          @if (autresGroupes().length > 0) {
+            <button
+              matButton
+              [matMenuTriggerFor]="menu"
+              i18n-aria-label="@@groupeActuel.switchAriaLabel"
+              aria-label="Changer de groupe"
+            >
+              <span i18n="@@groupeActuel.switch">Changer</span>
+              <mat-icon iconPositionEnd>expand_more</mat-icon>
+            </button>
+            <mat-menu #menu="matMenu">
+              @for (autre of autresGroupes(); track autre.id) {
+                <button mat-menu-item (click)="basculer(autre)">{{ autre.nom }}</button>
+              }
+            </mat-menu>
+          }
+          <a
             matButton
-            class="groupe-actuel-bar-switch"
-            [matMenuTriggerFor]="menu"
-            [disabled]="bascule()"
-            i18n-aria-label="@@groupeActuel.switchAriaLabel"
-            aria-label="Changer de groupe"
+            routerLink="/groupes"
+            i18n-aria-label="@@groupeActuel.manageAriaLabel"
+            aria-label="Gérer les groupes"
           >
-            <span i18n="@@groupeActuel.switch">Changer</span>
-            <mat-icon iconPositionEnd>expand_more</mat-icon>
-          </button>
-          <mat-menu #menu="matMenu">
-            @for (autre of autresGroupes(); track autre.id) {
-              <button mat-menu-item (click)="basculer(autre)">{{ autre.nom }}</button>
-            }
-          </mat-menu>
-        }
+            <span i18n="@@groupeActuel.manage">Gérer</span>
+          </a>
+        </span>
       </div>
     }
   `,
@@ -79,7 +85,10 @@ import { GroupeCreneau } from '../core/models';
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    .groupe-actuel-bar-switch {
+    .groupe-actuel-bar-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
       margin-left: auto;
     }
     @media (max-width: 740px) {
@@ -91,32 +100,12 @@ import { GroupeCreneau } from '../core/models';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class GroupeActuelBar {
-  private readonly api = inject(ApiService);
-  private readonly resolution = inject(PlanningResolutionStore);
+  private readonly store = inject(GroupeStore);
 
-  /** True while the switch request is in flight, so it cannot be fired twice. */
-  protected readonly bascule = signal(false);
+  protected readonly groupeActuel = computed(() => this.store.courant());
+  protected readonly autresGroupes = computed(() => this.store.autres());
 
-  protected readonly groupeActuel = computed(() => this.resolution.activeGroupe());
-  protected readonly autresGroupes = computed(() =>
-    this.resolution.groupesCreneaux().filter((groupe) => !groupe.actif)
-  );
-
-  /** Overridable so the test can assert the reload without navigating. */
-  protected reloadPage(): void {
-    window.location.reload();
-  }
-
-  protected async basculer(groupe: GroupeCreneau): Promise<void> {
-    if (this.bascule()) {
-      return;
-    }
-    this.bascule.set(true);
-    try {
-      await this.api.put(`/api/groupes-creneaux/${encodeURIComponent(groupe.id)}/actif`, {});
-      this.reloadPage();
-    } finally {
-      this.bascule.set(false);
-    }
+  protected basculer(groupe: Groupe): void {
+    this.store.basculer(groupe);
   }
 }

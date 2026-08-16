@@ -29,6 +29,12 @@ import jakarta.inject.Inject;
  * import only {@code DELETE}, {@code TRUNCATE} and {@code INSERT} statements
  * targeting those tables are executed, and the whole script runs in a single
  * transaction.
+ *
+ * <p>
+ * Unlike everything else that reads reference data, the dump stays
+ * <b>instance-wide</b>: it is a backup of the database, every {@code groupe}
+ * included, and restoring it restores exactly what was dumped. The per-group
+ * export is the scenario YAML, which does follow the current group.
  */
 @ApplicationScoped
 public class DatabaseDumpService {
@@ -38,6 +44,7 @@ public class DatabaseDumpService {
      * foreign key. Deletes are issued in the reverse order.
      */
     static final List<String> TABLES = List.of(
+            "groupe",
             "typologie",
             "emplacement",
             "animateur",

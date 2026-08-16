@@ -97,8 +97,8 @@ Single Quarkus service, no separate solver microservice. Package root:
   `PlanningPersistenceService`, `DatabaseDumpService`,
   `PlanningExportService` (PDF/ICS, server-side only).
 - `api/` — JAX-RS resources: `PlanningResource`, `SolverJobResource`,
-  `ReferenceDataResource`, `ConstraintResource`, `DatabaseResource`,
-  `PlanningExportResource`. Endpoint list in `docs/api.md`.
+  `ReferenceDataResource`, `GroupeResource`, `ConstraintResource`,
+  `DatabaseResource`, `PlanningExportResource`. Endpoint list in `docs/api.md`.
 - `mcp/` — MCP tools (`@Tool`) exposing the same capabilities to an AI
   assistant, delegating to the services above. One hard rule: animateur
   nom/prénom/dateNaissance never leave over MCP (issue #107) — return
@@ -108,6 +108,13 @@ Single Quarkus service, no separate solver microservice. Package root:
 - Persistence: PostgreSQL + Flyway migrations in
   `src/main/resources/db/migration/`. Schema change = **new versioned file**;
   never edit an applied migration.
+- **Everything is partitioned by `groupe`** (an edition: "Année 2025", "Année
+  2026"). Every business table carries a `groupe_id`, business ids have a
+  composite `(groupe_id, id)` primary key, and the group a request works in
+  comes from its `X-Groupe-Id` header via `GroupeContext`. A new reference
+  table must follow the same convention, and its SQL must go through
+  `ReferenceDataRepository` — the single point of passage that makes the
+  `groupe_id` predicate verifiable. See `docs/groupes.md`.
 - Solver tuning: `planning.solver.seconds-limit` /
   `planning.solver.unimproved-seconds-limit` in `application.properties`.
 

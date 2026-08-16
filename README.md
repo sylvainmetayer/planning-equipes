@@ -153,15 +153,31 @@ ainsi que le planning résolu.
 - rotation des stands d'un animateur au fil du festival ;
 - mixité des niveaux (associer un débutant à un référent).
 
+### Groupes (éditions)
+
+Toutes les données — stands, animateurs, typologies, emplacements, créneaux,
+paramètres et planning résolu — appartiennent à un **groupe**, c'est-à-dire à
+une édition du festival : « Année 2025 », « Année 2026 ». Rien ne circule de
+l'un à l'autre, ce qui permet de garder 2025 consultable et de préparer 2026 à
+côté, au lieu d'écraser l'un pour construire l'autre. Un bandeau en haut de
+chaque écran rappelle en permanence quel groupe est consulté, et la page
+« Groupes » permet d'en créer un vide, d'en **dupliquer** un existant
+(« 2026 = 2025 moins les affectations »), de le renommer ou de le supprimer.
+
+Le groupe consulté est un choix propre à chaque onglet du navigateur, pas un
+état partagé : on peut relire les résultats de 2025 dans un onglet pendant
+qu'on travaille sur 2026 dans l'autre. Le détail est dans
+[`docs/groupes.md`](docs/groupes.md).
+
 ### Plannings alternatifs
 
-Les créneaux peuvent être organisés en plusieurs groupes (« plannings ») —
-un planning normal et, par exemple, un planning de repli en cas
-d'imprévu de dernière minute (météo, lieu indisponible, ...). Un seul
-groupe est actif à la fois ; l'activer désactive automatiquement les
-autres. La résolution ne tient compte que des créneaux du groupe actif, ce
-qui permet de préparer un planning alternatif à l'avance et de basculer
-dessus en un clic sans perdre le planning courant.
+À l'intérieur d'un groupe, les créneaux peuvent être organisés en plusieurs
+grilles (« plannings ») — un planning normal et, par exemple, un planning de
+repli en cas d'imprévu de dernière minute (météo, lieu indisponible, ...). Une
+seule grille est active à la fois dans un groupe donné ; l'activer désactive
+automatiquement les autres. La résolution ne tient compte que des créneaux de
+la grille active, ce qui permet de préparer un planning alternatif à l'avance
+et de basculer dessus en un clic sans perdre le planning courant.
 
 Si le groupe actif change après une résolution (par exemple en basculant sur
 le planning de repli), l'application avertit l'utilisateur, sur tous les

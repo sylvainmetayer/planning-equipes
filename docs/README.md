@@ -12,7 +12,7 @@ fonctionnalités métier) : **tout ajout de documentation technique se fait ici*
 | [`api.md`](api.md) | Endpoints REST exposés par le service Quarkus |
 | [`mcp.md`](mcp.md) | Serveur MCP (outils exposés à un assistant IA, authentification, confidentialité) |
 | [`import-export.md`](import-export.md) | Formats d'import / export : dump SQL, PDF, ICS, schéma de validation des scénarios |
-| [`groupes.md`](groupes.md) | Cloisonner tout le référentiel et les résultats de solveur par groupe (« Année 2025 » / « Année 2026 ») : conception proposée, et bandeau « Groupe actuel » livré |
+| [`groupes.md`](groupes.md) | Cloisonnement de tout le référentiel et des résultats de solveur par groupe (« Année 2025 » / « Année 2026 ») : modèle, en-tête `X-Groupe-Id`, duplication de groupe, plan de migration |
 | [`developpement.md`](developpement.md) | Build, tests, CI, Podman, réglage du solveur, mises à jour Renovate |
 | [`observabilite.md`](observabilite.md) | Suivi d'erreurs (Bugsink) et analytics d'usage (PostHog) en production : choix, intégration, variables d'environnement |
 | [`audit-conformite-rh.md`](audit-conformite-rh.md) | Audit de conformité RH du référentiel de contraintes (Code du travail, CCN ÉCLAT) — constats, articles et suites données |

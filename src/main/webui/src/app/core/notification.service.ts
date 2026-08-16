@@ -9,10 +9,21 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { FeasibilityReport } from './models';
+import { groupeScopedKey } from './groupe-courant';
 import { hardScoreNegativeMessage } from '../shared/feasibility-messages';
 
 const SNACK_TIMEOUT_MS = 9000;
-const STORAGE_KEY = 'planning-equipes.notifications';
+const STORAGE_KEY_BASE = 'planning-equipes.notifications';
+
+/**
+ * One log per groupe: a warning about 2026's data has no business showing up
+ * while looking at 2025 (docs/groupes.md §6). Resolved lazily rather than
+ * once at module scope — the key must follow the group the page was loaded
+ * with, and switching group reloads the page anyway.
+ */
+function storageKey(): string {
+  return groupeScopedKey(STORAGE_KEY_BASE);
+}
 /** Caps the persisted log so localStorage cannot grow unbounded over a long session. */
 const MAX_NOTIFICATIONS = 200;
 
@@ -53,7 +64,7 @@ function severityOf(variant: ToastVariant): NotificationSeverity {
 
 function loadPersisted(): AppNotification[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(storageKey());
     return raw ? (JSON.parse(raw) as AppNotification[]) : [];
   } catch {
     return []; // corrupted or unavailable storage: start from an empty log
@@ -193,7 +204,7 @@ export class NotificationService {
 
   private persist(): void {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.notifications()));
+      localStorage.setItem(storageKey(), JSON.stringify(this.notifications()));
     } catch {
       /* storage full or unavailable: the in-memory log still works for this session */
     }

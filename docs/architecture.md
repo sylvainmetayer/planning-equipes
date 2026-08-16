@@ -78,16 +78,20 @@ dans [`domaine.md`](domaine.md).
 | `PlanningService` | Construit la `SolverFactory` depuis `solver/solverConfig.xml`, charge `scenario.yml`, expose `construireExemple()` / `resoudre()` / `analyser()`, et l'explicabilité par affectation (`expliquerAffectation()`, `simulerSwap()`) |
 | `SolverJobService` | Résolutions et analyses asynchrones ; porte le verrou « un seul solveur à la fois », partagé par tous les clients |
 | `ConstraintAnalysisStore` | Mémorise le résultat de la dernière analyse pour l'onglet « Constraints » |
-| `ReferenceDataService` / `ReferenceDataRepository` | CRUD référentiels (stands, créneaux, animateurs, typologies, contraintes ad hoc) |
-| `PlanningPersistenceService` | Lecture / écriture du planning persisté |
+| `ReferenceDataService` / `ReferenceDataRepository` | CRUD référentiels (stands, créneaux, animateurs, typologies, contraintes ad hoc) ; point de passage unique du SQL référentiel, et donc du prédicat `groupe_id` |
+| `GroupeService` / `GroupeRepository` | Gestion des éditions elles-mêmes : création, duplication, suppression — voir [`groupes.md`](groupes.md) |
+| `GroupeContext` / `GroupeRequestScope` | Résout le groupe que la requête courante lit et écrit (en-tête `X-Groupe-Id`, repli sur le groupe par défaut), et permet de lier un groupe à un thread sans requête (worker du solveur) |
+| `PlanningPersistenceService` | Lecture / écriture du planning persisté, cloisonnée par groupe |
 | `DatabaseDumpService` | Export / import de dump SQL |
 | `PlanningExportService` | Génération PDF (OpenPDF) et ICS, **côté serveur uniquement** |
 
 ### `api/`
 
 Ressources JAX-RS : `PlanningResource`, `SolverJobResource`, `ReferenceDataResource`,
-`ConstraintResource`, `AffectationExplanationResource`, `CsvImportResource`,
-`DatabaseResource`, `PlanningExportResource`. Voir [`api.md`](api.md).
+`GroupeResource`, `ConstraintResource`, `AffectationExplanationResource`,
+`CsvImportResource`, `DatabaseResource`, `PlanningExportResource`, plus le filtre
+`GroupeHeaderFilter` qui dépose l'en-tête `X-Groupe-Id` dans le scope de requête.
+Voir [`api.md`](api.md).
 
 ### `mcp/`
 
@@ -146,6 +150,7 @@ Chaque bloc fonctionnel a **sa propre route et sa propre page**, chargée en
 | `/debug` | `app/pages/debug/` | Diagnostics du solveur et état interne |
 | `/problemes` | `app/pages/problemes/` | Vue centralisée des problèmes, triés par gravité : causes d'infaisabilité (`GET /api/feasibility`, sans résolution) + règles en défaut de la dernière analyse |
 | `/data-setup` | `app/pages/data-setup/` | Scénarios d'exemple, réinitialisation, export scénario, export/import de dump SQL, durée de résolution du solveur |
+| `/groupes` | `app/pages/groupes/` | Gestion des éditions : création (vide ou par duplication), renommage, groupe par défaut, suppression |
 | `/stands` | `app/pages/stands/` | CRUD des stands |
 | `/emplacements` | `app/pages/emplacements/` | CRUD des emplacements (avec sélection sur carte) |
 | `/animateurs` | `app/pages/animateurs/` | CRUD des animateurs (compétences, jours d'indisponibilité) |
@@ -175,6 +180,9 @@ standalone) :
 | `app/core/models.ts` | Types TypeScript des payloads de l'API |
 | `app/core/date-utils.ts` | Calculs de dates (semaine commençant lundi) |
 | `app/core/locale.ts` | Langue choisie (`fr` / `en`), persistée dans `localStorage` |
+| `app/core/groupe-courant.ts` | Groupe (édition) consulté par cet onglet, persisté dans `localStorage` ; module et non service, pour que l'intercepteur ne dépende pas du `HttpClient` qu'il intercepte |
+| `app/core/groupe.interceptor.ts` | Ajoute l'en-tête `X-Groupe-Id` à chaque appel `/api/` |
+| `app/core/groupe.store.ts` | Liste des groupes et groupe réellement résolu par le serveur (`GET /api/groupes/courant`) |
 | `app/core/slug.ts` | Dérive un identifiant stable à partir d'un nom saisi librement |
 | `app/core/planning-state.service.ts` | État planning partagé (signal) + chargement lecture seule pour les vues |
 | `app/core/planning-resolution.store.ts` | Groupe de créneaux de la dernière résolution vs groupe actif : alimente les avertissements « planning obsolète » |
@@ -192,7 +200,8 @@ standalone) :
 | `app/shared/confirm-dialog.ts` | Dialogue Material de confirmation (remplace `window.confirm`) |
 | `app/shared/output-panel.ts` | Panneau de résultat monospace partagé par les pages d'action |
 | `app/shared/data-stale-indicator.ts` | Signale que les données de référence ont changé depuis la dernière résolution |
-| `app/shared/groupe-mismatch-banner.ts` | Signale que le groupe de créneaux actif diffère de celui de la dernière résolution |
+| `app/shared/groupe-actuel-bar.ts` | Bandeau permanent nommant l'édition consultée, avec bascule et lien vers la page Groupes |
+| `app/shared/groupe-mismatch-banner.ts` | Signale que la grille de créneaux active diffère de celle de la dernière résolution |
 | `app/shared/feasibility-banner.ts` | Alerte si le plan n'est pas fiable : soit la capacité pré-résolution (`FeasibilityReport`, avec ses causes les plus graves), soit le score dur réellement atteint (`hardScore` < 0 après résolution, y compris quand la capacité pré-résolution disait « réalisable ») |
 | `app/shared/problem-summary-banner.ts` | Bannière de synthèse (nombre de problèmes par gravité) sur la page Solveur, avec un lien vers la page Problèmes |
 | `app/shared/violation-details-dialog.ts` | Modale « qui/quoi/quand » listant chaque violation d'une contrainte dure (page Contraintes), à partir de `ConstraintView.violations` |
@@ -231,6 +240,12 @@ PostgreSQL, migrations Flyway (`quarkus.flyway.migrate-at-start=true`) dans
 `src/main/resources/db/migration/` (`V1__init.sql`, `V2__reference_details.sql`,
 `V3__reference_crud.sql`). **Un changement de schéma = un nouveau fichier
 versionné** ; ne jamais modifier une migration déjà appliquée.
+
+Toutes les tables métier sont cloisonnées par `groupe_id` depuis `V32`–`V35`, et
+les identifiants métier (`stand.id`, `animateur.id`, …) ont une clé primaire
+composite `(groupe_id, id)` : une nouvelle table du référentiel doit suivre la
+même convention, et sa requête doit passer par `ReferenceDataRepository`. Voir
+[`groupes.md`](groupes.md).
 
 ## Conteneurisation
 
