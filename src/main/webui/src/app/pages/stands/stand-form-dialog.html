@@ -66,9 +66,120 @@
               i18n="@@stands.field.niveauEffort">
   Épuisant physiquement
 </mat-checkbox>
+<div class="span-2 horaires-section">
+  <h3 i18n="@@stands.horaires.title">Horaires récurrents</h3>
+  <p class="empty-hint" i18n="@@stands.horaires.hint">
+    Le stand est ouvert sur chaque créneau par défaut. Une règle décrit un motif qui se répète — « ouvert de 10h à 12h
+    puis de 14h à la fermeture, tous les jours » tient en une règle à deux fenêtres, au lieu d'une plage datée par jour
+    de festival. Laissez l'heure de fin vide pour courir jusqu'à la fermeture du jour.
+  </p>
+  @for (horaire of draft().horaires; track $index; let indexHoraire = $index) {
+    <div class="horaire-carte">
+      <div class="horaire-entete">
+        <mat-form-field appearance="outline">
+          <mat-label i18n="@@stands.horaires.mode">Mode</mat-label>
+          <mat-select [name]="'horaireMode' + indexHoraire" [disabled]="editingLocked()"
+                      [ngModel]="horaire.mode" (ngModelChange)="patchHoraire(indexHoraire, { mode: $event })">
+            <mat-option value="OUVERTURE" i18n="@@stands.horaires.mode.ouverture">Ouvert sur ces fenêtres</mat-option>
+            <mat-option value="FERMETURE" i18n="@@stands.horaires.mode.fermeture">Fermé sur ces fenêtres</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label i18n="@@stands.horaires.jours">Jours concernés</mat-label>
+          <mat-select [name]="'horaireJours' + indexHoraire" [disabled]="editingLocked()"
+                      [ngModel]="horaire.jours" (ngModelChange)="patchHoraire(indexHoraire, { jours: $event })">
+            <mat-option value="TOUS" i18n="@@stands.horaires.jours.tous">Tous les jours</mat-option>
+            <mat-option value="JOURS_SEMAINE" i18n="@@stands.horaires.jours.semaine">Certains jours de la semaine</mat-option>
+            <mat-option value="PLAGE" i18n="@@stands.horaires.jours.plage">Une plage de dates</mat-option>
+            <mat-option value="DATES" i18n="@@stands.horaires.jours.dates">Des dates précises</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <button matIconButton type="button" i18n-matTooltip="@@common.delete" matTooltip="Supprimer"
+                i18n-aria-label="@@common.delete" aria-label="Supprimer" class="danger-action"
+                [disabled]="editingLocked()" (click)="retirerHoraire(indexHoraire)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+      @if (horaire.jours === 'JOURS_SEMAINE') {
+        <div class="horaire-jours-semaine">
+          @for (jour of joursSemaine; track jour) {
+            <mat-checkbox [name]="'horaireJour' + indexHoraire + jour" [disabled]="editingLocked()"
+                          [ngModel]="horaire.joursSemaine.includes(jour)"
+                          (ngModelChange)="basculerJourSemaine(indexHoraire, jour, $event)">
+              {{ libelleJourSemaine(jour) }}
+            </mat-checkbox>
+          }
+        </div>
+      }
+      @if (horaire.jours === 'PLAGE') {
+        <div class="horaire-plage">
+          <mat-form-field appearance="outline">
+            <mat-label i18n="@@stands.horaires.dateDebut">Du</mat-label>
+            <input matInput type="date" [name]="'horaireDateDebut' + indexHoraire"
+                   [ngModel]="horaire.dateDebut" (ngModelChange)="patchHoraire(indexHoraire, { dateDebut: $event })" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label i18n="@@stands.horaires.dateFin">Au</mat-label>
+            <input matInput type="date" [name]="'horaireDateFin' + indexHoraire"
+                   [ngModel]="horaire.dateFin" (ngModelChange)="patchHoraire(indexHoraire, { dateFin: $event })" />
+          </mat-form-field>
+        </div>
+      }
+      @if (horaire.jours === 'DATES') {
+        <mat-form-field appearance="outline" class="horaire-dates">
+          <mat-label i18n="@@stands.horaires.dates">Dates (AAAA-MM-JJ, séparées par des virgules)</mat-label>
+          <input matInput [name]="'horaireDates' + indexHoraire" placeholder="2026-07-14, 2026-07-19"
+                 [ngModel]="horaire.dates.join(', ')" (ngModelChange)="patchDates(indexHoraire, $event)" />
+        </mat-form-field>
+      }
+      <div class="horaire-fenetres">
+        @for (fenetre of horaire.fenetres; track $index) {
+          <div class="horaire-fenetre-row">
+            <mat-form-field appearance="outline">
+              <mat-label i18n="@@stands.horaires.heureDebut">Début</mat-label>
+              <input matInput type="time" required [name]="'fenetreDebut' + indexHoraire + '-' + $index"
+                     [ngModel]="fenetre.heureDebut"
+                     (ngModelChange)="patchFenetre(indexHoraire, $index, { heureDebut: $event })" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label i18n="@@stands.horaires.heureFin">Fin (vide = fermeture)</mat-label>
+              <input matInput type="time" [name]="'fenetreFin' + indexHoraire + '-' + $index"
+                     [ngModel]="fenetre.heureFin"
+                     (ngModelChange)="patchFenetre(indexHoraire, $index, { heureFin: $event })" />
+            </mat-form-field>
+            <button matIconButton type="button" i18n-matTooltip="@@common.delete" matTooltip="Supprimer"
+                    i18n-aria-label="@@common.delete" aria-label="Supprimer" class="danger-action"
+                    [disabled]="editingLocked()" (click)="retirerFenetre(indexHoraire, $index)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        }
+        <button matButton type="button" [disabled]="editingLocked()" (click)="ajouterFenetre(indexHoraire)">
+          <mat-icon>add</mat-icon>
+          <ng-container i18n="@@stands.horaires.addFenetre">Ajouter une fenêtre</ng-container>
+        </button>
+      </div>
+      <mat-form-field appearance="outline" class="horaire-motif">
+        <mat-label i18n="@@stands.horaires.motif">Motif (optionnel)</mat-label>
+        <input matInput [name]="'horaireMotif' + indexHoraire"
+               [ngModel]="horaire.motif" (ngModelChange)="patchHoraire(indexHoraire, { motif: $event })" />
+      </mat-form-field>
+    </div>
+  }
+  @if (erreurHoraires()) {
+    <p class="field-error">{{ erreurHoraires() }}</p>
+  }
+  <button matButton type="button" [disabled]="editingLocked()" (click)="ajouterHoraire()">
+    <mat-icon>add</mat-icon>
+    <ng-container i18n="@@stands.horaires.add">Ajouter une règle d'horaire</ng-container>
+  </button>
+</div>
 <div class="span-2">
-  <h3 i18n="@@stands.indisponibilites.title">Fermetures</h3>
-  <p class="empty-hint" i18n="@@stands.indisponibilites.hint">Le stand est ouvert sur chaque créneau par défaut. Ajoutez une fermeture pour le fermer tout ou partie d'un créneau (ex : fermé de 14h à 16h).</p>
+  <h3 i18n="@@stands.indisponibilites.title">Fermetures ponctuelles</h3>
+  <p class="empty-hint" i18n="@@stands.indisponibilites.hint">
+    Une exception datée : elle prime sur les règles ci-dessus, pour le seul jour qu'elle nomme, et remplace
+    entièrement ce qu'elles disaient de ce jour-là. Le stand est ouvert le reste de la journée.
+  </p>
   @for (indispo of draft().indisponibilites; track $index) {
     <div class="indisponibilite-row">
       <mat-form-field appearance="outline">
@@ -82,8 +193,8 @@
                [ngModel]="indispo.heureDebut" (ngModelChange)="patchIndisponibilite($index, { heureDebut: $event })" />
       </mat-form-field>
       <mat-form-field appearance="outline">
-        <mat-label i18n="@@stands.indisponibilites.heureFin">Fin</mat-label>
-        <input matInput type="time" required [name]="'indispoHeureFin' + $index"
+        <mat-label i18n="@@stands.indisponibilites.heureFin">Fin (vide = fermeture)</mat-label>
+        <input matInput type="time" [name]="'indispoHeureFin' + $index"
                [ngModel]="indispo.heureFin" (ngModelChange)="patchIndisponibilite($index, { heureFin: $event })" />
       </mat-form-field>
       <mat-form-field appearance="outline">
@@ -99,7 +210,7 @@
     </div>
   }
   @if (indisponibiliteInvalide()) {
-    <p class="field-error" i18n="@@stands.indisponibilites.invalid">Chaque fermeture doit avoir une date et une heure de fin strictement après l'heure de début.</p>
+    <p class="field-error" i18n="@@stands.indisponibilites.invalid">Chaque fermeture doit avoir une date et une heure de début ; l'heure de fin, si elle est renseignée, doit être après l'heure de début.</p>
   }
   <button matButton type="button" [disabled]="editingLocked()" (click)="ajouterIndisponibilite()">
     <mat-icon>add</mat-icon>
@@ -107,10 +218,10 @@
   </button>
 </div>
 <div class="span-2">
-  <h3 i18n="@@stands.ouvertures.title">Ouvertures</h3>
+  <h3 i18n="@@stands.ouvertures.title">Ouvertures ponctuelles</h3>
   <p class="empty-hint" i18n="@@stands.ouvertures.hint">
-    À utiliser à la place des fermetures pour un stand normalement fermé, ouvert seulement sur des créneaux
-    précis (ex : ouvert de 20h à 23h). Un jour ne peut pas avoir à la fois une fermeture et une ouverture.
+    L'inverse : ce jour-là, le stand n'est ouvert QUE sur les fenêtres listées. Prime aussi sur les règles. Un même
+    jour ne peut pas porter à la fois une fermeture et une ouverture.
   </p>
   @for (ouverture of draft().ouvertures; track $index) {
     <div class="indisponibilite-row">
@@ -125,8 +236,8 @@
                [ngModel]="ouverture.heureDebut" (ngModelChange)="patchOuverture($index, { heureDebut: $event })" />
       </mat-form-field>
       <mat-form-field appearance="outline">
-        <mat-label i18n="@@stands.ouvertures.heureFin">Fin</mat-label>
-        <input matInput type="time" required [name]="'ouvertureHeureFin' + $index"
+        <mat-label i18n="@@stands.ouvertures.heureFin">Fin (vide = fermeture)</mat-label>
+        <input matInput type="time" [name]="'ouvertureHeureFin' + $index"
                [ngModel]="ouverture.heureFin" (ngModelChange)="patchOuverture($index, { heureFin: $event })" />
       </mat-form-field>
       <mat-form-field appearance="outline">
@@ -142,7 +253,7 @@
     </div>
   }
   @if (ouvertureInvalide()) {
-    <p class="field-error" i18n="@@stands.ouvertures.invalid">Chaque ouverture doit avoir une date et une heure de fin strictement après l'heure de début.</p>
+    <p class="field-error" i18n="@@stands.ouvertures.invalid">Chaque ouverture doit avoir une date et une heure de début ; l'heure de fin, si elle est renseignée, doit être après l'heure de début.</p>
   }
   @if (conflitOuvertureFermeture()) {
     <p class="field-error" i18n="@@stands.ouvertures.conflict">
@@ -154,12 +265,29 @@
     <ng-container i18n="@@stands.ouvertures.add">Ajouter une ouverture</ng-container>
   </button>
 </div>
+@if (datesFestival().length > 0) {
+  <div class="span-2 horaires-apercu">
+    <h3 i18n="@@stands.apercu.title">Aperçu jour par jour</h3>
+    <p class="empty-hint" i18n="@@stands.apercu.hint">
+      Ce que le solveur lira, règles et exceptions résolues, sur les jours du groupe de créneaux actif.
+    </p>
+    <div class="apercu-bande">
+      @for (jour of apercu(); track jour.date) {
+        <div class="apercu-jour" [class.apercu-ferme]="jour.mode === 'OUVERTURE' && jour.fenetres.length === 0"
+             [class.apercu-exception]="jour.source === 'EXCEPTION'"
+             [matTooltip]="decrireJour(jour)">
+          <span class="apercu-date">{{ libelleJour(jour.date) }}</span>
+          <span class="apercu-detail">{{ decrireJour(jour) }}</span>
+        </div>
+      }
+    </div>
+  </div>
+}
 </fieldset>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button matButton type="button" (click)="dialogRef.close(false)" i18n="@@common.cancel">Annuler</button>
-  <button matButton="filled" type="submit"
-          [disabled]="effectifInvalid() || indisponibiliteInvalide() || ouvertureInvalide() || conflitOuvertureFermeture() || editingLocked()">
+  <button matButton="filled" type="submit" [disabled]="formulaireInvalide() || editingLocked()">
     <mat-icon>save</mat-icon>
     {{ submitLabel() }}
   </button>

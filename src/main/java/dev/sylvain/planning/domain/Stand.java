@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class Stand {
 
     private String id;
@@ -21,20 +23,43 @@ public class Stand {
     /** Physical location the stand is set up at; nullable (not every stand is geocoded). */
     private Emplacement emplacement;
     /**
-     * Closure windows for this stand, e.g. "closed 14:00-16:00 on 2026-07-18"
-     * — possibly only part of a créneau. Empty = the stand is open on every
-     * créneau (the default), unless {@link #ouvertures} says otherwise for
-     * that day. See {@link Creneau#segmentsOuvertsMinutes(Stand)}.
+     * Dated closure <b>exceptions</b> for this stand, e.g. "closed 14:00-16:00
+     * on 2026-07-18" — possibly only part of a créneau. Empty = the stand is
+     * open on every créneau (the default), unless {@link #ouvertures} or a
+     * {@link #horaires} rule says otherwise for that day. See
+     * {@link Creneau#segmentsOuvertsMinutes(Stand)}.
      */
     private List<IndisponibiliteStand> indisponibilites = new ArrayList<>();
     /**
-     * Opening windows for this stand — the inverse of {@link #indisponibilites},
-     * for a stand normally closed and only staffed during specific windows.
-     * Empty = no day is opening-only (the default). A day can never carry
-     * both an entry here and one in {@link #indisponibilites}; see
-     * {@link OuvertureStand}'s javadoc for the three-state rule this implies.
+     * Dated opening <b>exceptions</b> for this stand — the inverse of
+     * {@link #indisponibilites}, for a stand normally closed and only staffed
+     * during specific windows. Empty = no day is opening-only (the default). A
+     * day can never carry both an entry here and one in
+     * {@link #indisponibilites}; see {@link OuvertureStand}'s javadoc for the
+     * three-state rule this implies.
      */
     private List<OuvertureStand> ouvertures = new ArrayList<>();
+    /**
+     * Recurring opening/closing rules — what a stable opening pattern is
+     * entered as, instead of one dated row per festival day. A dated entry
+     * above always wins over these for the day it names; see
+     * {@link HoraireStand} for the full layering.
+     */
+    private List<HoraireStand> horaires = new ArrayList<>();
+    /**
+     * The dated windows {@link #horaires} expands to for the festival's days,
+     * merged with the dated exceptions above — {@code null} until
+     * {@code HoraireStandResolver} has run against a known set of dates.
+     *
+     * <p>Kept <b>beside</b> the persisted lists rather than substituted into
+     * them on purpose: {@code upsertStand} writes {@link #indisponibilites} /
+     * {@link #ouvertures}, so a resolved stand travelling back through a save
+     * (which a stand reached through a {@code PlanningFestival} does) can never
+     * silently freeze the expansion into the database as a few hundred dated
+     * rows.</p>
+     */
+    private List<IndisponibiliteStand> indisponibilitesEffectives;
+    private List<OuvertureStand> ouverturesEffectives;
 
     public Stand() {
     }
@@ -142,6 +167,46 @@ public class Stand {
 
     public void setOuvertures(List<OuvertureStand> ouvertures) {
         this.ouvertures = ouvertures != null ? ouvertures : new ArrayList<>();
+    }
+
+    public List<HoraireStand> getHoraires() {
+        return horaires;
+    }
+
+    public void setHoraires(List<HoraireStand> horaires) {
+        this.horaires = horaires != null ? horaires : new ArrayList<>();
+    }
+
+    /**
+     * Records what {@code HoraireStandResolver} resolved this stand's rules and
+     * exceptions to, for the festival's days. Both lists replace each other
+     * wholesale; passing {@code null} for either reverts to the dated lists.
+     */
+    public void setFenetresEffectives(List<IndisponibiliteStand> fermetures, List<OuvertureStand> ouvertures) {
+        this.indisponibilitesEffectives = fermetures;
+        this.ouverturesEffectives = ouvertures;
+    }
+
+    /**
+     * Closure windows to actually reason about: the resolved ones when
+     * {@link #setFenetresEffectives} has run, the dated ones otherwise. Falling
+     * back keeps every caller — and every test — that never resolves anything
+     * behaving exactly as it did before rules existed.
+     *
+     * <p>{@code @JsonIgnore} because this is a derived view: the REST payload
+     * carries the rules and the dated exceptions, which is what the UI edits,
+     * and the frontend recomputes the resolution itself for its preview (see
+     * {@code core/horaire-stand.ts}).</p>
+     */
+    @JsonIgnore
+    public List<IndisponibiliteStand> getIndisponibilitesEffectives() {
+        return indisponibilitesEffectives != null ? indisponibilitesEffectives : indisponibilites;
+    }
+
+    /** Opening windows to actually reason about — see {@link #getIndisponibilitesEffectives()}. */
+    @JsonIgnore
+    public List<OuvertureStand> getOuverturesEffectives() {
+        return ouverturesEffectives != null ? ouverturesEffectives : ouvertures;
     }
 
     @Override

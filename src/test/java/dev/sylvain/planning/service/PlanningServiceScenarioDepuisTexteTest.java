@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 
 /**
@@ -204,5 +205,56 @@ class PlanningServiceScenarioDepuisTexteTest {
         assertThatThrownBy(() -> service.construireDepuisTexteScenario("festival:\n  dateDebut: 2026-07-01\n"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageStartingWith("Scénario invalide");
+    }
+    /**
+     * A scenario stating its schedule as recurring {@code horaires:} rules rather
+     * than as one dated window per festival day. Everything downstream — which
+     * segments of a créneau a stand is open for, hence which postes exist —
+     * has to come out exactly as if the windows had been written out by hand.
+     */
+    @Test
+    void etendLesHorairesRecurrentsALImport() {
+        PlanningService service = service();
+        String yaml = scenarioYamlText("scenario-horaires-recurrents.yaml");
+
+        PlanningFestival planning = service.construireDepuisTexteScenario(yaml).planning();
+
+        // BOURSE : « 10h-12h puis 14h jusqu'à la fermeture, tous les jours » ouvre
+        // chacun des cinq créneaux en entier — la fenêtre ouverte s'adapte au jour
+        // qui ferme à 20h comme à celui qui ferme à minuit.
+        assertThat(postesDe(planning, "BOURSE")).hasSize(5);
+        assertThat(postesDe(planning, "BOURSE"))
+                .allSatisfy(poste -> assertThat(poste.getHeureFinEffective()).isNull());
+
+        // PODIUM : ouvert l'après-midi par la règle, sauf le 9 où une exception
+        // datée le ferme — et elle prime, donc aucun poste ce jour-là.
+        assertThat(postesDe(planning, "PODIUM")).hasSize(2);
+        assertThat(postesDe(planning, "PODIUM"))
+                .extracting(poste -> poste.getCreneau().getDate())
+                .containsExactlyInAnyOrder(LocalDate.of(2026, 7, 8), LocalDate.of(2026, 7, 10));
+
+        // MEDIATHEQUE : fermée 10h-12h les mercredis seulement. Le 8 juillet est un
+        // mercredi, le 9 un jeudi : le créneau du matin disparaît le premier jour
+        // et subsiste le second.
+        assertThat(creneauxDe(planning, "MEDIATHEQUE"))
+                .doesNotContain(entree(LocalDate.of(2026, 7, 8), LocalTime.of(10, 0)))
+                .contains(entree(LocalDate.of(2026, 7, 9), LocalTime.of(10, 0)));
+        assertThat(postesDe(planning, "MEDIATHEQUE")).hasSize(4);
+    }
+
+    private static java.util.List<PosteAffectation> postesDe(PlanningFestival planning, String standId) {
+        return planning.getPostes().stream()
+                .filter(poste -> poste.getStand().getId().equals(standId))
+                .toList();
+    }
+
+    private static java.util.List<String> creneauxDe(PlanningFestival planning, String standId) {
+        return postesDe(planning, standId).stream()
+                .map(poste -> entree(poste.getCreneau().getDate(), poste.getCreneau().getHeureDebut()))
+                .toList();
+    }
+
+    private static String entree(LocalDate date, LocalTime heureDebut) {
+        return date + " " + heureDebut;
     }
 }

@@ -1,0 +1,100 @@
+# yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+festival:
+  dateDebut: 2026-07-08
+
+# Fixture for PlanningServiceScenarioDepuisTexteTest: the stands state their
+# schedule as recurring `horaires:` rules instead of one dated window per day.
+# Three days of two amplitudes each, closing at different hours on purpose —
+# 20:00 the first two days, midnight the third — so the open-ended windows
+# ("jusqu'à la fermeture") have something to adapt to.
+creneaux:
+  - id: J1-MATIN
+    jour: 1
+    date: 2026-07-08
+    heureDebut: "10:00"
+    heureFin: "12:00"
+  - id: J1-APREM
+    jour: 1
+    date: 2026-07-08
+    heureDebut: "14:00"
+    heureFin: "20:00"
+  - id: J2-MATIN
+    jour: 2
+    date: 2026-07-09
+    heureDebut: "10:00"
+    heureFin: "12:00"
+  - id: J2-APREM
+    jour: 2
+    date: 2026-07-09
+    heureDebut: "14:00"
+    heureFin: "20:00"
+  - id: J3-APREM
+    jour: 3
+    date: 2026-07-10
+    heureDebut: "14:00"
+    heureFin: "00:00"
+
+stands:
+  # The AUTRES-BOURSE pattern: a lunch break, every day — one rule, two windows,
+  # where the dated form needed six entries for these three days alone. `jours`
+  # is omitted, which reads as TOUS.
+  - id: BOURSE
+    nom: Bourse
+    typologiesProposees:
+      - STRATEGIE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "12:00"
+          - heureDebut: "14:00"
+
+  # Open in the afternoon only, except on the 9th where a dated exception shuts
+  # it entirely — the exception wins over the rule for that day alone.
+  - id: PODIUM
+    nom: Podium
+    typologiesProposees:
+      - STRATEGIE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        jours: TOUS
+        fenetres:
+          - heureDebut: "14:00"
+    indisponibilites:
+      - date: 2026-07-09
+        heureDebut: "10:00"
+        motif: Absent ce jour
+
+  # Open by default, closed over the lunch hour on the two Wednesdays/Thursdays
+  # this fixture spans (2026-07-08 is a Wednesday).
+  - id: MEDIATHEQUE
+    nom: Médiathèque
+    typologiesProposees:
+      - STRATEGIE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: FERMETURE
+        jours: JOURS_SEMAINE
+        joursSemaine:
+          - WEDNESDAY
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "12:00"
+
+animateurs:
+  - id: A1
+    prenom: Alice
+    nom: Referente
+    dateNaissance: 2002-07-19
+    manager: false
+    competences:
+      STRATEGIE: REFERENT
+    joursIndisponibles: []

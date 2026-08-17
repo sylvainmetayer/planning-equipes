@@ -16,12 +16,14 @@ import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.scenario.ScenarioValidator;
+import dev.sylvain.planning.service.CompactageHoraires;
 import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.ReferenceDataService;
 import dev.sylvain.planning.service.ReferenceDataService.TypologieItem;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
@@ -78,6 +80,22 @@ public class ReferenceDataResource {
     public Response deleteStand(@PathParam("id") String id) {
         referenceDataService.deleteStand(id);
         return Response.noContent().build();
+    }
+
+    /**
+     * Rewrites hand-entered dated windows as the recurring horaires they repeat
+     * — the way a dataset captured before rules existed catches up with them.
+     *
+     * <p>{@code appliquer} defaults to {@code false}: the call is then a dry run
+     * that returns exactly what it <em>would</em> do, per stand, so the report
+     * can be shown before anything is written. Only {@code appliquer=true}
+     * persists.</p>
+     */
+    @POST
+    @Path("/stands/compactage-horaires")
+    public CompactageHoraires.RapportCompactage compacterHoraires(
+            @QueryParam("appliquer") @DefaultValue("false") boolean appliquer) {
+        return referenceDataService.compacterHoraires(appliquer);
     }
 
     @GET

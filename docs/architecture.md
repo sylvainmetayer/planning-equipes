@@ -179,6 +179,7 @@ standalone) :
 | `app/core/api.service.ts` | Helpers `HttpClient` ; `downloadFile` renvoie un message, ne touche jamais au DOM |
 | `app/core/models.ts` | Types TypeScript des payloads de l'API |
 | `app/core/date-utils.ts` | Calculs de dates (semaine commençant lundi) |
+| `app/core/horaire-stand.ts` | Résolution des horaires d'un stand (règles récurrentes + exceptions datées) en fenêtres jour par jour, et résumés affichés. Miroir de `HoraireStandResolver` côté serveur — le seul endroit où le frontend réimplémente de la logique de domaine, pour prévisualiser une règle sans aller-retour ; à faire évoluer dans le même commit que son pendant Java |
 | `app/core/locale.ts` | Langue choisie (`fr` / `en`), persistée dans `localStorage` |
 | `app/core/edition-courante.ts` | Édition consultée par cet onglet, persistée dans `localStorage` ; module et non service, pour que l'intercepteur ne dépende pas du `HttpClient` qu'il intercepte |
 | `app/core/edition.interceptor.ts` | Ajoute l'en-tête `X-Edition-Id` à chaque appel `/api/` |
@@ -232,7 +233,9 @@ Le CSS global se limite à ce que Material ne couvre pas : `src/styles.css` n'es
 qu'un agrégateur de règles `@import` et chaque partial vit sous `src/styles/`
 (`pages.css` cartes / formulaires / tableaux, `feedback.css` moniteur de job et
 variantes de snack bar, `calendar-month.css`, `calendar-day.css`,
-`constraints.css`, `problemes.css`, `staffing.css`, `typologie-colors.css`
+`constraints.css`, `problemes.css`, `staffing.css`, `horaires-stand.css`
+— éditeur de règles d'horaire d'un stand et bande d'aperçu jour par jour —,
+`typologie-colors.css`
 — la palette catégorielle des typologies de jeu, partagée par la heatmap et la
 timeline —, `heatmap.css`, `animateur-timeline.css`), avec ses propres `@media`.
 

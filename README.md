@@ -225,12 +225,27 @@ de l'algorithme est dans [`docs/domaine.md`](docs/domaine.md#découpage-automati
   animateurs sont rémunérés** et relèvent du même cadre légal de temps de
   travail ;
 - les **stands** : typologies de jeux proposées, effectif minimum et maximum
-  d'animateurs simultanés, restriction éventuelle aux majeurs, et fermetures
-  (un stand est ouvert sur chaque créneau par défaut ; une fermeture peut ne
-  couvrir qu'une partie d'un créneau, ex. fermé de 14 h à 16 h) — ou, à
-  l'inverse pour un stand normalement fermé, des **ouvertures** ponctuelles
-  (ex. ouvert seulement de 20 h à 23 h), pour éviter de saisir une fermeture
-  sur chaque autre créneau du festival ;
+  d'animateurs simultanés, restriction éventuelle aux majeurs, et leurs
+  **horaires d'ouverture**. Un stand est ouvert sur chaque créneau par défaut,
+  et son planning se saisit à deux niveaux :
+  - des **règles récurrentes**, pour le motif qui se répète : « ouvert de 10 h à
+    12 h puis de 14 h à la fermeture, tous les jours » tient en une règle à deux
+    fenêtres, au lieu d'une plage datée par jour de festival. Une règle peut ne
+    viser que certains jours de la semaine (« le week-end on ouvre dès 10 h »),
+    une plage de dates ou des dates précises, et dire aussi bien quand le stand
+    est ouvert que quand il est fermé. Laisser l'heure de fin vide veut dire
+    « jusqu'à la fermeture », ce qui laisse une même règle couvrir un jour
+    fermant à 20 h et un jour fermant à minuit ;
+  - des **fermetures et ouvertures ponctuelles**, datées : elles priment sur les
+    règles pour le seul jour qu'elles nomment, et peuvent ne couvrir qu'une
+    partie d'un créneau (ex. fermé de 14 h à 16 h).
+
+  Un aperçu jour par jour montre, sous l'éditeur, ce que le solveur lira une fois
+  règles et exceptions résolues. Un bouton **« Compacter les horaires »** réécrit
+  des plages datées répétées en règles équivalentes — utile pour des données
+  saisies avant l'arrivée des règles ; il affiche d'abord ce qu'il ferait, et
+  laisse inchangé tout stand dont les règles ne reproduiraient pas exactement les
+  mêmes ouvertures ;
 - les **créneaux** : jour du festival, date, heures de début et de fin ;
 - les **emplacements** : lieux géolocalisés (kiosque, mairie…) auxquels un stand
   peut être rattaché ;

@@ -456,8 +456,14 @@ public class PlanningPersistenceService {
     public PlanningFestival loadPersistedPlanning() {
         List<Animateur> animateurs = referenceDataService.listAnimateurs();
         Map<String, Animateur> animateursById = indexById(animateurs, Animateur::getId);
-        Map<String, Stand> standsById = indexById(referenceDataService.listStands(), Stand::getId);
-        Map<Long, Creneau> creneauxById = indexById(referenceDataService.listCreneaux(), Creneau::getId);
+        List<Creneau> creneaux = referenceDataService.listCreneaux();
+        List<Stand> stands = referenceDataService.listStands();
+        // Every group's créneaux, not just the active one's: this view shows what
+        // is persisted, so the horaires have to be resolved against the same
+        // days it displays.
+        HoraireStandResolver.appliquer(stands, creneaux);
+        Map<String, Stand> standsById = indexById(stands, Stand::getId);
+        Map<Long, Creneau> creneauxById = indexById(creneaux, Creneau::getId);
 
         List<PosteAffectation> postes = new ArrayList<>();
         String sql = "SELECT id, stand_id, creneau_id, animateur_id, heure_debut_effective, heure_fin_effective "

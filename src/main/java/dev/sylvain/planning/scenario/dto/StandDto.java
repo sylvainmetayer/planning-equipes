@@ -18,5 +18,11 @@ public record StandDto(
         String emplacementId,
         List<@Valid IndisponibiliteStandDto> indisponibilites,
         NiveauEffort niveauEffort,
-        List<@Valid OuvertureStandDto> ouvertures) {
+        List<@Valid OuvertureStandDto> ouvertures,
+        /**
+         * Recurring opening/closing rules — what a stable pattern is written as,
+         * instead of one dated entry per festival day in the two lists above,
+         * which stay for the per-date exceptions that override them.
+         */
+        List<@Valid HoraireStandDto> horaires) {
 }

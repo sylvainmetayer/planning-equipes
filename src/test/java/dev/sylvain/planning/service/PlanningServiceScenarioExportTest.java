@@ -3,6 +3,7 @@ package dev.sylvain.planning.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -15,12 +16,16 @@ import org.yaml.snakeyaml.Yaml;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.FenetreHoraire;
+import dev.sylvain.planning.domain.HoraireStand;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
+import dev.sylvain.planning.domain.ModeHoraire;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.domain.TypeJoursHoraire;
 
 /**
  * Exercises {@link PlanningService#construireScenarioYaml} directly
@@ -99,6 +104,62 @@ class PlanningServiceScenarioExportTest {
         assertThat(postesYaml.get(0)).containsEntry("standId", "STAND-A")
                 .containsEntry("creneauId", 1)
                 .containsEntry("animateurId", null);
+    }
+
+    /**
+     * The recurring horaires are exported as <b>rules</b>, with the day selector
+     * flattened onto the rule and only the fields that selector uses — which is
+     * the whole point: a stand open "10:00-12:00 then 14:00 to closing, every
+     * day" takes four lines here instead of twenty-four dated entries. An
+     * open-ended window drops its {@code heureFin} key entirely rather than
+     * writing an explicit null.
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    void horairesRecurrentsSontExportesCommeRegles() {
+        HoraireStand quotidien = HoraireStand.tousLesJours(ModeHoraire.OUVERTURE,
+                new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(12, 0)),
+                new FenetreHoraire(LocalTime.of(14, 0), null));
+        HoraireStand weekend = new HoraireStand(null, ModeHoraire.FERMETURE, TypeJoursHoraire.JOURS_SEMAINE,
+                List.of(new FenetreHoraire(LocalTime.of(0, 0), null)));
+        weekend.setJoursSemaine(Set.of(DayOfWeek.SUNDAY));
+        stand.setHoraires(List.of(quotidien, weekend));
+
+        String yaml = PlanningService.construireScenarioYaml(List.of(animateur), List.of(stand), List.of(creneau),
+                List.of());
+        Map<String, Object> parsed = new Yaml().load(yaml);
+
+        List<Map<String, Object>> stands = (List<Map<String, Object>>) parsed.get("stands");
+        List<Map<String, Object>> horaires = (List<Map<String, Object>>) stands.get(0).get("horaires");
+        assertThat(horaires).hasSize(2);
+
+        assertThat(horaires.get(0)).containsEntry("mode", "OUVERTURE").containsEntry("jours", "TOUS");
+        // A TOUS rule carries no selector data: emitting empty date keys would be
+        // noise in a file meant to be read and diffed by hand.
+        assertThat(horaires.get(0)).doesNotContainKeys("joursSemaine", "dateDebut", "dateFin", "dates");
+        List<Map<String, Object>> fenetres = (List<Map<String, Object>>) horaires.get(0).get("fenetres");
+        assertThat(fenetres).hasSize(2);
+        assertThat(fenetres.get(0)).containsEntry("heureDebut", "10:00").containsEntry("heureFin", "12:00");
+        assertThat(fenetres.get(1)).containsEntry("heureDebut", "14:00").doesNotContainKey("heureFin");
+
+        assertThat(horaires.get(1)).containsEntry("mode", "FERMETURE").containsEntry("jours", "JOURS_SEMAINE");
+        assertThat((List<String>) horaires.get(1).get("joursSemaine")).containsExactly("SUNDAY");
+    }
+
+    /** A dated exception with no end hour keeps its explicit null, unlike a rule's window. */
+    @Test
+    @SuppressWarnings("unchecked")
+    void uneOuvertureDateeSansHeureFinExporteUnHeureFinNul() {
+        stand.setOuvertures(List.of(
+                new OuvertureStand(1L, LocalDate.of(2026, 8, 20), LocalTime.of(20, 0), null, null)));
+
+        String yaml = PlanningService.construireScenarioYaml(List.of(animateur), List.of(stand), List.of(creneau),
+                List.of());
+        Map<String, Object> parsed = new Yaml().load(yaml);
+
+        List<Map<String, Object>> stands = (List<Map<String, Object>>) parsed.get("stands");
+        List<Map<String, Object>> ouvertures = (List<Map<String, Object>>) stands.get(0).get("ouvertures");
+        assertThat(ouvertures.get(0)).containsEntry("heureDebut", "20:00").containsEntry("heureFin", null);
     }
 
     @Test

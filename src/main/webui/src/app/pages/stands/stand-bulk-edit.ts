@@ -2,10 +2,22 @@
 // Kept apart from the dialog so the rules are unit-tested without rendering.
 
 import { ModeBooleen, ModeListe, appliquerModeBooleen, appliquerModeListe } from '../../core/bulk-edit';
-import { Emplacement, NiveauEffort, Stand } from '../../core/models';
+import { Emplacement, HoraireStand, NiveauEffort, Stand } from '../../core/models';
 
 /** `DEFINIR` ties every selected stand to one emplacement, `EFFACER` unties them all. */
 export type ModeEmplacement = 'INCHANGE' | 'DEFINIR' | 'EFFACER';
+
+/**
+ * How the recurring horaires of the selection are edited. This is the reason a
+ * bulk edit is worth having for them at all: on the reference festival, thirty
+ * stands share the single rule "open from 14:00 to closing, every day", and
+ * `REMPLACER` sets all thirty in one operation.
+ *
+ * `AJOUTER` appends the rules to whatever each stand already has; `REMPLACER`
+ * discards each stand's own rules first; `EFFACER` drops them all, which returns
+ * every stand to its dated exceptions (or to open-all-day if it has none).
+ */
+export type ModeHoraires = 'INCHANGE' | 'AJOUTER' | 'REMPLACER' | 'EFFACER';
 
 export interface StandBulkPatch {
   emplacement: { mode: ModeEmplacement; emplacementId: string | null };
@@ -16,6 +28,7 @@ export interface StandBulkPatch {
   reserveMajeurs: ModeBooleen;
   premium: ModeBooleen;
   niveauEffort: 'INCHANGE' | NiveauEffort;
+  horaires: { mode: ModeHoraires; horaires: HoraireStand[] };
 }
 
 export function patchStandVide(): StandBulkPatch {
@@ -26,7 +39,8 @@ export function patchStandVide(): StandBulkPatch {
     effectifMax: null,
     reserveMajeurs: 'INCHANGE',
     premium: 'INCHANGE',
-    niveauEffort: 'INCHANGE'
+    niveauEffort: 'INCHANGE',
+    horaires: { mode: 'INCHANGE', horaires: [] }
   };
 }
 
@@ -37,6 +51,9 @@ export function patchStandEstVide(patch: StandBulkPatch): boolean {
   const typologiesInactives =
     patch.typologies.mode === 'AUCUN' ||
     (patch.typologies.typologies.length === 0 && patch.typologies.mode !== 'REMPLACER');
+  const horairesInactifs =
+    patch.horaires.mode === 'INCHANGE' ||
+    (patch.horaires.mode !== 'EFFACER' && patch.horaires.horaires.length === 0);
   return (
     emplacementInactif &&
     typologiesInactives &&
@@ -44,7 +61,8 @@ export function patchStandEstVide(patch: StandBulkPatch): boolean {
     patch.effectifMax === null &&
     patch.reserveMajeurs === 'INCHANGE' &&
     patch.premium === 'INCHANGE' &&
-    patch.niveauEffort === 'INCHANGE'
+    patch.niveauEffort === 'INCHANGE' &&
+    horairesInactifs
   );
 }
 
@@ -65,7 +83,36 @@ export function appliquerPatchStand(
     effectifMax: patch.effectifMax ?? stand.effectifMax,
     reserveMajeurs: appliquerModeBooleen(Boolean(stand.reserveMajeurs), patch.reserveMajeurs),
     premium: appliquerModeBooleen(Boolean(stand.premium), patch.premium),
-    niveauEffort: patch.niveauEffort === 'INCHANGE' ? (stand.niveauEffort ?? 'NORMAL') : patch.niveauEffort
+    niveauEffort: patch.niveauEffort === 'INCHANGE' ? (stand.niveauEffort ?? 'NORMAL') : patch.niveauEffort,
+    horaires: appliquerHoraires(stand.horaires ?? [], patch.horaires)
+  };
+}
+
+/**
+ * The rules are copied per stand rather than shared: they carry a persisted `id`
+ * per stand, so handing the same objects to fifty payloads would send fifty
+ * stands the id of one of them.
+ */
+function appliquerHoraires(actuels: readonly HoraireStand[], patch: StandBulkPatch['horaires']): HoraireStand[] {
+  switch (patch.mode) {
+    case 'INCHANGE':
+      return [...actuels];
+    case 'EFFACER':
+      return [];
+    case 'REMPLACER':
+      return patch.horaires.map(copierHoraire);
+    case 'AJOUTER':
+      return [...actuels, ...patch.horaires.map(copierHoraire)];
+  }
+}
+
+function copierHoraire(horaire: HoraireStand): HoraireStand {
+  return {
+    ...horaire,
+    id: null,
+    joursSemaine: [...horaire.joursSemaine],
+    dates: [...horaire.dates],
+    fenetres: horaire.fenetres.map((fenetre) => ({ ...fenetre }))
   };
 }
 

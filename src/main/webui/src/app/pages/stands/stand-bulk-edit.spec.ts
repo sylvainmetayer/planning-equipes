@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Emplacement, Stand } from '../../core/models';
+import { Emplacement, HoraireStand, Stand } from '../../core/models';
 import {
   StandBulkPatch,
   appliquerPatchStand,
@@ -24,6 +24,7 @@ function stand(overrides: Partial<Stand> = {}): Stand {
     emplacement: kiosque,
     indisponibilites: [],
     ouvertures: [],
+    horaires: [],
     ...overrides
   };
 }
@@ -97,7 +98,7 @@ describe('appliquerPatchStand', () => {
     expect(resultat.niveauEffort).toBe('EPUISANT');
   });
 
-  // Les fermetures/ouvertures sont propres à chaque stand : jamais touchées.
+  // Les fermetures/ouvertures ponctuelles sont propres à chaque stand : jamais touchées.
   it('conserve fermetures et ouvertures', () => {
     const avecFermeture = stand({
       indisponibilites: [{ id: 1, date: '2026-08-01', heureDebut: '14:00', heureFin: '16:00', motif: null }]
@@ -107,7 +108,87 @@ describe('appliquerPatchStand', () => {
 
     expect(resultat.indisponibilites).toEqual(avecFermeture.indisponibilites);
   });
+
+  it('laisse les horaires intacts en mode INCHANGE', () => {
+    const avecHoraire = stand({ horaires: [regleQuotidienne()] });
+
+    const resultat = appliquerPatchStand(avecHoraire, patch({ premium: 'OUI' }), emplacements);
+
+    expect(resultat.horaires).toEqual(avecHoraire.horaires);
+  });
+
+  // Le gain visé : les trente stands en « 14h → fermeture » réglés d'un coup.
+  it('remplace les horaires et repart d’un id vierge', () => {
+    const avecHoraire = stand({ horaires: [{ ...regleQuotidienne(), id: 7 }] });
+
+    const resultat = appliquerPatchStand(
+      avecHoraire,
+      patch({ horaires: { mode: 'REMPLACER', horaires: [regleQuotidienne()] } }),
+      emplacements
+    );
+
+    expect(resultat.horaires).toHaveLength(1);
+    expect(resultat.horaires[0].id).toBeNull();
+    expect(resultat.horaires[0].fenetres).toEqual([{ heureDebut: '14:00', heureFin: null }]);
+  });
+
+  it('ajoute une règle sans écraser celles du stand', () => {
+    const avecHoraire = stand({ horaires: [regleQuotidienne()] });
+
+    const resultat = appliquerPatchStand(
+      avecHoraire,
+      patch({ horaires: { mode: 'AJOUTER', horaires: [regleQuotidienne()] } }),
+      emplacements
+    );
+
+    expect(resultat.horaires).toHaveLength(2);
+  });
+
+  it('efface les horaires sans toucher aux exceptions datées', () => {
+    const avecTout = stand({
+      horaires: [regleQuotidienne()],
+      indisponibilites: [{ id: 1, date: '2026-08-01', heureDebut: '14:00', heureFin: null, motif: null }]
+    });
+
+    const resultat = appliquerPatchStand(
+      avecTout,
+      patch({ horaires: { mode: 'EFFACER', horaires: [] } }),
+      emplacements
+    );
+
+    expect(resultat.horaires).toEqual([]);
+    expect(resultat.indisponibilites).toEqual(avecTout.indisponibilites);
+  });
+
+  /**
+   * Les objets de règle sont copiés par stand : partager la même instance
+   * enverrait à cinquante stands l'id de l'un d'eux.
+   */
+  it('ne partage pas les objets de règle entre deux stands', () => {
+    const modele = regleQuotidienne();
+    const patchCommun = patch({ horaires: { mode: 'REMPLACER', horaires: [modele] } });
+
+    const premier = appliquerPatchStand(stand({ id: 'A' }), patchCommun, emplacements);
+    const second = appliquerPatchStand(stand({ id: 'B' }), patchCommun, emplacements);
+
+    expect(premier.horaires[0]).not.toBe(second.horaires[0]);
+    expect(premier.horaires[0].fenetres[0]).not.toBe(second.horaires[0].fenetres[0]);
+  });
 });
+
+function regleQuotidienne(): HoraireStand {
+  return {
+    id: null,
+    mode: 'OUVERTURE',
+    jours: 'TOUS',
+    joursSemaine: [],
+    dateDebut: null,
+    dateFin: null,
+    dates: [],
+    fenetres: [{ heureDebut: '14:00', heureFin: null }],
+    motif: null
+  };
+}
 
 describe('standsAvecEffectifInvalide', () => {
   it('repère les stands dont le maximum passerait sous le minimum', () => {

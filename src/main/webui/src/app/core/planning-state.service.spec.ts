@@ -16,7 +16,8 @@ function stand(id: string, effectifMax: number): Stand {
     niveauEffort: 'NORMAL',
     emplacement: null,
     indisponibilites: [],
-    ouvertures: []
+    ouvertures: [],
+    horaires: []
   };
 }
 

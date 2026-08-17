@@ -56,11 +56,55 @@ rien et affiche une notification avec le détail de l'erreur.
 
 Le format YAML d'un stand couvre `typologiesProposees`, `effectifMin/Max`,
 `reserveMajeurs`, `premium`, `niveauEffort` (`NORMAL` par défaut si absent —
-voir [`domaine.md`](domaine.md)) ainsi que ses fenêtres `indisponibilites`
-(fermetures) et `ouvertures`, dans les deux sens : « Exporter les données
-actuelles en scénario » les écrit, l'import (nommé ou fichier) les relit à
-l'identique. `emplacementId` reste import seulement — l'export n'écrit pas
+voir [`domaine.md`](domaine.md)) ainsi que son planning d'ouverture : les règles
+récurrentes `horaires` et les fenêtres datées `indisponibilites` (fermetures) /
+`ouvertures` qui les surchargent. Tout cela va dans les deux sens : « Exporter
+les données actuelles en scénario » l'écrit, l'import (nommé ou fichier) le relit
+à l'identique. `emplacementId` reste import seulement — l'export n'écrit pas
 encore la section `emplacements` correspondante, à traiter séparément.
+
+### Horaires d'un stand
+
+Une entrée d'`horaires` porte son sélecteur de jours **à plat** : `jours` nomme
+lequel des champs voisins s'applique, et seul celui-là est lu. Absent, il vaut
+`TOUS`, ce qui ramène le cas courant à deux lignes. `heureFin` **omise** signifie
+« jusqu'à la fermeture » : la fenêtre court jusqu'à la fin du créneau évalué, ce
+qui permet à une même règle de couvrir un jour fermant à 20 h et un jour fermant
+à minuit — et remplace le contournement `23:59` qu'imposait une heure de fin
+concrète (une fenêtre ne peut pas chevaucher minuit).
+
+```yaml
+stands:
+  - id: "AUTRES-BOURSE"
+    nom: "Autres - Bourse"
+    typologiesProposees: [ANIMATION]
+    effectifMin: 2
+    effectifMax: 2
+    horaires:
+      # Ouvert 10h-12h puis 14h jusqu'à la fermeture, tous les jours du festival :
+      # une règle à deux fenêtres, là où la forme datée demandait 24 lignes.
+      - mode: OUVERTURE
+        fenetres:
+          - { heureDebut: "10:00", heureFin: "12:00" }
+          - { heureDebut: "14:00" }
+      # Le week-end, ouverture dès 10h sans coupure : portée plus précise, donc
+      # elle prime sur la précédente ces jours-là.
+      - mode: OUVERTURE
+        jours: JOURS_SEMAINE
+        joursSemaine: [SATURDAY, SUNDAY]
+        fenetres:
+          - { heureDebut: "10:00" }
+    # Une exception datée prime sur toutes les règles, pour ce seul jour.
+    indisponibilites:
+      - date: 2026-07-14
+        heureDebut: "10:00"
+        motif: Férié
+```
+
+Les autres portées sont `PLAGE` (avec `dateDebut`/`dateFin`, bornes incluses) et
+`DATES` (avec `dates`). Un fichier peut continuer à tout écrire en fenêtres
+datées : les deux formes coexistent, et [`domaine.md`](domaine.md#horaires-récurrents)
+décrit l'arbitrage entre elles.
 
 La section `postes` (un poste par place à pourvoir, référençant un
 `standId`/`creneauId`) est optionnelle : absente du fichier, elle est générée
@@ -105,12 +149,17 @@ conservé par un aller-retour export/import et doit être redéclaré à la main
 
 [`docs/schema/scenario-schema.json`](schema/scenario-schema.json) décrit la
 structure attendue d'un fichier de scénario (sections obligatoires `festival`,
-`creneaux`, `stands` — dont `niveauEffort` et `ouvertures` par stand —,
+`creneaux`, `stands` — dont `niveauEffort`, `horaires` et `ouvertures` par
+stand —,
 `animateurs`, et les sections optionnelles `postes` (voir plus haut),
 `parametresLegaux`, `parametresDecoupage`, `parametresSolveur`,
 `decoupageAuto`, `typologies`) : types de champs, sections/champs
 obligatoires, durées non négatives, valeurs d'enum (`NiveauCompetence`,
-`NiveauEffort`, `StrategieCouverturePendantPause`). Les ids de typologie
+`NiveauEffort`, `StrategieCouverturePendantPause`, `ModeHoraire`,
+`TypeJoursHoraire`). Il ne peut pas exprimer les règles conditionnelles d'un
+sélecteur d'`horaires` (`joursSemaine` requis pour `JOURS_SEMAINE`,
+`dateDebut`/`dateFin` pour `PLAGE`, `dates` pour `DATES`) : celles-là sont
+vérifiées à l'écriture par `ReferenceDataService.validateHoraires`. Les ids de typologie
 eux-mêmes (`typologiesProposees`, `competences`, `souhaits`, et la section
 `typologies`) sont de simples chaînes, pas un enum : le référentiel
 `typologie` est CRUD-managé, pas figé dans le code.

@@ -6,17 +6,23 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
@@ -24,8 +30,11 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
+import dev.sylvain.planning.domain.FenetreHoraire;
 import dev.sylvain.planning.domain.GroupeCreneau;
+import dev.sylvain.planning.domain.HoraireStand;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
+import dev.sylvain.planning.domain.ModeHoraire;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.OuvertureStand;
@@ -36,6 +45,7 @@ import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
+import dev.sylvain.planning.domain.TypeJoursHoraire;
 import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.service.ReferenceDataService.TypologieItem;
@@ -175,12 +185,84 @@ public class ReferenceDataRepository {
                     }
                 }
             }
+            chargerHoraires(connection, byId);
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to list stands", e);
         }
         List<Stand> stands = new ArrayList<>(byId.values());
         stands.sort(Comparator.comparing(Stand::getId, NATURAL_ID_ORDER));
         return stands;
+    }
+
+    /**
+     * Hydrates the recurring {@link HoraireStand} rules of every stand of
+     * {@code standsById}, windows included, in two queries rather than two per
+     * stand. Rules are keyed by their own id so the windows can be attached
+     * without re-walking the stands.
+     */
+    private void chargerHoraires(Connection connection, Map<String, Stand> standsById) throws SQLException {
+        Map<Long, HoraireStand> horairesParId = new LinkedHashMap<>();
+        try (PreparedStatement ps = prepareScoped(connection,
+                "SELECT id, stand_id, mode, type_jours, jours_semaine, date_debut, date_fin, dates, motif "
+                        + "FROM stand_horaire WHERE edition_id = ? ORDER BY stand_id, id");
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                Stand stand = standsById.get(rs.getString("stand_id"));
+                if (stand == null) {
+                    continue;
+                }
+                HoraireStand horaire = new HoraireStand();
+                horaire.setId(rs.getLong("id"));
+                horaire.setMode(ModeHoraire.valueOf(rs.getString("mode")));
+                horaire.setJours(TypeJoursHoraire.valueOf(rs.getString("type_jours")));
+                horaire.setJoursSemaine(decouperCsv(rs.getString("jours_semaine"), DayOfWeek::valueOf));
+                horaire.setDateDebut(rs.getObject("date_debut", LocalDate.class));
+                horaire.setDateFin(rs.getObject("date_fin", LocalDate.class));
+                horaire.setDates(decouperCsv(rs.getString("dates"), LocalDate::parse));
+                horaire.setMotif(rs.getString("motif"));
+                stand.getHoraires().add(horaire);
+                horairesParId.put(horaire.getId(), horaire);
+            }
+        }
+        if (horairesParId.isEmpty()) {
+            return;
+        }
+        try (PreparedStatement ps = prepareScoped(connection,
+                "SELECT horaire_id, heure_debut, heure_fin FROM stand_horaire_fenetre "
+                        + "WHERE edition_id = ? ORDER BY horaire_id, position, id");
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                HoraireStand horaire = horairesParId.get(rs.getLong("horaire_id"));
+                if (horaire != null) {
+                    horaire.getFenetres().add(new FenetreHoraire(
+                            rs.getObject("heure_debut", LocalTime.class),
+                            rs.getObject("heure_fin", LocalTime.class)));
+                }
+            }
+        }
+    }
+
+    /** Reads back a comma-separated leaf column (see V37 on why these two aren't normalised). */
+    private static <T> Set<T> decouperCsv(String csv, Function<String, T> parse) {
+        if (csv == null || csv.isBlank()) {
+            return Set.of();
+        }
+        Set<T> valeurs = new LinkedHashSet<>();
+        for (String morceau : csv.split(",")) {
+            String valeur = morceau.trim();
+            if (!valeur.isEmpty()) {
+                valeurs.add(parse.apply(valeur));
+            }
+        }
+        return valeurs;
+    }
+
+    /** Writes a set back as the comma-separated form {@link #decouperCsv} reads, or {@code null} when empty. */
+    private static String joindreCsv(Collection<?> valeurs) {
+        if (valeurs == null || valeurs.isEmpty()) {
+            return null;
+        }
+        return valeurs.stream().map(String::valueOf).collect(Collectors.joining(","));
     }
 
     public boolean standExists(String id) {
@@ -289,6 +371,62 @@ public class ReferenceDataRepository {
                     ins.setObject(4, ouverture.getHeureDebut());
                     ins.setObject(5, ouverture.getHeureFin());
                     ins.setString(6, ouverture.getMotif());
+                    ins.addBatch();
+                }
+                ins.executeBatch();
+            }
+        }
+        upsertHoraires(connection, stand);
+    }
+
+    /**
+     * Replaces the stand's rules wholesale — the windows go with them through
+     * {@code ON DELETE CASCADE}. Note this writes {@link Stand#getHoraires()}
+     * and the <em>dated</em> window lists above, never
+     * {@link Stand#getOuverturesEffectives()}: a stand that went through
+     * {@link HoraireStandResolver} can therefore be saved without freezing its
+     * expansion into a few hundred dated rows.
+     */
+    private void upsertHoraires(Connection connection, Stand stand) throws SQLException {
+        try (PreparedStatement del = prepareScoped(connection,
+                "DELETE FROM stand_horaire WHERE edition_id = ? AND stand_id = ?")) {
+            del.setString(2, stand.getId());
+            del.executeUpdate();
+        }
+        if (stand.getHoraires() == null || stand.getHoraires().isEmpty()) {
+            return;
+        }
+        for (HoraireStand horaire : stand.getHoraires()) {
+            long horaireId;
+            try (PreparedStatement ins = prepareScoped(connection,
+                    "INSERT INTO stand_horaire (edition_id, stand_id, mode, type_jours, jours_semaine, date_debut, "
+                            + "date_fin, dates, motif) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id")) {
+                ins.setString(2, stand.getId());
+                ins.setString(3, horaire.getMode().name());
+                ins.setString(4, horaire.getJours().name());
+                ins.setString(5, joindreCsv(horaire.getJoursSemaine()));
+                ins.setObject(6, horaire.getDateDebut());
+                ins.setObject(7, horaire.getDateFin());
+                ins.setString(8, joindreCsv(horaire.getDates()));
+                ins.setString(9, horaire.getMotif());
+                try (ResultSet rs = ins.executeQuery()) {
+                    rs.next();
+                    horaireId = rs.getLong("id");
+                }
+            }
+            horaire.setId(horaireId);
+            if (horaire.getFenetres().isEmpty()) {
+                continue;
+            }
+            try (PreparedStatement ins = prepareScoped(connection,
+                    "INSERT INTO stand_horaire_fenetre (edition_id, horaire_id, position, heure_debut, heure_fin) "
+                            + "VALUES (?, ?, ?, ?, ?)")) {
+                int position = 0;
+                for (FenetreHoraire fenetre : horaire.getFenetres()) {
+                    ins.setLong(2, horaireId);
+                    ins.setInt(3, position++);
+                    ins.setObject(4, fenetre.getHeureDebut());
+                    ins.setObject(5, fenetre.getHeureFin());
                     ins.addBatch();
                 }
                 ins.executeBatch();
@@ -1295,7 +1433,8 @@ public class ReferenceDataRepository {
                 // would otherwise survive as a stale freeze.)
                 for (String table : List.of("contrainte_animateur", "contrainte_ad_hoc", "verrouillage_planning",
                         "poste_affectation",
-                        "stand_typologie", "stand_indisponibilite", "stand_ouverture", "animateur_competence",
+                        "stand_typologie", "stand_indisponibilite", "stand_ouverture", "stand_horaire_fenetre",
+                        "stand_horaire", "animateur_competence",
                         "animateur_jour_indispo", "animateur_souhait", "stand", "animateur")) {
                     // Table names come from the literal list above, never from user input.
                     try (PreparedStatement ps = prepareScoped(connection,

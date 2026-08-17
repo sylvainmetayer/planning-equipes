@@ -155,11 +155,20 @@ complet les effacerait à chaque modification.
 
 | Outil | Description |
 | --- | --- |
-| `lister_stands` / `consulter_stand` | Typologies, effectifs, réserve majeurs/premium, effort, emplacement, plages |
+| `lister_stands` / `consulter_stand` | Typologies, effectifs, réserve majeurs/premium, effort, emplacement, horaires récurrents et plages datées |
 | `creer_stand` / `modifier_stand` / `supprimer_stand` | CRUD, modification par fusion |
-| `ajouter_fermeture_stand` / `ajouter_ouverture_stand` / `effacer_plages_stand` | Plages de fermeture et d'ouverture d'un stand |
+| `ajouter_horaire_stand` / `effacer_horaires_stand` | Règles d'horaire récurrentes : une règle au lieu d'une plage datée par jour de festival |
+| `ajouter_fermeture_stand` / `ajouter_ouverture_stand` / `effacer_plages_stand` | Plages datées, qui priment sur les règles pour le jour qu'elles nomment |
 | `lister_emplacements` / `creer_emplacement` / `modifier_emplacement` / `supprimer_emplacement` | Emplacements géographiques |
 | `lister_typologies` / `creer_typologie` / `modifier_typologie` / `supprimer_typologie` | Référentiel des typologies de jeu |
+
+`ajouter_horaire_stand` prend ses fenêtres en une chaîne compacte,
+`« 10:00-12:00,14:00- »` : une règle en porte régulièrement deux (la coupure
+méridienne), ce que des arguments nommés borneraient à un maximum arbitraire.
+Un tiret final laisse la fenêtre courir jusqu'à la fermeture du jour — même
+notion que l'`heureFin` omise ailleurs. Omettre `heureFin` sur
+`ajouter_fermeture_stand`/`ajouter_ouverture_stand` a le même effet. Voir
+[`domaine.md`](domaine.md#horaires-récurrents).
 
 ### Créneaux, groupes et découpage
 

@@ -70,21 +70,39 @@ public class Stand {
     private boolean premium;                    // stand éditeur : continuité + expérience privilégiées
     private NiveauEffort niveauEffort;          // défaut NORMAL ; EPUISANT déclenche repos post-créneau + équilibrage
     private Emplacement emplacement;            // lieu physique (kiosque, mairie, ...) ; nullable
-    private List<IndisponibiliteStand> indisponibilites;  // vide = toujours ouvert (défaut) — voir plus bas
+    private List<IndisponibiliteStand> indisponibilites;  // exceptions datées ; vide = toujours ouvert (défaut)
     private List<OuvertureStand> ouvertures;    // inverse des fermetures — voir plus bas
+    private List<HoraireStand> horaires;        // règles récurrentes, au-dessus des exceptions — voir plus bas
 }
 
 public class IndisponibiliteStand {
     private Long id;              // entier auto-généré par la base
     private LocalDate date;
     private LocalTime heureDebut;
-    private LocalTime heureFin;   // doit être strictement après heureDebut : ne peut pas traverser minuit
+    private LocalTime heureFin;   // nullable = jusqu'à la fermeture ; sinon strictement après heureDebut
     private String motif;         // libre, informatif — jamais lu par le solveur
 }
 
 public class OuvertureStand {
     // Même forme qu'IndisponibiliteStand — id/date/heureDebut/heureFin/motif,
-    // mêmes règles (heureFin strictement après heureDebut) — mais sens inverse.
+    // mêmes règles — mais sens inverse.
+}
+
+public class HoraireStand {
+    private Long id;
+    private ModeHoraire mode;             // OUVERTURE | FERMETURE
+    private TypeJoursHoraire jours;       // TOUS | JOURS_SEMAINE | PLAGE | DATES — défaut TOUS
+    private Set<DayOfWeek> joursSemaine;  // si jours == JOURS_SEMAINE
+    private LocalDate dateDebut;          // si jours == PLAGE (bornes incluses)
+    private LocalDate dateFin;
+    private Set<LocalDate> dates;         // si jours == DATES
+    private List<FenetreHoraire> fenetres;  // au moins une ; plusieurs = coupure méridienne
+    private String motif;
+}
+
+public class FenetreHoraire {
+    private LocalTime heureDebut;
+    private LocalTime heureFin;   // nullable = jusqu'à la fermeture du créneau évalué
 }
 
 public class Emplacement {
@@ -192,6 +210,85 @@ est dans l'un de trois états, décidé indépendamment jour par jour
   jour ne peut structurellement pas avoir les deux à la fois —
   `ReferenceDataService` le refuse à l'écriture (`createStand`/`updateStand`),
   ce qui évite d'avoir à arbitrer un conflit ici.
+
+L'`heureFin` d'une fenêtre est **nullable**, et vaut alors « jusqu'à la
+fermeture » : la fenêtre court jusqu'à la fin du créneau évalué, quelle que soit
+l'heure à laquelle ce jour-là ferme. C'est ce que veut dire « ouvert de 14 h à la
+fermeture », et c'est ce qui évite le contournement `23:59` qu'imposait une heure
+de fin concrète les jours fermant à minuit (une fenêtre ne peut pas chevaucher
+minuit, contrairement à un `Creneau`).
+
+Une fenêtre datée d'un jour J+1 n'est lue que par un créneau qui **traverse
+réellement minuit** — le seul cas où elle peut le chevaucher. Un créneau
+10 h-20 h n'est donc pas concerné par ce qui est daté du lendemain, ni pour ses
+segments ni pour le choix de son mode.
+
+### Horaires récurrents
+
+Les fenêtres datées ci-dessus sont des **exceptions** ; le motif qui se répète
+se saisit au-dessus d'elles, en `HoraireStand` — une règle qui porte un
+`ModeHoraire` (`OUVERTURE` ou `FERMETURE`), une ou plusieurs `FenetreHoraire`
+sans date, et le sélecteur de jours auquel elle s'applique :
+
+| `jours` | Données propres | Spécificité |
+|---|---|---|
+| `TOUS` | aucune | 0 |
+| `JOURS_SEMAINE` | `joursSemaine` | 1 |
+| `PLAGE` | `dateDebut`, `dateFin` (bornes incluses) | 2 |
+| `DATES` | `dates` | 3 |
+
+Le stand « Autres - Bourse », ouvert 10 h-12 h puis 14 h-fermeture sur les douze
+jours du festival, est **une** règle à deux fenêtres au lieu de vingt-quatre
+lignes datées. Sur la fixture de 63 stands, le rapport est du même ordre
+partout : 714 fenêtres datées pour ~83 règles.
+
+`HoraireStandResolver` résout tout cela **jour calendaire par jour calendaire**,
+en trois couches :
+
+1. **une fenêtre datée ce jour-là** (`OuvertureStand`/`IndisponibiliteStand`) →
+   elle gagne, seule, et remplace *entièrement* ce que les règles disaient de ce
+   jour ;
+2. **sinon les règles qui couvrent ce jour** → on ne garde que celles de
+   spécificité maximale et on prend l'union de leurs fenêtres. Deux règles de
+   même spécificité et de modes opposés sur des jours qui se croisent sont
+   refusées à l'écriture (`ReferenceDataService.validateHoraires`) ; le résolveur
+   garde malgré tout un arbitrage déterministe pour une donnée arrivée
+   autrement (un fichier de scénario écrit à la main) : `OUVERTURE` l'emporte,
+   parce que c'est la lecture la plus restrictive des deux ;
+3. **sinon** → rien, donc ouvert toute la journée, le défaut historique.
+
+Le résultat est toujours **un seul mode par jour**, ce qui préserve par
+construction l'invariant des trois états ci-dessus : ni
+`Creneau.segmentsOuvertsMinutes`, ni les contraintes, ni le solveur, ni les
+exports n'ont eu à changer quand les règles sont apparues.
+
+L'expansion n'est jamais écrite sur les listes datées : elle vit à côté, dans
+`Stand.setFenetresEffectives(...)`, et c'est
+`getIndisponibilitesEffectives()`/`getOuverturesEffectives()` que lit
+`Creneau` — avec repli sur les listes datées tant qu'aucune résolution n'a
+tourné. Un stand résolu peut donc repasser par une sauvegarde (ce que fait tout
+stand atteint via un `PlanningFestival`) sans figer son expansion en quelques
+centaines de lignes datées. Côté service, la distinction est explicite :
+`listStands()` rend la vue CRUD (règles + exceptions, brutes), et
+`listStandsResolus()` la vue effective, résolue sur les jours du groupe de
+créneaux actif — c'est elle que prennent le solveur, la génération de postes et
+l'analyse de faisabilité.
+
+**Limite assumée** : une exception *remplace* la journée au lieu de se
+soustraire aux règles. « Ouvert 10 h-12 h / 14 h-fermeture tous les jours, sauf
+le 14 juillet après-midi » demande donc de ressaisir la journée du 14 en
+exception. C'est le prix de l'invariant à un mode par jour ; l'alternative
+serait de mélanger les deux modes sur une même journée, précisément l'ambiguïté
+que cet invariant existe pour écarter.
+
+Une base saisie avant les règles n'a rien à migrer : ses lignes datées gardent
+exactement leur sens (ce sont les exceptions). L'action **« Compacter les
+horaires »** (`CompactageHoraires`, `POST /api/stands/compactage-horaires`) en
+dérive à la demande les règles équivalentes, et ne réécrit un stand que si les
+règles proposées reproduisent ses propres segments ouverts — vérifié en les
+rejouant contre les vrais créneaux (`ecartMaximalMinutes`). Le seul écart toléré
+est d'une minute, celle que récupère un ancien `23:59` devenu la fermeture
+réelle ; il est rapporté stand par stand plutôt que corrigé en silence.
 
 `PlanningService.construirePostes` génère un poste par place à pourvoir et par
 segment ouvert (voir plus bas) — un stand fermé sur tout un créneau n'y génère

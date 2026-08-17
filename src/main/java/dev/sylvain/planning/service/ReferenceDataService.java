@@ -18,8 +18,11 @@ import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.DecoupageAutoConfig;
 import dev.sylvain.planning.domain.Emplacement;
+import dev.sylvain.planning.domain.FenetreHoraire;
 import dev.sylvain.planning.domain.GroupeCreneau;
+import dev.sylvain.planning.domain.HoraireStand;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
+import dev.sylvain.planning.domain.ModeHoraire;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
@@ -101,17 +104,36 @@ public class ReferenceDataService {
 
     /* -------------------------------- Stands ------------------------------- */
 
+    /**
+     * Stands as entered: the recurring {@link HoraireStand} rules and the dated
+     * exceptions, side by side, with no expansion. This is the CRUD view — what
+     * the admin UI edits and what a save writes back. Anything that needs the
+     * <em>effective</em> windows of a given day wants
+     * {@link #listStandsResolus()} instead.
+     */
     public List<Stand> listStands() {
         return repository == null ? List.of() : repository.listStands();
     }
 
+    /**
+     * Stands with their rules already expanded against the active timeslot
+     * group's days, so {@link Creneau#segmentsOuvertsMinutes(Stand)} sees the
+     * effective windows — what the solver, the poste generation and the
+     * feasibility analysis all build on.
+     *
+     * <p>The expansion lands on {@link Stand#setFenetresEffectives} and never on
+     * the persisted lists, so these instances stay safe to hand to a save path
+     * (see {@link HoraireStandResolver}).</p>
+     */
+    public List<Stand> listStandsResolus() {
+        List<Stand> stands = listStands();
+        HoraireStandResolver.appliquer(stands, listCreneauxGroupeActif());
+        return stands;
+    }
+
     public Stand createStand(Stand stand) {
         stand.setId(requiredId(stand.getId(), "stand id"));
-        validateEffectifs(stand);
-        validateIndisponibilites(stand);
-        validateOuvertures(stand);
-        validateModesExclusifsParJour(stand);
-        validateTypologies(stand);
+        validateStand(stand);
         repository.saveStand(stand);
         markModified();
         return stand;
@@ -122,14 +144,19 @@ public class ReferenceDataService {
             throw new NotFoundException("Stand not found: " + id);
         }
         stand.setId(id);
+        validateStand(stand);
+        repository.saveStand(stand);
+        markModified();
+        return stand;
+    }
+
+    private void validateStand(Stand stand) {
         validateEffectifs(stand);
         validateIndisponibilites(stand);
         validateOuvertures(stand);
         validateModesExclusifsParJour(stand);
+        validateHoraires(stand);
         validateTypologies(stand);
-        repository.saveStand(stand);
-        markModified();
-        return stand;
     }
 
     /** Every proposed typologie must reference an id already present in the {@code typologie} referential. */
@@ -158,17 +185,21 @@ public class ReferenceDataService {
         }
     }
 
-    /** Every closure window must be a genuine, same-day interval — see {@code IndisponibiliteStand}. */
+    /**
+     * Every closure window must be a genuine, same-day interval — see
+     * {@code IndisponibiliteStand}. A {@code null} {@code heureFin} is
+     * accepted and means "until closing time".
+     */
     private void validateIndisponibilites(Stand stand) {
         if (stand.getIndisponibilites() == null) {
             return;
         }
         for (IndisponibiliteStand indispo : stand.getIndisponibilites()) {
-            if (indispo.getDate() == null || indispo.getHeureDebut() == null || indispo.getHeureFin() == null) {
-                throw new IllegalArgumentException("Une indisponibilité de stand requiert une date, une heure de "
-                        + "début et une heure de fin");
+            if (indispo.getDate() == null || indispo.getHeureDebut() == null) {
+                throw new IllegalArgumentException("Une indisponibilité de stand requiert une date et une heure de "
+                        + "début (l'heure de fin peut être vide : jusqu'à la fermeture)");
             }
-            if (!indispo.getHeureFin().isAfter(indispo.getHeureDebut())) {
+            if (indispo.getHeureFin() != null && !indispo.getHeureFin().isAfter(indispo.getHeureDebut())) {
                 throw new IllegalArgumentException(
                         "heureFin (" + indispo.getHeureFin() + ") doit être après heureDebut (" + indispo.getHeureDebut()
                                 + ") — une indisponibilité ne peut pas chevaucher minuit, entrez-en deux");
@@ -176,21 +207,104 @@ public class ReferenceDataService {
         }
     }
 
-    /** Every opening window must be a genuine, same-day interval — see {@code OuvertureStand}. */
+    /**
+     * Every opening window must be a genuine, same-day interval — see
+     * {@code OuvertureStand}. A {@code null} {@code heureFin} is accepted and
+     * means "until closing time".
+     */
     private void validateOuvertures(Stand stand) {
         if (stand.getOuvertures() == null) {
             return;
         }
         for (OuvertureStand ouverture : stand.getOuvertures()) {
-            if (ouverture.getDate() == null || ouverture.getHeureDebut() == null || ouverture.getHeureFin() == null) {
-                throw new IllegalArgumentException(
-                        "Une ouverture de stand requiert une date, une heure de début et une heure de fin");
+            if (ouverture.getDate() == null || ouverture.getHeureDebut() == null) {
+                throw new IllegalArgumentException("Une ouverture de stand requiert une date et une heure de début "
+                        + "(l'heure de fin peut être vide : jusqu'à la fermeture)");
             }
-            if (!ouverture.getHeureFin().isAfter(ouverture.getHeureDebut())) {
+            if (ouverture.getHeureFin() != null && !ouverture.getHeureFin().isAfter(ouverture.getHeureDebut())) {
                 throw new IllegalArgumentException(
                         "heureFin (" + ouverture.getHeureFin() + ") doit être après heureDebut ("
                                 + ouverture.getHeureDebut() + ") — une ouverture ne peut pas chevaucher minuit, "
                                 + "entrez-en deux");
+            }
+        }
+    }
+
+    /**
+     * Recurring rules must each be self-consistent (a selector with the data it
+     * needs, at least one usable window), and the set of them must not leave the
+     * resolver an arbitrary choice to make.
+     *
+     * <p>That second part is the interesting one: two rules of the <b>same</b>
+     * day selector, whose day sets intersect, but with opposite
+     * {@link ModeHoraire}, would give a day both "closed except…" and "open
+     * only…" at the same specificity. There is no non-arbitrary winner, so it is
+     * rejected here — exactly as {@link #validateModesExclusifsParJour} does for
+     * the dated exceptions. Two rules of <i>different</i> specificity are fine
+     * and expected ("open 14:00→closing every day, closed all day on the 14th"):
+     * the more specific one simply wins.</p>
+     */
+    private void validateHoraires(Stand stand) {
+        List<HoraireStand> horaires = stand.getHoraires();
+        if (horaires == null || horaires.isEmpty()) {
+            return;
+        }
+        for (HoraireStand horaire : horaires) {
+            validateHoraire(horaire);
+        }
+        for (int i = 0; i < horaires.size(); i++) {
+            for (int j = i + 1; j < horaires.size(); j++) {
+                HoraireStand a = horaires.get(i);
+                HoraireStand b = horaires.get(j);
+                if (a.getMode() != b.getMode() && a.joursSeChevauchentAvec(b)) {
+                    throw new IllegalArgumentException("Deux horaires de même portée (" + a.getJours()
+                            + ") portant sur les mêmes jours ne peuvent pas être l'un une ouverture et l'autre une "
+                            + "fermeture pour le stand " + stand.getId()
+                            + " — utilisez une portée plus précise pour celui qui doit primer");
+                }
+            }
+        }
+    }
+
+    private void validateHoraire(HoraireStand horaire) {
+        if (horaire.getFenetres().isEmpty()) {
+            throw new IllegalArgumentException("Un horaire de stand requiert au moins une fenêtre horaire");
+        }
+        for (FenetreHoraire fenetre : horaire.getFenetres()) {
+            if (fenetre.getHeureDebut() == null) {
+                throw new IllegalArgumentException("Une fenêtre horaire requiert une heure de début "
+                        + "(l'heure de fin peut être vide : jusqu'à la fermeture)");
+            }
+            if (fenetre.getHeureFin() != null && !fenetre.getHeureFin().isAfter(fenetre.getHeureDebut())) {
+                throw new IllegalArgumentException("heureFin (" + fenetre.getHeureFin() + ") doit être après heureDebut ("
+                        + fenetre.getHeureDebut() + ") — une fenêtre horaire ne peut pas chevaucher minuit, "
+                        + "entrez-en deux");
+            }
+        }
+        switch (horaire.getJours()) {
+            case JOURS_SEMAINE -> {
+                if (horaire.getJoursSemaine().isEmpty()) {
+                    throw new IllegalArgumentException(
+                            "Un horaire de portée JOURS_SEMAINE requiert au moins un jour de la semaine");
+                }
+            }
+            case PLAGE -> {
+                if (horaire.getDateDebut() == null || horaire.getDateFin() == null) {
+                    throw new IllegalArgumentException(
+                            "Un horaire de portée PLAGE requiert une dateDebut et une dateFin");
+                }
+                if (horaire.getDateFin().isBefore(horaire.getDateDebut())) {
+                    throw new IllegalArgumentException("dateFin (" + horaire.getDateFin() + ") doit être après ou égale "
+                            + "à dateDebut (" + horaire.getDateDebut() + ")");
+                }
+            }
+            case DATES -> {
+                if (horaire.getDates().isEmpty()) {
+                    throw new IllegalArgumentException("Un horaire de portée DATES requiert au moins une date");
+                }
+            }
+            case TOUS -> {
+                // Nothing else to check: the selector carries no data of its own.
             }
         }
     }
@@ -221,6 +335,42 @@ public class ReferenceDataService {
     public void deleteStand(String id) {
         repository.deleteStand(id);
         markModified();
+    }
+
+    /**
+     * Rewrites every stand's hand-entered dated windows as the recurring
+     * horaires they repeat, against the active timeslot group's days. With
+     * {@code appliquer} false nothing is written: the returned report describes
+     * what the operation <em>would</em> do, which is what makes it safe to show
+     * before committing to it.
+     *
+     * <p>Only stands the compaction proved equivalent are saved
+     * ({@link CompactageHoraires#ecartMaximalMinutes}); the others come back in
+     * the report with the reason they were left alone. Each one is saved
+     * individually so a single problematic stand cannot roll back the rest.</p>
+     */
+    public CompactageHoraires.RapportCompactage compacterHoraires(boolean appliquer) {
+        List<Stand> stands = listStands();
+        List<Creneau> creneaux = listCreneauxGroupeActif();
+        CompactageHoraires.RapportCompactage rapport = CompactageHoraires.compacter(stands, creneaux, appliquer);
+        if (!appliquer) {
+            return rapport;
+        }
+        Set<String> compactes = rapport.stands().stream()
+                .filter(CompactageHoraires.LigneCompactage::compacte)
+                .map(CompactageHoraires.LigneCompactage::standId)
+                .collect(Collectors.toSet());
+        boolean modifie = false;
+        for (Stand stand : stands) {
+            if (compactes.contains(stand.getId())) {
+                repository.saveStand(stand);
+                modifie = true;
+            }
+        }
+        if (modifie) {
+            markModified();
+        }
+        return rapport;
     }
 
     /* ----------------------------- Emplacements ----------------------------- */

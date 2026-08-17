@@ -80,7 +80,7 @@ public class PlanningMcpTools {
     FeasibilityReport analyser_faisabilite() {
         return feasibilityAnalyzer.analyser(
                 referenceDataService.listAnimateurs(),
-                referenceDataService.listStands(),
+                referenceDataService.listStandsResolus(),
                 referenceDataService.listCreneauxGroupeActif());
     }
 

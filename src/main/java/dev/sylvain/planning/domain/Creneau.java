@@ -144,14 +144,22 @@ public class Creneau {
      * </ul>
      *
      * <p>A window counts against this slot only when its {@code date} is this
-     * slot's start date or the following calendar day — the latter covers a
-     * window that falls after midnight inside a slot crossing midnight (e.g.
-     * a 20:00-02:00 slot closed 00:30-01:30 on the next day), mirroring how
-     * {@link #getDureeMinutes()} itself treats a slot ending at or before its
-     * start as crossing into the next day. A window that isn't
-     * {@code estValide()} (own {@code heureFin} not strictly after its
-     * {@code heureDebut}) is ignored defensively — a window may not itself
-     * cross midnight.</p>
+     * slot's start date or — <b>for a slot that actually crosses midnight</b>
+     * — the following calendar day, which covers a window falling after
+     * midnight inside such a slot (e.g. a 20:00-02:00 slot closed 00:30-01:30
+     * on the next day), mirroring how {@link #getDureeMinutes()} itself treats
+     * a slot ending at or before its start as crossing into the next day. A
+     * window that isn't {@code estValide()} (own {@code heureFin} before or
+     * equal to its {@code heureDebut}) is ignored defensively — a window may
+     * not itself cross midnight. A window with a {@code null}
+     * {@code heureFin} runs to the end of this slot: that is what "open from
+     * 14:00 until closing" means, whichever hour this particular day closes at.</p>
+     *
+     * <p>The windows read here are the <b>effective</b> ones
+     * ({@link Stand#getOuverturesEffectives()}): the dated exceptions plus
+     * whatever {@link HoraireStand} rules expand to, when a resolution has run.
+     * With no rules in play they are the dated lists themselves, so this method
+     * behaves exactly as it did before rules existed.</p>
      */
     public List<int[]> segmentsOuvertsMinutes(Stand stand) {
         int dureeMinutes = getDureeMinutes();
@@ -189,27 +197,22 @@ public class Creneau {
 
     /** Closure windows of {@code stand} overlapping this slot, clamped to {@code [0, dureeSecondes]} and expressed in seconds since this slot's start. */
     private List<int[]> fermeturesEnSecondes(Stand stand, int dureeSecondes) {
-        if (stand == null || stand.getIndisponibilites().isEmpty() || heureDebut == null || date == null) {
+        if (stand == null || stand.getIndisponibilitesEffectives().isEmpty() || heureDebut == null || date == null) {
             return List.of();
         }
         int debutSlotSecondes = heureDebut.toSecondOfDay();
         List<int[]> fermetures = new ArrayList<>();
-        for (IndisponibiliteStand indispo : stand.getIndisponibilites()) {
+        for (IndisponibiliteStand indispo : stand.getIndisponibilitesEffectives()) {
             if (!indispo.estValide()) {
                 continue;
             }
-            int decalageJour;
-            if (indispo.getDate().equals(date)) {
-                decalageJour = 0;
-            } else if (indispo.getDate().equals(date.plusDays(1))) {
-                decalageJour = SECONDES_PAR_JOUR;
-            } else {
+            int decalageJour = decalageJourFenetre(indispo.getDate());
+            if (decalageJour < 0) {
                 continue;
             }
             int indispoDebut = decalageJour + indispo.getHeureDebut().toSecondOfDay() - debutSlotSecondes;
-            int indispoFin = decalageJour + indispo.getHeureFin().toSecondOfDay() - debutSlotSecondes;
             int debut = Math.max(0, indispoDebut);
-            int fin = Math.min(dureeSecondes, indispoFin);
+            int fin = finFenetreEnSecondes(indispo.getHeureFin(), decalageJour, debutSlotSecondes, dureeSecondes);
             if (fin > debut) {
                 fermetures.add(new int[] {debut, fin});
             }
@@ -217,51 +220,89 @@ public class Creneau {
         return fermetures;
     }
 
-    /** Opening windows of {@code stand} overlapping this slot, clamped to {@code [0, dureeSecondes]} and expressed in seconds since this slot's start. */
+    /**
+     * Offset in seconds to add to a window dated {@code dateFenetre} to place
+     * it on this slot's timeline, or {@code -1} when that date has no bearing
+     * on this slot: {@code 0} for this slot's own date, one day for the next
+     * one — <b>only</b> when this slot really crosses midnight, since a window
+     * dated the day after a 10:00-20:00 slot cannot possibly overlap it.
+     */
+    private int decalageJourFenetre(LocalDate dateFenetre) {
+        if (dateFenetre.equals(date)) {
+            return 0;
+        }
+        if (traverseMinuit() && dateFenetre.equals(date.plusDays(1))) {
+            return SECONDES_PAR_JOUR;
+        }
+        return -1;
+    }
+
+    /**
+     * End of a window on this slot's timeline, clamped to the slot: a
+     * {@code null} {@code heureFin} means "until closing time" and therefore
+     * lands exactly on this slot's end, whatever hour that is.
+     */
+    private static int finFenetreEnSecondes(LocalTime heureFin, int decalageJour, int debutSlotSecondes,
+            int dureeSecondes) {
+        if (heureFin == null) {
+            return dureeSecondes;
+        }
+        return Math.min(dureeSecondes, decalageJour + heureFin.toSecondOfDay() - debutSlotSecondes);
+    }
+
+    /** True when this slot runs past midnight, i.e. its end is at or before its start. */
+    private boolean traverseMinuit() {
+        return heureDebut != null && heureFin != null && !heureFin.isAfter(heureDebut);
+    }
+
     /**
      * True when {@code stand} has at least one valid {@link OuvertureStand}
-     * dated this slot's day (or the day after, for a slot crossing midnight)
-     * — regardless of whether its time window actually overlaps this slot.
-     * Deciding "closed-by-default" mode on this alone (rather than on whether
-     * {@link #ouverturesEnSecondes} came back non-empty) is what makes a slot
-     * that happens to fall entirely outside every opening window that day
-     * come out fully closed, instead of wrongly falling back to open-by-default.
+     * bearing on this slot's day — regardless of whether its time window
+     * actually overlaps this slot. Deciding "closed-by-default" mode on this
+     * alone (rather than on whether {@link #ouverturesEnSecondes} came back
+     * non-empty) is what makes a slot that happens to fall entirely outside
+     * every opening window that day come out fully closed, instead of wrongly
+     * falling back to open-by-default.
+     *
+     * <p>"Bearing on this slot's day" goes through
+     * {@link #decalageJourFenetre}, so the next day only counts for a slot that
+     * genuinely crosses midnight. Reading the next day unconditionally — as
+     * this did before recurring rules existed — let an opening dated the day
+     * <i>after</i> a 10:00-20:00 slot flip that slot to closed-by-default, and
+     * so silently close a stand that a same-day closure exception meant to shut
+     * for two hours only. Harmless while openings were rare and hand-dated; not
+     * once a rule expands one onto every festival day.</p>
      */
     private boolean jourEnModeOuverture(Stand stand) {
-        if (stand == null || stand.getOuvertures().isEmpty() || date == null) {
+        if (stand == null || stand.getOuverturesEffectives().isEmpty() || date == null) {
             return false;
         }
-        for (OuvertureStand ouverture : stand.getOuvertures()) {
-            if (ouverture.estValide()
-                    && (ouverture.getDate().equals(date) || ouverture.getDate().equals(date.plusDays(1)))) {
+        for (OuvertureStand ouverture : stand.getOuverturesEffectives()) {
+            if (ouverture.estValide() && decalageJourFenetre(ouverture.getDate()) >= 0) {
                 return true;
             }
         }
         return false;
     }
 
+    /** Opening windows of {@code stand} overlapping this slot, clamped to {@code [0, dureeSecondes]} and expressed in seconds since this slot's start. */
     private List<int[]> ouverturesEnSecondes(Stand stand, int dureeSecondes) {
-        if (stand == null || stand.getOuvertures().isEmpty() || heureDebut == null || date == null) {
+        if (stand == null || stand.getOuverturesEffectives().isEmpty() || heureDebut == null || date == null) {
             return List.of();
         }
         int debutSlotSecondes = heureDebut.toSecondOfDay();
         List<int[]> ouvertures = new ArrayList<>();
-        for (OuvertureStand ouverture : stand.getOuvertures()) {
+        for (OuvertureStand ouverture : stand.getOuverturesEffectives()) {
             if (!ouverture.estValide()) {
                 continue;
             }
-            int decalageJour;
-            if (ouverture.getDate().equals(date)) {
-                decalageJour = 0;
-            } else if (ouverture.getDate().equals(date.plusDays(1))) {
-                decalageJour = SECONDES_PAR_JOUR;
-            } else {
+            int decalageJour = decalageJourFenetre(ouverture.getDate());
+            if (decalageJour < 0) {
                 continue;
             }
             int ouvertureDebut = decalageJour + ouverture.getHeureDebut().toSecondOfDay() - debutSlotSecondes;
-            int ouvertureFin = decalageJour + ouverture.getHeureFin().toSecondOfDay() - debutSlotSecondes;
             int debut = Math.max(0, ouvertureDebut);
-            int fin = Math.min(dureeSecondes, ouvertureFin);
+            int fin = finFenetreEnSecondes(ouverture.getHeureFin(), decalageJour, debutSlotSecondes, dureeSecondes);
             if (fin > debut) {
                 ouvertures.add(new int[] {debut, fin});
             }

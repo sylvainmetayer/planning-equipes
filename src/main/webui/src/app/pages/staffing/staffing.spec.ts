@@ -14,6 +14,7 @@ function stand(overrides: Partial<Stand> & { id: string }): Stand {
     emplacement: null,
     indisponibilites: [],
     ouvertures: [],
+    horaires: [],
     ...overrides
   };
 }

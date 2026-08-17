@@ -63,6 +63,10 @@
       },
       "required" : [ "date", "heureDebut", "heureFin", "id" ]
     },
+    "DayOfWeek" : {
+      "type" : "string",
+      "enum" : [ "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY" ]
+    },
     "DecoupageAutoDto" : {
       "type" : "object",
       "properties" : {
@@ -99,6 +103,18 @@
       },
       "required" : [ "id", "nom" ]
     },
+    "FenetreHoraireDto" : {
+      "type" : "object",
+      "properties" : {
+        "heureDebut" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "heureFin" : {
+          "$ref" : "#/$defs/LocalTime"
+        }
+      },
+      "required" : [ "heureDebut" ]
+    },
     "FestivalDto" : {
       "type" : "object",
       "properties" : {
@@ -107,6 +123,46 @@
         }
       },
       "required" : [ "dateDebut" ]
+    },
+    "HoraireStandDto" : {
+      "type" : "object",
+      "properties" : {
+        "dateDebut" : {
+          "$ref" : "#/$defs/LocalDate"
+        },
+        "dateFin" : {
+          "$ref" : "#/$defs/LocalDate"
+        },
+        "dates" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/$defs/LocalDate"
+          }
+        },
+        "fenetres" : {
+          "minItems" : 1,
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/$defs/FenetreHoraireDto"
+          }
+        },
+        "jours" : {
+          "$ref" : "#/$defs/TypeJoursHoraire"
+        },
+        "joursSemaine" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/$defs/DayOfWeek"
+          }
+        },
+        "mode" : {
+          "$ref" : "#/$defs/ModeHoraire"
+        },
+        "motif" : {
+          "type" : "string"
+        }
+      },
+      "required" : [ "fenetres", "mode" ]
     },
     "IndisponibiliteStandDto" : {
       "type" : "object",
@@ -124,7 +180,7 @@
           "type" : "string"
         }
       },
-      "required" : [ "date", "heureDebut", "heureFin" ]
+      "required" : [ "date", "heureDebut" ]
     },
     "LocalDate" : {
       "type" : "string",
@@ -139,6 +195,10 @@
       "additionalProperties" : {
         "$ref" : "#/$defs/NiveauCompetence"
       }
+    },
+    "ModeHoraire" : {
+      "type" : "string",
+      "enum" : [ "OUVERTURE", "FERMETURE" ]
     },
     "NiveauCompetence" : {
       "type" : "string",
@@ -164,7 +224,7 @@
           "type" : "string"
         }
       },
-      "required" : [ "date", "heureDebut", "heureFin" ]
+      "required" : [ "date", "heureDebut" ]
     },
     "ParametresDecoupageDto" : {
       "type" : "object",
@@ -288,6 +348,12 @@
         "emplacementId" : {
           "type" : "string"
         },
+        "horaires" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/$defs/HoraireStandDto"
+          }
+        },
         "id" : {
           "type" : "string",
           "minLength" : 1
@@ -329,6 +395,10 @@
     "StrategieCouverturePendantPause" : {
       "type" : "string",
       "enum" : [ "FERMETURE", "RELEVE" ]
+    },
+    "TypeJoursHoraire" : {
+      "type" : "string",
+      "enum" : [ "TOUS", "JOURS_SEMAINE", "PLAGE", "DATES" ]
     },
     "TypologieDto" : {
       "type" : "object",

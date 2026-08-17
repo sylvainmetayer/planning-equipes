@@ -211,6 +211,100 @@ class CreneauTest {
         assertThat(creneauFerme.segmentsOuvertsMinutes(stand)).containsExactly(new int[] {120, 660});
     }
 
+    /* ---------------- « Jusqu'à la fermeture » (heureFin nulle) ---------------- */
+
+    @Test
+    void ouvertureSansHeureFinCourtJusquALaFinDuCreneau() {
+        Creneau creneau = new Creneau(1L, 1, JOUR, LocalTime.of(10, 0), LocalTime.of(20, 0));
+
+        assertThat(creneau.segmentsOuvertsMinutes(ouvrir(LocalTime.of(14, 0), null)))
+                .containsExactly(new int[] {240, 600});
+    }
+
+    @Test
+    void fermetureSansHeureFinFermeJusquALaFinDuCreneau() {
+        Creneau creneau = new Creneau(1L, 1, JOUR, LocalTime.of(10, 0), LocalTime.of(20, 0));
+
+        assertThat(creneau.segmentsOuvertsMinutes(fermer(LocalTime.of(14, 0), null)))
+                .containsExactly(new int[] {0, 240});
+    }
+
+    /**
+     * The point of the open-ended form: the same window covers a day closing at
+     * 20:00 and a day closing at midnight, where a concrete end time would need
+     * two entries — and could not even name midnight, since a window may not
+     * cross it (hence the {@code 23:59} this replaces).
+     */
+    @Test
+    void uneMemeOuvertureSansFinSAdapteALAmplitudeDuJour() {
+        Stand stand = ouvrir(LocalTime.of(14, 0), null);
+
+        Creneau jourCourt = new Creneau(1L, 1, JOUR, LocalTime.of(10, 0), LocalTime.of(20, 0));
+        Creneau jourJusquaMinuit = new Creneau(2L, 1, JOUR, LocalTime.of(10, 0), LocalTime.MIDNIGHT);
+
+        assertThat(jourCourt.segmentsOuvertsMinutes(stand)).containsExactly(new int[] {240, 600});
+        assertThat(jourJusquaMinuit.segmentsOuvertsMinutes(stand)).containsExactly(new int[] {240, 840});
+    }
+
+    @Test
+    void ouvertureSansHeureFinCommencantApresLeCreneauNeLOuvrePas() {
+        Creneau matin = new Creneau(1L, 1, JOUR, LocalTime.of(10, 0), LocalTime.of(12, 0));
+
+        assertThat(matin.segmentsOuvertsMinutes(ouvrir(LocalTime.of(14, 0), null))).isEmpty();
+    }
+
+    /* ------------------- Fenêtre datée du lendemain ------------------- */
+
+    /**
+     * A window dated the day <i>after</i> a slot that does not cross midnight
+     * cannot overlap it, so it must not decide that slot's mode either. Reading
+     * the next day unconditionally — as this did before recurring horaires — let
+     * an opening dated the following day flip a 10:00-20:00 slot to
+     * closed-by-default, silently shutting a stand whose only statement that day
+     * was a two-hour closure. Harmless while openings were hand-dated and rare;
+     * not once a rule expands one onto every festival day.
+     */
+    @Test
+    void ouvertureDuLendemainNAffectePasUnCreneauQuiNeTraversePasMinuit() {
+        Creneau journee = new Creneau(1L, 1, JOUR, LocalTime.of(10, 0), LocalTime.of(20, 0));
+        Stand stand = new Stand("S", "S", java.util.Set.of(), 1, 1, false);
+        stand.setIndisponibilites(List.of(
+                new IndisponibiliteStand(null, JOUR, LocalTime.of(14, 0), LocalTime.of(16, 0), null)));
+        stand.setOuvertures(List.of(
+                new OuvertureStand(null, JOUR.plusDays(1), LocalTime.of(10, 0), LocalTime.of(20, 0), null)));
+
+        assertThat(journee.segmentsOuvertsMinutes(stand))
+                .containsExactly(new int[] {0, 240}, new int[] {360, 600});
+    }
+
+    /* --------------------- Fenêtres effectives --------------------- */
+
+    /**
+     * With no resolution having run, the effective windows are the dated lists
+     * themselves — which is what keeps every caller that never resolves anything
+     * behaving exactly as it did before rules existed.
+     */
+    @Test
+    void sansResolutionLesFenetresEffectivesSontLesFenetresDatees() {
+        Stand stand = fermer(LocalTime.of(14, 0), LocalTime.of(16, 0));
+
+        assertThat(stand.getIndisponibilitesEffectives()).isSameAs(stand.getIndisponibilites());
+        assertThat(stand.getOuverturesEffectives()).isSameAs(stand.getOuvertures());
+    }
+
+    /** Once resolved, the slot reads the effective windows and not the persisted ones. */
+    @Test
+    void unSegmentSuitLesFenetresEffectivesQuandEllesSontRenseignees() {
+        Creneau creneau = new Creneau(1L, 1, JOUR, LocalTime.of(10, 0), LocalTime.of(20, 0));
+        Stand stand = new Stand("S", "S", java.util.Set.of(), 1, 1, false);
+        stand.setFenetresEffectives(List.of(), List.of(
+                new OuvertureStand(null, JOUR, LocalTime.of(14, 0), null, null)));
+
+        assertThat(creneau.segmentsOuvertsMinutes(stand)).containsExactly(new int[] {240, 600});
+        // The persisted lists stayed empty: a save could not freeze the expansion.
+        assertThat(stand.getOuvertures()).isEmpty();
+    }
+
     private static Stand fermer(LocalTime debut, LocalTime fin) {
         Stand stand = new Stand("S", "S", java.util.Set.of(), 1, 1, false);
         stand.setIndisponibilites(List.of(new IndisponibiliteStand(null, JOUR, debut, fin, null)));

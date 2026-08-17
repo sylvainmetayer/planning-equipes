@@ -1,0 +1,94 @@
+/* Recurring-horaires editor of the stand form and the stand bulk edit, plus its
+   day-by-day preview strip. Only what Material doesn't already theme: the card
+   that groups one rule's fields, and the preview cells' colour coding. */
+
+.horaires-section .horaire-carte {
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium, 0.75rem);
+  padding: 0.75rem 0.75rem 0.25rem;
+  margin-bottom: 0.75rem;
+  background: var(--mat-sys-surface-container-low);
+}
+
+.horaire-entete,
+.horaire-plage,
+.horaire-fenetre-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.horaire-entete mat-form-field,
+.horaire-plage mat-form-field,
+.horaire-fenetre-row mat-form-field {
+  flex: 1 1 10rem;
+}
+
+.horaire-jours-semaine {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr));
+  gap: 0.25rem 0.75rem;
+  padding: 0 0 0.75rem;
+}
+
+.horaire-dates,
+.horaire-motif {
+  width: 100%;
+}
+
+/* The windows of one rule are its substance, so they sit indented under the
+   rule's own header rather than reading as siblings of it. */
+.horaire-fenetres {
+  border-left: 2px solid var(--mat-sys-outline-variant);
+  padding-left: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.horaires-apercu .apercu-bande {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
+  gap: 0.5rem;
+}
+
+.apercu-jour {
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-left: 4px solid var(--mat-sys-primary);
+  border-radius: var(--mat-sys-corner-small, 0.5rem);
+  padding: 0.4rem 0.5rem;
+  font-size: 0.8rem;
+  line-height: 1.25;
+  overflow: hidden;
+}
+
+.apercu-date {
+  display: block;
+  font-weight: 600;
+}
+
+.apercu-detail {
+  display: block;
+  color: var(--mat-sys-on-surface-variant);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A day the rules close entirely: worth spotting at a glance, since it is the
+   most common surprise when a rule's scope is narrower than intended. */
+.apercu-jour.apercu-ferme {
+  border-left-color: var(--mat-sys-error);
+  background: var(--mat-sys-error-container);
+}
+
+/* A day stated by hand, which therefore ignores every rule. */
+.apercu-jour.apercu-exception {
+  border-left-color: var(--mat-sys-tertiary);
+  border-left-style: dashed;
+}
+
+@media (max-width: 40rem) {
+  .horaires-apercu .apercu-bande {
+    grid-template-columns: 1fr;
+  }
+}

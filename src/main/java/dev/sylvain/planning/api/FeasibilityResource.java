@@ -34,13 +34,15 @@ public class FeasibilityResource {
      * Créneaux are read from the <em>active</em> group only, like
      * {@code PlanningService} does when it builds a problem: créneaux of the
      * other groups are not part of the next solve, and counting them would
-     * report shortfalls on days nobody intends to schedule.
+     * report shortfalls on days nobody intends to schedule. Stands come
+     * resolved, for the same reason: the analysis decides which stands are open
+     * on a créneau, so it has to see what the recurring horaires expand to.
      */
     @GET
     public FeasibilityReport analyser() {
         return feasibilityAnalyzer.analyser(
                 referenceDataService.listAnimateurs(),
-                referenceDataService.listStands(),
+                referenceDataService.listStandsResolus(),
                 referenceDataService.listCreneauxGroupeActif());
     }
 }

@@ -17,12 +17,19 @@ import java.util.Objects;
  * as two windows, one per calendar day. This keeps the overlap arithmetic in
  * {@code Creneau} simple and mirrors how a créneau itself is never allowed to
  * span more than "start day + one day".</p>
+ *
+ * <p>{@code heureFin} may however be {@code null}, meaning "until closing
+ * time": the window then runs to the end of whatever créneau it is evaluated
+ * against. That is both what "closed from 14:00 onwards" means and the way out
+ * of the {@code 23:59} stand-in a day ending at midnight would otherwise force
+ * — see {@link FenetreHoraire}.</p>
  */
 public class IndisponibiliteStand {
 
     private Long id;
     private LocalDate date;
     private LocalTime heureDebut;
+    /** {@code null} = until the end of the evaluated créneau ("fin de journée"). */
     private LocalTime heureFin;
     /** Free-text reason, nullable — purely informative, never read by the solver. */
     private String motif;
@@ -78,9 +85,9 @@ public class IndisponibiliteStand {
         this.motif = motif;
     }
 
-    /** True when {@code heureDebut}/{@code heureFin} form a non-empty, same-day window. */
+    /** True when {@code heureDebut}/{@code heureFin} form a non-empty, same-day window (an open end counts as valid). */
     public boolean estValide() {
-        return date != null && heureDebut != null && heureFin != null && heureFin.isAfter(heureDebut);
+        return date != null && heureDebut != null && (heureFin == null || heureFin.isAfter(heureDebut));
     }
 
     @Override

@@ -47,37 +47,127 @@ export interface Stand {
   /** Physical location (kiosque, mairie, ...), nullable. */
   emplacement: Emplacement | null;
   /**
-   * Closure windows, e.g. "closed 14:00-16:00 on 2026-07-18". Empty = always
-   * open (the default), unless `ouvertures` says otherwise for that day.
+   * Dated closure exceptions, e.g. "closed 14:00-16:00 on 2026-07-18". Empty =
+   * always open (the default), unless `ouvertures` or a `horaires` rule says
+   * otherwise for that day.
    */
   indisponibilites: IndisponibiliteStand[];
   /**
-   * Opening windows — the inverse of `indisponibilites`, for a stand normally
-   * closed and only staffed during specific windows. Empty = no day is
+   * Dated opening exceptions — the inverse of `indisponibilites`, for a stand
+   * normally closed and only staffed during specific windows. Empty = no day is
    * opening-only (the default). A day can never have both an entry here and
    * one in `indisponibilites`.
    */
   ouvertures: OuvertureStand[];
+  /**
+   * Recurring opening/closing rules — how a stable pattern is entered, instead
+   * of one dated window per festival day. A dated entry above always wins over
+   * these for the day it names; see `core/horaire-stand.ts` for the resolution.
+   */
+  horaires: HoraireStand[];
 }
 
-/** A single closure window of a stand — possibly only part of a créneau (issue #60). */
+/**
+ * A single dated closure window of a stand — possibly only part of a créneau
+ * (issue #60). A `null` `heureFin` means "until closing time": the window runs
+ * to the end of whatever créneau it is evaluated against.
+ */
 export interface IndisponibiliteStand {
   id: number | null;
   date: string;
   heureDebut: string;
-  heureFin: string;
+  heureFin: string | null;
   /** Free-text reason, nullable — purely informative, never read by the solver. */
   motif: string | null;
 }
 
-/** A single opening window of a stand — the inverse of `IndisponibiliteStand`. */
+/** A single dated opening window of a stand — the inverse of `IndisponibiliteStand`. */
 export interface OuvertureStand {
   id: number | null;
   date: string;
   heureDebut: string;
-  heureFin: string;
+  heureFin: string | null;
   /** Free-text reason, nullable — purely informative, never read by the solver. */
   motif: string | null;
+}
+
+/** `OUVERTURE` = open only on the listed windows; `FERMETURE` = closed only on them. */
+export type ModeHoraire = 'OUVERTURE' | 'FERMETURE';
+
+/**
+ * Which days a `HoraireStand` applies to. Also its *specificity* order, least
+ * specific first: when two rules cover the same day, the most specific one wins.
+ */
+export type TypeJoursHoraire = 'TOUS' | 'JOURS_SEMAINE' | 'PLAGE' | 'DATES';
+
+export type JourSemaine =
+  | 'MONDAY'
+  | 'TUESDAY'
+  | 'WEDNESDAY'
+  | 'THURSDAY'
+  | 'FRIDAY'
+  | 'SATURDAY'
+  | 'SUNDAY';
+
+/**
+ * A recurring opening/closing rule of a stand: windows plus the days they apply
+ * to. One rule replaces as many dated windows as there are festival days it
+ * covers — "open 10:00-12:00 then 14:00 to closing, every day" is one rule with
+ * two windows instead of twenty-four dated entries.
+ *
+ * The day selector is flat: `jours` names which of the sibling fields applies.
+ */
+export interface HoraireStand {
+  id: number | null;
+  mode: ModeHoraire;
+  jours: TypeJoursHoraire;
+  /** Only for `JOURS_SEMAINE`. */
+  joursSemaine: JourSemaine[];
+  /** Only for `PLAGE`, bounds included. */
+  dateDebut: string | null;
+  dateFin: string | null;
+  /** Only for `DATES`. */
+  dates: string[];
+  fenetres: FenetreHoraire[];
+  /** Free-text reason, nullable — purely informative, never read by the solver. */
+  motif: string | null;
+}
+
+/**
+ * One window of a `HoraireStand`, without a date — the date comes from the
+ * rule's day selector. A `null` `heureFin` means "until closing time", which is
+ * what lets one rule cover a day closing at 20:00 and a day closing at midnight.
+ */
+export interface FenetreHoraire {
+  heureDebut: string;
+  heureFin: string | null;
+}
+
+/**
+ * What `POST /api/stands/compactage-horaires` reports, per stand: dated windows
+ * before, rules and exceptions after, plus why a stand was left alone. A call
+ * with `appliquer=false` returns the same shape without writing anything.
+ */
+export interface LigneCompactage {
+  standId: string;
+  fenetresAvant: number;
+  reglesApres: number;
+  exceptionsApres: number;
+  /**
+   * Difference in minutes between the open segments before and after — non-zero
+   * only where a `23:59` window becomes a genuine "until closing time" one.
+   */
+  ecartMinutes: number;
+  compacte: boolean;
+  raison: string;
+}
+
+export interface RapportCompactage {
+  applique: boolean;
+  standsCompactes: number;
+  fenetresAvant: number;
+  fenetresApres: number;
+  stands: LigneCompactage[];
 }
 
 /** Editable GPS-located place a stand can be tied to (`/api/emplacements`). */

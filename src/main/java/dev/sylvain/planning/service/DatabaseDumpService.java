@@ -57,6 +57,8 @@ public class DatabaseDumpService {
             "creneau_stand_ouvert",
             "stand_indisponibilite",
             "stand_ouverture",
+            "stand_horaire",
+            "stand_horaire_fenetre",
             "poste_affectation",
             "contrainte_ad_hoc",
             "contrainte_animateur",
@@ -77,7 +79,7 @@ public class DatabaseDumpService {
      * could collide with one just imported.
      */
     private static final List<String> IDENTITY_TABLES = List.of("creneau", "stand_indisponibilite",
-            "stand_ouverture");
+            "stand_ouverture", "stand_horaire", "stand_horaire_fenetre");
 
     private static final Pattern STATEMENT_PATTERN = Pattern.compile(
             "^(insert\\s+into|delete\\s+from|truncate\\s+table|truncate)\\s+([a-z_][a-z0-9_]*)");

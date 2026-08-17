@@ -107,12 +107,130 @@
     </mat-form-field>
   </div>
 </div>
+<div class="bulk-field-group span-2 horaires-section">
+  <h3 i18n="@@stands.bulk.horaires.title">Horaires récurrents</h3>
+  <p class="empty-hint" i18n="@@stands.bulk.horaires.hint">
+    Applique les mêmes règles à toute la sélection — « ouvert de 14h à la fermeture, tous les jours » se règle ainsi
+    en une opération. Les fermetures et ouvertures ponctuelles de chaque stand ne sont pas touchées.
+  </p>
+  <mat-form-field appearance="outline">
+    <mat-label i18n="@@stands.bulk.horaires.mode">Que faire des horaires</mat-label>
+    <mat-select name="modeHoraires" [ngModel]="patch().horaires.mode"
+                (ngModelChange)="updateModeHoraires($event)">
+      @for (mode of modesHoraires; track mode.value) {
+        <mat-option [value]="mode.value">{{ mode.label }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  @if (patch().horaires.mode === 'AJOUTER' || patch().horaires.mode === 'REMPLACER') {
+    @for (horaire of patch().horaires.horaires; track $index; let indexHoraire = $index) {
+      <div class="horaire-carte">
+        <div class="horaire-entete">
+          <mat-form-field appearance="outline">
+            <mat-label i18n="@@stands.horaires.mode">Mode</mat-label>
+            <mat-select [name]="'bulkHoraireMode' + indexHoraire" [ngModel]="horaire.mode"
+                        (ngModelChange)="patchHoraire(indexHoraire, { mode: $event })">
+              <mat-option value="OUVERTURE" i18n="@@stands.horaires.mode.ouverture">Ouvert sur ces fenêtres</mat-option>
+              <mat-option value="FERMETURE" i18n="@@stands.horaires.mode.fermeture">Fermé sur ces fenêtres</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label i18n="@@stands.horaires.jours">Jours concernés</mat-label>
+            <mat-select [name]="'bulkHoraireJours' + indexHoraire" [ngModel]="horaire.jours"
+                        (ngModelChange)="patchHoraire(indexHoraire, { jours: $event })">
+              <mat-option value="TOUS" i18n="@@stands.horaires.jours.tous">Tous les jours</mat-option>
+              <mat-option value="JOURS_SEMAINE" i18n="@@stands.horaires.jours.semaine">Certains jours de la semaine</mat-option>
+              <mat-option value="PLAGE" i18n="@@stands.horaires.jours.plage">Une plage de dates</mat-option>
+              <mat-option value="DATES" i18n="@@stands.horaires.jours.dates">Des dates précises</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <button matIconButton type="button" i18n-matTooltip="@@common.delete" matTooltip="Supprimer"
+                  i18n-aria-label="@@common.delete" aria-label="Supprimer" class="danger-action"
+                  (click)="retirerHoraire(indexHoraire)">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
+        @if (horaire.jours === 'JOURS_SEMAINE') {
+          <div class="horaire-jours-semaine">
+            @for (jour of joursSemaine; track jour) {
+              <mat-checkbox [name]="'bulkHoraireJour' + indexHoraire + jour"
+                            [ngModel]="horaire.joursSemaine.includes(jour)"
+                            (ngModelChange)="basculerJourSemaine(indexHoraire, jour, $event)">
+                {{ libelleJourSemaine(jour) }}
+              </mat-checkbox>
+            }
+          </div>
+        }
+        @if (horaire.jours === 'PLAGE') {
+          <div class="horaire-plage">
+            <mat-form-field appearance="outline">
+              <mat-label i18n="@@stands.horaires.dateDebut">Du</mat-label>
+              <input matInput type="date" [name]="'bulkHoraireDateDebut' + indexHoraire"
+                     [ngModel]="horaire.dateDebut" (ngModelChange)="patchHoraire(indexHoraire, { dateDebut: $event })" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label i18n="@@stands.horaires.dateFin">Au</mat-label>
+              <input matInput type="date" [name]="'bulkHoraireDateFin' + indexHoraire"
+                     [ngModel]="horaire.dateFin" (ngModelChange)="patchHoraire(indexHoraire, { dateFin: $event })" />
+            </mat-form-field>
+          </div>
+        }
+        @if (horaire.jours === 'DATES') {
+          <mat-form-field appearance="outline" class="horaire-dates">
+            <mat-label i18n="@@stands.horaires.dates">Dates (AAAA-MM-JJ, séparées par des virgules)</mat-label>
+            <input matInput [name]="'bulkHoraireDates' + indexHoraire" placeholder="2026-07-14, 2026-07-19"
+                   [ngModel]="horaire.dates.join(', ')" (ngModelChange)="patchDates(indexHoraire, $event)" />
+          </mat-form-field>
+        }
+        <div class="horaire-fenetres">
+          @for (fenetre of horaire.fenetres; track $index) {
+            <div class="horaire-fenetre-row">
+              <mat-form-field appearance="outline">
+                <mat-label i18n="@@stands.horaires.heureDebut">Début</mat-label>
+                <input matInput type="time" [name]="'bulkFenetreDebut' + indexHoraire + '-' + $index"
+                       [ngModel]="fenetre.heureDebut"
+                       (ngModelChange)="patchFenetre(indexHoraire, $index, { heureDebut: $event })" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label i18n="@@stands.horaires.heureFin">Fin (vide = fermeture)</mat-label>
+                <input matInput type="time" [name]="'bulkFenetreFin' + indexHoraire + '-' + $index"
+                       [ngModel]="fenetre.heureFin"
+                       (ngModelChange)="patchFenetre(indexHoraire, $index, { heureFin: $event })" />
+              </mat-form-field>
+              <button matIconButton type="button" i18n-matTooltip="@@common.delete" matTooltip="Supprimer"
+                      i18n-aria-label="@@common.delete" aria-label="Supprimer" class="danger-action"
+                      (click)="retirerFenetre(indexHoraire, $index)">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          }
+          <button matButton type="button" (click)="ajouterFenetre(indexHoraire)">
+            <mat-icon>add</mat-icon>
+            <ng-container i18n="@@stands.horaires.addFenetre">Ajouter une fenêtre</ng-container>
+          </button>
+        </div>
+        <mat-form-field appearance="outline" class="horaire-motif">
+          <mat-label i18n="@@stands.horaires.motif">Motif (optionnel)</mat-label>
+          <input matInput [name]="'bulkHoraireMotif' + indexHoraire"
+                 [ngModel]="horaire.motif" (ngModelChange)="patchHoraire(indexHoraire, { motif: $event })" />
+        </mat-form-field>
+      </div>
+    }
+    @if (erreurHoraires()) {
+      <p class="field-error">{{ erreurHoraires() }}</p>
+    }
+    <button matButton type="button" (click)="ajouterHoraire()">
+      <mat-icon>add</mat-icon>
+      <ng-container i18n="@@stands.horaires.add">Ajouter une règle d'horaire</ng-container>
+    </button>
+  }
+</div>
 </fieldset>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button matButton type="button" (click)="dialogRef.close(false)" i18n="@@common.cancel">Annuler</button>
   <button matButton="filled" type="submit"
-          [disabled]="editingLocked() || rienAModifier() || standsInvalides().length > 0 || enCours()">
+          [disabled]="editingLocked() || rienAModifier() || standsInvalides().length > 0 || enCours() || !!erreurHoraires()">
     <mat-icon>save</mat-icon>
     <ng-container i18n="@@bulk.apply">Appliquer à la sélection</ng-container>
   </button>

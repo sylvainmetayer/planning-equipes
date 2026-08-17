@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -6,14 +6,18 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { ApiService } from '../../core/api.service';
 import { labelStandsPluriel } from '../../core/entity-labels';
+import { resumerHoraires } from '../../core/horaire-stand';
+import { NotificationService } from '../../core/notification.service';
 import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { TableSelection } from '../../core/table-selection';
-import { Stand } from '../../core/models';
+import { RapportCompactage, Stand } from '../../core/models';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
+import { ConfirmService } from '../../shared/confirm-dialog';
 import { StandBulkEditData, StandBulkEditDialog } from './stand-bulk-edit-dialog';
 import { StandFormData, StandFormDialog } from './stand-form-dialog';
 
@@ -42,11 +46,14 @@ import { StandFormData, StandFormDialog } from './stand-form-dialog';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class StandsPage {
-  protected readonly columns = ['select', 'id', 'nom', 'effectif', 'typologies', 'emplacement', 'fermetures', 'ouvertures', 'actions'];
+  protected readonly columns = ['select', 'id', 'nom', 'effectif', 'typologies', 'emplacement', 'horaires', 'actions'];
   protected readonly store = inject(ReferenceDataStore);
   protected readonly jobs = inject(SolverJobService);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
   protected readonly editingLocked = computed(() => this.jobs.solverBusy());
+
+  /** True while the compaction round-trip is in flight, to keep it from being fired twice. */
+  protected readonly compactageEnCours = signal(false);
 
   protected readonly selection = new TableSelection<string>(
     computed(() => this.store.stands().map((stand) => stand.id))
@@ -57,6 +64,9 @@ export class StandsPage {
 
   private readonly crud = inject(ReferenceCrudService);
   private readonly dialog = inject(MatDialog);
+  private readonly api = inject(ApiService);
+  private readonly confirm = inject(ConfirmService);
+  private readonly notifications = inject(NotificationService);
 
   constructor() {
     void this.crud.reload();
@@ -76,6 +86,64 @@ export class StandsPage {
 
   protected emplacementLabel(stand: Stand): string {
     return stand.emplacement?.nom || '—';
+  }
+
+  /**
+   * "2 règles · 1 exception" instead of the raw window count. The old column
+   * showed `24` for a stand simply open 10:00-12:00 then 14:00-20:00 every day,
+   * which said nothing about its schedule.
+   */
+  protected horairesLabel(stand: Stand): string {
+    return resumerHoraires(stand, {
+      aucun: '—',
+      regles: (n) => $localize`:@@stands.horaires.summary.regles:${n}:count: règle(s)`,
+      exceptions: (n) => $localize`:@@stands.horaires.summary.exceptions:${n}:count: exception(s)`
+    });
+  }
+
+  /**
+   * Rewrites hand-entered dated windows as the recurring rules they repeat.
+   * Always a dry run first: the report it returns is what the confirmation
+   * dialog shows, so nothing is written before the user has seen the trade.
+   */
+  protected async compacterHoraires(): Promise<void> {
+    this.compactageEnCours.set(true);
+    try {
+      await this.lancerCompactage();
+    } catch (error) {
+      // Same channel as every other write of this page: a snack bar, not an
+      // unhandled rejection swallowed by the click handler.
+      this.crud.reportError(error);
+    } finally {
+      this.compactageEnCours.set(false);
+    }
+  }
+
+  private async lancerCompactage(): Promise<void> {
+    const apercu = await this.api.post<RapportCompactage>('/api/stands/compactage-horaires?appliquer=false', {});
+    if (apercu.standsCompactes === 0) {
+      this.notifications.notify({
+        title: $localize`:@@stands.compactage.rienATitle:Aucun horaire à compacter`,
+        message: $localize`:@@stands.compactage.rienAMessage:Aucun stand ne répète un motif qui pourrait devenir une règle.`,
+        variant: 'info'
+      });
+      return;
+    }
+    const confirme = await this.confirm.ask({
+      title: $localize`:@@stands.compactage.confirmTitle:Compacter les horaires ?`,
+      message: $localize`:@@stands.compactage.confirmMessage:${apercu.standsCompactes}:stands: stand(s) verront leurs ${apercu.fenetresAvant}:avant: plages datées remplacées par ${apercu.fenetresApres}:apres: règles et exceptions. Les stands dont les règles ne reproduiraient pas exactement les mêmes ouvertures sont laissés inchangés.`,
+      confirmLabel: $localize`:@@stands.compactage.confirmLabel:Compacter`
+    });
+    if (!confirme) {
+      return;
+    }
+    const rapport = await this.api.post<RapportCompactage>('/api/stands/compactage-horaires?appliquer=true', {});
+    await this.crud.reload();
+    this.notifications.notify({
+      title: $localize`:@@stands.compactage.doneTitle:Horaires compactés`,
+      message: $localize`:@@stands.compactage.doneMessage:${rapport.standsCompactes}:stands: stand(s) compacté(s), ${rapport.fenetresAvant}:avant: plages ramenées à ${rapport.fenetresApres}:apres: entrées.`,
+      variant: 'success'
+    });
   }
 
   protected openCreate(): void {

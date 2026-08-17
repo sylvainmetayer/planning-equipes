@@ -18,7 +18,8 @@ function stand(id: string, typologiesProposees: string[] = []): Stand {
     niveauEffort: 'NORMAL',
     emplacement: null,
     indisponibilites: [],
-    ouvertures: []
+    ouvertures: [],
+    horaires: []
   };
 }
 

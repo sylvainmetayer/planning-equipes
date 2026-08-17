@@ -2,6 +2,7 @@ package dev.sylvain.planning.service;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -43,7 +45,10 @@ import dev.sylvain.planning.domain.ConstraintToggle;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.DecoupageAutoConfig;
 import dev.sylvain.planning.domain.Emplacement;
+import dev.sylvain.planning.domain.FenetreHoraire;
+import dev.sylvain.planning.domain.HoraireStand;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
+import dev.sylvain.planning.domain.ModeHoraire;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.OuvertureStand;
@@ -53,6 +58,7 @@ import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.domain.TypeJoursHoraire;
 import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.solver.ConstraintCatalog;
@@ -215,7 +221,9 @@ public class PlanningService {
      */
     public PlanningFestival construireDepuisReferenceData() {
         List<Animateur> animateurs = referenceDataService.listAnimateurs();
-        List<Stand> stands = referenceDataService.listStands();
+        // Resolved: construirePostes below asks each créneau which parts of it a
+        // stand is open for, so the recurring horaires have to be expanded first.
+        List<Stand> stands = referenceDataService.listStandsResolus();
         List<Creneau> creneaux = referenceDataService.listCreneauxGroupeActif();
         if (animateurs.isEmpty() || stands.isEmpty() || creneaux.isEmpty()) {
             throw new IllegalStateException(
@@ -406,12 +414,16 @@ public class PlanningService {
      */
     public String exporterScenarioYaml() {
         List<Animateur> animateurs = referenceDataService.listAnimateurs();
+        // Raw stands, so the file gets the recurring horaires as rules rather
+        // than the few hundred dated windows they expand to — the resolution
+        // still runs, because the seat list does depend on it.
         List<Stand> stands = referenceDataService.listStands();
         List<Creneau> creneaux = referenceDataService.listCreneauxGroupeActif();
         if (animateurs.isEmpty() || stands.isEmpty() || creneaux.isEmpty()) {
             throw new IllegalStateException(
                     "Aucune donnée de référence à exporter. Créez des stands, des animateurs et des créneaux d'abord.");
         }
+        HoraireStandResolver.appliquer(stands, creneaux);
         return construireScenarioYaml(animateurs, stands, creneaux, construirePostes(stands, creneaux));
     }
 
@@ -455,6 +467,7 @@ public class PlanningService {
             item.put("niveauEffort", stand.getNiveauEffort().name());
             item.put("indisponibilites", indisponibilitesYaml(stand.getIndisponibilites()));
             item.put("ouvertures", ouverturesYaml(stand.getOuvertures()));
+            item.put("horaires", horairesYaml(stand.getHoraires()));
             standsYaml.add(item);
         }
 
@@ -541,6 +554,54 @@ public class PlanningService {
     }
 
     /**
+     * Serializes a stand's recurring {@link HoraireStand} rules to the shape
+     * {@link #chargerReferenceScenario} reads back — the day selector flattened
+     * onto the rule itself, so the common "every day" case stays a two-line
+     * entry and the reader needs no polymorphism.
+     *
+     * <p>Only the fields the selector actually uses are written: a {@code TOUS}
+     * rule carries no dates, so emitting empty {@code dates}/{@code dateDebut}
+     * keys would be noise in a file meant to be read and diffed by hand.</p>
+     */
+    private static List<Map<String, Object>> horairesYaml(List<HoraireStand> horaires) {
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (HoraireStand horaire : horaires) {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("mode", horaire.getMode().name());
+            item.put("jours", horaire.getJours().name());
+            switch (horaire.getJours()) {
+                case JOURS_SEMAINE -> item.put("joursSemaine",
+                        horaire.getJoursSemaine().stream().map(Enum::name).toList());
+                case PLAGE -> {
+                    item.put("dateDebut", asString(horaire.getDateDebut()));
+                    item.put("dateFin", asString(horaire.getDateFin()));
+                }
+                case DATES -> item.put("dates", horaire.getDates().stream().map(PlanningService::asString).toList());
+                case TOUS -> {
+                    // No selector data to write.
+                }
+            }
+            List<Map<String, Object>> fenetres = new ArrayList<>();
+            for (FenetreHoraire fenetre : horaire.getFenetres()) {
+                Map<String, Object> fenetreYaml = new LinkedHashMap<>();
+                fenetreYaml.put("heureDebut", asString(fenetre.getHeureDebut()));
+                // Absent rather than null: "jusqu'à la fermeture" reads better as
+                // a missing end than as an explicit empty one.
+                if (fenetre.getHeureFin() != null) {
+                    fenetreYaml.put("heureFin", asString(fenetre.getHeureFin()));
+                }
+                fenetres.add(fenetreYaml);
+            }
+            item.put("fenetres", fenetres);
+            if (horaire.getMotif() != null) {
+                item.put("motif", horaire.getMotif());
+            }
+            result.add(item);
+        }
+        return result;
+    }
+
+    /**
      * Lists every {@code .yaml}/{@code .yml} scenario available in the
      * {@link #SCENARIOS_DIR} classpath folder, sorted alphabetically. Drop a new
      * file in that folder and it shows up here (and in the UI dropdown) with no
@@ -595,6 +656,12 @@ public class PlanningService {
     @SuppressWarnings("unchecked")
     private PlanningFestival construirePlanningDepuisDonnees(Map<String, Object> scenarioData) {
         ReferenceScenario reference = chargerReferenceScenario(scenarioData);
+
+        // Étendre les horaires récurrents avant toute décision d'ouverture : un
+        // fichier peut décrire les horaires d'un stand en règles plutôt qu'en
+        // fenêtres datées, et c'est bien sur les jours de ses propres créneaux
+        // qu'il faut les résoudre. Sans règle, l'appel ne change rien.
+        HoraireStandResolver.appliquer(reference.standsParId().values(), reference.creneauxParId().values());
 
         // Charger les postes : repris tels quels du fichier si la section est
         // présente, sinon générés à partir des stands/créneaux (mêmes règles que
@@ -775,7 +842,7 @@ public class PlanningService {
                 for (Map<String, Object> indispoData : indisponibilitesData) {
                     LocalDate date = parseLocalDate(indispoData.get("date"), "stands.indisponibilites.date");
                     LocalTime heureDebut = LocalTime.parse((String) indispoData.get("heureDebut"));
-                    LocalTime heureFin = LocalTime.parse((String) indispoData.get("heureFin"));
+                    LocalTime heureFin = parseHeureOuFinDeJournee(indispoData.get("heureFin"));
                     String motif = (String) indispoData.get("motif");
                     indisponibilites.add(new IndisponibiliteStand(null, date, heureDebut, heureFin, motif));
                 }
@@ -787,11 +854,15 @@ public class PlanningService {
                 for (Map<String, Object> ouvertureData : ouverturesData) {
                     LocalDate date = parseLocalDate(ouvertureData.get("date"), "stands.ouvertures.date");
                     LocalTime heureDebut = LocalTime.parse((String) ouvertureData.get("heureDebut"));
-                    LocalTime heureFin = LocalTime.parse((String) ouvertureData.get("heureFin"));
+                    LocalTime heureFin = parseHeureOuFinDeJournee(ouvertureData.get("heureFin"));
                     String motif = (String) ouvertureData.get("motif");
                     ouvertures.add(new OuvertureStand(null, date, heureDebut, heureFin, motif));
                 }
                 stand.setOuvertures(ouvertures);
+            }
+            List<Map<String, Object>> horairesData = (List<Map<String, Object>>) standData.get("horaires");
+            if (horairesData != null) {
+                stand.setHoraires(lireHoraires(horairesData));
             }
             standsMap.put(id, stand);
         }
@@ -1417,6 +1488,75 @@ public class PlanningService {
             List<ConstraintDiagnostic> contraintes,
             FeasibilityAnalyzer.FeasibilityReport faisabilite,
             int hardScore) {
+    }
+
+    /**
+     * Reads a window's end hour, {@code null} (absent or explicitly empty)
+     * meaning "until closing time" — see {@link FenetreHoraire}. A missing end
+     * used to be a hard error; it is now the way to say "to whatever hour this
+     * day closes at", which is what lets one rule cover days closing at 20:00
+     * and days closing at midnight alike.
+     */
+    private static LocalTime parseHeureOuFinDeJournee(Object value) {
+        if (value == null) {
+            return null;
+        }
+        String texte = value.toString().trim();
+        return texte.isEmpty() ? null : LocalTime.parse(texte);
+    }
+
+    /**
+     * Reads the {@code horaires:} section of a stand — recurring rules, with the
+     * day selector flattened onto the rule (see {@link #horairesYaml}). An absent
+     * {@code jours} reads as {@link TypeJoursHoraire#TOUS}, which is what makes
+     * the common case a two-line entry.
+     */
+    @SuppressWarnings("unchecked")
+    private List<HoraireStand> lireHoraires(List<Map<String, Object>> horairesData) {
+        List<HoraireStand> horaires = new ArrayList<>();
+        for (Map<String, Object> horaireData : horairesData) {
+            HoraireStand horaire = new HoraireStand();
+            String modeStr = (String) horaireData.get("mode");
+            if (modeStr == null) {
+                throw new IllegalArgumentException("Champ manquant: stands.horaires.mode (OUVERTURE ou FERMETURE)");
+            }
+            horaire.setMode(ModeHoraire.valueOf(modeStr));
+            String joursStr = (String) horaireData.getOrDefault("jours", TypeJoursHoraire.TOUS.name());
+            horaire.setJours(TypeJoursHoraire.valueOf(joursStr));
+            List<String> joursSemaine = (List<String>) horaireData.get("joursSemaine");
+            if (joursSemaine != null) {
+                horaire.setJoursSemaine(joursSemaine.stream().map(DayOfWeek::valueOf)
+                        .collect(Collectors.toCollection(TreeSet::new)));
+            }
+            if (horaireData.get("dateDebut") != null) {
+                horaire.setDateDebut(parseLocalDate(horaireData.get("dateDebut"), "stands.horaires.dateDebut"));
+            }
+            if (horaireData.get("dateFin") != null) {
+                horaire.setDateFin(parseLocalDate(horaireData.get("dateFin"), "stands.horaires.dateFin"));
+            }
+            List<Object> dates = (List<Object>) horaireData.get("dates");
+            if (dates != null) {
+                horaire.setDates(dates.stream().map(date -> parseLocalDate(date, "stands.horaires.dates"))
+                        .collect(Collectors.toCollection(TreeSet::new)));
+            }
+            List<Map<String, Object>> fenetresData = (List<Map<String, Object>>) horaireData.get("fenetres");
+            if (fenetresData == null || fenetresData.isEmpty()) {
+                throw new IllegalArgumentException("Champ manquant: stands.horaires.fenetres (au moins une fenêtre)");
+            }
+            List<FenetreHoraire> fenetres = new ArrayList<>();
+            for (Map<String, Object> fenetreData : fenetresData) {
+                Object heureDebut = fenetreData.get("heureDebut");
+                if (heureDebut == null) {
+                    throw new IllegalArgumentException("Champ manquant: stands.horaires.fenetres.heureDebut");
+                }
+                fenetres.add(new FenetreHoraire(LocalTime.parse(heureDebut.toString()),
+                        parseHeureOuFinDeJournee(fenetreData.get("heureFin"))));
+            }
+            horaire.setFenetres(fenetres);
+            horaire.setMotif((String) horaireData.get("motif"));
+            horaires.add(horaire);
+        }
+        return horaires;
     }
 
     private LocalDate parseLocalDate(Object value, String fieldName) {

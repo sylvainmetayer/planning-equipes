@@ -261,6 +261,40 @@ typologie des profils polyvalents : `POST`/`PUT` avec `ninja: true` retire
 automatiquement le drapeau de la typologie qui le portait (au plus une à la
 fois) — voir [`contraintes.md`](contraintes.md#typologie-ninja-et-buffer-de-polyvalents).
 
+### Horaires d'un stand
+
+Un stand porte son planning d'ouverture sur deux niveaux, et `GET /api/stands`
+les rend tels quels — sans expansion, c'est la vue que l'IHM édite :
+
+- `horaires` : les **règles récurrentes**, `{ mode, jours, joursSemaine,
+  dateDebut, dateFin, dates, fenetres, motif }`. `mode` vaut `OUVERTURE` ou
+  `FERMETURE`, `jours` vaut `TOUS` (défaut), `JOURS_SEMAINE`, `PLAGE` ou
+  `DATES`, et seuls les champs que ce sélecteur utilise sont lus ;
+- `indisponibilites` / `ouvertures` : les **exceptions datées**, qui priment sur
+  les règles pour le seul jour qu'elles nomment.
+
+Dans les deux cas, `heureFin` est **nullable** et vaut alors « jusqu'à la
+fermeture » : la fenêtre court jusqu'à la fin du créneau évalué. Voir
+[`domaine.md`](domaine.md#horaires-récurrents) pour l'arbitrage complet.
+
+`POST`/`PUT /api/stands` répondent **400** si une règle est incohérente (aucune
+fenêtre, heure de fin antérieure à l'heure de début, sélecteur sans les données
+qu'il exige) ou si deux règles de même portée, portant sur des jours qui se
+croisent, se contredisent (l'une ouverture, l'autre fermeture) — il n'y aurait
+pas de gagnant non arbitraire.
+
+| Méthode | Chemin | Description |
+| --- | --- | --- |
+| `POST` | `/api/stands/compactage-horaires?appliquer=false` | Réécrit les fenêtres datées répétées en règles équivalentes. `appliquer=false` (défaut) est un **essai à blanc** : rien n'est écrit, le rapport décrit ce qui *serait* fait |
+| `POST` | `/api/stands/compactage-horaires?appliquer=true` | Idem, et persiste les stands compactés |
+
+Le rapport porte `{ applique, standsCompactes, fenetresAvant, fenetresApres,
+stands[] }`, une ligne par stand : `{ standId, fenetresAvant, reglesApres,
+exceptionsApres, ecartMinutes, compacte, raison }`. Un stand n'est réécrit que si
+les règles proposées reproduisent ses propres segments ouverts ; sinon `compacte`
+est `false` et `raison` dit pourquoi. `ecartMinutes` vaut `1` quand un ancien
+`23:59` est devenu la fermeture réelle du jour.
+
 Contraintes ad hoc (pas de mise à jour, on supprime et on recrée) :
 
 | Méthode | Chemin |
