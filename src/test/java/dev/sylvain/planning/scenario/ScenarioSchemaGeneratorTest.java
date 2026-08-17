@@ -9,8 +9,8 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Guards {@code docs/schema/scenario-schema.json} against drifting from the
@@ -74,7 +74,7 @@ class ScenarioSchemaGeneratorTest {
 
     private static List<String> champs(JsonNode properties) {
         List<String> noms = new ArrayList<>();
-        properties.fieldNames().forEachRemaining(noms::add);
+        noms.addAll(properties.propertyNames());
         return noms;
     }
 }
