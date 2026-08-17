@@ -23,7 +23,7 @@
              used by the scenario DTOs (dev.sylvain.planning.scenario) stay
              on the same Jackson release as the rest of the classpath. -->
         <jackson-yaml.version>2.22.0</jackson-yaml.version>
-        <jsonschema-generator.version>5.0.0</jsonschema-generator.version>
+        <jsonschema-generator.version>4.38.0</jsonschema-generator.version>
         <mcp-server.version>1.13.1</mcp-server.version>
         <skipITs>true</skipITs>
         <surefire-plugin.version>3.5.6</surefire-plugin.version>
