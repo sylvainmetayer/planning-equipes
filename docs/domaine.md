@@ -240,7 +240,15 @@ sans date, et le sélecteur de jours auquel elle s'applique :
 Le stand « Autres - Bourse », ouvert 10 h-12 h puis 14 h-fermeture sur les douze
 jours du festival, est **une** règle à deux fenêtres au lieu de vingt-quatre
 lignes datées. Sur la fixture de 63 stands, le rapport est du même ordre
-partout : 714 fenêtres datées pour ~83 règles.
+partout : 714 fenêtres datées deviennent 120 règles et 19 exceptions
+résiduelles.
+
+Quand **tous** les jours du festival sont énoncés, le motif majoritaire d'un
+stand s'écrit en `TOUS` et les autres, plus spécifiques, le surchargent : « ouvert
+14 h→fermeture tous les jours, sauf les 9 et 12 juillet où ça ferme à 20 h » au
+lieu de deux listes de dates. Si un seul jour reste non énoncé, en revanche,
+aucune règle ne peut prendre `TOUS` — elle gouvernerait un jour laissé
+volontairement ouvert par défaut.
 
 `HoraireStandResolver` résout tout cela **jour calendaire par jour calendaire**,
 en trois couches :
@@ -286,9 +294,18 @@ exactement leur sens (ce sont les exceptions). L'action **« Compacter les
 horaires »** (`CompactageHoraires`, `POST /api/stands/compactage-horaires`) en
 dérive à la demande les règles équivalentes, et ne réécrit un stand que si les
 règles proposées reproduisent ses propres segments ouverts — vérifié en les
-rejouant contre les vrais créneaux (`ecartMaximalMinutes`). Le seul écart toléré
-est d'une minute, celle que récupère un ancien `23:59` devenu la fermeture
-réelle ; il est rapporté stand par stand plutôt que corrigé en silence.
+rejouant contre les vrais créneaux (`ecartMaximalMinutes`).
+
+L'écart est mesuré en **minutes d'ouverture** en désaccord, pas en appariant les
+segments un à un, et une minute est tolérée : celle que récupère un ancien
+`23:59` devenu la fermeture réelle. Cette nuance compte, parce qu'un stand absent
+toute la journée s'écrivait « fermé 10 h-23 h 59 » un jour fermant à minuit — ce
+qui laissait une minute ouverte, donc un poste d'une minute à 23 h 59. Réécrit en
+« fermé de 10 h à la fermeture », le stand ne génère plus aucun poste : le nombre
+de segments passe de 1 à 0 alors que le désaccord réel est cette seule minute, qui
+n'aurait jamais dû être à pourvoir. Compter les segments ferait refuser
+exactement les stands que la réécriture aide le plus. L'écart constaté est
+rapporté stand par stand plutôt que corrigé en silence.
 
 `PlanningService.construirePostes` génère un poste par place à pourvoir et par
 segment ouvert (voir plus bas) — un stand fermé sur tout un créneau n'y génère

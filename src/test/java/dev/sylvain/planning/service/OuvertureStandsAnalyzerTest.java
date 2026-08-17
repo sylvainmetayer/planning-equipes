@@ -1,0 +1,253 @@
+package dev.sylvain.planning.service;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
+import org.junit.jupiter.api.Test;
+
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.FenetreHoraire;
+import dev.sylvain.planning.domain.HoraireStand;
+import dev.sylvain.planning.domain.IndisponibiliteStand;
+import dev.sylvain.planning.domain.ModeHoraire;
+import dev.sylvain.planning.domain.OuvertureStand;
+import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.HoraireStandResolver.SourceHoraire;
+import dev.sylvain.planning.service.OuvertureStandsAnalyzer.Anomalie;
+import dev.sylvain.planning.service.OuvertureStandsAnalyzer.CelluleJour;
+import dev.sylvain.planning.service.OuvertureStandsAnalyzer.EtatOuverture;
+import dev.sylvain.planning.service.OuvertureStandsAnalyzer.LigneStand;
+import dev.sylvain.planning.service.OuvertureStandsAnalyzer.RapportOuvertures;
+import dev.sylvain.planning.service.OuvertureStandsAnalyzer.TypeAnomalie;
+
+/**
+ * {@link OuvertureStandsAnalyzer}: the stand × jour grid the "Ouvertures des
+ * stands" screen shows, and the three anomalies it flags.
+ *
+ * <p>2026-07-08 is a Wednesday, as in the reference festival.</p>
+ */
+class OuvertureStandsAnalyzerTest {
+
+    private static final LocalDate JOUR_1 = LocalDate.of(2026, 7, 8);
+
+    /** Two days, 10:00→20:00 each — the shape the amplitude fixtures use. */
+    private static List<Creneau> deuxJours() {
+        return new ArrayList<>(List.of(
+                new Creneau(1L, 1, JOUR_1, LocalTime.of(10, 0), LocalTime.of(20, 0)),
+                new Creneau(2L, 2, JOUR_1.plusDays(1), LocalTime.of(10, 0), LocalTime.of(20, 0))));
+    }
+
+    private static Stand stand(String id) {
+        Stand stand = new Stand(id, id, Set.of(), 1, 1, false);
+        stand.setIndisponibilites(new ArrayList<>());
+        stand.setOuvertures(new ArrayList<>());
+        stand.setHoraires(new ArrayList<>());
+        return stand;
+    }
+
+    private static RapportOuvertures analyser(List<Stand> stands, List<Creneau> creneaux) {
+        HoraireStandResolver.appliquer(stands, creneaux);
+        return OuvertureStandsAnalyzer.analyser(stands, creneaux);
+    }
+
+    @Test
+    void unStandSansHoraireEstOuvertSurToutesLesAmplitudes() {
+        Stand stand = stand("LIBRE");
+
+        RapportOuvertures rapport = analyser(List.of(stand), deuxJours());
+
+        assertThat(rapport.jours()).hasSize(2);
+        assertThat(rapport.jours().get(0).minutes()).isEqualTo(600);
+        LigneStand ligne = rapport.stands().get(0);
+        assertThat(ligne.jours()).allSatisfy(cellule -> {
+            assertThat(cellule.etat()).isEqualTo(EtatOuverture.OUVERT_TOTAL);
+            assertThat(cellule.source()).isEqualTo(SourceHoraire.DEFAUT);
+            assertThat(cellule.postes()).isEqualTo(1);
+        });
+        assertThat(ligne.minutesOuvertes()).isEqualTo(1200);
+        assertThat(rapport.postesTotal()).isEqualTo(2);
+        assertThat(rapport.anomalies()).isEmpty();
+    }
+
+    /**
+     * The interesting cell: a rule narrows the day, so the grid must show the
+     * clamped window, count the partial state, and say a <i>rule</i> decided it —
+     * that last part is what lets an admin find the culprit.
+     */
+    @Test
+    void uneRegleDonneUneCellulePartielleAttribueeALaRegle() {
+        Stand stand = stand("APREM");
+        stand.setHoraires(List.of(HoraireStand.tousLesJours(ModeHoraire.OUVERTURE,
+                new FenetreHoraire(LocalTime.of(14, 0), null))));
+
+        RapportOuvertures rapport = analyser(List.of(stand), deuxJours());
+
+        CelluleJour cellule = rapport.stands().get(0).jours().get(0);
+        assertThat(cellule.etat()).isEqualTo(EtatOuverture.OUVERT_PARTIEL);
+        assertThat(cellule.source()).isEqualTo(SourceHoraire.REGLE);
+        assertThat(cellule.minutesOuvertes()).isEqualTo(360);
+        assertThat(cellule.minutesAmplitude()).isEqualTo(600);
+        assertThat(cellule.fenetres()).singleElement().satisfies(fenetre -> {
+            assertThat(fenetre.heureDebut()).isEqualTo(LocalTime.of(14, 0));
+            assertThat(fenetre.heureFin()).isEqualTo(LocalTime.of(20, 0));
+        });
+    }
+
+    @Test
+    void uneExceptionDateeEstAttribueeALException() {
+        Stand stand = stand("EXCEPTION");
+        stand.setHoraires(List.of(HoraireStand.tousLesJours(ModeHoraire.OUVERTURE,
+                new FenetreHoraire(LocalTime.of(14, 0), null))));
+        stand.getIndisponibilites().add(new IndisponibiliteStand(null, JOUR_1, LocalTime.of(10, 0), null, "Férié"));
+
+        RapportOuvertures rapport = analyser(List.of(stand), deuxJours());
+
+        List<CelluleJour> jours = rapport.stands().get(0).jours();
+        assertThat(jours.get(0).source()).isEqualTo(SourceHoraire.EXCEPTION);
+        assertThat(jours.get(0).etat()).isEqualTo(EtatOuverture.FERME);
+        assertThat(jours.get(0).postes()).isZero();
+        assertThat(jours.get(1).source()).isEqualTo(SourceHoraire.REGLE);
+    }
+
+    /** A day cut into two windows must read as two stretches, not as one 10:00→20:00 block. */
+    @Test
+    void uneCoupureMeridienneDonneDeuxFenetres() {
+        Stand stand = stand("BOURSE");
+        stand.setHoraires(List.of(HoraireStand.tousLesJours(ModeHoraire.OUVERTURE,
+                new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(12, 0)),
+                new FenetreHoraire(LocalTime.of(14, 0), null))));
+
+        RapportOuvertures rapport = analyser(List.of(stand), deuxJours());
+
+        CelluleJour cellule = rapport.stands().get(0).jours().get(0);
+        assertThat(cellule.fenetres()).hasSize(2);
+        assertThat(cellule.minutesOuvertes()).isEqualTo(120 + 360);
+        // Un poste par segment ouvert, comme construirePostes.
+        assertThat(cellule.postes()).isEqualTo(2);
+    }
+
+    /**
+     * Vacations of the same day overlap by design (the handover). The cell must
+     * show one continuous stretch and count its minutes once, not one band per
+     * vacation.
+     */
+    @Test
+    void desVacationsQuiSeChevauchentDonnentUneSeuleFenetre() {
+        List<Creneau> vacations = new ArrayList<>(List.of(
+                new Creneau(1L, 1, JOUR_1, LocalTime.of(10, 0), LocalTime.of(15, 0)),
+                new Creneau(2L, 1, JOUR_1, LocalTime.of(14, 30), LocalTime.of(20, 0))));
+
+        RapportOuvertures rapport = analyser(List.of(stand("CONTINU")), vacations);
+
+        assertThat(rapport.jours().get(0).minutes()).isEqualTo(600);
+        CelluleJour cellule = rapport.stands().get(0).jours().get(0);
+        assertThat(cellule.fenetres()).singleElement().satisfies(fenetre -> {
+            assertThat(fenetre.heureDebut()).isEqualTo(LocalTime.of(10, 0));
+            assertThat(fenetre.heureFin()).isEqualTo(LocalTime.of(20, 0));
+        });
+        assertThat(cellule.minutesOuvertes()).isEqualTo(600);
+        assertThat(cellule.etat()).isEqualTo(EtatOuverture.OUVERT_TOTAL);
+        assertThat(cellule.postes()).isEqualTo(2);
+    }
+
+    @Test
+    void unStandFermePartoutEstSignale() {
+        Stand stand = stand("ABSENT");
+        stand.setHoraires(List.of(HoraireStand.tousLesJours(ModeHoraire.FERMETURE,
+                new FenetreHoraire(LocalTime.of(0, 0), null))));
+
+        RapportOuvertures rapport = analyser(List.of(stand), deuxJours());
+
+        assertThat(rapport.standsJamaisOuverts()).isEqualTo(1);
+        assertThat(rapport.postesTotal()).isZero();
+        assertThat(rapport.anomalies())
+                .extracting(Anomalie::type)
+                .contains(TypeAnomalie.STAND_JAMAIS_OUVERT);
+    }
+
+    /**
+     * The historical {@code 23:59} artefact: a closure ending one minute before a
+     * day that closes at midnight leaves exactly one staffable minute. That is a
+     * poste nobody can hold, and the screen exists to make it visible.
+     */
+    @Test
+    void unSegmentTropCourtPourEtreUnCreneauEstSignale() {
+        Stand stand = stand("UNE-MINUTE");
+        List<Creneau> jusquaMinuit = new ArrayList<>(List.of(
+                new Creneau(1L, 1, JOUR_1, LocalTime.of(10, 0), LocalTime.MIDNIGHT)));
+        stand.getIndisponibilites()
+                .add(new IndisponibiliteStand(null, JOUR_1, LocalTime.of(10, 0), LocalTime.of(23, 59), null));
+
+        RapportOuvertures rapport = analyser(List.of(stand), jusquaMinuit);
+
+        assertThat(rapport.stands().get(0).jours().get(0).minutesOuvertes()).isEqualTo(1);
+        assertThat(rapport.anomalies())
+                .filteredOn(anomalie -> anomalie.type() == TypeAnomalie.SEGMENT_TROP_COURT)
+                .singleElement()
+                .satisfies(anomalie -> {
+                    assertThat(anomalie.standId()).isEqualTo("UNE-MINUTE");
+                    assertThat(anomalie.date()).isEqualTo(JOUR_1);
+                    assertThat(anomalie.message()).contains("1 min");
+                });
+    }
+
+    /**
+     * L'anomalie doit rester silencieuse sur une ouverture courte mais voulue :
+     * un stand ouvert deux heures est parfaitement armable, et une alerte qui se
+     * déclenche sur de la donnée correcte cesse d'être lue.
+     */
+    @Test
+    void uneOuvertureCourteMaisVoulueNEstPasSignalee() {
+        Stand stand = stand("DEUX-HEURES");
+        stand.setHoraires(List.of(HoraireStand.tousLesJours(ModeHoraire.OUVERTURE,
+                new FenetreHoraire(LocalTime.of(14, 0), LocalTime.of(16, 0)))));
+
+        RapportOuvertures rapport = analyser(List.of(stand), deuxJours());
+
+        assertThat(rapport.stands().get(0).jours().get(0).minutesOuvertes()).isEqualTo(120);
+        assertThat(rapport.anomalies())
+                .filteredOn(anomalie -> anomalie.type() == TypeAnomalie.SEGMENT_TROP_COURT)
+                .isEmpty();
+    }
+
+    /** A window entered outside the day's amplitude changes nothing — and says so. */
+    @Test
+    void uneFenetreHorsAmplitudeEstSignaleeSansEffet() {
+        Stand stand = stand("HORS-AMPLITUDE");
+        stand.getOuvertures()
+                .add(new OuvertureStand(null, JOUR_1, LocalTime.of(21, 0), LocalTime.of(23, 0), null));
+
+        RapportOuvertures rapport = analyser(List.of(stand), deuxJours());
+
+        assertThat(rapport.anomalies())
+                .filteredOn(anomalie -> anomalie.type() == TypeAnomalie.FENETRE_SANS_EFFET)
+                .singleElement()
+                .satisfies(anomalie -> assertThat(anomalie.date()).isEqualTo(JOUR_1));
+        // Et la conséquence : ce jour-là le stand est fermé, malgré l'ouverture saisie.
+        assertThat(rapport.stands().get(0).jours().get(0).etat()).isEqualTo(EtatOuverture.FERME);
+    }
+
+    @Test
+    void uneFenetreDansLAmplitudeNEstPasSignalee() {
+        Stand stand = stand("DANS-AMPLITUDE");
+        stand.getOuvertures()
+                .add(new OuvertureStand(null, JOUR_1, LocalTime.of(14, 0), LocalTime.of(16, 0), null));
+
+        assertThat(analyser(List.of(stand), deuxJours()).anomalies())
+                .filteredOn(anomalie -> anomalie.type() == TypeAnomalie.FENETRE_SANS_EFFET)
+                .isEmpty();
+    }
+
+    @Test
+    void sansCreneauLeRapportEstVide() {
+        RapportOuvertures rapport = analyser(List.of(stand("SEUL")), new ArrayList<>());
+
+        assertThat(rapport.jours()).isEmpty();
+        assertThat(rapport.postesTotal()).isZero();
+    }
+}

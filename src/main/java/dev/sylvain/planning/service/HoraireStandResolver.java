@@ -118,6 +118,34 @@ public final class HoraireStandResolver {
         stand.setFenetresEffectives(fermetures, ouvertures);
     }
 
+    /** Which of the three layers decided a given day — see {@link HoraireStand}. */
+    public enum SourceHoraire {
+        /** Nothing states anything about that day: open all day. */
+        DEFAUT,
+        /** A recurring rule covers it. */
+        REGLE,
+        /** A dated window names it, and therefore overrides the rules. */
+        EXCEPTION
+    }
+
+    /**
+     * Which layer governs {@code date} for {@code stand}. Reads the <b>dated</b>
+     * lists, not the effective ones, so the answer stays the same whether or not
+     * a resolution has already run — otherwise every day would look like an
+     * exception once expanded.
+     */
+    public static SourceHoraire sourceDuJour(Stand stand, LocalDate date) {
+        if (stand == null || date == null) {
+            return SourceHoraire.DEFAUT;
+        }
+        boolean datee = stand.getIndisponibilites().stream().anyMatch(f -> date.equals(f.getDate()))
+                || stand.getOuvertures().stream().anyMatch(o -> date.equals(o.getDate()));
+        if (datee) {
+            return SourceHoraire.EXCEPTION;
+        }
+        return resoudreJour(stand.getHoraires(), date) != null ? SourceHoraire.REGLE : SourceHoraire.DEFAUT;
+    }
+
     /** What the rules say about one day: one mode, and the windows to apply. */
     record JourResolu(ModeHoraire mode, List<FenetreHoraire> fenetres, String motif) {
     }

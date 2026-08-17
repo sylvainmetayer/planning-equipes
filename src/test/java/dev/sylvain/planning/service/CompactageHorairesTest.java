@@ -97,8 +97,15 @@ class CompactageHorairesTest {
         assertThat(ligne.raison()).contains("23:59");
     }
 
+    /**
+     * Two patterns covering the whole festival come out as "every day, and this
+     * on the weekend" rather than as two date-or-weekday lists: the largest one
+     * becomes a plain {@code TOUS} rule and the other, being more specific, wins
+     * on its own days. That is the layering doing the work — and it is only sound
+     * because every festival day is stated (see {@code groupeDeBase}).
+     */
     @Test
-    void deuxMotifsDeviennentUneRegleParJourDeSemaine() {
+    void leMotifMajoritaireDevientUneRegleTousLesJoursEtLAutreLaSurcharge() {
         Stand stand = stand("GIGAMIC");
         for (int jour = 0; jour < NOMBRE_JOURS; jour++) {
             LocalDate date = PREMIER_JOUR.plusDays(jour);
@@ -110,13 +117,40 @@ class CompactageHorairesTest {
         CompactageHoraires.compacter(List.of(stand), amplitudes(LocalTime.of(20, 0)), true);
 
         assertThat(stand.getHoraires()).hasSize(2);
-        assertThat(stand.getHoraires()).allSatisfy(regle ->
-                assertThat(regle.getJours()).isEqualTo(TypeJoursHoraire.JOURS_SEMAINE));
-        HoraireStand duWeekend = stand.getHoraires().stream()
-                .filter(regle -> regle.getFenetres().get(0).getHeureDebut().equals(LocalTime.of(10, 0)))
+        HoraireStand base = horaireCommencantA(stand, LocalTime.of(14, 0));
+        assertThat(base.getJours()).isEqualTo(TypeJoursHoraire.TOUS);
+        HoraireStand duWeekend = horaireCommencantA(stand, LocalTime.of(10, 0));
+        assertThat(duWeekend.getJours()).isEqualTo(TypeJoursHoraire.JOURS_SEMAINE);
+        assertThat(duWeekend.getJoursSemaine()).containsExactly(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY);
+        assertThat(duWeekend.specificite()).isGreaterThan(base.specificite());
+    }
+
+    /**
+     * The mirror case: the patterns leave some festival days unstated, so no rule
+     * may claim "every day" — a base rule would start governing a day that was
+     * deliberately left open-by-default.
+     */
+    @Test
+    void sansCouvrirTousLesJoursAucuneRegleNeDevientTousLesJours() {
+        Stand stand = stand("PARTIEL");
+        for (int jour = 0; jour < 6; jour++) {
+            stand.getOuvertures().add(new OuvertureStand(null, PREMIER_JOUR.plusDays(jour), LocalTime.of(10, 0),
+                    LocalTime.of(12, 0), null));
+        }
+
+        CompactageHoraires.compacter(List.of(stand), amplitudes(LocalTime.of(20, 0)), true);
+
+        assertThat(stand.getHoraires()).hasSize(1);
+        assertThat(stand.getHoraires().get(0).getJours()).isEqualTo(TypeJoursHoraire.PLAGE);
+        assertThat(stand.getHoraires().get(0).getDateDebut()).isEqualTo(PREMIER_JOUR);
+        assertThat(stand.getHoraires().get(0).getDateFin()).isEqualTo(PREMIER_JOUR.plusDays(5));
+    }
+
+    private static HoraireStand horaireCommencantA(Stand stand, LocalTime heureDebut) {
+        return stand.getHoraires().stream()
+                .filter(regle -> regle.getFenetres().get(0).getHeureDebut().equals(heureDebut))
                 .findFirst()
                 .orElseThrow();
-        assertThat(duWeekend.getJoursSemaine()).containsExactly(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY);
     }
 
     /** A pattern seen on a single day is left dated: turning it into a rule buys nothing. */
@@ -202,14 +236,46 @@ class CompactageHorairesTest {
     }
 
     @Test
-    void lEcartEstMaximalQuandLeNombreDeSegmentsDiffere() {
+    void lEcartCompteLesMinutesDeDesaccord() {
         Stand ouvertToutLeTemps = stand("A");
-        Stand coupeEnDeux = stand("B");
-        coupeEnDeux.getIndisponibilites().add(new IndisponibiliteStand(null, PREMIER_JOUR, LocalTime.of(14, 0),
+        Stand ferme2h = stand("B");
+        ferme2h.getIndisponibilites().add(new IndisponibiliteStand(null, PREMIER_JOUR, LocalTime.of(14, 0),
                 LocalTime.of(16, 0), null));
 
-        assertThat(CompactageHoraires.ecartMaximalMinutes(ouvertToutLeTemps, coupeEnDeux,
-                amplitudes(LocalTime.of(20, 0)))).isEqualTo(Integer.MAX_VALUE);
+        assertThat(CompactageHoraires.ecartMaximalMinutes(ouvertToutLeTemps, ferme2h,
+                amplitudes(LocalTime.of(20, 0)))).isEqualTo(120);
+    }
+
+    /**
+     * Le cas que la mesure en minutes existe pour accepter : un stand absent toute
+     * la journée s'écrivait « fermé 10:00-23:59 » un jour fermant à minuit, ce qui
+     * laissait une minute ouverte — donc un poste d'une minute. Réécrit en « fermé
+     * de 10:00 à la fermeture », le stand ne génère plus aucun poste : le nombre de
+     * segments passe de 1 à 0 alors que le désaccord réel est cette seule minute.
+     */
+    @Test
+    void unPosteDUneMinuteHeriteDu2359NEmpechePasLeCompactage() {
+        Stand stand = stand("ABSENT");
+        for (int jour = 0; jour < NOMBRE_JOURS; jour++) {
+            stand.getIndisponibilites().add(new IndisponibiliteStand(null, PREMIER_JOUR.plusDays(jour),
+                    LocalTime.of(10, 0), LocalTime.of(23, 59), null));
+        }
+        List<Creneau> creneaux = amplitudes(LocalTime.MIDNIGHT);
+
+        // Avant : une minute ouverte par jour, à 23:59.
+        assertThat(creneaux.get(0).segmentsOuvertsMinutes(stand)).containsExactly(new int[] {839, 840});
+
+        CompactageHoraires.RapportCompactage rapport =
+                CompactageHoraires.compacter(List.of(stand), creneaux, true);
+
+        assertThat(rapport.standsCompactes()).isEqualTo(1);
+        assertThat(rapport.stands().get(0).ecartMinutes()).isEqualTo(1);
+        assertThat(stand.getHoraires()).hasSize(1);
+        assertThat(stand.getHoraires().get(0).getFenetres())
+                .containsExactly(new FenetreHoraire(LocalTime.of(10, 0), null));
+        // Après : le stand est fermé toute la journée, donc plus aucun poste.
+        HoraireStandResolver.appliquer(List.of(stand), creneaux);
+        assertThat(creneaux.get(0).segmentsOuvertsMinutes(stand)).isEmpty();
     }
 
     private static Stand stand(String id) {

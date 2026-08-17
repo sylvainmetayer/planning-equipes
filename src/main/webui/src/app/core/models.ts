@@ -170,6 +170,74 @@ export interface RapportCompactage {
   stands: LigneCompactage[];
 }
 
+/* ------------------ Ouvertures des stands (`/api/ouvertures-stands`) ------------------ */
+
+/** How much of a day's amplitude a stand covers. */
+export type EtatOuverture = 'OUVERT_TOTAL' | 'OUVERT_PARTIEL' | 'FERME';
+
+/** Which layer decided a day: nothing, a recurring rule, or a dated exception. */
+export type SourceHoraire = 'DEFAUT' | 'REGLE' | 'EXCEPTION';
+
+export type TypeAnomalieOuverture =
+  | 'STAND_JAMAIS_OUVERT'
+  | 'FENETRE_SANS_EFFET'
+  | 'SEGMENT_TROP_COURT';
+
+/** One festival day, and the amplitude its column's cells are measured against. */
+export interface JourAmplitude {
+  date: string;
+  jour: number;
+  heureDebut: string;
+  heureFin: string;
+  minutes: number;
+  nombreCreneaux: number;
+}
+
+export interface FenetreEffective {
+  heureDebut: string;
+  heureFin: string;
+}
+
+export interface CelluleJourOuverture {
+  date: string;
+  etat: EtatOuverture;
+  source: SourceHoraire;
+  fenetres: FenetreEffective[];
+  minutesOuvertes: number;
+  minutesAmplitude: number;
+  postes: number;
+}
+
+export interface LigneStandOuverture {
+  standId: string;
+  nom: string;
+  effectifMin: number;
+  jours: CelluleJourOuverture[];
+  minutesOuvertes: number;
+  postes: number;
+}
+
+export interface AnomalieOuverture {
+  type: TypeAnomalieOuverture;
+  standId: string;
+  standNom: string;
+  date: string | null;
+  message: string;
+}
+
+/**
+ * What `GET /api/ouvertures-stands` returns: the opening schedule actually in
+ * force, built server-side from the very postes a solve would receive — so the
+ * screen validates the real thing rather than a second interpretation of it.
+ */
+export interface RapportOuvertures {
+  jours: JourAmplitude[];
+  stands: LigneStandOuverture[];
+  standsJamaisOuverts: number;
+  postesTotal: number;
+  anomalies: AnomalieOuverture[];
+}
+
 /** Editable GPS-located place a stand can be tied to (`/api/emplacements`). */
 export interface Emplacement {
   id: string;

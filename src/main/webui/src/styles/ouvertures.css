@@ -1,0 +1,245 @@
+/* "Ouvertures des stands" : grille stand × jour, sa légende et sa liste
+   d'anomalies. Seul ce que Material ne couvre pas — l'essentiel étant le codage
+   couleur des cases, qui doit rester lisible sans dépendre de la seule couleur
+   (chaque case porte aussi une barre proportionnelle et une infobulle). */
+
+.ouvertures-synthese,
+.ouvertures-legende {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  align-items: center;
+}
+
+.ouvertures-synthese {
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.ouvertures-synthese .synthese-partiel {
+  color: var(--mat-sys-tertiary);
+}
+
+.ouvertures-synthese .synthese-ferme,
+.ouvertures-synthese .synthese-alerte {
+  color: var(--mat-sys-error);
+}
+
+.ouvertures-controles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.ouvertures-recherche {
+  flex: 1 1 14rem;
+  max-width: 22rem;
+}
+
+.ouvertures-legende {
+  margin-bottom: 0.75rem;
+  font-size: 0.8rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.ouvertures-legende .pastille {
+  display: inline-block;
+  width: 0.85rem;
+  height: 0.85rem;
+  margin-right: 0.35rem;
+  vertical-align: -2px;
+  border-radius: 0.2rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+}
+
+/* Les deux pastilles de provenance ne portent qu'un liseré : sur un carré pâle
+   de 0,85 rem il ne se voyait pas. On les élargit et on épaissit le liseré, seul
+   porteur de l'information ici. */
+.ouvertures-legende .pastille.source-regle,
+.ouvertures-legende .pastille.source-exception {
+  width: 1.4rem;
+  background: var(--mat-sys-surface-container-high);
+}
+
+.ouvertures-legende .pastille.source-regle {
+  border-left: 5px solid var(--mat-sys-primary);
+}
+
+.ouvertures-legende .pastille.source-exception {
+  border-left: 5px dashed var(--mat-sys-error);
+}
+
+.ouvertures-grille {
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.ouvertures-grille th,
+.ouvertures-grille td {
+  border: 1px solid var(--mat-sys-outline-variant);
+  padding: 0.25rem 0.4rem;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Le nom du stand reste visible pendant le défilement horizontal : sur soixante
+   stands et douze jours, une case sans sa ligne ne veut rien dire. */
+.ouvertures-grille .colonne-stand {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--mat-sys-surface);
+  text-align: left;
+  max-width: 16rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ouvertures-grille thead th {
+  background: var(--mat-sys-surface-container);
+  font-weight: 600;
+}
+
+.ouvertures-grille .entete-jour,
+.ouvertures-grille .entete-date {
+  display: block;
+  line-height: 1.15;
+}
+
+.ouvertures-grille .entete-date {
+  font-weight: 400;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.ouvertures-grille .stand-nom {
+  vertical-align: middle;
+}
+
+.ouvertures-grille .row-problem-icon {
+  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+  vertical-align: -3px;
+  margin-left: 0.25rem;
+  color: var(--mat-sys-error);
+}
+
+/* Une case : un fond selon l'état, une barre proportionnelle à la part
+   d'amplitude couverte, et l'heure d'ouverture en clair. */
+.ouverture-cellule {
+  position: relative;
+  min-width: 3.4rem;
+  height: 2.1rem;
+  vertical-align: middle;
+}
+
+.ouverture-cellule .cellule-barre {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 0.3rem;
+  background: currentColor;
+  opacity: 0.75;
+}
+
+.ouverture-cellule .cellule-heures {
+  position: relative;
+  font-variant-numeric: tabular-nums;
+}
+
+.ouverture-cellule .cellule-vide {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/* Deux valeurs par cellule de total : sans empilement elles se lisent
+   « 96 h86 postes ». */
+.ouvertures-grille .colonne-total {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.ouvertures-grille .colonne-total > span {
+  display: block;
+  line-height: 1.2;
+}
+
+.ouvertures-grille .colonne-total .total-postes {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.75rem;
+}
+
+/* Le nombre de fenêtres d'un jour : sans ce repère, une journée coupée en deux
+   (10h-12h puis 14h-20h) est indistinguable d'une journée continue. */
+.ouverture-cellule .cellule-fenetres {
+  position: relative;
+  margin-left: 0.2rem;
+  font-size: 0.7rem;
+  opacity: 0.8;
+}
+
+.etat-total {
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}
+
+.etat-partiel {
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+}
+
+.etat-ferme {
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/* Quelle couche a décidé du jour : un liseré, pour que l'état reste porté par le
+   fond et la provenance par la bordure — deux informations, deux canaux. */
+.source-regle {
+  border-left: 3px solid var(--mat-sys-primary);
+}
+
+.source-exception {
+  border-left: 3px dashed var(--mat-sys-error);
+}
+
+.ouvertures-anomalies {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+}
+
+.ouvertures-anomalies li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+
+.ouvertures-anomalies mat-icon {
+  font-size: 1.1rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  flex: none;
+  color: var(--mat-sys-error);
+}
+
+.ouvertures-anomalies .anomalie-stand {
+  font-weight: 600;
+  flex: none;
+}
+
+.ouvertures-anomalies .anomalie-date {
+  flex: none;
+  color: var(--mat-sys-on-surface-variant);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 60rem) {
+  .ouvertures-grille .colonne-stand {
+    max-width: 9rem;
+  }
+}

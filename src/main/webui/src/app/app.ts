@@ -98,6 +98,11 @@ function buildNavGroups(): NavGroup[] {
       },
       { path: '/hours', label: $localize`:@@nav.link.hours:Heures`, icon: 'schedule' },
       {
+        path: '/ouvertures',
+        label: $localize`:@@nav.link.ouvertures:Ouvertures des stands`,
+        icon: 'storefront'
+      },
+      {
         path: '/staffing',
         label: $localize`:@@nav.link.staffing:Besoin en animateurs`,
         icon: 'engineering'

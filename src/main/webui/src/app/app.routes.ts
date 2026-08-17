@@ -106,6 +106,12 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/staffing/staffing-page').then((m) => m.StaffingPage)
   },
   {
+    path: 'ouvertures',
+    title: 'Stand opening schedule — Planning Équipes',
+    loadComponent: () =>
+      import('./pages/ouvertures/ouvertures-page').then((m) => m.OuverturesPage)
+  },
+  {
     path: 'heatmap',
     title: 'Load heatmap — Planning Équipes',
     loadComponent: () => import('./pages/heatmap/heatmap-page').then((m) => m.HeatmapPage)

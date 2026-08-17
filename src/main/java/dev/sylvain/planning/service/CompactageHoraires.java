@@ -30,8 +30,8 @@ import dev.sylvain.planning.domain.TypeJoursHoraire;
  * before rules existed, and the reason V37 needs no data migration of its own.
  *
  * <p>On the reference 63-stand festival fixture this takes 714 dated windows
- * down to ~83 rules: nearly every stand states one or two patterns and repeats
- * them across twelve days.</p>
+ * down to 120 rules plus 19 remaining exceptions: nearly every stand states one
+ * or two patterns and repeats them across twelve days.</p>
  *
  * <p>Nothing is trusted blindly. Every candidate compaction is replayed against
  * the real créneaux and compared segment by segment with the original
@@ -138,6 +138,8 @@ public final class CompactageHoraires {
         Map<JourSaisi, Set<LocalDate>> groupes = new LinkedHashMap<>();
         compactables.forEach((date, jour) -> groupes.computeIfAbsent(jour, cle -> new TreeSet<>()).add(date));
 
+        Set<LocalDate> groupeDeBase = groupeDeBase(groupes, compactables.keySet(), datesFestival);
+
         List<HoraireStand> regles = new ArrayList<>();
         Map<LocalDate, JourSaisi> restentDates = new LinkedHashMap<>(horsPerimetre);
         groupes.forEach((patron, dates) -> {
@@ -145,7 +147,7 @@ public final class CompactageHoraires {
                 dates.forEach(date -> restentDates.put(date, patron));
                 return;
             }
-            regles.add(construireRegle(patron, dates, datesFestival));
+            regles.add(construireRegle(patron, dates, datesFestival, dates == groupeDeBase));
         });
         if (regles.isEmpty()) {
             return new LigneCompactage(stand.getId(), fenetresAvant, 0, fenetresAvant, 0, false,
@@ -267,16 +269,58 @@ public final class CompactageHoraires {
     }
 
     /**
-     * The cheapest selector that covers exactly {@code dates} and not one day
-     * more. Exactness matters: a {@code JOURS_SEMAINE} selector that also caught
-     * a day belonging to another pattern would silently restate that day.
+     * The one pattern allowed to be written as a plain "every day" rule and let
+     * the others override it, or {@code null} when none is.
+     *
+     * <p>This is what turns "these ten dates, then those two dates" into "every
+     * day, except those two" — the layering doing the work instead of two date
+     * lists. It is only sound when <b>every</b> festival day is stated somewhere:
+     * the days the base rule over-reaches are then all covered either by a more
+     * specific rule or by a dated exception, both of which win over it. Leave one
+     * day unstated and a base rule would start governing a day that was
+     * deliberately left open-by-default.</p>
+     *
+     * <p>A {@code TOUS} rule also reaches dates <em>outside</em> the festival —
+     * in practice only the day after a midnight-crossing amplitude, the one date
+     * {@code HoraireStandResolver} expands beyond the créneau days. That over-reach
+     * can only change anything if a créneau actually reads that date, and if it
+     * does, {@link #ecartMaximalMinutes} sees it and the stand is left alone. So
+     * the outcome stays correct either way; at worst a stand doesn't compact.
+     * Bounding the base rule with a {@code PLAGE} instead would be more precise
+     * and yet wrong: {@code PLAGE} outranks {@code JOURS_SEMAINE}, so it would
+     * start winning over the very rules meant to override it.</p>
+     *
+     * <p>The largest pattern is picked, ties broken on the earliest date, so the
+     * result doesn't depend on map iteration order.</p>
      */
-    private static HoraireStand construireRegle(JourSaisi patron, Set<LocalDate> dates, Set<LocalDate> datesFestival) {
+    private static Set<LocalDate> groupeDeBase(Map<JourSaisi, Set<LocalDate>> groupes, Set<LocalDate> joursStates,
+            Set<LocalDate> datesFestival) {
+        if (!joursStates.containsAll(datesFestival)) {
+            return null;
+        }
+        return groupes.values().stream()
+                .filter(dates -> dates.size() >= 2)
+                .max(Comparator.<Set<LocalDate>>comparingInt(Set::size)
+                        .thenComparing(dates -> dates.iterator().next(), Comparator.reverseOrder()))
+                .orElse(null);
+    }
+
+    /**
+     * The cheapest selector that covers exactly {@code dates} and not one day
+     * more — unless this is the base pattern ({@link #groupeDeBase}), which gets
+     * {@code TOUS} and relies on the other rules being more specific.
+     *
+     * <p>Exactness matters for every other pattern: a {@code JOURS_SEMAINE}
+     * selector that also caught a day belonging to another pattern would silently
+     * restate that day, and at equal specificity nothing would arbitrate.</p>
+     */
+    private static HoraireStand construireRegle(JourSaisi patron, Set<LocalDate> dates, Set<LocalDate> datesFestival,
+            boolean base) {
         HoraireStand regle = new HoraireStand();
         regle.setMode(patron.mode());
         regle.setFenetres(patron.fenetres());
         regle.setMotif(patron.motif());
-        if (dates.equals(datesFestival)) {
+        if (base || dates.equals(datesFestival)) {
             regle.setJours(TypeJoursHoraire.TOUS);
             return regle;
         }
@@ -305,15 +349,24 @@ public final class CompactageHoraires {
     }
 
     /**
-     * Largest difference, in minutes, between the open segments {@code avant} and
-     * {@code apres} produce over {@code creneaux} — {@link Integer#MAX_VALUE}
-     * when they don't even agree on how many segments a créneau has.
+     * How many minutes of opening {@code avant} and {@code apres} disagree on,
+     * at worst, over any single créneau of {@code creneaux}.
      *
      * <p>This is the safety net of the whole operation, and it is deliberately
-     * expressed on the observable outcome (what
-     * {@link Creneau#segmentsOuvertsMinutes(Stand)} returns, hence which postes
-     * get generated) rather than on the rules themselves: a compaction is
-     * correct exactly when the solver cannot tell the difference.</p>
+     * expressed on the observable outcome (which minutes of a créneau a stand is
+     * open for, hence which postes get generated) rather than on the rules
+     * themselves: a compaction is correct exactly when the solver cannot tell the
+     * difference.</p>
+     *
+     * <p>Measured as the symmetric difference of the <b>covered minutes</b>, not
+     * by pairing segments index by index. That matters for the one discrepancy
+     * this operation does introduce: a stand absent all day used to be written
+     * "closed 10:00-23:59" on a day closing at midnight, which left a single
+     * open minute behind — and therefore a one-minute poste. Rewritten as "closed
+     * from 10:00 to closing", the stand generates no poste at all, so the segment
+     * <i>count</i> drops from one to zero while the actual disagreement is the one
+     * minute that never should have been staffable. Comparing counts would reject
+     * exactly the stands this rewrite helps most.</p>
      */
     static int ecartMaximalMinutes(Stand avant, Stand apres, List<Creneau> creneaux) {
         Stand referenceAvant = copieAvecHoraires(avant, List.of(), avant.getIndisponibilites(), avant.getOuvertures());
@@ -321,17 +374,28 @@ public final class CompactageHoraires {
         HoraireStandResolver.appliquer(List.of(apres), creneaux);
         int ecart = 0;
         for (Creneau creneau : creneaux) {
-            List<int[]> segmentsAvant = creneau.segmentsOuvertsMinutes(referenceAvant);
-            List<int[]> segmentsApres = creneau.segmentsOuvertsMinutes(apres);
-            if (segmentsAvant.size() != segmentsApres.size()) {
-                return Integer.MAX_VALUE;
+            boolean[] ouvertAvant = minutesOuvertes(creneau, referenceAvant);
+            boolean[] ouvertApres = minutesOuvertes(creneau, apres);
+            int desaccord = 0;
+            for (int minute = 0; minute < ouvertAvant.length; minute++) {
+                if (ouvertAvant[minute] != ouvertApres[minute]) {
+                    desaccord++;
+                }
             }
-            for (int i = 0; i < segmentsAvant.size(); i++) {
-                ecart = Math.max(ecart, Math.abs(segmentsAvant.get(i)[0] - segmentsApres.get(i)[0]));
-                ecart = Math.max(ecart, Math.abs(segmentsAvant.get(i)[1] - segmentsApres.get(i)[1]));
-            }
+            ecart = Math.max(ecart, desaccord);
         }
         return ecart;
+    }
+
+    /** One flag per minute of {@code creneau}: is {@code stand} open then? */
+    private static boolean[] minutesOuvertes(Creneau creneau, Stand stand) {
+        boolean[] ouvert = new boolean[Math.max(0, creneau.getDureeMinutes())];
+        for (int[] segment : creneau.segmentsOuvertsMinutes(stand)) {
+            for (int minute = Math.max(0, segment[0]); minute < Math.min(ouvert.length, segment[1]); minute++) {
+                ouvert[minute] = true;
+            }
+        }
+        return ouvert;
     }
 
     /**

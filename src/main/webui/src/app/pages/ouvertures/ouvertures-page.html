@@ -1,0 +1,135 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <mat-card-title i18n="@@ouvertures.title">Ouvertures des stands</mat-card-title>
+    <mat-card-subtitle i18n="@@ouvertures.subtitle">
+      Ce que le solveur lira réellement : règles d'horaire étendues, exceptions datées appliquées, fenêtres bornées à
+      chaque créneau du groupe actif. Une case par stand et par jour.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-actions class="card-actions">
+    <button matButton type="button" [disabled]="chargement()" (click)="recharger()">
+      <mat-icon>refresh</mat-icon>
+      <ng-container i18n="@@common.refresh">Rafraîchir</ng-container>
+    </button>
+  </mat-card-actions>
+  <mat-card-content>
+    @if (chargement() && !rapport()) {
+      <p class="empty-hint" i18n="@@ouvertures.loading">Calcul des ouvertures…</p>
+    } @else if (!rapport() || rapport()!.jours.length === 0) {
+      <p class="empty-hint" i18n="@@ouvertures.empty">
+        Aucun créneau dans le groupe actif : créez des créneaux ou activez un autre groupe pour voir les ouvertures.
+      </p>
+    } @else {
+      @if (synthese(); as bilan) {
+        <div class="ouvertures-synthese">
+          <span><strong>{{ bilan.stands }}</strong>&nbsp;<ng-container i18n="@@ouvertures.synthese.stands">stands</ng-container></span>
+          <span><strong>{{ bilan.postesTotal }}</strong>&nbsp;<ng-container i18n="@@ouvertures.synthese.postes">postes à pourvoir</ng-container></span>
+          <span class="synthese-partiel"><strong>{{ bilan.avecJourPartiel }}</strong>&nbsp;<ng-container i18n="@@ouvertures.synthese.partiels">avec un jour partiel</ng-container></span>
+          <span class="synthese-ferme"><strong>{{ bilan.avecJourFerme }}</strong>&nbsp;<ng-container i18n="@@ouvertures.synthese.fermes">avec un jour fermé</ng-container></span>
+          @if (bilan.jamaisOuverts > 0) {
+            <span class="synthese-alerte"><strong>{{ bilan.jamaisOuverts }}</strong>&nbsp;<ng-container i18n="@@ouvertures.synthese.jamaisOuverts">jamais ouverts</ng-container></span>
+          }
+          @if (bilan.anomalies > 0) {
+            <span class="synthese-alerte"><strong>{{ bilan.anomalies }}</strong>&nbsp;<ng-container i18n="@@ouvertures.synthese.anomalies">anomalies</ng-container></span>
+          }
+        </div>
+      }
+
+      <div class="ouvertures-controles">
+        <mat-button-toggle-group [value]="filtre()" (valueChange)="filtre.set($event)" hideSingleSelectionIndicator>
+          <mat-button-toggle value="TOUS" i18n="@@ouvertures.filtre.tous">Tous</mat-button-toggle>
+          <mat-button-toggle value="ANOMALIES" i18n="@@ouvertures.filtre.anomalies">Anomalies</mat-button-toggle>
+          <mat-button-toggle value="PARTIELS" i18n="@@ouvertures.filtre.partiels">Jours partiels</mat-button-toggle>
+          <mat-button-toggle value="FERMES" i18n="@@ouvertures.filtre.fermes">Jours fermés</mat-button-toggle>
+        </mat-button-toggle-group>
+        <mat-form-field appearance="outline" class="ouvertures-recherche">
+          <mat-label i18n="@@ouvertures.recherche">Filtrer par stand</mat-label>
+          <input matInput name="recherche" [ngModel]="recherche()" (ngModelChange)="recherche.set($event)" />
+        </mat-form-field>
+      </div>
+
+      <div class="ouvertures-legende">
+        <span><i class="pastille etat-total"></i><ng-container i18n="@@ouvertures.legende.total">Toute l'amplitude</ng-container></span>
+        <span><i class="pastille etat-partiel"></i><ng-container i18n="@@ouvertures.legende.partiel">Partiel</ng-container></span>
+        <span><i class="pastille etat-ferme"></i><ng-container i18n="@@ouvertures.legende.ferme">Fermé</ng-container></span>
+        <span><i class="pastille source-regle"></i><ng-container i18n="@@ouvertures.legende.regle">Décidé par une règle</ng-container></span>
+        <span><i class="pastille source-exception"></i><ng-container i18n="@@ouvertures.legende.exception">Décidé par une exception datée</ng-container></span>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="ouvertures-grille">
+          <thead>
+            <tr>
+              <th scope="col" class="colonne-stand" i18n="@@ouvertures.colonne.stand">Stand</th>
+              @for (jour of rapport()!.jours; track jour.date) {
+                <th scope="col"
+                    [matTooltip]="libelleJour(jour.date) + ' · ' + heure(jour.heureDebut) + '→' + heure(jour.heureFin) + ' · ' + duree(jour.minutes)">
+                  <span class="entete-jour">J{{ jour.jour }}</span>
+                  <span class="entete-date">{{ libelleJour(jour.date) }}</span>
+                </th>
+              }
+              <th scope="col" class="colonne-total" i18n="@@ouvertures.colonne.total">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (ligne of lignes(); track ligne.standId) {
+              <tr>
+                <th scope="row" class="colonne-stand">
+                  <span class="stand-nom">{{ ligne.nom || ligne.standId }}</span>
+                  @if (anomaliesDe(ligne.standId).length > 0) {
+                    <mat-icon class="row-problem-icon" [matTooltip]="infobulleStand(ligne)"
+                              [attr.aria-label]="infobulleStand(ligne)">warning</mat-icon>
+                  }
+                </th>
+                @for (cellule of ligne.jours; track cellule.date) {
+                  <td [class]="classeCellule(cellule)" [matTooltip]="infobulleCellule(cellule)"
+                      [attr.aria-label]="libelleEtat(cellule)">
+                    @if (cellule.etat === 'FERME') {
+                      <span class="cellule-vide" aria-hidden="true">—</span>
+                    } @else {
+                      <span class="cellule-barre" [style.width.%]="largeurPourcent(cellule)"></span>
+                      <span class="cellule-heures">{{ heure(cellule.fenetres[0].heureDebut) }}</span>
+                      @if (cellule.fenetres.length > 1) {
+                        <span class="cellule-fenetres">×{{ cellule.fenetres.length }}</span>
+                      }
+                    }
+                  </td>
+                }
+                <td class="colonne-total">
+                  <span>{{ duree(ligne.minutesOuvertes) }}</span>
+                  <span class="total-postes" i18n="@@ouvertures.total.postes">{{ ligne.postes }} postes</span>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td [attr.colspan]="rapport()!.jours.length + 2" class="empty-hint" i18n="@@ouvertures.aucuneLigne">
+                  Aucun stand ne correspond à ce filtre.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (rapport()!.anomalies.length > 0) {
+        <h3 i18n="@@ouvertures.anomalies.title">Anomalies détectées</h3>
+        <p class="empty-hint" i18n="@@ouvertures.anomalies.hint">
+          Ces points ne bloquent pas une résolution, mais chacun est le symptôme habituel d'une saisie qui ne fait pas
+          ce qu'on croit.
+        </p>
+        <ul class="ouvertures-anomalies">
+          @for (anomalie of rapport()!.anomalies; track $index) {
+            <li>
+              <mat-icon>{{ iconeAnomalie(anomalie.type) }}</mat-icon>
+              <span class="anomalie-stand">{{ anomalie.standNom || anomalie.standId }}</span>
+              @if (anomalie.date) {
+                <span class="anomalie-date">{{ libelleJour(anomalie.date) }}</span>
+              }
+              <span>{{ anomalie.message }}</span>
+            </li>
+          }
+        </ul>
+      }
+    }
+  </mat-card-content>
+</mat-card>

@@ -292,8 +292,48 @@ Le rapport porte `{ applique, standsCompactes, fenetresAvant, fenetresApres,
 stands[] }`, une ligne par stand : `{ standId, fenetresAvant, reglesApres,
 exceptionsApres, ecartMinutes, compacte, raison }`. Un stand n'est réécrit que si
 les règles proposées reproduisent ses propres segments ouverts ; sinon `compacte`
-est `false` et `raison` dit pourquoi. `ecartMinutes` vaut `1` quand un ancien
-`23:59` est devenu la fermeture réelle du jour.
+est `false` et `raison` dit pourquoi.
+
+`ecartMinutes` compte les minutes d'ouverture en désaccord (au pire sur un
+créneau) : `0` dans le cas général, `1` quand un ancien `23:59` est devenu la
+fermeture réelle du jour. Ce cas a une conséquence visible : un stand absent
+toute la journée ne génère plus le poste d'une minute que ce `23:59` laissait
+derrière lui. Voir
+[`domaine.md`](domaine.md#horaires-récurrents).
+
+### Visualisation des ouvertures
+
+| Méthode | Chemin | Description |
+| --- | --- | --- |
+| `GET` | `/api/ouvertures-stands` | Grille stand × jour des ouvertures réellement en vigueur, plus les anomalies à relire (écran « Ouvertures des stands ») |
+
+Lecture seule, aucune résolution déclenchée — le pendant, pour les horaires, de
+ce que `GET /api/feasibility` est pour la capacité en animateurs. La grille est
+construite **à partir des postes que le solveur recevrait** (les stands sont
+résolus, les créneaux ceux du groupe actif) : l'écran valide donc la donnée
+réelle, pas une seconde interprétation de la même saisie.
+
+```
+{ jours: [{ date, jour, heureDebut, heureFin, minutes, nombreCreneaux }],
+  stands: [{ standId, nom, effectifMin, minutesOuvertes, postes,
+             jours: [{ date, etat, source, fenetres, minutesOuvertes,
+                       minutesAmplitude, postes }] }],
+  standsJamaisOuverts, postesTotal,
+  anomalies: [{ type, standId, standNom, date, message }] }
+```
+
+- `etat` vaut `OUVERT_TOTAL`, `OUVERT_PARTIEL` ou `FERME` — la part de
+  l'amplitude du jour que le stand couvre ;
+- `source` vaut `DEFAUT`, `REGLE` ou `EXCEPTION` : quelle couche a décidé de ce
+  jour-là, ce qui permet de remonter à la saisie fautive ;
+- `fenetres` sont les plages ouvertes en heures réelles, fusionnées et bornées
+  aux créneaux (les vacations d'un même jour se chevauchent par construction :
+  une journée continue doit se lire comme une seule plage) ;
+- `anomalies` porte trois types : `STAND_JAMAIS_OUVERT` (aucun poste sur tout le
+  groupe), `FENETRE_SANS_EFFET` (une fenêtre saisie qui ne recoupe aucun créneau
+  de son jour) et `SEGMENT_TROP_COURT` (une plage ouverte trop courte pour être
+  un vrai créneau de travail — la signature du contournement `23:59`). Aucune ne
+  bloque une résolution.
 
 Contraintes ad hoc (pas de mise à jour, on supprime et on recrée) :
 

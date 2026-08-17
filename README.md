@@ -346,6 +346,19 @@ de développement » de la navigation et affiche un bandeau d'avertissement.
 
 ### Consultation du planning
 
+- **Ouvertures des stands** : une grille stand × jour de ce que le planning
+  retiendra réellement, une fois les règles d'horaire étendues, les exceptions
+  datées appliquées et chaque fenêtre bornée aux créneaux du planning actif.
+  Chaque case dit d'un coup d'œil si le stand est ouvert toute la journée,
+  partiellement ou pas du tout, quelle part de l'amplitude il couvre, combien de
+  places il génère, et **qui a décidé** de ce jour-là — rien, une règle, ou une
+  exception datée. La page signale aussi les trois façons dont une saisie
+  d'horaires part habituellement de travers : un stand qui n'est finalement
+  ouvert aucun jour, une fenêtre saisie en dehors des heures du jour (elle ne
+  change rien), et une plage ouverte trop courte pour être un vrai créneau de
+  travail. À utiliser avant de lancer un calcul : c'est le moyen de valider des
+  horaires sans attendre plusieurs minutes de résolution pour découvrir qu'un
+  stand était fermé par erreur ;
 - **Calendrier mensuel** avec filtres par animateur et par stand, et détail des
   affectations au clic sur une journée ;
 - **Vue par jour**, stand par stand et créneau par créneau ;

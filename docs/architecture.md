@@ -161,6 +161,7 @@ Chaque bloc fonctionnel a **sa propre route et sa propre page**, chargée en
 | `/day-calendar` | `app/pages/calendar-day/` | Vue par jour du festival |
 | `/constraints` | `app/pages/constraints/` | Catalogue des contraintes + dernière analyse |
 | `/hours` | `app/pages/hours/` | Heures planifiées par animateur et par semaine |
+| `/ouvertures` | `app/pages/ouvertures/` | Grille stand × jour des ouvertures réellement en vigueur (règles étendues, exceptions appliquées, fenêtres bornées aux créneaux) et anomalies de saisie, pour validation avant résolution |
 | `/staffing` | `app/pages/staffing/` | Besoin minimum en effectif par créneau |
 | `/heatmap` | `app/pages/heatmap/` | Heatmap de charge par jour, croisée avec le stand (trous de couverture) ou l'animateur (surcharge) |
 | `/timeline` | `app/pages/animateur-timeline/` | Timeline individuelle d'un animateur : amplitude, vacations et pauses/déplacements jour par jour |
@@ -233,7 +234,8 @@ Le CSS global se limite à ce que Material ne couvre pas : `src/styles.css` n'es
 qu'un agrégateur de règles `@import` et chaque partial vit sous `src/styles/`
 (`pages.css` cartes / formulaires / tableaux, `feedback.css` moniteur de job et
 variantes de snack bar, `calendar-month.css`, `calendar-day.css`,
-`constraints.css`, `problemes.css`, `staffing.css`, `horaires-stand.css`
+`constraints.css`, `problemes.css`, `staffing.css`, `ouvertures.css`
+— grille des ouvertures de stands —, `horaires-stand.css`
 — éditeur de règles d'horaire d'un stand et bande d'aperçu jour par jour —,
 `typologie-colors.css`
 — la palette catégorielle des typologies de jeu, partagée par la heatmap et la
