@@ -91,6 +91,13 @@
       "matchPackageNames": ["postgres", "docker.io/postgres"],
       "matchUpdateTypes": ["major"],
       "dependencyDashboardApproval": true
+    },
+    {
+      "description": "jsonschema-generator major upgrades can break quarkus-mcp-server-http, which bundles its own victools-based generator built against an older major (mismatched majors crash MCP startup with NoSuchMethodError): handle them manually",
+      "matchManagers": ["maven"],
+      "matchPackageNames": ["com.github.victools{/,}**"],
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true
     }
   ],
   "vulnerabilityAlerts": {
