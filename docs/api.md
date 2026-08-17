@@ -28,7 +28,7 @@ langage naturel depuis un assistant IA : voir [`mcp.md`](mcp.md).
 | `GET` | `/api/planning/volumetrie` | Volumétrie réelle du prochain solve : nombre d'animateurs (value count Timefold), de postes à pourvoir (entity count Timefold, un par siège requis et non par stand) et de contraintes ad hoc actives ; tout à 0 si aucune donnée de référence n'est chargée |
 | `POST` | `/api/solve` | Résout un `PlanningFestival` envoyé en JSON (synchrone) |
 | `POST` | `/api/solve/analyze` | Analyse un planning : score et contraintes violées |
-| `POST` | `/api/planning/reset` | Vide le **groupe courant** (stands, créneaux, animateurs, affectations, contraintes) sans charger de scénario ; ses grilles de créneaux sont réinitialisées à la seule grille `DEFAUT` active. Les autres groupes ne sont pas touchés (bouton « Reset BDD ») |
+| `POST` | `/api/planning/reset` | Vide l'**édition courante** (stands, créneaux, animateurs, affectations, contraintes) sans charger de scénario ; ses grilles de créneaux sont réinitialisées à la seule grille `DEFAUT` active. Les autres éditions ne sont pas touchées (bouton « Reset BDD ») |
 | `GET` | `/api/planning/persisted` | Planning persisté en base, lecture seule (utilisé par les vues calendrier, qui ne déclenchent jamais de résolution) |
 | `GET` | `/api/planning/persisted/count` | Nombre d'affectations persistées |
 | `GET` | `/api/planning/persisted/resolution` | Groupe de créneaux et date de la dernière résolution persistée (`solved: false` si aucune résolution n'a encore eu lieu), plus `derniereModificationDonnees` : date de la dernière modification d'une donnée de référence (`null` si aucune depuis le démarrage du serveur) |
@@ -195,19 +195,19 @@ Persistée côté serveur (et non en `localStorage`) : la même valeur est lue e
 modifiée depuis n'importe quel navigateur. Le `PUT` répond **400** avec
 `{ "message": "…" }` si la valeur n'est pas strictement positive.
 
-## Groupes (éditions)
+## Éditions
 
-Tout le référentiel est cloisonné par **groupe** — une édition complète du
+Tout le référentiel est cloisonné par **édition** — une édition complète du
 festival, « Année 2025 », « Année 2026 » — avec ses propres stands, animateurs,
 typologies, emplacements, grilles de créneaux, paramètres et planning résolu.
-Rien ne circule de l'un à l'autre. Voir [`groupes.md`](groupes.md).
+Rien ne circule de l'une à l'autre. Voir [`editions.md`](editions.md).
 
-**Le client désigne le groupe qu'il consulte à chaque requête**, via l'en-tête
-`X-Groupe-Id` :
+**Le client désigne l'édition qu'il consulte à chaque requête**, via l'en-tête
+`X-Edition-Id` :
 
-- absent, ou nommant un groupe inconnu → le serveur retombe silencieusement sur
-  le groupe marqué `defaut`, jamais une erreur : un onglet resté ouvert sur un
-  groupe supprimé entre-temps continue de fonctionner ;
+- absent, ou nommant une édition inconnue → le serveur retombe silencieusement
+  sur l'édition marquée `defaut`, jamais une erreur : un onglet resté ouvert
+  sur une édition supprimée entre-temps continue de fonctionner ;
 - ce n'est donc pas un état global : deux onglets peuvent travailler sur deux
   éditions différentes en même temps.
 
@@ -216,24 +216,24 @@ du dump SQL (`/api/database/*`), qui reste une sauvegarde de l'instance entière
 
 | Méthode | Chemin | Description |
 | --- | --- | --- |
-| `GET` | `/api/groupes` | Liste des groupes |
-| `GET` | `/api/groupes/courant` | Groupe auquel *cette* requête a réellement été résolue — la façon dont un client découvre que son `X-Groupe-Id` a été ignoré |
-| `POST` | `/api/groupes` | Crée un groupe vide (`{ "id", "nom" }`) ; **400** si l'identifiant est déjà pris |
-| `PUT` | `/api/groupes/{id}` | Renomme le groupe |
-| `POST` | `/api/groupes/{id}/dupliquer` | Crée un nouveau groupe (`{ "id", "nom" }`) et y recopie **tout** le référentiel de `{id}` — les résultats de solveur (`poste_affectation`, `planning_resolution`) sont exclus : « 2026 = 2025 moins les affectations » |
-| `PUT` | `/api/groupes/{id}/defaut` | Désigne le groupe de repli pour les appelants sans en-tête |
-| `DELETE` | `/api/groupes/{id}` | Supprime le groupe **et tout son référentiel** ; **400** s'il s'agit du groupe par défaut, du groupe courant, ou du dernier restant |
+| `GET` | `/api/editions` | Liste des éditions |
+| `GET` | `/api/editions/courant` | Édition à laquelle *cette* requête a réellement été résolue — la façon dont un client découvre que son `X-Edition-Id` a été ignoré |
+| `POST` | `/api/editions` | Crée une édition vide (`{ "id", "nom" }`) ; **400** si l'identifiant est déjà pris |
+| `PUT` | `/api/editions/{id}` | Renomme l'édition |
+| `POST` | `/api/editions/{id}/dupliquer` | Crée une nouvelle édition (`{ "id", "nom" }`) et y recopie **tout** le référentiel de `{id}` — les résultats de solveur (`poste_affectation`, `planning_resolution`) sont exclus : « 2026 = 2025 moins les affectations » |
+| `PUT` | `/api/editions/{id}/defaut` | Désigne l'édition de repli pour les appelants sans en-tête |
+| `DELETE` | `/api/editions/{id}` | Supprime l'édition **et tout son référentiel** ; **400** s'il s'agit de l'édition par défaut, de l'édition courante, ou de la dernière restante |
 
-Le verrou « un solveur à la fois » reste global à l'instance, tous groupes
-confondus (voir *Résolution asynchrone*) ; un job écrit son résultat dans le
-groupe pour lequel il a été lancé, même si le client bascule ensuite.
+Le verrou « un solveur à la fois » reste global à l'instance, toutes éditions
+confondues (voir *Résolution asynchrone*) ; un job écrit son résultat dans
+l'édition pour laquelle il a été lancé, même si le client bascule ensuite.
 
 ## Référentiels (CRUD)
 
 Même schéma pour chaque référentiel : `GET` (liste), `POST` (création),
 `PUT /{id}` (mise à jour), `DELETE /{id}` (suppression). Tout est lu et écrit
-dans le groupe désigné par `X-Groupe-Id` (voir ci-dessus) : deux groupes peuvent
-porter les mêmes identifiants métier sans se marcher dessus.
+dans l'édition désignée par `X-Edition-Id` (voir ci-dessus) : deux éditions
+peuvent porter les mêmes identifiants métier sans se marcher dessus.
 
 | Ressource | Chemin |
 | --- | --- |
@@ -244,9 +244,9 @@ porter les mêmes identifiants métier sans se marcher dessus.
 | Typologies de jeux | `/api/typologies` |
 
 `PUT /api/groupes-creneaux/{id}/actif` active cette grille de créneaux pour le
-prochain solve et désactive toutes les autres **du groupe courant** (une seule
-grille active à la fois, par groupe : activer une grille dans l'édition 2026 ne
-touche pas à celle de 2025).
+prochain solve et désactive toutes les autres **de l'édition courante** (une
+seule grille active à la fois, par édition : activer une grille dans l'édition
+2026 ne touche pas à celle de 2025).
 
 Les typologies de jeux sont un référentiel comme les autres, pas un enum figé
 côté serveur : `stands.typologiesProposees` et

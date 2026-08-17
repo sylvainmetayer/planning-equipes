@@ -100,13 +100,13 @@ export interface Creneau {
 
 /**
  * A whole edition of the festival — "Année 2025", "Année 2026" — and the scope
- * every piece of reference data belongs to (`/api/groupes`). Not to be confused
+ * every piece of reference data belongs to (`/api/editions`). Not to be confused
  * with `GroupeCreneau`, which is one alternative slicing of the days *inside*
- * one `Groupe`. `defaut` is not "the current one": that is this browser's own
- * choice, sent as `X-Groupe-Id`; `defaut` is the server's fallback when no
- * group is designated. See docs/groupes.md.
+ * one `Edition`. `defaut` is not "the current one": that is this browser's own
+ * choice, sent as `X-Edition-Id`; `defaut` is the server's fallback when no
+ * edition is designated. See docs/editions.md.
  */
-export interface Groupe {
+export interface Edition {
   id: string;
   nom: string;
   defaut: boolean;
@@ -116,7 +116,7 @@ export interface Groupe {
 /**
  * Named set of timeslots (a "planning"), so an alternate schedule can be
  * prepared ahead of time and activated on short notice (`/api/groupes-creneaux`).
- * Exactly one group is active per `Groupe`; the solver only uses the active
+ * Exactly one group is active per `Edition`; the solver only uses the active
  * group's créneaux.
  */
 export interface GroupeCreneau {

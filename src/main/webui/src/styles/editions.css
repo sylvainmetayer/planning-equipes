@@ -1,6 +1,6 @@
-/* Groupes page: inline rename field and the state badges of the group table. */
+/* Éditions page: inline rename field and the state badges of the edition table. */
 
-.groupe-nom-input {
+.edition-nom-input {
   width: 100%;
   min-width: 8rem;
   padding: 0.25rem 0.5rem;
@@ -13,13 +13,13 @@
 
 /* The field only looks like one once it is being used: a table of a dozen
    boxed inputs reads as a form, not as a list. */
-.groupe-nom-input:hover:not(:disabled),
-.groupe-nom-input:focus {
+.edition-nom-input:hover:not(:disabled),
+.edition-nom-input:focus {
   border-color: var(--mat-sys-outline-variant);
   background: var(--mat-sys-surface-container-high);
 }
 
-.groupe-badge {
+.edition-badge {
   display: inline-block;
   margin-right: 0.35rem;
   padding: 0.1rem 0.5rem;

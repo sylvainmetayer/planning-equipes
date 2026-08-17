@@ -1,0 +1,96 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <mat-card-title i18n="@@editions.intro.title">Éditions</mat-card-title>
+    <mat-card-subtitle i18n="@@editions.intro.subtitle">
+      Une édition est une édition complète du festival — « Année 2025 », « Année 2026 » — avec ses propres stands, animateurs, typologies, emplacements, créneaux, paramètres et planning résolu. Rien ne circule de l'une à l'autre. L'édition affichée en haut de l'écran est celle que <em>cet onglet</em> consulte : un autre onglet peut travailler ailleurs.
+    </mat-card-subtitle>
+  </mat-card-header>
+</mat-card>
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <mat-card-title i18n="@@editions.create.title">Nouvelle édition</mat-card-title>
+    <mat-card-subtitle i18n="@@editions.create.subtitle">
+      Vide, ou copie d'une édition existante. La copie reprend tout le référentiel mais jamais les affectations : « 2026 = 2025 moins le planning résolu ».
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <form class="form-grid" (ngSubmit)="creer()">
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@editions.field.nom">Nom</mat-label>
+        <input matInput name="nom" [ngModel]="nouveauNom()" (ngModelChange)="nouveauNom.set($event)"
+               placeholder="Année 2026" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@editions.field.source">Copier depuis</mat-label>
+        <select matNativeControl name="source" [ngModel]="sourceDuplication()"
+                (ngModelChange)="sourceDuplication.set($event || null)">
+          <option value="" i18n="@@editions.source.aucune">Édition vide</option>
+          @for (edition of store.editions(); track edition.id) {
+            <option [value]="edition.id">{{ edition.nom }}</option>
+          }
+        </select>
+      </mat-form-field>
+      <button matButton="filled" type="submit" [disabled]="enCours() || nouveauNom().trim().length === 0">
+        <mat-icon>add</mat-icon>
+        <ng-container i18n="@@common.add">Ajouter</ng-container>
+      </button>
+    </form>
+  </mat-card-content>
+</mat-card>
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <mat-card-title i18n="@@editions.list.title">Éditions ({{ store.editions().length }})</mat-card-title>
+  </mat-card-header>
+  <mat-card-content class="table-wrapper">
+    <table mat-table [dataSource]="store.editions()">
+      <ng-container matColumnDef="nom">
+        <th mat-header-cell *matHeaderCellDef i18n="@@editions.field.nom">Nom</th>
+        <td mat-cell *matCellDef="let edition">
+          <input class="edition-nom-input" [value]="edition.nom" [disabled]="enCours()"
+                 i18n-aria-label="@@editions.field.nom" aria-label="Nom"
+                 (change)="renommer(edition, $any($event.target).value)" />
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="id">
+        <th mat-header-cell *matHeaderCellDef i18n="@@common.id">Id</th>
+        <td mat-cell *matCellDef="let edition">{{ edition.id }}</td>
+      </ng-container>
+      <ng-container matColumnDef="etat">
+        <th mat-header-cell *matHeaderCellDef i18n="@@editions.field.etat">État</th>
+        <td mat-cell *matCellDef="let edition">
+          @if (edition.id === courantId()) {
+            <span class="edition-badge" i18n="@@editions.badge.courant">Consultée ici</span>
+          }
+          @if (edition.defaut) {
+            <span class="edition-badge" i18n="@@editions.badge.defaut">Par défaut</span>
+          }
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>
+        <td mat-cell *matCellDef="let edition" class="row-actions">
+          <button matIconButton i18n-matTooltip="@@editions.action.basculer" matTooltip="Travailler dans cette édition"
+                  i18n-aria-label="@@editions.action.basculer" aria-label="Travailler dans cette édition"
+                  [disabled]="enCours() || edition.id === courantId()" (click)="basculer(edition)">
+            <mat-icon>login</mat-icon>
+          </button>
+          <button matIconButton i18n-matTooltip="@@editions.action.defaut" matTooltip="Faire de cette édition l'édition par défaut"
+                  i18n-aria-label="@@editions.action.defaut" aria-label="Faire de cette édition l'édition par défaut"
+                  [disabled]="enCours() || edition.defaut" (click)="definirParDefaut(edition)">
+            <mat-icon>flag</mat-icon>
+          </button>
+          <button matIconButton i18n-matTooltip="@@common.delete" matTooltip="Supprimer"
+                  i18n-aria-label="@@common.delete" aria-label="Supprimer" class="danger-action"
+                  [disabled]="enCours() || edition.defaut || edition.id === courantId() || store.editions().length <= 1"
+                  (click)="supprimer(edition)">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="columns"></tr>
+      <tr mat-row *matRowDef="let row; columns: columns"></tr>
+    </table>
+  </mat-card-content>
+</mat-card>

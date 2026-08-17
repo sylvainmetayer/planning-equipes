@@ -33,9 +33,9 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/data-setup/data-setup-page').then((m) => m.DataSetupPage)
   },
   {
-    path: 'groupes',
-    title: 'Groupes — Planning Équipes',
-    loadComponent: () => import('./pages/groupes/groupes-page').then((m) => m.GroupesPage)
+    path: 'editions',
+    title: 'Éditions — Planning Équipes',
+    loadComponent: () => import('./pages/editions/editions-page').then((m) => m.EditionsPage)
   },
   { path: 'exports', redirectTo: '' },
   { path: 'solver', redirectTo: '' },

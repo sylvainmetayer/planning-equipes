@@ -153,21 +153,21 @@ ainsi que le planning résolu.
 - rotation des stands d'un animateur au fil du festival ;
 - mixité des niveaux (associer un débutant à un référent).
 
-### Groupes (éditions)
+### Éditions
 
 Toutes les données — stands, animateurs, typologies, emplacements, créneaux,
-paramètres et planning résolu — appartiennent à un **groupe**, c'est-à-dire à
-une édition du festival : « Année 2025 », « Année 2026 ». Rien ne circule de
-l'un à l'autre, ce qui permet de garder 2025 consultable et de préparer 2026 à
-côté, au lieu d'écraser l'un pour construire l'autre. Un bandeau en haut de
-chaque écran rappelle en permanence quel groupe est consulté, et la page
-« Groupes » permet d'en créer un vide, d'en **dupliquer** un existant
-(« 2026 = 2025 moins les affectations »), de le renommer ou de le supprimer.
+paramètres et planning résolu — appartiennent à une **édition** du festival :
+« Année 2025 », « Année 2026 ». Rien ne circule de l'une à l'autre, ce qui
+permet de garder 2025 consultable et de préparer 2026 à côté, au lieu
+d'écraser l'une pour construire l'autre. Un bandeau en haut de chaque écran
+rappelle en permanence quelle édition est consultée, et la page « Éditions »
+permet d'en créer une vide, d'en **dupliquer** une existante (« 2026 = 2025
+moins les affectations »), de la renommer ou de la supprimer.
 
-Le groupe consulté est un choix propre à chaque onglet du navigateur, pas un
+L'édition consultée est un choix propre à chaque onglet du navigateur, pas un
 état partagé : on peut relire les résultats de 2025 dans un onglet pendant
 qu'on travaille sur 2026 dans l'autre. Le détail est dans
-[`docs/groupes.md`](docs/groupes.md).
+[`docs/editions.md`](docs/editions.md).
 
 ### Plannings alternatifs
 

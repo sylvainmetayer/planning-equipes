@@ -35,8 +35,8 @@ import jakarta.inject.Inject;
  * {@code poste_affectation} foreign keys are satisfied, then the assignment
  * rows are fully rewritten to mirror the latest solution.
  *
- * <p>Everything written here belongs to the current {@code groupe} (see
- * {@link GroupeContext}): each edition keeps its own persisted planning and its
+ * <p>Everything written here belongs to the current {@code edition} (see
+ * {@link EditionContext}): each edition keeps its own persisted planning and its
  * own freshness, so browsing 2025's calendars never shows 2026's solve.</p>
  */
 @ApplicationScoped
@@ -49,11 +49,11 @@ public class PlanningPersistenceService {
     ReferenceDataService referenceDataService;
 
     @Inject
-    GroupeContext groupeContext;
+    EditionContext editionContext;
 
     /** Edition every statement below reads and writes. */
-    private String groupeId() {
-        return groupeContext.groupeIdCourant();
+    private String editionId() {
+        return editionContext.editionIdCourant();
     }
 
     /**
@@ -99,14 +99,14 @@ public class PlanningPersistenceService {
         for (String table : TABLES_A_VIDER) {
             // Table names come from the literal list above, never from user input.
             try (PreparedStatement ps = connection.prepareStatement(
-                    "DELETE FROM " + table + " WHERE groupe_id = ?")) {
-                ps.setString(1, groupeId());
+                    "DELETE FROM " + table + " WHERE edition_id = ?")) {
+                ps.setString(1, editionId());
                 ps.executeUpdate();
             }
         }
         try (PreparedStatement ps = connection.prepareStatement(
-                "INSERT INTO groupe_creneau (groupe_id, id, nom, actif) VALUES (?, 'DEFAUT', 'Défaut', TRUE)")) {
-            ps.setString(1, groupeId());
+                "INSERT INTO groupe_creneau (edition_id, id, nom, actif) VALUES (?, 'DEFAUT', 'Défaut', TRUE)")) {
+            ps.setString(1, editionId());
             ps.executeUpdate();
         }
     }
@@ -147,8 +147,8 @@ public class PlanningPersistenceService {
             }
         }
 
-        String upsertStand = "INSERT INTO stand (groupe_id, id, nom, effectif_min, effectif_max, reserve_majeurs) "
-                + "VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (groupe_id, id) DO UPDATE SET "
+        String upsertStand = "INSERT INTO stand (edition_id, id, nom, effectif_min, effectif_max, reserve_majeurs) "
+                + "VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (edition_id, id) DO UPDATE SET "
                 + "nom = EXCLUDED.nom, effectif_min = EXCLUDED.effectif_min, "
                 + "effectif_max = EXCLUDED.effectif_max, reserve_majeurs = EXCLUDED.reserve_majeurs";
         List<Stand> distinctStands = dedupById(stands, Stand::getId);
@@ -167,7 +167,7 @@ public class PlanningPersistenceService {
         rewriteStandIndisponibilites(connection, distinctStands);
         rewriteStandOuvertures(connection, distinctStands);
 
-        String upsertCreneau = "INSERT INTO creneau (groupe_id, id, date_creneau, heure_debut, heure_fin) "
+        String upsertCreneau = "INSERT INTO creneau (edition_id, id, date_creneau, heure_debut, heure_fin) "
                 + "VALUES (?, ?, ?, ?, ?) ON CONFLICT (id) DO UPDATE SET "
                 + "date_creneau = EXCLUDED.date_creneau, "
                 + "heure_debut = EXCLUDED.heure_debut, heure_fin = EXCLUDED.heure_fin";
@@ -182,8 +182,8 @@ public class PlanningPersistenceService {
             ps.executeBatch();
         }
 
-        String upsertAnimateur = "INSERT INTO animateur (groupe_id, id, prenom, nom, date_naissance, manager) "
-                + "VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (groupe_id, id) DO UPDATE SET "
+        String upsertAnimateur = "INSERT INTO animateur (edition_id, id, prenom, nom, date_naissance, manager) "
+                + "VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (edition_id, id) DO UPDATE SET "
                 + "prenom = EXCLUDED.prenom, nom = EXCLUDED.nom, "
                 + "date_naissance = EXCLUDED.date_naissance, manager = EXCLUDED.manager";
         try (PreparedStatement ps = prepareScoped(connection, upsertAnimateur)) {
@@ -206,9 +206,9 @@ public class PlanningPersistenceService {
 
     private void rewriteStandTypologies(Connection connection, List<Stand> stands) throws SQLException {
         try (PreparedStatement delete = prepareScoped(connection,
-                        "DELETE FROM stand_typologie WHERE groupe_id = ? AND stand_id = ?");
+                        "DELETE FROM stand_typologie WHERE edition_id = ? AND stand_id = ?");
                 PreparedStatement insert = prepareScoped(connection,
-                        "INSERT INTO stand_typologie (groupe_id, stand_id, typologie) VALUES (?, ?, ?)")) {
+                        "INSERT INTO stand_typologie (edition_id, stand_id, typologie) VALUES (?, ?, ?)")) {
             for (Stand stand : stands) {
                 delete.setString(2, stand.getId());
                 delete.addBatch();
@@ -227,9 +227,9 @@ public class PlanningPersistenceService {
 
     private void rewriteStandIndisponibilites(Connection connection, List<Stand> stands) throws SQLException {
         try (PreparedStatement delete = prepareScoped(connection,
-                        "DELETE FROM stand_indisponibilite WHERE groupe_id = ? AND stand_id = ?");
+                        "DELETE FROM stand_indisponibilite WHERE edition_id = ? AND stand_id = ?");
                 PreparedStatement insert = prepareScoped(connection,
-                        "INSERT INTO stand_indisponibilite (groupe_id, stand_id, date_indisponibilite, heure_debut, "
+                        "INSERT INTO stand_indisponibilite (edition_id, stand_id, date_indisponibilite, heure_debut, "
                                 + "heure_fin, motif) VALUES (?, ?, ?, ?, ?, ?)")) {
             for (Stand stand : stands) {
                 delete.setString(2, stand.getId());
@@ -252,9 +252,9 @@ public class PlanningPersistenceService {
 
     private void rewriteStandOuvertures(Connection connection, List<Stand> stands) throws SQLException {
         try (PreparedStatement delete = prepareScoped(connection,
-                        "DELETE FROM stand_ouverture WHERE groupe_id = ? AND stand_id = ?");
+                        "DELETE FROM stand_ouverture WHERE edition_id = ? AND stand_id = ?");
                 PreparedStatement insert = prepareScoped(connection,
-                        "INSERT INTO stand_ouverture (groupe_id, stand_id, date_ouverture, heure_debut, heure_fin, "
+                        "INSERT INTO stand_ouverture (edition_id, stand_id, date_ouverture, heure_debut, heure_fin, "
                                 + "motif) VALUES (?, ?, ?, ?, ?, ?)")) {
             for (Stand stand : stands) {
                 delete.setString(2, stand.getId());
@@ -277,14 +277,14 @@ public class PlanningPersistenceService {
 
     private void rewriteAnimateurDetails(Connection connection, List<Animateur> animateurs) throws SQLException {
         try (PreparedStatement deleteComp = prepareScoped(connection,
-                        "DELETE FROM animateur_competence WHERE groupe_id = ? AND animateur_id = ?");
+                        "DELETE FROM animateur_competence WHERE edition_id = ? AND animateur_id = ?");
                 PreparedStatement insertComp = prepareScoped(connection,
-                        "INSERT INTO animateur_competence (groupe_id, animateur_id, typologie, niveau) "
+                        "INSERT INTO animateur_competence (edition_id, animateur_id, typologie, niveau) "
                                 + "VALUES (?, ?, ?, ?)");
                 PreparedStatement deleteJour = prepareScoped(connection,
-                        "DELETE FROM animateur_jour_indispo WHERE groupe_id = ? AND animateur_id = ?");
+                        "DELETE FROM animateur_jour_indispo WHERE edition_id = ? AND animateur_id = ?");
                 PreparedStatement insertJour = prepareScoped(connection,
-                        "INSERT INTO animateur_jour_indispo (groupe_id, animateur_id, jour) VALUES (?, ?, ?)")) {
+                        "INSERT INTO animateur_jour_indispo (edition_id, animateur_id, jour) VALUES (?, ?, ?)")) {
             for (Animateur animateur : animateurs) {
                 deleteComp.setString(2, animateur.getId());
                 deleteComp.addBatch();
@@ -315,12 +315,12 @@ public class PlanningPersistenceService {
 
     private int rewriteAssignments(Connection connection, List<PosteAffectation> postes) throws SQLException {
         try (PreparedStatement ps = prepareScoped(connection,
-                "DELETE FROM poste_affectation WHERE groupe_id = ?")) {
+                "DELETE FROM poste_affectation WHERE edition_id = ?")) {
             ps.executeUpdate();
         }
 
         String insert = "INSERT INTO poste_affectation "
-                + "(groupe_id, id, stand_id, creneau_id, animateur_id, heure_debut_effective, heure_fin_effective) "
+                + "(edition_id, id, stand_id, creneau_id, animateur_id, heure_debut_effective, heure_fin_effective) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?)";
         int count = 0;
         try (PreparedStatement ps = prepareScoped(connection, insert)) {
@@ -361,8 +361,8 @@ public class PlanningPersistenceService {
                 .filter(Objects::nonNull)
                 .findFirst()
                 .orElse(null);
-        String sql = "INSERT INTO planning_resolution (groupe_id, groupe_creneau_id, resolu_le) VALUES (?, ?, ?) "
-                + "ON CONFLICT (groupe_id) DO UPDATE SET groupe_creneau_id = EXCLUDED.groupe_creneau_id, "
+        String sql = "INSERT INTO planning_resolution (edition_id, groupe_creneau_id, resolu_le) VALUES (?, ?, ?) "
+                + "ON CONFLICT (edition_id) DO UPDATE SET groupe_creneau_id = EXCLUDED.groupe_creneau_id, "
                 + "resolu_le = EXCLUDED.resolu_le";
         try (PreparedStatement ps = prepareScoped(connection, sql)) {
             ps.setString(2, groupeCreneauId);
@@ -377,8 +377,8 @@ public class PlanningPersistenceService {
      */
     public PlanningResolution loadResolution() {
         String sql = "SELECT r.groupe_creneau_id, g.nom, r.resolu_le FROM planning_resolution r "
-                + "LEFT JOIN groupe_creneau g ON g.groupe_id = r.groupe_id AND g.id = r.groupe_creneau_id "
-                + "WHERE r.groupe_id = ?";
+                + "LEFT JOIN groupe_creneau g ON g.edition_id = r.edition_id AND g.id = r.groupe_creneau_id "
+                + "WHERE r.edition_id = ?";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = prepareScoped(connection, sql);
                 ResultSet rs = ps.executeQuery()) {
@@ -401,7 +401,7 @@ public class PlanningPersistenceService {
      * Number of assignment rows currently stored, used to confirm persistence.
      */
     public int countPersistedAssignments() {
-        String sql = "SELECT COUNT(*) FROM poste_affectation WHERE groupe_id = ?";
+        String sql = "SELECT COUNT(*) FROM poste_affectation WHERE edition_id = ?";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = prepareScoped(connection, sql);
                 ResultSet rs = ps.executeQuery()) {
@@ -461,7 +461,7 @@ public class PlanningPersistenceService {
 
         List<PosteAffectation> postes = new ArrayList<>();
         String sql = "SELECT id, stand_id, creneau_id, animateur_id, heure_debut_effective, heure_fin_effective "
-                + "FROM poste_affectation WHERE groupe_id = ? ORDER BY id";
+                + "FROM poste_affectation WHERE edition_id = ? ORDER BY id";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = prepareScoped(connection, sql);
                 ResultSet rs = ps.executeQuery()) {
@@ -496,13 +496,13 @@ public class PlanningPersistenceService {
     /**
      * Prepares {@code sql} with the current group already bound to its
      * <b>first</b> placeholder — same convention as
-     * {@code ReferenceDataRepository}: write the {@code groupe_id} predicate or
+     * {@code ReferenceDataRepository}: write the {@code edition_id} predicate or
      * column first, bind the rest from index 2.
      */
     private PreparedStatement prepareScoped(Connection connection, String sql) throws SQLException {
         PreparedStatement ps = connection.prepareStatement(sql);
         try {
-            ps.setString(1, groupeId());
+            ps.setString(1, editionId());
             return ps;
         } catch (SQLException | RuntimeException e) {
             ps.close();

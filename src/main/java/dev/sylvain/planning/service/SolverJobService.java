@@ -67,7 +67,7 @@ public class SolverJobService {
     ConstraintAnalysisStore analysisStore;
 
     @Inject
-    GroupeContext groupeContext;
+    EditionContext editionContext;
 
     private final Map<String, SolverJob> jobs = new ConcurrentHashMap<>();
     private final ExecutorService executor = Executors.newFixedThreadPool(2, new SolverThreadFactory());
@@ -110,11 +110,11 @@ public class SolverJobService {
             throw new SolverBusyException(active);
         });
         // Captured here, on the request thread: the worker has no request of
-        // its own to read the X-Groupe-Id header from, and the job must keep
+        // its own to read the X-Edition-Id header from, and the job must keep
         // writing to the group it was launched for even if the browser has
         // switched to another one in the meantime.
         SolverJob job = new SolverJob(UUID.randomUUID().toString(), type, secondsLimit,
-                groupeContext.groupeIdCourant());
+                editionContext.editionIdCourant());
         jobs.put(job.getId(), job);
         executor.submit(() -> run(job, task));
         return job;
@@ -126,7 +126,7 @@ public class SolverJobService {
         }
         job.markRunning();
         try {
-            Object result = groupeContext.executeDans(job.getGroupeId(), () -> task.execute(job));
+            Object result = editionContext.executeDans(job.getEditionId(), () -> task.execute(job));
             if (job.isCancelRequested()) {
                 job.markCancelled(result);
             } else {
@@ -259,7 +259,7 @@ public class SolverJobService {
         private final JobType type;
         private final Long secondsLimit;
         /** Group this job was submitted for, and the one its result is written to. */
-        private final String groupeId;
+        private final String editionId;
         private final Instant submittedAt = Instant.now();
         private volatile JobStatus status = JobStatus.PENDING;
         private volatile Instant startedAt;
@@ -269,11 +269,11 @@ public class SolverJobService {
         private volatile boolean cancelRequested;
         private volatile Solver<PlanningFestival> solver;
 
-        private SolverJob(String id, JobType type, Long secondsLimit, String groupeId) {
+        private SolverJob(String id, JobType type, Long secondsLimit, String editionId) {
             this.id = id;
             this.type = type;
             this.secondsLimit = secondsLimit;
-            this.groupeId = groupeId;
+            this.editionId = editionId;
         }
 
         private void markRunning() {
@@ -358,8 +358,8 @@ public class SolverJobService {
             return secondsLimit;
         }
 
-        public String getGroupeId() {
-            return groupeId;
+        public String getEditionId() {
+            return editionId;
         }
 
         public Instant getSubmittedAt() {

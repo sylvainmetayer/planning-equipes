@@ -3,9 +3,9 @@
 Tout se pilote depuis la page « Data transfer » de l'IHM, ou directement via
 l'[API](api.md).
 
-Sauf mention contraire, tout ce qui suit est lu et écrit dans le **groupe**
-(l'édition) désigné par l'en-tête `X-Groupe-Id` de la requête — voir
-[`groupes.md`](groupes.md).
+Sauf mention contraire, tout ce qui suit est lu et écrit dans l'**édition**
+désignée par l'en-tête `X-Edition-Id` de la requête — voir
+[`editions.md`](editions.md).
 
 ## Export / import SQL
 
@@ -13,9 +13,9 @@ Sauf mention contraire, tout ce qui suit est lu et écrit dans le **groupe**
 toutes les tables métier), téléchargeable depuis l'IHM.
 
 C'est la seule opération qui reste **globale à l'instance** : c'est une
-sauvegarde de la base, tous groupes compris (la table `groupe` en tête du
-script). L'export cloisonné par groupe existe sous une autre forme — l'export de
-scénario YAML ci-dessous, qui suit le groupe courant.
+sauvegarde de la base, toutes éditions comprises (la table `edition` en tête du
+script). L'export cloisonné par édition existe sous une autre forme — l'export
+de scénario YAML ci-dessous, qui suit l'édition courante.
 
 `POST /api/database/import` rejoue un tel script dans une seule transaction :
 seules les instructions `INSERT` / `DELETE` / `TRUNCATE` sur les tables métier
@@ -28,11 +28,11 @@ planning d'exemple » de la page Data setup) et `POST /api/reference-data/import
 (import générique d'un `PlanningFestival`) partagent la même logique de
 remplacement :
 
-- **rien ne sort du groupe courant** : un import dans « Année 2026 » ne touche
-  aucune donnée de « Année 2025 ». C'est le chemin nominal pour peupler une
-  édition vierge ;
-- à l'intérieur de ce groupe, animateurs et stands sont **toujours remplacés en
-  totalité** ;
+- **rien ne sort de l'édition courante** : un import dans « Année 2026 » ne
+  touche aucune donnée de « Année 2025 ». C'est le chemin nominal pour peupler
+  une édition vierge ;
+- à l'intérieur de cette édition, animateurs et stands sont **toujours
+  remplacés en totalité** ;
 - les créneaux, eux, sont scopés à la grille de créneaux active : seuls ceux de
   la grille active sont supprimés puis rechargés avec les créneaux du scénario ;
   les créneaux des autres grilles ne sont pas touchés. Chaque créneau importé
@@ -42,9 +42,9 @@ remplacement :
   grilles (par exemple un planning normal et un planning de repli) sans que
   l'un écrase les créneaux de l'autre. Voir [`domaine.md`](domaine.md) pour la
   notion de grille de créneaux.
-- les affectations (`poste_affectation`) et les contraintes ad hoc du groupe
-  restent supprimées en totalité à chaque import, quelle que soit la grille,
-  puisqu'elles n'ont pas de notion de grille propre.
+- les affectations (`poste_affectation`) et les contraintes ad hoc de
+  l'édition restent supprimées en totalité à chaque import, quelle que soit la
+  grille, puisqu'elles n'ont pas de notion de grille propre.
 
 Le bouton « Importer un fichier » de la page Data setup fait la même chose
 (`POST /api/reference-data/import-scenario-fichier`) à partir d'un fichier

@@ -14,7 +14,7 @@ import jakarta.inject.Inject;
  * scored on the last run. In-memory only: an analysis is a diagnostic, not
  * business data worth persisting.
  *
- * <p>Kept per {@code groupe}: an analysis describes one edition's data, so
+ * <p>Kept per {@code edition}: an analysis describes one edition's data, so
  * showing 2026's on 2025's constraints screen would be plainly wrong.</p>
  */
 @ApplicationScoped
@@ -24,18 +24,18 @@ public class ConstraintAnalysisStore {
     }
 
     @Inject
-    GroupeContext groupeContext;
+    EditionContext editionContext;
 
-    private final Map<String, StoredAnalysis> latestByGroupe = new ConcurrentHashMap<>();
+    private final Map<String, StoredAnalysis> latestByEdition = new ConcurrentHashMap<>();
 
     public void record(PlanningDiagnostic diagnostic) {
         if (diagnostic != null) {
-            latestByGroupe.put(groupeId(), new StoredAnalysis(Instant.now(), diagnostic));
+            latestByEdition.put(editionId(), new StoredAnalysis(Instant.now(), diagnostic));
         }
     }
 
     public StoredAnalysis latest() {
-        return latestByGroupe.get(groupeId());
+        return latestByEdition.get(editionId());
     }
 
     /**
@@ -43,7 +43,7 @@ public class ConstraintAnalysisStore {
      * (non-CDI) tests build this store with {@code new}, so the context is not
      * injected and every analysis lands under one key.
      */
-    private String groupeId() {
-        return groupeContext == null ? GroupeRepository.GROUPE_DEFAUT_ID : groupeContext.groupeIdCourant();
+    private String editionId() {
+        return editionContext == null ? EditionRepository.EDITION_DEFAUT_ID : editionContext.editionIdCourant();
     }
 }

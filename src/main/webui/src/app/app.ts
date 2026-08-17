@@ -10,13 +10,13 @@ import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { map } from 'rxjs';
-import { GroupeStore } from './core/groupe.store';
+import { EditionStore } from './core/edition.store';
 import { AppLocale, getStoredLocale, setStoredLocaleAndReload } from './core/locale';
 import { NotificationService } from './core/notification.service';
 import { PlanningResolutionStore } from './core/planning-resolution.store';
 import { SolverJobService } from './core/solver-job.service';
 import { DataStaleIndicator } from './shared/data-stale-indicator';
-import { GroupeActuelBar } from './shared/groupe-actuel-bar';
+import { EditionActuelleBar } from './shared/edition-actuelle-bar';
 import { GroupeMismatchBanner } from './shared/groupe-mismatch-banner';
 import { JobMonitor } from './shared/job-monitor';
 
@@ -69,7 +69,7 @@ function buildNavGroups(): NavGroup[] {
         label: $localize`:@@nav.link.dataSetup:Données`,
         icon: 'storage'
       },
-      { path: '/groupes', label: $localize`:@@nav.link.groupes:Groupes`, icon: 'layers' }
+      { path: '/editions', label: $localize`:@@nav.link.editions:Éditions`, icon: 'layers' }
     ]
   },
   {
@@ -166,7 +166,7 @@ function buildNavGroups(): NavGroup[] {
     MatDividerModule,
     JobMonitor,
     DataStaleIndicator,
-    GroupeActuelBar,
+    EditionActuelleBar,
     GroupeMismatchBanner
   ],
   templateUrl: './app.html',
@@ -177,7 +177,7 @@ export class App {
   protected readonly navGroups = buildNavGroups();
   protected readonly jobs = inject(SolverJobService);
   protected readonly resolution = inject(PlanningResolutionStore);
-  protected readonly groupes = inject(GroupeStore);
+  protected readonly editions = inject(EditionStore);
   protected readonly notifications = inject(NotificationService);
   protected readonly locale: AppLocale = getStoredLocale();
 
@@ -218,9 +218,9 @@ export class App {
     // every screen, including ones that never touch ReferenceDataStore (e.g.
     // the calendars). Refreshed after every solve, wherever it was started.
     void this.resolution.reload();
-    // Same reasoning for the "Groupe actuel" strip: it sits in the shell, so
+    // Same reasoning for the "Édition actuelle" strip: it sits in the shell, so
     // the list of editions is loaded here rather than by any single page.
-    void this.groupes.reload();
+    void this.editions.reload();
     inject(DestroyRef).onDestroy(this.jobs.onResult('SOLVE', () => void this.resolution.reload()));
   }
 

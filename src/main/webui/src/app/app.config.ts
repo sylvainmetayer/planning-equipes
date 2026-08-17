@@ -3,14 +3,14 @@ import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/
 import { provideRouter } from '@angular/router';
 
 import { routes } from './app.routes';
-import { groupeInterceptor } from './core/groupe.interceptor';
+import { editionInterceptor } from './core/edition.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     // Every backend call carries the edition this browser works in — see
-    // core/groupe.interceptor.ts and docs/groupes.md §5.
-    provideHttpClient(withFetch(), withInterceptors([groupeInterceptor])),
+    // core/edition.interceptor.ts and docs/editions.md §5.
+    provideHttpClient(withFetch(), withInterceptors([editionInterceptor])),
     provideRouter(routes)
   ]
 };

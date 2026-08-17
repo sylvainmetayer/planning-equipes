@@ -15,23 +15,23 @@ import jakarta.inject.Inject;
  * {@code planning_resolution}, nothing depends on this being correct across a
  * restart, and it is only meant as a soft, best-effort hint.
  *
- * <p>Tracked per {@code groupe}: editing 2026 must not make 2025's persisted
+ * <p>Tracked per {@code edition}: editing 2026 must not make 2025's persisted
  * planning look stale.</p>
  */
 @ApplicationScoped
 public class ReferenceDataChangeTracker {
 
     @Inject
-    GroupeContext groupeContext;
+    EditionContext editionContext;
 
-    private final Map<String, Instant> lastModifiedByGroupe = new ConcurrentHashMap<>();
+    private final Map<String, Instant> lastModifiedByEdition = new ConcurrentHashMap<>();
 
     public void markModified() {
-        lastModifiedByGroupe.put(groupeId(), Instant.now());
+        lastModifiedByEdition.put(editionId(), Instant.now());
     }
 
     public Instant lastModifiedAt() {
-        return lastModifiedByGroupe.get(groupeId());
+        return lastModifiedByEdition.get(editionId());
     }
 
     /**
@@ -39,7 +39,7 @@ public class ReferenceDataChangeTracker {
      * (non-CDI) tests build this tracker with {@code new}, so the context is
      * not injected and every mark lands under one key.
      */
-    private String groupeId() {
-        return groupeContext == null ? GroupeRepository.GROUPE_DEFAUT_ID : groupeContext.groupeIdCourant();
+    private String editionId() {
+        return editionContext == null ? EditionRepository.EDITION_DEFAUT_ID : editionContext.editionIdCourant();
     }
 }

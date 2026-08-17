@@ -9,20 +9,20 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { FeasibilityReport } from './models';
-import { groupeScopedKey } from './groupe-courant';
+import { editionScopedKey } from './edition-courante';
 import { hardScoreNegativeMessage } from '../shared/feasibility-messages';
 
 const SNACK_TIMEOUT_MS = 9000;
 const STORAGE_KEY_BASE = 'planning-equipes.notifications';
 
 /**
- * One log per groupe: a warning about 2026's data has no business showing up
- * while looking at 2025 (docs/groupes.md §6). Resolved lazily rather than
- * once at module scope — the key must follow the group the page was loaded
- * with, and switching group reloads the page anyway.
+ * One log per edition: a warning about 2026's data has no business showing up
+ * while looking at 2025 (docs/editions.md §6). Resolved lazily rather than
+ * once at module scope — the key must follow the edition the page was loaded
+ * with, and switching edition reloads the page anyway.
  */
 function storageKey(): string {
-  return groupeScopedKey(STORAGE_KEY_BASE);
+  return editionScopedKey(STORAGE_KEY_BASE);
 }
 /** Caps the persisted log so localStorage cannot grow unbounded over a long session. */
 const MAX_NOTIFICATIONS = 200;

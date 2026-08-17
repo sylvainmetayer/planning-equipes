@@ -4,86 +4,87 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
-import dev.sylvain.planning.domain.Groupe;
+import dev.sylvain.planning.domain.Edition;
 import io.quarkus.arc.Arc;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 /**
- * Answers the one question every reference-data query needs: <b>which group am
- * I reading and writing?</b> (see {@code docs/groupes.md} §5).
+ * Answers the one question every reference-data query needs: <b>which edition
+ * am I reading and writing?</b> (see {@code docs/editions.md} §5).
  *
- * <p>The client designates it per request through the {@code X-Groupe-Id}
+ * <p>The client designates it per request through the {@code X-Edition-Id}
  * header — not a global {@code actif} flag in the database, which would force
- * every open tab to share one group and turn switching into a write visible to
- * every other user. Two browser tabs can therefore sit on two different
+ * every open tab to share one edition and turn switching into a write visible
+ * to every other user. Two browser tabs can therefore sit on two different
  * editions at the same time.</p>
  *
  * <p>Resolution order:</p>
  * <ol>
  * <li>an explicit override bound to the current thread, for work that outlives
  * its request — see {@link #executeDans};</li>
- * <li>the {@code X-Groupe-Id} of the request being served, <b>if that group
+ * <li>the {@code X-Edition-Id} of the request being served, <b>if that edition
  * exists</b>;</li>
- * <li>the group flagged {@code defaut}.</li>
+ * <li>the edition flagged {@code defaut}.</li>
  * </ol>
  *
- * <p>An unknown or deleted id never fails the request: a tab left open on a
- * group someone else has since deleted must fall back to the default rather
+ * <p>An unknown or deleted id never fails the request: a tab left open on an
+ * edition someone else has since deleted must fall back to the default rather
  * than break every screen with a 400.</p>
  */
 @ApplicationScoped
-public class GroupeContext {
+public class EditionContext {
 
-    public static final String HEADER = "X-Groupe-Id";
+    public static final String HEADER = "X-Edition-Id";
 
     /**
-     * Group bound to the current thread, overriding the request header. Used by
-     * work that runs outside (or beyond) the request that triggered it — a
-     * solver job keeps writing to the group it was launched for even if the
+     * Edition bound to the current thread, overriding the request header. Used
+     * by work that runs outside (or beyond) the request that triggered it — a
+     * solver job keeps writing to the edition it was launched for even if the
      * browser has since switched.
      */
     private static final ThreadLocal<String> OVERRIDE = new ThreadLocal<>();
 
     @Inject
-    GroupeRepository groupeRepository;
+    EditionRepository editionRepository;
 
     @Inject
-    GroupeRequestScope requestScope;
+    EditionRequestScope requestScope;
 
     /**
-     * Known group ids and the default one, both cached: they are read on every
-     * single reference-data query, change only through the {@code /api/groupes}
-     * endpoints, and this is a single-instance application — so
-     * {@link #invaliderCache()} on those few writes is enough.
+     * Known edition ids and the default one, both cached: they are read on
+     * every single reference-data query, change only through the
+     * {@code /api/editions} endpoints, and this is a single-instance
+     * application — so {@link #invaliderCache()} on those few writes is
+     * enough.
      */
     private volatile Set<String> idsConnus;
     private volatile String idParDefaut;
 
-    /** Group the current call reads and writes. Never {@code null}. */
-    public String groupeIdCourant() {
+    /** Edition the current call reads and writes. Never {@code null}. */
+    public String editionIdCourant() {
         String override = OVERRIDE.get();
         if (override != null) {
             return override;
         }
-        String demande = groupeIdDemande();
+        String demande = editionIdDemande();
         return demande != null && idsConnus().contains(demande) ? demande : idParDefaut();
     }
 
     /**
-     * Runs {@code work} as if the request had designated {@code groupeId}. The
+     * Runs {@code work} as if the request had designated {@code editionId}. The
      * previous binding is restored afterwards, so nesting and thread reuse in a
      * pool are both safe.
      */
-    public <T> T executeDans(String groupeId, Callable<T> work) {
+    public <T> T executeDans(String editionId, Callable<T> work) {
         String precedent = OVERRIDE.get();
-        OVERRIDE.set(groupeId);
+        OVERRIDE.set(editionId);
         try {
             return work.call();
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
-            throw new IllegalStateException("Failed to run work in group " + groupeId, e);
+            throw new IllegalStateException("Failed to run work in edition " + editionId, e);
         } finally {
             if (precedent != null) {
                 OVERRIDE.set(precedent);
@@ -94,14 +95,14 @@ public class GroupeContext {
     }
 
     /** Same as {@link #executeDans(String, Callable)} for work returning nothing. */
-    public void executeDans(String groupeId, Runnable work) {
-        executeDans(groupeId, () -> {
+    public void executeDans(String editionId, Runnable work) {
+        executeDans(editionId, () -> {
             work.run();
             return null;
         });
     }
 
-    /** Must be called whenever a group is created, deleted, or made the default. */
+    /** Must be called whenever an edition is created, deleted, or made the default. */
     public void invaliderCache() {
         idsConnus = null;
         idParDefaut = null;
@@ -112,19 +113,20 @@ public class GroupeContext {
      * request. {@code Arc.container()} is null-checked because unit tests
      * instantiate this class outside a CDI container.
      */
-    private String groupeIdDemande() {
+    private String editionIdDemande() {
         var container = Arc.container();
         if (container == null || !container.requestContext().isActive()) {
             return null;
         }
-        String demande = requestScope.getGroupeIdDemande();
+        String demande = requestScope.getEditionIdDemande();
         return demande == null || demande.isBlank() ? null : demande;
     }
 
     private Set<String> idsConnus() {
         Set<String> cache = idsConnus;
         if (cache == null) {
-            cache = groupeRepository.listGroupes().stream().map(Groupe::getId).collect(Collectors.toUnmodifiableSet());
+            cache = editionRepository.listEditions().stream().map(Edition::getId)
+                    .collect(Collectors.toUnmodifiableSet());
             idsConnus = cache;
         }
         return cache;
@@ -133,7 +135,7 @@ public class GroupeContext {
     private String idParDefaut() {
         String cache = idParDefaut;
         if (cache == null) {
-            cache = groupeRepository.idGroupeParDefaut();
+            cache = editionRepository.idEditionParDefaut();
             idParDefaut = cache;
         }
         return cache;

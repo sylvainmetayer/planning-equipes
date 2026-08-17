@@ -32,9 +32,9 @@ import jakarta.inject.Inject;
  *
  * <p>
  * Unlike everything else that reads reference data, the dump stays
- * <b>instance-wide</b>: it is a backup of the database, every {@code groupe}
- * included, and restoring it restores exactly what was dumped. The per-group
- * export is the scenario YAML, which does follow the current group.
+ * <b>instance-wide</b>: it is a backup of the database, every {@code edition}
+ * included, and restoring it restores exactly what was dumped. The per-edition
+ * export is the scenario YAML, which does follow the current edition.
  */
 @ApplicationScoped
 public class DatabaseDumpService {
@@ -44,7 +44,7 @@ public class DatabaseDumpService {
      * foreign key. Deletes are issued in the reverse order.
      */
     static final List<String> TABLES = List.of(
-            "groupe",
+            "edition",
             "typologie",
             "emplacement",
             "animateur",

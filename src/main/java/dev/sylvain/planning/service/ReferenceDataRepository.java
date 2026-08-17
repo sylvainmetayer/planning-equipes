@@ -48,11 +48,11 @@ import jakarta.inject.Inject;
  * to PostgreSQL through this repository, and reads reconstruct fully-hydrated
  * domain objects (skills, off-days, stand typologies, constraint targets).
  *
- * <p>Every statement here is scoped to the current {@code groupe} — the edition
- * the caller is working on, resolved by {@link GroupeContext}. Being the single
+ * <p>Every statement here is scoped to the current {@code edition} — the
+ * edition the caller is working on, resolved by {@link EditionContext}. Being the single
  * point of passage for all reference-data SQL is what makes that scoping
- * mechanical and verifiable: a query without a {@code groupe_id} predicate is
- * visible as such, right here. See {@code docs/groupes.md}.</p>
+ * mechanical and verifiable: a query without a {@code edition_id} predicate is
+ * visible as such, right here. See {@code docs/editions.md}.</p>
  */
 @ApplicationScoped
 public class ReferenceDataRepository {
@@ -61,14 +61,14 @@ public class ReferenceDataRepository {
     DataSource dataSource;
 
     @Inject
-    GroupeContext groupeContext;
+    EditionContext editionContext;
 
-    /** Timeslot group seeded by V10 in every {@code groupe}, and the fallback for callers that name none. */
+    /** Timeslot group seeded by V10 in every {@code edition}, and the fallback for callers that name none. */
     private static final String GROUPE_CRENEAU_DEFAUT_ID = "DEFAUT";
 
     /** Edition every statement below reads and writes. */
-    private String groupeId() {
-        return groupeContext.groupeIdCourant();
+    private String editionId() {
+        return editionContext.editionIdCourant();
     }
 
     /**
@@ -112,8 +112,8 @@ public class ReferenceDataRepository {
                             + "e.id AS emplacement_id, e.nom AS emplacement_nom, e.latitude AS emplacement_latitude, "
                             + "e.longitude AS emplacement_longitude "
                             + "FROM stand s LEFT JOIN emplacement e "
-                            + "ON e.groupe_id = s.groupe_id AND e.id = s.emplacement_id "
-                            + "WHERE s.groupe_id = ? ORDER BY s.id");
+                            + "ON e.edition_id = s.edition_id AND e.id = s.emplacement_id "
+                            + "WHERE s.edition_id = ? ORDER BY s.id");
                     ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Stand stand = new Stand();
@@ -134,7 +134,7 @@ public class ReferenceDataRepository {
                 }
             }
             try (PreparedStatement ps = prepareScoped(connection,
-                    "SELECT stand_id, typologie FROM stand_typologie WHERE groupe_id = ?");
+                    "SELECT stand_id, typologie FROM stand_typologie WHERE edition_id = ?");
                     ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Stand stand = byId.get(rs.getString("stand_id"));
@@ -145,7 +145,7 @@ public class ReferenceDataRepository {
             }
             try (PreparedStatement ps = prepareScoped(connection,
                     "SELECT id, stand_id, date_indisponibilite, heure_debut, heure_fin, motif "
-                            + "FROM stand_indisponibilite WHERE groupe_id = ? ORDER BY id");
+                            + "FROM stand_indisponibilite WHERE edition_id = ? ORDER BY id");
                     ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Stand stand = byId.get(rs.getString("stand_id"));
@@ -161,7 +161,7 @@ public class ReferenceDataRepository {
             }
             try (PreparedStatement ps = prepareScoped(connection,
                     "SELECT id, stand_id, date_ouverture, heure_debut, heure_fin, motif "
-                            + "FROM stand_ouverture WHERE groupe_id = ? ORDER BY id");
+                            + "FROM stand_ouverture WHERE edition_id = ? ORDER BY id");
                     ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Stand stand = byId.get(rs.getString("stand_id"));
@@ -203,13 +203,13 @@ public class ReferenceDataRepository {
     }
 
     public void deleteStand(String id) {
-        delete("DELETE FROM stand WHERE groupe_id = ? AND id = ?", id);
+        delete("DELETE FROM stand WHERE edition_id = ? AND id = ?", id);
     }
 
     private void upsertEmplacementTx(Connection connection, Emplacement emplacement) throws SQLException {
         try (PreparedStatement ps = prepareScoped(connection,
-                "INSERT INTO emplacement (groupe_id, id, nom, latitude, longitude) VALUES (?, ?, ?, ?, ?) "
-                        + "ON CONFLICT (groupe_id, id) DO UPDATE SET nom = EXCLUDED.nom, "
+                "INSERT INTO emplacement (edition_id, id, nom, latitude, longitude) VALUES (?, ?, ?, ?, ?) "
+                        + "ON CONFLICT (edition_id, id) DO UPDATE SET nom = EXCLUDED.nom, "
                         + "latitude = EXCLUDED.latitude, longitude = EXCLUDED.longitude")) {
             ps.setString(2, emplacement.getId());
             ps.setString(3, emplacement.getNom());
@@ -221,9 +221,9 @@ public class ReferenceDataRepository {
 
     private void upsertStand(Connection connection, Stand stand) throws SQLException {
         try (PreparedStatement ps = prepareScoped(connection,
-                "INSERT INTO stand (groupe_id, id, nom, effectif_min, effectif_max, reserve_majeurs, premium, "
+                "INSERT INTO stand (edition_id, id, nom, effectif_min, effectif_max, reserve_majeurs, premium, "
                         + "emplacement_id, niveau_effort) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) "
-                        + "ON CONFLICT (groupe_id, id) DO UPDATE SET nom = EXCLUDED.nom, "
+                        + "ON CONFLICT (edition_id, id) DO UPDATE SET nom = EXCLUDED.nom, "
                         + "effectif_min = EXCLUDED.effectif_min, "
                         + "effectif_max = EXCLUDED.effectif_max, reserve_majeurs = EXCLUDED.reserve_majeurs, "
                         + "premium = EXCLUDED.premium, emplacement_id = EXCLUDED.emplacement_id, "
@@ -239,13 +239,13 @@ public class ReferenceDataRepository {
             ps.executeUpdate();
         }
         try (PreparedStatement del = prepareScoped(connection,
-                "DELETE FROM stand_typologie WHERE groupe_id = ? AND stand_id = ?")) {
+                "DELETE FROM stand_typologie WHERE edition_id = ? AND stand_id = ?")) {
             del.setString(2, stand.getId());
             del.executeUpdate();
         }
         if (stand.getTypologiesProposees() != null && !stand.getTypologiesProposees().isEmpty()) {
             try (PreparedStatement ins = prepareScoped(connection,
-                    "INSERT INTO stand_typologie (groupe_id, stand_id, typologie) VALUES (?, ?, ?)")) {
+                    "INSERT INTO stand_typologie (edition_id, stand_id, typologie) VALUES (?, ?, ?)")) {
                 for (String typologie : stand.getTypologiesProposees()) {
                     ins.setString(2, stand.getId());
                     ins.setString(3, typologie);
@@ -255,13 +255,13 @@ public class ReferenceDataRepository {
             }
         }
         try (PreparedStatement del = prepareScoped(connection,
-                "DELETE FROM stand_indisponibilite WHERE groupe_id = ? AND stand_id = ?")) {
+                "DELETE FROM stand_indisponibilite WHERE edition_id = ? AND stand_id = ?")) {
             del.setString(2, stand.getId());
             del.executeUpdate();
         }
         if (stand.getIndisponibilites() != null && !stand.getIndisponibilites().isEmpty()) {
             try (PreparedStatement ins = prepareScoped(connection,
-                    "INSERT INTO stand_indisponibilite (groupe_id, stand_id, date_indisponibilite, heure_debut, "
+                    "INSERT INTO stand_indisponibilite (edition_id, stand_id, date_indisponibilite, heure_debut, "
                             + "heure_fin, motif) VALUES (?, ?, ?, ?, ?, ?)")) {
                 for (IndisponibiliteStand indispo : stand.getIndisponibilites()) {
                     ins.setString(2, stand.getId());
@@ -275,13 +275,13 @@ public class ReferenceDataRepository {
             }
         }
         try (PreparedStatement del = prepareScoped(connection,
-                "DELETE FROM stand_ouverture WHERE groupe_id = ? AND stand_id = ?")) {
+                "DELETE FROM stand_ouverture WHERE edition_id = ? AND stand_id = ?")) {
             del.setString(2, stand.getId());
             del.executeUpdate();
         }
         if (stand.getOuvertures() != null && !stand.getOuvertures().isEmpty()) {
             try (PreparedStatement ins = prepareScoped(connection,
-                    "INSERT INTO stand_ouverture (groupe_id, stand_id, date_ouverture, heure_debut, heure_fin, motif) "
+                    "INSERT INTO stand_ouverture (edition_id, stand_id, date_ouverture, heure_debut, heure_fin, motif) "
                             + "VALUES (?, ?, ?, ?, ?, ?)")) {
                 for (OuvertureStand ouverture : stand.getOuvertures()) {
                     ins.setString(2, stand.getId());
@@ -302,7 +302,7 @@ public class ReferenceDataRepository {
         List<Emplacement> emplacements = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = prepareScoped(connection,
-                        "SELECT id, nom, latitude, longitude FROM emplacement WHERE groupe_id = ? ORDER BY id");
+                        "SELECT id, nom, latitude, longitude FROM emplacement WHERE edition_id = ? ORDER BY id");
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 emplacements.add(new Emplacement(rs.getString("id"), rs.getString("nom"),
@@ -327,7 +327,7 @@ public class ReferenceDataRepository {
     }
 
     public void deleteEmplacement(String id) {
-        delete("DELETE FROM emplacement WHERE groupe_id = ? AND id = ?", id);
+        delete("DELETE FROM emplacement WHERE edition_id = ? AND id = ?", id);
     }
 
     /* ------------------------------ Timeslots ------------------------------ */
@@ -336,8 +336,8 @@ public class ReferenceDataRepository {
             "SELECT c.id, c.date_creneau, c.heure_debut, c.heure_fin, c.famille, "
                     + "g.id AS groupe_creneau_id, g.nom AS groupe_nom, g.actif AS groupe_actif "
                     + "FROM creneau c JOIN groupe_creneau g "
-                    + "ON g.groupe_id = c.groupe_id AND g.id = c.groupe_creneau_id "
-                    + "WHERE c.groupe_id = ?";
+                    + "ON g.edition_id = c.edition_id AND g.id = c.groupe_creneau_id "
+                    + "WHERE c.edition_id = ?";
 
     public List<Creneau> listCreneaux() {
         return listCreneaux(SELECT_CRENEAU_SQL + " ORDER BY c.id");
@@ -392,14 +392,14 @@ public class ReferenceDataRepository {
             connection.setAutoCommit(false);
             try {
                 try (PreparedStatement ps = prepareScoped(connection,
-                        "DELETE FROM poste_affectation WHERE groupe_id = ? AND creneau_id IN "
-                                + "(SELECT id FROM creneau WHERE groupe_id = ? AND groupe_creneau_id = ?)")) {
-                    ps.setString(2, groupeId());
+                        "DELETE FROM poste_affectation WHERE edition_id = ? AND creneau_id IN "
+                                + "(SELECT id FROM creneau WHERE edition_id = ? AND groupe_creneau_id = ?)")) {
+                    ps.setString(2, editionId());
                     ps.setString(3, groupeCreneauId);
                     ps.executeUpdate();
                 }
                 try (PreparedStatement ps = prepareScoped(connection,
-                        "DELETE FROM creneau WHERE groupe_id = ? AND groupe_creneau_id = ?")) {
+                        "DELETE FROM creneau WHERE edition_id = ? AND groupe_creneau_id = ?")) {
                     ps.setString(2, groupeCreneauId);
                     ps.executeUpdate();
                 }
@@ -502,7 +502,7 @@ public class ReferenceDataRepository {
     }
 
     public void deleteCreneau(Long id) {
-        deleteLong("DELETE FROM creneau WHERE groupe_id = ? AND id = ?", id);
+        deleteLong("DELETE FROM creneau WHERE edition_id = ? AND id = ?", id);
     }
 
     /* -------------------------- Timeslot groups ----------------------------- */
@@ -512,7 +512,7 @@ public class ReferenceDataRepository {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = prepareScoped(connection,
                         "SELECT id, nom, actif, groupe_source_id FROM groupe_creneau "
-                                + "WHERE groupe_id = ? ORDER BY nom");
+                                + "WHERE edition_id = ? ORDER BY nom");
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 groupes.add(new GroupeCreneau(rs.getString("id"), rs.getString("nom"), rs.getBoolean("actif"),
@@ -535,9 +535,9 @@ public class ReferenceDataRepository {
     public void saveGroupeCreneau(GroupeCreneau groupe) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = prepareScoped(connection,
-                        "INSERT INTO groupe_creneau (groupe_id, id, nom, actif, groupe_source_id) "
+                        "INSERT INTO groupe_creneau (edition_id, id, nom, actif, groupe_source_id) "
                                 + "VALUES (?, ?, ?, FALSE, ?) "
-                                + "ON CONFLICT (groupe_id, id) DO UPDATE SET nom = EXCLUDED.nom, "
+                                + "ON CONFLICT (edition_id, id) DO UPDATE SET nom = EXCLUDED.nom, "
                                 + "groupe_source_id = EXCLUDED.groupe_source_id")) {
             ps.setString(2, groupe.getId());
             ps.setString(3, groupe.getNom());
@@ -550,8 +550,8 @@ public class ReferenceDataRepository {
 
     /**
      * Activates the given group and deactivates every other one <b>of the
-     * current groupe</b>, in a single transaction (deactivate-then-activate
-     * order, so the partial unique index on {@code (groupe_id, actif)} is never
+     * current edition</b>, in a single transaction (deactivate-then-activate
+     * order, so the partial unique index on {@code (edition_id, actif)} is never
      * violated in between). Another edition's active grid is untouched: each
      * one keeps its own.
      */
@@ -560,11 +560,11 @@ public class ReferenceDataRepository {
             connection.setAutoCommit(false);
             try {
                 try (PreparedStatement ps = prepareScoped(connection,
-                        "UPDATE groupe_creneau SET actif = FALSE WHERE groupe_id = ?")) {
+                        "UPDATE groupe_creneau SET actif = FALSE WHERE edition_id = ?")) {
                     ps.executeUpdate();
                 }
                 try (PreparedStatement ps = prepareScoped(connection,
-                        "UPDATE groupe_creneau SET actif = TRUE WHERE groupe_id = ? AND id = ?")) {
+                        "UPDATE groupe_creneau SET actif = TRUE WHERE edition_id = ? AND id = ?")) {
                     ps.setString(2, id);
                     ps.executeUpdate();
                 }
@@ -579,7 +579,7 @@ public class ReferenceDataRepository {
     }
 
     public void deleteGroupeCreneau(String id) {
-        delete("DELETE FROM groupe_creneau WHERE groupe_id = ? AND id = ?", id);
+        delete("DELETE FROM groupe_creneau WHERE edition_id = ? AND id = ?", id);
     }
 
     /* ------------------------------ Animateurs ----------------------------- */
@@ -589,7 +589,7 @@ public class ReferenceDataRepository {
         try (Connection connection = dataSource.getConnection()) {
             try (PreparedStatement ps = prepareScoped(connection,
                     "SELECT id, prenom, nom, date_naissance, manager FROM animateur "
-                            + "WHERE groupe_id = ? ORDER BY id");
+                            + "WHERE edition_id = ? ORDER BY id");
                     ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Animateur animateur = new Animateur(
@@ -602,7 +602,7 @@ public class ReferenceDataRepository {
                 }
             }
             try (PreparedStatement ps = prepareScoped(connection,
-                    "SELECT animateur_id, typologie, niveau FROM animateur_competence WHERE groupe_id = ?");
+                    "SELECT animateur_id, typologie, niveau FROM animateur_competence WHERE edition_id = ?");
                     ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Animateur animateur = byId.get(rs.getString("animateur_id"));
@@ -614,7 +614,7 @@ public class ReferenceDataRepository {
                 }
             }
             try (PreparedStatement ps = prepareScoped(connection,
-                    "SELECT animateur_id, jour FROM animateur_jour_indispo WHERE groupe_id = ?");
+                    "SELECT animateur_id, jour FROM animateur_jour_indispo WHERE edition_id = ?");
                     ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Animateur animateur = byId.get(rs.getString("animateur_id"));
@@ -624,7 +624,7 @@ public class ReferenceDataRepository {
                 }
             }
             try (PreparedStatement ps = prepareScoped(connection,
-                    "SELECT animateur_id, typologie FROM animateur_souhait WHERE groupe_id = ?");
+                    "SELECT animateur_id, typologie FROM animateur_souhait WHERE edition_id = ?");
                     ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Animateur animateur = byId.get(rs.getString("animateur_id"));
@@ -637,7 +637,7 @@ public class ReferenceDataRepository {
             // holding the ninja typologie is what makes an animateur dispatchable
             // on any stand, so the flag is derived here once competences are known.
             String typologieNinja = null;
-            try (PreparedStatement ps = prepareScoped(connection, "SELECT id FROM typologie WHERE groupe_id = ? AND ninja LIMIT 1");
+            try (PreparedStatement ps = prepareScoped(connection, "SELECT id FROM typologie WHERE edition_id = ? AND ninja LIMIT 1");
                     ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     typologieNinja = rs.getString("id");
@@ -674,14 +674,14 @@ public class ReferenceDataRepository {
     }
 
     public void deleteAnimateur(String id) {
-        delete("DELETE FROM animateur WHERE groupe_id = ? AND id = ?", id);
+        delete("DELETE FROM animateur WHERE edition_id = ? AND id = ?", id);
     }
 
     private void upsertAnimateur(Connection connection, Animateur animateur) throws SQLException {
         try (PreparedStatement ps = prepareScoped(connection,
-                "INSERT INTO animateur (groupe_id, id, prenom, nom, date_naissance, manager) "
+                "INSERT INTO animateur (edition_id, id, prenom, nom, date_naissance, manager) "
                         + "VALUES (?, ?, ?, ?, ?, ?) "
-                        + "ON CONFLICT (groupe_id, id) DO UPDATE SET prenom = EXCLUDED.prenom, nom = EXCLUDED.nom, "
+                        + "ON CONFLICT (edition_id, id) DO UPDATE SET prenom = EXCLUDED.prenom, nom = EXCLUDED.nom, "
                         + "date_naissance = EXCLUDED.date_naissance, manager = EXCLUDED.manager")) {
             ps.setString(2, animateur.getId());
             ps.setString(3, animateur.getPrenom());
@@ -691,13 +691,13 @@ public class ReferenceDataRepository {
             ps.executeUpdate();
         }
         try (PreparedStatement del = prepareScoped(connection,
-                "DELETE FROM animateur_competence WHERE groupe_id = ? AND animateur_id = ?")) {
+                "DELETE FROM animateur_competence WHERE edition_id = ? AND animateur_id = ?")) {
             del.setString(2, animateur.getId());
             del.executeUpdate();
         }
         if (animateur.getCompetences() != null && !animateur.getCompetences().isEmpty()) {
             try (PreparedStatement ins = prepareScoped(connection,
-                    "INSERT INTO animateur_competence (groupe_id, animateur_id, typologie, niveau) "
+                    "INSERT INTO animateur_competence (edition_id, animateur_id, typologie, niveau) "
                             + "VALUES (?, ?, ?, ?)")) {
                 for (Map.Entry<String, NiveauCompetence> entry : animateur.getCompetences().entrySet()) {
                     ins.setString(2, animateur.getId());
@@ -709,13 +709,13 @@ public class ReferenceDataRepository {
             }
         }
         try (PreparedStatement del = prepareScoped(connection,
-                "DELETE FROM animateur_jour_indispo WHERE groupe_id = ? AND animateur_id = ?")) {
+                "DELETE FROM animateur_jour_indispo WHERE edition_id = ? AND animateur_id = ?")) {
             del.setString(2, animateur.getId());
             del.executeUpdate();
         }
         if (animateur.getJoursIndisponibles() != null && !animateur.getJoursIndisponibles().isEmpty()) {
             try (PreparedStatement ins = prepareScoped(connection,
-                    "INSERT INTO animateur_jour_indispo (groupe_id, animateur_id, jour) VALUES (?, ?, ?)")) {
+                    "INSERT INTO animateur_jour_indispo (edition_id, animateur_id, jour) VALUES (?, ?, ?)")) {
                 for (LocalDate jour : animateur.getJoursIndisponibles()) {
                     ins.setString(2, animateur.getId());
                     ins.setObject(3, jour);
@@ -725,13 +725,13 @@ public class ReferenceDataRepository {
             }
         }
         try (PreparedStatement del = prepareScoped(connection,
-                "DELETE FROM animateur_souhait WHERE groupe_id = ? AND animateur_id = ?")) {
+                "DELETE FROM animateur_souhait WHERE edition_id = ? AND animateur_id = ?")) {
             del.setString(2, animateur.getId());
             del.executeUpdate();
         }
         if (animateur.getSouhaits() != null && !animateur.getSouhaits().isEmpty()) {
             try (PreparedStatement ins = prepareScoped(connection,
-                    "INSERT INTO animateur_souhait (groupe_id, animateur_id, typologie) VALUES (?, ?, ?)")) {
+                    "INSERT INTO animateur_souhait (edition_id, animateur_id, typologie) VALUES (?, ?, ?)")) {
                 for (String typologie : animateur.getSouhaits()) {
                     ins.setString(2, animateur.getId());
                     ins.setString(3, typologie);
@@ -748,7 +748,7 @@ public class ReferenceDataRepository {
         List<TypologieItem> typologies = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = prepareScoped(connection,
-                        "SELECT id, label, ninja FROM typologie WHERE groupe_id = ? ORDER BY id");
+                        "SELECT id, label, ninja FROM typologie WHERE edition_id = ? ORDER BY id");
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 typologies.add(new TypologieItem(rs.getString("id"), rs.getString("label"), rs.getBoolean("ninja")));
@@ -762,7 +762,7 @@ public class ReferenceDataRepository {
     /** Id of the single typologie flagged ninja, empty when the referential has none. */
     public Optional<String> findTypologieNinja() {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection, "SELECT id FROM typologie WHERE groupe_id = ? AND ninja LIMIT 1");
+                PreparedStatement ps = prepareScoped(connection, "SELECT id FROM typologie WHERE edition_id = ? AND ninja LIMIT 1");
                 ResultSet rs = ps.executeQuery()) {
             return rs.next() ? Optional.of(rs.getString("id")) : Optional.empty();
         } catch (SQLException e) {
@@ -800,22 +800,22 @@ public class ReferenceDataRepository {
     }
 
     public void deleteTypologie(String id) {
-        delete("DELETE FROM typologie WHERE groupe_id = ? AND id = ?", id);
+        delete("DELETE FROM typologie WHERE edition_id = ? AND id = ?", id);
     }
 
     public boolean typologieEnUsage(String id) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = prepareScoped(connection,
                         "SELECT 1 WHERE EXISTS "
-                                + "(SELECT 1 FROM stand_typologie WHERE groupe_id = ? AND typologie = ?) "
+                                + "(SELECT 1 FROM stand_typologie WHERE edition_id = ? AND typologie = ?) "
                                 + "OR EXISTS "
-                                + "(SELECT 1 FROM animateur_competence WHERE groupe_id = ? AND typologie = ?) "
+                                + "(SELECT 1 FROM animateur_competence WHERE edition_id = ? AND typologie = ?) "
                                 + "OR EXISTS "
-                                + "(SELECT 1 FROM animateur_souhait WHERE groupe_id = ? AND typologie = ?)")) {
+                                + "(SELECT 1 FROM animateur_souhait WHERE edition_id = ? AND typologie = ?)")) {
             ps.setString(2, id);
-            ps.setString(3, groupeId());
+            ps.setString(3, editionId());
             ps.setString(4, id);
-            ps.setString(5, groupeId());
+            ps.setString(5, editionId());
             ps.setString(6, id);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
@@ -827,8 +827,8 @@ public class ReferenceDataRepository {
 
     private void upsertTypologie(Connection connection, TypologieItem typologie) throws SQLException {
         try (PreparedStatement ps = prepareScoped(connection,
-                "INSERT INTO typologie (groupe_id, id, label, ninja) VALUES (?, ?, ?, ?) "
-                        + "ON CONFLICT (groupe_id, id) DO UPDATE SET label = EXCLUDED.label, "
+                "INSERT INTO typologie (edition_id, id, label, ninja) VALUES (?, ?, ?, ?) "
+                        + "ON CONFLICT (edition_id, id) DO UPDATE SET label = EXCLUDED.label, "
                         + "ninja = EXCLUDED.ninja")) {
             ps.setString(2, typologie.id());
             ps.setString(3, typologie.label());
@@ -845,8 +845,8 @@ public class ReferenceDataRepository {
      */
     private void upsertTypologieDerivee(Connection connection, TypologieItem typologie) throws SQLException {
         try (PreparedStatement ps = prepareScoped(connection,
-                "INSERT INTO typologie (groupe_id, id, label, ninja) VALUES (?, ?, ?, FALSE) "
-                        + "ON CONFLICT (groupe_id, id) DO UPDATE SET label = EXCLUDED.label")) {
+                "INSERT INTO typologie (edition_id, id, label, ninja) VALUES (?, ?, ?, FALSE) "
+                        + "ON CONFLICT (edition_id, id) DO UPDATE SET label = EXCLUDED.label")) {
             ps.setString(2, typologie.id());
             ps.setString(3, typologie.label());
             ps.executeUpdate();
@@ -860,7 +860,7 @@ public class ReferenceDataRepository {
         try (Connection connection = dataSource.getConnection()) {
             try (PreparedStatement ps = prepareScoped(connection,
                     "SELECT id, type, creneau_id, stand_id, raison, cree_par, cree_le FROM contrainte_ad_hoc "
-                            + "WHERE groupe_id = ? ORDER BY id");
+                            + "WHERE edition_id = ? ORDER BY id");
                     ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     ContrainteAdHoc contrainte = new ContrainteAdHoc(
@@ -885,7 +885,7 @@ public class ReferenceDataRepository {
                 }
             }
             try (PreparedStatement ps = prepareScoped(connection,
-                    "SELECT contrainte_id, animateur_id FROM contrainte_animateur WHERE groupe_id = ? "
+                    "SELECT contrainte_id, animateur_id FROM contrainte_animateur WHERE edition_id = ? "
                             + "ORDER BY contrainte_id, position");
                     ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -919,14 +919,14 @@ public class ReferenceDataRepository {
     }
 
     public void deleteContrainte(String id) {
-        delete("DELETE FROM contrainte_ad_hoc WHERE groupe_id = ? AND id = ?", id);
+        delete("DELETE FROM contrainte_ad_hoc WHERE edition_id = ? AND id = ?", id);
     }
 
     private void upsertContrainte(Connection connection, ContrainteAdHoc contrainte) throws SQLException {
         try (PreparedStatement ps = prepareScoped(connection,
-                "INSERT INTO contrainte_ad_hoc (groupe_id, id, type, creneau_id, stand_id, raison, cree_par, cree_le) "
+                "INSERT INTO contrainte_ad_hoc (edition_id, id, type, creneau_id, stand_id, raison, cree_par, cree_le) "
                         + "VALUES (?, ?, ?, ?, ?, ?, ?, ?) "
-                        + "ON CONFLICT (groupe_id, id) DO UPDATE SET type = EXCLUDED.type, "
+                        + "ON CONFLICT (edition_id, id) DO UPDATE SET type = EXCLUDED.type, "
                         + "creneau_id = EXCLUDED.creneau_id, stand_id = EXCLUDED.stand_id, raison = EXCLUDED.raison, "
                         + "cree_par = EXCLUDED.cree_par, cree_le = EXCLUDED.cree_le")) {
             ps.setString(2, contrainte.getId());
@@ -940,14 +940,14 @@ public class ReferenceDataRepository {
             ps.executeUpdate();
         }
         try (PreparedStatement del = prepareScoped(connection,
-                "DELETE FROM contrainte_animateur WHERE groupe_id = ? AND contrainte_id = ?")) {
+                "DELETE FROM contrainte_animateur WHERE edition_id = ? AND contrainte_id = ?")) {
             del.setString(2, contrainte.getId());
             del.executeUpdate();
         }
         List<Animateur> cibles = contrainte.getAnimateursConcernes();
         if (cibles != null && !cibles.isEmpty()) {
             try (PreparedStatement ins = prepareScoped(connection,
-                    "INSERT INTO contrainte_animateur (groupe_id, contrainte_id, animateur_id, position) "
+                    "INSERT INTO contrainte_animateur (edition_id, contrainte_id, animateur_id, position) "
                             + "VALUES (?, ?, ?, ?)")) {
                 int position = 0;
                 for (Animateur animateur : cibles) {
@@ -968,9 +968,9 @@ public class ReferenceDataRepository {
 
     private static final String SELECT_VERROUILLAGE_SQL =
             "SELECT id, type, groupe_creneau_id, animateur_id, stand_id, creneau_id, jour, raison, cree_le "
-                    + "FROM verrouillage_planning WHERE groupe_id = ?";
+                    + "FROM verrouillage_planning WHERE edition_id = ?";
 
-    /** Every lock of the current groupe, all its timeslot groups included, most recent first. */
+    /** Every lock of the current edition, all its timeslot groups included, most recent first. */
     public List<VerrouillagePlanning> listVerrouillages() {
         return queryVerrouillages(SELECT_VERROUILLAGE_SQL + " ORDER BY cree_le DESC, id", null);
     }
@@ -1023,7 +1023,7 @@ public class ReferenceDataRepository {
      */
     public void saveVerrouillage(VerrouillagePlanning verrouillage) {
         String sql = "INSERT INTO verrouillage_planning "
-                + "(groupe_id, id, type, groupe_creneau_id, animateur_id, stand_id, creneau_id, jour, raison, cree_le) "
+                + "(edition_id, id, type, groupe_creneau_id, animateur_id, stand_id, creneau_id, jour, raison, cree_le) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = prepareScoped(connection, sql)) {
@@ -1044,7 +1044,7 @@ public class ReferenceDataRepository {
     }
 
     public void deleteVerrouillage(String id) {
-        delete("DELETE FROM verrouillage_planning WHERE groupe_id = ? AND id = ?", id);
+        delete("DELETE FROM verrouillage_planning WHERE edition_id = ? AND id = ?", id);
     }
 
     /* --------------------------- Legal parameters --------------------------- */
@@ -1054,7 +1054,7 @@ public class ReferenceDataRepository {
                 PreparedStatement ps = prepareScoped(connection,
                         "SELECT duree_hebdomadaire_max_minutes, duree_hebdomadaire_max_mineur_minutes, "
                                 + "pause_minimale_entre_vacations_minutes, repos_quotidien_minimal_minutes "
-                                + "FROM parametres_legaux WHERE groupe_id = ?");
+                                + "FROM parametres_legaux WHERE edition_id = ?");
                 ResultSet rs = ps.executeQuery()) {
             if (rs.next()) {
                 ParametresLegaux parametres = new ParametresLegaux(rs.getInt("duree_hebdomadaire_max_minutes"),
@@ -1073,10 +1073,10 @@ public class ReferenceDataRepository {
     public void saveParametresLegaux(ParametresLegaux parametres) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = prepareScoped(connection,
-                        "INSERT INTO parametres_legaux (groupe_id, duree_hebdomadaire_max_minutes, "
+                        "INSERT INTO parametres_legaux (edition_id, duree_hebdomadaire_max_minutes, "
                                 + "duree_hebdomadaire_max_mineur_minutes, pause_minimale_entre_vacations_minutes, "
                                 + "repos_quotidien_minimal_minutes) VALUES (?, ?, ?, ?, ?) "
-                                + "ON CONFLICT (groupe_id) DO UPDATE SET "
+                                + "ON CONFLICT (edition_id) DO UPDATE SET "
                                 + "duree_hebdomadaire_max_minutes = EXCLUDED.duree_hebdomadaire_max_minutes, "
                                 + "duree_hebdomadaire_max_mineur_minutes = "
                                 + "EXCLUDED.duree_hebdomadaire_max_mineur_minutes, "
@@ -1102,7 +1102,7 @@ public class ReferenceDataRepository {
                                 + "duree_chevauchement_minutes, duree_pause_repas_minutes, fenetre_repas_midi_debut, "
                                 + "fenetre_repas_midi_fin, fenetre_repas_soir_debut, fenetre_repas_soir_fin, "
                                 + "strategie_couverture_pendant_pause, nombre_familles_decalage, "
-                                + "duree_decalage_max_minutes FROM parametres_decoupage WHERE groupe_id = ?");
+                                + "duree_decalage_max_minutes FROM parametres_decoupage WHERE edition_id = ?");
                 ResultSet rs = ps.executeQuery()) {
             if (rs.next()) {
                 ParametresDecoupage parametres = new ParametresDecoupage();
@@ -1131,13 +1131,13 @@ public class ReferenceDataRepository {
     public void saveParametresDecoupage(ParametresDecoupage parametres) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = prepareScoped(connection,
-                        "INSERT INTO parametres_decoupage (groupe_id, duree_vacation_cible_minutes, "
+                        "INSERT INTO parametres_decoupage (edition_id, duree_vacation_cible_minutes, "
                                 + "duree_vacation_min_minutes, duree_vacation_max_minutes, duree_chevauchement_minutes, "
                                 + "duree_pause_repas_minutes, fenetre_repas_midi_debut, fenetre_repas_midi_fin, "
                                 + "fenetre_repas_soir_debut, fenetre_repas_soir_fin, strategie_couverture_pendant_pause, "
                                 + "nombre_familles_decalage, duree_decalage_max_minutes) "
                                 + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
-                                + "ON CONFLICT (groupe_id) DO UPDATE SET "
+                                + "ON CONFLICT (edition_id) DO UPDATE SET "
                                 + "duree_vacation_cible_minutes = EXCLUDED.duree_vacation_cible_minutes, "
                                 + "duree_vacation_min_minutes = EXCLUDED.duree_vacation_min_minutes, "
                                 + "duree_vacation_max_minutes = EXCLUDED.duree_vacation_max_minutes, "
@@ -1173,7 +1173,7 @@ public class ReferenceDataRepository {
     public ParametresSolveur getParametresSolveur() {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = prepareScoped(connection,
-                        "SELECT duree_resolution_secondes FROM parametres_solveur WHERE groupe_id = ?");
+                        "SELECT duree_resolution_secondes FROM parametres_solveur WHERE edition_id = ?");
                 ResultSet rs = ps.executeQuery()) {
             if (rs.next()) {
                 return new ParametresSolveur(rs.getInt("duree_resolution_secondes"));
@@ -1187,8 +1187,8 @@ public class ReferenceDataRepository {
     public void saveParametresSolveur(ParametresSolveur parametres) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = prepareScoped(connection,
-                        "INSERT INTO parametres_solveur (groupe_id, duree_resolution_secondes) VALUES (?, ?) "
-                                + "ON CONFLICT (groupe_id) DO UPDATE SET "
+                        "INSERT INTO parametres_solveur (edition_id, duree_resolution_secondes) VALUES (?, ?) "
+                                + "ON CONFLICT (edition_id) DO UPDATE SET "
                                 + "duree_resolution_secondes = EXCLUDED.duree_resolution_secondes")) {
             ps.setInt(2, parametres.getDureeResolutionSecondes());
             ps.executeUpdate();
@@ -1202,7 +1202,7 @@ public class ReferenceDataRepository {
     public java.util.Set<String> getContraintesDesactivees() {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = prepareScoped(connection,
-                        "SELECT nom FROM constraint_toggle WHERE groupe_id = ?");
+                        "SELECT nom FROM constraint_toggle WHERE edition_id = ?");
                 ResultSet rs = ps.executeQuery()) {
             java.util.Set<String> desactivees = new java.util.HashSet<>();
             while (rs.next()) {
@@ -1225,14 +1225,14 @@ public class ReferenceDataRepository {
         try (Connection connection = dataSource.getConnection()) {
             if (actif) {
                 try (PreparedStatement ps = prepareScoped(connection,
-                        "DELETE FROM constraint_toggle WHERE groupe_id = ? AND nom = ?")) {
+                        "DELETE FROM constraint_toggle WHERE edition_id = ? AND nom = ?")) {
                     ps.setString(2, nom);
                     ps.executeUpdate();
                 }
             } else {
                 try (PreparedStatement ps = prepareScoped(connection,
-                        "INSERT INTO constraint_toggle (groupe_id, nom, motif, modifie_par_utilisateur_id, modifie_le) "
-                                + "VALUES (?, ?, ?, ?, now()) ON CONFLICT (groupe_id, nom) DO UPDATE SET "
+                        "INSERT INTO constraint_toggle (edition_id, nom, motif, modifie_par_utilisateur_id, modifie_le) "
+                                + "VALUES (?, ?, ?, ?, now()) ON CONFLICT (edition_id, nom) DO UPDATE SET "
                                 + "motif = EXCLUDED.motif, "
                                 + "modifie_par_utilisateur_id = EXCLUDED.modifie_par_utilisateur_id, "
                                 + "modifie_le = EXCLUDED.modifie_le")) {
@@ -1299,12 +1299,12 @@ public class ReferenceDataRepository {
                         "animateur_jour_indispo", "animateur_souhait", "stand", "animateur")) {
                     // Table names come from the literal list above, never from user input.
                     try (PreparedStatement ps = prepareScoped(connection,
-                            "DELETE FROM " + table + " WHERE groupe_id = ?")) {
+                            "DELETE FROM " + table + " WHERE edition_id = ?")) {
                         ps.executeUpdate();
                     }
                 }
                 try (PreparedStatement ps = prepareScoped(connection,
-                        "DELETE FROM creneau WHERE groupe_id = ? AND groupe_creneau_id = ?")) {
+                        "DELETE FROM creneau WHERE edition_id = ? AND groupe_creneau_id = ?")) {
                     ps.setString(2, groupeActifId);
                     ps.executeUpdate();
                 }
@@ -1372,7 +1372,7 @@ public class ReferenceDataRepository {
 
     private String groupeActifId(Connection connection) throws SQLException {
         try (PreparedStatement ps = prepareScoped(connection,
-                "SELECT id FROM groupe_creneau WHERE groupe_id = ? AND actif");
+                "SELECT id FROM groupe_creneau WHERE edition_id = ? AND actif");
                 ResultSet rs = ps.executeQuery()) {
             return rs.next() ? rs.getString("id") : GROUPE_CRENEAU_DEFAUT_ID;
         }
@@ -1385,7 +1385,7 @@ public class ReferenceDataRepository {
         // NOT NULL FK.
         String groupeCreneauId = creneau.getGroupe() != null ? creneau.getGroupe().getId() : GROUPE_CRENEAU_DEFAUT_ID;
         try (PreparedStatement ps = prepareScoped(connection,
-                "INSERT INTO creneau (groupe_id, date_creneau, heure_debut, heure_fin, groupe_creneau_id, famille) "
+                "INSERT INTO creneau (edition_id, date_creneau, heure_debut, heure_fin, groupe_creneau_id, famille) "
                         + "VALUES (?, ?, ?, ?, ?, ?) RETURNING id")) {
             ps.setObject(2, creneau.getDate());
             ps.setObject(3, creneau.getHeureDebut());
@@ -1407,13 +1407,13 @@ public class ReferenceDataRepository {
         // clause, so the group predicate can't be the statement's first one.
         try (PreparedStatement ps = connection.prepareStatement(
                 "UPDATE creneau SET date_creneau = ?, heure_debut = ?, heure_fin = ?, groupe_creneau_id = ?, "
-                        + "famille = ? WHERE groupe_id = ? AND id = ?")) {
+                        + "famille = ? WHERE edition_id = ? AND id = ?")) {
             ps.setObject(1, creneau.getDate());
             ps.setObject(2, creneau.getHeureDebut());
             ps.setObject(3, creneau.getHeureFin());
             ps.setString(4, groupeCreneauId);
             ps.setInt(5, creneau.getFamille());
-            ps.setString(6, groupeId());
+            ps.setString(6, editionId());
             ps.setLong(7, creneau.getId());
             ps.executeUpdate();
         }
@@ -1444,15 +1444,15 @@ public class ReferenceDataRepository {
 
     /**
      * Prepares {@code sql} with the current group already bound to its
-     * <b>first</b> placeholder — so write the {@code groupe_id = ?} predicate
-     * (or the {@code groupe_id} column of an INSERT) first, and bind the
+     * <b>first</b> placeholder — so write the {@code edition_id = ?} predicate
+     * (or the {@code edition_id} column of an INSERT) first, and bind the
      * remaining parameters from index 2. An UPDATE, whose first placeholder
      * necessarily belongs to its SET clause, binds the group by hand instead.
      */
     private PreparedStatement prepareScoped(Connection connection, String sql) throws SQLException {
         PreparedStatement ps = connection.prepareStatement(sql);
         try {
-            ps.setString(1, groupeId());
+            ps.setString(1, editionId());
             return ps;
         } catch (SQLException | RuntimeException e) {
             ps.close();
@@ -1464,7 +1464,7 @@ public class ReferenceDataRepository {
         // Table names come from this class's own call sites, never from user input.
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = prepareScoped(connection,
-                        "SELECT 1 FROM " + table + " WHERE groupe_id = ? AND id = ?")) {
+                        "SELECT 1 FROM " + table + " WHERE edition_id = ? AND id = ?")) {
             ps.setString(2, id);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
@@ -1487,7 +1487,7 @@ public class ReferenceDataRepository {
     private boolean existsLong(String table, Long id) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = prepareScoped(connection,
-                        "SELECT 1 FROM " + table + " WHERE groupe_id = ? AND id = ?")) {
+                        "SELECT 1 FROM " + table + " WHERE edition_id = ? AND id = ?")) {
             ps.setLong(2, id);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();

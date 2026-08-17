@@ -11,24 +11,24 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
-import dev.sylvain.planning.domain.Groupe;
+import dev.sylvain.planning.domain.Edition;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 /**
- * Direct JDBC access to the {@code groupe} table — the editions the whole
- * reference model is partitioned into (see {@code docs/groupes.md}).
+ * Direct JDBC access to the {@code edition} table — the editions the whole
+ * reference model is partitioned into (see {@code docs/editions.md}).
  *
  * <p>Deliberately separate from {@link ReferenceDataRepository}: that one reads
- * and writes <i>inside</i> a group and gets its scope from
- * {@link GroupeContext}, this one manipulates the scopes themselves and must
- * therefore stay group-agnostic.</p>
+ * and writes <i>inside</i> an edition and gets its scope from
+ * {@link EditionContext}, this one manipulates the scopes themselves and must
+ * therefore stay edition-agnostic.</p>
  */
 @ApplicationScoped
-public class GroupeRepository {
+public class EditionRepository {
 
-    /** Group seeded by V30, and the fallback for any caller designating none. */
-    public static final String GROUPE_DEFAUT_ID = "DEFAUT";
+    /** Edition seeded by V30, and the fallback for any caller designating none. */
+    public static final String EDITION_DEFAUT_ID = "DEFAUT";
 
     /**
      * Reference tables copied by {@link #dupliquer}, ordered so a sequential
@@ -69,91 +69,91 @@ public class GroupeRepository {
     @Inject
     DataSource dataSource;
 
-    public List<Groupe> listGroupes() {
-        List<Groupe> groupes = new ArrayList<>();
+    public List<Edition> listEditions() {
+        List<Edition> editions = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement(
-                        "SELECT id, nom, defaut, cree_le FROM groupe ORDER BY cree_le, id");
+                        "SELECT id, nom, defaut, cree_le FROM edition ORDER BY cree_le, id");
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 Timestamp creeLe = rs.getTimestamp("cree_le");
-                groupes.add(new Groupe(rs.getString("id"), rs.getString("nom"), rs.getBoolean("defaut"),
+                editions.add(new Edition(rs.getString("id"), rs.getString("nom"), rs.getBoolean("defaut"),
                         creeLe != null ? creeLe.toInstant() : null));
             }
         } catch (SQLException e) {
-            throw new IllegalStateException("Failed to list groups", e);
+            throw new IllegalStateException("Failed to list editions", e);
         }
-        return groupes;
+        return editions;
     }
 
     public boolean exists(String id) {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = connection.prepareStatement("SELECT 1 FROM groupe WHERE id = ?")) {
+                PreparedStatement ps = connection.prepareStatement("SELECT 1 FROM edition WHERE id = ?")) {
             ps.setString(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
             }
         } catch (SQLException e) {
-            throw new IllegalStateException("Failed to probe group " + id, e);
+            throw new IllegalStateException("Failed to probe edition " + id, e);
         }
     }
 
     /**
-     * Id of the group flagged {@code defaut}, or {@value #GROUPE_DEFAUT_ID} if
+     * Id of the edition flagged {@code defaut}, or {@value #EDITION_DEFAUT_ID} if
      * none is — a database always has one (V30 seeds it, and the service
      * refuses to delete it), so the fallback only covers a hand-edited base.
      */
-    public String idGroupeParDefaut() {
+    public String idEditionParDefaut() {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = connection.prepareStatement("SELECT id FROM groupe WHERE defaut");
+                PreparedStatement ps = connection.prepareStatement("SELECT id FROM edition WHERE defaut");
                 ResultSet rs = ps.executeQuery()) {
-            return rs.next() ? rs.getString("id") : GROUPE_DEFAUT_ID;
+            return rs.next() ? rs.getString("id") : EDITION_DEFAUT_ID;
         } catch (SQLException e) {
-            throw new IllegalStateException("Failed to load the default group", e);
+            throw new IllegalStateException("Failed to load the default edition", e);
         }
     }
 
-    /** Creates the group, or renames it if it already exists — {@code defaut} is never touched here. */
-    public void save(Groupe groupe) {
+    /** Creates the edition, or renames it if it already exists — {@code defaut} is never touched here. */
+    public void save(Edition edition) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement(
-                        "INSERT INTO groupe (id, nom, defaut) VALUES (?, ?, FALSE) "
+                        "INSERT INTO edition (id, nom, defaut) VALUES (?, ?, FALSE) "
                                 + "ON CONFLICT (id) DO UPDATE SET nom = EXCLUDED.nom")) {
-            ps.setString(1, groupe.getId());
-            ps.setString(2, groupe.getNom());
+            ps.setString(1, edition.getId());
+            ps.setString(2, edition.getNom());
             ps.executeUpdate();
         } catch (SQLException e) {
-            throw new IllegalStateException("Failed to save group " + groupe.getId(), e);
+            throw new IllegalStateException("Failed to save edition " + edition.getId(), e);
         }
     }
 
     /**
-     * Flags this group as the default and clears every other one, in a single
+     * Flags this edition as the default and clears every other one, in a single
      * transaction (clear-then-set order, so the partial unique index on
      * {@code defaut} is never violated in between — same pattern as
      * {@code groupe_creneau.actif}).
      */
     public void definirParDefaut(String id) {
         inTransaction(connection -> {
-            try (PreparedStatement ps = connection.prepareStatement("UPDATE groupe SET defaut = FALSE")) {
+            try (PreparedStatement ps = connection.prepareStatement("UPDATE edition SET defaut = FALSE")) {
                 ps.executeUpdate();
             }
             try (PreparedStatement ps = connection.prepareStatement(
-                    "UPDATE groupe SET defaut = TRUE WHERE id = ?")) {
+                    "UPDATE edition SET defaut = TRUE WHERE id = ?")) {
                 ps.setString(1, id);
                 ps.executeUpdate();
             }
-        }, "Failed to set group " + id + " as default");
+        }, "Failed to set edition " + id + " as default");
     }
 
-    /** Drops the group and, by {@code ON DELETE CASCADE}, its whole reference model. */
+    /** Drops the edition and, by {@code ON DELETE CASCADE}, its whole reference model. */
     public void delete(String id) {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = connection.prepareStatement("DELETE FROM groupe WHERE id = ?")) {
+                PreparedStatement ps = connection.prepareStatement("DELETE FROM edition WHERE id = ?")) {
             ps.setString(1, id);
             ps.executeUpdate();
         } catch (SQLException e) {
-            throw new IllegalStateException("Failed to delete group " + id, e);
+            throw new IllegalStateException("Failed to delete edition " + id, e);
         }
     }
 
@@ -163,8 +163,8 @@ public class GroupeRepository {
      * minus the assignments" action. Solver results are never copied.
      *
      * <p>Every table is copied by a plain {@code INSERT … SELECT} rewriting
-     * {@code groupe_id}, which works because business ids are preserved
-     * verbatim: that is exactly what the composite {@code (groupe_id, id)}
+     * {@code edition_id}, which works because business ids are preserved
+     * verbatim: that is exactly what the composite {@code (edition_id, id)}
      * primary keys of V32 are for. {@code creneau} is the one exception — its
      * id is a DB-generated identity, so new ids are drawn up-front into a
      * temporary mapping table and the rows referencing them are rewritten
@@ -178,7 +178,7 @@ public class GroupeRepository {
             }
             copierCreneaux(connection, sourceId, cibleId);
             copierContraintesAdHoc(connection, sourceId, cibleId);
-        }, "Failed to duplicate group " + sourceId + " into " + cibleId);
+        }, "Failed to duplicate edition " + sourceId + " into " + cibleId);
     }
 
     /**
@@ -189,8 +189,8 @@ public class GroupeRepository {
      */
     private void copierGroupesCreneaux(Connection connection, String sourceId, String cibleId) throws SQLException {
         try (PreparedStatement ps = connection.prepareStatement(
-                "INSERT INTO groupe_creneau (groupe_id, id, nom, actif) "
-                        + "SELECT ?, id, nom, actif FROM groupe_creneau WHERE groupe_id = ?")) {
+                "INSERT INTO groupe_creneau (edition_id, id, nom, actif) "
+                        + "SELECT ?, id, nom, actif FROM groupe_creneau WHERE edition_id = ?")) {
             ps.setString(1, cibleId);
             ps.setString(2, sourceId);
             ps.executeUpdate();
@@ -198,7 +198,7 @@ public class GroupeRepository {
         try (PreparedStatement ps = connection.prepareStatement(
                 "UPDATE groupe_creneau cible SET groupe_source_id = source.groupe_source_id "
                         + "FROM groupe_creneau source "
-                        + "WHERE source.groupe_id = ? AND cible.groupe_id = ? AND cible.id = source.id")) {
+                        + "WHERE source.edition_id = ? AND cible.edition_id = ? AND cible.id = source.id")) {
             ps.setString(1, sourceId);
             ps.setString(2, cibleId);
             ps.executeUpdate();
@@ -209,8 +209,8 @@ public class GroupeRepository {
             throws SQLException {
         // Column lists come from the constant above, never from user input.
         try (PreparedStatement ps = connection.prepareStatement(
-                "INSERT INTO " + table.nom() + " (groupe_id, " + table.colonnes() + ") "
-                        + "SELECT ?, " + table.colonnes() + " FROM " + table.nom() + " WHERE groupe_id = ?")) {
+                "INSERT INTO " + table.nom() + " (edition_id, " + table.colonnes() + ") "
+                        + "SELECT ?, " + table.colonnes() + " FROM " + table.nom() + " WHERE edition_id = ?")) {
             ps.setString(1, cibleId);
             ps.setString(2, sourceId);
             ps.executeUpdate();
@@ -232,22 +232,22 @@ public class GroupeRepository {
         try (PreparedStatement ps = connection.prepareStatement(
                 "INSERT INTO creneau_remap (ancien_id, nouvel_id) "
                         + "SELECT id, nextval(pg_get_serial_sequence('creneau', 'id')) "
-                        + "FROM creneau WHERE groupe_id = ?")) {
+                        + "FROM creneau WHERE edition_id = ?")) {
             ps.setString(1, sourceId);
             ps.executeUpdate();
         }
         try (PreparedStatement ps = connection.prepareStatement(
-                "INSERT INTO creneau (id, groupe_id, date_creneau, heure_debut, heure_fin, groupe_creneau_id, famille) "
+                "INSERT INTO creneau (id, edition_id, date_creneau, heure_debut, heure_fin, groupe_creneau_id, famille) "
                         + "SELECT r.nouvel_id, ?, c.date_creneau, c.heure_debut, c.heure_fin, c.groupe_creneau_id, "
-                        + "c.famille FROM creneau c JOIN creneau_remap r ON r.ancien_id = c.id WHERE c.groupe_id = ?")) {
+                        + "c.famille FROM creneau c JOIN creneau_remap r ON r.ancien_id = c.id WHERE c.edition_id = ?")) {
             ps.setString(1, cibleId);
             ps.setString(2, sourceId);
             ps.executeUpdate();
         }
         try (PreparedStatement ps = connection.prepareStatement(
-                "INSERT INTO creneau_stand_ouvert (groupe_id, creneau_id, stand_id) "
+                "INSERT INTO creneau_stand_ouvert (edition_id, creneau_id, stand_id) "
                         + "SELECT ?, r.nouvel_id, cso.stand_id FROM creneau_stand_ouvert cso "
-                        + "JOIN creneau_remap r ON r.ancien_id = cso.creneau_id WHERE cso.groupe_id = ?")) {
+                        + "JOIN creneau_remap r ON r.ancien_id = cso.creneau_id WHERE cso.edition_id = ?")) {
             ps.setString(1, cibleId);
             ps.setString(2, sourceId);
             ps.executeUpdate();
@@ -257,18 +257,18 @@ public class GroupeRepository {
     /** Ad hoc constraints last: they reference both a stand and a (remapped) créneau. */
     private void copierContraintesAdHoc(Connection connection, String sourceId, String cibleId) throws SQLException {
         try (PreparedStatement ps = connection.prepareStatement(
-                "INSERT INTO contrainte_ad_hoc (groupe_id, id, type, creneau_id, stand_id, raison, cree_par, cree_le) "
+                "INSERT INTO contrainte_ad_hoc (edition_id, id, type, creneau_id, stand_id, raison, cree_par, cree_le) "
                         + "SELECT ?, c.id, c.type, r.nouvel_id, c.stand_id, c.raison, c.cree_par, c.cree_le "
                         + "FROM contrainte_ad_hoc c LEFT JOIN creneau_remap r ON r.ancien_id = c.creneau_id "
-                        + "WHERE c.groupe_id = ?")) {
+                        + "WHERE c.edition_id = ?")) {
             ps.setString(1, cibleId);
             ps.setString(2, sourceId);
             ps.executeUpdate();
         }
         try (PreparedStatement ps = connection.prepareStatement(
-                "INSERT INTO contrainte_animateur (groupe_id, contrainte_id, animateur_id, position) "
+                "INSERT INTO contrainte_animateur (edition_id, contrainte_id, animateur_id, position) "
                         + "SELECT ?, contrainte_id, animateur_id, position FROM contrainte_animateur "
-                        + "WHERE groupe_id = ?")) {
+                        + "WHERE edition_id = ?")) {
             ps.setString(1, cibleId);
             ps.setString(2, sourceId);
             ps.executeUpdate();
