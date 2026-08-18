@@ -33,6 +33,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/data-setup/data-setup-page').then((m) => m.DataSetupPage)
   },
   {
+    path: 'aide',
+    title: 'Aide — Planning Équipes',
+    loadComponent: () => import('./pages/aide/aide-page').then((m) => m.AidePage)
+  },
+  {
     path: 'editions',
     title: 'Éditions — Planning Équipes',
     loadComponent: () => import('./pages/editions/editions-page').then((m) => m.EditionsPage)

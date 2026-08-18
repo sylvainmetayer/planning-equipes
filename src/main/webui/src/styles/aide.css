@@ -1,0 +1,76 @@
+/* User guide page: prose layout Material does not cover (long paragraphs,
+   definition lists, table of contents). */
+
+.aide-search {
+  display: block;
+  max-width: 32rem;
+}
+
+/* Table of contents: one chip-sized link per section, wrapping on narrow screens. */
+.aide-toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.aide-section-icon {
+  color: var(--mat-sys-primary);
+}
+
+/* Prose is capped: full-width lines are unreadable on a wide screen. */
+.aide-paragraph,
+.aide-list,
+.aide-definitions {
+  max-width: 68ch;
+}
+
+.aide-paragraph {
+  font: var(--mat-sys-body-medium);
+  margin: 0 0 0.75rem;
+}
+
+.aide-list {
+  font: var(--mat-sys-body-medium);
+  margin: 0 0 0.75rem;
+  padding-left: 1.25rem;
+}
+
+.aide-list li {
+  margin-bottom: 0.375rem;
+}
+
+.aide-definitions {
+  margin: 0 0 0.75rem;
+}
+
+.aide-definitions dt {
+  font: var(--mat-sys-title-small);
+  margin-top: 0.75rem;
+}
+
+.aide-definitions dd {
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+  margin: 0.25rem 0 0;
+}
+
+.aide-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+}
+
+.aide-links-label {
+  font: var(--mat-sys-label-medium);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/* Anchored sections must not land under the sticky toolbar when jumped to. */
+.aide-section {
+  scroll-margin-top: 5rem;
+}

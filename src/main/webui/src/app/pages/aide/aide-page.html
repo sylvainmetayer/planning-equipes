@@ -1,0 +1,87 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <mat-card-title i18n="@@aide.intro.title">Aide à l'utilisation</mat-card-title>
+    <mat-card-subtitle i18n="@@aide.intro.subtitle">
+      Guide d'utilisation de l'application : à quoi sert chaque écran, comment configurer le solveur, comment lire un
+      résultat et quoi corriger quand un planning n'est pas réalisable. Cette page ne lit aucune donnée et reste
+      consultable pendant qu'une résolution tourne.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <mat-form-field appearance="outline" class="aide-search">
+      <mat-label i18n="@@aide.search.label">Rechercher dans l'aide</mat-label>
+      <mat-icon matPrefix>search</mat-icon>
+      <input
+        matInput
+        name="aideSearch"
+        [ngModel]="query()"
+        (ngModelChange)="query.set($event)"
+        i18n-placeholder="@@aide.search.placeholder"
+        placeholder="score dur, découpage, mineurs…"
+      />
+      @if (query()) {
+        <button matIconButton matSuffix type="button" (click)="query.set('')"
+                i18n-aria-label="@@aide.search.clear" aria-label="Effacer la recherche">
+          <mat-icon>close</mat-icon>
+        </button>
+      }
+    </mat-form-field>
+
+    <nav class="aide-toc" i18n-aria-label="@@aide.toc.label" aria-label="Sommaire de l'aide">
+      @for (section of visibleSections(); track section.id) {
+        <a matButton="tonal" [href]="'#' + section.id">
+          <mat-icon>{{ section.icon }}</mat-icon>
+          {{ section.title }}
+        </a>
+      }
+    </nav>
+
+    @if (noResult()) {
+      <p class="empty-hint" i18n="@@aide.search.noResult">
+        Aucune section ne correspond à cette recherche.
+      </p>
+    }
+  </mat-card-content>
+</mat-card>
+
+@for (section of visibleSections(); track section.id) {
+  <mat-card appearance="outlined" class="page-card aide-section" [id]="section.id">
+    <mat-card-header>
+      <mat-icon mat-card-avatar class="aide-section-icon">{{ section.icon }}</mat-icon>
+      <mat-card-title>{{ section.title }}</mat-card-title>
+      <mat-card-subtitle>{{ section.summary }}</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      @for (block of section.blocks; track $index) {
+        @switch (block.kind) {
+          @case ('paragraph') {
+            <p class="aide-paragraph">{{ block.text }}</p>
+          }
+          @case ('list') {
+            <ul class="aide-list">
+              @for (item of block.items; track item) {
+                <li>{{ item }}</li>
+              }
+            </ul>
+          }
+          @case ('definitions') {
+            <dl class="aide-definitions">
+              @for (definition of block.items; track definition.term) {
+                <dt>{{ definition.term }}</dt>
+                <dd>{{ definition.text }}</dd>
+              }
+            </dl>
+          }
+        }
+      }
+      @if (section.links.length > 0) {
+        <div class="aide-links">
+          <span class="aide-links-label" i18n="@@aide.links.label">Écrans concernés :</span>
+          @for (link of section.links; track link.route) {
+            <a matButton [routerLink]="link.route">{{ link.label }}</a>
+          }
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+}

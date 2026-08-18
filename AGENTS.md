@@ -140,7 +140,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `/debug`, `/notifications`, `/data-setup`, `/stands`, `/emplacements`,
   `/animateurs`, `/creneaux`, `/decoupage`, `/typologies`,
   `/ad-hoc-constraints`, `/calendar`, `/day-calendar`, `/constraints`,
-  `/problemes`, `/hours`, `/staffing` (`/solver`, `/exports` and
+  `/problemes`, `/hours`, `/staffing`, `/aide` (`/solver`, `/exports` and
   `/data-transfer` are legacy redirects, kept for old bookmarks/links).
   Adding a functional block means adding a route and a `app/pages/<block>/`
   folder, never a new section inside an existing page.

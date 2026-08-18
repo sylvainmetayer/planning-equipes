@@ -378,6 +378,19 @@ de développement » de la navigation et affiche un bandeau d'avertissement.
   qui permet d'identifier précisément ce qui bloque quand aucun planning
   satisfaisant n'est trouvé.
 
+### Aide intégrée
+
+Un écran « Aide » réunit le mode d'emploi de l'application : l'ordre dans lequel
+enchaîner les écrans pour construire un planning, le rôle de chaque référentiel,
+les réglages qui agissent réellement sur le solveur (durée de résolution,
+paramètres légaux, activation des contraintes, contraintes ad hoc,
+verrouillages, paramètres de découpage), la lecture du score dur / medium /
+souple et des écrans de diagnostic, puis un guide symptôme par symptôme de ce
+qu'il faut corriger — et dans quel ordre — quand un planning n'est pas
+réalisable. Le contenu est cherchable et ne dépend d'aucune donnée : la page
+reste consultable pendant qu'une résolution tourne, ou sur une édition encore
+vide.
+
 ### Assistant IA
 
 Un serveur MCP permet à un assistant IA de consulter et piloter

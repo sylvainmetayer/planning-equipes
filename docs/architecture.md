@@ -150,6 +150,7 @@ Chaque bloc fonctionnel a **sa propre route et sa propre page**, chargée en
 | `/debug` | `app/pages/debug/` | Diagnostics du solveur et état interne |
 | `/problemes` | `app/pages/problemes/` | Vue centralisée des problèmes, triés par gravité : causes d'infaisabilité (`GET /api/feasibility`, sans résolution) + règles en défaut de la dernière analyse |
 | `/data-setup` | `app/pages/data-setup/` | Scénarios d'exemple, réinitialisation, export scénario, export/import de dump SQL, durée de résolution du solveur |
+| `/aide` | `app/pages/aide/` | Guide d'utilisation intégré : rôle de chaque écran, configuration du solveur, lecture des scores et réglages à faire selon le symptôme. Contenu statique (`aide-content.ts`), aucune dépendance à un service ni au planning résolu |
 | `/editions` | `app/pages/editions/` | Gestion des éditions : création (vide ou par duplication), renommage, édition par défaut, suppression |
 | `/stands` | `app/pages/stands/` | CRUD des stands |
 | `/emplacements` | `app/pages/emplacements/` | CRUD des emplacements (avec sélection sur carte) |
