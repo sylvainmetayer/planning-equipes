@@ -15,9 +15,20 @@
 <mat-sidenav-container class="app-shell">
   <mat-sidenav class="app-drawer" [mode]="drawerMode()" [opened]="drawerOpen()"
                (openedChange)="drawerOpen.set($event)">
-    @for (group of navGroups; track group.title) {
+    @for (group of navGroups; track group.id) {
       <mat-nav-list>
-        <div matSubheader>{{ group.title }}</div>
+        <button
+          type="button"
+          class="nav-group-header"
+          [attr.aria-expanded]="!isCollapsed(group)"
+          [attr.aria-controls]="'nav-group-' + group.id"
+          (click)="toggleGroup(group)"
+        >
+          <span>{{ group.title }}</span>
+          <mat-icon>{{ isCollapsed(group) ? 'expand_more' : 'expand_less' }}</mat-icon>
+        </button>
+        @if (!isCollapsed(group)) {
+        <div [id]="'nav-group-' + group.id">
         @for (link of group.links; track link.path) {
           @if (link.external) {
             <a mat-list-item [href]="link.path" target="_blank" rel="noopener">
@@ -41,6 +52,8 @@
               <span matListItemTitle>{{ link.label }}</span>
             </a>
           }
+        }
+        </div>
         }
       </mat-nav-list>
       <mat-divider />

@@ -42,6 +42,35 @@
   margin: 0 auto;
 }
 
+/*
+ * Replaces `matSubheader` on a group title: same look, but a real button, so
+ * folding a group is reachable at the keyboard and announced to assistive
+ * technology (aria-expanded / aria-controls).
+ */
+.nav-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 1rem;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  text-align: start;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-title-small);
+}
+
+.nav-group-header:hover {
+  background: var(--mat-sys-surface-container-high);
+}
+
+.nav-group-header mat-icon {
+  flex-shrink: 0;
+  color: var(--mat-sys-on-surface-variant);
+}
+
 .active-link {
   --mat-list-list-item-label-text-color: var(--mat-sys-primary);
   --mat-list-list-item-leading-icon-color: var(--mat-sys-primary);

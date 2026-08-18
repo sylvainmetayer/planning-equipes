@@ -1,5 +1,5 @@
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, linkedSignal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, linkedSignal, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
@@ -12,6 +12,12 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { map } from 'rxjs';
 import { EditionStore } from './core/edition.store';
 import { AppLocale, getStoredLocale, setStoredLocaleAndReload } from './core/locale';
+import {
+  defaultNavStorage,
+  readCollapsedGroups,
+  toggleCollapsedGroup,
+  writeCollapsedGroups
+} from './core/nav-collapse';
 import { NotificationService } from './core/notification.service';
 import { PlanningResolutionStore } from './core/planning-resolution.store';
 import { SolverJobService } from './core/solver-job.service';
@@ -37,6 +43,8 @@ interface NavLink {
 }
 
 interface NavGroup {
+  /** Stable across languages: what the collapsed state is stored under. */
+  id: string;
   title: string;
   links: NavLink[];
 }
@@ -53,6 +61,7 @@ interface NavGroup {
 function buildNavGroups(): NavGroup[] {
   return [
   {
+    id: 'planning',
     title: $localize`:@@nav.group.planning:Planning`,
     links: [
       { path: '/', label: $localize`:@@nav.link.solver:Solveur`, icon: 'play_circle' },
@@ -74,6 +83,7 @@ function buildNavGroups(): NavGroup[] {
     ]
   },
   {
+    id: 'reference-data',
     title: $localize`:@@nav.group.referenceData:Données de référence`,
     links: [
       { path: '/stands', label: $localize`:@@nav.link.stands:Stands`, icon: 'storefront' },
@@ -85,6 +95,7 @@ function buildNavGroups(): NavGroup[] {
     ]
   },
   {
+    id: 'views',
     title: $localize`:@@nav.group.views:Vues`,
     links: [
       {
@@ -121,6 +132,7 @@ function buildNavGroups(): NavGroup[] {
     ]
   },
   {
+    id: 'tools',
     title: $localize`:@@nav.group.tools:Outils`,
     links: [
       {
@@ -136,6 +148,7 @@ function buildNavGroups(): NavGroup[] {
   {
     // Pages backed by features that are not finished yet: each one shows an
     // `app-work-in-progress-banner` telling the user so.
+    id: 'work-in-progress',
     title: $localize`:@@nav.group.workInProgress:En cours de développement`,
     links: [
       {
@@ -232,6 +245,20 @@ export class App {
 
   protected toggleDrawer(): void {
     this.drawerOpen.update((open) => !open);
+  }
+
+  /** Folded navigation groups, remembered across visits (see `core/nav-collapse`). */
+  private readonly navStorage = defaultNavStorage();
+  protected readonly collapsedGroups = signal<ReadonlySet<string>>(readCollapsedGroups(this.navStorage));
+
+  protected isCollapsed(group: NavGroup): boolean {
+    return this.collapsedGroups().has(group.id);
+  }
+
+  protected toggleGroup(group: NavGroup): void {
+    const next = toggleCollapsedGroup(this.collapsedGroups(), group.id);
+    this.collapsedGroups.set(next);
+    writeCollapsedGroups(this.navStorage, next);
   }
 
   /** Closes the overlay drawer after navigating on a small screen. */
