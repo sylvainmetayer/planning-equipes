@@ -7,9 +7,14 @@ on:
       - 'v*'
   workflow_dispatch:
 
+# `id-token` and `attestations` are what lets this workflow sign, and publish
+# to the repository's attestation store, the provenance and the SBOM of the
+# image it just pushed — see the two attest steps at the end of the job.
 permissions:
   contents: read
   packages: write
+  id-token: write
+  attestations: write
 
 concurrency:
   group: docker-ghcr-${{ github.ref }}
@@ -47,6 +52,7 @@ jobs:
             type=sha
 
       - name: Build and push Docker image
+        id: build
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -57,3 +63,35 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      # Syft reads the pushed image rather than the source tree: what has to be
+      # inventoried is what actually ships (the JVM layer, the Quarkus app and
+      # every jar it bundles), not what a build might have produced.
+      - name: Generate the image SBOM
+        id: sbom
+        uses: anchore/sbom-action@v0
+        with:
+          image: ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}
+          format: cyclonedx-json
+          output-file: sbom.cyclonedx.json
+          upload-artifact: true
+          artifact-name: sbom.cyclonedx.json
+
+      # Both attestations are signed with the workflow's OIDC identity and
+      # stored on the repository, so anyone can check what a published image is
+      # made of and where it came from:
+      #   gh attestation verify oci://ghcr.io/<repo>:main --repo <repo>
+      #- name: Attest the image provenance
+      #  uses: actions/attest-build-provenance@v3
+      #  with:
+      #    subject-name: ghcr.io/${{ github.repository }}
+      #    subject-digest: ${{ steps.build.outputs.digest }}
+      #    push-to-registry: true
+
+      #- name: Attest the image SBOM
+      #  uses: actions/attest-sbom@v3
+      #  with:
+      #    subject-name: ghcr.io/${{ github.repository }}
+      #    subject-digest: ${{ steps.build.outputs.digest }}
+      #    sbom-path: sbom.cyclonedx.json
+      #    push-to-registry: true

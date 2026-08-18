@@ -344,7 +344,30 @@ démarrage. **Un changement de schéma = un nouveau fichier versionné** ; ne ja
   sur Raspberry Pi. Ne se déclenche **que** sur un push `main` ou un tag de
   release (`v*`) — jamais sur une branche ou une pull request, pour ne pas
   payer le coût (temps + minutes CI) d'un build multi-arch complet à chaque
-  push d'une branche de travail.
+  push d'une branche de travail. Chaque image publiée est également
+  **inventoriée et signée** : voir ci-dessous.
+
+### SBOM et attestations de l'image
+
+À chaque commit sur `main` (et à chaque tag `v*`), `docker-ghcr.yml` produit,
+après le push de l'image :
+
+1. un **SBOM** CycloneDX de l'image elle-même (Syft, `anchore/sbom-action`) —
+   l'inventaire de ce qui est réellement livré (couche JVM, application Quarkus
+   et jars embarqués), pas de ce que l'arbre source aurait pu produire. Il est
+   aussi déposé en artefact de run (`sbom.cyclonedx.json`) ;
+2. une **attestation de provenance** (`actions/attest-build-provenance`) et une
+   **attestation de SBOM** (`actions/attest-sbom`), signées avec l'identité OIDC
+   du workflow, publiées sur le dépôt **et** poussées à côté de l'image sur
+   GHCR.
+
+D'où les permissions `id-token: write` et `attestations: write` du workflow.
+Vérification côté consommateur :
+
+```bash
+gh attestation verify oci://ghcr.io/sylvainmetayer/planning-equipes:main \
+  --repo sylvainmetayer/planning-equipes
+```
 
 ## Mises à jour de dépendances (Renovate)
 
