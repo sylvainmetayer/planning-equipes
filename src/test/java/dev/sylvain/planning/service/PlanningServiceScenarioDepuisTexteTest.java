@@ -14,6 +14,7 @@ import java.time.LocalTime;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.Test;
 
+import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
@@ -34,7 +35,7 @@ class PlanningServiceScenarioDepuisTexteTest {
     private static PlanningService service() {
         ReferenceDataService referenceDataService = new ReferenceDataService();
         referenceDataService.init();
-        return new PlanningService(3L, 2L, referenceDataService, new FeasibilityAnalyzer(),
+        return new PlanningService(3L, 2L, ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT, referenceDataService, new FeasibilityAnalyzer(),
                 ConfigProvider.getConfig());
     }
 

@@ -254,11 +254,45 @@ silencieusement les règles autour de lui.
 | `experienceRequisePourStandsPremium` | Un stand premium ne devrait pas être tenu par un débutant |
 | `eviterRoulementStandsPremium` | Sur un stand premium, limiter le nombre d'animateurs **différents** qui s'y relaient au-delà d'un équipage (`max(1, effectifMin)`), et non le nombre de paires de postes — voir la note ci-dessous |
 | `eviterChangementEmplacementEloigne` | Entre deux créneaux consécutifs, éviter de basculer un animateur vers un stand dont l'emplacement est éloigné (> 300 m) |
+| `limiterEmplacementsParJour` | Sur une même journée, limiter le nombre d'**emplacements distincts** visités par un animateur (plafond `planning.contraintes.max-emplacements-par-jour`, 3 par défaut ; pénalité proportionnelle au dépassement) — voir la note ci-dessous |
 | `eviterEnchainementStandsEpuisants` | Entre deux créneaux consécutifs, éviter d'enchaîner un animateur sur deux stands physiquement épuisants (`Stand.niveauEffort = EPUISANT`) sans repos ni stand plus facile entre les deux |
 | `appreciationIncompatible` | L'appréciation de l'administrateur (`Animateur.competences`) ne couvre aucune typologie proposée par le stand — ex-contrainte dure `competenceCompatible`, assouplie car il s'agit d'une appréciation métier faite après formation, pas d'une qualification objective |
 | `souhaitsIncompatibles` | Aucune des typologies proposées par le stand ne figure dans les souhaits déclarés de l'animateur (`Animateur.souhaits`) |
 | `limiterTypologiesDistinctesParAnimateur` | Un animateur devrait idéalement intervenir sur une ou deux typologies de jeu distinctes sur l'ensemble du planning (au-delà de 2, pénalité proportionnelle au dépassement) |
 | `maxJoursConsecutifsTravailles` | Un animateur ne devrait pas travailler plus de six jours consécutifs sans au moins un jour de repos — moins est possible, plus ne devrait pas l'être (pénalité proportionnelle au dépassement) |
+
+#### `limiterEmplacementsParJour` : des zones distinctes, pas des transitions
+
+`eviterChangementEmplacementEloigne` ne voit qu'une **paire de créneaux
+consécutifs** à la fois, et seulement au-delà de 300 m : dix allers-retours
+entre deux zones voisines ne lui coûtent rien, alors que la journée de
+l'animateur est bel et bien passée à se déplacer. Cette règle plafonne donc le
+nombre d'emplacements distincts couverts dans la **journée**, indépendamment
+des distances.
+
+Elle compte des **zones distinctes** et non des transitions : A → B → A vaut
+deux zones, pas deux déplacements. C'est plus simple à expliquer, et cela évite
+de payer deux fois un aller-retour.
+
+**Zone = `Emplacement`** : le modèle n'a pas d'autre notion de zone, et en
+introduire une (un regroupement d'emplacements) serait une évolution du modèle,
+hors périmètre ici.
+
+**Pas de double pénalisation** avec `eviterChangementEmplacementEloigne` : les
+deux règles ne regardent pas le même fait. Un unique déplacement éloigné entre
+deux zones dans la journée est facturé par la première et **pas** par
+celle-ci, qui ne se déclenche qu'au-delà du plafond
+(`QualiteConstraintsTest#unSeulDeplacementEloigneNEstPasPenaliseDeuxFois`).
+
+**Plafond réglable** : `planning.contraintes.max-emplacements-par-jour` (3 par
+défaut), porté au solveur par le fait de planification `ParametresQualite`
+comme `ParametresLegaux` l'est pour les règles légales. Contrairement à ces
+dernières, il n'est pas stocké par édition : il règle le confort, pas la loi.
+Une valeur très grande neutralise la règle sans la désactiver.
+
+**Inerte sans emplacements renseignés** (voir #118) : un poste dont le stand n'a
+pas d'emplacement est filtré, donc rien n'est compté — plutôt que de faire
+compter tout le monde pour une même zone fictive.
 
 #### `eviterRoulementStandsPremium` : des têtes, pas des paires
 

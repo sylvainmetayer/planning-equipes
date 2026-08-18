@@ -56,6 +56,7 @@ import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
@@ -76,6 +77,8 @@ public class PlanningService {
     private final long defaultSecondsLimit;
     private final long defaultUnimprovedSecondsLimit;
     private final ConstraintWeightOverrides<HardMediumSoftScore> constraintWeightOverrides;
+    /** Cap fed to {@code limiterEmplacementsParJour} through {@link ParametresQualite}. */
+    private final int maxEmplacementsParJour;
 
     /**
      * Field-injected rather than a constructor parameter: the plain (non-CDI)
@@ -88,6 +91,8 @@ public class PlanningService {
     public PlanningService(
             @ConfigProperty(name = "planning.solver.seconds-limit", defaultValue = "120") Long secondsLimit,
             @ConfigProperty(name = "planning.solver.unimproved-seconds-limit", defaultValue = "30") Long unimprovedSecondsLimit,
+            @ConfigProperty(name = "planning.contraintes.max-emplacements-par-jour",
+                    defaultValue = "" + ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT) Integer maxEmplacementsParJour,
             ReferenceDataService referenceDataService,
             FeasibilityAnalyzer feasibilityAnalyzer,
             Config config) {
@@ -101,6 +106,7 @@ public class PlanningService {
         this.feasibilityAnalyzer = feasibilityAnalyzer;
         this.defaultSecondsLimit = secondsLimit;
         this.defaultUnimprovedSecondsLimit = unimprovedSecondsLimit;
+        this.maxEmplacementsParJour = maxEmplacementsParJour;
         this.constraintWeightOverrides = buildConstraintWeightOverrides(config);
     }
 
@@ -1414,6 +1420,9 @@ public class PlanningService {
                     .map(ConstraintToggle::new)
                     .toList());
         }
+        // Server-side configuration, like the weights below: always overwritten
+        // so a caller cannot loosen a quality threshold by sending its own.
+        problem.setParametresQualite(List.of(new ParametresQualite(maxEmplacementsParJour)));
         // Never sent by a caller (the field is @JsonIgnore-d on PlanningFestival),
         // so this always overwrites the ConstraintWeightOverrides.none() default.
         problem.setPonderationsContraintes(constraintWeightOverrides);

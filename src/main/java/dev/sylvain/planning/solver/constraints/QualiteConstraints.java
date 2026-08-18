@@ -14,6 +14,7 @@ import ai.timefold.solver.core.api.score.stream.Joiners;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.NiveauEffort;
+import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 
@@ -40,6 +41,7 @@ public final class QualiteConstraints {
                 experienceRequisePourStandsPremium(constraintFactory),
                 eviterRoulementStandsPremium(constraintFactory),
                 eviterChangementEmplacementEloigne(constraintFactory),
+                limiterEmplacementsParJour(constraintFactory),
                 eviterEnchainementStandsEpuisants(constraintFactory),
                 appreciationIncompatible(constraintFactory),
                 souhaitsIncompatibles(constraintFactory),
@@ -186,6 +188,48 @@ public final class QualiteConstraints {
                         && emplacementsEloignes(precedent.getStand(), suivant.getStand()))
                 .penalize(HardMediumSoftScore.ONE_MEDIUM)
                 .asConstraint("eviterChangementEmplacementEloigne");
+    }
+
+    /**
+     * Caps how many distinct emplacements an animateur covers in a single day
+     * (issue #82). {@link #eviterChangementEmplacementEloigne} only sees one
+     * pair of back-to-back slots at a time, and only when they are more than
+     * {@link #DISTANCE_ELOIGNEE_METRES} apart: ten hops between two neighbouring
+     * zones cost nothing there, while the animateur genuinely spends the day
+     * moving.
+     *
+     * <p>Counted as <b>distinct zones</b>, not as transitions: A → B → A is two
+     * zones, not two moves, which is both easier to explain and free of the
+     * double count a transition-based rule pays on a return trip.</p>
+     *
+     * <p>The two rules do not mechanically stack on the same fact: this one
+     * ignores the order and the distance, and only fires above the cap, so a
+     * single far move between two zones (the case
+     * {@code eviterChangementEmplacementEloigne} penalises) stays untouched
+     * here as long as the day holds no more than {@code
+     * maxEmplacementsDistinctsParJour} zones.</p>
+     *
+     * <p>Inert on a dataset where {@code Stand.emplacement} is not filled in
+     * (see #118): a poste without an emplacement is filtered out, so nothing is
+     * counted at all rather than everything counting as one big zone.</p>
+     */
+    private Constraint limiterEmplacementsParJour(ConstraintFactory constraintFactory) {
+        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
+                "limiterEmplacementsParJour")
+                .filter(poste -> poste.getAnimateur() != null
+                        && poste.getStand() != null
+                        && poste.getStand().getEmplacement() != null
+                        && poste.getCreneau() != null)
+                .groupBy(PosteAffectation::getAnimateur,
+                        poste -> poste.getCreneau().getJour(),
+                        ConstraintCollectors.toSet(poste -> poste.getStand().getEmplacement()))
+                .join(ParametresQualite.class)
+                .filter((animateur, jour, emplacements, parametres) -> emplacements
+                        .size() > parametres.getMaxEmplacementsDistinctsParJour())
+                .penalize(HardMediumSoftScore.ONE_MEDIUM,
+                        (animateur, jour, emplacements, parametres) -> emplacements.size()
+                                - parametres.getMaxEmplacementsDistinctsParJour())
+                .asConstraint("limiterEmplacementsParJour");
     }
 
     /**

@@ -32,6 +32,9 @@ public class PlanningFestival {
     private List<ParametresLegaux> parametresLegaux = new ArrayList<>(List.of(new ParametresLegaux()));
 
     @ProblemFactCollectionProperty
+    private List<ParametresQualite> parametresQualite = new ArrayList<>(List.of(new ParametresQualite()));
+
+    @ProblemFactCollectionProperty
     private List<ConstraintToggle> constraintsDesactivees = new ArrayList<>();
 
     /**
@@ -109,6 +112,14 @@ public class PlanningFestival {
 
     public void setParametresLegaux(List<ParametresLegaux> parametresLegaux) {
         this.parametresLegaux = parametresLegaux;
+    }
+
+    public List<ParametresQualite> getParametresQualite() {
+        return parametresQualite;
+    }
+
+    public void setParametresQualite(List<ParametresQualite> parametresQualite) {
+        this.parametresQualite = parametresQualite;
     }
 
     public List<ConstraintToggle> getConstraintsDesactivees() {

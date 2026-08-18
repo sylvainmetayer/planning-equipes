@@ -10,6 +10,8 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.NiveauCompetence;
+import dev.sylvain.planning.domain.ParametresQualite;
+import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 
 class QualiteConstraintsTest extends ConstraintTestBase {
@@ -223,6 +225,107 @@ class QualiteConstraintsTest extends ConstraintTestBase {
                 .given(poste(standStrategie("STAND-A"), matin, a1),
                         poste(standStrategie("STAND-B"), suite, a1))
                 .penalizesBy(0);
+    }
+
+    // --- limiterEmplacementsParJour (#82) ---------------------------------
+    //
+    // The cap travels as a ParametresQualite problem fact, so each test states
+    // the plafond it exercises instead of depending on the configured default.
+
+    private static final ParametresQualite PLAFOND_3 = new ParametresQualite(3);
+
+    private final Emplacement halle = emplacement("HALLE", 46.6480, 2.2470);
+    private final Emplacement chateau = emplacement("CHATEAU", 46.6535, 2.2440);
+
+    /** Four postes on four emplacements, all on the same day, for one animateur. */
+    private PosteAffectation[] journeeSur(Animateur animateur, Emplacement... emplacements) {
+        PosteAffectation[] postes = new PosteAffectation[emplacements.length];
+        for (int i = 0; i < emplacements.length; i++) {
+            Creneau creneau = creneau("J1-C" + i, 1, D1,
+                    LocalTime.of(8 + 2 * i, 0), LocalTime.of(9 + 2 * i, 0));
+            postes[i] = poste(standAvecEmplacement("STAND-" + i, emplacements[i]), creneau, animateur);
+        }
+        return postes;
+    }
+
+    @Test
+    void journeeSousLePlafondDEmplacementsNEstPasPenalisee() {
+        verify("limiterEmplacementsParJour")
+                .given(concat(PLAFOND_3, journeeSur(majeurReferent("A1"), placeDrapeau, mairie)))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void journeeExactementAuPlafondDEmplacementsNEstPasPenalisee() {
+        verify("limiterEmplacementsParJour")
+                .given(concat(PLAFOND_3, journeeSur(majeurReferent("A1"), placeDrapeau, mairie, halle)))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void journeeAuDessusDuPlafondDEmplacementsEstPenalisee() {
+        verify("limiterEmplacementsParJour")
+                .given(concat(PLAFOND_3, journeeSur(majeurReferent("A1"), placeDrapeau, mairie, halle, chateau)))
+                .penalizesBy(1);
+    }
+
+    @Test
+    void deuxPostesSurLeMemeEmplacementNeComptentQuUneZone() {
+        // A → B → A: two zones, not two moves — the whole point of counting
+        // distinct zones rather than transitions.
+        verify("limiterEmplacementsParJour")
+                .given(concat(PLAFOND_3,
+                        journeeSur(majeurReferent("A1"), placeDrapeau, mairie, placeDrapeau, mairie)))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void journeesDifferentesNeSAdditionnentPas() {
+        Animateur a1 = majeurReferent("A1");
+        verify("limiterEmplacementsParJour")
+                .given(PLAFOND_3,
+                        poste(standAvecEmplacement("S1", placeDrapeau), matin("J1-M", 1, D1), a1),
+                        poste(standAvecEmplacement("S2", mairie), apresMidi("J1-A", 1, D1), a1),
+                        poste(standAvecEmplacement("S3", halle), matin("J2-M", 2, D2), a1),
+                        poste(standAvecEmplacement("S4", chateau), apresMidi("J2-A", 2, D2), a1))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void emplacementsNonRenseignesRendentLaRegleInerte() {
+        Animateur a1 = majeurReferent("A1");
+        verify("limiterEmplacementsParJour")
+                .given(PLAFOND_3,
+                        poste(standStrategie("S1"), creneau("J1-A", 1, D1, LocalTime.of(8, 0), LocalTime.of(9, 0)), a1),
+                        poste(standStrategie("S2"), creneau("J1-B", 1, D1, LocalTime.of(9, 0), LocalTime.of(10, 0)), a1),
+                        poste(standStrategie("S3"), creneau("J1-C", 1, D1, LocalTime.of(10, 0), LocalTime.of(11, 0)), a1),
+                        poste(standStrategie("S4"), creneau("J1-D", 1, D1, LocalTime.of(11, 0), LocalTime.of(12, 0)), a1))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void unSeulDeplacementEloigneNEstPasPenaliseDeuxFois() {
+        // The very fact eviterChangementEmplacementEloigne charges 1 for: under
+        // the cap, this rule adds nothing, so the two never stack on it.
+        Stand standDrapeau = standAvecEmplacement("STAND-DRAPEAU", placeDrapeau);
+        Stand standMairie = standAvecEmplacement("STAND-MAIRIE", mairie);
+        Creneau matin = creneau("J1-MATIN-DUP", 1, D1, LocalTime.of(9, 0), LocalTime.of(13, 0));
+        Creneau suite = creneau("J1-SUITE-DUP", 1, D1, LocalTime.of(13, 0), LocalTime.of(17, 0));
+        Animateur a1 = majeurReferent("A1");
+        verify("eviterChangementEmplacementEloigne")
+                .given(poste(standDrapeau, matin, a1), poste(standMairie, suite, a1))
+                .penalizesBy(1);
+        verify("limiterEmplacementsParJour")
+                .given(PLAFOND_3, poste(standDrapeau, matin, a1), poste(standMairie, suite, a1))
+                .penalizesBy(0);
+    }
+
+    /** {@code given(...)} is varargs of facts: prepends the plafond to a day's postes. */
+    private static Object[] concat(ParametresQualite parametres, PosteAffectation[] postes) {
+        Object[] facts = new Object[postes.length + 1];
+        facts[0] = parametres;
+        System.arraycopy(postes, 0, facts, 1, postes.length);
+        return facts;
     }
 
     @Test

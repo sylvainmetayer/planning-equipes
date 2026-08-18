@@ -10,6 +10,7 @@ import java.util.Set;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.Test;
 
+import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
@@ -28,7 +29,7 @@ class PlanningServiceDiagnosticViolationsTest {
     void posteNonPourvuProduitUneLigneLisibleDeViolation() {
         ReferenceDataService referenceDataService = new ReferenceDataService();
         referenceDataService.init();
-        PlanningService planningService = new PlanningService(3L, 2L, referenceDataService, new FeasibilityAnalyzer(),
+        PlanningService planningService = new PlanningService(3L, 2L, ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT, referenceDataService, new FeasibilityAnalyzer(),
                 ConfigProvider.getConfig());
 
         Stand stand = new Stand("STAND-1", "Stand tir à l'arc", Set.of(), 1, 1, false);

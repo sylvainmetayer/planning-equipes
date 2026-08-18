@@ -114,6 +114,10 @@ public final class ConstraintCatalog {
             new ConstraintDefinition("eviterChangementEmplacementEloigne", Niveau.MEDIUM, "Qualité d'organisation",
                     "Entre deux créneaux consécutifs, éviter de faire basculer un animateur vers un stand dont "
                             + "l'emplacement est éloigné (> 300 m à vol d'oiseau) de celui du créneau précédent."),
+            new ConstraintDefinition("limiterEmplacementsParJour", Niveau.MEDIUM, "Qualité d'organisation",
+                    "Sur une même journée, limiter le nombre d'emplacements distincts visités par un animateur "
+                            + "(plafond réglable, 3 par défaut) : au-delà, la journée est dispersée quelles que "
+                            + "soient les distances."),
             new ConstraintDefinition("eviterEnchainementStandsEpuisants", Niveau.MEDIUM, "Qualité d'organisation",
                     "Entre deux créneaux consécutifs, éviter d'enchaîner un animateur sur deux stands physiquement "
                             + "épuisants sans repos ni stand plus facile entre les deux."),

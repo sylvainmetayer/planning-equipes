@@ -13,6 +13,7 @@ import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.Test;
 
+import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.NiveauCompetence;
@@ -38,7 +39,7 @@ class PlanningServiceConstraintWeightOverridesTest {
                 .withSources(mapConfigSource(Map.of(
                         "planning.constraint-weights.standComplexeAvecReferent", "5")))
                 .build();
-        PlanningService planningService = new PlanningService(2L, 1L, referenceDataService,
+        PlanningService planningService = new PlanningService(2L, 1L, ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT, referenceDataService,
                 new FeasibilityAnalyzer(), config);
 
         Stand stand = new Stand("S1", "S1", Set.of("STRATEGIE"), 1, 1, false);
