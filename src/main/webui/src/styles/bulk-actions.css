@@ -23,11 +23,6 @@
   padding-right: 0;
 }
 
-/* Selection checkbox of a créneau, inside its expansion panel header. */
-.bulk-select-inline {
-  margin-right: 0.75rem;
-}
-
 /* Bulk edit dialog: one bordered block per field, each with its own "leave unchanged" switch. */
 .bulk-field {
   border: 1px solid var(--mat-sys-outline-variant);

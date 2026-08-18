@@ -4,11 +4,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
-import { MatExpansionModule } from '@angular/material/expansion';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { labelCreneauxPluriel } from '../../core/entity-labels';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
@@ -36,10 +36,10 @@ import { CreneauFormData, CreneauFormDialog } from './creneau-form-dialog';
     FormsModule,
     MatCardModule,
     MatCheckboxModule,
-    MatExpansionModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
+    MatTableModule,
     MatButtonModule,
     MatIconModule,
     MatTooltipModule,
@@ -65,6 +65,8 @@ export class CreneauxPage {
 
   /** `null` = every group shown. */
   protected readonly filtreGroupeId = signal<string | null>(null);
+
+  protected readonly columns = ['select', 'jour', 'date', 'horaires', 'groupe', 'actions'];
 
   /**
    * Filtered by the selected group (if any), then sorted by group name so

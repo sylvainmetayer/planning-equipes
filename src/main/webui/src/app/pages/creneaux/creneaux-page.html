@@ -54,48 +54,65 @@
     </mat-form-field>
   </mat-card-actions>
   <mat-card-content>
-    @if (creneauxAffiches().length) {
-      <mat-checkbox class="bulk-select-inline"
-                    [checked]="selection.allSelected()" [indeterminate]="selection.partiallySelected()"
-                    (change)="selection.toggleAll()" i18n="@@bulk.selectAll">Tout sélectionner</mat-checkbox>
-    }
     @if (selection.hasSelection()) {
       <app-bulk-actions-bar [count]="selection.count()" [disabled]="editingLocked()"
                             (edit)="editSelection()" (remove)="removeSelection()" (clear)="selection.clear()" />
     }
-    <mat-accordion class="table-wrapper">
-      @for (creneau of creneauxAffiches(); track creneau.id) {
-        <mat-expansion-panel>
-          <mat-expansion-panel-header>
-            <mat-panel-title>
-              <mat-checkbox class="bulk-select-inline" i18n-aria-label="@@bulk.selectRow" aria-label="Sélectionner la ligne"
-                            [checked]="selection.isSelected(creneau.id)"
-                            (click)="$event.stopPropagation()"
-                            (change)="selection.toggle(creneau.id)"></mat-checkbox>
-              J{{ creneau.jour }} · {{ creneau.date }} {{ creneau.heureDebut }}–{{ creneau.heureFin }} · {{ creneau.groupe?.nom || creneau.groupe?.id }}
-              @if (causeParCreneau().get(creneau.id); as cause) {
-                <mat-icon class="row-problem-icon" [matTooltip]="cause.message" [attr.aria-label]="cause.message">warning</mat-icon>
-              }
-            </mat-panel-title>
-            <mat-panel-description>
-              <span class="row-actions">
-                <button matIconButton i18n-matTooltip="@@common.edit" matTooltip="Modifier" i18n-aria-label="@@common.edit" aria-label="Modifier" [disabled]="editingLocked()"
-                        (click)="edit(creneau); $event.stopPropagation()">
-                  <mat-icon>edit</mat-icon>
-                </button>
-                <button matIconButton i18n-matTooltip="@@common.delete" matTooltip="Supprimer" i18n-aria-label="@@common.delete" aria-label="Supprimer" class="danger-action" [disabled]="editingLocked()"
-                        (click)="remove(creneau); $event.stopPropagation()">
-                  <mat-icon>delete</mat-icon>
-                </button>
-              </span>
-            </mat-panel-description>
-          </mat-expansion-panel-header>
-          @if (editingLocked()) {
-            <p class="locked-hint" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
-          }
-        </mat-expansion-panel>
-      }
-    </mat-accordion>
+    @if (editingLocked()) {
+      <p class="locked-hint" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
+    }
+    <div class="table-wrapper">
+      <table mat-table [dataSource]="creneauxAffiches()">
+        <ng-container matColumnDef="select">
+          <th mat-header-cell *matHeaderCellDef>
+            <mat-checkbox i18n-aria-label="@@bulk.selectAll" aria-label="Tout sélectionner"
+                          [checked]="selection.allSelected()" [indeterminate]="selection.partiallySelected()"
+                          (change)="selection.toggleAll()"></mat-checkbox>
+          </th>
+          <td mat-cell *matCellDef="let creneau">
+            <mat-checkbox i18n-aria-label="@@bulk.selectRow" aria-label="Sélectionner la ligne"
+                          [checked]="selection.isSelected(creneau.id)"
+                          (change)="selection.toggle(creneau.id)"></mat-checkbox>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="jour">
+          <th mat-header-cell *matHeaderCellDef i18n="@@creneaux.column.jour">Jour</th>
+          <td mat-cell *matCellDef="let creneau">
+            J{{ creneau.jour }}
+            @if (causeParCreneau().get(creneau.id); as cause) {
+              <mat-icon class="row-problem-icon" [matTooltip]="cause.message" [attr.aria-label]="cause.message">warning</mat-icon>
+            }
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="date">
+          <th mat-header-cell *matHeaderCellDef i18n="@@creneaux.column.date">Date</th>
+          <td mat-cell *matCellDef="let creneau">{{ creneau.date }}</td>
+        </ng-container>
+        <ng-container matColumnDef="horaires">
+          <th mat-header-cell *matHeaderCellDef i18n="@@creneaux.column.horaires">Horaires</th>
+          <td mat-cell *matCellDef="let creneau">{{ creneau.heureDebut }}–{{ creneau.heureFin }}</td>
+        </ng-container>
+        <ng-container matColumnDef="groupe">
+          <th mat-header-cell *matHeaderCellDef i18n="@@creneaux.column.groupe">Groupe</th>
+          <td mat-cell *matCellDef="let creneau">{{ creneau.groupe?.nom || creneau.groupe?.id }}</td>
+        </ng-container>
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>
+          <td mat-cell *matCellDef="let creneau" class="row-actions">
+            <button matIconButton i18n-matTooltip="@@common.edit" matTooltip="Modifier" i18n-aria-label="@@common.edit" aria-label="Modifier" [disabled]="editingLocked()"
+                    (click)="edit(creneau)">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button matIconButton i18n-matTooltip="@@common.delete" matTooltip="Supprimer" i18n-aria-label="@@common.delete" aria-label="Supprimer" class="danger-action" [disabled]="editingLocked()"
+                    (click)="remove(creneau)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="columns"></tr>
+        <tr mat-row *matRowDef="let row; columns: columns"></tr>
+      </table>
+    </div>
     @if (creneauxAffiches().length === 0) {
       <p class="empty-hint" i18n="@@creneaux.empty">Aucun créneau pour le moment.</p>
     }
