@@ -117,6 +117,50 @@ Pour ajouter une chaîne traduisible :
    partagent le même id : renommez l'un des deux plutôt que d'ignorer
    l'avertissement.
 
+## Accessibilité du frontend
+
+Ces conventions sont appliquées sur les 26 écrans ; les tenir coûte peu à
+l'écriture, les rattraper après coup coûte cher.
+
+**Un `<h1>` par écran, et un seul.** `mat-card-title` rend une `<div>` : écrivez
+`<h1 mat-card-title>` sur le titre principal de la page et `<h2 mat-card-title>`
+sur les cartes suivantes. Six écrans dont la première carte n'est pas leur
+identité (Solveur, Contraintes, Créneaux, Données, Verrouillages, Calendrier)
+portent un `<h1 class="page-title">` en tête de template. Naviguer par titres
+est le premier réflexe au lecteur d'écran.
+
+**Le résultat d'une action s'annonce.** `app-status-message` est le seul endroit
+où une page dit « enregistré », « supprimé » ou une erreur :
+`tone="error"` produit un `role="alert"` (interrompt, l'action a échoué), les
+autres un `role="status"` (poli). N'écrivez pas un `<p>` inerte pour ça.
+
+**Une erreur de formulaire est reliée à son champ.** `mat-error` dans le
+`mat-form-field` quand l'erreur porte sur un champ ; `role="alert"` sur le
+message quand elle porte sur plusieurs (`stand-form-dialog` en donne les deux
+formes).
+
+**Le focus survit à la suppression d'une ligne.** Un formulaire répétable
+détruit le bouton focalisé : appelez `focusApresSuppression(...)`
+(`core/focus-apres-suppression.ts`) pour le rendre au bouton « Ajouter » de la
+section, via un attribut `data-focus`.
+
+**Un tableau de données porte une `<caption>`** masquée (`.visually-hidden`)
+disant ce qu'il compte et sur quel périmètre, et ses en-têtes leur `scope`.
+
+**Une longue liste se filtre, elle ne se déroule pas.**
+`app-selection-recherche` (autocomplétion, jetons en mode multiple) remplace un
+`mat-select` dès que la liste dépasse quelques dizaines d'entrées : 153
+animateurs au clavier, c'est 153 flèches.
+
+**Une grille se parcourt aux flèches.** Heatmap et calendrier mensuel utilisent
+un *roving tabindex* (un seul arrêt de tabulation, les flèches déplacent la
+sélection). N'écrivez `role="grid"` que si la structure lignes/cellules existe
+réellement — sinon `role="group"` et des boutons.
+
+**La couleur n'est jamais seule** : doublez-la d'un texte, d'une icône ou d'une
+initiale (pastilles de typologie, dépassements d'heures). Et une infobulle
+n'existe pas au tactile : ce qu'elle dit doit exister ailleurs.
+
 ## Tests
 
 On distingue trois familles de tests :
