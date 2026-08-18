@@ -347,7 +347,7 @@ démarrage. **Un changement de schéma = un nouveau fichier versionné** ; ne ja
   push d'une branche de travail. Chaque image publiée est également
   **inventoriée et signée** : voir ci-dessous.
 
-### SBOM et attestations de l'image
+### SBOM et signature de l'image
 
 À chaque commit sur `main` (et à chaque tag `v*`), `docker-ghcr.yml` produit,
 après le push de l'image :
@@ -356,13 +356,51 @@ après le push de l'image :
    l'inventaire de ce qui est réellement livré (couche JVM, application Quarkus
    et jars embarqués), pas de ce que l'arbre source aurait pu produire. Il est
    aussi déposé en artefact de run (`sbom.cyclonedx.json`) ;
-2. une **attestation de provenance** (`actions/attest-build-provenance`) et une
-   **attestation de SBOM** (`actions/attest-sbom`), signées avec l'identité OIDC
-   du workflow, publiées sur le dépôt **et** poussées à côté de l'image sur
-   GHCR.
+2. une **signature cosign** de l'image et une **attestation CycloneDX** portant
+   ce SBOM, toutes deux attachées à l'image dans GHCR ;
+3. une **attestation de provenance** et une **attestation de SBOM** côté GitHub
+   (`actions/attest-*`) — **uniquement si le dépôt est public**, voir plus bas.
 
-D'où les permissions `id-token: write` et `attestations: write` du workflow.
+D'où les permissions `id-token: write`, `packages: write` et
+`attestations: write` du workflow.
+
+#### cosign en mode keyless
+
+Le certificat de signature est délivré à la volée par Fulcio à partir de
+l'identité OIDC du workflow : aucune clé à stocker ni à faire tourner. La
+contrepartie est que la signature est enregistrée dans **Rekor, le journal de
+transparence public** — le nom du dépôt, le chemin du workflow et l'empreinte
+de l'image y deviennent visibles publiquement, alors même que le dépôt est
+privé. Rien du contenu de l'image ne fuit, seulement ces identifiants.
+
 Vérification côté consommateur :
+
+```bash
+IMAGE=ghcr.io/sylvainmetayer/planning-equipes:main
+IDENTITE='^https://github\.com/sylvainmetayer/planning-equipes/\.github/workflows/docker-ghcr\.yml@refs/'
+
+cosign verify \
+  --certificate-identity-regexp "$IDENTITE" \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  "$IMAGE"
+
+# Le SBOM lui-même, tel qu'attaché à l'image :
+cosign verify-attestation --type cyclonedx \
+  --certificate-identity-regexp "$IDENTITE" \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  "$IMAGE" | jq -r .payload | base64 -d | jq .predicate
+```
+
+#### Attestations GitHub : en attente d'un dépôt public
+
+Les deux étapes `actions/attest-build-provenance` et `actions/attest-sbom`
+restent dans le workflow, gardées par `if: ${{ !github.event.repository.private }}`.
+Le magasin d'attestations de GitHub refuse en effet les dépôts **privés
+appartenant à un utilisateur** (« Feature not available for user-owned private
+repositories »), ce qui est le cas ici. Le garde les réactivera de lui-même le
+jour où le dépôt passera public ou rejoindra une organisation — d'où le choix
+de les garder actives et gardées plutôt que commentées. Vérification, ce
+jour-là :
 
 ```bash
 gh attestation verify oci://ghcr.io/sylvainmetayer/planning-equipes:main \

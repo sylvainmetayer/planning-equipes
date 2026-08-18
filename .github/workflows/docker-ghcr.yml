@@ -77,21 +77,45 @@ jobs:
           upload-artifact: true
           artifact-name: sbom.cyclonedx.json
 
-      # Both attestations are signed with the workflow's OIDC identity and
-      # stored on the repository, so anyone can check what a published image is
-      # made of and where it came from:
-      #   gh attestation verify oci://ghcr.io/<repo>:main --repo <repo>
-      #- name: Attest the image provenance
-      #  uses: actions/attest-build-provenance@v3
-      #  with:
-      #    subject-name: ghcr.io/${{ github.repository }}
-      #    subject-digest: ${{ steps.build.outputs.digest }}
-      #    push-to-registry: true
+      # Signature and SBOM attached to the image itself, in GHCR. This is the
+      # path that works today: GitHub's own attestation store (the two steps
+      # below) is closed to user-owned private repositories, which is exactly
+      # what this repository is.
+      #
+      # Keyless: the short-lived certificate comes from Fulcio through the
+      # workflow's OIDC identity, so there is no key to store or rotate. The
+      # counterpart is that the signature is recorded in Rekor, the PUBLIC
+      # transparency log — the repository name, the workflow path and the image
+      # digest become publicly visible there, even though the repository is
+      # private. Nothing of the image content leaks; only these identifiers do.
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
 
-      #- name: Attest the image SBOM
-      #  uses: actions/attest-sbom@v3
-      #  with:
-      #    subject-name: ghcr.io/${{ github.repository }}
-      #    subject-digest: ${{ steps.build.outputs.digest }}
-      #    sbom-path: sbom.cyclonedx.json
-      #    push-to-registry: true
+      - name: Sign the image and attach its SBOM (cosign, keyless)
+        env:
+          IMAGE: ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}
+        run: |
+          cosign sign --yes "$IMAGE"
+          cosign attest --yes --type cyclonedx --predicate sbom.cyclonedx.json "$IMAGE"
+
+      # GitHub-side attestations, kept ready rather than commented out: the
+      # guard turns them back on by itself the day this repository becomes
+      # public (or moves to an organisation), which is the only thing that
+      # blocks them. Verification, once enabled:
+      #   gh attestation verify oci://ghcr.io/<repo>:main --repo <repo>
+      - name: Attest the image provenance
+        if: ${{ !github.event.repository.private }}
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-name: ghcr.io/${{ github.repository }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
+
+      - name: Attest the image SBOM
+        if: ${{ !github.event.repository.private }}
+        uses: actions/attest-sbom@v3
+        with:
+          subject-name: ghcr.io/${{ github.repository }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          sbom-path: sbom.cyclonedx.json
+          push-to-registry: true
