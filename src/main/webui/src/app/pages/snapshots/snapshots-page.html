@@ -1,0 +1,105 @@
+<mat-card appearance="outlined">
+  <mat-card-header>
+    <mat-card-title i18n="@@snapshots.title">Instantanés de plan</mat-card-title>
+    <mat-card-subtitle i18n="@@snapshots.subtitle">
+      Un seul plan est enregistré à la fois : chaque résolution écrase le précédent. Un instantané le met de côté —
+      et un instantané est pris automatiquement avant chaque résolution.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-actions class="card-actions">
+    <button matButton="filled" type="button" [disabled]="enCours() !== null" (click)="capturer()">
+      <mat-icon>save</mat-icon>
+      <ng-container i18n="@@snapshots.capture.action">Enregistrer cet état</ng-container>
+    </button>
+    <button matButton type="button" [disabled]="store.chargement()" (click)="recharger()">
+      <mat-icon>refresh</mat-icon>
+      <ng-container i18n="@@common.refresh">Rafraîchir</ng-container>
+    </button>
+  </mat-card-actions>
+  <mat-card-content>
+    @if (store.chargement() || enCours() !== null) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    @if (error()) {
+      <p class="snapshot-error">{{ error() }}</p>
+    }
+    @if (message()) {
+      <p class="snapshot-message">{{ message() }}</p>
+    }
+    @if (locked()) {
+      <p class="locked-hint" i18n="@@snapshots.lockedHint">
+        Une résolution est en cours : la restauration est désactivée, elle serait écrasée à la fin du calcul.
+      </p>
+    }
+    <div class="table-wrapper">
+      <table mat-table [dataSource]="store.snapshots()">
+        <ng-container matColumnDef="libelle">
+          <th mat-header-cell *matHeaderCellDef i18n="@@snapshots.column.libelle">Instantané</th>
+          <td mat-cell *matCellDef="let snapshot">
+            {{ snapshot.libelle }}
+            @if (snapshot.automatique) {
+              <mat-chip
+                class="snapshot-auto-chip"
+                i18n-matTooltip="@@snapshots.autoTooltip"
+                matTooltip="Pris automatiquement avant une résolution ; les plus anciens sont purgés."
+                i18n="@@snapshots.auto"
+                >auto</mat-chip
+              >
+            }
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="groupe">
+          <th mat-header-cell *matHeaderCellDef i18n="@@snapshots.column.groupe">Groupe de créneaux</th>
+          <td mat-cell *matCellDef="let snapshot">{{ groupeLabel(snapshot) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="score">
+          <th mat-header-cell *matHeaderCellDef i18n="@@snapshots.column.score">Score</th>
+          <td mat-cell *matCellDef="let snapshot">{{ snapshot.score || '—' }}</td>
+        </ng-container>
+        <ng-container matColumnDef="affectations">
+          <th mat-header-cell *matHeaderCellDef i18n="@@snapshots.column.affectations">Affectations</th>
+          <td mat-cell *matCellDef="let snapshot">{{ snapshot.nombreAffectations }}</td>
+        </ng-container>
+        <ng-container matColumnDef="creeLe">
+          <th mat-header-cell *matHeaderCellDef i18n="@@snapshots.column.creeLe">Enregistré le</th>
+          <td mat-cell *matCellDef="let snapshot">{{ dateLabel(snapshot) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>
+          <td mat-cell *matCellDef="let snapshot" class="row-actions">
+            <button
+              matIconButton
+              i18n-matTooltip="@@snapshots.restore.tooltip"
+              matTooltip="Restaurer ce plan"
+              i18n-aria-label="@@snapshots.restore.tooltip"
+              aria-label="Restaurer ce plan"
+              [disabled]="locked() || enCours() !== null"
+              (click)="restaurer(snapshot)"
+            >
+              <mat-icon>restore</mat-icon>
+            </button>
+            <button
+              matIconButton
+              class="danger-action"
+              i18n-matTooltip="@@common.delete"
+              matTooltip="Supprimer"
+              i18n-aria-label="@@common.delete"
+              aria-label="Supprimer"
+              [disabled]="enCours() !== null"
+              (click)="supprimer(snapshot)"
+            >
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="columns"></tr>
+        <tr mat-row *matRowDef="let row; columns: columns"></tr>
+      </table>
+    </div>
+    @if (store.snapshots().length === 0 && !store.chargement()) {
+      <p class="empty-hint" i18n="@@snapshots.empty">
+        Aucun instantané pour le moment. Le premier sera pris automatiquement avant la prochaine résolution.
+      </p>
+    }
+  </mat-card-content>
+</mat-card>

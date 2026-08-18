@@ -38,6 +38,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/aide/aide-page').then((m) => m.AidePage)
   },
   {
+    path: 'instantanes',
+    title: 'Instantanés — Planning Équipes',
+    loadComponent: () => import('./pages/snapshots/snapshots-page').then((m) => m.SnapshotsPage)
+  },
+  {
     path: 'editions',
     title: 'Éditions — Planning Équipes',
     loadComponent: () => import('./pages/editions/editions-page').then((m) => m.EditionsPage)

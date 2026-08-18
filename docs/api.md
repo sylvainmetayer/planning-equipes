@@ -33,6 +33,34 @@ langage naturel depuis un assistant IA : voir [`mcp.md`](mcp.md).
 | `GET` | `/api/planning/persisted/count` | Nombre d'affectations persistées |
 | `GET` | `/api/planning/persisted/resolution` | Groupe de créneaux et date de la dernière résolution persistée (`solved: false` si aucune résolution n'a encore eu lieu), plus `derniereModificationDonnees` : date de la dernière modification d'une donnée de référence (`null` si aucune depuis le démarrage du serveur) |
 
+## Instantanés de plan
+
+Un seul plan est persisté à la fois par édition (`poste_affectation` est
+réécrite en entier à chaque solve). Les instantanés sont la seule persistance
+capable d'en garder plusieurs : ils mettent un plan de côté avant qu'il ne soit
+écrasé.
+
+| Méthode | Chemin | Description |
+| --- | --- | --- |
+| `GET` | `/api/planning/snapshots` | Liste les instantanés de l'édition courante, du plus récent au plus ancien (métadonnées seules, sans le contenu) |
+| `GET` | `/api/planning/snapshots/{id}` | Un instantané avec ses affectations |
+| `POST` | `/api/planning/snapshots` | Enregistre le plan actuellement persisté. Corps : `{ "libelle": "…" }`. `409` s'il n'y a aucun plan à enregistrer |
+| `POST` | `/api/planning/snapshots/{id}/restore` | Réécrit `poste_affectation` et `planning_resolution` depuis l'instantané. `409` **sans rien écrire** si des références ont disparu, avec la liste `referencesManquantes` (`stand:…`, `creneau:…`, `animateur:…`) |
+| `DELETE` | `/api/planning/snapshots/{id}` | Supprime un instantané |
+
+Un instantané est pris **automatiquement avant chaque solve** (`automatique:
+true`, libellé « Avant solve du … ») : c'est le vrai filet anti-écrasement,
+celui qui protège l'utilisateur qui n'a pas pensé à enregistrer. Ces
+instantanés-là sont purgés au-delà des N derniers
+(`planning.snapshots.automatiques-conservees`, 5 par défaut) ; ceux créés à la
+main ne le sont jamais.
+
+Le contenu est stocké **dénormalisé** en JSONB, jamais comme une copie de
+lignes `poste_affectation` : ces lignes sont liées aux `creneau` par clé
+étrangère, donc une copie mourrait avec les créneaux du groupe abandonné —
+exactement le cas d'usage visé. En contrepartie, restaurer est une
+ré-résolution contre le référentiel du moment, et peut légitimement échouer.
+
 ## Résolution asynchrone
 
 La résolution complète dure plusieurs minutes : l'IHM lance un job, reste

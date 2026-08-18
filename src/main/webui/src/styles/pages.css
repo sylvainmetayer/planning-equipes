@@ -234,3 +234,21 @@ form.form-grid {
   font-size: 0.85rem;
   line-height: 1.35;
 }
+
+/* Snapshots screen (issue #138): a refused restore is an error the user must
+   read (it names the missing ids), a successful one a short confirmation. */
+.snapshot-error {
+  color: var(--mat-sys-error);
+  font: var(--mat-sys-body-medium);
+  margin: 0.75rem 0 0;
+}
+
+.snapshot-message {
+  color: var(--mat-sys-primary);
+  font: var(--mat-sys-body-medium);
+  margin: 0.75rem 0 0;
+}
+
+.snapshot-auto-chip {
+  margin-left: 0.5rem;
+}

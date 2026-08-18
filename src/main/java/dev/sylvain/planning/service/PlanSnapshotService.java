@@ -1,0 +1,408 @@
+package dev.sylvain.planning.service;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.LocalTime;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+
+import javax.sql.DataSource;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import dev.sylvain.planning.service.PlanningPersistenceService.PlanningResolution;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+
+/**
+ * Plan snapshots (issue #138): captures the persisted plan so a later solve
+ * cannot destroy it, and puts it back on demand.
+ *
+ * <p>A snapshot stores the plan <b>denormalised</b> in a JSONB column, never a
+ * copy of {@code poste_affectation} rows: those rows are foreign-keyed to
+ * {@code creneau} with {@code ON DELETE CASCADE}, so a row copy would die with
+ * the créneaux of the abandoned group — exactly the case snapshots exist
+ * for.</p>
+ *
+ * <p>Restoring is therefore a re-resolution against today's referential, and it
+ * can legitimately fail: {@link #restaurer} reports the ids that no longer
+ * exist rather than silently dropping the seats naming them.</p>
+ */
+@ApplicationScoped
+public class PlanSnapshotService {
+
+    /**
+     * How many <b>automatic</b> snapshots (the one taken before each solve) are
+     * kept per edition. Hand-made ones are never purged: the user asked for
+     * them. Five covers an afternoon of trial and error without letting the
+     * JSONB column grow without bound — a 3 500-seat plan is roughly 1 MB.
+     */
+    @ConfigProperty(name = "planning.snapshots.automatiques-conservees", defaultValue = "5")
+    int automatiquesConservees;
+
+    /** Label of an automatic snapshot, in the server's zone — it names a moment for a human. */
+    private static final DateTimeFormatter LIBELLE_AUTO_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+    @Inject
+    DataSource dataSource;
+
+    @Inject
+    EditionContext editionContext;
+
+    @Inject
+    PlanningPersistenceService persistenceService;
+
+    @Inject
+    ConstraintAnalysisStore analysisStore;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    /** One seat of a snapshotted plan, carrying everything needed to put it back. */
+    public record AffectationSnapshot(
+            String posteId,
+            String standId,
+            String creneauId,
+            String animateurId,
+            String heureDebutEffective,
+            String heureFinEffective) {
+    }
+
+    /** A snapshot without its content: what the management screen lists. */
+    public record SnapshotMeta(
+            long id,
+            String libelle,
+            boolean automatique,
+            String groupeCreneauId,
+            String groupeNom,
+            String score,
+            int nombreAffectations,
+            Instant creeLe) {
+    }
+
+    /** A snapshot with its content. */
+    public record SnapshotDetail(SnapshotMeta meta, List<AffectationSnapshot> affectations) {
+    }
+
+    /**
+     * Outcome of a restore attempt. {@code restaure} false means nothing was
+     * written: the plan on screen is still the one that was there.
+     *
+     * @param referencesManquantes ids the snapshot names and the referential no
+     *                             longer holds, prefixed by their kind
+     *                             ({@code stand:…}, {@code creneau:…},
+     *                             {@code animateur:…})
+     */
+    public record RestaurationResult(boolean restaure, int affectations, List<String> referencesManquantes) {
+    }
+
+    /**
+     * Captures the currently persisted plan. Returns {@code null} when there is
+     * nothing to capture (no seat stored yet), so the automatic capture before
+     * the very first solve is a no-op rather than an empty snapshot.
+     */
+    public SnapshotMeta capturer(String libelle, boolean automatique) {
+        List<AffectationSnapshot> affectations = lireAffectationsPersistees();
+        if (affectations.isEmpty()) {
+            return null;
+        }
+        PlanningResolution resolution = persistenceService.loadResolution();
+        ConstraintAnalysisStore.StoredAnalysis analysis = analysisStore.latest();
+        String score = analysis == null ? null : analysis.diagnostic().score();
+        String contenu = ecrireContenu(affectations);
+
+        String sql = "INSERT INTO plan_snapshot "
+                + "(edition_id, libelle, automatique, groupe_creneau_id, groupe_nom, score, nombre_affectations, "
+                + "cree_le, contenu) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb) RETURNING id, cree_le";
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = prepareScoped(connection, sql)) {
+            ps.setString(2, libelle);
+            ps.setBoolean(3, automatique);
+            ps.setString(4, resolution == null ? null : resolution.groupeCreneauId());
+            ps.setString(5, resolution == null ? null : resolution.groupeCreneauNom());
+            ps.setString(6, score);
+            ps.setInt(7, affectations.size());
+            ps.setTimestamp(8, Timestamp.from(Instant.now()));
+            ps.setString(9, contenu);
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                SnapshotMeta meta = new SnapshotMeta(rs.getLong("id"), libelle, automatique,
+                        resolution == null ? null : resolution.groupeCreneauId(),
+                        resolution == null ? null : resolution.groupeCreneauNom(),
+                        score, affectations.size(), rs.getTimestamp("cree_le").toInstant());
+                if (automatique) {
+                    purgerAutomatiques(connection);
+                }
+                return meta;
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to capture plan snapshot", e);
+        }
+    }
+
+    /**
+     * The safety net: taken right before a solve overwrites the persisted plan,
+     * labelled with the moment it was taken. Never fails the solve — a snapshot
+     * that could not be written must not cost the user their run.
+     */
+    public void capturerAvantSolve() {
+        try {
+            capturer("Avant solve du " + LIBELLE_AUTO_FORMAT.format(ZonedDateTime.now()), true);
+        } catch (RuntimeException e) {
+            // Deliberately swallowed: see javadoc.
+        }
+    }
+
+    public List<SnapshotMeta> lister() {
+        String sql = "SELECT id, libelle, automatique, groupe_creneau_id, groupe_nom, score, nombre_affectations, "
+                + "cree_le FROM plan_snapshot WHERE edition_id = ? ORDER BY cree_le DESC, id DESC";
+        List<SnapshotMeta> snapshots = new ArrayList<>();
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = prepareScoped(connection, sql);
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                snapshots.add(lireMeta(rs));
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to list plan snapshots", e);
+        }
+        return snapshots;
+    }
+
+    /** {@code null} when no snapshot of this edition carries that id. */
+    public SnapshotDetail charger(long id) {
+        String sql = "SELECT id, libelle, automatique, groupe_creneau_id, groupe_nom, score, nombre_affectations, "
+                + "cree_le, contenu FROM plan_snapshot WHERE edition_id = ? AND id = ?";
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = prepareScoped(connection, sql)) {
+            ps.setLong(2, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+                return new SnapshotDetail(lireMeta(rs), lireContenu(rs.getString("contenu")));
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to load plan snapshot " + id, e);
+        }
+    }
+
+    /** @return true when a row was actually deleted. */
+    public boolean supprimer(long id) {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = prepareScoped(connection,
+                        "DELETE FROM plan_snapshot WHERE edition_id = ? AND id = ?")) {
+            ps.setLong(2, id);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to delete plan snapshot " + id, e);
+        }
+    }
+
+    /**
+     * Rewrites {@code poste_affectation} and {@code planning_resolution} from a
+     * snapshot. Refuses — without writing anything — as soon as one referenced
+     * stand, créneau or animateur has disappeared since the capture: a partial
+     * restore would silently produce a plan nobody ever computed.
+     */
+    public RestaurationResult restaurer(long id) {
+        SnapshotDetail detail = charger(id);
+        if (detail == null) {
+            return null;
+        }
+        List<String> manquantes = referencesManquantes(detail.affectations());
+        if (!manquantes.isEmpty()) {
+            return new RestaurationResult(false, 0, manquantes);
+        }
+        try (Connection connection = dataSource.getConnection()) {
+            boolean autoCommit = connection.getAutoCommit();
+            connection.setAutoCommit(false);
+            try {
+                try (PreparedStatement ps = prepareScoped(connection,
+                        "DELETE FROM poste_affectation WHERE edition_id = ?")) {
+                    ps.executeUpdate();
+                }
+                String insert = "INSERT INTO poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id, "
+                        + "heure_debut_effective, heure_fin_effective) VALUES (?, ?, ?, ?, ?, ?, ?)";
+                try (PreparedStatement ps = prepareScoped(connection, insert)) {
+                    for (AffectationSnapshot affectation : detail.affectations()) {
+                        ps.setString(2, affectation.posteId());
+                        ps.setString(3, affectation.standId());
+                        ps.setLong(4, Long.parseLong(affectation.creneauId()));
+                        ps.setString(5, affectation.animateurId());
+                        ps.setObject(6, heure(affectation.heureDebutEffective()));
+                        ps.setObject(7, heure(affectation.heureFinEffective()));
+                        ps.addBatch();
+                    }
+                    ps.executeBatch();
+                }
+                String resolution = "INSERT INTO planning_resolution (edition_id, groupe_creneau_id, resolu_le) "
+                        + "VALUES (?, ?, ?) ON CONFLICT (edition_id) DO UPDATE SET "
+                        + "groupe_creneau_id = EXCLUDED.groupe_creneau_id, resolu_le = EXCLUDED.resolu_le";
+                try (PreparedStatement ps = prepareScoped(connection, resolution)) {
+                    ps.setString(2, detail.meta().groupeCreneauId());
+                    ps.setTimestamp(3, Timestamp.from(Instant.now()));
+                    ps.executeUpdate();
+                }
+                connection.commit();
+            } catch (SQLException | RuntimeException e) {
+                connection.rollback();
+                throw e;
+            } finally {
+                connection.setAutoCommit(autoCommit);
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to restore plan snapshot " + id, e);
+        }
+        return new RestaurationResult(true, detail.affectations().size(), List.of());
+    }
+
+    /* -------------------------------- Helpers ------------------------------ */
+
+    private List<AffectationSnapshot> lireAffectationsPersistees() {
+        String sql = "SELECT id, stand_id, creneau_id, animateur_id, heure_debut_effective, heure_fin_effective "
+                + "FROM poste_affectation WHERE edition_id = ? ORDER BY id";
+        List<AffectationSnapshot> affectations = new ArrayList<>();
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = prepareScoped(connection, sql);
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                affectations.add(new AffectationSnapshot(
+                        rs.getString("id"),
+                        rs.getString("stand_id"),
+                        String.valueOf(rs.getLong("creneau_id")),
+                        rs.getString("animateur_id"),
+                        texte(rs.getObject("heure_debut_effective", LocalTime.class)),
+                        texte(rs.getObject("heure_fin_effective", LocalTime.class))));
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to read the persisted plan", e);
+        }
+        return affectations;
+    }
+
+    /** Ids the snapshot names that the referential no longer holds. */
+    private List<String> referencesManquantes(List<AffectationSnapshot> affectations) {
+        Set<String> stands = new LinkedHashSet<>();
+        Set<String> creneaux = new LinkedHashSet<>();
+        Set<String> animateurs = new LinkedHashSet<>();
+        for (AffectationSnapshot affectation : affectations) {
+            stands.add(affectation.standId());
+            creneaux.add(affectation.creneauId());
+            if (affectation.animateurId() != null) {
+                animateurs.add(affectation.animateurId());
+            }
+        }
+        List<String> manquantes = new ArrayList<>();
+        manquantes.addAll(absents("stand", "stand", "id", stands, false));
+        manquantes.addAll(absents("creneau", "creneau", "id", creneaux, true));
+        manquantes.addAll(absents("animateur", "animateur", "id", animateurs, false));
+        return manquantes;
+    }
+
+    /**
+     * Ids of {@code table} that do not exist in the current edition, prefixed by
+     * {@code kind}. Table and column names come from this class's own call
+     * sites, never from user input.
+     */
+    private List<String> absents(String kind, String table, String colonne, Set<String> ids, boolean numerique) {
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+        List<String> manquants = new ArrayList<>();
+        String sql = "SELECT 1 FROM " + table + " WHERE edition_id = ? AND " + colonne + " = ?";
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = prepareScoped(connection, sql)) {
+            for (String id : ids) {
+                if (numerique) {
+                    ps.setLong(2, Long.parseLong(id));
+                } else {
+                    ps.setString(2, id);
+                }
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (!rs.next()) {
+                        manquants.add(kind + ":" + id);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to check snapshot references against " + table, e);
+        }
+        return manquants;
+    }
+
+    /** Drops the oldest automatic snapshots beyond the configured retention. */
+    private void purgerAutomatiques(Connection connection) throws SQLException {
+        String sql = "DELETE FROM plan_snapshot WHERE edition_id = ? AND automatique AND id NOT IN ("
+                + "SELECT id FROM plan_snapshot WHERE edition_id = ? AND automatique "
+                + "ORDER BY cree_le DESC, id DESC LIMIT ?)";
+        try (PreparedStatement ps = prepareScoped(connection, sql)) {
+            ps.setString(2, editionId());
+            ps.setInt(3, Math.max(1, automatiquesConservees));
+            ps.executeUpdate();
+        }
+    }
+
+    private SnapshotMeta lireMeta(ResultSet rs) throws SQLException {
+        Timestamp creeLe = rs.getTimestamp("cree_le");
+        return new SnapshotMeta(
+                rs.getLong("id"),
+                rs.getString("libelle"),
+                rs.getBoolean("automatique"),
+                rs.getString("groupe_creneau_id"),
+                rs.getString("groupe_nom"),
+                rs.getString("score"),
+                rs.getInt("nombre_affectations"),
+                creeLe == null ? null : creeLe.toInstant());
+    }
+
+    private String ecrireContenu(List<AffectationSnapshot> affectations) {
+        try {
+            return objectMapper.writeValueAsString(affectations);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to serialise plan snapshot", e);
+        }
+    }
+
+    private List<AffectationSnapshot> lireContenu(String contenu) {
+        try {
+            return objectMapper.readValue(contenu, new TypeReference<List<AffectationSnapshot>>() {
+            });
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to read plan snapshot content", e);
+        }
+    }
+
+    private static String texte(LocalTime heure) {
+        return heure == null ? null : heure.toString();
+    }
+
+    private static LocalTime heure(String texte) {
+        return texte == null ? null : LocalTime.parse(texte);
+    }
+
+    private String editionId() {
+        return editionContext.editionIdCourant();
+    }
+
+    /** Same convention as the other repositories: edition bound to placeholder 1. */
+    private PreparedStatement prepareScoped(Connection connection, String sql) throws SQLException {
+        PreparedStatement ps = connection.prepareStatement(sql);
+        try {
+            ps.setString(1, editionId());
+            return ps;
+        } catch (SQLException | RuntimeException e) {
+            ps.close();
+            throw e;
+        }
+    }
+}

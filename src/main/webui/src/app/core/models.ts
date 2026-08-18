@@ -708,3 +708,26 @@ export interface ObservabilityConfig {
   posthogHost: string;
   cloudflareWebAnalyticsToken: string;
 }
+
+/**
+ * One saved plan (issue #138). `automatique` marks the capture taken on its own
+ * before a solve — those are purged beyond the last few; the ones asked for by
+ * hand never are.
+ */
+export interface PlanSnapshot {
+  id: number;
+  libelle: string;
+  automatique: boolean;
+  groupeCreneauId: string | null;
+  groupeNom: string | null;
+  score: string | null;
+  nombreAffectations: number;
+  creeLe: string | null;
+}
+
+/** `POST /api/planning/snapshots/{id}/restore` on success. */
+export interface RestaurationSnapshot {
+  restaure: boolean;
+  affectations: number;
+  referencesManquantes: string[];
+}

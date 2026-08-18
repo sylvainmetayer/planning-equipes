@@ -67,6 +67,9 @@ public class SolverJobService {
     ConstraintAnalysisStore analysisStore;
 
     @Inject
+    PlanSnapshotService snapshotService;
+
+    @Inject
     EditionContext editionContext;
 
     private final Map<String, SolverJob> jobs = new ConcurrentHashMap<>();
@@ -83,6 +86,10 @@ public class SolverJobService {
      */
     public SolverJob submitSolve(PlanningFestival problem, Long secondsLimit) {
         return submit(JobType.SOLVE, secondsLimit, job -> {
+            // The safety net of issue #138: the plan about to be overwritten is
+            // captured first, so a solve launched on the wrong groupe de
+            // créneaux no longer destroys the previous result.
+            snapshotService.capturerAvantSolve();
             PlanningFestival solved = planningService.resoudre(problem, secondsLimit, job::attachSolver);
             persistenceService.persist(solved);
             PlanningService.PlanningDiagnostic diagnostic = planningService.diagnostiquer(solved);

@@ -6,6 +6,7 @@ import java.time.format.DateTimeFormatter;
 
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.service.ConstraintAnalysisStore;
+import dev.sylvain.planning.service.PlanSnapshotService;
 import dev.sylvain.planning.service.PlanningPersistenceService;
 import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.PlanningService.PlanningDiagnostic;
@@ -37,6 +38,9 @@ public class PlanningResource {
 
     @Inject
     ReferenceDataChangeTracker changeTracker;
+
+    @Inject
+    PlanSnapshotService snapshotService;
 
     /**
      * Lists the scenario files available in the {@code scenarios} folder so the
@@ -99,6 +103,9 @@ public class PlanningResource {
     @Path("/solve")
     public PlanningFestival solve(PlanningFestival planningFestival,
             @QueryParam("seconds") Long secondsLimit) {
+        // Same safety net as the async path (issue #138): capture the plan this
+        // solve is about to overwrite.
+        snapshotService.capturerAvantSolve();
         PlanningFestival solved = planningService.resoudre(planningFestival, secondsLimit);
         persistenceService.persist(solved);
         return solved;

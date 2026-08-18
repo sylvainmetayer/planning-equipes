@@ -78,6 +78,7 @@ function buildNavGroups(): NavGroup[] {
         label: $localize`:@@nav.link.dataSetup:Données`,
         icon: 'storage'
       },
+      { path: '/instantanes', label: $localize`:@@nav.link.snapshots:Instantanés`, icon: 'history' },
       { path: '/aide', label: $localize`:@@nav.link.aide:Aide`, icon: 'help_outline' },
       { path: '/editions', label: $localize`:@@nav.link.editions:Éditions`, icon: 'layers' }
     ]
