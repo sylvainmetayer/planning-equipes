@@ -214,6 +214,27 @@ essayées, 1 y arrive ~45 s plus tôt mais avec un medium nettement moins bon
 (-9 211 contre -8 502 à temps égal) — or c'est précisément le polissage
 medium/soft qui occupe le budget une fois la faisabilité atteinte.
 
+#### Deux phases : trouver, puis polir
+
+Un `acceptedCountLimit` bas trouve la faisabilité mais polit mal, un haut fait
+l'inverse. Les deux objectifs n'appellent donc pas le même réglage, et la
+recherche locale est découpée en **deux phases** : la première à 2, terminée
+par `bestScoreFeasible`, la seconde à 40 pour le reste du budget. Mesuré à
+600 s :
+
+| Configuration | 0 hard atteint | medium | soft |
+| --- | --- | --- | --- |
+| `acl 2` seul | 146 s | -7 987 | -539 |
+| `acl 20` seul | jamais (-2 hard) | -6 878 | -720 |
+| `2 puis 20` | 145 s | -6 876 | -715 |
+| **`2 puis 40`** | **145 s** | **-6 704** | -716 |
+
+L'avantage de 40 sur 20 en phase 2 est vérifié sur trois graines : -6 704 /
+-6 703 / -6 762 contre -6 876 / -6 867 / -6 879. Timefold conserve toujours la
+meilleure solution rencontrée, donc la phase 2 ne peut pas reperdre la
+faisabilité acquise par la phase 1. Les deux sélecteurs ciblés sur les postes
+non pourvus ne sont pas repris en phase 2 : à ce stade il n'y en a plus.
+
 `lateAcceptanceSize` a été remesuré au passage : 100 / 400 / 1500 donnent
 -14 / -14 / -12 à `acceptedCountLimit` 20, et -1 / 0 / 0 à 2. En dessous de 400
 il dégrade, au-dessus il ne change rien — laissé tel quel.

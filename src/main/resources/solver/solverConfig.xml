@@ -70,6 +70,10 @@
         </changeMoveSelector>
     </constructionHeuristic>
     <localSearch>
+        <!-- Phase 1 : atteindre la faisabilite, puis passer la main. -->
+        <termination>
+            <bestScoreFeasible>true</bestScoreFeasible>
+        </termination>
         <unionMoveSelector>
             <changeMoveSelector>
                 <filterClass>dev.sylvain.planning.solver.EligibleAnimateurMoveFilter$ChangeMoveFilter</filterClass>
@@ -135,6 +139,57 @@
                 at 2. Below 400 it hurts, above it changes nothing: left as is.
             -->
             <acceptedCountLimit>2</acceptedCountLimit>
+        </forager>
+    </localSearch>
+
+    <!--
+        Seconde phase : le planning est faisable, il reste a le rendre bon.
+        Les deux objectifs ne demandent pas le meme reglage — mesure sur le
+        scenario 2026 (3502 postes), budget de 600 s, meme graine :
+
+            configuration      0 hard atteint   medium   soft
+            acl 2 seul             146 s        -7 987   -539
+            acl 20 seul            jamais       -6 878   -720   (-2 hard)
+            2 puis 20              145 s        -6 876   -715
+            2 puis 40              145 s        -6 704   -716
+
+        Des pas rapides trouvent la faisabilite et des pas larges la polissent :
+        enchainer les deux donne 0 hard ET le meilleur medium, la ou chaque
+        reglage seul echoue sur l'un des deux. Timefold conserve toujours la
+        meilleure solution rencontrée, donc la phase 2 ne peut pas reperdre la
+        faisabilite acquise par la phase 1.
+
+        40 plutot que 20 en phase 2 : verifie sur trois graines, meme sens et
+        meme ordre de grandeur a chaque fois.
+
+            graine      0        1        2
+            2 puis 20   -6 876   -6 867   -6 879
+            2 puis 40   -6 704   -6 703   -6 762
+
+        Le soft est marginalement moins bon (-716/-745/-723 contre
+        -715/-725/-713), mais il est classe sous le medium : l'arbitrage est
+        sans ambiguite.
+
+        Les deux selecteurs cibles sur les postes non pourvus ne sont pas
+        repris ici : arrive a ce stade il n'y en a plus, ils ne produiraient
+        aucun mouvement.
+    -->
+    <localSearch>
+        <unionMoveSelector>
+            <changeMoveSelector>
+                <filterClass>dev.sylvain.planning.solver.EligibleAnimateurMoveFilter$ChangeMoveFilter</filterClass>
+                <fixedProbabilityWeight>1.0</fixedProbabilityWeight>
+            </changeMoveSelector>
+            <swapMoveSelector>
+                <filterClass>dev.sylvain.planning.solver.EligibleAnimateurMoveFilter$SwapMoveFilter</filterClass>
+                <fixedProbabilityWeight>1.0</fixedProbabilityWeight>
+            </swapMoveSelector>
+        </unionMoveSelector>
+        <acceptor>
+            <lateAcceptanceSize>400</lateAcceptanceSize>
+        </acceptor>
+        <forager>
+            <acceptedCountLimit>40</acceptedCountLimit>
         </forager>
     </localSearch>
 
