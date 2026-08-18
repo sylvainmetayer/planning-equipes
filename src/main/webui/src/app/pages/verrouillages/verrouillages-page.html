@@ -1,6 +1,10 @@
 <h1 class="page-title" i18n="@@nav.link.verrouillages">Verrouillages</h1>
 
-<app-work-in-progress-banner />
+<app-work-in-progress-banner
+  i18n-marche="@@verrouillages.wip.marche"
+  marche="poser et retirer un verrouillage, et le gel effectif des sièges déjà pourvus à la résolution suivante"
+  i18n-manque="@@verrouillages.wip.manque"
+  manque="l'aperçu du planning gelé avant lancement, et la reprise d'un verrouillage après suppression du créneau visé" />
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
@@ -72,6 +76,7 @@
         <input matInput [ngModel]="raison()" (ngModelChange)="raison.set($event)" [disabled]="editingLocked()" />
       </mat-form-field>
     </form>
+    <app-status-message [text]="impactMessage()" tone="info" />
   </mat-card-content>
   <mat-card-actions class="card-actions">
     <button matButton="filled" type="button" [disabled]="editingLocked() || !cibleRenseignee()" (click)="verrouiller()">

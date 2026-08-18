@@ -73,7 +73,7 @@
     </mat-form-field>
   </div>
   @if (standsInvalides().length) {
-    <p class="field-error">{{ effectifInvalideMessage() }}</p>
+    <p class="field-error" role="alert">{{ effectifInvalideMessage() }}</p>
   }
 </div>
 
@@ -217,7 +217,7 @@
       </div>
     }
     @if (erreurHoraires()) {
-      <p class="field-error">{{ erreurHoraires() }}</p>
+      <p class="field-error" role="alert">{{ erreurHoraires() }}</p>
     }
     <button matButton type="button" (click)="ajouterHoraire()">
       <mat-icon>add</mat-icon>

@@ -292,3 +292,38 @@ form.form-grid {
   white-space: nowrap;
   border: 0;
 }
+
+/* Repeatable sections of the stand form (recurring horaires, dated closures
+   and openings). Real <fieldset>s so each group is announced with its legend,
+   styled flat so the dialog does not turn into a stack of boxes. */
+.stand-section {
+  border: 0;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+  margin: 0.5rem 0 0;
+  padding: 0.75rem 0 0;
+  min-width: 0;
+}
+
+.stand-section > legend {
+  font: var(--mat-sys-title-small);
+  color: var(--mat-sys-on-surface);
+  padding: 0;
+}
+
+/* Découpage: the thirty settings read as three questions (how long is a
+   vacation, when do people eat, how many staggered grids), so they are three
+   field groups rather than one flat wall of inputs. */
+.decoupage-groupe {
+  border: 0;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+  margin: 0 0 0.5rem;
+  padding: 0.75rem 0 0;
+  min-width: 0;
+}
+
+.decoupage-groupe > legend {
+  font: var(--mat-sys-title-small);
+  color: var(--mat-sys-on-surface);
+  padding: 0;
+  margin-bottom: 0.5rem;
+}

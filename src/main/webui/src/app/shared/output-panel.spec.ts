@@ -1,6 +1,7 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { NotificationService } from '../core/notification.service';
 import { OutputPanel } from './output-panel';
 
 describe('OutputPanel', () => {
@@ -8,7 +9,10 @@ describe('OutputPanel', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [provideZonelessChangeDetection()]
+      providers: [
+        provideZonelessChangeDetection(),
+        { provide: NotificationService, useValue: { notify: vi.fn() } }
+      ]
     });
     fixture = TestBed.createComponent(OutputPanel);
   });
@@ -35,5 +39,14 @@ describe('OutputPanel', () => {
     fixture.componentRef.setInput('text', '');
     await fixture.whenStable();
     expect(fixture.nativeElement.querySelector('.output-panel')).toBeNull();
+  });
+
+  it('announces its output instead of writing into silence', async () => {
+    fixture.componentRef.setInput('text', '3 erreurs de validation');
+    await fixture.whenStable();
+
+    const pre = fixture.nativeElement.querySelector('pre') as HTMLElement;
+    expect(pre.getAttribute('role')).toBe('log');
+    expect(pre.getAttribute('aria-live')).toBe('polite');
   });
 });

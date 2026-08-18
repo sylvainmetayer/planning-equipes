@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 
@@ -14,10 +14,22 @@ import { MatIconModule } from '@angular/material/icon';
     <mat-card appearance="outlined" class="work-in-progress-banner">
       <mat-card-content>
         <mat-icon>construction</mat-icon>
-        <p i18n="@@workInProgress.message">
-          Cette fonctionnalité est en cours de développement : son comportement et les données saisies ici peuvent
-          encore évoluer, et le résultat du solveur peut ne pas en tenir compte.
-        </p>
+        <div>
+          <p i18n="@@workInProgress.message">
+            Cette fonctionnalité est en cours de développement : son comportement et les données saisies ici peuvent
+            encore évoluer, et le résultat du solveur peut ne pas en tenir compte.
+          </p>
+          @if (marche()) {
+            <p class="work-in-progress-detail">
+              <strong i18n="@@workInProgress.working">Ce qui fonctionne :</strong> {{ marche() }}
+            </p>
+          }
+          @if (manque()) {
+            <p class="work-in-progress-detail">
+              <strong i18n="@@workInProgress.missing">Ce qui manque :</strong> {{ manque() }}
+            </p>
+          }
+        </div>
       </mat-card-content>
     </mat-card>
   `,
@@ -38,7 +50,19 @@ import { MatIconModule } from '@angular/material/icon';
     .work-in-progress-banner p {
       margin: 0;
     }
+    .work-in-progress-detail {
+      margin-top: 0.35rem !important;
+      font: var(--mat-sys-body-small);
+    }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class WorkInProgressBanner {}
+export class WorkInProgressBanner {
+  /**
+   * "En cours de développement" alone tells the user nothing actionable. These
+   * two lines say where the boundary is, so someone can decide whether to rely
+   * on the screen today.
+   */
+  readonly marche = input('');
+  readonly manque = input('');
+}

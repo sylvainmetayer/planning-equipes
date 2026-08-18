@@ -14,6 +14,7 @@ import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { slugify } from '../../core/slug';
 import { Creneau, DecoupageRequest, GroupeCreneau, ParametresDecoupage } from '../../core/models';
+import { StatusMessage } from '../../shared/status-message';
 import { summarizeVacationsByDay } from './decoupage';
 
 /**
@@ -34,7 +35,8 @@ import { summarizeVacationsByDay } from './decoupage';
     MatIconModule,
     MatInputModule,
     MatProgressSpinnerModule,
-    MatSelectModule
+    MatSelectModule,
+    StatusMessage
   ],
   templateUrl: './decoupage-page.html'
 })
@@ -49,6 +51,25 @@ export class DecoupagePage {
 
   protected readonly parametres = signal<ParametresDecoupage | null>(null);
   protected readonly parametresLoading = signal(false);
+
+  /**
+   * What the current settings would produce, in one sentence, recomputed as
+   * they are typed. The generation itself is a separate, explicit action: this
+   * only answers "am I about to cut 4-hour or 8-hour vacations?" before the
+   * user commits to it.
+   */
+  protected readonly apercuParametres = computed(() => {
+    const p = this.parametres();
+    if (!p) {
+      return '';
+    }
+    const heures = (minutes: number) => (minutes / 60).toFixed(1).replace('.0', '').replace('.', ',');
+    const familles =
+      p.nombreFamillesDecalage > 1
+        ? $localize`:@@decoupage.apercu.familles:, réparties sur ${p.nombreFamillesDecalage}:count: grilles décalées`
+        : '';
+    return $localize`:@@decoupage.apercu:Avec ces réglages : des vacations d'environ ${heures(p.dureeVacationCibleMinutes)}:cible: h (jamais plus de ${heures(p.dureeVacationMaxMinutes)}:max: h), un relais de ${p.dureeChevauchementMinutes}:chevauchement: min et une pause repas de ${p.dureePauseRepasMinutes}:repas: min${familles}:familles:.`;
+  });
 
   protected readonly previewVacations = signal<Creneau[] | null>(null);
   protected readonly previewLoading = signal(false);

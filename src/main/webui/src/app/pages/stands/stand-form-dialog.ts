@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, Injector, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -8,6 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { focusApresSuppression } from '../../core/focus-apres-suppression';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
@@ -84,6 +85,13 @@ export class StandFormDialog {
   protected readonly dialogRef = inject<MatDialogRef<StandFormDialog, boolean>>(MatDialogRef);
   private readonly data = inject<StandFormData>(MAT_DIALOG_DATA);
   private readonly crud = inject(ReferenceCrudService);
+  private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
+
+  /** Removing a row destroys the focused button: hand the focus to the section's "add" button. */
+  private focusApres(selecteur: string): void {
+    focusApresSuppression(this.hote.nativeElement, selecteur, this.injector);
+  }
 
   protected readonly editingId = signal<string | null>(this.data.stand?.id ?? null);
   protected readonly draft = signal<StandDraft>(toDraft(this.data.stand));
@@ -249,6 +257,7 @@ export class StandFormDialog {
       ...draft,
       indisponibilites: draft.indisponibilites.filter((_, i) => i !== index)
     }));
+    this.focusApres('[data-focus="ajouter-indisponibilite"]');
   }
 
   protected ajouterOuverture(): void {
@@ -270,6 +279,7 @@ export class StandFormDialog {
       ...draft,
       ouvertures: draft.ouvertures.filter((_, i) => i !== index)
     }));
+    this.focusApres('[data-focus="ajouter-ouverture"]');
   }
 
   /* ------------------------- Recurring horaires ------------------------- */
@@ -287,6 +297,7 @@ export class StandFormDialog {
 
   protected retirerHoraire(index: number): void {
     this.draft.update((draft) => ({ ...draft, horaires: draft.horaires.filter((_, i) => i !== index) }));
+    this.focusApres('[data-focus="ajouter-horaire"]');
   }
 
   protected ajouterFenetre(indexHoraire: number): void {
@@ -301,6 +312,7 @@ export class StandFormDialog {
 
   protected retirerFenetre(indexHoraire: number, indexFenetre: number): void {
     this.majFenetres(indexHoraire, (fenetres) => fenetres.filter((_, i) => i !== indexFenetre));
+    this.focusApres(`[data-focus="ajouter-fenetre-${indexHoraire}"]`);
   }
 
   /**

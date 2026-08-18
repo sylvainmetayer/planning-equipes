@@ -13,6 +13,7 @@ import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';
+import { PlanSnapshotStore } from '../../core/plan-snapshot.store';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { FeasibilityBanner } from '../../shared/feasibility-banner';
 import { OutputPanel } from '../../shared/output-panel';
@@ -73,6 +74,8 @@ export class DataSetupPage {
   // previous dataset.
   private readonly resolution = inject(PlanningResolutionStore);
   private readonly confirm = inject(ConfirmService);
+  private readonly snapshots = inject(PlanSnapshotStore);
+
   private readonly jobs = inject(SolverJobService);
   private readonly solverSettings = inject(SolverSettingsService);
   private readonly notifications = inject(NotificationService);
@@ -95,6 +98,37 @@ export class DataSetupPage {
       this.output.set(
         $localize`:@@dataSetup.scenarioListError:Erreur lors du chargement de la liste des scénarios : ${message(error)}:message:`
       );
+    }
+  }
+
+  /**
+   * Offers to save the current plan before an action that destroys it.
+   *
+   * Every action on this page rewrites the dataset, and the plan is the
+   * expensive part: it costs a solve to rebuild. Snapshots exist now, so the
+   * page proposes one rather than letting the user discover afterwards that
+   * the only copy is gone. Declining is fine — this is a safety net, not a
+   * gate — and a snapshot that fails to save never blocks the action.
+   */
+  private async proposerInstantane(intitule: string): Promise<void> {
+    const veut = await this.confirm.ask({
+      title: $localize`:@@dataSetup.snapshotBefore.title:Enregistrer le plan actuel d'abord ?`,
+      message: $localize`:@@dataSetup.snapshotBefore.message:${intitule}:action: va remplacer les données, et avec elles le planning résolu. Un instantané permet de le retrouver ensuite.`,
+      confirmLabel: $localize`:@@dataSetup.snapshotBefore.confirm:Enregistrer un instantané`
+    });
+    if (!veut) {
+      return;
+    }
+    try {
+      await this.snapshots.capturer(
+        $localize`:@@dataSetup.snapshotBefore.libelle:Avant ${intitule}:action:`
+      );
+    } catch (error) {
+      this.notifications.notify({
+        title: $localize`:@@dataSetup.snapshotBefore.failed:Instantané non enregistré`,
+        message: message(error),
+        variant: 'error'
+      });
     }
   }
 
@@ -147,6 +181,7 @@ export class DataSetupPage {
     if (!confirmed) {
       return;
     }
+    await this.proposerInstantane($localize`:@@dataSetup.action.reset:vider la base`);
     this.resetting.set(true);
     this.output.set($localize`:@@dataSetup.resetting:Suppression des données...`);
     try {
@@ -262,6 +297,7 @@ export class DataSetupPage {
     if (!confirmed) {
       return;
     }
+    await this.proposerInstantane($localize`:@@dataSetup.action.importSql:rejouer un dump SQL`);
     this.transferBusy.set(true);
     this.output.set($localize`:@@dataTransfer.importing:Import de ${file.name}:fileName: en cours...`);
     try {

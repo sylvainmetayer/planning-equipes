@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -13,6 +14,7 @@ import { NotificationService } from '../../core/notification.service';
 import { slugify } from '../../core/slug';
 import { Edition } from '../../core/models';
 import { ConfirmService } from '../../shared/confirm-dialog';
+import { PromptDialog } from '../../shared/prompt-dialog';
 
 /**
  * Manages the editions the whole referential is partitioned into: create an
@@ -53,6 +55,7 @@ export class EditionsPage {
   private readonly api = inject(ApiService);
   private readonly notifications = inject(NotificationService);
   private readonly confirm = inject(ConfirmService);
+  private readonly dialog = inject(MatDialog);
 
   constructor() {
     void this.recharger();
@@ -99,15 +102,26 @@ export class EditionsPage {
     this.store.basculer(edition);
   }
 
-  /** Explicit confirmation: deleting an edition takes its whole referential with it. */
+  /**
+   * Deleting an edition takes a whole festival with it — referential, settings
+   * and solved plan — and nothing restores it. So this is the one action in
+   * the application that asks the user to type the name rather than to click
+   * once: the friction is the point, exactly as when deleting a repository.
+   */
   protected async supprimer(edition: Edition): Promise<void> {
-    const confirme = await this.confirm.ask({
+    const saisi = await PromptDialog.ask(this.dialog, {
       title: $localize`:@@editions.delete.title:Supprimer l'édition ${edition.nom}:nom: ?`,
-      message: $localize`:@@editions.delete.message:Tout son référentiel — stands, animateurs, typologies, créneaux, paramètres et planning résolu — est supprimé définitivement.`,
-      confirmLabel: $localize`:@@common.delete:Supprimer`,
-      danger: true
+      label: $localize`:@@editions.delete.typeName:Saisissez « ${edition.nom}:nom: » pour confirmer`,
+      confirmLabel: $localize`:@@common.delete:Supprimer`
     });
-    if (!confirme) {
+    if (saisi === null) {
+      return;
+    }
+    if (saisi.trim() !== edition.nom.trim()) {
+      this.notifications.notify({
+        title: $localize`:@@editions.delete.mismatch:Nom incorrect : l'édition n'a pas été supprimée.`,
+        variant: 'error'
+      });
       return;
     }
     await this.executer(() => this.api.delete(`/api/editions/${encodeURIComponent(edition.id)}`));

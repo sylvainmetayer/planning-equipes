@@ -9,11 +9,13 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { NotificationService } from '../../core/notification.service';
+import { PlanningStateService } from '../../core/planning-state.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { VerrouillageStore } from '../../core/verrouillage.store';
-import { TypeVerrouillage, VerrouillagePlanning } from '../../core/models';
+import { PlanningFestival, TypeVerrouillage, VerrouillagePlanning } from '../../core/models';
 import { ConfirmService } from '../../shared/confirm-dialog';
+import { StatusMessage } from '../../shared/status-message';
 import { WorkInProgressBanner } from '../../shared/work-in-progress-banner';
 
 const TYPE_VALUES: TypeVerrouillage[] = ['ANIMATEUR', 'STAND', 'JOUR', 'CRENEAU'];
@@ -57,6 +59,7 @@ interface VerrouillageRow extends VerrouillagePlanning {
     MatSelectModule,
     MatTableModule,
     MatTooltipModule,
+    StatusMessage,
     WorkInProgressBanner
   ],
   templateUrl: './verrouillages-page.html',
@@ -95,8 +98,23 @@ export class VerrouillagesPage {
   private readonly notifications = inject(NotificationService);
   private readonly confirm = inject(ConfirmService);
 
+  private readonly planningState = inject(PlanningStateService);
+
   constructor() {
     void this.reload();
+    void this.chargerPlanning();
+  }
+
+  /** Persisted plan, loaded once so the impact preview has something to count. */
+  protected readonly planning = signal<PlanningFestival | null>(null);
+
+  private async chargerPlanning(): Promise<void> {
+    try {
+      this.planning.set(await this.planningState.loadForDisplay());
+    } catch {
+      // No plan yet (nothing solved): the preview simply stays silent.
+      this.planning.set(null);
+    }
   }
 
   protected async reload(): Promise<void> {
@@ -119,6 +137,41 @@ export class VerrouillagesPage {
       case 'JOUR':
         return !!this.jour();
     }
+  });
+
+  /**
+   * How many already-assigned seats the target currently covers.
+   *
+   * A lock is invisible until the next solve, which is exactly when it is too
+   * late to notice it was aimed at the wrong stand. Counting against the
+   * persisted plan turns "je verrouille" into "je fige 42 sièges".
+   */
+  protected readonly impact = computed(() => {
+    const postes = this.planning()?.postes ?? [];
+    if (postes.length === 0 || !this.cibleRenseignee()) {
+      return null;
+    }
+    const pourvus = postes.filter((poste) => poste.animateur);
+    switch (this.type()) {
+      case 'ANIMATEUR':
+        return pourvus.filter((poste) => poste.animateur?.id === this.animateurId()).length;
+      case 'STAND':
+        return pourvus.filter((poste) => poste.stand?.id === this.standId()).length;
+      case 'CRENEAU':
+        return pourvus.filter((poste) => poste.creneau?.id === Number(this.creneauId())).length;
+      case 'JOUR':
+        return pourvus.filter((poste) => poste.creneau?.date === this.jour()).length;
+    }
+  });
+
+  protected readonly impactMessage = computed(() => {
+    const sieges = this.impact();
+    if (sieges === null) {
+      return '';
+    }
+    return sieges === 0
+      ? $localize`:@@verrouillages.impact.aucun:Aucune affectation enregistrée ne correspond à cette cible : le verrouillage ne figera rien tant qu'une résolution ne l'aura pas pourvue.`
+      : $localize`:@@verrouillages.impact:${sieges}:count: affectation(s) déjà enregistrée(s) seront figées par ce verrouillage.`;
   });
 
   protected async verrouiller(): Promise<void> {

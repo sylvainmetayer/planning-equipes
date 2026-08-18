@@ -17,15 +17,17 @@
 <mat-form-field appearance="outline">
   <mat-label i18n="@@stands.field.effectifMin">Effectif minimum</mat-label>
   <input matInput name="effectifMin" type="number" min="0"
+         aria-describedby="stand-effectif-erreur" [attr.aria-invalid]="effectifInvalid() || null"
          [ngModel]="draft().effectifMin" (ngModelChange)="patch({ effectifMin: $event })" />
 </mat-form-field>
 <mat-form-field appearance="outline">
   <mat-label i18n="@@stands.field.effectifMax">Effectif maximum</mat-label>
   <input matInput name="effectifMax" type="number" min="0"
+         aria-describedby="stand-effectif-erreur" [attr.aria-invalid]="effectifInvalid() || null"
          [ngModel]="draft().effectifMax" (ngModelChange)="patch({ effectifMax: $event })" />
 </mat-form-field>
 @if (effectifInvalid()) {
-  <p class="field-error span-2" i18n="@@stands.effectifInvalid">L'effectif maximum ne peut pas être inférieur à l'effectif minimum.</p>
+  <p class="field-error span-2" id="stand-effectif-erreur" role="alert" i18n="@@stands.effectifInvalid">L'effectif maximum ne peut pas être inférieur à l'effectif minimum.</p>
 }
 <mat-form-field appearance="outline" class="span-2">
   <mat-label i18n="@@stands.field.typologies">Typologies de jeu</mat-label>
@@ -66,8 +68,8 @@
               i18n="@@stands.field.niveauEffort">
   Épuisant physiquement
 </mat-checkbox>
-<div class="span-2 horaires-section">
-  <h3 i18n="@@stands.horaires.title">Horaires récurrents</h3>
+<fieldset class="span-2 horaires-section stand-section">
+  <legend i18n="@@stands.horaires.title">Horaires récurrents</legend>
   <p class="empty-hint" i18n="@@stands.horaires.hint">
     Le stand est ouvert sur chaque créneau par défaut. Une règle décrit un motif qui se répète — « ouvert de 10h à 12h
     puis de 14h à la fermeture, tous les jours » tient en une règle à deux fenêtres, au lieu d'une plage datée par jour
@@ -154,7 +156,8 @@
             </button>
           </div>
         }
-        <button matButton type="button" [disabled]="editingLocked()" (click)="ajouterFenetre(indexHoraire)">
+        <button matButton type="button" [attr.data-focus]="'ajouter-fenetre-' + indexHoraire"
+                [disabled]="editingLocked()" (click)="ajouterFenetre(indexHoraire)">
           <mat-icon>add</mat-icon>
           <ng-container i18n="@@stands.horaires.addFenetre">Ajouter une fenêtre</ng-container>
         </button>
@@ -167,15 +170,15 @@
     </div>
   }
   @if (erreurHoraires()) {
-    <p class="field-error">{{ erreurHoraires() }}</p>
+    <p class="field-error" role="alert">{{ erreurHoraires() }}</p>
   }
-  <button matButton type="button" [disabled]="editingLocked()" (click)="ajouterHoraire()">
+  <button matButton type="button" data-focus="ajouter-horaire" [disabled]="editingLocked()" (click)="ajouterHoraire()">
     <mat-icon>add</mat-icon>
     <ng-container i18n="@@stands.horaires.add">Ajouter une règle d'horaire</ng-container>
   </button>
-</div>
-<div class="span-2">
-  <h3 i18n="@@stands.indisponibilites.title">Fermetures ponctuelles</h3>
+</fieldset>
+<fieldset class="span-2 stand-section">
+  <legend i18n="@@stands.indisponibilites.title">Fermetures ponctuelles</legend>
   <p class="empty-hint" i18n="@@stands.indisponibilites.hint">
     Une exception datée : elle prime sur les règles ci-dessus, pour le seul jour qu'elle nomme, et remplace
     entièrement ce qu'elles disaient de ce jour-là. Le stand est ouvert le reste de la journée.
@@ -210,15 +213,15 @@
     </div>
   }
   @if (indisponibiliteInvalide()) {
-    <p class="field-error" i18n="@@stands.indisponibilites.invalid">Chaque fermeture doit avoir une date et une heure de début ; l'heure de fin, si elle est renseignée, doit être après l'heure de début.</p>
+    <p class="field-error" role="alert" i18n="@@stands.indisponibilites.invalid">Chaque fermeture doit avoir une date et une heure de début ; l'heure de fin, si elle est renseignée, doit être après l'heure de début.</p>
   }
-  <button matButton type="button" [disabled]="editingLocked()" (click)="ajouterIndisponibilite()">
+  <button matButton type="button" data-focus="ajouter-indisponibilite" [disabled]="editingLocked()" (click)="ajouterIndisponibilite()">
     <mat-icon>add</mat-icon>
     <ng-container i18n="@@stands.indisponibilites.add">Ajouter une fermeture</ng-container>
   </button>
-</div>
-<div class="span-2">
-  <h3 i18n="@@stands.ouvertures.title">Ouvertures ponctuelles</h3>
+</fieldset>
+<fieldset class="span-2 stand-section">
+  <legend i18n="@@stands.ouvertures.title">Ouvertures ponctuelles</legend>
   <p class="empty-hint" i18n="@@stands.ouvertures.hint">
     L'inverse : ce jour-là, le stand n'est ouvert QUE sur les fenêtres listées. Prime aussi sur les règles. Un même
     jour ne peut pas porter à la fois une fermeture et une ouverture.
@@ -253,18 +256,18 @@
     </div>
   }
   @if (ouvertureInvalide()) {
-    <p class="field-error" i18n="@@stands.ouvertures.invalid">Chaque ouverture doit avoir une date et une heure de début ; l'heure de fin, si elle est renseignée, doit être après l'heure de début.</p>
+    <p class="field-error" role="alert" i18n="@@stands.ouvertures.invalid">Chaque ouverture doit avoir une date et une heure de début ; l'heure de fin, si elle est renseignée, doit être après l'heure de début.</p>
   }
   @if (conflitOuvertureFermeture()) {
-    <p class="field-error" i18n="@@stands.ouvertures.conflict">
+    <p class="field-error" role="alert" i18n="@@stands.ouvertures.conflict">
       Un même jour ne peut pas avoir à la fois une fermeture et une ouverture.
     </p>
   }
-  <button matButton type="button" [disabled]="editingLocked()" (click)="ajouterOuverture()">
+  <button matButton type="button" data-focus="ajouter-ouverture" [disabled]="editingLocked()" (click)="ajouterOuverture()">
     <mat-icon>add</mat-icon>
     <ng-container i18n="@@stands.ouvertures.add">Ajouter une ouverture</ng-container>
   </button>
-</div>
+</fieldset>
 @if (datesFestival().length > 0) {
   <div class="span-2 horaires-apercu">
     <h3 i18n="@@stands.apercu.title">Aperçu jour par jour</h3>
