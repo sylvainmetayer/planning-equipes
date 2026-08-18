@@ -100,3 +100,18 @@
   color: var(--mat-sys-on-error-container);
   font-weight: 600;
 }
+
+/* The grid is keyboard-navigable (roving tabindex): the focused cell must be
+   unmistakable, since the arrows move it one step at a time. */
+.heatmap-cell:focus-visible {
+  outline: 3px solid var(--mat-sys-primary);
+  outline-offset: -3px;
+}
+
+/* The row label stays readable while the fifteen day columns scroll under it. */
+.heatmap-table .heatmap-row-header {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--mat-sys-surface);
+}

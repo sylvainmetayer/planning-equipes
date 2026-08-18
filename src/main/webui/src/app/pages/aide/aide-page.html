@@ -26,6 +26,7 @@
         </button>
       }
     </mat-form-field>
+    <app-status-message [text]="resumeRecherche()" tone="info" />
 
     <nav class="aide-toc" i18n-aria-label="@@aide.toc.label" aria-label="Sommaire de l'aide">
       @for (section of visibleSections(); track section.id) {
@@ -45,7 +46,7 @@
 </mat-card>
 
 @for (section of visibleSections(); track section.id) {
-  <mat-card appearance="outlined" class="page-card aide-section" [id]="section.id">
+  <mat-card appearance="outlined" class="page-card aide-section" [id]="section.id" tabindex="-1">
     <mat-card-header>
       <mat-icon mat-card-avatar class="aide-section-icon">{{ section.icon }}</mat-icon>
       <h2 mat-card-title>{{ section.title }}</h2>

@@ -21,6 +21,10 @@
   }
   @if (rapport(); as report) {
     <mat-card-content class="table-wrapper">
+      <p class="empty-hint" i18n="@@hours.legend">
+        Une semaine au-delà de {{ plafondMineur }} h est signalée (plafond d'un mineur), au-delà de
+        {{ plafondMajeur }} h elle dépasse le plafond légal applicable à tous.
+      </p>
       <table mat-table [dataSource]="sortedAnimateurs()" matSort [matSortActive]="sort().active" [matSortDirection]="sort().direction" (matSortChange)="sort.set($event)">
         <caption class="visually-hidden" i18n="@@hours.table.caption">Heures planifiées par animateur et par semaine ISO, avec le total de l'événement</caption>
         @for (col of columns(); track col) {
@@ -35,7 +39,16 @@
               <td mat-footer-cell *matFooterCellDef><strong>{{ totaux().total | number: '1.1-1' }} h</strong></td>
             } @else {
               <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ col }}</th>
-              <td mat-cell *matCellDef="let row">{{ (row.heuresParSemaine[col] ?? 0) | number: '1.1-1' }} h</td>
+              <td mat-cell *matCellDef="let row"
+                  [class.hours-depassement]="niveauHeures(row.heuresParSemaine[col] ?? 0) === 'depassement'"
+                  [class.hours-verifier]="niveauHeures(row.heuresParSemaine[col] ?? 0) === 'verifier'"
+                  [attr.title]="libelleHeures(row.heuresParSemaine[col] ?? 0) || null">
+                {{ (row.heuresParSemaine[col] ?? 0) | number: '1.1-1' }} h
+                @if (niveauHeures(row.heuresParSemaine[col] ?? 0) !== 'normal') {
+                  <mat-icon inline class="hours-alerte-icon"
+                            [attr.aria-label]="libelleHeures(row.heuresParSemaine[col] ?? 0)">priority_high</mat-icon>
+                }
+              </td>
               <td mat-footer-cell *matFooterCellDef><strong>{{ (totaux().parSemaine[col] ?? 0) | number: '1.1-1' }} h</strong></td>
             }
           </ng-container>

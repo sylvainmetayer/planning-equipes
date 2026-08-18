@@ -7,7 +7,12 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { ApiService } from '../../core/api.service';
-import { HeuresAnimateur, HeuresRapport } from '../../core/models';
+import {
+  DUREE_HEBDOMADAIRE_MAX_HEURES,
+  DUREE_HEBDOMADAIRE_MAX_MINEUR_HEURES,
+  HeuresAnimateur,
+  HeuresRapport
+} from '../../core/models';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { OutputPanel } from '../../shared/output-panel';
 
@@ -39,6 +44,34 @@ export class HoursPage {
   protected readonly rapport = signal<HeuresRapport | null>(null);
   protected readonly columns = computed(() => ['animateur', ...(this.rapport()?.semaines ?? []), 'total']);
   protected readonly sort = signal<Sort>({ active: '', direction: '' });
+
+  /**
+   * Weekly ceilings the table marks up. The point of this screen is to catch an
+   * overrun, and until now the hours were plain numbers: 52 h and 12 h looked
+   * exactly alike. The minor ceiling is flagged as a check rather than a
+   * breach, since the table does not know who is a minor — it is the reader who
+   * knows, and 35 h is where they should look.
+   */
+  protected readonly plafondMajeur = DUREE_HEBDOMADAIRE_MAX_HEURES;
+  protected readonly plafondMineur = DUREE_HEBDOMADAIRE_MAX_MINEUR_HEURES;
+
+  protected niveauHeures(heures: number): 'depassement' | 'verifier' | 'normal' {
+    if (heures > this.plafondMajeur) {
+      return 'depassement';
+    }
+    return heures > this.plafondMineur ? 'verifier' : 'normal';
+  }
+
+  protected libelleHeures(heures: number): string {
+    switch (this.niveauHeures(heures)) {
+      case 'depassement':
+        return $localize`:@@hours.cell.depassement:${heures}:heures: h — au-dessus du plafond légal de ${this.plafondMajeur}:plafond: h par semaine`;
+      case 'verifier':
+        return $localize`:@@hours.cell.verifier:${heures}:heures: h — au-dessus du plafond de ${this.plafondMineur}:plafond: h applicable à un mineur`;
+      default:
+        return '';
+    }
+  }
   protected readonly sortedAnimateurs = computed(() => {
     const animateurs = this.rapport()?.animateurs ?? [];
     const { active, direction } = this.sort();

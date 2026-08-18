@@ -7,14 +7,16 @@
   </mat-card-header>
   <mat-card-content>
     <div class="timeline-toolbar">
-      <mat-form-field appearance="outline" class="timeline-animateur-select">
-        <mat-label i18n="@@timeline.selectAnimateur">Animateur</mat-label>
-        <mat-select [value]="selectedAnimateurId()" (valueChange)="selectAnimateur($event)">
-          @for (option of animateurOptions(); track option.id) {
-            <mat-option [value]="option.id">{{ option.label }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
+      <app-selection-recherche
+        class="timeline-animateur-select"
+        i18n-label="@@timeline.selectAnimateur"
+        label="Animateur"
+        i18n-placeholder="@@timeline.selectAnimateur.placeholder"
+        placeholder="Tapez un nom"
+        [options]="animateurOptions()"
+        [valeurs]="animateurSelection()"
+        (valeursChange)="onAnimateurSelection($event)"
+      />
       <button matButton="tonal" type="button" [disabled]="loading()" (click)="refresh()">
         <mat-icon>refresh</mat-icon>
         <ng-container i18n="@@common.refresh">Actualiser</ng-container>

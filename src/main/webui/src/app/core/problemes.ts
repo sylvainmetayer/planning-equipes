@@ -28,6 +28,18 @@ export interface Probleme {
   message: string;
   /** Concrete entities involved: créneau, stands, or one line per violation. */
   details: string[];
+  /**
+   * Where to go to act on the problem. A cause names a créneau and stands, and
+   * the answer is almost always to edit one of them: without the link the user
+   * has to memorise an id and go hunting for it in another screen.
+   */
+  liens: LienProbleme[];
+}
+
+/** A route the problem can be acted upon from. */
+export interface LienProbleme {
+  route: string;
+  libelle: string;
 }
 
 export interface ComptageProblemes {
@@ -73,6 +85,22 @@ export function typeCauseLabel(): string {
 }
 
 /** Créneau and stands named by a cause, as printable lines. */
+/** Screens a feasibility cause can be acted upon from, in the order one would try them. */
+export function liensDeCause(cause: CauseInfaisabilite): LienProbleme[] {
+  const liens: LienProbleme[] = [];
+  if (cause.creneauId !== null && cause.creneauId !== undefined) {
+    liens.push({ route: '/creneaux', libelle: $localize`:@@problemes.lien.creneaux:Voir les créneaux` });
+  }
+  if (cause.standIds.length > 0) {
+    liens.push({ route: '/stands', libelle: $localize`:@@problemes.lien.stands:Voir les stands` });
+    liens.push({ route: '/ouvertures', libelle: $localize`:@@problemes.lien.ouvertures:Vérifier les ouvertures` });
+  }
+  if (cause.manque > 0) {
+    liens.push({ route: '/staffing', libelle: $localize`:@@problemes.lien.staffing:Besoin en animateurs` });
+  }
+  return liens;
+}
+
 export function detailsDeCause(cause: CauseInfaisabilite): string[] {
   const details: string[] = [];
   if (cause.creneauId !== null && cause.creneauId !== undefined) {
@@ -118,7 +146,8 @@ export function construireProblemes(
       source: 'FAISABILITE',
       titre: typeCauseLabel(),
       message: cause.message,
-      details: detailsDeCause(cause)
+      details: detailsDeCause(cause),
+      liens: liensDeCause(cause)
     });
   });
 
@@ -135,7 +164,10 @@ export function construireProblemes(
         details:
           contrainte.violations.length > 0
             ? contrainte.violations
-            : [$localize`:@@problemes.detail.matches:${matchCount}:count: correspondance(s) sur la dernière analyse.`]
+            : [$localize`:@@problemes.detail.matches:${matchCount}:count: correspondance(s) sur la dernière analyse.`],
+        // A violated rule is acted upon on the constraints screen: that is where
+        // its weight is explained and where it can be relaxed.
+        liens: [{ route: '/constraints', libelle: $localize`:@@problemes.lien.contraintes:Voir la règle` }]
       });
     });
 

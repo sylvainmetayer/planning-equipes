@@ -65,9 +65,13 @@
     } @else if (!hasData() && loaded()) {
       <p class="calendar-empty" i18n="@@calendarMonth.noData">Aucune donnée de planning disponible pour le moment.</p>
     } @else {
-      <div class="calendar-grid" role="grid" i18n-aria-label="@@calendarMonth.gridLabel" aria-label="Calendrier mensuel des affectations">
-        @for (cell of cells(); track cell.dateKey) {
+      <div class="calendar-grid" role="group" i18n-aria-label="@@calendarMonth.gridLabel" aria-label="Calendrier mensuel des affectations"
+           (keydown)="naviguerJours($event)">
+        @for (cell of cells(); track cell.dateKey; let indexJour = $index) {
           <button type="button" class="calendar-day-cell"
+                  [attr.data-jour]="indexJour"
+                  [tabindex]="indexJour === indexJourCourant() ? 0 : -1"
+                  (focus)="indexJourCourant.set(indexJour)"
                   [class.is-other-month]="cell.otherMonth"
                   [class.is-today]="cell.today"
                   [class.is-selected]="cell.dateKey === effectiveDateKey()"
@@ -94,7 +98,7 @@
             </div>
             <div class="calendar-day-meta">
               <span>{{ creneauCountLabel(cell.count) }}</span>
-              <span class="calendar-dot" [class.has-events]="cell.count > 0"></span>
+              <span class="calendar-dot" aria-hidden="true" [class.has-events]="cell.count > 0"></span>
             </div>
           </button>
         }

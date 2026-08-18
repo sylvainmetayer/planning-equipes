@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
@@ -72,7 +74,15 @@ interface DayCard {
  */
 @Component({
   selector: 'app-calendar-day-page',
-  imports: [MatCardModule, MatButtonModule, MatIconModule, MatProgressBarModule, MatTooltipModule],
+  imports: [
+    FormsModule,
+    MatCardModule,
+    MatButtonModule,
+    MatCheckboxModule,
+    MatIconModule,
+    MatProgressBarModule,
+    MatTooltipModule
+  ],
   templateUrl: './calendar-day-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -90,7 +100,36 @@ export class CalendarDayPage {
   private readonly planningState = inject(PlanningStateService);
   private readonly dialog = inject(MatDialog);
 
-  protected readonly days = computed<DayCard[]>(() => buildDays(this.planning()?.postes ?? []));
+  /**
+   * Narrows the day cards to the stand lines that need attention. A festival
+   * day holds dozens of lines of which two are wrong; scrolling all of them to
+   * find those two is the actual daily task this screen exists for.
+   */
+  protected readonly seulementProblemes = signal(false);
+
+  private readonly toutesLesJournees = computed<DayCard[]>(() => buildDays(this.planning()?.postes ?? []));
+
+  protected readonly days = computed<DayCard[]>(() => {
+    if (!this.seulementProblemes()) {
+      return this.toutesLesJournees();
+    }
+    return this.toutesLesJournees()
+      .map((day) => ({
+        ...day,
+        slots: day.slots
+          .map((slot) => ({
+            ...slot,
+            stands: slot.stands.filter(
+              (stand) =>
+                this.isUnderstaffed(stand) ||
+                this.hasAppreciationMismatch(stand) ||
+                stand.entries.length === 0
+            )
+          }))
+          .filter((slot) => slot.stands.length > 0)
+      }))
+      .filter((day) => day.slots.length > 0);
+  });
 
   constructor() {
     void this.refresh();

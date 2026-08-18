@@ -327,3 +327,53 @@ form.form-grid {
   padding: 0;
   margin-bottom: 0.5rem;
 }
+
+/* Hours: a week beyond a legal ceiling must not look like any other number.
+   Colour is doubled by an icon and a title, so the marking survives a
+   colour-blind reader and a monochrome print (WCAG 1.4.1). */
+.hours-depassement {
+  color: var(--mat-sys-error);
+  font-weight: 600;
+}
+
+.hours-verifier {
+  color: var(--mat-sys-tertiary);
+}
+
+.hours-alerte-icon {
+  margin-left: 0.15rem;
+}
+
+/* Digits line up column by column: comparing hours is the whole point here. */
+.hours-total-row td,
+table td.hours-depassement,
+table td.hours-verifier {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Problèmes: each problem names the screen where it can be acted upon, so the
+   user does not have to memorise an id and go hunting for it. */
+.probleme-liens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0;
+}
+
+/* Notifications grouped by day: the heading carries the date, the rows only
+   need their time. */
+.notification-jour {
+  font: var(--mat-sys-title-small);
+  color: var(--mat-sys-on-surface-variant);
+  margin: 1rem 0 0.35rem;
+  text-transform: capitalize;
+}
+
+/* Ouvertures grid: the stand name stays put while the fifteen day columns
+   scroll under it — same reasoning as the heatmap. */
+.ouvertures-grille .colonne-stand {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--mat-sys-surface);
+}

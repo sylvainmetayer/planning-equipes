@@ -13,6 +13,8 @@ import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';
 import { FeasibilityBanner } from '../../shared/feasibility-banner';
+import { SelectionRecherche } from '../../shared/selection-recherche';
+import { StatusMessage } from '../../shared/status-message';
 
 /**
  * "What if?" screen (issue #73): recruit three more, three cancel, close the
@@ -36,7 +38,9 @@ import { FeasibilityBanner } from '../../shared/feasibility-banner';
     MatInputModule,
     MatProgressBarModule,
     MatSelectModule,
-    FeasibilityBanner
+    FeasibilityBanner,
+    SelectionRecherche,
+    StatusMessage
   ],
   templateUrl: './what-if-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -62,6 +66,34 @@ export class WhatIfPage {
 
   private readonly api = inject(ApiService);
   private readonly solverSettings = inject(SolverSettingsService);
+
+  protected readonly optionsAnimateurs = computed(() =>
+    this.store.animateurs().map((animateur) => ({
+      id: animateur.id,
+      label: `${animateur.prenom} ${animateur.nom}`.trim() || animateur.id
+    }))
+  );
+
+  protected readonly optionsStands = computed(() =>
+    this.store.stands().map((stand) => ({ id: stand.id, label: stand.nom || stand.id }))
+  );
+
+  /** Spoken summary of the variant: the verdict is what the user came for. */
+  protected readonly resumeSimulation = computed(() => {
+    const resultat = this.resultat();
+    if (!resultat) {
+      return '';
+    }
+    return resultat.simulation.feasible
+      ? $localize`:@@whatIf.resume.feasible:Variante réalisable : ${resultat.animateurs}:animateurs: animateurs pour ${resultat.standsOuverts}:stands: stands ouverts.`
+      : $localize`:@@whatIf.resume.infeasible:Variante non réalisable : ${resultat.simulation.manqueAnimateurs}:manque: animateur(s) manquant(s) au pire créneau.`;
+  });
+
+  protected readonly messageScore = computed(() =>
+    this.scoreSimule()
+      ? $localize`:@@whatIf.solve.scoreMessage:Score de la variante : ${this.scoreSimule()}:score:`
+      : ''
+  );
 
   protected readonly deltaAnimateurs = computed(() => {
     const resultat = this.resultat();

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { RouterLink } from '@angular/router';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
@@ -19,7 +20,8 @@ import { SolverJobService } from '../../core/solver-job.service';
  */
 @Component({
   selector: 'app-problemes-page',
-  imports: [MatCardModule, MatButtonModule, MatIconModule, MatChipsModule, MatProgressBarModule],
+  imports: [
+    RouterLink,MatCardModule, MatButtonModule, MatIconModule, MatChipsModule, MatProgressBarModule],
   templateUrl: './problemes-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })

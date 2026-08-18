@@ -15,6 +15,21 @@
         Affectations enregistrées en base : <strong>{{ persistedCount() }}</strong>
       </span>
     </div>
+    <mat-checkbox class="calendar-filtre" [ngModel]="seulementProblemes()"
+                  (ngModelChange)="seulementProblemes.set($event)"
+                  i18n="@@calendarDay.filter.problemes">Afficher seulement les lignes à problème</mat-checkbox>
+
+    <ul class="calendar-legende">
+      <li><mat-icon inline class="understaffed-icon" aria-hidden="true">warning</mat-icon>
+        <span i18n="@@calendarDay.legend.understaffed">Sous-effectif : moins d'animateurs que de sièges générés</span></li>
+      <li><mat-icon inline class="couverture-pause-icon" aria-hidden="true">restaurant</mat-icon>
+        <span i18n="@@calendarDay.legend.couverturePause">Couverture de pause : demi-effectif voulu, pas un manque</span></li>
+      <li><mat-icon inline class="appreciation-mismatch-icon" aria-hidden="true">psychology</mat-icon>
+        <span i18n="@@calendarDay.legend.appreciation">L'appréciation de l'animateur ne couvre aucune typologie du stand</span></li>
+      <li><mat-icon inline class="verrouille-icon" aria-hidden="true">lock</mat-icon>
+        <span i18n="@@calendarDay.legend.verrouille">Ligne figée par un verrouillage</span></li>
+    </ul>
+
     @if (loading()) {
       <mat-progress-bar mode="indeterminate" />
     }

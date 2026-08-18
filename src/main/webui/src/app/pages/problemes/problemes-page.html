@@ -59,6 +59,13 @@
         <strong>{{ probleme.titre }}</strong>
       </div>
       <p class="probleme-message">{{ probleme.message }}</p>
+      @if (probleme.liens.length > 0) {
+        <p class="probleme-liens">
+          @for (lien of probleme.liens; track lien.route) {
+            <a matButton [routerLink]="lien.route">{{ lien.libelle }}</a>
+          }
+        </p>
+      }
       @if (probleme.details.length > 0) {
         <ul class="probleme-details">
           <!-- Static list per problem, and two violation lines can be identical: index is the safe key. -->

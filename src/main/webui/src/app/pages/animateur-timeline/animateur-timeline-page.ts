@@ -13,6 +13,7 @@ import { NotificationService } from '../../core/notification.service';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { Animateur, PlanningFestival, PosteAffectation, TypologieItem } from '../../core/models';
 import { standTypologies, typologieColorClass, typologieLabel, typologieLabels, typologiePrincipale } from '../../core/typologie-colors';
+import { SelectionRecherche } from '../../shared/selection-recherche';
 
 export interface AnimateurOption {
   id: string;
@@ -96,7 +97,8 @@ export interface TimelineDay {
     MatSelectModule,
     MatIconModule,
     MatProgressBarModule,
-    MatTooltipModule
+    MatTooltipModule,
+    SelectionRecherche
   ],
   templateUrl: './animateur-timeline-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -179,6 +181,16 @@ export class AnimateurTimelinePage {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  /** Bridges the picker's id list with the page's single selected id. */
+  protected readonly animateurSelection = computed(() => {
+    const id = this.selectedAnimateurId();
+    return id ? [id] : [];
+  });
+
+  protected onAnimateurSelection(ids: string[]): void {
+    this.selectAnimateur(ids[0] ?? '');
   }
 
   protected selectAnimateur(animateurId: string): void {

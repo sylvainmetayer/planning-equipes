@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, effect, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
@@ -354,6 +354,47 @@ export class CalendarMonthPage {
   protected selectStand(value: string): void {
     this.standFilter.set(value);
     this.selectedDateKey.set(null);
+  }
+
+  /**
+   * Day the grid hands the focus to (roving tabindex). A month is 35 buttons:
+   * without arrow keys, reaching the 28th costs 28 tabs, and the same again to
+   * get back out.
+   */
+  protected readonly indexJourCourant = signal(0);
+
+  private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  protected naviguerJours(event: KeyboardEvent): void {
+    const total = this.cells().length;
+    const courant = this.indexJourCourant();
+    let cible: number | null = null;
+    switch (event.key) {
+      case 'ArrowRight':
+        cible = Math.min(courant + 1, total - 1);
+        break;
+      case 'ArrowLeft':
+        cible = Math.max(courant - 1, 0);
+        break;
+      // A week is seven columns, so a vertical move is a seven-day jump.
+      case 'ArrowDown':
+        cible = Math.min(courant + 7, total - 1);
+        break;
+      case 'ArrowUp':
+        cible = Math.max(courant - 7, 0);
+        break;
+      case 'Home':
+        cible = courant - (courant % 7);
+        break;
+      case 'End':
+        cible = Math.min(courant - (courant % 7) + 6, total - 1);
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
+    this.indexJourCourant.set(cible);
+    this.hote.nativeElement.querySelector<HTMLElement>(`[data-jour="${cible}"]`)?.focus();
   }
 
   protected selectDay(cell: MonthCell): void {

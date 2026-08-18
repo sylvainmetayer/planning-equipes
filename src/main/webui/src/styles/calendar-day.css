@@ -119,3 +119,27 @@
 .verrouille-icon {
   color: var(--mat-sys-on-surface-variant);
 }
+
+/* Legend for the four status icons a stand line can carry. They were only
+   explained by a tooltip, which does not exist on touch. */
+.calendar-legende {
+  list-style: none;
+  margin: 0.5rem 0 0.75rem;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.5rem;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.calendar-legende li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.calendar-filtre {
+  display: block;
+  margin-top: 0.5rem;
+}

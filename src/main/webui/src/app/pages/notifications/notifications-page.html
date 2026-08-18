@@ -20,8 +20,10 @@
     @if (notifications.notifications().length === 0) {
       <p class="empty-hint" i18n="@@notifications.empty">Aucune notification pour le moment.</p>
     } @else {
+      @for (journee of journees(); track journee.cle) {
+      <h2 class="notification-jour">{{ journee.libelle }}</h2>
       <div class="notification-list">
-        @for (notification of notifications.notifications(); track notification.id) {
+        @for (notification of journee.notifications; track notification.id) {
           <div
             class="notification-item notification-item-{{ notification.severity }}"
             [class.notification-item-unread]="!notification.read"
@@ -38,10 +40,11 @@
                 <span class="notification-message">{{ notification.message }}</span>
               }
             </div>
-            <span class="notification-timestamp">{{ formattedTimestamp(notification.timestamp) }}</span>
+            <span class="notification-timestamp">{{ formattedTime(notification.timestamp) }}</span>
           </div>
         }
       </div>
+      }
     }
   </mat-card-content>
 </mat-card>

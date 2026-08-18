@@ -49,12 +49,21 @@
   color: var(--mat-sys-on-surface-variant);
 }
 
-/* Small round swatch used in legends and in the heatmap row headers. */
+/*
+ * Small round swatch used in legends and in the heatmap row headers. It carries
+ * the typologie's initial as well as its hue: colour alone is not information
+ * (WCAG 1.4.1), and the letter also survives a monochrome print of the grid.
+ */
 .typologie-dot {
-  display: inline-block;
-  width: 0.7rem;
-  height: 0.7rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
   border-radius: 50%;
   border: 1px solid var(--mat-sys-outline-variant);
   flex: none;
+  font-size: 0.6rem;
+  font-weight: 600;
+  line-height: 1;
 }

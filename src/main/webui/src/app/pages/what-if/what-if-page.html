@@ -23,23 +23,27 @@
         >
       </mat-form-field>
 
-      <mat-form-field appearance="outline">
-        <mat-label i18n="@@whatIf.field.animateursRetires">Animateurs indisponibles</mat-label>
-        <mat-select multiple [ngModel]="animateursRetires()" (ngModelChange)="animateursRetires.set($event); simuler()">
-          @for (animateur of store.animateurs(); track animateur.id) {
-            <mat-option [value]="animateur.id">{{ animateur.prenom }} {{ animateur.nom }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
+      <app-selection-recherche
+        [multiple]="true"
+        i18n-label="@@whatIf.field.animateursRetires"
+        label="Animateurs indisponibles"
+        i18n-placeholder="@@whatIf.field.animateursRetires.placeholder"
+        placeholder="Tapez un nom"
+        [options]="optionsAnimateurs()"
+        [valeurs]="animateursRetires()"
+        (valeursChange)="animateursRetires.set($event); simuler()"
+      />
 
-      <mat-form-field appearance="outline">
-        <mat-label i18n="@@whatIf.field.standsFermes">Stands fermés</mat-label>
-        <mat-select multiple [ngModel]="standsFermes()" (ngModelChange)="standsFermes.set($event); simuler()">
-          @for (stand of store.stands(); track stand.id) {
-            <mat-option [value]="stand.id">{{ stand.nom || stand.id }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
+      <app-selection-recherche
+        [multiple]="true"
+        i18n-label="@@whatIf.field.standsFermes"
+        label="Stands fermés"
+        i18n-placeholder="@@whatIf.field.standsFermes.placeholder"
+        placeholder="Tapez un nom de stand"
+        [options]="optionsStands()"
+        [valeurs]="standsFermes()"
+        (valeursChange)="standsFermes.set($event); simuler()"
+      />
 
       <mat-form-field appearance="outline">
         <mat-label i18n="@@whatIf.field.standCible">Stand dont l'effectif change</mat-label>
@@ -57,11 +61,13 @@
           matInput
           type="number"
           min="1"
-          [disabled]="!standCible()"
           [ngModel]="effectifCible()"
           (ngModelChange)="effectifCible.set($event)"
           (change)="simuler()"
         />
+        @if (!standCible()) {
+          <mat-hint i18n="@@whatIf.hint.effectifCible">Choisissez d'abord le stand dont l'effectif doit changer.</mat-hint>
+        }
       </mat-form-field>
     </div>
 
@@ -75,9 +81,8 @@
     @if (chargement()) {
       <mat-progress-bar mode="indeterminate" />
     }
-    @if (error()) {
-      <p class="snapshot-error">{{ error() }}</p>
-    }
+    <app-status-message [text]="error()" tone="error" />
+    <app-status-message [text]="resumeSimulation()" tone="info" />
   </mat-card-content>
 </mat-card>
 
@@ -104,13 +109,13 @@
       </ul>
 
       @if (ameliore()) {
-        <p class="snapshot-message" i18n="@@whatIf.result.improves">
-          Cette variante rend le planning réalisable, alors que les données actuelles ne le sont pas.
-        </p>
+        <app-status-message tone="success"
+          i18n-text="@@whatIf.result.improves"
+          text="Cette variante rend le planning réalisable, alors que les données actuelles ne le sont pas." />
       } @else if (degrade()) {
-        <p class="snapshot-error" i18n="@@whatIf.result.degrades">
-          Cette variante rend le planning infaisable, alors que les données actuelles sont réalisables.
-        </p>
+        <app-status-message tone="error"
+          i18n-text="@@whatIf.result.degrades"
+          text="Cette variante rend le planning infaisable, alors que les données actuelles sont réalisables." />
       }
 
       <h3 i18n="@@whatIf.result.simulation">Variante simulée</h3>
@@ -159,11 +164,7 @@
       @if (solveEnCours()) {
         <mat-progress-bar mode="indeterminate" />
       }
-      @if (scoreSimule()) {
-        <p class="snapshot-message">
-          <span i18n="@@whatIf.solve.score">Score de la variante</span> : <strong>{{ scoreSimule() }}</strong>
-        </p>
-      }
+      <app-status-message [text]="messageScore()" tone="success" />
     </mat-card-content>
   </mat-card>
 }

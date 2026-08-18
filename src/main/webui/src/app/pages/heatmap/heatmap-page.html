@@ -25,6 +25,11 @@
       </mat-form-field>
     }
 
+    <p class="empty-hint" i18n="@@heatmap.keyboardHint">
+      Dans la grille : les flèches déplacent la sélection, Origine et Fin vont au début et à la fin de la ligne.
+      Chaque cellule annonce le détail de sa journée.
+    </p>
+
     <div class="heatmap-legend">
       @if (view() === 'stand') {
         <span class="heatmap-legend-item"><span class="heatmap-swatch heatmap-cell-critical"></span><ng-container i18n="@@heatmap.legend.gap">Trou (aucun poste pourvu)</ng-container></span>
@@ -54,7 +59,7 @@
         <p class="empty-hint" i18n="@@heatmap.empty">Aucune donnée de planning disponible pour le moment. Lancez une résolution depuis la page Solveur.</p>
       } @else {
         <div class="table-wrapper">
-          <table class="heatmap-table">
+          <table class="heatmap-table" role="grid">
             <caption class="visually-hidden" i18n="@@heatmap.table.caption">Charge par jour : une ligne par stand ou par animateur, une colonne par journée du festival</caption>
             <thead>
               <tr>
@@ -65,7 +70,7 @@
               </tr>
             </thead>
             <tbody>
-              @for (row of activeTable().rows; track row.id) {
+              @for (row of activeTable().rows; track row.id; let indexLigne = $index) {
                 <tr>
                   <th
                     class="heatmap-row-header"
@@ -77,18 +82,24 @@
                     @if (row.typologies.length > 0) {
                       <span class="heatmap-typologie-dots">
                         @for (typologie of row.typologies; track typologie.id) {
-                          <span class="typologie-dot" [class]="typologie.colorClass" [matTooltip]="typologie.label"></span>
+                          <span class="typologie-dot" [class]="typologie.colorClass" [matTooltip]="typologie.label"
+                                [attr.aria-label]="typologie.label">{{ typologie.initiale }}</span>
                         }
                       </span>
                     }
                   </th>
-                  @for (cell of row.cells; track cell.jour) {
+                  @for (cell of row.cells; track cell.jour; let indexColonne = $index) {
                     <td
                       class="heatmap-cell"
                       [class.heatmap-cell-none]="cell.level === 'none'"
                       [class.heatmap-cell-ok]="cell.level === 'ok'"
                       [class.heatmap-cell-warning]="cell.level === 'warning'"
                       [class.heatmap-cell-critical]="cell.level === 'critical'"
+                      [attr.data-ligne]="indexLigne"
+                      [attr.data-colonne]="indexColonne"
+                      [tabindex]="estCelluleCourante(indexLigne, indexColonne) ? 0 : -1"
+                      (focus)="celluleCourante.set({ ligne: indexLigne, colonne: indexColonne })"
+                      (keydown)="naviguer($event, indexLigne, indexColonne)"
                       [matTooltip]="cell.tooltip"
                       [attr.aria-label]="cell.tooltip"
                     >{{ cell.label }}</td>

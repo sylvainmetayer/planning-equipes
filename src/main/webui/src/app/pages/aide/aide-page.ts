@@ -7,6 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { RouterLink } from '@angular/router';
 import { buildHelpSections, filterHelpSections } from './aide-content';
+import { StatusMessage } from '../../shared/status-message';
 
 /**
  * In-app user guide: what each screen is for, how the solver is configured,
@@ -26,7 +27,8 @@ import { buildHelpSections, filterHelpSections } from './aide-content';
     MatCardModule,
     MatIconModule,
     MatFormFieldModule,
-    MatInputModule
+    MatInputModule,
+    StatusMessage
   ],
   templateUrl: './aide-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -46,6 +48,23 @@ export class AidePage {
    * the element that actually scrolls here, not the document.
    */
   protected scrollToSection(id: string): void {
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const section = document.getElementById(id);
+    section?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Scrolling moves the view, not the caret: a keyboard user stayed in the
+    // summary and a screen reader kept reading where it was. `tabindex="-1"`
+    // on the section makes it focusable by script only, so the focus follows
+    // the eye without adding a tab stop.
+    section?.focus({ preventScroll: true });
   }
+
+  /** Announces what the search found, instead of silently shrinking the list. */
+  protected readonly resumeRecherche = computed(() => {
+    if (!this.query().trim()) {
+      return '';
+    }
+    const trouvees = this.visibleSections().length;
+    return trouvees === 0
+      ? $localize`:@@aide.search.none:Aucune section ne correspond à cette recherche.`
+      : $localize`:@@aide.search.count:${trouvees}:count: section(s) correspondent à cette recherche.`;
+  });
 }

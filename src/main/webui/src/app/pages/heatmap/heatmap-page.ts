@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
@@ -35,6 +35,12 @@ export interface HeatmapTypologieBadge {
   id: string;
   label: string;
   colorClass: string;
+  /**
+   * First letter of the label, drawn inside the dot. Colour alone carried the
+   * meaning until then: unusable for a colour-blind reader, and invisible to a
+   * screen reader (WCAG 1.4.1).
+   */
+  initiale: string;
 }
 
 export interface HeatmapRow {
@@ -108,6 +114,53 @@ export class HeatmapPage {
   protected readonly activeTable = computed<HeatmapTable>(() =>
     this.view() === 'stand' ? this.standTable() : this.animateurTable()
   );
+
+  /**
+   * The cell the grid hands the focus to (roving tabindex): one stop for the
+   * whole table on Tab, then the arrows move inside it. Every cell already
+   * carried a rich `aria-label`; nothing could reach it without a mouse.
+   */
+  protected readonly celluleCourante = signal({ ligne: 0, colonne: 0 });
+
+  protected estCelluleCourante(ligne: number, colonne: number): boolean {
+    const courante = this.celluleCourante();
+    return courante.ligne === ligne && courante.colonne === colonne;
+  }
+
+  protected naviguer(event: KeyboardEvent, ligne: number, colonne: number): void {
+    const table = this.activeTable();
+    const derniereLigne = table.rows.length - 1;
+    const derniereColonne = (table.rows[ligne]?.cells.length ?? 1) - 1;
+    let cible: { ligne: number; colonne: number } | null = null;
+    switch (event.key) {
+      case 'ArrowRight':
+        cible = { ligne, colonne: Math.min(colonne + 1, derniereColonne) };
+        break;
+      case 'ArrowLeft':
+        cible = { ligne, colonne: Math.max(colonne - 1, 0) };
+        break;
+      case 'ArrowDown':
+        cible = { ligne: Math.min(ligne + 1, derniereLigne), colonne };
+        break;
+      case 'ArrowUp':
+        cible = { ligne: Math.max(ligne - 1, 0), colonne };
+        break;
+      case 'Home':
+        cible = { ligne, colonne: 0 };
+        break;
+      case 'End':
+        cible = { ligne, colonne: derniereColonne };
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
+    this.celluleCourante.set(cible);
+    const selecteur = `[data-ligne="${cible.ligne}"][data-colonne="${cible.colonne}"]`;
+    this.hote.nativeElement.querySelector<HTMLElement>(selecteur)?.focus();
+  }
+
+  private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef);
 
   constructor() {
     void this.refresh();
@@ -258,7 +311,10 @@ export function buildAnimateurHeatmap(postes: PosteAffectation[], labels: Map<st
 /** Distinct typologies of an animateur's stands, sorted by label, with their colour. */
 function buildTypologieBadges(typologies: Set<string> | undefined, labels: Map<string, string>): HeatmapTypologieBadge[] {
   return Array.from(typologies ?? [])
-    .map((id) => ({ id, label: typologieLabel(labels, id), colorClass: typologieColorClass(id) }))
+    .map((id) => {
+      const label = typologieLabel(labels, id);
+      return { id, label, colorClass: typologieColorClass(id), initiale: label.slice(0, 1).toLocaleUpperCase() };
+    })
     .sort((left, right) => left.label.localeCompare(right.label));
 }
 
