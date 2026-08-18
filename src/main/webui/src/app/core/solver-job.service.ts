@@ -12,7 +12,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { ApiService, toError } from './api.service';
 import { NotificationService } from './notification.service';
-import { JobType, JobView, PlanningDiagnostic, PlanningFestival } from './models';
+import { JobType, JobView, MutationsWhatIf, PlanningDiagnostic, PlanningFestival } from './models';
 
 const POLL_INTERVAL_MS = 2000;
 
@@ -178,6 +178,16 @@ export class SolverJobService {
   /** Server-side-built counterpart of {@link submitAnalyze}. */
   submitAnalyzeFromReferenceData(seconds?: number): Promise<JobView> {
     return this.submit('/api/solve/analyze/async/reference-data', {}, 'ANALYZE', seconds);
+  }
+
+  /**
+   * Analyzes a what-if variant (issue #73): the server applies the mutations to
+   * in-memory copies of the reference data and analyzes the result. Nothing is
+   * written — an ANALYZE job never persists a plan, and the variant lives in
+   * the request.
+   */
+  submitWhatIfAnalyze(mutations: MutationsWhatIf, seconds?: number): Promise<JobView> {
+    return this.submit('/api/what-if/analyze', mutations, 'ANALYZE', seconds);
   }
 
   /**

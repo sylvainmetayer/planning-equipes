@@ -1,0 +1,169 @@
+<mat-card appearance="outlined">
+  <mat-card-header>
+    <mat-card-title i18n="@@whatIf.title">Simulation « et si ? »</mat-card-title>
+    <mat-card-subtitle i18n="@@whatIf.subtitle">
+      Trois désistements, un recrutement de dernière minute, un stand fermé par la météo : mesurez l'impact sans
+      toucher aux données. Rien n'est enregistré — cet écran ne sait que lire.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <div class="form-grid">
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@whatIf.field.animateursAjoutes">Animateurs supplémentaires</mat-label>
+        <input
+          matInput
+          type="number"
+          min="0"
+          [ngModel]="animateursAjoutes()"
+          (ngModelChange)="animateursAjoutes.set($event || 0)"
+          (change)="simuler()"
+        />
+        <mat-hint i18n="@@whatIf.hint.animateursAjoutes"
+          >Hypothèse optimiste : polyvalents, majeurs, toujours disponibles.</mat-hint
+        >
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@whatIf.field.animateursRetires">Animateurs indisponibles</mat-label>
+        <mat-select multiple [ngModel]="animateursRetires()" (ngModelChange)="animateursRetires.set($event); simuler()">
+          @for (animateur of store.animateurs(); track animateur.id) {
+            <mat-option [value]="animateur.id">{{ animateur.prenom }} {{ animateur.nom }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@whatIf.field.standsFermes">Stands fermés</mat-label>
+        <mat-select multiple [ngModel]="standsFermes()" (ngModelChange)="standsFermes.set($event); simuler()">
+          @for (stand of store.stands(); track stand.id) {
+            <mat-option [value]="stand.id">{{ stand.nom || stand.id }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@whatIf.field.standCible">Stand dont l'effectif change</mat-label>
+        <mat-select [ngModel]="standCible()" (ngModelChange)="standCible.set($event); simuler()">
+          <mat-option [value]="null" i18n="@@whatIf.field.aucunStand">Aucun</mat-option>
+          @for (stand of store.stands(); track stand.id) {
+            <mat-option [value]="stand.id">{{ stand.nom || stand.id }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@whatIf.field.effectifCible">Effectif requis simulé</mat-label>
+        <input
+          matInput
+          type="number"
+          min="1"
+          [disabled]="!standCible()"
+          [ngModel]="effectifCible()"
+          (ngModelChange)="effectifCible.set($event)"
+          (change)="simuler()"
+        />
+      </mat-form-field>
+    </div>
+
+    <div class="form-actions">
+      <button matButton type="button" (click)="reinitialiser()">
+        <mat-icon>restart_alt</mat-icon>
+        <ng-container i18n="@@whatIf.reset">Réinitialiser</ng-container>
+      </button>
+    </div>
+
+    @if (chargement()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    @if (error()) {
+      <p class="snapshot-error">{{ error() }}</p>
+    }
+  </mat-card-content>
+</mat-card>
+
+@if (resultat(); as resultat) {
+  <mat-card appearance="outlined" class="page-card">
+    <mat-card-header>
+      <mat-card-title i18n="@@whatIf.result.title">Impact</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <ul class="what-if-deltas">
+        <li>
+          <span i18n="@@whatIf.result.animateurs">Animateurs</span> :
+          <strong>{{ resultat.animateurs }}</strong>
+          <span class="what-if-delta">({{ deltaAnimateurs() >= 0 ? '+' : '' }}{{ deltaAnimateurs() }})</span>
+        </li>
+        <li>
+          <span i18n="@@whatIf.result.stands">Stands ouverts</span> :
+          <strong>{{ resultat.standsOuverts }}</strong>
+          <span class="what-if-delta">({{ deltaStands() >= 0 ? '+' : '' }}{{ deltaStands() }})</span>
+        </li>
+        <li>
+          <span i18n="@@whatIf.result.creneaux">Créneaux évalués</span> : <strong>{{ resultat.creneaux }}</strong>
+        </li>
+      </ul>
+
+      @if (ameliore()) {
+        <p class="snapshot-message" i18n="@@whatIf.result.improves">
+          Cette variante rend le planning réalisable, alors que les données actuelles ne le sont pas.
+        </p>
+      } @else if (degrade()) {
+        <p class="snapshot-error" i18n="@@whatIf.result.degrades">
+          Cette variante rend le planning infaisable, alors que les données actuelles sont réalisables.
+        </p>
+      }
+
+      <h3 i18n="@@whatIf.result.simulation">Variante simulée</h3>
+      <app-feasibility-banner [report]="resultat.simulation" />
+      @if (resultat.simulation.feasible) {
+        <p class="empty-hint">{{ resultat.simulation.message }}</p>
+      }
+
+      <h3 i18n="@@whatIf.result.reference">Données actuelles, pour comparaison</h3>
+      <app-feasibility-banner [report]="resultat.reference" />
+      @if (resultat.reference.feasible) {
+        <p class="empty-hint">{{ resultat.reference.message }}</p>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card appearance="outlined" class="page-card">
+    <mat-card-header>
+      <mat-card-title i18n="@@whatIf.solve.title">Score approché (résolution courte)</mat-card-title>
+      <mat-card-subtitle i18n="@@whatIf.solve.subtitle">
+        Le contrôle ci-dessus est une estimation de capacité, sans résolution. Pour un score comparable, lancez une
+        résolution courte sur la variante : elle ne remplace pas une vraie résolution ({{ dureeReelle() }} s) et
+        n'enregistre rien.
+      </mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <mat-form-field appearance="outline" class="solver-duration">
+        <mat-label i18n="@@whatIf.solve.seconds">Durée allouée (s)</mat-label>
+        <input
+          matInput
+          type="number"
+          min="5"
+          [ngModel]="secondesSolve()"
+          (ngModelChange)="secondesSolve.set($event || 30)"
+        />
+      </mat-form-field>
+      <button
+        matButton="filled"
+        type="button"
+        [disabled]="solveEnCours() || jobs.solverBusy()"
+        (click)="analyser()"
+      >
+        <mat-icon>speed</mat-icon>
+        <ng-container i18n="@@whatIf.solve.run">Analyser la variante</ng-container>
+      </button>
+      @if (solveEnCours()) {
+        <mat-progress-bar mode="indeterminate" />
+      }
+      @if (scoreSimule()) {
+        <p class="snapshot-message">
+          <span i18n="@@whatIf.solve.score">Score de la variante</span> : <strong>{{ scoreSimule() }}</strong>
+        </p>
+      }
+    </mat-card-content>
+  </mat-card>
+}

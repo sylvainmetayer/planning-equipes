@@ -170,7 +170,7 @@ public class SolverJobResource {
             String error,
             Object result) {
 
-        static JobView withoutResult(SolverJob job) {
+        public static JobView withoutResult(SolverJob job) {
             return build(job, null);
         }
 

@@ -252,3 +252,20 @@ form.form-grid {
 .snapshot-auto-chip {
   margin-left: 0.5rem;
 }
+
+/* What-if screen (issue #73): the variant's figures, each with its delta
+   against today's referential — the delta is the point, not the absolute. */
+.what-if-deltas {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  font: var(--mat-sys-body-medium);
+}
+
+.what-if-delta {
+  color: var(--mat-sys-on-surface-variant);
+  margin-left: 0.25rem;
+}

@@ -249,11 +249,24 @@ public class PlanningService {
      * solvable at all (the JSON of such a planning exceeds the HTTP body limit).
      */
     public PlanningFestival construireDepuisReferenceData() {
-        List<Animateur> animateurs = referenceDataService.listAnimateurs();
-        // Resolved: construirePostes below asks each créneau which parts of it a
-        // stand is open for, so the recurring horaires have to be expanded first.
-        List<Stand> stands = referenceDataService.listStandsResolus();
-        List<Creneau> creneaux = referenceDataService.listCreneauxGroupeActif();
+        // Resolved stands: construirePostes asks each créneau which parts of it
+        // a stand is open for, so the recurring horaires have to be expanded
+        // first.
+        return construireDepuisReferenceData(
+                referenceDataService.listAnimateurs(),
+                referenceDataService.listStandsResolus(),
+                referenceDataService.listCreneauxGroupeActif());
+    }
+
+    /**
+     * Same problem, built from lists the caller provides instead of reading the
+     * referential — what {@link WhatIfService} uses to evaluate a variant
+     * (animateurs added or removed, a stand closed) without writing anything.
+     * Everything else still comes from the referential: locks, ad hoc
+     * constraints and legal parameters are not what a simulation varies.
+     */
+    public PlanningFestival construireDepuisReferenceData(List<Animateur> animateurs, List<Stand> stands,
+            List<Creneau> creneaux) {
         if (animateurs.isEmpty() || stands.isEmpty() || creneaux.isEmpty()) {
             throw new IllegalStateException(
                     "Aucune donnée de référence. Chargez un scénario ou créez des stands, "

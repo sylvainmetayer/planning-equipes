@@ -127,6 +127,44 @@ simulation en mémoire, à usage d'aide à la décision uniquement.
 | Méthode | Chemin | Description |
 | --- | --- | --- |
 | `GET` | `/api/feasibility` | Diagnostic d'infaisabilité calculé sur les données de référence actuelles, **sans lancer le solveur** |
+| `POST` | `/api/what-if` | Même diagnostic, sur une **variante** des données de référence, comparé à celui des données actuelles. Rien n'est écrit |
+| `POST` | `/api/what-if/analyze?seconds=n` | Lance un job `ANALYZE` **court** sur cette variante, pour un score comparable. Rien n'est persisté (une analyse ne persiste jamais de plan) ; `409` si le solveur est déjà occupé |
+
+### Simulation « et si ? »
+
+Corps commun aux deux routes — toutes les clés sont facultatives :
+
+```json
+{
+  "animateursAjoutes": 3,
+  "animateursRetires": ["ANIM-12", "ANIM-45"],
+  "standsFermes": ["STAND-EXT"],
+  "effectifsMin": { "STAND-CENTRAL": 4 }
+}
+```
+
+Le serveur applique ces mutations à des **copies en mémoire** des données de
+référence : aucun appel d'écriture, aucune persistance, la variante meurt avec
+la requête. Elle est construite côté serveur et non dans le navigateur pour la
+même raison que les résolutions « depuis les données de référence » : le JSON
+d'un `PlanningFestival` réel dépasse la taille de corps HTTP admise.
+
+Les animateurs ajoutés sont fictifs, majeurs, toujours disponibles et
+polyvalents — hypothèse délibérément **optimiste**, à lire comme telle : un
+recrutement réel, limité à deux typologies, aide moins que celui-là.
+
+`POST /api/what-if` répond avec les deux rapports côte à côte, pour lire un
+écart et pas seulement un verdict :
+
+```json
+{
+  "animateurs": 156, "animateursReference": 153,
+  "standsOuverts": 64, "standsOuvertsReference": 65,
+  "creneaux": 354,
+  "reference": { "feasible": true, "…": "…" },
+  "simulation": { "feasible": false, "…": "…" }
+}
+```
 
 Le diagnostic est un simple calcul de capacité (aucune résolution, réponse
 immédiate) : l'écran de préparation des données peut donc l'afficher avant même
