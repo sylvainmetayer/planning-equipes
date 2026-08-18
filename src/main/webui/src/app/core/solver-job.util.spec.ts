@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { elapsedSeconds, formatDuration, formatScore, type TrackedJob } from './solver-job.service';
-import type { HardMediumSoftScore } from './models';
+import { elapsedSeconds, formatDuration, type TrackedJob } from './solver-job.service';
 
 describe('formatDuration', () => {
   it('shows only seconds under a minute', () => {
@@ -15,17 +14,6 @@ describe('formatDuration', () => {
   it('clamps negative or invalid input to zero', () => {
     expect(formatDuration(-10)).toBe('0s');
     expect(formatDuration(Number.NaN)).toBe('0s');
-  });
-});
-
-describe('formatScore', () => {
-  it('renders the three score levels', () => {
-    const score: HardMediumSoftScore = { hardScore: 0, mediumScore: -219, softScore: -2824 };
-    expect(formatScore(score)).toBe('0hard/-219medium/-2824soft');
-  });
-
-  it('returns n/d when there is no score', () => {
-    expect(formatScore(null)).toBe('n/d');
   });
 });
 

@@ -13,8 +13,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { intlLocale } from '../../core/locale';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { VerrouillageStore } from '../../core/verrouillage.store';
-import { Animateur, PlanningFestival, PosteAffectation, Stand } from '../../core/models';
-import { AffectationExplanationDialog } from '../../shared/affectation-explanation-dialog';
+import { PlanningFestival, PosteAffectation } from '../../core/models';
+import { aUneAppreciationPour, ouvrirExplication } from '../../shared/affectation-explanation-dialog';
 import {
   buildMonthCells,
   getMonthStart,
@@ -428,22 +428,10 @@ export class CalendarMonthPage {
   /** Opens the "Pourquoi lui ?" dialog for one filled seat, offering every other competent animateur as a swap candidate. */
   protected openExplanation(poste: PosteAffectation): void {
     const planning = this.planning();
-    if (!planning) {
-      return;
+    if (planning) {
+      ouvrirExplication(this.dialog, planning, poste);
     }
-    const candidats = (planning.animateurs ?? []).filter(
-      (animateur) =>
-        animateur.id !== poste.animateur?.id && poste.stand && aUneAppreciationPour(animateur, poste.stand)
-    );
-    this.dialog.open(AffectationExplanationDialog, {
-      data: { poste, planning, candidats },
-      width: '32rem'
-    });
   }
-}
-
-function aUneAppreciationPour(animateur: Animateur, stand: Stand): boolean {
-  return stand.typologiesProposees.some((typologie) => typologie in (animateur.competences ?? {}));
 }
 
 /** True for a stand-line with some, but fewer than its generated seats, animateurs actually assigned — fully unassigned (0) is already flagged separately. */

@@ -17,6 +17,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.IntConsumer;
 import java.util.stream.Collectors;
 
 import ai.timefold.solver.core.api.domain.solution.ConstraintWeightOverrides;
@@ -1183,11 +1185,7 @@ public class PlanningService {
      * so the scenario stays fully reproducible on its own.
      */
     public Optional<ParametresLegaux> chargerParametresLegauxScenario(String scenarioName) {
-        try {
-            return parseParametresLegaux(lireDonneesScenario(cheminScenario(scenarioName)));
-        } catch (IOException e) {
-            throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
-        }
+        return chargerSectionScenario(scenarioName, PlanningService::parseParametresLegaux);
     }
 
     /**
@@ -1199,11 +1197,7 @@ public class PlanningService {
      * scenario-import endpoint only.
      */
     public Optional<ParametresDecoupage> chargerParametresDecoupageScenario(String scenarioName) {
-        try {
-            return parseParametresDecoupage(lireDonneesScenario(cheminScenario(scenarioName)));
-        } catch (IOException e) {
-            throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
-        }
+        return chargerSectionScenario(scenarioName, PlanningService::parseParametresDecoupage);
     }
 
     /**
@@ -1216,11 +1210,7 @@ public class PlanningService {
      * {@link #chargerParametresDecoupageScenario}.
      */
     public Optional<ParametresSolveur> chargerParametresSolveurScenario(String scenarioName) {
-        try {
-            return parseParametresSolveur(lireDonneesScenario(cheminScenario(scenarioName)));
-        } catch (IOException e) {
-            throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
-        }
+        return chargerSectionScenario(scenarioName, PlanningService::parseParametresSolveur);
     }
 
     /**
@@ -1232,11 +1222,7 @@ public class PlanningService {
      * {@link DecoupageAutoConfig}.
      */
     public Optional<DecoupageAutoConfig> chargerDecoupageAutoScenario(String scenarioName) {
-        try {
-            return parseDecoupageAuto(lireDonneesScenario(cheminScenario(scenarioName)));
-        } catch (IOException e) {
-            throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
-        }
+        return chargerSectionScenario(scenarioName, PlanningService::parseDecoupageAuto);
     }
 
     /**
@@ -1250,8 +1236,13 @@ public class PlanningService {
      * natural "absent" distinct from "empty".
      */
     public List<ReferenceDataService.TypologieItem> chargerTypologiesScenario(String scenarioName) {
+        return chargerSectionScenario(scenarioName, PlanningService::parseTypologies);
+    }
+
+    /** Loads the scenario's YAML and hands it to one of the {@code parseXxx} section readers. */
+    private <T> T chargerSectionScenario(String scenarioName, Function<Map<String, Object>, T> parseSection) {
         try {
-            return parseTypologies(lireDonneesScenario(cheminScenario(scenarioName)));
+            return parseSection.apply(lireDonneesScenario(cheminScenario(scenarioName)));
         } catch (IOException e) {
             throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
         }
@@ -1264,17 +1255,26 @@ public class PlanningService {
             return Optional.empty();
         }
         ParametresLegaux parametres = new ParametresLegaux();
-        if (data.get("dureeHebdomadaireMaxMinutes") != null) {
-            parametres.setDureeHebdomadaireMaxMinutes(((Number) data.get("dureeHebdomadaireMaxMinutes")).intValue());
-        }
-        if (data.get("pauseMinimaleEntreVacationsMinutes") != null) {
-            parametres.setPauseMinimaleEntreVacationsMinutes(
-                    ((Number) data.get("pauseMinimaleEntreVacationsMinutes")).intValue());
-        }
-        if (data.get("reposQuotidienMinimalMinutes") != null) {
-            parametres.setReposQuotidienMinimalMinutes(((Number) data.get("reposQuotidienMinimalMinutes")).intValue());
-        }
+        lireEntier(data, "dureeHebdomadaireMaxMinutes", parametres::setDureeHebdomadaireMaxMinutes);
+        lireEntier(data, "pauseMinimaleEntreVacationsMinutes", parametres::setPauseMinimaleEntreVacationsMinutes);
+        lireEntier(data, "reposQuotidienMinimalMinutes", parametres::setReposQuotidienMinimalMinutes);
         return Optional.of(parametres);
+    }
+
+    /** Applies the section's integer field to the setter, leaving the target's own default when absent. */
+    private static void lireEntier(Map<String, Object> data, String cle, IntConsumer setter) {
+        Object valeur = data.get(cle);
+        if (valeur != null) {
+            setter.accept(((Number) valeur).intValue());
+        }
+    }
+
+    /** Same as {@link #lireEntier} for an {@code HH:MM:SS} field — see {@link #parseLocalTime(Object)}. */
+    private static void lireHeure(Map<String, Object> data, String cle, Consumer<LocalTime> setter) {
+        Object valeur = data.get(cle);
+        if (valeur != null) {
+            setter.accept(parseLocalTime(valeur));
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -1284,43 +1284,21 @@ public class PlanningService {
             return Optional.empty();
         }
         ParametresDecoupage parametres = new ParametresDecoupage();
-        if (data.get("dureeVacationCibleMinutes") != null) {
-            parametres.setDureeVacationCibleMinutes(((Number) data.get("dureeVacationCibleMinutes")).intValue());
-        }
-        if (data.get("dureeVacationMinMinutes") != null) {
-            parametres.setDureeVacationMinMinutes(((Number) data.get("dureeVacationMinMinutes")).intValue());
-        }
-        if (data.get("dureeVacationMaxMinutes") != null) {
-            parametres.setDureeVacationMaxMinutes(((Number) data.get("dureeVacationMaxMinutes")).intValue());
-        }
-        if (data.get("dureeChevauchementMinutes") != null) {
-            parametres.setDureeChevauchementMinutes(((Number) data.get("dureeChevauchementMinutes")).intValue());
-        }
-        if (data.get("dureePauseRepasMinutes") != null) {
-            parametres.setDureePauseRepasMinutes(((Number) data.get("dureePauseRepasMinutes")).intValue());
-        }
-        if (data.get("fenetreRepasMidiDebut") != null) {
-            parametres.setFenetreRepasMidiDebut(parseLocalTime(data.get("fenetreRepasMidiDebut")));
-        }
-        if (data.get("fenetreRepasMidiFin") != null) {
-            parametres.setFenetreRepasMidiFin(parseLocalTime(data.get("fenetreRepasMidiFin")));
-        }
-        if (data.get("fenetreRepasSoirDebut") != null) {
-            parametres.setFenetreRepasSoirDebut(parseLocalTime(data.get("fenetreRepasSoirDebut")));
-        }
-        if (data.get("fenetreRepasSoirFin") != null) {
-            parametres.setFenetreRepasSoirFin(parseLocalTime(data.get("fenetreRepasSoirFin")));
-        }
+        lireEntier(data, "dureeVacationCibleMinutes", parametres::setDureeVacationCibleMinutes);
+        lireEntier(data, "dureeVacationMinMinutes", parametres::setDureeVacationMinMinutes);
+        lireEntier(data, "dureeVacationMaxMinutes", parametres::setDureeVacationMaxMinutes);
+        lireEntier(data, "dureeChevauchementMinutes", parametres::setDureeChevauchementMinutes);
+        lireEntier(data, "dureePauseRepasMinutes", parametres::setDureePauseRepasMinutes);
+        lireHeure(data, "fenetreRepasMidiDebut", parametres::setFenetreRepasMidiDebut);
+        lireHeure(data, "fenetreRepasMidiFin", parametres::setFenetreRepasMidiFin);
+        lireHeure(data, "fenetreRepasSoirDebut", parametres::setFenetreRepasSoirDebut);
+        lireHeure(data, "fenetreRepasSoirFin", parametres::setFenetreRepasSoirFin);
         if (data.get("strategieCouverturePendantPause") != null) {
             parametres.setStrategieCouverturePendantPause(ParametresDecoupage.StrategieCouverturePendantPause
                     .valueOf((String) data.get("strategieCouverturePendantPause")));
         }
-        if (data.get("nombreFamillesDecalage") != null) {
-            parametres.setNombreFamillesDecalage(((Number) data.get("nombreFamillesDecalage")).intValue());
-        }
-        if (data.get("dureeDecalageMaxMinutes") != null) {
-            parametres.setDureeDecalageMaxMinutes(((Number) data.get("dureeDecalageMaxMinutes")).intValue());
-        }
+        lireEntier(data, "nombreFamillesDecalage", parametres::setNombreFamillesDecalage);
+        lireEntier(data, "dureeDecalageMaxMinutes", parametres::setDureeDecalageMaxMinutes);
         return Optional.of(parametres);
     }
 

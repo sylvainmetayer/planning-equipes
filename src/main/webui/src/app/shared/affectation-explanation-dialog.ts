@@ -8,7 +8,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -21,6 +21,7 @@ import {
   HardMediumSoftScore,
   PlanningFestival,
   PosteAffectation,
+  Stand,
   SwapSimulation
 } from '../core/models';
 
@@ -267,4 +268,25 @@ function compareDelta(delta: HardMediumSoftScore): 'better' | 'worse' | 'same' {
 
 function message(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+/** True when the animateur holds an appreciation on at least one typologie this stand offers. */
+export function aUneAppreciationPour(animateur: Animateur, stand: Stand): boolean {
+  return stand.typologiesProposees.some((typologie) => typologie in (animateur.competences ?? {}));
+}
+
+/**
+ * Opens the "Pourquoi lui ?" dialog for one filled seat, offering every other
+ * animateur with an appreciation for the poste's stand as a swap candidate —
+ * the shared entry point of the day and month calendars.
+ */
+export function ouvrirExplication(dialog: MatDialog, planning: PlanningFestival, poste: PosteAffectation): void {
+  const candidats = (planning.animateurs ?? []).filter(
+    (animateur) =>
+      animateur.id !== poste.animateur?.id && poste.stand && aUneAppreciationPour(animateur, poste.stand)
+  );
+  dialog.open(AffectationExplanationDialog, {
+    data: { poste, planning, candidats },
+    width: '32rem'
+  });
 }

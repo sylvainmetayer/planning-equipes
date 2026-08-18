@@ -229,33 +229,7 @@ public class PlanningExportService {
     }
 
     private void addGlobalHeader(Document document, PlanningFestival planning, List<LigneAffectation> lignes) {
-        Image logo = loadImage(LOGO_RESOURCE);
-        logo.scaleToFit(46f, 46f);
-
-        PdfPTable header = new PdfPTable(new float[] { 46f, 420f });
-        header.setTotalWidth(document.getPageSize().getWidth() - document.leftMargin() - document.rightMargin());
-        header.setLockedWidth(true);
-
-        PdfPCell logoCell = new PdfPCell(logo, false);
-        logoCell.setBorder(Rectangle.NO_BORDER);
-        logoCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
-        logoCell.setPadding(0f);
-        header.addCell(logoCell);
-
-        PdfPCell titleCell = new PdfPCell();
-        titleCell.setBorder(Rectangle.NO_BORDER);
-        titleCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
-        titleCell.setPaddingLeft(14f);
-        Paragraph brandLabel = new Paragraph();
-        Chunk brandChunk = new Chunk("PLANNING GLOBAL", BRAND_LABEL_FONT);
-        brandChunk.setCharacterSpacing(1.4f);
-        brandLabel.add(brandChunk);
-        brandLabel.setSpacingAfter(3f);
-        titleCell.addElement(brandLabel);
-        titleCell.addElement(new Paragraph("Toutes les affectations", NAME_FONT));
-        header.addCell(titleCell);
-        header.setSpacingAfter(18f);
-        document.add(header);
+        document.add(brandHeader(document, 420f, "PLANNING GLOBAL", "Toutes les affectations", 18f));
 
         PdfPTable stats = new PdfPTable(new float[] { 10f, 0.6f, 10f, 0.6f, 10f, 0.6f, 10f });
         stats.setWidthPercentage(100);
@@ -562,10 +536,24 @@ public class PlanningExportService {
         strip.setAbsolutePosition(pageWidth - 22f - strip.getScaledWidth(), pageHeight - 20f - strip.getScaledHeight());
         document.add(strip);
 
+        document.add(brandHeader(document, 320f, "PLANNING", animateurName, 22f));
+
+        PdfPTable stats = statBlock(postes);
+        stats.setSpacingAfter(24f);
+        document.add(stats);
+    }
+
+    /**
+     * Branded page header shared by the global and per-animateur PDFs: the
+     * FESTIVAL logo, a spaced small-caps brand label and the page's title —
+     * only the title-column width, the texts and the bottom spacing differ.
+     */
+    private PdfPTable brandHeader(Document document, float titleWidth, String brandText, String title,
+            float spacingAfter) {
         Image logo = loadImage(LOGO_RESOURCE);
         logo.scaleToFit(46f, 46f);
 
-        PdfPTable header = new PdfPTable(new float[] { 46f, 320f });
+        PdfPTable header = new PdfPTable(new float[] { 46f, titleWidth });
         header.setTotalWidth(document.getPageSize().getWidth() - document.leftMargin() - document.rightMargin());
         header.setLockedWidth(true);
 
@@ -580,21 +568,15 @@ public class PlanningExportService {
         titleCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
         titleCell.setPaddingLeft(14f);
         Paragraph brandLabel = new Paragraph();
-        Chunk brandChunk = new Chunk("PLANNING", BRAND_LABEL_FONT);
+        Chunk brandChunk = new Chunk(brandText, BRAND_LABEL_FONT);
         brandChunk.setCharacterSpacing(1.4f);
         brandLabel.add(brandChunk);
         brandLabel.setSpacingAfter(3f);
-        Paragraph name = new Paragraph(animateurName, NAME_FONT);
         titleCell.addElement(brandLabel);
-        titleCell.addElement(name);
+        titleCell.addElement(new Paragraph(title, NAME_FONT));
         header.addCell(titleCell);
-
-        header.setSpacingAfter(22f);
-        document.add(header);
-
-        PdfPTable stats = statBlock(postes);
-        stats.setSpacingAfter(24f);
-        document.add(stats);
+        header.setSpacingAfter(spacingAfter);
+        return header;
     }
 
     private PdfPTable statBlock(List<PosteAffectation> postes) {

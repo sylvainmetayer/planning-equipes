@@ -495,16 +495,7 @@ public class ReferenceDataRepository {
                 ps.setString(2, groupeCreneauId);
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
-                        Creneau creneau = new Creneau(
-                                rs.getLong("id"),
-                                0,
-                                rs.getObject("date_creneau", LocalDate.class),
-                                rs.getObject("heure_debut", LocalTime.class),
-                                rs.getObject("heure_fin", LocalTime.class));
-                        creneau.setFamille(rs.getInt("famille"));
-                        creneau.setCouverturePause(rs.getBoolean("couverture_pause"));
-                        creneau.setGroupe(new GroupeCreneau(rs.getString("groupe_creneau_id"),
-                                rs.getString("groupe_nom"), rs.getBoolean("groupe_actif")));
+                        Creneau creneau = readCreneau(rs);
                         byId.put(creneau.getId(), creneau);
                     }
                 }
@@ -560,22 +551,32 @@ public class ReferenceDataRepository {
         }
     }
 
+    /**
+     * Maps one {@code SELECT_CRENEAU_SQL} row, with {@code jour} left at 0 —
+     * it is never stored and is recomputed per group by
+     * {@link Creneau#assignerJours} after loading.
+     */
+    private static Creneau readCreneau(ResultSet rs) throws SQLException {
+        Creneau creneau = new Creneau(
+                rs.getLong("id"),
+                0,
+                rs.getObject("date_creneau", LocalDate.class),
+                rs.getObject("heure_debut", LocalTime.class),
+                rs.getObject("heure_fin", LocalTime.class));
+        creneau.setFamille(rs.getInt("famille"));
+        creneau.setCouverturePause(rs.getBoolean("couverture_pause"));
+        creneau.setGroupe(new GroupeCreneau(rs.getString("groupe_creneau_id"),
+                rs.getString("groupe_nom"), rs.getBoolean("groupe_actif")));
+        return creneau;
+    }
+
     private List<Creneau> listCreneaux(String sql) {
         Map<Long, Creneau> byId = new LinkedHashMap<>();
         try (Connection connection = dataSource.getConnection()) {
             try (PreparedStatement ps = prepareScoped(connection, sql);
                     ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    Creneau creneau = new Creneau(
-                            rs.getLong("id"),
-                            0,
-                            rs.getObject("date_creneau", LocalDate.class),
-                            rs.getObject("heure_debut", LocalTime.class),
-                            rs.getObject("heure_fin", LocalTime.class));
-                    creneau.setFamille(rs.getInt("famille"));
-                    creneau.setCouverturePause(rs.getBoolean("couverture_pause"));
-                    creneau.setGroupe(new GroupeCreneau(rs.getString("groupe_creneau_id"),
-                            rs.getString("groupe_nom"), rs.getBoolean("groupe_actif")));
+                    Creneau creneau = readCreneau(rs);
                     byId.put(creneau.getId(), creneau);
                 }
             }

@@ -377,9 +377,3 @@ function describeResult(result: unknown): string {
   return $localize`:@@job.result:Score ${score}:score: — ${postesNonPourvus}:count: poste(s) non pourvu(s).`;
 }
 
-export function formatScore(score: PlanningFestival['score']): string {
-  if (!score) {
-    return $localize`:@@job.scoreUnavailable:n/d`;
-  }
-  return `${score.hardScore}hard/${score.mediumScore}medium/${score.softScore}soft`;
-}

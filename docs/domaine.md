@@ -75,7 +75,10 @@ public class Stand {
     private List<HoraireStand> horaires;        // règles récurrentes, au-dessus des exceptions — voir plus bas
 }
 
-public class IndisponibiliteStand {
+// Forme commune des deux fenêtres datées (classe de base abstraite) :
+// deux sous-classes de sens opposés, jamais interchangeables (l'égalité
+// est limitée à la classe concrète).
+public abstract class FenetreDateeStand {
     private Long id;              // entier auto-généré par la base
     private LocalDate date;
     private LocalTime heureDebut;
@@ -83,10 +86,9 @@ public class IndisponibiliteStand {
     private String motif;         // libre, informatif — jamais lu par le solveur
 }
 
-public class OuvertureStand {
-    // Même forme qu'IndisponibiliteStand — id/date/heureDebut/heureFin/motif,
-    // mêmes règles — mais sens inverse.
-}
+public class IndisponibiliteStand extends FenetreDateeStand { }  // fermeture datée
+
+public class OuvertureStand extends FenetreDateeStand { }        // sens inverse, mêmes règles
 
 public class HoraireStand {
     private Long id;
