@@ -5,6 +5,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { RouterLink } from '@angular/router';
 import { EditionStore } from '../core/edition.store';
 import { Edition } from '../core/models';
+import { GroupeCreneauSelector } from './groupe-creneau-selector';
 
 /**
  * Persistent strip under the toolbar naming the edition every screen is
@@ -19,7 +20,7 @@ import { Edition } from '../core/models';
  */
 @Component({
   selector: 'app-edition-actuelle-bar',
-  imports: [MatButtonModule, MatIconModule, MatMenuModule, RouterLink],
+  imports: [MatButtonModule, MatIconModule, MatMenuModule, RouterLink, GroupeCreneauSelector],
   template: `
     @if (editionActuelle(); as edition) {
       <div class="edition-actuelle-bar" role="status">
@@ -28,6 +29,7 @@ import { Edition } from '../core/models';
           <span i18n="@@editionActuelle.label">Édition actuelle :</span>
           <strong>{{ edition.nom }}</strong>
         </span>
+        <app-groupe-creneau-selector class="edition-actuelle-bar-groupe" />
         <span class="edition-actuelle-bar-actions">
           @if (autresEditions().length > 0) {
             <button
@@ -84,6 +86,14 @@ import { Edition } from '../core/models';
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+    .edition-actuelle-bar-groupe {
+      display: flex;
+      align-items: center;
+      min-width: 0;
+      margin-left: 1rem;
+      padding-left: 1rem;
+      border-left: 1px solid var(--mat-sys-outline-variant);
     }
     .edition-actuelle-bar-actions {
       display: flex;

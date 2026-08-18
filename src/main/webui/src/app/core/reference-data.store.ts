@@ -105,6 +105,15 @@ export class ReferenceDataStore {
     return result;
   }
 
+  /**
+   * Refreshes the timeslot groups alone. Used by the shell's group selector,
+   * which is mounted on every screen and must not drag the whole referential
+   * in with it.
+   */
+  async reloadGroupesCreneaux(): Promise<void> {
+    this.groupesCreneaux.set(await this.api.get<GroupeCreneau[]>('/api/groupes-creneaux'));
+  }
+
   /** Activates a timeslot group and deactivates every other one, then refreshes. */
   async activerGroupeCreneau(id: string): Promise<void> {
     await this.api.put(`/api/groupes-creneaux/${encodeURIComponent(id)}/actif`, {});

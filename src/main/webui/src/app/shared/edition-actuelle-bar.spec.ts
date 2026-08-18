@@ -20,7 +20,9 @@ describe('EditionActuelleBar', () => {
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
-        { provide: ApiService, useValue: { get: vi.fn(), put: vi.fn() } }
+        // The strip now embeds the groupe de créneaux selector, which fetches
+        // its own (here empty) list on creation.
+        { provide: ApiService, useValue: { get: vi.fn().mockResolvedValue([]), put: vi.fn(), post: vi.fn() } }
       ]
     });
     store = TestBed.inject(EditionStore);
