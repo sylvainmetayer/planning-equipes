@@ -68,16 +68,12 @@ connexion.
 Corps du `PUT /api/constraints/{name}` :
 
 ```json
-{ "actif": false, "motif": "…", "modifieParUtilisateurId": "ui" }
+{ "actif": false }
 ```
 
-`motif` et `modifieParUtilisateurId` ne sont enregistrés que lors d'une
-**désactivation** (colonnes `motif`, `modifie_par_utilisateur_id`,
-`modifie_le` de `constraint_toggle`) ; ils sont ignorés à la réactivation, qui
-supprime la ligne. Tous deux sont facultatifs — un client plus ancien continue
-de fonctionner. L'IHM les renseigne systématiquement pour les contraintes de
-catégorie « Légal », après un avertissement explicite : voir
-[`contraintes.md`](contraintes.md).
+Une désactivation insère une ligne dans `constraint_toggle`, une réactivation
+la supprime : c'est tout ce que la table porte (voir
+[`contraintes.md`](contraintes.md)).
 
 ## Explicabilité par affectation
 

@@ -1355,13 +1355,11 @@ public class ReferenceDataRepository {
     }
 
     /**
-     * Disabling a constraint records <i>who</i> (as reported by the client),
-     * <i>when</i> and <i>why</i> alongside the toggle — see migration V16 and
-     * constat C2 of the RH compliance audit. Re-enabling simply drops the row,
-     * so the trace of a past disabling does not survive its cancellation: this
-     * is a toggle table, not an audit log.
+     * A row's presence means the constraint is disabled for the next solve;
+     * re-enabling simply drops it. Nothing else is recorded: this is a toggle
+     * table, not an audit log (see migration V39).
      */
-    public void setContrainteActive(String nom, boolean actif, String motif, String utilisateurId) {
+    public void setContrainteActive(String nom, boolean actif) {
         try (Connection connection = dataSource.getConnection()) {
             if (actif) {
                 try (PreparedStatement ps = prepareScoped(connection,
@@ -1371,14 +1369,9 @@ public class ReferenceDataRepository {
                 }
             } else {
                 try (PreparedStatement ps = prepareScoped(connection,
-                        "INSERT INTO constraint_toggle (edition_id, nom, motif, modifie_par_utilisateur_id, modifie_le) "
-                                + "VALUES (?, ?, ?, ?, now()) ON CONFLICT (edition_id, nom) DO UPDATE SET "
-                                + "motif = EXCLUDED.motif, "
-                                + "modifie_par_utilisateur_id = EXCLUDED.modifie_par_utilisateur_id, "
-                                + "modifie_le = EXCLUDED.modifie_le")) {
+                        "INSERT INTO constraint_toggle (edition_id, nom) VALUES (?, ?) "
+                                + "ON CONFLICT (edition_id, nom) DO NOTHING")) {
                     ps.setString(2, nom);
-                    ps.setString(3, motif);
-                    ps.setString(4, utilisateurId);
                     ps.executeUpdate();
                 }
             }

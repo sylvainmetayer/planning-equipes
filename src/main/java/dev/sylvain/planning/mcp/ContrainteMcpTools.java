@@ -50,23 +50,21 @@ public class ContrainteMcpTools {
 
     @Tool(description = "Active une contrainte pour le prochain solve (annule une désactivation précédente).")
     ToggleResult activer_contrainte(@ToolArg(description = "Nom technique de la contrainte (voir lister_contraintes)") String nom) {
-        return setActive(nom, true, null, "mcp");
+        return setActive(nom, true);
     }
 
-    @Tool(description = "Désactive une contrainte pour le prochain solve. Le solveur l'ignorera jusqu'à réactivation. "
-            + "Motif recommandé, en particulier pour les contraintes de niveau légal.")
-    ToggleResult desactiver_contrainte(@ToolArg(description = "Nom technique de la contrainte (voir lister_contraintes)") String nom,
-            @ToolArg(description = "Raison de la désactivation", required = false) String motif) {
-        return setActive(nom, false, motif, "mcp");
+    @Tool(description = "Désactive une contrainte pour le prochain solve. Le solveur l'ignorera jusqu'à réactivation.")
+    ToggleResult desactiver_contrainte(@ToolArg(description = "Nom technique de la contrainte (voir lister_contraintes)") String nom) {
+        return setActive(nom, false);
     }
 
-    private ToggleResult setActive(String nom, boolean actif, String motif, String utilisateurId) {
+    private ToggleResult setActive(String nom, boolean actif) {
         boolean known = ConstraintCatalog.definitions().stream()
                 .anyMatch(definition -> definition.name().equals(nom));
         if (!known) {
             throw new NotFoundException("Contrainte inconnue : " + nom);
         }
-        referenceDataService.setContrainteActive(nom, actif, motif, utilisateurId);
+        referenceDataService.setContrainteActive(nom, actif);
         return new ToggleResult(nom, actif);
     }
 

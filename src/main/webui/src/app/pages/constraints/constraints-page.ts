@@ -21,7 +21,6 @@ import {
 } from '../../core/models';
 import { SolverJobService } from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';
-import { ConfirmService } from '../../shared/confirm-dialog';
 import { FeasibilityBanner } from '../../shared/feasibility-banner';
 import { ViolationDetailsDialog } from '../../shared/violation-details-dialog';
 
@@ -93,7 +92,6 @@ export class ConstraintsPage {
   protected readonly jobs = inject(SolverJobService);
 
   private readonly api = inject(ApiService);
-  private readonly confirm = inject(ConfirmService);
   private readonly dialog = inject(MatDialog);
   private readonly solverSettings = inject(SolverSettingsService);
 
@@ -214,49 +212,16 @@ export class ConstraintsPage {
     }
   }
 
-  /** True for the constraints that carry a Code du travail obligation. */
-  private estContrainteLegale(constraint: ConstraintView): boolean {
-    return constraint.categorie.startsWith('Légal');
-  }
-
   /**
    * Toggles a constraint on/off for the next solve. Applied optimistically so
    * the switch reacts instantly; rolled back if the save fails.
-   *
-   * Disabling a constraint of the "Légal" category means the solver may produce
-   * a plan that breaks the Code du travail while reporting a hard score of
-   * zero, so it goes through an explicit warning first. See the "limite connue"
-   * note in `docs/contraintes.md`: the toggle table records no author, reason
-   * or timestamp, so this dialog is the only trace such a decision leaves.
    */
   protected async toggleConstraint(constraint: ConstraintView, actif: boolean): Promise<void> {
-    let motif: string | null = null;
-    if (!actif && this.estContrainteLegale(constraint)) {
-      motif = await this.confirm.askWithReason({
-        title: $localize`:@@constraints.disableLegal.title:Désactiver une règle légale ?`,
-        message: $localize`:@@constraints.disableLegal.message:« ${constraint.name}:name: » applique une obligation du Code du travail. En la désactivant, le solveur pourra produire un planning illégal tout en affichant un score dur à zéro.`,
-        reasonLabel: $localize`:@@constraints.disableLegal.reason:Motif de la désactivation (enregistré en base)`,
-        confirmLabel: $localize`:@@constraints.disableLegal.confirm:Désactiver quand même`,
-        danger: true
-      });
-      if (motif === null) {
-        // The Material toggle has already flipped its own visual state; rewrite
-        // the (unchanged) value so a new view object forces it back in sync.
-        this.setConstraintActif(constraint.name, !actif);
-        return;
-      }
-    }
     this.setConstraintActif(constraint.name, actif);
     this.togglingConstraint.set(constraint.name);
     this.error.set('');
     try {
-      await this.api.put<{ actif: boolean }>(`/api/constraints/${encodeURIComponent(constraint.name)}`, {
-        actif,
-        motif,
-        // No authentication in this application: declarative, exactly like
-        // `ContrainteAdHoc.creeParUtilisateurId`.
-        modifieParUtilisateurId: 'ui'
-      });
+      await this.api.put<{ actif: boolean }>(`/api/constraints/${encodeURIComponent(constraint.name)}`, { actif });
     } catch (error) {
       this.setConstraintActif(constraint.name, !actif);
       const message = error instanceof Error ? error.message : String(error);

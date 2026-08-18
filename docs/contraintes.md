@@ -363,31 +363,24 @@ contraintes sont actives par défaut.
   appelé juste après le `forEach` initial (sur le flux le plus étroit possible :
   une contrainte pilotée par `ContrainteAdHoc` y branche le toggle sur les
   quelques faits ad hoc, pas sur les milliers de postes).
-### Désactiver une contrainte légale : avertissement et trace
+### Désactiver une contrainte légale : aucune trace conservée
 
 Désactiver une contrainte de catégorie « Légal » n'est pas un réglage comme un
 autre : le solveur peut alors produire un planning **contraire au Code du
-travail tout en affichant un score dur à zéro**. La page « Constraints »
-oppose donc, pour ces contraintes uniquement, une **boîte de dialogue
-d'avertissement** qui explique cette conséquence et exige la saisie d'un
-**motif** avant de laisser passer la désactivation.
+travail tout en affichant un score dur à zéro**. Rien n'empêche pourtant
+techniquement de le faire, et **rien n'en garde trace**.
 
-Le motif, l'auteur déclaré et l'horodatage sont enregistrés dans
-`constraint_toggle` (migration V16, colonnes `motif`,
-`modifie_par_utilisateur_id`, `modifie_le`), à l'image de `ContrainteAdHoc`.
+La confirmation à motif obligatoire qui existait pour ces contraintes (V16 :
+colonnes `motif`, `modifie_par_utilisateur_id`, `modifie_le`) a été retirée en
+V39 : personne ne saisissait de motif, et sans authentification
+`modifie_par_utilisateur_id` ne pouvait valoir que la constante `ui` ou `mcp` —
+donc ni imputable, ni exploitable. `constraint_toggle` est revenue à sa forme
+d'origine : la seule liste des contraintes désactivées.
 
-**Limites connues, à ne pas confondre avec une piste d'audit :**
-
-- l'application **n'a aucune authentification** : `modifie_par_utilisateur_id`
-  vaut ce que l'IHM déclare (aujourd'hui la constante `ui`, exactement comme
-  `contrainte_ad_hoc.cree_par`). Ce n'est pas une preuve d'imputabilité ;
-- `constraint_toggle` est une **table d'état, pas un journal** : réactiver une
-  contrainte supprime la ligne, donc la trace d'une désactivation passée ne
-  survit pas à son annulation. Un vrai journal (une ligne par changement,
-  jamais supprimée) reste à faire ;
-- rien n'empêche techniquement la désactivation : l'avertissement informe, il
-  ne bloque pas. Un blocage suppose de décider qui a le droit de lever une
-  règle légale — donc, à nouveau, une notion d'utilisateur.
+Une vraie piste d'audit reste donc à faire, et suppose d'abord une notion
+d'utilisateur : un journal (une ligne par changement, jamais supprimée) plutôt
+qu'une table d'état, et le cas échéant un blocage — qui suppose de décider qui
+a le droit de lever une règle légale.
 
 - `ConstraintToggleTest` couvre le mécanisme lui-même, une contrainte
   représentative par famille : le même jeu de données doit être pénalisé sans

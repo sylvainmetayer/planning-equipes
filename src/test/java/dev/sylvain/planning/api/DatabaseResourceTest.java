@@ -134,7 +134,7 @@ class DatabaseResourceTest {
 
         given()
                 .contentType(ContentType.JSON)
-                .body("{\"actif\":false,\"motif\":\"test\",\"modifieParUtilisateurId\":\"ui\"}")
+                .body("{\"actif\":false}")
                 .when().put("/api/constraints/dureeHebdomadaireMax")
                 .then()
                 .statusCode(200);

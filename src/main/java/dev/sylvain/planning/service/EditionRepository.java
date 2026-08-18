@@ -51,7 +51,7 @@ public class EditionRepository {
             new TableACopier("stand_indisponibilite",
                     "stand_id, date_indisponibilite, heure_debut, heure_fin, motif"),
             new TableACopier("stand_ouverture", "stand_id, date_ouverture, heure_debut, heure_fin, motif"),
-            new TableACopier("constraint_toggle", "nom, motif, modifie_par_utilisateur_id, modifie_le"),
+            new TableACopier("constraint_toggle", "nom"),
             new TableACopier("parametres_legaux",
                     "duree_hebdomadaire_max_minutes, duree_hebdomadaire_max_mineur_minutes, "
                             + "pause_minimale_entre_vacations_minutes, repos_quotidien_minimal_minutes"),

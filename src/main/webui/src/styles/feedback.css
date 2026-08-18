@@ -141,12 +141,3 @@
   }
 }
 
-/*
- * Free-text field of the confirm dialog (used to record why a legal constraint
- * is being disabled). Material sizes form fields on their content; inside a
- * fixed-width dialog we want it to span the whole body.
- */
-.confirm-dialog-reason {
-  width: 100%;
-  margin-top: 0.75rem;
-}

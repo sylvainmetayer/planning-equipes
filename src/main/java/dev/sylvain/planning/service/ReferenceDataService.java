@@ -900,9 +900,9 @@ public class ReferenceDataService {
      * {@code ContrainteAdHoc.creeParUtilisateurId}. The reason and the
      * timestamp are real; the author is not proof of accountability.</p>
      */
-    public void setContrainteActive(String nom, boolean actif, String motif, String utilisateurId) {
+    public void setContrainteActive(String nom, boolean actif) {
         if (repository != null) {
-            repository.setContrainteActive(nom, actif, motif, utilisateurId);
+            repository.setContrainteActive(nom, actif);
             markModified();
         }
     }
