@@ -30,6 +30,20 @@ public class Creneau {
      */
     private int famille;
 
+    /**
+     * True when this slot is the short vacation covering a stand's internal
+     * meal pause, generated under
+     * {@link ParametresDecoupage.StrategieCouverturePendantPause#EFFECTIF_REDUIT}.
+     * Poste generation then staffs it at half the stand's usual headcount
+     * (see {@code PlanningService#construirePostes}).
+     *
+     * <p>Always {@code false} under the two other strategies — {@code RELEVE}
+     * covers the pause at full headcount and {@code FERMETURE} generates no
+     * covering vacation at all — and always {@code false} on amplitude
+     * créneaux.</p>
+     */
+    private boolean couverturePause;
+
     public Creneau() {
     }
 
@@ -119,6 +133,14 @@ public class Creneau {
 
     public void setFamille(int famille) {
         this.famille = famille;
+    }
+
+    public boolean isCouverturePause() {
+        return couverturePause;
+    }
+
+    public void setCouverturePause(boolean couverturePause) {
+        this.couverturePause = couverturePause;
     }
 
     /**

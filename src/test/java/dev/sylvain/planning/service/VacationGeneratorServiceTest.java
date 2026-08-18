@@ -208,6 +208,75 @@ class VacationGeneratorServiceTest {
     }
 
     @Test
+    void strategieEffectifReduitCouvreLaPauseEtMarqueLaVacation() {
+        // Même scénario que RELEVE — la pause est couverte, sans interruption —
+        // mais la vacation de couverture porte en plus le marqueur qui fera
+        // tourner le stand à demi-effectif (PlanningService#construirePostes).
+        Creneau amplitude = amplitude(LocalTime.of(10, 0), LocalTime.of(18, 0)); // 8h
+        ParametresDecoupage parametres = new ParametresDecoupage();
+        parametres.setDureeVacationMaxMinutes(8 * 60);
+        parametres.setDureeVacationCibleMinutes(8 * 60);
+        parametres.setStrategieCouverturePendantPause(
+                ParametresDecoupage.StrategieCouverturePendantPause.EFFECTIF_REDUIT);
+
+        List<Creneau> vacations = VacationGeneratorService.genererVacations(List.of(amplitude), parametres);
+
+        assertThat(vacations).hasSize(3);
+        Creneau avantPause = vacations.get(0);
+        Creneau couverture = vacations.get(1);
+        Creneau apresPause = vacations.get(2);
+        assertThat(couverture.getHeureDebut()).isEqualTo(avantPause.getHeureFin());
+        assertThat(couverture.getHeureFin()).isEqualTo(apresPause.getHeureDebut());
+        // Seule la vacation de couverture est marquée : les deux vacations
+        // encadrantes tournent à effectif plein.
+        assertThat(couverture.isCouverturePause()).isTrue();
+        assertThat(avantPause.isCouverturePause()).isFalse();
+        assertThat(apresPause.isCouverturePause()).isFalse();
+    }
+
+    @Test
+    void strategieReleveNeMarqueAucuneVacationCommeEffectifReduit() {
+        // RELEVE couvre la pause à effectif PLEIN : le marqueur doit rester à
+        // false, sans quoi le passage de FERMETURE/RELEVE à EFFECTIF_REDUIT
+        // n'aurait aucun effet observable.
+        Creneau amplitude = amplitude(LocalTime.of(10, 0), LocalTime.of(18, 0));
+        ParametresDecoupage parametres = new ParametresDecoupage();
+        parametres.setDureeVacationMaxMinutes(8 * 60);
+        parametres.setDureeVacationCibleMinutes(8 * 60);
+        parametres.setStrategieCouverturePendantPause(
+                ParametresDecoupage.StrategieCouverturePendantPause.RELEVE);
+
+        List<Creneau> vacations = VacationGeneratorService.genererVacations(List.of(amplitude), parametres);
+
+        assertThat(vacations).allSatisfy(v -> assertThat(v.isCouverturePause()).isFalse());
+    }
+
+    @Test
+    void unePauseQuiFinitSurLaFermetureNeGenerePasDeVacationVide() {
+        // Régression : une fenêtre repas collée au bord de l'amplitude faisait
+        // émettre un segment de queue [pauseFin, fin] de longueur nulle. Une
+        // vacation dont heureFin == heureDebut est relue comme chevauchant
+        // minuit (donc 24 h) par Creneau#getDureeMinutes(), et réclamait un
+        // effectif complet sur ces 24 h fictives.
+        Creneau amplitude = amplitude(LocalTime.of(10, 0), LocalTime.of(21, 0));
+        ParametresDecoupage parametres = new ParametresDecoupage();
+        parametres.setFenetreRepasSoirDebut(LocalTime.of(20, 0));
+        parametres.setFenetreRepasSoirFin(LocalTime.of(21, 0));
+        parametres.setDureePauseRepasMinutes(60);
+        parametres.setStrategieCouverturePendantPause(
+                ParametresDecoupage.StrategieCouverturePendantPause.EFFECTIF_REDUIT);
+
+        List<Creneau> vacations = VacationGeneratorService.genererVacations(List.of(amplitude), parametres);
+
+        assertThat(vacations).allSatisfy(v -> {
+            assertThat(v.getHeureFin()).as("vacation vide %s", v.getHeureDebut()).isNotEqualTo(v.getHeureDebut());
+            assertThat(v.getDureeMinutes()).isPositive().isLessThanOrEqualTo(24 * 60);
+        });
+        // Et aucune ne doit approcher les 24 h : l'amplitude n'en fait que 11.
+        assertThat(vacations).allSatisfy(v -> assertThat(v.getDureeMinutes()).isLessThanOrEqualTo(11 * 60));
+    }
+
+    @Test
     void sansDecalageToutesLesVacationsSontTagueesFamilleZero() {
         // Comportement par défaut (nombreFamillesDecalage=1) : aucun
         // changement de comportement, chaque vacation générée porte la

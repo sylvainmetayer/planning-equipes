@@ -471,7 +471,7 @@ public class ReferenceDataRepository {
     /* ------------------------------ Timeslots ------------------------------ */
 
     private static final String SELECT_CRENEAU_SQL =
-            "SELECT c.id, c.date_creneau, c.heure_debut, c.heure_fin, c.famille, "
+            "SELECT c.id, c.date_creneau, c.heure_debut, c.heure_fin, c.famille, c.couverture_pause, "
                     + "g.id AS groupe_creneau_id, g.nom AS groupe_nom, g.actif AS groupe_actif "
                     + "FROM creneau c JOIN groupe_creneau g "
                     + "ON g.edition_id = c.edition_id AND g.id = c.groupe_creneau_id "
@@ -502,6 +502,7 @@ public class ReferenceDataRepository {
                                 rs.getObject("heure_debut", LocalTime.class),
                                 rs.getObject("heure_fin", LocalTime.class));
                         creneau.setFamille(rs.getInt("famille"));
+                        creneau.setCouverturePause(rs.getBoolean("couverture_pause"));
                         creneau.setGroupe(new GroupeCreneau(rs.getString("groupe_creneau_id"),
                                 rs.getString("groupe_nom"), rs.getBoolean("groupe_actif")));
                         byId.put(creneau.getId(), creneau);
@@ -572,6 +573,7 @@ public class ReferenceDataRepository {
                             rs.getObject("heure_debut", LocalTime.class),
                             rs.getObject("heure_fin", LocalTime.class));
                     creneau.setFamille(rs.getInt("famille"));
+                    creneau.setCouverturePause(rs.getBoolean("couverture_pause"));
                     creneau.setGroupe(new GroupeCreneau(rs.getString("groupe_creneau_id"),
                             rs.getString("groupe_nom"), rs.getBoolean("groupe_actif")));
                     byId.put(creneau.getId(), creneau);
@@ -1524,13 +1526,14 @@ public class ReferenceDataRepository {
         // NOT NULL FK.
         String groupeCreneauId = creneau.getGroupe() != null ? creneau.getGroupe().getId() : GROUPE_CRENEAU_DEFAUT_ID;
         try (PreparedStatement ps = prepareScoped(connection,
-                "INSERT INTO creneau (edition_id, date_creneau, heure_debut, heure_fin, groupe_creneau_id, famille) "
-                        + "VALUES (?, ?, ?, ?, ?, ?) RETURNING id")) {
+                "INSERT INTO creneau (edition_id, date_creneau, heure_debut, heure_fin, groupe_creneau_id, famille, "
+                        + "couverture_pause) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id")) {
             ps.setObject(2, creneau.getDate());
             ps.setObject(3, creneau.getHeureDebut());
             ps.setObject(4, creneau.getHeureFin());
             ps.setString(5, groupeCreneauId);
             ps.setInt(6, creneau.getFamille());
+            ps.setBoolean(7, creneau.isCouverturePause());
             try (ResultSet rs = ps.executeQuery()) {
                 rs.next();
                 long id = rs.getLong("id");
@@ -1546,14 +1549,15 @@ public class ReferenceDataRepository {
         // clause, so the group predicate can't be the statement's first one.
         try (PreparedStatement ps = connection.prepareStatement(
                 "UPDATE creneau SET date_creneau = ?, heure_debut = ?, heure_fin = ?, groupe_creneau_id = ?, "
-                        + "famille = ? WHERE edition_id = ? AND id = ?")) {
+                        + "famille = ?, couverture_pause = ? WHERE edition_id = ? AND id = ?")) {
             ps.setObject(1, creneau.getDate());
             ps.setObject(2, creneau.getHeureDebut());
             ps.setObject(3, creneau.getHeureFin());
             ps.setString(4, groupeCreneauId);
             ps.setInt(5, creneau.getFamille());
-            ps.setString(6, editionId());
-            ps.setLong(7, creneau.getId());
+            ps.setBoolean(6, creneau.isCouverturePause());
+            ps.setString(7, editionId());
+            ps.setLong(8, creneau.getId());
             ps.executeUpdate();
         }
     }

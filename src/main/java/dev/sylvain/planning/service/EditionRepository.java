@@ -237,9 +237,11 @@ public class EditionRepository {
             ps.executeUpdate();
         }
         try (PreparedStatement ps = connection.prepareStatement(
-                "INSERT INTO creneau (id, edition_id, date_creneau, heure_debut, heure_fin, groupe_creneau_id, famille) "
+                "INSERT INTO creneau (id, edition_id, date_creneau, heure_debut, heure_fin, groupe_creneau_id, famille, "
+                        + "couverture_pause) "
                         + "SELECT r.nouvel_id, ?, c.date_creneau, c.heure_debut, c.heure_fin, c.groupe_creneau_id, "
-                        + "c.famille FROM creneau c JOIN creneau_remap r ON r.ancien_id = c.id WHERE c.edition_id = ?")) {
+                        + "c.famille, c.couverture_pause FROM creneau c JOIN creneau_remap r ON r.ancien_id = c.id "
+                        + "WHERE c.edition_id = ?")) {
             ps.setString(1, cibleId);
             ps.setString(2, sourceId);
             ps.executeUpdate();

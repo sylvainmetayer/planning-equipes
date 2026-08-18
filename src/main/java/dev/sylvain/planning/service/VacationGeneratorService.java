@@ -82,15 +82,29 @@ public final class VacationGeneratorService {
         int duree = amplitude.getDureeMinutes();
         List<int[]> segmentsBruts = decouperEnMinutes(duree, parametres, fenetresRepasEnMinutes(amplitude, parametres),
                 famille, nombreFamilles);
-        List<int[]> segments = new ArrayList<>();
+        List<Segment> segments = new ArrayList<>();
         for (int[] segment : segmentsBruts) {
             segments.addAll(appliquerPauseLegaleSiNecessaire(segment, amplitude, parametres));
         }
         List<Creneau> resultat = new ArrayList<>();
-        for (int[] segment : segments) {
-            resultat.add(creerVacation(amplitude, segment[0], segment[1]));
+        for (Segment segment : segments) {
+            Creneau vacation = creerVacation(amplitude, segment.debut(), segment.fin());
+            vacation.setCouverturePause(segment.couverturePause());
+            resultat.add(vacation);
         }
         return resultat;
+    }
+
+    /**
+     * A generated vacation's bounds, in minutes from the amplitude's start,
+     * plus whether it is the short slot covering an internal meal pause at
+     * reduced headcount. Replaces the bare {@code int[]} the pause split used
+     * to return: the flag has to survive all the way to
+     * {@link #creerVacation}, and only
+     * {@link #appliquerPauseLegaleSiNecessaire} knows which of the pieces it
+     * produced is the covering one.
+     */
+    private record Segment(int debut, int fin, boolean couverturePause) {
     }
 
     /**
@@ -222,19 +236,22 @@ public final class VacationGeneratorService {
      *
      * <p>Splits the offending segment into two, separated by a pause (a meal
      * break if one overlaps the split point, otherwise the 20-min legal
-     * minimum), snapped into any meal window that intersects the segment. When
-     * {@link ParametresDecoupage.StrategieCouverturePendantPause#RELEVE} is
-     * configured, a third short vacation covering exactly the pause window is
-     * added so the stand stays staffed instead of closing.</p>
+     * minimum), snapped into any meal window that intersects the segment.
+     * Unless {@link ParametresDecoupage.StrategieCouverturePendantPause#FERMETURE}
+     * is configured, a third short vacation covering exactly the pause window
+     * is added so the stand stays staffed instead of closing — at full
+     * headcount under {@code RELEVE}, at half under {@code EFFECTIF_REDUIT},
+     * which is the only case where the returned {@link Segment} carries
+     * {@code couverturePause}.</p>
      */
-    private static List<int[]> appliquerPauseLegaleSiNecessaire(int[] segment, Creneau amplitude,
+    private static List<Segment> appliquerPauseLegaleSiNecessaire(int[] segment, Creneau amplitude,
             ParametresDecoupage parametres) {
         int longueur = segment[1] - segment[0];
         List<int[]> fenetresRepas = fenetresRepasEnMinutes(amplitude, parametres);
         boolean depasseSeuilLegal = longueur > SEUIL_PAUSE_LEGALE_MINUTES;
         if (!depasseSeuilLegal
                 && !contientUneFenetreRepasEntiere(segment, fenetresRepasNonTronqueesEnMinutes(amplitude, parametres))) {
-            return List.of(segment);
+            return List.of(new Segment(segment[0], segment[1], false));
         }
         int milieu = segment[0] + longueur / 2;
         int pauseDebut = milieu;
@@ -249,13 +266,30 @@ public final class VacationGeneratorService {
             }
         }
         int pauseFin = Math.min(segment[1], pauseDebut + dureePause);
-        List<int[]> resultat = new ArrayList<>();
-        resultat.add(new int[] { segment[0], pauseDebut });
-        if (parametres.getStrategieCouverturePendantPause() == ParametresDecoupage.StrategieCouverturePendantPause.RELEVE
-                && pauseFin > pauseDebut) {
-            resultat.add(new int[] { pauseDebut, pauseFin });
+        ParametresDecoupage.StrategieCouverturePendantPause strategie = parametres
+                .getStrategieCouverturePendantPause();
+        List<Segment> resultat = new ArrayList<>();
+        // Les trois morceaux ne sont ajoutés que s'ils sont non vides. Une
+        // pause qui commence sur le début du segment, ou qui finit sur sa fin,
+        // produit sinon une vacation de durée nulle — et une vacation dont
+        // heureFin == heureDebut est relue par Creneau#getDureeMinutes() comme
+        // chevauchant minuit, donc longue de 24 h. Le cas se produit dès qu'une
+        // fenêtre repas touche un bord de l'amplitude : par exemple une
+        // fenêtre 20:00-21:00 sur une journée qui ferme à 21:00 faisait
+        // générer une vacation 21:00→21:00 par famille, chacune réclamant un
+        // effectif complet pour 24 h fictives.
+        if (pauseDebut > segment[0]) {
+            resultat.add(new Segment(segment[0], pauseDebut, false));
         }
-        resultat.add(new int[] { pauseFin, segment[1] });
+        if (strategie != ParametresDecoupage.StrategieCouverturePendantPause.FERMETURE && pauseFin > pauseDebut) {
+            // RELEVE et EFFECTIF_REDUIT couvrent tous deux la pause ; seul le
+            // second réduit l'effectif, d'où le marqueur porté par la vacation.
+            boolean effectifReduit = strategie == ParametresDecoupage.StrategieCouverturePendantPause.EFFECTIF_REDUIT;
+            resultat.add(new Segment(pauseDebut, pauseFin, effectifReduit));
+        }
+        if (segment[1] > pauseFin) {
+            resultat.add(new Segment(pauseFin, segment[1], false));
+        }
         return resultat;
     }
 

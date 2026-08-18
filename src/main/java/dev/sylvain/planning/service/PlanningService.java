@@ -352,12 +352,17 @@ public class PlanningService {
         List<PosteAffectation> postes = new ArrayList<>();
         int counter = 0;
         for (Stand stand : stands) {
-            int seats = Math.max(1, stand.getEffectifMin());
+            int effectif = Math.max(1, stand.getEffectifMin());
+            // Sur une vacation de couverture de pause (stratégie EFFECTIF_REDUIT),
+            // le stand tourne à demi-effectif, arrondi au supérieur : un stand
+            // tenu par une seule personne la garde plutôt que de fermer.
+            int effectifPause = (effectif + 1) / 2;
             int familleStand = familleParStand.get(stand.getId());
             for (Creneau creneau : creneaux) {
                 if (creneau.getFamille() != familleStand) {
                     continue;
                 }
+                int seats = creneau.isCouverturePause() ? effectifPause : effectif;
                 List<int[]> segments = creneau.segmentsOuvertsMinutes(stand);
                 boolean creneauEntierOuvert = segments.size() == 1 && segments.get(0)[0] == 0
                         && segments.get(0)[1] == creneau.getDureeMinutes();

@@ -155,4 +155,48 @@ class PlanningServicePosteGenerationTest {
 
         assertThat(ordreInverse).isEqualTo(ordreDirect);
     }
+
+    /**
+     * Stratégie EFFECTIF_REDUIT : sur la vacation qui couvre la pause repas, le
+     * stand ne mobilise que la moitié de son effectif, arrondie au supérieur.
+     */
+    @Test
+    void vacationDeCouverturePauseNeGenereQueLaMoitieDesSieges() {
+        Stand quatre = new Stand("STAND-4", "Quatre", Set.of(), 4, 4, false);
+        Stand trois = new Stand("STAND-3", "Trois", Set.of(), 3, 3, false);
+        Creneau pause = new Creneau(20L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(12, 0), LocalTime.of(13, 0));
+        pause.setCouverturePause(true);
+
+        Map<String, Long> parStand = PlanningService.construirePostes(List.of(quatre, trois), List.of(pause)).stream()
+                .collect(Collectors.groupingBy(p -> p.getStand().getId(), Collectors.counting()));
+
+        assertThat(parStand).containsEntry("STAND-4", 2L);   // 4 / 2
+        assertThat(parStand).containsEntry("STAND-3", 2L);   // ceil(3 / 2)
+    }
+
+    /**
+     * Cas limite qui motive l'arrondi au supérieur : un stand tenu par une
+     * seule personne la garde pendant la pause. Avec un arrondi à l'inférieur
+     * il fermerait, ce qui reviendrait à FERMETURE sans que personne l'ait
+     * demandé.
+     */
+    @Test
+    void standAUnSeulSiegeResteOuvertPendantLaPause() {
+        Creneau pause = new Creneau(21L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(12, 0), LocalTime.of(13, 0));
+        pause.setCouverturePause(true);
+
+        List<PosteAffectation> postes = PlanningService.construirePostes(List.of(standA), List.of(pause));
+
+        assertThat(postes).hasSize(1);
+    }
+
+    /** Hors vacation de pause, l'effectif reste plein — non-régression. */
+    @Test
+    void creneauOrdinaireGardeLEffectifPlein() {
+        Stand quatre = new Stand("STAND-4", "Quatre", Set.of(), 4, 4, false);
+
+        List<PosteAffectation> postes = PlanningService.construirePostes(List.of(quatre), List.of(creneauOuvert));
+
+        assertThat(postes).hasSize(4);
+    }
 }

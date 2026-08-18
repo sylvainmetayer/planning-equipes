@@ -15,7 +15,27 @@ public class ParametresDecoupage {
         /** The stand closes (no poste generated) during an unavoidable internal pause. */
         FERMETURE,
         /** A temporary extra poste is generated to cover the stand during the pause. */
-        RELEVE
+        RELEVE,
+        /**
+         * The stand stays open during the pause but at <b>half</b> its usual
+         * headcount: like {@link #RELEVE} a covering vacation is generated, but
+         * it is flagged ({@link Creneau#isCouverturePause()}) so poste
+         * generation only creates {@code ceil(effectifMin / 2)} seats on it
+         * instead of the full complement.
+         *
+         * <p>This is what the source festival actually does — see the
+         * {@code Recap. Espaces - VOLUMES ANIM.} formula
+         * {@code ARRONDI.SUP(effectif * .../2)} documented in
+         * {@code docs/solver-pause-effectif-reduit.md}. {@link #FERMETURE}
+         * (nobody) and {@link #RELEVE} (a whole extra crew) bracket that rule
+         * without expressing it.</p>
+         *
+         * <p>Rounding is deliberately <b>up</b>: a stand needing a single
+         * animateur keeps that one rather than silently closing, so closing a
+         * stand stays an explicit decision ({@link #FERMETURE} or a dated
+         * indisponibilité) instead of a side effect of integer division.</p>
+         */
+        EFFECTIF_REDUIT
     }
 
     public static final int DUREE_VACATION_CIBLE_MINUTES_PAR_DEFAUT = 5 * 60;

@@ -53,4 +53,5 @@ dist/
 
 # Contains sensitive data, do not commit
 src/main/resources/scenarios/reel-*.yaml
+docs/reel-*.yaml
 assets/

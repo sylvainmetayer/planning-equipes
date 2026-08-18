@@ -394,7 +394,7 @@
     },
     "StrategieCouverturePendantPause" : {
       "type" : "string",
-      "enum" : [ "FERMETURE", "RELEVE" ]
+      "enum" : [ "FERMETURE", "RELEVE", "EFFECTIF_REDUIT" ]
     },
     "TypeJoursHoraire" : {
       "type" : "string",

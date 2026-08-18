@@ -477,17 +477,34 @@ bandeau `app-feasibility-banner`, qui affiche désormais les deux.
 
 `ParametresDecoupage` (une seule ligne en base, même mécanisme que
 `ParametresLegaux`) porte ces paramètres, y compris
-`strategieCouverturePendantPause` (`FERMETURE` ou `RELEVE`) qui régit toute
-pause interne insérée — que ce soit parce qu'un administrateur a configuré un
-plafond de vacation au-dessus du seuil légal et qu'une vacation générée le
-dépasse malgré tout, ou parce qu'une vacation (de n'importe quelle durée)
-engloutit entièrement une fenêtre repas (cas ci-dessus). `FERMETURE` (par
-défaut) ferme simplement le stand pendant la pause ; `RELEVE` y ajoute une
-vacation courte supplémentaire pour garder le stand ouvert — à utiliser avec
-prudence sur un scénario déjà tendu en solvabilité, voir la nuance
-ci-dessus : une vacation de relève de plus par pause, sur *chaque* stand
-concerné, concentrée sur la même fenêtre horaire, est justement le genre de
-pic de demande simultanée qui fait caler le solveur.
+`strategieCouverturePendantPause` (`FERMETURE`, `RELEVE` ou `EFFECTIF_REDUIT`)
+qui régit toute pause interne insérée — que ce soit parce qu'un administrateur
+a configuré un plafond de vacation au-dessus du seuil légal et qu'une vacation
+générée le dépasse malgré tout, ou parce qu'une vacation (de n'importe quelle
+durée) engloutit entièrement une fenêtre repas (cas ci-dessus).
+
+| Valeur | Effectif pendant la pause | Vacation de couverture générée |
+| --- | --- | --- |
+| `FERMETURE` (défaut) | aucun, le stand ferme | non |
+| `RELEVE` | effectif plein, en plus des deux vacations encadrantes | oui |
+| `EFFECTIF_REDUIT` | moitié de `effectifMin`, **arrondie au supérieur** | oui, marquée `Creneau.couverturePause` |
+
+`RELEVE` est à utiliser avec prudence sur un scénario déjà tendu en
+solvabilité, voir la nuance ci-dessus : une vacation de relève de plus par
+pause, sur *chaque* stand concerné, concentrée sur la même fenêtre horaire,
+est justement le genre de pic de demande simultanée qui fait caler le solveur.
+
+`EFFECTIF_REDUIT` reproduit ce que fait réellement le classeur source du
+festival, qui divise l'effectif par deux sur les créneaux de repas plutôt que
+d'y ajouter une équipe ou de fermer. C'est la seule des trois valeurs dont
+l'effectif dépend du stand : `PlanningService#construirePostes` lit
+`Creneau.couverturePause` et ne crée que `ceil(effectifMin / 2)` sièges sur ces
+vacations. L'arrondi est volontairement au supérieur, pour qu'un stand tenu par
+une seule personne la garde au lieu de fermer — fermer reste une décision
+explicite (`FERMETURE`, ou une indisponibilité datée) et non l'effet de bord
+d'une division entière. Voir
+[`solver-pause-effectif-reduit.md`](solver-pause-effectif-reduit.md) pour le
+chiffrage et les limites de ce réglage.
 
 Un fichier scénario (`scenarios/*.yaml`) peut fixer ses propres
 `parametresLegaux:`, `parametresDecoupage:` et/ou `parametresSolveur:` en tête

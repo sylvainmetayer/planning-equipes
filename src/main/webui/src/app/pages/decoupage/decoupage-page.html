@@ -65,7 +65,20 @@
                       [ngModel]="p.strategieCouverturePendantPause" (ngModelChange)="p.strategieCouverturePendantPause = $event">
             <mat-option value="FERMETURE" i18n="@@decoupage.strategie.fermeture">Fermeture du stand</mat-option>
             <mat-option value="RELEVE" i18n="@@decoupage.strategie.releve">Poste de relève supplémentaire</mat-option>
+            <mat-option value="EFFECTIF_REDUIT" i18n="@@decoupage.strategie.effectifReduit">Effectif réduit de moitié</mat-option>
           </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label i18n="@@decoupage.field.nombreFamillesDecalage">Nombre de grilles de relais décalées</mat-label>
+          <input matInput type="number" min="1" name="nombreFamillesDecalage"
+                 [ngModel]="p.nombreFamillesDecalage" (ngModelChange)="p.nombreFamillesDecalage = $event" />
+          <mat-hint i18n="@@decoupage.field.nombreFamillesDecalage.hint">1 = désactivé, chaque stand partage la même grille</mat-hint>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label i18n="@@decoupage.field.dureeDecalageMax">Étalement du décalage (min)</mat-label>
+          <input matInput type="number" min="0" name="dureeDecalageMaxMinutes"
+                 [ngModel]="p.dureeDecalageMaxMinutes" (ngModelChange)="p.dureeDecalageMaxMinutes = $event" />
+          <mat-hint i18n="@@decoupage.field.dureeDecalageMax.hint">Ignoré si le nombre de grilles est 1</mat-hint>
         </mat-form-field>
         <button matButton="filled" type="submit" [disabled]="parametresLoading()">
           @if (parametresLoading()) {

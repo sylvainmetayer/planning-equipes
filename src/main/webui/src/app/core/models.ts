@@ -548,7 +548,7 @@ export interface ParametresLegaux {
   reposQuotidienMinimalMinutes: number;
 }
 
-export type StrategieCouverturePendantPause = 'FERMETURE' | 'RELEVE';
+export type StrategieCouverturePendantPause = 'FERMETURE' | 'RELEVE' | 'EFFECTIF_REDUIT';
 
 /**
  * `/api/parametres-decoupage`: generation-time parameters consumed by
@@ -566,6 +566,10 @@ export interface ParametresDecoupage {
   fenetreRepasSoirDebut: string;
   fenetreRepasSoirFin: string;
   strategieCouverturePendantPause: StrategieCouverturePendantPause;
+  /** Nombre de grilles de relais décalées (1 = désactivé, comportement historique inchangé). */
+  nombreFamillesDecalage: number;
+  /** Étalement (min) des coupures internes des familles autour de la cible ; ignoré si `nombreFamillesDecalage` ≤ 1. */
+  dureeDecalageMaxMinutes: number;
 }
 
 /**
