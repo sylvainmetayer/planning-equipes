@@ -273,7 +273,9 @@ Chaque ligne de ces quatre référentiels ouvre une **vue de détail** (icône
 saisie ne montre pas — les libellés humains des typologies plutôt que leurs
 identifiants, les stands rattachés à un emplacement, les stands et animateurs
 qui référencent une typologie, le statut majeur/mineur déduit de la date de
-naissance. La modification reste accessible depuis cette vue, et y est bloquée
+naissance. Pour un stand, chaque **règle d'horaire** est écrite en clair — ce
+qu'elle ouvre ou ferme, les jours qu'elle couvre, ses fenêtres — ainsi que
+chaque exception datée avec son motif. La modification reste accessible depuis cette vue, et y est bloquée
 pendant une résolution du solveur comme partout ailleurs.
 
 Chacun de ces référentiels (stands, emplacements, animateurs, typologies)

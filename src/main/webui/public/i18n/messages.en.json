@@ -773,8 +773,6 @@
   "detail.section.coordonnees": "Coordinates",
   "detail.stand.effectifRange": "{$min} to {$max} staff member(s)",
   "detail.stand.horairesAucun": "Open by default, no rule",
-  "detail.stand.ouvertures": "Dated openings",
-  "detail.stand.indisponibilites": "Dated closures",
   "detail.animateur.aucuneAppreciation": "No appreciation: the solver may assign them anywhere, at a quality penalty",
   "detail.animateur.joursIndisponibles": "Unavailable days ({$count})",
   "detail.animateur.toujoursDisponible": "Available every day",
@@ -788,5 +786,11 @@
   "detail.typologie.stands": "Stands offering this typologie ({$count})",
   "detail.typologie.standsVide": "Stands offering this typologie",
   "detail.typologie.animateurs": "Staff vetted on this typologie ({$count})",
-  "detail.typologie.animateursVide": "Staff vetted on this typologie"
+  "detail.typologie.animateursVide": "Staff vetted on this typologie",
+  "detail.stand.regle": "Rule {$numero}",
+  "detail.stand.mode.ouverture": "Open",
+  "detail.stand.mode.fermeture": "Closed",
+  "detail.stand.plage": "from {$debut} to {$fin}",
+  "detail.stand.ouvertureDatee": "Opening on {$date}",
+  "detail.stand.fermetureDatee": "Closure on {$date}"
 }

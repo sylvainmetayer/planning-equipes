@@ -2,9 +2,9 @@
 // out of the page) so the content is unit-tested without rendering anything —
 // same split as `stand-bulk-edit.ts`.
 
-import { DetailSection } from '../../shared/detail-dialog';
-import { resumerHoraires } from '../../core/horaire-stand';
-import { Stand, TypologieItem } from '../../core/models';
+import { DetailRow, DetailSection } from '../../shared/detail-dialog';
+import { decrireFenetre, resumerHoraires } from '../../core/horaire-stand';
+import { HoraireStand, IndisponibiliteStand, JourSemaine, OuvertureStand, Stand, TypologieItem } from '../../core/models';
 
 /**
  * Identity, staffing, schedule and — the reason a detail view is worth more
@@ -72,17 +72,87 @@ export function buildStandDetail(stand: Stand, typologies: readonly TypologieIte
             exceptions: (n) => $localize`:@@stands.horaires.summary.exceptions:${n}:count: exception(s)`
           })
         },
-        {
-          label: $localize`:@@detail.stand.ouvertures:Ouvertures datées`,
-          value: String((stand.ouvertures ?? []).length)
-        },
-        {
-          label: $localize`:@@detail.stand.indisponibilites:Fermetures datées`,
-          value: String((stand.indisponibilites ?? []).length)
-        }
+        // Each rule spelled out, not just counted: "2 règles" says nothing
+        // about when the stand is actually open, which is the one thing this
+        // view is opened to check.
+        ...(stand.horaires ?? []).map((horaire, index) => ({
+          label: $localize`:@@detail.stand.regle:Règle ${index + 1}:numero:`,
+          value: decrireHoraire(horaire)
+        })),
+        ...(stand.ouvertures ?? []).map((ouverture) => decrireExceptionRow(ouverture, true)),
+        ...(stand.indisponibilites ?? []).map((indisponibilite) => decrireExceptionRow(indisponibilite, false))
       ]
     }
   ];
+}
+
+/**
+ * One recurring rule in one line: what it does, which days it covers, and the
+ * windows it opens or closes — the three parts a rule is made of, in the order
+ * the editor asks for them.
+ */
+function decrireHoraire(horaire: HoraireStand): string {
+  const mode = horaire.mode === 'OUVERTURE'
+    ? $localize`:@@detail.stand.mode.ouverture:Ouverture`
+    : $localize`:@@detail.stand.mode.fermeture:Fermeture`;
+  const fenetres = (horaire.fenetres ?? [])
+    .map((fenetre) => decrireFenetre(fenetre, $localize`:@@stands.apercu.fermeture:fermeture`))
+    .join(', ');
+  const morceaux = [mode, decrireJours(horaire), fenetres].filter((morceau) => morceau.length > 0);
+  const description = morceaux.join(' · ');
+  return horaire.motif ? `${description} — ${horaire.motif}` : description;
+}
+
+/** The day selector, read through whichever field `jours` designates — the others are ignored, exactly like the backend does. */
+function decrireJours(horaire: HoraireStand): string {
+  switch (horaire.jours) {
+    case 'JOURS_SEMAINE':
+      return (horaire.joursSemaine ?? []).map(libelleJourSemaine).join(', ');
+    case 'PLAGE':
+      return $localize`:@@detail.stand.plage:du ${horaire.dateDebut ?? '?'}:debut: au ${horaire.dateFin ?? '?'}:fin:`;
+    case 'DATES':
+      return (horaire.dates ?? []).map(jourCourt).join(', ');
+    default:
+      return $localize`:@@stands.horaires.jours.tous:Tous les jours`;
+  }
+}
+
+function decrireExceptionRow(exception: OuvertureStand | IndisponibiliteStand, ouverture: boolean): DetailRow {
+  const fenetre = decrireFenetre(
+    { heureDebut: exception.heureDebut, heureFin: exception.heureFin },
+    $localize`:@@stands.apercu.fermeture:fermeture`
+  );
+  return {
+    label: ouverture
+      ? $localize`:@@detail.stand.ouvertureDatee:Ouverture du ${exception.date}:date:`
+      : $localize`:@@detail.stand.fermetureDatee:Fermeture du ${exception.date}:date:`,
+    value: exception.motif ? `${fenetre} — ${exception.motif}` : fenetre
+  };
+}
+
+/** `08/07` rather than `2026-07-08`: a rule can list a dozen dates on one line. */
+function jourCourt(date: string): string {
+  const [, mois, jour] = date.split('-');
+  return jour && mois ? `${jour}/${mois}` : date;
+}
+
+function libelleJourSemaine(jour: JourSemaine): string {
+  switch (jour) {
+    case 'MONDAY':
+      return $localize`:@@common.weekday.monday:Lundi`;
+    case 'TUESDAY':
+      return $localize`:@@common.weekday.tuesday:Mardi`;
+    case 'WEDNESDAY':
+      return $localize`:@@common.weekday.wednesday:Mercredi`;
+    case 'THURSDAY':
+      return $localize`:@@common.weekday.thursday:Jeudi`;
+    case 'FRIDAY':
+      return $localize`:@@common.weekday.friday:Vendredi`;
+    case 'SATURDAY':
+      return $localize`:@@common.weekday.saturday:Samedi`;
+    default:
+      return $localize`:@@common.weekday.sunday:Dimanche`;
+  }
 }
 
 function emplacementLabel(stand: Stand): string {

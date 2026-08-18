@@ -50,7 +50,80 @@ describe('buildStandDetail', () => {
     expect(rowValue(sections, 'Emplacement')).toBe('Place du Drapeau (46.64870, 2.25030)');
   });
 
-  it('counts the dated exceptions that override the recurring rules', () => {
+  it('spells out each recurring rule: mode, days and windows', () => {
+    const sections = buildStandDetail(
+      stand({
+        horaires: [
+          {
+            id: 1,
+            mode: 'FERMETURE',
+            jours: 'TOUS',
+            joursSemaine: [],
+            dateDebut: null,
+            dateFin: null,
+            dates: [],
+            fenetres: [{ heureDebut: '09:00', heureFin: null }],
+            motif: null
+          },
+          {
+            id: 2,
+            mode: 'OUVERTURE',
+            jours: 'DATES',
+            joursSemaine: [],
+            dateDebut: null,
+            dateFin: null,
+            dates: ['2026-07-08', '2026-07-13'],
+            fenetres: [
+              { heureDebut: '10:00', heureFin: '12:00' },
+              { heureDebut: '14:00', heureFin: null }
+            ],
+            motif: 'Après-midi seulement'
+          }
+        ]
+      })
+    );
+
+    expect(rowValue(sections, 'Règle 1')).toBe('Fermeture · Tous les jours · 09:00 → fermeture');
+    expect(rowValue(sections, 'Règle 2')).toBe(
+      'Ouverture · 08/07, 13/07 · 10:00 → 12:00, 14:00 → fermeture — Après-midi seulement'
+    );
+  });
+
+  it('names the weekdays of a JOURS_SEMAINE rule', () => {
+    const sections = buildStandDetail(
+      stand({
+        horaires: [
+          {
+            id: 1,
+            mode: 'FERMETURE',
+            jours: 'JOURS_SEMAINE',
+            joursSemaine: ['SUNDAY', 'MONDAY'],
+            dateDebut: null,
+            dateFin: null,
+            dates: [],
+            fenetres: [{ heureDebut: '00:00', heureFin: null }],
+            motif: null
+          }
+        ]
+      })
+    );
+
+    expect(rowValue(sections, 'Règle 1')).toContain('Dimanche, Lundi');
+  });
+
+  it('lists each dated exception with its window and reason', () => {
+    const sections = buildStandDetail(
+      stand({
+        ouvertures: [{ id: 1, date: '2026-07-08', heureDebut: '20:00', heureFin: null, motif: 'Nocturne' }],
+        indisponibilites: [{ id: 2, date: '2026-07-09', heureDebut: '14:00', heureFin: '16:00', motif: null }]
+      })
+    );
+
+    expect(rowValue(sections, 'Ouverture du 2026-07-08')).toBe('20:00 → fermeture — Nocturne');
+    expect(rowValue(sections, 'Fermeture du 2026-07-09')).toBe('14:00 → 16:00');
+  });
+
+  it('summarises how many rules and exceptions the stand carries', () => {
     const sections = buildStandDetail(
       stand({
         ouvertures: [{ id: 1, date: '2026-07-08', heureDebut: '10:00', heureFin: '12:00', motif: null }],
@@ -61,7 +134,6 @@ describe('buildStandDetail', () => {
       })
     );
 
-    expect(rowValue(sections, 'Ouvertures datées')).toBe('1');
-    expect(rowValue(sections, 'Fermetures datées')).toBe('2');
+    expect(rowValue(sections, 'Horaires')).toBe('3 exception(s)');
   });
 });
