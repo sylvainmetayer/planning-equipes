@@ -150,6 +150,10 @@ ainsi que le planning résolu.
   épuisant, plutôt qu'un enchaînement direct vers un autre stand épuisant ;
 - répartition équitable des créneaux pénibles (stands épuisants ou premium)
   entre animateurs ;
+- journée peu dispersée : au-delà de trois emplacements distincts visités dans
+  la même journée, la dispersion est pénalisée — quelles que soient les
+  distances, là où la règle voisine ne regarde que les changements éloignés
+  entre deux créneaux consécutifs ;
 - rotation des stands d'un animateur au fil du festival ;
 - mixité des niveaux (associer un débutant à un référent).
 
@@ -179,10 +183,40 @@ automatiquement les autres. La résolution ne tient compte que des créneaux de
 la grille active, ce qui permet de préparer un planning alternatif à l'avance
 et de basculer dessus en un clic sans perdre le planning courant.
 
+La grille active se change depuis n'importe quel écran, dans le bandeau qui
+nomme déjà l'édition consultée : basculer sur le planning de repli, ou créer
+une nouvelle grille, ne demande plus de passer par la page Créneaux. Le
+sélecteur est verrouillé pendant une résolution — changer de grille sous les
+pieds du solveur invaliderait son résultat.
+
 Si le groupe actif change après une résolution (par exemple en basculant sur
 le planning de repli), l'application avertit l'utilisateur, sur tous les
 écrans concernant les créneaux, que le dernier calcul ne correspond plus au
-groupe actif et qu'une nouvelle résolution est nécessaire.
+groupe actif et qu'une nouvelle résolution est nécessaire — et propose, si un
+instantané existe pour cette grille, de le restaurer sur place.
+
+### Instantanés de plan
+
+Un seul planning est enregistré à la fois par édition : chaque résolution
+écrase le précédent. Un **instantané** met un plan de côté, avec son score, sa
+grille de créneaux et sa date, et permet de le remettre en place plus tard.
+Un instantané est pris **automatiquement avant chaque résolution** — c'est le
+filet qui protège même l'utilisateur qui n'y a pas pensé ; les cinq derniers
+sont conservés, ceux enregistrés à la main ne sont jamais purgés.
+
+Restaurer est refusé, sans rien écrire, si le référentiel a trop bougé depuis
+la capture (un stand ou un créneau cité n'existe plus) : l'application dit ce
+qui manque plutôt que de reconstituer un planning que personne n'a calculé.
+
+### Simulation « et si ? »
+
+Trois désistements, un recrutement de dernière minute, un stand fermé par la
+météo, un stand qui demande une personne de plus : la page « Simulation »
+mesure l'impact **sans toucher aux données**. La réponse immédiate est un
+contrôle de capacité, affiché à côté de celui des données actuelles pour lire
+l'écart ; une résolution courte, explicitement demandée et de durée affichée,
+donne au besoin un score comparable. Rien n'est enregistré, et il n'y a
+volontairement aucun bouton « appliquer pour de vrai ».
 
 Plus généralement, si une donnée de référence (stand, animateur, créneau,
 contrainte ad hoc, activation/désactivation de règle, ...) est modifiée après

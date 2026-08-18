@@ -639,6 +639,22 @@ qui revient à supposer qu'aucune pause n'est prise pendant un créneau. C'est
 précisément pourquoi les pauses sont modélisées comme des **trous entre deux
 créneaux d'un même animateur**, et non comme un attribut de créneau.
 
+## Paramètres de qualité
+
+`ParametresQualite` est un fait de problème du même type que `ParametresLegaux`,
+pour les seuils qui règlent le **confort** d'un planning et non la loi. Il ne
+porte aujourd'hui qu'un champ :
+
+| Champ | Défaut | Réglage | Contrainte qui le consomme |
+| --- | --- | --- | --- |
+| `maxEmplacementsDistinctsParJour` | 3 | `planning.contraintes.max-emplacements-par-jour` | `limiterEmplacementsParJour` |
+
+Différence assumée avec `ParametresLegaux` : ces seuils ne sont **pas stockés
+par édition** en base, ils viennent de la configuration de l'application. Ils
+n'engagent aucune obligation, seulement un arbitrage d'organisation, et
+`PlanningService.prepareProblem` les écrase systématiquement — un appelant ne
+peut donc pas desserrer un seuil de qualité en l'envoyant dans son payload.
+
 ## Activation des contraintes
 
 `ConstraintToggle` (même mécanisme de fait de problème que `ParametresLegaux` /

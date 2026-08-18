@@ -166,6 +166,8 @@ Chaque bloc fonctionnel a **sa propre route et sa propre page**, chargée en
 | `/staffing` | `app/pages/staffing/` | Besoin minimum en effectif par créneau |
 | `/heatmap` | `app/pages/heatmap/` | Heatmap de charge par jour, croisée avec le stand (trous de couverture) ou l'animateur (surcharge) |
 | `/timeline` | `app/pages/animateur-timeline/` | Timeline individuelle d'un animateur : amplitude, vacations et pauses/déplacements jour par jour |
+| `/instantanes` | `app/pages/snapshots/` | Instantanés de plan : enregistrer, restaurer, supprimer un plan mis de côté (un instantané est aussi pris automatiquement avant chaque résolution) |
+| `/what-if` | `app/pages/what-if/` | Simulation « et si ? » : impact d'un désistement, d'un recrutement ou de la fermeture d'un stand, sans rien écrire |
 
 `/exports` et `/solver` (son ancienne route) redirigent vers `/` (les exports
 PDF / ICS sont déclenchés depuis la page de résolution) ; toute route inconnue
