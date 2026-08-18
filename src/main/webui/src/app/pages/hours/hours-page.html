@@ -1,6 +1,6 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title i18n="@@hours.title">Heures planifiées par animateur</mat-card-title>
+    <h1 mat-card-title i18n="@@hours.title">Heures planifiées par animateur</h1>
     <mat-card-subtitle i18n="@@hours.description">
       Les heures sont regroupées par semaine calendaire ISO, calculées à partir du planning résolu cette session ou
       du dernier enregistré en base.
@@ -22,6 +22,7 @@
   @if (rapport(); as report) {
     <mat-card-content class="table-wrapper">
       <table mat-table [dataSource]="sortedAnimateurs()" matSort [matSortActive]="sort().active" [matSortDirection]="sort().direction" (matSortChange)="sort.set($event)">
+        <caption class="visually-hidden" i18n="@@hours.table.caption">Heures planifiées par animateur et par semaine ISO, avec le total de l'événement</caption>
         @for (col of columns(); track col) {
           <ng-container [matColumnDef]="col">
             @if (col === 'animateur') {

@@ -1,6 +1,6 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title i18n="@@aide.intro.title">Aide à l'utilisation</mat-card-title>
+    <h1 mat-card-title i18n="@@aide.intro.title">Aide à l'utilisation</h1>
     <mat-card-subtitle i18n="@@aide.intro.subtitle">
       Guide d'utilisation de l'application : à quoi sert chaque écran, comment configurer le solveur, comment lire un
       résultat et quoi corriger quand un planning n'est pas réalisable. Cette page ne lit aucune donnée et reste
@@ -48,7 +48,7 @@
   <mat-card appearance="outlined" class="page-card aide-section" [id]="section.id">
     <mat-card-header>
       <mat-icon mat-card-avatar class="aide-section-icon">{{ section.icon }}</mat-icon>
-      <mat-card-title>{{ section.title }}</mat-card-title>
+      <h2 mat-card-title>{{ section.title }}</h2>
       <mat-card-subtitle>{{ section.summary }}</mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>

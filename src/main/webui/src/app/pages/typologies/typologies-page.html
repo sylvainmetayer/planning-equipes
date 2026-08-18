@@ -1,6 +1,6 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title i18n="@@typologies.list.title">Typologies ({{ store.typologies().length }})</mat-card-title>
+    <h1 mat-card-title i18n="@@typologies.list.title">Typologies ({{ store.typologies().length }})</h1>
   </mat-card-header>
   <mat-card-actions class="card-actions">
     <button matButton="filled" type="button" [disabled]="editingLocked()" (click)="openCreate()">
@@ -26,6 +26,7 @@
                             (remove)="removeSelection()" (clear)="selection.clear()" />
     }
     <table mat-table [dataSource]="typologiesFiltrees()">
+      <caption class="visually-hidden" i18n="@@typologies.table.caption">Typologies de jeu du référentiel : identifiant, libellé et actions</caption>
       <ng-container matColumnDef="select">
         <th mat-header-cell *matHeaderCellDef>
           <mat-checkbox i18n-aria-label="@@bulk.selectAll" aria-label="Tout sélectionner"

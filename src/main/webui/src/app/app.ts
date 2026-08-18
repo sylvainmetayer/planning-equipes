@@ -1,6 +1,18 @@
+import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, linkedSignal, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  ElementRef,
+  computed,
+  inject,
+  linkedSignal,
+  signal,
+  viewChild
+} from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { Title } from '@angular/platform-browser';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
@@ -8,8 +20,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { map } from 'rxjs';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { filter, map } from 'rxjs';
 import { EditionStore } from './core/edition.store';
 import { AppLocale, getStoredLocale, setStoredLocaleAndReload } from './core/locale';
 import {
@@ -202,6 +214,10 @@ export class App {
   protected readonly notifications = inject(NotificationService);
   protected readonly locale: AppLocale = getStoredLocale();
 
+  private readonly router = inject(Router);
+  private readonly title = inject(Title);
+  private readonly announcer = inject(LiveAnnouncer);
+
   /** True while at least one unread notification is severity 'alert': overrides the badge count with a warning glyph. */
   protected readonly hasUnreadAlert = computed(() =>
     this.notifications.notifications().some((notification) => notification.severity === 'alert' && !notification.read)
@@ -243,6 +259,15 @@ export class App {
     // the list of editions is loaded here rather than by any single page.
     void this.editions.reload();
     inject(DestroyRef).onDestroy(this.jobs.onResult('SOLVE', () => void this.resolution.reload()));
+    // Router `title` is applied on NavigationEnd too; subscribing after it in
+    // the same microtask order means `Title.getTitle()` already holds the new
+    // page's title when the announcement is built.
+    this.router.events
+      .pipe(
+        filter((event) => event instanceof NavigationEnd),
+        takeUntilDestroyed()
+      )
+      .subscribe(() => queueMicrotask(() => this.annoncerNavigation()));
   }
 
   protected toggleDrawer(): void {
@@ -261,6 +286,41 @@ export class App {
     const next = toggleCollapsedGroup(this.collapsedGroups(), group.id);
     this.collapsedGroups.set(next);
     writeCollapsedGroups(this.navStorage, next);
+  }
+
+  protected readonly allCollapsed = computed(() => this.collapsedGroups().size >= this.navGroups.length);
+
+  /** One control for the five groups: folding them one by one is five clicks. */
+  protected toggleAllGroups(): void {
+    const next = this.allCollapsed() ? new Set<string>() : new Set(this.navGroups.map((group) => group.id));
+    this.collapsedGroups.set(next);
+    writeCollapsedGroups(this.navStorage, next);
+  }
+
+  /**
+   * Moves the focus into the page content, and announces which page it is.
+   *
+   * A router navigation swaps the content but leaves the focus on the link
+   * that was clicked: a keyboard user tabs back through the whole drawer, and
+   * a screen reader announces nothing at all. Focusing the `<main>` (which is
+   * `tabindex="-1"`, so focusable by script but not by tab) puts the caret at
+   * the top of the new page, and the announcer speaks its title — the same
+   * title the browser puts in the tab.
+   */
+  private readonly contenu = viewChild<ElementRef<HTMLElement>>('contenu');
+
+  private annoncerNavigation(): void {
+    this.contenu()?.nativeElement.focus({ preventScroll: true });
+    const titre = this.title.getTitle().split('—')[0].trim();
+    if (titre) {
+      this.announcer.announce(titre, 'polite');
+    }
+  }
+
+  /** Skip link: `href="#contenu"` alone would move the caret but not the focus. */
+  protected focusContenu(event: Event): void {
+    event.preventDefault();
+    this.contenu()?.nativeElement.focus();
   }
 
   /** Closes the overlay drawer after navigating on a small screen. */

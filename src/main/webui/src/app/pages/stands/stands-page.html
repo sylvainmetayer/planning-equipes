@@ -1,6 +1,6 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title i18n="@@stands.list.title">Stands ({{ store.stands().length }})</mat-card-title>
+    <h1 mat-card-title i18n="@@stands.list.title">Stands ({{ store.stands().length }})</h1>
     <mat-card-subtitle i18n="@@stands.form.description">Un stand est doté d'un effectif à chaque créneau, entre son effectif minimum et maximum.</mat-card-subtitle>
   </mat-card-header>
   <mat-card-actions class="card-actions">
@@ -23,6 +23,7 @@
                             (edit)="editSelection()" (remove)="removeSelection()" (clear)="selection.clear()" />
     }
     <table mat-table [dataSource]="standsFiltres()">
+      <caption class="visually-hidden" i18n="@@stands.table.caption">Stands du référentiel : nom, effectifs, typologies, emplacement et actions</caption>
       <ng-container matColumnDef="select">
         <th mat-header-cell *matHeaderCellDef>
           <mat-checkbox i18n-aria-label="@@bulk.selectAll" aria-label="Tout sélectionner"

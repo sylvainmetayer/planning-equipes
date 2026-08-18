@@ -22,6 +22,10 @@ async function bootstrap(): Promise<void> {
   ]);
   initObservability(observabilityConfig);
   const locale = isEnglish ? 'en' : 'fr';
+  // `index.html` can only declare one language; the UI picks its own at
+  // runtime. Without this, a screen reader reads the English catalog with
+  // French pronunciation rules (WCAG 3.1.1).
+  document.documentElement.lang = locale;
   await bootstrapApplication(App, {
     ...appConfig,
     providers: [

@@ -1,8 +1,10 @@
+<h1 class="page-title" i18n="@@nav.link.solver">Solveur</h1>
+
 <app-problem-summary-banner [problemes]="problemes.problemes()" />
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title i18n="@@solver.volumetry.title">Volumétrie du problème</mat-card-title>
+    <h2 mat-card-title i18n="@@solver.volumetry.title">Volumétrie du problème</h2>
     <mat-card-subtitle i18n="@@solver.volumetry.hint">
       Données de référence du groupe de créneaux actif, mises à jour dès qu'elles changent.
     </mat-card-subtitle>
@@ -42,7 +44,7 @@
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title i18n="@@nav.link.solver">Solveur</mat-card-title>
+    <h2 mat-card-title i18n="@@nav.link.solver">Solveur</h2>
     <mat-card-subtitle i18n="@@solver.description">
       Exécute Timefold en arrière-plan ; le résultat est analysé automatiquement. Une seule tâche du solveur s'exécute à la
       fois pour tout le serveur. Initialisez ou réinitialisez les données depuis la page Configuration des données.
@@ -97,7 +99,7 @@
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title i18n="@@dataSetup.solverDuration.title">Résolution du solveur</mat-card-title>
+    <h2 mat-card-title i18n="@@dataSetup.solverDuration.title">Résolution du solveur</h2>
     <mat-card-subtitle i18n="@@dataSetup.solverDuration.hint">
       Durée maximale allouée au solveur Timefold pour une résolution ou une analyse. Par défaut : 3 min.
     </mat-card-subtitle>

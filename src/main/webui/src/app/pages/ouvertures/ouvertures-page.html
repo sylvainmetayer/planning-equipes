@@ -1,6 +1,6 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title i18n="@@ouvertures.title">Ouvertures des stands</mat-card-title>
+    <h1 mat-card-title i18n="@@ouvertures.title">Ouvertures des stands</h1>
     <mat-card-subtitle i18n="@@ouvertures.subtitle">
       Ce que le solveur lira réellement : règles d'horaire étendues, exceptions datées appliquées, fenêtres bornées à
       chaque créneau du groupe actif. Une case par stand et par jour.
@@ -58,6 +58,7 @@
 
       <div class="table-wrapper">
         <table class="ouvertures-grille">
+          <caption class="visually-hidden" i18n="@@ouvertures.table.caption">Ouvertures effectives des stands : une ligne par stand, une colonne par journée du festival</caption>
           <thead>
             <tr>
               <th scope="col" class="colonne-stand" i18n="@@ouvertures.colonne.stand">Stand</th>

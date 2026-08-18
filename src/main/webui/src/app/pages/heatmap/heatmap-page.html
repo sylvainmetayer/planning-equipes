@@ -1,6 +1,6 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title i18n="@@nav.link.heatmap">Heatmap de charge</mat-card-title>
+    <h1 mat-card-title i18n="@@nav.link.heatmap">Heatmap de charge</h1>
     <mat-card-subtitle i18n="@@heatmap.subtitle">
       Vue d'ensemble par jour pour repérer immédiatement les surcharges et les trous de couverture.
     </mat-card-subtitle>
@@ -55,11 +55,12 @@
       } @else {
         <div class="table-wrapper">
           <table class="heatmap-table">
+            <caption class="visually-hidden" i18n="@@heatmap.table.caption">Charge par jour : une ligne par stand ou par animateur, une colonne par journée du festival</caption>
             <thead>
               <tr>
-                <th class="heatmap-row-header">{{ view() === 'stand' ? standColumnLabel : animateurColumnLabel }}</th>
+                <th scope="col" class="heatmap-row-header">{{ view() === 'stand' ? standColumnLabel : animateurColumnLabel }}</th>
                 @for (day of activeTable().days; track day.jour) {
-                  <th class="heatmap-day-header" [title]="day.date ?? ''">{{ day.label }}</th>
+                  <th scope="col" class="heatmap-day-header" [title]="day.date ?? ''">{{ day.label }}</th>
                 }
               </tr>
             </thead>

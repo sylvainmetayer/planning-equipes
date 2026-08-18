@@ -1,6 +1,8 @@
+<h1 class="page-title" i18n="@@nav.link.creneaux">Créneaux</h1>
+
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title i18n="@@groupesCreneaux.list.title">Groupes de créneaux</mat-card-title>
+    <h2 mat-card-title i18n="@@groupesCreneaux.list.title">Groupes de créneaux</h2>
     <mat-card-subtitle i18n="@@groupesCreneaux.list.subtitle">Un seul groupe est actif à la fois : c'est lui que le solveur utilise. Cochez un groupe pour l'activer et désactiver les autres.</mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
@@ -35,7 +37,7 @@
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title i18n="@@creneaux.list.title">Créneaux ({{ creneauxAffiches().length }})</mat-card-title>
+    <h2 mat-card-title i18n="@@creneaux.list.title">Créneaux ({{ creneauxAffiches().length }})</h2>
     <mat-card-subtitle i18n="@@creneaux.form.description">Chaque stand est ouvert sur chaque créneau par défaut ; les fermetures se déclarent depuis la fiche du stand.</mat-card-subtitle>
   </mat-card-header>
   <mat-card-actions class="card-actions">
@@ -63,6 +65,7 @@
     }
     <div class="table-wrapper">
       <table mat-table [dataSource]="creneauxAffiches()">
+        <caption class="visually-hidden" i18n="@@creneaux.table.caption">Créneaux de la grille affichée : jour, date, horaires, groupe et actions</caption>
         <ng-container matColumnDef="select">
           <th mat-header-cell *matHeaderCellDef>
             <mat-checkbox i18n-aria-label="@@bulk.selectAll" aria-label="Tout sélectionner"

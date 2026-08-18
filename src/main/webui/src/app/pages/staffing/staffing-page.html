@@ -1,6 +1,6 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title i18n="@@staffing.title">Besoin minimum en effectif</mat-card-title>
+    <h1 mat-card-title i18n="@@staffing.title">Besoin minimum en effectif</h1>
     <mat-card-subtitle i18n="@@staffing.description">
       Trois bornes minimales calculées sur les sièges que le solveur devrait réellement pourvoir (horaires des stands
       résolus, vacations générées comprises), avant la saisie d'aucun animateur — la plus grande des trois est retenue.
@@ -71,6 +71,7 @@
       } @else {
         <div class="table-wrapper">
           <table mat-table [dataSource]="resume.parJour">
+            <caption class="visually-hidden" i18n="@@staffing.table.caption">Besoin en animateurs journée par journée, pour la grille de créneaux active</caption>
             <ng-container matColumnDef="jour">
               <th mat-header-cell *matHeaderCellDef i18n="@@staffing.column.jour">Journée</th>
               <td mat-cell *matCellDef="let row">J{{ row.jour }} · {{ row.date }}</td>

@@ -1,6 +1,6 @@
 <mat-card appearance="outlined">
   <mat-card-header>
-    <mat-card-title i18n="@@whatIf.title">Simulation « et si ? »</mat-card-title>
+    <h1 mat-card-title i18n="@@whatIf.title">Simulation « et si ? »</h1>
     <mat-card-subtitle i18n="@@whatIf.subtitle">
       Trois désistements, un recrutement de dernière minute, un stand fermé par la météo : mesurez l'impact sans
       toucher aux données. Rien n'est enregistré — cet écran ne sait que lire.
@@ -84,7 +84,7 @@
 @if (resultat(); as resultat) {
   <mat-card appearance="outlined" class="page-card">
     <mat-card-header>
-      <mat-card-title i18n="@@whatIf.result.title">Impact</mat-card-title>
+      <h2 mat-card-title i18n="@@whatIf.result.title">Impact</h2>
     </mat-card-header>
     <mat-card-content>
       <ul class="what-if-deltas">
@@ -129,7 +129,7 @@
 
   <mat-card appearance="outlined" class="page-card">
     <mat-card-header>
-      <mat-card-title i18n="@@whatIf.solve.title">Score approché (résolution courte)</mat-card-title>
+      <h2 mat-card-title i18n="@@whatIf.solve.title">Score approché (résolution courte)</h2>
       <mat-card-subtitle i18n="@@whatIf.solve.subtitle">
         Le contrôle ci-dessus est une estimation de capacité, sans résolution. Pour un score comparable, lancez une
         résolution courte sur la variante : elle ne remplace pas une vraie résolution ({{ dureeReelle() }} s) et

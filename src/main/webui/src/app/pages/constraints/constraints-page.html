@@ -1,8 +1,10 @@
+<h1 class="page-title" i18n="@@nav.link.constraints">Contraintes</h1>
+
 <app-feasibility-banner [report]="feasibility()" [hardScore]="hardScore()" [hardIssues]="hardIssues()" />
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title i18n="@@constraints.legal.title">Paramètres légaux</mat-card-title>
+    <h2 mat-card-title i18n="@@constraints.legal.title">Paramètres légaux</h2>
     <mat-card-subtitle i18n="@@constraints.legal.description">
       Plafonds hebdomadaires de temps de travail appliqués par les contraintes fortes
       <code>dureeHebdomadaireMax</code> (majeurs) et <code>dureeHebdomadaireMaxMineur</code>. Tous les animateurs sont
@@ -43,7 +45,7 @@
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title i18n="@@constraints.active.title">Contraintes actives</mat-card-title>
+    <h2 mat-card-title i18n="@@constraints.active.title">Contraintes actives</h2>
     <mat-card-subtitle i18n="@@constraints.active.description">
       Description métier de chaque règle appliquée par le solveur, avec le résultat de la dernière analyse.
     </mat-card-subtitle>
@@ -78,7 +80,7 @@
 @for (group of groups(); track group.categorie) {
   <mat-card appearance="outlined" class="page-card">
     <mat-card-header>
-      <mat-card-title>{{ group.categorie }}</mat-card-title>
+      <h2 mat-card-title>{{ group.categorie }}</h2>
     </mat-card-header>
     <mat-card-content>
       <div class="constraint-grid">

@@ -1,6 +1,6 @@
 <mat-card appearance="outlined">
   <mat-card-header>
-    <mat-card-title i18n="@@snapshots.title">Instantanés de plan</mat-card-title>
+    <h1 mat-card-title i18n="@@snapshots.title">Instantanés de plan</h1>
     <mat-card-subtitle i18n="@@snapshots.subtitle">
       Un seul plan est enregistré à la fois : chaque résolution écrase le précédent. Un instantané le met de côté —
       et un instantané est pris automatiquement avant chaque résolution.
@@ -33,6 +33,7 @@
     }
     <div class="table-wrapper">
       <table mat-table [dataSource]="store.snapshots()">
+        <caption class="visually-hidden" i18n="@@snapshots.table.caption">Instantanés de plan enregistrés : libellé, grille de créneaux, score, taille et date</caption>
         <ng-container matColumnDef="libelle">
           <th mat-header-cell *matHeaderCellDef i18n="@@snapshots.column.libelle">Instantané</th>
           <td mat-cell *matCellDef="let snapshot">

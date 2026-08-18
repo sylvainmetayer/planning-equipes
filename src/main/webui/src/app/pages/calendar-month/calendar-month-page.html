@@ -1,6 +1,8 @@
+<h1 class="page-title" i18n="@@nav.link.calendar">Calendrier des affectations</h1>
+
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title>{{ monthLabel() }}</mat-card-title>
+    <h2 mat-card-title>{{ monthLabel() }}</h2>
     <mat-card-subtitle i18n="@@calendarMonth.subtitle">Vue en lecture seule du dernier planning résolu ou enregistré.</mat-card-subtitle>
   </mat-card-header>
 
@@ -103,7 +105,7 @@
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title>{{ dayTitle() || dayDetailsFallback }}</mat-card-title>
+    <h2 mat-card-title>{{ dayTitle() || dayDetailsFallback }}</h2>
   </mat-card-header>
   <mat-card-content aria-live="polite">
     @if (!hasData()) {

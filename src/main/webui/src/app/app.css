@@ -4,6 +4,62 @@
   height: 100%;
 }
 
+/*
+ * Visible only once focused: the first Tab of the page jumps straight past the
+ * drawer's 27 links instead of walking through them on every navigation.
+ */
+.skip-link {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 10;
+  transform: translateY(-150%);
+  padding: 0.6rem 1rem;
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+  border-radius: 0 0 var(--mat-sys-corner-small) 0;
+  font: var(--mat-sys-label-large);
+  text-decoration: none;
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+/* The content region is focused on every navigation; the ring would otherwise
+   draw a box around the whole page. */
+.app-page:focus {
+  outline: none;
+}
+
+.app-page:focus-visible {
+  outline: 2px solid var(--mat-sys-primary);
+  outline-offset: -2px;
+}
+
+.nav-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.5rem 0.5rem 0;
+}
+
+.nav-toolbar-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  padding: 0.35rem 0.5rem;
+  border-radius: var(--mat-sys-corner-small);
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-label-medium);
+}
+
+.nav-toolbar-action:hover {
+  background: var(--mat-sys-surface-container-high);
+}
+
 .app-toolbar {
   position: sticky;
   top: 0;

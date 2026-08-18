@@ -1,6 +1,6 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title i18n="@@emplacements.list.title">Emplacements ({{ store.emplacements().length }})</mat-card-title>
+    <h1 mat-card-title i18n="@@emplacements.list.title">Emplacements ({{ store.emplacements().length }})</h1>
   </mat-card-header>
   <mat-card-actions class="card-actions">
     <button matButton="filled" type="button" [disabled]="editingLocked()" (click)="openCreate()">
@@ -16,6 +16,7 @@
                             (edit)="editSelection()" (remove)="removeSelection()" (clear)="selection.clear()" />
     }
     <table mat-table [dataSource]="emplacementsFiltres()">
+      <caption class="visually-hidden" i18n="@@emplacements.table.caption">Emplacements du référentiel : identifiant, nom, coordonnées et actions</caption>
       <ng-container matColumnDef="select">
         <th mat-header-cell *matHeaderCellDef>
           <mat-checkbox i18n-aria-label="@@bulk.selectAll" aria-label="Tout sélectionner"

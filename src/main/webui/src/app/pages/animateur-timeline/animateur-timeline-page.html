@@ -1,6 +1,6 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title i18n="@@nav.link.timeline">Timeline animateur</mat-card-title>
+    <h1 mat-card-title i18n="@@nav.link.timeline">Timeline animateur</h1>
     <mat-card-subtitle i18n="@@timeline.subtitle">
       Amplitude journalière, vacations et pauses/déplacements d'un animateur, jour par jour.
     </mat-card-subtitle>
@@ -67,7 +67,7 @@
   } @else {
     <mat-card appearance="outlined" class="page-card timeline-stands-card">
       <mat-card-header>
-        <mat-card-title i18n="@@timeline.stands.title">Stands à couvrir</mat-card-title>
+        <h2 mat-card-title i18n="@@timeline.stands.title">Stands à couvrir</h2>
         <mat-card-subtitle>{{ standsSummaryLabel() }}</mat-card-subtitle>
       </mat-card-header>
       <mat-card-content>
@@ -90,7 +90,7 @@
     @for (day of days(); track day.jour) {
       <mat-card appearance="outlined" class="page-card timeline-day-card">
         <mat-card-header>
-          <mat-card-title>{{ day.title }}</mat-card-title>
+          <h2 mat-card-title>{{ day.title }}</h2>
           <mat-card-subtitle>{{ day.amplitudeLabel }}</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>

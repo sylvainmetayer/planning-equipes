@@ -1,3 +1,5 @@
+<a class="skip-link" href="#contenu" (click)="focusContenu($event)" i18n="@@shell.skipToContent">Aller au contenu</a>
+
 <mat-toolbar class="app-toolbar">
   <img src="logo.png" alt="Planning Équipes" class="app-logo" />
   <button matIconButton i18n-aria-label="@@shell.toggleNav" aria-label="Afficher/masquer la navigation" (click)="toggleDrawer()">
@@ -15,56 +17,68 @@
 <mat-sidenav-container class="app-shell">
   <mat-sidenav class="app-drawer" [mode]="drawerMode()" [opened]="drawerOpen()"
                (openedChange)="drawerOpen.set($event)">
-    @for (group of navGroups; track group.id) {
-      <mat-nav-list>
-        <button
-          type="button"
-          class="nav-group-header"
-          [attr.aria-expanded]="!isCollapsed(group)"
-          [attr.aria-controls]="'nav-group-' + group.id"
-          (click)="toggleGroup(group)"
-        >
-          <span>{{ group.title }}</span>
-          <mat-icon>{{ isCollapsed(group) ? 'expand_more' : 'expand_less' }}</mat-icon>
-        </button>
-        @if (!isCollapsed(group)) {
-        <div [id]="'nav-group-' + group.id">
-        @for (link of group.links; track link.path) {
-          @if (link.external) {
-            <a mat-list-item [href]="link.path" target="_blank" rel="noopener">
-              <mat-icon matListItemIcon>{{ link.icon }}</mat-icon>
-              <span matListItemTitle>{{ link.label }}</span>
-            </a>
+    <nav i18n-aria-label="@@shell.navLabel" aria-label="Navigation principale">
+      <div class="nav-toolbar">
+        <button type="button" class="nav-toolbar-action" (click)="toggleAllGroups()">
+          <mat-icon>{{ allCollapsed() ? 'unfold_more' : 'unfold_less' }}</mat-icon>
+          @if (allCollapsed()) {
+            <span i18n="@@shell.expandAll">Tout déplier</span>
           } @else {
-            <a mat-list-item [routerLink]="link.path" routerLinkActive="active-link"
-               [routerLinkActiveOptions]="{ exact: link.path === '/' }" (click)="onNavigate()">
-              @if (link.badge === 'notifications') {
-                <mat-icon
-                  matListItemIcon
-                  [matBadge]="notificationBadgeContent()"
-                  [matBadgeHidden]="notifications.unreadCount() === 0"
-                  [matBadgeColor]="hasUnreadAlert() ? 'warn' : 'accent'"
-                  [matBadgeDescription]="notificationBadgeDescription()"
-                >{{ link.icon }}</mat-icon>
-              } @else {
-                <mat-icon matListItemIcon>{{ link.icon }}</mat-icon>
-              }
-              <span matListItemTitle>{{ link.label }}</span>
-            </a>
+            <span i18n="@@shell.collapseAll">Tout replier</span>
           }
-        }
-        </div>
-        }
-      </mat-nav-list>
-      <mat-divider />
-    }
+        </button>
+      </div>
+      @for (group of navGroups; track group.id) {
+        <mat-nav-list>
+          <button
+            type="button"
+            class="nav-group-header"
+            [attr.aria-expanded]="!isCollapsed(group)"
+            [attr.aria-controls]="'nav-group-' + group.id"
+            (click)="toggleGroup(group)"
+          >
+            <span>{{ group.title }}</span>
+            <mat-icon>{{ isCollapsed(group) ? 'expand_more' : 'expand_less' }}</mat-icon>
+          </button>
+          <div [id]="'nav-group-' + group.id" [hidden]="isCollapsed(group)">
+            @for (link of group.links; track link.path) {
+              @if (link.external) {
+                <a mat-list-item [href]="link.path" target="_blank" rel="noopener">
+                  <mat-icon matListItemIcon>{{ link.icon }}</mat-icon>
+                  <span matListItemTitle>{{ link.label }}</span>
+                </a>
+              } @else {
+                <a mat-list-item [routerLink]="link.path" routerLinkActive="active-link"
+                   #rla="routerLinkActive"
+                   [attr.aria-current]="rla.isActive ? 'page' : null"
+                   [routerLinkActiveOptions]="{ exact: link.path === '/' }" (click)="onNavigate()">
+                  @if (link.badge === 'notifications') {
+                    <mat-icon
+                      matListItemIcon
+                      [matBadge]="notificationBadgeContent()"
+                      [matBadgeHidden]="notifications.unreadCount() === 0"
+                      [matBadgeColor]="hasUnreadAlert() ? 'warn' : 'accent'"
+                      [matBadgeDescription]="notificationBadgeDescription()"
+                    >{{ link.icon }}</mat-icon>
+                  } @else {
+                    <mat-icon matListItemIcon>{{ link.icon }}</mat-icon>
+                  }
+                  <span matListItemTitle>{{ link.label }}</span>
+                </a>
+              }
+            }
+          </div>
+        </mat-nav-list>
+        <mat-divider />
+      }
+    </nav>
   </mat-sidenav>
 
   <mat-sidenav-content>
     <app-edition-actuelle-bar />
-    <div class="app-page">
+    <main id="contenu" class="app-page" tabindex="-1" #contenu>
       <app-groupe-mismatch-banner />
       <router-outlet />
-    </div>
+    </main>
   </mat-sidenav-content>
 </mat-sidenav-container>

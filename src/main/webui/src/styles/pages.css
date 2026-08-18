@@ -269,3 +269,26 @@ form.form-grid {
   color: var(--mat-sys-on-surface-variant);
   margin-left: 0.25rem;
 }
+
+/* Page-level heading for the screens whose first card is not the page itself
+   (Solveur, Contraintes, Créneaux, Données, Verrouillages, Calendrier). Every
+   other screen carries its <h1> on its first mat-card-title. */
+.page-title {
+  font: var(--mat-sys-headline-small);
+  color: var(--mat-sys-on-surface);
+  margin: 0 0 1rem;
+}
+
+/* Available to assistive technology, invisible on screen — table captions and
+   the odd label whose meaning is already carried visually by layout. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

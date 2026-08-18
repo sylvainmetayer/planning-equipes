@@ -1,8 +1,10 @@
+<h1 class="page-title" i18n="@@nav.link.verrouillages">Verrouillages</h1>
+
 <app-work-in-progress-banner />
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title i18n="@@verrouillages.form.title">Verrouiller une partie du planning</mat-card-title>
+    <h2 mat-card-title i18n="@@verrouillages.form.title">Verrouiller une partie du planning</h2>
     <mat-card-subtitle i18n="@@verrouillages.form.subtitle">
       Une cible verrouillée est figée : à la prochaine résolution, les affectations déjà enregistrées qu'elle couvre
       sont conservées telles quelles, et seul le reste du planning est réoptimisé. Un poste non pourvu n'est jamais
@@ -85,10 +87,11 @@
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title i18n="@@verrouillages.list.title">Verrouillages ({{ rows().length }})</mat-card-title>
+    <h2 mat-card-title i18n="@@verrouillages.list.title">Verrouillages ({{ rows().length }})</h2>
   </mat-card-header>
   <mat-card-content class="table-wrapper">
     <table mat-table [dataSource]="rows()">
+      <caption class="visually-hidden" i18n="@@verrouillages.table.caption">Verrouillages du planning : périmètre, période et actions</caption>
       <ng-container matColumnDef="type">
         <th mat-header-cell *matHeaderCellDef i18n="@@verrouillages.field.type">Type</th>
         <td mat-cell *matCellDef="let row">

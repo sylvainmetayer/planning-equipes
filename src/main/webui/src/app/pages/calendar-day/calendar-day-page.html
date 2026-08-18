@@ -1,6 +1,6 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title i18n="@@nav.link.dayCalendar">Calendrier journalier</mat-card-title>
+    <h1 mat-card-title i18n="@@nav.link.dayCalendar">Calendrier journalier</h1>
     <mat-card-subtitle i18n="@@calendarDay.subtitle">
       Créneaux regroupés par jour de festival, avec les animateurs affectés à chaque stand.
     </mat-card-subtitle>
@@ -35,7 +35,7 @@
     @for (day of days(); track day.jour) {
       <mat-card appearance="outlined" class="day-card" [class.has-understaffed]="day.understaffed" [class.has-appreciation-mismatch]="day.appreciationMismatch">
         <mat-card-header>
-          <mat-card-title>
+          <h2 mat-card-title>
             {{ day.title }}
             @if (day.understaffed) {
               <mat-icon inline class="understaffed-icon" [matTooltip]="dayUnderstaffedTooltip" [attr.aria-label]="dayUnderstaffedTooltip">
@@ -52,7 +52,7 @@
                 lock
               </mat-icon>
             }
-          </mat-card-title>
+          </h2>
         </mat-card-header>
         <mat-card-content>
           @for (slot of day.slots; track slot.creneauId) {

@@ -1,6 +1,6 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title i18n="@@decoupage.intro.title">Découpage automatique en vacations</mat-card-title>
+    <h1 mat-card-title i18n="@@decoupage.intro.title">Découpage automatique en vacations</h1>
     <mat-card-subtitle i18n="@@decoupage.intro.subtitle">
       À partir d'un groupe d'amplitudes (une seule fenêtre d'ouverture par jour, ex. un scénario "continu"), génère automatiquement des vacations de travail plus courtes et chevauchantes, jamais au-dessus du seuil légal de pause — sans créneau à saisir à la main.
     </mat-card-subtitle>
@@ -9,7 +9,7 @@
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title i18n="@@decoupage.parametres.title">Paramètres de découpage</mat-card-title>
+    <h2 mat-card-title i18n="@@decoupage.parametres.title">Paramètres de découpage</h2>
   </mat-card-header>
   <mat-card-content>
     @if (parametres(); as p) {
@@ -95,7 +95,7 @@
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <mat-card-title i18n="@@decoupage.generer.title">Générer un découpage</mat-card-title>
+    <h2 mat-card-title i18n="@@decoupage.generer.title">Générer un découpage</h2>
   </mat-card-header>
   <mat-card-content>
     <form class="form-grid">
