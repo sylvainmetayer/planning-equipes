@@ -15,6 +15,7 @@ import { SolverSettingsService } from '../../core/solver-settings.service';
 import { FeasibilityBanner } from '../../shared/feasibility-banner';
 import { SelectionRecherche } from '../../shared/selection-recherche';
 import { StatusMessage } from '../../shared/status-message';
+import { WorkInProgressBanner } from '../../shared/work-in-progress-banner';
 
 /**
  * "What if?" screen (issue #73): recruit three more, three cancel, close the
@@ -40,7 +41,8 @@ import { StatusMessage } from '../../shared/status-message';
     MatSelectModule,
     FeasibilityBanner,
     SelectionRecherche,
-    StatusMessage
+    StatusMessage,
+    WorkInProgressBanner
   ],
   templateUrl: './what-if-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush

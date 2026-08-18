@@ -91,7 +91,6 @@ function buildNavGroups(): NavGroup[] {
         icon: 'storage'
       },
       { path: '/instantanes', label: $localize`:@@nav.link.snapshots:Instantanés`, icon: 'history' },
-      { path: '/what-if', label: $localize`:@@nav.link.whatIf:Simulation « et si ? »`, icon: 'science' },
       { path: '/aide', label: $localize`:@@nav.link.aide:Aide`, icon: 'help_outline' },
       { path: '/editions', label: $localize`:@@nav.link.editions:Éditions`, icon: 'layers' }
     ]
@@ -170,6 +169,7 @@ function buildNavGroups(): NavGroup[] {
         label: $localize`:@@nav.link.adHocConstraints:Contraintes ad hoc`,
         icon: 'rule'
       },
+      { path: '/what-if', label: $localize`:@@nav.link.whatIf:Simulation « et si ? »`, icon: 'science' },
       {
         path: '/verrouillages',
         label: $localize`:@@nav.link.verrouillages:Verrouillages`,
