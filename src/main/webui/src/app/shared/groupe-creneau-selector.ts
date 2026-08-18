@@ -1,3 +1,4 @@
+import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
@@ -97,6 +98,7 @@ export class GroupeCreneauSelector {
   private readonly resolution = inject(PlanningResolutionStore);
   private readonly jobs = inject(SolverJobService);
   private readonly dialog = inject(MatDialog);
+  private readonly announcer = inject(LiveAnnouncer);
 
   /** True while an activation or a creation is in flight. */
   protected readonly enCours = signal(false);
@@ -119,6 +121,13 @@ export class GroupeCreneauSelector {
       return;
     }
     this.enCours.set(true);
+    // Said before it happens: the page is about to be replaced wholesale, and
+    // for a screen reader an unannounced reload is the application vanishing
+    // and coming back.
+    this.announcer.announce(
+      $localize`:@@groupeCreneauSelector.switching:Passage au groupe de créneaux ${groupe.nom}:nom:. La page va être rechargée.`,
+      'assertive'
+    );
     try {
       await this.store.activerGroupeCreneau(groupe.id);
       // The mismatch banner compares against the active group; refresh it

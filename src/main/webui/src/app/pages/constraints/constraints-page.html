@@ -2,6 +2,8 @@
 
 <app-feasibility-banner [report]="feasibility()" [hardScore]="hardScore()" [hardIssues]="hardIssues()" />
 
+<app-status-message [text]="alerteReglesLegales()" tone="error" />
+
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
     <h2 mat-card-title i18n="@@constraints.legal.title">Paramètres légaux</h2>
@@ -56,6 +58,9 @@
         <mat-icon>refresh</mat-icon>
         <ng-container i18n="@@common.refresh">Actualiser</ng-container>
       </button>
+      <mat-slide-toggle [checked]="triParScore()" (change)="basculerTri()" i18n="@@constraints.sortByScore">
+        Trier par score
+      </mat-slide-toggle>
       @if (summary()) {
         <span class="calendar-meta">{{ summary() }}</span>
       }
@@ -83,6 +88,8 @@
       <h2 mat-card-title>{{ group.categorie }}</h2>
     </mat-card-header>
     <mat-card-content>
+      <fieldset class="constraint-fieldset">
+        <legend class="visually-hidden">{{ group.categorie }}</legend>
       <div class="constraint-grid">
         @for (constraint of group.items; track constraint.name) {
           <mat-card appearance="outlined" class="constraint-card" [class.constraint-card-inactive]="!constraint.actif">
@@ -114,6 +121,7 @@
           </mat-card>
         }
       </div>
+      </fieldset>
     </mat-card-content>
   </mat-card>
 }

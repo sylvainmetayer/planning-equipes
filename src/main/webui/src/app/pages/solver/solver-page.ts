@@ -4,6 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -21,6 +22,7 @@ import { SolverSettingsService } from '../../core/solver-settings.service';
 import { FeasibilityBanner, HardIssue } from '../../shared/feasibility-banner';
 import { OutputPanel } from '../../shared/output-panel';
 import { ProblemSummaryBanner } from '../../shared/problem-summary-banner';
+import { StatusMessage } from '../../shared/status-message';
 
 /**
  * A constraint's raw score string looks like `-14hard/0medium/0soft`
@@ -80,6 +82,8 @@ function bestUnitFor(seconds: number): SolverDurationUnit {
 @Component({
   selector: 'app-solver-page',
   imports: [
+    MatProgressBarModule,
+    StatusMessage,
     FormsModule,
     MatCardModule,
     MatButtonModule,
@@ -292,6 +296,37 @@ export class SolverPage {
     this.solverDurationValueDraft.set(secondsToValue(seconds, unit));
     this.solverDurationSecondsSaved.set(Math.round(seconds));
   }
+
+  /**
+   * Why the solver actions are greyed out, in words. A disabled button with no
+   * explanation is the classic dead end: the user clicks, nothing happens, and
+   * nothing says a run started from another browser is holding the lock.
+   */
+  /** Shared with the Contraintes screen: see `ProblemesStore.alerteReglesLegales`. */
+  protected readonly alerteReglesLegales = computed(() => this.problemes.alerteReglesLegales());
+
+  protected readonly raisonVerrou = computed(() => {
+    if (this.exportBusy()) {
+      return $localize`:@@solver.locked.export:Un export est en cours de génération.`;
+    }
+    if (!this.solverBusy()) {
+      return '';
+    }
+    return this.jobs.activeJob()
+      ? this.jobs.activeJobDescription()
+      : $localize`:@@solver.locked.unknown:L'état du solveur n'est pas encore connu : les actions se débloquent dès la première réponse du serveur.`;
+  });
+
+  /** Progress of the running job, as a share of the budget it was given. */
+  protected readonly progression = computed(() => {
+    const job = this.jobs.activeJob();
+    const restant = this.jobs.remainingSeconds();
+    if (!job?.secondsLimit || restant === null) {
+      return null;
+    }
+    const ecoule = job.secondsLimit - restant;
+    return Math.min(100, Math.max(0, Math.round((ecoule / job.secondsLimit) * 100)));
+  });
 
   protected async onTimefoldSolve(): Promise<void> {
     if (this.solverJobAlreadyRunning()) {

@@ -32,6 +32,30 @@ export class ProblemesStore {
   readonly comptage = computed(() => compterProblemes(this.problemes()));
 
   /**
+   * Legal rules currently switched off, and the sentence that says so.
+   *
+   * Disabling one lets the solver return a plan with a hard score of zero that
+   * still breaks the Code du travail, and nothing records the decision since
+   * the confirmation dialog was removed. The state is therefore kept visible
+   * wherever a solve is launched or judged — the Solveur and Contraintes
+   * screens both read this.
+   */
+  readonly reglesLegalesDesactivees = computed(() =>
+    (this.constraints()?.contraintes ?? []).filter(
+      (contrainte) => contrainte.categorie.startsWith('Légal') && !contrainte.actif
+    )
+  );
+
+  readonly alerteReglesLegales = computed(() => {
+    const desactivees = this.reglesLegalesDesactivees();
+    if (desactivees.length === 0) {
+      return '';
+    }
+    const noms = desactivees.map((contrainte) => contrainte.name).join(', ');
+    return $localize`:@@constraints.legalDisabled:${desactivees.length}:count: règle(s) légale(s) désactivée(s) : ${noms}:noms:. Le solveur peut produire un planning contraire au Code du travail tout en affichant un score dur à zéro.`;
+  });
+
+  /**
    * Stand id → the first cause naming it, for the row badges. Keys are the raw
    * stand ids; a stand can appear in several causes, only the most severe one
    * (causes are ranked server-side) is kept, since a tooltip shows one message.

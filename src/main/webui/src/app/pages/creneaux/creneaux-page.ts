@@ -8,6 +8,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { labelCreneauxPluriel } from '../../core/entity-labels';
@@ -39,6 +40,7 @@ import { CreneauFormData, CreneauFormDialog } from './creneau-form-dialog';
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
+    MatSortModule,
     MatTableModule,
     MatButtonModule,
     MatIconModule,
@@ -66,7 +68,10 @@ export class CreneauxPage {
   /** `null` = every group shown. */
   protected readonly filtreGroupeId = signal<string | null>(null);
 
-  protected readonly columns = ['select', 'jour', 'date', 'horaires', 'groupe', 'actions'];
+  protected readonly columns = ['select', 'jour', 'date', 'horaires', 'groupe', 'probleme', 'actions'];
+
+  /** Sorting, so the slots at fault can be grouped instead of hunted for. */
+  protected readonly sort = signal<Sort>({ active: '', direction: '' });
 
   /**
    * Filtered by the selected group (if any), then sorted by group name so
@@ -77,8 +82,25 @@ export class CreneauxPage {
   protected readonly creneauxAffiches = computed(() => {
     const groupeId = this.filtreGroupeId();
     const creneaux = groupeId ? this.store.creneaux().filter((c) => c.groupe?.id === groupeId) : this.store.creneaux();
-    return [...creneaux].sort((a, b) => (a.groupe?.nom ?? a.groupe?.id ?? '').localeCompare(b.groupe?.nom ?? b.groupe?.id ?? ''));
+    const parGroupe = [...creneaux].sort((a, b) =>
+      (a.groupe?.nom ?? a.groupe?.id ?? '').localeCompare(b.groupe?.nom ?? b.groupe?.id ?? '')
+    );
+    const { active, direction } = this.sort();
+    if (!active || !direction) {
+      return parGroupe;
+    }
+    const facteur = direction === 'asc' ? 1 : -1;
+    return parGroupe.sort((a, b) => facteur * this.comparer(a, b, active));
   });
+
+  /** `probleme` sorts on the shortfall, so the worst slots come first. */
+  private comparer(a: Creneau, b: Creneau, colonne: string): number {
+    if (colonne === 'probleme') {
+      const manque = (creneau: Creneau) => this.causeParCreneau().get(creneau.id)?.manque ?? 0;
+      return manque(a) - manque(b);
+    }
+    return a.jour - b.jour || (a.heureDebut ?? '').localeCompare(b.heureDebut ?? '');
+  }
 
   /** Keyed on the displayed slots, so the group filter also narrows "tout sélectionner". */
   protected readonly selection = new TableSelection<number>(

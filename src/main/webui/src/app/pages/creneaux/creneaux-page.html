@@ -64,7 +64,8 @@
       <p class="locked-hint" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
     }
     <div class="table-wrapper">
-      <table mat-table [dataSource]="creneauxAffiches()">
+      <table mat-table [dataSource]="creneauxAffiches()" matSort [matSortActive]="sort().active"
+             [matSortDirection]="sort().direction" (matSortChange)="sort.set($event)">
         <caption class="visually-hidden" i18n="@@creneaux.table.caption">Créneaux de la grille affichée : jour, date, horaires, groupe et actions</caption>
         <ng-container matColumnDef="select">
           <th mat-header-cell *matHeaderCellDef>
@@ -79,11 +80,21 @@
           </td>
         </ng-container>
         <ng-container matColumnDef="jour">
-          <th mat-header-cell *matHeaderCellDef i18n="@@creneaux.column.jour">Jour</th>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header i18n="@@creneaux.column.jour">Jour</th>
+          <td mat-cell *matCellDef="let creneau">J{{ creneau.jour }}</td>
+        </ng-container>
+        <ng-container matColumnDef="probleme">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header i18n="@@creneaux.column.probleme">Problème</th>
           <td mat-cell *matCellDef="let creneau">
-            J{{ creneau.jour }}
             @if (causeParCreneau().get(creneau.id); as cause) {
-              <mat-icon class="row-problem-icon" [matTooltip]="cause.message" [attr.aria-label]="cause.message">warning</mat-icon>
+              <span class="creneau-probleme">
+                <mat-icon class="row-problem-icon" aria-hidden="true">warning</mat-icon>
+                <span [matTooltip]="cause.message" i18n="@@creneaux.probleme.manque">
+                  {{ cause.manque }} animateur(s) manquant(s)
+                </span>
+              </span>
+            } @else {
+              <span class="visually-hidden" i18n="@@creneaux.probleme.aucun">Aucun</span>
             }
           </td>
         </ng-container>

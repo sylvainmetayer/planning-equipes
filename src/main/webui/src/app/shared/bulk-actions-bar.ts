@@ -13,6 +13,12 @@ import { MatIconModule } from '@angular/material/icon';
   template: `
     <div class="bulk-bar" role="status">
       <span class="bulk-bar-count">{{ countLabel() }}</span>
+      @if (filtre()) {
+        <!-- The selection follows the filter: "select all" ticks what is on
+             screen, not the whole referential. Worth saying before a bulk
+             delete, not after. -->
+        <span class="bulk-bar-scope" i18n="@@bulk.filteredScope">(lignes affichées par le filtre uniquement)</span>
+      }
       @if (editable()) {
         <button matButton type="button" [disabled]="disabled()" (click)="edit.emit()">
           <mat-icon>edit</mat-icon>
@@ -36,6 +42,8 @@ export class BulkActionsBar {
   readonly disabled = input(false);
   /** False on the pages whose entities share no bulk-editable field (typologies). */
   readonly editable = input(true);
+  /** True when a text filter is narrowing the table the selection was made in. */
+  readonly filtre = input(false);
 
   readonly edit = output<void>();
   readonly remove = output<void>();

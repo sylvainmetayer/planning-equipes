@@ -57,6 +57,21 @@ export class TypologiesPage {
 
   /** Quick filter of the table: id and label, the two things a typologie is looked up by. */
   protected readonly filtre = signal('');
+  /**
+   * Who references a typologie, counted before it can be deleted. Removing one
+   * silently strips it from every stand and animateur that named it.
+   */
+  protected usages(typologieId: string): string {
+    const stands = this.store.stands().filter((stand) => stand.typologiesProposees?.includes(typologieId)).length;
+    const animateurs = this.store
+      .animateurs()
+      .filter((animateur) => Object.keys(animateur.competences ?? {}).includes(typologieId)).length;
+    if (stands === 0 && animateurs === 0) {
+      return $localize`:@@typologies.usages.none:Aucun stand ni animateur ne la référence.`;
+    }
+    return $localize`:@@typologies.usages:${stands}:stands: stand(s) et ${animateurs}:animateurs: animateur(s) la référencent.`;
+  }
+
   protected readonly typologiesFiltrees = computed(() =>
     this.store.typologies().filter((typologie) => correspondAuFiltre(this.filtre(), [typologie.id, typologie.label]))
   );
@@ -138,7 +153,12 @@ export class TypologiesPage {
   }
 
   protected async remove(typologie: TypologieItem): Promise<void> {
-    await this.crud.remove('typologies', typologie.id, $localize`:@@typologies.entityLabel:Typologie`);
+    await this.crud.remove(
+      'typologies',
+      typologie.id,
+      $localize`:@@typologies.entityLabel:Typologie`,
+      this.usages(typologie.id)
+    );
   }
 
   protected async removeSelection(): Promise<void> {

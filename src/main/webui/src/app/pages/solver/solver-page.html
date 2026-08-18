@@ -2,6 +2,8 @@
 
 <app-problem-summary-banner [problemes]="problemes.problemes()" />
 
+<app-status-message [text]="alerteReglesLegales()" tone="error" />
+
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
     <h2 mat-card-title i18n="@@solver.volumetry.title">Volumétrie du problème</h2>
@@ -67,6 +69,17 @@
       <ng-container i18n="@@solver.exportGlobal">Exporter le planning global (PDF)</ng-container>
     </button>
   </mat-card-actions>
+  @if (raisonVerrou()) {
+    <mat-card-content>
+      <app-status-message [text]="raisonVerrou()" tone="info" />
+    </mat-card-content>
+  }
+  @if (progression() !== null) {
+    <mat-card-content>
+      <mat-progress-bar mode="determinate" [value]="progression()!"
+                        i18n-aria-label="@@solver.progress.label" aria-label="Progression de la résolution" />
+    </mat-card-content>
+  }
   @if (estimatedEnd()) {
     <mat-card-content>
       <p class="calendar-meta" aria-live="polite" i18n="@@solver.estimatedEnd">

@@ -20,19 +20,16 @@
     @if (store.chargement() || enCours() !== null) {
       <mat-progress-bar mode="indeterminate" />
     }
-    @if (error()) {
-      <p class="snapshot-error">{{ error() }}</p>
-    }
-    @if (message()) {
-      <p class="snapshot-message">{{ message() }}</p>
-    }
+    <app-status-message [text]="error()" tone="error" />
+    <app-status-message [text]="message()" tone="success" />
     @if (locked()) {
       <p class="locked-hint" i18n="@@snapshots.lockedHint">
         Une résolution est en cours : la restauration est désactivée, elle serait écrasée à la fin du calcul.
       </p>
     }
+    <h3 i18n="@@snapshots.section.manuels">Enregistrés par vous</h3>
     <div class="table-wrapper">
-      <table mat-table [dataSource]="store.snapshots()">
+      <table mat-table [dataSource]="instantanesManuels()">
         <caption class="visually-hidden" i18n="@@snapshots.table.caption">Instantanés de plan enregistrés : libellé, grille de créneaux, score, taille et date</caption>
         <ng-container matColumnDef="libelle">
           <th mat-header-cell *matHeaderCellDef i18n="@@snapshots.column.libelle">Instantané</th>
@@ -63,7 +60,12 @@
         </ng-container>
         <ng-container matColumnDef="creeLe">
           <th mat-header-cell *matHeaderCellDef i18n="@@snapshots.column.creeLe">Enregistré le</th>
-          <td mat-cell *matCellDef="let snapshot">{{ dateLabel(snapshot) }}</td>
+          <td mat-cell *matCellDef="let snapshot">
+            {{ dateLabel(snapshot) }}
+            @if (ecart(snapshot); as ecartLabel) {
+              <span class="snapshot-ecart">{{ ecartLabel }}</span>
+            }
+          </td>
         </ng-container>
         <ng-container matColumnDef="actions">
           <th mat-header-cell *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>
@@ -97,10 +99,64 @@
         <tr mat-row *matRowDef="let row; columns: columns"></tr>
       </table>
     </div>
-    @if (store.snapshots().length === 0 && !store.chargement()) {
-      <p class="empty-hint" i18n="@@snapshots.empty">
-        Aucun instantané pour le moment. Le premier sera pris automatiquement avant la prochaine résolution.
+    @if (instantanesManuels().length === 0 && !store.chargement()) {
+      <p class="empty-hint" i18n="@@snapshots.empty.manuels">
+        Aucun instantané enregistré à la main. Le bouton ci-dessus met le plan actuel de côté.
       </p>
     }
+
+    @if (instantanesAutomatiques().length > 0) {
+      <h3 i18n="@@snapshots.section.automatiques">Pris automatiquement avant une résolution</h3>
+      <div class="table-wrapper">
+        <table mat-table [dataSource]="instantanesAutomatiques()">
+          <caption class="visually-hidden" i18n="@@snapshots.table.captionAuto">
+            Instantanés pris automatiquement avant chaque résolution, les plus anciens étant purgés
+          </caption>
+          <ng-container matColumnDef="libelleAuto">
+            <th mat-header-cell *matHeaderCellDef i18n="@@snapshots.column.libelle">Instantané</th>
+            <td mat-cell *matCellDef="let snapshot">{{ snapshot.libelle }}</td>
+          </ng-container>
+          <ng-container matColumnDef="groupeAuto">
+            <th mat-header-cell *matHeaderCellDef i18n="@@snapshots.column.groupe">Groupe de créneaux</th>
+            <td mat-cell *matCellDef="let snapshot">{{ groupeLabel(snapshot) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="scoreAuto">
+            <th mat-header-cell *matHeaderCellDef i18n="@@snapshots.column.score">Score</th>
+            <td mat-cell *matCellDef="let snapshot">{{ snapshot.score || '—' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="affectationsAuto">
+            <th mat-header-cell *matHeaderCellDef i18n="@@snapshots.column.affectations">Affectations</th>
+            <td mat-cell *matCellDef="let snapshot">
+              {{ snapshot.nombreAffectations }}
+              @if (ecart(snapshot); as ecartLabel) {
+                <span class="snapshot-ecart">{{ ecartLabel }}</span>
+              }
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="creeLeAuto">
+            <th mat-header-cell *matHeaderCellDef i18n="@@snapshots.column.creeLe">Enregistré le</th>
+            <td mat-cell *matCellDef="let snapshot">{{ dateLabel(snapshot) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="actionsAuto">
+            <th mat-header-cell *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>
+            <td mat-cell *matCellDef="let snapshot" class="row-actions">
+              <button matIconButton i18n-matTooltip="@@snapshots.restore.tooltip" matTooltip="Restaurer ce plan"
+                      i18n-aria-label="@@snapshots.restore.tooltip" aria-label="Restaurer ce plan"
+                      [disabled]="locked() || enCours() !== null" (click)="restaurer(snapshot)">
+                <mat-icon>restore</mat-icon>
+              </button>
+              <button matIconButton class="danger-action" i18n-matTooltip="@@common.delete" matTooltip="Supprimer"
+                      i18n-aria-label="@@common.delete" aria-label="Supprimer"
+                      [disabled]="enCours() !== null" (click)="supprimer(snapshot)">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="columnsAuto"></tr>
+          <tr mat-row *matRowDef="let row; columns: columnsAuto"></tr>
+        </table>
+      </div>
+    }
+
   </mat-card-content>
 </mat-card>

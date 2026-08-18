@@ -19,9 +19,11 @@ import {
   NiveauContrainte,
   ParametresLegaux
 } from '../../core/models';
+import { ProblemesStore } from '../../core/problemes.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';
 import { FeasibilityBanner } from '../../shared/feasibility-banner';
+import { StatusMessage } from '../../shared/status-message';
 import { ViolationDetailsDialog } from '../../shared/violation-details-dialog';
 
 /** Called lazily (never at module scope, see `app.ts`'s `buildNavGroups`). */
@@ -59,7 +61,8 @@ interface ConstraintGroup {
     MatInputModule,
     MatProgressBarModule,
     MatSlideToggleModule,
-    FeasibilityBanner
+    FeasibilityBanner,
+    StatusMessage
   ],
   templateUrl: './constraints-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -90,6 +93,10 @@ export class ConstraintsPage {
   );
 
   protected readonly jobs = inject(SolverJobService);
+  private readonly problemes = inject(ProblemesStore);
+
+  /** Shared with the Solveur screen: see `ProblemesStore.alerteReglesLegales`. */
+  protected readonly alerteReglesLegales = computed(() => this.problemes.alerteReglesLegales());
 
   private readonly api = inject(ApiService);
   private readonly dialog = inject(MatDialog);
@@ -109,6 +116,13 @@ export class ConstraintsPage {
     return $localize`:@@constraints.summary.latest:Dernière analyse ${analysedAt}:date: — score ${score}:score:, ${postesNonPourvus}:count: poste(s) non pourvu(s).`;
   });
 
+  /** Sort key of the constraint cards: by score, the "what costs most" question. */
+  protected readonly triParScore = signal(false);
+
+  protected basculerTri(): void {
+    this.triParScore.update((actif) => !actif);
+  }
+
   protected readonly groups = computed<ConstraintGroup[]>(() => {
     const constraints = this.view()?.contraintes ?? [];
     const groups = new Map<string, ConstraintView[]>();
@@ -117,7 +131,11 @@ export class ConstraintsPage {
       items.push(constraint);
       groups.set(constraint.categorie, items);
     });
-    return Array.from(groups.entries()).map(([categorie, items]) => ({ categorie, items }));
+    const parScore = this.triParScore();
+    return Array.from(groups.entries()).map(([categorie, items]) => ({
+      categorie,
+      items: parScore ? [...items].sort((a, b) => (b.matchCount ?? 0) - (a.matchCount ?? 0)) : items
+    }));
   });
 
   constructor() {
@@ -136,7 +154,11 @@ export class ConstraintsPage {
     this.loading.set(true);
     this.error.set('');
     try {
-      this.view.set(await this.api.get<ConstraintsView>('/api/constraints'));
+      const view = await this.api.get<ConstraintsView>('/api/constraints');
+      this.view.set(view);
+      // Feeds the shared "legal rules disabled" alert, which the Solveur screen
+      // also reads.
+      this.problemes.constraints.set(view);
     } catch (error) {
       this.view.set(null);
       this.error.set($localize`:@@common.errorPrefix:Erreur : ${error instanceof Error ? error.message : String(error)}:message:`);

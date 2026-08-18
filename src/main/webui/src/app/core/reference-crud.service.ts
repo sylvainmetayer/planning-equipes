@@ -66,10 +66,17 @@ export class ReferenceCrudService {
   }
 
   /** Asks for a confirmation, then deletes. Returns true when deleted. */
-  async remove(resource: string, id: string | number, label: string): Promise<boolean> {
+  /**
+   * @param detail extra sentence appended to the confirmation, for the entities
+   *               whose deletion has consequences the user cannot see from the
+   *               row itself (e.g. how many stands reference a typologie)
+   */
+  async remove(resource: string, id: string | number, label: string, detail = ''): Promise<boolean> {
     const confirmed = await this.confirm.ask({
       title: $localize`:@@crud.deleteTitle:Supprimer ${label}:label: ${id}:id: ?`,
-      message: $localize`:@@crud.deleteMessage:Cette action est irréversible.`,
+      message: detail
+        ? $localize`:@@crud.deleteMessageDetail:${detail}:detail: Cette action est irréversible.`
+        : $localize`:@@crud.deleteMessage:Cette action est irréversible.`,
       confirmLabel: $localize`:@@crud.deleteConfirm:Supprimer`,
       danger: true
     });

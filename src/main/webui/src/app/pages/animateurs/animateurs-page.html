@@ -15,6 +15,7 @@
   <mat-card-content class="table-wrapper">
     @if (selection.hasSelection()) {
       <app-bulk-actions-bar [count]="selection.count()" [disabled]="editingLocked()"
+                            [filtre]="!!filtre()"
                             (edit)="editSelection()" (remove)="removeSelection()" (clear)="selection.clear()" />
     }
     <table mat-table [dataSource]="sortedAnimateurs()" matSort [matSortActive]="sort().active" [matSortDirection]="sort().direction" (matSortChange)="sort.set($event)">

@@ -37,7 +37,9 @@ import { MatInputModule } from '@angular/material/input';
         </button>
       }
       @if (value()) {
-        <mat-hint i18n="@@filter.matchCount">{{ matches() }} ligne(s) sur {{ total() }}</mat-hint>
+        <!-- Announced, not just shown: the count is the feedback of the typing,
+             and a screen-reader user otherwise filters blind. -->
+        <mat-hint role="status" i18n="@@filter.matchCount">{{ matches() }} ligne(s) sur {{ total() }}</mat-hint>
       }
     </mat-form-field>
   `,

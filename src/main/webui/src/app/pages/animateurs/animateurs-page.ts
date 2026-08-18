@@ -52,6 +52,15 @@ import { AnimateurFormData, AnimateurFormDialog } from './animateur-form-dialog'
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AnimateursPage {
+  protected readonly resumeFiltre = computed(() => {
+    const total = this.store.animateurs().length;
+    const affiches = this.animateursFiltres().length;
+    if (affiches === total) {
+      return $localize`:@@filter.summary.all:${total}:total: ligne(s).`;
+    }
+    return $localize`:@@filter.summary.filtered:${affiches}:count: ligne(s) affichée(s) sur ${total}:total:. Les actions de masse ne portent que sur les lignes affichées.`;
+  });
+
   protected readonly columns = ['select', 'id', 'nom', 'majorite', 'manager', 'competences', 'indisponibilites', 'actions'];
   protected readonly sort = signal<Sort>({ active: '', direction: '' });
   /** Quick filter of the table: id, identity and compétences. Applied before the sort. */

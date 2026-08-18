@@ -9,6 +9,7 @@ import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { Emplacement } from '../../core/models';
 import { MapPicker, MapPosition } from '../../shared/map-picker';
+import { StatusMessage } from '../../shared/status-message';
 
 interface EmplacementDraft {
   id: string;
@@ -24,7 +25,16 @@ export interface EmplacementFormData {
 /** Add/edit dialog for an emplacement: identity plus GPS coordinates, set via the map picker or typed directly. */
 @Component({
   selector: 'app-emplacement-form-dialog',
-  imports: [FormsModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule, MapPicker],
+  imports: [
+    FormsModule,
+    MatDialogModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule,
+    MatIconModule,
+    MapPicker,
+    StatusMessage
+  ],
   templateUrl: './emplacement-form-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -55,8 +65,14 @@ export class EmplacementFormDialog {
     this.draft.update((draft) => ({ ...draft, ...patch }));
   }
 
+  /** Says out loud what a click on the map just wrote into the two fields. */
+  protected readonly messagePosition = signal('');
+
   protected onPositionChange(position: MapPosition): void {
     this.patch({ latitude: position.latitude, longitude: position.longitude });
+    this.messagePosition.set(
+      $localize`:@@emplacements.position.set:Position choisie : ${position.latitude.toFixed(5)}:latitude:, ${position.longitude.toFixed(5)}:longitude:`
+    );
   }
 
   protected async save(): Promise<void> {

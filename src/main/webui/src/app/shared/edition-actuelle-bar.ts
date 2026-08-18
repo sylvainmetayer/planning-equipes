@@ -23,7 +23,10 @@ import { GroupeCreneauSelector } from './groupe-creneau-selector';
   imports: [MatButtonModule, MatIconModule, MatMenuModule, RouterLink, GroupeCreneauSelector],
   template: `
     @if (editionActuelle(); as edition) {
-      <div class="edition-actuelle-bar" role="status">
+      <!-- Not a live region as a whole: it would announce the edition and the
+           groupe de créneaux on every first render, when nothing changed. Only
+           the switching action speaks, and it says so itself. -->
+      <div class="edition-actuelle-bar">
         <mat-icon class="edition-actuelle-bar-icon">layers</mat-icon>
         <span class="edition-actuelle-bar-label">
           <span i18n="@@editionActuelle.label">Édition actuelle :</span>

@@ -7,12 +7,14 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { ApiService } from '../../core/api.service';
 import { intlLocale } from '../../core/locale';
-import { PlanSnapshot } from '../../core/models';
+import { PersistenceStatus, PlanSnapshot } from '../../core/models';
 import { PlanSnapshotStore, ReferencesManquantesError } from '../../core/plan-snapshot.store';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
+import { StatusMessage } from '../../shared/status-message';
 import { PromptDialog } from '../../shared/prompt-dialog';
 
 /**
@@ -33,13 +35,55 @@ import { PromptDialog } from '../../shared/prompt-dialog';
     MatIconModule,
     MatProgressBarModule,
     MatTableModule,
-    MatTooltipModule
+    MatTooltipModule,
+    StatusMessage
   ],
   templateUrl: './snapshots-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SnapshotsPage {
   protected readonly columns = ['libelle', 'groupe', 'score', 'affectations', 'creeLe', 'actions'];
+  protected readonly columnsAuto = [
+    'libelleAuto',
+    'groupeAuto',
+    'scoreAuto',
+    'affectationsAuto',
+    'creeLeAuto',
+    'actionsAuto'
+  ];
+
+  /**
+   * Hand-made snapshots first, automatic ones after. One capture is taken
+   * before every solve, so within a day of work the automatic ones outnumber
+   * the deliberate ones and bury them.
+   */
+  protected readonly instantanesManuels = computed(() =>
+    this.store.snapshots().filter((snapshot) => !snapshot.automatique)
+  );
+  protected readonly instantanesAutomatiques = computed(() =>
+    this.store.snapshots().filter((snapshot) => snapshot.automatique)
+  );
+
+  /** Assignments currently persisted, to compare a snapshot against. */
+  protected readonly affectationsCourantes = signal<number | null>(null);
+
+  /**
+   * How a snapshot differs from the plan in place — restoring blind is exactly
+   * what the screen should spare the user.
+   */
+  protected ecart(snapshot: PlanSnapshot): string {
+    const courant = this.affectationsCourantes();
+    if (courant === null) {
+      return '';
+    }
+    const delta = snapshot.nombreAffectations - courant;
+    if (delta === 0) {
+      return $localize`:@@snapshots.delta.same:même nombre d'affectations qu'actuellement`;
+    }
+    return delta > 0
+      ? $localize`:@@snapshots.delta.more:${delta}:delta: affectation(s) de plus qu'actuellement`
+      : $localize`:@@snapshots.delta.less:${-delta}:delta: affectation(s) de moins qu'actuellement`;
+  }
   protected readonly store = inject(PlanSnapshotStore);
   protected readonly jobs = inject(SolverJobService);
 
@@ -48,12 +92,24 @@ export class SnapshotsPage {
   protected readonly enCours = signal<number | 'capture' | null>(null);
   protected readonly locked = computed(() => this.jobs.solverBusy());
 
+  private readonly api = inject(ApiService);
   private readonly resolution = inject(PlanningResolutionStore);
   private readonly confirm = inject(ConfirmService);
   private readonly dialog = inject(MatDialog);
 
   constructor() {
     void this.recharger();
+    void this.chargerAffectationsCourantes();
+  }
+
+  private async chargerAffectationsCourantes(): Promise<void> {
+    try {
+      const statut = await this.api.get<PersistenceStatus>('/api/planning/persisted/count');
+      this.affectationsCourantes.set(statut.assignments);
+    } catch {
+      // Without it the delta column simply stays empty.
+      this.affectationsCourantes.set(null);
+    }
   }
 
   protected async recharger(): Promise<void> {

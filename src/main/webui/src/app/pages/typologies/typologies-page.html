@@ -22,7 +22,8 @@
   </mat-card-actions>
   <mat-card-content class="table-wrapper">
     @if (selection.hasSelection()) {
-      <app-bulk-actions-bar [count]="selection.count()" [disabled]="editingLocked()" [editable]="false"
+      <app-bulk-actions-bar [count]="selection.count()" [disabled]="editingLocked()"
+                            [filtre]="!!filtre()" [editable]="false"
                             (remove)="removeSelection()" (clear)="selection.clear()" />
     }
     <table mat-table [dataSource]="typologiesFiltrees()">

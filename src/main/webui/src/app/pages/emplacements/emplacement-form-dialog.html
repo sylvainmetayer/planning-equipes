@@ -24,6 +24,7 @@
   <input matInput name="longitude" type="number" step="any" min="-180" max="180"
          [ngModel]="draft().longitude" (ngModelChange)="patch({ longitude: $event })" />
 </mat-form-field>
+<app-status-message class="span-2" [text]="messagePosition()" tone="info" />
 <app-map-picker class="span-2"
   [latitude]="draft().latitude" [longitude]="draft().longitude"
   [disabled]="editingLocked()"

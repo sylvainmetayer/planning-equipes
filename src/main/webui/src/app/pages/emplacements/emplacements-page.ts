@@ -13,6 +13,7 @@ import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { TableSelection } from '../../core/table-selection';
 import { correspondAuFiltre } from '../../core/text-filter';
+import { distanceMetres, formatDistance } from '../../core/distance';
 import { Emplacement } from '../../core/models';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
 import { DetailData, DetailDialog } from '../../shared/detail-dialog';
@@ -27,6 +28,9 @@ import { EmplacementFormData, EmplacementFormDialog } from './emplacement-form-d
  * Rows are multi-selectable, for a bulk delete or to put several places on the
  * same GPS point at once.
  */
+/** Mirrors `QualiteConstraints.DISTANCE_ELOIGNEE_METRES` on the server. */
+const SEUIL_ELOIGNEMENT_METRES = 300;
+
 @Component({
   selector: 'app-emplacements-page',
   imports: [
@@ -43,7 +47,7 @@ import { EmplacementFormData, EmplacementFormDialog } from './emplacement-form-d
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EmplacementsPage {
-  protected readonly columns = ['select', 'id', 'nom', 'coordonnees', 'actions'];
+  protected readonly columns = ['select', 'id', 'nom', 'coordonnees', 'voisin', 'actions'];
   protected readonly store = inject(ReferenceDataStore);
   protected readonly jobs = inject(SolverJobService);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
@@ -51,6 +55,37 @@ export class EmplacementsPage {
 
   /** Quick filter of the table: id, name and coordinates. */
   protected readonly filtre = signal('');
+  /**
+   * Nearest other emplacement, in metres.
+   *
+   * Two constraints reason in metres — a change of emplacement beyond 300 m is
+   * penalised, and a day spread over too many of them too. Nobody can judge
+   * that from two pairs of decimal coordinates, so the table says it.
+   */
+  protected voisinLePlusProche(emplacement: Emplacement): string {
+    let plusProche: { nom: string; metres: number } | null = null;
+    for (const autre of this.store.emplacements()) {
+      if (autre.id === emplacement.id) {
+        continue;
+      }
+      const metres = distanceMetres(emplacement, autre);
+      if (metres === null) {
+        continue;
+      }
+      if (!plusProche || metres < plusProche.metres) {
+        plusProche = { nom: autre.nom || autre.id, metres };
+      }
+    }
+    if (!plusProche) {
+      return '';
+    }
+    const distance = formatDistance(plusProche.metres);
+    const nom = plusProche.nom;
+    return plusProche.metres > SEUIL_ELOIGNEMENT_METRES
+      ? $localize`:@@emplacements.voisin.loin:${distance}:distance: de ${nom}:nom: (au-delà du seuil d'éloignement)`
+      : $localize`:@@emplacements.voisin:${distance}:distance: de ${nom}:nom:`;
+  }
+
   protected readonly emplacementsFiltres = computed(() =>
     this.store
       .emplacements()
