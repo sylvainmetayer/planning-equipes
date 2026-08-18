@@ -230,7 +230,22 @@ par `bestScoreFeasible`, la seconde à 40 pour le reste du budget. Mesuré à
 | **`2 puis 40`** | **145 s** | **-6 704** | -716 |
 
 L'avantage de 40 sur 20 en phase 2 est vérifié sur trois graines : -6 704 /
--6 703 / -6 762 contre -6 876 / -6 867 / -6 879. Timefold conserve toujours la
+-6 703 / -6 762 contre -6 876 / -6 867 / -6 879.
+
+Confirmé en conditions réelles sur le scénario 2026 (3 502 postes, 153
+animateurs, 45 stands premium), budget de production de 1800 s :
+
+| Configuration | dur | medium | dont `appreciationIncompatible` |
+| --- | --- | --- | --- |
+| `acl 20`, une phase | **-2** | -7 217 | -1 125 |
+| `acl 2`, une phase | 0 | -9 055 | **-2 322** |
+| **deux phases 2 → 40** | **0** | **-7 266** | -1 236 |
+
+C'est bien le compromis visé, et il faut lire la troisième colonne pour le
+comprendre : `acl 2` seul atteignait la faisabilité, mais en doublant le nombre
+de postes tenus par un animateur sans appréciation sur la typologie du stand
+(deux tiers du planning contre un tiers). Les deux phases donnent la
+faisabilité **et** gardent la qualité du réglage historique. Timefold conserve toujours la
 meilleure solution rencontrée, donc la phase 2 ne peut pas reperdre la
 faisabilité acquise par la phase 1. Les deux sélecteurs ciblés sur les postes
 non pourvus ne sont pas repris en phase 2 : à ce stade il n'y en a plus.
