@@ -252,13 +252,37 @@ silencieusement les règles autour de lui.
 | `equilibrerCharge` | Répartition équitable de la charge entre animateurs |
 | `repartitionMineursParCreneau` | Pas plus de mineurs que de majeurs sur un stand et un créneau |
 | `experienceRequisePourStandsPremium` | Un stand premium ne devrait pas être tenu par un débutant |
-| `eviterRoulementStandsPremium` | Sur un stand premium, éviter de faire tourner plusieurs animateurs différents |
+| `eviterRoulementStandsPremium` | Sur un stand premium, limiter le nombre d'animateurs **différents** qui s'y relaient au-delà d'un équipage (`max(1, effectifMin)`), et non le nombre de paires de postes — voir la note ci-dessous |
 | `eviterChangementEmplacementEloigne` | Entre deux créneaux consécutifs, éviter de basculer un animateur vers un stand dont l'emplacement est éloigné (> 300 m) |
 | `eviterEnchainementStandsEpuisants` | Entre deux créneaux consécutifs, éviter d'enchaîner un animateur sur deux stands physiquement épuisants (`Stand.niveauEffort = EPUISANT`) sans repos ni stand plus facile entre les deux |
 | `appreciationIncompatible` | L'appréciation de l'administrateur (`Animateur.competences`) ne couvre aucune typologie proposée par le stand — ex-contrainte dure `competenceCompatible`, assouplie car il s'agit d'une appréciation métier faite après formation, pas d'une qualification objective |
 | `souhaitsIncompatibles` | Aucune des typologies proposées par le stand ne figure dans les souhaits déclarés de l'animateur (`Animateur.souhaits`) |
 | `limiterTypologiesDistinctesParAnimateur` | Un animateur devrait idéalement intervenir sur une ou deux typologies de jeu distinctes sur l'ensemble du planning (au-delà de 2, pénalité proportionnelle au dépassement) |
 | `maxJoursConsecutifsTravailles` | Un animateur ne devrait pas travailler plus de six jours consécutifs sans au moins un jour de repos — moins est possible, plus ne devrait pas l'être (pénalité proportionnelle au dépassement) |
+
+#### `eviterRoulementStandsPremium` : des têtes, pas des paires
+
+La règle compte le nombre d'animateurs **distincts** passés sur un stand
+premium, au-delà d'un équipage (`max(1, effectifMin)`, soit exactement le
+nombre de places que la génération de postes crée par créneau). Un stand à
+deux places tenu par les deux mêmes personnes du début à la fin ne coûte rien,
+quel que soit le nombre de créneaux ; chaque tête supplémentaire coûte un
+point.
+
+Elle comptait auparavant les **paires** de postes du même stand tenues par des
+animateurs différents sur des créneaux différents, ce qui est quadratique en
+nombre de postes par stand et devient ingérable dès qu'un festival marque plus
+d'une poignée de stands premium. Mesuré sur les données réelles 2026 (45 stands
+premium sur 65, 3 502 postes) : 48 567 paires possibles, une pénalité de 38 591
+sur un score medium total de 46 284 — 84 % de celui-ci — dont environ 25 000
+**structurellement inatteignables**, un stand ouvert douze jours ne pouvant pas
+légalement être tenu par une seule personne (48 h/semaine, 11 h de repos
+quotidien, 6 jours par semaine). Le solveur dépensait donc son budget à
+descendre une pente qui s'arrête très au-dessus de zéro, pendant que 36 postes
+restaient non pourvus. Compter les têtes conserve l'intention (la continuité
+reste récompensée de façon monotone), ramène la contrainte à l'ordre de
+grandeur des autres règles medium, et supprime au passage une jointure
+quadratique maintenue à chaque mouvement du solveur.
 
 `maxJoursConsecutifsTravailles` n'est adossée à aucun article identifié du
 Code du travail : `maxJoursTravaillesParSemaine` (dur, art. L3132-1) borne

@@ -126,11 +126,53 @@ class QualiteConstraintsTest extends ConstraintTestBase {
     }
 
     @Test
-    void deuxAnimateursDifferentsSurStandPremiumAuMemeCreneauNEstPasPenalise() {
-        // Simultaneous multi-staffing on the same slot is not a rotation.
+    void chaqueAnimateurSupplementaireSurUnStandPremiumCouteUnPointDePlus() {
+        // Four heads on a one-seat stand: three more than the crew it needs.
+        // The former pair-counting formulation scored 6 for the same planning,
+        // and grew quadratically from there.
         verify("eviterRoulementStandsPremium")
                 .given(poste(standPremium, creneauMatin, majeurReferent("A1")),
-                        poste(standPremium, creneauMatin, majeurReferent("A2")))
+                        poste(standPremium, creneauAprem, majeurReferent("A2")),
+                        poste(standPremium, creneau("J2-MATIN", 2, D2, LocalTime.of(9, 0), LocalTime.of(13, 0)),
+                                majeurReferent("A3")),
+                        poste(standPremium, creneau("J2-APREM", 2, D2, LocalTime.of(14, 0), LocalTime.of(18, 0)),
+                                majeurReferent("A4")))
+                .penalizesBy(3);
+    }
+
+    @Test
+    void unEquipageCompletTenuParLesMemesPersonnesNEstPasPenalise() {
+        // Two seats at a time held by the same two people all along: perfect
+        // continuity, not a rotation — whatever the number of créneaux.
+        Stand standDeuxPlaces = standPremium("STAND-PREMIUM-2");
+        standDeuxPlaces.setEffectifMin(2);
+        Animateur a1 = majeurReferent("A1");
+        Animateur a2 = majeurReferent("A2");
+        verify("eviterRoulementStandsPremium")
+                .given(poste(standDeuxPlaces, creneauMatin, a1),
+                        poste(standDeuxPlaces, creneauMatin, a2),
+                        poste(standDeuxPlaces, creneauAprem, a1),
+                        poste(standDeuxPlaces, creneauAprem, a2))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void deuxAnimateursDifferentsSurStandPremiumAuMemeCreneauNEstPasPenalise() {
+        // Simultaneous multi-staffing on the same slot is not a rotation: the
+        // stand needs both of them at once.
+        Stand standDeuxPlaces = standPremium("STAND-PREMIUM-SIMULTANE");
+        standDeuxPlaces.setEffectifMin(2);
+        verify("eviterRoulementStandsPremium")
+                .given(poste(standDeuxPlaces, creneauMatin, majeurReferent("A1")),
+                        poste(standDeuxPlaces, creneauMatin, majeurReferent("A2")))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void unStandNonPremiumNEstJamaisPenalisePourSonRoulement() {
+        verify("eviterRoulementStandsPremium")
+                .given(poste(standStrategie("STAND-ORDINAIRE"), creneauMatin, majeurReferent("A1")),
+                        poste(standStrategie("STAND-ORDINAIRE"), creneauAprem, majeurReferent("A2")))
                 .penalizesBy(0);
     }
 

@@ -114,38 +114,46 @@ public final class QualiteConstraints {
     }
 
     /**
-     * On a premium stand, prefer keeping the same (already-vetted) animateur
-     * across timeslots instead of rotating people through it.
+     * On a premium stand, prefer keeping the same (already-vetted) animateurs
+     * instead of rotating people through it: penalises how many <b>distinct</b>
+     * animateurs the stand sees, beyond the one crew it needs at a time.
      *
-     * <p>Used to be described as the mirror image of a
-     * {@code favoriserRotationDesStands} soft constraint, which pushed the
-     * other way on every stand; that one has since been removed, so this is
-     * now the only rule expressing a preference about repeating a stand — and
-     * it only ever speaks about premium ones.</p>
+     * <p>"Beyond one crew" is {@code max(1, effectifMin)}, which is exactly the
+     * number of seats poste generation creates per créneau: a stand needing two
+     * people at once, held by the same two all festival, is perfect continuity
+     * and scores zero. Simultaneous multi-staffing was never rotation, and
+     * still isn't.</p>
      *
-     * <p>The premium test is applied <em>before</em> pairing, not after. The
-     * previous formulation paired every poste with every other poste of the
-     * same stand and only then discarded the non-premium ones: on
-     * {@code scenario-complet.yaml} that is 115 596 pair tuples built and
-     * incrementally maintained, of which zero survive the filter (the scenario
-     * has no premium stand at all). Filtering first makes the pair count
-     * proportional to the premium stands only.</p>
-     *
-     * <p>{@code lessThan} on the planning id reproduces
-     * {@code forEachUniquePair}'s "each unordered pair exactly once" semantics,
-     * so the match count is unchanged.</p>
+     * <p>This used to count <em>pairs</em> of postes on the same stand held by
+     * different animateurs on different créneaux, which made it quadratic in
+     * the number of postes per stand — and unusable as soon as a festival flags
+     * more than a handful of premium stands. Measured on the real 2026 data
+     * (45 premium stands of 65, 3 502 postes): 48 567 possible pairs, a
+     * penalty of 38 591 out of a 46 284 total medium score — 84 % of it — of
+     * which roughly 25 000 are <b>structurally unreachable</b>, since a stand
+     * open twelve days cannot legally be held by one person (48 h/week, 11 h
+     * daily rest, 6 days/week). The solver therefore spent its budget sliding
+     * down a slope that bottoms out far above zero, while 36 seats stayed
+     * unfilled. Counting heads instead of pairs brings the same intent
+     * (continuity, monotonically rewarded) back to the order of magnitude of
+     * the other medium rules, and drops a quadratic join maintained at every
+     * move.</p>
      */
     private Constraint eviterRoulementStandsPremium(ConstraintFactory constraintFactory) {
         return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
                 "eviterRoulementStandsPremium")
                 .filter(poste -> poste.getStand().isPremium())
-                .join(PosteAffectation.class,
-                        Joiners.equal(poste -> poste.getStand().getId()),
-                        Joiners.lessThan(PosteAffectation::getId))
-                .filter((posteA, posteB) -> !posteA.getAnimateur().equals(posteB.getAnimateur())
-                        && !posteA.getCreneau().equals(posteB.getCreneau()))
-                .penalize(HardMediumSoftScore.ONE_MEDIUM)
+                .groupBy(PosteAffectation::getStand,
+                        ConstraintCollectors.countDistinct(PosteAffectation::getAnimateur))
+                .filter((stand, animateursDistincts) -> animateursDistincts > equipage(stand))
+                .penalize(HardMediumSoftScore.ONE_MEDIUM,
+                        (stand, animateursDistincts) -> animateursDistincts - equipage(stand))
                 .asConstraint("eviterRoulementStandsPremium");
+    }
+
+    /** Seats a stand needs staffed at the same time — one crew, i.e. what poste generation creates per créneau. */
+    private static int equipage(Stand stand) {
+        return Math.max(1, stand.getEffectifMin());
     }
 
     /**
