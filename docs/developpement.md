@@ -191,6 +191,58 @@ Dans `application.properties` :
 | `planning.solver.unimproved-seconds-limit` | `300` (`2` en profil `%test`), `0` = désactivé | Arrêt anticipé sur plateau, **conditionné à la faisabilité** : voir ci-dessous |
 | `planning.constraint-weights.<nomDeLaContrainte>` | `1` pour chaque contrainte | Poids de la contrainte (multiplie le hard/medium/soft qu'elle produit) ; voir [`contraintes.md`](contraintes.md#pondérer-une-contrainte) |
 
+### `acceptedCountLimit` : mesuré, pas hérité
+
+Le nombre de mouvements candidats échantillonnés par pas de recherche locale
+(`solverConfig.xml`, `<forager>`) est le réglage le plus sensible du fichier, et
+il dépend de la **taille du problème**. Mesures sur le scénario réel 2026
+(3 502 postes, 153 animateurs), même graine, budget de 180 s, runs séquentiels :
+
+| `acceptedCountLimit` | 1 | 2 | 3 | 4 | 10 | 20 | 40 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| score dur à 180 s | 0 | 0 | -1 | -3 | -6 | -14 | -27 |
+| 0 hard atteint à | 95 s | 137 s | jamais dans le budget | | | | |
+
+La valeur était à 20, réglée pour la qualité de chaque pas sur le scénario de
+référence de 2 088 postes. À 3 502 postes le compromis s'inverse : un pas coûte
+assez cher pour qu'échantillonner 20 candidats affame la recherche, et ce
+réglage « prudent » n'atteint jamais la faisabilité — un run de production de
+1800 s plafonnait à -2 hard là où 2 y arrive en moins de trois minutes.
+
+2 plutôt que 1 : les deux atteignent la faisabilité sur toutes les graines
+essayées, 1 y arrive ~45 s plus tôt mais avec un medium nettement moins bon
+(-9 211 contre -8 502 à temps égal) — or c'est précisément le polissage
+medium/soft qui occupe le budget une fois la faisabilité atteinte.
+
+`lateAcceptanceSize` a été remesuré au passage : 100 / 400 / 1500 donnent
+-14 / -14 / -12 à `acceptedCountLimit` 20, et -1 / 0 / 0 à 2. En dessous de 400
+il dégrade, au-dessus il ne change rien — laissé tel quel.
+
+**À refaire si la taille du problème change nettement.** Le protocole : rejouer
+le vrai problème (`GET /api/planning/persisted`, champ `score` retiré,
+animateurs remis à `null`) hors du serveur de dev, une configuration à la fois
+— deux solveurs concurrents se partagent cache et bande passante mémoire et la
+comparaison ne veut plus rien dire.
+
+### Geler un bloc acquis pour rétrécir l'espace de recherche
+
+`PosteAffectation.verrouille` porte l'annotation `@PlanningPin` de Timefold, et
+un `VerrouillagePlanning` de type `STAND` couvre toutes les places d'un stand
+sur tous ses créneaux. Poser un tel verrou sur un bloc volumineux mais facile —
+le montage et le démontage de `edition-1708` pèsent 712 des 3 502 postes, soit
+20 %, pour deux stands mono-typologie sans contrainte de compétence — retire
+ces entités de la génération de mouvements **sans les retirer du planning** :
+elles restent affectées, nominatives et visibles partout, et leurs heures
+continuent d'être évaluées par les contraintes légales (un poste épinglé
+participe toujours au calcul du score).
+
+Le gain porte donc sur l'espace de recherche, pas sur le coût d'un calcul de
+score. Contrepartie : le verrou fige ces personnes-là sur ces places et
+consomme leurs heures, il n'est donc sain que si l'affectation gelée est déjà
+bonne — d'où l'ordre « résoudre, vérifier, puis verrouiller », et la réversion
+par `DELETE /api/verrouillages/{id}`. Aucun code n'est nécessaire : c'est deux
+appels d'API ou deux clics sur l'écran Verrouillages.
+
 ### Arrêt anticipé : plateau **et** planning faisable
 
 Une résolution s'arrête de deux façons, à la première des deux : le budget

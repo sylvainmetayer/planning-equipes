@@ -792,5 +792,7 @@
   "detail.stand.mode.fermeture": "Closed",
   "detail.stand.plage": "from {$debut} to {$fin}",
   "detail.stand.ouvertureDatee": "Opening on {$date}",
-  "detail.stand.fermetureDatee": "Closure on {$date}"
+  "detail.stand.fermetureDatee": "Closure on {$date}",
+  "aide.tuning.term.gelerBloc": "Part of the planning is settled and slows the search down",
+  "aide.tuning.def.gelerBloc": "Some days are bulky and easy — set-up and tear-down typically: many seats, a single typologie, no skill requirement. The solver still spends a share of its moves on them proportional to their seat count. Once a run has staffed them correctly, put a Stand lock on those stands: the seats stay in the planning in full, named and visible everywhere, their hours keep counting towards the legal caps, but the solver stops trying to move them and spends its budget on the hard days. Keep this for diagnosis and large scenarios: the lock freezes those people on those seats, so it is only sound if the frozen assignment is already good — hence the order « solve, check, then lock ». It can be removed at any time from the Locks page."
 }

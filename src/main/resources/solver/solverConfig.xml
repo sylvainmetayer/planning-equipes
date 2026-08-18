@@ -110,15 +110,31 @@
         </acceptor>
         <forager>
             <!--
-                Was 4: each local-search step only sampled 4 candidate moves,
-                which is too narrow a neighborhood to reliably find the
-                multi-move chains (e.g. a swap-of-swaps) needed to clear a
-                double-booking together with an unfilled poste. 20 costs more
-                per step but finds improving/escaping moves far more
-                consistently; re-tune down if this proves too slow on
-                constrained hardware.
+                Number of candidate moves sampled per local-search step. This
+                was 4, then 20 for the quality of each step on the 2088-poste
+                reference scenario. Measured again on the real 3502-poste 2026
+                scenario (153 animateurs, 45 premium stands), same seed, same
+                180 s budget, runs executed sequentially:
+
+                    acceptedCountLimit :  1     2     3    4    10    20    40
+                    score dur a 180 s  :  0     0    -1   -3    -6   -14   -27
+                    0 hard atteint a   : 95s  137s     jamais dans le budget
+
+                The trade-off inverted with the problem size: at 3502 postes a
+                step costs enough that sampling 20 candidates starves the
+                search, and the setting that was "safer" never reaches
+                feasibility at all — the 1800 s production run stalled at
+                -2 hard while 2 gets there in under three minutes. 2 rather
+                than 1: both reach feasibility on every seed tried, 1 gets
+                there ~45 s earlier but with a visibly worse medium score
+                (-9 211 vs -8 502 at equal time), and what follows feasibility
+                is precisely medium/soft polishing.
+
+                lateAcceptanceSize was re-measured alongside: 100 / 400 / 1500
+                give -14 / -14 / -12 at acceptedCountLimit 20, and -1 / 0 / 0
+                at 2. Below 400 it hurts, above it changes nothing: left as is.
             -->
-            <acceptedCountLimit>20</acceptedCountLimit>
+            <acceptedCountLimit>2</acceptedCountLimit>
         </forager>
     </localSearch>
 

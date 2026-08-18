@@ -292,6 +292,10 @@ export function buildHelpSections(): HelpSection[] {
               text: $localize`:@@aide.tuning.def.adhoc:Cherchez du côté des contraintes ad hoc et des verrouillages ajoutés depuis la dernière résolution réussie : ils ont le poids d'une contrainte dure. Désactivez temporairement le dernier ajout et relancez pour confirmer.`
             },
             {
+              term: $localize`:@@aide.tuning.term.gelerBloc:Une part du planning est acquise et ralentit la recherche`,
+              text: $localize`:@@aide.tuning.def.gelerBloc:Certaines journées sont volumineuses et sans difficulté — le montage et le démontage, typiquement : beaucoup de places, une seule typologie, aucune contrainte de compétence. Le solveur y consacre pourtant une part de ses mouvements proportionnelle à leur nombre de places. Une fois qu'une résolution les a correctement pourvues, posez un verrouillage de type Stand sur ces stands : les places restent intégralement dans le planning, nominatives et visibles partout, leurs heures continuent de compter dans les plafonds légaux, mais le solveur ne cherche plus à les déplacer et concentre son budget sur les journées difficiles. À réserver au diagnostic et aux gros scénarios : le verrou fige ces personnes-là sur ces places, donc il n'est sain que si l'affectation gelée est déjà bonne — d'où l'ordre « résoudre, vérifier, puis verrouiller ». Il se retire à tout moment depuis la page Verrouillages.`
+            },
+            {
               term: $localize`:@@aide.tuning.term.mediumEleve:Le score medium ou souple paraît énorme`,
               text: $localize`:@@aide.tuning.def.mediumEleve:Vérifiez d'abord qu'il ne s'agit pas d'un plancher lié à une donnée absente (souhaits, niveau référent). Enrichir les compétences et les souhaits des animateurs améliore ces composantes bien plus que n'importe quel réglage du solveur.`
             }
@@ -306,7 +310,8 @@ export function buildHelpSections(): HelpSection[] {
         { route: '/problemes', label: $localize`:@@nav.link.problemes:Problèmes` },
         { route: '/staffing', label: $localize`:@@nav.link.staffing:Besoin en animateurs` },
         { route: '/decoupage', label: $localize`:@@nav.link.decoupage:Découpage` },
-        { route: '/ad-hoc-constraints', label: $localize`:@@nav.link.adHocConstraints:Contraintes ad hoc` }
+        { route: '/ad-hoc-constraints', label: $localize`:@@nav.link.adHocConstraints:Contraintes ad hoc` },
+        { route: '/verrouillages', label: $localize`:@@nav.link.verrouillages:Verrouillages` }
       ]
     },
     {
