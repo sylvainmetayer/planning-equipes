@@ -188,8 +188,29 @@ Dans `application.properties` :
 | Propriété | Défaut | Rôle |
 | --- | --- | --- |
 | `planning.solver.seconds-limit` | `180` (`3` en profil `%test`) | Durée maximale de résolution |
-| `planning.solver.unimproved-seconds-limit` | `0` = désactivé (`2` en profil `%test`) | Arrêt anticipé si le score n'a pas progressé ; désactivé par défaut pour laisser la recherche locale utiliser tout le budget `seconds-limit` plutôt que d'abandonner sur un optimum local à hard > 0 |
+| `planning.solver.unimproved-seconds-limit` | `300` (`2` en profil `%test`), `0` = désactivé | Arrêt anticipé sur plateau, **conditionné à la faisabilité** : voir ci-dessous |
 | `planning.constraint-weights.<nomDeLaContrainte>` | `1` pour chaque contrainte | Poids de la contrainte (multiplie le hard/medium/soft qu'elle produit) ; voir [`contraintes.md`](contraintes.md#pondérer-une-contrainte) |
+
+### Arrêt anticipé : plateau **et** planning faisable
+
+Une résolution s'arrête de deux façons, à la première des deux : le budget
+`seconds-limit` est épuisé, **ou** le planning est déjà faisable (score dur à
+zéro) et n'a plus progressé depuis `unimproved-seconds-limit`. C'est un `AND`
+entre `bestScoreFeasible` et la limite de plateau, monté dans
+`PlanningService#applyTermination`.
+
+Le conditionnement à la faisabilité n'est pas cosmétique : c'est ce qui a permis
+de réactiver cette limite. Une limite de plateau nue — ce que la propriété
+configurait avant d'être mise à `0` — coupe aussi la recherche locale sur un
+plateau de score **dur** : le solveur abandonnait plusieurs minutes trop tôt sur
+un planning qui avait encore des postes non pourvus, exactement le cas où il a
+besoin de tout son budget. Ainsi conditionné, l'arrêt ne peut rogner que du
+temps passé à polir le medium/soft d'un planning déjà exploitable.
+
+Mesures sur `edition-1708` (3 502 postes, 153 animateurs), budget par budget :
+600 s → -11 hard, 1200 s → -2 hard, 1800 s → 0 hard. Sur ce scénario, le budget
+de 30 min n'a donc pas de gras à couper avant d'atteindre la faisabilité — c'est
+après, sur le medium/soft, que l'arrêt anticipé peut jouer.
 
 La configuration Timefold elle-même est dans `src/main/resources/solver/solverConfig.xml`.
 Le value range `animateurRange` couvre tous les animateurs (~150) car

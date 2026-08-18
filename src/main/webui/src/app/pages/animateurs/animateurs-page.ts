@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { firstValueFrom } from 'rxjs';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
@@ -16,8 +17,10 @@ import { SolverJobService } from '../../core/solver-job.service';
 import { TableSelection } from '../../core/table-selection';
 import { correspondAuFiltre } from '../../core/text-filter';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
+import { DetailData, DetailDialog } from '../../shared/detail-dialog';
 import { TableFilter } from '../../shared/table-filter';
 import { AnimateurBulkEditData, AnimateurBulkEditDialog } from './animateur-bulk-edit-dialog';
+import { buildAnimateurDetail } from './animateur-detail';
 import { AnimateurFormData, AnimateurFormDialog } from './animateur-form-dialog';
 
 /**
@@ -137,6 +140,24 @@ export class AnimateursPage {
       return $localize`:@@animateurs.majorite.mineur:Non`;
     }
     return '—';
+  }
+
+  /**
+   * Read-only detail of one row, with an "Modifier" button handing over to the
+   * usual form dialog — locked, there as here, while a solve is running.
+   */
+  protected async consult(animateur: Animateur): Promise<void> {
+    const data: DetailData = {
+      title: `${animateur.prenom ?? ''} ${animateur.nom ?? ''}`.trim() || animateur.id,
+      subtitle: animateur.id,
+      sections: buildAnimateurDetail(animateur, this.store.typologies())
+    };
+    const result = await firstValueFrom(
+      this.dialog.open(DetailDialog, { data, width: '40rem', maxWidth: '95vw' }).afterClosed()
+    );
+    if (result === 'edit') {
+      this.edit(animateur);
+    }
   }
 
   protected openCreate(): void {

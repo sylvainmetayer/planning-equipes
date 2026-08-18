@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -17,7 +18,9 @@ import { TableSelection } from '../../core/table-selection';
 import { correspondAuFiltre } from '../../core/text-filter';
 import { TypologieItem } from '../../core/models';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
+import { DetailData, DetailDialog } from '../../shared/detail-dialog';
 import { TableFilter } from '../../shared/table-filter';
+import { buildTypologieDetail } from './typologie-detail';
 import { TypologieFormData, TypologieFormDialog } from './typologie-form-dialog';
 
 /**
@@ -96,6 +99,24 @@ export class TypologiesPage {
     const cible = this.store.typologies().find((typologie) => typologie.id === id);
     if (cible) {
       await this.crud.save('typologies', { ...cible, ninja: true }, cible.id, label);
+    }
+  }
+
+  /**
+   * Read-only detail of one row, with an "Modifier" button handing over to the
+   * usual form dialog — locked, there as here, while a solve is running.
+   */
+  protected async consult(typologie: TypologieItem): Promise<void> {
+    const data: DetailData = {
+      title: typologie.label || typologie.id,
+      subtitle: typologie.id,
+      sections: buildTypologieDetail(typologie, this.store.stands(), this.store.animateurs())
+    };
+    const result = await firstValueFrom(
+      this.dialog.open(DetailDialog, { data, width: '40rem', maxWidth: '95vw' }).afterClosed()
+    );
+    if (result === 'edit') {
+      this.edit(typologie);
     }
   }
 

@@ -268,6 +268,14 @@ ligne. Sont modifiables ainsi :
 - pour les **emplacements** : les coordonnées GPS, saisies ou pointées sur la
   carte, appliquées à toute la sélection.
 
+Chaque ligne de ces quatre référentiels ouvre une **vue de détail** (icône
+« consulter ») : tout ce que porte l'élément, y compris ce que le formulaire de
+saisie ne montre pas — les libellés humains des typologies plutôt que leurs
+identifiants, les stands rattachés à un emplacement, les stands et animateurs
+qui référencent une typologie, le statut majeur/mineur déduit de la date de
+naissance. La modification reste accessible depuis cette vue, et y est bloquée
+pendant une résolution du solveur comme partout ailleurs.
+
 Chacun de ces référentiels (stands, emplacements, animateurs, typologies)
 dispose d'un champ de **filtre rapide** : la table se réduit aux lignes
 contenant tous les mots saisis, accents et casse ignorés, ce qui permet de

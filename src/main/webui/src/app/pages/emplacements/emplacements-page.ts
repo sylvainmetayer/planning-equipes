@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { firstValueFrom } from 'rxjs';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
@@ -14,8 +15,10 @@ import { TableSelection } from '../../core/table-selection';
 import { correspondAuFiltre } from '../../core/text-filter';
 import { Emplacement } from '../../core/models';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
+import { DetailData, DetailDialog } from '../../shared/detail-dialog';
 import { TableFilter } from '../../shared/table-filter';
 import { EmplacementBulkEditData, EmplacementBulkEditDialog } from './emplacement-bulk-edit-dialog';
+import { buildEmplacementDetail } from './emplacement-detail';
 import { EmplacementFormData, EmplacementFormDialog } from './emplacement-form-dialog';
 
 /**
@@ -78,6 +81,24 @@ export class EmplacementsPage {
       return '—';
     }
     return `${emplacement.latitude.toFixed(5)}, ${emplacement.longitude.toFixed(5)}`;
+  }
+
+  /**
+   * Read-only detail of one row, with an "Modifier" button handing over to the
+   * usual form dialog — locked, there as here, while a solve is running.
+   */
+  protected async consult(emplacement: Emplacement): Promise<void> {
+    const data: DetailData = {
+      title: emplacement.nom || emplacement.id,
+      subtitle: emplacement.id,
+      sections: buildEmplacementDetail(emplacement, this.store.stands())
+    };
+    const result = await firstValueFrom(
+      this.dialog.open(DetailDialog, { data, width: '40rem', maxWidth: '95vw' }).afterClosed()
+    );
+    if (result === 'edit') {
+      this.edit(emplacement);
+    }
   }
 
   protected openCreate(): void {

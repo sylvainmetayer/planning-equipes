@@ -30,6 +30,7 @@ import ai.timefold.solver.core.api.solver.Solver;
 import ai.timefold.solver.core.api.solver.SolutionManager;
 import ai.timefold.solver.core.api.solver.SolverFactory;
 import ai.timefold.solver.core.config.score.director.ScoreDirectorFactoryConfig;
+import ai.timefold.solver.core.config.solver.termination.TerminationCompositionStyle;
 import ai.timefold.solver.core.config.solver.termination.TerminationConfig;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -131,6 +132,24 @@ public class PlanningService {
         return overrides.isEmpty() ? ConstraintWeightOverrides.none() : ConstraintWeightOverrides.of(overrides);
     }
 
+    /**
+     * Two ways for a solve to end, whichever comes first: the time budget is
+     * exhausted, or the planning is <b>already feasible</b> and has stopped
+     * improving for {@code unimprovedSecondsLimit}.
+     *
+     * <p>The second half is deliberately gated on feasibility
+     * ({@link TerminationConfig#withBestScoreFeasible}, AND-ed with the plateau
+     * limit). A bare unimproved-time limit — what this used to configure, and
+     * why it ended up disabled altogether — bails out of local search on a
+     * <em>hard-constraint</em> plateau too: the solver gave up minutes early on
+     * a planning that still had unfilled seats, exactly the case where it needs
+     * the rest of its budget. Gated this way, the bailout can only ever cut
+     * time that was being spent polishing medium/soft score on an already
+     * workable planning, never time spent reaching hard-feasibility.</p>
+     *
+     * <p>{@code unimprovedSecondsLimit <= 0} disables the plateau branch and
+     * leaves the plain time budget.</p>
+     */
     private static void applyTermination(SolverConfig solverConfig, Long secondsLimit, Long unimprovedSecondsLimit) {
         if (solverConfig.getTerminationConfig() == null) {
             solverConfig.setTerminationConfig(new TerminationConfig());
@@ -138,7 +157,10 @@ public class PlanningService {
         TerminationConfig termination = solverConfig.getTerminationConfig();
         termination.setSecondsSpentLimit(secondsLimit);
         if (unimprovedSecondsLimit != null && unimprovedSecondsLimit > 0) {
-            termination.setUnimprovedSecondsSpentLimit(unimprovedSecondsLimit);
+            termination.setTerminationConfigList(List.of(new TerminationConfig()
+                    .withBestScoreFeasible(true)
+                    .withUnimprovedSecondsSpentLimit(unimprovedSecondsLimit)
+                    .withTerminationCompositionStyle(TerminationCompositionStyle.AND)));
         }
     }
 

@@ -158,7 +158,8 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `app/shared/` holds cross-page components (`job-monitor.ts`,
   `confirm-dialog.ts` — replaces `window.confirm`, `output-panel.ts`,
   `bulk-actions-bar.ts`, `table-filter.ts` — the reference pages' quick-filter
-  field), and `app/pages/<page>/` holds one folder per route.
+  field, `detail-dialog.ts` — their read-only "consultation" view, whose
+  content each page builds in a plain `<entity>-detail.ts` next to it), and `app/pages/<page>/` holds one folder per route.
 - Bulk edits go through one dialog per entity (`<entity>-bulk-edit-dialog.ts`),
   whose rules live in a plain `<entity>-bulk-edit.ts` next to it so they are
   unit-tested without rendering. Every field defaults to "ne pas modifier": a

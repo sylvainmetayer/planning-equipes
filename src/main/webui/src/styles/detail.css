@@ -1,0 +1,59 @@
+/* Read-only detail dialog of a reference-data row (app-detail-dialog):
+   labelled values in a two-column definition list, one block per section. */
+
+.detail-subtitle {
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+  margin: 0 0 1rem;
+}
+
+.detail-section + .detail-section {
+  margin-top: 1.25rem;
+}
+
+.detail-section-title {
+  font: var(--mat-sys-title-small);
+  color: var(--mat-sys-primary);
+  margin: 0 0 0.5rem;
+}
+
+.detail-rows {
+  display: grid;
+  grid-template-columns: minmax(8rem, 12rem) 1fr;
+  gap: 0.4rem 1rem;
+  margin: 0;
+}
+
+.detail-rows dt {
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.detail-rows dd {
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface);
+  margin: 0;
+}
+
+.detail-rows dd.detail-muted {
+  color: var(--mat-sys-on-surface-variant);
+  font-style: italic;
+}
+
+/* A long chip list must wrap inside the dialog rather than widen it. */
+.detail-rows mat-chip-set {
+  --mat-chip-container-height: 1.75rem;
+}
+
+/* Single column on a narrow screen: the label above its value stays readable
+   where a 8rem column would squeeze both. */
+@media (max-width: 30rem) {
+  .detail-rows {
+    grid-template-columns: 1fr;
+    gap: 0.15rem;
+  }
+
+  .detail-rows dd {
+    margin-bottom: 0.5rem;
+  }
+}

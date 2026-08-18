@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { firstValueFrom } from 'rxjs';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
@@ -18,9 +19,11 @@ import { TableSelection } from '../../core/table-selection';
 import { correspondAuFiltre } from '../../core/text-filter';
 import { RapportCompactage, Stand } from '../../core/models';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
+import { DetailData, DetailDialog } from '../../shared/detail-dialog';
 import { TableFilter } from '../../shared/table-filter';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { StandBulkEditData, StandBulkEditDialog } from './stand-bulk-edit-dialog';
+import { buildStandDetail } from './stand-detail';
 import { StandFormData, StandFormDialog } from './stand-form-dialog';
 
 /**
@@ -164,6 +167,24 @@ export class StandsPage {
       message: $localize`:@@stands.compactage.doneMessage:${rapport.standsCompactes}:stands: stand(s) compacté(s), ${rapport.fenetresAvant}:avant: plages ramenées à ${rapport.fenetresApres}:apres: entrées.`,
       variant: 'success'
     });
+  }
+
+  /**
+   * Read-only detail of one row, with an "Modifier" button handing over to the
+   * usual form dialog — locked, there as here, while a solve is running.
+   */
+  protected async consult(stand: Stand): Promise<void> {
+    const data: DetailData = {
+      title: stand.nom || stand.id,
+      subtitle: stand.id,
+      sections: buildStandDetail(stand, this.store.typologies())
+    };
+    const result = await firstValueFrom(
+      this.dialog.open(DetailDialog, { data, width: '40rem', maxWidth: '95vw' }).afterClosed()
+    );
+    if (result === 'edit') {
+      this.edit(stand);
+    }
   }
 
   protected openCreate(): void {
