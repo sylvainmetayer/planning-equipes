@@ -433,6 +433,19 @@ démarrage. **Un changement de schéma = un nouveau fichier versionné** ; ne ja
   séparément de la mise en cache npm du job `frontend` (celle-ci passe par
   `actions/setup-node`, qui ne s'applique pas ici — ce job n'installe pas de
   Node système, Quinoa utilise le sien).
+- `.github/workflows/scenario-tests.yml` — les deux tests de scénario grande
+  échelle (`PlanningServiceScenarioCompletTest`,
+  `PlanningServiceScenarioContinuTest`, ~8 min), qui résolvent des scénarios de
+  plusieurs milliers de postes jusqu'à la faisabilité et affirment un score dur
+  nul. Trop lents pour tourner sur chaque push, ils se déclenchent **uniquement**
+  sur les chemins qui peuvent casser la convergence : les packages `solver/` et
+  `domain/`, `solverConfig.xml`, `application.properties`, les scénarios de
+  `src/main/resources/scenarios/`, les deux classes de test elles-mêmes et
+  `pom.xml` — une montée de version Timefold étant précisément le moment où
+  l'on veut savoir si les scénarios connus convergent toujours. Lançable aussi
+  à la main (`workflow_dispatch`). Sans ce filet, un réglage du solveur pouvait
+  partir en production sans qu'aucun test ne vérifie qu'un scénario connu
+  converge encore.
 - `.github/workflows/docker-ghcr.yml` — publication de l'image sur GHCR, en
   multi-arch (`linux/amd64`, `linux/arm64` via QEMU) pour un déploiement natif
   sur Raspberry Pi. Ne se déclenche **que** sur un push `main` ou un tag de

@@ -52,9 +52,18 @@ Read before working on constraints or the domain model:
 solve a ~2000-poste scenario to hard-feasibility and take ~25s/~75s
 respectively — tagged `@Tag("scenario-lent")`, excluded from the default
 `./mvnw test`/`./mvnw verify` run via the `test.excludedGroups` property in
-`pom.xml`, and **not run in CI** (`.github/workflows/tests.yml` uses the
-default exclusion). Run them explicitly with `./mvnw test -Pscenario-tests`
-(the profile clears the exclusion), optionally narrowed with `-Dtest=...`.
+`pom.xml`, and not run by the main CI workflow (`.github/workflows/tests.yml`
+uses the default exclusion). Run them explicitly with
+`./mvnw test -Pscenario-tests` (the profile clears the exclusion), optionally
+narrowed with `-Dtest=...`.
+
+CI does run them, but **only when something that can break convergence
+changes**: `.github/workflows/scenario-tests.yml` triggers on the `solver/`
+and `domain/` packages, `solverConfig.xml`, `application.properties`, the
+scenario files and `pom.xml` (a Timefold bump is exactly when you want them).
+Keep that path list in step with any move of those files — a solver tuning
+that ships without these tests having run is the hole this workflow exists to
+close.
 Add the same tag to any future test in this weight class instead of letting
 it slow down the default loop.
 

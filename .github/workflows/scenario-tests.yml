@@ -1,0 +1,84 @@
+# Tests de scénario grande échelle, lancés ponctuellement.
+#
+# PlanningServiceScenarioCompletTest et PlanningServiceScenarioContinuTest
+# résolvent des scénarios de plusieurs milliers de postes jusqu'à la
+# faisabilité et affirment un score dur nul. Trop lents (~8 min) pour le
+# workflow Tests qui tourne sur chaque push, ils sont taggés `scenario-lent`
+# et exclus par défaut (voir `test.excludedGroups` dans le pom).
+#
+# Ils sont pourtant le seul filet contre une régression de convergence, et
+# rien ne les déclenchait : un réglage du solveur pouvait partir en production
+# sans que personne ne vérifie qu'un scénario connu converge encore. Ce
+# workflow comble ce trou en les lançant sur les seuls changements qui peuvent
+# les casser — ce que le solveur résout, ou la façon dont il cherche.
+name: Tests de scénario
+
+on:
+  pull_request:
+    # Liste dupliquee ci-dessous pour le push : GitHub Actions n'interprete pas
+    # les ancres YAML.
+    paths:
+      - 'src/main/java/dev/sylvain/planning/solver/**'
+      - 'src/main/java/dev/sylvain/planning/domain/**'
+      - 'src/main/resources/solver/solverConfig.xml'
+      - 'src/main/resources/application.properties'
+      - 'src/main/resources/scenarios/**'
+      - 'src/test/java/dev/sylvain/planning/service/PlanningServiceScenario*Test.java'
+      # Une montée de version Timefold est précisément le moment où l'on veut
+      # savoir si les scénarios connus convergent toujours.
+      - 'pom.xml'
+      - '.github/workflows/scenario-tests.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/main/java/dev/sylvain/planning/solver/**'
+      - 'src/main/java/dev/sylvain/planning/domain/**'
+      - 'src/main/resources/solver/solverConfig.xml'
+      - 'src/main/resources/application.properties'
+      - 'src/main/resources/scenarios/**'
+      - 'src/test/java/dev/sylvain/planning/service/PlanningServiceScenario*Test.java'
+      - 'pom.xml'
+      - '.github/workflows/scenario-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scenario-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scenario:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      # `test` et non `verify` : ces tests sont du Java simple, sans Quarkus ni
+      # base de données, donc rien à packager — et donc pas de Quinoa à
+      # réveiller, contrairement au workflow Tests.
+      # Le profil `scenario-tests` lève l'exclusion du tag ; `-Dtest` limite le
+      # run aux deux classes concernées, le reste de la suite étant déjà
+      # couvert par le workflow Tests.
+      - name: Run the large-scenario tests
+        run: >-
+          ./mvnw -B --no-transfer-progress test -Pscenario-tests
+          -Dtest='PlanningServiceScenarioCompletTest,PlanningServiceScenarioContinuTest'
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: scenario-test-reports
+          path: target/surefire-reports/
+          if-no-files-found: ignore
