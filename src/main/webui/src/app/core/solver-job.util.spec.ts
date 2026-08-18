@@ -35,7 +35,8 @@ describe('elapsedSeconds', () => {
     type: 'SOLVE',
     label: 'Timefold solve',
     startedAtMs: 10_000,
-    mine: true
+    mine: true,
+    secondsLimit: 180
   };
 
   it('rounds the elapsed time to whole seconds', () => {

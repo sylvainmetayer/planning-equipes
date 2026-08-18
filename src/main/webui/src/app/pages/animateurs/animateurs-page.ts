@@ -14,7 +14,9 @@ import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { TableSelection } from '../../core/table-selection';
+import { correspondAuFiltre } from '../../core/text-filter';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
+import { TableFilter } from '../../shared/table-filter';
 import { AnimateurBulkEditData, AnimateurBulkEditDialog } from './animateur-bulk-edit-dialog';
 import { AnimateurFormData, AnimateurFormDialog } from './animateur-form-dialog';
 
@@ -40,7 +42,8 @@ import { AnimateurFormData, AnimateurFormDialog } from './animateur-form-dialog'
     MatTableModule,
     MatSortModule,
     MatTooltipModule,
-    BulkActionsBar
+    BulkActionsBar,
+    TableFilter
   ],
   templateUrl: './animateurs-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -48,8 +51,23 @@ import { AnimateurFormData, AnimateurFormDialog } from './animateur-form-dialog'
 export class AnimateursPage {
   protected readonly columns = ['select', 'id', 'nom', 'majorite', 'manager', 'competences', 'indisponibilites', 'actions'];
   protected readonly sort = signal<Sort>({ active: '', direction: '' });
+  /** Quick filter of the table: id, identity and compétences. Applied before the sort. */
+  protected readonly filtre = signal('');
+  protected readonly animateursFiltres = computed(() =>
+    this.store
+      .animateurs()
+      .filter((animateur) =>
+        correspondAuFiltre(this.filtre(), [
+          animateur.id,
+          animateur.prenom,
+          animateur.nom,
+          ...Object.keys(animateur.competences ?? {})
+        ])
+      )
+  );
+
   protected readonly sortedAnimateurs = computed(() => {
-    const animateurs = this.store.animateurs();
+    const animateurs = this.animateursFiltres();
     const { active, direction } = this.sort();
     if (!active || !direction) {
       return animateurs;
@@ -63,7 +81,7 @@ export class AnimateursPage {
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
   protected readonly editingLocked = computed(() => this.jobs.solverBusy());
 
-  /** Keyed on the sorted rows, so "tout sélectionner" follows what the table shows. */
+  /** Keyed on the filtered, sorted rows, so "tout sélectionner" follows what the table shows. */
   protected readonly selection = new TableSelection<string>(
     computed(() => this.sortedAnimateurs().map((animateur) => animateur.id))
   );

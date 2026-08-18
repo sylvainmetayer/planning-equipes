@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -14,8 +14,10 @@ import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { TableSelection } from '../../core/table-selection';
+import { correspondAuFiltre } from '../../core/text-filter';
 import { TypologieItem } from '../../core/models';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
+import { TableFilter } from '../../shared/table-filter';
 import { TypologieFormData, TypologieFormDialog } from './typologie-form-dialog';
 
 /**
@@ -37,7 +39,8 @@ import { TypologieFormData, TypologieFormDialog } from './typologie-form-dialog'
     MatSelectModule,
     MatTableModule,
     MatTooltipModule,
-    BulkActionsBar
+    BulkActionsBar,
+    TableFilter
   ],
   templateUrl: './typologies-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -49,8 +52,15 @@ export class TypologiesPage {
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
   protected readonly editingLocked = computed(() => this.jobs.solverBusy());
 
+  /** Quick filter of the table: id and label, the two things a typologie is looked up by. */
+  protected readonly filtre = signal('');
+  protected readonly typologiesFiltrees = computed(() =>
+    this.store.typologies().filter((typologie) => correspondAuFiltre(this.filtre(), [typologie.id, typologie.label]))
+  );
+
+  /** Keyed on the filtered rows, so "tout sélectionner" follows what the table shows. */
   protected readonly selection = new TableSelection<string>(
-    computed(() => this.store.typologies().map((typologie) => typologie.id))
+    computed(() => this.typologiesFiltrees().map((typologie) => typologie.id))
   );
 
   private readonly crud = inject(ReferenceCrudService);

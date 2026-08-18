@@ -49,6 +49,28 @@ export class HoursPage {
     return [...animateurs].sort((a, b) => factor * compareByColumn(a, b, active));
   });
 
+  /**
+   * Festival-wide totals, summed over every animateur: the hours the event
+   * actually costs, week by week and overall, plus the average per animateur.
+   * Rendered as the table's footer row — a per-animateur table answers "is
+   * this person overloaded", never "what does the whole roster amount to".
+   */
+  protected readonly totaux = computed(() => {
+    const rapport = this.rapport();
+    const animateurs = rapport?.animateurs ?? [];
+    const parSemaine: Record<string, number> = {};
+    for (const semaine of rapport?.semaines ?? []) {
+      parSemaine[semaine] = animateurs.reduce((sum, row) => sum + (row.heuresParSemaine[semaine] ?? 0), 0);
+    }
+    const total = animateurs.reduce((sum, row) => sum + row.total, 0);
+    return {
+      animateurCount: animateurs.length,
+      parSemaine,
+      total,
+      moyenneParAnimateur: animateurs.length > 0 ? total / animateurs.length : 0
+    };
+  });
+
   private readonly api = inject(ApiService);
   private readonly planningState = inject(PlanningStateService);
 

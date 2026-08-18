@@ -97,19 +97,22 @@ describe('buildDays — issue #60 partial-closure regression', () => {
 });
 
 describe('buildDays — understaffing indicator', () => {
-  it('carries the stand effectifMin on each line, so a partially-staffed stand can be flagged', () => {
+  it('counts the seats generated for the line, so a partially-staffed stand can be flagged', () => {
     // Regression for the reported DEV case: 17/07/2026 Stand Stratégie 16,
-    // 18h30-00h, effectifMin 2 but only one animateur assigned — the line
-    // must carry enough data (entries.length < effectifMin) for the template
-    // to flag it, not just the fully-unassigned case already shown in red.
+    // 18h30-00h, two seats but only one animateur assigned — the line must
+    // carry enough data (entries.length < effectifRequis) for the template to
+    // flag it, not just the fully-unassigned case already shown in red.
     const c1 = creneau({ id: 1, heureDebut: '18:30', heureFin: '00:00' });
     const s1 = stand('Stratégie 16', 2);
-    const days = buildDays([poste({ id: 'p1', creneau: c1, stand: s1, animateur: animateur('Oscar') })]);
+    const days = buildDays([
+      poste({ id: 'p1', creneau: c1, stand: s1, animateur: animateur('Oscar') }),
+      poste({ id: 'p2', creneau: c1, stand: s1 })
+    ]);
 
     const line = days[0].slots[0].stands[0];
     expect(labels(line)).toEqual(['Oscar']);
-    expect(line.effectifMin).toBe(2);
-    expect(line.entries.length).toBeLessThan(line.effectifMin);
+    expect(line.effectifRequis).toBe(2);
+    expect(line.entries.length).toBeLessThan(line.effectifRequis);
   });
 
   it('a fully-staffed stand is not understaffed', () => {
@@ -121,13 +124,30 @@ describe('buildDays — understaffing indicator', () => {
     ]);
 
     const line = days[0].slots[0].stands[0];
-    expect(line.entries.length).toBeGreaterThanOrEqual(line.effectifMin);
+    expect(line.entries.length).toBeGreaterThanOrEqual(line.effectifRequis);
+  });
+
+  it('does not flag a meal-pause coverage slot, deliberately staffed at half the headcount', () => {
+    // EFFECTIF_REDUIT: the découpage generates a single seat on the pause
+    // vacation of a two-person stand. Filling it is full coverage, not a
+    // shortfall — the previous effectifMin comparison flagged every such slot.
+    const pause = creneau({ id: 2, heureDebut: '12:00', heureFin: '13:00', couverturePause: true });
+    const days = buildDays([
+      poste({ id: 'p1', creneau: pause, stand: stand('Silver Fest', 2), animateur: animateur('Oscar') })
+    ]);
+
+    const line = days[0].slots[0].stands[0];
+    expect(line.couverturePause).toBe(true);
+    expect(line.effectifRequis).toBe(1);
+    expect(days[0].understaffed).toBe(false);
   });
 
   it('flags the whole day card when any of its stand-lines is understaffed, visible without opening it', () => {
     const c1 = creneau({ id: 1, jour: 1 });
+    const s1 = stand('Stratégie 16', 2);
     const days = buildDays([
-      poste({ id: 'p1', creneau: c1, stand: stand('Stratégie 16', 2), animateur: animateur('Oscar') })
+      poste({ id: 'p1', creneau: c1, stand: s1, animateur: animateur('Oscar') }),
+      poste({ id: 'p2', creneau: c1, stand: s1 })
     ]);
 
     expect(days[0].understaffed).toBe(true);

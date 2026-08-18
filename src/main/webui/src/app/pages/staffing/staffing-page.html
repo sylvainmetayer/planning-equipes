@@ -2,87 +2,106 @@
   <mat-card-header>
     <mat-card-title i18n="@@staffing.title">Besoin minimum en effectif</mat-card-title>
     <mat-card-subtitle i18n="@@staffing.description">
-      Deux bornes minimales calculées à partir des seuls stands et créneaux, avant la saisie d'aucun animateur — la
-      plus grande des deux est retenue. Aucune des deux ne tient compte des compétences ni des disponibilités
-      réelles : à traiter comme un plancher de recrutement à dépasser, pas comme une cible — voir la note ci-dessous.
+      Trois bornes minimales calculées sur les sièges que le solveur devrait réellement pourvoir (horaires des stands
+      résolus, vacations générées comprises), avant la saisie d'aucun animateur — la plus grande des trois est retenue.
+      Aucune ne tient compte des compétences ni des disponibilités réelles : à traiter comme un plancher de recrutement
+      à dépasser, pas comme une cible — voir la note ci-dessous.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
-    <div class="staffing-summary">
-      <mat-card appearance="outlined" class="staffing-stat">
-        <div class="staffing-stat-value">{{ summary().minimumTotal }}</div>
-        <div class="staffing-stat-label" i18n="@@staffing.minimumTotal">Minimum retenu</div>
-      </mat-card>
-      <mat-card appearance="outlined" class="staffing-stat">
-        <div class="staffing-stat-value">{{ summary().minimumMajeurs }}</div>
-        <div class="staffing-stat-label" i18n="@@staffing.minimumMajeurs">dont majeurs</div>
-      </mat-card>
-      <mat-card appearance="outlined" class="staffing-stat">
-        <div class="staffing-stat-value">{{ summary().minimumMineurs }}</div>
-        <div class="staffing-stat-label" i18n="@@staffing.minimumMineurs">dont mineurs (au plus)</div>
-      </mat-card>
-    </div>
-
-    <div class="staffing-bounds">
-      <p [class.staffing-binding]="summary().bindingBound === 'peak'">
-        <mat-icon inline aria-hidden="true">event_seat</mat-icon>
-        <strong i18n="@@staffing.peakBound.label">Pic de créneau : {{ summary().peakTotal }}</strong>
-        <ng-container i18n="@@staffing.peakBound.description"> — sièges ouverts au créneau le plus chargé, en
-        supposant qu'un animateur puisse enchaîner n'importe quel créneau du festival.</ng-container>
-        @if (summary().creneauCritique; as critique) {
-          {{ busiestCreneauLabel(critique) }}
-        }
-      </p>
-      <p [class.staffing-binding]="summary().bindingBound === 'workload'">
-        <mat-icon inline aria-hidden="true">schedule</mat-icon>
-        <strong i18n="@@staffing.workloadBound.label">Charge horaire / plafond légal : {{ summary().workloadTotal }}</strong>
-        <ng-container i18n="@@staffing.workloadBound.description"> —
-        {{ summary().totalDemandeHeures | number: '1.0-0' }} heures-personne à couvrir au total, réparties sur
-        {{ summary().nombreSemaines }} semaine(s) ISO à {{ summary().capaciteHeuresParAnimateur / summary().nombreSemaines | number: '1.0-0' }}
-        h maximum par animateur et par semaine (durée hebdomadaire maximale légale).</ng-container>
-      </p>
-    </div>
-
-    <p class="empty-hint staffing-caveat">
-      <mat-icon inline aria-hidden="true">warning</mat-icon>
-      <ng-container i18n="@@staffing.caveat">Ces deux minimums restent optimistes : ils supposent une répartition parfaite, sans tenir compte des
-      compétences de chaque animateur ni de la façon dont les indisponibilités réelles se superposent. Il n'existe pas de marge universelle à appliquer ici :
-      une fois de vrais animateurs saisis, vérifiez la faisabilité réelle sur la page « Constraints ».</ng-container>
-    </p>
-
-    @if (summary().parCreneau.length === 0) {
-      <p class="empty-hint" i18n="@@creneaux.empty">Aucun créneau pour le moment.</p>
-    } @else {
-      <div class="table-wrapper">
-        <table mat-table [dataSource]="summary().parCreneau">
-          <ng-container matColumnDef="creneau">
-            <th mat-header-cell *matHeaderCellDef i18n="@@stands.column.effectif.creneau">Créneau</th>
-            <td mat-cell *matCellDef="let row">
-              J{{ row.jour }} · {{ row.date }} {{ row.heureDebut }}–{{ row.heureFin }}
-            </td>
-          </ng-container>
-          <ng-container matColumnDef="standsOuverts">
-            <th mat-header-cell *matHeaderCellDef i18n="@@staffing.column.standsOuverts">Stands ouverts</th>
-            <td mat-cell *matCellDef="let row">{{ row.standsOuverts }}</td>
-          </ng-container>
-          <ng-container matColumnDef="total">
-            <th mat-header-cell *matHeaderCellDef i18n="@@hours.column.total">Total</th>
-            <td mat-cell *matCellDef="let row">
-              <strong [class.staffing-critical]="row === summary().creneauCritique">{{ row.total }}</strong>
-            </td>
-          </ng-container>
-          <ng-container matColumnDef="majeurs">
-            <th mat-header-cell *matHeaderCellDef i18n="@@staffing.column.majeurs">Majeurs</th>
-            <td mat-cell *matCellDef="let row">{{ row.majeurs }}</td>
-          </ng-container>
-          <ng-container matColumnDef="mineurs">
-            <th mat-header-cell *matHeaderCellDef i18n="@@staffing.column.mineurs">Mineurs</th>
-            <td mat-cell *matCellDef="let row">{{ row.mineurs }}</td>
-          </ng-container>
-          <tr mat-header-row *matHeaderRowDef="columns"></tr>
-          <tr mat-row *matRowDef="let row; columns: columns"></tr>
-        </table>
+    @if (loading()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    @if (error()) {
+      <p class="calendar-empty">{{ error() }}</p>
+    }
+    @if (summary(); as resume) {
+      <div class="staffing-summary">
+        <mat-card appearance="outlined" class="staffing-stat">
+          <div class="staffing-stat-value">{{ resume.minimumTotal }}</div>
+          <div class="staffing-stat-label" i18n="@@staffing.minimumTotal">Minimum retenu</div>
+        </mat-card>
+        <mat-card appearance="outlined" class="staffing-stat">
+          <div class="staffing-stat-value">{{ resume.minimumMajeurs }}</div>
+          <div class="staffing-stat-label" i18n="@@staffing.minimumMajeurs">dont majeurs</div>
+        </mat-card>
+        <mat-card appearance="outlined" class="staffing-stat">
+          <div class="staffing-stat-value">{{ resume.minimumMineurs }}</div>
+          <div class="staffing-stat-label" i18n="@@staffing.minimumMineurs">dont mineurs (au plus)</div>
+        </mat-card>
       </div>
+
+      <div class="staffing-bounds">
+        <p [class.staffing-binding]="estBorneRetenue('PIC_SIMULTANE')">
+          <mat-icon inline aria-hidden="true">event_seat</mat-icon>
+          <strong i18n="@@staffing.peakBound.label">Pic simultané : {{ resume.picSimultane }}</strong>
+          <ng-container i18n="@@staffing.peakBound.description"> — sièges ouverts au même instant, au moment le plus
+          chargé du festival : personne ne peut en tenir deux à la fois.</ng-container>
+        </p>
+        <p [class.staffing-binding]="estBorneRetenue('PIC_AVEC_PAUSE')">
+          <mat-icon inline aria-hidden="true">groups</mat-icon>
+          <strong i18n="@@staffing.pauseBound.label">Pic avec pause légale : {{ resume.picAvecPause }}</strong>
+          <ng-container i18n="@@staffing.pauseBound.description"> — même pic, chaque vacation prolongée des
+          {{ resume.pauseMinimaleMinutes }} minutes de pause obligatoire entre deux vacations d'une même personne.
+          C'est le nombre exact d'animateurs distincts qu'exige la journée la plus chargée : aucune durée de résolution
+          ne descendra en dessous.</ng-container>
+          @if (resume.jourCritique; as critique) {
+            {{ jourCritiqueLabel(critique) }}
+          }
+        </p>
+        <p [class.staffing-binding]="estBorneRetenue('CHARGE_HORAIRE')">
+          <mat-icon inline aria-hidden="true">schedule</mat-icon>
+          <strong i18n="@@staffing.workloadBound.label">Charge horaire / plafond légal : {{ resume.chargeTotal }}</strong>
+          <ng-container i18n="@@staffing.workloadBound.description"> —
+          {{ resume.totalDemandeHeures | number: '1.0-0' }} heures-personne à couvrir au total, réparties sur
+          {{ resume.nombreSemaines }} semaine(s) ISO à {{ heuresParSemaine() | number: '1.0-0' }}
+          h maximum par animateur et par semaine (durée hebdomadaire maximale légale).</ng-container>
+        </p>
+      </div>
+
+      <p class="empty-hint staffing-caveat">
+        <mat-icon inline aria-hidden="true">warning</mat-icon>
+        <ng-container i18n="@@staffing.caveat">Ces minimums restent optimistes : ils supposent une répartition parfaite, sans tenir compte des
+        compétences de chaque animateur ni de la façon dont les indisponibilités réelles se superposent. Il n'existe pas de marge universelle à appliquer ici :
+        une fois de vrais animateurs saisis, vérifiez la faisabilité réelle sur la page « Contraintes ».</ng-container>
+      </p>
+
+      @if (resume.parJour.length === 0) {
+        <p class="empty-hint" i18n="@@creneaux.empty">Aucun créneau pour le moment.</p>
+      } @else {
+        <div class="table-wrapper">
+          <table mat-table [dataSource]="resume.parJour">
+            <ng-container matColumnDef="jour">
+              <th mat-header-cell *matHeaderCellDef i18n="@@staffing.column.jour">Journée</th>
+              <td mat-cell *matCellDef="let row">J{{ row.jour }} · {{ row.date }}</td>
+            </ng-container>
+            <ng-container matColumnDef="standsOuverts">
+              <th mat-header-cell *matHeaderCellDef i18n="@@staffing.column.standsOuverts">Stands ouverts</th>
+              <td mat-cell *matCellDef="let row">{{ row.standsOuverts }}</td>
+            </ng-container>
+            <ng-container matColumnDef="sieges">
+              <th mat-header-cell *matHeaderCellDef i18n="@@staffing.column.sieges">Sièges</th>
+              <td mat-cell *matCellDef="let row">{{ row.sieges }}</td>
+            </ng-container>
+            <ng-container matColumnDef="heures">
+              <th mat-header-cell *matHeaderCellDef i18n="@@staffing.column.heures">Heures-personne</th>
+              <td mat-cell *matCellDef="let row">{{ row.heures | number: '1.0-0' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="picSimultane">
+              <th mat-header-cell *matHeaderCellDef i18n="@@staffing.column.picSimultane">Pic simultané</th>
+              <td mat-cell *matCellDef="let row">{{ row.picSimultane }}</td>
+            </ng-container>
+            <ng-container matColumnDef="picAvecPause">
+              <th mat-header-cell *matHeaderCellDef i18n="@@staffing.column.picAvecPause">Pic avec pause</th>
+              <td mat-cell *matCellDef="let row">
+                <strong [class.staffing-critical]="row.picAvecPause === resume.picAvecPause">{{ row.picAvecPause }}</strong>
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="columns"></tr>
+            <tr mat-row *matRowDef="let row; columns: columns"></tr>
+          </table>
+        </div>
+      }
     }
   </mat-card-content>
 </mat-card>

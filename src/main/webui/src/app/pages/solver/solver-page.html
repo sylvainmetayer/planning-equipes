@@ -57,7 +57,22 @@
       <mat-icon>archive</mat-icon>
       <ng-container i18n="@@solver.export">Exporter le planning (PDF + ICS)</ng-container>
     </button>
+    <button matButton="tonal" [disabled]="exportBusy() || solverBusy()"
+            i18n-matTooltip="@@solver.exportGlobal.tooltip"
+            matTooltip="Le planning complet dans un seul PDF, pour l'organisateur : toutes les affectations, présentées journée par journée puis stand par stand."
+            (click)="onExportGlobalPdf()">
+      <mat-icon>picture_as_pdf</mat-icon>
+      <ng-container i18n="@@solver.exportGlobal">Exporter le planning global (PDF)</ng-container>
+    </button>
   </mat-card-actions>
+  @if (estimatedEnd()) {
+    <mat-card-content>
+      <p class="calendar-meta" aria-live="polite" i18n="@@solver.estimatedEnd">
+        Fin estimée de la résolution en cours : {{ estimatedEnd() }} (dans {{ estimatedRemaining() }}) — au plus tard,
+        le solveur peut s'arrêter avant s'il n'améliore plus le score.
+      </p>
+    </mat-card-content>
+  }
   @if (lastRunAt()) {
     <mat-card-content>
       <p class="calendar-meta" i18n="@@solver.lastRun">Dernière exécution : {{ formattedLastRun() }}</p>

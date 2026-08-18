@@ -18,7 +18,7 @@ interface StandLineView {
   standId: string;
   entries: { label: string }[];
   totalAssigned: number;
-  effectifMin: number;
+  effectifRequis: number;
 }
 
 function labels(line: StandLineView): string[] {
@@ -121,7 +121,8 @@ describe('CalendarMonthPage — understaffing vs. animateur filter', () => {
     const c1 = creneau(1, '2026-07-17');
     const a1 = animateur('A1');
     const a2 = animateur('A2');
-    const { fixture, page } = setUp([poste('p1', s1, c1, a1), poste('p2', s1, c1, a2)], {
+    // Three seats generated, only two of them filled.
+    const { fixture, page } = setUp([poste('p1', s1, c1, a1), poste('p2', s1, c1, a2), poste('p3', s1, c1, null)], {
       month: '2026-07',
       animateur: 'A1'
     });
@@ -138,7 +139,8 @@ describe('CalendarMonthPage — understaffing vs. animateur filter', () => {
 
     const line = page.daySlots()[0].stands[0];
     expect(labels(line)).toEqual(['A1']);
-    expect(line.totalAssigned).toBe(2); // 2 assigned out of 3 required: still understaffed, correctly.
+    expect(line.totalAssigned).toBe(2); // 2 assigned out of 3 seats: still understaffed, correctly.
+    expect(line.effectifRequis).toBe(3);
   });
 
   it('stand-only filtering never needs correcting: entries.length already equals the true headcount', async () => {

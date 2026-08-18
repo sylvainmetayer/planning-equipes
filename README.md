@@ -62,9 +62,9 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
    ouverts sur l'application, qui voient le calcul en cours et son temps écoulé.
 4. Consulter le résultat dans **Assignment calendar** (vue mensuelle) ou
    **Day calendar** (vue par jour), et le respect des règles dans **Constraints**.
-5. Exporter les plannings individuels en PDF ou en ICS : l'archive complète
-   depuis la page **Solveur**, ou le planning d'un seul animateur depuis la page
-   **Timeline animateur**.
+5. Exporter le planning : le PDF global de l'organisateur ou l'archive complète
+   des plannings individuels (PDF + ICS) depuis la page **Solveur**, ou le
+   planning d'un seul animateur depuis la page **Timeline animateur**.
 
 ### Configuration
 
@@ -268,37 +268,44 @@ ligne. Sont modifiables ainsi :
 - pour les **emplacements** : les coordonnées GPS, saisies ou pointées sur la
   carte, appliquées à toute la sélection.
 
+Chacun de ces référentiels (stands, emplacements, animateurs, typologies)
+dispose d'un champ de **filtre rapide** : la table se réduit aux lignes
+contenant tous les mots saisis, accents et casse ignorés, ce qui permet de
+retrouver une information dans une liste de plusieurs dizaines (ou centaines)
+de lignes sans la parcourir. Les actions de masse ne portent jamais que sur les
+lignes affichées.
+
 ### Estimation du besoin en animateurs
 
-Avant même de lancer une génération de planning, une page dédiée calcule, à
-partir des stands et créneaux saisis dans les référentiels (effectif minimum
-par stand, restriction éventuelle aux majeurs, stands ouverts par créneau) et
-de la durée hebdomadaire maximale légale, le nombre minimum d'animateurs à
-recruter. Deux minimums sont calculés, et le plus élevé des deux est retenu :
+Avant même de lancer une génération de planning, une page dédiée calcule le
+nombre minimum d'animateurs à recruter. Le calcul part des **places réellement
+à pourvoir** — exactement celles qu'une génération de planning devrait remplir,
+horaires d'ouverture des stands résolus, vacations générées comprises — et non
+d'un simple produit stands × créneaux, qui comptait plusieurs fois la même
+heure du même stand dès qu'un planning était découpé en vacations. Trois
+minimums sont calculés, et le plus élevé est retenu :
 
-- le **pic de créneau** : sièges ouverts au créneau le plus chargé du
-  festival, en supposant qu'un animateur puisse enchaîner n'importe quel
-  créneau ;
-- la **charge horaire** : le volume total d'heures-personne à couvrir,
-  rapporté au plafond légal hebdomadaire sur le nombre de semaines ISO que
-  couvre le festival — le pic de créneau seul ignore ce plafond, alors qu'il
-  est souvent la contrainte la plus limitante sur un festival de plusieurs
-  jours.
+- le **pic simultané** : places ouvertes au même instant, au moment le plus
+  chargé du festival — personne ne peut en tenir deux à la fois ;
+- le **pic avec pause légale** : le même pic, chaque vacation prolongée de la
+  pause minimale obligatoire entre deux vacations d'une même personne. C'est le
+  nombre exact d'animateurs distincts qu'exige la journée la plus chargée :
+  aucune durée de calcul, si longue soit-elle, ne descendra en dessous ;
+- la **charge horaire** : le volume total d'heures-personne à couvrir, rapporté
+  au plafond légal hebdomadaire sur le nombre de semaines que couvre le
+  festival — un pic seul ignore ce plafond, alors qu'il est souvent la
+  contrainte la plus limitante sur un festival de plusieurs jours.
 
 Ce minimum retenu est ensuite décomposé en **majeurs** et **mineurs**, en
 respectant à la fois l'encadrement obligatoire (au moins un majeur dès qu'un
 mineur est présent sur un stand) et l'équilibre visé entre les deux. Le détail
-créneau par créneau reste affiché, avec le créneau le plus critique mis en
+journée par journée reste affiché, avec la journée la plus critique mise en
 évidence.
 
-Les deux minimums restent des estimations basses : ils supposent une
-répartition parfaite et ignorent les compétences de chaque animateur ainsi que
-la façon dont les indisponibilités réelles se superposent. Sur le scénario de
-référence de l'application, le pic de créneau seul donnait 58 animateurs, la
-charge horaire 102 — et il en fallait en réalité 150 pour obtenir un planning
-réellement réalisable (score dur à zéro) une fois le solveur lancé. Une fois de
-vrais animateurs saisis, la faisabilité réelle se vérifie sur la page «
-Constraints ».
+Ces minimums restent des estimations basses : ils supposent une répartition
+parfaite et ignorent les compétences de chaque animateur ainsi que la façon
+dont les indisponibilités réelles se superposent. Une fois de vrais animateurs
+saisis, la faisabilité réelle se vérifie sur la page « Contraintes ».
 
 ### Exceptions ponctuelles (contraintes ad hoc)
 
@@ -372,7 +379,12 @@ de développement » de la navigation et affiche un bandeau d'avertissement.
   stand étant coloré selon sa typologie) puis amplitude journalière, vacations et
   pauses/déplacements entre elles, jour par jour — utile en réparation
   manuelle d'un planning, avec export PDF ou ICS du planning de l'animateur
-  affiché ;
+  affiché. Chaque vacation nomme les **coéquipiers** présents sur le même stand
+  au même moment, ou signale que l'animateur y sera seul — l'information la plus
+  demandée avant d'arriver sur place, présente aussi sur le PDF individuel ;
+- **Heures planifiées par animateur**, semaine ISO par semaine ISO, avec une
+  ligne de total « tous les animateurs » : le volume horaire que représente
+  l'événement entier, et la moyenne par animateur ;
 - **Page « Constraints »** : catalogue des règles actives et résultat de la
   dernière analyse, avec le score du planning et les contraintes en défaut — ce
   qui permet d'identifier précisément ce qui bloque quand aucun planning
@@ -407,6 +419,11 @@ API, désactivé tant qu'aucune clé n'est configurée. Détails dans
 
 ### Restitution et échanges de données
 
+- **Export PDF global**, pour l'organisateur : un seul document reprenant
+  toutes les affectations, d'abord journée par journée (qui tient quoi, à quelle
+  heure, à quel emplacement), puis stand par stand (qui s'y relaie sur tout le
+  festival). Chaque ligne affiche l'effectif pourvu sur l'effectif attendu et
+  signale en rouge les places restées vides ;
 - **Export PDF** du planning individuel d'un animateur, ou de tous les plannings
   individuels en une archive ZIP ;
 - **Export ICS** du planning individuel, importable directement dans Google

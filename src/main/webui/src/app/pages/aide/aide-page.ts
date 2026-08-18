@@ -36,4 +36,16 @@ export class AidePage {
   protected readonly query = signal('');
   protected readonly visibleSections = computed(() => filterHelpSections(this.sections, this.query()));
   protected readonly noResult = computed(() => this.visibleSections().length === 0);
+
+  /**
+   * Scrolls to a section of the guide. Deliberately programmatic rather than
+   * an `href="#id"` anchor: `index.html` declares `<base href="/">`, so a bare
+   * fragment resolves against the base URL and not against the current one —
+   * clicking the summary navigated to `/#id`, i.e. straight back to the home
+   * page. Scrolling by hand also works inside `mat-sidenav-content`, which is
+   * the element that actually scrolls here, not the document.
+   */
+  protected scrollToSection(id: string): void {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 }

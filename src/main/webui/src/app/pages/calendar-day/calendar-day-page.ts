@@ -31,8 +31,20 @@ interface StandLine {
   heureFin: string;
   /** One per filled seat; unfilled seats are only reflected by this being empty (see `unassignedLabel`). */
   entries: AssignedEntry[];
-  /** The stand's required headcount for this line, to flag understaffing (some but not enough entries). */
-  effectifMin: number;
+  /**
+   * Seats actually generated for this line — the number of `PosteAffectation`
+   * it holds, filled or not — and therefore the headcount understaffing is
+   * measured against.
+   *
+   * <p>Not `stand.effectifMin`: a vacation covering a meal pause under the
+   * `EFFECTIF_REDUIT` strategy is deliberately staffed at half the stand's
+   * usual headcount (see {@code PlanningService#construirePostes}), so
+   * comparing it to `effectifMin` reported every such slot as understaffed
+   * when it was in fact exactly as staffed as intended.</p>
+   */
+  effectifRequis: number;
+  /** True when this line is a meal-pause coverage vacation: a deliberately reduced headcount, flagged as information, never as a shortfall. */
+  couverturePause: boolean;
 }
 
 interface SlotCard {
@@ -123,14 +135,21 @@ export class CalendarDayPage {
     }
   }
 
-  /** True for a stand-line with some, but fewer than `effectifMin`, animateurs — fully unassigned (0) is already flagged separately. */
+  /** True for a stand-line with some, but fewer than its generated seats, animateurs — fully unassigned (0) is already flagged separately. */
   protected isUnderstaffed(stand: StandLine): boolean {
     return isStandLineUnderstaffed(stand);
   }
 
   protected understaffedTooltip(stand: StandLine): string {
-    return $localize`:@@calendarDay.understaffed:Sous-effectif : ${stand.entries.length}:count: / ${stand.effectifMin}:min: animateur(s) affecté(s)`;
+    return $localize`:@@calendarDay.understaffed:Sous-effectif : ${stand.entries.length}:count: / ${stand.effectifRequis}:min: animateur(s) affecté(s)`;
   }
+
+  /** True for a meal-pause coverage line: reduced headcount on purpose, shown as an indication. */
+  protected isCouverturePause(stand: StandLine): boolean {
+    return stand.couverturePause;
+  }
+
+  protected readonly couverturePauseTooltip = $localize`:@@calendar.couverturePause:Effectif réduit pendant la pause repas — choix de couverture assumé, pas un manque d'animateurs`;
 
   protected readonly dayUnderstaffedTooltip = $localize`:@@calendarMonth.cellUnderstaffed:Au moins un stand en sous-effectif ce jour-là`;
 
@@ -164,9 +183,9 @@ function aUneAppreciationPour(animateur: Animateur, stand: Stand): boolean {
   return stand.typologiesProposees.some((typologie) => typologie in (animateur.competences ?? {}));
 }
 
-/** True for a stand-line with some, but fewer than `effectifMin`, animateurs — fully unassigned (0) is already flagged separately. */
+/** True for a stand-line with some, but fewer than its generated seats, animateurs — fully unassigned (0) is already flagged separately. */
 function isStandLineUnderstaffed(stand: StandLine): boolean {
-  return stand.entries.length > 0 && stand.entries.length < stand.effectifMin;
+  return stand.entries.length > 0 && stand.entries.length < stand.effectifRequis;
 }
 
 /** True for a stand-line with at least one filled seat whose animateur has no appreciation on this stand's typologies. */
@@ -185,7 +204,7 @@ export function buildDays(postes: PosteAffectation[]): DayCard[] {
   const days = new Map<number, { jour: number; date: string | null; creneaux: Map<number, Creneau> }>();
   const assignments = new Map<
     number,
-    Map<string, { stand: Stand; heureDebut: string; heureFin: string; entries: AssignedEntry[] }>
+    Map<string, { stand: Stand; heureDebut: string; heureFin: string; entries: AssignedEntry[]; sieges: number }>
   >();
 
   postes.forEach((poste) => {
@@ -215,9 +234,11 @@ export function buildDays(postes: PosteAffectation[]): DayCard[] {
     const key = `${stand.id}::${heureDebut}::${heureFin}`;
     let entry = standMap.get(key);
     if (!entry) {
-      entry = { stand, heureDebut, heureFin, entries: [] };
+      entry = { stand, heureDebut, heureFin, entries: [], sieges: 0 };
       standMap.set(key, entry);
     }
+    // Every poste is one seat this line has to fill, whoever ends up on it.
+    entry.sieges += 1;
     if (poste.animateur) {
       const label = `${poste.animateur.prenom ?? ''} ${poste.animateur.nom ?? ''}`.trim();
       entry.entries.push({ poste, label });
@@ -240,7 +261,8 @@ export function buildDays(postes: PosteAffectation[]): DayCard[] {
               heureDebut: entry.heureDebut,
               heureFin: entry.heureFin,
               entries: entry.entries,
-              effectifMin: Math.max(1, entry.stand.effectifMin)
+              effectifRequis: entry.sieges,
+              couverturePause: creneau.couverturePause === true
             }))
             .sort(
               (left, right) => left.standNom.localeCompare(right.standNom) || left.heureDebut.localeCompare(right.heureDebut)

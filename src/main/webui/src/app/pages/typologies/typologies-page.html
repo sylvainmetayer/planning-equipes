@@ -18,13 +18,14 @@
       </mat-select>
       <mat-hint i18n="@@typologies.field.ninjaHint">Un animateur qui possède cette typologie sait s'adapter : il peut être affecté à n'importe quel stand.</mat-hint>
     </mat-form-field>
+    <app-table-filter [(value)]="filtre" [matches]="typologiesFiltrees().length" [total]="store.typologies().length" />
   </mat-card-actions>
   <mat-card-content class="table-wrapper">
     @if (selection.hasSelection()) {
       <app-bulk-actions-bar [count]="selection.count()" [disabled]="editingLocked()" [editable]="false"
                             (remove)="removeSelection()" (clear)="selection.clear()" />
     }
-    <table mat-table [dataSource]="store.typologies()">
+    <table mat-table [dataSource]="typologiesFiltrees()">
       <ng-container matColumnDef="select">
         <th mat-header-cell *matHeaderCellDef>
           <mat-checkbox i18n-aria-label="@@bulk.selectAll" aria-label="Tout sélectionner"
@@ -71,6 +72,8 @@
     </table>
     @if (store.typologies().length === 0) {
       <p class="empty-hint" i18n="@@typologies.empty">Aucune typologie pour le moment.</p>
+    } @else if (typologiesFiltrees().length === 0) {
+      <p class="empty-hint" i18n="@@filter.noMatch">Aucune ligne ne correspond au filtre.</p>
     }
   </mat-card-content>
 </mat-card>

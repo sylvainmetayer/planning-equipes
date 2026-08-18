@@ -164,6 +164,45 @@ référentiel courant. Comme il s'agit d'une estimation **optimiste** (elle igno
 quel stand précis chaque animateur pourrait tenir), `feasible: true` ne garantit
 pas un score dur nul après résolution — voir [`domaine.md`](domaine.md).
 
+## Besoin minimum en animateurs
+
+| Méthode | Chemin | Description |
+| --- | --- | --- |
+| `GET` | `/api/staffing` | Nombre minimal d'animateurs qu'exigent les stands et créneaux actuels, **sans lancer le solveur** (écran « Besoin en animateurs ») |
+
+Le calcul part des **sièges** qu'une résolution aurait à pourvoir : le problème
+est construit exactement comme pour `POST /api/solve/async/reference-data`
+(horaires récurrents résolus, familles de relais, effectif réduit pendant les
+pauses), si bien que le compte ne peut pas diverger du réel. Trois bornes sont
+calculées, la plus grande est retenue dans `minimumTotal` :
+
+| Champ | Borne |
+| --- | --- |
+| `picSimultane` | sièges ouverts au même instant : personne n'en tient deux à la fois |
+| `picAvecPause` | même pic, chaque vacation prolongée de `pauseMinimaleEntreVacationsMinutes` — c'est le nombre **exact** d'animateurs distincts qu'exige la journée la plus chargée |
+| `chargeTotal` | heures-personne totales divisées par le plafond hebdomadaire légal × nombre de semaines ISO |
+
+`parJour` détaille chaque journée (`standsOuverts`, `sieges`, `heures`,
+`picSimultane`, `picAvecPause`) et `jourCritique` pointe celle qui fixe
+`picAvecPause`. Les trois bornes restent **optimistes** : elles ignorent les
+compétences et les indisponibilités individuelles. À traiter comme un plancher
+de recrutement à dépasser, jamais comme une cible.
+
+```json
+{
+  "minimumTotal": 122,
+  "minimumMajeurs": 87,
+  "minimumMineurs": 35,
+  "picSimultane": 105,
+  "picAvecPause": 122,
+  "chargeTotal": 67,
+  "borneRetenue": "PIC_AVEC_PAUSE",
+  "nombreSemaines": 3,
+  "totalDemandeHeures": 9583.75,
+  "jourCritique": { "date": "2026-07-10", "jour": 5, "picAvecPause": 122 }
+}
+```
+
 ## Paramètres légaux
 
 | Méthode | Chemin | Description |
@@ -430,15 +469,24 @@ Détail des formats : [`import-export.md`](import-export.md).
 ## Exports planning
 
 Génération **côté serveur** (OpenPDF pour le PDF, texte pour l'ICS). Le planning
-à exporter est envoyé dans le corps de la requête.
+à exporter est envoyé dans le corps de la requête, sauf pour l'export global qui
+lit le planning persisté lui-même (voir ci-dessous).
 
 | Méthode | Chemin | Description |
 | --- | --- | --- |
+| `GET` | `/api/planning/export/pdf/global` | **Un seul PDF** reprenant toutes les affectations, pour l'organisateur : section « par journée » puis section « par stand » (bouton « Exporter le planning global » de la page Solveur) |
 | `POST` | `/api/planning/export/bundle/all` | ZIP contenant un PDF **et** un ICS par animateur (utilisé par l'IHM) |
 | `POST` | `/api/planning/export/pdf/all` | ZIP contenant un PDF par animateur |
 | `POST` | `/api/planning/export/pdf/animateur/{animateurId}` | PDF du planning individuel |
 | `POST` | `/api/planning/export/ics/all` | ZIP contenant un ICS par animateur |
 | `POST` | `/api/planning/export/ics/animateur/{animateurId}` | ICS du planning individuel |
+
+L'export global est le seul en `GET` : un planning de la taille du festival pèse
+plusieurs mégaoctets en JSON, que l'appelant n'a pas à téléverser pour récupérer
+un document. Il lit la même source que les calendriers
+(`GET /api/planning/persisted`). Chaque ligne du document vaut pour un stand ×
+vacation : elle porte les animateurs affectés, l'effectif `pourvus/sièges`, et
+signale en rouge les sièges non pourvus.
 
 ## Heures planifiées
 

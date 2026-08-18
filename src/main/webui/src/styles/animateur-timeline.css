@@ -81,6 +81,13 @@
   margin-right: 0.25rem;
 }
 
+/* Who else holds the same stand on the same vacation — secondary to the stand itself. */
+.timeline-block-list-team {
+  color: var(--mat-sys-on-surface-variant);
+  font-style: italic;
+  margin-left: 0.4rem;
+}
+
 .timeline-stands-card {
   margin-bottom: 1rem;
 }

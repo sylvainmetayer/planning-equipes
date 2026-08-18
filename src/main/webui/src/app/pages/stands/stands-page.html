@@ -15,13 +15,14 @@
       <mat-icon>compress</mat-icon>
       <ng-container i18n="@@stands.compactage.action">Compacter les horaires</ng-container>
     </button>
+    <app-table-filter [(value)]="filtre" [matches]="standsFiltres().length" [total]="store.stands().length" />
   </mat-card-actions>
   <mat-card-content class="table-wrapper">
     @if (selection.hasSelection()) {
       <app-bulk-actions-bar [count]="selection.count()" [disabled]="editingLocked()"
                             (edit)="editSelection()" (remove)="removeSelection()" (clear)="selection.clear()" />
     }
-    <table mat-table [dataSource]="store.stands()">
+    <table mat-table [dataSource]="standsFiltres()">
       <ng-container matColumnDef="select">
         <th mat-header-cell *matHeaderCellDef>
           <mat-checkbox i18n-aria-label="@@bulk.selectAll" aria-label="Tout sélectionner"
@@ -84,6 +85,8 @@
     </table>
     @if (store.stands().length === 0) {
       <p class="empty-hint" i18n="@@stands.empty">Aucun stand pour le moment. Créez-en un ci-dessus, ou chargez l'exemple depuis la page Solveur.</p>
+    } @else if (standsFiltres().length === 0) {
+      <p class="empty-hint" i18n="@@filter.noMatch">Aucune ligne ne correspond au filtre.</p>
     }
   </mat-card-content>
 </mat-card>

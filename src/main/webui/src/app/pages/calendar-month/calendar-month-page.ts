@@ -47,8 +47,20 @@ interface StandLine {
   heureFin: string;
   /** One per filled seat, narrowed by the animateur/stand filters like the rest of the line — see `totalAssigned` for the unfiltered headcount. */
   entries: AssignedEntry[];
-  /** The stand's required headcount for this line, to flag understaffing (some but not enough entries). */
-  effectifMin: number;
+  /**
+   * Seats actually generated for this line — the number of `PosteAffectation`
+   * it holds, filled or not — and therefore the headcount understaffing is
+   * measured against.
+   *
+   * <p>Not `stand.effectifMin`: a vacation covering a meal pause under the
+   * `EFFECTIF_REDUIT` strategy is deliberately staffed at half the stand's
+   * usual headcount (see {@code PlanningService#construirePostes}), so
+   * comparing it to `effectifMin` reported every such slot as understaffed
+   * when it was in fact exactly as staffed as intended.</p>
+   */
+  effectifRequis: number;
+  /** True when this line is a meal-pause coverage vacation: a deliberately reduced headcount, flagged as information, never as a shortfall. */
+  couverturePause: boolean;
   /**
    * Total animateurs actually assigned to this line, ignoring the
    * animateur/stand filters — `entries.length` once those filters have
@@ -351,14 +363,21 @@ export class CalendarMonthPage {
     }
   }
 
-  /** True for a stand-line with some, but fewer than `effectifMin`, animateurs — fully unassigned (0) is already flagged separately. */
+  /** True for a stand-line with some, but fewer than its generated seats, animateurs — fully unassigned (0) is already flagged separately. */
   protected isUnderstaffed(stand: StandLine): boolean {
     return isStandLineUnderstaffed(stand);
   }
 
   protected understaffedTooltip(stand: StandLine): string {
-    return $localize`:@@calendarDay.understaffed:Sous-effectif : ${stand.totalAssigned}:count: / ${stand.effectifMin}:min: animateur(s) affecté(s)`;
+    return $localize`:@@calendarDay.understaffed:Sous-effectif : ${stand.totalAssigned}:count: / ${stand.effectifRequis}:min: animateur(s) affecté(s)`;
   }
+
+  /** True for a meal-pause coverage line: reduced headcount on purpose, shown as an indication. */
+  protected isCouverturePause(stand: StandLine): boolean {
+    return stand.couverturePause;
+  }
+
+  protected readonly couverturePauseTooltip = $localize`:@@calendar.couverturePause:Effectif réduit pendant la pause repas — choix de couverture assumé, pas un manque d'animateurs`;
 
   /** True for a stand-line with at least one filled seat lacking the administrator's appreciation for it. */
   protected hasAppreciationMismatch(stand: StandLine): boolean {
@@ -386,9 +405,9 @@ function aUneAppreciationPour(animateur: Animateur, stand: Stand): boolean {
   return stand.typologiesProposees.some((typologie) => typologie in (animateur.competences ?? {}));
 }
 
-/** True for a stand-line with some, but fewer than `effectifMin`, animateurs actually assigned — fully unassigned (0) is already flagged separately. */
+/** True for a stand-line with some, but fewer than its generated seats, animateurs actually assigned — fully unassigned (0) is already flagged separately. */
 function isStandLineUnderstaffed(stand: StandLine): boolean {
-  return stand.totalAssigned > 0 && stand.totalAssigned < stand.effectifMin;
+  return stand.totalAssigned > 0 && stand.totalAssigned < stand.effectifRequis;
 }
 
 /** True when any stand-line across any créneau of `slots` is understaffed — drives the month grid's day-cell indicator. */
@@ -413,12 +432,12 @@ function standLineKey(line: StandLine): string {
 }
 
 /**
- * Replaces every line's `totalAssigned` in `filtered` with the matching
- * line's from `truth` (same date + créneau + stand-line), leaving `entries`
- * and everything else untouched. Used when the animateur filter has
- * narrowed `filtered`'s postes: without this, `totalAssigned` would equal
- * `entries.length` of the filtered subset instead of the stand's real
- * headcount.
+ * Replaces every line's `totalAssigned` and `effectifRequis` in `filtered`
+ * with the matching line's from `truth` (same date + créneau + stand-line),
+ * leaving `entries` and everything else untouched. Used when the animateur
+ * filter has narrowed `filtered`'s postes: without this, both would only
+ * count the filtered subset instead of the line's real headcount and its
+ * real number of seats.
  */
 function withTrueHeadcounts(filtered: Map<string, SlotEntry[]>, truth: Map<string, SlotEntry[]>): Map<string, SlotEntry[]> {
   const result = new Map<string, SlotEntry[]>();
@@ -434,7 +453,8 @@ function withTrueHeadcounts(filtered: Map<string, SlotEntry[]>, truth: Map<strin
           ...slot,
           stands: slot.stands.map((line) => ({
             ...line,
-            totalAssigned: truthLinesByKey.get(standLineKey(line))?.totalAssigned ?? line.totalAssigned
+            totalAssigned: truthLinesByKey.get(standLineKey(line))?.totalAssigned ?? line.totalAssigned,
+            effectifRequis: truthLinesByKey.get(standLineKey(line))?.effectifRequis ?? line.effectifRequis
           }))
         };
       })
@@ -506,11 +526,14 @@ export function buildAssignmentsByDate(postes: PosteAffectation[]): Map<string, 
         heureDebut,
         heureFin,
         entries: [],
-        effectifMin: Math.max(1, stand.effectifMin),
-        totalAssigned: 0 // recomputed from `entries.length` once every poste is accounted for, below.
+        effectifRequis: 0, // one more per poste of this line, filled or not — see below.
+        couverturePause: creneau.couverturePause === true,
+        totalAssigned: 0 // recomputed below: `entries` is narrowed by the filters, the headcount must not be.
       };
       slot.standMap.set(lineKey, line);
     }
+    // Every poste is one seat this line has to fill, whoever ends up on it.
+    line.effectifRequis += 1;
     if (poste.animateur) {
       const label = `${poste.animateur.prenom ?? ''} ${poste.animateur.nom ?? ''}`.trim();
       line.entries.push({ poste, label });

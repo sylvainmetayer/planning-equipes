@@ -15,6 +15,11 @@ import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
 
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.DecoupageAutoConfig;
+import dev.sylvain.planning.domain.Emplacement;
+import dev.sylvain.planning.domain.ParametresDecoupage;
+import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreHoraire;
 import dev.sylvain.planning.domain.HoraireStand;
@@ -160,6 +165,83 @@ class PlanningServiceScenarioExportTest {
         List<Map<String, Object>> stands = (List<Map<String, Object>>) parsed.get("stands");
         List<Map<String, Object>> ouvertures = (List<Map<String, Object>>) stands.get(0).get("ouvertures");
         assertThat(ouvertures.get(0)).containsEntry("heureDebut", "20:00").containsEntry("heureFin", null);
+    }
+
+    /**
+     * Reproducibility: an exported scenario must carry the settings that shape
+     * a solve, not only its entities. Without them the file replayed elsewhere
+     * silently borrowed that instance's own solve duration, vacation lengths
+     * and legal caps — the same "scenario", a different problem.
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    void exportedYamlCarriesTheCurrentSettings() {
+        ParametresLegaux legaux = new ParametresLegaux();
+        legaux.setDureeHebdomadaireMaxMinutes(40 * 60);
+        legaux.setPauseMinimaleEntreVacationsMinutes(45);
+        ParametresDecoupage decoupage = new ParametresDecoupage();
+        decoupage.setNombreFamillesDecalage(5);
+        decoupage.setDureeDecalageMaxMinutes(120);
+        decoupage.setStrategieCouverturePendantPause(
+                ParametresDecoupage.StrategieCouverturePendantPause.EFFECTIF_REDUIT);
+
+        String yaml = PlanningService.construireScenarioYaml(new PlanningService.ScenarioExport(
+                List.of(animateur), List.of(stand), List.of(creneau), List.of(),
+                List.of(new ReferenceDataService.TypologieItem("STRATEGIE", "Stratégie", true)),
+                List.of(new Emplacement("PLACE", "Place du Drapeau", 46.6487, 2.2503)),
+                legaux, decoupage, new ParametresSolveur(1800), null));
+        Map<String, Object> parsed = new Yaml().load(yaml);
+
+        assertThat((Map<String, Object>) parsed.get("parametresSolveur"))
+                .containsEntry("dureeResolutionSecondes", 1800);
+        assertThat((Map<String, Object>) parsed.get("parametresLegaux"))
+                .containsEntry("dureeHebdomadaireMaxMinutes", 40 * 60)
+                .containsEntry("pauseMinimaleEntreVacationsMinutes", 45);
+        assertThat((Map<String, Object>) parsed.get("parametresDecoupage"))
+                .containsEntry("nombreFamillesDecalage", 5)
+                .containsEntry("dureeDecalageMaxMinutes", 120)
+                .containsEntry("strategieCouverturePendantPause", "EFFECTIF_REDUIT")
+                // Times stay strings, like everywhere else in the file.
+                .containsEntry("fenetreRepasMidiDebut", "12:00");
+        assertThat((List<Map<String, Object>>) parsed.get("typologies"))
+                .singleElement()
+                .satisfies(typologie -> assertThat(typologie).containsEntry("id", "STRATEGIE")
+                        .containsEntry("label", "Stratégie")
+                        .containsEntry("ninja", true));
+        assertThat((List<Map<String, Object>>) parsed.get("emplacements"))
+                .singleElement()
+                .satisfies(emplacement -> assertThat(emplacement).containsEntry("id", "PLACE")
+                        .containsEntry("latitude", 46.6487));
+    }
+
+    /** A stand tied to an emplacement exports the link, or the emplacements section is decorative. */
+    @Test
+    @SuppressWarnings("unchecked")
+    void aStandExportsItsEmplacementId() {
+        stand.setEmplacement(new Emplacement("PLACE", "Place du Drapeau", 46.6487, 2.2503));
+
+        String yaml = PlanningService.construireScenarioYaml(List.of(animateur), List.of(stand), List.of(creneau),
+                List.of());
+        Map<String, Object> parsed = new Yaml().load(yaml);
+
+        assertThat(((List<Map<String, Object>>) parsed.get("stands")).get(0)).containsEntry("emplacementId", "PLACE");
+    }
+
+    /**
+     * A scenario whose planning comes from an auto-découpage pins the découpage
+     * instead of a seat list: the vacations (and therefore the créneau ids the
+     * postes would reference) only exist once the import has re-run it.
+     */
+    @Test
+    void aDecoupageAutoScenarioPinsNoSeatList() {
+        String yaml = PlanningService.construireScenarioYaml(new PlanningService.ScenarioExport(
+                List.of(animateur), List.of(stand), List.of(creneau), null, List.of(), List.of(), null, null, null,
+                new DecoupageAutoConfig("Amplitudes", "Vacations")));
+        Map<String, Object> parsed = new Yaml().load(yaml);
+
+        assertThat(parsed).doesNotContainKey("postes");
+        assertThat(parsed.get("decoupageAuto")).isEqualTo(
+                Map.of("groupeSourceNom", "Amplitudes", "groupeCibleNom", "Vacations"));
     }
 
     @Test

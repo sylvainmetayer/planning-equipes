@@ -150,13 +150,15 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `reference-data.store.ts`; `reference-crud.service.ts` — save/delete, single
   or in bulk, plus snack-bar feedback shared by the five reference pages;
   `table-selection.ts` — multi-row selection of those pages, always intersected
-  with the displayed rows; `bulk-edit.ts` — the "leave unchanged / add / remove
+  with the displayed rows; `text-filter.ts` — accent/case-insensitive
+  "contains every term" matching behind those pages' quick filter; `bulk-edit.ts` — the "leave unchanged / add / remove
   / replace" modes a bulk edit applies to one row; `entity-labels.ts` — plural
   entity labels of the bulk actions;
   `solver-job.service.ts`; `notification.service.ts`, backed by `MatSnackBar`),
   `app/shared/` holds cross-page components (`job-monitor.ts`,
   `confirm-dialog.ts` — replaces `window.confirm`, `output-panel.ts`,
-  `bulk-actions-bar.ts`), and `app/pages/<page>/` holds one folder per route.
+  `bulk-actions-bar.ts`, `table-filter.ts` — the reference pages' quick-filter
+  field), and `app/pages/<page>/` holds one folder per route.
 - Bulk edits go through one dialog per entity (`<entity>-bulk-edit-dialog.ts`),
   whose rules live in a plain `<entity>-bulk-edit.ts` next to it so they are
   unit-tested without rendering. Every field defaults to "ne pas modifier": a

@@ -60,8 +60,28 @@ voir [`domaine.md`](domaine.md)) ainsi que son planning d'ouverture : les règle
 récurrentes `horaires` et les fenêtres datées `indisponibilites` (fermetures) /
 `ouvertures` qui les surchargent. Tout cela va dans les deux sens : « Exporter
 les données actuelles en scénario » l'écrit, l'import (nommé ou fichier) le relit
-à l'identique. `emplacementId` reste import seulement — l'export n'écrit pas
-encore la section `emplacements` correspondante, à traiter séparément.
+à l'identique, `emplacementId` et la section `emplacements` comprises.
+
+### Ce que l'export garantit
+
+« Exporter les données actuelles en scénario » écrit **toutes** les sections que
+l'import sait relire, pas seulement les entités : `typologies`, `emplacements`,
+`parametresLegaux`, `parametresDecoupage`, `parametresSolveur` et, quand la
+grille active a été produite par un découpage automatique, `decoupageAuto`.
+Réimporter le fichier reproduit donc exactement le même problème — c'est la
+raison d'être de l'export. Un fichier sans ces sections retombait silencieusement
+sur les réglages de l'instance qui l'importe (sa durée de résolution, ses durées
+de vacation, ses plafonds légaux) : le « même » scénario rejoué ailleurs
+résolvait un autre problème.
+
+Deux formes en sortent, selon la grille active :
+
+- une grille saisie à la main exporte ses propres `creneaux` **et** la liste de
+  sièges qu'ils impliquent (`postes`) ;
+- une grille issue d'un découpage exporte les **amplitudes sources** et
+  `decoupageAuto`, **sans** section `postes` : l'import rejoue le découpage et
+  régénère les sièges à partir des vacations qu'il recrée, seule façon de garder
+  des ids cohérents (les créneaux générés reçoivent de nouveaux ids en base).
 
 ### Horaires d'un stand
 
@@ -141,9 +161,9 @@ libellé mis à jour si le scénario la redéclare.
 
 Chaque entrée de cette section accepte un champ optionnel `ninja: true` pour
 désigner la typologie « ninja » du référentiel (au plus une : la déclarer
-retire le drapeau de la précédente). L'**export** ne réécrit pas la section
-`typologies:` : comme les libellés personnalisés, le drapeau ninja n'est pas
-conservé par un aller-retour export/import et doit être redéclaré à la main.
+retire le drapeau de la précédente). L'**export** réécrit la section
+`typologies:` en entier, libellés et drapeau ninja compris : un aller-retour
+export/import les conserve.
 
 ## Schéma de validation d'un fichier de scénario
 

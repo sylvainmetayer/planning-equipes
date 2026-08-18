@@ -78,23 +78,42 @@ describe('buildAssignmentsByDate — issue #60 partial-closure regression', () =
 });
 
 describe('buildAssignmentsByDate — understaffing indicator', () => {
-  it('carries the stand effectifMin on each line, so a partially-staffed stand can be flagged', () => {
+  it('counts the seats generated for the line, so a partially-staffed stand can be flagged', () => {
     // Regression for the reported DEV case: 17/07/2026 Stand Stratégie 16,
-    // 18h30-00h, effectifMin 2 but only one animateur assigned.
+    // 18h30-00h, two seats but only one animateur assigned.
     const c1 = creneau({ id: 1, date: '2026-07-17', heureDebut: '18:30', heureFin: '00:00' });
     const s1 = stand('Stratégie 16', 2);
-    const byDate = buildAssignmentsByDate([poste({ id: 'p1', creneau: c1, stand: s1, animateur: animateur('Oscar') })]);
+    const byDate = buildAssignmentsByDate([
+      poste({ id: 'p1', creneau: c1, stand: s1, animateur: animateur('Oscar') }),
+      poste({ id: 'p2', creneau: c1, stand: s1 })
+    ]);
 
     const line = byDate.get('2026-07-17')![0].stands[0];
     expect(labels(line)).toEqual(['Oscar']);
-    expect(line.effectifMin).toBe(2);
-    expect(line.entries.length).toBeLessThan(line.effectifMin);
+    expect(line.effectifRequis).toBe(2);
+    expect(line.entries.length).toBeLessThan(line.effectifRequis);
+  });
+
+  it('does not flag a meal-pause coverage slot, deliberately staffed at half the headcount', () => {
+    // EFFECTIF_REDUIT: one seat generated on the pause vacation of a
+    // two-person stand — filling it is full coverage, not a shortfall.
+    const pause = creneau({ id: 2, date: '2026-07-15', heureDebut: '12:00', heureFin: '13:00', couverturePause: true });
+    const byDate = buildAssignmentsByDate([
+      poste({ id: 'p1', creneau: pause, stand: stand('Silver Fest', 2), animateur: animateur('Oscar') })
+    ]);
+
+    const line = byDate.get('2026-07-15')![0].stands[0];
+    expect(line.couverturePause).toBe(true);
+    expect(line.effectifRequis).toBe(1);
+    expect(hasUnderstaffedStand(byDate.get('2026-07-15'))).toBe(false);
   });
 
   it('hasUnderstaffedStand flags the month-grid day cell without opening the day', () => {
     const c1 = creneau({ id: 1, date: '2026-07-17' });
+    const s1 = stand('Stratégie 16', 2);
     const byDate = buildAssignmentsByDate([
-      poste({ id: 'p1', creneau: c1, stand: stand('Stratégie 16', 2), animateur: animateur('Oscar') })
+      poste({ id: 'p1', creneau: c1, stand: s1, animateur: animateur('Oscar') }),
+      poste({ id: 'p2', creneau: c1, stand: s1 })
     ]);
 
     expect(hasUnderstaffedStand(byDate.get('2026-07-17'))).toBe(true);

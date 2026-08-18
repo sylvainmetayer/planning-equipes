@@ -50,6 +50,12 @@ export interface TrackedJob {
   startedAtMs: number;
   /** True when this browser submitted the job. */
   mine: boolean;
+  /**
+   * Wall-clock budget the server gave this job, in seconds — `null` when it
+   * runs on the server default and the client was never told. Drives the
+   * estimated finishing time; see {@link estimatedEndMs}.
+   */
+  secondsLimit: number | null;
 }
 
 type ResultHandler = (result: unknown) => void;
@@ -66,6 +72,28 @@ export class SolverJobService {
    * action that the server would refuse.
    */
   readonly solverBusy = computed(() => this.activeJob() !== null || !this.stateKnown());
+
+  /**
+   * When the running job is due to end at the latest: its start plus the
+   * budget it was submitted with. Null when no job runs or when the server
+   * did not report a limit.
+   *
+   * <p>An upper bound, not a promise: the solver stops early when it exhausts
+   * its unimproved-seconds budget, and a job can be cancelled by hand.</p>
+   */
+  readonly estimatedEndMs = computed(() => {
+    const job = this.activeJob();
+    if (!job || job.secondsLimit == null || job.secondsLimit <= 0) {
+      return null;
+    }
+    return job.startedAtMs + job.secondsLimit * 1000;
+  });
+
+  /** Seconds left before {@link estimatedEndMs}, floored at 0; null when unknown. */
+  readonly remainingSeconds = computed(() => {
+    const end = this.estimatedEndMs();
+    return end === null ? null : Math.max(0, Math.round((end - this.now()) / 1000));
+  });
 
   readonly activeJobDescription = computed(() => {
     const job = this.activeJob();
@@ -264,7 +292,8 @@ export class SolverJobService {
       type: job.type,
       label: jobLabel(job.type),
       startedAtMs: Date.now() - (Number(job.elapsedSeconds) || 0) * 1000,
-      mine
+      mine,
+      secondsLimit: job.secondsLimit == null ? null : Number(job.secondsLimit)
     };
     this.activeJob.set(entry);
     // A submit() adopts its job without waiting for the next poll: start the

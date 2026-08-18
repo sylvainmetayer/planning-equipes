@@ -48,6 +48,22 @@ form.form-grid {
   min-width: 18rem;
 }
 
+/* Footer row of the Hours table: the festival-wide totals, kept visible while
+   the per-animateur rows scroll under it. */
+.hours-total-row td {
+  background: var(--mat-sys-surface-container);
+  font-weight: 500;
+}
+
+/* Quick filter (app-table-filter) sitting inline with the action buttons of a reference page.
+   Pushed to the right so the buttons keep their usual place whatever the page. */
+.table-filter {
+  min-width: 16rem;
+  flex: 1 1 16rem;
+  max-width: 26rem;
+  margin-inline-start: auto;
+}
+
 /* Wide enough that the label and hint never wrap onto the following mat-divider. */
 .solver-duration {
   display: block;

@@ -129,6 +129,11 @@
                     warning
                   </mat-icon>
                 }
+                @if (isCouverturePause(stand)) {
+                  <mat-icon inline class="couverture-pause-icon" [matTooltip]="couverturePauseTooltip" [attr.aria-label]="couverturePauseTooltip">
+                    restaurant
+                  </mat-icon>
+                }
                 @if (hasAppreciationMismatch(stand)) {
                   <mat-icon inline class="appreciation-mismatch-icon" [matTooltip]="appreciationMismatchTooltip" [attr.aria-label]="appreciationMismatchTooltip">
                     psychology

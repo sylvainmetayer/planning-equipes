@@ -103,8 +103,8 @@
                 class="timeline-block"
                 [style.left.%]="block.offsetPercent"
                 [style.width.%]="block.widthPercent"
-                [matTooltip]="block.standNom + ' : ' + block.heureDebut + ' – ' + block.heureFin"
-                [attr.aria-label]="block.standNom + ' : ' + block.heureDebut + ' – ' + block.heureFin"
+                [matTooltip]="blockTooltip(block)"
+                [attr.aria-label]="blockTooltip(block)"
               >
                 <span class="timeline-block-label">{{ block.standNom }}</span>
               </div>
@@ -115,6 +115,11 @@
               <li>
                 <span class="timeline-block-list-time">{{ block.heureDebut }} – {{ block.heureFin }}</span>
                 {{ block.standNom }}
+                @if (block.coequipiers.length > 0) {
+                  <span class="timeline-block-list-team" i18n="@@timeline.teammates">avec {{ block.coequipiers.join(', ') }}</span>
+                } @else {
+                  <span class="timeline-block-list-team" i18n="@@timeline.alone">seul(e) sur ce stand</span>
+                }
               </li>
             }
           </ul>

@@ -29,10 +29,10 @@
 
     <nav class="aide-toc" i18n-aria-label="@@aide.toc.label" aria-label="Sommaire de l'aide">
       @for (section of visibleSections(); track section.id) {
-        <a matButton="tonal" [href]="'#' + section.id">
+        <button matButton="tonal" type="button" (click)="scrollToSection(section.id)">
           <mat-icon>{{ section.icon }}</mat-icon>
           {{ section.title }}
-        </a>
+        </button>
       }
     </nav>
 

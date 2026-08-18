@@ -27,18 +27,29 @@
             @if (col === 'animateur') {
               <th mat-header-cell *matHeaderCellDef mat-sort-header i18n="@@hours.column.animateur">Animateur</th>
               <td mat-cell *matCellDef="let row">{{ row.nom }}</td>
+              <td mat-footer-cell *matFooterCellDef i18n="@@hours.total.label">Tous les animateurs ({{ totaux().animateurCount }})</td>
             } @else if (col === 'total') {
               <th mat-header-cell *matHeaderCellDef mat-sort-header i18n="@@hours.column.total">Total</th>
               <td mat-cell *matCellDef="let row"><strong>{{ row.total | number: '1.1-1' }} h</strong></td>
+              <td mat-footer-cell *matFooterCellDef><strong>{{ totaux().total | number: '1.1-1' }} h</strong></td>
             } @else {
               <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ col }}</th>
               <td mat-cell *matCellDef="let row">{{ (row.heuresParSemaine[col] ?? 0) | number: '1.1-1' }} h</td>
+              <td mat-footer-cell *matFooterCellDef><strong>{{ (totaux().parSemaine[col] ?? 0) | number: '1.1-1' }} h</strong></td>
             }
           </ng-container>
         }
         <tr mat-header-row *matHeaderRowDef="columns()"></tr>
         <tr mat-row *matRowDef="let row; columns: columns()"></tr>
+        <tr mat-footer-row *matFooterRowDef="columns(); sticky: true" class="hours-total-row"></tr>
       </table>
+      @if (report.animateurs.length > 0) {
+        <p class="calendar-meta" i18n="@@hours.total.hint">
+          {{ totaux().total | number: '1.1-1' }} heures planifiées sur tout l'événement pour
+          {{ totaux().animateurCount }} animateurs, soit {{ totaux().moyenneParAnimateur | number: '1.1-1' }} h en
+          moyenne par animateur.
+        </p>
+      }
       @if (report.animateurs.length === 0) {
         <p class="empty-hint" i18n="@@animateurs.empty">Aucun animateur pour le moment.</p>
       }

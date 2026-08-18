@@ -83,15 +83,337 @@ public class PlanningExportService {
     private static final Font TIME_FONT = new Font(Font.HELVETICA, 8.5f, Font.BOLD, MUTED);
     private static final Font STAND_FONT = new Font(Font.HELVETICA, 10.5f, Font.BOLD, HEADLINE);
     private static final Font LOCATION_FONT = new Font(Font.HELVETICA, 9, Font.NORMAL, MUTED);
+    /** Teammates line under the stand name: present but secondary to the stand itself. */
+    private static final Font TEAM_FONT = new Font(Font.HELVETICA, 9, Font.ITALIC, MUTED);
     private static final Font EMPTY_STATE_FONT = new Font(Font.HELVETICA, 10, Font.ITALIC, MUTED);
     private static final Font FOOTER_FONT = new Font(Font.HELVETICA, 8, Font.NORMAL, MUTED);
+    // --- Global (organiser) export: dense tables rather than per-seat cards ---
+    private static final Font TABLE_HEADER_FONT = new Font(Font.HELVETICA, 8, Font.BOLD, HEADLINE);
+    private static final Font TABLE_BODY_FONT = new Font(Font.HELVETICA, 8, Font.NORMAL, HEADLINE);
+    private static final Font TABLE_ALERT_FONT = new Font(Font.HELVETICA, 8, Font.BOLD, RED);
 
     public byte[] exportAnimateurPdf(PlanningFestival planning, String animateurId) {
         List<PosteAffectation> animateurPostes = planning.getPostes().stream()
                 .filter(poste -> poste.getAnimateur() != null && animateurId.equals(poste.getAnimateur().getId()))
                 .sorted(byCreneauThenStand())
                 .toList();
-        return buildPdf(resolveAnimateurName(planning, animateurId), animateurPostes);
+        return buildPdf(resolveAnimateurName(planning, animateurId), animateurPostes,
+                coequipiersParPoste(planning, animateurId));
+    }
+
+    /**
+     * For each of this animateur's postes, the names of the others holding a
+     * seat on the same stand, same créneau and same window — who they will
+     * actually be working alongside, which is what someone reads their own
+     * planning to find out. Keyed by poste id, empty list when they hold the
+     * stand alone.
+     *
+     * <p>Same grouping key as the calendars: two segments of one stand split by
+     * a mid-créneau closure are not the same line, and the people on either
+     * side never meet.</p>
+     *
+     * <p>Package-private so the rule is unit-tested on plain objects rather
+     * than through the bytes of a generated PDF.</p>
+     */
+    java.util.Map<String, List<String>> coequipiersParPoste(PlanningFestival planning, String animateurId) {
+        java.util.Map<String, List<String>> equipeParLigne = new java.util.LinkedHashMap<>();
+        for (PosteAffectation poste : planning.getPostes()) {
+            if (poste.getAnimateur() == null || poste.getCreneau() == null || poste.getStand() == null) {
+                continue;
+            }
+            equipeParLigne.computeIfAbsent(ligneKey(poste), ignored -> new ArrayList<>())
+                    .add(toDisplayName(poste.getAnimateur()));
+        }
+        java.util.Map<String, List<String>> parPoste = new java.util.LinkedHashMap<>();
+        for (PosteAffectation poste : planning.getPostes()) {
+            if (poste.getAnimateur() == null || !animateurId.equals(poste.getAnimateur().getId())
+                    || poste.getCreneau() == null || poste.getStand() == null) {
+                continue;
+            }
+            List<String> equipe = new ArrayList<>(equipeParLigne.getOrDefault(ligneKey(poste), List.of()));
+            equipe.remove(toDisplayName(poste.getAnimateur()));
+            equipe.sort(String.CASE_INSENSITIVE_ORDER);
+            parPoste.put(poste.getId(), equipe);
+        }
+        return parPoste;
+    }
+
+    private static String ligneKey(PosteAffectation poste) {
+        return poste.getStand().getId() + "@" + poste.getCreneau().getId() + "#" + poste.heureDebutEffectif() + "-"
+                + poste.heureFinEffectif();
+    }
+
+    /**
+     * The whole planning in one landscape PDF, for the organiser rather than
+     * for the animateurs: who holds which seat, everywhere, at once.
+     *
+     * <p>The same assignments are laid out twice, because the two questions an
+     * organiser asks on site are not the same one: <b>par journée</b> answers
+     * "who is where right now", <b>par stand</b> answers "who runs this stand
+     * over the whole festival". Both read as compact tables with repeated
+     * headers, one line per stand × vacation rather than one card per seat —
+     * the per-animateur card layout of {@link #exportAnimateurPdf} covers a
+     * dozen assignments and would run to hundreds of pages here.</p>
+     *
+     * <p>Seats nobody holds are spelled out in red on their line instead of
+     * being silently absent: an unstaffed stand is exactly what the organiser
+     * opens this document to find.</p>
+     */
+    public byte[] exportGlobalPdf(PlanningFestival planning) {
+        List<LigneAffectation> lignes = lignesAffectation(planning);
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        Document document = new Document(PageSize.A4.rotate(), 34, 34, 34, 50);
+        PdfWriter writer = PdfWriter.getInstance(document, output);
+        writer.setPageEvent(new FooterEvent("Festival — Centre-ville · planning global généré le "
+                + GENERATED_AT_FORMAT.format(Instant.now().atZone(ZoneOffset.systemDefault()))));
+        document.open();
+
+        addGlobalHeader(document, planning, lignes);
+        if (lignes.isEmpty()) {
+            document.add(emptyState());
+        } else {
+            addSectionParJournee(document, lignes);
+            document.newPage();
+            addSectionParStand(document, lignes);
+        }
+
+        document.close();
+        return output.toByteArray();
+    }
+
+    /**
+     * One line per stand × vacation × open segment: the seats of a same stand
+     * on a same window are one line holding every name, not one line each.
+     * Mirrors how the calendars group them, and is what makes the document
+     * readable at festival scale (3 500 seats becoming ~2 000 lines).
+     */
+    private List<LigneAffectation> lignesAffectation(PlanningFestival planning) {
+        java.util.Map<String, LigneAffectation> parCle = new java.util.LinkedHashMap<>();
+        for (PosteAffectation poste : planning.getPostes()) {
+            Creneau creneau = poste.getCreneau();
+            Stand stand = poste.getStand();
+            if (creneau == null || stand == null) {
+                continue;
+            }
+            String cle = stand.getId() + "@" + creneau.getId() + "#" + poste.heureDebutEffectif() + "-"
+                    + poste.heureFinEffectif();
+            LigneAffectation ligne = parCle.computeIfAbsent(cle,
+                    ignored -> new LigneAffectation(stand, creneau, poste.heureDebutEffectif(),
+                            poste.heureFinEffectif(), new ArrayList<>(), new int[] { 0 }));
+            ligne.sieges()[0]++;
+            if (poste.getAnimateur() != null) {
+                ligne.animateurs().add(toDisplayName(poste.getAnimateur()));
+            }
+        }
+        List<LigneAffectation> lignes = new ArrayList<>(parCle.values());
+        for (LigneAffectation ligne : lignes) {
+            ligne.animateurs().sort(String::compareToIgnoreCase);
+        }
+        return lignes;
+    }
+
+    /**
+     * One stand × vacation line of the global export.
+     *
+     * @param sieges seats generated for that line, as a single-element array so
+     *               the count can be incremented while grouping — never the
+     *               stand's {@code effectifMin}, which a meal-pause coverage
+     *               vacation deliberately halves
+     */
+    private record LigneAffectation(Stand stand, Creneau creneau, LocalTime debut, LocalTime fin,
+            List<String> animateurs, int[] sieges) {
+
+        boolean incomplete() {
+            return animateurs.size() < sieges[0];
+        }
+    }
+
+    private void addGlobalHeader(Document document, PlanningFestival planning, List<LigneAffectation> lignes) {
+        Image logo = loadImage(LOGO_RESOURCE);
+        logo.scaleToFit(46f, 46f);
+
+        PdfPTable header = new PdfPTable(new float[] { 46f, 420f });
+        header.setTotalWidth(document.getPageSize().getWidth() - document.leftMargin() - document.rightMargin());
+        header.setLockedWidth(true);
+
+        PdfPCell logoCell = new PdfPCell(logo, false);
+        logoCell.setBorder(Rectangle.NO_BORDER);
+        logoCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        logoCell.setPadding(0f);
+        header.addCell(logoCell);
+
+        PdfPCell titleCell = new PdfPCell();
+        titleCell.setBorder(Rectangle.NO_BORDER);
+        titleCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        titleCell.setPaddingLeft(14f);
+        Paragraph brandLabel = new Paragraph();
+        Chunk brandChunk = new Chunk("PLANNING GLOBAL", BRAND_LABEL_FONT);
+        brandChunk.setCharacterSpacing(1.4f);
+        brandLabel.add(brandChunk);
+        brandLabel.setSpacingAfter(3f);
+        titleCell.addElement(brandLabel);
+        titleCell.addElement(new Paragraph("Toutes les affectations", NAME_FONT));
+        header.addCell(titleCell);
+        header.setSpacingAfter(18f);
+        document.add(header);
+
+        PdfPTable stats = new PdfPTable(new float[] { 10f, 0.6f, 10f, 0.6f, 10f, 0.6f, 10f });
+        stats.setWidthPercentage(100);
+        stats.addCell(statCell(distinctDayCount(planning.getPostes()), "JOURS", null));
+        stats.addCell(gapCell());
+        stats.addCell(statCell(distinctStandCount(planning.getPostes()), "STANDS", null));
+        stats.addCell(gapCell());
+        int sieges = lignes.stream().mapToInt(ligne -> ligne.sieges()[0]).sum();
+        int pourvus = lignes.stream().mapToInt(ligne -> ligne.animateurs().size()).sum();
+        stats.addCell(statCell(sieges, "SIÈGES", String.format(Locale.FRENCH, "%d POURVUS", pourvus)));
+        stats.addCell(gapCell());
+        stats.addCell(statCell(planning.getAnimateurs().size(), "ANIMATEURS",
+                String.format(Locale.FRENCH, "TOTAL %.0f H TRAVAILLÉES", totalHeures(planning.getPostes()))));
+        stats.setSpacingAfter(20f);
+        document.add(stats);
+    }
+
+    /** Section 1: chronological reading — one page per festival day. */
+    private void addSectionParJournee(Document document, List<LigneAffectation> lignes) {
+        document.add(sectionTitle("Planning par journée"));
+        List<LocalDate> dates = lignes.stream()
+                .map(ligne -> ligne.creneau().getDate())
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .sorted()
+                .toList();
+        boolean premier = true;
+        for (LocalDate date : dates) {
+            if (!premier) {
+                document.newPage();
+            }
+            premier = false;
+            List<LigneAffectation> duJour = lignes.stream()
+                    .filter(ligne -> date.equals(ligne.creneau().getDate()))
+                    .sorted(Comparator.comparing(LigneAffectation::debut)
+                            .thenComparing(ligne -> ligne.stand().getNom(), String.CASE_INSENSITIVE_ORDER))
+                    .toList();
+            document.add(groupTitle("Jour " + duJour.get(0).creneau().getJour() + " — " + formatFrenchDayDate(date)));
+
+            PdfPTable table = globalTable(new float[] { 1.3f, 3.2f, 2.4f, 6f, 1f },
+                    "Horaires", "Stand", "Emplacement", "Animateurs", "Effectif");
+            for (LigneAffectation ligne : duJour) {
+                table.addCell(bodyCell(formatHoraires(ligne)));
+                table.addCell(bodyCell(ligne.stand().getNom()));
+                table.addCell(bodyCell(emplacementNom(ligne.stand())));
+                table.addCell(animateursCell(ligne));
+                table.addCell(effectifCell(ligne));
+            }
+            document.add(table);
+        }
+    }
+
+    /** Section 2: per-stand reading — every vacation of a stand, in one block. */
+    private void addSectionParStand(Document document, List<LigneAffectation> lignes) {
+        document.add(sectionTitle("Planning par stand"));
+        List<Stand> stands = lignes.stream()
+                .map(LigneAffectation::stand)
+                .collect(Collectors.toMap(Stand::getId, stand -> stand, (left, right) -> left,
+                        java.util.LinkedHashMap::new))
+                .values().stream()
+                .sorted(Comparator.comparing(Stand::getNom, String.CASE_INSENSITIVE_ORDER))
+                .toList();
+        for (Stand stand : stands) {
+            List<LigneAffectation> duStand = lignes.stream()
+                    .filter(ligne -> ligne.stand().getId().equals(stand.getId()))
+                    .sorted(Comparator.comparing((LigneAffectation ligne) -> ligne.creneau().getDate())
+                            .thenComparing(LigneAffectation::debut))
+                    .toList();
+            document.add(groupTitle(stand.getNom() + "  ·  " + emplacementNom(stand)));
+
+            PdfPTable table = globalTable(new float[] { 2.6f, 1.3f, 8.5f, 1f },
+                    "Journée", "Horaires", "Animateurs", "Effectif");
+            for (LigneAffectation ligne : duStand) {
+                table.addCell(bodyCell("J" + ligne.creneau().getJour() + " · "
+                        + DATE_FORMAT.format(ligne.creneau().getDate())));
+                table.addCell(bodyCell(formatHoraires(ligne)));
+                table.addCell(animateursCell(ligne));
+                table.addCell(effectifCell(ligne));
+            }
+            document.add(table);
+        }
+    }
+
+    private Paragraph sectionTitle(String text) {
+        Paragraph paragraph = new Paragraph(text, NAME_FONT);
+        paragraph.setSpacingAfter(12f);
+        return paragraph;
+    }
+
+    private Paragraph groupTitle(String text) {
+        Paragraph paragraph = new Paragraph(text, DATE_FONT);
+        paragraph.setSpacingBefore(10f);
+        paragraph.setSpacingAfter(6f);
+        // Never leave a group heading alone at the bottom of a page.
+        paragraph.setKeepTogether(true);
+        return paragraph;
+    }
+
+    /** Table with a coloured header row repeated on every page it spills onto. */
+    private PdfPTable globalTable(float[] widths, String... entetes) {
+        PdfPTable table = new PdfPTable(widths);
+        table.setWidthPercentage(100);
+        table.setHeaderRows(1);
+        table.setSpacingAfter(8f);
+        for (String entete : entetes) {
+            PdfPCell cell = new PdfPCell(new Phrase(entete, TABLE_HEADER_FONT));
+            cell.setBackgroundColor(YELLOW);
+            cell.setBorderColor(PILL_BACKGROUND);
+            cell.setPadding(5f);
+            table.addCell(cell);
+        }
+        return table;
+    }
+
+    private PdfPCell bodyCell(String text) {
+        PdfPCell cell = new PdfPCell(new Phrase(text == null ? "—" : text, TABLE_BODY_FONT));
+        cell.setBorderColor(PILL_BACKGROUND);
+        cell.setPadding(4f);
+        return cell;
+    }
+
+    /** Names on the line, or the shortfall spelled out in red when seats are left unfilled. */
+    private PdfPCell animateursCell(LigneAffectation ligne) {
+        if (ligne.animateurs().isEmpty()) {
+            PdfPCell cell = new PdfPCell(new Phrase("Aucun animateur affecté", TABLE_ALERT_FONT));
+            cell.setBorderColor(PILL_BACKGROUND);
+            cell.setPadding(4f);
+            return cell;
+        }
+        Paragraph paragraph = new Paragraph(String.join(", ", ligne.animateurs()), TABLE_BODY_FONT);
+        if (ligne.incomplete()) {
+            paragraph.add(new Chunk("  ·  " + (ligne.sieges()[0] - ligne.animateurs().size())
+                    + " siège(s) non pourvu(s)", TABLE_ALERT_FONT));
+        }
+        PdfPCell cell = new PdfPCell(paragraph);
+        cell.setBorderColor(PILL_BACKGROUND);
+        cell.setPadding(4f);
+        return cell;
+    }
+
+    private PdfPCell effectifCell(LigneAffectation ligne) {
+        PdfPCell cell = new PdfPCell(new Phrase(ligne.animateurs().size() + "/" + ligne.sieges()[0],
+                ligne.incomplete() ? TABLE_ALERT_FONT : TABLE_BODY_FONT));
+        cell.setBorderColor(PILL_BACKGROUND);
+        cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+        cell.setPadding(4f);
+        return cell;
+    }
+
+    private String formatHoraires(LigneAffectation ligne) {
+        return TIME_FORMAT.format(ligne.debut()) + "–" + TIME_FORMAT.format(ligne.fin());
+    }
+
+    private String emplacementNom(Stand stand) {
+        Emplacement emplacement = stand.getEmplacement();
+        return emplacement == null || emplacement.getNom() == null || emplacement.getNom().isBlank()
+                ? "—"
+                : emplacement.getNom();
     }
 
     /**
@@ -205,7 +527,8 @@ public class PlanningExportService {
                 .orElse(animateurId);
     }
 
-    private byte[] buildPdf(String animateurName, List<PosteAffectation> postes) {
+    private byte[] buildPdf(String animateurName, List<PosteAffectation> postes,
+            java.util.Map<String, List<String>> coequipiersParPoste) {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         Document document = new Document(PageSize.A4, 40, 40, 40, 54);
         PdfWriter writer = PdfWriter.getInstance(document, output);
@@ -221,7 +544,7 @@ public class PlanningExportService {
         } else {
             document.add(buildStandsAffectesCard(postes));
             for (PosteAffectation poste : postes) {
-                document.add(buildAssignmentCard(poste));
+                document.add(buildAssignmentCard(poste, coequipiersParPoste.getOrDefault(poste.getId(), List.of())));
             }
         }
 
@@ -414,8 +737,8 @@ public class PlanningExportService {
         return paragraph;
     }
 
-    /** One rounded card per assignment: day/date with a "JOURx" badge, a time pill, the stand and its location. */
-    private PdfPTable buildAssignmentCard(PosteAffectation poste) {
+    /** One rounded card per assignment: day/date with a "JOURx" badge, a time pill, the stand, its location and the teammates. */
+    private PdfPTable buildAssignmentCard(PosteAffectation poste, List<String> coequipiers) {
         Creneau creneau = poste.getCreneau();
 
         PdfPTable card = new PdfPTable(new float[] { 2.4f, 1.8f, 2.5f, 2.3f });
@@ -426,7 +749,7 @@ public class PlanningExportService {
 
         card.addCell(dayCell(creneau));
         card.addCell(timePillCell(poste.heureDebutEffectif(), poste.heureFinEffectif()));
-        card.addCell(standCell(poste.getStand()));
+        card.addCell(standCell(poste.getStand(), coequipiers));
         card.addCell(locationCell(poste.getStand()));
         return card;
     }
@@ -491,11 +814,19 @@ public class PlanningExportService {
         return cell;
     }
 
-    private PdfPCell standCell(Stand stand) {
-        PdfPCell cell = new PdfPCell(new Phrase("Stand " + stand.getNom(), STAND_FONT));
+    /** The stand, and under it who else is on it at that moment — the question every animateur asks about their own planning. */
+    private PdfPCell standCell(Stand stand, List<String> coequipiers) {
+        PdfPCell cell = new PdfPCell();
         cell.setBorder(Rectangle.NO_BORDER);
         cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
         cell.setPadding(14f);
+        cell.addElement(new Paragraph("Stand " + stand.getNom(), STAND_FONT));
+
+        Paragraph equipe = new Paragraph(coequipiers.isEmpty()
+                ? "Seul(e) sur ce stand"
+                : "Avec " + String.join(", ", coequipiers), TEAM_FONT);
+        equipe.setSpacingBefore(3f);
+        cell.addElement(equipe);
         return cell;
     }
 
@@ -786,7 +1117,10 @@ public class PlanningExportService {
 
         @Override
         public void onCloseDocument(PdfWriter writer, Document document) {
-            int totalPages = writer.getPageNumber();
+            // One template was stacked per page actually written; the writer's
+            // own counter is already sitting on the next, not-yet-written page,
+            // which is what made every document read "Page 1/2" at one page.
+            int totalPages = pageCounterTemplates.size();
             BaseFont baseFont = FOOTER_FONT.getCalculatedBaseFont(false);
             for (int i = 0; i < pageCounterTemplates.size(); i++) {
                 PdfTemplate template = pageCounterTemplates.get(i);

@@ -15,8 +15,10 @@ import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { TableSelection } from '../../core/table-selection';
+import { correspondAuFiltre } from '../../core/text-filter';
 import { RapportCompactage, Stand } from '../../core/models';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
+import { TableFilter } from '../../shared/table-filter';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { StandBulkEditData, StandBulkEditDialog } from './stand-bulk-edit-dialog';
 import { StandFormData, StandFormDialog } from './stand-form-dialog';
@@ -40,7 +42,8 @@ import { StandFormData, StandFormDialog } from './stand-form-dialog';
     MatIconModule,
     MatTableModule,
     MatTooltipModule,
-    BulkActionsBar
+    BulkActionsBar,
+    TableFilter
   ],
   templateUrl: './stands-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -55,8 +58,25 @@ export class StandsPage {
   /** True while the compaction round-trip is in flight, to keep it from being fired twice. */
   protected readonly compactageEnCours = signal(false);
 
+  /** Quick filter of the table: id, name, typologies and emplacement — everything a stand is looked up by. */
+  protected readonly filtre = signal('');
+  protected readonly standsFiltres = computed(() =>
+    this.store
+      .stands()
+      .filter((stand) =>
+        correspondAuFiltre(this.filtre(), [
+          stand.id,
+          stand.nom,
+          ...(stand.typologiesProposees ?? []),
+          stand.emplacement?.nom,
+          stand.emplacement?.id
+        ])
+      )
+  );
+
+  /** Keyed on the filtered rows, so "tout sélectionner" follows what the table shows. */
   protected readonly selection = new TableSelection<string>(
-    computed(() => this.store.stands().map((stand) => stand.id))
+    computed(() => this.standsFiltres().map((stand) => stand.id))
   );
 
   /** Holds `causeParStandId`: a memoised map, so each row only does a lookup. */

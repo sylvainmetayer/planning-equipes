@@ -7,13 +7,15 @@
       <mat-icon>add</mat-icon>
       <ng-container i18n="@@common.add">Ajouter</ng-container>
     </button>
+    <app-table-filter [(value)]="filtre" [matches]="emplacementsFiltres().length"
+                      [total]="store.emplacements().length" />
   </mat-card-actions>
   <mat-card-content class="table-wrapper">
     @if (selection.hasSelection()) {
       <app-bulk-actions-bar [count]="selection.count()" [disabled]="editingLocked()"
                             (edit)="editSelection()" (remove)="removeSelection()" (clear)="selection.clear()" />
     }
-    <table mat-table [dataSource]="store.emplacements()">
+    <table mat-table [dataSource]="emplacementsFiltres()">
       <ng-container matColumnDef="select">
         <th mat-header-cell *matHeaderCellDef>
           <mat-checkbox i18n-aria-label="@@bulk.selectAll" aria-label="Tout sélectionner"
@@ -55,6 +57,8 @@
     </table>
     @if (store.emplacements().length === 0) {
       <p class="empty-hint" i18n="@@emplacements.empty">Aucun emplacement pour le moment. Créez-en un ci-dessus.</p>
+    } @else if (emplacementsFiltres().length === 0) {
+      <p class="empty-hint" i18n="@@filter.noMatch">Aucune ligne ne correspond au filtre.</p>
     }
   </mat-card-content>
 </mat-card>

@@ -29,6 +29,12 @@ export interface TimelineBlock {
   /** Position within the day's amplitude bar, as a 0-100 percentage. */
   offsetPercent: number;
   widthPercent: number;
+  /**
+   * The other animateurs holding a seat on the same stand, same créneau and
+   * same window — who this person will actually be working with. Empty when
+   * they hold the stand alone.
+   */
+  coequipiers: string[];
 }
 
 export interface TimelineGap {
@@ -123,6 +129,16 @@ export class AnimateurTimelinePage {
   protected readonly standsSummary = computed<TimelineStandsSummary>(() =>
     buildStandsSummary(this.days(), typologieLabels(this.typologies()))
   );
+
+  /** Stand, hours and — the point of the addition — who else is on that line. */
+  protected blockTooltip(block: TimelineBlock): string {
+    const base = `${block.standNom} : ${block.heureDebut} – ${block.heureFin}`;
+    if (block.coequipiers.length === 0) {
+      return $localize`:@@timeline.tooltip.alone:${base}:poste: — seul(e) sur ce stand`;
+    }
+    const equipe = block.coequipiers.join(', ');
+    return $localize`:@@timeline.tooltip.teammates:${base}:poste: — avec ${equipe}:equipe:`;
+  }
 
   protected readonly standsSummaryLabel = computed(() => {
     const summary = this.standsSummary();
@@ -289,6 +305,9 @@ export function buildStandsSummary(days: TimelineDay[], labels: Map<string, stri
 
 /** One entry per festival day the animateur works, sorted chronologically. */
 export function buildAnimateurTimeline(postes: PosteAffectation[], animateurId: string): TimelineDay[] {
+  // Built over every poste, not only this animateur's: who else holds a seat
+  // on the same line is exactly what the teammate list needs.
+  const equipesParLigne = equipesParLigneDeStand(postes);
   const byDay = new Map<number, { date: string | null; postes: PosteAffectation[] }>();
   postes.forEach((poste) => {
     const creneau = poste.creneau;
@@ -305,10 +324,42 @@ export function buildAnimateurTimeline(postes: PosteAffectation[], animateurId: 
 
   return Array.from(byDay.entries())
     .sort((left, right) => left[0] - right[0])
-    .map(([jour, day]) => buildTimelineDay(jour, day.date, day.postes));
+    .map(([jour, day]) => buildTimelineDay(jour, day.date, day.postes, animateurId, equipesParLigne));
 }
 
-function buildTimelineDay(jour: number, date: string | null, postes: PosteAffectation[]): TimelineDay {
+/** Identity of a staffed line: one stand, one créneau, one window — the same key the calendars group on. */
+function ligneKey(poste: PosteAffectation): string {
+  const creneau = poste.creneau!;
+  const heureDebut = poste.heureDebutEffective ?? creneau.heureDebut;
+  const heureFin = poste.heureFinEffective ?? creneau.heureFin;
+  return `${poste.stand?.id}::${creneau.id}::${heureDebut}::${heureFin}`;
+}
+
+/** Every assigned animateur (id + display name) per staffed line. */
+function equipesParLigneDeStand(postes: PosteAffectation[]): Map<string, { id: string; nom: string }[]> {
+  const equipes = new Map<string, { id: string; nom: string }[]>();
+  postes.forEach((poste) => {
+    if (!poste.creneau || !poste.animateur) {
+      return;
+    }
+    const key = ligneKey(poste);
+    const equipe = equipes.get(key) ?? [];
+    equipe.push({
+      id: poste.animateur.id,
+      nom: `${poste.animateur.prenom ?? ''} ${poste.animateur.nom ?? ''}`.trim() || poste.animateur.id
+    });
+    equipes.set(key, equipe);
+  });
+  return equipes;
+}
+
+function buildTimelineDay(
+  jour: number,
+  date: string | null,
+  postes: PosteAffectation[],
+  animateurId: string,
+  equipesParLigne: Map<string, { id: string; nom: string }[]>
+): TimelineDay {
   const spans = postes
     .map((poste) => {
       const creneau = poste.creneau!;
@@ -318,6 +369,10 @@ function buildTimelineDay(jour: number, date: string | null, postes: PosteAffect
         posteId: poste.id,
         standNom: poste.stand?.nom || poste.stand?.id || '',
         typologies: standTypologies(poste.stand),
+        coequipiers: (equipesParLigne.get(ligneKey(poste)) ?? [])
+          .filter((membre) => membre.id !== animateurId)
+          .map((membre) => membre.nom)
+          .sort((left, right) => left.localeCompare(right)),
         heureDebut,
         heureFin,
         startMinutes: minutesOfDay(heureDebut),
@@ -334,6 +389,7 @@ function buildTimelineDay(jour: number, date: string | null, postes: PosteAffect
     posteId: span.posteId,
     standNom: span.standNom,
     typologies: span.typologies,
+    coequipiers: span.coequipiers,
     heureDebut: span.heureDebut,
     heureFin: span.heureFin,
     offsetPercent: ((span.startMinutes - amplitudeDebutMinutes) / range) * 100,

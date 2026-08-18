@@ -10,6 +10,7 @@
       <mat-icon>add</mat-icon>
       <ng-container i18n="@@common.add">Ajouter</ng-container>
     </button>
+    <app-table-filter [(value)]="filtre" [matches]="animateursFiltres().length" [total]="store.animateurs().length" />
   </mat-card-actions>
   <mat-card-content class="table-wrapper">
     @if (selection.hasSelection()) {
@@ -75,6 +76,8 @@
     </table>
     @if (store.animateurs().length === 0) {
       <p class="empty-hint" i18n="@@animateurs.empty">Aucun animateur pour le moment.</p>
+    } @else if (animateursFiltres().length === 0) {
+      <p class="empty-hint" i18n="@@filter.noMatch">Aucune ligne ne correspond au filtre.</p>
     }
   </mat-card-content>
 </mat-card>

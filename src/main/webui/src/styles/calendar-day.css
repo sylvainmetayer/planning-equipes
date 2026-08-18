@@ -60,7 +60,17 @@
   font-style: italic;
 }
 
-/** Some, but fewer than effectifMin, animateurs assigned — distinct from fully unassigned (.empty-slot). */
+/**
+ * Meal-pause coverage vacation (EFFECTIF_REDUIT): the stand runs at half its
+ * usual headcount on purpose. Neutral/outline on purpose — it is an
+ * indication of how the pause is covered, never a shortfall, so it must not
+ * borrow the error or warning colours.
+ */
+.couverture-pause-icon {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/** Some, but fewer than the seats generated for the line, animateurs assigned — distinct from fully unassigned (.empty-slot). */
 .understaffed-slot {
   color: var(--mat-sys-error);
   font-weight: 500;

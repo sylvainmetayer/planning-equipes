@@ -45,6 +45,48 @@ describe('buildAnimateurTimeline', () => {
     expect(days[0].gaps).toHaveLength(0);
   });
 
+  it('lists the other animateurs of the same stand line as teammates, and only them', () => {
+    const c1 = creneau({ id: 1, jour: 1, heureDebut: '09:00', heureFin: '12:00' });
+    const s1 = stand('S1');
+    const days = buildAnimateurTimeline(
+      [
+        poste({ id: 'p1', creneau: c1, stand: s1, animateur: animateur('A', 'Ada', 'Lovelace') }),
+        poste({ id: 'p2', creneau: c1, stand: s1, animateur: animateur('B', 'Alan', 'Turing') }),
+        poste({ id: 'p3', creneau: c1, stand: s1, animateur: null }), // unfilled seat: nobody to name
+        // Same créneau, another stand: not a teammate.
+        poste({ id: 'p4', creneau: c1, stand: stand('S2'), animateur: animateur('C', 'Grace', 'Hopper') })
+      ],
+      'A'
+    );
+
+    expect(days[0].blocks[0].coequipiers).toEqual(['Alan Turing']);
+  });
+
+  it('leaves the teammate list empty for a stand held alone', () => {
+    const days = buildAnimateurTimeline(
+      [poste({ id: 'p1', creneau: creneau({ id: 1, jour: 1 }), stand: stand('S1'), animateur: animateur('A') })],
+      'A'
+    );
+
+    expect(days[0].blocks[0].coequipiers).toEqual([]);
+  });
+
+  it('does not pair two segments of the same stand and créneau split by a partial closure', () => {
+    // A mid-créneau closure splits the stand into two windows: whoever holds
+    // the morning half never meets whoever holds the afternoon half.
+    const c1 = creneau({ id: 1, jour: 1, heureDebut: '09:00', heureFin: '18:00' });
+    const s1 = stand('S1');
+    const days = buildAnimateurTimeline(
+      [
+        poste({ id: 'p1', creneau: c1, stand: s1, animateur: animateur('A'), heureDebutEffective: '09:00', heureFinEffective: '12:00' }),
+        poste({ id: 'p2', creneau: c1, stand: s1, animateur: animateur('B'), heureDebutEffective: '14:00', heureFinEffective: '18:00' })
+      ],
+      'A'
+    );
+
+    expect(days[0].blocks[0].coequipiers).toEqual([]);
+  });
+
   it('inserts a gap between two vacations, sized proportionally to the amplitude', () => {
     // 08:00-10:00 then 11:00-13:00: amplitude is 08:00-13:00 (300 min), the
     // 1h gap (10:00-11:00, 60 min) should land at 40% offset / 20% width.

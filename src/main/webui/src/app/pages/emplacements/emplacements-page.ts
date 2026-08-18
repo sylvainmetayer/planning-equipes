@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -11,8 +11,10 @@ import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { TableSelection } from '../../core/table-selection';
+import { correspondAuFiltre } from '../../core/text-filter';
 import { Emplacement } from '../../core/models';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
+import { TableFilter } from '../../shared/table-filter';
 import { EmplacementBulkEditData, EmplacementBulkEditDialog } from './emplacement-bulk-edit-dialog';
 import { EmplacementFormData, EmplacementFormDialog } from './emplacement-form-dialog';
 
@@ -31,7 +33,8 @@ import { EmplacementFormData, EmplacementFormDialog } from './emplacement-form-d
     MatIconModule,
     MatTableModule,
     MatTooltipModule,
-    BulkActionsBar
+    BulkActionsBar,
+    TableFilter
   ],
   templateUrl: './emplacements-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -43,8 +46,24 @@ export class EmplacementsPage {
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
   protected readonly editingLocked = computed(() => this.jobs.solverBusy());
 
+  /** Quick filter of the table: id, name and coordinates. */
+  protected readonly filtre = signal('');
+  protected readonly emplacementsFiltres = computed(() =>
+    this.store
+      .emplacements()
+      .filter((emplacement) =>
+        correspondAuFiltre(this.filtre(), [
+          emplacement.id,
+          emplacement.nom,
+          emplacement.latitude,
+          emplacement.longitude
+        ])
+      )
+  );
+
+  /** Keyed on the filtered rows, so "tout sélectionner" follows what the table shows. */
   protected readonly selection = new TableSelection<string>(
-    computed(() => this.store.emplacements().map((emplacement) => emplacement.id))
+    computed(() => this.emplacementsFiltres().map((emplacement) => emplacement.id))
   );
 
   private readonly crud = inject(ReferenceCrudService);

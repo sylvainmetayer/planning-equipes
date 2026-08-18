@@ -2,64 +2,73 @@ import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ApiService } from '../../core/api.service';
-import { ParametresLegaux } from '../../core/models';
-import { ReferenceCrudService } from '../../core/reference-crud.service';
-import { ReferenceDataStore } from '../../core/reference-data.store';
-import { computeStaffingSummary, CreneauStaffing } from './staffing';
+import { JourStaffing, StaffingSummary } from '../../core/models';
 
 /**
- * Staffing-need calculator: from the configured stands and créneaux alone
- * (effectifMin, reserveMajeurs, indisponibilites) plus the legal weekly-hour
- * cap, computes two lower bounds on the number of animateurs to recruit —
- * peak concurrent seats, and total workload divided by the legal cap — and
- * keeps the larger one. See `computeStaffingSummary` for the methodology and
- * its measured limits.
+ * Staffing-need calculator: how many animateurs the stands and créneaux
+ * currently configured require at a minimum, before any animateur is entered.
+ *
+ * Everything is computed server-side (`GET /api/staffing`) on the very seats a
+ * solve would have to fill. This page used to compute it in the browser from
+ * `effectifMin` × open stands × créneaux, which ignored recurring horaires
+ * (every stand counted open around the clock) and counted overlapping relay
+ * vacations several times over — on edition-1708 it announced more than 1500
+ * animateurs for a festival staffed by 153. See `StaffingAnalyzer` on the
+ * backend for the methodology and its limits.
  */
 @Component({
   selector: 'app-staffing-page',
-  imports: [MatCardModule, MatIconModule, MatTableModule, MatTooltipModule, DecimalPipe],
+  imports: [MatCardModule, MatIconModule, MatProgressBarModule, MatTableModule, MatTooltipModule, DecimalPipe],
   templateUrl: './staffing-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class StaffingPage {
-  protected readonly store = inject(ReferenceDataStore);
-  protected readonly columns = ['creneau', 'standsOuverts', 'total', 'majeurs', 'mineurs'];
-  protected readonly dureeHebdomadaireMaxMinutes = signal<number | null>(null);
-  /** Only the active groupe de créneaux' slots count — the others are an alternate planning, not the one being staffed. */
-  private readonly activeGroupeId = computed(() => this.store.groupesCreneaux().find((groupe) => groupe.actif)?.id ?? null);
-  private readonly creneauxGroupeActif = computed(() =>
-    this.store.creneaux().filter((creneau) => creneau.groupe?.id === this.activeGroupeId())
-  );
-  protected readonly summary = computed(() =>
-    computeStaffingSummary(this.store.stands(), this.creneauxGroupeActif(), this.dureeHebdomadaireMaxMinutes() ?? undefined)
-  );
+  protected readonly columns = ['jour', 'standsOuverts', 'sieges', 'heures', 'picSimultane', 'picAvecPause'];
+  protected readonly summary = signal<StaffingSummary | null>(null);
+  protected readonly loading = signal(true);
+  protected readonly error = signal('');
 
-  private readonly crud = inject(ReferenceCrudService);
+  protected readonly heuresParSemaine = computed(() => {
+    const summary = this.summary();
+    return summary && summary.nombreSemaines > 0 ? summary.capaciteHeuresParAnimateur / summary.nombreSemaines : 0;
+  });
+
   private readonly api = inject(ApiService);
 
   constructor() {
-    void this.crud.reload();
-    void this.loadParametresLegaux();
+    void this.load();
   }
 
-  private async loadParametresLegaux(): Promise<void> {
+  private async load(): Promise<void> {
+    this.loading.set(true);
     try {
-      const parametres = await this.api.get<ParametresLegaux>('/api/parametres-legaux');
-      this.dureeHebdomadaireMaxMinutes.set(parametres.dureeHebdomadaireMaxMinutes);
-    } catch {
-      // Falls back to the computeStaffingSummary default (48h) if unreachable.
+      this.summary.set(await this.api.get<StaffingSummary>('/api/staffing'));
+      this.error.set('');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.error.set($localize`:@@common.errorPrefix:Erreur : ${message}:message:`);
+    } finally {
+      this.loading.set(false);
     }
   }
 
-  protected busiestCreneauLabel(critique: CreneauStaffing): string {
-    const jour = critique.jour;
-    const date = critique.date;
-    const heureDebut = critique.heureDebut;
-    const heureFin = critique.heureFin;
-    const standsOuverts = critique.standsOuverts;
-    return $localize`:@@staffing.busiestCreneau:Créneau le plus chargé : J${jour}:jour: · ${date}:date: ${heureDebut}:heureDebut:–${heureFin}:heureFin: (${standsOuverts}:count: stands ouverts)`;
+  protected jourCritiqueLabel(jour: JourStaffing): string {
+    const date = jour.date;
+    const numero = jour.jour;
+    const standsOuverts = jour.standsOuverts;
+    return $localize`:@@staffing.busiestDay:Journée la plus chargée : J${numero}:jour: · ${date}:date: (${standsOuverts}:count: stands ouverts)`;
+  }
+
+  /** True for the bound that set the retained minimum, highlighted in the list. */
+  protected estBorneRetenue(borne: StaffingSummary['borneRetenue']): boolean {
+    return this.summary()?.borneRetenue === borne;
+  }
+
+  protected pauseMinutes(): number {
+    return this.summary()?.pauseMinimaleMinutes ?? 0;
   }
 }

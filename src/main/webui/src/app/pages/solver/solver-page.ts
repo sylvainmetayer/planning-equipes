@@ -6,6 +6,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ApiService } from '../../core/api.service';
 import { intlLocale } from '../../core/locale';
 import { FeasibilityReport, PlanningDiagnostic } from '../../core/models';
@@ -15,7 +16,7 @@ import { PlanningStateService } from '../../core/planning-state.service';
 import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
-import { SolverJobService } from '../../core/solver-job.service';
+import { SolverJobService, formatDuration } from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';
 import { FeasibilityBanner, HardIssue } from '../../shared/feasibility-banner';
 import { OutputPanel } from '../../shared/output-panel';
@@ -86,6 +87,7 @@ function bestUnitFor(seconds: number): SolverDurationUnit {
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
+    MatTooltipModule,
     FeasibilityBanner,
     ProblemSummaryBanner,
     OutputPanel
@@ -122,6 +124,21 @@ export class SolverPage {
 
   /** The server-side lock, not a local flag: it also covers other browsers. */
   protected readonly solverBusy = computed(() => this.jobs.solverBusy());
+
+  /**
+   * "Fin estimée" of the run in progress: its start time plus the duration it
+   * was submitted with. An upper bound — the solver stops earlier when its
+   * unimproved-seconds budget runs out, and anyone can stop it by hand.
+   * Empty when nothing runs, or when the server reported no limit for it.
+   */
+  protected readonly estimatedEnd = computed(() => {
+    const end = this.jobs.estimatedEndMs();
+    return end === null ? '' : new Date(end).toLocaleTimeString(intlLocale());
+  });
+  protected readonly estimatedRemaining = computed(() => {
+    const remaining = this.jobs.remainingSeconds();
+    return remaining === null ? '' : formatDuration(remaining);
+  });
 
   /** Completion time of the most recent finished SOLVE or ANALYZE job, if any has ever run. */
   protected readonly lastRunAt = signal<string | null>(null);
@@ -309,6 +326,26 @@ export class SolverPage {
       $localize`:@@solver.alreadyRunning:${description}:description: Veuillez attendre la fin avant d'en démarrer une autre.`
     );
     return true;
+  }
+
+  /**
+   * The organiser's own copy: one PDF holding every assignment, laid out by
+   * day and by stand. A GET, unlike the per-animateur bundle below — the
+   * server reads the persisted planning itself rather than having the browser
+   * upload several megabytes of JSON just to get a document back.
+   */
+  protected async onExportGlobalPdf(): Promise<void> {
+    this.exportBusy.set(true);
+    this.output.set($localize`:@@solver.exportGlobalBuilding:Construction du PDF global...`);
+    try {
+      this.output.set(
+        await this.api.downloadGet('/api/planning/export/pdf/global', 'planning-global.pdf', 'application/pdf')
+      );
+    } catch (error) {
+      this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
+    } finally {
+      this.exportBusy.set(false);
+    }
   }
 
   protected async onExportPlanning(): Promise<void> {

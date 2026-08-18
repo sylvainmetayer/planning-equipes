@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -46,6 +47,73 @@ class PlanningExportServiceTest {
         assertThat(pdf).isNotEmpty();
         assertThat(new String(pdf, 0, 4, java.nio.charset.StandardCharsets.US_ASCII)).isEqualTo("%PDF");
         writeSample("planning-sample-" + animateurId + ".pdf", pdf);
+    }
+
+    @Test
+    void coequipiersNamesTheOthersOnTheSameStandLineOnly() {
+        PlanningFestival planning = new PlanningFestival();
+        Stand stand = new Stand("STAND-A", "Stand A", Set.of("STRATEGIE"), 2, 2, false);
+        Stand autre = new Stand("STAND-B", "Stand B", Set.of("STRATEGIE"), 1, 1, false);
+        Creneau creneau = new Creneau(1L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
+        Animateur ada = new Animateur("A1", "Ada", "Lovelace", LocalDate.of(2000, 1, 1), false);
+        Animateur alan = new Animateur("A2", "Alan", "Turing", LocalDate.of(2000, 1, 1), false);
+        Animateur grace = new Animateur("A3", "Grace", "Hopper", LocalDate.of(2000, 1, 1), false);
+        PosteAffectation p1 = new PosteAffectation("p1", stand, creneau);
+        p1.setAnimateur(ada);
+        PosteAffectation p2 = new PosteAffectation("p2", stand, creneau);
+        p2.setAnimateur(alan);
+        PosteAffectation p3 = new PosteAffectation("p3", stand, creneau); // unfilled seat: nobody to name
+        PosteAffectation p4 = new PosteAffectation("p4", autre, creneau); // same créneau, another stand
+        p4.setAnimateur(grace);
+        planning.setAnimateurs(List.of(ada, alan, grace));
+        planning.setPostes(List.of(p1, p2, p3, p4));
+
+        assertThat(service.coequipiersParPoste(planning, "A1")).containsExactly(entry("p1", List.of("Alan Turing")));
+    }
+
+    @Test
+    void coequipiersIgnoresTheOtherSegmentOfAStandSplitByAClosure() {
+        PlanningFestival planning = new PlanningFestival();
+        Stand stand = new Stand("STAND-A", "Stand A", Set.of("STRATEGIE"), 1, 1, false);
+        Creneau creneau = new Creneau(1L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(18, 0));
+        Animateur ada = new Animateur("A1", "Ada", "Lovelace", LocalDate.of(2000, 1, 1), false);
+        Animateur alan = new Animateur("A2", "Alan", "Turing", LocalDate.of(2000, 1, 1), false);
+        PosteAffectation matin = new PosteAffectation("p1", stand, creneau);
+        matin.setAnimateur(ada);
+        matin.setHeureDebutEffective(LocalTime.of(9, 0));
+        matin.setHeureFinEffective(LocalTime.of(12, 0));
+        PosteAffectation apresMidi = new PosteAffectation("p2", stand, creneau);
+        apresMidi.setAnimateur(alan);
+        apresMidi.setHeureDebutEffective(LocalTime.of(14, 0));
+        apresMidi.setHeureFinEffective(LocalTime.of(18, 0));
+        planning.setAnimateurs(List.of(ada, alan));
+        planning.setPostes(List.of(matin, apresMidi));
+
+        assertThat(service.coequipiersParPoste(planning, "A1")).containsExactly(entry("p1", List.of()));
+    }
+
+    @Test
+    void exportGlobalPdfProducesAWellFormedPdfCoveringEveryAssignment() throws IOException {
+        PlanningFestival planning = fakePlanning();
+
+        byte[] pdf = service.exportGlobalPdf(planning);
+
+        assertThat(pdf).isNotEmpty();
+        assertThat(new String(pdf, 0, 4, java.nio.charset.StandardCharsets.US_ASCII)).isEqualTo("%PDF");
+        writeSample("planning-sample-global.pdf", pdf);
+    }
+
+    /** An empty planning must still produce a readable document, not an exception. */
+    @Test
+    void exportGlobalPdfHandlesAnEmptyPlanning() {
+        PlanningFestival planning = new PlanningFestival();
+        planning.setAnimateurs(List.of());
+        planning.setPostes(List.of());
+
+        byte[] pdf = service.exportGlobalPdf(planning);
+
+        assertThat(pdf).isNotEmpty();
+        assertThat(new String(pdf, 0, 4, java.nio.charset.StandardCharsets.US_ASCII)).isEqualTo("%PDF");
     }
 
     @Test

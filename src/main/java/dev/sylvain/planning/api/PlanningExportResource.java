@@ -1,9 +1,14 @@
 package dev.sylvain.planning.api;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.service.PlanningExportService;
+import dev.sylvain.planning.service.PlanningPersistenceService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -18,6 +23,28 @@ public class PlanningExportResource {
 
     @Inject
     PlanningExportService planningExportService;
+
+    @Inject
+    PlanningPersistenceService persistenceService;
+
+    /**
+     * The whole planning in one PDF, for the organiser — the only export that
+     * reads the persisted planning server-side instead of taking it in the
+     * request body: a festival-sized planning weighs several megabytes as JSON,
+     * which is exactly what the caller should not have to upload just to get a
+     * document back. Same read-only source as the calendars
+     * ({@code GET /api/planning/persisted}).
+     */
+    @GET
+    @jakarta.ws.rs.Path("/pdf/global")
+    @Produces("application/pdf")
+    public Response exportGlobalPdf() {
+        byte[] content = planningExportService.exportGlobalPdf(persistenceService.loadPersistedPlanning());
+        String filename = "planning-global-" + LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE) + ".pdf";
+        return Response.ok(content)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .build();
+    }
 
     @POST
     @Path("/pdf/all")
