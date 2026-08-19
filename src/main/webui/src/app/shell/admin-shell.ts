@@ -1,0 +1,357 @@
+import { LiveAnnouncer } from '@angular/cdk/a11y';
+import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  ElementRef,
+  computed,
+  inject,
+  linkedSignal,
+  signal,
+  viewChild
+} from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { Title } from '@angular/platform-browser';
+import { MatBadgeModule } from '@angular/material/badge';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatIconModule } from '@angular/material/icon';
+import { MatListModule } from '@angular/material/list';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { filter, map } from 'rxjs';
+import { ApiService } from '../core/api.service';
+import { EditionStore } from '../core/edition.store';
+import { AppLocale, getStoredLocale, setStoredLocaleAndReload } from '../core/locale';
+import {
+  defaultNavStorage,
+  readCollapsedGroups,
+  toggleCollapsedGroup,
+  writeCollapsedGroups
+} from '../core/nav-collapse';
+import { NotificationService } from '../core/notification.service';
+import { PlanningResolutionStore } from '../core/planning-resolution.store';
+import { SolverJobService } from '../core/solver-job.service';
+import { DataStaleIndicator } from '../shared/data-stale-indicator';
+import { EditionActuelleBar } from '../shared/edition-actuelle-bar';
+import { GroupeMismatchBanner } from '../shared/groupe-mismatch-banner';
+import { JobMonitor } from '../shared/job-monitor';
+
+interface NavLink {
+  path: string;
+  label: string;
+  icon: string;
+  /**
+   * True for a real external link (target="_blank"), rendered as a plain
+   * <a href> instead of an Angular routerLink. `/db` resolves relative to
+   * whatever host serves this app; routing it to pgAdmin is a deployment-side
+   * reverse-proxy concern, not something this repo builds (docker-compose
+   * only exposes a dev-only pgAdmin on :5050, unrelated to this link).
+   */
+  external?: boolean;
+  /** Shows the unread notification count as a mat-badge on this link only. */
+  badge?: 'notifications';
+}
+
+interface NavGroup {
+  /** Stable across languages: what the collapsed state is stored under. */
+  id: string;
+  title: string;
+  links: NavLink[];
+}
+
+/**
+ * One entry per route: the navigation mirrors the page split exactly.
+ *
+ * Built lazily (called from the component constructor, not at module scope):
+ * $localize resolves translations from whatever `loadTranslations()` has
+ * registered at call time, and that only happens once `main.ts` has fetched
+ * the English catalog — before `bootstrapApplication()` runs, but after this
+ * module has already been imported.
+ */
+function buildNavGroups(): NavGroup[] {
+  return [
+  {
+    id: 'planning',
+    title: $localize`:@@nav.group.planning:Planning`,
+    links: [
+      { path: '/', label: $localize`:@@nav.link.solver:Solveur`, icon: 'play_circle' },
+      {
+        path: '/notifications',
+        label: $localize`:@@nav.link.notifications:Notifications`,
+        icon: 'notifications',
+        badge: 'notifications'
+      },
+      { path: '/problemes', label: $localize`:@@nav.link.problemes:Problèmes`, icon: 'report_problem' },
+      { path: '/echanges', label: $localize`:@@nav.link.echanges:Échanges`, icon: 'swap_horiz' },
+      { path: '/constraints', label: $localize`:@@nav.link.constraints:Contraintes`, icon: 'fact_check' },
+      {
+        path: '/data-setup',
+        label: $localize`:@@nav.link.dataSetup:Données`,
+        icon: 'storage'
+      },
+      { path: '/instantanes', label: $localize`:@@nav.link.snapshots:Instantanés`, icon: 'history' },
+      { path: '/aide', label: $localize`:@@nav.link.aide:Aide`, icon: 'help_outline' },
+      { path: '/editions', label: $localize`:@@nav.link.editions:Éditions`, icon: 'layers' }
+    ]
+  },
+  {
+    id: 'reference-data',
+    title: $localize`:@@nav.group.referenceData:Données de référence`,
+    links: [
+      { path: '/stands', label: $localize`:@@nav.link.stands:Stands`, icon: 'storefront' },
+      { path: '/emplacements', label: $localize`:@@nav.link.emplacements:Emplacements`, icon: 'place' },
+      { path: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs`, icon: 'groups' },
+      { path: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux`, icon: 'schedule' },
+      { path: '/decoupage', label: $localize`:@@nav.link.decoupage:Découpage`, icon: 'content_cut' },
+      { path: '/typologies', label: $localize`:@@nav.link.typologies:Typologies`, icon: 'category' }
+    ]
+  },
+  {
+    id: 'views',
+    title: $localize`:@@nav.group.views:Vues`,
+    links: [
+      {
+        path: '/calendar',
+        label: $localize`:@@nav.link.calendar:Calendrier des affectations`,
+        icon: 'calendar_month'
+      },
+      {
+        path: '/day-calendar',
+        label: $localize`:@@nav.link.dayCalendar:Calendrier journalier`,
+        icon: 'view_day'
+      },
+      { path: '/hours', label: $localize`:@@nav.link.hours:Heures`, icon: 'schedule' },
+      {
+        path: '/ouvertures',
+        label: $localize`:@@nav.link.ouvertures:Ouvertures des stands`,
+        icon: 'storefront'
+      },
+      {
+        path: '/staffing',
+        label: $localize`:@@nav.link.staffing:Besoin en animateurs`,
+        icon: 'engineering'
+      },
+      {
+        path: '/heatmap',
+        label: $localize`:@@nav.link.heatmap:Heatmap de charge`,
+        icon: 'grid_view'
+      },
+      {
+        path: '/timeline',
+        label: $localize`:@@nav.link.timeline:Timeline animateur`,
+        icon: 'timeline'
+      }
+    ]
+  },
+  {
+    id: 'tools',
+    title: $localize`:@@nav.group.tools:Outils`,
+    links: [
+      {
+        path: '/db',
+        label: $localize`:@@nav.link.db:Base de données (pgAdmin)`,
+        icon: 'storage',
+        external: true
+      },
+      { path: '/debug', label: $localize`:@@nav.link.debug:Débogage`, icon: 'bug_report' },
+      { path: '/validateur-yaml', label: $localize`:@@nav.link.yamlValidator:Validateur YAML`, icon: 'rule' }
+    ]
+  },
+  {
+    // Pages backed by features that are not finished yet: each one shows an
+    // `app-work-in-progress-banner` telling the user so.
+    id: 'work-in-progress',
+    title: $localize`:@@nav.group.workInProgress:En cours de développement`,
+    links: [
+      {
+        path: '/ad-hoc-constraints',
+        label: $localize`:@@nav.link.adHocConstraints:Contraintes ad hoc`,
+        icon: 'rule'
+      },
+      { path: '/what-if', label: $localize`:@@nav.link.whatIf:Simulation « et si ? »`, icon: 'science' },
+      {
+        path: '/verrouillages',
+        label: $localize`:@@nav.link.verrouillages:Verrouillages`,
+        icon: 'lock'
+      }
+    ]
+  }
+  ];
+}
+
+/**
+ * Admin shell: Material toolbar, navigation drawer listing every admin page,
+ * and the solver monitor fed by the server-side job state. Everything under it
+ * sits behind the admin session (issue #165) — the routes outside this shell
+ * (/login, /animateur/:jeton) render without any of this chrome, so its
+ * polling and preloading only ever run for a logged-in admin.
+ */
+@Component({
+  selector: 'app-admin-shell',
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    MatToolbarModule,
+    MatSidenavModule,
+    MatListModule,
+    MatIconModule,
+    MatButtonModule,
+    MatBadgeModule,
+    MatDividerModule,
+    JobMonitor,
+    DataStaleIndicator,
+    EditionActuelleBar,
+    GroupeMismatchBanner
+  ],
+  templateUrl: './admin-shell.html',
+  styleUrl: './admin-shell.css',
+  changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class AdminShell {
+  protected readonly navGroups = buildNavGroups();
+  protected readonly jobs = inject(SolverJobService);
+  protected readonly resolution = inject(PlanningResolutionStore);
+  protected readonly editions = inject(EditionStore);
+  protected readonly notifications = inject(NotificationService);
+  protected readonly locale: AppLocale = getStoredLocale();
+
+  private readonly router = inject(Router);
+  private readonly title = inject(Title);
+  private readonly announcer = inject(LiveAnnouncer);
+
+  /** True while at least one unread notification is severity 'alert': overrides the badge count with a warning glyph. */
+  protected readonly hasUnreadAlert = computed(() =>
+    this.notifications.notifications().some((notification) => notification.severity === 'alert' && !notification.read)
+  );
+  protected readonly notificationBadgeContent = computed(() =>
+    this.hasUnreadAlert() ? '⚠' : String(this.notifications.unreadCount())
+  );
+  protected readonly notificationBadgeDescription = computed(() =>
+    this.hasUnreadAlert()
+      ? $localize`:@@nav.notificationsBadge.alert:Alerte non lue`
+      : $localize`:@@nav.notificationsBadge.count:${this.notifications.unreadCount()}:count: notification(s) non lue(s)`
+  );
+
+  private readonly handset = toSignal(
+    inject(BreakpointObserver)
+      .observe([Breakpoints.Handset, Breakpoints.TabletPortrait])
+      .pipe(map((state) => state.matches)),
+    { initialValue: false }
+  );
+
+  /** The drawer overlays the content on small screens, docks on large ones. */
+  protected readonly drawerMode = computed<'over' | 'side'>(() => (this.handset() ? 'over' : 'side'));
+  /**
+   * The drawer follows the viewport, but stays user-controllable afterwards:
+   * `linkedSignal` is exactly that — derived until written, reset by the next
+   * breakpoint change. An `effect` writing this signal would do the same for
+   * one more scheduling round-trip and an untraceable write.
+   */
+  protected readonly drawerOpen = linkedSignal(() => !this.handset());
+
+  constructor() {
+    // Starts polling the server-side solver lock for the whole session.
+    this.jobs.start();
+    // Loaded once here (not per-page) so the mismatch banner is correct on
+    // every screen, including ones that never touch ReferenceDataStore (e.g.
+    // the calendars). Refreshed after every solve, wherever it was started.
+    void this.resolution.reload();
+    // Same reasoning for the "Édition actuelle" strip: it sits in the shell, so
+    // the list of editions is loaded here rather than by any single page.
+    void this.editions.reload();
+    inject(DestroyRef).onDestroy(this.jobs.onResult('SOLVE', () => void this.resolution.reload()));
+    // Router `title` is applied on NavigationEnd too; subscribing after it in
+    // the same microtask order means `Title.getTitle()` already holds the new
+    // page's title when the announcement is built.
+    this.router.events
+      .pipe(
+        filter((event) => event instanceof NavigationEnd),
+        takeUntilDestroyed()
+      )
+      .subscribe(() => queueMicrotask(() => this.annoncerNavigation()));
+  }
+
+  protected toggleDrawer(): void {
+    this.drawerOpen.update((open) => !open);
+  }
+
+  /** Folded navigation groups, remembered across visits (see `core/nav-collapse`). */
+  private readonly navStorage = defaultNavStorage();
+  protected readonly collapsedGroups = signal<ReadonlySet<string>>(readCollapsedGroups(this.navStorage));
+
+  protected isCollapsed(group: NavGroup): boolean {
+    return this.collapsedGroups().has(group.id);
+  }
+
+  protected toggleGroup(group: NavGroup): void {
+    const next = toggleCollapsedGroup(this.collapsedGroups(), group.id);
+    this.collapsedGroups.set(next);
+    writeCollapsedGroups(this.navStorage, next);
+  }
+
+  protected readonly allCollapsed = computed(() => this.collapsedGroups().size >= this.navGroups.length);
+
+  /** One control for the five groups: folding them one by one is five clicks. */
+  protected toggleAllGroups(): void {
+    const next = this.allCollapsed() ? new Set<string>() : new Set(this.navGroups.map((group) => group.id));
+    this.collapsedGroups.set(next);
+    writeCollapsedGroups(this.navStorage, next);
+  }
+
+  /**
+   * Moves the focus into the page content, and announces which page it is.
+   *
+   * A router navigation swaps the content but leaves the focus on the link
+   * that was clicked: a keyboard user tabs back through the whole drawer, and
+   * a screen reader announces nothing at all. Focusing the `<main>` (which is
+   * `tabindex="-1"`, so focusable by script but not by tab) puts the caret at
+   * the top of the new page, and the announcer speaks its title — the same
+   * title the browser puts in the tab.
+   */
+  private readonly contenu = viewChild<ElementRef<HTMLElement>>('contenu');
+
+  private annoncerNavigation(): void {
+    this.contenu()?.nativeElement.focus({ preventScroll: true });
+    const titre = this.title.getTitle().split('—')[0].trim();
+    if (titre) {
+      this.announcer.announce(titre, 'polite');
+    }
+  }
+
+  /** Skip link: `href="#contenu"` alone would move the caret but not the focus. */
+  protected focusContenu(event: Event): void {
+    event.preventDefault();
+    this.contenu()?.nativeElement.focus();
+  }
+
+  /** Closes the overlay drawer after navigating on a small screen. */
+  protected onNavigate(): void {
+    if (this.handset()) {
+      this.drawerOpen.set(false);
+    }
+  }
+
+  /** Language messages resolve once at bootstrap, so switching reloads the page. */
+  protected toggleLocale(): void {
+    setStoredLocaleAndReload(this.locale === 'fr' ? 'en' : 'fr');
+  }
+
+  private readonly api = inject(ApiService);
+
+  /**
+   * Drops the admin session cookie, then hard-navigates to /login: a reload
+   * (rather than a router navigation) also resets every store this shell
+   * preloaded, so nothing keeps polling behind the login page.
+   */
+  protected async logout(): Promise<void> {
+    try {
+      await this.api.post('/api/auth/logout', null);
+    } finally {
+      window.location.assign('/login');
+    }
+  }
+}

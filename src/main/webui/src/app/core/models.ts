@@ -31,6 +31,10 @@ export interface Animateur {
   /** Stand typologies the animateur wishes to be assigned to — unordered, no priority. */
   souhaits: string[];
   joursIndisponibles: string[];
+  /** Contact address for the échange notifications (issue #165); null when not collected. */
+  email?: string | null;
+  /** Access token of the espace animateur — the link printed on their PDF planning. Read-only: rotated via `/api/animateurs/{id}/jeton`. */
+  jetonAcces?: string | null;
 }
 
 export interface Stand {
@@ -335,8 +339,8 @@ export interface ContrainteAdHoc {
   creeLe?: string;
 }
 
-/** What a {@link VerrouillagePlanning} freezes (issue #87). */
-export type TypeVerrouillage = 'ANIMATEUR' | 'STAND' | 'JOUR' | 'CRENEAU';
+/** What a {@link VerrouillagePlanning} freezes (issue #87; ANIMATEUR_CRENEAU: issue #165). */
+export type TypeVerrouillage = 'ANIMATEUR' | 'STAND' | 'JOUR' | 'CRENEAU' | 'ANIMATEUR_CRENEAU';
 
 /**
  * A validated part of the planning the solver must not touch again
@@ -749,4 +753,94 @@ export interface ResultatWhatIf {
   creneaux: number;
   reference: FeasibilityReport;
   simulation: FeasibilityReport;
+}
+
+/* ----------------------- Foire au planning (issue #165) ----------------------- */
+
+/** `/api/auth/me`: whether the browser holds a valid admin session. */
+export interface StatutSession {
+  authentifie: boolean;
+  nom: string | null;
+}
+
+/** One of the animateur's seats, as shown in their espace. */
+export interface PosteAnimateurView {
+  creneauId: number;
+  /** ISO date. */
+  date: string | null;
+  heureDebut: string | null;
+  heureFin: string | null;
+  standId: string;
+  standNom: string;
+  coequipiers: string[];
+}
+
+/** A colleague an échange can target. */
+export interface CollegueView {
+  id: string;
+  nomComplet: string;
+}
+
+/** `/api/espace-animateur/{jeton}`: the espace's home payload. */
+export interface EspaceAnimateurView {
+  animateurId: string;
+  prenom: string;
+  nom: string;
+  planningResoluLe: string | null;
+  postes: PosteAnimateurView[];
+  collegues: CollegueView[];
+}
+
+export type StatutDemandeEchange = 'PROPOSEE' | 'ACCEPTEE' | 'REFUSEE' | 'ANNULEE';
+
+/** One demande d'échange with every label resolved, shared by the espace and the admin screen. */
+export interface DemandeEchangeView {
+  id: string;
+  creneauId: number;
+  date: string | null;
+  heureDebut: string | null;
+  heureFin: string | null;
+  standId: string;
+  standNom: string;
+  demandeurId: string;
+  demandeurNom: string;
+  cibleId: string;
+  cibleNom: string;
+  motif: string | null;
+  statut: StatutDemandeEchange;
+  /** Hard-constraint prevalidation at submission; null while not evaluated. */
+  prevalidationOk: boolean | null;
+  /** Business descriptions of the hard constraints the échange would break. */
+  contraintesViolees: string[];
+  commentaireAdmin: string | null;
+  creeLe: string;
+  decideLe: string | null;
+}
+
+/** Payload of a new demande, one entry of the submission batch. */
+export interface NouvelleDemandeEchange {
+  creneauId: number;
+  standId: string;
+  cibleId: string;
+  motif: string | null;
+}
+
+/** One hard constraint a simulated échange would newly violate, in business words. */
+export interface ViolationDure {
+  name: string;
+  description: string;
+  matchesSupplementaires: number;
+}
+
+/** `/api/echanges/{id}/impact`: fresh simulation of a demande against the persisted planning. */
+export interface EchangeSimulation {
+  posteDemandeurId: string;
+  posteCibleId: string | null;
+  echangeCroise: boolean;
+  standCibleId: string | null;
+  scoreAvant: string;
+  scoreApres: string;
+  delta: string;
+  casseContrainteDure: boolean;
+  nouvellesViolationsDures: ViolationDure[];
 }

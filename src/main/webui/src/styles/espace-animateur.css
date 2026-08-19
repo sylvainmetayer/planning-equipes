@@ -1,0 +1,288 @@
+/* Foire au planning (issue #165): the standalone login page, the espace
+   animateur layout and the admin "Échanges" screen. Everything Material does
+   not already theme; colours come from the --mat-sys-* tokens. */
+
+/* ---------- Login ---------- */
+
+.login-page {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.login-card {
+  width: min(26rem, 100%);
+}
+
+.login-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 1rem;
+}
+
+.login-echec {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--mat-sys-error);
+  margin: 0 0 0.75rem;
+}
+
+/* ---------- Espace animateur layout ---------- */
+
+/* The admin shell's toolbar classes are component-scoped (admin-shell.css), so
+   the standalone espace toolbar re-declares the few it reuses, globally. */
+.espace-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  gap: 0.5rem;
+  background: #0098d7;
+  color: #fff;
+}
+
+.espace-toolbar .app-logo,
+.login-card .app-logo {
+  height: 2.5rem;
+  width: auto;
+}
+
+.espace-toolbar .app-title {
+  font: var(--mat-sys-title-medium);
+}
+
+.espace-toolbar .app-toolbar-spacer {
+  flex: 1 1 auto;
+}
+
+.espace-page {
+  max-width: 56rem;
+  margin: 0 auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.espace-identite {
+  margin-right: 0.75rem;
+  font-size: 0.95rem;
+}
+
+.espace-nav {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.espace-nav a.espace-nav-active {
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+  border-radius: 999px;
+}
+
+.espace-erreur {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 2rem 1rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.espace-vide {
+  color: var(--mat-sys-on-surface-variant);
+  font-style: italic;
+}
+
+/* ---------- Planning cards ---------- */
+
+.espace-jour mat-card-title {
+  text-transform: capitalize;
+}
+
+.espace-postes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.espace-poste {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.espace-poste-horaire {
+  font-variant-numeric: tabular-nums;
+  color: var(--mat-sys-on-surface-variant);
+  min-width: 7.5rem;
+}
+
+.espace-poste-stand {
+  font-weight: 600;
+}
+
+.espace-poste-equipe,
+.espace-brouillon-cible {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/* ---------- Échange request form ---------- */
+
+.espace-form-champs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.espace-form-champs mat-form-field {
+  flex: 1 1 14rem;
+}
+
+.espace-form-motif {
+  flex: 2 1 18rem;
+}
+
+.espace-brouillons {
+  list-style: none;
+  margin: 0.75rem 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.espace-brouillons li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 0.75rem;
+}
+
+.espace-brouillon-motif {
+  color: var(--mat-sys-on-surface-variant);
+  font-style: italic;
+}
+
+.espace-section-titre {
+  margin: 0.5rem 0 0;
+}
+
+/* ---------- Demande cards & statut chips ---------- */
+
+.espace-demande-entete,
+.echanges-demande-entete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.espace-statut {
+  padding: 0.15rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: var(--mat-sys-surface-variant);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.espace-statut-attente {
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}
+
+.espace-statut-acceptee {
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+}
+
+.espace-statut-refusee {
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+
+.espace-demande-motif {
+  margin: 0.5rem 0 0;
+  font-style: italic;
+}
+
+.espace-demande-alerte {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.75rem;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+
+.espace-demande-alerte p,
+.espace-demande-alerte ul {
+  margin: 0.15rem 0;
+}
+
+.espace-demande-commentaire {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin: 0.5rem 0 0;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/* ---------- Admin Échanges screen ---------- */
+
+.echanges-demande {
+  margin-bottom: 0.75rem;
+}
+
+.echanges-demande-date {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.85rem;
+}
+
+.echanges-impact {
+  margin-top: 0.6rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.75rem;
+  background: var(--mat-sys-surface-variant);
+}
+
+.echanges-impact p,
+.echanges-impact ul {
+  margin: 0.2rem 0;
+}
+
+.echanges-impact-casse {
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+
+.echanges-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+@media (max-width: 640px) {
+  .espace-poste-horaire {
+    min-width: 0;
+  }
+
+  .espace-form-champs {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

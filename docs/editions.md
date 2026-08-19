@@ -187,11 +187,17 @@ Mise en œuvre :
 - le contexte n'est pas lui-même `@RequestScoped` parce qu'il doit servir des
   threads sans requête (worker du solveur) : `EditionContext.executeDans(id, …)`
   lie explicitement une édition au thread courant ;
-- `ReferenceDataRepository` et `PlanningPersistenceService` ajoutent
+- `ReferenceDataRepository`, `PlanningPersistenceService` (ainsi que
+  `PlanSnapshotService` et `DemandeEchangeService`) ajoutent
   `edition_id = ?` à toutes leurs requêtes. Être le point de passage unique de
   tout le SQL rend le changement mécanique et **vérifiable** : une requête sans
   prédicat d'édition s'y voit. La convention est portée par un helper,
-  `prepareScoped`, qui lie l'édition au **premier** paramètre de l'instruction ;
+  `prepareScoped`, qui lie l'édition au **premier** paramètre de l'instruction.
+  Unique exception assumée : `resoudreJetonAnimateur` (issue #165), qui résout
+  un jeton d'espace animateur **globalement** — le jeton arrive sur une URL
+  publique sans en-tête d'édition à croire, et est justement unique toutes
+  éditions confondues pour désigner la sienne ; tout le reste de la requête
+  s'exécute ensuite dans `EditionContext.executeDans(éditionRésolue, …)` ;
 - côté Angular, un `HttpInterceptor` (`core/edition.interceptor.ts`) pose
   l'en-tête depuis `core/edition-courante.ts`, dont la valeur est persistée en
   `localStorage`. C'est un module et non un service : l'intercepteur tourne à

@@ -99,6 +99,9 @@ public final class ConstraintCatalog {
             new ConstraintDefinition("animateurVerrouilleFige", Niveau.HARD, "Verrouillage du planning",
                     "Le planning d'un animateur verrouillé ne bouge plus : ses postes validés sont figés et "
                             + "le solveur ne peut plus lui en attribuer de nouveaux."),
+            new ConstraintDefinition("animateurVerrouilleCreneauFige", Niveau.HARD, "Verrouillage du planning",
+                    "Un échange validé est figé sur son créneau : ce que chacun des deux animateurs y tient "
+                            + "après l'échange ne bouge plus, sans geler le reste de leur planning."),
 
             new ConstraintDefinition("standComplexeAvecReferent", Niveau.MEDIUM, "Qualité d'organisation",
                     "Chaque stand devrait compter au moins un référent sur chaque créneau."),

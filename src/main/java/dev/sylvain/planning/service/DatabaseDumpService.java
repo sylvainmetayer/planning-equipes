@@ -63,6 +63,7 @@ public class DatabaseDumpService {
             "contrainte_ad_hoc",
             "contrainte_animateur",
             "verrouillage_planning",
+            "demande_echange",
             "planning_resolution",
             "parametres_legaux",
             "parametres_decoupage",

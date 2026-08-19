@@ -1,0 +1,120 @@
+<mat-card class="espace-form" appearance="outlined">
+  <mat-card-header>
+    <mat-card-title i18n="@@espace.echanges.formTitre">Proposer un échange</mat-card-title>
+    <mat-card-subtitle i18n="@@espace.echanges.formSousTitre">
+      Choisissez un de vos créneaux, le ou la collègue avec qui échanger, et un motif. Ajoutez
+      autant de demandes que nécessaire puis soumettez la liste : l'organisation valide (ou non)
+      chaque échange.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <div class="espace-form-champs">
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@espace.echanges.creneau">Créneau concerné</mat-label>
+        <mat-select [ngModel]="posteChoisi()" (ngModelChange)="posteChoisi.set($event)">
+          @for (poste of espace.vue()?.postes ?? []; track poste.standId + '-' + poste.creneauId + '-' + poste.heureDebut) {
+            <mat-option [value]="poste">
+              {{ poste.date | date: 'EEE d MMM' }} {{ poste.heureDebut }}–{{ poste.heureFin }} · {{ poste.standNom }}
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@espace.echanges.collegue">Échanger avec</mat-label>
+        <mat-select [ngModel]="cibleId()" (ngModelChange)="cibleId.set($event)">
+          @for (collegue of espace.vue()?.collegues ?? []; track collegue.id) {
+            <mat-option [value]="collegue.id">{{ collegue.nomComplet }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="espace-form-motif">
+        <mat-label i18n="@@espace.echanges.motif">Motif</mat-label>
+        <input matInput [ngModel]="motif()" (ngModelChange)="motif.set($event)"
+               i18n-placeholder="@@espace.echanges.motifPlaceholder" placeholder="Ex. : rendez-vous médical" />
+      </mat-form-field>
+      <button matButton="filled" (click)="ajouter()" [disabled]="!formulaireComplet()">
+        <mat-icon>playlist_add</mat-icon>
+        <span i18n="@@espace.echanges.ajouter">Ajouter à la liste</span>
+      </button>
+    </div>
+
+    @if (brouillons().length > 0) {
+      <ul class="espace-brouillons">
+        @for (brouillon of brouillons(); track $index) {
+          <li>
+            <span>{{ brouillon.creneauLabel }} · {{ brouillon.standNom }}</span>
+            <span class="espace-brouillon-cible">
+              <mat-icon inline>swap_horiz</mat-icon>
+              {{ brouillon.cibleNom }}
+            </span>
+            @if (brouillon.motif) {
+              <span class="espace-brouillon-motif">{{ brouillon.motif }}</span>
+            }
+            <button matIconButton (click)="retirer($index)"
+                    i18n-aria-label="@@espace.echanges.retirer" aria-label="Retirer cette demande">
+              <mat-icon>close</mat-icon>
+            </button>
+          </li>
+        }
+      </ul>
+      <button matButton="filled" class="espace-soumettre" (click)="soumettre()" [disabled]="envoiEnCours()">
+        <mat-icon>send</mat-icon>
+        <span i18n="@@espace.echanges.soumettre">Soumettre mes demandes</span>
+      </button>
+    }
+  </mat-card-content>
+</mat-card>
+
+<h2 class="espace-section-titre" i18n="@@espace.echanges.listeTitre">Mes demandes</h2>
+@if (demandes().length === 0) {
+  <p class="espace-vide" i18n="@@espace.echanges.aucune">Aucune demande pour le moment.</p>
+} @else {
+  @for (demande of demandes(); track demande.id) {
+    <mat-card class="espace-demande" appearance="outlined">
+      <mat-card-content>
+        <div class="espace-demande-entete">
+          <span class="espace-statut espace-statut-{{ demande.statutClasse }}">{{ demande.statutLabel }}</span>
+          <span>{{ demande.date | date: 'EEE d MMM' }} {{ demande.heureDebut }}–{{ demande.heureFin }} · {{ demande.standNom }}</span>
+          <span class="espace-brouillon-cible">
+            <mat-icon inline>swap_horiz</mat-icon>
+            {{ demande.cibleNom }}
+          </span>
+        </div>
+        @if (demande.motif) {
+          <p class="espace-demande-motif">{{ demande.motif }}</p>
+        }
+        @if (demande.prevalidationOk === false && demande.statut === 'PROPOSEE') {
+          <div class="espace-demande-alerte">
+            <mat-icon inline>warning</mat-icon>
+            <div>
+              <p i18n="@@espace.echanges.infaisable">
+                En l'état du planning, cet échange poserait un problème :
+              </p>
+              <ul>
+                @for (contrainte of demande.contraintesViolees; track contrainte) {
+                  <li>{{ contrainte }}</li>
+                }
+              </ul>
+              <p i18n="@@espace.echanges.infaisableSuite">
+                La demande a tout de même été transmise : l'organisation tranchera.
+              </p>
+            </div>
+          </div>
+        }
+        @if (demande.commentaireAdmin) {
+          <p class="espace-demande-commentaire">
+            <mat-icon inline>chat</mat-icon>
+            <span i18n="@@espace.echanges.commentaireAdmin">Commentaire de l'organisation :</span>
+            {{ demande.commentaireAdmin }}
+          </p>
+        }
+        @if (demande.statut === 'PROPOSEE') {
+          <button matButton (click)="annuler(demande)">
+            <mat-icon>undo</mat-icon>
+            <span i18n="@@espace.echanges.annuler">Annuler cette demande</span>
+          </button>
+        }
+      </mat-card-content>
+    </mat-card>
+  }
+}

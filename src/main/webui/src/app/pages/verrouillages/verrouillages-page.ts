@@ -18,7 +18,9 @@ import { ConfirmService } from '../../shared/confirm-dialog';
 import { StatusMessage } from '../../shared/status-message';
 import { WorkInProgressBanner } from '../../shared/work-in-progress-banner';
 
-const TYPE_VALUES: TypeVerrouillage[] = ['ANIMATEUR', 'STAND', 'JOUR', 'CRENEAU'];
+/** Manually creatable types: ANIMATEUR_CRENEAU locks are only ever posed by an accepted échange (issue #165). */
+type TypeVerrouillageManuel = Exclude<TypeVerrouillage, 'ANIMATEUR_CRENEAU'>;
+const TYPE_VALUES: TypeVerrouillageManuel[] = ['ANIMATEUR', 'STAND', 'JOUR', 'CRENEAU'];
 
 /** Called lazily (never at module scope, see `app.ts`'s `buildNavGroups`). */
 function typeLabel(value: TypeVerrouillage): string {
@@ -31,6 +33,8 @@ function typeLabel(value: TypeVerrouillage): string {
       return $localize`:@@verrouillages.type.jour:Journée`;
     case 'CRENEAU':
       return $localize`:@@verrouillages.type.creneau:Créneau`;
+    case 'ANIMATEUR_CRENEAU':
+      return $localize`:@@verrouillages.type.animateurCreneau:Animateur sur un créneau`;
   }
 }
 
@@ -74,7 +78,7 @@ export class VerrouillagesPage {
   /** Locking is disabled while a solve runs: it would not be taken into account by the run in progress. */
   protected readonly editingLocked = computed(() => this.jobs.solverBusy());
 
-  protected readonly type = signal<TypeVerrouillage>('JOUR');
+  protected readonly type = signal<TypeVerrouillageManuel>('JOUR');
   protected readonly animateurId = signal('');
   protected readonly standId = signal('');
   protected readonly creneauId = signal<number | ''>('');
@@ -237,6 +241,15 @@ export class VerrouillagesPage {
       case 'CRENEAU': {
         const creneau = this.store.creneaux().find((candidate) => candidate.id === verrouillage.creneauId);
         return creneau ? `${creneau.date} ${creneau.heureDebut}–${creneau.heureFin}` : String(verrouillage.creneauId ?? '—');
+      }
+      case 'ANIMATEUR_CRENEAU': {
+        const animateur = this.store.animateurs().find((candidate) => candidate.id === verrouillage.animateurId);
+        const creneau = this.store.creneaux().find((candidate) => candidate.id === verrouillage.creneauId);
+        const nomAnimateur = animateur ? `${animateur.prenom} ${animateur.nom}`.trim() : (verrouillage.animateurId ?? '—');
+        const libelleCreneau = creneau
+          ? `${creneau.date} ${creneau.heureDebut}–${creneau.heureFin}`
+          : String(verrouillage.creneauId ?? '—');
+        return `${nomAnimateur} · ${libelleCreneau}`;
       }
     }
   }

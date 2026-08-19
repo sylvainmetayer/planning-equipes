@@ -623,6 +623,11 @@ public class PlanningService {
             item.put("nom", animateur.getNom());
             item.put("dateNaissance", asString(animateur.getDateNaissance()));
             item.put("manager", animateur.isManager());
+            // Contact only — the espace-animateur access token never travels
+            // through a scenario file (regenerated from the database instead).
+            if (animateur.getEmail() != null && !animateur.getEmail().isBlank()) {
+                item.put("email", animateur.getEmail());
+            }
             Map<String, String> competences = new LinkedHashMap<>();
             if (animateur.getCompetences() != null) {
                 animateur.getCompetences()
@@ -1100,6 +1105,7 @@ public class PlanningService {
             boolean manager = Boolean.TRUE.equals(animateurData.get("manager"));
 
             Animateur animateur = new Animateur(id, prenom, nom, dateNaissance, manager);
+            animateur.setEmail((String) animateurData.get("email"));
 
             // Charger les compétences
             Map<String, String> competencesData = (Map<String, String>) animateurData.get("competences");
@@ -1498,6 +1504,96 @@ public class PlanningService {
                 scoreAvant, scoreApres, scoreApres.subtract(scoreAvant), violeesAvant, violeesApres);
     }
 
+    /**
+     * Simulates a demande d'échange (issue #165) on an already-solved planning:
+     * the demandeur's seat on ({@code creneauId}, {@code standId}) goes to
+     * {@code cibleId}, and — when the cible also works that créneau — their own
+     * seat goes to the demandeur (échange croisé). Nothing is persisted; the
+     * substitution lives only for the second {@code analyze} call, exactly like
+     * {@link #simulerSwap}.
+     *
+     * <p>Unlike {@code simulerSwap}'s per-poste view, the verdict here is
+     * planning-wide: a swap can break a hard constraint on a poste it does not
+     * touch (weekly hours, rest periods…), so feasibility is judged on the
+     * global hard score and the extra hard matches, not on the two seats
+     * alone.</p>
+     */
+    public EchangeSimulation simulerEchange(PlanningFestival solved, String demandeurId, String cibleId,
+            long creneauId, String standId) {
+        PosteAffectation posteDemandeur = solved.getPostes().stream()
+                .filter(poste -> poste.getStand() != null && standId.equals(poste.getStand().getId())
+                        && poste.getCreneau() != null && poste.getCreneau().getId() != null
+                        && poste.getCreneau().getId() == creneauId
+                        && poste.getAnimateur() != null && demandeurId.equals(poste.getAnimateur().getId()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Aucun poste de l'animateur " + demandeurId + " sur ce créneau et ce stand"));
+        Animateur demandeur = posteDemandeur.getAnimateur();
+        Animateur cible = trouverAnimateur(solved, cibleId);
+        PosteAffectation posteCible = solved.getPostes().stream()
+                .filter(poste -> poste != posteDemandeur
+                        && poste.getCreneau() != null && poste.getCreneau().getId() != null
+                        && poste.getCreneau().getId() == creneauId
+                        && poste.getAnimateur() != null && cibleId.equals(poste.getAnimateur().getId()))
+                .findFirst()
+                .orElse(null);
+
+        ScoreAnalysis<?> avant = solutionManager.analyze(solved);
+        ScoreAnalysis<?> apres;
+        posteDemandeur.setAnimateur(cible);
+        if (posteCible != null) {
+            posteCible.setAnimateur(demandeur);
+        }
+        try {
+            apres = solutionManager.analyze(solved);
+        } finally {
+            posteDemandeur.setAnimateur(demandeur);
+            if (posteCible != null) {
+                posteCible.setAnimateur(cible);
+            }
+        }
+
+        HardMediumSoftScore scoreAvant = (HardMediumSoftScore) avant.score();
+        HardMediumSoftScore scoreApres = (HardMediumSoftScore) apres.score();
+        return new EchangeSimulation(
+                posteDemandeur.getId(),
+                posteCible == null ? null : posteCible.getId(),
+                posteCible != null,
+                posteCible == null ? null : posteCible.getStand().getId(),
+                scoreAvant, scoreApres, scoreApres.subtract(scoreAvant),
+                scoreApres.hardScore() < scoreAvant.hardScore(),
+                violationsDuresSupplementaires(avant, apres));
+    }
+
+    /**
+     * The hard constraints with strictly more matches after the simulated swap
+     * than before, each carried with its business description from the
+     * {@link ConstraintCatalog} — what the animateur (and the admin) reads,
+     * rather than a technical constraint dump.
+     */
+    private static List<ViolationDure> violationsDuresSupplementaires(ScoreAnalysis<?> avant,
+            ScoreAnalysis<?> apres) {
+        Map<String, Integer> matchesAvant = new HashMap<>();
+        for (ConstraintAnalysis<?> ca : avant.constraintAnalyses()) {
+            matchesAvant.put(ca.constraintRef().constraintName(), ca.matchCount());
+        }
+        List<ViolationDure> violations = new ArrayList<>();
+        for (ConstraintAnalysis<?> ca : apres.constraintAnalyses()) {
+            String name = ca.constraintRef().constraintName();
+            if (!HARD_CONSTRAINT_NAMES.contains(name)) {
+                continue;
+            }
+            int supplement = ca.matchCount() - matchesAvant.getOrDefault(name, 0);
+            if (supplement <= 0) {
+                continue;
+            }
+            ConstraintCatalog.ConstraintDefinition definition = DEFINITIONS_PAR_NOM.get(name);
+            violations.add(new ViolationDure(name,
+                    definition == null ? name : definition.description(), supplement));
+        }
+        return violations;
+    }
+
     /** @return one {@link ContrainteImpact} per constraint that matches (violées) or does not (respectées) for {@code poste}. */
     private static List<ContrainteImpact> impactsPour(ScoreAnalysis<?> analysis, PosteAffectation poste, boolean violees) {
         List<ContrainteImpact> impacts = new ArrayList<>();
@@ -1570,6 +1666,27 @@ public class PlanningService {
     public record SwapSimulation(String posteId, String animateurActuelId, String animateurCandidatId,
             HardMediumSoftScore scoreAvant, HardMediumSoftScore scoreApres, HardMediumSoftScore delta,
             List<ContrainteImpact> contraintesVioleesAvant, List<ContrainteImpact> contraintesVioleesApres) {
+    }
+
+    /**
+     * Result of {@link #simulerEchange}: what a demande d'échange would do to
+     * the persisted planning, without persisting anything.
+     *
+     * @param posteCibleId  the cible's own seat on the same créneau, {@code null}
+     *                      when the cible is free there (simple takeover)
+     * @param echangeCroise true when both seats swap occupants
+     * @param standCibleId  stand of {@code posteCibleId}, {@code null} on takeover
+     * @param casseContrainteDure true when the swap makes the global hard score
+     *                      worse — the prevalidation verdict shown to the animateur
+     */
+    public record EchangeSimulation(String posteDemandeurId, String posteCibleId, boolean echangeCroise,
+            String standCibleId, HardMediumSoftScore scoreAvant, HardMediumSoftScore scoreApres,
+            HardMediumSoftScore delta, boolean casseContrainteDure,
+            List<ViolationDure> nouvellesViolationsDures) {
+    }
+
+    /** One hard constraint the simulated échange would newly violate, in business words. */
+    public record ViolationDure(String name, String description, int matchesSupplementaires) {
     }
 
     /**

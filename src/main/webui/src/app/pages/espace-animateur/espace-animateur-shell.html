@@ -1,0 +1,41 @@
+<mat-toolbar class="app-toolbar espace-toolbar">
+  <img src="logo.png" alt="Planning Équipes" class="app-logo" />
+  <span class="app-title" i18n="@@espace.title">Espace animateur</span>
+  <span class="app-toolbar-spacer"></span>
+  @if (espace.vue(); as vue) {
+    <span class="espace-identite">{{ vue.prenom }} {{ vue.nom }}</span>
+  }
+  <button matButton (click)="toggleLocale()" i18n-aria-label="@@shell.switchLanguage" aria-label="Changer de langue">
+    {{ locale === 'fr' ? 'EN' : 'FR' }}
+  </button>
+</mat-toolbar>
+
+<main class="espace-page">
+  @if (espace.chargement()) {
+    <mat-progress-bar mode="indeterminate" />
+  } @else if (espace.erreur()) {
+    <div class="espace-erreur">
+      <mat-icon>link_off</mat-icon>
+      <p i18n="@@espace.lienInvalide">
+        Ce lien n'est pas (ou plus) valide. Rapprochez-vous de l'organisation pour recevoir un
+        nouveau planning avec votre lien personnel.
+      </p>
+    </div>
+  } @else {
+    <nav class="espace-nav" i18n-aria-label="@@espace.navLabel" aria-label="Espace animateur">
+      <a matButton [routerLink]="['/animateur', jeton()]" routerLinkActive="espace-nav-active"
+         [routerLinkActiveOptions]="{ exact: true }" #rlaPlanning="routerLinkActive"
+         [attr.aria-current]="rlaPlanning.isActive ? 'page' : null">
+        <mat-icon>calendar_month</mat-icon>
+        <span i18n="@@espace.nav.planning">Mon planning</span>
+      </a>
+      <a matButton [routerLink]="['/animateur', jeton(), 'echanges']" routerLinkActive="espace-nav-active"
+         #rlaEchanges="routerLinkActive"
+         [attr.aria-current]="rlaEchanges.isActive ? 'page' : null">
+        <mat-icon>swap_horiz</mat-icon>
+        <span i18n="@@espace.nav.echanges">Mes échanges</span>
+      </a>
+    </nav>
+    <router-outlet />
+  }
+</main>

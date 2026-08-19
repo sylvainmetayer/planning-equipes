@@ -360,10 +360,12 @@ problème (`PlanningService.construireDepuisReferenceData`) à partir des
 verrous enregistrés dans la table `verrouillage_planning`
 (`VerrouillagePlanning`, voir [`api.md`](api.md#verrouillages-du-planning)).
 
-Un verrou porte sur un **animateur**, un **stand**, une **journée** ou un
-**créneau**, et n'appartient qu'à un `GroupeCreneau` : changer de groupe actif,
-c'est changer de planning, donc les verrous des autres groupes restent en base
-mais dormants.
+Un verrou porte sur un **animateur**, un **stand**, une **journée**, un
+**créneau** ou un couple **animateur × créneau** (`ANIMATEUR_CRENEAU`, posé
+automatiquement quand l'admin valide une demande d'échange — voir
+[Demandes d'échange](#demandes-déchange)), et n'appartient qu'à un
+`GroupeCreneau` : changer de groupe actif, c'est changer de planning, donc les
+verrous des autres groupes restent en base mais dormants.
 
 Deux règles encadrent le mécanisme :
 
@@ -380,6 +382,8 @@ places qu'il tient, mais laisserait le solveur lui en attribuer de nouvelles
 ailleurs. C'est la contrainte dure `animateurVerrouilleFige` (voir
 [`contraintes.md`](contraintes.md)) qui l'interdit, à partir des
 `VerrouillagePlanning` transmis comme faits du problème.
+`animateurVerrouilleCreneauFige` applique la même mécanique au verrou
+`ANIMATEUR_CRENEAU`, restreinte à son seul créneau.
 
 `allowsUnassigned = true` (et non l'attribut `nullable`, déprécié et voué à
 disparaître côté Timefold) : une place peut rester vide pendant la recherche et
@@ -388,6 +392,37 @@ exigence dure. Conséquence pratique côté contraintes : `forEach(...)` **exclu
 les postes non pourvus, seul `forEachIncludingUnassigned(...)` les voit — d'où
 son usage dans `posteDoitEtrePourvu`, et l'inutilité d'un test
 `animateur != null` après un `forEach`.
+
+### Demandes d'échange
+
+La « foire au planning » (issue #165) permet à un animateur de proposer un
+échange de créneau depuis son espace en libre-service ; rien n'est appliqué
+sans validation admin explicite.
+
+`DemandeEchange` (table `demande_echange`, partitionnée par édition) porte le
+cycle de vie : demandeur, animateur ciblé, le poste cédé référencé par son
+couple **(créneau, stand)** — les ids de `poste_affectation` sont renumérotés
+à chaque résolution, le couple est ce qui survit — un motif libre, le statut
+(`PROPOSEE` → `ACCEPTEE` / `REFUSEE`, ou `ANNULEE` par le demandeur) et le
+verdict de prévalidation des contraintes dures au moment de la soumission
+(`prevalidationOk` + descriptions métier du catalogue).
+
+Trois briques l'entourent :
+
+- **l'identité** : chaque animateur porte un `jeton_acces` opaque, généré par
+  la base (`DEFAULT gen_random_uuid()`), unique **globalement** pour résoudre
+  à lui seul le couple (édition, animateur). C'est le lien imprimé sur le
+  planning PDF individuel — pas de compte ni d'authentification côté
+  animateur (voir issue #63) ; seule l'action « régénérer » le change ;
+- **la simulation** : `PlanningService.simulerEchange` généralise
+  `simulerSwap` au cas à deux places — échange croisé si la cible tient aussi
+  un poste sur le créneau, reprise simple sinon — et juge la faisabilité sur
+  le **score dur global** (un échange peut casser une contrainte sur un poste
+  qu'il ne touche pas : heures hebdomadaires, repos…) ;
+- **l'application** : accepter met à jour chirurgicalement les places
+  concernées de `poste_affectation` (jamais de re-résolution implicite), puis
+  pose deux verrous `ANIMATEUR_CRENEAU` — la régénération suivante ne défera
+  pas l'échange, sans geler le reste du planning des deux animateurs.
 
 ## Solution globale
 

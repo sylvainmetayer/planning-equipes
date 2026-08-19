@@ -17,5 +17,13 @@ public enum TypeVerrouillage {
     JOUR,
 
     /** Every seat of one single créneau. */
-    CRENEAU
+    CRENEAU,
+
+    /**
+     * What one animateur holds on one single créneau — nothing else of their
+     * planning. Posed when an admin validates a demande d'échange (issue #165):
+     * it freezes each swapped seat and forbids handing that animateur another
+     * seat on that créneau, while leaving the rest of their festival movable.
+     */
+    ANIMATEUR_CRENEAU
 }

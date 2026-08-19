@@ -27,6 +27,7 @@ interface AnimateurDraft {
   nom: string;
   dateNaissance: string;
   manager: boolean;
+  email: string;
   competences: CompetenceRow[];
   souhaits: string[];
   joursIndisponibles: string[];
@@ -122,6 +123,7 @@ export class AnimateurFormDialog {
       nom: draft.nom.trim(),
       dateNaissance: draft.dateNaissance || null,
       manager: draft.manager,
+      email: draft.email.trim() || null,
       competences,
       souhaits: draft.souhaits,
       joursIndisponibles: draft.joursIndisponibles
@@ -187,6 +189,7 @@ function toDraft(animateur: Animateur | null): AnimateurDraft {
       nom: '',
       dateNaissance: '',
       manager: false,
+      email: '',
       competences: [],
       souhaits: [],
       joursIndisponibles: []
@@ -198,6 +201,7 @@ function toDraft(animateur: Animateur | null): AnimateurDraft {
     nom: animateur.nom ?? '',
     dateNaissance: animateur.dateNaissance ?? '',
     manager: animateur.manager ?? false,
+    email: animateur.email ?? '',
     competences: Object.entries(animateur.competences ?? {}).map(([typologie, niveau]) => ({ typologie, niveau })),
     souhaits: [...(animateur.souhaits ?? [])],
     joursIndisponibles: [...(animateur.joursIndisponibles ?? [])]

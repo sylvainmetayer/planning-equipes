@@ -92,13 +92,44 @@ public class PlanningExportService {
     private static final Font TABLE_BODY_FONT = new Font(Font.HELVETICA, 8, Font.NORMAL, HEADLINE);
     private static final Font TABLE_ALERT_FONT = new Font(Font.HELVETICA, 8, Font.BOLD, RED);
 
+    /**
+     * Base URL printed as the espace-animateur link (issue #165); injected
+     * when the service runs in the container, {@code null} in plain unit
+     * tests — the link is simply omitted then.
+     */
+    @org.eclipse.microprofile.config.inject.ConfigProperty(name = "planning.public-url")
+    java.util.Optional<String> publicUrl;
+
     public byte[] exportAnimateurPdf(PlanningFestival planning, String animateurId) {
         List<PosteAffectation> animateurPostes = planning.getPostes().stream()
                 .filter(poste -> poste.getAnimateur() != null && animateurId.equals(poste.getAnimateur().getId()))
                 .sorted(byCreneauThenStand())
                 .toList();
         return buildPdf(resolveAnimateurName(planning, animateurId), animateurPostes,
-                coequipiersParPoste(planning, animateurId));
+                coequipiersParPoste(planning, animateurId), lienEspaceAnimateur(planning, animateurId));
+    }
+
+    /**
+     * The animateur's personal espace URL, {@code null} when no base URL is
+     * configured or the animateur carries no access token. The token IS the
+     * credential of the espace: it only ever leaves through this link, on the
+     * animateur's own PDF.
+     */
+    private String lienEspaceAnimateur(PlanningFestival planning, String animateurId) {
+        if (publicUrl == null || publicUrl.isEmpty() || publicUrl.get().isBlank()
+                || planning.getAnimateurs() == null) {
+            return null;
+        }
+        String base = publicUrl.get().endsWith("/")
+                ? publicUrl.get().substring(0, publicUrl.get().length() - 1)
+                : publicUrl.get();
+        return planning.getAnimateurs().stream()
+                .filter(animateur -> animateurId.equals(animateur.getId()))
+                .map(Animateur::getJetonAcces)
+                .filter(jeton -> jeton != null && !jeton.isBlank())
+                .findFirst()
+                .map(jeton -> base + "/animateur/" + jeton)
+                .orElse(null);
     }
 
     /**
@@ -502,7 +533,7 @@ public class PlanningExportService {
     }
 
     private byte[] buildPdf(String animateurName, List<PosteAffectation> postes,
-            java.util.Map<String, List<String>> coequipiersParPoste) {
+            java.util.Map<String, List<String>> coequipiersParPoste, String lienEspaceAnimateur) {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         Document document = new Document(PageSize.A4, 40, 40, 40, 54);
         PdfWriter writer = PdfWriter.getInstance(document, output);
@@ -521,9 +552,31 @@ public class PlanningExportService {
                 document.add(buildAssignmentCard(poste, coequipiersParPoste.getOrDefault(poste.getId(), List.of())));
             }
         }
+        if (lienEspaceAnimateur != null) {
+            document.add(espaceAnimateurCallout(lienEspaceAnimateur));
+        }
 
         document.close();
         return output.toByteArray();
+    }
+
+    /**
+     * Personal espace link (issue #165), closing the animateur's PDF: click it
+     * on screen, or type the printed URL — it opens their planning and the
+     * échange request form, no account needed.
+     */
+    private static Paragraph espaceAnimateurCallout(String lien) {
+        Paragraph callout = new Paragraph();
+        callout.setSpacingBefore(18f);
+        callout.add(new Chunk("VOTRE ESPACE EN LIGNE\n", CALLOUT_TITLE_FONT));
+        Chunk action = new Chunk(
+                "Consulter mon planning et proposer un échange de créneau", CALLOUT_TEXT_FONT);
+        action.setAnchor(lien);
+        callout.add(action);
+        Chunk url = new Chunk("\n" + lien, FOOTER_FONT);
+        url.setAnchor(lien);
+        callout.add(url);
+        return callout;
     }
 
     private void addHeader(Document document, String animateurName, List<PosteAffectation> postes) {

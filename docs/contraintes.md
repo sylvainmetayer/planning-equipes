@@ -227,6 +227,7 @@ opposable au même titre qu'une règle légale.
 | Contrainte | Description |
 | --- | --- |
 | `animateurVerrouilleFige` | Le planning d'un animateur verrouillé ne bouge plus : le solveur ne peut pas lui attribuer un poste supplémentaire |
+| `animateurVerrouilleCreneauFige` | Un échange validé est figé sur son créneau : ce que chacun des deux animateurs y tient après l'échange ne bouge plus, sans geler le reste de leur planning |
 
 Geler une **journée**, un **stand** ou un **créneau** ne demande aucune
 contrainte : les places couvertes sont épinglées (`@PlanningPin` sur
@@ -238,6 +239,13 @@ Geler un **animateur** demande en plus cette contrainte : l'épinglage fige les
 places qu'il tient déjà, mais laisserait le solveur lui en donner de nouvelles
 ailleurs. Seules les places **non épinglées** sont pénalisées ; pénaliser ses
 places validées mettrait une violation dure permanente dans tous les plannings.
+
+`animateurVerrouilleCreneauFige` est la même mécanique restreinte à **un seul
+créneau** : le verrou `ANIMATEUR_CRENEAU`, posé quand l'admin valide une
+demande d'échange (issue #165), épingle la place que l'animateur tient sur ce
+créneau et interdit de lui en donner une autre au même moment — y compris à
+l'animateur libéré par une reprise simple, qui n'a plus de place à épingler
+mais ne doit pas y être réaffecté par la régénération suivante.
 
 Interaction avec les autres contraintes : une place épinglée est **scorée
 normalement**. Un verrou peut donc laisser une violation visible (par exemple

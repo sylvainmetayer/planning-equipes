@@ -12,6 +12,9 @@
   <button matButton (click)="toggleLocale()" i18n-aria-label="@@shell.switchLanguage" aria-label="Changer de langue">
     {{ locale === 'fr' ? 'EN' : 'FR' }}
   </button>
+  <button matIconButton (click)="logout()" i18n-aria-label="@@shell.logout" aria-label="Se déconnecter">
+    <mat-icon>logout</mat-icon>
+  </button>
 </mat-toolbar>
 
 <mat-sidenav-container class="app-shell">

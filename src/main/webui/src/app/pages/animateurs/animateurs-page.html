@@ -70,6 +70,14 @@
           <button matIconButton i18n-matTooltip="@@common.edit" matTooltip="Modifier" i18n-aria-label="@@common.edit" aria-label="Modifier" [disabled]="editingLocked()" (click)="edit(animateur)">
             <mat-icon>edit</mat-icon>
           </button>
+          <button matIconButton i18n-matTooltip="@@animateurs.copierLien" matTooltip="Copier le lien de son espace animateur" i18n-aria-label="@@animateurs.copierLien" aria-label="Copier le lien de son espace animateur"
+                  [disabled]="!animateur.jetonAcces" (click)="copierLienEspace(animateur)">
+            <mat-icon>link</mat-icon>
+          </button>
+          <button matIconButton i18n-matTooltip="@@animateurs.regenererJeton" matTooltip="Régénérer le lien de son espace" i18n-aria-label="@@animateurs.regenererJeton" aria-label="Régénérer le lien de son espace"
+                  [disabled]="editingLocked()" (click)="regenererJeton(animateur)">
+            <mat-icon>autorenew</mat-icon>
+          </button>
           <button matIconButton i18n-matTooltip="@@common.delete" matTooltip="Supprimer" i18n-aria-label="@@common.delete" aria-label="Supprimer" class="danger-action" [disabled]="editingLocked()"
                   (click)="remove(animateur)">
             <mat-icon>delete</mat-icon>

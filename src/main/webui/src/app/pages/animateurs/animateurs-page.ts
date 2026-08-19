@@ -8,7 +8,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { ApiService } from '../../core/api.service';
 import { Animateur } from '../../core/models';
+import { NotificationService } from '../../core/notification.service';
 import { labelAnimateursPluriel } from '../../core/entity-labels';
 import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
@@ -17,6 +19,7 @@ import { SolverJobService } from '../../core/solver-job.service';
 import { TableSelection } from '../../core/table-selection';
 import { correspondAuFiltre } from '../../core/text-filter';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
+import { ConfirmService } from '../../shared/confirm-dialog';
 import { DetailData, DetailDialog } from '../../shared/detail-dialog';
 import { TableFilter } from '../../shared/table-filter';
 import { AnimateurBulkEditData, AnimateurBulkEditDialog } from './animateur-bulk-edit-dialog';
@@ -101,6 +104,59 @@ export class AnimateursPage {
   private readonly problemes = inject(ProblemesStore);
   private readonly crud = inject(ReferenceCrudService);
   private readonly dialog = inject(MatDialog);
+  private readonly api = inject(ApiService);
+  private readonly notifications = inject(NotificationService);
+  private readonly confirmDialog = inject(ConfirmService);
+
+  /** Copies the animateur's personal espace link (issue #165) — what the PDF prints. */
+  protected async copierLienEspace(animateur: Animateur): Promise<void> {
+    if (!animateur.jetonAcces) {
+      return;
+    }
+    const lien = `${window.location.origin}/animateur/${animateur.jetonAcces}`;
+    try {
+      await navigator.clipboard.writeText(lien);
+      this.notifications.notify({
+        title: $localize`:@@animateurs.lienCopie:Lien de l'espace animateur copié.`,
+        variant: 'success',
+        timeout: 4000
+      });
+    } catch {
+      this.notifications.notify({
+        title: $localize`:@@animateurs.lienCopieEchec:Impossible de copier le lien`,
+        message: lien,
+        variant: 'warning'
+      });
+    }
+  }
+
+  /** Rotates the espace access token: the link on already-distributed PDFs stops working. */
+  protected async regenererJeton(animateur: Animateur): Promise<void> {
+    const confirmed = await this.confirmDialog.ask({
+      title: $localize`:@@animateurs.regenererJetonTitre:Régénérer le lien de ${animateur.prenom}:prenom: ${animateur.nom}:nom: ?`,
+      message: $localize`:@@animateurs.regenererJetonMessage:L'ancien lien (déjà imprimé sur ses plannings PDF) cessera de fonctionner immédiatement.`,
+      confirmLabel: $localize`:@@animateurs.regenererJetonConfirm:Régénérer`,
+      danger: true
+    });
+    if (!confirmed) {
+      return;
+    }
+    try {
+      await this.api.post(`/api/animateurs/${animateur.id}/jeton`, null);
+      await this.store.reload();
+      this.notifications.notify({
+        title: $localize`:@@animateurs.jetonRegenere:Nouveau lien généré.`,
+        variant: 'success',
+        timeout: 4000
+      });
+    } catch (error) {
+      this.notifications.notify({
+        title: $localize`:@@crud.error:Erreur`,
+        message: error instanceof Error ? error.message : String(error),
+        variant: 'error'
+      });
+    }
+  }
 
   /**
    * Animateur id → the tooltip explaining that one of their unavailability days

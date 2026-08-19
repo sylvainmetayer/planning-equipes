@@ -61,6 +61,44 @@ class VerrouillageConstraintsTest extends ConstraintTestBase {
                 .penalizesBy(0);
     }
 
+    private static VerrouillagePlanning verrouAnimateurCreneau(String id, Animateur animateur, Creneau creneau) {
+        VerrouillagePlanning verrouillage = new VerrouillagePlanning(id, TypeVerrouillage.ANIMATEUR_CRENEAU);
+        verrouillage.setAnimateurId(animateur.getId());
+        verrouillage.setCreneauId(creneau.getId());
+        return verrouillage;
+    }
+
+    @Test
+    void nouveauPosteSurLeCreneauVerrouilleEstPenalise() {
+        Animateur a1 = majeurReferent("A1");
+        verify("animateurVerrouilleCreneauFige")
+                .given(a1,
+                        poste(standStrat, creneauMatin, a1),
+                        verrouAnimateurCreneau("V1", a1, creneauMatin))
+                .penalizesBy(1);
+    }
+
+    @Test
+    void posteFigeParLEchangeValideNEstPasPenalise() {
+        Animateur a1 = majeurReferent("A1");
+        verify("animateurVerrouilleCreneauFige")
+                .given(a1,
+                        posteVerrouille(standStrat, creneauMatin, a1),
+                        verrouAnimateurCreneau("V1", a1, creneauMatin))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void lesAutresCreneauxDeLAnimateurRestentLibres() {
+        Animateur a1 = majeurReferent("A1");
+        verify("animateurVerrouilleCreneauFige")
+                .given(a1,
+                        posteVerrouille(standStrat, creneauMatin, a1),
+                        poste(standStrat, creneauAprem, a1),
+                        verrouAnimateurCreneau("V1", a1, creneauMatin))
+                .penalizesBy(0);
+    }
+
     @Test
     void unVerrouillageJourNeContraintPersonneParLuiMeme() {
         Animateur a1 = majeurReferent("A1");

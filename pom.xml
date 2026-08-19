@@ -87,6 +87,22 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-smallrye-openapi</artifactId>
         </dependency>
+        <!-- Échange notifications (issue #165): a mail to the admin when
+             demandes are submitted, a mail to the animateur when one is
+             decided. Mocked in dev/test unless an SMTP host is configured
+             (docker-compose ships Mailpit for local testing). -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-mailer</artifactId>
+        </dependency>
+        <!-- Admin authentication (issue #165): single admin account defined in
+             configuration (embedded users), form login with an encrypted
+             session cookie. Replaced by OIDC later without touching the
+             HTTP permission layout. -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-elytron-security-properties-file</artifactId>
+        </dependency>
         <dependency>
             <groupId>ai.timefold.solver</groupId>
             <artifactId>timefold-solver-core</artifactId>

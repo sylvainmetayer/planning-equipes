@@ -51,8 +51,9 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 
 ### Premiers pas dans l'application
 
-1. Ouvrir <http://localhost:8080> — la page **Solver** s'affiche ; le menu
-   latéral donne accès à chaque écran.
+1. Ouvrir <http://localhost:8080> et se connecter (compte `admin`, mot de passe
+   `admin` par défaut en local — variable `ADMIN_PASSWORD`) — la page
+   **Solver** s'affiche ; le menu latéral donne accès à chaque écran.
 2. Cliquer sur **Generate sample planning** pour charger le jeu de données
    d'exemple (les référentiels sont ensuite modifiables depuis **Stands**,
    **Animateurs**, **Créneaux**, **Typologies** et **Ad hoc constraints**).
@@ -80,6 +81,13 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 | `PLANNING_MCP_API_KEY` | *(vide = MCP inutilisable)* | Clé API attendue pour authentifier le serveur MCP |
 | `PLANNING_MCP_API_KEY_HEADER` | `X-MCP-Api-Key` | En-tête HTTP portant la clé (ou `Authorization: Bearer <clé>`) |
 | `PLANNING_MCP_REQUIRED_HEADERS` | *(vide)* | En-têtes supplémentaires exigés en plus de la clé, `Nom=valeur` séparés par des virgules (déploiement derrière un proxy type Pangolin) |
+| `ADMIN_PASSWORD` | `admin` | Mot de passe du compte administrateur `admin` (à changer hors local) |
+| `SESSION_ENCRYPTION_KEY` | *(vide = clé générée au démarrage)* | Clé (≥ 16 caractères) de chiffrement du cookie de session admin ; la définir pour que les sessions survivent aux redémarrages |
+| `MAIL_HOST` / `MAIL_PORT` | `localhost` / `1025` | Serveur SMTP des notifications d'échange (Mailpit en local) |
+| `MAIL_MOCK` | `true` (`false` en prod) | `true` : les mails sont journalisés au lieu d'être envoyés |
+| `MAIL_FROM` | `planning-equipes@localhost` | Adresse expéditrice |
+| `MAIL_ADMIN` | *(vide = désactivé)* | Adresse prévenue quand des demandes d'échange sont soumises |
+| `PUBLIC_URL` | `http://localhost:8080` | URL publique de l'application, imprimée comme lien « espace animateur » sur les PDF |
 
 Détails et mise en place : [`docs/observabilite.md`](docs/observabilite.md) (Sentry/PostHog),
 [`docs/mcp.md`](docs/mcp.md) (serveur MCP).
@@ -394,6 +402,33 @@ les laisse en sommeil sans les perdre.
 
 Comme les contraintes ad hoc, cette page est rangée dans la section « En cours
 de développement » de la navigation et affiche un bandeau d'avertissement.
+
+### Foire au planning : échanges de créneaux en libre-service
+
+Chaque animateur dispose d'un **espace personnel** accessible par un lien
+imprimé sur son planning PDF — aucun compte à créer. Il y consulte son
+planning à jour (avec ses coéquipiers), et peut y proposer d'**échanger un de
+ses créneaux** avec un collègue : il constitue sa liste de demandes (créneau,
+collègue, motif) puis la soumet en une fois.
+
+Chaque demande est **prévalidée** contre les règles dures du planning : si
+l'échange poserait un problème (temps de travail dépassé, repos insuffisant…),
+l'animateur en est informé en langage métier — la demande part quand même,
+l'organisation tranche.
+
+Côté organisation, l'écran **Échanges** liste les demandes en attente avec
+leur impact mesuré sur le planning actuel (échange croisé ou simple reprise,
+effet sur le score, règles impactées). **Accepter** applique l'échange
+immédiatement, exactement comme simulé, et le **verrouille** sur son créneau :
+une régénération ultérieure du planning ne le défera pas. **Refuser** ne
+modifie rien ; dans les deux cas l'animateur est prévenu par e-mail (si son
+adresse est renseignée sur sa fiche), avec le commentaire éventuel de
+l'organisation. Aucun échange n'est jamais appliqué sans cette validation
+explicite.
+
+L'accès à l'application d'administration est désormais protégé par un compte
+administrateur ; seuls les espaces animateurs restent accessibles par leur
+lien personnel.
 
 ### Consultation du planning
 

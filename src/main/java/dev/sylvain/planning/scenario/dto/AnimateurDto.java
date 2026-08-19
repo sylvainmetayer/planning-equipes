@@ -1,6 +1,7 @@
 package dev.sylvain.planning.scenario.dto;
 
 import dev.sylvain.planning.domain.NiveauCompetence;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
@@ -13,6 +14,7 @@ public record AnimateurDto(
         @NotBlank String nom,
         @NotNull LocalDate dateNaissance,
         Boolean manager,
+        @Email String email,
         @NotNull Map<String, NiveauCompetence> competences,
         List<LocalDate> joursIndisponibles,
         List<String> souhaits) {

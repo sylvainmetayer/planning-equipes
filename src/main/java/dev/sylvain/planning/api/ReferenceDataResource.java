@@ -240,6 +240,27 @@ public class ReferenceDataResource {
         return Response.noContent().build();
     }
 
+    /**
+     * Rotates the animateur's espace access token (issue #165): the link
+     * printed on an already-distributed PDF stops working, the fiche shows the
+     * new one. Regeneration is the only way a token ever changes.
+     */
+    @POST
+    @Path("/animateurs/{id}/jeton")
+    public Response regenererJetonAnimateur(@PathParam("id") String id) {
+        try {
+            return Response.ok(new JetonAnimateur(referenceDataService.regenererJetonAnimateur(id))).build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(new ErreurValidation(e.getMessage()))
+                    .build();
+        }
+    }
+
+    /** Body of a token regeneration: the new token, nothing else. */
+    public record JetonAnimateur(String jeton) {
+    }
+
     @GET
     @Path("/typologies")
     public List<TypologieItem> listTypologies() {

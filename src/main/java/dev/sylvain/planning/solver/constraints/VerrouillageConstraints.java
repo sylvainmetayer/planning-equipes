@@ -22,7 +22,8 @@ public final class VerrouillageConstraints {
 
     public Constraint[] define(ConstraintFactory constraintFactory) {
         return new Constraint[] {
-                animateurVerrouilleFige(constraintFactory)
+                animateurVerrouilleFige(constraintFactory),
+                animateurVerrouilleCreneauFige(constraintFactory)
         };
     }
 
@@ -47,5 +48,30 @@ public final class VerrouillageConstraints {
                 .filter((verrouillage, poste) -> !poste.isVerrouille())
                 .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint("animateurVerrouilleFige");
+    }
+
+    /**
+     * Same mechanism as {@link #animateurVerrouilleFige}, narrowed to one
+     * créneau: an {@code ANIMATEUR_CRENEAU} lock (posed when a demande
+     * d'échange is validated, issue #165) freezes what that animateur holds on
+     * that créneau — the swapped seat itself is pinned — and forbids the solver
+     * to hand them another, unpinned seat there. The animateur freed by a
+     * one-way takeover is kept free the same way: nothing of theirs is pinned
+     * on the créneau, so any new seat there is a violation.
+     */
+    private Constraint animateurVerrouilleCreneauFige(ConstraintFactory constraintFactory) {
+        return ConstraintToggleSupport
+                .actif(constraintFactory.forEach(VerrouillagePlanning.class), "animateurVerrouilleCreneauFige")
+                .filter(verrouillage -> verrouillage.getType() == TypeVerrouillage.ANIMATEUR_CRENEAU
+                        && verrouillage.getAnimateurId() != null
+                        && verrouillage.getCreneauId() != null)
+                .join(PosteAffectation.class,
+                        Joiners.equal(VerrouillagePlanning::getAnimateurId,
+                                poste -> poste.getAnimateur().getId()),
+                        Joiners.equal(VerrouillagePlanning::getCreneauId,
+                                poste -> poste.getCreneau().getId()))
+                .filter((verrouillage, poste) -> !poste.isVerrouille())
+                .penalize(HardMediumSoftScore.ONE_HARD)
+                .asConstraint("animateurVerrouilleCreneauFige");
     }
 }

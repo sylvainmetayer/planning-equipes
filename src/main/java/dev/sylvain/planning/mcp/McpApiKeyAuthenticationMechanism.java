@@ -101,6 +101,21 @@ public class McpApiKeyAuthenticationMechanism implements HttpAuthenticationMecha
         return Uni.createFrom().item(new ChallengeData(401));
     }
 
+    /**
+     * Above the form mechanism (priority 1000, see
+     * {@code quarkus.http.auth.form.*}, issue #165), so the challenge served
+     * to an unauthenticated request is this plain 401 everywhere — an API/SPA
+     * client must never be answered with form auth's 302 to an HTML login
+     * page, whether it targets {@code /mcp} or {@code /api}. Authentication
+     * itself is unaffected: this mechanism ignores any request outside
+     * {@code /mcp} (see {@link #authenticate}), and the form mechanism keeps
+     * handling its cookie and {@code /j_security_check}.
+     */
+    @Override
+    public int getPriority() {
+        return 2000;
+    }
+
     @Override
     public Set<Class<? extends AuthenticationRequest>> getCredentialTypes() {
         return Set.of(TrustedAuthenticationRequest.class);

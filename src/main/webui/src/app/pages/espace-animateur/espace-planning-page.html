@@ -1,0 +1,29 @@
+@if (jours().length === 0) {
+  <p class="espace-vide" i18n="@@espace.planning.vide">
+    Aucune affectation pour le moment : le planning n'a pas encore été publié.
+  </p>
+} @else {
+  @for (jour of jours(); track jour.date) {
+    <mat-card class="espace-jour" appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>{{ jour.date ? (jour.date | date: 'EEEE d MMMM') : '—' }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <ul class="espace-postes">
+          @for (poste of jour.postes; track poste.standId + '-' + poste.creneauId + '-' + poste.heureDebut) {
+            <li class="espace-poste">
+              <span class="espace-poste-horaire">{{ poste.heureDebut }}–{{ poste.heureFin }}</span>
+              <span class="espace-poste-stand">{{ poste.standNom }}</span>
+              @if (poste.coequipiers.length > 0) {
+                <span class="espace-poste-equipe">
+                  <mat-icon inline>group</mat-icon>
+                  {{ poste.coequipiers.join(', ') }}
+                </span>
+              }
+            </li>
+          }
+        </ul>
+      </mat-card-content>
+    </mat-card>
+  }
+}

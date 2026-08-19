@@ -768,12 +768,48 @@ public class ReferenceDataService {
                 verrouillage.setStandId(null);
                 verrouillage.setCreneauId(null);
             }
+            case ANIMATEUR_CRENEAU -> {
+                String animateurId = requiredId(verrouillage.getAnimateurId(), "animateur id");
+                if (!repository.animateurExists(animateurId)) {
+                    throw new IllegalArgumentException("Animateur inconnu : " + animateurId);
+                }
+                Long creneauId = verrouillage.getCreneauId();
+                if (creneauId == null) {
+                    throw new IllegalArgumentException("Missing créneau id");
+                }
+                if (!repository.creneauExists(creneauId)) {
+                    throw new IllegalArgumentException("Créneau inconnu : " + creneauId);
+                }
+                verrouillage.setStandId(null);
+                verrouillage.setJour(null);
+            }
         }
     }
 
     public void deleteVerrouillage(String id) {
         repository.deleteVerrouillage(id);
         markModified();
+    }
+
+    /* ----------------------- Espace animateur (jeton) ----------------------- */
+
+    /** See {@link ReferenceDataRepository#resoudreJetonAnimateur}. */
+    public ReferenceDataRepository.ProprietaireJeton resoudreJetonAnimateur(String jeton) {
+        return repository == null ? null : repository.resoudreJetonAnimateur(jeton);
+    }
+
+    /**
+     * Rotates an animateur's espace access token. Not a {@code markModified()}
+     * event: the token changes nothing the solver reads.
+     *
+     * @throws IllegalArgumentException when the animateur is unknown
+     */
+    public String regenererJetonAnimateur(String id) {
+        String jeton = repository == null ? null : repository.regenererJetonAnimateur(id);
+        if (jeton == null) {
+            throw new IllegalArgumentException("Animateur inconnu : " + id);
+        }
+        return jeton;
     }
 
     /**

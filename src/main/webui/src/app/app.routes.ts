@@ -1,7 +1,12 @@
 import { Routes } from '@angular/router';
 
-/** One route per functional block; every page is lazy-loaded. */
-export const routes: Routes = [
+/**
+ * One route per functional block; every page is lazy-loaded. Admin pages live
+ * under the admin shell (toolbar + drawer, behind the admin session); /login
+ * and the espace animateur (issue #165) render standalone, without any admin
+ * chrome or polling.
+ */
+const adminRoutes: Routes = [
   {
     path: '',
     title: 'Solver — Planning Équipes',
@@ -26,6 +31,11 @@ export const routes: Routes = [
     path: 'problemes',
     title: 'Problems — Planning Équipes',
     loadComponent: () => import('./pages/problemes/problemes-page').then((m) => m.ProblemesPage)
+  },
+  {
+    path: 'echanges',
+    title: 'Échanges — Planning Équipes',
+    loadComponent: () => import('./pages/echanges/echanges-page').then((m) => m.EchangesPage)
   },
   {
     path: 'data-setup',
@@ -138,4 +148,36 @@ export const routes: Routes = [
       import('./pages/animateur-timeline/animateur-timeline-page').then((m) => m.AnimateurTimelinePage)
   },
   { path: '**', redirectTo: '' }
+];
+
+export const routes: Routes = [
+  {
+    path: 'login',
+    title: 'Connexion — Planning Équipes',
+    loadComponent: () => import('./pages/login/login-page').then((m) => m.LoginPage)
+  },
+  {
+    path: 'animateur/:jeton',
+    loadComponent: () =>
+      import('./pages/espace-animateur/espace-animateur-shell').then((m) => m.EspaceAnimateurShell),
+    children: [
+      {
+        path: '',
+        title: 'Mon planning — Planning Équipes',
+        loadComponent: () =>
+          import('./pages/espace-animateur/espace-planning-page').then((m) => m.EspacePlanningPage)
+      },
+      {
+        path: 'echanges',
+        title: 'Mes échanges — Planning Équipes',
+        loadComponent: () =>
+          import('./pages/espace-animateur/espace-echanges-page').then((m) => m.EspaceEchangesPage)
+      }
+    ]
+  },
+  {
+    path: '',
+    loadComponent: () => import('./shell/admin-shell').then((m) => m.AdminShell),
+    children: adminRoutes
+  }
 ];

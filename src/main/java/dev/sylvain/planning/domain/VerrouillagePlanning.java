@@ -72,6 +72,11 @@ public class VerrouillagePlanning {
             case CRENEAU -> creneauId != null
                     && poste.getCreneau() != null
                     && creneauId.equals(poste.getCreneau().getId());
+            case ANIMATEUR_CRENEAU -> animateurId != null && creneauId != null
+                    && poste.getAnimateur() != null
+                    && poste.getCreneau() != null
+                    && animateurId.equals(poste.getAnimateur().getId())
+                    && creneauId.equals(poste.getCreneau().getId());
         };
     }
 

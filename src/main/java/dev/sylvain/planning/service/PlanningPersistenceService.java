@@ -90,7 +90,8 @@ public class PlanningPersistenceService {
     }
 
     /** Child-first order, so no {@code ON DELETE} cascade has to be relied on. */
-    private static final List<String> TABLES_A_VIDER = List.of("poste_affectation", "planning_resolution",
+    private static final List<String> TABLES_A_VIDER = List.of("poste_affectation", "demande_echange",
+            "planning_resolution",
             "contrainte_animateur", "contrainte_ad_hoc", "verrouillage_planning", "stand_typologie",
             "animateur_competence", "animateur_jour_indispo", "animateur_souhait", "stand_indisponibilite",
             "stand_ouverture", "creneau_stand_ouvert", "stand", "creneau", "animateur", "groupe_creneau");
@@ -340,6 +341,51 @@ public class PlanningPersistenceService {
             ps.executeBatch();
         }
         return count;
+    }
+
+    /**
+     * Applies an accepted demande d'échange (issue #165) to the persisted
+     * planning: the demandeur's seat on (créneau, stand) goes to the cible,
+     * and — échange croisé — the cible's own seat on the same créneau goes to
+     * the demandeur. Surgical {@code UPDATE}s in one transaction, so the rest
+     * of the plan (and the seat ids) stay exactly as persisted. An animateur
+     * holds at most one seat per stand × créneau (hard overlap constraint), so
+     * matching on {@code animateur_id} designates a single row.
+     *
+     * @param standCibleId {@code null} for a simple takeover (the cible was
+     *                     free on the créneau)
+     */
+    public void appliquerEchange(long creneauId, String standDemandeurId, String demandeurId,
+            String cibleId, String standCibleId) {
+        inTransaction(connection -> {
+            int updated = reaffecterSiege(connection, creneauId, standDemandeurId, demandeurId, cibleId);
+            if (updated == 0) {
+                throw new SQLException("Aucun poste de " + demandeurId + " sur ce créneau et ce stand");
+            }
+            if (standCibleId != null) {
+                int updatedCible = reaffecterSiege(connection, creneauId, standCibleId, cibleId, demandeurId);
+                if (updatedCible == 0) {
+                    throw new SQLException("Aucun poste de " + cibleId + " sur ce créneau et ce stand");
+                }
+            }
+            return updated;
+        }, "Failed to apply the échange to the persisted planning");
+    }
+
+    private int reaffecterSiege(Connection connection, long creneauId, String standId,
+            String occupantActuelId, String nouvelOccupantId) throws SQLException {
+        // Not prepareScoped: the SET clause claims placeholder 1, so the
+        // edition_id predicate is bound explicitly here.
+        try (PreparedStatement ps = connection.prepareStatement(
+                "UPDATE poste_affectation SET animateur_id = ? "
+                        + "WHERE edition_id = ? AND creneau_id = ? AND stand_id = ? AND animateur_id = ?")) {
+            ps.setString(1, nouvelOccupantId);
+            ps.setString(2, editionId());
+            ps.setLong(3, creneauId);
+            ps.setString(4, standId);
+            ps.setString(5, occupantActuelId);
+            return ps.executeUpdate();
+        }
     }
 
     /**

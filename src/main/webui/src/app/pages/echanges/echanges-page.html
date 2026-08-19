@@ -1,0 +1,109 @@
+<div class="page-header">
+  <h1 i18n="@@echanges.titre">Échanges de créneaux</h1>
+  <p i18n="@@echanges.intro">
+    Les demandes d'échange soumises par les animateurs depuis leur espace. Accepter applique
+    l'échange immédiatement au planning enregistré et le verrouille sur son créneau ; refuser ne
+    modifie rien. La régénération du planning reste une action à part, depuis la page Solveur.
+  </p>
+  <button matButton (click)="reload()" [disabled]="chargement()">
+    <mat-icon>refresh</mat-icon>
+    <span i18n="@@echanges.recharger">Recharger</span>
+  </button>
+</div>
+
+@if (chargement()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<h2 i18n="@@echanges.enAttenteTitre">En attente</h2>
+@if (enAttente().length === 0) {
+  <p class="espace-vide" i18n="@@echanges.aucuneEnAttente">Aucune demande en attente.</p>
+}
+@for (demande of enAttente(); track demande.id) {
+  <mat-card class="echanges-demande" appearance="outlined">
+    <mat-card-content>
+      <div class="echanges-demande-entete">
+        <span class="espace-statut espace-statut-{{ demande.statutClasse }}">{{ demande.statutLabel }}</span>
+        <strong>{{ demande.demandeurNom }}</strong>
+        <mat-icon inline>swap_horiz</mat-icon>
+        <strong>{{ demande.cibleNom }}</strong>
+        <span>{{ demande.date | date: 'EEE d MMM' }} {{ demande.heureDebut }}–{{ demande.heureFin }} · {{ demande.standNom }}</span>
+        <span class="echanges-demande-date" i18n="@@echanges.soumiseLe">soumise le {{ demande.creeLe | date: 'short' }}</span>
+      </div>
+      @if (demande.motif) {
+        <p class="espace-demande-motif">{{ demande.motif }}</p>
+      }
+      @if (demande.prevalidationOk === false) {
+        <p class="espace-demande-alerte">
+          <mat-icon inline>warning</mat-icon>
+          <span i18n="@@echanges.infaisableALaSoumission">Signalée infaisable à la soumission — vérifier l'impact ci-dessous.</span>
+        </p>
+      }
+
+      @if (impactDe(demande); as impact) {
+        <div class="echanges-impact" [class.echanges-impact-casse]="impact.casseContrainteDure">
+          <p>
+            @if (impact.echangeCroise) {
+              <span i18n="@@echanges.impactCroise">Échange croisé : les deux animateurs permutent leurs postes sur ce créneau.</span>
+            } @else {
+              <span i18n="@@echanges.impactReprise">Reprise simple : le ou la collègue est libre sur ce créneau et reprend le poste.</span>
+            }
+          </p>
+          <p>
+            <span i18n="@@echanges.impactScore">Impact sur le score :</span>
+            <code>{{ impact.delta }}</code>
+          </p>
+          @if (impact.nouvellesViolationsDures.length > 0) {
+            <ul>
+              @for (violation of impact.nouvellesViolationsDures; track violation.name) {
+                <li>{{ violation.description }}</li>
+              }
+            </ul>
+          } @else {
+            <p i18n="@@echanges.impactSansViolation">Aucune contrainte dure supplémentaire violée.</p>
+          }
+        </div>
+      } @else {
+        <button matButton (click)="chargerImpact(demande)" [disabled]="impactEnCours() === demande.id">
+          <mat-icon>science</mat-icon>
+          <span i18n="@@echanges.voirImpact">Voir l'impact sur le planning</span>
+        </button>
+      }
+
+      <div class="echanges-actions">
+        <button matButton="filled" (click)="accepter(demande)" [disabled]="decisionEnCours() === demande.id">
+          <mat-icon>check</mat-icon>
+          <span i18n="@@echanges.accepter">Accepter</span>
+        </button>
+        <button matButton (click)="refuser(demande)" [disabled]="decisionEnCours() === demande.id">
+          <mat-icon>close</mat-icon>
+          <span i18n="@@echanges.refuser">Refuser</span>
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+}
+
+<h2 i18n="@@echanges.decideesTitre">Décidées</h2>
+@if (decidees().length === 0) {
+  <p class="espace-vide" i18n="@@echanges.aucuneDecidee">Aucune demande décidée pour le moment.</p>
+}
+@for (demande of decidees(); track demande.id) {
+  <mat-card class="echanges-demande echanges-demande-decidee" appearance="outlined">
+    <mat-card-content>
+      <div class="echanges-demande-entete">
+        <span class="espace-statut espace-statut-{{ demande.statutClasse }}">{{ demande.statutLabel }}</span>
+        <strong>{{ demande.demandeurNom }}</strong>
+        <mat-icon inline>swap_horiz</mat-icon>
+        <strong>{{ demande.cibleNom }}</strong>
+        <span>{{ demande.date | date: 'EEE d MMM' }} {{ demande.heureDebut }}–{{ demande.heureFin }} · {{ demande.standNom }}</span>
+        @if (demande.decideLe) {
+          <span class="echanges-demande-date" i18n="@@echanges.decideeLe">décidée le {{ demande.decideLe | date: 'short' }}</span>
+        }
+      </div>
+      @if (demande.commentaireAdmin) {
+        <p class="espace-demande-commentaire">{{ demande.commentaireAdmin }}</p>
+      }
+    </mat-card-content>
+  </mat-card>
+}

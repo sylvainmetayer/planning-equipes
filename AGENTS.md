@@ -91,7 +91,8 @@ Single Quarkus service, no separate solver microservice. Package root:
 
 - `domain/` — Timefold model: `Animateur`, `Stand`, `Creneau`, `PosteAffectation`
   (planning entity, **one instance per seat to fill**, not one per stand×slot),
-  `ContrainteAdHoc`, `PlanningFestival` (`@PlanningSolution`,
+  `ContrainteAdHoc`, `VerrouillagePlanning`, `DemandeEchange` (self-service
+  swap proposals, issue #165), `PlanningFestival` (`@PlanningSolution`,
   `HardMediumSoftScore`).
 - `solver/PlanningConstraintProvider.java` — aggregates constraints; the actual
   rules live in `solver/constraints/` split by family (`AffectationConstraints`,
@@ -104,10 +105,21 @@ Single Quarkus service, no separate solver microservice. Package root:
   loads `scenario.yml` via SnakeYAML), `SolverJobService` (async solve/analyze),
   `ConstraintAnalysisStore`, `ReferenceDataService` / `ReferenceDataRepository`,
   `PlanningPersistenceService`, `DatabaseDumpService`,
-  `PlanningExportService` (PDF/ICS, server-side only).
+  `PlanningExportService` (PDF/ICS, server-side only),
+  `DemandeEchangeService` / `EspaceAnimateurService` / `MailService` (foire au
+  planning, issue #165).
 - `api/` — JAX-RS resources: `PlanningResource`, `SolverJobResource`,
   `ReferenceDataResource`, `EditionResource`, `ConstraintResource`,
-  `DatabaseResource`, `PlanningExportResource`. Endpoint list in `docs/api.md`.
+  `DatabaseResource`, `PlanningExportResource`, `EspaceAnimateurResource`
+  (token-authenticated, the only public part of the API), `DemandeEchangeResource`,
+  `AuthResource`. Endpoint list in `docs/api.md`.
+- HTTP security (issue #165): everything under `/api` requires the admin form
+  login (single `admin` account from config) **except**
+  `/api/espace-animateur/*` (its URL token is the credential and resolves the
+  edition by itself), `/api/auth/*` and `/api/config`; `/mcp` keeps its own
+  API-key mechanism. The `%test` profile opens the API (`permit`) so
+  functional tests skip the session; `AuthentificationAdminTest` restores and
+  covers the real policy.
 - `mcp/` — MCP tools (`@Tool`) exposing the same capabilities to an AI
   assistant, delegating to the services above. One hard rule: animateur
   nom/prénom/dateNaissance never leave over MCP (issue #107) — return
@@ -142,14 +154,19 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `--mat-sys-*` tokens in custom CSS instead of hard-coded colours. The app has
   no `@angular/animations` dependency: Material components animate through CSS,
   so don't add `provideAnimations*()` back.
-- Shell: `app/app.ts` renders a `mat-toolbar` + `mat-sidenav` with the navigation
-  grouped in Planning / Reference data / Views, and the solver `app-job-monitor`
-  in the toolbar.
-- **One route = one page = one block.** Routes: `/` (default, the solver page),
+- Shell: `app/app.ts` is a bare `<router-outlet/>`; the admin chrome
+  (`mat-toolbar` + `mat-sidenav`, navigation grouped in Planning / Reference
+  data / Views, the solver `app-job-monitor`, the logout button) lives in
+  `app/shell/admin-shell.ts`, a layout route wrapping every admin page. The
+  standalone routes `/login` and `/animateur/:jeton` (espace animateur, issue
+  #165) render outside it — no admin navigation, no polling.
+- **One route = one page = one block.** Admin routes (children of the shell):
+  `/` (default, the solver page),
   `/debug`, `/notifications`, `/data-setup`, `/stands`, `/emplacements`,
   `/animateurs`, `/creneaux`, `/decoupage`, `/typologies`,
   `/ad-hoc-constraints`, `/calendar`, `/day-calendar`, `/constraints`,
-  `/problemes`, `/hours`, `/staffing`, `/aide` (`/solver`, `/exports` and
+  `/problemes`, `/echanges`, `/hours`, `/staffing`, `/aide` (`/solver`,
+  `/exports` and
   `/data-transfer` are legacy redirects, kept for old bookmarks/links).
   Adding a functional block means adding a route and a `app/pages/<block>/`
   folder, never a new section inside an existing page.

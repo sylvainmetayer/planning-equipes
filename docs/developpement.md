@@ -465,6 +465,29 @@ contraintes. Détail des mesures dans
 | `DB_USER` | `festival` | Utilisateur base |
 | `DB_PASSWORD` | `festival` | Mot de passe base |
 | `HTTP_PORT` | `8080` | Port HTTP exposé |
+| `ADMIN_PASSWORD` | `admin` | Mot de passe du compte `admin` (form login, issue #165) |
+| `SESSION_ENCRYPTION_KEY` | *(vide)* | Clé (≥ 16 caractères) du cookie de session ; générée au démarrage si absente (les sessions ne survivent alors pas à un redémarrage) |
+| `MAIL_HOST` / `MAIL_PORT` / `MAIL_FROM` / `MAIL_MOCK` / `MAIL_ADMIN` | voir `application.properties` | Notifications d'échange par mail |
+| `PUBLIC_URL` | `http://localhost:8080` | Base des liens « espace animateur » imprimés sur les PDF |
+
+### Authentification admin en développement
+
+Toute l'API `/api/*` est derrière le form login Quarkus (compte unique
+`admin`/`admin` en local), **sauf** l'espace animateur, `/api/auth/*` et
+`/api/config` — voir [`api.md`](api.md#authentification). Le profil `%test`
+désactive la policy (`permit`) pour que les tests fonctionnels appellent l'API
+sans session ; le flux d'authentification lui-même est couvert par
+`AuthentificationAdminTest`, dont le `@TestProfile` restaure la policy réelle.
+
+### Mails en local (Mailpit)
+
+Les notifications d'échange (issue #165) sont **mockées** par défaut
+(`MAIL_MOCK=true` hors prod : les mails partent dans les logs). Pour les voir
+réellement, `docker compose up mailpit` fournit un puits SMTP sur
+`localhost:1025` avec une UI sur <http://localhost:8025> ; lancer alors
+`quarkus:dev` avec `MAIL_MOCK=false`. Le profil `--profile app` du compose est
+déjà branché sur Mailpit. `MAIL_ADMIN` vide désactive la notification admin ;
+un animateur sans adresse e-mail sur sa fiche ne reçoit simplement rien.
 
 ## Base de données
 

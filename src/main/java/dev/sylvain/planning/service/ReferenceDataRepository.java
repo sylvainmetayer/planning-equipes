@@ -729,7 +729,7 @@ public class ReferenceDataRepository {
         Map<String, Animateur> byId = new LinkedHashMap<>();
         try (Connection connection = dataSource.getConnection()) {
             try (PreparedStatement ps = prepareScoped(connection,
-                    "SELECT id, prenom, nom, date_naissance, manager FROM animateur "
+                    "SELECT id, prenom, nom, date_naissance, manager, email, jeton_acces FROM animateur "
                             + "WHERE edition_id = ? ORDER BY id");
                     ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -739,6 +739,8 @@ public class ReferenceDataRepository {
                             rs.getString("nom"),
                             rs.getObject("date_naissance", LocalDate.class),
                             rs.getBoolean("manager"));
+                    animateur.setEmail(rs.getString("email"));
+                    animateur.setJetonAcces(rs.getString("jeton_acces"));
                     byId.put(animateur.getId(), animateur);
                 }
             }
@@ -818,17 +820,70 @@ public class ReferenceDataRepository {
         delete("DELETE FROM animateur WHERE edition_id = ? AND id = ?", id);
     }
 
+    /**
+     * Rotates the espace-animateur access token — the one explicit way it ever
+     * changes (a lost or leaked PDF link stops working once regenerated).
+     *
+     * @return the new token, or {@code null} when the animateur is unknown.
+     */
+    public String regenererJetonAnimateur(String id) {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = prepareScoped(connection,
+                        "UPDATE animateur SET jeton_acces = gen_random_uuid()::text "
+                                + "WHERE edition_id = ? AND id = ? RETURNING jeton_acces")) {
+            ps.setString(2, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getString(1) : null;
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to regenerate token for animator " + id, e);
+        }
+    }
+
+    /** (édition, animateur) behind an espace-animateur access token. */
+    public record ProprietaireJeton(String editionId, String animateurId) {
+    }
+
+    /**
+     * Resolves an espace-animateur token to its owner. Deliberately <b>not</b>
+     * edition-scoped — the single exception to this repository's rule: the
+     * token arrives on a public URL with no {@code X-Edition-Id} to trust, and
+     * is globally unique precisely so it can designate the edition by itself
+     * (the caller then runs everything else inside
+     * {@code EditionContext.executeDans}).
+     */
+    public ProprietaireJeton resoudreJetonAnimateur(String jeton) {
+        if (jeton == null || jeton.isBlank()) {
+            return null;
+        }
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = connection.prepareStatement(
+                        "SELECT edition_id, id FROM animateur WHERE jeton_acces = ?")) {
+            ps.setString(1, jeton);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? new ProprietaireJeton(rs.getString("edition_id"), rs.getString("id")) : null;
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to resolve animator token", e);
+        }
+    }
+
     private void upsertAnimateur(Connection connection, Animateur animateur) throws SQLException {
+        // jeton_acces is deliberately absent: a fresh row gets the database
+        // default, an existing row keeps its token. Rotation only happens
+        // through regenererJetonAnimateur.
         try (PreparedStatement ps = prepareScoped(connection,
-                "INSERT INTO animateur (edition_id, id, prenom, nom, date_naissance, manager) "
-                        + "VALUES (?, ?, ?, ?, ?, ?) "
+                "INSERT INTO animateur (edition_id, id, prenom, nom, date_naissance, manager, email) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?) "
                         + "ON CONFLICT (edition_id, id) DO UPDATE SET prenom = EXCLUDED.prenom, nom = EXCLUDED.nom, "
-                        + "date_naissance = EXCLUDED.date_naissance, manager = EXCLUDED.manager")) {
+                        + "date_naissance = EXCLUDED.date_naissance, manager = EXCLUDED.manager, "
+                        + "email = EXCLUDED.email")) {
             ps.setString(2, animateur.getId());
             ps.setString(3, animateur.getPrenom());
             ps.setString(4, animateur.getNom());
             ps.setObject(5, animateur.getDateNaissance());
             ps.setBoolean(6, animateur.isManager());
+            ps.setString(7, animateur.getEmail());
             ps.executeUpdate();
         }
         try (PreparedStatement del = prepareScoped(connection,

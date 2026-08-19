@@ -20,6 +20,21 @@ langage naturel depuis un assistant IA : voir [`mcp.md`](mcp.md).
 | `GET` | `/api/config` | Configuration d'observabilité lue par le frontend au démarrage (DSN Sentry/Bugsink, clé PostHog, token Cloudflare Web Analytics) — voir [`observabilite.md`](observabilite.md) |
 | `POST` | `/api/debug/test-exception` | Lève systématiquement une exception de test, pour vérifier le suivi d'erreurs (bouton « Exception back » de l'onglet Débogage) — voir [`observabilite.md`](observabilite.md) |
 
+## Authentification
+
+Toute l'API `/api/*` est réservée à la session admin (issue #165), avec trois
+exceptions volontaires : l'espace animateur (`/api/espace-animateur/*`, dont le
+jeton d'URL est la clé d'accès), les routes de session ci-dessous et
+`/api/config`. Le serveur MCP garde sa propre clé d'API (voir
+[`mcp.md`](mcp.md)). Un appel non authentifié répond `401` — jamais une
+redirection HTML.
+
+| Méthode | Chemin | Description |
+| --- | --- | --- |
+| `POST` | `/j_security_check` | Form login Quarkus : corps `application/x-www-form-urlencoded` avec `j_username` / `j_password`. Succès : cookie `planning-session` chiffré + `302` vers `/api/auth/me` (que le navigateur suit) ; échec : `401` (jamais de page HTML). Compte unique `admin`, mot de passe via `ADMIN_PASSWORD` |
+| `GET` | `/api/auth/me` | Statut de session : `{ "authentifie": bool, "nom": "admin" \| null }` — accessible anonymement |
+| `POST` | `/api/auth/logout` | Supprime le cookie de session (`204`), idempotent |
+
 ## Planning
 
 | Méthode | Chemin | Description |
@@ -121,6 +136,41 @@ seulement qu'aucune violation n'a été trouvée pour ce poste précis, pas que 
 contrainte s'applique nécessairement à lui — l'IHM ne doit pas la présenter
 comme un satisfecit positif. `simulation-swap` ne persiste rien : c'est une
 simulation en mémoire, à usage d'aide à la décision uniquement.
+
+## Foire au planning (échanges de créneaux)
+
+Un animateur propose d'échanger un de ses créneaux avec un collègue depuis son
+espace en libre-service ; rien n'est appliqué au planning sans une validation
+admin explicite (issue #165). Voir
+[`domaine.md`](domaine.md#demandes-déchange) pour le modèle.
+
+### Espace animateur (public, par jeton)
+
+Seules routes de l'API accessibles sans session admin : le jeton d'accès —
+le lien imprimé sur le planning PDF individuel — est la clé, et résout à lui
+seul l'animateur **et** son édition (l'en-tête `X-Edition-Id` n'est pas lu
+ici). Un jeton inconnu répond `404 { "message": "…" }`, jamais `401`.
+
+| Méthode | Chemin | Description |
+| --- | --- | --- |
+| `GET` | `/api/espace-animateur/{jeton}` | Identité, planning personnel (postes + coéquipiers, lecture seule) et collègues avec qui échanger |
+| `GET` | `/api/espace-animateur/{jeton}/demandes` | Ses demandes d'échange, tous statuts, la plus récente d'abord |
+| `POST` | `/api/espace-animateur/{jeton}/demandes` | Soumet une **liste** de demandes `[{ creneauId, standId, cibleId, motif? }]`. Chacune est prévalidée contre les contraintes dures (`simulerEchange`) mais enregistrée quel que soit le verdict ; la réponse porte `prevalidationOk` et `contraintesViolees` (descriptions métier du catalogue). Un mail est envoyé à l'admin (si `planning.mail.admin` est configurée) |
+| `POST` | `/api/espace-animateur/{jeton}/demandes/{id}/annulation` | Annule une de **ses** demandes encore en attente (`204` ; `400` si déjà décidée) |
+
+### Échanges (admin)
+
+| Méthode | Chemin | Description |
+| --- | --- | --- |
+| `GET` | `/api/echanges` | Toutes les demandes de l'édition courante, la plus récente d'abord |
+| `GET` | `/api/echanges/{id}/impact` | Re-simule la demande contre le planning persisté **actuel** : delta de score, échange croisé ou reprise simple, contraintes dures nouvellement violées |
+| `POST` | `/api/echanges/{id}/acceptation` | Applique l'échange exactement comme simulé (mise à jour chirurgicale de `poste_affectation`), pose deux verrous `ANIMATEUR_CRENEAU` (un par animateur sur le créneau) et notifie le demandeur par mail. Corps optionnel `{ "commentaire": "…" }`. Le solveur n'est **pas** relancé |
+| `POST` | `/api/echanges/{id}/refus` | Refuse sans rien modifier ; `{ "commentaire": "…" }` est transmis à l'animateur |
+
+Sémantique de l'échange : si le collègue ciblé tient aussi un poste sur le
+créneau, les deux postes permutent (échange croisé) ; s'il est libre, il
+reprend simplement le poste du demandeur. `400` si la demande n'est plus en
+attente ; accepter puis refuser la même demande est donc impossible.
 
 ## Faisabilité
 

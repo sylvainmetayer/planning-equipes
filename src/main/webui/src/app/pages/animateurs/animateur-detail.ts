@@ -37,7 +37,19 @@ export function buildAnimateurDetail(
           muted: !animateur.dateNaissance
         },
         { label: $localize`:@@animateurs.column.majorite:Majeur`, value: majoriteLabel(animateur, aujourdHui) },
-        { label: $localize`:@@animateurs.column.manager:Manager`, value: ouiNon(animateur.manager) }
+        { label: $localize`:@@animateurs.column.manager:Manager`, value: ouiNon(animateur.manager) },
+        {
+          label: $localize`:@@animateurs.field.email:E-mail`,
+          value: animateur.email || aucun,
+          muted: !animateur.email
+        },
+        {
+          label: $localize`:@@animateurs.field.lienEspace:Lien espace animateur`,
+          value: animateur.jetonAcces
+            ? `/animateur/${animateur.jetonAcces}`
+            : aucun,
+          muted: !animateur.jetonAcces
+        }
       ]
     },
     {
