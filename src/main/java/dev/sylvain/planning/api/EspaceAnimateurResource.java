@@ -36,10 +36,11 @@ import jakarta.ws.rs.core.Response;
  * guessing one.</p>
  *
  * <p>Since the espace serves the planning for download, the link alone is no
- * longer enough: every route except the two code endpoints also requires a
- * session opened by e-mail code (see {@link EspaceAccesService}), carried by
- * the {@code planning-espace} HttpOnly cookie. Without it, a valid token answers
- * 401 — the interface then shows the code screen.</p>
+ * longer enough: every route except the two code endpoints is guarded by
+ * {@link SessionEspaceRequise} / {@link SessionEspaceFilter} — a session
+ * opened by e-mail code, carried by the {@code planning-espace} HttpOnly cookie.
+ * Without it, a valid token answers 401 — the interface then shows the code
+ * screen.</p>
  */
 @Path("/espace-animateur")
 @Produces(MediaType.APPLICATION_JSON)
@@ -54,8 +55,8 @@ public class EspaceAnimateurResource {
     @Inject
     dev.sylvain.planning.service.EspaceAccesService espaceAccesService;
 
-    @jakarta.ws.rs.core.Context
-    HttpHeaders entetes;
+    @Inject
+    ProprietaireJetonCourant proprietaireCourant;
 
     @Inject
     EspaceAnimateurService espaceAnimateurService;
@@ -75,16 +76,18 @@ public class EspaceAnimateurResource {
     /** Who I am, my persisted planning (with teammates) and the colleagues I can swap with. */
     @GET
     @Path("/{jeton}")
+    @SessionEspaceRequise
     public Response espace(@PathParam("jeton") String jeton) {
-        return avecSession(jeton, animateurId -> Response.ok(
+        return avecJeton(jeton, animateurId -> Response.ok(
                 espaceAnimateurService.construireVue(animateurId)).build());
     }
 
     /** My demandes d'échange, most recent first, whatever their statut. */
     @GET
     @Path("/{jeton}/demandes")
+    @SessionEspaceRequise
     public Response demandes(@PathParam("jeton") String jeton) {
-        return avecSession(jeton, animateurId -> Response.ok(
+        return avecJeton(jeton, animateurId -> Response.ok(
                 espaceAnimateurService.versVues(demandeEchangeService.listerPourDemandeur(animateurId))).build());
     }
 
@@ -96,8 +99,9 @@ public class EspaceAnimateurResource {
      */
     @POST
     @Path("/{jeton}/demandes")
+    @SessionEspaceRequise
     public Response soumettre(@PathParam("jeton") String jeton, List<NouvelleDemande> nouvelles) {
-        return avecSession(jeton, animateurId -> {
+        return avecJeton(jeton, animateurId -> {
             try {
                 return Response.ok(espaceAnimateurService.versVues(
                         demandeEchangeService.soumettre(animateurId, nouvelles))).build();
@@ -116,9 +120,10 @@ public class EspaceAnimateurResource {
      */
     @GET
     @Path("/{jeton}/planning.pdf")
+    @SessionEspaceRequise
     @Produces("application/pdf")
     public Response planningPdf(@PathParam("jeton") String jeton) {
-        return avecSession(jeton, animateurId -> {
+        return avecJeton(jeton, animateurId -> {
             PlanningFestival planning = persistenceService.loadPersistedPlanning();
             byte[] contenu = planningExportService.exportAnimateurPdf(planning, animateurId);
             return Response.ok(contenu)
@@ -131,9 +136,10 @@ public class EspaceAnimateurResource {
     /** My planning as an ICS calendar, importable in any agenda app. */
     @GET
     @Path("/{jeton}/planning.ics")
+    @SessionEspaceRequise
     @Produces("text/calendar")
     public Response planningIcs(@PathParam("jeton") String jeton) {
-        return avecSession(jeton, animateurId -> {
+        return avecJeton(jeton, animateurId -> {
             PlanningFestival planning = persistenceService.loadPersistedPlanning();
             String contenu = planningExportService.exportAnimateurIcs(planning, animateurId);
             return Response.ok(contenu)
@@ -156,8 +162,9 @@ public class EspaceAnimateurResource {
     /** Withdraws one of my own, still-pending demandes. */
     @POST
     @Path("/{jeton}/demandes/{demandeId}/annulation")
+    @SessionEspaceRequise
     public Response annuler(@PathParam("jeton") String jeton, @PathParam("demandeId") String demandeId) {
-        return avecSession(jeton, animateurId -> {
+        return avecJeton(jeton, animateurId -> {
             try {
                 demandeEchangeService.annuler(animateurId, demandeId);
                 return Response.noContent().build();
@@ -222,10 +229,14 @@ public class EspaceAnimateurResource {
 
     /**
      * Resolves the token and runs {@code action} inside the owner's edition.
-     * The espace never trusts the request's edition header.
+     * The espace never trusts the request's edition header. On a
+     * {@link SessionEspaceRequise} route the guard already resolved (and
+     * authenticated) the owner, so the lookup happens once per request.
      */
     private Response avecJeton(String jeton, Function<String, Response> action) {
-        ReferenceDataRepository.ProprietaireJeton proprietaire = referenceDataService.resoudreJetonAnimateur(jeton);
+        ReferenceDataRepository.ProprietaireJeton proprietaire = proprietaireCourant.valeur() != null
+                ? proprietaireCourant.valeur()
+                : referenceDataService.resoudreJetonAnimateur(jeton);
         if (proprietaire == null) {
             return Response.status(Response.Status.NOT_FOUND)
                     .entity(new ReferenceDataResource.ErreurValidation("Lien inconnu ou expiré"))
@@ -235,22 +246,4 @@ public class EspaceAnimateurResource {
                 () -> action.apply(proprietaire.animateurId()));
     }
 
-    /**
-     * Same as {@link #avecJeton}, plus the session requirement: the
-     * {@code planning-espace} cookie must carry a live session of the animateur
-     * the token resolves to. 401 otherwise — the interface then offers the
-     * code screen. Checked inside the edition context, like everything else.
-     */
-    private Response avecSession(String jeton, Function<String, Response> action) {
-        return avecJeton(jeton, animateurId -> {
-            jakarta.ws.rs.core.Cookie cookie = entetes.getCookies().get(COOKIE_SESSION);
-            if (!espaceAccesService.sessionValide(cookie == null ? null : cookie.getValue(), animateurId)) {
-                return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity(new ReferenceDataResource.ErreurValidation(
-                                "Authentification requise : demandez un code d'accès par e-mail."))
-                        .build();
-            }
-            return action.apply(animateurId);
-        });
-    }
 }
