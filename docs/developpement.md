@@ -205,7 +205,8 @@ On distingue quatre familles de tests :
   suppression confirmée ;
 - **vues du planning** sur les données ensemencées (heures, besoin en
   effectif, ouvertures, timeline animateur — y compris l'envoi des plannings
-  par e-mail, individuel et groupé, avec son compte rendu), **verrouillages** (pose d'un
+  par e-mail : individuel depuis la timeline, groupé depuis la page Solveur,
+  avec son compte rendu), **verrouillages** (pose d'un
   verrou de journée avec aperçu d'impact, retrait) et **page d'aide** (recherche,
   section foire au planning) ;
 - **résolutions réelles** (`e2e/solveur.spec.ts`, solves courts de ~6 s via
@@ -552,13 +553,16 @@ sans session ; le flux d'authentification lui-même est couvert par
 
 ### Mails en local (Mailpit)
 
-Les notifications d'échange (issue #165) sont **mockées** par défaut
-(`MAIL_MOCK=true` hors prod : les mails partent dans les logs). Pour les voir
-réellement, `docker compose up mailpit` fournit un puits SMTP sur
-`localhost:1025` avec une UI sur <http://localhost:8025> ; lancer alors
-`quarkus:dev` avec `MAIL_MOCK=false`. Le profil `--profile app` du compose est
-déjà branché sur Mailpit. `MAIL_ADMIN` vide désactive la notification admin ;
-un animateur sans adresse e-mail sur sa fiche ne reçoit simplement rien.
+Les mails (notifications d'échange et envoi des plannings, issue #165)
+partent **réellement** en dev et en prod, vers `localhost:1025` par défaut :
+`docker compose up mailpit` fournit ce puits SMTP avec une UI sur
+<http://localhost:8025>, et un `quarkus:dev` sans configuration
+supplémentaire y dépose donc ses mails. Seul le profil de **test** mocke
+inconditionnellement ; `MAIL_MOCK=true` restaure le mock partout ailleurs
+(les mails partent dans les logs — c'est ce que fait la pile jetable des
+tests Playwright). Le profil `--profile app` du compose est déjà branché sur
+Mailpit. `MAIL_ADMIN` vide désactive la notification admin ; un animateur
+sans adresse e-mail sur sa fiche ne reçoit simplement rien.
 
 ## Base de données
 

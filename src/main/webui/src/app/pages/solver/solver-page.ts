@@ -9,8 +9,9 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ApiService } from '../../core/api.service';
+import { resumeEnvoi } from '../../core/envoi-planning';
 import { intlLocale } from '../../core/locale';
-import { FeasibilityReport, PlanningDiagnostic } from '../../core/models';
+import { CompteRenduEnvoi, FeasibilityReport, PlanningDiagnostic } from '../../core/models';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningStateService } from '../../core/planning-state.service';
@@ -19,6 +20,7 @@ import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService, formatDuration } from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';
+import { ConfirmService } from '../../shared/confirm-dialog';
 import { FeasibilityBanner, HardIssue } from '../../shared/feasibility-banner';
 import { OutputPanel } from '../../shared/output-panel';
 import { ProblemSummaryBanner } from '../../shared/problem-summary-banner';
@@ -105,6 +107,7 @@ export class SolverPage {
   protected readonly hardScore = signal<number | null>(null);
   protected readonly hardIssues = signal<HardIssue[]>([]);
   protected readonly exportBusy = signal(false);
+  protected readonly envoiBusy = signal(false);
 
   protected readonly solverDurationLoading = signal(false);
   protected readonly solverDurationSaving = signal(false);
@@ -213,6 +216,7 @@ export class SolverPage {
   private readonly jobs = inject(SolverJobService);
   private readonly solverSettings = inject(SolverSettingsService);
   private readonly notifications = inject(NotificationService);
+  private readonly confirm = inject(ConfirmService);
   private readonly crud = inject(ReferenceCrudService);
 
   constructor() {
@@ -380,6 +384,37 @@ export class SolverPage {
       this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
     } finally {
       this.exportBusy.set(false);
+    }
+  }
+
+  /**
+   * Mails every animateur holding at least one poste their individual
+   * planning (PDF + espace link), built server-side from the persisted
+   * planning — same read-only source as the global PDF above. Confirmed
+   * first: it reaches everyone at once.
+   */
+  protected async onEnvoyerPlannings(): Promise<void> {
+    if (this.envoiBusy()) {
+      return;
+    }
+    const confirme = await this.confirm.ask({
+      title: $localize`:@@solver.envoiTous.confirmTitre:Envoyer tous les plannings ?`,
+      message: $localize`:@@solver.envoiTous.confirmMessage:Chaque animateur du planning enregistré ayant une adresse e-mail recevra son planning individuel en PDF, avec le lien vers son espace en ligne.`,
+      confirmLabel: $localize`:@@solver.envoiTous.confirmAction:Envoyer`
+    });
+    if (!confirme) {
+      return;
+    }
+    this.envoiBusy.set(true);
+    this.output.set($localize`:@@solver.envoiTousEnCours:Envoi des plannings par e-mail...`);
+    try {
+      const compteRendu = await this.api.post<CompteRenduEnvoi>('/api/planning/envoi/tous', null);
+      const resume = resumeEnvoi(compteRendu);
+      this.output.set(resume.details ? `${resume.titre} — ${resume.details}` : resume.titre);
+    } catch (error) {
+      this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
+    } finally {
+      this.envoiBusy.set(false);
     }
   }
 

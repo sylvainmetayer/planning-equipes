@@ -63,11 +63,14 @@ test("l'envoi des plannings par e-mail rend compte, individuellement et pour tou
   await champ.fill('Alice');
   await page.getByRole('option', { name: /Alice E2E/ }).click();
 
-  // Individual send: Alice has an address, the mail leaves (mock SMTP).
+  // Individual send, from the timeline: Alice has an address, the mail
+  // leaves (mock SMTP).
   await page.getByRole('button', { name: 'Envoyer par e-mail' }).click();
   await expect(page.getByText('Planning envoyé à Alice E2E')).toBeVisible();
 
-  // Global send: the report names Bruno, seeded without an address.
+  // Global send lives on the Solveur page, next to the global PDF export;
+  // its report names Bruno, seeded without an address.
+  await page.goto('/');
   await page.getByRole('button', { name: 'Envoyer à tous' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Envoyer' }).click();
   await expect(page.getByText('1 planning(s) envoyé(s)')).toBeVisible();

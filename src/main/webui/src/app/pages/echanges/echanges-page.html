@@ -51,7 +51,7 @@
           </p>
           <p>
             <span i18n="@@echanges.impactScore">Impact sur le score :</span>
-            <code>{{ impact.delta }}</code>
+            <code>{{ formatDelta(impact.delta) }}</code>
           </p>
           @if (impact.nouvellesViolationsDures.length > 0) {
             <ul>

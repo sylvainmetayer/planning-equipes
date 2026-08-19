@@ -14,6 +14,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { AffectationExplanationService } from '../core/affectation-explanation.service';
+import { formatDeltaScore } from '../core/score-format';
 import {
   AffectationExplanation,
   Animateur,
@@ -247,8 +248,7 @@ export class AffectationExplanationDialog {
   }
 
   protected formatDelta(delta: HardMediumSoftScore): string {
-    const sign = (value: number) => (value > 0 ? '+' : '');
-    return `${sign(delta.hardScore)}${delta.hardScore}hard / ${sign(delta.mediumScore)}${delta.mediumScore}medium / ${sign(delta.softScore)}${delta.softScore}soft`;
+    return formatDeltaScore(delta);
   }
 }
 

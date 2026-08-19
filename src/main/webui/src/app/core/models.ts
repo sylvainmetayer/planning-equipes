@@ -845,9 +845,9 @@ export interface EchangeSimulation {
   posteCibleId: string | null;
   echangeCroise: boolean;
   standCibleId: string | null;
-  scoreAvant: string;
-  scoreApres: string;
-  delta: string;
+  scoreAvant: HardMediumSoftScore;
+  scoreApres: HardMediumSoftScore;
+  delta: HardMediumSoftScore;
   casseContrainteDure: boolean;
   nouvellesViolationsDures: ViolationDure[];
 }

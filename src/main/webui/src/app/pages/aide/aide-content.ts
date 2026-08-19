@@ -380,7 +380,7 @@ export function buildHelpSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.foire.term.envoi:Envoi des plannings`,
-              text: $localize`:@@aide.foire.def.envoi:Depuis la page Timeline animateur, envoyez à un animateur — ou à tous ceux qui tiennent au moins un poste — son planning individuel par e-mail : le PDF en pièce jointe, avec le lien de son espace personnel. Le compte rendu nomme les animateurs sans adresse e-mail et les envois en échec ; rien ne part sans confirmation pour l'envoi groupé.`
+              text: $localize`:@@aide.foire.def.envoi:Le bouton « Envoyer à tous » de la page Solveur (à côté de l'export du planning global) envoie à chaque animateur tenant au moins un poste son planning individuel par e-mail : le PDF en pièce jointe, avec le lien de son espace personnel — après confirmation. La page Timeline animateur offre le même envoi pour l'animateur affiché seulement. Le compte rendu nomme les animateurs sans adresse e-mail et les envois en échec.`
             }
           ]
         }

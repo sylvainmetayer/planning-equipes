@@ -58,6 +58,11 @@ test.describe('espace animateur', () => {
     await expect(pageAdmin.getByText('Alice E2E').first()).toBeVisible();
     await pageAdmin.getByRole('button', { name: "Voir l'impact sur le planning" }).first().click();
     await expect(pageAdmin.getByText('Échange croisé', { exact: false })).toBeVisible();
+    // The score delta renders as a real score, never as a raw object dump.
+    await expect(pageAdmin.locator('.echanges-impact code')).toHaveText(
+      /^[+-]?\d+hard \/ [+-]?\d+medium \/ [+-]?\d+soft$/
+    );
+    await expect(pageAdmin.getByText('[object Object]')).toHaveCount(0);
     await pageAdmin.getByRole('button', { name: 'Accepter', exact: true }).first().click();
     // Confirmation dialog.
     await pageAdmin.getByRole('dialog').getByRole('button', { name: 'Accepter' }).click();

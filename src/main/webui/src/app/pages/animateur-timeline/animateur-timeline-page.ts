@@ -10,7 +10,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { uniqueById } from '../../core/date-utils';
 import { NotificationService } from '../../core/notification.service';
-import { ConfirmService } from '../../shared/confirm-dialog';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { Animateur, CompteRenduEnvoi, PlanningFestival, PosteAffectation, TypologieItem } from '../../core/models';
 import { standTypologies, typologieColorClass, typologieLabel, typologieLabels, typologiePrincipale } from '../../core/typologie-colors';
@@ -115,7 +114,6 @@ export class AnimateurTimelinePage {
   protected readonly typologies = signal<TypologieItem[]>([]);
 
   private readonly api = inject(ApiService);
-  private readonly confirm = inject(ConfirmService);
   private readonly notifications = inject(NotificationService);
   private readonly planningState = inject(PlanningStateService);
   private readonly route = inject(ActivatedRoute);
@@ -276,57 +274,6 @@ export class AnimateurTimelinePage {
     }
   }
 
-  /** Same send, for every animateur holding at least one poste — confirmed first. */
-  protected async envoyerEmailATous(): Promise<void> {
-    if (this.envoiBusy()) {
-      return;
-    }
-    const confirme = await this.confirm.ask({
-      title: $localize`:@@timeline.envoiTous.confirmTitre:Envoyer tous les plannings ?`,
-      message: $localize`:@@timeline.envoiTous.confirmMessage:Chaque animateur du planning enregistré ayant une adresse e-mail recevra son planning individuel en PDF, avec le lien vers son espace en ligne.`,
-      confirmLabel: $localize`:@@timeline.envoiTous.confirmAction:Envoyer`
-    });
-    if (!confirme) {
-      return;
-    }
-    this.envoiBusy.set(true);
-    try {
-      const compteRendu = await this.api.post<CompteRenduEnvoi>('/api/planning/envoi/tous', null);
-      const resume = resumeEnvoi(compteRendu);
-      this.notifications.notify({
-        title: resume.titre,
-        message: resume.details,
-        variant: compteRendu.echecs.length > 0 ? 'error' : 'success'
-      });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      this.notifications.notify({
-        title: $localize`:@@timeline.envoi.echec:Envoi impossible`,
-        message,
-        variant: 'error'
-      });
-    } finally {
-      this.envoiBusy.set(false);
-    }
-  }
-}
-
-/**
- * Folds a send report into a one-line title plus optional details naming who
- * was skipped (no address) or failed — the admin acts on names, not counts.
- */
-export function resumeEnvoi(compteRendu: CompteRenduEnvoi): { titre: string; details?: string } {
-  const titre = $localize`:@@timeline.envoiTous.succes:${compteRendu.envoyes}:count: planning(s) envoyé(s)`;
-  const details: string[] = [];
-  if (compteRendu.sansEmail.length > 0) {
-    details.push(
-      $localize`:@@timeline.envoiTous.sansEmail:Sans adresse e-mail : ${compteRendu.sansEmail.join(', ')}:noms:`
-    );
-  }
-  if (compteRendu.echecs.length > 0) {
-    details.push($localize`:@@timeline.envoiTous.echecs:Échec de l'envoi : ${compteRendu.echecs.join(', ')}:noms:`);
-  }
-  return { titre, details: details.length > 0 ? details.join(' — ') : undefined };
 }
 
 export function buildAnimateurOptions(postes: PosteAffectation[]): AnimateurOption[] {

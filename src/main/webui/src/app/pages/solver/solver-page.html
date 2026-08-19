@@ -68,6 +68,13 @@
       <mat-icon>picture_as_pdf</mat-icon>
       <ng-container i18n="@@solver.exportGlobal">Exporter le planning global (PDF)</ng-container>
     </button>
+    <button matButton="tonal" [disabled]="envoiBusy() || solverBusy()"
+            i18n-matTooltip="@@solver.envoiTous.tooltip"
+            matTooltip="Envoyer à chaque animateur du planning son planning individuel par e-mail (PDF + lien vers son espace)"
+            (click)="onEnvoyerPlannings()">
+      <mat-icon>forward_to_inbox</mat-icon>
+      <ng-container i18n="@@solver.envoiTous">Envoyer à tous</ng-container>
+    </button>
   </mat-card-actions>
   @if (raisonVerrou()) {
     <mat-card-content>

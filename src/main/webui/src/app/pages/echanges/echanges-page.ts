@@ -7,8 +7,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ApiService } from '../../core/api.service';
 import { statutDemandeClasse, statutDemandeLabel } from '../../core/demande-echange-labels';
-import { DemandeEchangeView, EchangeSimulation } from '../../core/models';
+import { DemandeEchangeView, EchangeSimulation, HardMediumSoftScore } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
+import { formatDeltaScore } from '../../core/score-format';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { PromptDialog } from '../../shared/prompt-dialog';
 
@@ -73,6 +74,11 @@ export class EchangesPage {
 
   protected impactDe(demande: DemandeRow): EchangeSimulation | null {
     return this.impacts()[demande.id] ?? null;
+  }
+
+  /** The delta is a score object — rendered through the shared formatter, never interpolated raw. */
+  protected formatDelta(delta: HardMediumSoftScore): string {
+    return formatDeltaScore(delta);
   }
 
   protected async chargerImpact(demande: DemandeRow): Promise<void> {

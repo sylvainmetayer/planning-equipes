@@ -54,17 +54,6 @@
         <mat-icon>outgoing_mail</mat-icon>
         <ng-container i18n="@@timeline.envoi">Envoyer par e-mail</ng-container>
       </button>
-      <button
-        matButton="tonal"
-        type="button"
-        [disabled]="loading() || envoiBusy() || animateurOptions().length === 0"
-        (click)="envoyerEmailATous()"
-        matTooltip="Envoyer à chaque animateur du planning son planning individuel par e-mail"
-        i18n-matTooltip="@@timeline.envoiTous.tooltip"
-      >
-        <mat-icon>forward_to_inbox</mat-icon>
-        <ng-container i18n="@@timeline.envoiTous">Envoyer à tous</ng-container>
-      </button>
     </div>
     @if (loading()) {
       <mat-progress-bar mode="indeterminate" />
