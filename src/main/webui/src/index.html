@@ -6,13 +6,15 @@
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Roboto and Material Icons are self-hosted (public/fonts + styles/fonts.css):
+         no dependency on fonts.googleapis.com, so icons render offline too. -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap"
-      rel="stylesheet"
+      rel="preload"
+      href="/fonts/material-icons.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
     />
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
   </head>
   <body>
     <app-root></app-root>

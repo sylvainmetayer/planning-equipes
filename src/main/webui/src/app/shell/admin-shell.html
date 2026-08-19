@@ -49,8 +49,12 @@
                  [attr.aria-current]="rla.isActive ? 'page' : null"
                  [routerLinkActiveOptions]="{ exact: link.path === '/' }" (click)="onNavigate()">
                 @if (link.badge === 'notifications') {
+                  <!-- aria-hidden="false": the badge carries real information
+                       (matBadgeDescription); hidden, assistive tech would never
+                       see the unread count and the CDK logs a warning. -->
                   <mat-icon
                     matListItemIcon
+                    aria-hidden="false"
                     [matBadge]="notificationBadgeContent()"
                     [matBadgeHidden]="notifications.unreadCount() === 0"
                     [matBadgeColor]="hasUnreadAlert() ? 'warn' : 'accent'"
