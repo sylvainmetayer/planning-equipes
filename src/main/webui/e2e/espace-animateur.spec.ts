@@ -3,7 +3,7 @@
 // decision, and the outcome back on the animateur's side.
 
 import { APIRequestContext, expect, test } from '@playwright/test';
-import { SEED, contexteAdmin, jetonDe, seedPlanning } from './support';
+import { SEED, contexteAdmin, jetonDe, pageAdmin, seedPlanning } from './support';
 
 let admin: APIRequestContext;
 let jeton: string;
@@ -69,6 +69,49 @@ test.describe('espace animateur', () => {
     await expect(page.getByText('Acceptée').first()).toBeVisible();
     await page.getByRole('link', { name: 'Mon planning' }).click();
     await expect(page.getByText('Stand E2E deux')).toBeVisible();
+  });
+
+  test("refuser une demande transmet le motif à l'animateur", async ({ page, browser }) => {
+    test.slow();
+    // After the accepted swap, Alice proposes another one from her new seat.
+    await page.goto(`/animateur/${jeton}/echanges`);
+    await page.getByLabel('Créneau concerné').click();
+    await page.getByRole('option').first().click();
+    await page.getByLabel('Échanger avec').click();
+    await page.getByRole('option', { name: 'Bruno E2E' }).click();
+    await page.getByRole('button', { name: 'Ajouter à la liste' }).click();
+    await page.getByRole('button', { name: 'Soumettre mes demandes' }).click();
+    await expect(page.getByText('En attente').first()).toBeVisible();
+
+    // The admin refuses, with a reason.
+    const pageAdminEchanges = await pageAdmin(browser, admin);
+    await pageAdminEchanges.goto('/echanges');
+    await pageAdminEchanges.getByRole('button', { name: 'Refuser' }).first().click();
+    await pageAdminEchanges
+      .getByRole('dialog')
+      .getByLabel("Motif du refus (transmis à l'animateur)")
+      .fill('Bruno doit rester sur ce stand');
+    await pageAdminEchanges.getByRole('dialog').getByRole('button', { name: 'Refuser' }).click();
+    await expect(pageAdminEchanges.getByText('Demande refusée', { exact: false })).toBeVisible();
+    await pageAdminEchanges.context().close();
+
+    // The animateur sees the outcome and the admin's comment.
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.getByText('Refusée').first()).toBeVisible();
+    await expect(page.getByText('Bruno doit rester sur ce stand')).toBeVisible();
+  });
+
+  test("annuler une demande en attente depuis l'espace", async ({ page }) => {
+    await page.goto(`/animateur/${jeton}/echanges`);
+    await page.getByLabel('Créneau concerné').click();
+    await page.getByRole('option').first().click();
+    await page.getByLabel('Échanger avec').click();
+    await page.getByRole('option', { name: 'Bruno E2E' }).click();
+    await page.getByRole('button', { name: 'Ajouter à la liste' }).click();
+    await page.getByRole('button', { name: 'Soumettre mes demandes' }).click();
+    await page.getByRole('button', { name: 'Annuler cette demande' }).first().click();
+    await expect(page.getByText('Demande annulée.')).toBeVisible();
+    await expect(page.getByText('Annulée').first()).toBeVisible();
   });
 
   test("le périmètre du jeton : l'espace ne donne aucune session admin", async ({ page }) => {

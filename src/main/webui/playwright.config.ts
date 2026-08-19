@@ -21,6 +21,9 @@ export default defineConfig({
   workers: 1,
   reporter: [['list']],
   timeout: 30_000,
+  // A cold SPA load (fresh context, lazy chunks) can take >10s on a modest
+  // machine; the default 5s expect budget flakes right after a full reload.
+  expect: { timeout: 15_000 },
   use: {
     baseURL: process.env['E2E_BASE_URL'] ?? 'http://localhost:8080',
     // The UI's source language; the specs assert on French labels.

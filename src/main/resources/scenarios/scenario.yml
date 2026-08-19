@@ -42,6 +42,7 @@ stands:
 
 animateurs:
   - id: A1
+    email: A1@example.org
     prenom: Alice
     nom: Referente
     dateNaissance: 2002-07-19
@@ -51,6 +52,7 @@ animateurs:
       HOMME_JEU: AUTONOME
     joursIndisponibles: []
   - id: A2
+    email: A2@example.org
     prenom: Bruno
     nom: Autonome
     dateNaissance: 2007-07-19
@@ -60,6 +62,7 @@ animateurs:
       HOMME_JEU: DEBUTANT
     joursIndisponibles: []
   - id: A3
+    email: A3@example.org
     prenom: Chloe
     nom: Junior
     dateNaissance: 2010-07-19

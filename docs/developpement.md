@@ -189,12 +189,43 @@ On distingue quatre familles de tests :
 
 ### Tests de bout en bout (Playwright)
 
-`src/main/webui/e2e` verrouille le **périmètre** de la foire au planning
-(issue #165) dans un vrai navigateur : mur d'authentification (401 nus,
-redirection `/login`, connexion/déconnexion), frontière de l'espace animateur
-(jeton inconnu, absence de chrome admin, pas de session offerte par le jeton)
-et le flux complet soumission → acceptation admin → échange visible et
-appliqué côté animateur.
+`src/main/webui/e2e` exerce le frontend dans un vrai navigateur :
+
+- **périmètre de sécurité** (issue #165) : mur d'authentification (401 nus,
+  redirection `/login`, connexion/déconnexion), frontière de l'espace
+  animateur (jeton inconnu, absence de chrome admin, pas de session offerte
+  par le jeton) ;
+- **foire au planning de bout en bout** : soumission → acceptation admin →
+  échange appliqué côté animateur, refus avec motif transmis, annulation
+  depuis l'espace ;
+- **balayage de l'admin** : chaque route du menu se charge et affiche son
+  contenu, bascule de langue FR/EN, catalogue des contraintes ;
+- **CRUD référentiels** via l'interface (animateur avec e-mail et lien
+  d'espace copiable/régénérable, typologie), filtre rapide, consultation,
+  suppression confirmée ;
+- **vues du planning** sur les données ensemencées (heures, besoin en
+  effectif, ouvertures, timeline animateur), **verrouillages** (pose d'un
+  verrou de journée avec aperçu d'impact, retrait) et **page d'aide** (recherche,
+  section foire au planning) ;
+- **résolutions réelles** (`e2e/solveur.spec.ts`, solves courts de ~6 s via
+  `?seconds=`) : un solve lancé depuis la page Solveur pourvoit tous les
+  postes, les trois types de contrainte ad hoc sont respectés par le résultat
+  **et** visibles dans le frontend (écran Contraintes ad hoc, timeline de
+  l'animateur imposé), un verrouillage `ANIMATEUR` fige un planning à
+  l'identique après re-résolution, et un échange accepté **survit à la
+  régénération** grâce à ses verrous `ANIMATEUR_CRENEAU` ;
+- **fuzzing à invariants** (`e2e/solveur-fuzz.spec.ts`) : des référentiels
+  aléatoires mais **reproductibles** (PRNG semé, graine affichée dans la
+  sortie et rejouable avec `E2E_FUZZ_SEED=<graine>`) sont résolus pour de
+  vrai, puis le planning persisté est vérifié structurellement — tous les
+  postes pourvus, aucun chevauchement, indisponibilités personnelles et
+  forcées respectées, incompatibles jamais réunis, affectation forcée
+  honorée, stand réservé aux majeurs sans mineur, score dur nul.
+
+Les créneaux de test vivent dans la plage réservée `987000–987999` et toutes
+les lignes ensemencées portent un préfixe `E2E-`/`SOLV-`/`FUZZ-` : la suite ne
+touche jamais à des données hors de ce périmètre, mais elle réécrit le
+planning persisté de l'édition courante — d'où la pile jetable.
 
 Ils sont **volontairement exclus de la CI** : ils exigent la pile complète et
 écrivent en base (ensemencement idempotent d'identifiants `E2E-*` via

@@ -342,6 +342,7 @@ stands:
         heureFin: "16:00"
 animateurs:
   - id: A1
+    email: A1@example.org
     prenom: Nina
     nom: Blanc
     dateNaissance: 1965-11-03
@@ -352,6 +353,7 @@ animateurs:
       AMBIANCE: AUTONOME
     joursIndisponibles: []
   - id: A2
+    email: A2@example.org
     prenom: Jules
     nom: Roux
     dateNaissance: 1971-07-19
@@ -362,6 +364,7 @@ animateurs:
       - 2026-07-13
       - 2026-07-12
   - id: A3
+    email: A3@example.org
     prenom: Berenice
     nom: Richard
     dateNaissance: 1962-12-09
@@ -372,6 +375,7 @@ animateurs:
       ROLE: AUTONOME
     joursIndisponibles: []
   - id: A4
+    email: A4@example.org
     prenom: Iris
     nom: Henry
     dateNaissance: 1996-12-10
@@ -382,6 +386,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-16
   - id: A5
+    email: A5@example.org
     prenom: Adrien
     nom: Petit
     dateNaissance: 2009-06-14
@@ -393,6 +398,7 @@ animateurs:
       - 2026-07-14
       - 2026-07-16
   - id: A6
+    email: A6@example.org
     prenom: Karim
     nom: Michel
     dateNaissance: 1995-07-02
@@ -403,6 +409,7 @@ animateurs:
       COOPERATIF: DEBUTANT
     joursIndisponibles: []
   - id: A7
+    email: A7@example.org
     prenom: Tania
     nom: Garcia
     dateNaissance: 1960-02-01
@@ -416,6 +423,7 @@ animateurs:
       - 2026-07-15
       - 2026-07-16
   - id: A8
+    email: A8@example.org
     prenom: Thibault
     nom: Simon
     dateNaissance: 1968-05-17
@@ -426,6 +434,7 @@ animateurs:
       ROLE: AUTONOME
     joursIndisponibles: []
   - id: A9
+    email: A9@example.org
     prenom: Noemie
     nom: Muller
     dateNaissance: 1993-03-26
@@ -437,6 +446,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-19
   - id: A10
+    email: A10@example.org
     prenom: Yasmine
     nom: Morin
     dateNaissance: 1992-01-23
@@ -449,6 +459,7 @@ animateurs:
       ROLE: AUTONOME
     joursIndisponibles: []
   - id: A11
+    email: A11@example.org
     prenom: Olivier
     nom: Fontaine
     dateNaissance: 1960-04-22
@@ -459,6 +470,7 @@ animateurs:
       ROLE: AUTONOME
     joursIndisponibles: []
   - id: A12
+    email: A12@example.org
     prenom: Jules
     nom: Fontaine
     dateNaissance: 1960-08-20
@@ -471,6 +483,7 @@ animateurs:
       COOPERATIF: REFERENT
     joursIndisponibles: []
   - id: A13
+    email: A13@example.org
     prenom: William
     nom: Moreau
     dateNaissance: 1982-09-24
@@ -483,6 +496,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-19
   - id: A14
+    email: A14@example.org
     prenom: Elise
     nom: Blanc
     dateNaissance: 2010-08-23
@@ -494,6 +508,7 @@ animateurs:
       - 2026-07-13
       - 2026-07-12
   - id: A15
+    email: A15@example.org
     prenom: William
     nom: Roux
     dateNaissance: 1985-02-17
@@ -504,6 +519,7 @@ animateurs:
       ROLE: AUTONOME
     joursIndisponibles: []
   - id: A16
+    email: A16@example.org
     prenom: Jules
     nom: Henry
     dateNaissance: 1978-11-23
@@ -514,6 +530,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-19
   - id: A17
+    email: A17@example.org
     prenom: Wafa
     nom: David
     dateNaissance: 2010-10-10
@@ -524,6 +541,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-15
   - id: A18
+    email: A18@example.org
     prenom: Emma
     nom: Blanc
     dateNaissance: 1992-11-19
@@ -534,6 +552,7 @@ animateurs:
       COOPERATIF: DEBUTANT
     joursIndisponibles: []
   - id: A19
+    email: A19@example.org
     prenom: Wafa
     nom: Blanc
     dateNaissance: 1972-01-25
@@ -545,6 +564,7 @@ animateurs:
       AMBIANCE: AUTONOME
     joursIndisponibles: []
   - id: A20
+    email: A20@example.org
     prenom: Olivier
     nom: Fontaine
     dateNaissance: 1963-03-10
@@ -557,6 +577,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-12
   - id: A21
+    email: A21@example.org
     prenom: Gabrielle
     nom: Leroy
     dateNaissance: 1990-12-10
@@ -568,6 +589,7 @@ animateurs:
       COOPERATIF: AUTONOME
     joursIndisponibles: []
   - id: A22
+    email: A22@example.org
     prenom: Valentine
     nom: Perrin
     dateNaissance: 1974-07-11
@@ -578,6 +600,7 @@ animateurs:
       ROLE: AUTONOME
     joursIndisponibles: []
   - id: A23
+    email: A23@example.org
     prenom: Diane
     nom: Morin
     dateNaissance: 1974-03-03
@@ -588,6 +611,7 @@ animateurs:
       ROLE: AUTONOME
     joursIndisponibles: []
   - id: A24
+    email: A24@example.org
     prenom: Quitterie
     nom: Blanc
     dateNaissance: 1968-02-21
@@ -600,6 +624,7 @@ animateurs:
       - 2026-07-15
       - 2026-07-16
   - id: A25
+    email: A25@example.org
     prenom: Remi
     nom: Lefebvre
     dateNaissance: 1973-06-03
@@ -609,6 +634,7 @@ animateurs:
       ROLE: AUTONOME
     joursIndisponibles: []
   - id: A26
+    email: A26@example.org
     prenom: Chloe
     nom: Guerin
     dateNaissance: 1980-08-08
@@ -619,6 +645,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-19
   - id: A27
+    email: A27@example.org
     prenom: Pauline
     nom: Vincent
     dateNaissance: 1997-05-02
@@ -629,6 +656,7 @@ animateurs:
       ROLE: AUTONOME
     joursIndisponibles: []
   - id: A28
+    email: A28@example.org
     prenom: Perrine
     nom: Rousseau
     dateNaissance: 1973-12-28
@@ -640,6 +668,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-19
   - id: A29
+    email: A29@example.org
     prenom: Oscar
     nom: Roussel
     dateNaissance: 1973-10-20
@@ -652,6 +681,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-19
   - id: A30
+    email: A30@example.org
     prenom: Florian
     nom: Bertrand
     dateNaissance: 2006-04-13
@@ -661,6 +691,7 @@ animateurs:
       STRATEGIE: DEBUTANT
     joursIndisponibles: []
   - id: A31
+    email: A31@example.org
     prenom: Noemie
     nom: Garcia
     dateNaissance: 1985-02-14
@@ -670,6 +701,7 @@ animateurs:
       COOPERATIF: AUTONOME
     joursIndisponibles: []
   - id: A32
+    email: A32@example.org
     prenom: Emma
     nom: Richard
     dateNaissance: 1968-08-15
@@ -682,6 +714,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-19
   - id: A33
+    email: A33@example.org
     prenom: Fabien
     nom: Bertrand
     dateNaissance: 2006-04-23
@@ -692,6 +725,7 @@ animateurs:
       AMBIANCE: AUTONOME
     joursIndisponibles: []
   - id: A34
+    email: A34@example.org
     prenom: Victor
     nom: Blanc
     dateNaissance: 2003-11-22
@@ -703,6 +737,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-19
   - id: A35
+    email: A35@example.org
     prenom: Marc
     nom: Laurent
     dateNaissance: 1972-08-15
@@ -712,6 +747,7 @@ animateurs:
       ENIGME: DEBUTANT
     joursIndisponibles: []
   - id: A36
+    email: A36@example.org
     prenom: Bruno
     nom: Simon
     dateNaissance: 1963-11-11
@@ -721,6 +757,7 @@ animateurs:
       ROLE: AUTONOME
     joursIndisponibles: []
   - id: A37
+    email: A37@example.org
     prenom: Elise
     nom: Bernard
     dateNaissance: 1985-05-24
@@ -731,6 +768,7 @@ animateurs:
       - 2026-07-13
       - 2026-07-12
   - id: A38
+    email: A38@example.org
     prenom: Ugo
     nom: Mathieu
     dateNaissance: 1983-09-16
@@ -741,6 +779,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-12
   - id: A39
+    email: A39@example.org
     prenom: Laura
     nom: Roux
     dateNaissance: 2002-02-11
@@ -751,6 +790,7 @@ animateurs:
       COOPERATIF: AUTONOME
     joursIndisponibles: []
   - id: A40
+    email: A40@example.org
     prenom: Jules
     nom: Thomas
     dateNaissance: 1992-12-15
@@ -762,6 +802,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-12
   - id: A41
+    email: A41@example.org
     prenom: Xavier
     nom: Garcia
     dateNaissance: 1973-03-20
@@ -771,6 +812,7 @@ animateurs:
       ROLE: AUTONOME
     joursIndisponibles: []
   - id: A42
+    email: A42@example.org
     prenom: Umberto
     nom: Morin
     dateNaissance: 1972-01-27
@@ -780,6 +822,7 @@ animateurs:
       STRATEGIE: REFERENT
     joursIndisponibles: []
   - id: A43
+    email: A43@example.org
     prenom: Romane
     nom: Garcia
     dateNaissance: 2002-01-10
@@ -791,6 +834,7 @@ animateurs:
       COOPERATIF: REFERENT
     joursIndisponibles: []
   - id: A44
+    email: A44@example.org
     prenom: Marc
     nom: Laurent
     dateNaissance: 2004-07-17
@@ -802,6 +846,7 @@ animateurs:
       AMBIANCE: AUTONOME
     joursIndisponibles: []
   - id: A45
+    email: A45@example.org
     prenom: Sarah
     nom: Rousseau
     dateNaissance: 2009-05-21
@@ -814,6 +859,7 @@ animateurs:
       - 2026-07-15
       - 2026-07-19
   - id: A46
+    email: A46@example.org
     prenom: Yanis
     nom: Moreau
     dateNaissance: 1964-12-16
@@ -824,6 +870,7 @@ animateurs:
       AMBIANCE: AUTONOME
     joursIndisponibles: []
   - id: A47
+    email: A47@example.org
     prenom: Marc
     nom: Henry
     dateNaissance: 1988-05-21
@@ -835,6 +882,7 @@ animateurs:
       - 2026-07-15
       - 2026-07-16
   - id: A48
+    email: A48@example.org
     prenom: Diane
     nom: Rousseau
     dateNaissance: 1977-03-28
@@ -845,6 +893,7 @@ animateurs:
       AMBIANCE: DEBUTANT
     joursIndisponibles: []
   - id: A49
+    email: A49@example.org
     prenom: Karim
     nom: Lefebvre
     dateNaissance: 1963-05-23
@@ -855,6 +904,7 @@ animateurs:
       ROLE: AUTONOME
     joursIndisponibles: []
   - id: A50
+    email: A50@example.org
     prenom: Bruno
     nom: Lefebvre
     dateNaissance: 2008-12-07
@@ -865,6 +915,7 @@ animateurs:
       - 2026-07-15
       - 2026-07-19
   - id: A51
+    email: A51@example.org
     prenom: Iris
     nom: Robert
     dateNaissance: 1986-02-06
@@ -878,6 +929,7 @@ animateurs:
       - 2026-07-13
       - 2026-07-16
   - id: A52
+    email: A52@example.org
     prenom: Bruno
     nom: Durand
     dateNaissance: 2002-10-02
@@ -887,6 +939,7 @@ animateurs:
       AMBIANCE: AUTONOME
     joursIndisponibles: []
   - id: A53
+    email: A53@example.org
     prenom: Elise
     nom: Durand
     dateNaissance: 1989-12-05
@@ -897,6 +950,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-19
   - id: A54
+    email: A54@example.org
     prenom: Diane
     nom: Roux
     dateNaissance: 1989-05-12
@@ -908,6 +962,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-19
   - id: A55
+    email: A55@example.org
     prenom: Chloe
     nom: Nicolas
     dateNaissance: 1966-01-25
@@ -918,6 +973,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-12
   - id: A56
+    email: A56@example.org
     prenom: Laura
     nom: Thomas
     dateNaissance: 1975-03-08
@@ -929,6 +985,7 @@ animateurs:
       ROLE: REFERENT
     joursIndisponibles: []
   - id: A57
+    email: A57@example.org
     prenom: Thibault
     nom: Nicolas
     dateNaissance: 2004-05-06
@@ -940,6 +997,7 @@ animateurs:
       COOPERATIF: AUTONOME
     joursIndisponibles: []
   - id: A58
+    email: A58@example.org
     prenom: Yasmine
     nom: Dubois
     dateNaissance: 1990-04-23
@@ -950,6 +1008,7 @@ animateurs:
       COOPERATIF: AUTONOME
     joursIndisponibles: []
   - id: A59
+    email: A59@example.org
     prenom: Xavier
     nom: Leroy
     dateNaissance: 1962-11-16
@@ -959,6 +1018,7 @@ animateurs:
       COOPERATIF: DEBUTANT
     joursIndisponibles: []
   - id: A60
+    email: A60@example.org
     prenom: Iris
     nom: Richard
     dateNaissance: 1973-01-24
@@ -969,6 +1029,7 @@ animateurs:
       - 2026-07-13
       - 2026-07-12
   - id: A61
+    email: A61@example.org
     prenom: Sarah
     nom: Morin
     dateNaissance: 1970-11-03
@@ -978,6 +1039,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-12
   - id: A62
+    email: A62@example.org
     prenom: Simon
     nom: Michel
     dateNaissance: 2003-02-27
@@ -987,6 +1049,7 @@ animateurs:
       ROLE: AUTONOME
     joursIndisponibles: []
   - id: A63
+    email: A63@example.org
     prenom: Xavier
     nom: Simon
     dateNaissance: 2001-05-22
@@ -999,6 +1062,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-19
   - id: A64
+    email: A64@example.org
     prenom: Jules
     nom: Bertrand
     dateNaissance: 1982-11-16
@@ -1009,6 +1073,7 @@ animateurs:
       COOPERATIF: DEBUTANT
     joursIndisponibles: []
   - id: A65
+    email: A65@example.org
     prenom: Fabien
     nom: Garcia
     dateNaissance: 2001-04-07
@@ -1020,6 +1085,7 @@ animateurs:
       ROLE: AUTONOME
     joursIndisponibles: []
   - id: A66
+    email: A66@example.org
     prenom: Zoe
     nom: David
     dateNaissance: 2009-11-14
@@ -1029,6 +1095,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-15
   - id: A67
+    email: A67@example.org
     prenom: Ugo
     nom: Nicolas
     dateNaissance: 1973-10-05
@@ -1041,6 +1108,7 @@ animateurs:
       - 2026-07-14
       - 2026-07-16
   - id: A68
+    email: A68@example.org
     prenom: Xavier
     nom: Leroy
     dateNaissance: 2010-01-13
@@ -1053,6 +1121,7 @@ animateurs:
       - 2026-07-19
       - 2026-07-16
   - id: A69
+    email: A69@example.org
     prenom: Perrine
     nom: Blanc
     dateNaissance: 2010-10-21
@@ -1063,6 +1132,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-15
   - id: A70
+    email: A70@example.org
     prenom: Ines
     nom: Lefebvre
     dateNaissance: 1972-07-12
@@ -1074,6 +1144,7 @@ animateurs:
       - 2026-07-14
       - 2026-07-16
   - id: A71
+    email: A71@example.org
     prenom: Julien
     nom: Roux
     dateNaissance: 1971-11-25
@@ -1084,6 +1155,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-16
   - id: A72
+    email: A72@example.org
     prenom: Hicham
     nom: Dubois
     dateNaissance: 1972-11-03
@@ -1095,6 +1167,7 @@ animateurs:
       COOPERATIF: DEBUTANT
     joursIndisponibles: []
   - id: A73
+    email: A73@example.org
     prenom: Ugo
     nom: Leroy
     dateNaissance: 1972-06-04
@@ -1105,6 +1178,7 @@ animateurs:
       - 2026-07-13
       - 2026-07-12
   - id: A74
+    email: A74@example.org
     prenom: Marc
     nom: Muller
     dateNaissance: 1960-04-05
@@ -1116,6 +1190,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-12
   - id: A75
+    email: A75@example.org
     prenom: Sarah
     nom: Morin
     dateNaissance: 1961-02-19
@@ -1125,6 +1200,7 @@ animateurs:
       ROLE: REFERENT
     joursIndisponibles: []
   - id: A76
+    email: A76@example.org
     prenom: Adrien
     nom: Thomas
     dateNaissance: 1959-04-15
@@ -1135,6 +1211,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-19
   - id: A77
+    email: A77@example.org
     prenom: Emma
     nom: Martin
     dateNaissance: 1996-11-15
@@ -1145,6 +1222,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-19
   - id: A78
+    email: A78@example.org
     prenom: William
     nom: David
     dateNaissance: 1977-06-19
@@ -1155,6 +1233,7 @@ animateurs:
       ROLE: AUTONOME
     joursIndisponibles: []
   - id: A79
+    email: A79@example.org
     prenom: Yasmine
     nom: Laurent
     dateNaissance: 1997-03-08
@@ -1165,6 +1244,7 @@ animateurs:
       ENIGME: AUTONOME
     joursIndisponibles: []
   - id: A80
+    email: A80@example.org
     prenom: Julien
     nom: Henry
     dateNaissance: 2009-02-12
@@ -1176,6 +1256,7 @@ animateurs:
       - 2026-07-12
       - 2026-07-15
   - id: A81
+    email: A81@example.org
     prenom: Laura
     nom: Fontaine
     dateNaissance: 1969-04-21
@@ -1187,6 +1268,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-19
   - id: A82
+    email: A82@example.org
     prenom: Gaelle
     nom: Dubois
     dateNaissance: 1984-03-24
@@ -1196,6 +1278,7 @@ animateurs:
       ROLE: AUTONOME
     joursIndisponibles: []
   - id: A83
+    email: A83@example.org
     prenom: Yasmine
     nom: Laurent
     dateNaissance: 2006-05-15
@@ -1207,6 +1290,7 @@ animateurs:
       - 2026-07-15
       - 2026-07-16
   - id: A84
+    email: A84@example.org
     prenom: Elise
     nom: Moreau
     dateNaissance: 2010-09-19
@@ -1219,6 +1303,7 @@ animateurs:
       - 2026-07-15
       - 2026-07-16
   - id: A85
+    email: A85@example.org
     prenom: Hugo
     nom: Michel
     dateNaissance: 2010-02-19
@@ -1229,6 +1314,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-15
   - id: A86
+    email: A86@example.org
     prenom: Mathis
     nom: Rousseau
     dateNaissance: 2009-04-27
@@ -1241,6 +1327,7 @@ animateurs:
       - 2026-07-19
       - 2026-07-16
   - id: A87
+    email: A87@example.org
     prenom: Elise
     nom: Vincent
     dateNaissance: 1986-03-27
@@ -1252,6 +1339,7 @@ animateurs:
       - 2026-07-15
       - 2026-07-16
   - id: A88
+    email: A88@example.org
     prenom: Oscar
     nom: Leroy
     dateNaissance: 1989-12-23
@@ -1262,6 +1350,7 @@ animateurs:
       COOPERATIF: AUTONOME
     joursIndisponibles: []
   - id: A89
+    email: A89@example.org
     prenom: Florian
     nom: Moreau
     dateNaissance: 1982-07-13
@@ -1273,6 +1362,7 @@ animateurs:
       AMBIANCE: AUTONOME
     joursIndisponibles: []
   - id: A90
+    email: A90@example.org
     prenom: Adrien
     nom: Vincent
     dateNaissance: 1979-03-11
@@ -1282,6 +1372,7 @@ animateurs:
       ROLE: AUTONOME
     joursIndisponibles: []
   - id: A91
+    email: A91@example.org
     prenom: Tania
     nom: Richard
     dateNaissance: 2010-05-10
@@ -1293,6 +1384,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-15
   - id: A92
+    email: A92@example.org
     prenom: Gabrielle
     nom: Muller
     dateNaissance: 1990-02-26
@@ -1302,6 +1394,7 @@ animateurs:
       ENIGME: AUTONOME
     joursIndisponibles: []
   - id: A93
+    email: A93@example.org
     prenom: Remi
     nom: Simon
     dateNaissance: 2001-02-28
@@ -1310,6 +1403,7 @@ animateurs:
       STRATEGIE: REFERENT
     joursIndisponibles: []
   - id: A94
+    email: A94@example.org
     prenom: Lea
     nom: David
     dateNaissance: 1965-08-06
@@ -1319,6 +1413,7 @@ animateurs:
       STRATEGIE: REFERENT
     joursIndisponibles: []
   - id: A95
+    email: A95@example.org
     prenom: Yasmine
     nom: Robert
     dateNaissance: 1973-10-02
@@ -1328,6 +1423,7 @@ animateurs:
       ROLE: AUTONOME
     joursIndisponibles: []
   - id: A96
+    email: A96@example.org
     prenom: Quitterie
     nom: Laurent
     dateNaissance: 2001-02-25
@@ -1337,6 +1433,7 @@ animateurs:
       STRATEGIE: AUTONOME
     joursIndisponibles: []
   - id: A97
+    email: A97@example.org
     prenom: Berenice
     nom: Nicolas
     dateNaissance: 1976-03-23
@@ -1346,6 +1443,7 @@ animateurs:
       ROLE: AUTONOME
     joursIndisponibles: []
   - id: A98
+    email: A98@example.org
     prenom: Wafa
     nom: Laurent
     dateNaissance: 1971-10-22
@@ -1357,6 +1455,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-16
   - id: A99
+    email: A99@example.org
     prenom: Perrine
     nom: Roux
     dateNaissance: 1976-12-10
@@ -1366,6 +1465,7 @@ animateurs:
       COOPERATIF: DEBUTANT
     joursIndisponibles: []
   - id: A100
+    email: A100@example.org
     prenom: Ugo
     nom: Fontaine
     dateNaissance: 2009-08-26
@@ -1376,6 +1476,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-15
   - id: A101
+    email: A101@example.org
     prenom: Remi
     nom: Morin
     dateNaissance: 1958-02-13
@@ -1386,6 +1487,7 @@ animateurs:
       ROLE: AUTONOME
     joursIndisponibles: []
   - id: A102
+    email: A102@example.org
     prenom: Remi
     nom: Thomas
     dateNaissance: 1967-12-20
@@ -1397,6 +1499,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-19
   - id: A103
+    email: A103@example.org
     prenom: Victor
     nom: Morin
     dateNaissance: 1995-07-21
@@ -1406,6 +1509,7 @@ animateurs:
       AMBIANCE: DEBUTANT
     joursIndisponibles: []
   - id: A104
+    email: A104@example.org
     prenom: Berenice
     nom: Richard
     dateNaissance: 2010-04-23
@@ -1416,6 +1520,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-15
   - id: A105
+    email: A105@example.org
     prenom: Remi
     nom: Richard
     dateNaissance: 2000-08-06
@@ -1428,6 +1533,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-16
   - id: A106
+    email: A106@example.org
     prenom: Oscar
     nom: Bertrand
     dateNaissance: 1986-08-26
@@ -1438,6 +1544,7 @@ animateurs:
       AMBIANCE: AUTONOME
     joursIndisponibles: []
   - id: A107
+    email: A107@example.org
     prenom: Umberto
     nom: Blanc
     dateNaissance: 2003-04-15
@@ -1447,6 +1554,7 @@ animateurs:
       COOPERATIF: REFERENT
     joursIndisponibles: []
   - id: A108
+    email: A108@example.org
     prenom: Gabrielle
     nom: Henry
     dateNaissance: 2009-11-05
@@ -1459,6 +1567,7 @@ animateurs:
       - 2026-07-15
       - 2026-07-19
   - id: A109
+    email: A109@example.org
     prenom: Wafa
     nom: Petit
     dateNaissance: 1958-09-16
@@ -1471,6 +1580,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-19
   - id: A110
+    email: A110@example.org
     prenom: Marc
     nom: Perrin
     dateNaissance: 1975-05-07
@@ -1483,6 +1593,7 @@ animateurs:
       - 2026-07-15
       - 2026-07-16
   - id: A111
+    email: A111@example.org
     prenom: Oscar
     nom: Fontaine
     dateNaissance: 1979-07-19
@@ -1492,6 +1603,7 @@ animateurs:
       COOPERATIF: AUTONOME
     joursIndisponibles: []
   - id: A112
+    email: A112@example.org
     prenom: Emma
     nom: Lefebvre
     dateNaissance: 1994-11-23
@@ -1502,6 +1614,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-19
   - id: A113
+    email: A113@example.org
     prenom: Iris
     nom: Bernard
     dateNaissance: 1985-10-11
@@ -1514,6 +1627,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-19
   - id: A114
+    email: A114@example.org
     prenom: Remi
     nom: Durand
     dateNaissance: 1962-05-26
@@ -1523,6 +1637,7 @@ animateurs:
       COOPERATIF: REFERENT
     joursIndisponibles: []
   - id: A115
+    email: A115@example.org
     prenom: Quentin
     nom: Laurent
     dateNaissance: 2010-06-28
@@ -1534,6 +1649,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-15
   - id: A116
+    email: A116@example.org
     prenom: Adrien
     nom: Richard
     dateNaissance: 2007-03-24
@@ -1545,6 +1661,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-19
   - id: A117
+    email: A117@example.org
     prenom: Berenice
     nom: Bertrand
     dateNaissance: 1974-05-12
@@ -1553,6 +1670,7 @@ animateurs:
       ENIGME: DEBUTANT
     joursIndisponibles: []
   - id: A118
+    email: A118@example.org
     prenom: Hicham
     nom: Henry
     dateNaissance: 1969-12-22
@@ -1564,6 +1682,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-12
   - id: A119
+    email: A119@example.org
     prenom: Florian
     nom: Laurent
     dateNaissance: 1958-01-11
@@ -1574,6 +1693,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-19
   - id: A120
+    email: A120@example.org
     prenom: Alice
     nom: Richard
     dateNaissance: 1971-02-13
@@ -1583,6 +1703,7 @@ animateurs:
       ROLE: AUTONOME
     joursIndisponibles: []
   - id: A121
+    email: A121@example.org
     prenom: Emma
     nom: Bertrand
     dateNaissance: 1990-05-18
@@ -1593,6 +1714,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-19
   - id: A122
+    email: A122@example.org
     prenom: Nina
     nom: Rousseau
     dateNaissance: 2003-08-26
@@ -1603,6 +1725,7 @@ animateurs:
       AMBIANCE: AUTONOME
     joursIndisponibles: []
   - id: A123
+    email: A123@example.org
     prenom: William
     nom: Morin
     dateNaissance: 1988-06-14
@@ -1613,6 +1736,7 @@ animateurs:
       ROLE: DEBUTANT
     joursIndisponibles: []
   - id: A124
+    email: A124@example.org
     prenom: William
     nom: Robert
     dateNaissance: 2009-10-08
@@ -1624,6 +1748,7 @@ animateurs:
       - 2026-07-12
       - 2026-07-15
   - id: A125
+    email: A125@example.org
     prenom: Victor
     nom: Rousseau
     dateNaissance: 2008-11-25
@@ -1633,6 +1758,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-15
   - id: A126
+    email: A126@example.org
     prenom: Romane
     nom: Henry
     dateNaissance: 1965-10-03
@@ -1642,6 +1768,7 @@ animateurs:
       COOPERATIF: DEBUTANT
     joursIndisponibles: []
   - id: A127
+    email: A127@example.org
     prenom: Julien
     nom: Perrin
     dateNaissance: 1990-01-11
@@ -1651,6 +1778,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-12
   - id: A128
+    email: A128@example.org
     prenom: Sarah
     nom: Fontaine
     dateNaissance: 1979-11-01
@@ -1660,6 +1788,7 @@ animateurs:
       ROLE: DEBUTANT
     joursIndisponibles: []
   - id: A129
+    email: A129@example.org
     prenom: Bruno
     nom: Roux
     dateNaissance: 1994-03-11
@@ -1669,6 +1798,7 @@ animateurs:
       ROLE: AUTONOME
     joursIndisponibles: []
   - id: A130
+    email: A130@example.org
     prenom: Ugo
     nom: Nicolas
     dateNaissance: 1962-01-25
@@ -1679,6 +1809,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-19
   - id: A131
+    email: A131@example.org
     prenom: Marc
     nom: Henry
     dateNaissance: 1997-08-28
@@ -1690,6 +1821,7 @@ animateurs:
       - 2026-07-13
       - 2026-07-12
   - id: A132
+    email: A132@example.org
     prenom: Chloe
     nom: Roux
     dateNaissance: 1960-11-02
@@ -1699,6 +1831,7 @@ animateurs:
       COOPERATIF: AUTONOME
     joursIndisponibles: []
   - id: A133
+    email: A133@example.org
     prenom: Perrine
     nom: Mathieu
     dateNaissance: 1998-12-24
@@ -1709,6 +1842,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-19
   - id: A134
+    email: A134@example.org
     prenom: Pauline
     nom: Petit
     dateNaissance: 1978-08-14
@@ -1720,6 +1854,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-16
   - id: A135
+    email: A135@example.org
     prenom: Emma
     nom: Henry
     dateNaissance: 1973-02-10
@@ -1729,6 +1864,7 @@ animateurs:
       ROLE: REFERENT
     joursIndisponibles: []
   - id: A136
+    email: A136@example.org
     prenom: Victor
     nom: Perrin
     dateNaissance: 1969-07-14
@@ -1738,6 +1874,7 @@ animateurs:
       ROLE: AUTONOME
     joursIndisponibles: []
   - id: A137
+    email: A137@example.org
     prenom: Umberto
     nom: Blanc
     dateNaissance: 1974-01-07
@@ -1748,6 +1885,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-12
   - id: A138
+    email: A138@example.org
     prenom: Tania
     nom: Petit
     dateNaissance: 1997-02-12
@@ -1759,6 +1897,7 @@ animateurs:
       - 2026-07-13
       - 2026-07-12
   - id: A139
+    email: A139@example.org
     prenom: Hicham
     nom: Thomas
     dateNaissance: 2010-11-28
@@ -1771,6 +1910,7 @@ animateurs:
       - 2026-07-19
       - 2026-07-16
   - id: A140
+    email: A140@example.org
     prenom: Jules
     nom: Bertrand
     dateNaissance: 2009-09-11
@@ -1781,6 +1921,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-15
   - id: A141
+    email: A141@example.org
     prenom: Julien
     nom: Perrin
     dateNaissance: 1992-06-13
@@ -1791,6 +1932,7 @@ animateurs:
       ROLE: AUTONOME
     joursIndisponibles: []
   - id: A142
+    email: A142@example.org
     prenom: Laura
     nom: Moreau
     dateNaissance: 2004-10-04
@@ -1801,6 +1943,7 @@ animateurs:
       COOPERATIF: AUTONOME
     joursIndisponibles: []
   - id: A143
+    email: A143@example.org
     prenom: Zoe
     nom: Perrin
     dateNaissance: 2009-01-12
@@ -1811,6 +1954,7 @@ animateurs:
       - 2026-07-15
       - 2026-07-19
   - id: A144
+    email: A144@example.org
     prenom: Berenice
     nom: Fontaine
     dateNaissance: 1976-07-18
@@ -1821,6 +1965,7 @@ animateurs:
       ROLE: AUTONOME
     joursIndisponibles: []
   - id: A145
+    email: A145@example.org
     prenom: Simon
     nom: Moreau
     dateNaissance: 1964-10-24
@@ -1832,6 +1977,7 @@ animateurs:
     joursIndisponibles:
       - 2026-07-19
   - id: A146
+    email: A146@example.org
     prenom: Yanis
     nom: Lefebvre
     dateNaissance: 1980-12-21
@@ -1843,6 +1989,7 @@ animateurs:
       ROLE: AUTONOME
     joursIndisponibles: []
   - id: A147
+    email: A147@example.org
     prenom: Perrine
     nom: Perrin
     dateNaissance: 1991-05-26
@@ -1854,6 +2001,7 @@ animateurs:
       COOPERATIF: AUTONOME
     joursIndisponibles: []
   - id: A148
+    email: A148@example.org
     prenom: Diane
     nom: Blanc
     dateNaissance: 1968-08-09
@@ -1865,6 +2013,7 @@ animateurs:
       - 2026-07-13
       - 2026-07-12
   - id: A149
+    email: A149@example.org
     prenom: Cedric
     nom: Guerin
     dateNaissance: 2006-02-03
@@ -1878,6 +2027,7 @@ animateurs:
       - 2026-07-13
       - 2026-07-16
   - id: A150
+    email: A150@example.org
     prenom: Yanis
     nom: David
     dateNaissance: 2009-06-22

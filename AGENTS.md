@@ -218,10 +218,16 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   dedicated CI job. Favour testing `core/` logic (services with a mocked
   `ApiService`, pure helpers) over heavy component-rendering tests.
 - End-to-end tests are Playwright specs in `src/main/webui/e2e` (`npm run
-  e2e`), locking the issue #165 security perimeter (auth wall, espace
-  animateur boundary, full échange flow). **Deliberately excluded from CI**:
-  they need the full stack and write to the database — run them only against a
-  disposable local stack (see `docs/developpement.md` § Tests de bout en bout).
+  e2e`): the issue #165 security perimeter (auth wall, espace animateur
+  boundary, full échange flow with refusal and cancellation), a smoke sweep of
+  every admin route plus the language toggle, reference-data CRUD through the
+  UI, the planning views over seeded data, locks, the help page, **real short
+  solves** (ad hoc constraints respected and visible, a locked animateur
+  unchanged by a re-solve, an accepted échange surviving regeneration) and
+  **seeded invariant fuzzing** (random referentials solved for real, replayed
+  with `E2E_FUZZ_SEED`). **Deliberately excluded from CI**: they need the full
+  stack and write to the database — run them only against a disposable local
+  stack (see `docs/developpement.md` § Tests de bout en bout).
 
 ## Domain invariants (never break these)
 
