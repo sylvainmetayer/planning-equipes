@@ -214,6 +214,12 @@ On distingue quatre familles de tests :
   l'animateur imposé), un verrouillage `ANIMATEUR` fige un planning à
   l'identique après re-résolution, et un échange accepté **survit à la
   régénération** grâce à ses verrous `ANIMATEUR_CRENEAU` ;
+- **cas limites du périmètre** (`e2e/cas-limites.spec.ts`) : la régénération
+  du jeton vue du navigateur (l'ancien lien meurt en impasse propre, le
+  nouveau reprend l'espace), une demande vers un collègue indisponible
+  signalée infaisable **des deux côtés** (alerte métier chez l'animateur,
+  bandeau « Signalée infaisable » chez l'admin), et un lien profond admin
+  sans session qui repasse par `/login` ;
 - **fuzzing à invariants** (`e2e/solveur-fuzz.spec.ts`) : des référentiels
   aléatoires mais **reproductibles** (PRNG semé, graine affichée dans la
   sortie et rejouable avec `E2E_FUZZ_SEED=<graine>`) sont résolus pour de

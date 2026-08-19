@@ -99,6 +99,19 @@ class VerrouillageConstraintsTest extends ConstraintTestBase {
                 .penalizesBy(0);
     }
 
+    /** Le verrou (animateur, créneau) ne bride que cet animateur-là. */
+    @Test
+    void unAutreAnimateurResteLibreSurLeCreneauVerrouille() {
+        Animateur a1 = majeurReferent("A1");
+        Animateur a2 = majeurAutonome("A2");
+        verify("animateurVerrouilleCreneauFige")
+                .given(a1, a2,
+                        posteVerrouille(standStrat, creneauMatin, a1),
+                        poste(standStrat, creneauMatin, a2),
+                        verrouAnimateurCreneau("V1", a1, creneauMatin))
+                .penalizesBy(0);
+    }
+
     @Test
     void unVerrouillageJourNeContraintPersonneParLuiMeme() {
         Animateur a1 = majeurReferent("A1");

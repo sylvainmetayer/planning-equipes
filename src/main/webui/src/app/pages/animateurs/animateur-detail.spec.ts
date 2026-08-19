@@ -63,4 +63,25 @@ describe('buildAnimateurDetail', () => {
     const sans = buildAnimateurDetail(animateur(), [], new Date(2026, 6, 8));
     expect(rowValue(sans, 'Indisponibilités')).toBe('Disponible tous les jours');
   });
+
+  it("montre l'e-mail et le lien espace quand la fiche les porte (issue #165)", () => {
+    const sections = buildAnimateurDetail(
+      animateur({ email: 'ada@example.org', jetonAcces: 'jeton-opaque' }),
+      [],
+      new Date(2026, 6, 8)
+    );
+    expect(rowValue(sections, 'E-mail')).toBe('ada@example.org');
+    expect(rowValue(sections, 'Lien espace animateur')).toBe('/animateur/jeton-opaque');
+  });
+
+  it('dit « Aucun » sans e-mail ni jeton, plutôt que des cases vides', () => {
+    const sections = buildAnimateurDetail(animateur(), [], new Date(2026, 6, 8));
+    const rows = sections.flatMap((section) => section.rows);
+    const email = rows.find((row) => row.label === 'E-mail');
+    const lien = rows.find((row) => row.label === 'Lien espace animateur');
+    expect(email?.value).toBe('Aucun');
+    expect(email?.muted).toBe(true);
+    expect(lien?.value).toBe('Aucun');
+    expect(lien?.muted).toBe(true);
+  });
 });

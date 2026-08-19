@@ -120,6 +120,49 @@ class PlanningServiceVerrouillageTest {
         assertThat(postes.get(1).getAnimateur()).isEqualTo(bob);
     }
 
+    /**
+     * The ANIMATEUR_CRENEAU lock (issue #165, posé par un échange validé) only
+     * freezes that animateur's seat on that créneau: their seats on other
+     * créneaux stay free for the next solve.
+     */
+    @Test
+    void unVerrouillageAnimateurCreneauNeFigeQueCeSiegeLa() {
+        List<PosteAffectation> postes = List.of(
+                poste("poste-0", standA, matinJ1),
+                poste("poste-1", standA, matinJ2));
+        VerrouillagePlanning verrouillage = verrou(TypeVerrouillage.ANIMATEUR_CRENEAU);
+        verrouillage.setAnimateurId("A1");
+        verrouillage.setCreneauId(1L);
+
+        PlanningService.appliquerVerrouillages(postes, animateurs, List.of(verrouillage), Map.of(
+                PlanningPersistenceService.cleStandCreneau("STAND-A", 1L), List.of("A1"),
+                PlanningPersistenceService.cleStandCreneau("STAND-A", 2L), List.of("A1")));
+
+        assertThat(postes.get(0).isVerrouille()).isTrue();
+        assertThat(postes.get(0).getAnimateur()).isEqualTo(alice);
+        assertThat(postes.get(1).isVerrouille()).isFalse();
+        assertThat(postes.get(1).getAnimateur()).isNull();
+    }
+
+    /** On a two-seat stand, the seat frozen is the one the locked animateur held. */
+    @Test
+    void unVerrouillageAnimateurCreneauViseLeBonSiegeDuStand() {
+        List<PosteAffectation> postes = List.of(
+                poste("poste-0", standA, matinJ1),
+                poste("poste-1", standA, matinJ1));
+        VerrouillagePlanning verrouillage = verrou(TypeVerrouillage.ANIMATEUR_CRENEAU);
+        verrouillage.setAnimateurId("A2");
+        verrouillage.setCreneauId(1L);
+
+        PlanningService.appliquerVerrouillages(postes, animateurs, List.of(verrouillage), Map.of(
+                PlanningPersistenceService.cleStandCreneau("STAND-A", 1L), List.of("A1", "A2")));
+
+        assertThat(postes.get(0).isVerrouille()).isFalse();
+        assertThat(postes.get(0).getAnimateur()).isNull();
+        assertThat(postes.get(1).isVerrouille()).isTrue();
+        assertThat(postes.get(1).getAnimateur()).isEqualTo(bob);
+    }
+
     /** A hole is never frozen: pinning it would make it permanently unfillable. */
     @Test
     void unSiegeNonPourvuNEstJamaisFige() {

@@ -10,9 +10,12 @@ export const MOT_DE_PASSE_ADMIN = process.env['E2E_ADMIN_PASSWORD'] ?? 'admin';
 export const SEED = {
   demandeur: 'E2E-A',
   cible: 'E2E-B',
+  /** Seatless colleague, unavailable on the seeded day (edge-case suite). */
+  collegueIndisponible: 'E2E-C',
   standDemandeur: 'E2E-S1',
   standCible: 'E2E-S2',
-  creneauId: 987001
+  creneauId: 987001,
+  jour: '2026-07-10'
 } as const;
 
 /**
@@ -37,8 +40,15 @@ export async function contexteAdmin(
  * Alice on stand E2E-S1, Bruno on stand E2E-S2 — the smallest dataset on
  * which an échange croisé exists. Replayed through `/api/database/import`,
  * whose statements are restricted to the business tables server-side.
+ *
+ * With `avecCollegueIndisponible`, a third, seatless colleague (Chloé) who
+ * declared the seeded day off joins the referential — the fixture of the
+ * prevalidation edge cases.
  */
-export async function seedPlanning(admin: APIRequestContext): Promise<void> {
+export async function seedPlanning(
+  admin: APIRequestContext,
+  options: { avecCollegueIndisponible?: boolean } = {}
+): Promise<void> {
   const script = [
     // Clean previous runs, children first.
     `delete from demande_echange where demandeur_id like 'E2E-%' or cible_id like 'E2E-%';`,
@@ -55,7 +65,13 @@ export async function seedPlanning(admin: APIRequestContext): Promise<void> {
     `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager) values ('DEFAUT', '${SEED.cible}', 'Bruno', 'E2E', '1992-02-02', false);`,
     `insert into creneau (edition_id, id, date_creneau, heure_debut, heure_fin) values ('DEFAUT', ${SEED.creneauId}, '2026-07-10', '10:00', '12:00');`,
     `insert into poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id) values ('DEFAUT', 'E2E-P1', '${SEED.standDemandeur}', ${SEED.creneauId}, '${SEED.demandeur}');`,
-    `insert into poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id) values ('DEFAUT', 'E2E-P2', '${SEED.standCible}', ${SEED.creneauId}, '${SEED.cible}');`
+    `insert into poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id) values ('DEFAUT', 'E2E-P2', '${SEED.standCible}', ${SEED.creneauId}, '${SEED.cible}');`,
+    ...(options.avecCollegueIndisponible
+      ? [
+          `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager) values ('DEFAUT', '${SEED.collegueIndisponible}', 'Chloé', 'E2E', '1995-03-03', false);`,
+          `insert into animateur_jour_indispo (edition_id, animateur_id, jour) values ('DEFAUT', '${SEED.collegueIndisponible}', '${SEED.jour}');`
+        ]
+      : [])
   ].join('\n');
 
   const importReponse = await admin.post('/api/database/import', {
