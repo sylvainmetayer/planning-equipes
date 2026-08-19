@@ -78,8 +78,8 @@ function bestUnitFor(seconds: number): SolverDurationUnit {
  * planning (PDF + ICS bundled in one ZIP). The server always analyzes the
  * solve result as part of the same job (see {@code SolverJobService.submitSolve}
  * on the backend), so there is no separate analyze action and no client-side
- * chaining to keep in sync. Seeding and resetting the database live on the
- * Data setup page.
+ * chaining to keep in sync. Seeding the database lives on the Data setup
+ * page, emptying it on the Debug page.
  */
 @Component({
   selector: 'app-solver-page',

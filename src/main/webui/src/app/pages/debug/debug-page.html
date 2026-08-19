@@ -43,6 +43,18 @@
         <ng-container i18n="@@debug.testException.back">Exception back</ng-container>
       </button>
     </div>
+    <p class="debug-version" i18n="@@debug.mail.hint">
+      Les e-mails sortants (codes d'accès, plannings) sont visibles dans le débogueur d'e-mails :
+    </p>
+    <div class="calendar-toolbar">
+      <!-- `/mail` resolves relative to whatever host serves this app; routing
+           it to Mailpit is a deployment-side reverse-proxy concern, like `/db`
+           below (proxy.conf.json wires both for `ng serve`). -->
+      <a matButton="outlined" href="/mail" target="_blank" rel="noopener">
+        <mat-icon>outgoing_mail</mat-icon>
+        <ng-container i18n="@@debug.mailLink">Ouvrir le débogueur d'e-mails (Mailpit)</ng-container>
+      </a>
+    </div>
     <p class="debug-version">
       <ng-container i18n="@@debug.version">Version :</ng-container>
       <a [href]="repoUrl + '/commit/' + appVersion" target="_blank" rel="noopener">{{ appVersion }}</a>
@@ -58,6 +70,36 @@
       <p class="empty-hint" i18n="@@debug.empty">Aucune résolution ni analyse pour cette session pour le moment.</p>
     }
   </mat-card-content>
+</mat-card>
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h2 mat-card-title i18n="@@dataSetup.database.title">Base de données</h2>
+    <mat-card-subtitle i18n="@@dataSetup.database.description">
+      Interagir avec la base de données. Ces actions sont verrouillées pendant que le solveur est en
+      cours d'exécution.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-actions class="card-actions">
+    <button
+      matButton="outlined"
+      class="danger-action"
+      [disabled]="solverBusy() || resetting()"
+      (click)="onResetDatabase()"
+    >
+      <mat-icon>delete_sweep</mat-icon>
+      <ng-container i18n="@@dataSetup.resetDatabase">Vider la base de données</ng-container>
+    </button>
+    <!-- `/db` resolves relative to whatever host serves this app; routing it to
+         pgAdmin is a deployment-side reverse-proxy concern (see proxy.conf.json
+         for the `ng serve` wiring). -->
+    <a matButton="outlined" href="/db" target="_blank" rel="noopener">
+      <mat-icon>storage</mat-icon>
+      <ng-container i18n="@@dataSetup.database.pgAdminLink"
+        >Accéder à la base de données (pgAdmin)</ng-container
+      >
+    </a>
+  </mat-card-actions>
 </mat-card>
 
 <app-output-panel [text]="output()" />

@@ -5,7 +5,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { ApiService } from '../../core/api.service';
-import { ImportSummary, ImportScenarioResult, ResetSummary } from '../../core/models';
+import { ImpactImport, ImportSummary, ImportScenarioResult } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { PlanningStateService } from '../../core/planning-state.service';
@@ -16,13 +16,15 @@ import { SolverSettingsService } from '../../core/solver-settings.service';
 import { PlanSnapshotStore } from '../../core/plan-snapshot.store';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { FeasibilityBanner } from '../../shared/feasibility-banner';
+import { InstantaneAvantAction } from '../../shared/instantane-avant-action';
 import { OutputPanel } from '../../shared/output-panel';
 
 /**
- * Data page: seeds/resets the database, exports it as a scenario file, and
- * transfers data via SQL dump. All actions rebuild or replace part of the
- * dataset, so they are locked while any solver job (solve or analysis) is
- * running for the server.
+ * Data page: seeds the database from scenario files, exports it as a scenario
+ * file, and transfers data via SQL dump (emptying the database lives on the
+ * Debug page). All actions rebuild or replace part of the dataset, so they
+ * are locked while any solver job (solve or analysis) is running for the
+ * server.
  *
  * Also the last screen before a solve is launched, so it runs the solver-free
  * feasibility check (`GET /api/feasibility`) on entry and after every action
@@ -46,7 +48,6 @@ import { OutputPanel } from '../../shared/output-panel';
 export class DataSetupPage {
   protected readonly output = signal('');
   protected readonly sampleLoading = signal(false);
-  protected readonly resetting = signal(false);
   protected readonly exporting = signal(false);
   protected readonly transferBusy = signal(false);
   protected readonly scenarioFileImporting = signal(false);
@@ -75,6 +76,7 @@ export class DataSetupPage {
   private readonly resolution = inject(PlanningResolutionStore);
   private readonly confirm = inject(ConfirmService);
   private readonly snapshots = inject(PlanSnapshotStore);
+  private readonly instantane = inject(InstantaneAvantAction);
 
   private readonly jobs = inject(SolverJobService);
   private readonly solverSettings = inject(SolverSettingsService);
@@ -101,39 +103,50 @@ export class DataSetupPage {
     }
   }
 
-  /**
-   * Offers to save the current plan before an action that destroys it.
-   *
-   * Every action on this page rewrites the dataset, and the plan is the
-   * expensive part: it costs a solve to rebuild. Snapshots exist now, so the
-   * page proposes one rather than letting the user discover afterwards that
-   * the only copy is gone. Declining is fine — this is a safety net, not a
-   * gate — and a snapshot that fails to save never blocks the action.
-   */
-  private async proposerInstantane(intitule: string): Promise<void> {
-    const veut = await this.confirm.ask({
-      title: $localize`:@@dataSetup.snapshotBefore.title:Enregistrer le plan actuel d'abord ?`,
-      message: $localize`:@@dataSetup.snapshotBefore.message:${intitule}:action: va remplacer les données, et avec elles le planning résolu. Un instantané permet de le retrouver ensuite.`,
-      confirmLabel: $localize`:@@dataSetup.snapshotBefore.confirm:Enregistrer un instantané`
-    });
-    if (!veut) {
-      return;
-    }
-    try {
-      await this.snapshots.capturer(
-        $localize`:@@dataSetup.snapshotBefore.libelle:Avant ${intitule}:action:`
-      );
-    } catch (error) {
-      this.notifications.notify({
-        title: $localize`:@@dataSetup.snapshotBefore.failed:Instantané non enregistré`,
-        message: message(error),
-        variant: 'error'
-      });
-    }
-  }
-
   protected onSelectScenario(name: string): void {
     this.selectedScenario.set(name);
+  }
+
+  /**
+   * The gate of both scenario-import buttons: shows what the import will
+   * replace or erase — counted server-side — and, once confirmed, saves an
+   * automatic snapshot of the resolved plan (when there is one) so the
+   * operation stays reversible on the planning side. `false` aborts.
+   */
+  private async confirmerImportScenario(intitule: string): Promise<boolean> {
+    let impact: ImpactImport | null = null;
+    try {
+      impact = await this.api.get<ImpactImport>('/api/reference-data/impact-import');
+    } catch {
+      // Counting is comfort, not safety: without it the dialog still warns.
+    }
+    const confirme = await this.confirm.ask({
+      title: $localize`:@@dataSetup.impact.titre:Importer et remplacer les données ?`,
+      message: messageImpactImport(impact, intitule),
+      confirmLabel: $localize`:@@dataTransfer.importAction:Importer`,
+      danger: true
+    });
+    if (!confirme) {
+      return false;
+    }
+    if (impact?.planningResolu) {
+      try {
+        await this.snapshots.capturer(
+          $localize`:@@dataSetup.snapshotBefore.libelle:Avant ${intitule}:action:`
+        );
+        this.notifications.notify({
+          title: $localize`:@@dataSetup.impact.instantane:Instantané du plan enregistré avant l'import.`,
+          variant: 'info'
+        });
+      } catch (error) {
+        this.notifications.notify({
+          title: $localize`:@@dataSetup.snapshotBefore.failed:Instantané non enregistré`,
+          message: message(error),
+          variant: 'error'
+        });
+      }
+    }
+    return true;
   }
 
   protected async onLoadSample(): Promise<void> {
@@ -141,6 +154,10 @@ export class DataSetupPage {
       return;
     }
     const name = this.selectedScenario();
+    if (!(await this.confirmerImportScenario(
+      $localize`:@@dataSetup.action.importScenario:charger un scénario`))) {
+      return;
+    }
     this.sampleLoading.set(true);
     this.output.set(
       name
@@ -166,37 +183,6 @@ export class DataSetupPage {
     }
   }
 
-  // Empties the database entirely: no scenario is reloaded, so the app is left
-  // with a blank dataset until a sample is loaded again.
-  protected async onResetDatabase(): Promise<void> {
-    if (this.solverActionBlocked()) {
-      return;
-    }
-    const confirmed = await this.confirm.ask({
-      title: $localize`:@@dataSetup.resetConfirmTitle:Vider la base de données ?`,
-      message: $localize`:@@dataSetup.resetConfirmMessage:Tous les stands, créneaux, animateurs, affectations et contraintes ad hoc sont supprimés. Rien n'est rechargé.`,
-      confirmLabel: $localize`:@@dataSetup.resetConfirmLabel:Vider`,
-      danger: true
-    });
-    if (!confirmed) {
-      return;
-    }
-    await this.proposerInstantane($localize`:@@dataSetup.action.reset:vider la base`);
-    this.resetting.set(true);
-    this.output.set($localize`:@@dataSetup.resetting:Suppression des données...`);
-    try {
-      await this.api.post<ResetSummary>('/api/planning/reset', {});
-      await this.refreshAfterImport();
-      this.output.set(
-        $localize`:@@dataSetup.resetDone:Base de données vidée. Chargez un planning d'exemple pour la repeupler.`
-      );
-    } catch (error) {
-      this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
-    } finally {
-      this.resetting.set(false);
-    }
-  }
-
   // Read-only, so it is not gated by solverActionBlocked() like the other two
   // actions: it never touches the dataset, only reads it.
   protected async onExportScenario(): Promise<void> {
@@ -216,14 +202,13 @@ export class DataSetupPage {
     this.scenarioFileInput().nativeElement.click();
   }
 
-  // Unlike onSqlFileSelected/onCsvFileSelected (removed), no confirm dialog:
-  // a scenario import already replaces animateurs/stands the same way
-  // "Charger le scénario sélectionné" does, without asking either — this
-  // button is the same action, just sourced from disk instead of a bundled
-  // name.
   protected async onScenarioFileSelected(event: Event): Promise<void> {
     const file = takeFile(event);
     if (!file) {
+      return;
+    }
+    if (!(await this.confirmerImportScenario(
+      $localize`:@@dataSetup.action.importScenarioFichier:importer un fichier scénario`))) {
       return;
     }
     this.scenarioFileImporting.set(true);
@@ -297,7 +282,7 @@ export class DataSetupPage {
     if (!confirmed) {
       return;
     }
-    await this.proposerInstantane($localize`:@@dataSetup.action.importSql:rejouer un dump SQL`);
+    await this.instantane.proposer($localize`:@@dataSetup.action.importSql:rejouer un dump SQL`);
     this.transferBusy.set(true);
     this.output.set($localize`:@@dataTransfer.importing:Import de ${file.name}:fileName: en cours...`);
     try {
@@ -344,6 +329,34 @@ export class DataSetupPage {
       this.problemes.reloadFeasibility()
     ]);
   }
+}
+
+/**
+ * The confirmation message of a scenario import, built from the server-side
+ * impact counts: what gets replaced, what disappears with it, what stays.
+ * With `impact` null (the counting call failed), a generic warning remains —
+ * counting is comfort, never the safety net itself.
+ */
+export function messageImpactImport(impact: ImpactImport | null, intitule: string): string {
+  const lignes: string[] = [
+    $localize`:@@dataSetup.impact.base:Cette action va ${intitule}:action: : les stands et animateurs sont remplacés par ceux du fichier, et ceux qui n'y figurent pas sont supprimés — avec leurs demandes d'échange, sessions et codes d'accès. Les animateurs conservés gardent leur lien d'espace et leur e-mail.`
+  ];
+  if (impact) {
+    lignes.push(
+      $localize`:@@dataSetup.impact.referentiel:Actuellement : ${impact.animateurs}:animateurs: animateur(s) et ${impact.stands}:stands: stand(s).`
+    );
+    if (impact.planningResolu) {
+      lignes.push(
+        $localize`:@@dataSetup.impact.planning:Le planning résolu du groupe « ${impact.groupeResoluNom ?? '?'}:groupe: » (${impact.postes}:postes: affectation(s)) sera effacé, ainsi que ${impact.verrous}:verrous: verrouillage(s) ; un instantané sera enregistré automatiquement avant l'import.`
+      );
+    }
+    if (impact.demandesEchange > 0) {
+      lignes.push(
+        $localize`:@@dataSetup.impact.demandes:${impact.demandesEchange}:demandes: demande(s) d'échange (dont ${impact.demandesEnAttente}:enAttente: en attente) seront perdues si leurs créneaux sont remplacés ou leurs animateurs supprimés.`
+      );
+    }
+  }
+  return lignes.join(' ');
 }
 
 // Reads the picked file and clears the input so the same file can be picked twice.

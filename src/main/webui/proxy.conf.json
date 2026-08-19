@@ -4,5 +4,11 @@
     "pathRewrite": { "^/db": "" },
     "changeOrigin": true,
     "secure": false
+  },
+  "/mail": {
+    "target": "http://localhost:8025",
+    "pathRewrite": { "^/mail": "" },
+    "changeOrigin": true,
+    "secure": false
   }
 }

@@ -42,14 +42,6 @@ interface NavLink {
   path: string;
   label: string;
   icon: string;
-  /**
-   * True for a real external link (target="_blank"), rendered as a plain
-   * <a href> instead of an Angular routerLink. `/db` resolves relative to
-   * whatever host serves this app; routing it to pgAdmin is a deployment-side
-   * reverse-proxy concern, not something this repo builds (docker-compose
-   * only exposes a dev-only pgAdmin on :5050, unrelated to this link).
-   */
-  external?: boolean;
   /** Shows the unread notification count as a mat-badge on this link only. */
   badge?: 'notifications';
 }
@@ -149,12 +141,6 @@ function buildNavGroups(): NavGroup[] {
     id: 'tools',
     title: $localize`:@@nav.group.tools:Outils`,
     links: [
-      {
-        path: '/db',
-        label: $localize`:@@nav.link.db:Base de données (pgAdmin)`,
-        icon: 'storage',
-        external: true
-      },
       { path: '/debug', label: $localize`:@@nav.link.debug:Débogage`, icon: 'bug_report' },
       { path: '/validateur-yaml', label: $localize`:@@nav.link.yamlValidator:Validateur YAML`, icon: 'rule' }
     ]

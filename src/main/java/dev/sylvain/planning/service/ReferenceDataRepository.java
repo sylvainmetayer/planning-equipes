@@ -869,15 +869,30 @@ public class ReferenceDataRepository {
     }
 
     private void upsertAnimateur(Connection connection, Animateur animateur) throws SQLException {
+        upsertAnimateur(connection, animateur, false);
+    }
+
+    /**
+     * @param conserverEmailSiAbsent true on the scenario-import path: a file
+     *                               that carries no email for an animateur must
+     *                               not silently wipe the stored one — the
+     *                               address is now the espace's second factor.
+     *                               The fiche update (false) can still clear it.
+     */
+    private void upsertAnimateur(Connection connection, Animateur animateur, boolean conserverEmailSiAbsent)
+            throws SQLException {
         // jeton_acces is deliberately absent: a fresh row gets the database
         // default, an existing row keeps its token. Rotation only happens
         // through regenererJetonAnimateur.
+        String miseAJourEmail = conserverEmailSiAbsent
+                ? "email = COALESCE(EXCLUDED.email, animateur.email)"
+                : "email = EXCLUDED.email";
         try (PreparedStatement ps = prepareScoped(connection,
                 "INSERT INTO animateur (edition_id, id, prenom, nom, date_naissance, manager, email) "
                         + "VALUES (?, ?, ?, ?, ?, ?, ?) "
                         + "ON CONFLICT (edition_id, id) DO UPDATE SET prenom = EXCLUDED.prenom, nom = EXCLUDED.nom, "
                         + "date_naissance = EXCLUDED.date_naissance, manager = EXCLUDED.manager, "
-                        + "email = EXCLUDED.email")) {
+                        + miseAJourEmail)) {
             ps.setString(2, animateur.getId());
             ps.setString(3, animateur.getPrenom());
             ps.setString(4, animateur.getNom());
@@ -1478,15 +1493,15 @@ public class ReferenceDataRepository {
             connection.setAutoCommit(false);
             try {
                 // verrouillage_planning goes with the assignments it freezes: the
-                // whole reference dataset is being replaced, so the validated
-                // planning those locks protected no longer exists. (Locks on a
-                // stand/animateur/créneau would cascade away anyway; a JOUR lock
-                // would otherwise survive as a stale freeze.)
+                // reference dataset is being replaced, so the validated planning
+                // those locks protected no longer exists — and planning_resolution
+                // goes with it, so nothing keeps claiming "résolu le …" over an
+                // empty plan. Stands and animateurs, on the other hand, are
+                // DIFFED, not wiped: the file's rows are upserted (which keeps
+                // an existing animateur's access token, sessions and demandes
+                // alive) and only the rows absent from the file are deleted.
                 for (String table : List.of("contrainte_animateur", "contrainte_ad_hoc", "verrouillage_planning",
-                        "poste_affectation",
-                        "stand_typologie", "stand_indisponibilite", "stand_ouverture", "stand_horaire_fenetre",
-                        "stand_horaire", "animateur_competence",
-                        "animateur_jour_indispo", "animateur_souhait", "stand", "animateur")) {
+                        "poste_affectation", "planning_resolution")) {
                     // Table names come from the literal list above, never from user input.
                     try (PreparedStatement ps = prepareScoped(connection,
                             "DELETE FROM " + table + " WHERE edition_id = ?")) {
@@ -1523,9 +1538,17 @@ public class ReferenceDataRepository {
                 }
                 for (Animateur animateur : animateurs) {
                     if (animateur != null && animateur.getId() != null) {
-                        upsertAnimateur(connection, animateur);
+                        upsertAnimateur(connection, animateur, true);
                     }
                 }
+                // Rows the file does not carry are the only ones deleted — for
+                // an animateur that also drops, by cascade, their demandes
+                // d'échange, sessions and access code.
+                supprimerAbsentsTx(connection, "stand", standsById.keySet());
+                supprimerAbsentsTx(connection, "animateur", animateurs.stream()
+                        .filter(animateur -> animateur != null && animateur.getId() != null)
+                        .map(Animateur::getId)
+                        .collect(java.util.stream.Collectors.toSet()));
                 for (ContrainteAdHoc contrainte : contraintes) {
                     if (contrainte != null && contrainte.getId() != null) {
                         if (contrainte.getCreneau() != null && contrainte.getCreneau().getId() != null) {
@@ -1544,6 +1567,92 @@ public class ReferenceDataRepository {
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to import reference data from planning", e);
+        }
+    }
+
+    /**
+     * What a scenario import would touch, counted for the confirmation dialog
+     * shown before it runs: nothing here decides anything, it only lets the
+     * operator see the blast radius — replaced referentials, erased resolved
+     * planning, demandes and locks that will go with it.
+     */
+    public record ImpactImport(int animateurs, int stands, int postes, boolean planningResolu,
+            String groupeResoluNom, int demandesEchange, int demandesEnAttente, int verrous) {
+    }
+
+    public ImpactImport compterImpactImport() {
+        try (Connection connection = dataSource.getConnection()) {
+            int animateurs = compter(connection, "animateur");
+            int stands = compter(connection, "stand");
+            int postes = compter(connection, "poste_affectation");
+            int verrous = compter(connection, "verrouillage_planning");
+            int demandes = 0;
+            int enAttente = 0;
+            try (PreparedStatement ps = prepareScoped(connection,
+                    "SELECT COUNT(*) AS total, COUNT(*) FILTER (WHERE statut = 'PROPOSEE') AS en_attente "
+                            + "FROM demande_echange WHERE edition_id = ?");
+                    ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    demandes = rs.getInt("total");
+                    enAttente = rs.getInt("en_attente");
+                }
+            }
+            boolean resolu = false;
+            String groupeNom = null;
+            try (PreparedStatement ps = prepareScoped(connection,
+                    "SELECT COALESCE(g.nom, r.groupe_creneau_id) AS nom FROM planning_resolution r "
+                            + "LEFT JOIN groupe_creneau g ON g.edition_id = r.edition_id AND g.id = r.groupe_creneau_id "
+                            + "WHERE r.edition_id = ?");
+                    ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    resolu = true;
+                    groupeNom = rs.getString("nom");
+                }
+            }
+            return new ImpactImport(animateurs, stands, postes, resolu, groupeNom, demandes, enAttente, verrous);
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to measure the import impact", e);
+        }
+    }
+
+    /** COUNT(*) of one edition-scoped table from the literal list of {@link #compterImpactImport}. */
+    private int compter(Connection connection, String table) throws SQLException {
+        try (PreparedStatement ps = prepareScoped(connection,
+                "SELECT COUNT(*) FROM " + table + " WHERE edition_id = ?");
+                ResultSet rs = ps.executeQuery()) {
+            return rs.next() ? rs.getInt(1) : 0;
+        }
+    }
+
+    /**
+     * Deletes the rows of {@code table} (whitelisted by its two callers in
+     * {@link #importFromPlanning}: {@code stand} or {@code animateur}) whose id
+     * is not in {@code idsConserves} — the diff half of the import: what the
+     * file does not name disappears, what it names was upserted in place.
+     */
+    private void supprimerAbsentsTx(Connection connection, String table, java.util.Set<String> idsConserves)
+            throws SQLException {
+        List<String> absents = new ArrayList<>();
+        try (PreparedStatement ps = prepareScoped(connection,
+                "SELECT id FROM " + table + " WHERE edition_id = ?");
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                String id = rs.getString("id");
+                if (!idsConserves.contains(id)) {
+                    absents.add(id);
+                }
+            }
+        }
+        if (absents.isEmpty()) {
+            return;
+        }
+        try (PreparedStatement ps = prepareScoped(connection,
+                "DELETE FROM " + table + " WHERE edition_id = ? AND id = ?")) {
+            for (String id : absents) {
+                ps.setString(2, id);
+                ps.addBatch();
+            }
+            ps.executeBatch();
         }
     }
 

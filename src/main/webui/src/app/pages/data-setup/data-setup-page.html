@@ -15,35 +15,6 @@
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <h2 mat-card-title i18n="@@dataSetup.database.title">Base de données</h2>
-    <mat-card-subtitle i18n="@@dataSetup.database.description">
-      Interagir avec la base de données. Ces actions sont verrouillées pendant que le solveur est en
-      cours d'exécution.
-    </mat-card-subtitle>
-  </mat-card-header>
-  <mat-card-actions class="card-actions">
-    <button
-      matButton="outlined"
-      class="danger-action"
-      [disabled]="solverBusy() || resetting()"
-      (click)="onResetDatabase()"
-    >
-      <mat-icon>delete_sweep</mat-icon>
-      <ng-container i18n="@@dataSetup.resetDatabase">Vider la base de données</ng-container>
-    </button>
-    <!-- `/db` resolves relative to whatever host serves this app; routing it to
-         pgAdmin is a deployment-side reverse-proxy concern (see app.ts). -->
-    <a matButton="outlined" href="/db" target="_blank" rel="noopener">
-      <mat-icon>storage</mat-icon>
-      <ng-container i18n="@@dataSetup.database.pgAdminLink"
-        >Accéder à la base de données (pgAdmin)</ng-container
-      >
-    </a>
-  </mat-card-actions>
-</mat-card>
-
-<mat-card appearance="outlined" class="page-card">
-  <mat-card-header>
     <h2 mat-card-title i18n="@@dataSetup.scenarios.title">Scénarios</h2>
     <mat-card-subtitle i18n="@@dataSetup.scenarios.description">
       Ces actions sont verrouillées pendant que le solveur est en cours d'exécution.

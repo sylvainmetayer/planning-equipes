@@ -833,6 +833,18 @@ export interface NouvelleDemandeEchange {
   motif: string | null;
 }
 
+/** `/api/reference-data/impact-import`: what a scenario import would touch, for the confirmation dialog. */
+export interface ImpactImport {
+  animateurs: number;
+  stands: number;
+  postes: number;
+  planningResolu: boolean;
+  groupeResoluNom: string | null;
+  demandesEchange: number;
+  demandesEnAttente: number;
+  verrous: number;
+}
+
 /** Outcome of mailing the individual plannings (`/api/planning/envoi/*`): display names, ready to show. */
 export interface CompteRenduEnvoi {
   envoyes: number;

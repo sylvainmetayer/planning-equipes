@@ -326,6 +326,17 @@ public class ReferenceDataResource {
      * notify the operator that the group it just activated holds the
      * auto-generated vacations.
      */
+    /**
+     * What a scenario import would touch, for the confirmation dialog shown
+     * before either import button runs: replaced referentials, the resolved
+     * planning about to be erased, the demandes and locks going with it.
+     */
+    @GET
+    @Path("/reference-data/impact-import")
+    public dev.sylvain.planning.service.ReferenceDataRepository.ImpactImport impactImport() {
+        return referenceDataService.compterImpactImport();
+    }
+
     @POST
     @Path("/reference-data/import-scenario")
     @Consumes(MediaType.WILDCARD)

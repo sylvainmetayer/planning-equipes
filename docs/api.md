@@ -43,7 +43,7 @@ redirection HTML.
 | `GET` | `/api/planning/volumetrie` | Volumétrie réelle du prochain solve : nombre d'animateurs (value count Timefold), de postes à pourvoir (entity count Timefold, un par siège requis et non par stand) et de contraintes ad hoc actives ; tout à 0 si aucune donnée de référence n'est chargée |
 | `POST` | `/api/solve` | Résout un `PlanningFestival` envoyé en JSON (synchrone) |
 | `POST` | `/api/solve/analyze` | Analyse un planning : score et contraintes violées |
-| `POST` | `/api/planning/reset` | Vide l'**édition courante** (stands, créneaux, animateurs, affectations, contraintes) sans charger de scénario ; ses grilles de créneaux sont réinitialisées à la seule grille `DEFAUT` active. Les autres éditions ne sont pas touchées (bouton « Reset BDD ») |
+| `POST` | `/api/planning/reset` | Vide l'**édition courante** (stands, créneaux, animateurs, affectations, contraintes) sans charger de scénario ; ses grilles de créneaux sont réinitialisées à la seule grille `DEFAUT` active. Les autres éditions ne sont pas touchées (bouton « Vider la base de données » de l'onglet Débogage) |
 | `GET` | `/api/planning/persisted` | Planning persisté en base, lecture seule (utilisé par les vues calendrier, qui ne déclenchent jamais de résolution) |
 | `GET` | `/api/planning/persisted/count` | Nombre d'affectations persistées |
 | `GET` | `/api/planning/persisted/resolution` | Groupe de créneaux et date de la dernière résolution persistée (`solved: false` si aucune résolution n'a encore eu lieu), plus `derniereModificationDonnees` : date de la dernière modification d'une donnée de référence (`null` si aucune depuis le démarrage du serveur) |
@@ -540,6 +540,23 @@ curl -X POST http://localhost:8080/api/verrouillages \
 
 Import global du référentiel depuis un `PlanningFestival` :
 `POST /api/reference-data/import`.
+
+**Sémantique d'un import de scénario** (les deux endpoints ci-dessous) :
+c'est un **diff**, pas un remplacement aveugle. Les stands et animateurs du
+fichier sont mis à jour **en place** — un animateur conservé garde son
+`jeton_acces` (les liens d'espace imprimés survivent), ses sessions, ses
+demandes d'échange hors créneaux remplacés, et son e-mail si le fichier n'en
+porte pas ; seuls les stands/animateurs **absents du fichier** sont supprimés
+(leurs demandes, sessions et codes d'accès partent en cascade). Le planning
+résolu, les verrous, les contraintes ad hoc et la trace de résolution
+(`planning_resolution`) sont en revanche toujours effacés, et les créneaux du
+groupe actif remplacés par ceux du fichier.
+
+`GET /api/reference-data/impact-import` chiffre ce périmètre **avant**
+d'importer : `{ animateurs, stands, postes, planningResolu, groupeResoluNom,
+demandesEchange, demandesEnAttente, verrous }` — c'est ce que le dialogue de
+confirmation de l'onglet Données affiche, qui enregistre aussi un instantané
+du plan automatiquement quand un planning résolu existe.
 
 `POST /api/reference-data/import-scenario?name={fichier}` charge un scénario
 du dossier `scenarios/` côté serveur et importe son référentiel. Si le

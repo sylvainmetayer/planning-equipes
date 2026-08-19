@@ -44,30 +44,23 @@
           </button>
           <div [id]="'nav-group-' + group.id" [hidden]="isCollapsed(group)">
             @for (link of group.links; track link.path) {
-              @if (link.external) {
-                <a mat-list-item [href]="link.path" target="_blank" rel="noopener">
+              <a mat-list-item [routerLink]="link.path" routerLinkActive="active-link"
+                 #rla="routerLinkActive"
+                 [attr.aria-current]="rla.isActive ? 'page' : null"
+                 [routerLinkActiveOptions]="{ exact: link.path === '/' }" (click)="onNavigate()">
+                @if (link.badge === 'notifications') {
+                  <mat-icon
+                    matListItemIcon
+                    [matBadge]="notificationBadgeContent()"
+                    [matBadgeHidden]="notifications.unreadCount() === 0"
+                    [matBadgeColor]="hasUnreadAlert() ? 'warn' : 'accent'"
+                    [matBadgeDescription]="notificationBadgeDescription()"
+                  >{{ link.icon }}</mat-icon>
+                } @else {
                   <mat-icon matListItemIcon>{{ link.icon }}</mat-icon>
-                  <span matListItemTitle>{{ link.label }}</span>
-                </a>
-              } @else {
-                <a mat-list-item [routerLink]="link.path" routerLinkActive="active-link"
-                   #rla="routerLinkActive"
-                   [attr.aria-current]="rla.isActive ? 'page' : null"
-                   [routerLinkActiveOptions]="{ exact: link.path === '/' }" (click)="onNavigate()">
-                  @if (link.badge === 'notifications') {
-                    <mat-icon
-                      matListItemIcon
-                      [matBadge]="notificationBadgeContent()"
-                      [matBadgeHidden]="notifications.unreadCount() === 0"
-                      [matBadgeColor]="hasUnreadAlert() ? 'warn' : 'accent'"
-                      [matBadgeDescription]="notificationBadgeDescription()"
-                    >{{ link.icon }}</mat-icon>
-                  } @else {
-                    <mat-icon matListItemIcon>{{ link.icon }}</mat-icon>
-                  }
-                  <span matListItemTitle>{{ link.label }}</span>
-                </a>
-              }
+                }
+                <span matListItemTitle>{{ link.label }}</span>
+              </a>
             }
           </div>
         </mat-nav-list>

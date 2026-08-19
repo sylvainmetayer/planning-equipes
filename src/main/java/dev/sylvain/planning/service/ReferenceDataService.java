@@ -793,6 +793,11 @@ public class ReferenceDataService {
 
     /* ----------------------- Espace animateur (jeton) ----------------------- */
 
+    /** See {@link ReferenceDataRepository#compterImpactImport}. */
+    public ReferenceDataRepository.ImpactImport compterImpactImport() {
+        return repository.compterImpactImport();
+    }
+
     /** See {@link ReferenceDataRepository#resoudreJetonAnimateur}. */
     public ReferenceDataRepository.ProprietaireJeton resoudreJetonAnimateur(String jeton) {
         return repository == null ? null : repository.resoudreJetonAnimateur(jeton);
