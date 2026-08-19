@@ -180,7 +180,10 @@ Mise en œuvre :
 - `EditionHeaderFilter` (`ContainerRequestFilter`) dépose l'en-tête dans
   `EditionRequestScope` (`@RequestScoped`) ;
 - `EditionContext` (`@ApplicationScoped`) le résout : surcharge liée au thread →
-  en-tête de la requête **si l'édition existe** → édition `defaut`. Jamais
+  édition du **jeton d'espace animateur** de la requête (posée par les gardes
+  `@JetonRequis`/`@SessionEspaceRequise`, elle prime sur l'en-tête que l'espace
+  ne croit jamais) → en-tête de la requête **si l'édition existe** → édition
+  `defaut`. Jamais
   d'erreur 400 : une édition supprimée dans un onglet resté ouvert ne doit pas
   casser l'écran. Les ids connus et l'id par défaut sont mis en cache, invalidé
   à chaque écriture sur `/api/editions` ;
@@ -196,8 +199,9 @@ Mise en œuvre :
   Unique exception assumée : `resoudreJetonAnimateur` (issue #165), qui résout
   un jeton d'espace animateur **globalement** — le jeton arrive sur une URL
   publique sans en-tête d'édition à croire, et est justement unique toutes
-  éditions confondues pour désigner la sienne ; tout le reste de la requête
-  s'exécute ensuite dans `EditionContext.executeDans(éditionRésolue, …)` ;
+  éditions confondues pour désigner la sienne ; les gardes de l'espace lient
+  ensuite l'édition résolue à la requête (`EditionRequestScope`), et tout le
+  reste s'exécute dedans sans enveloppe explicite ;
 - côté Angular, un `HttpInterceptor` (`core/edition.interceptor.ts`) pose
   l'en-tête depuis `core/edition-courante.ts`, dont la valeur est persistée en
   `localStorage`. C'est un module et non un service : l'intercepteur tourne à

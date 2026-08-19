@@ -67,6 +67,10 @@ public class EditionContext {
         if (override != null) {
             return override;
         }
+        String imposee = editionImposeeParJeton();
+        if (imposee != null) {
+            return imposee;
+        }
         String demande = editionIdDemande();
         return demande != null && idsConnus().contains(demande) ? demande : idParDefaut();
     }
@@ -120,6 +124,21 @@ public class EditionContext {
         }
         String demande = requestScope.getEditionIdDemande();
         return demande == null || demande.isBlank() ? null : demande;
+    }
+
+    /**
+     * Edition of the espace token the request carries, resolved by the espace
+     * guards — it overrides the header (the espace never trusts it) and needs
+     * no validation against the known ids: it comes from the animateur row
+     * itself. {@code null} off the espace routes or outside any request.
+     */
+    private String editionImposeeParJeton() {
+        var container = Arc.container();
+        if (container == null || !container.requestContext().isActive()) {
+            return null;
+        }
+        var proprietaire = requestScope.getProprietaireJeton();
+        return proprietaire == null ? null : proprietaire.editionId();
     }
 
     private Set<String> idsConnus() {

@@ -281,14 +281,21 @@ export function dernierCodeMailpit(requeteur: APIRequestContext, email: string):
   return lireCodeMailpit(requeteur, email, 0);
 }
 
-async function nombreDeMails(requeteur: APIRequestContext, email: string): Promise<number> {
+/** One page of a Mailpit search. `messages_count` is the REAL match total — `messages` is capped at 50 per page. */
+interface RechercheMailpit {
+  messages_count: number;
+  messages: { ID: string }[];
+}
+
+async function rechercherMails(requeteur: APIRequestContext, email: string): Promise<RechercheMailpit | null> {
   const reponse = await requeteur.get(
     `${MAILPIT_URL}/api/v1/search?query=${encodeURIComponent(`to:"${email}"`)}`
   );
-  if (!reponse.ok()) {
-    return 0;
-  }
-  return ((await reponse.json()) as { messages: { ID: string }[] }).messages.length;
+  return reponse.ok() ? ((await reponse.json()) as RechercheMailpit) : null;
+}
+
+async function nombreDeMails(requeteur: APIRequestContext, email: string): Promise<number> {
+  return (await rechercherMails(requeteur, email))?.messages_count ?? 0;
 }
 
 /** Polls Mailpit until the freshly sent code mail lands, newest first. */
@@ -298,18 +305,13 @@ async function lireCodeMailpit(
   mailsAvant: number
 ): Promise<string> {
   for (let essai = 0; essai < 40; essai++) {
-    const recherche = await requeteur.get(
-      `${MAILPIT_URL}/api/v1/search?query=${encodeURIComponent(`to:"${email}"`)}`
-    );
-    if (recherche.ok()) {
-      const messages = ((await recherche.json()) as { messages: { ID: string }[] }).messages;
-      if (messages.length > mailsAvant) {
-        const detail = await requeteur.get(`${MAILPIT_URL}/api/v1/message/${messages[0].ID}`);
-        const texte = ((await detail.json()) as { Text: string }).Text;
-        const code = /\b(\d{6})\b/.exec(texte)?.[1];
-        if (code) {
-          return code;
-        }
+    const recherche = await rechercherMails(requeteur, email);
+    if (recherche && recherche.messages_count > mailsAvant && recherche.messages.length > 0) {
+      const detail = await requeteur.get(`${MAILPIT_URL}/api/v1/message/${recherche.messages[0].ID}`);
+      const texte = ((await detail.json()) as { Text: string }).Text;
+      const code = /\b(\d{6})\b/.exec(texte)?.[1];
+      if (code) {
+        return code;
       }
     }
     await new Promise((resolve) => setTimeout(resolve, 250));
