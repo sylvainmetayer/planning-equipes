@@ -67,7 +67,7 @@ services:
   # Local SMTP sink for the échange notification mails (issue #165): catches
   # everything, delivers nothing. Web UI on http://localhost:8025.
   mailpit:
-    image: axllent/mailpit:v1
+    image: axllent/mailpit
     ports:
       - "1025:1025"
       - "8025:8025"
