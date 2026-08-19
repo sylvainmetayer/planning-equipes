@@ -58,7 +58,7 @@ public class PlanSnapshotResource {
         SnapshotMeta meta = snapshotService.capturer(libelle, false);
         if (meta == null) {
             return Response.status(Response.Status.CONFLICT)
-                    .entity(new ErreurRestauration("Aucun plan persisté à enregistrer.", List.of()))
+                    .entity(new ErreurRestauration("Aucun plan persisté à enregistrer.", List.of(), false))
                     .build();
         }
         return Response.status(Response.Status.CREATED).entity(meta).build();
@@ -72,16 +72,29 @@ public class PlanSnapshotResource {
     @POST
     @Path("/{id}/restore")
     @Consumes(MediaType.WILDCARD)
-    public Response restore(@PathParam("id") long id) {
-        RestaurationResult result = snapshotService.restaurer(id);
+    public Response restore(@PathParam("id") long id,
+            @jakarta.ws.rs.QueryParam("forcer") @jakarta.ws.rs.DefaultValue("false") boolean forcer) {
+        RestaurationResult result = snapshotService.restaurer(id, forcer);
         if (result == null) {
             throw new NotFoundException("Unknown snapshot: " + id);
+        }
+        // Snapshot of another groupe de créneaux than the active one: refused
+        // unless explicitly forced — restoring it would replace the persisted
+        // planning with one computed for a different set of créneaux.
+        if (result.groupeDifferent()) {
+            return Response.status(Response.Status.CONFLICT)
+                    .entity(new ErreurRestauration(
+                            "L'instantané appartient au groupe de créneaux « " + result.groupeSnapshotNom()
+                                    + " » alors que le groupe actif est « " + result.groupeActifNom()
+                                    + " » : le restaurer remplacerait le planning courant par celui d'un autre groupe.",
+                            List.of(), true))
+                    .build();
         }
         if (!result.restaure()) {
             return Response.status(Response.Status.CONFLICT)
                     .entity(new ErreurRestauration(
                             "L'instantané référence des données qui n'existent plus : rien n'a été restauré.",
-                            result.referencesManquantes()))
+                            result.referencesManquantes(), false))
                     .build();
         }
         return Response.ok(result).build();
@@ -100,6 +113,7 @@ public class PlanSnapshotResource {
     public record CaptureRequest(String libelle) {
     }
 
-    public record ErreurRestauration(String message, List<String> referencesManquantes) {
+    /** @param groupeDifferent true when the refusal is a groupe mismatch, overridable with {@code ?forcer=true} */
+    public record ErreurRestauration(String message, List<String> referencesManquantes, Boolean groupeDifferent) {
     }
 }

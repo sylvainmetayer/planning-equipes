@@ -19,9 +19,14 @@ import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeVerrouillage;
+import org.junit.jupiter.api.AfterEach;
+
 import dev.sylvain.planning.service.PlanningPersistenceService;
 import dev.sylvain.planning.service.ReferenceDataService;
+import io.quarkus.mailer.MockMailbox;
 import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.RestAssured;
+import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
 
@@ -43,6 +48,18 @@ class DemandeEchangeFlowTest {
 
     @Inject
     ReferenceDataService referenceData;
+
+    @Inject
+    MockMailbox mailbox;
+
+    /** Espace sessions of the two seeded animateurs (e-mail code flow). */
+    private String sessionAlice;
+    private String sessionBruno;
+
+    @AfterEach
+    void resetSpecification() {
+        RestAssured.requestSpecification = null;
+    }
 
     @Test
     void unEchangeCroiseEstSoumisPuisAccepteEtApplique() {
@@ -270,10 +287,17 @@ class DemandeEchangeFlowTest {
                 .statusCode(200)
                 .extract().path("[0].id");
 
+        // Bruno acts with his OWN session on his own jeton: the 400 is the
+        // ownership rule, not a session mismatch.
+        RestAssured.requestSpecification = null;
         given().contentType(ContentType.JSON)
+                .cookie("planning-espace", sessionBruno)
                 .when().post("/api/espace-animateur/" + jetonBruno + "/demandes/" + demandeId + "/annulation")
                 .then()
                 .statusCode(400);
+        RestAssured.requestSpecification = new RequestSpecBuilder()
+                .addCookie("planning-espace", sessionAlice)
+                .build();
 
         given().when().get("/api/espace-animateur/" + jetonAlice + "/demandes")
                 .then()
@@ -345,6 +369,28 @@ class DemandeEchangeFlowTest {
         PosteAffectation posteDeux = new PosteAffectation("ECH-P2", standDeux, creneau);
         posteDeux.setAnimateur(bruno);
         persistence.persist(new PlanningFestival(JOUR, List.of(alice, bruno, chloe), List.of(posteUn, posteDeux)));
+
+        // The espace requires an e-mail-code session since the auth follow-up:
+        // both actors get an address, a session, and Alice's cookie rides on
+        // every request by default (harmless on the admin routes).
+        donnerEmail("ECH-A", "ech-alice@example.org");
+        donnerEmail("ECH-B", "ech-bruno@example.org");
+        mailbox.clear();
+        RestAssured.requestSpecification = null;
+        sessionAlice = EspaceSessions.ouvrir(mailbox, jetonDe("ECH-A"), "ech-alice@example.org");
+        sessionBruno = EspaceSessions.ouvrir(mailbox, jetonDe("ECH-B"), "ech-bruno@example.org");
+        RestAssured.requestSpecification = new RequestSpecBuilder()
+                .addCookie("planning-espace", sessionAlice)
+                .build();
+    }
+
+    private void donnerEmail(String animateurId, String email) {
+        Animateur animateur = referenceData.listAnimateurs().stream()
+                .filter(candidat -> candidat.getId().equals(animateurId))
+                .findFirst()
+                .orElseThrow();
+        animateur.setEmail(email);
+        referenceData.updateAnimateur(animateurId, animateur);
     }
 
     /** Occupant of the single seat of {@code standId} on the test créneau. */

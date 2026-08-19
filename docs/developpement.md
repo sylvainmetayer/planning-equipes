@@ -244,10 +244,13 @@ Ils sont **volontairement exclus de la CI** : ils exigent la pile complète et
 locale jetable.
 
 ```bash
-# 1. La pile : Postgres + l'application packagée (ou `quarkus:dev`)
-docker compose up -d postgres
+# 1. La pile : Postgres + Mailpit + l'application packagée (ou `quarkus:dev`).
+#    Mailpit est OBLIGATOIRE : l'espace animateur s'authentifie par code
+#    envoyé par e-mail, et la suite lit ces codes dans l'API Mailpit — ne pas
+#    mocker les mails (laisser MAIL_MOCK à sa valeur par défaut, false).
+docker compose up -d postgres mailpit
 ./mvnw package -DskipTests
-MAIL_MOCK=true java -jar target/quarkus-app/quarkus-run.jar
+java -jar target/quarkus-app/quarkus-run.jar
 
 # 2. La suite (depuis src/main/webui ; navigateur : npx playwright install chromium)
 npm run e2e
@@ -255,7 +258,8 @@ npm run e2e
 
 Variables : `E2E_BASE_URL` (défaut `http://localhost:8080`),
 `E2E_ADMIN_PASSWORD` (défaut `admin`, doit refléter l'`ADMIN_PASSWORD` de
-l'application), `E2E_CHROMIUM` (chemin d'un Chromium déjà installé, pour un
+l'application), `E2E_MAILPIT_URL` (défaut `http://localhost:8025`),
+`E2E_CHROMIUM` (chemin d'un Chromium déjà installé, pour un
 environnement qui interdit le téléchargement du navigateur). Les specs
 s'exécutent en série (`workers: 1`) : elles partagent la base et le jeu de
 données ensemencé.

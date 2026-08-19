@@ -101,8 +101,28 @@ public class PlanSnapshotService {
      *                             longer holds, prefixed by their kind
      *                             ({@code stand:…}, {@code creneau:…},
      *                             {@code animateur:…})
+     * @param groupeDifferent      true when the restore was refused because the
+     *                             snapshot belongs to another groupe de
+     *                             créneaux than the active one (overridable
+     *                             with {@code forcer})
+     * @param groupeSnapshotNom    display name of the snapshot's groupe, only
+     *                             set with {@code groupeDifferent}
+     * @param groupeActifNom       display name of the active groupe, idem
      */
-    public record RestaurationResult(boolean restaure, int affectations, List<String> referencesManquantes) {
+    public record RestaurationResult(boolean restaure, int affectations, List<String> referencesManquantes,
+            boolean groupeDifferent, String groupeSnapshotNom, String groupeActifNom) {
+
+        static RestaurationResult ok(int affectations) {
+            return new RestaurationResult(true, affectations, List.of(), false, null, null);
+        }
+
+        static RestaurationResult referencesPerdues(List<String> manquantes) {
+            return new RestaurationResult(false, 0, manquantes, false, null, null);
+        }
+
+        static RestaurationResult autreGroupe(String groupeSnapshotNom, String groupeActifNom) {
+            return new RestaurationResult(false, 0, List.of(), true, groupeSnapshotNom, groupeActifNom);
+        }
     }
 
     /**
@@ -214,14 +234,26 @@ public class PlanSnapshotService {
      * stand, créneau or animateur has disappeared since the capture: a partial
      * restore would silently produce a plan nobody ever computed.
      */
-    public RestaurationResult restaurer(long id) {
+    public RestaurationResult restaurer(long id, boolean forcer) {
         SnapshotDetail detail = charger(id);
         if (detail == null) {
             return null;
         }
         List<String> manquantes = referencesManquantes(detail.affectations());
         if (!manquantes.isEmpty()) {
-            return new RestaurationResult(false, 0, manquantes);
+            return RestaurationResult.referencesPerdues(manquantes);
+        }
+        // Restoring a snapshot of ANOTHER groupe de créneaux silently replaces
+        // the whole persisted planning with one computed for a different set of
+        // créneaux — almost always a mistake, so it is refused unless the
+        // caller explicitly forces it (the UI asks a second confirmation).
+        GroupeActif groupeActif = groupeActif();
+        String groupeSnapshot = detail.meta().groupeCreneauId();
+        if (!forcer && groupeSnapshot != null && groupeActif != null
+                && !groupeSnapshot.equals(groupeActif.id())) {
+            return RestaurationResult.autreGroupe(
+                    detail.meta().groupeNom() == null ? groupeSnapshot : detail.meta().groupeNom(),
+                    groupeActif.nom() == null ? groupeActif.id() : groupeActif.nom());
         }
         try (Connection connection = dataSource.getConnection()) {
             boolean autoCommit = connection.getAutoCommit();
@@ -263,10 +295,25 @@ public class PlanSnapshotService {
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to restore plan snapshot " + id, e);
         }
-        return new RestaurationResult(true, detail.affectations().size(), List.of());
+        return RestaurationResult.ok(detail.affectations().size());
     }
 
     /* -------------------------------- Helpers ------------------------------ */
+
+    private record GroupeActif(String id, String nom) {
+    }
+
+    /** The active groupe de créneaux, {@code null} when none is flagged. */
+    private GroupeActif groupeActif() {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = prepareScoped(connection,
+                        "SELECT id, nom FROM groupe_creneau WHERE edition_id = ? AND actif");
+                ResultSet rs = ps.executeQuery()) {
+            return rs.next() ? new GroupeActif(rs.getString("id"), rs.getString("nom")) : null;
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to load the active groupe de créneaux", e);
+        }
+    }
 
     private List<AffectationSnapshot> lireAffectationsPersistees() {
         String sql = "SELECT id, stand_id, creneau_id, animateur_id, heure_debut_effective, heure_fin_effective "

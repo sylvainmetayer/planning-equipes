@@ -21,7 +21,10 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.PlanningPersistenceService;
 import dev.sylvain.planning.service.ReferenceDataService;
+import io.quarkus.mailer.MockMailbox;
 import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.RestAssured;
+import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
 
@@ -43,6 +46,9 @@ class FoireEtExportsEspaceTest {
     @Inject
     ReferenceDataService referenceData;
 
+    @Inject
+    MockMailbox mailbox;
+
     @BeforeEach
     void seed() {
         Animateur alice = new Animateur("FOIRE-A", "Alice", "Martin", LocalDate.of(1990, 1, 1), false);
@@ -55,12 +61,31 @@ class FoireEtExportsEspaceTest {
         PosteAffectation posteDeux = new PosteAffectation("FOIRE-P2", standDeux, creneau);
         posteDeux.setAnimateur(bruno);
         persistence.persist(new PlanningFestival(JOUR, List.of(alice, bruno), List.of(posteUn, posteDeux)));
+
+        // Alice's espace session (e-mail code flow) rides on every request.
+        donnerEmail("FOIRE-A", "foire-alice@example.org");
+        mailbox.clear();
+        RestAssured.requestSpecification = null;
+        String session = EspaceSessions.ouvrir(mailbox, jetonDe("FOIRE-A"), "foire-alice@example.org");
+        RestAssured.requestSpecification = new RequestSpecBuilder()
+                .addCookie("planning-espace", session)
+                .build();
+    }
+
+    private void donnerEmail(String animateurId, String email) {
+        Animateur animateur = referenceData.listAnimateurs().stream()
+                .filter(candidat -> candidat.getId().equals(animateurId))
+                .findFirst()
+                .orElseThrow();
+        animateur.setEmail(email);
+        referenceData.updateAnimateur(animateurId, animateur);
     }
 
     /** The foire state is shared, edition-wide: every test leaves it open. */
     @AfterEach
     void rouvrirLaFoire() {
         configurer(true);
+        RestAssured.requestSpecification = null;
     }
 
     @Test

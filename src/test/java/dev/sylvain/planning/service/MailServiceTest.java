@@ -178,6 +178,31 @@ class MailServiceTest {
                 .doesNotContain("espace en ligne");
     }
 
+    /** Le code d'accès part en clair dans le corps, avec sa durée de validité. */
+    @Test
+    void leCodeDAccesEstEnvoyeAvecSaDureeDeValidite() {
+        service.envoyerCodeAcces("alice@example.org", "Alice", "042137");
+
+        assertThat(envoyes).hasSize(1);
+        assertThat(envoyes.get(0).getSubject()).contains("code d'accès");
+        assertThat(envoyes.get(0).getText())
+                .contains("Bonjour Alice")
+                .contains("042137")
+                .contains("10 minutes");
+    }
+
+    /** Sans le mail, pas d'accès : un échec d'envoi du code doit remonter. */
+    @Test
+    void unEchecDEnvoiDeCodeRemonteALAppelant() {
+        service.mailer = mails -> {
+            throw new IllegalStateException("SMTP down");
+        };
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                () -> service.envoyerCodeAcces("alice@example.org", "Alice", "042137"))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
     /**
      * Contrairement aux notifications, l'envoi du planning est une action
      * admin explicite : un échec doit remonter pour être montré, pas être

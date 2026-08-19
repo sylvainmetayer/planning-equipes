@@ -3,7 +3,9 @@
 // decision, and the outcome back on the animateur's side.
 
 import { APIRequestContext, expect, test } from '@playwright/test';
-import { SEED, contexteAdmin, jetonDe, pageAdmin, seedPlanning } from './support';
+import { SEED, contexteAdmin, dernierCodeMailpit, jetonDe, ouvrirSessionEspace, pageAdmin, seedPlanning } from './support';
+
+const EMAIL_ALICE = `${SEED.demandeur}@example.org`;
 
 let admin: APIRequestContext;
 let jeton: string;
@@ -27,7 +29,30 @@ test.describe('espace animateur', () => {
     await expect(page.getByRole('link', { name: 'Mon planning' })).toHaveCount(0);
   });
 
+  test("sans session, le lien mène à l'écran du code d'accès — pas au planning", async ({ page }) => {
+    await page.goto(`/animateur/${jeton}`);
+    await expect(page.getByText('Accès à votre espace')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Recevoir mon code par e-mail' })).toBeVisible();
+    await expect(page.getByText('Stand E2E un')).toHaveCount(0);
+    // The API itself refuses: the screen is not a mere curtain.
+    const reponse = await page.request.get(`/api/espace-animateur/${jeton}`);
+    expect(reponse.status()).toBe(401);
+  });
+
+  test("le code reçu par e-mail ouvre l'espace depuis l'écran d'accès", async ({ page }) => {
+    await page.goto(`/animateur/${jeton}`);
+    await page.getByRole('button', { name: 'Recevoir mon code par e-mail' }).click();
+    await expect(page.getByText('Code envoyé à E•••@example.org', { exact: false })).toBeVisible();
+    // The code lands in Mailpit — typed here as the animateur would type it.
+    const code = await dernierCodeMailpit(page.request, EMAIL_ALICE);
+    await page.getByLabel('Code reçu').fill(code);
+    await page.getByRole('button', { name: 'Ouvrir mon espace' }).click();
+    await expect(page.getByText('Alice E2E')).toBeVisible();
+    await expect(page.getByText('Stand E2E un')).toBeVisible();
+  });
+
   test('le jeton ouvre le planning personnel, sans navigation admin', async ({ page }) => {
+    await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
     await page.goto(`/animateur/${jeton}`);
     await expect(page.getByText('Alice E2E')).toBeVisible();
     await expect(page.getByText('Stand E2E un')).toBeVisible();
@@ -39,6 +64,7 @@ test.describe('espace animateur', () => {
     // Two browser contexts and a decision round trip: triple the budget.
     test.slow();
     // --- Animateur side: build then submit one demande. ---
+    await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
     await page.goto(`/animateur/${jeton}/echanges`);
     await page.getByLabel('Créneau concerné').click();
     await page.getByRole('option').first().click();
@@ -79,6 +105,7 @@ test.describe('espace animateur', () => {
   test("refuser une demande transmet le motif à l'animateur", async ({ page, browser }) => {
     test.slow();
     // After the accepted swap, Alice proposes another one from her new seat.
+    await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
     await page.goto(`/animateur/${jeton}/echanges`);
     await page.getByLabel('Créneau concerné').click();
     await page.getByRole('option').first().click();
@@ -107,6 +134,7 @@ test.describe('espace animateur', () => {
   });
 
   test("annuler une demande en attente depuis l'espace", async ({ page }) => {
+    await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
     await page.goto(`/animateur/${jeton}/echanges`);
     await page.getByLabel('Créneau concerné').click();
     await page.getByRole('option').first().click();
@@ -120,6 +148,7 @@ test.describe('espace animateur', () => {
   });
 
   test("le périmètre du jeton : l'espace ne donne aucune session admin", async ({ page }) => {
+    await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
     await page.goto(`/animateur/${jeton}`);
     const reponse = await page.request.get('/api/constraints', { maxRedirects: 0 });
     expect(reponse.status()).toBe(401);

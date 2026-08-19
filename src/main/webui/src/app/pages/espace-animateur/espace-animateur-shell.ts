@@ -1,7 +1,11 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { ActivatedRoute, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
@@ -22,9 +26,13 @@ import { AppLocale, getStoredLocale, setStoredLocaleAndReload } from '../../core
     RouterOutlet,
     RouterLink,
     RouterLinkActive,
+    FormsModule,
     MatToolbarModule,
     MatButtonModule,
+    MatCardModule,
+    MatFormFieldModule,
     MatIconModule,
+    MatInputModule,
     MatProgressBarModule
   ],
   templateUrl: './espace-animateur-shell.html',
@@ -49,5 +57,43 @@ export class EspaceAnimateurShell {
   /** Language messages resolve once at bootstrap, so switching reloads the page. */
   protected toggleLocale(): void {
     setStoredLocaleAndReload(this.locale === 'fr' ? 'en' : 'fr');
+  }
+
+  /* -------- Passwordless access: e-mail code against the valid token ------- */
+
+  /** Masked address the code went to, `null` while none was requested. */
+  protected readonly codeEnvoyeA = signal<string | null>(null);
+  protected readonly codeSaisi = signal('');
+  protected readonly authEnCours = signal(false);
+  protected readonly erreurAuth = signal<string | null>(null);
+
+  protected async demanderCode(): Promise<void> {
+    this.authEnCours.set(true);
+    this.erreurAuth.set(null);
+    try {
+      this.codeEnvoyeA.set(await this.espace.demanderCode());
+      this.codeSaisi.set('');
+    } catch (error) {
+      this.erreurAuth.set(error instanceof Error ? error.message : String(error));
+    } finally {
+      this.authEnCours.set(false);
+    }
+  }
+
+  protected async validerCode(): Promise<void> {
+    if (!this.codeSaisi().trim()) {
+      return;
+    }
+    this.authEnCours.set(true);
+    this.erreurAuth.set(null);
+    try {
+      // On success `charger` runs again with the fresh cookie: `authRequise`
+      // flips back and the espace renders in place of this screen.
+      await this.espace.validerCode(this.codeSaisi().trim());
+    } catch (error) {
+      this.erreurAuth.set(error instanceof Error ? error.message : String(error));
+    } finally {
+      this.authEnCours.set(false);
+    }
   }
 }

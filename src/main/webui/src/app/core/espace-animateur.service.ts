@@ -2,8 +2,9 @@
 // demandes, keyed by the access token carried in the URL. Read-only for the
 // planning; the only writes are submitting or withdrawing demandes.
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
-import { ApiService } from './api.service';
+import { ApiService, toError } from './api.service';
 import { DemandeEchangeView, EspaceAnimateurView, NouvelleDemandeEchange } from './models';
 
 @Injectable({ providedIn: 'root' })
@@ -17,26 +18,53 @@ export class EspaceAnimateurService {
   readonly chargement = signal(false);
   /** Message of the load failure, `null` while everything is fine. */
   readonly erreur = signal<string | null>(null);
+  /**
+   * True when the token is valid but no session is open (401): the interface
+   * then offers the e-mail code screen instead of the espace.
+   */
+  readonly authRequise = signal(false);
 
   /** Loads (or reloads) the whole espace for one token. */
   async charger(jeton: string): Promise<void> {
     this.jeton.set(jeton);
     this.chargement.set(true);
     this.erreur.set(null);
+    this.authRequise.set(false);
     try {
       const [vue, demandes] = await Promise.all([
-        this.api.get<EspaceAnimateurView>(`/api/espace-animateur/${jeton}`),
-        this.api.get<DemandeEchangeView[]>(`/api/espace-animateur/${jeton}/demandes`)
+        this.api.getPreservingHttpError<EspaceAnimateurView>(`/api/espace-animateur/${jeton}`),
+        this.api.getPreservingHttpError<DemandeEchangeView[]>(`/api/espace-animateur/${jeton}/demandes`)
       ]);
       this.vue.set(vue);
       this.demandes.set(demandes);
     } catch (error) {
       this.vue.set(null);
       this.demandes.set([]);
-      this.erreur.set(error instanceof Error ? error.message : String(error));
+      if (error instanceof HttpErrorResponse && error.status === 401) {
+        this.authRequise.set(true);
+      } else {
+        this.erreur.set(toError(error).message);
+      }
     } finally {
       this.chargement.set(false);
     }
+  }
+
+  /**
+   * Asks the server to mail a fresh access code; returns the masked address
+   * it went to, for the confirmation line under the input.
+   */
+  async demanderCode(): Promise<string> {
+    const jeton = this.jetonRequis();
+    const reponse = await this.api.post<{ emailMasque: string }>(`/api/espace-animateur/${jeton}/code`, null);
+    return reponse.emailMasque;
+  }
+
+  /** Exchanges the received code for the session cookie, then loads the espace. */
+  async validerCode(code: string): Promise<void> {
+    const jeton = this.jetonRequis();
+    await this.api.post<void>(`/api/espace-animateur/${jeton}/session`, { code });
+    await this.charger(jeton);
   }
 
   /**
@@ -58,7 +86,7 @@ export class EspaceAnimateurService {
     const jeton = this.jetonRequis();
     await this.api.post<void>(`/api/espace-animateur/${jeton}/demandes/${demandeId}/annulation`, null);
     this.demandes.set(
-      await this.api.get<DemandeEchangeView[]>(`/api/espace-animateur/${jeton}/demandes`)
+      await this.api.getPreservingHttpError<DemandeEchangeView[]>(`/api/espace-animateur/${jeton}/demandes`)
     );
   }
 

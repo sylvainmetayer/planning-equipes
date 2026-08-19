@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -44,7 +45,7 @@ function demande(id: string): DemandeEchangeView {
 }
 
 class FakeApi {
-  get = vi.fn(async (_url: string): Promise<unknown> => null);
+  getPreservingHttpError = vi.fn(async (_url: string): Promise<unknown> => null);
   post = vi.fn(async (_url: string, _body: unknown): Promise<unknown> => null);
 }
 
@@ -65,14 +66,14 @@ describe('EspaceAnimateurService', () => {
   });
 
   it('charge la vue et les demandes du jeton, et vide toute erreur passée', async () => {
-    api.get.mockImplementation(async (url: string) =>
+    api.getPreservingHttpError.mockImplementation(async (url: string) =>
       url.endsWith('/demandes') ? [demande('D1')] : vue()
     );
 
     await service.charger('jeton-1');
 
-    expect(api.get).toHaveBeenCalledWith('/api/espace-animateur/jeton-1');
-    expect(api.get).toHaveBeenCalledWith('/api/espace-animateur/jeton-1/demandes');
+    expect(api.getPreservingHttpError).toHaveBeenCalledWith('/api/espace-animateur/jeton-1');
+    expect(api.getPreservingHttpError).toHaveBeenCalledWith('/api/espace-animateur/jeton-1/demandes');
     expect(service.jeton()).toBe('jeton-1');
     expect(service.vue()?.animateurId).toBe('A1');
     expect(service.demandes().map((d) => d.id)).toEqual(['D1']);
@@ -81,12 +82,12 @@ describe('EspaceAnimateurService', () => {
   });
 
   it('un échec de chargement pose le message et remet la vue à zéro', async () => {
-    api.get.mockImplementation(async (url: string) =>
+    api.getPreservingHttpError.mockImplementation(async (url: string) =>
       url.endsWith('/demandes') ? [demande('D1')] : vue()
     );
     await service.charger('jeton-1');
 
-    api.get.mockRejectedValue(new Error('Lien inconnu ou expiré'));
+    api.getPreservingHttpError.mockRejectedValue(new Error('Lien inconnu ou expiré'));
     await service.charger('jeton-perime');
 
     expect(service.erreur()).toBe('Lien inconnu ou expiré');
@@ -95,8 +96,31 @@ describe('EspaceAnimateurService', () => {
     expect(service.chargement()).toBe(false);
   });
 
+  it("un 401 bascule en « authentification requise » plutôt qu'en erreur", async () => {
+    api.getPreservingHttpError.mockRejectedValue(new HttpErrorResponse({ status: 401 }));
+
+    await service.charger('jeton-1');
+
+    expect(service.authRequise()).toBe(true);
+    expect(service.erreur()).toBeNull();
+    expect(service.vue()).toBeNull();
+  });
+
+  it("valider le code ouvre la session puis recharge l'espace", async () => {
+    service.jeton.set('jeton-1');
+    api.getPreservingHttpError.mockImplementation(async (url: string) =>
+      url.endsWith('/demandes') ? [demande('D1')] : vue()
+    );
+
+    await service.validerCode('123456');
+
+    expect(api.post).toHaveBeenCalledWith('/api/espace-animateur/jeton-1/session', { code: '123456' });
+    expect(service.vue()?.animateurId).toBe('A1');
+    expect(service.authRequise()).toBe(false);
+  });
+
   it('la soumission poste le lot et insère les demandes stockées en tête de liste', async () => {
-    api.get.mockImplementation(async (url: string) =>
+    api.getPreservingHttpError.mockImplementation(async (url: string) =>
       url.endsWith('/demandes') ? [demande('ANCIENNE')] : vue()
     );
     await service.charger('jeton-1');
@@ -114,13 +138,13 @@ describe('EspaceAnimateurService', () => {
   });
 
   it("l'annulation poste puis recharge la liste depuis le serveur", async () => {
-    api.get.mockImplementation(async (url: string) =>
+    api.getPreservingHttpError.mockImplementation(async (url: string) =>
       url.endsWith('/demandes') ? [demande('D1')] : vue()
     );
     await service.charger('jeton-1');
 
     const annulee = { ...demande('D1'), statut: 'ANNULEE' as const };
-    api.get.mockResolvedValue([annulee]);
+    api.getPreservingHttpError.mockResolvedValue([annulee]);
     await service.annuler('D1');
 
     expect(api.post).toHaveBeenCalledWith(

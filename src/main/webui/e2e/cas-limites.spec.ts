@@ -3,7 +3,9 @@
 // both sides, and admin deep links without a session.
 
 import { APIRequestContext, expect, test } from '@playwright/test';
-import { SEED, contexteAdmin, jetonDe, pageAdmin, seedPlanning } from './support';
+import { SEED, contexteAdmin, jetonDe, ouvrirSessionEspace, pageAdmin, seedPlanning } from './support';
+
+const EMAIL_ALICE = `${SEED.demandeur}@example.org`;
 
 let admin: APIRequestContext;
 
@@ -20,6 +22,7 @@ test.describe('cas limites', () => {
   test("régénérer le jeton tue l'ancien lien, le nouveau prend le relais", async ({ page }) => {
     await seedPlanning(admin);
     const ancienJeton = await jetonDe(admin, SEED.demandeur);
+    await ouvrirSessionEspace(page.request, ancienJeton, EMAIL_ALICE);
 
     // The old link works…
     await page.goto(`/animateur/${ancienJeton}`);
@@ -51,6 +54,7 @@ test.describe('cas limites', () => {
     test.slow();
     await seedPlanning(admin, { avecCollegueIndisponible: true });
     const jeton = await jetonDe(admin, SEED.demandeur);
+    await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
 
     // Alice asks to swap with Chloé, who declared the day off.
     await page.goto(`/animateur/${jeton}/echanges`);
@@ -77,6 +81,7 @@ test.describe('cas limites', () => {
     test.slow();
     await seedPlanning(admin);
     const jeton = await jetonDe(admin, SEED.demandeur);
+    await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
 
     // The admin closes the foire from the Échanges screen.
     const pageEchanges = await pageAdmin(browser, admin);

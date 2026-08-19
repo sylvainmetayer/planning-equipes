@@ -34,14 +34,28 @@ import jakarta.ws.rs.core.Response;
  * <p>An unknown token answers a plain 404 with no distinction between "no such
  * token" and "no such route": the token is the credential, nothing should help
  * guessing one.</p>
+ *
+ * <p>Since the espace serves the planning for download, the link alone is no
+ * longer enough: every route except the two code endpoints also requires a
+ * session opened by e-mail code (see {@link EspaceAccesService}), carried by
+ * the {@code planning-espace} HttpOnly cookie. Without it, a valid token answers
+ * 401 — the interface then shows the code screen.</p>
  */
 @Path("/espace-animateur")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class EspaceAnimateurResource {
 
+    static final String COOKIE_SESSION = "planning-espace";
+
     @Inject
     ReferenceDataService referenceDataService;
+
+    @Inject
+    dev.sylvain.planning.service.EspaceAccesService espaceAccesService;
+
+    @jakarta.ws.rs.core.Context
+    HttpHeaders entetes;
 
     @Inject
     EspaceAnimateurService espaceAnimateurService;
@@ -62,7 +76,7 @@ public class EspaceAnimateurResource {
     @GET
     @Path("/{jeton}")
     public Response espace(@PathParam("jeton") String jeton) {
-        return avecJeton(jeton, animateurId -> Response.ok(
+        return avecSession(jeton, animateurId -> Response.ok(
                 espaceAnimateurService.construireVue(animateurId)).build());
     }
 
@@ -70,7 +84,7 @@ public class EspaceAnimateurResource {
     @GET
     @Path("/{jeton}/demandes")
     public Response demandes(@PathParam("jeton") String jeton) {
-        return avecJeton(jeton, animateurId -> Response.ok(
+        return avecSession(jeton, animateurId -> Response.ok(
                 espaceAnimateurService.versVues(demandeEchangeService.listerPourDemandeur(animateurId))).build());
     }
 
@@ -83,7 +97,7 @@ public class EspaceAnimateurResource {
     @POST
     @Path("/{jeton}/demandes")
     public Response soumettre(@PathParam("jeton") String jeton, List<NouvelleDemande> nouvelles) {
-        return avecJeton(jeton, animateurId -> {
+        return avecSession(jeton, animateurId -> {
             try {
                 return Response.ok(espaceAnimateurService.versVues(
                         demandeEchangeService.soumettre(animateurId, nouvelles))).build();
@@ -104,7 +118,7 @@ public class EspaceAnimateurResource {
     @Path("/{jeton}/planning.pdf")
     @Produces("application/pdf")
     public Response planningPdf(@PathParam("jeton") String jeton) {
-        return avecJeton(jeton, animateurId -> {
+        return avecSession(jeton, animateurId -> {
             PlanningFestival planning = persistenceService.loadPersistedPlanning();
             byte[] contenu = planningExportService.exportAnimateurPdf(planning, animateurId);
             return Response.ok(contenu)
@@ -119,7 +133,7 @@ public class EspaceAnimateurResource {
     @Path("/{jeton}/planning.ics")
     @Produces("text/calendar")
     public Response planningIcs(@PathParam("jeton") String jeton) {
-        return avecJeton(jeton, animateurId -> {
+        return avecSession(jeton, animateurId -> {
             PlanningFestival planning = persistenceService.loadPersistedPlanning();
             String contenu = planningExportService.exportAnimateurIcs(planning, animateurId);
             return Response.ok(contenu)
@@ -143,7 +157,7 @@ public class EspaceAnimateurResource {
     @POST
     @Path("/{jeton}/demandes/{demandeId}/annulation")
     public Response annuler(@PathParam("jeton") String jeton, @PathParam("demandeId") String demandeId) {
-        return avecJeton(jeton, animateurId -> {
+        return avecSession(jeton, animateurId -> {
             try {
                 demandeEchangeService.annuler(animateurId, demandeId);
                 return Response.noContent().build();
@@ -153,6 +167,57 @@ public class EspaceAnimateurResource {
                         .build();
             }
         });
+    }
+
+    /**
+     * Sends a fresh access code to the animateur's e-mail address. The one
+     * espace call (with the session opener below) that only needs the token:
+     * it is how a session gets bootstrapped.
+     */
+    @POST
+    @Path("/{jeton}/code")
+    public Response demanderCode(@PathParam("jeton") String jeton) {
+        return avecJeton(jeton, animateurId -> {
+            try {
+                return Response.ok(espaceAccesService.demanderCode(animateurId)).build();
+            } catch (IllegalArgumentException e) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(new ReferenceDataResource.ErreurValidation(e.getMessage()))
+                        .build();
+            } catch (RuntimeException e) {
+                io.quarkus.logging.Log.errorf(e, "Failed to mail an espace access code");
+                return Response.serverError()
+                        .entity(new ReferenceDataResource.ErreurValidation(
+                                "L'envoi du code a échoué : réessayez dans quelques instants."))
+                        .build();
+            }
+        });
+    }
+
+    /** Exchanges a valid code for the durable session cookie. */
+    @POST
+    @Path("/{jeton}/session")
+    public Response ouvrirSession(@PathParam("jeton") String jeton, CodeSession codeSession) {
+        return avecJeton(jeton, animateurId -> {
+            try {
+                String session = espaceAccesService.ouvrirSession(animateurId,
+                        codeSession == null ? null : codeSession.code());
+                return Response.noContent()
+                        .header("Set-Cookie", COOKIE_SESSION + "=" + session
+                                + "; Path=/api/espace-animateur; HttpOnly; SameSite=Strict; Max-Age="
+                                + dev.sylvain.planning.service.EspaceAccesService.VALIDITE_SESSION
+                                        .toSeconds())
+                        .build();
+            } catch (IllegalArgumentException e) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(new ReferenceDataResource.ErreurValidation(e.getMessage()))
+                        .build();
+            }
+        });
+    }
+
+    /** Body of the session opener: the code received by e-mail. */
+    public record CodeSession(String code) {
     }
 
     /**
@@ -168,5 +233,24 @@ public class EspaceAnimateurResource {
         }
         return editionContext.executeDans(proprietaire.editionId(),
                 () -> action.apply(proprietaire.animateurId()));
+    }
+
+    /**
+     * Same as {@link #avecJeton}, plus the session requirement: the
+     * {@code planning-espace} cookie must carry a live session of the animateur
+     * the token resolves to. 401 otherwise — the interface then offers the
+     * code screen. Checked inside the edition context, like everything else.
+     */
+    private Response avecSession(String jeton, Function<String, Response> action) {
+        return avecJeton(jeton, animateurId -> {
+            jakarta.ws.rs.core.Cookie cookie = entetes.getCookies().get(COOKIE_SESSION);
+            if (!espaceAccesService.sessionValide(cookie == null ? null : cookie.getValue(), animateurId)) {
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(new ReferenceDataResource.ErreurValidation(
+                                "Authentification requise : demandez un code d'accès par e-mail."))
+                        .build();
+            }
+            return action.apply(animateurId);
+        });
     }
 }

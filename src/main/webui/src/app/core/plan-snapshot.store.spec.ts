@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from './api.service';
 import { PlanSnapshot } from './models';
-import { PlanSnapshotStore, ReferencesManquantesError } from './plan-snapshot.store';
+import { GroupeDifferentError, PlanSnapshotStore, ReferencesManquantesError } from './plan-snapshot.store';
 
 function snapshot(id: number, groupeCreneauId: string | null, libelle = 'S' + id): PlanSnapshot {
   return {
@@ -71,6 +71,25 @@ describe('PlanSnapshotStore', () => {
     api.postPreservingHttpError.mockRejectedValue(new HttpErrorResponse({ status: 500 }));
 
     await expect(store.restaurer(7)).rejects.not.toBeInstanceOf(ReferencesManquantesError);
+  });
+
+  it("distingue le refus « autre groupe de créneaux », rejouable avec l'option forcer", async () => {
+    api.postPreservingHttpError.mockRejectedValue(
+      new HttpErrorResponse({
+        status: 409,
+        error: { message: 'Autre groupe', referencesManquantes: [], groupeDifferent: true }
+      })
+    );
+
+    await expect(store.restaurer(7)).rejects.toBeInstanceOf(GroupeDifferentError);
+    expect(api.postPreservingHttpError).toHaveBeenLastCalledWith('/api/planning/snapshots/7/restore', {});
+
+    api.postPreservingHttpError.mockResolvedValue({ restaure: true, affectations: 12 });
+    await store.restaurer(7, true);
+    expect(api.postPreservingHttpError).toHaveBeenLastCalledWith(
+      '/api/planning/snapshots/7/restore?forcer=true',
+      {}
+    );
   });
 
   it('reloads the list after a capture and after a delete', async () => {

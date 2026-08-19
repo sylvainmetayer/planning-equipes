@@ -106,6 +106,31 @@
   margin: 0;
 }
 
+/* Écran du code d'accès par e-mail (issue #165). */
+.espace-code {
+  max-width: 34rem;
+  margin: 2rem auto;
+}
+
+.espace-code-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.espace-code-envoye,
+.espace-code-erreur {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+.espace-code-erreur {
+  color: var(--mat-sys-error);
+}
+
 /* Étiquette du groupe de créneaux du planning affiché (issue #165). */
 .espace-groupe {
   display: flex;

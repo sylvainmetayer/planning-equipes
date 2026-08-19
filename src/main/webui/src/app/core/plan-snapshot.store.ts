@@ -17,6 +17,14 @@ export class ReferencesManquantesError extends Error {
   }
 }
 
+/** The snapshot belongs to another groupe de créneaux than the active one; retry with `forcer` after confirming. */
+export class GroupeDifferentError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'GroupeDifferentError';
+  }
+}
+
 @Injectable({ providedIn: 'root' })
 export class PlanSnapshotStore {
   readonly snapshots = signal<PlanSnapshot[]>([]);
@@ -56,22 +64,27 @@ export class PlanSnapshotStore {
   }
 
   /**
-   * Puts a snapshot back. Throws {@link ReferencesManquantesError} when the
-   * server refuses because ids named by the snapshot no longer exist — nothing
-   * was written in that case.
+   * Puts a snapshot back. Throws {@link GroupeDifferentError} when the server
+   * refuses because the snapshot belongs to another groupe de créneaux than
+   * the active one (retry with `forcer` after an explicit confirmation), and
+   * {@link ReferencesManquantesError} when ids named by the snapshot no longer
+   * exist — nothing was written in either case.
    */
-  async restaurer(id: number): Promise<RestaurationSnapshot> {
+  async restaurer(id: number, forcer = false): Promise<RestaurationSnapshot> {
     try {
       // The raw HttpErrorResponse, not the flattened Error: the 409 body
       // carries the ids the snapshot names and the referential has lost, and
       // that list is the whole point of the message shown to the user.
       return await this.api.postPreservingHttpError<RestaurationSnapshot>(
-        `/api/planning/snapshots/${id}/restore`,
+        `/api/planning/snapshots/${id}/restore${forcer ? '?forcer=true' : ''}`,
         {}
       );
     } catch (error) {
+      if (corpsErreur(error)?.groupeDifferent === true) {
+        throw new GroupeDifferentError(messageErreur(error));
+      }
       const references = referencesManquantes(error);
-      if (references) {
+      if (references && references.length > 0) {
         throw new ReferencesManquantesError(messageErreur(error), references);
       }
       throw toError(error);
@@ -90,10 +103,14 @@ function messageErreur(error: unknown): string {
   return corpsErreur(error)?.message ?? toError(error).message;
 }
 
-function corpsErreur(error: unknown): { message?: string; referencesManquantes?: unknown[] } | null {
+function corpsErreur(
+  error: unknown
+): { message?: string; referencesManquantes?: unknown[]; groupeDifferent?: boolean } | null {
   if (!(error instanceof HttpErrorResponse)) {
     return null;
   }
   const body: unknown = error.error;
-  return body && typeof body === 'object' ? (body as { message?: string; referencesManquantes?: unknown[] }) : null;
+  return body && typeof body === 'object'
+    ? (body as { message?: string; referencesManquantes?: unknown[]; groupeDifferent?: boolean })
+    : null;
 }

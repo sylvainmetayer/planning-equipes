@@ -13,6 +13,49 @@
 <main class="espace-page">
   @if (espace.chargement()) {
     <mat-progress-bar mode="indeterminate" />
+  } @else if (espace.authRequise()) {
+    <mat-card class="espace-code" appearance="outlined">
+      <mat-card-header>
+        <mat-card-title i18n="@@espace.code.titre">Accès à votre espace</mat-card-title>
+        <mat-card-subtitle i18n="@@espace.code.sousTitre">
+          Votre espace contient votre planning personnel : un code d'accès, envoyé à l'adresse
+          e-mail connue de l'organisation, est demandé une fois par appareil.
+        </mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        @if (codeEnvoyeA(); as adresse) {
+          <p class="espace-code-envoye">
+            <mat-icon inline>mark_email_read</mat-icon>
+            <span i18n="@@espace.code.envoye">Code envoyé à {{ adresse }} — il est valable 10 minutes.</span>
+          </p>
+          <form class="espace-code-form" (submit)="$event.preventDefault(); validerCode()">
+            <mat-form-field appearance="outline">
+              <mat-label i18n="@@espace.code.champ">Code reçu</mat-label>
+              <input matInput inputmode="numeric" autocomplete="one-time-code" maxlength="6"
+                     [ngModel]="codeSaisi()" (ngModelChange)="codeSaisi.set($event)" name="code" />
+            </mat-form-field>
+            <button matButton="filled" type="submit" [disabled]="authEnCours() || !codeSaisi().trim()">
+              <mat-icon>login</mat-icon>
+              <span i18n="@@espace.code.valider">Ouvrir mon espace</span>
+            </button>
+            <button matButton type="button" [disabled]="authEnCours()" (click)="demanderCode()">
+              <span i18n="@@espace.code.renvoyer">Renvoyer un code</span>
+            </button>
+          </form>
+        } @else {
+          <button matButton="filled" [disabled]="authEnCours()" (click)="demanderCode()">
+            <mat-icon>outgoing_mail</mat-icon>
+            <span i18n="@@espace.code.demander">Recevoir mon code par e-mail</span>
+          </button>
+        }
+        @if (erreurAuth(); as message) {
+          <p class="espace-code-erreur">
+            <mat-icon inline>error</mat-icon>
+            {{ message }}
+          </p>
+        }
+      </mat-card-content>
+    </mat-card>
   } @else if (espace.erreur()) {
     <div class="espace-erreur">
       <mat-icon>link_off</mat-icon>

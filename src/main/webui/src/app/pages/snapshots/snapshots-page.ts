@@ -9,8 +9,8 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ApiService } from '../../core/api.service';
 import { intlLocale } from '../../core/locale';
-import { PersistenceStatus, PlanSnapshot } from '../../core/models';
-import { PlanSnapshotStore, ReferencesManquantesError } from '../../core/plan-snapshot.store';
+import { PersistenceStatus, PlanSnapshot, RestaurationSnapshot } from '../../core/models';
+import { GroupeDifferentError, PlanSnapshotStore, ReferencesManquantesError } from '../../core/plan-snapshot.store';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
@@ -160,7 +160,10 @@ export class SnapshotsPage {
     this.error.set('');
     this.message.set('');
     try {
-      const resultat = await this.store.restaurer(snapshot.id);
+      const resultat = await this.restaurerAvecGardeDeGroupe(snapshot);
+      if (!resultat) {
+        return;
+      }
       await this.resolution.reload();
       this.message.set(
         $localize`:@@snapshots.restored:${resultat.affectations}:count: affectation(s) restaurée(s) depuis « ${snapshot.libelle}:libelle: ».`
@@ -169,6 +172,29 @@ export class SnapshotsPage {
       this.error.set(this.messageErreur(error));
     } finally {
       this.enCours.set(null);
+    }
+  }
+
+  /**
+   * A snapshot of another groupe de créneaux than the active one is refused
+   * server-side: surface the business message and ask a second, explicit
+   * confirmation before retrying with the override. `null` when the user
+   * backs out.
+   */
+  private async restaurerAvecGardeDeGroupe(snapshot: PlanSnapshot): Promise<RestaurationSnapshot | null> {
+    try {
+      return await this.store.restaurer(snapshot.id);
+    } catch (error) {
+      if (!(error instanceof GroupeDifferentError)) {
+        throw error;
+      }
+      const confirme = await this.confirm.ask({
+        title: $localize`:@@snapshots.groupeDifferent.titre:Restaurer un autre groupe de créneaux ?`,
+        message: error.message,
+        confirmLabel: $localize`:@@snapshots.groupeDifferent.confirm:Restaurer quand même`,
+        danger: true
+      });
+      return confirme ? this.store.restaurer(snapshot.id, true) : null;
     }
   }
 

@@ -23,7 +23,10 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.PlanningPersistenceService;
 import dev.sylvain.planning.service.ReferenceDataService;
+import io.quarkus.mailer.MockMailbox;
 import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.RestAssured;
+import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
 
@@ -50,6 +53,9 @@ class DemandeHorsGroupeTest {
     @Inject
     DataSource dataSource;
 
+    @Inject
+    MockMailbox mailbox;
+
     @BeforeEach
     void seed() {
         Animateur alice = new Animateur("GRP-A", "Alice", "Martin", LocalDate.of(1990, 1, 1), false);
@@ -62,6 +68,25 @@ class DemandeHorsGroupeTest {
         PosteAffectation posteDeux = new PosteAffectation("GRP-P2", standDeux, creneau);
         posteDeux.setAnimateur(bruno);
         persistence.persist(new PlanningFestival(JOUR, List.of(alice, bruno), List.of(posteUn, posteDeux)));
+
+        // Alice's espace session (e-mail code flow) rides on every request.
+        Animateur aliceStockee = referenceData.listAnimateurs().stream()
+                .filter(candidat -> candidat.getId().equals("GRP-A"))
+                .findFirst()
+                .orElseThrow();
+        aliceStockee.setEmail("grp-alice@example.org");
+        referenceData.updateAnimateur("GRP-A", aliceStockee);
+        mailbox.clear();
+        RestAssured.requestSpecification = null;
+        String session = EspaceSessions.ouvrir(mailbox, jetonDe("GRP-A"), "grp-alice@example.org");
+        RestAssured.requestSpecification = new RequestSpecBuilder()
+                .addCookie("planning-espace", session)
+                .build();
+    }
+
+    @org.junit.jupiter.api.AfterEach
+    void resetSpecification() {
+        RestAssured.requestSpecification = null;
     }
 
     @Test

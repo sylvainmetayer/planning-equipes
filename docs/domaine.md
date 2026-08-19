@@ -412,8 +412,13 @@ Trois briques l'entourent :
 - **l'identité** : chaque animateur porte un `jeton_acces` opaque, généré par
   la base (`DEFAULT gen_random_uuid()`), unique **globalement** pour résoudre
   à lui seul le couple (édition, animateur). C'est le lien imprimé sur le
-  planning PDF individuel — pas de compte ni d'authentification côté
-  animateur (voir issue #63) ; seule l'action « régénérer » le change ;
+  planning PDF individuel ; seule l'action « régénérer » le change. Depuis que
+  l'espace sert le planning en téléchargement, le lien seul ne suffit plus :
+  un **code à 6 chiffres envoyé à l'adresse de la fiche** (tables
+  `espace_acces` / `espace_session`, code et session stockés hachés) ouvre une
+  session de 30 jours portée par un cookie HttpOnly — pas de compte ni de mot
+  de passe (issue #63 reste ouverte), la boîte mail est le second facteur, et
+  un animateur sans adresse doit la faire ajouter par l'organisation ;
 - **la simulation** : `PlanningService.simulerEchange` généralise
   `simulerSwap` au cas à deux places — échange croisé si la cible tient aussi
   un poste sur le créneau, reprise simple sinon — et juge la faisabilité sur

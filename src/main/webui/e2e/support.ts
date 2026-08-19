@@ -250,6 +250,73 @@ export async function pageAdmin(browser: Browser, admin: APIRequestContext): Pro
   return contexte.newPage();
 }
 
+/* --------------------- Espace-animateur authentication ------------------- */
+
+/** Where the e2e stack's Mailpit serves its REST API (docker, port 8025). */
+const MAILPIT_URL = process.env['E2E_MAILPIT_URL'] ?? 'http://localhost:8025';
+
+/**
+ * Opens the espace session of one animateur the way the animateur would:
+ * request a code, read it in Mailpit, exchange it for the HttpOnly cookie.
+ * The cookie lands in the requester's jar — pass `page.request` so the page
+ * itself is authenticated, or an `APIRequestContext` for API-level flows.
+ */
+export async function ouvrirSessionEspace(
+  requeteur: APIRequestContext,
+  jeton: string,
+  email: string
+): Promise<void> {
+  const avant = await nombreDeMails(requeteur, email);
+  const envoi = await requeteur.post(`/api/espace-animateur/${jeton}/code`);
+  expect(envoi.ok(), await envoi.text()).toBe(true);
+  const code = await lireCodeMailpit(requeteur, email, avant);
+  const session = await requeteur.post(`/api/espace-animateur/${jeton}/session`, {
+    data: { code }
+  });
+  expect(session.status(), await session.text()).toBe(204);
+}
+
+/** The newest access code Mailpit holds for `email` — for UI flows where the click itself sent it. */
+export function dernierCodeMailpit(requeteur: APIRequestContext, email: string): Promise<string> {
+  return lireCodeMailpit(requeteur, email, 0);
+}
+
+async function nombreDeMails(requeteur: APIRequestContext, email: string): Promise<number> {
+  const reponse = await requeteur.get(
+    `${MAILPIT_URL}/api/v1/search?query=${encodeURIComponent(`to:"${email}"`)}`
+  );
+  if (!reponse.ok()) {
+    return 0;
+  }
+  return ((await reponse.json()) as { messages: { ID: string }[] }).messages.length;
+}
+
+/** Polls Mailpit until the freshly sent code mail lands, newest first. */
+async function lireCodeMailpit(
+  requeteur: APIRequestContext,
+  email: string,
+  mailsAvant: number
+): Promise<string> {
+  for (let essai = 0; essai < 40; essai++) {
+    const recherche = await requeteur.get(
+      `${MAILPIT_URL}/api/v1/search?query=${encodeURIComponent(`to:"${email}"`)}`
+    );
+    if (recherche.ok()) {
+      const messages = ((await recherche.json()) as { messages: { ID: string }[] }).messages;
+      if (messages.length > mailsAvant) {
+        const detail = await requeteur.get(`${MAILPIT_URL}/api/v1/message/${messages[0].ID}`);
+        const texte = ((await detail.json()) as { Text: string }).Text;
+        const code = /\b(\d{6})\b/.exec(texte)?.[1];
+        if (code) {
+          return code;
+        }
+      }
+    }
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  throw new Error(`Aucun code d'accès reçu dans Mailpit pour ${email} (${MAILPIT_URL})`);
+}
+
 /** The database-generated espace token of one seeded animateur, via the admin API. */
 export async function jetonDe(admin: APIRequestContext, animateurId: string): Promise<string> {
   const reponse = await admin.get('/api/animateurs');

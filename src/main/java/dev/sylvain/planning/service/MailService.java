@@ -111,6 +111,20 @@ public class MailService {
                 .addAttachment(nomFichier, pdf, "application/pdf"));
     }
 
+    /**
+     * Sends the espace access code — the second factor of the espace
+     * animateur. Like {@link #envoyerPlanningIndividuel}, a failure is NOT
+     * swallowed: without the mail the animateur cannot get in, so the caller
+     * must be able to say "send failed" instead of "check your inbox".
+     */
+    public void envoyerCodeAcces(String emailAnimateur, String prenom, String code) {
+        String corps = "Bonjour" + (prenom == null || prenom.isBlank() ? "" : " " + prenom) + ",\n\n"
+                + "Voici votre code d'accès à votre espace animateur : " + code + "\n\n"
+                + "Il est valable 10 minutes. Si vous n'êtes pas à l'origine de cette demande, "
+                + "ignorez simplement ce message.\n";
+        mailer.send(Mail.withText(emailAnimateur, "Planning Équipes — votre code d'accès", corps));
+    }
+
     private void envoyer(String destinataire, String sujet, String corps) {
         try {
             mailer.send(Mail.withText(destinataire, sujet, corps));

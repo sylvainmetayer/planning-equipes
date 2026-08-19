@@ -60,7 +60,7 @@ capable d'en garder plusieurs : ils mettent un plan de côté avant qu'il ne soi
 | `GET` | `/api/planning/snapshots` | Liste les instantanés de l'édition courante, du plus récent au plus ancien (métadonnées seules, sans le contenu) |
 | `GET` | `/api/planning/snapshots/{id}` | Un instantané avec ses affectations |
 | `POST` | `/api/planning/snapshots` | Enregistre le plan actuellement persisté. Corps : `{ "libelle": "…" }`. `409` s'il n'y a aucun plan à enregistrer |
-| `POST` | `/api/planning/snapshots/{id}/restore` | Réécrit `poste_affectation` et `planning_resolution` depuis l'instantané. `409` **sans rien écrire** si des références ont disparu, avec la liste `referencesManquantes` (`stand:…`, `creneau:…`, `animateur:…`) |
+| `POST` | `/api/planning/snapshots/{id}/restore` | Réécrit `poste_affectation` et `planning_resolution` depuis l'instantané. `409` **sans rien écrire** si des références ont disparu (liste `referencesManquantes` : `stand:…`, `creneau:…`, `animateur:…`) **ou** si l'instantané appartient à un autre groupe de créneaux que le groupe actif (`groupeDifferent: true` — l'interface demande alors une seconde confirmation et rejoue avec `?forcer=true`) |
 | `DELETE` | `/api/planning/snapshots/{id}` | Supprime un instantané |
 
 Un instantané est pris **automatiquement avant chaque solve** (`automatique:
@@ -159,10 +159,17 @@ ici). Un jeton inconnu répond `404 { "message": "…" }`, jamais `401`.
 | `POST` | `/api/espace-animateur/{jeton}/demandes/{id}/annulation` | Annule une de **ses** demandes encore en attente (`204` ; `400` si déjà décidée) |
 | `GET` | `/api/espace-animateur/{jeton}/planning.pdf` | Son planning individuel en PDF (même document que l'export admin), toujours disponible — foire fermée comprise |
 | `GET` | `/api/espace-animateur/{jeton}/planning.ics` | Son planning au format calendrier ICS |
+| `POST` | `/api/espace-animateur/{jeton}/code` | Envoie un code d'accès à 6 chiffres (10 min, 5 essais) à l'adresse de la fiche ; répond `{ emailMasque }`. `400` si la fiche n'a pas d'adresse — l'e-mail EST le second facteur |
+| `POST` | `/api/espace-animateur/{jeton}/session` | Échange `{ "code": "…" }` contre une session de 30 jours, posée dans le cookie HttpOnly `planning-espace` (`Path=/api/espace-animateur`, `SameSite=Strict`) — `204`, ou `400` (code faux, expiré ou épuisé) |
 
-La soumission et l'annulation répondent `400` quand la **foire est fermée**
-(voir `/api/echanges/configuration`) : la fermeture est appliquée côté
-serveur, la vue (`foireOuverte`) ne sert qu'à l'afficher.
+**Authentification de l'espace** : le lien (jeton) ne suffit plus — l'espace
+sert le planning en téléchargement, donc toutes les routes ci-dessus **sauf**
+`/code` et `/session` exigent aussi la session du cookie `planning-espace`, liée à
+l'animateur que le jeton résout ; sans elle, un jeton valide répond `401`
+(l'interface affiche alors l'écran du code). La soumission et l'annulation
+répondent par ailleurs `400` quand la **foire est fermée** (voir
+`/api/echanges/configuration`) : la fermeture est appliquée côté serveur, la
+vue (`foireOuverte`) ne sert qu'à l'afficher.
 
 ### Échanges (admin)
 
