@@ -1,0 +1,15 @@
+# GitGuardian (ggshield) : périmètre du scan de secrets.
+#
+# Seuls les chemins de TEST sont exclus : ils contiennent par nature des
+# identifiants factices (compte admin/admin de développement du form login,
+# mots de passe volontairement faux des tests d'authentification, jetons
+# inventés des specs Playwright — issue #165). Les fichiers de configuration
+# réels (application.properties, docker-compose.yml, workflows) restent
+# scannés : un vrai secret qui y atterrirait doit continuer d'être détecté.
+version: 2
+
+secret:
+  ignored_paths:
+    - src/test/**
+    - src/main/webui/e2e/**
+    - src/main/webui/src/**/*.spec.ts

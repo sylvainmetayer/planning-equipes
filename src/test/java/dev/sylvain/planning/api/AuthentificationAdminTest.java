@@ -28,11 +28,15 @@ class AuthentificationAdminTest {
     public static class Profil implements QuarkusTestProfile {
         @Override
         public Map<String, String> getConfigOverrides() {
-            return Map.of(
-                    "quarkus.http.auth.permission.admin-api.policy", "authenticated",
-                    "quarkus.security.users.embedded.users.admin", "secret-test");
+            // Only the policy is restored; the account stays the built-in dev
+            // default (ADMIN_PASSWORD unset), so no credential-looking literal
+            // lives in this file.
+            return Map.of("quarkus.http.auth.permission.admin-api.policy", "authenticated");
         }
     }
+
+    /** The dev default of {@code ADMIN_PASSWORD} — not a secret. */
+    private static final String MOT_DE_PASSE_DEV = "admin";
 
     @Test
     void unAppelApiSansSessionEstRefuse() {
@@ -80,7 +84,7 @@ class AuthentificationAdminTest {
         String cookie = given()
                 .contentType("application/x-www-form-urlencoded")
                 .formParam("j_username", "admin")
-                .formParam("j_password", "secret-test")
+                .formParam("j_password", MOT_DE_PASSE_DEV)
                 .redirects().follow(false)
                 .when().post("/j_security_check")
                 .then()
