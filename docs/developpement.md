@@ -163,7 +163,7 @@ n'existe pas au tactile : ce qu'elle dit doit exister ailleurs.
 
 ## Tests
 
-On distingue trois familles de tests :
+On distingue quatre familles de tests :
 
 - **Tests unitaires de contraintes** (`solver/constraints/*ConstraintsTest`) :
   chaque contrainte est vérifiée isolément avec le `ConstraintVerifier` de
@@ -184,6 +184,39 @@ On distingue trois familles de tests :
   fonctions pures de dates/formatage) et le rendu des composants légers de
   `app/shared/`. Ils ne sont **pas** branchés sur la phase de test Maven (Quinoa
   reste désactivé sur `%test`) ; ils tournent dans un job CI dédié.
+- **Tests de bout en bout** (`src/main/webui/e2e`, **Playwright**) : voir
+  ci-dessous — exécutés à la main, jamais en CI.
+
+### Tests de bout en bout (Playwright)
+
+`src/main/webui/e2e` verrouille le **périmètre** de la foire au planning
+(issue #165) dans un vrai navigateur : mur d'authentification (401 nus,
+redirection `/login`, connexion/déconnexion), frontière de l'espace animateur
+(jeton inconnu, absence de chrome admin, pas de session offerte par le jeton)
+et le flux complet soumission → acceptation admin → échange visible et
+appliqué côté animateur.
+
+Ils sont **volontairement exclus de la CI** : ils exigent la pile complète et
+écrivent en base (ensemencement idempotent d'identifiants `E2E-*` via
+`/api/database/import`, décisions réelles) — à ne lancer que contre une pile
+locale jetable.
+
+```bash
+# 1. La pile : Postgres + l'application packagée (ou `quarkus:dev`)
+docker compose up -d postgres
+./mvnw package -DskipTests
+MAIL_MOCK=true java -jar target/quarkus-app/quarkus-run.jar
+
+# 2. La suite (depuis src/main/webui ; navigateur : npx playwright install chromium)
+npm run e2e
+```
+
+Variables : `E2E_BASE_URL` (défaut `http://localhost:8080`),
+`E2E_ADMIN_PASSWORD` (défaut `admin`, doit refléter l'`ADMIN_PASSWORD` de
+l'application), `E2E_CHROMIUM` (chemin d'un Chromium déjà installé, pour un
+environnement qui interdit le téléchargement du navigateur). Les specs
+s'exécutent en série (`workers: 1`) : elles partagent la base et le jeu de
+données ensemencé.
 
 ### Mesurer la couverture
 

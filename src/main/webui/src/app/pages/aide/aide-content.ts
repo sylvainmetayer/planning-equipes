@@ -354,6 +354,40 @@ export function buildHelpSections(): HelpSection[] {
       ]
     },
     {
+      id: 'foire-au-planning',
+      icon: 'handshake',
+      title: $localize`:@@aide.foire.title:Foire au planning (échanges de créneaux)`,
+      summary: $localize`:@@aide.foire.summary:Les animateurs proposent leurs échanges de créneaux en libre-service ; rien n'est appliqué sans votre validation.`,
+      blocks: [
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.foire.intro:Chaque animateur dispose d'un espace personnel, accessible par le lien imprimé sur son planning PDF — aucun compte à créer. Il y consulte son planning à jour (avec ses coéquipiers) et peut proposer d'échanger un de ses créneaux avec un collègue. Chaque demande est prévalidée contre les règles dures du planning ; une demande irréalisable est signalée en langage métier, mais transmise quand même : c'est vous qui tranchez.`
+        },
+        {
+          kind: 'definitions',
+          items: [
+            {
+              term: $localize`:@@aide.foire.term.espace:Espace animateur`,
+              text: $localize`:@@aide.foire.def.espace:L'animateur constitue sa liste de demandes (créneau concerné, collègue avec qui échanger, motif) puis la soumet en une fois. Il suit ensuite le statut de chacune — en attente, acceptée, refusée — avec votre commentaire éventuel, et peut annuler une demande tant qu'elle n'est pas décidée. Le lien de son espace se copie (et se régénère, si un PDF a fuité) depuis sa fiche sur la page Animateurs.`
+            },
+            {
+              term: $localize`:@@aide.foire.term.ecran:Écran Échanges`,
+              text: $localize`:@@aide.foire.def.ecran:Les demandes en attente, avec pour chacune son impact mesuré sur le planning actuel : échange croisé (les deux permutent) ou simple reprise (le collègue est libre sur le créneau), effet sur le score, règles dures qui seraient cassées. Accepter applique l'échange immédiatement, exactement comme simulé, et le verrouille sur son créneau : une régénération ultérieure ne le défera pas — elle reste à lancer depuis la page Solveur. Refuser ne modifie rien ; le motif saisi est transmis à l'animateur.`
+            },
+            {
+              term: $localize`:@@aide.foire.term.connexion:Connexion et notifications`,
+              text: $localize`:@@aide.foire.def.connexion:L'administration est protégée par le compte admin ; seuls les espaces animateurs restent accessibles par leur lien personnel. Si la messagerie est configurée, vous êtes prévenu par e-mail à chaque soumission, et l'animateur reçoit le résultat de ses demandes à l'adresse renseignée sur sa fiche.`
+            }
+          ]
+        }
+      ],
+      links: [
+        { route: '/echanges', label: $localize`:@@nav.link.echanges:Échanges` },
+        { route: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs` },
+        { route: '/verrouillages', label: $localize`:@@nav.link.verrouillages:Verrouillages` }
+      ]
+    },
+    {
       id: 'echanges',
       icon: 'swap_horiz',
       title: $localize`:@@aide.exchange.title:Imports, exports et outils`,

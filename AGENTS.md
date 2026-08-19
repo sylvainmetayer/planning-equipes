@@ -217,6 +217,11 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   not wired into the Maven `%test` phase (Quinoa stays disabled there), run by a
   dedicated CI job. Favour testing `core/` logic (services with a mocked
   `ApiService`, pure helpers) over heavy component-rendering tests.
+- End-to-end tests are Playwright specs in `src/main/webui/e2e` (`npm run
+  e2e`), locking the issue #165 security perimeter (auth wall, espace
+  animateur boundary, full échange flow). **Deliberately excluded from CI**:
+  they need the full stack and write to the database — run them only against a
+  disposable local stack (see `docs/developpement.md` § Tests de bout en bout).
 
 ## Domain invariants (never break these)
 

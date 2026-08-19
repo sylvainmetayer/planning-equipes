@@ -1005,5 +1005,14 @@
   "animateurs.regenererJetonTitre": "Regenerate the link of {$prenom} {$nom}?",
   "animateurs.regenererJetonMessage": "The old link (already printed on their PDF schedules) will stop working immediately.",
   "animateurs.regenererJetonConfirm": "Regenerate",
-  "animateurs.jetonRegenere": "New link generated."
+  "animateurs.jetonRegenere": "New link generated.",
+  "aide.foire.title": "Schedule swap fair (shift swaps)",
+  "aide.foire.summary": "Staff members propose their shift swaps themselves; nothing is applied without your approval.",
+  "aide.foire.intro": "Each staff member has a personal area, reached through the link printed on their PDF schedule — no account needed. There they see their up-to-date schedule (with teammates) and can propose swapping one of their slots with a colleague. Every request is prechecked against the hard scheduling rules; an infeasible one is flagged in business words but still sent: you decide.",
+  "aide.foire.term.espace": "Staff area",
+  "aide.foire.def.espace": "The staff member builds their list of requests (time slot, colleague to swap with, reason) then submits it in one go. They then follow each request's status — pending, accepted, refused — with your optional comment, and can cancel a request while it is undecided. The link to their area can be copied (and regenerated, if a PDF leaked) from their record on the Staff page.",
+  "aide.foire.term.ecran": "Swaps screen",
+  "aide.foire.def.ecran": "The pending requests, each with its measured impact on the current schedule: cross swap (both trade places) or simple takeover (the colleague is free on the slot), score effect, hard rules that would break. Accepting applies the swap immediately, exactly as simulated, and locks it on its time slot: a later regeneration will not undo it — regeneration itself stays on the Solver page. Refusing changes nothing; the reason you type is sent to the staff member.",
+  "aide.foire.term.connexion": "Login and notifications",
+  "aide.foire.def.connexion": "The administration is protected by the admin account; only the staff areas remain reachable through their personal link. If mailing is configured, you are notified by email at every submission, and the staff member receives the outcome of their requests at the address on their record."
 }
