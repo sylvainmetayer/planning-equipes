@@ -204,7 +204,8 @@ On distingue quatre familles de tests :
   d'espace copiable/régénérable, typologie), filtre rapide, consultation,
   suppression confirmée ;
 - **vues du planning** sur les données ensemencées (heures, besoin en
-  effectif, ouvertures, timeline animateur), **verrouillages** (pose d'un
+  effectif, ouvertures, timeline animateur — y compris l'envoi des plannings
+  par e-mail, individuel et groupé, avec son compte rendu), **verrouillages** (pose d'un
   verrou de journée avec aperçu d'impact, retrait) et **page d'aide** (recherche,
   section foire au planning) ;
 - **résolutions réelles** (`e2e/solveur.spec.ts`, solves courts de ~6 s via

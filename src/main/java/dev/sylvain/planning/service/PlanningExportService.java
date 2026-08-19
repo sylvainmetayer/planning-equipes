@@ -112,10 +112,11 @@ public class PlanningExportService {
     /**
      * The animateur's personal espace URL, {@code null} when no base URL is
      * configured or the animateur carries no access token. The token IS the
-     * credential of the espace: it only ever leaves through this link, on the
-     * animateur's own PDF.
+     * credential of the espace: it only ever leaves through this link — on the
+     * animateur's own PDF, or in the mail sending them that PDF
+     * ({@code EnvoiPlanningResource}).
      */
-    private String lienEspaceAnimateur(PlanningFestival planning, String animateurId) {
+    public String lienEspaceAnimateur(PlanningFestival planning, String animateurId) {
         if (publicUrl == null || publicUrl.isEmpty() || publicUrl.get().isBlank()
                 || planning.getAnimateurs() == null) {
             return null;

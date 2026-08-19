@@ -53,3 +53,24 @@ test("la timeline d'un animateur montre ses stands à couvrir", async ({ browser
   await expect(page.locator('#contenu')).toContainText(/Stand E2E (un|deux)/);
   await page.context().close();
 });
+
+test("l'envoi des plannings par e-mail rend compte, individuellement et pour tous", async ({ browser }) => {
+  test.slow();
+  const page = await pageAdmin(browser, admin);
+  await page.goto('/timeline');
+  const champ = page.getByRole('combobox', { name: 'Animateur' });
+  await champ.click();
+  await champ.fill('Alice');
+  await page.getByRole('option', { name: /Alice E2E/ }).click();
+
+  // Individual send: Alice has an address, the mail leaves (mock SMTP).
+  await page.getByRole('button', { name: 'Envoyer par e-mail' }).click();
+  await expect(page.getByText('Planning envoyé à Alice E2E')).toBeVisible();
+
+  // Global send: the report names Bruno, seeded without an address.
+  await page.getByRole('button', { name: 'Envoyer à tous' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Envoyer' }).click();
+  await expect(page.getByText('1 planning(s) envoyé(s)')).toBeVisible();
+  await expect(page.getByText('Sans adresse e-mail : Bruno E2E')).toBeVisible();
+  await page.context().close();
+});

@@ -50,10 +50,15 @@ export async function seedPlanning(
   options: { avecCollegueIndisponible?: boolean } = {}
 ): Promise<void> {
   const script = [
-    // Clean previous runs, children first.
+    // Clean previous runs, children first. Postes of the other test prefixes
+    // are wiped too: a solver spec may have persisted a whole planning over
+    // its SOLV-/FUZZ- referential, and the sends ("Envoyer à tous") must see
+    // exactly the two-seat planning seeded here.
     `delete from demande_echange where demandeur_id like 'E2E-%' or cible_id like 'E2E-%';`,
     `delete from verrouillage_planning where animateur_id like 'E2E-%';`,
     `delete from poste_affectation where id like 'E2E-%';`,
+    `delete from poste_affectation where stand_id like 'SOLV-%' or animateur_id like 'SOLV-%';`,
+    `delete from poste_affectation where stand_id like 'FUZZ-%' or animateur_id like 'FUZZ-%';`,
     `delete from creneau where id = ${SEED.creneauId};`,
     `delete from animateur where id like 'E2E-%';`,
     `delete from stand where id like 'E2E-%';`,
@@ -61,7 +66,8 @@ export async function seedPlanning(
     // generates it, and the suite reads it back through the admin API.
     `insert into stand (edition_id, id, nom, effectif_min, effectif_max, reserve_majeurs) values ('DEFAUT', '${SEED.standDemandeur}', 'Stand E2E un', 1, 1, false);`,
     `insert into stand (edition_id, id, nom, effectif_min, effectif_max, reserve_majeurs) values ('DEFAUT', '${SEED.standCible}', 'Stand E2E deux', 1, 1, false);`,
-    `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager) values ('DEFAUT', '${SEED.demandeur}', 'Alice', 'E2E', '1990-01-01', false);`,
+    // Alice carries an email (mail-sending tests); Bruno deliberately none.
+    `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager, email) values ('DEFAUT', '${SEED.demandeur}', 'Alice', 'E2E', '1990-01-01', false, '${SEED.demandeur}@example.org');`,
     `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager) values ('DEFAUT', '${SEED.cible}', 'Bruno', 'E2E', '1992-02-02', false);`,
     `insert into creneau (edition_id, id, date_creneau, heure_debut, heure_fin) values ('DEFAUT', ${SEED.creneauId}, '2026-07-10', '10:00', '12:00');`,
     `insert into poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id) values ('DEFAUT', 'E2E-P1', '${SEED.standDemandeur}', ${SEED.creneauId}, '${SEED.demandeur}');`,

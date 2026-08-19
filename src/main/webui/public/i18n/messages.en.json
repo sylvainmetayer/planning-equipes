@@ -519,6 +519,18 @@
   "timeline.exportIcs": "Export ICS",
   "timeline.exportIcs.tooltip": "Individual schedule of this staff member as a calendar file (ICS)",
   "timeline.exportFailed": "Export failed",
+  "timeline.envoi": "Send by e-mail",
+  "timeline.envoi.tooltip": "E-mail this staff member their individual schedule (PDF + link to their space)",
+  "timeline.envoi.succes": "Schedule sent to {$animateur}",
+  "timeline.envoi.echec": "Send failed",
+  "timeline.envoiTous": "Send to everyone",
+  "timeline.envoiTous.tooltip": "E-mail every scheduled staff member their individual schedule",
+  "timeline.envoiTous.confirmTitre": "Send every schedule?",
+  "timeline.envoiTous.confirmMessage": "Every staff member of the saved schedule with an e-mail address will receive their individual schedule as a PDF, with the link to their online space.",
+  "timeline.envoiTous.confirmAction": "Send",
+  "timeline.envoiTous.succes": "{$count} schedule(s) sent",
+  "timeline.envoiTous.sansEmail": "No e-mail address: {$noms}",
+  "timeline.envoiTous.echecs": "Send failed for: {$noms}",
   "timeline.gap.tooltip": "Break or travel: {$duree}",
   "timeline.stands.title": "Stands to cover",
   "timeline.stands.count": "{$count} stand(s) in total, {$typologieCount} game typologie(s)",
@@ -1014,5 +1026,7 @@
   "aide.foire.term.ecran": "Swaps screen",
   "aide.foire.def.ecran": "The pending requests, each with its measured impact on the current schedule: cross swap (both trade places) or simple takeover (the colleague is free on the slot), score effect, hard rules that would break. Accepting applies the swap immediately, exactly as simulated, and locks it on its time slot: a later regeneration will not undo it — regeneration itself stays on the Solver page. Refusing changes nothing; the reason you type is sent to the staff member.",
   "aide.foire.term.connexion": "Login and notifications",
-  "aide.foire.def.connexion": "The administration is protected by the admin account; only the staff areas remain reachable through their personal link. If mailing is configured, you are notified by email at every submission, and the staff member receives the outcome of their requests at the address on their record."
+  "aide.foire.def.connexion": "The administration is protected by the admin account; only the staff areas remain reachable through their personal link. If mailing is configured, you are notified by email at every submission, and the staff member receives the outcome of their requests at the address on their record.",
+  "aide.foire.term.envoi": "Sending the schedules",
+  "aide.foire.def.envoi": "From the Staff timeline page, e-mail one staff member — or everyone holding at least one seat — their individual schedule: the PDF attached, with the link to their personal space. The report names the staff members without an e-mail address and the failed sends; nothing goes out without confirmation for the bulk send."
 }

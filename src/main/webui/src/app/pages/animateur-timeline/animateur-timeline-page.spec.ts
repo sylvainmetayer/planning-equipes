@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Animateur, Creneau, PosteAffectation, Stand } from '../../core/models';
-import { buildAnimateurOptions, buildAnimateurTimeline, buildStandsSummary, exportFilename } from './animateur-timeline-page';
+import { buildAnimateurOptions, buildAnimateurTimeline, buildStandsSummary, exportFilename, resumeEnvoi } from './animateur-timeline-page';
 
 function creneau(overrides: Partial<Creneau> & { id: number; jour: number }): Creneau {
   return { date: '2026-08-01', heureDebut: '09:00', heureFin: '12:00', groupe: null, ...overrides };
@@ -256,5 +256,25 @@ describe('buildStandsSummary', () => {
 
     expect(summary.stands[0].colorClass).toBe(summary.stands[1].colorClass);
     expect(summary.stands[2].colorClass).toBe('typologie-color-none');
+  });
+});
+
+describe('resumeEnvoi', () => {
+  it('résume un envoi complet en une ligne, sans détails superflus', () => {
+    const resume = resumeEnvoi({ envoyes: 3, sansEmail: [], echecs: [] });
+    expect(resume.titre).toBe('3 planning(s) envoyé(s)');
+    expect(resume.details).toBeUndefined();
+  });
+
+  it('nomme les animateurs sans adresse et les échecs — pas de simples compteurs', () => {
+    const resume = resumeEnvoi({
+      envoyes: 1,
+      sansEmail: ['Bruno Petit'],
+      echecs: ['Chloé Durand', 'David Roux']
+    });
+    expect(resume.titre).toBe('1 planning(s) envoyé(s)');
+    expect(resume.details).toBe(
+      "Sans adresse e-mail : Bruno Petit — Échec de l'envoi : Chloé Durand, David Roux"
+    );
   });
 });

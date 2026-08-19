@@ -825,6 +825,13 @@ export interface NouvelleDemandeEchange {
   motif: string | null;
 }
 
+/** Outcome of mailing the individual plannings (`/api/planning/envoi/*`): display names, ready to show. */
+export interface CompteRenduEnvoi {
+  envoyes: number;
+  sansEmail: string[];
+  echecs: string[];
+}
+
 /** One hard constraint a simulated échange would newly violate, in business words. */
 export interface ViolationDure {
   name: string;

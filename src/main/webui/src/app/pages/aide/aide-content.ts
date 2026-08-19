@@ -377,6 +377,10 @@ export function buildHelpSections(): HelpSection[] {
             {
               term: $localize`:@@aide.foire.term.connexion:Connexion et notifications`,
               text: $localize`:@@aide.foire.def.connexion:L'administration est protégée par le compte admin ; seuls les espaces animateurs restent accessibles par leur lien personnel. Si la messagerie est configurée, vous êtes prévenu par e-mail à chaque soumission, et l'animateur reçoit le résultat de ses demandes à l'adresse renseignée sur sa fiche.`
+            },
+            {
+              term: $localize`:@@aide.foire.term.envoi:Envoi des plannings`,
+              text: $localize`:@@aide.foire.def.envoi:Depuis la page Timeline animateur, envoyez à un animateur — ou à tous ceux qui tiennent au moins un poste — son planning individuel par e-mail : le PDF en pièce jointe, avec le lien de son espace personnel. Le compte rendu nomme les animateurs sans adresse e-mail et les envois en échec ; rien ne part sans confirmation pour l'envoi groupé.`
             }
           ]
         }

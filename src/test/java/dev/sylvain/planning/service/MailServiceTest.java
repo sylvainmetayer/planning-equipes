@@ -146,6 +146,54 @@ class MailServiceTest {
         assertThat(envoyes).isEmpty();
     }
 
+    @Test
+    void lEnvoiDuPlanningJointLePdfEtLeLienEspace() {
+        byte[] pdf = new byte[] { 1, 2, 3 };
+
+        service.envoyerPlanningIndividuel("alice@example.org", "Alice",
+                "https://planning.example.org/animateur/jeton-1", pdf, "planning-Alice-Martin.pdf");
+
+        assertThat(envoyes).hasSize(1);
+        Mail mail = envoyes.get(0);
+        assertThat(mail.getTo()).containsExactly("alice@example.org");
+        assertThat(mail.getSubject()).contains("votre planning individuel");
+        assertThat(mail.getText())
+                .contains("Bonjour Alice,")
+                .contains("pièce jointe")
+                .contains("https://planning.example.org/animateur/jeton-1");
+        assertThat(mail.getAttachments()).hasSize(1);
+        assertThat(mail.getAttachments().get(0).getName()).isEqualTo("planning-Alice-Martin.pdf");
+        assertThat(mail.getAttachments().get(0).getContentType()).isEqualTo("application/pdf");
+    }
+
+    /** Sans URL publique (pas de lien d'espace), le mail part sans le lien. */
+    @Test
+    void lEnvoiDuPlanningSansLienEspaceResteComplet() {
+        service.envoyerPlanningIndividuel("alice@example.org", null, null,
+                new byte[] { 1 }, "planning.pdf");
+
+        assertThat(envoyes).hasSize(1);
+        assertThat(envoyes.get(0).getText())
+                .contains("Bonjour,")
+                .doesNotContain("espace en ligne");
+    }
+
+    /**
+     * Contrairement aux notifications, l'envoi du planning est une action
+     * admin explicite : un échec doit remonter pour être montré, pas être
+     * avalé.
+     */
+    @Test
+    void unEchecDEnvoiDePlanningRemonteALAppelant() {
+        service.mailer = mails -> {
+            throw new IllegalStateException("SMTP down");
+        };
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service
+                .envoyerPlanningIndividuel("alice@example.org", "Alice", null, new byte[] { 1 }, "planning.pdf"))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
     /** Un SMTP en panne ne doit jamais faire échouer l'opération métier. */
     @Test
     void unEchecDEnvoiEstAvaleSansCasserLOperation() {

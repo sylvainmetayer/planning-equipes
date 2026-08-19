@@ -592,6 +592,8 @@ lit le planning persisté lui-même (voir ci-dessous).
 | `POST` | `/api/planning/export/pdf/animateur/{animateurId}` | PDF du planning individuel |
 | `POST` | `/api/planning/export/ics/all` | ZIP contenant un ICS par animateur |
 | `POST` | `/api/planning/export/ics/animateur/{animateurId}` | ICS du planning individuel |
+| `POST` | `/api/planning/envoi/tous` | Envoie par e-mail à chaque animateur **titulaire d'au moins un poste** son planning individuel (PDF joint + lien de son espace), construit côté serveur depuis le planning persisté ; répond un compte rendu `{envoyes, sansEmail, echecs}` nommant les animateurs sans adresse et les échecs |
+| `POST` | `/api/planning/envoi/animateur/{animateurId}` | Même envoi pour un seul animateur — `400` s'il n'a pas d'adresse e-mail, `404` s'il est inconnu |
 
 L'export global est le seul en `GET` : un planning de la taille du festival pèse
 plusieurs mégaoctets en JSON, que l'appelant n'a pas à téléverser pour récupérer

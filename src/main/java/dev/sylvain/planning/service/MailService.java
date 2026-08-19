@@ -91,6 +91,26 @@ public class MailService {
         envoyer(emailAnimateur, sujet, corps.toString());
     }
 
+    /**
+     * Sends one animateur their individual planning: the PDF attached, the
+     * espace link in the body. Unlike the notifications above, this is an
+     * explicit admin action ("envoyer les plannings"), so a failure is NOT
+     * swallowed here — the caller reports who could not be reached.
+     */
+    public void envoyerPlanningIndividuel(String emailAnimateur, String prenom, String lienEspace,
+            byte[] pdf, String nomFichier) {
+        StringBuilder corps = new StringBuilder()
+                .append("Bonjour").append(prenom == null || prenom.isBlank() ? "" : " " + prenom).append(",\n\n")
+                .append("Vous trouverez en pièce jointe votre planning individuel pour le festival.\n");
+        if (lienEspace != null && !lienEspace.isBlank()) {
+            corps.append("\nVotre espace en ligne (planning à jour, demandes d'échange) : ")
+                    .append(lienEspace).append('\n');
+        }
+        corps.append("\nÀ bientôt,\nL'équipe d'organisation\n");
+        mailer.send(Mail.withText(emailAnimateur, "Planning Équipes — votre planning individuel", corps.toString())
+                .addAttachment(nomFichier, pdf, "application/pdf"));
+    }
+
     private void envoyer(String destinataire, String sujet, String corps) {
         try {
             mailer.send(Mail.withText(destinataire, sujet, corps));
