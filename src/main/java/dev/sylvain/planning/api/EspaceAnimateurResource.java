@@ -3,10 +3,13 @@ package dev.sylvain.planning.api;
 import java.util.List;
 import java.util.function.Function;
 
+import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.service.DemandeEchangeService;
 import dev.sylvain.planning.service.DemandeEchangeService.NouvelleDemande;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.EspaceAnimateurService;
+import dev.sylvain.planning.service.PlanningExportService;
+import dev.sylvain.planning.service.PlanningPersistenceService;
 import dev.sylvain.planning.service.ReferenceDataRepository;
 import dev.sylvain.planning.service.ReferenceDataService;
 import jakarta.inject.Inject;
@@ -16,6 +19,7 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -47,6 +51,12 @@ public class EspaceAnimateurResource {
 
     @Inject
     EditionContext editionContext;
+
+    @Inject
+    PlanningPersistenceService persistenceService;
+
+    @Inject
+    PlanningExportService planningExportService;
 
     /** Who I am, my persisted planning (with teammates) and the colleagues I can swap with. */
     @GET
@@ -83,6 +93,50 @@ public class EspaceAnimateurResource {
                         .build();
             }
         });
+    }
+
+    /**
+     * My planning as a PDF — same document as the admin's individual export,
+     * downloadable by the animateur themself. Stays available when the foire
+     * is closed: closing only stops the échanges, never the consultation.
+     */
+    @GET
+    @Path("/{jeton}/planning.pdf")
+    @Produces("application/pdf")
+    public Response planningPdf(@PathParam("jeton") String jeton) {
+        return avecJeton(jeton, animateurId -> {
+            PlanningFestival planning = persistenceService.loadPersistedPlanning();
+            byte[] contenu = planningExportService.exportAnimateurPdf(planning, animateurId);
+            return Response.ok(contenu)
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"" + nomFichier(planning, animateurId, "pdf") + "\"")
+                    .build();
+        });
+    }
+
+    /** My planning as an ICS calendar, importable in any agenda app. */
+    @GET
+    @Path("/{jeton}/planning.ics")
+    @Produces("text/calendar")
+    public Response planningIcs(@PathParam("jeton") String jeton) {
+        return avecJeton(jeton, animateurId -> {
+            PlanningFestival planning = persistenceService.loadPersistedPlanning();
+            String contenu = planningExportService.exportAnimateurIcs(planning, animateurId);
+            return Response.ok(contenu)
+                    .type("text/calendar; charset=utf-8")
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"" + nomFichier(planning, animateurId, "ics") + "\"")
+                    .build();
+        });
+    }
+
+    /** Same readable convention as the admin exports: {@code planning-Prenom-Nom.pdf}. */
+    private String nomFichier(PlanningFestival planning, String animateurId, String extension) {
+        String nom = planningExportService.resolveAnimateurName(planning, animateurId);
+        String safe = (nom == null ? animateurId : nom)
+                .replaceAll("[^\\p{L}\\p{N}]+", "-")
+                .replaceAll("^-+|-+$", "");
+        return "planning-" + (safe.isEmpty() ? "animateur" : safe) + "." + extension;
     }
 
     /** Withdraws one of my own, still-pending demandes. */

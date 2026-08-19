@@ -1,5 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { EspaceAnimateurService } from '../../core/espace-animateur.service';
@@ -18,12 +19,20 @@ interface JourPlanning {
  */
 @Component({
   selector: 'app-espace-planning-page',
-  imports: [DatePipe, MatCardModule, MatIconModule],
+  imports: [DatePipe, MatButtonModule, MatCardModule, MatIconModule],
   templateUrl: './espace-planning-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EspacePlanningPage {
   protected readonly espace = inject(EspaceAnimateurService);
+
+  /** Direct download links — the token in the URL is the whole credential. */
+  protected readonly lienPdf = computed(() =>
+    this.espace.jeton() ? `/api/espace-animateur/${this.espace.jeton()}/planning.pdf` : null
+  );
+  protected readonly lienIcs = computed(() =>
+    this.espace.jeton() ? `/api/espace-animateur/${this.espace.jeton()}/planning.ics` : null
+  );
 
   protected readonly jours = computed<JourPlanning[]>(() => {
     const parJour = new Map<string, PosteAnimateurView[]>();

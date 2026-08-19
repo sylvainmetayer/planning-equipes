@@ -90,6 +90,52 @@
   color: var(--mat-sys-on-surface-variant);
 }
 
+/* Foire fermée : l'espace passe en consultation seule (issue #165). */
+.espace-foire-fermee {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.espace-foire-fermee p {
+  margin: 0;
+}
+
+/* Étiquette du groupe de créneaux du planning affiché (issue #165). */
+.espace-groupe {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin: 0 0 0.75rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/* Demande faite sur un autre groupe que le planning courant. */
+.espace-demande-horsgroupe,
+.echanges-hors-groupe {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin: 0.5rem 0 0;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.75rem;
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/* Téléchargements du planning personnel (PDF / ICS). */
+.espace-telechargements {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
 .espace-vide {
   color: var(--mat-sys-on-surface-variant);
   font-style: italic;
@@ -183,6 +229,27 @@
 /* ---------- Demande cards & statut chips ---------- */
 
 .espace-demande-entete,
+/* Interrupteur admin d'ouverture/fermeture de la foire (issue #165). */
+.echanges-foire {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 0.6rem 1rem;
+  border-radius: 0.75rem;
+  background: var(--mat-sys-surface-container-high);
+}
+
+.echanges-foire-fermee {
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+
+.echanges-foire-etat {
+  font-size: 0.9rem;
+}
+
 .echanges-demande-entete {
   display: flex;
   flex-wrap: wrap;

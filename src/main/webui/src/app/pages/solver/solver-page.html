@@ -57,6 +57,10 @@
       <mat-icon>play_arrow</mat-icon>
       <ng-container i18n="@@solver.solve">Résoudre avec Timefold</ng-container>
     </button>
+    <button matButton="tonal" [disabled]="!solverBusy() || arretEnCours()" (click)="onArreterSolveur()">
+      <mat-icon>stop_circle</mat-icon>
+      <ng-container i18n="@@solver.arreter">Arrêter le solveur</ng-container>
+    </button>
     <button matButton="tonal" [disabled]="exportBusy() || solverBusy()" (click)="onExportPlanning()">
       <mat-icon>archive</mat-icon>
       <ng-container i18n="@@solver.export">Exporter le planning (PDF + ICS)</ng-container>

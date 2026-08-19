@@ -220,8 +220,11 @@ On distingue quatre familles de tests :
   du jeton vue du navigateur (l'ancien lien meurt en impasse propre, le
   nouveau reprend l'espace), une demande vers un collègue indisponible
   signalée infaisable **des deux côtés** (alerte métier chez l'animateur,
-  bandeau « Signalée infaisable » chez l'admin), et un lien profond admin
-  sans session qui repasse par `/login` ;
+  bandeau « Signalée infaisable » chez l'admin), la **fermeture de la foire**
+  (l'espace passe en consultation seule : formulaire absent, refus serveur,
+  planning toujours téléchargeable en PDF/ICS, réouverture par le même
+  interrupteur), et un lien profond admin sans session qui repasse par
+  `/login` ;
 - **fuzzing à invariants** (`e2e/solveur-fuzz.spec.ts`) : des référentiels
   aléatoires mais **reproductibles** (PRNG semé, graine affichée dans la
   sortie et rejouable avec `E2E_FUZZ_SEED=<graine>`) sont résolus pour de

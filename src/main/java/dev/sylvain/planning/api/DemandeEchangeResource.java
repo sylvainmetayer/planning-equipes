@@ -11,6 +11,7 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -41,6 +42,29 @@ public class DemandeEchangeResource {
         return espaceAnimateurService.versVues(demandeEchangeService.lister());
     }
 
+    /** Whether animateurs may currently submit demandes (open by default). */
+    @GET
+    @Path("/configuration")
+    public ConfigurationFoire configuration() {
+        return new ConfigurationFoire(demandeEchangeService.estFoireOuverte());
+    }
+
+    /**
+     * Opens or closes the foire for the current edition. Closing turns the
+     * espaces animateurs read-only: submissions and withdrawals are refused
+     * server-side, the planning stays consultable (and downloadable).
+     */
+    @PUT
+    @Path("/configuration")
+    public ConfigurationFoire configurer(ConfigurationFoire configuration) {
+        demandeEchangeService.ouvrirFoire(configuration != null && configuration.foireOuverte());
+        return new ConfigurationFoire(demandeEchangeService.estFoireOuverte());
+    }
+
+    /** The single admin switch of the foire au planning. */
+    public record ConfigurationFoire(boolean foireOuverte) {
+    }
+
     /**
      * Fresh impact of one demande against the current persisted planning:
      * score delta and the hard constraints the échange would newly break.
@@ -54,7 +78,11 @@ public class DemandeEchangeResource {
             EchangeSimulation simulation = demandeEchangeService.impact(id);
             return Response.ok(simulation).build();
         } catch (IllegalArgumentException e) {
-            return notFound(e);
+            // Unknown id is a 404; a demande that exists but cannot be
+            // measured (another groupe de créneaux) is a business 400.
+            return e.getMessage() != null && e.getMessage().startsWith("Demande inconnue")
+                    ? notFound(e)
+                    : badRequest(e);
         }
     }
 

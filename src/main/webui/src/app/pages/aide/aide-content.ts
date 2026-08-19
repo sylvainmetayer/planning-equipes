@@ -368,7 +368,7 @@ export function buildHelpSections(): HelpSection[] {
           items: [
             {
               term: $localize`:@@aide.foire.term.espace:Espace animateur`,
-              text: $localize`:@@aide.foire.def.espace:L'animateur constitue sa liste de demandes (créneau concerné, collègue avec qui échanger, motif) puis la soumet en une fois. Il suit ensuite le statut de chacune — en attente, acceptée, refusée — avec votre commentaire éventuel, et peut annuler une demande tant qu'elle n'est pas décidée. Le lien de son espace se copie (et se régénère, si un PDF a fuité) depuis sa fiche sur la page Animateurs.`
+              text: $localize`:@@aide.foire.def.espace:L'animateur constitue sa liste de demandes (créneau concerné, collègue avec qui échanger, motif) puis la soumet en une fois. Il suit ensuite le statut de chacune — en attente, acceptée, refusée — avec votre commentaire éventuel, et peut annuler une demande tant qu'elle n'est pas décidée. Il peut aussi télécharger son planning en PDF ou l'ajouter à son agenda (ICS) depuis l'onglet « Mon planning ». Le lien de son espace se copie (et se régénère, si un PDF a fuité) depuis sa fiche sur la page Animateurs.`
             },
             {
               term: $localize`:@@aide.foire.term.ecran:Écran Échanges`,
@@ -377,6 +377,10 @@ export function buildHelpSections(): HelpSection[] {
             {
               term: $localize`:@@aide.foire.term.connexion:Connexion et notifications`,
               text: $localize`:@@aide.foire.def.connexion:L'administration est protégée par le compte admin ; seuls les espaces animateurs restent accessibles par leur lien personnel. Si la messagerie est configurée, vous êtes prévenu par e-mail à chaque soumission, et l'animateur reçoit le résultat de ses demandes à l'adresse renseignée sur sa fiche.`
+            },
+            {
+              term: $localize`:@@aide.foire.term.ouverture:Ouverture et fermeture`,
+              text: $localize`:@@aide.foire.def.ouverture:L'interrupteur en tête de l'écran Échanges ouvre ou ferme la foire pour l'édition courante. Fermée, les espaces animateurs passent en consultation seule — le planning reste visible et téléchargeable (PDF, ICS), mais plus aucune demande ne peut être soumise ni annulée, et le refus est appliqué côté serveur, pas seulement masqué à l'écran.`
             },
             {
               term: $localize`:@@aide.foire.term.envoi:Envoi des plannings`,

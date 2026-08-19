@@ -157,15 +157,23 @@ ici). Un jeton inconnu répond `404 { "message": "…" }`, jamais `401`.
 | `GET` | `/api/espace-animateur/{jeton}/demandes` | Ses demandes d'échange, tous statuts, la plus récente d'abord |
 | `POST` | `/api/espace-animateur/{jeton}/demandes` | Soumet une **liste** de demandes `[{ creneauId, standId, cibleId, motif? }]`. Chacune est prévalidée contre les contraintes dures (`simulerEchange`) mais enregistrée quel que soit le verdict ; la réponse porte `prevalidationOk` et `contraintesViolees` (descriptions métier du catalogue). Un mail est envoyé à l'admin (si `planning.mail.admin` est configurée) |
 | `POST` | `/api/espace-animateur/{jeton}/demandes/{id}/annulation` | Annule une de **ses** demandes encore en attente (`204` ; `400` si déjà décidée) |
+| `GET` | `/api/espace-animateur/{jeton}/planning.pdf` | Son planning individuel en PDF (même document que l'export admin), toujours disponible — foire fermée comprise |
+| `GET` | `/api/espace-animateur/{jeton}/planning.ics` | Son planning au format calendrier ICS |
+
+La soumission et l'annulation répondent `400` quand la **foire est fermée**
+(voir `/api/echanges/configuration`) : la fermeture est appliquée côté
+serveur, la vue (`foireOuverte`) ne sert qu'à l'afficher.
 
 ### Échanges (admin)
 
 | Méthode | Chemin | Description |
 | --- | --- | --- |
 | `GET` | `/api/echanges` | Toutes les demandes de l'édition courante, la plus récente d'abord |
-| `GET` | `/api/echanges/{id}/impact` | Re-simule la demande contre le planning persisté **actuel** : delta de score, échange croisé ou reprise simple, contraintes dures nouvellement violées |
-| `POST` | `/api/echanges/{id}/acceptation` | Applique l'échange exactement comme simulé (mise à jour chirurgicale de `poste_affectation`), pose deux verrous `ANIMATEUR_CRENEAU` (un par animateur sur le créneau) et notifie le demandeur par mail. Corps optionnel `{ "commentaire": "…" }`. Le solveur n'est **pas** relancé |
+| `GET` | `/api/echanges/{id}/impact` | Re-simule la demande contre le planning persisté **actuel** : delta de score, échange croisé ou reprise simple, contraintes dures nouvellement violées. `400` métier si la demande vient d'un **autre groupe de créneaux** que le planning courant (les vues portent `horsGroupe` + `groupeCreneauNom` pour l'afficher sans appeler l'impact) |
+| `POST` | `/api/echanges/{id}/acceptation` | Applique l'échange exactement comme simulé (mise à jour chirurgicale de `poste_affectation`), pose deux verrous `ANIMATEUR_CRENEAU` (un par animateur sur le créneau) et notifie le demandeur par mail. Corps optionnel `{ "commentaire": "…" }`. Le solveur n'est **pas** relancé. `400` métier pour une demande d'un autre groupe de créneaux — seul le refus reste possible |
 | `POST` | `/api/echanges/{id}/refus` | Refuse sans rien modifier ; `{ "commentaire": "…" }` est transmis à l'animateur |
+| `GET` | `/api/echanges/configuration` | État de la foire : `{ "foireOuverte": true }` (ouverte par défaut) |
+| `PUT` | `/api/echanges/configuration` | Ouvre ou ferme la foire pour l'édition courante. Fermée, les espaces animateurs passent en consultation seule (planning visible et téléchargeable, soumissions et annulations refusées côté serveur) |
 
 Sémantique de l'échange : si le collègue ciblé tient aussi un poste sur le
 créneau, les deux postes permutent (échange croisé) ; s'il est libre, il

@@ -3,6 +3,27 @@
     Aucune affectation pour le moment : le planning n'a pas encore été publié.
   </p>
 } @else {
+  @if (espace.vue()?.groupeCreneauNom; as groupe) {
+    <p class="espace-groupe">
+      <mat-icon inline>event_note</mat-icon>
+      <span i18n="@@espace.planning.groupe">Planning « {{ groupe }} »</span>
+      @if (espace.vue()?.planningResoluLe; as resolu) {
+        <span i18n="@@espace.planning.resoluLe">— mis à jour le {{ resolu | date: 'short' }}</span>
+      }
+    </p>
+  }
+  @if (lienPdf(); as pdf) {
+    <div class="espace-telechargements">
+      <a matButton [href]="pdf" download>
+        <mat-icon>picture_as_pdf</mat-icon>
+        <span i18n="@@espace.planning.telechargerPdf">Télécharger en PDF</span>
+      </a>
+      <a matButton [href]="lienIcs()" download>
+        <mat-icon>event</mat-icon>
+        <span i18n="@@espace.planning.telechargerIcs">Ajouter à mon agenda (ICS)</span>
+      </a>
+    </div>
+  }
   @for (jour of jours(); track jour.date) {
     <mat-card class="espace-jour" appearance="outlined">
       <mat-card-header>

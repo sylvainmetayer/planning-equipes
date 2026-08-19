@@ -11,6 +11,25 @@
   </button>
 </div>
 
+@if (foireOuverte() !== null) {
+  <div class="echanges-foire" [class.echanges-foire-fermee]="foireOuverte() === false">
+    <mat-slide-toggle [checked]="foireOuverte() === true" [disabled]="foireEnCours()"
+                      (change)="basculerFoire($event.checked)">
+      <ng-container i18n="@@echanges.foireToggle">Foire au planning ouverte</ng-container>
+    </mat-slide-toggle>
+    @if (foireOuverte() === false) {
+      <span class="echanges-foire-etat" i18n="@@echanges.foireEtatFerme">
+        Fermée : les animateurs consultent leur planning (et le téléchargent), sans pouvoir
+        proposer ni annuler d'échange.
+      </span>
+    } @else {
+      <span class="echanges-foire-etat" i18n="@@echanges.foireEtatOuvert">
+        Ouverte : les animateurs peuvent proposer des échanges depuis leur espace.
+      </span>
+    }
+  </div>
+}
+
 @if (chargement()) {
   <mat-progress-bar mode="indeterminate" />
 }
@@ -40,7 +59,15 @@
         </p>
       }
 
-      @if (impactDe(demande); as impact) {
+      @if (demande.horsGroupe) {
+        <p class="echanges-hors-groupe">
+          <mat-icon inline>layers</mat-icon>
+          <span i18n="@@echanges.horsGroupe">
+            Demande d'un autre groupe de créneaux ({{ demande.groupeCreneauNom }}) : impossible à
+            mesurer ou à accepter contre le planning actuel — refusez-la, ou re-résolvez ce groupe.
+          </span>
+        </p>
+      } @else if (impactDe(demande); as impact) {
         <div class="echanges-impact" [class.echanges-impact-casse]="impact.casseContrainteDure">
           <p>
             @if (impact.echangeCroise) {
@@ -71,10 +98,12 @@
       }
 
       <div class="echanges-actions">
-        <button matButton="filled" (click)="accepter(demande)" [disabled]="decisionEnCours() === demande.id">
-          <mat-icon>check</mat-icon>
-          <span i18n="@@echanges.accepter">Accepter</span>
-        </button>
+        @if (!demande.horsGroupe) {
+          <button matButton="filled" (click)="accepter(demande)" [disabled]="decisionEnCours() === demande.id">
+            <mat-icon>check</mat-icon>
+            <span i18n="@@echanges.accepter">Accepter</span>
+          </button>
+        }
         <button matButton (click)="refuser(demande)" [disabled]="decisionEnCours() === demande.id">
           <mat-icon>close</mat-icon>
           <span i18n="@@echanges.refuser">Refuser</span>

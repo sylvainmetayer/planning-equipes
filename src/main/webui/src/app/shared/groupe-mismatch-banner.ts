@@ -11,7 +11,7 @@ import { SolverJobService } from '../core/solver-job.service';
  * (calendars, exports, ...) no longer matches the active groupe de créneaux:
  * the last solve was computed for a different group, so its result is stale
  * for the one now active. Silent otherwise, so it adds no noise on the
- * nominal path. Self-injects its data (like `app-job-monitor`) so it can be
+ * nominal path. Self-injects its data (like `app-data-stale-indicator`) so it can be
  * dropped once in the app shell instead of being wired into every page.
  *
  * Since issue #138 it also offers the remedy, not just the diagnosis: when a

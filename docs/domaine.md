@@ -424,6 +424,21 @@ Trois briques l'entourent :
   pose deux verrous `ANIMATEUR_CRENEAU` — la régénération suivante ne défera
   pas l'échange, sans geler le reste du planning des deux animateurs.
 
+La foire s'**ouvre et se ferme** par édition (table `parametres_echange`, une
+ligne par édition, absente = ouverte) : fermée, soumissions et annulations
+sont refusées côté serveur, et l'espace animateur passe en consultation seule
+— planning visible et téléchargeable (PDF, ICS), historique des demandes
+conservé.
+
+Une édition peut porter **plusieurs groupes de créneaux**, mais le lien de
+l'espace (le jeton) identifie l'animateur, pas un planning : c'est voulu, une
+personne = un lien. Le planning persisté appartenant à un seul groupe à la
+fois, l'espace affiche le **nom du groupe** du planning courant, chaque
+demande mémorise son groupe d'origine (`demande_echange.groupe_creneau_id`,
+dénormalisé, sans FK), et une demande d'un autre groupe que le planning
+courant est marquée `horsGroupe` dans les vues : impossible à mesurer ou à
+accepter (400 métier), seul le refus reste possible pour la purger.
+
 ## Solution globale
 
 ```java

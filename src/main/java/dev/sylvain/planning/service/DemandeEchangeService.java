@@ -71,6 +71,7 @@ public class DemandeEchangeService {
      *                                  the demandeur's own seats or a known colleague
      */
     public List<DemandeEchange> soumettre(String demandeurId, List<NouvelleDemande> nouvelles) {
+        verifierFoireOuverte();
         if (nouvelles == null || nouvelles.isEmpty()) {
             return List.of();
         }
@@ -122,6 +123,7 @@ public class DemandeEchangeService {
 
     /** The demandeur withdraws one of their own, still-pending demandes. */
     public void annuler(String demandeurId, String demandeId) {
+        verifierFoireOuverte();
         // Not prepareScoped: the SET clause claims placeholder 1, so the
         // edition_id predicate is bound explicitly.
         try (Connection connection = dataSource.getConnection();
@@ -144,6 +146,76 @@ public class DemandeEchangeService {
         return lister(" AND demandeur_id = ?", demandeurId);
     }
 
+    /* --------------------------- Foire open/close --------------------------- */
+
+    /**
+     * True when animateurs may submit and withdraw demandes. Open by default:
+     * the row only exists once the admin has decided something.
+     */
+    public boolean estFoireOuverte() {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = prepareScoped(connection,
+                        "SELECT foire_ouverte FROM parametres_echange WHERE edition_id = ?");
+                ResultSet rs = ps.executeQuery()) {
+            return !rs.next() || rs.getBoolean("foire_ouverte");
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to read the foire state", e);
+        }
+    }
+
+    /**
+     * Admin decision: opens or closes the foire for the current edition. The
+     * closure is enforced server-side ({@link #soumettre}, {@link #annuler}),
+     * not merely hidden in the interface.
+     */
+    public void ouvrirFoire(boolean ouverte) {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = prepareScoped(connection,
+                        "INSERT INTO parametres_echange (edition_id, foire_ouverte) VALUES (?, ?) "
+                                + "ON CONFLICT (edition_id) DO UPDATE SET foire_ouverte = EXCLUDED.foire_ouverte")) {
+            ps.setBoolean(2, ouverte);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to store the foire state", e);
+        }
+    }
+
+    private void verifierFoireOuverte() {
+        if (!estFoireOuverte()) {
+            throw new IllegalArgumentException(
+                    "La foire au planning est fermée : les demandes d'échange ne sont plus ouvertes");
+        }
+    }
+
+    /**
+     * An edition can hold several groupes de créneaux, but the persisted
+     * planning belongs to exactly one: a demande submitted on another groupe
+     * references créneaux that no longer exist in it. Refused with a business
+     * message, rather than the technical "Aucun poste…" the simulation would
+     * otherwise throw. The refusal of such a demande stays possible — it is
+     * how the admin purges them.
+     */
+    private void verifierGroupeCourant(DemandeEchange demande) {
+        PlanningPersistenceService.PlanningResolution resolution = persistenceService.loadResolution();
+        String groupeCourant = resolution == null ? null : resolution.groupeCreneauId();
+        if (demande.getGroupeCreneauId() == null || groupeCourant == null
+                || demande.getGroupeCreneauId().equals(groupeCourant)) {
+            return;
+        }
+        throw new IllegalArgumentException("Cette demande concerne le groupe de créneaux « "
+                + nomGroupe(demande.getGroupeCreneauId()) + " » ; le planning actuel est sur le groupe « "
+                + (resolution.groupeCreneauNom() == null ? groupeCourant : resolution.groupeCreneauNom())
+                + " ». Elle ne peut être ni mesurée ni acceptée en l'état — refusez-la, ou re-résolvez ce groupe.");
+    }
+
+    private String nomGroupe(String groupeId) {
+        return referenceDataService.listGroupesCreneaux().stream()
+                .filter(groupe -> groupeId.equals(groupe.getId()))
+                .map(groupe -> groupe.getNom() == null ? groupe.getId() : groupe.getNom())
+                .findFirst()
+                .orElse(groupeId);
+    }
+
     /* -------------------------------- Admin -------------------------------- */
 
     public List<DemandeEchange> lister() {
@@ -157,6 +229,7 @@ public class DemandeEchangeService {
      */
     public EchangeSimulation impact(String demandeId) {
         DemandeEchange demande = demandeRequise(demandeId);
+        verifierGroupeCourant(demande);
         PlanningFestival planning = persistenceService.loadPersistedPlanning();
         return planningService.simulerEchange(planning,
                 demande.getDemandeurId(), demande.getCibleId(), demande.getCreneauId(), demande.getStandId());
@@ -173,6 +246,7 @@ public class DemandeEchangeService {
     public DemandeEchange accepter(String demandeId, String commentaire) {
         DemandeEchange demande = demandeRequise(demandeId);
         exigerEnAttente(demande);
+        verifierGroupeCourant(demande);
         PlanningFestival planning = persistenceService.loadPersistedPlanning();
         EchangeSimulation simulation = planningService.simulerEchange(planning,
                 demande.getDemandeurId(), demande.getCibleId(), demande.getCreneauId(), demande.getStandId());

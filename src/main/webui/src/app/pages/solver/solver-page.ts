@@ -108,6 +108,7 @@ export class SolverPage {
   protected readonly hardIssues = signal<HardIssue[]>([]);
   protected readonly exportBusy = signal(false);
   protected readonly envoiBusy = signal(false);
+  protected readonly arretEnCours = signal(false);
 
   protected readonly solverDurationLoading = signal(false);
   protected readonly solverDurationSaving = signal(false);
@@ -384,6 +385,35 @@ export class SolverPage {
       this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
     } finally {
       this.exportBusy.set(false);
+    }
+  }
+
+  /**
+   * Stops the running solver job, whoever started it — the partial result is
+   * still analysed and persisted. Replaces the former toolbar-wide monitor:
+   * this page already shows the progress, the button now lives next to it.
+   */
+  protected async onArreterSolveur(): Promise<void> {
+    const job = this.jobs.activeJob();
+    if (!job || this.arretEnCours()) {
+      return;
+    }
+    const confirme = await this.confirm.ask({
+      title: $localize`:@@solver.arreter:Arrêter le solveur`,
+      message: $localize`:@@solver.arreterConfirm:Arrêter ${job.label}:jobLabel: en cours ? Le résultat partiel sera tout de même analysé et enregistré.`,
+      confirmLabel: $localize`:@@solver.arreter:Arrêter le solveur`,
+      danger: true
+    });
+    if (!confirme) {
+      return;
+    }
+    this.arretEnCours.set(true);
+    try {
+      await this.jobs.cancel(job.id);
+    } catch (error) {
+      this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
+    } finally {
+      this.arretEnCours.set(false);
     }
   }
 

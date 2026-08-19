@@ -787,6 +787,10 @@ export interface EspaceAnimateurView {
   prenom: string;
   nom: string;
   planningResoluLe: string | null;
+  /** Name of the groupe de créneaux the displayed planning belongs to, `null` before any resolution. */
+  groupeCreneauNom: string | null;
+  /** False turns the espace read-only: the foire is closed by the admin (enforced server-side too). */
+  foireOuverte: boolean;
   postes: PosteAnimateurView[];
   collegues: CollegueView[];
 }
@@ -813,6 +817,10 @@ export interface DemandeEchangeView {
   /** Business descriptions of the hard constraints the échange would break. */
   contraintesViolees: string[];
   commentaireAdmin: string | null;
+  /** True when the demande belongs to another groupe de créneaux than the persisted planning. */
+  horsGroupe: boolean;
+  /** Name of that other groupe, `null` unless `horsGroupe`. */
+  groupeCreneauNom: string | null;
   creeLe: string;
   decideLe: string | null;
 }

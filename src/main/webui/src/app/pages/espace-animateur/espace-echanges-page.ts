@@ -61,6 +61,9 @@ export class EspaceEchangesPage {
     brouillonComplet(this.posteChoisi(), this.cibleId())
   );
 
+  /** Closed foire = read-only history: no submission form, no withdrawals. */
+  protected readonly foireOuverte = computed(() => this.espace.vue()?.foireOuverte ?? true);
+
   protected readonly demandes = computed<DemandeRow[]>(() =>
     this.espace.demandes().map((demande) => ({
       ...demande,

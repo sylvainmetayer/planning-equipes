@@ -73,6 +73,53 @@ test.describe('cas limites', () => {
     await pageEchanges.context().close();
   });
 
+  test("fermer la foire rend l'espace consultable seulement, téléchargements compris", async ({ page, browser }) => {
+    test.slow();
+    await seedPlanning(admin);
+    const jeton = await jetonDe(admin, SEED.demandeur);
+
+    // The admin closes the foire from the Échanges screen.
+    const pageEchanges = await pageAdmin(browser, admin);
+    await pageEchanges.goto('/echanges');
+    const interrupteur = pageEchanges.getByRole('switch');
+    await expect(interrupteur).toBeVisible();
+    if ((await interrupteur.getAttribute('aria-checked')) === 'true') {
+      await interrupteur.click();
+    }
+    // The status line, not the transient snack bar carrying the same words.
+    await expect(pageEchanges.locator('.echanges-foire-etat')).toContainText('Fermée');
+
+    // The animateur can still browse — but not submit: no form, a clear banner.
+    await page.goto(`/animateur/${jeton}/echanges`);
+    await expect(page.getByText('La foire au planning est fermée', { exact: false })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Ajouter à la liste' })).toHaveCount(0);
+
+    // The API refuses too: closing is enforced server-side.
+    const refus = await page.request.post(`/api/espace-animateur/${jeton}/demandes`, {
+      data: [{ creneauId: SEED.creneauId, standId: SEED.standDemandeur, cibleId: SEED.cible, motif: null }]
+    });
+    expect(refus.status()).toBe(400);
+
+    // The planning stays consultable and downloadable (PDF + ICS).
+    await page.getByRole('link', { name: 'Mon planning' }).click();
+    await expect(page.getByRole('link', { name: 'Télécharger en PDF' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Ajouter à mon agenda (ICS)' })).toBeVisible();
+    const pdf = await page.request.get(`/api/espace-animateur/${jeton}/planning.pdf`);
+    expect(pdf.status()).toBe(200);
+    expect((await pdf.body()).subarray(0, 5).toString()).toBe('%PDF-');
+    const ics = await page.request.get(`/api/espace-animateur/${jeton}/planning.ics`);
+    expect(ics.status()).toBe(200);
+    expect(await ics.text()).toContain('BEGIN:VCALENDAR');
+
+    // Reopening from the same switch restores the submission form.
+    await interrupteur.click();
+    await expect(pageEchanges.locator('.echanges-foire-etat')).toContainText('Ouverte');
+    await pageEchanges.context().close();
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.getByRole('link', { name: 'Mes échanges' }).click();
+    await expect(page.getByRole('button', { name: 'Ajouter à la liste' })).toBeVisible();
+  });
+
   test('un lien profond admin sans session passe par la connexion', async ({ browser }) => {
     const contexteAnonyme = await browser.newContext();
     const page = await contexteAnonyme.newPage();

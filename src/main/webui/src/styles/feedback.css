@@ -1,28 +1,4 @@
-/* Solver progress indicator and snack bar variants. */
-
-.job-monitor {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  max-width: 22rem;
-}
-
-.job-monitor-label {
-  font: var(--mat-sys-label-medium);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.job-monitor-bar {
-  width: 5rem;
-  border-radius: var(--mat-sys-corner-full);
-}
-
-.job-monitor button {
-  --mdc-icon-button-icon-size: 1.25rem;
-  flex-shrink: 0;
-}
+/* Snack bar variants and inline feedback styles. */
 
 .snack-success {
   --mat-snack-bar-button-color: var(--mat-sys-inverse-primary);
@@ -131,13 +107,4 @@
   white-space: nowrap;
 }
 
-@media (max-width: 740px) {
-  .job-monitor-bar {
-    display: none;
-  }
-
-  .job-monitor-label {
-    max-width: 9rem;
-  }
-}
 
