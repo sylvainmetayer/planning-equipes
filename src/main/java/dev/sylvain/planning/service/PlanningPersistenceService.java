@@ -472,9 +472,9 @@ public class PlanningPersistenceService {
     public Map<String, List<String>> chargerAnimateursParStandCreneau() {
         Map<String, List<String>> parStandCreneau = new java.util.LinkedHashMap<>();
         String sql = "SELECT stand_id, creneau_id, animateur_id FROM poste_affectation "
-                + "WHERE animateur_id IS NOT NULL ORDER BY id";
+                + "WHERE edition_id = ? AND animateur_id IS NOT NULL ORDER BY id";
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = connection.prepareStatement(sql);
+                PreparedStatement ps = prepareScoped(connection, sql);
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 parStandCreneau
