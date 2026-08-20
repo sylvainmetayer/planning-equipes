@@ -181,49 +181,28 @@ L'édition consultée est un choix propre à chaque onglet du navigateur, pas un
 qu'on travaille sur 2026 dans l'autre. Le détail est dans
 [`docs/editions.md`](docs/editions.md).
 
-### Plannings alternatifs
+### Plans alternatifs (canicule, repli)
 
-À l'intérieur d'un groupe, les créneaux peuvent être organisés en plusieurs
-grilles (« plannings ») — un planning normal et, par exemple, un planning de
-repli en cas d'imprévu de dernière minute (météo, lieu indisponible, ...). Une
-seule grille est active à la fois dans un groupe donné ; l'activer désactive
-automatiquement les autres. La résolution ne tient compte que des créneaux de
-la grille active, ce qui permet de préparer un planning alternatif à l'avance
-et de basculer dessus en un clic sans perdre le planning courant.
-
-La grille active se change depuis n'importe quel écran, dans le bandeau qui
-nomme déjà l'édition consultée : basculer sur le planning de repli, ou créer
-une nouvelle grille, ne demande plus de passer par la page Créneaux. Le
-sélecteur est verrouillé pendant une résolution — changer de grille sous les
-pieds du solveur invaliderait son résultat.
-
-Si le groupe actif change après une résolution (par exemple en basculant sur
-le planning de repli), l'application avertit l'utilisateur, sur tous les
-écrans concernant les créneaux, que le dernier calcul ne correspond plus au
-groupe actif et qu'une nouvelle résolution est nécessaire — et propose, si un
-instantané existe pour cette grille, de le restaurer sur place.
-
-Pour que cette bascule soit réellement immédiate, le bouton « Résoudre tous
-les groupes » de la page Solveur résout chaque grille l'une après l'autre — la
-grille active en dernier — et conserve le résultat de chacune en instantané,
-sans jamais toucher au planning affiché pendant le calcul. Changer de grille
-devient alors une restauration en un clic plutôt qu'une nouvelle résolution de
-plusieurs minutes. Chaque grille repart de son dernier instantané, si bien
-qu'une file relancée après quelques retouches se termine bien plus vite que la
-première. Une grille peut être exclue de la file (par exemple des amplitudes
-pas encore découpées en vacations, ou un brouillon) depuis la gestion des
-groupes.
+L'édition est l'unique porteur de variante : un plan alternatif est une
+**édition dupliquée**, pas une grille parallèle. La veille d'une bascule
+(canicule annoncée, imprévu), on duplique l'édition courante — la copie
+embarque stands, horaires, animateurs et leurs indisponibilités du moment,
+mais ni les affectations ni les liens d'espace, chaque édition frappant les
+siens —, on applique les restrictions imposées dans la copie (l'édition en
+masse des horaires s'y prête), on lance la résolution pour la nuit, et le
+matin venu on bascule d'édition dans le bandeau puis on ré-envoie les
+plannings. Au retour à la normale : re-bascule vers l'édition nominale,
+restée intacte, et nouvel envoi. Une absence de dernière minute se saisit sur
+la seule édition vivante — une fois.
 
 ### Instantanés de plan
 
 Un seul planning est enregistré à la fois par édition : chaque résolution
-écrase le précédent. Un **instantané** met un plan de côté, avec son score, sa
-grille de créneaux et sa date, et permet de le remettre en place plus tard.
-Un instantané est pris **automatiquement avant chaque résolution** — c'est le
-filet qui protège même l'utilisateur qui n'y a pas pensé ; les cinq derniers
-sont conservés, ceux enregistrés à la main ne sont jamais purgés, et le plus
-récent de chaque grille de créneaux encore existante est lui aussi toujours
-gardé : c'est lui qu'une bascule de grille restaure.
+écrase le précédent. Un **instantané** met un plan de côté, avec son score et
+sa date, et permet de le remettre en place plus tard. Un instantané est pris
+**automatiquement avant chaque résolution** — c'est le filet qui protège même
+l'utilisateur qui n'y a pas pensé ; les cinq derniers sont conservés, ceux
+enregistrés à la main ne sont jamais purgés.
 
 Restaurer est refusé, sans rien écrire, si le référentiel a trop bougé depuis
 la capture (un stand ou un créneau cité n'existe plus) : l'application dit ce
@@ -265,7 +244,7 @@ la page « Découpage » génère automatiquement les vacations de travail réel
 sans jamais dépasser 6h d'affilée pour un même animateur. La pause (et la
 pause repas) de chacun est simplement le trou entre deux de ses vacations —
 rien à saisir à la main. Un aperçu montre le découpage avant de le
-matérialiser dans un groupe de créneaux dédié, activable en un clic. Le détail
+matérialiser — les vacations remplacent alors les amplitudes en place. Le détail
 de l'algorithme est dans [`docs/domaine.md`](docs/domaine.md#découpage-automatique-en-vacations).
 
 ### Gestion des référentiels
@@ -318,8 +297,7 @@ ligne. Sont modifiables ainsi :
   les souhaits, le statut manager et un jour d'indisponibilité commun ;
 - pour les **stands** : l'emplacement, les typologies proposées, l'effectif
   minimum / maximum et les indicateurs (majeurs, premium, niveau d'effort) ;
-- pour les **créneaux** : le groupe de créneaux (déplacement d'un lot vers un
-  planning alternatif) et les horaires ;
+- pour les **créneaux** : les horaires ;
 - pour les **emplacements** : les coordonnées GPS, saisies ou pointées sur la
   carte, appliquées à toute la sélection.
 
@@ -409,9 +387,8 @@ métier, donc un verrouillage peut laisser une alerte visible plutôt que de
 masquer un problème.
 
 Les verrous se gèrent depuis la page « Verrouillages » et sont signalés par un
-cadenas dans les calendriers. Ils appartiennent au planning (groupe de
-créneaux) pour lequel ils ont été posés : basculer sur un planning alternatif
-les laisse en sommeil sans les perdre.
+cadenas dans les calendriers. Ils appartiennent à leur édition, comme le reste
+du référentiel.
 
 Comme les contraintes ad hoc, cette page est rangée dans la section « En cours
 de développement » de la navigation et affiche un bandeau d'avertissement.

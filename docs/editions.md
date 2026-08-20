@@ -7,6 +7,18 @@ l'API `/api/editions`, l'intercepteur et la page « Éditions » côté Angular
 sont livrés. Une base existante devient une mono-édition `DEFAUT` strictement
 identique à ce qu'elle était.
 
+**Révision (issue #172, `V45`) : l'édition est devenue l'unique porteur de
+variantes.** Le second niveau de cloisonnement décrit dans les sections 2 et 3
+— les « groupes de créneaux » — a été **supprimé** : il ne cloisonnait que les
+créneaux alors que stands, horaires, animateurs et paramètres restaient
+partagés par l'édition, si bien qu'une « variante » de plan y mélangeait
+silencieusement les référentiels (constaté sur données réelles :
+edition-1708 × canicule). Les sections 2 et 3 sont conservées comme trace du
+raisonnement d'origine ; le modèle courant est : **une édition = un
+référentiel complet + une seule grille de créneaux + un planning résolu**, et
+le découpage remplace les créneaux en place. Voir le rituel de bascule en
+section 6 bis.
+
 ## 1. Le besoin
 
 Avant cette évolution, la base ne contenait **qu'un seul référentiel** : un jeu
@@ -20,7 +32,7 @@ consultable, avec ses stands et ses animateurs de l'époque) et une édition
 « Année 2026 » (en cours), **sans qu'aucune donnée de l'une ne fuite dans
 l'autre**, et basculer de l'une à l'autre en un clic.
 
-## 2. Ce qui existait déjà : `groupe_creneau`
+## 2. Ce qui existait à l'époque : `groupe_creneau` (supprimé par `V45`, contexte historique)
 
 Une notion de groupe existait déjà, mais **cloisonne uniquement les créneaux** :
 
@@ -41,7 +53,7 @@ deux éditions distinctes. Cette notion de « groupe de créneaux » n'est **pas
 concernée par le renommage décrit ici — elle garde son nom, sa table
 `groupe_creneau` et ses classes `GroupeCreneau`.
 
-## 3. Décision de modélisation : deux niveaux, pas un
+## 3. Décision de modélisation d'origine : deux niveaux (révisée depuis — voir le statut en tête)
 
 Deux options se présentaient.
 
@@ -57,17 +69,13 @@ tester un autre découpage est exactement ce que `groupe_creneau` évite, et cet
 capacité est utilisée (régénération de découpage, `groupe_source_id`). Les deux
 notions répondent à deux questions différentes et restent distinctes.
 
-Vocabulaire retenu dans l'UI, pour qu'« édition » ne soit pas ambigu avec
-« groupe de créneaux » :
+Vocabulaire retenu dans l'UI :
 
 - **Édition** (table `edition`, ex-`groupe`) : le périmètre complet — « Année
-  2025 » ;
-- **Grille de créneaux** (table `groupe_creneau`) : une variante de découpage
-  **à l'intérieur** d'une édition.
+  2025 », ou une variante de plan (« 2026-canicule »).
 
 Le code Java et Angular a suivi ce même renommage (`Edition` / `EditionStore` /
-`EditionContext`, …) ; seul `GroupeCreneau` — un concept distinct — garde son
-nom.
+`EditionContext`, …).
 
 ## 4. Schéma
 
@@ -157,6 +165,7 @@ Une migration par lot, pour rester relisible et rejouable :
 | `V34` | bascule des clés primaires métier en `(groupe_id, id)` et réécriture des FK |
 | `V35` | singletons de paramètres : PK `groupe_id`, une ligne par groupe |
 | `V36` | renomme `groupe` → `edition`, `groupe_id` → `edition_id` partout (colonnes, contraintes, index), et le seed `'Groupe par défaut'` → `'2026'` — sans toucher à `groupe_creneau` |
+| `V45` | **supprime `groupe_creneau`** (issue #172) : chaque édition garde les créneaux et verrouillages de son groupe alors actif, les colonnes `groupe_creneau_id` tombent partout, l'unicité des verrous redevient par édition |
 
 Aucune perte de donnée : une base existante devient une mono-édition `DEFAUT`,
 strictement identique à ce qu'elle était. Aucune sémantique de suppression n'est
@@ -256,11 +265,33 @@ groupes s'y enchaînent **en séquence** dans un seul job, jamais en parallèle.
   édition, pour la même raison.
 - **Verrouillages de planning** : cloisonnés eux aussi. Leur identifiant reste
   un UUID global — donc pas de clé composite —, mais l'unicité d'une cible
-  verrouillée devient « une fois par édition **et** par grille de créneaux ».
+  verrouillée devient « une fois par édition » (`V45`).
 - **Outils MCP** (`mcp/`) : servis hors du filtre JAX-RS, ils n'ont pas
   d'en-tête `X-Edition-Id` et travaillent donc dans l'édition par défaut. C'est
   le comportement voulu pour un appelant qui ne désigne rien ; exposer le choix
   de l'édition à l'assistant reste à faire.
+
+## 6 bis. Le rituel de bascule (issue #172)
+
+L'édition étant l'unique porteur de variantes, préparer puis jouer un plan
+alternatif (canicule, repli) suit six étapes :
+
+1. **La veille** : dupliquer l'édition courante (« 2026 » → « 2026-canicule »).
+   La copie embarque e-mails, indisponibilités et règles d'horaires ; ni les
+   affectations, ni les jetons d'espace (chaque édition frappe les siens).
+2. Appliquer le **delta imposé** dans la copie — l'édition en masse des
+   horaires et des effectifs s'y prête, quel que soit le delta.
+3. **Solve nocturne** dans la copie.
+4. Le matin : **basculer d'édition** dans le bandeau.
+5. **« Envoyer à tous »** — les animateurs reçoivent le plan et les liens de
+   cette édition. Toute bascule se conclut par un envoi : sans lui, les liens
+   déjà distribués continueraient d'afficher le plan de l'ancienne édition.
+6. **Retour à la normale** : re-basculer vers l'édition nominale, restée
+   intacte, et ré-envoyer les plannings.
+
+Le jour J, une absence de dernière minute se saisit sur la seule édition
+vivante — une fois. La replanification minimale autour de l'absent est le
+périmètre restant de l'issue #86.
 
 ## 7. Les écrans
 
@@ -283,7 +314,8 @@ présent sur **tous** les écrans :
   page ne continue d'afficher les lignes de l'édition précédente. C'est une
   action rare et délibérée.
 
-Il est complémentaire du bandeau `app-groupe-mismatch-banner`, qui reste
+Il était complémentaire du bandeau `app-groupe-mismatch-banner` (supprimé
+avec les groupes de créneaux par l'issue #172), qui restait
 silencieux tant que tout est cohérent : l'un rappelle **où** on est, l'autre
 prévient quand le planning affiché **n'est plus à jour** pour cet endroit.
 

@@ -43,7 +43,6 @@ public class Creneau {
     private LocalDate date;
     private LocalTime heureDebut;
     private LocalTime heureFin;
-    private GroupeCreneau groupe; // planning ("groupe de créneaux") auquel ce créneau appartient
 }
 
 public class Animateur {
@@ -114,12 +113,6 @@ public class Emplacement {
     private Double longitude;
 }
 
-public class GroupeCreneau {
-    private String id;
-    private String nom;
-    private boolean actif;       // un seul groupe actif à la fois (index unique partiel en base)
-    private String groupeSourceId; // groupe d'amplitudes source d'un découpage auto ; null si saisi/importé directement
-}
 ```
 
 `HOMME_JEU` (issue #93) est une compétence d'*animation de rue* (le stand
@@ -146,75 +139,29 @@ géré comme `Stand`/`Creneau`/`Animateur` (CRUD, pas de logique métier propre 
 un autre emplacement). Un stand non géolocalisé (`emplacement == null`) est
 simplement ignoré par la contrainte de distance.
 
-Un `GroupeCreneau` regroupe des créneaux en un planning nommé (page « Créneaux »,
-panneau « Groupes de créneaux »), pour préparer un planning alternatif à
-l'avance et l'activer en cas de besoin de dernière minute. Chaque `Creneau`
-appartient à exactement un groupe (le groupe « Défaut » créé par la migration
-`V10__groupe_creneau.sql` sert de valeur par défaut). Activer un groupe
-(`PUT /api/groupes-creneaux/{id}/actif`) désactive automatiquement tous les
-autres — au plus un groupe actif à la fois, garanti à la fois en base (index
-unique partiel) et côté service. Le solveur ne construit son problème
-(`PlanningService.construireDepuisReferenceData`) qu'à partir des créneaux du
-groupe actif ; les créneaux des autres groupes existent en base mais ne sont
-jamais soumis au solveur tant que leur groupe n'est pas activé. Le chargement
-d'un scénario (`ReferenceDataRepository.importFromPlanning`) respecte la même
-règle : il ne remplace que les créneaux du groupe actif, ce qui permet de
-charger un scénario différent dans chaque groupe sans écraser les autres —
-voir [`import-export.md`](import-export.md).
-
-Exception à « seul le groupe actif est résolu » : la **file de résolution**
-(issue #167, bouton « Résoudre tous les groupes » de la page Solveur,
-`POST /api/solve/file/async`) enchaîne un solve par groupe marqué
-`resoudreEnFile`, en séquence sous le verrou global, le groupe actif **en
-dernier**. Le résultat d'un groupe non actif ne touche jamais
-`poste_affectation` : il est capturé en instantané directement depuis la
-solution en mémoire (`PlanSnapshotService.capturerDepuisSolution`), si bien que
-l'espace animateur, les exports et les calendriers continuent de servir le plan
-du groupe actif pendant toute la file — basculer de groupe restaure ensuite
-l'instantané en un clic. Chaque solve de la file est **réamorcé** depuis le
-dernier instantané de son groupe (warm start, premier volet de l'issue #86,
-`PlanningService.seedDepuisAffectations` : ré-ancrage positionnel par clé
-stand × créneau, tolérant aux références disparues, appliqué avant les
-verrouillages qui gardent leur priorité) — un groupe déjà bon s'arrête alors
-sur le critère « faisable et plus d'amélioration depuis N s » au lieu de
-consommer tout son budget. Le drapeau `resoudreEnFile` (défaut `true`) existe
-parce que rien ne distingue structurellement un groupe d'amplitudes non
-découpées d'un groupe de vacations : le découpage le positionne seul (source →
-`false`, cible → `true`), l'utilisateur peut aussi exclure un brouillon.
-
-Le warm start en pratique — quatre règles à connaître :
-
-- **Il est automatique et sans réglage** : dès qu'un groupe possède un
-  instantané, chaque solve de file en repart. Il n'y a rien à cocher, et le
-  récapitulatif de la file dit ce qui s'est réellement passé, groupe par
-  groupe : « réamorcé (N postes) » ou « à froid ».
-- **Repartir de zéro = supprimer les instantanés du groupe** (page
-  Instantanés). Sans instantané, le solve de file redevient un solve à froid
-  au budget plein — c'est le seul moyen de forcer une exploration vierge dans
-  la file.
-- **Le bouton « Résoudre avec Timefold » reste, lui, toujours à froid** :
-  choix délibéré, le solve manuel du groupe actif explore sans a priori.
-  L'éventuelle option « repartir du dernier instantané » pour ce bouton est
-  suivie dans l'issue #86.
-- **L'arrêt anticipé n'est pas garanti** : le critère « plus d'amélioration
-  depuis N s » n'est armé qu'une fois le planning **faisable** (0 hard). Un
-  groupe structurellement infaisable — typiquement un référentiel d'édition
-  écrasé par l'import d'un autre scénario, voir l'issue #172 — consomme son
-  budget plein à chaque passage de file, réamorcé ou non : le warm start
-  accélère la convergence, il ne rachète jamais un problème insoluble.
+Les créneaux appartiennent directement à leur **édition** — la notion de
+« groupe de créneaux » a été supprimée (issue #172) : elle ne cloisonnait que
+les créneaux alors que tout le reste du référentiel (stands et horaires,
+animateurs, paramètres) restait partagé par l'édition, si bien qu'une
+« variante » de plan y mélangeait silencieusement les référentiels. L'édition
+est désormais l'**unique porteur de variantes** : un plan canicule est une
+édition dupliquée la veille (le rituel de bascule est décrit dans
+[`editions.md`](editions.md)), et le découpage automatique remplace les
+créneaux de l'édition **en place** — les amplitudes qu'il lit sont consommées,
+l'édition ne porte jamais qu'une seule grille. Pour re-découper avec d'autres
+paramètres : ré-importer le scénario source (le YAML reste la source de vérité
+des amplitudes), ou entretenir une édition « amplitudes » maîtresse dupliquée
+à chaque essai.
 
 L'id d'un `Creneau` est un entier auto-généré par la base (colonne identity),
-jamais saisi par l'utilisateur ni affiché dans l'IHM. Deux groupes ne peuvent
-donc structurellement plus entrer en collision d'id (contrairement à l'ancien
-schéma à clé texte globale), ce qui rend inutile toute qualification d'id par
-groupe.
+jamais saisi par l'utilisateur ni affiché dans l'IHM.
 
 Le `jour` (« jour du festival ») n'est pas non plus saisi : il est calculé à
 chaque lecture (`Creneau.assignerJours`, appelé par
 `ReferenceDataRepository.listCreneaux`) comme le nombre de jours calendaires
-entre la date la plus ancienne du groupe et la date du créneau, plus un. Ce
+entre la date la plus ancienne de l'édition et la date du créneau, plus un. Ce
 calcul garantit que deux créneaux sur des jours calendaires consécutifs ont
-toujours des numéros de jour consécutifs, même si un jour du groupe ne
+toujours des numéros de jour consécutifs, même si un jour de l'édition ne
 contient aucun créneau — invariant dont dépend la contrainte légale de repos
 nuit → lendemain (`LegalConstraints`, `soir.getJour() + 1 == lendemain.getJour()`).
 
@@ -321,8 +268,8 @@ tourné. Un stand résolu peut donc repasser par une sauvegarde (ce que fait tou
 stand atteint via un `PlanningFestival`) sans figer son expansion en quelques
 centaines de lignes datées. Côté service, la distinction est explicite :
 `listStands()` rend la vue CRUD (règles + exceptions, brutes), et
-`listStandsResolus()` la vue effective, résolue sur les jours du groupe de
-créneaux actif — c'est elle que prennent le solveur, la génération de postes et
+`listStandsResolus()` la vue effective, résolue sur les jours des créneaux de
+l'édition — c'est elle que prennent le solveur, la génération de postes et
 l'analyse de faisabilité.
 
 **Limite assumée** : une exception *remplace* la journée au lieu de se
@@ -353,9 +300,7 @@ rapporté stand par stand plutôt que corrigé en silence.
 `PlanningService.construirePostes` génère un poste par place à pourvoir et par
 segment ouvert (voir plus bas) — un stand fermé sur tout un créneau n'y génère
 simplement aucun poste, sans pénalité associée. En amont, `construirePostes`
-ne reçoit que les créneaux du `GroupeCreneau` actif
-(`referenceDataService.listCreneauxGroupeActif()`) : les créneaux d'un groupe
-inactif ne génèrent aucun poste tant que ce groupe n'est pas activé.
+reçoit les créneaux de l'édition (`referenceDataService.listCreneaux()`).
 
 ```java
 @PlanningEntity
@@ -404,9 +349,8 @@ verrous enregistrés dans la table `verrouillage_planning`
 Un verrou porte sur un **animateur**, un **stand**, une **journée**, un
 **créneau** ou un couple **animateur × créneau** (`ANIMATEUR_CRENEAU`, posé
 automatiquement quand l'admin valide une demande d'échange — voir
-[Demandes d'échange](#demandes-déchange)), et n'appartient qu'à un
-`GroupeCreneau` : changer de groupe actif, c'est changer de planning, donc les
-verrous des autres groupes restent en base mais dormants.
+[Demandes d'échange](#demandes-déchange)), et appartient à son édition comme
+le reste du référentiel.
 
 Deux règles encadrent le mécanisme :
 
@@ -476,14 +420,9 @@ sont refusées côté serveur, et l'espace animateur passe en consultation seule
 — planning visible et téléchargeable (PDF, ICS), historique des demandes
 conservé.
 
-Une édition peut porter **plusieurs groupes de créneaux**, mais le lien de
-l'espace (le jeton) identifie l'animateur, pas un planning : c'est voulu, une
-personne = un lien. Le planning persisté appartenant à un seul groupe à la
-fois, l'espace affiche le **nom du groupe** du planning courant, chaque
-demande mémorise son groupe d'origine (`demande_echange.groupe_creneau_id`,
-dénormalisé, sans FK), et une demande d'un autre groupe que le planning
-courant est marquée `horsGroupe` dans les vues : impossible à mesurer ou à
-accepter (400 métier), seul le refus reste possible pour la purger.
+Le lien de l'espace (le jeton) identifie l'animateur **dans son édition** :
+une personne = un lien par édition, et une édition dupliquée frappe des jetons
+neufs — un lien envoyé désigne donc toujours exactement le plan d'une édition.
 
 ## Solution globale
 
@@ -621,19 +560,16 @@ sur les `ParametresLegaux` actuellement en base, et l'import laisse
 `ParametresDecoupage`/`ParametresSolveur` tels quels.
 
 Un scénario écrit directement en amplitudes peut aussi fixer une section
-`decoupageAuto:` (`groupeSourceNom:` + `groupeCibleNom:`) pour que son import
-déclenche lui-même ce découpage plutôt que de laisser l'opérateur repasser par
-l'écran « Découpage » ensuite (issue #110) : les créneaux importés atterrissent
-dans un groupe source portant `groupeSourceNom` (créé si besoin), le découpage
-tourne dessus avec les `parametresDecoupage:` déjà appliqués à ce moment-là, et
-le groupe cible `groupeCibleNom` (créé si besoin) reçoit les vacations et est
-activé — une notification prévient l'opérateur du groupe désormais actif.
-Chaque nom de groupe est résolu vers un groupe existant du même nom le
-cas échéant, sinon vers un id dérivé du nom (même mécanisme que le `slugify`
-de l'écran Découpage). Absente (cas de tous les scénarios `scenario-*.yaml`
-fournis, qui listent leurs `postes:` directement sur les créneaux découpés),
-l'import se comporte comme avant : les créneaux du scénario remplacent ceux du
-groupe actif.
+`decoupageAuto:` pour que son import déclenche lui-même ce découpage plutôt
+que de laisser l'opérateur repasser par l'écran « Découpage » ensuite (issue
+#110) : les créneaux importés sont découpés **en place** avec les
+`parametresDecoupage:` déjà appliqués à ce moment-là — l'édition reçoit
+directement les vacations, et une notification prévient l'opérateur. Les
+anciens champs `groupeSourceNom:`/`groupeCibleNom:` de la section sont
+acceptés et ignorés (issue #172 : plus de groupes à nommer). Absente (cas de
+tous les scénarios `scenario-*.yaml` fournis, qui listent leurs `postes:`
+directement sur les créneaux découpés), l'import se comporte comme avant :
+les créneaux du scénario remplacent ceux de l'édition.
 
 Un scénario peut aussi fixer une section `typologies:` (liste de `{ id,
 label, ninja? }`) pour donner un libellé humain aux ids de typologie qu'il référence
@@ -653,12 +589,10 @@ première le lendemain est déjà couvert, pour tout animateur et gradué par
 tranche d'âge, par `reposQuotidienMinimal` (11 h majeur, 12 h mineur, 14 h
 avant 16 ans — art. L3131-1 / L3164-1). Voir [`contraintes.md`](contraintes.md).
 
-Une amplitude est un `Creneau` ordinaire vivant dans un `GroupeCreneau` non
-activé (le groupe source) ; les vacations générées remplacent le contenu d'un
-autre `GroupeCreneau` (le groupe cible, dont `groupeSourceId` trace sa
-provenance pour permettre de le régénérer). Le solveur ne voit jamais les
-amplitudes elles-mêmes — seul le groupe actif (les vacations) alimente
-`PlanningService.construireDepuisReferenceData`.
+Une amplitude est un `Creneau` ordinaire, en base le temps de l'import ; le
+découpage les remplace **en place** par les vacations générées (issue #172).
+Le solveur ne voit donc jamais d'amplitudes : au moment où il construit son
+problème, l'édition ne porte que les vacations.
 
 ## Contraintes ad hoc
 
@@ -800,5 +734,5 @@ au démarrage. Détails et exemple dans [`contraintes.md`](contraintes.md#pondé
 - Les noms de domaine restent en français métier.
 - Un `Creneau` reste toujours l'unité de travail réellement assignable à un
   `PosteAffectation` (une vacation) — jamais une amplitude d'ouverture brute.
-  Une amplitude est un `Creneau` ordinaire vivant dans un groupe non activé,
-  source d'un découpage automatique (voir plus haut).
+  Une amplitude est un `Creneau` ordinaire que le découpage automatique
+  consomme et remplace en place (voir plus haut).

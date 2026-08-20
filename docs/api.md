@@ -43,7 +43,7 @@ redirection HTML.
 | `GET` | `/api/planning/volumetrie` | Volumétrie réelle du prochain solve : nombre d'animateurs (value count Timefold), de postes à pourvoir (entity count Timefold, un par siège requis et non par stand) et de contraintes ad hoc actives ; tout à 0 si aucune donnée de référence n'est chargée |
 | `POST` | `/api/solve` | Résout un `PlanningFestival` envoyé en JSON (synchrone) |
 | `POST` | `/api/solve/analyze` | Analyse un planning : score et contraintes violées |
-| `POST` | `/api/planning/reset` | Vide l'**édition courante** (stands, créneaux, animateurs, affectations, contraintes) sans charger de scénario ; ses grilles de créneaux sont réinitialisées à la seule grille `DEFAUT` active. Les autres éditions ne sont pas touchées (bouton « Vider la base de données » de l'onglet Débogage) |
+| `POST` | `/api/planning/reset` | Vide l'**édition courante** (stands, créneaux, animateurs, affectations, contraintes) sans charger de scénario. Les autres éditions ne sont pas touchées (bouton « Vider la base de données » de l'onglet Débogage) |
 | `GET` | `/api/planning/persisted` | Planning persisté en base, lecture seule (utilisé par les vues calendrier, qui ne déclenchent jamais de résolution) |
 | `GET` | `/api/planning/persisted/count` | Nombre d'affectations persistées |
 | `GET` | `/api/planning/persisted/resolution` | Groupe de créneaux et date de la dernière résolution persistée (`solved: false` si aucune résolution n'a encore eu lieu), plus `derniereModificationDonnees` : date de la dernière modification d'une donnée de référence (`null` si aucune depuis le démarrage du serveur) |
@@ -60,7 +60,7 @@ capable d'en garder plusieurs : ils mettent un plan de côté avant qu'il ne soi
 | `GET` | `/api/planning/snapshots` | Liste les instantanés de l'édition courante, du plus récent au plus ancien (métadonnées seules, sans le contenu) |
 | `GET` | `/api/planning/snapshots/{id}` | Un instantané avec ses affectations |
 | `POST` | `/api/planning/snapshots` | Enregistre le plan actuellement persisté. Corps : `{ "libelle": "…" }`. `409` s'il n'y a aucun plan à enregistrer |
-| `POST` | `/api/planning/snapshots/{id}/restore` | Réécrit `poste_affectation` et `planning_resolution` depuis l'instantané. `409` **sans rien écrire** si des références ont disparu (liste `referencesManquantes` : `stand:…`, `creneau:…`, `animateur:…`) **ou** si l'instantané appartient à un autre groupe de créneaux que le groupe actif (`groupeDifferent: true` — l'interface demande alors une seconde confirmation et rejoue avec `?forcer=true`) |
+| `POST` | `/api/planning/snapshots/{id}/restore` | Réécrit `poste_affectation` et `planning_resolution` depuis l'instantané, puis re-dérive l'analyse de contraintes du plan restauré. `409` **sans rien écrire** si des références ont disparu (liste `referencesManquantes` : `stand:…`, `creneau:…`, `animateur:…`) |
 | `DELETE` | `/api/planning/snapshots/{id}` | Supprime un instantané |
 
 Un instantané est pris **automatiquement avant chaque solve** (`automatique:
@@ -68,17 +68,7 @@ true`, libellé « Avant solve du … ») : c'est le vrai filet anti-écrasement
 celui qui protège l'utilisateur qui n'a pas pensé à enregistrer. Ces
 instantanés-là sont purgés au-delà des N derniers
 (`planning.snapshots.automatiques-conservees`, 5 par défaut) ; ceux créés à la
-main ne le sont jamais, et depuis la file « résoudre tous les groupes » (issue
-#167) le plus récent instantané de **chaque groupe de créneaux encore
-existant** est lui aussi épargné, quel que soit son âge — c'est le plan
-pré-résolu qu'une bascule de groupe restaure en un clic (un groupe supprimé
-rend son instantané de nouveau purgeable).
-
-Le contenu est stocké **dénormalisé** en JSONB, jamais comme une copie de
-lignes `poste_affectation` : ces lignes sont liées aux `creneau` par clé
-étrangère, donc une copie mourrait avec les créneaux du groupe abandonné —
-exactement le cas d'usage visé. En contrepartie, restaurer est une
-ré-résolution contre le référentiel du moment, et peut légitimement échouer.
+main ne le sont jamais.
 
 ## Résolution asynchrone
 
@@ -96,7 +86,6 @@ autre onglet) voit le même job actif et le même temps écoulé via
 | --- | --- | --- |
 | `POST` | `/api/solve/async?seconds={n}` | Démarre une résolution en tâche de fond (`202`, ou `409` si le solveur est occupé) |
 | `POST` | `/api/solve/analyze/async?seconds={n}` | Démarre une analyse en tâche de fond (`202`, ou `409` si le solveur est occupé) |
-| `POST` | `/api/solve/file/async?seconds={n}` | Résout **tous** les groupes de créneaux marqués `resoudreEnFile`, en séquence sous le même verrou, le groupe actif en dernier (`202` ; `409` si occupé ; `400` si aucun groupe éligible). `{n}` s'applique à **chaque** groupe |
 | `GET` | `/api/jobs` | Liste des jobs |
 | `GET` | `/api/jobs/active` | Job en cours (`200`) ou solveur libre (`204`) |
 | `GET` | `/api/jobs/{id}` | État et résultat d'un job |
@@ -105,18 +94,6 @@ autre onglet) voit le même job actif et le même temps écoulé via
 Chaque job expose `elapsedSeconds`, calculé côté serveur : le temps écoulé
 affiché est identique quel que soit le client, son horloge ou son heure de
 connexion.
-
-Un job `SOLVE_FILE` (issue #167) expose en plus sa progression
-(`groupeCourantNom`, `groupeCourant`, `totalGroupes` — « groupe i/N ») et son
-résultat est une ligne par groupe (`statut` : `RESOLU`, `INTERROMPU`, `ECHEC`
-avec `erreur`, ou `NON_TRAITE` après annulation ; `postesReamorces` : taille du
-seed de warm start — 0 signale un solve reparti de zéro). Seul le groupe **actif**,
-résolu en dernier, écrit dans `poste_affectation` ; chaque groupe non actif est
-conservé en instantané pris directement depuis la solution en mémoire, et
-chaque solve repart du dernier instantané de son groupe (warm start, issue
-#86) — l'arrêt « plus d'amélioration depuis N s, une fois faisable » écourte
-alors les groupes déjà bons. L'annulation (`/api/jobs/{id}/cancel`) conserve le
-résultat partiel du groupe en cours et saute les suivants.
 
 ## Contraintes
 
@@ -193,8 +170,8 @@ vue (`foireOuverte`) ne sert qu'à l'afficher.
 | Méthode | Chemin | Description |
 | --- | --- | --- |
 | `GET` | `/api/echanges` | Toutes les demandes de l'édition courante, la plus récente d'abord |
-| `GET` | `/api/echanges/{id}/impact` | Re-simule la demande contre le planning persisté **actuel** : delta de score, échange croisé ou reprise simple, contraintes dures nouvellement violées. `400` métier si la demande vient d'un **autre groupe de créneaux** que le planning courant (les vues portent `horsGroupe` + `groupeCreneauNom` pour l'afficher sans appeler l'impact) |
-| `POST` | `/api/echanges/{id}/acceptation` | Applique l'échange exactement comme simulé (mise à jour chirurgicale de `poste_affectation`), pose deux verrous `ANIMATEUR_CRENEAU` (un par animateur sur le créneau) et notifie le demandeur par mail. Corps optionnel `{ "commentaire": "…" }`. Le solveur n'est **pas** relancé. `400` métier pour une demande d'un autre groupe de créneaux — seul le refus reste possible |
+| `GET` | `/api/echanges/{id}/impact` | Re-simule la demande contre le planning persisté **actuel** : delta de score, échange croisé ou reprise simple, contraintes dures nouvellement violées. |
+| `POST` | `/api/echanges/{id}/acceptation` | Applique l'échange exactement comme simulé (mise à jour chirurgicale de `poste_affectation`), pose deux verrous `ANIMATEUR_CRENEAU` (un par animateur sur le créneau) et notifie le demandeur par mail. Corps optionnel `{ "commentaire": "…" }`. Le solveur n'est **pas** relancé. |
 | `POST` | `/api/echanges/{id}/refus` | Refuse sans rien modifier ; `{ "commentaire": "…" }` est transmis à l'animateur |
 | `GET` | `/api/echanges/configuration` | État de la foire : `{ "foireOuverte": true }` (ouverte par défaut) |
 | `PUT` | `/api/echanges/configuration` | Ouvre ou ferme la foire pour l'édition courante. Fermée, les espaces animateurs passent en consultation seule (planning visible et téléchargeable, soumissions et annulations refusées côté serveur) |
@@ -251,7 +228,7 @@ recrutement réel, limité à deux typologies, aide moins que celui-là.
 Le diagnostic est un simple calcul de capacité (aucune résolution, réponse
 immédiate) : l'écran de préparation des données peut donc l'afficher avant même
 de lancer une résolution de plusieurs minutes. Les créneaux pris en compte sont
-ceux du **groupe actif**, comme pour une résolution.
+ceux de l'édition, comme pour une résolution.
 
 ```json
 {
@@ -382,7 +359,7 @@ modifiée depuis n'importe quel navigateur. Le `PUT` répond **400** avec
 
 Tout le référentiel est cloisonné par **édition** — une édition complète du
 festival, « Année 2025 », « Année 2026 » — avec ses propres stands, animateurs,
-typologies, emplacements, grilles de créneaux, paramètres et planning résolu.
+typologies, emplacements, paramètres et planning résolu.
 Rien ne circule de l'une à l'autre. Voir [`editions.md`](editions.md).
 
 **Le client désigne l'édition qu'il consulte à chaque requête**, via l'en-tête
@@ -422,20 +399,8 @@ peuvent porter les mêmes identifiants métier sans se marcher dessus.
 | --- | --- |
 | Stands | `/api/stands` |
 | Créneaux | `/api/creneaux` |
-| Groupes de créneaux | `/api/groupes-creneaux` |
 | Animateurs | `/api/animateurs` |
 | Typologies de jeux | `/api/typologies` |
-
-`PUT /api/groupes-creneaux/{id}/actif` active cette grille de créneaux pour le
-prochain solve et désactive toutes les autres **de l'édition courante** (une
-seule grille active à la fois, par édition : activer une grille dans l'édition
-2026 ne touche pas à celle de 2025).
-
-Chaque groupe porte un booléen `resoudreEnFile` (défaut `true`) : participe-t-il
-à `POST /api/solve/file/async` ? Le découpage le gère seul (groupe source
-d'amplitudes → `false`, groupe de vacations généré → `true`), et il reste
-éditable via `PUT /api/groupes-creneaux/{id}` — résoudre un groupe d'amplitudes
-jamais découpé ne produirait qu'un plan-poubelle de vacations de 14 h.
 
 Les typologies de jeux sont un référentiel comme les autres, pas un enum figé
 côté serveur : `stands.typologiesProposees` et
@@ -619,8 +584,8 @@ courtes et chevauchantes (voir [`domaine.md`](domaine.md#découpage-automatique-
 
 | Méthode | Chemin | Description |
 | --- | --- | --- |
-| `GET` | `/api/decoupage/preview?groupeSourceId={id}` | Prévisualise les vacations générées, sans rien persister |
-| `POST` | `/api/decoupage/generer` | Matérialise les vacations dans un groupe cible (créé si besoin) : `{ "groupeSourceId", "groupeCibleId", "nomGroupeCible", "activerGroupeCible" }` |
+| `GET` | `/api/decoupage/preview` | Prévisualise les vacations que les créneaux courants de l'édition (lus comme des amplitudes) produiraient, sans rien persister |
+| `POST` | `/api/decoupage/generer` | Matérialise le découpage **en place** : les créneaux de l'édition (les amplitudes) sont remplacés par les vacations générées, et le plan résolu est effacé avec eux |
 | `GET` | `/api/parametres-decoupage` | Paramètres de découpage courants |
 | `PUT` | `/api/parametres-decoupage` | Met à jour les paramètres de découpage |
 

@@ -173,15 +173,13 @@ notion que l'`heureFin` omise ailleurs. Omettre `heureFin` sur
 `ajouter_fermeture_stand`/`ajouter_ouverture_stand` a le même effet. Voir
 [`domaine.md`](domaine.md#horaires-récurrents).
 
-### Créneaux, groupes et découpage
+### Créneaux et découpage
 
 | Outil | Description |
 | --- | --- |
-| `lister_creneaux` / `lister_tous_les_creneaux` | Créneaux du groupe actif, ou tous groupes confondus |
+| `lister_creneaux` | Créneaux de l'édition |
 | `creer_creneau` / `modifier_creneau` / `supprimer_creneau` | CRUD des créneaux |
-| `lister_groupes_creneaux` / `creer_groupe_creneaux` / `modifier_groupe_creneaux` / `supprimer_groupe_creneaux` | Groupes de créneaux |
-| `activer_groupe_creneaux` | Choisit le groupe sur lequel portera la prochaine résolution |
-| `previsualiser_decoupage` / `generer_decoupage` | Découpage des amplitudes en vacations |
+| `previsualiser_decoupage` / `generer_decoupage` | Découpage des créneaux courants (lus comme amplitudes) en vacations, en place |
 
 ### Paramètres et contraintes
 
