@@ -102,6 +102,10 @@ export function buildHelpSections(): HelpSection[] {
         {
           kind: 'paragraph',
           text: $localize`:@@aide.editions.file:Pour préparer ces bascules à l'avance, le bouton « Résoudre tous les groupes » de la page Solveur résout chaque grille l'une après l'autre — la grille active en dernier — et conserve le résultat de chacune en instantané, sans toucher au planning affiché pendant le calcul. Chaque grille repart de son dernier instantané, donc une file relancée après quelques retouches se termine bien plus vite que la première ; le dernier instantané de chaque grille n'est jamais purgé. Une grille peut être exclue de la file depuis la gestion des groupes (page Créneaux) — typiquement des amplitudes pas encore découpées en vacations, que résoudre n'aurait aucun sens.`
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.editions.warmstart:Ce réamorçage est automatique, sans réglage : le récapitulatif de la file indique pour chaque grille « réamorcé (N postes) » ou « à froid ». Pour forcer une exploration vierge, supprimez les instantanés de la grille (page Instantanés) ; le bouton « Résoudre avec Timefold », lui, repart toujours de zéro. Attention : l'arrêt anticipé de la file (« plus d'amélioration depuis quelques minutes ») ne s'arme qu'une fois le planning faisable — une grille dont le score dur reste négatif consomme tout son budget à chaque passage, réamorcée ou non : le réamorçage accélère, il ne répare pas un problème insoluble.`
         }
       ],
       links: [

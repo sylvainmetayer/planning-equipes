@@ -182,6 +182,27 @@ parce que rien ne distingue structurellement un groupe d'amplitudes non
 découpées d'un groupe de vacations : le découpage le positionne seul (source →
 `false`, cible → `true`), l'utilisateur peut aussi exclure un brouillon.
 
+Le warm start en pratique — quatre règles à connaître :
+
+- **Il est automatique et sans réglage** : dès qu'un groupe possède un
+  instantané, chaque solve de file en repart. Il n'y a rien à cocher, et le
+  récapitulatif de la file dit ce qui s'est réellement passé, groupe par
+  groupe : « réamorcé (N postes) » ou « à froid ».
+- **Repartir de zéro = supprimer les instantanés du groupe** (page
+  Instantanés). Sans instantané, le solve de file redevient un solve à froid
+  au budget plein — c'est le seul moyen de forcer une exploration vierge dans
+  la file.
+- **Le bouton « Résoudre avec Timefold » reste, lui, toujours à froid** :
+  choix délibéré, le solve manuel du groupe actif explore sans a priori.
+  L'éventuelle option « repartir du dernier instantané » pour ce bouton est
+  suivie dans l'issue #86.
+- **L'arrêt anticipé n'est pas garanti** : le critère « plus d'amélioration
+  depuis N s » n'est armé qu'une fois le planning **faisable** (0 hard). Un
+  groupe structurellement infaisable — typiquement un référentiel d'édition
+  écrasé par l'import d'un autre scénario, voir l'issue #172 — consomme son
+  budget plein à chaque passage de file, réamorcé ou non : le warm start
+  accélère la convergence, il ne rachète jamais un problème insoluble.
+
 L'id d'un `Creneau` est un entier auto-généré par la base (colonne identity),
 jamais saisi par l'utilisateur ni affiché dans l'IHM. Deux groupes ne peuvent
 donc structurellement plus entrer en collision d'id (contrairement à l'ancien
