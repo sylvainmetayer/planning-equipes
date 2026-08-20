@@ -59,6 +59,37 @@ l'instance en cours, et détecte le proxy via l'en-tête de réponse
 quand il est présent, la page rappelle qu'il faut créer un jeton d'accès et
 le présenter dans `P-Access-Token-Id`/`P-Access-Token`.
 
+### La clé, vue depuis l'interface
+
+La page interroge `GET /api/mcp/statut` au chargement. Clé absente, elle
+**avertit** au lieu de laisser l'opérateur configurer un client qui
+n'obtiendra que des 401 — le mode « sécurisé par défaut » ci-dessus est un
+refus de servir silencieux, et un refus silencieux se diagnostique mal depuis
+un client MCP.
+
+Clé présente, un bouton « Révéler la clé d'API » demande **à nouveau le mot de
+passe administrateur** (`POST /api/mcp/cle`). La session prouve déjà « un
+admin » ; ce second contrôle existe parce que la clé est le seul secret de
+l'interface qui **survit à la session** d'où il a été copié, ce qui fait d'un
+onglet resté ouvert un risque d'une autre nature que le reste des écrans. Le
+modèle de menace visé est donc quelqu'un devant un poste laissé sans
+surveillance, pas un attaquant anonyme — celui-là n'arrive jamais jusque-là,
+`/api/*` exigeant déjà la session.
+
+Une fois révélée, la clé ne vit que dans un signal du composant : ni store, ni
+`sessionStorage`, ni URL. Quitter la page détruit le composant, donc y revenir
+redemande le mot de passe ; un minuteur de deux minutes l'efface aussi sur
+place, relancé à chaque copie — copier est la seule interaction qui prouve que
+quelqu'un est encore devant l'écran. La configuration client affichée juste en
+dessous se met à jour avec la vraie clé tant qu'elle est visible, ce qui évite
+le copier-coller manuel dans le JSON.
+
+Côté serveur, cinq échecs bloquent l'endpoint cinq minutes, et le bon mot de
+passe ne lève pas le blocage — sinon il suffirait de le deviner une fois pour
+annuler la limitation. Aucune trace n'est écrite : une ligne par révélation
+n'apprendrait rien qui ne soit déjà dans la session, et ce journal deviendrait
+lui-même un inventaire de qui détient la clé.
+
 Quand l'application est déployée derrière un proxy d'accès type
 [Pangolin](https://docs.pangolin.net/manage/access-control/links#use-the-access-token),
 le proxy s'intercale avant le serveur MCP et exige son propre jeton. Le trajet

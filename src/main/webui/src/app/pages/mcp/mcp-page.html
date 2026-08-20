@@ -12,7 +12,7 @@
   <mat-card-content>
     <p i18n="@@mcp.connexion.endpoint">
       Le point d'entrée est <code>{{ origin }}/mcp</code> (transport HTTP streamable). Chaque requête
-      doit présenter la clé API partagée dans l'en-tête <code>X-MCP-Api-Key</code> — c'est la valeur
+      doit présenter la clé API partagée dans l'en-tête <code>{{ enTeteCle() }}</code> — c'est la valeur
       de la variable serveur <code>PLANNING_MCP_API_KEY</code> ; tant qu'elle n'est pas configurée côté
       serveur, le MCP répond 401 à tout le monde.
     </p>
@@ -25,6 +25,77 @@
       indisponibilités et son statut manager. Un assistant qui ne lit jamais un nom ne peut pas le
       divulguer.
     </p>
+    @if (statut(); as etat) {
+      @if (!etat.configuree) {
+        <app-status-message
+          i18n-text="@@mcp.cle.absente"
+          text="Aucune clé n'est configurée sur ce serveur : la variable PLANNING_MCP_API_KEY est vide, et le MCP répond donc 401 à tout le monde. Inutile de paramétrer un client tant que l'exploitant ne l'a pas renseignée et redémarré l'application."
+          tone="warning"
+        />
+      } @else {
+        <div class="card-actions">
+          @if (!cle() && !formulaireOuvert()) {
+            <button matButton="tonal" type="button" (click)="ouvrirFormulaire()">
+              <mat-icon>key</mat-icon>
+              <ng-container i18n="@@mcp.cle.reveler">Révéler la clé d'API</ng-container>
+            </button>
+          }
+          @if (cle()) {
+            <button matButton="tonal" type="button" (click)="oublierCle()">
+              <mat-icon>visibility_off</mat-icon>
+              <ng-container i18n="@@mcp.cle.masquer">Masquer la clé</ng-container>
+            </button>
+          }
+        </div>
+
+        @if (formulaireOuvert()) {
+          <form class="mcp-cle-form" (submit)="reveler($event)">
+            <p i18n="@@mcp.cle.pourquoi">
+              La clé donne un accès complet en écriture aux référentiels et au solveur, et elle survit à la
+              session depuis laquelle elle a été copiée : confirmez le mot de passe administrateur pour
+              l'afficher.
+            </p>
+            <mat-form-field appearance="outline">
+              <mat-label i18n="@@mcp.cle.motDePasse">Mot de passe administrateur</mat-label>
+              <input
+                matInput
+                type="password"
+                autocomplete="current-password"
+                [ngModel]="motDePasse()"
+                (ngModelChange)="motDePasse.set($event)"
+                name="motDePasseMcp"
+              />
+            </mat-form-field>
+            <div class="card-actions">
+              <button matButton="filled" type="submit" [disabled]="enCours() || !motDePasse()">
+                <ng-container i18n="@@mcp.cle.confirmer">Afficher la clé</ng-container>
+              </button>
+              <button matButton type="button" (click)="annuler()" i18n="@@mcp.cle.annuler">Annuler</button>
+            </div>
+            @if (erreur()) {
+              <app-status-message [text]="erreur()" tone="error" />
+            }
+          </form>
+        }
+
+        @if (cle()) {
+          <div class="mcp-cle-revelee">
+            <pre class="mcp-pre">{{ cle() }}</pre>
+            <div class="card-actions">
+              <button matButton="tonal" type="button" (click)="copier(cle())">
+                <mat-icon>content_copy</mat-icon>
+                <ng-container i18n="@@mcp.cle.copier">Copier la clé</ng-container>
+              </button>
+            </div>
+            <p class="mcp-cle-note" i18n="@@mcp.cle.ephemere">
+              La clé disparaît de cet écran au bout de deux minutes, et dès que vous quittez la page — il
+              faudra alors ressaisir le mot de passe. Copier la clé relance le délai.
+            </p>
+          </div>
+        }
+      }
+    }
+
     <p i18n="@@mcp.connexion.config">Configuration à déclarer dans votre client MCP :</p>
     <pre class="mcp-pre">{{ configurationClient() }}</pre>
     <div class="card-actions">
@@ -81,3 +152,23 @@
     </div>
   </mat-card-content>
 </mat-card>
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h2 mat-card-title i18n="@@mcp.prompt.grille.title">Exemple : construire la grille de créneaux</h2>
+    <mat-card-subtitle i18n="@@mcp.prompt.grille.subtitle">
+      Poser des créneaux récurrents — « de 9h à 12h et de 14h à 18h, tous les jours sauf le week-end » — sans
+      les saisir un par un, en faisant contrôler la grille obtenue avant de la garder.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <pre class="mcp-pre mcp-prompt">{{ promptGrille }}</pre>
+    <div class="card-actions">
+      <button matButton="tonal" type="button" (click)="copier(promptGrille)">
+        <mat-icon>content_copy</mat-icon>
+        <ng-container i18n="@@mcp.copierPrompt.grille">Copier le prompt</ng-container>
+      </button>
+    </div>
+  </mat-card-content>
+</mat-card>
+

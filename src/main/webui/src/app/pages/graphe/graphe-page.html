@@ -1,0 +1,179 @@
+<h1 class="page-title" i18n="@@nav.link.graphe">Graphe</h1>
+
+@if (chargement()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <mat-card-subtitle i18n="@@graphe.intro">
+      Descendre des lieux vers les personnes : un emplacement, ses stands, les créneaux sur lesquels
+      ils sont armés, et qui y est affecté. Cliquez une carte pour ouvrir la colonne suivante.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <nav class="graphe-ariane" aria-label="Chemin de navigation" i18n-aria-label="@@graphe.ariane.label">
+      <button matButton type="button" (click)="reinitialiser()">
+        <mat-icon>home</mat-icon>
+        <ng-container i18n="@@graphe.ariane.racine">Tous les emplacements</ng-container>
+      </button>
+      @for (etape of filAriane(); track etape.niveau) {
+        <mat-icon class="graphe-ariane-fleche">chevron_right</mat-icon>
+        <span class="graphe-ariane-etape">{{ etape.libelle }}</span>
+      }
+    </nav>
+
+    @if (!planDisponible() && !chargement()) {
+      <app-status-message
+        i18n-text="@@graphe.sansPlan"
+        text="Aucun planning résolu n'est enregistré : les colonnes « Créneaux » et « Animateurs » se lisent sur les affectations persistées et resteront vides. Les emplacements et leurs stands, eux, viennent des données de référence et sont navigables."
+        tone="info"
+      />
+    }
+
+    <div class="graphe-corps">
+      <div class="graphe-colonnes">
+        <section class="graphe-colonne">
+          <h2 class="graphe-colonne-titre" i18n="@@graphe.colonne.emplacements">
+            Emplacements <span class="graphe-compteur">{{ emplacements().length }}</span>
+          </h2>
+          <div class="graphe-liste">
+            @for (noeud of emplacements(); track noeud.id) {
+              <button
+                type="button"
+                class="graphe-noeud"
+                [class.graphe-noeud-actif]="emplacementSelectionne() === noeud.id"
+                (click)="selectionner('emplacement', noeud.id)"
+              >
+                <span class="graphe-noeud-libelle">{{ noeud.libelle }}</span>
+                @if (noeud.detail) {
+                  <span class="graphe-noeud-detail">{{ noeud.detail }}</span>
+                }
+                <span class="graphe-noeud-compte">{{ noeud.descendants }}</span>
+              </button>
+            }
+          </div>
+        </section>
+
+        <section class="graphe-colonne" [class.graphe-colonne-inactive]="!emplacementSelectionne()">
+          <h2 class="graphe-colonne-titre" i18n="@@graphe.colonne.stands">
+            Stands <span class="graphe-compteur">{{ stands().length }}</span>
+          </h2>
+          <div class="graphe-liste">
+            @for (noeud of stands(); track noeud.id) {
+              <button
+                type="button"
+                class="graphe-noeud"
+                [class.graphe-noeud-actif]="standSelectionne() === noeud.id"
+                (click)="selectionner('stand', noeud.id)"
+              >
+                <span class="graphe-noeud-libelle">{{ noeud.libelle }}</span>
+                @if (noeud.detail) {
+                  <span class="graphe-noeud-detail">{{ noeud.detail }}</span>
+                }
+                <span class="graphe-noeud-compte">{{ noeud.descendants }}</span>
+              </button>
+            } @empty {
+              <p class="graphe-vide" i18n="@@graphe.vide.stands">Choisissez un emplacement.</p>
+            }
+          </div>
+        </section>
+
+        <section class="graphe-colonne" [class.graphe-colonne-inactive]="!standSelectionne()">
+          <h2 class="graphe-colonne-titre" i18n="@@graphe.colonne.creneaux">
+            Créneaux <span class="graphe-compteur">{{ creneaux().length }}</span>
+          </h2>
+          <div class="graphe-liste">
+            @for (noeud of creneaux(); track noeud.id) {
+              <button
+                type="button"
+                class="graphe-noeud"
+                [class.graphe-noeud-actif]="creneauSelectionne() === noeud.id"
+                (click)="selectionner('creneau', noeud.id)"
+              >
+                <span class="graphe-noeud-libelle">{{ noeud.libelle }}</span>
+                @if (noeud.detail) {
+                  <span class="graphe-noeud-detail">{{ noeud.detail }}</span>
+                }
+                <span class="graphe-noeud-compte">{{ noeud.descendants }}</span>
+              </button>
+            } @empty {
+              <p class="graphe-vide" i18n="@@graphe.vide.creneaux">Choisissez un stand.</p>
+            }
+          </div>
+        </section>
+
+        <section class="graphe-colonne" [class.graphe-colonne-inactive]="!creneauSelectionne()">
+          <h2 class="graphe-colonne-titre" i18n="@@graphe.colonne.animateurs">
+            Animateurs <span class="graphe-compteur">{{ animateurs().length }}</span>
+          </h2>
+          <div class="graphe-liste">
+            @for (noeud of animateurs(); track noeud.id) {
+              <button
+                type="button"
+                class="graphe-noeud"
+                [class.graphe-noeud-actif]="animateurSelectionne() === noeud.id"
+                (click)="selectionner('animateur', noeud.id)"
+              >
+                <span class="graphe-noeud-libelle">{{ noeud.libelle }}</span>
+                @if (noeud.detail) {
+                  <span class="graphe-noeud-detail">{{ noeud.detail }}</span>
+                }
+              </button>
+            } @empty {
+              <p class="graphe-vide" i18n="@@graphe.vide.animateurs">Choisissez un créneau.</p>
+            }
+          </div>
+        </section>
+      </div>
+
+      <aside class="graphe-detail">
+        @if (noeudCourant(); as courant) {
+          <h2 class="graphe-detail-titre">{{ courant.noeud.libelle }}</h2>
+          @if (courant.noeud.detail) {
+            <p class="graphe-detail-sous-titre">{{ courant.noeud.detail }}</p>
+          }
+
+          @if (voisinage(); as voisins) {
+            <svg class="graphe-voisinage" viewBox="0 0 200 200" role="img"
+              aria-label="Voisinage direct du nœud sélectionné"
+              i18n-aria-label="@@graphe.voisinage.label">
+              @for (point of voisins.points; track point.libelle) {
+                <line x1="100" y1="100" [attr.x2]="point.x" [attr.y2]="point.y"
+                  [class.graphe-arete-parent]="point.parent" class="graphe-arete" />
+              }
+              @for (point of voisins.points; track point.libelle) {
+                <circle [attr.cx]="point.x" [attr.cy]="point.y" r="6"
+                  [class.graphe-point-parent]="point.parent" class="graphe-point">
+                  <title>{{ point.libelle }}</title>
+                </circle>
+              }
+              <circle cx="100" cy="100" r="11" class="graphe-point graphe-point-centre">
+                <title>{{ voisins.centre }}</title>
+              </circle>
+            </svg>
+            @if (voisins.tronques > 0) {
+              <p class="graphe-detail-sous-titre" i18n="@@graphe.voisinage.tronque">
+                +{{ voisins.tronques }} voisins non représentés
+              </p>
+            }
+          }
+
+          @if (courant.niveau === 'emplacement' && emplacementCourant(); as lieu) {
+            @if (lieu.latitude !== null && lieu.longitude !== null) {
+              <app-map-picker [latitude]="lieu.latitude" [longitude]="lieu.longitude" [disabled]="true" />
+            } @else {
+              <p class="graphe-vide" i18n="@@graphe.sansCoordonnees">
+                Cet emplacement n'a pas de coordonnées : rien à situer sur la carte.
+              </p>
+            }
+          }
+        } @else {
+          <p class="graphe-vide" i18n="@@graphe.detail.vide">
+            Sélectionnez un élément pour voir son détail et son voisinage direct.
+          </p>
+        }
+      </aside>
+    </div>
+  </mat-card-content>
+</mat-card>

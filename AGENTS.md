@@ -117,7 +117,12 @@ Single Quarkus service, no separate solver microservice. Package root:
   login (single `admin` account from config) **except**
   `/api/espace-animateur/*` (its URL token is the credential and resolves the
   edition by itself), `/api/auth/*` and `/api/config`; `/mcp` keeps its own
-  API-key mechanism. The `%test` profile opens the API (`permit`) so
+  API-key mechanism. An **opt-in** header mode (`planning.auth.remote-user.*`,
+  off by default) lets an access proxy assert an already-authenticated
+  address: `admin-email` gets the admin role, any other recognised address is
+  an animateur whose espace opens without the e-mail code. It refuses to boot
+  without a shared secret — a header is a claim, not a proof. The `%test`
+  profile opens the API (`permit`) so
   functional tests skip the session; `AuthentificationAdminTest` restores and
   covers the real policy.
 - `mcp/` — MCP tools (`@Tool`) exposing the same capabilities to an AI

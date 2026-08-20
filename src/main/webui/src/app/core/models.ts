@@ -762,6 +762,17 @@ export interface StatutSession {
   nom: string | null;
 }
 
+/** Whether this deployment has an MCP API key at all, and the header it travels in. Never the key. */
+export interface StatutMcp {
+  configuree: boolean;
+  header: string;
+}
+
+/** The MCP API key, returned only in exchange for the admin password. Never stored. */
+export interface CleMcp {
+  cle: string;
+}
+
 /** One of the animateur's seats, as shown in their espace. */
 export interface PosteAnimateurView {
   creneauId: number;

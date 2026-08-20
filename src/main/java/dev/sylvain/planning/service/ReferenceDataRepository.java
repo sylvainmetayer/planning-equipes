@@ -718,7 +718,12 @@ public class ReferenceDataRepository {
     }
 
     /** (édition, animateur) behind an espace-animateur access token. */
-    public record ProprietaireJeton(String editionId, String animateurId) {
+    /**
+     * @param email address on the animateur's fiche, {@code null} when none was
+     *              collected — carried here so the espace guard can match a
+     *              proxy-asserted identity without a second query
+     */
+    public record ProprietaireJeton(String editionId, String animateurId, String email) {
     }
 
     /**
@@ -729,16 +734,42 @@ public class ReferenceDataRepository {
      * (the caller then runs everything else inside
      * {@code EditionContext.executeDans}).
      */
+    /**
+     * Whether any animateur, in any edition, carries this address. Like
+     * {@link #resoudreJetonAnimateur}, deliberately not edition-scoped: the
+     * caller is the startup check of the remote-user mode, which has no
+     * edition to speak of and wants to know whether the collision exists
+     * anywhere at all.
+     */
+    public boolean emailAnimateurExiste(String email) {
+        if (email == null || email.isBlank()) {
+            return false;
+        }
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = connection.prepareStatement(
+                        "SELECT 1 FROM animateur WHERE lower(email) = lower(?) LIMIT 1")) {
+            ps.setString(1, email.trim());
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to look up animator e-mail", e);
+        }
+    }
+
     public ProprietaireJeton resoudreJetonAnimateur(String jeton) {
         if (jeton == null || jeton.isBlank()) {
             return null;
         }
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement(
-                        "SELECT edition_id, id FROM animateur WHERE jeton_acces = ?")) {
+                        "SELECT edition_id, id, email FROM animateur WHERE jeton_acces = ?")) {
             ps.setString(1, jeton);
             try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() ? new ProprietaireJeton(rs.getString("edition_id"), rs.getString("id")) : null;
+                return rs.next()
+                        ? new ProprietaireJeton(rs.getString("edition_id"), rs.getString("id"),
+                                rs.getString("email"))
+                        : null;
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to resolve animator token", e);

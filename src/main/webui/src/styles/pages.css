@@ -452,3 +452,30 @@ table td.hours-verifier {
 .mcp-prompt {
   white-space: pre-wrap;
 }
+
+/* MCP: the API-key reveal — a short form, then the key itself, both inline in
+   the connection card rather than in a dialog, so the configuration block
+   right below updates with the real key under the reader's eyes. */
+.mcp-cle-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0.5rem 0 1rem;
+  padding: 1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 0.5rem;
+}
+
+.mcp-cle-form mat-form-field {
+  max-width: 22rem;
+}
+
+.mcp-cle-revelee {
+  margin-bottom: 1rem;
+}
+
+.mcp-cle-note {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  color: var(--mat-sys-on-surface-variant);
+}

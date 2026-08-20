@@ -34,6 +34,53 @@ redirection HTML.
 | `POST` | `/j_security_check` | Form login Quarkus : corps `application/x-www-form-urlencoded` avec `j_username` / `j_password`. Succès : cookie `planning-session` chiffré + `302` vers `/api/auth/me` (que le navigateur suit) ; échec : `401` (jamais de page HTML). Compte unique `admin`, mot de passe via `ADMIN_PASSWORD` |
 | `GET` | `/api/auth/me` | Statut de session : `{ "authentifie": bool, "nom": "admin" \| null }` — accessible anonymement |
 | `POST` | `/api/auth/logout` | Supprime le cookie de session (`204`), idempotent |
+| `GET` | `/api/mcp/statut` | `{ configuree, header }` : si une clé MCP est configurée côté serveur, et l'en-tête qui la porte. **Jamais la clé** — c'est ce qui permet à la page MCP d'avertir « MCP inutilisable en l'état » au lieu de laisser paramétrer un client qui n'obtiendra que des 401 |
+| `POST` | `/api/mcp/cle` | Échange `{ motDePasse }` (celui de l'admin) contre `{ cle }`. `401` mot de passe faux ou absent, `404` mot de passe bon mais aucune clé configurée, `429` après cinq échecs (blocage de 5 min, que le bon mot de passe ne lève pas). La session admin ne suffit pas : la clé donne un accès complet en écriture et **survit à la session** d'où elle a été copiée, donc la révélation est liée à quelqu'un présent au clavier |
+
+### Authentification par en-tête (remote user, facultative)
+
+Pour un déploiement derrière un proxy d'accès qui authentifie lui-même ses
+visiteurs (Pangolin et consorts) et transmet l'adresse retenue. **Désactivée
+par défaut** : le form login reste le mode normal, et les deux modes coexistent
+— une origine atteinte directement, ou un proxy mal configuré, laisse toujours
+`/login` utilisable.
+
+| Propriété | Défaut | Rôle |
+| --- | --- | --- |
+| `planning.auth.remote-user.enabled` (`REMOTE_USER_ENABLED`) | `false` | Active le mode. |
+| `planning.auth.remote-user.header` (`REMOTE_USER_HEADER`) | `Remote-Email` | En-tête portant l'adresse authentifiée par le proxy. |
+| `planning.auth.remote-user.secret-header` (`REMOTE_USER_SECRET_HEADER`) | `Remote-Auth-Secret` | En-tête portant le secret partagé. |
+| `planning.auth.remote-user.secret` (`REMOTE_USER_SECRET`) | vide | Secret partagé. **Obligatoire** quand le mode est actif. |
+| `planning.auth.remote-user.admin-email` (`REMOTE_USER_ADMIN_EMAIL`) | vide | La seule adresse qui obtient le rôle admin. |
+
+**Le secret n'est pas une option.** Un en-tête est une affirmation, pas une
+preuve : sans lui, quiconque atteint l'origine sans passer par le proxy devient
+administrateur en envoyant une ligne d'en-tête — et une origine joignable en
+direct est l'état ordinaire des choses (un port publié pour déboguer, une
+seconde ingress, un réseau interne), pas une exotisme. Activer le mode sans
+secret **fait donc échouer le démarrage** au lieu de laisser en place une
+configuration silencieusement grande ouverte. Le secret doit voyager sur un
+en-tête que le proxy **écrase inconditionnellement** en entrée, faute de quoi
+un client peut le forger.
+
+Qui est qui :
+
+- l'adresse `admin-email` obtient le rôle admin, exactement comme le form login
+  (même principal `admin`, mêmes droits) ;
+- **toute autre adresse est un animateur**, identifié par l'e-mail de sa fiche.
+  L'attestation du proxy prend alors la place du code à 6 chiffres de l'espace
+  animateur : cet e-mail est précisément ce que le code prouve, donc l'affirmer
+  depuis le proxy qui a déjà authentifié la personne établit le même fait une
+  étape plus tôt. Le lien (jeton) reste nécessaire, et l'adresse doit
+  correspondre à la fiche qu'il désigne — l'attestation d'un animateur n'ouvre
+  donc pas l'espace d'un collègue dont il aurait ramassé le lien ;
+- une adresse qui n'est ni l'admin ni le propriétaire du jeton présenté n'obtient
+  rien.
+
+Si `admin-email` est aussi l'adresse d'un animateur, l'admin l'emporte et la
+personne perd l'accès à son espace : la collision est signalée par un
+avertissement au démarrage plutôt que découverte à l'usage.
+
 
 ## Planning
 
