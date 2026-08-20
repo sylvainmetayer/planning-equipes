@@ -116,6 +116,31 @@ Pour ajouter une chaîne traduisible :
    `npx ng extract-i18n` réémet un avertissement si deux textes différents
    partagent le même id : renommez l'un des deux plutôt que d'ignorer
    l'avertissement.
+5. Vérifiez : `npm run i18n-check` (depuis `src/main/webui`).
+
+### Le garde-fou `i18n-check`
+
+`npm run i18n-check` extrait les messages sources et les confronte à
+`messages.en.json`. Il échoue sur trois écarts, chacun invisible autrement :
+
+| Écart | Conséquence sans le contrôle |
+| --- | --- |
+| Id présent dans le code, absent du catalogue | L'écran s'affiche **en français** pour un lecteur anglophone. `$localize` retombe sur la source sans rien signaler. |
+| Clé présente dans le catalogue, absente du code | Poids mort, et généralement la moitié oubliée d'un renommage. |
+| Placeholders divergents entre source et traduction | Casse **à l'affichage**, sur ce seul écran, en anglais uniquement : ni le build ni les tests ne la voient. |
+
+Ce contrôle tourne dans le job `frontend` du workflow Tests. Il a été ajouté
+après avoir trouvé 56 identifiants sans traduction et 6 messages aux
+placeholders divergents — dont trois où le catalogue anglais avait *renommé* le
+placeholder (`{$adresse}` pour `{$INTERPOLATION}`), si bien que l'utilisateur
+anglophone voyait le jeton littéral au lieu de la valeur, et deux où le
+français avait été réécrit sans que l'anglais suive. Rien n'avait signalé ces
+six-là pendant des mois.
+
+Les avertissements « Duplicate messages with id » de l'extraction sont
+affichés mais ne font **pas** échouer le contrôle : ils signalent un id partagé
+par deux textes sources différents, ce qui est un problème réel mais distinct,
+et à traiter en renommant l'un des deux.
 
 ## Accessibilité du frontend
 

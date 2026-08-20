@@ -12,6 +12,7 @@
     "watch": "ng build --watch --configuration development",
     "pretest": "npm run generate-version",
     "test": "ng test",
+    "i18n-check": "node scripts/generate-version.js && node scripts/check-i18n.js",
     "e2e": "playwright test"
   },
   "private": true,

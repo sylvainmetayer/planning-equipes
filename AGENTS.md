@@ -17,10 +17,12 @@ The Angular frontend UI (`src/main/webui`) is bilingual French/English via
 build): French is the source language written directly in templates/components
 (`i18n="@@id"` / `` $localize`:@@id:…` ``), and the English string for every
 id lives in `public/i18n/messages.en.json` — a new user-visible string needs
-both. Never call `$localize` at module scope (only from a method, a
-`computed()`, or a constructor): it must run after `main.ts` has loaded
-translations, not at import time. See `docs/developpement.md` for the full
-workflow. Code comments and non-domain identifiers stay in English.
+both — and `npm run i18n-check` (job `frontend` of the Tests workflow) fails
+the build when they drift: a missing id, an orphan key, or a placeholder
+renamed between source and translation. Never call `$localize` at module scope
+(only from a method, a `computed()`, or a constructor): it must run after
+`main.ts` has loaded translations, not at import time. See
+`docs/developpement.md` for the full workflow. Code comments and non-domain identifiers stay in English.
 
 ## Project overview
 
