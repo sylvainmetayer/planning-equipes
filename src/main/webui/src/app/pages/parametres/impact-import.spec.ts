@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ImpactImport } from '../../core/models';
-import { messageImpactImport } from './data-setup-page';
+import { messageImpactImport } from './parametres-page';
 
 function impact(overrides: Partial<ImpactImport> = {}): ImpactImport {
   return {

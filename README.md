@@ -239,7 +239,7 @@ planning en cours.
 
 Pour un scénario « continu » où chaque jour n'est défini que par une seule
 amplitude d'ouverture (ex. 10h-20h, ou 10h-minuit pour une journée + nocturne),
-la page « Découpage » génère automatiquement les vacations de travail réelles
+le découpage génère automatiquement les vacations de travail réelles (réglages sur la page « Paramètres », génération depuis la page « Créneaux »)
 à partir de cette amplitude : plusieurs créneaux plus courts et chevauchants,
 sans jamais dépasser 6h d'affilée pour un même animateur. La pause (et la
 pause repas) de chacun est simplement le trou entre deux de ses vacations —

@@ -553,7 +553,7 @@ réapplique ce réglage à chaque import plutôt que de dépendre d'une valeur
 laissée en base par une session précédente. `parametresSolveur.dureeResolutionSecondes`
 permet en particulier à un gros scénario (ex. `scenario-complet.yaml`, ~8 min
 pour atteindre un bon score) d'auto-configurer la durée de résolution
-(onglet Données) plutôt que de dépendre d'une valeur laissée par un scénario
+(page Solveur) plutôt que de dépendre d'une valeur laissée par un scénario
 précédent, plus rapide. Absentes du fichier (cas de tous les autres
 scénarios), ces trois sections sont sans effet : `construireExemple` retombe
 sur les `ParametresLegaux` actuellement en base, et l'import laisse
@@ -561,7 +561,7 @@ sur les `ParametresLegaux` actuellement en base, et l'import laisse
 
 Un scénario écrit directement en amplitudes peut aussi fixer une section
 `decoupageAuto:` pour que son import déclenche lui-même ce découpage plutôt
-que de laisser l'opérateur repasser par l'écran « Découpage » ensuite (issue
+que de laisser l'opérateur repasser par la page Créneaux ensuite (issue
 #110) : les créneaux importés sont découpés **en place** avec les
 `parametresDecoupage:` déjà appliqués à ce moment-là — l'édition reçoit
 directement les vacations, et une notification prévient l'opérateur. Les

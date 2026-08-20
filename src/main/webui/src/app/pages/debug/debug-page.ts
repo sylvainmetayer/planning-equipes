@@ -16,6 +16,7 @@ import { ConfirmService } from '../../shared/confirm-dialog';
 import { InstantaneAvantAction } from '../../shared/instantane-avant-action';
 import { OutputPanel } from '../../shared/output-panel';
 import { APP_VERSION, REPO_URL } from '../../version';
+import { YamlValidator } from './yaml-validator';
 
 /**
  * Raw dump of the last solve/analyze diagnostic (`GET /api/constraints`):
@@ -32,7 +33,8 @@ import { APP_VERSION, REPO_URL } from '../../version';
  */
 @Component({
   selector: 'app-debug-page',
-  imports: [MatCardModule, MatButtonModule, MatIconModule, MatProgressBarModule, OutputPanel],
+  imports: [MatCardModule, MatButtonModule, MatIconModule, MatProgressBarModule, OutputPanel,
+    YamlValidator],
   templateUrl: './debug-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })

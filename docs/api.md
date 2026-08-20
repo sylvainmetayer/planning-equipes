@@ -347,7 +347,7 @@ est acceptée.
 
 | Méthode | Chemin | Description |
 | --- | --- | --- |
-| `GET` | `/api/parametres-solveur` | Durée de résolution par défaut (onglet Données) |
+| `GET` | `/api/parametres-solveur` | Durée de résolution par défaut (réglée sur la page Solveur) |
 | `PUT` | `/api/parametres-solveur` | Met à jour cette durée |
 
 ```json
@@ -546,7 +546,7 @@ groupe actif remplacés par ceux du fichier.
 `GET /api/reference-data/impact-import` chiffre ce périmètre **avant**
 d'importer : `{ animateurs, stands, postes, planningResolu, groupeResoluNom,
 demandesEchange, demandesEnAttente, verrous }` — c'est ce que le dialogue de
-confirmation de l'onglet Données affiche, qui enregistre aussi un instantané
+confirmation de la page Paramètres affiche, qui enregistre aussi un instantané
 du plan automatiquement quand un planning résolu existe.
 
 `POST /api/reference-data/import-scenario?name={fichier}` charge un scénario
@@ -555,7 +555,7 @@ fichier définit `parametresLegaux:`, `parametresDecoupage:` et/ou
 `parametresSolveur:` (sections optionnelles, voir
 [`domaine.md`](domaine.md#découpage-automatique-en-vacations)), ces réglages
 sont aussi appliqués — `parametresSolveur.dureeResolutionSecondes` reconfigure
-la durée de résolution (onglet Données) ; absents, les réglages actuellement
+la durée de résolution (page Solveur) ; absents, les réglages actuellement
 en base sont laissés tels quels. Une section `typologies: [{ id, label, ninja? }, …]`
 optionnelle fixe le libellé du référentiel `typologie` (voir
 [`import-export.md`](import-export.md#chargement-de-scénario)) pour les ids
@@ -564,7 +564,7 @@ identique à leur id.
 
 `POST /api/reference-data/import-scenario-fichier` fait la même chose pour un
 scénario envoyé en corps de requête (bouton « Importer un fichier » de
-l'onglet Données), plutôt qu'un nom de fichier du dossier `scenarios/` —
+la page Paramètres), plutôt qu'un nom de fichier du dossier `scenarios/` —
 même format YAML, typiquement celui produit par « Exporter les données
 actuelles en scénario ». Un fichier invalide (YAML mal formé, section
 manquante) renvoie `400` avec `{"message": "…"}` décrivant l'erreur, sans
@@ -574,7 +574,7 @@ rien importer.
 d'un fichier YAML (types, sections/champs requis, plages de valeurs — voir
 [`docs/schema/scenario-schema.json`](schema/scenario-schema.json) et
 `ScenarioValidator`) sans rien importer ni persister — c'est l'endpoint de
-l'outil « Validateur YAML ». Toujours **200**, y compris pour un fichier
+l'outil « Validateur YAML » de la page Débogage. Toujours **200**, y compris pour un fichier
 vide ou un YAML mal formé : `{"valide": bool, "erreurs": ["…", …]}`, une
 liste vide signifiant que le fichier est valide. Ne remplace pas les
 vérifications de références croisées (`standId`/`creneauId` d'un poste)
@@ -582,8 +582,9 @@ qu'effectue `import-scenario-fichier` sur un import réel.
 
 ## Découpage automatique en vacations
 
-Découpe les amplitudes d'un groupe de créneaux source en vacations plus
-courtes et chevauchantes (voir [`domaine.md`](domaine.md#découpage-automatique-en-vacations)).
+Découpe les créneaux courants de l'édition, lus comme des amplitudes, en
+vacations plus courtes et chevauchantes — paramètres sur la page Paramètres,
+génération depuis la page Créneaux (voir [`domaine.md`](domaine.md#découpage-automatique-en-vacations)).
 
 | Méthode | Chemin | Description |
 | --- | --- | --- |

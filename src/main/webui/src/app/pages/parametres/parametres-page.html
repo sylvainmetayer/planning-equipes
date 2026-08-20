@@ -1,19 +1,76 @@
+<h1 class="page-title" i18n="@@nav.link.parametres">Paramètres</h1>
+
+<!-- Pre-solve diagnostic: silent while the dataset is theoretically solvable. -->
+<app-feasibility-banner [report]="problemes.report()" />
+
+<h2 class="section-title" i18n="@@parametres.section.edition">Paramètres de l'édition</h2>
+
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <h1 mat-card-title i18n="@@decoupage.intro.title">Découpage automatique en vacations</h1>
-    <mat-card-subtitle i18n="@@decoupage.intro.subtitle">
-      À partir des créneaux actuels de l'édition lus comme des amplitudes (une seule fenêtre d'ouverture par jour, ex. un scénario "continu"), génère automatiquement des vacations de travail plus courtes et chevauchantes, jamais au-dessus du seuil légal de pause — sans créneau à saisir à la main. Le découpage remplace les créneaux en place : pour re-découper avec d'autres paramètres, ré-importez le scénario source.
+    <h3 mat-card-title i18n="@@dataSetup.scenarios.title">Scénarios</h3>
+    <mat-card-subtitle i18n="@@dataSetup.scenarios.description">
+      L'import remplace les données de l'édition actuelle, et d'elle seule — l'édition visée est
+      rappelée au moment de confirmer. Ces actions sont verrouillées pendant qu'un solveur s'exécute
+      sur cette édition ; une résolution en cours sur une autre édition ne les bloque pas.
     </mat-card-subtitle>
   </mat-card-header>
+  <mat-card-actions class="card-actions">
+    <mat-form-field appearance="outline" class="scenario-select">
+      <mat-label i18n="@@dataSetup.scenario">Scénario</mat-label>
+      <mat-select
+        [value]="selectedScenario()"
+        (valueChange)="onSelectScenario($event)"
+        [disabled]="editionLocked() || sampleLoading() || scenarios().length === 0"
+      >
+        @for (name of scenarios(); track name) {
+          <mat-option [value]="name">{{ name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <button
+      matButton="outlined"
+      [disabled]="editionLocked() || sampleLoading() || scenarios().length === 0"
+      (click)="onLoadSample()"
+    >
+      <mat-icon>auto_awesome</mat-icon>
+      <ng-container i18n="@@dataSetup.loadSample">Charger le scénario selectionné</ng-container>
+    </button>
+    <button matButton="outlined" [disabled]="exporting()" (click)="onExportScenario()">
+      <mat-icon>file_download</mat-icon>
+      <ng-container i18n="@@dataSetup.exportScenario"
+        >Exporter les données actuelles en scénario</ng-container
+      >
+    </button>
+    <button
+      matButton="outlined"
+      class="danger-action"
+      [disabled]="editionLocked() || transferBusy() || scenarioFileImporting()"
+      (click)="pickScenarioFile()"
+    >
+      <mat-icon>upload_file</mat-icon>
+      <ng-container i18n="@@dataSetup.importScenarioFile">Importer un fichier</ng-container>
+    </button>
+    <input
+      #scenarioFileInput
+      type="file"
+      accept=".yaml,.yml,application/x-yaml,text/yaml,text/plain"
+      hidden
+      (change)="onScenarioFileSelected($event)"
+    />
+  </mat-card-actions>
 </mat-card>
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <h2 mat-card-title i18n="@@decoupage.parametres.title">Paramètres de découpage</h2>
+    <h3 mat-card-title i18n="@@decoupage.parametres.title">Paramètres de découpage</h3>
+    <mat-card-subtitle i18n="@@parametres.decoupage.subtitle">
+      Règles de découpe des amplitudes en vacations de travail. La génération elle-même se lance
+      depuis la page Créneaux, avec sa prévisualisation.
+    </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
-    @if (parametres(); as p) {
-      <form (ngSubmit)="sauvegarderParametres()">
+    @if (parametresDecoupage(); as p) {
+      <form (ngSubmit)="sauvegarderParametresDecoupage()">
         <fieldset class="decoupage-groupe form-grid">
         <legend i18n="@@decoupage.groupe.vacations">Durée des vacations</legend>
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
@@ -98,14 +155,22 @@
         </mat-form-field>
         </fieldset>
         <app-status-message [text]="apercuParametres()" tone="info" />
-        <button matButton="filled" type="submit" [disabled]="parametresLoading()">
-          @if (parametresLoading()) {
-            <mat-progress-spinner diameter="18" mode="indeterminate" />
-          } @else {
-            <mat-icon>save</mat-icon>
-          }
-          <ng-container i18n="@@decoupage.parametres.save">Enregistrer les paramètres</ng-container>
-        </button>
+        <div class="card-actions">
+          <button matButton="filled" type="submit" [disabled]="parametresDecoupageLoading() || editionLocked()">
+            @if (parametresDecoupageLoading()) {
+              <mat-progress-spinner diameter="18" mode="indeterminate" />
+            } @else {
+              <mat-icon>save</mat-icon>
+            }
+            <ng-container i18n="@@decoupage.parametres.save">Enregistrer les paramètres</ng-container>
+          </button>
+          <a matButton routerLink="/creneaux">
+            <mat-icon>content_cut</mat-icon>
+            <ng-container i18n="@@parametres.decoupage.versCreneaux"
+              >Prévisualiser et générer le découpage (page Créneaux)</ng-container
+            >
+          </a>
+        </div>
       </form>
     }
   </mat-card-content>
@@ -113,44 +178,99 @@
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <h2 mat-card-title i18n="@@decoupage.generer.title">Générer le découpage</h2>
-    <mat-card-subtitle i18n="@@decoupage.generer.hint">
-      Les créneaux actuels de l'édition sont lus comme des amplitudes ; les vacations générées les remplacent, et le
-      planning résolu est effacé avec eux.
+    <h3 mat-card-title i18n="@@typologies.field.ninja">Typologie ninja</h3>
+    <mat-card-subtitle i18n="@@typologies.field.ninjaHint">
+      Un animateur qui possède cette typologie sait s'adapter : il peut être affecté à n'importe quel stand.
+    </mat-card-subtitle>
+  </mat-card-header>
+  @if (alerteNinjaManquant()) {
+    <mat-card-content class="parametres-alerte-ninja">
+      <app-status-message [text]="alerteNinjaManquant()" tone="warning" />
+    </mat-card-content>
+  }
+  <mat-card-actions class="card-actions">
+    <mat-form-field appearance="outline" class="ninja-select" subscriptSizing="dynamic">
+      <mat-label i18n="@@typologies.field.ninja">Typologie ninja</mat-label>
+      <mat-select name="ninja" [disabled]="editionLocked()" [ngModel]="typologieNinjaId()"
+                  (ngModelChange)="setNinja($event)">
+        <mat-option [value]="null" i18n="@@typologies.field.noNinja">Aucune</mat-option>
+        @for (typologie of store.typologies(); track typologie.id) {
+          <mat-option [value]="typologie.id">{{ typologie.label || typologie.id }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <a matButton routerLink="/typologies">
+      <mat-icon>category</mat-icon>
+      <ng-container i18n="@@parametres.versTypologies">Gérer les typologies</ng-container>
+    </a>
+  </mat-card-actions>
+</mat-card>
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h3 mat-card-title i18n="@@parametres.ailleurs.title">Réglés sur leur propre écran</h3>
+    <mat-card-subtitle i18n="@@parametres.ailleurs.subtitle">
+      Ces paramètres d'édition restent sur l'écran qu'ils pilotent directement :
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
-    <div class="card-actions">
-      <button matButton type="button" [disabled]="previewLoading()" (click)="previsualiser()">
-        @if (previewLoading()) {
-          <mat-progress-spinner diameter="18" mode="indeterminate" />
-        } @else {
-          <mat-icon>visibility</mat-icon>
-        }
-        <ng-container i18n="@@decoupage.preview">Prévisualiser</ng-container>
-      </button>
-      <button matButton="filled" type="button" [disabled]="genererLoading()" (click)="genererDecoupage()">
-        @if (genererLoading()) {
-          <mat-progress-spinner diameter="18" mode="indeterminate" />
-        } @else {
-          <mat-icon>auto_awesome</mat-icon>
-        }
-        <ng-container i18n="@@decoupage.generer.submit">Générer les vacations (remplace les créneaux)</ng-container>
-      </button>
-    </div>
-
-    @if (resume().length > 0) {
-      <div class="table-wrapper decoupage-resume">
-        @for (jour of resume(); track jour.date) {
-          <p>
-            <strong>{{ jour.date }}</strong>
-            <span i18n="@@decoupage.resume.vacationCount"> — {{ jour.vacations.length }} vacation(s) :</span>
-            @for (vacation of jour.vacations; track $index) {
-              <span class="vacation-chip">{{ vacation.heureDebut }}–{{ vacation.heureFin }}</span>
-            }
-          </p>
-        }
-      </div>
-    }
+    <ul class="parametres-renvois">
+      <li>
+        <a routerLink="/" i18n="@@parametres.renvoi.solveur">Durée de résolution du solveur — page Solveur</a>
+      </li>
+      <li>
+        <a routerLink="/echanges" i18n="@@parametres.renvoi.echanges">Ouverture et fermeture de la foire au planning — page Échanges</a>
+      </li>
+      <li>
+        <a routerLink="/constraints" i18n="@@parametres.renvoi.contraintes">Activation et désactivation des contraintes — page Contraintes</a>
+      </li>
+      <li>
+        <a routerLink="/creneaux" i18n="@@parametres.renvoi.decoupage">Prévisualisation et génération du découpage — page Créneaux</a>
+      </li>
+    </ul>
   </mat-card-content>
 </mat-card>
+
+<h2 class="section-title" i18n="@@parametres.section.global">Paramètres globaux</h2>
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h3 mat-card-title i18n="@@dataTransfer.sql.title">Export SQL</h3>
+    <mat-card-subtitle i18n="@@dataTransfer.sql.description">
+      Exporte ou rejoue toute la base de données sous forme de script SQL — toutes les éditions,
+      pas seulement l'actuelle, et l'import écrase tout. Utile pour partager un jeu de données qui
+      bloque le solveur.
+    </mat-card-subtitle>
+  </mat-card-header>
+  @if (solverBusy()) {
+    <mat-card-content>
+      <p class="locked-hint" i18n="@@dataTransfer.locked">
+        Les transferts sont verrouillés pendant que le solveur est en cours d'exécution.
+      </p>
+    </mat-card-content>
+  }
+  <mat-card-actions class="card-actions">
+    <button matButton="filled" [disabled]="transferLocked()" (click)="onExportSql()">
+      <mat-icon>download</mat-icon>
+      <ng-container i18n="@@dataTransfer.exportSql">Exporter le dump SQL</ng-container>
+    </button>
+    <button
+      matButton="outlined"
+      class="danger-action"
+      [disabled]="transferLocked()"
+      (click)="pickSqlFile()"
+    >
+      <mat-icon>upload</mat-icon>
+      <ng-container i18n="@@dataTransfer.importSql">Importer un dump SQL</ng-container>
+    </button>
+    <input
+      #sqlInput
+      type="file"
+      accept=".sql,application/sql,text/plain"
+      hidden
+      (change)="onSqlFileSelected($event)"
+    />
+  </mat-card-actions>
+</mat-card>
+
+<app-output-panel [text]="output()" />

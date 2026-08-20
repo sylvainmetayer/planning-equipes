@@ -8,9 +8,15 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { RouterLink } from '@angular/router';
+import { ApiService } from '../../core/api.service';
+import { NotificationService } from '../../core/notification.service';
+import { ConfirmService } from '../../shared/confirm-dialog';
+import { summarizeVacationsByDay } from './decoupage';
 import { labelCreneauxPluriel } from '../../core/entity-labels';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { ProblemesStore } from '../../core/problemes.store';
@@ -42,7 +48,9 @@ import { CreneauFormData, CreneauFormDialog } from './creneau-form-dialog';
     MatTableModule,
     MatButtonModule,
     MatIconModule,
+    MatProgressSpinnerModule,
     MatTooltipModule,
+    RouterLink,
     BulkActionsBar
   ],
   templateUrl: './creneaux-page.html',
@@ -167,4 +175,61 @@ export class CreneauxPage {
     });
   }
 
+  /* --------------------- Découpage automatique en vacations --------------------- */
+  // Lives here rather than on a page of its own: the generation reads the
+  // créneaux above as amplitudes and REPLACES them in place (issue #172), so
+  // it belongs next to the list it rewrites. Its parameters are edited on the
+  // Paramètres page.
+
+  private readonly api = inject(ApiService);
+  private readonly notifications = inject(NotificationService);
+  private readonly confirm = inject(ConfirmService);
+
+  protected readonly previewVacations = signal<Creneau[] | null>(null);
+  protected readonly previewLoading = signal(false);
+  protected readonly genererLoading = signal(false);
+
+  protected readonly resumeDecoupage = computed(() => {
+    const vacations = this.previewVacations();
+    return vacations ? summarizeVacationsByDay(vacations) : [];
+  });
+
+  protected async previsualiserDecoupage(): Promise<void> {
+    this.previewLoading.set(true);
+    this.previewVacations.set(null);
+    try {
+      this.previewVacations.set(await this.api.get<Creneau[]>('/api/decoupage/preview'));
+    } catch (error) {
+      this.crud.reportError(error);
+    } finally {
+      this.previewLoading.set(false);
+    }
+  }
+
+  /** Confirmed first: the generation replaces the edition's créneaux and erases the persisted plan with them. */
+  protected async genererDecoupage(): Promise<void> {
+    const confirme = await this.confirm.ask({
+      title: $localize`:@@decoupage.generer.title:Générer le découpage`,
+      message: $localize`:@@decoupage.generer.confirm:Les créneaux actuels de l'édition (les amplitudes) seront remplacés par les vacations générées, et le planning résolu sera effacé avec eux. Pour re-découper avec d'autres paramètres, il faudra ré-importer le scénario source.`,
+      confirmLabel: $localize`:@@decoupage.generer.submitCourt:Générer les vacations`,
+      danger: true
+    });
+    if (!confirme) {
+      return;
+    }
+    this.genererLoading.set(true);
+    try {
+      await this.api.post('/api/decoupage/generer', {});
+      await Promise.all([this.crud.reload(), this.resolution.reload()]);
+      this.notifications.notify({
+        title: $localize`:@@decoupage.generated:Découpage généré : les vacations ont remplacé les amplitudes.`,
+        variant: 'success',
+        timeout: 6000
+      });
+    } catch (error) {
+      this.crud.reportError(error);
+    } finally {
+      this.genererLoading.set(false);
+    }
+  }
 }

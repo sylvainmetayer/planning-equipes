@@ -18,11 +18,6 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/debug/debug-page').then((m) => m.DebugPage)
   },
   {
-    path: 'validateur-yaml',
-    title: 'Validateur YAML — Planning Équipes',
-    loadComponent: () => import('./pages/yaml-validator/yaml-validator-page').then((m) => m.YamlValidatorPage)
-  },
-  {
     path: 'notifications',
     title: 'Notifications — Planning Équipes',
     loadComponent: () => import('./pages/notifications/notifications-page').then((m) => m.NotificationsPage)
@@ -38,9 +33,9 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/echanges/echanges-page').then((m) => m.EchangesPage)
   },
   {
-    path: 'data-setup',
-    title: 'Data — Planning Équipes',
-    loadComponent: () => import('./pages/data-setup/data-setup-page').then((m) => m.DataSetupPage)
+    path: 'parametres',
+    title: 'Paramètres — Planning Équipes',
+    loadComponent: () => import('./pages/parametres/parametres-page').then((m) => m.ParametresPage)
   },
   {
     path: 'aide',
@@ -64,7 +59,11 @@ const adminRoutes: Routes = [
   },
   { path: 'exports', redirectTo: '' },
   { path: 'solver', redirectTo: '' },
-  { path: 'data-transfer', redirectTo: 'data-setup' },
+  // Pre-Paramètres URLs (bookmarks, aide links): the pages were merged there.
+  { path: 'data-transfer', redirectTo: 'parametres' },
+  { path: 'data-setup', redirectTo: 'parametres' },
+  { path: 'decoupage', redirectTo: 'parametres' },
+  { path: 'validateur-yaml', redirectTo: 'debug' },
   {
     path: 'stands',
     title: 'Stands — Planning Équipes',
@@ -84,11 +83,6 @@ const adminRoutes: Routes = [
     path: 'creneaux',
     title: 'Créneaux — Planning Équipes',
     loadComponent: () => import('./pages/creneaux/creneaux-page').then((m) => m.CreneauxPage)
-  },
-  {
-    path: 'decoupage',
-    title: 'Découpage — Planning Équipes',
-    loadComponent: () => import('./pages/decoupage/decoupage-page').then((m) => m.DecoupagePage)
   },
   {
     path: 'typologies',

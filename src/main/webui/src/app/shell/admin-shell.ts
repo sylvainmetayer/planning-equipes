@@ -78,11 +78,6 @@ function buildNavGroups(): NavGroup[] {
       { path: '/problemes', label: $localize`:@@nav.link.problemes:Problèmes`, icon: 'report_problem' },
       { path: '/echanges', label: $localize`:@@nav.link.echanges:Échanges`, icon: 'swap_horiz' },
       { path: '/constraints', label: $localize`:@@nav.link.constraints:Contraintes`, icon: 'fact_check' },
-      {
-        path: '/data-setup',
-        label: $localize`:@@nav.link.dataSetup:Données`,
-        icon: 'storage'
-      },
       { path: '/instantanes', label: $localize`:@@nav.link.snapshots:Instantanés`, icon: 'history' },
       { path: '/aide', label: $localize`:@@nav.link.aide:Aide`, icon: 'help_outline' },
       { path: '/editions', label: $localize`:@@nav.link.editions:Éditions`, icon: 'layers' }
@@ -96,7 +91,6 @@ function buildNavGroups(): NavGroup[] {
       { path: '/emplacements', label: $localize`:@@nav.link.emplacements:Emplacements`, icon: 'place' },
       { path: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs`, icon: 'groups' },
       { path: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux`, icon: 'schedule' },
-      { path: '/decoupage', label: $localize`:@@nav.link.decoupage:Découpage`, icon: 'content_cut' },
       { path: '/typologies', label: $localize`:@@nav.link.typologies:Typologies`, icon: 'category' }
     ]
   },
@@ -141,8 +135,8 @@ function buildNavGroups(): NavGroup[] {
     id: 'tools',
     title: $localize`:@@nav.group.tools:Outils`,
     links: [
-      { path: '/debug', label: $localize`:@@nav.link.debug:Débogage`, icon: 'bug_report' },
-      { path: '/validateur-yaml', label: $localize`:@@nav.link.yamlValidator:Validateur YAML`, icon: 'rule' }
+      { path: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres`, icon: 'settings' },
+      { path: '/debug', label: $localize`:@@nav.link.debug:Débogage`, icon: 'bug_report' }
     ]
   },
   {

@@ -72,7 +72,7 @@ export function buildHelpSections(): HelpSection[] {
       ],
       links: [
         { route: '/editions', label: $localize`:@@nav.link.editions:Éditions` },
-        { route: '/data-setup', label: $localize`:@@nav.link.dataSetup:Données` },
+        { route: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres` },
         { route: '/', label: $localize`:@@nav.link.solver:Solveur` }
       ]
     },
@@ -136,7 +136,7 @@ export function buildHelpSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.data.term.autres:Emplacements et typologies`,
-              text: $localize`:@@aide.data.def.autres:Les emplacements sont des lieux géolocalisés auxquels rattacher un stand — ils servent à éviter les changements de lieu éloignés d'un créneau à l'autre. Les typologies sont le vocabulaire commun entre les compétences d'un animateur et les jeux d'un stand : un animateur ne peut tenir un stand que s'il en maîtrise au moins une typologie. Désignez-y aussi la typologie « ninja » : ses porteurs sont considérés polyvalents (affectables sur n'importe quel stand), et le solveur essaie d'en garder un libre sur chaque créneau — votre marge de manœuvre en cas d'absence de dernière minute. Sans typologie ninja désignée, cette réserve n'existe pas et chacun reste cantonné à ses compétences ; la page Typologies vous en avertit.`
+              text: $localize`:@@aide.data.def.autres:Les emplacements sont des lieux géolocalisés auxquels rattacher un stand — ils servent à éviter les changements de lieu éloignés d'un créneau à l'autre. Les typologies sont le vocabulaire commun entre les compétences d'un animateur et les jeux d'un stand : un animateur ne peut tenir un stand que s'il en maîtrise au moins une typologie. Désignez-y aussi la typologie « ninja » : ses porteurs sont considérés polyvalents (affectables sur n'importe quel stand), et le solveur essaie d'en garder un libre sur chaque créneau — votre marge de manœuvre en cas d'absence de dernière minute. Sans typologie ninja désignée, cette réserve n'existe pas et chacun reste cantonné à ses compétences ; elle se choisit sur la page Paramètres, qui vous avertit si elle manque.`
             }
           ]
         },
@@ -191,7 +191,7 @@ export function buildHelpSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.config.term.decoupage:Paramètres de découpage`,
-              text: $localize`:@@aide.config.def.decoupage:Pour un scénario « continu », la page Découpage transforme l'amplitude d'ouverture d'une journée en vacations réelles : durée cible, minimale et maximale d'une vacation, chevauchement de relais, fenêtres et durée de pause repas, et stratégie de couverture pendant la pause (fermer le stand, faire une relève, ou tourner à effectif réduit). Le découpage remplace les créneaux de l'édition en place — pour re-découper avec d'autres paramètres, ré-importez le scénario source. Ces paramètres déterminent le nombre de postes à pourvoir : les modifier change la taille du problème bien plus que n'importe quel réglage du solveur.`
+              text: $localize`:@@aide.config.def.decoupage:Pour un scénario « continu », le découpage transforme l'amplitude d'ouverture d'une journée en vacations réelles : durée cible, minimale et maximale d'une vacation, chevauchement de relais, fenêtres et durée de pause repas, et stratégie de couverture pendant la pause (fermer le stand, faire une relève, ou tourner à effectif réduit). Ces réglages s'éditent sur la page Paramètres ; la prévisualisation et la génération se lancent depuis la page Créneaux, car le découpage remplace les créneaux de l'édition en place — pour re-découper avec d'autres paramètres, ré-importez le scénario source. Ces paramètres déterminent le nombre de postes à pourvoir : les modifier change la taille du problème bien plus que n'importe quel réglage du solveur.`
             }
           ]
         },
@@ -203,7 +203,7 @@ export function buildHelpSections(): HelpSection[] {
       links: [
         { route: '/', label: $localize`:@@nav.link.solver:Solveur` },
         { route: '/constraints', label: $localize`:@@nav.link.constraints:Contraintes` },
-        { route: '/decoupage', label: $localize`:@@nav.link.decoupage:Découpage` },
+        { route: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres` },
         { route: '/verrouillages', label: $localize`:@@nav.link.verrouillages:Verrouillages` }
       ]
     },
@@ -317,7 +317,7 @@ export function buildHelpSections(): HelpSection[] {
       links: [
         { route: '/problemes', label: $localize`:@@nav.link.problemes:Problèmes` },
         { route: '/staffing', label: $localize`:@@nav.link.staffing:Besoin en animateurs` },
-        { route: '/decoupage', label: $localize`:@@nav.link.decoupage:Découpage` },
+        { route: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres` },
         { route: '/ad-hoc-constraints', label: $localize`:@@nav.link.adHocConstraints:Contraintes ad hoc` },
         { route: '/verrouillages', label: $localize`:@@nav.link.verrouillages:Verrouillages` }
       ]
@@ -415,15 +415,15 @@ export function buildHelpSections(): HelpSection[] {
             $localize`:@@aide.exchange.item.scenario:Import d'un scénario YAML depuis votre poste : la façon la plus rapide de remplir une édition vide. Un fichier invalide donne une notification détaillée plutôt qu'un import partiel.`,
             $localize`:@@aide.exchange.item.sql:Export et import d'un dump SQL complet, pour dupliquer ou restaurer un jeu de données entier.`,
             $localize`:@@aide.exchange.item.pdfIcs:Export du planning individuel d'un animateur en PDF ou en ICS (importable dans Google Calendar, Apple Calendar ou Outlook), à l'unité ou en archive ZIP pour tout le monde.`,
-            $localize`:@@aide.exchange.item.yamlValidator:Validateur YAML : vérifie un fichier scénario sans rien importer, pour corriger avant de toucher aux données.`,
+            $localize`:@@aide.exchange.item.yamlValidator:Validateur YAML (sur la page Débogage) : vérifie un fichier scénario sans rien importer, pour corriger avant de toucher aux données.`,
             $localize`:@@aide.exchange.item.notifications:Notifications : l'historique des événements — fin de résolution, import, erreur. Une alerte non lue est signalée dans la navigation.`,
             $localize`:@@aide.exchange.item.debug:Débogage : l'état brut renvoyé par le serveur, utile pour rapporter un problème précisément.`
           ]
         }
       ],
       links: [
-        { route: '/data-setup', label: $localize`:@@nav.link.dataSetup:Données` },
-        { route: '/validateur-yaml', label: $localize`:@@nav.link.yamlValidator:Validateur YAML` },
+        { route: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres` },
+        { route: '/debug', label: $localize`:@@nav.link.debug:Débogage` },
         { route: '/notifications', label: $localize`:@@nav.link.notifications:Notifications` }
       ]
     }

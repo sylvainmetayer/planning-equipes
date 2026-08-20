@@ -1,15 +1,21 @@
 import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
+import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
-import { ImpactImport, ImportSummary, ImportScenarioResult } from '../../core/models';
+import { EditionStore } from '../../core/edition.store';
+import { ImpactImport, ImportSummary, ImportScenarioResult, ParametresDecoupage } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { ProblemesStore } from '../../core/problemes.store';
+import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';
@@ -18,34 +24,44 @@ import { ConfirmService } from '../../shared/confirm-dialog';
 import { FeasibilityBanner } from '../../shared/feasibility-banner';
 import { InstantaneAvantAction } from '../../shared/instantane-avant-action';
 import { OutputPanel } from '../../shared/output-panel';
+import { StatusMessage } from '../../shared/status-message';
 
 /**
- * Data page: seeds the database from scenario files, exports it as a scenario
- * file, and transfers data via SQL dump (emptying the database lives on the
- * Debug page). All actions rebuild or replace part of the dataset, so they
- * are locked while any solver job (solve or analysis) is running for the
- * server.
+ * The single settings page, split in two sections mirroring the data model:
  *
- * Also the last screen before a solve is launched, so it runs the solver-free
- * feasibility check (`GET /api/feasibility`) on entry and after every action
- * that rewrites the dataset: a structurally impossible planning is called out
- * here rather than after a fruitless solve.
+ * - "Paramètres de l'édition" — everything scoped by the `X-Edition-Id`
+ *   partition: scenario imports (they write the current edition only, and the
+ *   confirmation names it), the découpage parameters (the generation itself
+ *   lives with the créneaux it replaces), the ninja typologie, plus pointers
+ *   to the parameters that stay on their own screen (solver duration, foire
+ *   aux échanges, constraint toggles).
+ * - "Paramètres globaux" — the SQL dump import/export: it replays the WHOLE
+ *   database, every edition included, so it does not belong to any edition.
+ *
+ * Also runs the solver-free feasibility check on entry and after every import,
+ * as the former Données page did: a structurally impossible planning is called
+ * out here rather than after a fruitless solve.
  */
 @Component({
-  selector: 'app-data-setup-page',
+  selector: 'app-parametres-page',
   imports: [
+    FormsModule,
     MatCardModule,
     MatButtonModule,
-    MatIconModule,
     MatFormFieldModule,
+    MatIconModule,
+    MatInputModule,
+    MatProgressSpinnerModule,
     MatSelectModule,
+    RouterLink,
     FeasibilityBanner,
-    OutputPanel
+    OutputPanel,
+    StatusMessage
   ],
-  templateUrl: './data-setup-page.html',
+  templateUrl: './parametres-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DataSetupPage {
+export class ParametresPage {
   protected readonly output = signal('');
   protected readonly sampleLoading = signal(false);
   protected readonly exporting = signal(false);
@@ -59,9 +75,9 @@ export class DataSetupPage {
   /** The server-side solver lock: also covers a solve/analysis from another browser. */
   protected readonly solverBusy = computed(() => this.jobs.solverBusy());
   /**
-   * Scenario imports only write the current edition, so they follow the
-   * per-edition lock: a solve running on ANOTHER edition leaves them
-   * available (e.g. importing next year's data during a long solve).
+   * Edition-scoped writes (scenario import, découpage parameters, ninja
+   * typologie) follow the per-edition lock: a solve running on ANOTHER
+   * edition leaves them available.
    */
   protected readonly editionLocked = computed(() => this.jobs.editingLocked());
   /** SQL dump replay rewrites the WHOLE database, every edition included: locked by any running job. */
@@ -71,14 +87,16 @@ export class DataSetupPage {
   private readonly scenarioFileInput = viewChild.required<ElementRef<HTMLInputElement>>('scenarioFileInput');
   /** Pre-solve diagnostic shown by the banner at the top of the page. */
   protected readonly problemes = inject(ProblemesStore);
+  protected readonly editions = inject(EditionStore);
+  protected readonly store = inject(ReferenceDataStore);
 
   private readonly api = inject(ApiService);
+  private readonly crud = inject(ReferenceCrudService);
   private readonly planningState = inject(PlanningStateService);
   private readonly referenceData = inject(ReferenceDataStore);
-  // Seeding, emptying or replacing the database moves both the resolved
-  // resolution stamp and the "data edited since the last solve" hint:
-  // refresh the store the toolbar warnings read, or they keep showing the
-  // previous dataset.
+  // Seeding or replacing the database moves both the resolution stamp and the
+  // "data edited since the last solve" hint: refresh the store the toolbar
+  // warnings read, or they keep showing the previous dataset.
   private readonly resolution = inject(PlanningResolutionStore);
   private readonly confirm = inject(ConfirmService);
   private readonly snapshots = inject(PlanSnapshotStore);
@@ -91,7 +109,11 @@ export class DataSetupPage {
   constructor() {
     void this.loadScenarioList();
     void this.problemes.reloadFeasibility();
+    void this.crud.reload();
+    void this.chargerParametresDecoupage();
   }
+
+  /* ----------------------------- Scenario import ---------------------------- */
 
   // Fills the dropdown with the scenario files exposed by the backend. Selects
   // the first one so the "Load" button always has a target.
@@ -114,9 +136,11 @@ export class DataSetupPage {
   }
 
   /**
-   * The gate of both scenario-import buttons: shows what the import will
-   * replace or erase — counted server-side — and, once confirmed, saves an
-   * automatic snapshot of the resolved plan (when there is one) so the
+   * The gate of both scenario-import buttons: names the edition the import
+   * will write into (a scenario import only ever touches the current one —
+   * the operator confirms the target, not just the action), then what it
+   * will replace or erase — counted server-side — and, once confirmed, saves
+   * an automatic snapshot of the resolved plan (when there is one) so the
    * operation stays reversible on the planning side. `false` aborts.
    */
   private async confirmerImportScenario(intitule: string): Promise<boolean> {
@@ -126,9 +150,14 @@ export class DataSetupPage {
     } catch {
       // Counting is comfort, not safety: without it the dialog still warns.
     }
+    const edition = this.editions.courant()?.nom ?? '';
+    const lignes = [
+      $localize`:@@parametres.impact.edition:L'import écrit dans l'édition « ${edition}:edition: », et elle seule.`,
+      messageImpactImport(impact, intitule)
+    ];
     const confirme = await this.confirm.ask({
       title: $localize`:@@dataSetup.impact.titre:Importer et remplacer les données ?`,
-      message: messageImpactImport(impact, intitule),
+      message: lignes.join(' '),
       confirmLabel: $localize`:@@dataTransfer.importAction:Importer`,
       danger: true
     });
@@ -189,8 +218,8 @@ export class DataSetupPage {
     }
   }
 
-  // Read-only, so it is not gated by solverActionBlocked() like the other two
-  // actions: it never touches the dataset, only reads it.
+  // Read-only, so it is not gated by solverActionBlocked() like the imports:
+  // it never touches the dataset, only reads it.
   protected async onExportScenario(): Promise<void> {
     this.exporting.set(true);
     this.output.set($localize`:@@dataSetup.exportingScenario:Export des données actuelles en fichier scénario...`);
@@ -245,7 +274,7 @@ export class DataSetupPage {
 
   // Surfaces the scenario's decoupageAuto section, when present: the import
   // replaced the file's amplitudes with the generated vacations in place, so
-  // the operator is told without having to check the Découpage page.
+  // the operator is told without having to open the Créneaux page.
   private notifyDecoupageAuto(result: ImportScenarioResult | null): void {
     if (!result?.decoupageAuto) {
       return;
@@ -256,6 +285,118 @@ export class DataSetupPage {
       variant: 'info'
     });
   }
+
+  /* --------------------------- Découpage parameters -------------------------- */
+
+  protected readonly parametresDecoupage = signal<ParametresDecoupage | null>(null);
+  protected readonly parametresDecoupageLoading = signal(false);
+
+  /**
+   * What the current settings would produce, in one sentence, recomputed as
+   * they are typed. The generation itself lives on the Créneaux page: this
+   * only answers "am I about to cut 4-hour or 8-hour vacations?" before the
+   * user commits to it.
+   */
+  protected readonly apercuParametres = computed(() => {
+    const p = this.parametresDecoupage();
+    if (!p) {
+      return '';
+    }
+    const heures = (minutes: number) => (minutes / 60).toFixed(1).replace('.0', '').replace('.', ',');
+    const familles =
+      p.nombreFamillesDecalage > 1
+        ? $localize`:@@decoupage.apercu.familles:, réparties sur ${p.nombreFamillesDecalage}:count: grilles décalées`
+        : '';
+    return $localize`:@@decoupage.apercu:Avec ces réglages : des vacations d'environ ${heures(p.dureeVacationCibleMinutes)}:cible: h (jamais plus de ${heures(p.dureeVacationMaxMinutes)}:max: h), un relais de ${p.dureeChevauchementMinutes}:chevauchement: min et une pause repas de ${p.dureePauseRepasMinutes}:repas: min${familles}:familles:.`;
+  });
+
+  /**
+   * Immutable field update: the « Avec ces réglages » preview is a computed
+   * over the `parametresDecoupage` signal, and a zoneless app never notices
+   * an in-place mutation. Replacing the object is what makes it live while
+   * typing.
+   */
+  protected patchParametre(patch: Partial<ParametresDecoupage>): void {
+    this.parametresDecoupage.update((p) => (p ? { ...p, ...patch } : p));
+  }
+
+  private async chargerParametresDecoupage(): Promise<void> {
+    this.parametresDecoupageLoading.set(true);
+    try {
+      this.parametresDecoupage.set(await this.api.get<ParametresDecoupage>('/api/parametres-decoupage'));
+    } catch (error) {
+      this.crud.reportError(error);
+    } finally {
+      this.parametresDecoupageLoading.set(false);
+    }
+  }
+
+  protected async sauvegarderParametresDecoupage(): Promise<void> {
+    const parametres = this.parametresDecoupage();
+    if (!parametres) {
+      return;
+    }
+    this.parametresDecoupageLoading.set(true);
+    try {
+      this.parametresDecoupage.set(await this.api.put<ParametresDecoupage>('/api/parametres-decoupage', parametres));
+      this.notifications.notify({
+        title: $localize`:@@decoupage.parametresSaved:Paramètres de découpage enregistrés.`,
+        variant: 'success',
+        timeout: 4000
+      });
+    } catch (error) {
+      this.crud.reportError(error);
+    } finally {
+      this.parametresDecoupageLoading.set(false);
+    }
+  }
+
+  /* ------------------------------ Ninja typologie ---------------------------- */
+
+  /**
+   * Warning text when no typologie is flagged ninja (and the referential is
+   * not simply empty): without it, no animateur is polyvalent — nobody can be
+   * seated outside their own competences, and `preserverBufferPolyvalents`
+   * (keep one polyvalent free per créneau to absorb last-minute absences)
+   * has nothing to protect. A silent degradation worth a visible sentence.
+   */
+  protected readonly alerteNinjaManquant = computed(() => {
+    if (this.store.typologies().length === 0 || this.store.typologies().some((typologie) => typologie.ninja)) {
+      return '';
+    }
+    return $localize`:@@typologies.ninjaManquant:Aucune typologie « ninja » n'est désignée. Sans elle, aucun animateur n'est polyvalent : personne ne peut être affecté en dehors de ses compétences, et la contrainte « préserver un polyvalent libre par créneau » (votre marge de manœuvre en cas d'absence de dernière minute) ne protège plus rien. Choisissez la typologie qui joue ce rôle dans le sélecteur ci-dessous.`;
+  });
+
+  /** Id of the typologie currently flagged ninja — at most one, `null` when none. */
+  protected readonly typologieNinjaId = computed(
+    () => this.store.typologies().find((typologie) => typologie.ninja)?.id ?? null
+  );
+
+  /**
+   * Promotes `id` as the single ninja typologie, or clears the flag altogether
+   * when `id` is `null`. Only the newly selected typologie is sent: the server
+   * demotes the previous holder in the same transaction (a partial unique index
+   * makes two ninjas impossible anyway).
+   */
+  protected async setNinja(id: string | null): Promise<void> {
+    const label = $localize`:@@typologies.entityLabel:Typologie`;
+    const courante = this.store.typologies().find((typologie) => typologie.ninja) ?? null;
+    if ((courante?.id ?? null) === id) {
+      return;
+    }
+    if (id === null) {
+      if (courante) {
+        await this.crud.save('typologies', { ...courante, ninja: false }, courante.id, label);
+      }
+      return;
+    }
+    const cible = this.store.typologies().find((typologie) => typologie.id === id);
+    if (cible) {
+      await this.crud.save('typologies', { ...cible, ninja: true }, cible.id, label);
+    }
+  }
+
+  /* --------------------------------- SQL dump -------------------------------- */
 
   protected async onExportSql(): Promise<void> {
     this.transferBusy.set(true);
@@ -319,20 +460,21 @@ export class DataSetupPage {
     return false;
   }
 
-  // A seed, reset or bulk import invalidates whatever planning was displayed,
-  // and moves both the resolution stamp and the "data edited since
-  // the last solve" stamp the toolbar warnings are computed from. A scenario
-  // may also have pinned its own solver duration (see import-scenario), so
-  // the field on this page is refreshed too — harmless when unchanged.
-  // The feasibility diagnostic is recomputed from the new dataset for the same
-  // reason: it is about to drive the decision to launch a solve.
+  // A seed or bulk import invalidates whatever planning was displayed, and
+  // moves both the resolution stamp and the "data edited since the last
+  // solve" stamp the toolbar warnings are computed from. A scenario may also
+  // have pinned its own solver duration or découpage parameters (see
+  // import-scenario), so those are refreshed too — harmless when unchanged.
+  // The feasibility diagnostic is recomputed from the new dataset for the
+  // same reason: it is about to drive the decision to launch a solve.
   private async refreshAfterImport(): Promise<void> {
     this.planningState.set(null);
     await Promise.all([
       this.referenceData.reload(),
       this.resolution.reload(),
       this.solverSettings.refresh(),
-      this.problemes.reloadFeasibility()
+      this.problemes.reloadFeasibility(),
+      this.chargerParametresDecoupage()
     ]);
   }
 }

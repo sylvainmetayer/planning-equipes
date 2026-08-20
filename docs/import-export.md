@@ -137,14 +137,14 @@ la section reste possible pour un staffing qui s'écarte de cette règle
 dans ce cas elle est reprise telle quelle.
 
 Un scénario écrit directement en amplitudes (ex. `scenario-continu.yaml`) peut
-fixer une section `decoupageAuto: { groupeSourceNom, groupeCibleNom }` en tête
-de fichier pour que ces deux imports (nom ou fichier) déclenchent eux-mêmes le
-découpage en vacations plutôt que de laisser l'opérateur repasser par l'écran
-« Découpage » : les créneaux importés atterrissent dans un groupe source
-`groupeSourceNom` (créé si besoin, jamais activé), le découpage tourne dessus
-et le groupe cible `groupeCibleNom` (créé si besoin) reçoit les vacations et
-devient le groupe actif. Une notification prévient alors l'opérateur du nom du
-groupe activé. Absente, l'import se comporte comme ci-dessus. Voir
+fixer une section `decoupageAuto: {}` en tête de fichier pour que ces deux
+imports (nom ou fichier) déclenchent eux-mêmes le découpage en vacations
+plutôt que de laisser l'opérateur repasser par la page Créneaux : les
+créneaux importés sont découpés **en place** (issue #172 — l'édition ne porte
+qu'une grille) et une notification prévient l'opérateur. Les anciens champs
+`groupeSourceNom`/`groupeCibleNom` de la section sont acceptés mais ignorés ;
+`decoupageAuto: false` désactive explicitement. Absente, l'import se comporte
+comme ci-dessus. Voir
 [`domaine.md`](domaine.md#découpage-automatique-en-vacations).
 
 Les typologies (`typologiesProposees` d'un stand, `competences`/`souhaits`

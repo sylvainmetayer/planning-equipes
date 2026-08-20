@@ -147,15 +147,15 @@ Chaque bloc fonctionnel a **sa propre route et sa propre page**, chargée en
 | Route | Page | Contenu |
 | --- | --- | --- |
 | `/` (défaut) | `app/pages/solver/` | Scénario d'exemple, réinitialisation, résolution, analyse |
-| `/debug` | `app/pages/debug/` | Diagnostics du solveur et état interne |
+| `/debug` | `app/pages/debug/` | Diagnostics du solveur et état interne, outils base de données, validateur YAML de scénario |
 | `/problemes` | `app/pages/problemes/` | Vue centralisée des problèmes, triés par gravité : causes d'infaisabilité (`GET /api/feasibility`, sans résolution) + règles en défaut de la dernière analyse |
-| `/data-setup` | `app/pages/data-setup/` | Scénarios d'exemple, réinitialisation, export scénario, export/import de dump SQL, durée de résolution du solveur |
+| `/parametres` | `app/pages/parametres/` | Paramètres de l'édition (import/export de scénarios, paramètres de découpage, typologie ninja, renvois vers les réglages restés sur leur écran) et paramètres globaux (export/import de dump SQL) |
 | `/aide` | `app/pages/aide/` | Guide d'utilisation intégré : rôle de chaque écran, configuration du solveur, lecture des scores et réglages à faire selon le symptôme. Contenu statique (`aide-content.ts`), aucune dépendance à un service ni au planning résolu |
 | `/editions` | `app/pages/editions/` | Gestion des éditions : création (vide ou par duplication), renommage, édition par défaut, suppression |
 | `/stands` | `app/pages/stands/` | CRUD des stands |
 | `/emplacements` | `app/pages/emplacements/` | CRUD des emplacements (avec sélection sur carte) |
 | `/animateurs` | `app/pages/animateurs/` | CRUD des animateurs (compétences, jours d'indisponibilité) |
-| `/creneaux` | `app/pages/creneaux/` | CRUD des créneaux |
+| `/creneaux` | `app/pages/creneaux/` | CRUD des créneaux + prévisualisation et génération du découpage en vacations |
 | `/typologies` | `app/pages/typologies/` | CRUD des typologies de jeux |
 | `/ad-hoc-constraints` | `app/pages/ad-hoc-constraints/` | CRUD des contraintes ad hoc |
 | `/calendar` | `app/pages/calendar-month/` | Vue mensuelle + filtres animateur / stand |

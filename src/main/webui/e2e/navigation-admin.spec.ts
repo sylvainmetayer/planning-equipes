@@ -28,7 +28,6 @@ const ROUTES: { path: string; marker?: string }[] = [
   { path: '/problemes' },
   { path: '/constraints' },
   { path: '/echanges', marker: 'Échanges de créneaux' },
-  { path: '/data-setup' },
   { path: '/instantanes' },
   { path: '/aide', marker: "Aide à l'utilisation" },
   { path: '/editions', marker: 'Nouvelle édition' },
@@ -36,7 +35,6 @@ const ROUTES: { path: string; marker?: string }[] = [
   { path: '/emplacements' },
   { path: '/animateurs', marker: 'Animateurs (' },
   { path: '/creneaux', marker: 'Créneaux (' },
-  { path: '/decoupage' },
   { path: '/typologies', marker: 'Typologies (' },
   { path: '/calendar', marker: 'Calendrier des affectations' },
   { path: '/day-calendar' },
@@ -48,8 +46,8 @@ const ROUTES: { path: string; marker?: string }[] = [
   { path: '/ad-hoc-constraints' },
   { path: '/what-if' },
   { path: '/verrouillages', marker: 'Verrouiller une partie du planning' },
-  { path: '/debug' },
-  { path: '/validateur-yaml' }
+  { path: '/parametres', marker: 'Paramètres de découpage' },
+  { path: '/debug', marker: 'Validateur YAML' }
 ];
 
 test('chaque page du menu admin se charge et affiche son contenu', async ({ browser }) => {

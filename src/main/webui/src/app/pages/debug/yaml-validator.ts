@@ -15,17 +15,17 @@ interface ScenarioValidationResult {
  * Uploads a scenario YAML file and reports the structural validation errors
  * ScenarioValidator finds (types, required fields, value ranges — see
  * docs/schema/scenario-schema.json), without importing anything. A
- * standalone diagnostic tool: unlike the "Importer un fichier" button on the
- * Données page, nothing here is ever persisted, so it's safe to try on any
- * file, valid or not.
+ * diagnostic tool embedded in the Debug page: unlike the "Importer un
+ * fichier" button on the Paramètres page, nothing here is ever persisted, so
+ * it's safe to try on any file, valid or not.
  */
 @Component({
-  selector: 'app-yaml-validator-page',
+  selector: 'app-yaml-validator',
   imports: [MatCardModule, MatButtonModule, MatIconModule, MatProgressBarModule],
-  templateUrl: './yaml-validator-page.html',
+  templateUrl: './yaml-validator.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class YamlValidatorPage {
+export class YamlValidator {
   protected readonly validating = signal(false);
   protected readonly result = signal<ScenarioValidationResult | null>(null);
   /** Pre-translated "<file> is valid." / "<file> contains N error(s):" — built once the result arrives. */

@@ -162,12 +162,12 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   #165) render outside it — no admin navigation, no polling.
 - **One route = one page = one block.** Admin routes (children of the shell):
   `/` (default, the solver page),
-  `/debug`, `/notifications`, `/data-setup`, `/stands`, `/emplacements`,
-  `/animateurs`, `/creneaux`, `/decoupage`, `/typologies`,
+  `/debug`, `/notifications`, `/parametres`, `/stands`, `/emplacements`,
+  `/animateurs`, `/creneaux`, `/typologies`,
   `/ad-hoc-constraints`, `/calendar`, `/day-calendar`, `/constraints`,
   `/problemes`, `/echanges`, `/hours`, `/staffing`, `/aide` (`/solver`,
-  `/exports` and
-  `/data-transfer` are legacy redirects, kept for old bookmarks/links).
+  `/exports`, `/data-transfer`, `/data-setup`, `/decoupage` and
+  `/validateur-yaml` are legacy redirects, kept for old bookmarks/links).
   Adding a functional block means adding a route and a `app/pages/<block>/`
   folder, never a new section inside an existing page.
 - Layout: `app/core/` holds shared services (`api.service.ts` — the only place

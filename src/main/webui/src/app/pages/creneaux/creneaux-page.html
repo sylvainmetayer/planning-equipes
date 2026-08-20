@@ -91,3 +91,51 @@
     }
   </mat-card-content>
 </mat-card>
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h2 mat-card-title i18n="@@decoupage.generer.title">Générer le découpage</h2>
+    <mat-card-subtitle i18n="@@decoupage.generer.hint">
+      Les créneaux actuels de l'édition sont lus comme des amplitudes ; les vacations générées les remplacent, et le
+      planning résolu est effacé avec eux.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <div class="card-actions">
+      <button matButton type="button" [disabled]="previewLoading()" (click)="previsualiserDecoupage()">
+        @if (previewLoading()) {
+          <mat-progress-spinner diameter="18" mode="indeterminate" />
+        } @else {
+          <mat-icon>visibility</mat-icon>
+        }
+        <ng-container i18n="@@decoupage.preview">Prévisualiser</ng-container>
+      </button>
+      <button matButton="filled" type="button" [disabled]="genererLoading() || editingLocked()" (click)="genererDecoupage()">
+        @if (genererLoading()) {
+          <mat-progress-spinner diameter="18" mode="indeterminate" />
+        } @else {
+          <mat-icon>auto_awesome</mat-icon>
+        }
+        <ng-container i18n="@@decoupage.generer.submit">Générer les vacations (remplace les créneaux)</ng-container>
+      </button>
+      <a matButton routerLink="/parametres">
+        <mat-icon>settings</mat-icon>
+        <ng-container i18n="@@creneaux.decoupage.versParametres">Régler les paramètres de découpage</ng-container>
+      </a>
+    </div>
+
+    @if (resumeDecoupage().length > 0) {
+      <div class="table-wrapper decoupage-resume">
+        @for (jour of resumeDecoupage(); track jour.date) {
+          <p>
+            <strong>{{ jour.date }}</strong>
+            <span i18n="@@decoupage.resume.vacationCount"> — {{ jour.vacations.length }} vacation(s) :</span>
+            @for (vacation of jour.vacations; track $index) {
+              <span class="vacation-chip">{{ vacation.heureDebut }}–{{ vacation.heureFin }}</span>
+            }
+          </p>
+        }
+      </div>
+    }
+  </mat-card-content>
+</mat-card>
