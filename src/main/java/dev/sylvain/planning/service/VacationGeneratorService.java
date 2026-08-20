@@ -10,7 +10,7 @@ import dev.sylvain.planning.domain.ParametresDecoupage;
 
 /**
  * Slices day-long opening windows ("amplitudes" — plain {@link Creneau} rows
- * living in a source, non-activated {@link dev.sylvain.planning.domain.GroupeCreneau})
+ * imported straight from a "continu" scenario file)
  * into several shorter, overlapping work vacations, so a "continu" scenario
  * (one amplitude per day, e.g. 10:00→00:00) never forces a single animateur
  * to be nominally in-post for the whole opening window.

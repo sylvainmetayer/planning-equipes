@@ -144,7 +144,7 @@ public class EditionRepository {
      * Flags this edition as the default and clears every other one, in a single
      * transaction (clear-then-set order, so the partial unique index on
      * {@code defaut} is never violated in between — same pattern as
-     * {@code groupe_creneau.actif}).
+     * the former {@code groupe_creneau.actif}).
      */
     public void definirParDefaut(String id) {
         inTransaction(connection -> {
@@ -185,37 +185,12 @@ public class EditionRepository {
      */
     public void dupliquer(String sourceId, String cibleId) {
         inTransaction(connection -> {
-            copierGroupesCreneaux(connection, sourceId, cibleId);
             for (TableACopier table : TABLES_A_COPIER) {
                 copierTable(connection, table, sourceId, cibleId);
             }
             copierCreneaux(connection, sourceId, cibleId);
             copierContraintesAdHoc(connection, sourceId, cibleId);
         }, "Failed to duplicate edition " + sourceId + " into " + cibleId);
-    }
-
-    /**
-     * Timeslot groups first, since the créneaux point at them. Their
-     * {@code groupe_source_id} self-reference is filled in a second pass: a
-     * single multi-row insert would otherwise have to order the rows so every
-     * source comes before the groups generated from it.
-     */
-    private void copierGroupesCreneaux(Connection connection, String sourceId, String cibleId) throws SQLException {
-        try (PreparedStatement ps = connection.prepareStatement(
-                "INSERT INTO groupe_creneau (edition_id, id, nom, actif, resoudre_en_file) "
-                        + "SELECT ?, id, nom, actif, resoudre_en_file FROM groupe_creneau WHERE edition_id = ?")) {
-            ps.setString(1, cibleId);
-            ps.setString(2, sourceId);
-            ps.executeUpdate();
-        }
-        try (PreparedStatement ps = connection.prepareStatement(
-                "UPDATE groupe_creneau cible SET groupe_source_id = source.groupe_source_id "
-                        + "FROM groupe_creneau source "
-                        + "WHERE source.edition_id = ? AND cible.edition_id = ? AND cible.id = source.id")) {
-            ps.setString(1, sourceId);
-            ps.setString(2, cibleId);
-            ps.executeUpdate();
-        }
     }
 
     private void copierTable(Connection connection, TableACopier table, String sourceId, String cibleId)
@@ -250,9 +225,9 @@ public class EditionRepository {
             ps.executeUpdate();
         }
         try (PreparedStatement ps = connection.prepareStatement(
-                "INSERT INTO creneau (id, edition_id, date_creneau, heure_debut, heure_fin, groupe_creneau_id, famille, "
+                "INSERT INTO creneau (id, edition_id, date_creneau, heure_debut, heure_fin, famille, "
                         + "couverture_pause) "
-                        + "SELECT r.nouvel_id, ?, c.date_creneau, c.heure_debut, c.heure_fin, c.groupe_creneau_id, "
+                        + "SELECT r.nouvel_id, ?, c.date_creneau, c.heure_debut, c.heure_fin, "
                         + "c.famille, c.couverture_pause FROM creneau c JOIN creneau_remap r ON r.ancien_id = c.id "
                         + "WHERE c.edition_id = ?")) {
             ps.setString(1, cibleId);

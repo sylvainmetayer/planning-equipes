@@ -61,7 +61,7 @@ public final class AffectationConstraints {
      * duration rule</b>: the former {@code pasDeDoubleAffectationSurMemeCreneau}
      * compared créneau <i>identity</i>, so two distinct but overlapping
      * créneaux (10:00-14:00 and 12:00-16:00 — the normal case as soon as
-     * overlapping vacations, several {@code GroupeCreneau}, or hand-typed hours
+     * overlapping vacations or hand-typed hours
      * exist) could both be assigned to the same person. The daily and weekly
      * caps summed their minutes correctly, but the plan was physically
      * unworkable and every rest rule added afterwards would have inherited the

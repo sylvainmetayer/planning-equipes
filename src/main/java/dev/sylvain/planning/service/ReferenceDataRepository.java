@@ -1319,11 +1319,8 @@ public class ReferenceDataRepository {
     /**
      * Replaces the reference dataset with the one carried by a planning (used
      * by the "Load sample" action and by generic reference-data import).
-     * Stands and animateurs are global and always fully replaced; timeslots
-     * are not — only the currently active {@link GroupeCreneau}'s créneaux are
-     * cleared and reloaded, so a scenario can be imported into one group
-     * (e.g. an alternate planning) without wiping out the créneaux other
-     * groups already hold. Each imported créneau receives a freshly
+     * Stands, animateurs and timeslots are fully replaced within the
+     * edition. Each imported créneau receives a freshly
      * DB-generated id (ids are a numeric identity column, so collisions with
      * another group's créneaux are structurally impossible); ad hoc
      * constraints referencing one of those créneaux by its original
