@@ -41,7 +41,11 @@ public class EditionRepository {
     private static final List<TableACopier> TABLES_A_COPIER = List.of(
             new TableACopier("typologie", "id, label"),
             new TableACopier("emplacement", "id, nom, latitude, longitude"),
-            new TableACopier("animateur", "id, prenom, nom, date_naissance, manager"),
+            // email travels with the copy (the canicule-edition ritual of issue
+            // #172 ends with « Envoyer à tous », mute without it); jeton_acces
+            // deliberately does NOT: the column default mints a fresh token per
+            // edition, so an espace link keeps designating exactly one edition.
+            new TableACopier("animateur", "id, prenom, nom, date_naissance, manager, email"),
             new TableACopier("stand",
                     "id, nom, effectif_min, effectif_max, reserve_majeurs, premium, emplacement_id, niveau_effort"),
             new TableACopier("animateur_competence", "animateur_id, typologie, niveau"),
@@ -51,6 +55,15 @@ public class EditionRepository {
             new TableACopier("stand_indisponibilite",
                     "stand_id, date_indisponibilite, heure_debut, heure_fin, motif"),
             new TableACopier("stand_ouverture", "stand_id, date_ouverture, heure_debut, heure_fin, motif"),
+            // The recurring opening rules (V37) predated by this list: without
+            // them a duplicated edition silently fell back to « open on every
+            // slot ». Their BIGSERIAL ids are kept as-is — the PKs are
+            // composite (edition_id, id), the child FK follows the new
+            // edition_id, and the shared sequence has already consumed those
+            // values, so future inserts cannot collide.
+            new TableACopier("stand_horaire",
+                    "id, stand_id, mode, type_jours, jours_semaine, date_debut, date_fin, dates, motif"),
+            new TableACopier("stand_horaire_fenetre", "id, horaire_id, position, heure_debut, heure_fin"),
             new TableACopier("constraint_toggle", "nom"),
             new TableACopier("parametres_legaux",
                     "duree_hebdomadaire_max_minutes, duree_hebdomadaire_max_mineur_minutes, "

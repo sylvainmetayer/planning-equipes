@@ -125,6 +125,54 @@ class EditionResourceTest {
                 .body("assignments", org.hamcrest.Matchers.equalTo(0));
     }
 
+    /**
+     * The V41 columns and the V37 recurring-hours tables postdated the
+     * duplication column list: a duplicated edition silently lost every
+     * animateur email (muting « Envoyer à tous », step 5 of the issue #172
+     * switch ritual) and every recurring opening rule (stands falling back to
+     * « open on every slot »). The access token, on the other hand, must NOT
+     * travel: each edition mints its own, so an espace link keeps designating
+     * exactly one edition.
+     */
+    @Test
+    void dupliquerRecopieEmailEtHorairesMaisFrappeUnJetonNeuf() {
+        given().header(HEADER, DEFAUT).contentType("application/json")
+                .body("{\"id\":\"ANIM-COPIE\",\"prenom\":\"Ada\",\"nom\":\"Lovelace\","
+                        + "\"dateNaissance\":\"1990-01-01\",\"email\":\"ada@example.org\"}")
+                .when().post("/api/animateurs")
+                .then().statusCode(200);
+        given().header(HEADER, DEFAUT).contentType("application/json")
+                .body("{\"id\":\"STAND-HORAIRE\",\"nom\":\"Stand à règles\",\"effectifMin\":1,\"effectifMax\":2,"
+                        + "\"horaires\":[{\"mode\":\"FERMETURE\",\"typeJours\":\"TOUS\","
+                        + "\"fenetres\":[{\"heureDebut\":\"09:00:00\",\"heureFin\":\"10:00:00\"}]}]}")
+                .when().post("/api/stands")
+                .then().statusCode(200);
+        String jetonSource = given().header(HEADER, DEFAUT)
+                .when().get("/api/animateurs")
+                .then().statusCode(200)
+                .extract().jsonPath().getString("find { it.id == 'ANIM-COPIE' }.jetonAcces");
+
+        given().contentType("application/json")
+                .body("{\"id\":\"COPIE-2026\",\"nom\":\"Copie 2026\"}")
+                .when().post("/api/editions/" + DEFAUT + "/dupliquer")
+                .then().statusCode(200);
+
+        given().header(HEADER, "COPIE-2026")
+                .when().get("/api/animateurs")
+                .then().statusCode(200)
+                .body("find { it.id == 'ANIM-COPIE' }.email", org.hamcrest.Matchers.equalTo("ada@example.org"))
+                .body("find { it.id == 'ANIM-COPIE' }.jetonAcces",
+                        org.hamcrest.Matchers.allOf(
+                                org.hamcrest.Matchers.notNullValue(),
+                                org.hamcrest.Matchers.not(jetonSource)));
+        given().header(HEADER, "COPIE-2026")
+                .when().get("/api/stands")
+                .then().statusCode(200)
+                .body("find { it.id == 'STAND-HORAIRE' }.horaires.size()", org.hamcrest.Matchers.equalTo(1))
+                .body("find { it.id == 'STAND-HORAIRE' }.horaires[0].fenetres[0].heureDebut",
+                        org.hamcrest.Matchers.equalTo("09:00:00"));
+    }
+
     @Test
     void uneEditionDupliqueeEstIndependanteDeSaSource() {
         creerStand(DEFAUT, "STAND-PARTAGE");

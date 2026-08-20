@@ -230,7 +230,12 @@ groupes s'y enchaînent **en séquence** dans un seul job, jamais en parallèle.
   métier sont recopiés à l'identique — c'est précisément ce que les clés
   composites autorisent ; seuls les `creneau.id`, générés par la base, sont
   réattribués, via une table temporaire de correspondance à travers laquelle les
-  lignes qui les référencent sont réécrites.
+  lignes qui les référencent sont réécrites. La copie emporte les e-mails et les
+  indisponibilités des animateurs comme les règles d'horaires des stands ; le
+  **jeton d'accès de l'espace animateur n'est volontairement pas copié** — chaque
+  édition frappe le sien, un lien d'espace désigne donc toujours exactement une
+  édition (le rituel de bascule de l'issue #172 se conclut par un « Envoyer à
+  tous » qui diffuse les liens de l'édition fraîchement activée).
 - **Supprimer une édition** : `ON DELETE CASCADE` emporte tout le référentiel ;
   confirmation explicite obligatoire côté IHM, et refus côté serveur de
   supprimer l'édition par défaut, l'édition courante, ou la dernière restante.
