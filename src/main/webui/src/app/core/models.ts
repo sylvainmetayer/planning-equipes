@@ -256,8 +256,6 @@ export interface Creneau {
   date: string;
   heureDebut: string;
   heureFin: string;
-  /** Planning ("groupe de créneaux") this slot belongs to. */
-  groupe: GroupeCreneau | null;
   /**
    * Stagger family this generated vacation belongs to (0-based). The
    * découpage slices each amplitude once per family with offset relay cuts,
@@ -279,8 +277,8 @@ export interface Creneau {
 /**
  * A whole edition of the festival — "Année 2025", "Année 2026" — and the scope
  * every piece of reference data belongs to (`/api/editions`). Not to be confused
- * with `GroupeCreneau`, which is one alternative slicing of the days *inside*
- * one `Edition`. `defaut` is not "the current one": that is this browser's own
+ * with the former timeslot groups (removed by issue #172: the edition is
+ * the only variant carrier). `defaut` is not "the current one": that is this browser's own
  * choice, sent as `X-Edition-Id`; `defaut` is the server's fallback when no
  * edition is designated. See docs/editions.md.
  */
@@ -291,37 +289,15 @@ export interface Edition {
   creeLe: string | null;
 }
 
-/**
- * Named set of timeslots (a "planning"), so an alternate schedule can be
- * prepared ahead of time and activated on short notice (`/api/groupes-creneaux`).
- * Exactly one group is active per `Edition`; the solver only uses the active
- * group's créneaux.
- */
-export interface GroupeCreneau {
-  id: string;
-  nom: string;
-  actif: boolean;
-  /** Id of the "amplitudes" group this group's vacations were auto-generated from, or `null`. */
-  groupeSourceId?: string | null;
-  /**
-   * Whether the "résoudre tous les groupes" queue solves this group (issue
-   * #167). Defaults to true; the découpage flips it off on the amplitudes
-   * source it slices from. Absent on payloads predating the flag.
-   */
-  resoudreEnFile?: boolean;
-}
 
 /**
- * Which groupe de créneaux the last persisted solve (`/api/planning/persisted`)
- * was computed for, and when. `solved` is `false` when nothing has ever been
- * solved; `groupeCreneauId`/`groupeCreneauNom` can still be `null` even when
- * `solved` is `true` if that group was since deleted. `derniereModificationDonnees`
- * is when reference data was last edited (`null` if never, or since server start).
+ * When the persisted plan (`/api/planning/persisted`) was last solved.
+ * `solved` is `false` when nothing has ever been solved.
+ * `derniereModificationDonnees` is when reference data was last edited
+ * (`null` if never, or since server start).
  */
 export interface PlanningResolution {
   solved: boolean;
-  groupeCreneauId: string | null;
-  groupeCreneauNom: string | null;
   resoluLe: string | null;
   derniereModificationDonnees: string | null;
 }
@@ -359,12 +335,11 @@ export type TypeVerrouillage = 'ANIMATEUR' | 'STAND' | 'JOUR' | 'CRENEAU' | 'ANI
 /**
  * A validated part of the planning the solver must not touch again
  * (`/api/verrouillages`). Exactly one target field is set, matching `type`,
- * and the lock only applies to its own `groupeCreneauId`.
+ * and the lock belongs to its edition like the rest of the referential.
  */
 export interface VerrouillagePlanning {
   id: string;
   type: TypeVerrouillage;
-  groupeCreneauId: string;
   animateurId: string | null;
   standId: string | null;
   creneauId: number | null;
@@ -607,13 +582,6 @@ export interface ParametresSolveur {
   dureeResolutionSecondes: number;
 }
 
-export interface DecoupageRequest {
-  groupeSourceId: string;
-  groupeCibleId: string;
-  nomGroupeCible: string;
-  activerGroupeCible: boolean;
-}
-
 /** Ordre public ceiling for adults, in hours (Code du travail art. L3121-20). */
 export const DUREE_HEBDOMADAIRE_MAX_HEURES = 48;
 
@@ -634,31 +602,9 @@ export interface JobView {
   finishedAt: string | null;
   elapsedSeconds: number;
   error: string | null;
-  /** SOLVE_FILE progress (« groupe i/N ») — null on other job types. */
-  groupeCourantNom: string | null;
-  groupeCourant: number | null;
-  totalGroupes: number | null;
   result: unknown;
 }
 
-/**
- * One line of a SOLVE_FILE job's result: what happened to each groupe de
- * créneaux, in queue order. `statut` is RESOLU, INTERROMPU (cancelled
- * mid-solve, partial result captured), ECHEC (`erreur` says why) or
- * NON_TRAITE (cancelled before its turn).
- */
-export interface GroupeFileResultat {
-  groupeId: string;
-  nom: string;
-  actif: boolean;
-  statut: 'RESOLU' | 'INTERROMPU' | 'ECHEC' | 'NON_TRAITE';
-  score: string | null;
-  affectations: number;
-  /** Warm-start seed size: 0 means this group solved from scratch. */
-  postesReamorces: number;
-  dureeSecondes: number;
-  erreur: string | null;
-}
 
 /**
  * One festival day of `GET /api/staffing`: what its generated seats demand.
@@ -738,7 +684,7 @@ export interface ImportSummary {
  * section — `null`/absent otherwise, in which case the import ran plain.
  */
 export interface ImportScenarioResult {
-  decoupageAutoGroupeCibleNom: string | null;
+  decoupageAuto: boolean;
 }
 
 /** `/api/config`: observability keys, blank when the matching feature is disabled server-side. */
@@ -759,8 +705,6 @@ export interface PlanSnapshot {
   id: number;
   libelle: string;
   automatique: boolean;
-  groupeCreneauId: string | null;
-  groupeNom: string | null;
   score: string | null;
   nombreAffectations: number;
   creeLe: string | null;
@@ -826,8 +770,6 @@ export interface EspaceAnimateurView {
   prenom: string;
   nom: string;
   planningResoluLe: string | null;
-  /** Name of the groupe de créneaux the displayed planning belongs to, `null` before any resolution. */
-  groupeCreneauNom: string | null;
   /** False turns the espace read-only: the foire is closed by the admin (enforced server-side too). */
   foireOuverte: boolean;
   postes: PosteAnimateurView[];
@@ -856,10 +798,6 @@ export interface DemandeEchangeView {
   /** Business descriptions of the hard constraints the échange would break. */
   contraintesViolees: string[];
   commentaireAdmin: string | null;
-  /** True when the demande belongs to another groupe de créneaux than the persisted planning. */
-  horsGroupe: boolean;
-  /** Name of that other groupe, `null` unless `horsGroupe`. */
-  groupeCreneauNom: string | null;
   creeLe: string;
   decideLe: string | null;
 }
@@ -878,7 +816,6 @@ export interface ImpactImport {
   stands: number;
   postes: number;
   planningResolu: boolean;
-  groupeResoluNom: string | null;
   demandesEchange: number;
   demandesEnAttente: number;
   verrous: number;

@@ -70,7 +70,7 @@ export class DataSetupPage {
   private readonly planningState = inject(PlanningStateService);
   private readonly referenceData = inject(ReferenceDataStore);
   // Seeding, emptying or replacing the database moves both the resolved
-  // groupe de créneaux and the "data edited since the last solve" stamp:
+  // resolution stamp and the "data edited since the last solve" hint:
   // refresh the store the toolbar warnings read, or they keep showing the
   // previous dataset.
   private readonly resolution = inject(PlanningResolutionStore);
@@ -238,16 +238,15 @@ export class DataSetupPage {
   }
 
   // Surfaces the scenario's decoupageAuto section, when present: the import
-  // silently switched the active timeslot group to the auto-generated
-  // vacations, so the operator is told which one without having to check the
-  // Découpage page themselves.
+  // replaced the file's amplitudes with the generated vacations in place, so
+  // the operator is told without having to check the Découpage page.
   private notifyDecoupageAuto(result: ImportScenarioResult | null): void {
-    if (!result?.decoupageAutoGroupeCibleNom) {
+    if (!result?.decoupageAuto) {
       return;
     }
     this.notifications.notify({
       title: $localize`:@@dataSetup.decoupageAuto.applied:Découpage automatique appliqué`,
-      message: $localize`:@@dataSetup.decoupageAuto.appliedHint:Le groupe de créneaux « ${result.decoupageAutoGroupeCibleNom}:groupeCibleNom: » a été généré et activé.`,
+      message: $localize`:@@dataSetup.decoupageAuto.appliedHint:Les amplitudes du scénario ont été découpées : l'édition porte désormais les vacations générées.`,
       variant: 'info'
     });
   }
@@ -314,7 +313,7 @@ export class DataSetupPage {
   }
 
   // A seed, reset or bulk import invalidates whatever planning was displayed,
-  // and moves both the resolved groupe de créneaux and the "data edited since
+  // and moves both the resolution stamp and the "data edited since
   // the last solve" stamp the toolbar warnings are computed from. A scenario
   // may also have pinned its own solver duration (see import-scenario), so
   // the field on this page is refreshed too — harmless when unchanged.
@@ -347,7 +346,7 @@ export function messageImpactImport(impact: ImpactImport | null, intitule: strin
     );
     if (impact.planningResolu) {
       lignes.push(
-        $localize`:@@dataSetup.impact.planning:Le planning résolu du groupe « ${impact.groupeResoluNom ?? '?'}:groupe: » (${impact.postes}:postes: affectation(s)) sera effacé, ainsi que ${impact.verrous}:verrous: verrouillage(s) ; un instantané sera enregistré automatiquement avant l'import.`
+        $localize`:@@dataSetup.impact.planning:Le planning résolu (${impact.postes}:postes: affectation(s)) sera effacé, ainsi que ${impact.verrous}:verrous: verrouillage(s) ; un instantané sera enregistré automatiquement avant l'import.`
       );
     }
     if (impact.demandesEchange > 0) {

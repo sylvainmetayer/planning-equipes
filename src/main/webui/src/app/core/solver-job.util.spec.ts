@@ -24,10 +24,7 @@ describe('elapsedSeconds', () => {
     label: 'Timefold solve',
     startedAtMs: 10_000,
     mine: true,
-    secondsLimit: 180,
-    groupeCourantNom: null,
-    groupeCourant: null,
-    totalGroupes: null
+    secondsLimit: 180
   };
 
   it('rounds the elapsed time to whole seconds', () => {

@@ -126,7 +126,7 @@ public class AnimateurMcpTools {
 
     /** Same derivation as {@code PlanningService.construireDepuisReferenceData}: the earliest date of the active groupe de créneaux. */
     private LocalDate dateReference() {
-        return referenceDataService.listCreneauxGroupeActif().stream()
+        return referenceDataService.listCreneaux().stream()
                 .map(Creneau::getDate)
                 .filter(Objects::nonNull)
                 .min(LocalDate::compareTo)

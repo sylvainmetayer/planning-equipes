@@ -78,29 +78,6 @@ public class SolverJobResource {
         }
     }
 
-    /**
-     * The "résoudre tous les groupes" queue (issue #167): one sequential solve
-     * per groupe de créneaux flagged for it, warm-started from each group's
-     * last snapshot, the active group last. Same global lock as any other job
-     * (409 when busy); cancel through the ordinary {@code /jobs/{id}/cancel},
-     * which keeps the current group's partial result and skips the rest.
-     */
-    @POST
-    @Path("/solve/file/async")
-    @Consumes(MediaType.WILDCARD)
-    public Response solveFileAsync(@QueryParam("seconds") Long secondsLimit) {
-        try {
-            SolverJob job = solverJobService.submitSolveFile(secondsLimit);
-            return Response.accepted(JobView.withoutResult(job)).build();
-        } catch (SolverBusyException e) {
-            return busy(e);
-        } catch (IllegalArgumentException e) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(Map.of("message", e.getMessage()))
-                    .build();
-        }
-    }
-
     /** Server-side-built counterpart of {@link #analyzeAsync}. */
     @POST
     @Path("/solve/analyze/async/reference-data")
@@ -182,10 +159,6 @@ public class SolverJobResource {
                 .orElseGet(() -> Response.status(Response.Status.NOT_FOUND).build());
     }
 
-    /**
-     * {@code groupeCourantNom}/{@code groupeCourant}/{@code totalGroupes} are
-     * the {@code SOLVE_FILE} progress (« groupe i/N »), null on other job types.
-     */
     public record JobView(
             String id,
             String type,
@@ -196,9 +169,6 @@ public class SolverJobResource {
             Instant finishedAt,
             long elapsedSeconds,
             String error,
-            String groupeCourantNom,
-            Integer groupeCourant,
-            Integer totalGroupes,
             Object result) {
 
         public static JobView withoutResult(SolverJob job) {
@@ -220,9 +190,6 @@ public class SolverJobResource {
                     job.getFinishedAt(),
                     job.getElapsedSeconds(),
                     job.getError(),
-                    job.getGroupeCourantNom(),
-                    job.getGroupeCourant(),
-                    job.getTotalGroupes(),
                     result);
         }
     }

@@ -5,32 +5,20 @@
 
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { ApiService } from './api.service';
-import { GroupeCreneau, TypeVerrouillage, VerrouillagePlanning } from './models';
+import { TypeVerrouillage, VerrouillagePlanning } from './models';
 
 @Injectable({ providedIn: 'root' })
 export class VerrouillageStore {
-  /** Every lock, all groupes de créneaux included. */
+  /** Every lock of the edition — the ones the next solve applies. */
   readonly verrouillages = signal<VerrouillagePlanning[]>([]);
-  readonly groupeActifId = signal<string | null>(null);
 
-  /**
-   * The locks the next solve will actually apply: those of the active groupe
-   * de créneaux. The others stay visible on the management page, flagged as
-   * dormant, rather than silently disappearing.
-   */
-  readonly actifs = computed(() =>
-    this.verrouillages().filter((verrouillage) => verrouillage.groupeCreneauId === this.groupeActifId())
-  );
+  /** Alias kept for the read helpers below: every lock applies now. */
+  readonly actifs = computed(() => this.verrouillages());
 
   private readonly api = inject(ApiService);
 
   async reload(): Promise<void> {
-    const [verrouillages, groupes] = await Promise.all([
-      this.api.get<VerrouillagePlanning[]>('/api/verrouillages'),
-      this.api.get<GroupeCreneau[]>('/api/groupes-creneaux')
-    ]);
-    this.verrouillages.set(verrouillages);
-    this.groupeActifId.set(groupes.find((groupe) => groupe.actif)?.id ?? null);
+    this.verrouillages.set(await this.api.get<VerrouillagePlanning[]>('/api/verrouillages'));
   }
 
   async create(verrouillage: Partial<VerrouillagePlanning> & { type: TypeVerrouillage }): Promise<void> {

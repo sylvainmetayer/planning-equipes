@@ -1,5 +1,4 @@
-// Plan snapshots (issue #138): the saved plans of the current edition, shared
-// between the management screen and the mismatch banner's "restore" action.
+// Plan snapshots (issue #138): the saved plans of the current edition.
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
@@ -17,30 +16,10 @@ export class ReferencesManquantesError extends Error {
   }
 }
 
-/** The snapshot belongs to another groupe de créneaux than the active one; retry with `forcer` after confirming. */
-export class GroupeDifferentError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'GroupeDifferentError';
-  }
-}
-
 @Injectable({ providedIn: 'root' })
 export class PlanSnapshotStore {
   readonly snapshots = signal<PlanSnapshot[]>([]);
   readonly chargement = signal(false);
-
-  /** Most recent snapshot per groupe de créneaux, for the mismatch banner. */
-  readonly parGroupe = computed(() => {
-    const parGroupe = new Map<string, PlanSnapshot>();
-    // `snapshots` comes back newest first, so the first one seen for a group wins.
-    for (const snapshot of this.snapshots()) {
-      if (snapshot.groupeCreneauId && !parGroupe.has(snapshot.groupeCreneauId)) {
-        parGroupe.set(snapshot.groupeCreneauId, snapshot);
-      }
-    }
-    return parGroupe;
-  });
 
   private readonly api = inject(ApiService);
 
@@ -64,25 +43,19 @@ export class PlanSnapshotStore {
   }
 
   /**
-   * Puts a snapshot back. Throws {@link GroupeDifferentError} when the server
-   * refuses because the snapshot belongs to another groupe de créneaux than
-   * the active one (retry with `forcer` after an explicit confirmation), and
-   * {@link ReferencesManquantesError} when ids named by the snapshot no longer
-   * exist — nothing was written in either case.
+   * Puts a snapshot back. Throws {@link ReferencesManquantesError} when ids
+   * named by the snapshot no longer exist — nothing was written.
    */
-  async restaurer(id: number, forcer = false): Promise<RestaurationSnapshot> {
+  async restaurer(id: number): Promise<RestaurationSnapshot> {
     try {
       // The raw HttpErrorResponse, not the flattened Error: the 409 body
       // carries the ids the snapshot names and the referential has lost, and
       // that list is the whole point of the message shown to the user.
       return await this.api.postPreservingHttpError<RestaurationSnapshot>(
-        `/api/planning/snapshots/${id}/restore${forcer ? '?forcer=true' : ''}`,
+        `/api/planning/snapshots/${id}/restore`,
         {}
       );
     } catch (error) {
-      if (corpsErreur(error)?.groupeDifferent === true) {
-        throw new GroupeDifferentError(messageErreur(error));
-      }
       const references = referencesManquantes(error);
       if (references && references.length > 0) {
         throw new ReferencesManquantesError(messageErreur(error), references);
@@ -105,12 +78,12 @@ function messageErreur(error: unknown): string {
 
 function corpsErreur(
   error: unknown
-): { message?: string; referencesManquantes?: unknown[]; groupeDifferent?: boolean } | null {
+): { message?: string; referencesManquantes?: unknown[] } | null {
   if (!(error instanceof HttpErrorResponse)) {
     return null;
   }
   const body: unknown = error.error;
   return body && typeof body === 'object'
-    ? (body as { message?: string; referencesManquantes?: unknown[]; groupeDifferent?: boolean })
+    ? (body as { message?: string; referencesManquantes?: unknown[] })
     : null;
 }

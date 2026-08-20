@@ -66,7 +66,7 @@ function animateur(id: string): Animateur {
 }
 
 function creneau(id: number, date: string): Creneau {
-  return { id, jour: 1, date, heureDebut: '14:00', heureFin: '18:00', groupe: null };
+  return { id, jour: 1, date, heureDebut: '14:00', heureFin: '18:00' };
 }
 
 function poste(id: string, standRef: Stand, creneauRef: Creneau, animateurRef: Animateur | null): PosteAffectation {

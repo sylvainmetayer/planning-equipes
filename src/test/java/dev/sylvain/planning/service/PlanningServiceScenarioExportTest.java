@@ -16,7 +16,6 @@ import org.yaml.snakeyaml.Yaml;
 
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.DecoupageAutoConfig;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
@@ -190,7 +189,7 @@ class PlanningServiceScenarioExportTest {
                 List.of(animateur), List.of(stand), List.of(creneau), List.of(),
                 List.of(new ReferenceDataService.TypologieItem("STRATEGIE", "Stratégie", true)),
                 List.of(new Emplacement("PLACE", "Place du Drapeau", 46.6487, 2.2503)),
-                legaux, decoupage, new ParametresSolveur(1800), null));
+                legaux, decoupage, new ParametresSolveur(1800)));
         Map<String, Object> parsed = new Yaml().load(yaml);
 
         assertThat((Map<String, Object>) parsed.get("parametresSolveur"))
@@ -228,21 +227,15 @@ class PlanningServiceScenarioExportTest {
         assertThat(((List<Map<String, Object>>) parsed.get("stands")).get(0)).containsEntry("emplacementId", "PLACE");
     }
 
-    /**
-     * A scenario whose planning comes from an auto-découpage pins the découpage
-     * instead of a seat list: the vacations (and therefore the créneau ids the
-     * postes would reference) only exist once the import has re-run it.
-     */
+    /** A null seat list leaves the {@code postes:} section out entirely. */
     @Test
-    void aDecoupageAutoScenarioPinsNoSeatList() {
+    void aNullSeatListPinsNoPostesSection() {
         String yaml = PlanningService.construireScenarioYaml(new PlanningService.ScenarioExport(
-                List.of(animateur), List.of(stand), List.of(creneau), null, List.of(), List.of(), null, null, null,
-                new DecoupageAutoConfig("Amplitudes", "Vacations")));
+                List.of(animateur), List.of(stand), List.of(creneau), null, List.of(), List.of(), null, null, null));
         Map<String, Object> parsed = new Yaml().load(yaml);
 
         assertThat(parsed).doesNotContainKey("postes");
-        assertThat(parsed.get("decoupageAuto")).isEqualTo(
-                Map.of("groupeSourceNom", "Amplitudes", "groupeCibleNom", "Vacations"));
+        assertThat(parsed).doesNotContainKey("decoupageAuto");
     }
 
     @Test

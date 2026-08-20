@@ -95,15 +95,6 @@
         @if (demande.motif) {
           <p class="espace-demande-motif">{{ demande.motif }}</p>
         }
-        @if (demande.horsGroupe) {
-          <p class="espace-demande-horsgroupe">
-            <mat-icon inline>layers</mat-icon>
-            <span i18n="@@espace.echanges.horsGroupe">
-              Demande faite sur un autre planning ({{ demande.groupeCreneauNom }}) : elle ne
-              s'applique plus au planning affiché.
-            </span>
-          </p>
-        }
         @if (demande.prevalidationOk === false && demande.statut === 'PROPOSEE') {
           <div class="espace-demande-alerte">
             <mat-icon inline>warning</mat-icon>

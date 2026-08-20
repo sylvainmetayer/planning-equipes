@@ -8,7 +8,7 @@
   <mat-card-header>
     <h2 mat-card-title i18n="@@solver.volumetry.title">Volumétrie du problème</h2>
     <mat-card-subtitle i18n="@@solver.volumetry.hint">
-      Données de référence du groupe de créneaux actif, mises à jour dès qu'elles changent.
+      Données de référence de l'édition, mises à jour dès qu'elles changent.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
@@ -57,12 +57,6 @@
       <mat-icon>play_arrow</mat-icon>
       <ng-container i18n="@@solver.solve">Résoudre avec Timefold</ng-container>
     </button>
-    <button matButton="tonal" [disabled]="solverBusy() || groupesFile().length === 0" (click)="onSolveFile()"
-            i18n-matTooltip="@@solver.solveFile.tooltip"
-            matTooltip="Résout successivement chaque groupe de créneaux marqué « résoudre en file », le groupe actif en dernier. Les groupes non actifs sont conservés en instantanés, prêts pour une bascule sans re-résolution.">
-      <mat-icon>playlist_play</mat-icon>
-      <ng-container i18n="@@solver.solveFileBouton">Résoudre tous les groupes ({{ groupesFile().length }})</ng-container>
-    </button>
     <button matButton="tonal" [disabled]="!solverBusy() || arretEnCours()" (click)="onArreterSolveur()">
       <mat-icon>stop_circle</mat-icon>
       <ng-container i18n="@@solver.arreter">Arrêter le solveur</ng-container>
@@ -105,41 +99,6 @@
       </p>
     </mat-card-content>
   }
-  @if (groupesExclusFile() > 0) {
-    <mat-card-content>
-      <p class="calendar-meta" i18n="@@solver.fileExclus">
-        {{ groupesExclusFile() }} groupe(s) de créneaux exclu(s) de la file (amplitudes non découpées ou brouillons) —
-        modifiable dans la gestion des groupes, page Créneaux.
-      </p>
-    </mat-card-content>
-  }
-  @if (fileResultats(); as resultats) {
-    <mat-card-content>
-      <p class="calendar-meta" i18n="@@solver.fileResultatsTitre">Dernière file de résolution :</p>
-      <table class="file-resultats">
-        <tbody>
-          @for (resultat of resultats; track resultat.groupeId) {
-            <tr>
-              <td>{{ resultat.nom }}@if (resultat.actif) {&nbsp;<ng-container i18n="@@solver.fileResultatActif">(groupe actif)</ng-container>}</td>
-              <td>{{ resultat.statut }}</td>
-              <td>{{ resultat.score ?? '—' }}</td>
-              <td>
-                @if (resultat.statut === 'RESOLU' || resultat.statut === 'INTERROMPU') {
-                  @if (resultat.postesReamorces > 0) {
-                    <ng-container i18n="@@solver.fileResultatReamorce">réamorcé ({{ resultat.postesReamorces }} postes)</ng-container>
-                  } @else {
-                    <ng-container i18n="@@solver.fileResultatFroid">à froid</ng-container>
-                  }
-                }
-              </td>
-              <td i18n="@@solver.fileResultatDuree">{{ resultat.dureeSecondes }} s</td>
-              <td>{{ resultat.erreur ?? '' }}</td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </mat-card-content>
-  }
   @if (lastRunAt()) {
     <mat-card-content>
       <p class="calendar-meta" i18n="@@solver.lastRun">Dernière exécution : {{ formattedLastRun() }}</p>
@@ -147,12 +106,6 @@
   }
   @if (resolution.resolution()?.solved) {
     <mat-card-content>
-      <p class="calendar-meta" [class.groupe-mismatch]="groupeMismatch()">
-        <ng-container i18n="@@solver.lastRunGroupe">Groupe de créneaux résolu : {{ resolvedGroupeNom() }}</ng-container>
-        @if (groupeMismatch()) {
-          <ng-container i18n="@@solver.lastRunGroupeStale"> — ne correspond plus au groupe actif, relancez le solveur pour un résultat à jour</ng-container>
-        }
-      </p>
       @if (dataStale()) {
         <p class="calendar-meta data-stale-hint" i18n="@@solver.dataStale">
           Des données de référence ont été modifiées depuis cette résolution ; le résultat affiché peut ne plus être à jour.

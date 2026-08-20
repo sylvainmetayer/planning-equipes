@@ -39,16 +39,12 @@
               <mat-chip
                 class="snapshot-auto-chip"
                 i18n-matTooltip="@@snapshots.autoTooltip"
-                matTooltip="Pris automatiquement avant une résolution ; les plus anciens sont purgés, sauf le dernier de chaque groupe de créneaux."
+                matTooltip="Pris automatiquement avant une résolution ; les plus anciens sont purgés."
                 i18n="@@snapshots.auto"
                 >auto</mat-chip
               >
             }
           </td>
-        </ng-container>
-        <ng-container matColumnDef="groupe">
-          <th mat-header-cell *matHeaderCellDef i18n="@@snapshots.column.groupe">Groupe de créneaux</th>
-          <td mat-cell *matCellDef="let snapshot">{{ groupeLabel(snapshot) }}</td>
         </ng-container>
         <ng-container matColumnDef="score">
           <th mat-header-cell *matHeaderCellDef i18n="@@snapshots.column.score">Score</th>
@@ -116,22 +112,9 @@
             <th mat-header-cell *matHeaderCellDef i18n="@@snapshots.column.libelle">Instantané</th>
             <td mat-cell *matCellDef="let snapshot">
               {{ snapshot.libelle }}
-              @if (dernierDuGroupe(snapshot)) {
-                <mat-chip
-                  class="snapshot-auto-chip"
-                  i18n-matTooltip="@@snapshots.dernierGroupeTooltip"
-                  matTooltip="Dernier instantané de ce groupe de créneaux : jamais purgé tant que le groupe existe, c'est lui qu'une bascule de groupe restaure."
-                  i18n="@@snapshots.dernierGroupe"
-                  >dernier du groupe</mat-chip
-                >
-              }
             </td>
           </ng-container>
-          <ng-container matColumnDef="groupeAuto">
-            <th mat-header-cell *matHeaderCellDef i18n="@@snapshots.column.groupe">Groupe de créneaux</th>
-            <td mat-cell *matCellDef="let snapshot">{{ groupeLabel(snapshot) }}</td>
-          </ng-container>
-          <ng-container matColumnDef="scoreAuto">
+            <ng-container matColumnDef="scoreAuto">
             <th mat-header-cell *matHeaderCellDef i18n="@@snapshots.column.score">Score</th>
             <td mat-cell *matCellDef="let snapshot">{{ snapshot.score || '—' }}</td>
           </ng-container>

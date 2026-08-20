@@ -93,9 +93,9 @@ public class ScenarioMcpTools {
 
     private static ImportResult toImportResult(Response response) {
         if (response.getEntity() instanceof ImportScenarioResult resultat) {
-            return new ImportResult(true, resultat.decoupageAutoGroupeCibleNom());
+            return new ImportResult(true, resultat.decoupageAuto());
         }
-        return new ImportResult(true, null);
+        return new ImportResult(true, false);
     }
 
     private static String messageErreur(Response response) {
@@ -110,7 +110,7 @@ public class ScenarioMcpTools {
      * @param decoupageAutoGroupeCibleNom nom du groupe de créneaux généré et activé quand le scénario portait
      *                                    une section {@code decoupageAuto:}, null sinon
      */
-    public record ImportResult(boolean importe, String decoupageAutoGroupeCibleNom) {
+    public record ImportResult(boolean importe, boolean decoupageAuto) {
     }
 
     public record ValidationResult(boolean valide, List<String> erreurs) {

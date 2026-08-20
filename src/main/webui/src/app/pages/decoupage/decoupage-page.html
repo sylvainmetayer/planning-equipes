@@ -2,7 +2,7 @@
   <mat-card-header>
     <h1 mat-card-title i18n="@@decoupage.intro.title">Découpage automatique en vacations</h1>
     <mat-card-subtitle i18n="@@decoupage.intro.subtitle">
-      À partir d'un groupe d'amplitudes (une seule fenêtre d'ouverture par jour, ex. un scénario "continu"), génère automatiquement des vacations de travail plus courtes et chevauchantes, jamais au-dessus du seuil légal de pause — sans créneau à saisir à la main.
+      À partir des créneaux actuels de l'édition lus comme des amplitudes (une seule fenêtre d'ouverture par jour, ex. un scénario "continu"), génère automatiquement des vacations de travail plus courtes et chevauchantes, jamais au-dessus du seuil légal de pause — sans créneau à saisir à la main. Le découpage remplace les créneaux en place : pour re-découper avec d'autres paramètres, ré-importez le scénario source.
     </mat-card-subtitle>
   </mat-card-header>
 </mat-card>
@@ -113,19 +113,15 @@
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <h2 mat-card-title i18n="@@decoupage.generer.title">Générer un découpage</h2>
+    <h2 mat-card-title i18n="@@decoupage.generer.title">Générer le découpage</h2>
+    <mat-card-subtitle i18n="@@decoupage.generer.hint">
+      Les créneaux actuels de l'édition sont lus comme des amplitudes ; les vacations générées les remplacent, et le
+      planning résolu est effacé avec eux.
+    </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
-    <form class="form-grid">
-      <mat-form-field appearance="outline">
-        <mat-label i18n="@@decoupage.field.groupeSource">Groupe source (amplitudes)</mat-label>
-        <mat-select [ngModel]="groupeSourceId()" name="groupeSourceId" (ngModelChange)="setGroupeSource($event)">
-          @for (groupe of store.groupesCreneaux(); track groupe.id) {
-            <mat-option [value]="groupe.id">{{ groupe.nom || groupe.id }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-      <button matButton type="button" [disabled]="!groupeSourceId() || previewLoading()" (click)="previsualiser()">
+    <div class="card-actions">
+      <button matButton type="button" [disabled]="previewLoading()" (click)="previsualiser()">
         @if (previewLoading()) {
           <mat-progress-spinner diameter="18" mode="indeterminate" />
         } @else {
@@ -133,7 +129,15 @@
         }
         <ng-container i18n="@@decoupage.preview">Prévisualiser</ng-container>
       </button>
-    </form>
+      <button matButton="filled" type="button" [disabled]="genererLoading()" (click)="genererDecoupage()">
+        @if (genererLoading()) {
+          <mat-progress-spinner diameter="18" mode="indeterminate" />
+        } @else {
+          <mat-icon>auto_awesome</mat-icon>
+        }
+        <ng-container i18n="@@decoupage.generer.submit">Générer les vacations (remplace les créneaux)</ng-container>
+      </button>
+    </div>
 
     @if (resume().length > 0) {
       <div class="table-wrapper">
@@ -148,33 +152,5 @@
         }
       </div>
     }
-
-    <form class="form-grid" (ngSubmit)="genererDecoupage()">
-      <mat-form-field appearance="outline">
-        <mat-label i18n="@@decoupage.field.groupeCibleExistant">Groupe cible existant (à régénérer)</mat-label>
-        <mat-select [ngModel]="groupeCibleExistantId()" name="groupeCibleExistantId" (ngModelChange)="setGroupeCibleExistant($event)">
-          <mat-option [value]="null" i18n="@@decoupage.field.groupeCibleNouveau">— Créer un nouveau groupe —</mat-option>
-          @for (groupe of groupesCiblePossibles(); track groupe.id) {
-            <mat-option [value]="groupe.id">{{ groupe.nom || groupe.id }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-      <mat-form-field appearance="outline">
-        <mat-label i18n="@@decoupage.field.nomGroupeCible">Nom du groupe cible</mat-label>
-        <input matInput name="nomGroupeCible" [ngModel]="nomGroupeCible()" (ngModelChange)="nomGroupeCible.set($event)" />
-      </mat-form-field>
-      <mat-checkbox [ngModel]="activerGroupeCible()" name="activerGroupeCible" (ngModelChange)="activerGroupeCible.set($event)"
-                    i18n="@@decoupage.field.activer">
-        Activer ce groupe immédiatement après génération
-      </mat-checkbox>
-      <button matButton="filled" type="submit" [disabled]="!groupeSourceId() || !nomGroupeCible().trim() || genererLoading()">
-        @if (genererLoading()) {
-          <mat-progress-spinner diameter="18" mode="indeterminate" />
-        } @else {
-          <mat-icon>auto_awesome</mat-icon>
-        }
-        <ng-container i18n="@@decoupage.generer.submit">Générer les vacations</ng-container>
-      </button>
-    </form>
   </mat-card-content>
 </mat-card>

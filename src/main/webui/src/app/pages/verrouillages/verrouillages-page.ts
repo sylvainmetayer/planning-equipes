@@ -41,7 +41,6 @@ function typeLabel(value: TypeVerrouillage): string {
 interface VerrouillageRow extends VerrouillagePlanning {
   typeLabel: string;
   cibleLabel: string;
-  /** False for a lock recorded on another groupe de créneaux: kept, but dormant. */
   actif: boolean;
 }
 
@@ -70,7 +69,7 @@ interface VerrouillageRow extends VerrouillagePlanning {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class VerrouillagesPage {
-  protected readonly columns = ['type', 'cible', 'raison', 'groupe', 'actions'];
+  protected readonly columns = ['type', 'cible', 'raison', 'actions'];
   protected readonly types = TYPE_VALUES.map((value) => ({ value, label: typeLabel(value) }));
   protected readonly store = inject(ReferenceDataStore);
   protected readonly verrous = inject(VerrouillageStore);
@@ -95,7 +94,7 @@ export class VerrouillagesPage {
       ...verrouillage,
       typeLabel: typeLabel(verrouillage.type),
       cibleLabel: this.cibleLabel(verrouillage),
-      actif: verrouillage.groupeCreneauId === this.verrous.groupeActifId()
+      actif: true
     }))
   );
 

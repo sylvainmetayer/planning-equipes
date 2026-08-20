@@ -31,7 +31,6 @@ import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.FenetreHoraire;
-import dev.sylvain.planning.domain.GroupeCreneau;
 import dev.sylvain.planning.domain.HoraireStand;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.ModeHoraire;
@@ -74,7 +73,6 @@ public class ReferenceDataRepository {
     EditionContext editionContext;
 
     /** Timeslot group seeded by V10 in every {@code edition}, and the fallback for callers that name none. */
-    private static final String GROUPE_CRENEAU_DEFAUT_ID = "DEFAUT";
 
     /** Edition every statement below reads and writes. */
     private String editionId() {
@@ -471,72 +469,34 @@ public class ReferenceDataRepository {
     /* ------------------------------ Timeslots ------------------------------ */
 
     private static final String SELECT_CRENEAU_SQL =
-            "SELECT c.id, c.date_creneau, c.heure_debut, c.heure_fin, c.famille, c.couverture_pause, "
-                    + "g.id AS groupe_creneau_id, g.nom AS groupe_nom, g.actif AS groupe_actif "
-                    + "FROM creneau c JOIN groupe_creneau g "
-                    + "ON g.edition_id = c.edition_id AND g.id = c.groupe_creneau_id "
-                    + "WHERE c.edition_id = ?";
+            "SELECT c.id, c.date_creneau, c.heure_debut, c.heure_fin, c.famille, c.couverture_pause "
+                    + "FROM creneau c WHERE c.edition_id = ?";
 
     public List<Creneau> listCreneaux() {
         return listCreneaux(SELECT_CRENEAU_SQL + " ORDER BY c.id");
     }
 
-    /** Timeslots of the currently active group only — what the solver builds its problem from. */
-    public List<Creneau> listCreneauxGroupeActif() {
-        return listCreneaux(SELECT_CRENEAU_SQL + " AND g.actif ORDER BY c.id");
-    }
-
-    /** Timeslots of one specific group, active or not — used by the découpage generator to read a source "amplitudes" group. */
-    public List<Creneau> listCreneauxParGroupe(String groupeCreneauId) {
-        Map<Long, Creneau> byId = new LinkedHashMap<>();
-        try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement ps = prepareScoped(connection,
-                    SELECT_CRENEAU_SQL + " AND g.id = ? ORDER BY c.id")) {
-                ps.setString(2, groupeCreneauId);
-                try (ResultSet rs = ps.executeQuery()) {
-                    while (rs.next()) {
-                        Creneau creneau = readCreneau(rs);
-                        byId.put(creneau.getId(), creneau);
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            throw new IllegalStateException("Failed to list timeslots for group " + groupeCreneauId, e);
-        }
-        List<Creneau> creneaux = new ArrayList<>(byId.values());
-        Creneau.assignerJours(creneaux);
-        creneaux.sort(Comparator.comparingInt(Creneau::getJour)
-                .thenComparing(Creneau::getHeureDebut, Comparator.nullsLast(Comparator.naturalOrder())));
-        return creneaux;
-    }
-
     /**
-     * Replaces every créneau of one specific group (source-amplitudes or
-     * generated-vacations), leaving every other group untouched. Used by the
-     * découpage generator to (re)materialize a target group's vacations from
-     * a source group's amplitudes.
+     * Replaces every créneau of the edition — how the découpage materializes
+     * its vacations in place (issue #172: the amplitudes it read are consumed,
+     * the edition only ever holds one grid). The persisted plan goes with the
+     * créneaux it referenced.
      */
-    public void replaceCreneauxDuGroupe(String groupeCreneauId, List<Creneau> creneaux) {
+    public void replaceCreneaux(List<Creneau> creneaux) {
         try (Connection connection = dataSource.getConnection()) {
             boolean previousAutoCommit = connection.getAutoCommit();
             connection.setAutoCommit(false);
             try {
                 try (PreparedStatement ps = prepareScoped(connection,
-                        "DELETE FROM poste_affectation WHERE edition_id = ? AND creneau_id IN "
-                                + "(SELECT id FROM creneau WHERE edition_id = ? AND groupe_creneau_id = ?)")) {
-                    ps.setString(2, editionId());
-                    ps.setString(3, groupeCreneauId);
+                        "DELETE FROM poste_affectation WHERE edition_id = ?")) {
                     ps.executeUpdate();
                 }
                 try (PreparedStatement ps = prepareScoped(connection,
-                        "DELETE FROM creneau WHERE edition_id = ? AND groupe_creneau_id = ?")) {
-                    ps.setString(2, groupeCreneauId);
+                        "DELETE FROM creneau WHERE edition_id = ?")) {
                     ps.executeUpdate();
                 }
-                GroupeCreneau groupe = new GroupeCreneau(groupeCreneauId, null, false);
                 for (Creneau creneau : creneaux) {
                     creneau.setId(null);
-                    creneau.setGroupe(groupe);
                     insertCreneauTx(connection, creneau);
                 }
                 connection.commit();
@@ -547,14 +507,14 @@ public class ReferenceDataRepository {
                 connection.setAutoCommit(previousAutoCommit);
             }
         } catch (SQLException e) {
-            throw new IllegalStateException("Failed to replace timeslots for group " + groupeCreneauId, e);
+            throw new IllegalStateException("Failed to replace timeslots", e);
         }
     }
 
     /**
      * Maps one {@code SELECT_CRENEAU_SQL} row, with {@code jour} left at 0 —
-     * it is never stored and is recomputed per group by
-     * {@link Creneau#assignerJours} after loading.
+     * it is never stored and is recomputed by {@link Creneau#assignerJours}
+     * after loading.
      */
     private static Creneau readCreneau(ResultSet rs) throws SQLException {
         Creneau creneau = new Creneau(
@@ -565,8 +525,6 @@ public class ReferenceDataRepository {
                 rs.getObject("heure_fin", LocalTime.class));
         creneau.setFamille(rs.getInt("famille"));
         creneau.setCouverturePause(rs.getBoolean("couverture_pause"));
-        creneau.setGroupe(new GroupeCreneau(rs.getString("groupe_creneau_id"),
-                rs.getString("groupe_nom"), rs.getBoolean("groupe_actif")));
         return creneau;
     }
 
@@ -583,14 +541,10 @@ public class ReferenceDataRepository {
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to list timeslots", e);
         }
-        // `jour` is never stored — it's computed per group from each group's
-        // earliest date (see Creneau.assignerJours), so consecutive calendar
-        // days always yield consecutive day numbers even across a gap day.
-        Map<String, List<Creneau>> parGroupe = new LinkedHashMap<>();
-        for (Creneau creneau : byId.values()) {
-            parGroupe.computeIfAbsent(creneau.getGroupe().getId(), k -> new ArrayList<>()).add(creneau);
-        }
-        parGroupe.values().forEach(Creneau::assignerJours);
+        // `jour` is never stored — it's computed from the edition's earliest
+        // date (see Creneau.assignerJours), so consecutive calendar days
+        // always yield consecutive day numbers even across a gap day.
+        Creneau.assignerJours(byId.values());
         // Chronological order (day, then start time), not `ORDER BY id`: ids like
         // J1.../J10... sort lexicographically ("J10-MATIN" before "J2-MATIN"), and
         // even within one day "APREM"/"MATIN"/"SOIREE" sort alphabetically instead
@@ -644,85 +598,6 @@ public class ReferenceDataRepository {
 
     public void deleteCreneau(Long id) {
         deleteLong("DELETE FROM creneau WHERE edition_id = ? AND id = ?", id);
-    }
-
-    /* -------------------------- Timeslot groups ----------------------------- */
-
-    public List<GroupeCreneau> listGroupesCreneaux() {
-        List<GroupeCreneau> groupes = new ArrayList<>();
-        try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection,
-                        "SELECT id, nom, actif, groupe_source_id, resoudre_en_file FROM groupe_creneau "
-                                + "WHERE edition_id = ? ORDER BY nom");
-                ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                groupes.add(new GroupeCreneau(rs.getString("id"), rs.getString("nom"), rs.getBoolean("actif"),
-                        rs.getString("groupe_source_id"), rs.getBoolean("resoudre_en_file")));
-            }
-        } catch (SQLException e) {
-            throw new IllegalStateException("Failed to list timeslot groups", e);
-        }
-        return groupes;
-    }
-
-    public boolean groupeCreneauExists(String id) {
-        return exists("groupe_creneau", id);
-    }
-
-    /**
-     * Upserts id/nom/groupeSourceId/resoudreEnFile only — {@code actif} is
-     * never touched here, see {@link #activerGroupeCreneau(String)}.
-     */
-    public void saveGroupeCreneau(GroupeCreneau groupe) {
-        try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection,
-                        "INSERT INTO groupe_creneau (edition_id, id, nom, actif, groupe_source_id, resoudre_en_file) "
-                                + "VALUES (?, ?, ?, FALSE, ?, ?) "
-                                + "ON CONFLICT (edition_id, id) DO UPDATE SET nom = EXCLUDED.nom, "
-                                + "groupe_source_id = EXCLUDED.groupe_source_id, "
-                                + "resoudre_en_file = EXCLUDED.resoudre_en_file")) {
-            ps.setString(2, groupe.getId());
-            ps.setString(3, groupe.getNom());
-            ps.setString(4, groupe.getGroupeSourceId());
-            ps.setBoolean(5, groupe.isResoudreEnFile());
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            throw new IllegalStateException("Failed to save timeslot group " + groupe.getId(), e);
-        }
-    }
-
-    /**
-     * Activates the given group and deactivates every other one <b>of the
-     * current edition</b>, in a single transaction (deactivate-then-activate
-     * order, so the partial unique index on {@code (edition_id, actif)} is never
-     * violated in between). Another edition's active grid is untouched: each
-     * one keeps its own.
-     */
-    public void activerGroupeCreneau(String id) {
-        try (Connection connection = dataSource.getConnection()) {
-            connection.setAutoCommit(false);
-            try {
-                try (PreparedStatement ps = prepareScoped(connection,
-                        "UPDATE groupe_creneau SET actif = FALSE WHERE edition_id = ?")) {
-                    ps.executeUpdate();
-                }
-                try (PreparedStatement ps = prepareScoped(connection,
-                        "UPDATE groupe_creneau SET actif = TRUE WHERE edition_id = ? AND id = ?")) {
-                    ps.setString(2, id);
-                    ps.executeUpdate();
-                }
-                connection.commit();
-            } catch (SQLException e) {
-                connection.rollback();
-                throw e;
-            }
-        } catch (SQLException e) {
-            throw new IllegalStateException("Failed to activate timeslot group " + id, e);
-        }
-    }
-
-    public void deleteGroupeCreneau(String id) {
-        delete("DELETE FROM groupe_creneau WHERE edition_id = ? AND id = ?", id);
     }
 
     /* ------------------------------ Animateurs ----------------------------- */
@@ -1180,27 +1055,15 @@ public class ReferenceDataRepository {
     /* --------------------------- Planning locks ----------------------------- */
 
     private static final String SELECT_VERROUILLAGE_SQL =
-            "SELECT id, type, groupe_creneau_id, animateur_id, stand_id, creneau_id, jour, raison, cree_le "
+            "SELECT id, type, animateur_id, stand_id, creneau_id, jour, raison, cree_le "
                     + "FROM verrouillage_planning WHERE edition_id = ?";
 
-    /** Every lock of the current edition, all its timeslot groups included, most recent first. */
+    /** Every lock of the current edition, most recent first — the ones a solve applies. */
     public List<VerrouillagePlanning> listVerrouillages() {
-        return queryVerrouillages(SELECT_VERROUILLAGE_SQL + " ORDER BY cree_le DESC, id", null);
-    }
-
-    /** The locks of one groupe de créneaux — the only ones a solve applies. */
-    public List<VerrouillagePlanning> listVerrouillagesGroupe(String groupeCreneauId) {
-        return queryVerrouillages(
-                SELECT_VERROUILLAGE_SQL + " AND groupe_creneau_id = ? ORDER BY cree_le DESC, id", groupeCreneauId);
-    }
-
-    private List<VerrouillagePlanning> queryVerrouillages(String sql, String parameter) {
         List<VerrouillagePlanning> verrouillages = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection, sql)) {
-            if (parameter != null) {
-                ps.setString(2, parameter);
-            }
+                PreparedStatement ps = prepareScoped(connection,
+                        SELECT_VERROUILLAGE_SQL + " ORDER BY cree_le DESC, id")) {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     verrouillages.add(readVerrouillage(rs));
@@ -1215,7 +1078,6 @@ public class ReferenceDataRepository {
     private static VerrouillagePlanning readVerrouillage(ResultSet rs) throws SQLException {
         VerrouillagePlanning verrouillage = new VerrouillagePlanning(
                 rs.getString("id"), TypeVerrouillage.valueOf(rs.getString("type")));
-        verrouillage.setGroupeCreneauId(rs.getString("groupe_creneau_id"));
         verrouillage.setAnimateurId(rs.getString("animateur_id"));
         verrouillage.setStandId(rs.getString("stand_id"));
         long creneauId = rs.getLong("creneau_id");
@@ -1231,25 +1093,24 @@ public class ReferenceDataRepository {
 
     /**
      * Inserts the lock, or does nothing if that exact target is already frozen
-     * for the group (see {@code idx_verrouillage_planning_cible}) — locking
-     * twice is not an error, it is already locked.
+     * (see {@code idx_verrouillage_cible_edition}) — locking twice is not an
+     * error, it is already locked.
      */
     public void saveVerrouillage(VerrouillagePlanning verrouillage) {
         String sql = "INSERT INTO verrouillage_planning "
-                + "(edition_id, id, type, groupe_creneau_id, animateur_id, stand_id, creneau_id, jour, raison, cree_le) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING";
+                + "(edition_id, id, type, animateur_id, stand_id, creneau_id, jour, raison, cree_le) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = prepareScoped(connection, sql)) {
             ps.setString(2, verrouillage.getId());
             ps.setString(3, verrouillage.getType() != null ? verrouillage.getType().name() : null);
-            ps.setString(4, verrouillage.getGroupeCreneauId());
-            ps.setString(5, verrouillage.getAnimateurId());
-            ps.setString(6, verrouillage.getStandId());
-            ps.setObject(7, verrouillage.getCreneauId());
-            ps.setObject(8, verrouillage.getJour());
-            ps.setString(9, verrouillage.getRaison());
+            ps.setString(4, verrouillage.getAnimateurId());
+            ps.setString(5, verrouillage.getStandId());
+            ps.setObject(6, verrouillage.getCreneauId());
+            ps.setObject(7, verrouillage.getJour());
+            ps.setString(8, verrouillage.getRaison());
             Instant creeLe = verrouillage.getCreeLe() != null ? verrouillage.getCreeLe() : Instant.now();
-            ps.setTimestamp(10, Timestamp.from(creeLe));
+            ps.setTimestamp(9, Timestamp.from(creeLe));
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to save planning lock " + verrouillage.getId(), e);
@@ -1491,7 +1352,6 @@ public class ReferenceDataRepository {
                 : List.of();
 
         try (Connection connection = dataSource.getConnection()) {
-            String groupeActifId = groupeActifId(connection);
             connection.setAutoCommit(false);
             try {
                 // verrouillage_planning goes with the assignments it freezes: the
@@ -1511,15 +1371,12 @@ public class ReferenceDataRepository {
                     }
                 }
                 try (PreparedStatement ps = prepareScoped(connection,
-                        "DELETE FROM creneau WHERE edition_id = ? AND groupe_creneau_id = ?")) {
-                    ps.setString(2, groupeActifId);
+                        "DELETE FROM creneau WHERE edition_id = ?")) {
                     ps.executeUpdate();
                 }
-                GroupeCreneau groupeActif = new GroupeCreneau(groupeActifId, null, false);
                 Map<Long, Long> idsRemap = new LinkedHashMap<>();
                 for (Creneau creneau : creneauxById.values()) {
                     Long ancienId = creneau.getId();
-                    creneau.setGroupe(groupeActif);
                     Long nouvelId = insertCreneauTx(connection, creneau);
                     idsRemap.put(ancienId, nouvelId);
                 }
@@ -1579,7 +1436,7 @@ public class ReferenceDataRepository {
      * planning, demandes and locks that will go with it.
      */
     public record ImpactImport(int animateurs, int stands, int postes, boolean planningResolu,
-            String groupeResoluNom, int demandesEchange, int demandesEnAttente, int verrous) {
+            int demandesEchange, int demandesEnAttente, int verrous) {
     }
 
     public ImpactImport compterImpactImport() {
@@ -1600,18 +1457,12 @@ public class ReferenceDataRepository {
                 }
             }
             boolean resolu = false;
-            String groupeNom = null;
             try (PreparedStatement ps = prepareScoped(connection,
-                    "SELECT COALESCE(g.nom, r.groupe_creneau_id) AS nom FROM planning_resolution r "
-                            + "LEFT JOIN groupe_creneau g ON g.edition_id = r.edition_id AND g.id = r.groupe_creneau_id "
-                            + "WHERE r.edition_id = ?");
+                    "SELECT 1 FROM planning_resolution WHERE edition_id = ?");
                     ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    resolu = true;
-                    groupeNom = rs.getString("nom");
-                }
+                resolu = rs.next();
             }
-            return new ImpactImport(animateurs, stands, postes, resolu, groupeNom, demandes, enAttente, verrous);
+            return new ImpactImport(animateurs, stands, postes, resolu, demandes, enAttente, verrous);
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to measure the import impact", e);
         }
@@ -1658,42 +1509,16 @@ public class ReferenceDataRepository {
         }
     }
 
-    /**
-     * Id of the groupe de créneaux currently active, falling back to the
-     * seeded default group when no row is flagged (the same fallback the
-     * import path uses). Public because planning locks are scoped to it.
-     */
-    public String groupeCreneauActifId() {
-        try (Connection connection = dataSource.getConnection()) {
-            return groupeActifId(connection);
-        } catch (SQLException e) {
-            throw new IllegalStateException("Failed to read the active timeslot group", e);
-        }
-    }
-
-    private String groupeActifId(Connection connection) throws SQLException {
-        try (PreparedStatement ps = prepareScoped(connection,
-                "SELECT id FROM groupe_creneau WHERE edition_id = ? AND actif");
-                ResultSet rs = ps.executeQuery()) {
-            return rs.next() ? rs.getString("id") : GROUPE_CRENEAU_DEFAUT_ID;
-        }
-    }
-
     /** Inserts a new timeslot row; the generated id is set back onto {@code creneau} and returned. */
     private Long insertCreneauTx(Connection connection, Creneau creneau) throws SQLException {
-        // Callers that don't know about timeslot groups yet (CSV import) leave
-        // this null; fall back to the seeded default one rather than fail the
-        // NOT NULL FK.
-        String groupeCreneauId = creneau.getGroupe() != null ? creneau.getGroupe().getId() : GROUPE_CRENEAU_DEFAUT_ID;
         try (PreparedStatement ps = prepareScoped(connection,
-                "INSERT INTO creneau (edition_id, date_creneau, heure_debut, heure_fin, groupe_creneau_id, famille, "
-                        + "couverture_pause) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id")) {
+                "INSERT INTO creneau (edition_id, date_creneau, heure_debut, heure_fin, famille, "
+                        + "couverture_pause) VALUES (?, ?, ?, ?, ?, ?) RETURNING id")) {
             ps.setObject(2, creneau.getDate());
             ps.setObject(3, creneau.getHeureDebut());
             ps.setObject(4, creneau.getHeureFin());
-            ps.setString(5, groupeCreneauId);
-            ps.setInt(6, creneau.getFamille());
-            ps.setBoolean(7, creneau.isCouverturePause());
+            ps.setInt(5, creneau.getFamille());
+            ps.setBoolean(6, creneau.isCouverturePause());
             try (ResultSet rs = ps.executeQuery()) {
                 rs.next();
                 long id = rs.getLong("id");
@@ -1704,20 +1529,18 @@ public class ReferenceDataRepository {
     }
 
     private void updateCreneauTx(Connection connection, Creneau creneau) throws SQLException {
-        String groupeCreneauId = creneau.getGroupe() != null ? creneau.getGroupe().getId() : GROUPE_CRENEAU_DEFAUT_ID;
         // Not prepareScoped: an UPDATE's first placeholder belongs to its SET
-        // clause, so the group predicate can't be the statement's first one.
+        // clause, so the edition predicate can't be the statement's first one.
         try (PreparedStatement ps = connection.prepareStatement(
-                "UPDATE creneau SET date_creneau = ?, heure_debut = ?, heure_fin = ?, groupe_creneau_id = ?, "
+                "UPDATE creneau SET date_creneau = ?, heure_debut = ?, heure_fin = ?, "
                         + "famille = ?, couverture_pause = ? WHERE edition_id = ? AND id = ?")) {
             ps.setObject(1, creneau.getDate());
             ps.setObject(2, creneau.getHeureDebut());
             ps.setObject(3, creneau.getHeureFin());
-            ps.setString(4, groupeCreneauId);
-            ps.setInt(5, creneau.getFamille());
-            ps.setBoolean(6, creneau.isCouverturePause());
-            ps.setString(7, editionId());
-            ps.setLong(8, creneau.getId());
+            ps.setInt(4, creneau.getFamille());
+            ps.setBoolean(5, creneau.isCouverturePause());
+            ps.setString(6, editionId());
+            ps.setLong(7, creneau.getId());
             ps.executeUpdate();
         }
     }

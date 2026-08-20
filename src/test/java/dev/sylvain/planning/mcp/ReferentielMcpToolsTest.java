@@ -99,25 +99,19 @@ class ReferentielMcpToolsTest {
     }
 
     @Test
-    void creerUnGroupeEtSesCreneaux() {
-        creneauTools.creer_groupe_creneaux("GRP-MCP-1", "Amplitudes MCP");
-        CreneauView creneau = creneauTools.creer_creneau(1, "2026-07-18", "09:00", "13:00", "GRP-MCP-1");
+    void creerEtModifierUnCreneau() {
+        CreneauView creneau = creneauTools.creer_creneau(1, "2026-07-18", "09:00", "13:00");
 
-        assertThat(creneau.groupeId()).isEqualTo("GRP-MCP-1");
-        assertThat(creneauTools.lister_groupes_creneaux())
-                .anySatisfy(groupe -> assertThat(groupe.id()).isEqualTo("GRP-MCP-1"));
-
-        CreneauView modifie = creneauTools.modifier_creneau(creneau.id(), null, null, "10:00", null, null);
+        CreneauView modifie = creneauTools.modifier_creneau(creneau.id(), null, null, "10:00", null);
         assertThat(modifie.heureDebut()).hasToString("10:00");
         assertThat(modifie.heureFin()).hasToString("13:00");
 
         creneauTools.supprimer_creneau(creneau.id());
-        creneauTools.supprimer_groupe_creneaux("GRP-MCP-1");
     }
 
     @Test
     void uneDateMalFormeeRemonteUnMessageExploitable() {
-        assertThatThrownBy(() -> creneauTools.creer_creneau(1, "18/07/2026", "09:00", "13:00", null))
+        assertThatThrownBy(() -> creneauTools.creer_creneau(1, "18/07/2026", "09:00", "13:00"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("AAAA-MM-JJ");
     }

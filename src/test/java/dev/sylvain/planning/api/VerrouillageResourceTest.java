@@ -27,7 +27,6 @@ class VerrouillageResourceTest {
                 .body("id", notNullValue())
                 .body("type", equalTo("JOUR"))
                 .body("jour", equalTo(jour))
-                .body("groupeCreneauId", notNullValue())
                 .extract().path("id");
     }
 

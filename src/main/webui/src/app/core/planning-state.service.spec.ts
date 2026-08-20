@@ -22,7 +22,7 @@ function stand(id: string, effectifMax: number): Stand {
 }
 
 function creneau(id: number): Creneau {
-  return { id, jour: 1, date: '2026-07-08', heureDebut: '09:00', heureFin: '13:00', groupe: null };
+  return { id, jour: 1, date: '2026-07-08', heureDebut: '09:00', heureFin: '13:00' };
 }
 
 function animateur(id: string): Animateur {

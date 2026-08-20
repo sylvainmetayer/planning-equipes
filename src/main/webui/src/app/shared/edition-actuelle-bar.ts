@@ -5,7 +5,6 @@ import { MatMenuModule } from '@angular/material/menu';
 import { RouterLink } from '@angular/router';
 import { EditionStore } from '../core/edition.store';
 import { Edition } from '../core/models';
-import { GroupeCreneauSelector } from './groupe-creneau-selector';
 
 /**
  * Persistent strip under the toolbar naming the edition every screen is
@@ -20,11 +19,11 @@ import { GroupeCreneauSelector } from './groupe-creneau-selector';
  */
 @Component({
   selector: 'app-edition-actuelle-bar',
-  imports: [MatButtonModule, MatIconModule, MatMenuModule, RouterLink, GroupeCreneauSelector],
+  imports: [MatButtonModule, MatIconModule, MatMenuModule, RouterLink],
   template: `
     @if (editionActuelle(); as edition) {
       <!-- Not a live region as a whole: it would announce the edition and the
-           groupe de créneaux on every first render, when nothing changed. Only
+           edition on every first render, when nothing changed. Only
            the switching action speaks, and it says so itself. -->
       <div class="edition-actuelle-bar">
         <mat-icon class="edition-actuelle-bar-icon">layers</mat-icon>
@@ -32,7 +31,6 @@ import { GroupeCreneauSelector } from './groupe-creneau-selector';
           <span i18n="@@editionActuelle.label">Édition actuelle :</span>
           <strong>{{ edition.nom }}</strong>
         </span>
-        <app-groupe-creneau-selector class="edition-actuelle-bar-groupe" />
         <span class="edition-actuelle-bar-actions">
           @if (autresEditions().length > 0) {
             <button

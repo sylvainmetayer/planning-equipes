@@ -269,7 +269,7 @@ export class CalendarMonthPage {
     effect(() => this.syncQueryParams());
   }
 
-  /** True when the whole date is frozen by a JOUR lock on the active groupe de créneaux. */
+  /** True when the whole date is frozen by a JOUR lock on the edition. */
   protected estJourVerrouille(dateKey: string): boolean {
     return this.verrous.estJourVerrouille(dateKey);
   }

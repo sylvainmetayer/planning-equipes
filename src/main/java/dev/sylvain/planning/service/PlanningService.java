@@ -46,10 +46,8 @@ import ai.timefold.solver.core.config.solver.SolverConfig;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ConstraintToggle;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.DecoupageAutoConfig;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.FenetreHoraire;
-import dev.sylvain.planning.domain.GroupeCreneau;
 import dev.sylvain.planning.domain.HoraireStand;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.ModeHoraire;
@@ -257,54 +255,7 @@ public class PlanningService {
         return construireDepuisReferenceData(
                 referenceDataService.listAnimateurs(),
                 referenceDataService.listStandsResolus(),
-                referenceDataService.listCreneauxGroupeActif());
-    }
-
-    /**
-     * The problem for an <b>explicit</b> groupe de créneaux, active or not —
-     * what each step of the "résoudre tous les groupes" queue builds (issue
-     * #167). Both group-dependent reads are parametrised (créneaux <i>and</i>
-     * locks: the active-group lock read would otherwise pin another group's
-     * seats onto this problem), and the seats are warm-started from
-     * {@code seed} (issue #86): every seeded seat keeps its animateur as a
-     * movable starting point — the construction heuristic then only fills the
-     * holes and local search improves from the seed's score instead of from
-     * scratch, which is what lets the plateau bailout (see
-     * {@link #applyTermination}) finish a re-solve of an already-good plan in
-     * a fraction of the full budget. Seats covered by one of the group's locks
-     * are pinned, exactly as in the cold path. An empty {@code seed} degrades
-     * to a plain cold solve.
-     *
-     * @param seed animateur ids per {@link PlanningPersistenceService#cleStandCreneau}
-     *             key, in seat order — the group's last snapshot, or the
-     *             persisted plan for the active group
-     */
-    public PlanningFestival construireDepuisReferenceData(String groupeCreneauId, Map<String, List<String>> seed) {
-        List<Animateur> animateurs = referenceDataService.listAnimateurs();
-        // Raw stands resolved against THIS group's créneaux — listStandsResolus()
-        // expands the recurring horaires against the active group's days, which
-        // are not necessarily the same days.
-        List<Stand> stands = referenceDataService.listStands();
-        List<Creneau> creneaux = referenceDataService.listCreneauxParGroupe(groupeCreneauId);
-        if (animateurs.isEmpty() || stands.isEmpty() || creneaux.isEmpty()) {
-            throw new IllegalStateException(
-                    "Aucune donnée de référence pour le groupe " + groupeCreneauId
-                            + ". Chargez un scénario ou créez des stands, des animateurs et des créneaux d'abord.");
-        }
-        HoraireStandResolver.appliquer(stands, creneaux);
-        List<PosteAffectation> postes = construirePostes(stands, creneaux);
-        List<VerrouillagePlanning> verrouillages = referenceDataService.snapshotVerrouillagesGroupe(groupeCreneauId);
-        seedDepuisAffectations(postes, animateurs, verrouillages, seed, true);
-        LocalDate dateDebut = creneaux.stream()
-                .map(Creneau::getDate)
-                .filter(java.util.Objects::nonNull)
-                .min(LocalDate::compareTo)
-                .orElse(null);
-        PlanningFestival festival = new PlanningFestival(dateDebut, animateurs, postes,
-                referenceDataService.snapshotContraintes());
-        festival.setParametresLegaux(List.of(referenceDataService.getParametresLegaux()));
-        festival.setVerrouillages(verrouillages);
-        return festival;
+                referenceDataService.listCreneaux());
     }
 
     /**
@@ -322,7 +273,7 @@ public class PlanningService {
                             + "des animateurs et des créneaux d'abord.");
         }
         List<PosteAffectation> postes = construirePostes(stands, creneaux);
-        List<VerrouillagePlanning> verrouillages = referenceDataService.snapshotVerrouillagesGroupeActif();
+        List<VerrouillagePlanning> verrouillages = referenceDataService.listVerrouillages();
         appliquerVerrouillages(postes, animateurs, verrouillages);
         LocalDate dateDebut = creneaux.stream()
                 .map(Creneau::getDate)
@@ -556,54 +507,29 @@ public class PlanningService {
         // than the few hundred dated windows they expand to — the resolution
         // still runs, because the seat list does depend on it.
         List<Stand> stands = referenceDataService.listStands();
-        List<Creneau> creneaux = referenceDataService.listCreneauxGroupeActif();
+        List<Creneau> creneaux = referenceDataService.listCreneaux();
         if (animateurs.isEmpty() || stands.isEmpty() || creneaux.isEmpty()) {
             throw new IllegalStateException(
                     "Aucune donnée de référence à exporter. Créez des stands, des animateurs et des créneaux d'abord.");
         }
         HoraireStandResolver.appliquer(stands, creneaux);
 
-        DecoupageAutoConfig decoupageAuto = decoupageAutoDuGroupeActif();
-        List<Creneau> creneauxExportes = creneaux;
+        // The edition's créneaux are exported as-is (issue #172): once the
+        // découpage ran, the amplitudes it consumed are gone, so a découpé
+        // edition exports its vacations plainly — the hand-maintained
+        // "amplitudes + decoupageAuto:" scenario file stays the source of
+        // truth for re-slicing, never this export.
         List<PosteAffectation> postes = construirePostes(stands, creneaux);
-        if (decoupageAuto != null) {
-            creneauxExportes = referenceDataService.listCreneaux().stream()
-                    .filter(creneau -> creneau.getGroupe() != null
-                            && decoupageAuto.groupeSourceNom().equals(creneau.getGroupe().getNom()))
-                    .toList();
-            postes = null; // regenerated on import, from the vacations the découpage recreates
-        }
         return construireScenarioYaml(new ScenarioExport(
                 animateurs,
                 stands,
-                creneauxExportes,
+                creneaux,
                 postes,
                 referenceDataService.listTypologies(),
                 referenceDataService.listEmplacements(),
                 referenceDataService.getParametresLegaux(),
                 referenceDataService.getParametresDecoupage(),
-                referenceDataService.getParametresSolveur(),
-                decoupageAuto));
-    }
-
-    /**
-     * The {@code decoupageAuto:} section describing the active planning, or
-     * {@code null} when it was not generated from another group. Both group
-     * <em>names</em> are used rather than their ids: that is what
-     * {@link DecoupageAutoConfig} matches on when the file is read back, on an
-     * instance where the ids are not the same.
-     */
-    private DecoupageAutoConfig decoupageAutoDuGroupeActif() {
-        List<GroupeCreneau> groupes = referenceDataService.listGroupesCreneaux();
-        GroupeCreneau actif = groupes.stream().filter(GroupeCreneau::isActif).findFirst().orElse(null);
-        if (actif == null || actif.getGroupeSourceId() == null) {
-            return null;
-        }
-        return groupes.stream()
-                .filter(groupe -> actif.getGroupeSourceId().equals(groupe.getId()))
-                .findFirst()
-                .map(source -> new DecoupageAutoConfig(source.getNom(), actif.getNom()))
-                .orElse(null);
+                referenceDataService.getParametresSolveur()));
     }
 
     /**
@@ -623,8 +549,7 @@ public class PlanningService {
             List<Emplacement> emplacements,
             ParametresLegaux parametresLegaux,
             ParametresDecoupage parametresDecoupage,
-            ParametresSolveur parametresSolveur,
-            DecoupageAutoConfig decoupageAuto) {
+            ParametresSolveur parametresSolveur) {
     }
 
     /**
@@ -635,7 +560,7 @@ public class PlanningService {
     static String construireScenarioYaml(List<Animateur> animateurs, List<Stand> stands, List<Creneau> creneaux,
             List<PosteAffectation> postes) {
         return construireScenarioYaml(new ScenarioExport(animateurs, stands, creneaux, postes, List.of(), List.of(),
-                null, null, null, null));
+                null, null, null));
     }
 
     /** Full-fidelity variant: writes every optional section {@link ScenarioExport} carries. */
@@ -741,12 +666,6 @@ public class PlanningService {
         }
         if (export.parametresDecoupage() != null) {
             root.put("parametresDecoupage", parametresDecoupageYaml(export.parametresDecoupage()));
-        }
-        if (export.decoupageAuto() != null) {
-            Map<String, Object> decoupage = new LinkedHashMap<>();
-            decoupage.put("groupeSourceNom", export.decoupageAuto().groupeSourceNom());
-            decoupage.put("groupeCibleNom", export.decoupageAuto().groupeCibleNom());
-            root.put("decoupageAuto", decoupage);
         }
         if (!export.typologies().isEmpty()) {
             root.put("typologies", typologiesYaml(export.typologies()));
@@ -1052,7 +971,7 @@ public class PlanningService {
      */
     public record ScenarioImporte(PlanningFestival planning, Optional<ParametresLegaux> parametresLegaux,
             Optional<ParametresDecoupage> parametresDecoupage, Optional<ParametresSolveur> parametresSolveur,
-            Optional<DecoupageAutoConfig> decoupageAuto, List<ReferenceDataService.TypologieItem> typologies) {
+            boolean decoupageAuto, List<ReferenceDataService.TypologieItem> typologies) {
     }
 
     /**
@@ -1293,10 +1212,9 @@ public class PlanningService {
      * scenario file, if present — lets a scenario written straight in
      * "amplitudes" (one long opening window per day, e.g. {@code scenario-continu.yaml})
      * ask its import to auto-slice itself into vacations instead of leaving
-     * the operator to run the "Découpage" screen by hand afterwards. See
-     * {@link DecoupageAutoConfig}.
+     * the operator to run the "Découpage" screen by hand afterwards.
      */
-    public Optional<DecoupageAutoConfig> chargerDecoupageAutoScenario(String scenarioName) {
+    public boolean chargerDecoupageAutoScenario(String scenarioName) {
         return chargerSectionScenario(scenarioName, PlanningService::parseDecoupageAuto);
     }
 
@@ -1386,14 +1304,14 @@ public class PlanningService {
         return Optional.of(new ParametresSolveur(((Number) data.get("dureeResolutionSecondes")).intValue()));
     }
 
-    @SuppressWarnings("unchecked")
-    private static Optional<DecoupageAutoConfig> parseDecoupageAuto(Map<String, Object> scenarioData) {
-        Map<String, Object> data = (Map<String, Object>) scenarioData.get("decoupageAuto");
-        if (data == null) {
-            return Optional.empty();
-        }
-        return Optional.of(new DecoupageAutoConfig((String) data.get("groupeSourceNom"),
-                (String) data.get("groupeCibleNom")));
+    /**
+     * True when the scenario carries a top-level {@code decoupageAuto:}
+     * section. Its historical {@code groupeSourceNom}/{@code groupeCibleNom}
+     * fields are accepted and ignored (issue #172: the découpage replaces the
+     * edition's créneaux in place, there are no groups to name anymore).
+     */
+    private static boolean parseDecoupageAuto(Map<String, Object> scenarioData) {
+        return scenarioData.get("decoupageAuto") != null;
     }
 
     @SuppressWarnings("unchecked")
@@ -1446,35 +1364,6 @@ public class PlanningService {
             Consumer<Solver<PlanningFestival>> onSolverReady) {
         prepareProblem(problem);
         Solver<PlanningFestival> solver = resolveSolverFactory(secondsLimitOverride).buildSolver();
-        if (onSolverReady != null) {
-            onSolverReady.accept(solver);
-        }
-        return solver.solve(problem);
-    }
-
-    /**
-     * Same as {@link #resoudre(PlanningFestival, Long, Consumer)}, but an
-     * explicit budget <b>keeps</b> the ambient feasible-plateau bailout instead
-     * of disabling it (see {@link #resolveSolverFactory}) — what each solve of
-     * the "résoudre tous les groupes" queue uses: a warm-started group whose
-     * seed is already feasible stops a few unimproved seconds in rather than
-     * consuming its whole slice of the queue's budget, while a group still
-     * chasing hard-feasibility keeps the full slice.
-     */
-    public PlanningFestival resoudreAvecBailoutPlateau(PlanningFestival problem, Long secondsLimitOverride,
-            Consumer<Solver<PlanningFestival>> onSolverReady) {
-        prepareProblem(problem);
-        SolverFactory<PlanningFestival> factory;
-        if (secondsLimitOverride == null || secondsLimitOverride.equals(defaultSecondsLimit)) {
-            factory = solverFactory;
-        } else {
-            SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
-            solverConfig.setScoreDirectorFactoryConfig(new ScoreDirectorFactoryConfig()
-                    .withConstraintProviderClass(PlanningConstraintProvider.class));
-            applyTermination(solverConfig, secondsLimitOverride, defaultUnimprovedSecondsLimit);
-            factory = SolverFactory.create(solverConfig);
-        }
-        Solver<PlanningFestival> solver = factory.buildSolver();
         if (onSolverReady != null) {
             onSolverReady.accept(solver);
         }

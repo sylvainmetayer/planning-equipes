@@ -3,7 +3,7 @@
     <h1 mat-card-title i18n="@@ouvertures.title">Ouvertures des stands</h1>
     <mat-card-subtitle i18n="@@ouvertures.subtitle">
       Ce que le solveur lira réellement : règles d'horaire étendues, exceptions datées appliquées, fenêtres bornées à
-      chaque créneau du groupe actif. Une case par stand et par jour.
+      chaque créneau de l'édition. Une case par stand et par jour.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-actions class="card-actions">
@@ -17,7 +17,7 @@
       <p class="empty-hint" i18n="@@ouvertures.loading">Calcul des ouvertures…</p>
     } @else if (!rapport() || rapport()!.jours.length === 0) {
       <p class="empty-hint" i18n="@@ouvertures.empty">
-        Aucun créneau dans le groupe actif : créez des créneaux ou activez un autre groupe pour voir les ouvertures.
+        Aucun créneau dans l'édition : créez des créneaux pour voir les ouvertures.
       </p>
     } @else {
       @if (synthese(); as bilan) {

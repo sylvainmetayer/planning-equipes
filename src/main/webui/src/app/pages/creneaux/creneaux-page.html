@@ -2,56 +2,6 @@
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <h2 mat-card-title i18n="@@groupesCreneaux.list.title">Groupes de créneaux</h2>
-    <mat-card-subtitle i18n="@@groupesCreneaux.list.subtitle">Un seul groupe est actif à la fois : c'est lui que le solveur utilise. Cochez un groupe pour l'activer et désactiver les autres.</mat-card-subtitle>
-  </mat-card-header>
-  <mat-card-content>
-    <div class="stand-checklist groupes-creneaux-liste">
-      @for (groupe of store.groupesCreneaux(); track groupe.id) {
-        <span class="row-actions">
-          <mat-checkbox [checked]="groupe.actif"
-                        [disabled]="groupe.actif || editingLocked() || !!groupeEnCours()"
-                        (change)="activerGroupe(groupe)">
-            {{ groupe.nom || groupe.id }}
-          </mat-checkbox>
-          @if (groupe.resoudreEnFile === false) {
-            <button matIconButton i18n-matTooltip="@@groupesCreneaux.file.inclure"
-                    matTooltip="Exclu de la file « résoudre tous les groupes » (amplitudes non découpées ou brouillon). Cliquer pour l'inclure."
-                    i18n-aria-label="@@groupesCreneaux.file.inclureAria" aria-label="Inclure dans la file de résolution"
-                    [disabled]="editingLocked()" (click)="basculerResoudreEnFile(groupe)">
-              <mat-icon>playlist_remove</mat-icon>
-            </button>
-          } @else {
-            <button matIconButton i18n-matTooltip="@@groupesCreneaux.file.exclure"
-                    matTooltip="Résolu par la file « résoudre tous les groupes ». Cliquer pour l'exclure (par ex. un groupe d'amplitudes non découpées)."
-                    i18n-aria-label="@@groupesCreneaux.file.exclureAria" aria-label="Exclure de la file de résolution"
-                    [disabled]="editingLocked()" (click)="basculerResoudreEnFile(groupe)">
-              <mat-icon>playlist_play</mat-icon>
-            </button>
-          }
-          <button matIconButton i18n-matTooltip="@@common.delete" matTooltip="Supprimer" i18n-aria-label="@@common.delete" aria-label="Supprimer" class="danger-action"
-                  [disabled]="groupe.actif || editingLocked()" (click)="supprimerGroupe(groupe)">
-            <mat-icon>delete</mat-icon>
-          </button>
-        </span>
-      }
-    </div>
-    <form class="form-grid" (ngSubmit)="ajouterGroupe()">
-      <mat-form-field appearance="outline">
-        <mat-label i18n="@@groupesCreneaux.field.nom">Nom du nouveau groupe</mat-label>
-        <input matInput name="nouveauGroupeNom" [disabled]="editingLocked()"
-               [ngModel]="nouveauGroupeNom()" (ngModelChange)="nouveauGroupeNom.set($event)" />
-      </mat-form-field>
-      <button matButton type="submit" [disabled]="editingLocked() || !nouveauGroupeNom().trim()">
-        <mat-icon>add</mat-icon>
-        <ng-container i18n="@@groupesCreneaux.add">Ajouter un groupe</ng-container>
-      </button>
-    </form>
-  </mat-card-content>
-</mat-card>
-
-<mat-card appearance="outlined" class="page-card">
-  <mat-card-header>
     <h2 mat-card-title i18n="@@creneaux.list.title">Créneaux ({{ creneauxAffiches().length }})</h2>
     <mat-card-subtitle i18n="@@creneaux.form.description">Chaque stand est ouvert sur chaque créneau par défaut ; les fermetures se déclarent depuis la fiche du stand.</mat-card-subtitle>
   </mat-card-header>
@@ -60,16 +10,7 @@
       <mat-icon>add</mat-icon>
       <ng-container i18n="@@common.add">Ajouter</ng-container>
     </button>
-    <mat-form-field appearance="outline">
-      <mat-label i18n="@@creneaux.filter.groupe">Filtrer par groupe</mat-label>
-      <mat-select [ngModel]="filtreGroupeId()" (ngModelChange)="filtreGroupeId.set($event)">
-        <mat-option [value]="null" i18n="@@creneaux.filter.tousGroupes">Tous les groupes</mat-option>
-        @for (groupe of store.groupesCreneaux(); track groupe.id) {
-          <mat-option [value]="groupe.id">{{ groupe.nom || groupe.id }}</mat-option>
-        }
-      </mat-select>
-    </mat-form-field>
-  </mat-card-actions>
+      </mat-card-actions>
   <mat-card-content>
     @if (selection.hasSelection()) {
       <app-bulk-actions-bar [count]="selection.count()" [disabled]="editingLocked()"
@@ -81,7 +22,7 @@
     <div class="table-wrapper">
       <table mat-table [dataSource]="creneauxAffiches()" matSort [matSortActive]="sort().active"
              [matSortDirection]="sort().direction" (matSortChange)="sort.set($event)">
-        <caption class="visually-hidden" i18n="@@creneaux.table.caption">Créneaux de la grille affichée : jour, date, horaires, groupe et actions</caption>
+        <caption class="visually-hidden" i18n="@@creneaux.table.caption">Créneaux de l’édition : jour, date, horaires et actions</caption>
         <ng-container matColumnDef="select">
           <th mat-header-cell *matHeaderCellDef>
             <mat-checkbox i18n-aria-label="@@bulk.selectAll" aria-label="Tout sélectionner"
@@ -127,10 +68,6 @@
               matTooltip="Le découpage génère chaque vacation en plusieurs variantes aux coupures décalées (« familles ») ; chaque stand n'est affecté qu'à une seule famille. Des créneaux identiques de familles différentes ne sont donc pas des doublons."
               i18n="@@creneaux.column.famille">Famille</th>
           <td mat-cell *matCellDef="let creneau">{{ (creneau.famille ?? 0) + 1 }}</td>
-        </ng-container>
-        <ng-container matColumnDef="groupe">
-          <th mat-header-cell *matHeaderCellDef i18n="@@creneaux.column.groupe">Groupe</th>
-          <td mat-cell *matCellDef="let creneau">{{ creneau.groupe?.nom || creneau.groupe?.id }}</td>
         </ng-container>
         <ng-container matColumnDef="actions">
           <th mat-header-cell *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>

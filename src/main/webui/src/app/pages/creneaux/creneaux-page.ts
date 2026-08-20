@@ -18,15 +18,13 @@ import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { TableSelection } from '../../core/table-selection';
-import { slugify } from '../../core/slug';
-import { CauseInfaisabilite, Creneau, GroupeCreneau } from '../../core/models';
+import { CauseInfaisabilite, Creneau } from '../../core/models';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
 import { CreneauBulkEditData, CreneauBulkEditDialog } from './creneau-bulk-edit-dialog';
 import { CreneauFormData, CreneauFormDialog } from './creneau-form-dialog';
 
 /**
  * Timeslots CRUD: festival day, date and hours of every schedulable slot,
- * organized in switchable "groupes de créneaux" (alternate plannings).
  *
  * Slots are multi-selectable, for a bulk delete or to move a whole batch to
  * another group / realign its hours.
@@ -61,13 +59,6 @@ export class CreneauxPage {
   private readonly dialog = inject(MatDialog);
   private readonly resolution = inject(PlanningResolutionStore);
 
-  protected readonly nouveauGroupeNom = signal('');
-  /** Id of the group currently being activated/created, to disable its row while the request is in flight. */
-  protected readonly groupeEnCours = signal<string | null>(null);
-
-  /** `null` = every group shown. */
-  protected readonly filtreGroupeId = signal<string | null>(null);
-
   /**
    * The « Famille » column only appears when the displayed slots actually
    * carry several stagger families: a group generated with N families holds N
@@ -77,8 +68,8 @@ export class CreneauxPage {
    */
   protected readonly columns = computed(() =>
     this.afficherFamilles()
-      ? ['select', 'jour', 'date', 'horaires', 'famille', 'groupe', 'probleme', 'actions']
-      : ['select', 'jour', 'date', 'horaires', 'groupe', 'probleme', 'actions']
+      ? ['select', 'jour', 'date', 'horaires', 'famille', 'probleme', 'actions']
+      : ['select', 'jour', 'date', 'horaires', 'probleme', 'actions']
   );
   protected readonly afficherFamilles = computed(() =>
     this.creneauxAffiches().some((creneau) => (creneau.famille ?? 0) > 0)
@@ -88,23 +79,17 @@ export class CreneauxPage {
   protected readonly sort = signal<Sort>({ active: '', direction: '' });
 
   /**
-   * Filtered by the selected group (if any), then sorted by group name so
-   * each planning's slots stay together; `store.creneaux()` is already
-   * chronological (jour, heureDebut), and the sort below is stable, so slots
-   * within a group keep that order.
+   * `store.creneaux()` is already chronological (jour, heureDebut); the sort
+   * below is stable, so an unsorted view keeps that order.
    */
   protected readonly creneauxAffiches = computed(() => {
-    const groupeId = this.filtreGroupeId();
-    const creneaux = groupeId ? this.store.creneaux().filter((c) => c.groupe?.id === groupeId) : this.store.creneaux();
-    const parGroupe = [...creneaux].sort((a, b) =>
-      (a.groupe?.nom ?? a.groupe?.id ?? '').localeCompare(b.groupe?.nom ?? b.groupe?.id ?? '')
-    );
+    const creneaux = [...this.store.creneaux()];
     const { active, direction } = this.sort();
     if (!active || !direction) {
-      return parGroupe;
+      return creneaux;
     }
     const facteur = direction === 'asc' ? 1 : -1;
-    return parGroupe.sort((a, b) => facteur * this.comparer(a, b, active));
+    return creneaux.sort((a, b) => facteur * this.comparer(a, b, active));
   });
 
   /** `probleme` sorts on the shortfall, so the worst slots come first. */
@@ -182,63 +167,4 @@ export class CreneauxPage {
     });
   }
 
-  /** Activates a timeslot group; checking one implicitly deactivates every other one, so an already-active row is a no-op. */
-  protected async activerGroupe(groupe: GroupeCreneau): Promise<void> {
-    if (groupe.actif || this.editingLocked() || this.groupeEnCours()) {
-      return;
-    }
-    this.groupeEnCours.set(groupe.id);
-    try {
-      await this.store.activerGroupeCreneau(groupe.id);
-      // The mismatch banner compares against the active group: refresh it
-      // right away instead of waiting for the next solve.
-      void this.resolution.reload();
-    } catch (error) {
-      this.crud.reportError(error);
-    } finally {
-      this.groupeEnCours.set(null);
-    }
-  }
-
-  protected async supprimerGroupe(groupe: GroupeCreneau): Promise<void> {
-    await this.crud.remove('groupes-creneaux', groupe.id, $localize`:@@groupesCreneaux.entityLabel:Groupe de créneaux`);
-  }
-
-  /**
-   * Toggles whether the "résoudre tous les groupes" queue solves this group
-   * (issue #167) — e.g. an amplitudes group awaiting its découpage must stay
-   * out, or every queue run wastes a full budget on a garbage plan. The whole
-   * group is round-tripped so the rename path and this toggle never clobber
-   * each other's fields.
-   */
-  protected async basculerResoudreEnFile(groupe: GroupeCreneau): Promise<void> {
-    await this.crud.save(
-      'groupes-creneaux',
-      { ...groupe, resoudreEnFile: groupe.resoudreEnFile === false },
-      groupe.id,
-      $localize`:@@groupesCreneaux.entityLabel:Groupe de créneaux`
-    );
-  }
-
-  protected async ajouterGroupe(): Promise<void> {
-    const nom = this.nouveauGroupeNom().trim();
-    if (!nom) {
-      return;
-    }
-    const id = slugify(
-      nom,
-      this.store.groupesCreneaux().map((g) => g.id)
-    );
-    const groupe: GroupeCreneau = { id, nom, actif: false };
-    if (
-      await this.crud.save(
-        'groupes-creneaux',
-        groupe,
-        null,
-        $localize`:@@groupesCreneaux.entityLabel:Groupe de créneaux`
-      )
-    ) {
-      this.nouveauGroupeNom.set('');
-    }
-  }
 }

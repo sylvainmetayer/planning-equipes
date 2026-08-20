@@ -14,16 +14,6 @@ import jakarta.ws.rs.NotFoundException;
 @ApplicationScoped
 public class EditionService {
 
-    /**
-     * Timeslot group every new {@code edition} starts with. An edition holding
-     * no {@code groupe_creneau} at all could not receive a single créneau (the
-     * FK would have nothing to point at), so this is structural, not a
-     * convenience. Everything else — stands, animateurs, typologies — starts
-     * empty on purpose: a new edition is filled by importing a scenario or by
-     * duplicating an existing edition, not by inheriting someone else's data.
-     */
-    private static final String GROUPE_CRENEAU_INITIAL_ID = "DEFAUT";
-    private static final String GROUPE_CRENEAU_INITIAL_NOM = "Défaut";
 
     @Inject
     EditionRepository repository;
@@ -52,9 +42,7 @@ public class EditionService {
     }
 
     public Edition creer(Edition edition) {
-        Edition cree = creerVide(edition);
-        initialiserGroupeCreneau(cree.getId());
-        return cree;
+        return creerVide(edition);
     }
 
     public Edition renommer(String id, Edition edition) {
@@ -123,15 +111,6 @@ public class EditionService {
         exigerExistant(id);
         repository.definirParDefaut(id);
         editionContext.invaliderCache();
-    }
-
-    /** Seeds the new edition's one timeslot group, inside that edition's own scope. */
-    private void initialiserGroupeCreneau(String id) {
-        editionContext.executeDans(id, () -> {
-            referenceDataRepository.saveGroupeCreneau(new dev.sylvain.planning.domain.GroupeCreneau(
-                    GROUPE_CRENEAU_INITIAL_ID, GROUPE_CRENEAU_INITIAL_NOM, false));
-            referenceDataRepository.activerGroupeCreneau(GROUPE_CRENEAU_INITIAL_ID);
-        });
     }
 
     private void exigerExistant(String id) {

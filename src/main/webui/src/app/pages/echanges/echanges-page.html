@@ -59,15 +59,7 @@
         </p>
       }
 
-      @if (demande.horsGroupe) {
-        <p class="echanges-hors-groupe">
-          <mat-icon inline>layers</mat-icon>
-          <span i18n="@@echanges.horsGroupe">
-            Demande d'un autre groupe de créneaux ({{ demande.groupeCreneauNom }}) : impossible à
-            mesurer ou à accepter contre le planning actuel — refusez-la, ou re-résolvez ce groupe.
-          </span>
-        </p>
-      } @else if (impactDe(demande); as impact) {
+      @if (impactDe(demande); as impact) {
         <div class="echanges-impact" [class.echanges-impact-casse]="impact.casseContrainteDure">
           <p>
             @if (impact.echangeCroise) {
@@ -98,7 +90,7 @@
       }
 
       <div class="echanges-actions">
-        @if (!demande.horsGroupe) {
+        @if (true) {
           <button matButton="filled" (click)="accepter(demande)" [disabled]="decisionEnCours() === demande.id">
             <mat-icon>check</mat-icon>
             <span i18n="@@echanges.accepter">Accepter</span>

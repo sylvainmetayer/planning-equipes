@@ -81,7 +81,7 @@ public class PlanningMcpTools {
         return feasibilityAnalyzer.analyser(
                 referenceDataService.listAnimateurs(),
                 referenceDataService.listStandsResolus(),
-                referenceDataService.listCreneauxGroupeActif());
+                referenceDataService.listCreneaux());
     }
 
     @Tool(description = "État du planning persisté : pour quel groupe de créneaux la dernière résolution a "
@@ -92,10 +92,9 @@ public class PlanningMcpTools {
         int affectations = persistenceService.countPersistedAssignments();
         Instant derniereModificationDonnees = changeTracker.lastModifiedAt();
         if (resolution == null) {
-            return new EtatPlanningView(false, null, null, null, affectations, derniereModificationDonnees);
+            return new EtatPlanningView(false, null, affectations, derniereModificationDonnees);
         }
-        return new EtatPlanningView(true, resolution.groupeCreneauId(), resolution.groupeCreneauNom(),
-                resolution.resoluLe(), affectations, derniereModificationDonnees);
+        return new EtatPlanningView(true, resolution.resoluLe(), affectations, derniereModificationDonnees);
     }
 
     @Tool(description = "Affectations du dernier planning persisté, filtrables par stand, par créneau ou par "
@@ -189,7 +188,7 @@ public class PlanningMcpTools {
     }
 
     /** @param resolu false quand rien n'a jamais été résolu */
-    public record EtatPlanningView(boolean resolu, String groupeCreneauId, String groupeCreneauNom,
+    public record EtatPlanningView(boolean resolu,
             Instant resoluLe, int affectationsPersistees, Instant derniereModificationDonnees) {
     }
 

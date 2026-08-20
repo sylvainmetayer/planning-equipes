@@ -18,8 +18,6 @@ public class Creneau {
     private LocalDate date;
     private LocalTime heureDebut;
     private LocalTime heureFin;
-    /** Planning ("groupe de créneaux") this slot belongs to; nullable defensively, always set once persisted. */
-    private GroupeCreneau groupe;
     /**
      * Which time-staggered relay-grid variant this slot belongs to, when
      * {@code VacationGeneratorService} generated several instead of one
@@ -56,9 +54,9 @@ public class Creneau {
     }
 
     /**
-     * Computes and assigns {@link #getJour()} for every créneau of the same
-     * group: the number of calendar days between the group's earliest date
-     * and each créneau's date, plus one. This guarantees two créneaux on
+     * Computes and assigns {@link #getJour()} for every créneau of the
+     * edition: the number of calendar days between the earliest date and each
+     * créneau's date, plus one. This guarantees two créneaux on
      * calendar-consecutive dates always get day numbers differing by exactly
      * one — even across a créneau-less gap day — which the night-rest legal
      * constraint relies on ({@code soir.getJour() + 1 == lendemain.getJour()}).
@@ -117,14 +115,6 @@ public class Creneau {
 
     public void setHeureFin(LocalTime heureFin) {
         this.heureFin = heureFin;
-    }
-
-    public GroupeCreneau getGroupe() {
-        return groupe;
-    }
-
-    public void setGroupe(GroupeCreneau groupe) {
-        this.groupe = groupe;
     }
 
     public int getFamille() {

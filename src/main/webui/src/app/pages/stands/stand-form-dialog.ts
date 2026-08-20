@@ -167,16 +167,9 @@ export class StandFormDialog {
       : null;
   });
 
-  /**
-   * Days the preview covers: those of the active timeslot group, since that's
-   * the one the solver builds from. Falls back to every group's days when none
-   * is flagged active, so the preview is never empty for no visible reason.
-   */
+  /** Days the preview covers: the edition's créneaux — what the solver builds from. */
   protected readonly datesFestival = computed(() => {
-    const creneaux = this.store.creneaux();
-    const actifs = creneaux.filter((creneau) => creneau.groupe?.actif);
-    const retenus = actifs.length > 0 ? actifs : creneaux;
-    return [...new Set(retenus.map((creneau) => creneau.date))].sort();
+    return [...new Set(this.store.creneaux().map((creneau) => creneau.date))].sort();
   });
 
   /** The schedule as the solver will read it, day by day — the point of the whole editor. */

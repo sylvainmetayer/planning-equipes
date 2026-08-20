@@ -112,15 +112,6 @@
         <th mat-header-cell *matHeaderCellDef i18n="@@verrouillages.field.raison">Raison (optionnel)</th>
         <td mat-cell *matCellDef="let row">{{ row.raison || '—' }}</td>
       </ng-container>
-      <ng-container matColumnDef="groupe">
-        <th mat-header-cell *matHeaderCellDef i18n="@@verrouillages.field.groupe">Groupe de créneaux</th>
-        <td mat-cell *matCellDef="let row">
-          {{ row.groupeCreneauId }}
-          @if (!row.actif) {
-            <span class="empty-hint" i18n="@@verrouillages.dormant">(dormant : autre groupe que le groupe actif)</span>
-          }
-        </td>
-      </ng-container>
       <ng-container matColumnDef="actions">
         <th mat-header-cell *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>
         <td mat-cell *matCellDef="let row" class="row-actions">

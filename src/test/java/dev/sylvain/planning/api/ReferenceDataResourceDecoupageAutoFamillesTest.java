@@ -71,7 +71,7 @@ class ReferenceDataResourceDecoupageAutoFamillesTest {
                 .when().post("/api/reference-data/import-scenario?name=scenario-decoupage-auto-familles.yaml")
                 .then()
                 .statusCode(200)
-                .body("decoupageAutoGroupeCibleNom", equalTo("Vacations familles"));
+                .body("decoupageAuto", equalTo(true));
 
         given()
                 .when().get("/api/parametres-decoupage")
@@ -87,16 +87,9 @@ class ReferenceDataResourceDecoupageAutoFamillesTest {
                 .statusCode(200)
                 .extract().jsonPath().getList("$");
 
-        List<Map<String, Object>> vacations = creneaux.stream()
-                .filter(creneau -> {
-                    Object groupe = creneau.get("groupe");
-                    return groupe instanceof Map<?, ?> map && "Vacations familles".equals(map.get("nom"));
-                })
-                .toList();
+        assertThat(creneaux).as("l'édition doit porter les vacations générées").isNotEmpty();
 
-        assertThat(vacations).as("le groupe cible doit porter les vacations générées").isNotEmpty();
-
-        Set<Object> familles = vacations.stream()
+        Set<Object> familles = creneaux.stream()
                 .map(vacation -> vacation.get("famille"))
                 .collect(Collectors.toSet());
 

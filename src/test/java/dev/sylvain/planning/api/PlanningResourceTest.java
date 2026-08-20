@@ -253,14 +253,6 @@ class PlanningResourceTest {
                 .then()
                 .statusCode(200);
 
-        // Also seed an extra timeslot group, so the reset has one to wipe too.
-        given()
-                .contentType("application/json")
-                .body("{\"id\":\"ALT\",\"nom\":\"Alternatif\",\"actif\":false}")
-                .when().post("/api/groupes-creneaux")
-                .then()
-                .statusCode(200);
-
         // Reset now empties the database instead of reloading a scenario: the
         // summary is all zeros and nothing remains persisted.
         given()
@@ -277,15 +269,6 @@ class PlanningResourceTest {
                 .then()
                 .statusCode(200)
                 .body("postes.size()", equalTo(0));
-
-        // Timeslot groups are wiped back to the single default group, active.
-        given()
-                .when().get("/api/groupes-creneaux")
-                .then()
-                .statusCode(200)
-                .body("size()", equalTo(1))
-                .body("[0].id", equalTo("DEFAUT"))
-                .body("[0].actif", equalTo(true));
     }
 
     @Test

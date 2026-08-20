@@ -18,7 +18,6 @@ public class DemandeEchange {
 
     private String id;
     /** Groupe de créneaux of the persisted planning at submission time, for context; may be null. */
-    private String groupeCreneauId;
     private String demandeurId;
     private String cibleId;
     private Long creneauId;
@@ -42,14 +41,6 @@ public class DemandeEchange {
 
     public void setId(String id) {
         this.id = id;
-    }
-
-    public String getGroupeCreneauId() {
-        return groupeCreneauId;
-    }
-
-    public void setGroupeCreneauId(String groupeCreneauId) {
-        this.groupeCreneauId = groupeCreneauId;
     }
 
     public String getDemandeurId() {

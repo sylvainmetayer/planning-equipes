@@ -8,7 +8,6 @@ function creneau(overrides: Partial<Creneau> & { id: number }): Creneau {
     date: '2026-08-01',
     heureDebut: '09:00',
     heureFin: '12:00',
-    groupe: null,
     ...overrides
   };
 }

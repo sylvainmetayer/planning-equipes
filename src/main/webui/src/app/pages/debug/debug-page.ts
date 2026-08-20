@@ -52,7 +52,7 @@ export class DebugPage {
   private readonly jobs = inject(SolverJobService);
   private readonly confirm = inject(ConfirmService);
   private readonly instantane = inject(InstantaneAvantAction);
-  // Emptying the database moves the resolved groupe de créneaux, the "data
+  // Emptying the database moves the resolution stamp, the "data
   // edited since the last solve" stamp and the feasibility diagnostic: the
   // stores the toolbar warnings read are refreshed here, exactly as the Data
   // page does after its own imports.

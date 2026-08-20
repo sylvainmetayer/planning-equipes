@@ -8,7 +8,6 @@ function impact(overrides: Partial<ImpactImport> = {}): ImpactImport {
     stands: 5,
     postes: 40,
     planningResolu: true,
-    groupeResoluNom: 'Week-end 1',
     demandesEchange: 3,
     demandesEnAttente: 2,
     verrous: 4,
@@ -21,7 +20,7 @@ describe('messageImpactImport', () => {
     const message = messageImpactImport(impact(), 'charger un scénario');
     expect(message).toContain('charger un scénario');
     expect(message).toContain('12 animateur(s) et 5 stand(s)');
-    expect(message).toContain('« Week-end 1 » (40 affectation(s))');
+    expect(message).toContain('(40 affectation(s))');
     expect(message).toContain('4 verrouillage(s)');
     expect(message).toContain('instantané sera enregistré automatiquement');
     expect(message).toContain("3 demande(s) d'échange (dont 2 en attente)");
@@ -31,7 +30,7 @@ describe('messageImpactImport', () => {
 
   it('reste utile sans planning résolu ni demandes : pas de lignes vides', () => {
     const message = messageImpactImport(
-      impact({ planningResolu: false, groupeResoluNom: null, demandesEchange: 0, demandesEnAttente: 0 }),
+      impact({ planningResolu: false, demandesEchange: 0, demandesEnAttente: 0 }),
       'importer un fichier scénario'
     );
     expect(message).toContain('12 animateur(s)');

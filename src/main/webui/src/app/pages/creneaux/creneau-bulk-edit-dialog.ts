@@ -24,7 +24,7 @@ export interface CreneauBulkEditData {
 }
 
 /**
- * Bulk edit of the selected créneaux: move them to another groupe de créneaux
+ * Bulk edit of the selected créneaux: shift their hours
  * (the main use — building an alternate planning from an existing one), and/or
  * realign their hours. Day and date stay per-slot.
  */
@@ -58,7 +58,7 @@ export class CreneauBulkEditDialog {
 
   /** Slots the patch would leave ending before they start: the batch is blocked as a whole. */
   protected readonly creneauxInvalides = computed(() =>
-    creneauxAvecHorairesInvalides(this.data.creneaux, this.patch(), this.store.groupesCreneaux())
+    creneauxAvecHorairesInvalides(this.data.creneaux, this.patch())
   );
 
   protected readonly formTitle = $localize`:@@creneaux.bulk.title:Modifier ${this.data.creneaux.length}:count: créneaux`;
@@ -72,8 +72,7 @@ export class CreneauBulkEditDialog {
       return;
     }
     const patch = this.patch();
-    const groupes = this.store.groupesCreneaux();
-    const payloads = this.data.creneaux.map((creneau) => appliquerPatchCreneau(creneau, patch, groupes));
+    const payloads = this.data.creneaux.map((creneau) => appliquerPatchCreneau(creneau, patch));
     this.enCours.set(true);
     try {
       if ((await this.crud.saveMany('creneaux', payloads, labelCreneauxPluriel())) > 0) {

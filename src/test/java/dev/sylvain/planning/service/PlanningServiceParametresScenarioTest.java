@@ -9,7 +9,6 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.domain.ParametresQualite;
-import dev.sylvain.planning.domain.DecoupageAutoConfig;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresSolveur;
@@ -39,7 +38,7 @@ class PlanningServiceParametresScenarioTest {
         assertThat(service.chargerParametresLegauxScenario("scenario.yml")).isEmpty();
         assertThat(service.chargerParametresDecoupageScenario("scenario.yml")).isEmpty();
         assertThat(service.chargerParametresSolveurScenario("scenario.yml")).isEmpty();
-        assertThat(service.chargerDecoupageAutoScenario("scenario.yml")).isEmpty();
+        assertThat(service.chargerDecoupageAutoScenario("scenario.yml")).isFalse();
     }
 
     @Test
@@ -90,14 +89,12 @@ class PlanningServiceParametresScenarioTest {
     }
 
     @Test
-    void scenarioAvecDecoupageAutoExposeLesNomsDeGroupes() {
+    void scenarioAvecDecoupageAutoEstDetecte() {
         PlanningService service = service();
 
-        DecoupageAutoConfig decoupageAuto = service.chargerDecoupageAutoScenario("scenario-decoupage-auto.yaml")
-                .orElseThrow();
-
-        assertThat(decoupageAuto.groupeSourceNom()).isEqualTo("Amplitudes import auto");
-        assertThat(decoupageAuto.groupeCibleNom()).isEqualTo("Vacations import auto");
+        // Les anciens champs groupeSourceNom/groupeCibleNom du fichier sont
+        // acceptés et ignorés (issue #172) : seule la présence de la section compte.
+        assertThat(service.chargerDecoupageAutoScenario("scenario-decoupage-auto.yaml")).isTrue();
     }
 
     /**
@@ -116,7 +113,8 @@ class PlanningServiceParametresScenarioTest {
                     .isEqualTo(service.chargerParametresLegauxScenario(PlanningService.DEFAULT_SCENARIO).isPresent());
             assertThat(service.chargerParametresDecoupageScenario(nom)).isNotNull();
             assertThat(service.chargerParametresSolveurScenario(nom)).isNotNull();
-            assertThat(service.chargerDecoupageAutoScenario(nom)).isNotNull();
+            assertThat(service.chargerDecoupageAutoScenario(nom)).isEqualTo(
+                    service.chargerDecoupageAutoScenario(PlanningService.DEFAULT_SCENARIO));
             assertThat(service.chargerTypologiesScenario(nom))
                     .isEqualTo(service.chargerTypologiesScenario(PlanningService.DEFAULT_SCENARIO));
         }

@@ -43,6 +43,6 @@ public class FeasibilityResource {
         return feasibilityAnalyzer.analyser(
                 referenceDataService.listAnimateurs(),
                 referenceDataService.listStandsResolus(),
-                referenceDataService.listCreneauxGroupeActif());
+                referenceDataService.listCreneaux());
     }
 }

@@ -18,7 +18,6 @@ import javax.sql.DataSource;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.GroupeCreneau;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.OuvertureStand;
@@ -67,19 +66,18 @@ public class PlanningPersistenceService {
         return inTransaction(connection -> {
             upsertReferenceData(connection, planning);
             int count = rewriteAssignments(connection, planning.getPostes());
-            recordResolution(connection, planning);
+            recordResolution(connection);
             return count;
         }, "Failed to persist planning solution");
     }
 
     /**
-     * Empties the <b>current group</b>: wipes its planning tables (stands,
+     * Empties the <b>current edition</b>: wipes its planning tables (stands,
      * timeslots, animators, assignments and constraints) without loading any
-     * scenario, and resets its timeslot groups ({@code groupe_creneau}) back to
-     * the single default one. Typologies are kept: they are seeded by the
-     * Flyway migrations, not by a scenario. Used by the "Reset BDD" admin
-     * action to start an edition from scratch — every other group is left
-     * untouched, which is why this is a scoped {@code DELETE} rather than the
+     * scenario. Typologies are kept: they are seeded by the Flyway
+     * migrations, not by a scenario. Used by the "Reset BDD" admin action to
+     * start an edition from scratch — every other edition is left untouched,
+     * which is why this is a scoped {@code DELETE} rather than the
      * {@code TRUNCATE} it used to be.
      */
     public void clearDatabase() {
@@ -94,7 +92,7 @@ public class PlanningPersistenceService {
             "planning_resolution",
             "contrainte_animateur", "contrainte_ad_hoc", "verrouillage_planning", "stand_typologie",
             "animateur_competence", "animateur_jour_indispo", "animateur_souhait", "stand_indisponibilite",
-            "stand_ouverture", "creneau_stand_ouvert", "stand", "creneau", "animateur", "groupe_creneau");
+            "stand_ouverture", "creneau_stand_ouvert", "stand", "creneau", "animateur");
 
     private void clearPlanningTables(Connection connection) throws SQLException {
         for (String table : TABLES_A_VIDER) {
@@ -104,11 +102,6 @@ public class PlanningPersistenceService {
                 ps.setString(1, editionId());
                 ps.executeUpdate();
             }
-        }
-        try (PreparedStatement ps = connection.prepareStatement(
-                "INSERT INTO groupe_creneau (edition_id, id, nom, actif) VALUES (?, 'DEFAUT', 'Défaut', TRUE)")) {
-            ps.setString(1, editionId());
-            ps.executeUpdate();
         }
     }
 
@@ -388,31 +381,12 @@ public class PlanningPersistenceService {
         }
     }
 
-    /**
-     * Records which groupe de créneaux this solve was computed for, taken from
-     * the (already-hydrated) créneau of the solved postes rather than
-     * re-reading "the active group" from the database: that way the record
-     * reflects the group actually solved even if it was changed while the
-     * solve was running. Silently records {@code null} when the solved
-     * postes carry no group (e.g. a YAML scenario solved without reference
-     * data), rather than blocking persistence.
-     */
-    private void recordResolution(Connection connection, PlanningFestival planning) throws SQLException {
-        String groupeCreneauId = planning.getPostes().stream()
-                .map(PosteAffectation::getCreneau)
-                .filter(Objects::nonNull)
-                .map(Creneau::getGroupe)
-                .filter(Objects::nonNull)
-                .map(GroupeCreneau::getId)
-                .filter(Objects::nonNull)
-                .findFirst()
-                .orElse(null);
-        String sql = "INSERT INTO planning_resolution (edition_id, groupe_creneau_id, resolu_le) VALUES (?, ?, ?) "
-                + "ON CONFLICT (edition_id) DO UPDATE SET groupe_creneau_id = EXCLUDED.groupe_creneau_id, "
-                + "resolu_le = EXCLUDED.resolu_le";
+    /** Stamps when this edition's plan was last solved and persisted. */
+    private void recordResolution(Connection connection) throws SQLException {
+        String sql = "INSERT INTO planning_resolution (edition_id, resolu_le) VALUES (?, ?) "
+                + "ON CONFLICT (edition_id) DO UPDATE SET resolu_le = EXCLUDED.resolu_le";
         try (PreparedStatement ps = prepareScoped(connection, sql)) {
-            ps.setString(2, groupeCreneauId);
-            ps.setTimestamp(3, Timestamp.from(Instant.now()));
+            ps.setTimestamp(2, Timestamp.from(Instant.now()));
             ps.executeUpdate();
         }
     }
@@ -422,9 +396,7 @@ public class PlanningPersistenceService {
      * when it ran. {@code null} when nothing has been solved yet.
      */
     public PlanningResolution loadResolution() {
-        String sql = "SELECT r.groupe_creneau_id, g.nom, r.resolu_le FROM planning_resolution r "
-                + "LEFT JOIN groupe_creneau g ON g.edition_id = r.edition_id AND g.id = r.groupe_creneau_id "
-                + "WHERE r.edition_id = ?";
+        String sql = "SELECT resolu_le FROM planning_resolution WHERE edition_id = ?";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = prepareScoped(connection, sql);
                 ResultSet rs = ps.executeQuery()) {
@@ -432,15 +404,13 @@ public class PlanningPersistenceService {
                 return null;
             }
             Timestamp resoluLe = rs.getTimestamp("resolu_le");
-            return new PlanningResolution(rs.getString("groupe_creneau_id"), rs.getString("nom"),
-                    resoluLe != null ? resoluLe.toInstant() : null);
+            return new PlanningResolution(resoluLe != null ? resoluLe.toInstant() : null);
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to load planning resolution", e);
         }
     }
 
-    /** @param groupeCreneauId may be {@code null} if the group solved for was later deleted. */
-    public record PlanningResolution(String groupeCreneauId, String groupeCreneauNom, Instant resoluLe) {
+    public record PlanningResolution(Instant resoluLe) {
     }
 
     /**

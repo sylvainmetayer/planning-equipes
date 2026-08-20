@@ -3,13 +3,10 @@
     Aucune affectation pour le moment : le planning n'a pas encore été publié.
   </p>
 } @else {
-  @if (espace.vue()?.groupeCreneauNom; as groupe) {
+  @if (espace.vue()?.planningResoluLe; as resolu) {
     <p class="espace-groupe">
       <mat-icon inline>event_note</mat-icon>
-      <span i18n="@@espace.planning.groupe">Planning « {{ groupe }} »</span>
-      @if (espace.vue()?.planningResoluLe; as resolu) {
-        <span i18n="@@espace.planning.resoluLe">— mis à jour le {{ resolu | date: 'short' }}</span>
-      }
+      <span i18n="@@espace.planning.resoluLe">Planning mis à jour le {{ resolu | date: 'short' }}</span>
     </p>
   }
   @if (lienPdf(); as pdf) {

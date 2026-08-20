@@ -12,7 +12,6 @@ import java.util.stream.Collectors;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.DemandeEchange;
-import dev.sylvain.planning.domain.GroupeCreneau;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -65,23 +64,18 @@ public class EspaceAnimateurService {
      *                    missing cards; empty when they hold no seat at all
      */
     public record EspaceAnimateurView(String animateurId, String prenom, String nom, Instant planningResoluLe,
-            String groupeCreneauNom, boolean foireOuverte, List<PosteAnimateurView> postes,
+            boolean foireOuverte, List<PosteAnimateurView> postes,
             List<LocalDate> joursRepos, List<CollegueView> collegues) {
     }
 
     /**
      * One demande with every label resolved, shared by the espace and the
-     * admin screen. {@code horsGroupe} marks a demande submitted on another
-     * groupe de créneaux than the one the persisted planning belongs to (an
-     * edition can hold several groups, but the link — the animateur's token —
-     * is unique): impossible to measure or accept against the current
-     * planning, {@code groupeCreneauNom} names where it comes from.
+     * admin screen.
      */
     public record DemandeEchangeView(String id, Long creneauId, LocalDate date, LocalTime heureDebut,
             LocalTime heureFin, String standId, String standNom, String demandeurId, String demandeurNom,
             String cibleId, String cibleNom, String motif, String statut, Boolean prevalidationOk,
-            List<String> contraintesViolees, String commentaireAdmin, boolean horsGroupe,
-            String groupeCreneauNom, Instant creeLe, Instant decideLe) {
+            List<String> contraintesViolees, String commentaireAdmin, Instant creeLe, Instant decideLe) {
     }
 
     public EspaceAnimateurView construireVue(String animateurId) {
@@ -124,7 +118,6 @@ public class EspaceAnimateurService {
         PlanningPersistenceService.PlanningResolution resolution = persistenceService.loadResolution();
         return new EspaceAnimateurView(animateur.getId(), animateur.getPrenom(), animateur.getNom(),
                 resolution == null ? null : resolution.resoluLe(),
-                resolution == null ? null : resolution.groupeCreneauNom(),
                 demandeEchangeService.estFoireOuverte(), postes, joursRepos, collegues);
     }
 
@@ -137,23 +130,13 @@ public class EspaceAnimateurService {
                 .collect(Collectors.toMap(Creneau::getId, Function.identity()));
         Map<String, Stand> stands = referenceDataService.listStands().stream()
                 .collect(Collectors.toMap(Stand::getId, Function.identity()));
-        Map<String, String> nomsGroupes = referenceDataService.listGroupesCreneaux().stream()
-                .collect(Collectors.toMap(GroupeCreneau::getId, groupe ->
-                        groupe.getNom() == null ? groupe.getId() : groupe.getNom()));
-        PlanningPersistenceService.PlanningResolution resolution = persistenceService.loadResolution();
-        String groupeCourant = resolution == null ? null : resolution.groupeCreneauId();
         return demandes.stream()
-                .map(demande -> versVue(demande, animateurs, creneaux, stands, nomsGroupes, groupeCourant))
+                .map(demande -> versVue(demande, animateurs, creneaux, stands))
                 .toList();
     }
 
     private static DemandeEchangeView versVue(DemandeEchange demande, Map<String, Animateur> animateurs,
-            Map<Long, Creneau> creneaux, Map<String, Stand> stands, Map<String, String> nomsGroupes,
-            String groupeCourant) {
-        // A demande without a recorded groupe (or before any resolution) is
-        // never flagged: there is nothing to contradict.
-        boolean horsGroupe = demande.getGroupeCreneauId() != null && groupeCourant != null
-                && !demande.getGroupeCreneauId().equals(groupeCourant);
+            Map<Long, Creneau> creneaux, Map<String, Stand> stands) {
         Creneau creneau = creneaux.get(demande.getCreneauId());
         Stand stand = stands.get(demande.getStandId());
         return new DemandeEchangeView(
@@ -173,10 +156,6 @@ public class EspaceAnimateurService {
                 demande.getPrevalidationOk(),
                 demande.getContraintesViolees(),
                 demande.getCommentaireAdmin(),
-                horsGroupe,
-                horsGroupe
-                        ? nomsGroupes.getOrDefault(demande.getGroupeCreneauId(), demande.getGroupeCreneauId())
-                        : null,
                 demande.getCreeLe(),
                 demande.getDecideLe());
     }

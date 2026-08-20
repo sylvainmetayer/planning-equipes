@@ -16,10 +16,8 @@ import java.util.stream.Collectors;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.DecoupageAutoConfig;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.FenetreHoraire;
-import dev.sylvain.planning.domain.GroupeCreneau;
 import dev.sylvain.planning.domain.HoraireStand;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.ModeHoraire;
@@ -127,7 +125,7 @@ public class ReferenceDataService {
      */
     public List<Stand> listStandsResolus() {
         List<Stand> stands = listStands();
-        HoraireStandResolver.appliquer(stands, listCreneauxGroupeActif());
+        HoraireStandResolver.appliquer(stands, listCreneaux());
         return stands;
     }
 
@@ -339,7 +337,7 @@ public class ReferenceDataService {
 
     /**
      * Rewrites every stand's hand-entered dated windows as the recurring
-     * horaires they repeat, against the active timeslot group's days. With
+     * horaires they repeat, against the edition's days. With
      * {@code appliquer} false nothing is written: the returned report describes
      * what the operation <em>would</em> do, which is what makes it safe to show
      * before committing to it.
@@ -351,7 +349,7 @@ public class ReferenceDataService {
      */
     public CompactageHoraires.RapportCompactage compacterHoraires(boolean appliquer) {
         List<Stand> stands = listStands();
-        List<Creneau> creneaux = listCreneauxGroupeActif();
+        List<Creneau> creneaux = listCreneaux();
         CompactageHoraires.RapportCompactage rapport = CompactageHoraires.compacter(stands, creneaux, appliquer);
         if (!appliquer) {
             return rapport;
@@ -422,24 +420,8 @@ public class ReferenceDataService {
         return repository == null ? List.of() : repository.listCreneaux();
     }
 
-    /** Timeslots of the currently active group only — what the solver builds its problem from. */
-    public List<Creneau> listCreneauxGroupeActif() {
-        return repository == null ? List.of() : repository.listCreneauxGroupeActif();
-    }
-
-    /**
-     * Timeslots of an explicit group, active or not — what the "résoudre tous
-     * les groupes" queue (issue #167) builds each problem from: relying on the
-     * active-group flag there would have every queued solve target the same
-     * group.
-     */
-    public List<Creneau> listCreneauxParGroupe(String groupeCreneauId) {
-        return repository == null ? List.of() : repository.listCreneauxParGroupe(groupeCreneauId);
-    }
-
     public Creneau createCreneau(Creneau creneau) {
         creneau.setId(null); // ignore any client-supplied id — the database always generates it
-        defaultGroupeIfMissing(creneau);
         Creneau created = repository.insertCreneau(creneau);
         markModified();
         return created;
@@ -450,7 +432,6 @@ public class ReferenceDataService {
             throw new NotFoundException("Timeslot not found: " + id);
         }
         creneau.setId(id);
-        defaultGroupeIfMissing(creneau);
         repository.updateCreneau(creneau);
         markModified();
         return creneau;
@@ -462,178 +443,44 @@ public class ReferenceDataService {
     }
 
     /** Clients that don't send a group (older callers, tests) land in the default one. */
-    private void defaultGroupeIfMissing(Creneau creneau) {
-        if (creneau.getGroupe() == null || creneau.getGroupe().getId() == null) {
-            creneau.setGroupe(new GroupeCreneau(GROUPE_CRENEAU_DEFAUT_ID, null, false));
-        }
-    }
-
-    /* -------------------------- Timeslot groups ----------------------------- */
-
-    public List<GroupeCreneau> listGroupesCreneaux() {
-        return repository == null ? List.of() : repository.listGroupesCreneaux();
-    }
-
-    public GroupeCreneau createGroupeCreneau(GroupeCreneau groupe) {
-        groupe.setId(requiredId(groupe.getId(), "timeslot group id"));
-        if (groupe.getNom() == null || groupe.getNom().isBlank()) {
-            throw new IllegalArgumentException("timeslot group name is required");
-        }
-        groupe.setActif(false);
-        repository.saveGroupeCreneau(groupe);
-        markModified();
-        return groupe;
-    }
-
-    public GroupeCreneau updateGroupeCreneau(String id, GroupeCreneau groupe) {
-        if (!repository.groupeCreneauExists(id)) {
-            throw new NotFoundException("Timeslot group not found: " + id);
-        }
-        if (groupe.getNom() == null || groupe.getNom().isBlank()) {
-            throw new IllegalArgumentException("timeslot group name is required");
-        }
-        groupe.setId(id);
-        repository.saveGroupeCreneau(groupe);
-        markModified();
-        return groupe;
-    }
-
-    /**
-     * Doesn't mark reference data as modified: switching the active group is
-     * already surfaced precisely by the groupe de créneaux mismatch check (which
-     * group the last solve ran for vs. the active one), so flagging it here too
-     * would just be a redundant, less specific warning.
-     */
-    public void activerGroupeCreneau(String id) {
-        if (!repository.groupeCreneauExists(id)) {
-            throw new NotFoundException("Timeslot group not found: " + id);
-        }
-        repository.activerGroupeCreneau(id);
-    }
-
-    public void deleteGroupeCreneau(String id) {
-        boolean actif = repository.listGroupesCreneaux().stream()
-                .anyMatch(groupe -> groupe.getId().equals(id) && groupe.isActif());
-        if (actif) {
-            throw new IllegalArgumentException("Impossible de supprimer le groupe actif");
-        }
-        repository.deleteGroupeCreneau(id);
-        markModified();
-    }
-
     /* ------------------------------ Découpage ------------------------------- */
 
     /**
-     * Generates the vacations a source "amplitudes" group would produce,
-     * without persisting anything — used by the découpage preview screen.
+     * Generates the vacations the edition's current créneaux — read as
+     * amplitudes — would produce, without persisting anything: the découpage
+     * preview.
      */
-    public List<Creneau> previsualiserDecoupage(String groupeSourceId) {
-        List<Creneau> amplitudes = repository.listCreneauxParGroupe(groupeSourceId);
+    public List<Creneau> previsualiserDecoupage() {
+        List<Creneau> amplitudes = repository.listCreneaux();
         if (amplitudes.isEmpty()) {
-            throw new IllegalArgumentException("Le groupe source ne contient aucune amplitude: " + groupeSourceId);
+            throw new IllegalArgumentException("Aucune amplitude à découper : l'édition n'a aucun créneau");
         }
         return VacationGeneratorService.genererVacations(amplitudes, getParametresDecoupage());
     }
 
     /**
-     * Materializes the vacations generated from {@code groupeSourceId}'s
-     * amplitudes into {@code groupeCibleId} (created with {@code nomGroupeCible}
-     * if it doesn't exist yet), replacing that target group's créneaux
-     * entirely — every other group, including the source, is untouched.
+     * Materializes the découpage <b>in place</b> (issue #172): the edition's
+     * créneaux — the amplitudes just read — are replaced by the generated
+     * vacations, and the persisted plan goes with them. Re-running with other
+     * parameters means re-importing the scenario (or duplicating an
+     * "amplitudes" edition first): the edition only ever holds one grid.
      */
-    public GroupeCreneau genererDecoupage(String groupeSourceId, String groupeCibleId, String nomGroupeCible,
-            boolean activerGroupeCible) {
-        if (!repository.groupeCreneauExists(groupeSourceId)) {
-            throw new NotFoundException("Timeslot group not found: " + groupeSourceId);
-        }
-        List<Creneau> vacations = previsualiserDecoupage(groupeSourceId);
-
-        GroupeCreneau cible = repository.listGroupesCreneaux().stream()
-                .filter(g -> g.getId().equals(groupeCibleId))
-                .findFirst()
-                .orElseGet(() -> new GroupeCreneau(requiredId(groupeCibleId, "target timeslot group id"),
-                        requiredId(nomGroupeCible, "target timeslot group name"), false));
-        cible.setGroupeSourceId(groupeSourceId);
-        // The découpage settles the amplitudes/vacations question for this
-        // pair: raw amplitudes must not be solved by the queue (issue #167),
-        // their vacations are exactly what it is for.
-        cible.setResoudreEnFile(true);
-        repository.listGroupesCreneaux().stream()
-                .filter(g -> g.getId().equals(groupeSourceId) && g.isResoudreEnFile())
-                .findFirst()
-                .ifPresent(source -> {
-                    source.setResoudreEnFile(false);
-                    repository.saveGroupeCreneau(source);
-                });
-        repository.saveGroupeCreneau(cible);
-        repository.replaceCreneauxDuGroupe(cible.getId(), vacations);
+    public void genererDecoupage() {
+        List<Creneau> vacations = previsualiserDecoupage();
+        repository.replaceCreneaux(vacations);
         markModified();
-        if (activerGroupeCible) {
-            repository.activerGroupeCreneau(cible.getId());
-        }
-        return cible;
     }
 
     /**
      * Applies a scenario's optional {@code decoupageAuto:} section right after
-     * its raw reference data is imported: lands the scenario's créneaux
-     * (amplitudes) into a source group named {@link DecoupageAutoConfig#groupeSourceNom()}
-     * (created if needed), runs the day-to-vacations découpage against it, and
-     * activates the resulting target group named
-     * {@link DecoupageAutoConfig#groupeCibleNom()} — sparing the operator the
-     * manual "Découpage" screen round-trip after every import of that
-     * scenario. Both group ids are derived from their name the same way the
-     * découpage screen derives one from a free-typed name (see the frontend's
-     * {@code slugify}), reusing an existing group of that name if one already
-     * exists instead of creating a duplicate.
+     * its raw reference data is imported: the scenario's créneaux (amplitudes)
+     * land in the edition, then the day-to-vacations découpage replaces them —
+     * sparing the operator the manual "Découpage" screen round-trip after
+     * every import of that scenario.
      */
-    public GroupeCreneau appliquerDecoupageAutomatique(PlanningFestival planning, DecoupageAutoConfig config) {
-        GroupeCreneau source = assurerGroupeCreneauParNom(config.groupeSourceNom());
-        activerGroupeCreneau(source.getId());
+    public void appliquerDecoupageAutomatique(PlanningFestival planning) {
         importFromPlanning(planning);
-        String groupeCibleId = resolveGroupeIdParNom(config.groupeCibleNom());
-        return genererDecoupage(source.getId(), groupeCibleId, config.groupeCibleNom(), true);
-    }
-
-    /** Finds a timeslot group by name (case-insensitive), or creates one otherwise. */
-    private GroupeCreneau assurerGroupeCreneauParNom(String nom) {
-        List<GroupeCreneau> existants = listGroupesCreneaux();
-        return existants.stream()
-                .filter(groupe -> nom.equalsIgnoreCase(groupe.getNom()))
-                .findFirst()
-                .orElseGet(() -> createGroupeCreneau(new GroupeCreneau(slugifyGroupeId(nom, existants), nom, false)));
-    }
-
-    /** Resolves the id a timeslot group named {@code nom} already has, or the id it would get if created. */
-    private String resolveGroupeIdParNom(String nom) {
-        List<GroupeCreneau> existants = listGroupesCreneaux();
-        return existants.stream()
-                .filter(groupe -> nom.equalsIgnoreCase(groupe.getNom()))
-                .map(GroupeCreneau::getId)
-                .findFirst()
-                .orElseGet(() -> slugifyGroupeId(nom, existants));
-    }
-
-    /**
-     * Derives a stable id from a free-typed name — accents stripped,
-     * uppercased, non-alphanumeric runs collapsed to a dash — suffixed with
-     * {@code -2}, {@code -3}... until it doesn't collide with an existing
-     * group id. Mirrors the frontend's {@code slugify} (see {@code slug.ts}),
-     * used there for the same purpose on the découpage screen.
-     */
-    private static String slugifyGroupeId(String nom, List<GroupeCreneau> groupesExistants) {
-        String sansAccents = Normalizer.normalize(nom, Normalizer.Form.NFD).replaceAll("\\p{M}", "");
-        String base = sansAccents.toUpperCase(Locale.ROOT).replaceAll("[^A-Z0-9]+", "-").replaceAll("^-+|-+$", "");
-        if (base.isBlank()) {
-            base = "GROUPE";
-        }
-        Set<String> idsExistants = groupesExistants.stream().map(GroupeCreneau::getId)
-                .collect(Collectors.toCollection(HashSet::new));
-        String id = base;
-        for (int suffixe = 2; idsExistants.contains(id); suffixe++) {
-            id = base + "-" + suffixe;
-        }
-        return id;
+        genererDecoupage();
     }
 
     /* ------------------------------ Typologies ----------------------------- */
@@ -709,39 +556,14 @@ public class ReferenceDataService {
     }
 
     /**
-     * The locks a solve must apply: those recorded for the groupe de créneaux
-     * currently active. Locks kept for another group stay in the table, dormant
-     * until that group is activated again.
-     */
-    public List<VerrouillagePlanning> snapshotVerrouillagesGroupeActif() {
-        if (repository == null) {
-            return List.of();
-        }
-        return repository.listVerrouillagesGroupe(repository.groupeCreneauActifId());
-    }
-
-    /**
-     * The locks recorded for an explicit group — what a queued solve of that
-     * group (issue #167) must apply, where {@link #snapshotVerrouillagesGroupeActif()}
-     * would silently apply the active group's locks to another group's problem.
-     */
-    public List<VerrouillagePlanning> snapshotVerrouillagesGroupe(String groupeCreneauId) {
-        return repository == null ? List.of() : repository.listVerrouillagesGroupe(groupeCreneauId);
-    }
-
-    /**
-     * Records a lock, defaulting its group to the active one and rejecting a
-     * target that does not match the type or does not exist. Locking an already
-     * locked target is a no-op, not an error.
+     * Records a lock, rejecting a target that does not match the type or does
+     * not exist. Locking an already locked target is a no-op, not an error.
      */
     public VerrouillagePlanning createVerrouillage(VerrouillagePlanning verrouillage) {
         if (verrouillage.getType() == null) {
             throw new IllegalArgumentException("Type de verrouillage manquant");
         }
         normaliserCible(verrouillage);
-        if (verrouillage.getGroupeCreneauId() == null || verrouillage.getGroupeCreneauId().isBlank()) {
-            verrouillage.setGroupeCreneauId(repository.groupeCreneauActifId());
-        }
         if (verrouillage.getId() == null || verrouillage.getId().isBlank()) {
             verrouillage.setId(UUID.randomUUID().toString());
         }

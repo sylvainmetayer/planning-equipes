@@ -73,7 +73,7 @@ class PlanningServiceScenarioDepuisTexteTest {
         assertThat(importe.parametresDecoupage()).isPresent();
         assertThat(importe.parametresSolveur()).isPresent();
         assertThat(importe.parametresSolveur().orElseThrow().getDureeResolutionSecondes()).isEqualTo(400);
-        assertThat(importe.decoupageAuto()).isEmpty();
+        assertThat(importe.decoupageAuto()).isFalse();
     }
 
     @Test
@@ -83,9 +83,7 @@ class PlanningServiceScenarioDepuisTexteTest {
 
         PlanningService.ScenarioImporte importe = service.construireDepuisTexteScenario(yaml);
 
-        assertThat(importe.decoupageAuto()).isPresent();
-        assertThat(importe.decoupageAuto().orElseThrow().groupeSourceNom()).isEqualTo("Amplitudes import auto");
-        assertThat(importe.decoupageAuto().orElseThrow().groupeCibleNom()).isEqualTo("Vacations import auto");
+        assertThat(importe.decoupageAuto()).isTrue();
     }
 
     @Test

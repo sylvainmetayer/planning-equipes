@@ -96,7 +96,7 @@ public class WhatIfService {
     public ResultatWhatIf simuler(Mutations mutations) {
         List<Animateur> animateursReference = referenceDataService.listAnimateurs();
         List<Stand> standsReference = referenceDataService.listStandsResolus();
-        List<Creneau> creneaux = referenceDataService.listCreneauxGroupeActif();
+        List<Creneau> creneaux = referenceDataService.listCreneaux();
 
         List<Animateur> animateurs = appliquerAuxAnimateurs(animateursReference, mutations);
         List<Stand> stands = appliquerAuxStands(standsReference, mutations);
@@ -121,7 +121,7 @@ public class WhatIfService {
         PlanningFestival probleme = planningService.construireDepuisReferenceData(
                 appliquerAuxAnimateurs(referenceDataService.listAnimateurs(), mutations),
                 appliquerAuxStands(referenceDataService.listStandsResolus(), mutations),
-                referenceDataService.listCreneauxGroupeActif());
+                referenceDataService.listCreneaux());
         return probleme;
     }
 

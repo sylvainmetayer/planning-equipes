@@ -37,7 +37,6 @@ import { SolverJobService } from '../core/solver-job.service';
 import { DataStaleIndicator } from '../shared/data-stale-indicator';
 import { SolverRunningIndicator } from '../shared/solver-running-indicator';
 import { EditionActuelleBar } from '../shared/edition-actuelle-bar';
-import { GroupeMismatchBanner } from '../shared/groupe-mismatch-banner';
 
 interface NavLink {
   path: string;
@@ -190,8 +189,7 @@ function buildNavGroups(): NavGroup[] {
     MatDividerModule,
     DataStaleIndicator,
     SolverRunningIndicator,
-    EditionActuelleBar,
-    GroupeMismatchBanner
+    EditionActuelleBar
   ],
   templateUrl: './admin-shell.html',
   styleUrl: './admin-shell.css',

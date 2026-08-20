@@ -4,7 +4,6 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.nullValue;
 
 import java.util.List;
 
@@ -117,63 +116,10 @@ class PlanSnapshotResourceTest {
         assertThat(nombreAffectations()).isZero();
     }
 
-    /**
-     * Restoring a snapshot of ANOTHER groupe de créneaux than the active one
-     * would silently replace the planning with one computed for a different
-     * set of créneaux: refused by default, possible only with {@code ?forcer}.
-     */
-    @Test
-    void restaurationBloqueeQuandLeGroupeActifADiverge() throws InterruptedException {
-        planPersiste();
-        long id = capturer("Plan du groupe d'origine");
-        String groupeOrigine = given()
-                .when().get("/api/planning/persisted/resolution")
-                .then()
-                .statusCode(200)
-                .extract().jsonPath().getString("groupeCreneauId");
-        assertThat(groupeOrigine).isNotNull();
-
-        // The admin prepares and activates another groupe.
-        given().contentType(ContentType.JSON)
-                .body("{\"id\":\"SNAP-G2\",\"nom\":\"Autre groupe\"}")
-                .when().post("/api/groupes-creneaux")
-                .then().statusCode(200);
-        given().contentType(ContentType.JSON)
-                .when().put("/api/groupes-creneaux/SNAP-G2/actif")
-                .then().statusCode(204);
-        try {
-            given()
-                    .when().post("/api/planning/snapshots/" + id + "/restore")
-                    .then()
-                    .statusCode(409)
-                    .body("groupeDifferent", equalTo(true))
-                    .body("message", org.hamcrest.Matchers.containsString("groupe de créneaux"));
-
-            // The explicit override still works — a deliberate choice.
-            given()
-                    .when().post("/api/planning/snapshots/" + id + "/restore?forcer=true")
-                    .then()
-                    .statusCode(200)
-                    .body("restaure", equalTo(true));
-        } finally {
-            given().contentType(ContentType.JSON)
-                    .when().put("/api/groupes-creneaux/" + groupeOrigine + "/actif")
-                    .then().statusCode(204);
-            given().when().delete("/api/groupes-creneaux/SNAP-G2")
-                    .then().statusCode(204);
-        }
-    }
-
     @Test
     void unInstantaneSurvitALaDisparitionDeSesCreneaux() throws InterruptedException {
         planPersiste();
-        String groupeNom = given()
-                .when().get("/api/planning/persisted/resolution")
-                .then()
-                .statusCode(200)
-                .extract().jsonPath().getString("groupeCreneauNom");
-
-        long id = capturer("Groupe bientôt abandonné");
+        long id = capturer("Grille bientôt abandonnée");
 
         // Wipes the créneaux (and with them every poste_affectation row) the
         // snapshot was computed on. A snapshot made of copied rows would be gone
@@ -186,8 +132,7 @@ class PlanSnapshotResourceTest {
                 .when().get("/api/planning/snapshots/" + id)
                 .then()
                 .statusCode(200)
-                .body("meta.libelle", equalTo("Groupe bientôt abandonné"))
-                .body("meta.groupeNom", groupeNom == null ? nullValue() : equalTo(groupeNom))
+                .body("meta.libelle", equalTo("Grille bientôt abandonnée"))
                 .body("affectations.size()", greaterThan(0));
     }
 

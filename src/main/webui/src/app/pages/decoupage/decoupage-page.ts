@@ -11,18 +11,18 @@ import { MatSelectModule } from '@angular/material/select';
 import { ApiService } from '../../core/api.service';
 import { NotificationService } from '../../core/notification.service';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
-import { ReferenceDataStore } from '../../core/reference-data.store';
-import { slugify } from '../../core/slug';
-import { Creneau, DecoupageRequest, GroupeCreneau, ParametresDecoupage } from '../../core/models';
+import { ConfirmService } from '../../shared/confirm-dialog';
+import { Creneau, ParametresDecoupage } from '../../core/models';
 import { StatusMessage } from '../../shared/status-message';
 import { summarizeVacationsByDay } from './decoupage';
 
 /**
- * Découpage automatique : à partir d'un groupe d'amplitudes (une seule
- * fenêtre d'ouverture par jour, ex. le scénario "continu"), génère les
- * vacations de travail réelles (plus courtes, chevauchantes, jamais au-dessus
- * du seuil légal de pause) dans un groupe de créneaux cible, sans saisie
- * manuelle détaillée. Voir `docs/domaine.md#découpage-automatique-en-vacations`.
+ * Découpage automatique : à partir des créneaux actuels de l'édition, lus
+ * comme des amplitudes (une seule fenêtre d'ouverture par jour, ex. le
+ * scénario "continu"), génère les vacations de travail réelles (plus courtes,
+ * chevauchantes, jamais au-dessus du seuil légal de pause) et les substitue
+ * EN PLACE aux amplitudes (issue #172 : l'édition ne porte qu'une grille).
+ * Voir `docs/domaine.md#découpage-automatique-en-vacations`.
  */
 @Component({
   selector: 'app-decoupage-page',
@@ -41,13 +41,10 @@ import { summarizeVacationsByDay } from './decoupage';
   templateUrl: './decoupage-page.html'
 })
 export class DecoupagePage {
-  protected readonly store = inject(ReferenceDataStore);
-
   private readonly api = inject(ApiService);
   private readonly crud = inject(ReferenceCrudService);
   private readonly notifications = inject(NotificationService);
-
-  protected readonly groupeSourceId = signal<string | null>(null);
+  private readonly confirm = inject(ConfirmService);
 
   protected readonly parametres = signal<ParametresDecoupage | null>(null);
   protected readonly parametresLoading = signal(false);
@@ -73,17 +70,7 @@ export class DecoupagePage {
 
   protected readonly previewVacations = signal<Creneau[] | null>(null);
   protected readonly previewLoading = signal(false);
-
-  /** `null` = créer un nouveau groupe cible (voir `nomGroupeCible`). */
-  protected readonly groupeCibleExistantId = signal<string | null>(null);
-  protected readonly nomGroupeCible = signal('');
-  protected readonly activerGroupeCible = signal(false);
   protected readonly genererLoading = signal(false);
-
-  /** Un groupe ne peut pas se découper lui-même : jamais listé comme cible possible. */
-  protected readonly groupesCiblePossibles = computed(() =>
-    this.store.groupesCreneaux().filter((groupe) => groupe.id !== this.groupeSourceId())
-  );
 
   protected readonly resume = computed(() => {
     const vacations = this.previewVacations();
@@ -93,22 +80,6 @@ export class DecoupagePage {
   constructor() {
     void this.crud.reload();
     void this.chargerParametres();
-  }
-
-  protected setGroupeSource(id: string | null): void {
-    this.groupeSourceId.set(id);
-    this.previewVacations.set(null);
-    if (id !== null && this.groupeCibleExistantId() === id) {
-      this.groupeCibleExistantId.set(null);
-    }
-  }
-
-  protected setGroupeCibleExistant(id: string | null): void {
-    this.groupeCibleExistantId.set(id);
-    const groupe = this.store.groupesCreneaux().find((g) => g.id === id);
-    if (groupe) {
-      this.nomGroupeCible.set(groupe.nom);
-    }
   }
 
   private async chargerParametres(): Promise<void> {
@@ -143,16 +114,10 @@ export class DecoupagePage {
   }
 
   protected async previsualiser(): Promise<void> {
-    const groupeId = this.groupeSourceId();
-    if (!groupeId) {
-      return;
-    }
     this.previewLoading.set(true);
     this.previewVacations.set(null);
     try {
-      this.previewVacations.set(
-        await this.api.get<Creneau[]>(`/api/decoupage/preview?groupeSourceId=${encodeURIComponent(groupeId)}`)
-      );
+      this.previewVacations.set(await this.api.get<Creneau[]>('/api/decoupage/preview'));
     } catch (error) {
       this.crud.reportError(error);
     } finally {
@@ -160,30 +125,23 @@ export class DecoupagePage {
     }
   }
 
+  /** Confirmed first: the generation replaces the edition's créneaux and erases the persisted plan with them. */
   protected async genererDecoupage(): Promise<void> {
-    const groupeSourceId = this.groupeSourceId();
-    const nom = this.nomGroupeCible().trim();
-    if (!groupeSourceId || !nom) {
+    const confirme = await this.confirm.ask({
+      title: $localize`:@@decoupage.generer.title:Générer le découpage`,
+      message: $localize`:@@decoupage.generer.confirm:Les créneaux actuels de l'édition (les amplitudes) seront remplacés par les vacations générées, et le planning résolu sera effacé avec eux. Pour re-découper avec d'autres paramètres, il faudra ré-importer le scénario source.`,
+      confirmLabel: $localize`:@@decoupage.generer.submitCourt:Générer les vacations`,
+      danger: true
+    });
+    if (!confirme) {
       return;
     }
-    const groupeCibleId =
-      this.groupeCibleExistantId() ??
-      slugify(
-        nom,
-        this.store.groupesCreneaux().map((g) => g.id)
-      );
     this.genererLoading.set(true);
     try {
-      const requete: DecoupageRequest = {
-        groupeSourceId,
-        groupeCibleId,
-        nomGroupeCible: nom,
-        activerGroupeCible: this.activerGroupeCible()
-      };
-      const groupe = await this.api.post<GroupeCreneau>('/api/decoupage/generer', requete);
+      await this.api.post('/api/decoupage/generer', {});
       await this.crud.reload();
       this.notifications.notify({
-        title: $localize`:@@decoupage.generated:Découpage généré dans le groupe ${groupe.nom}:nom:.`,
+        title: $localize`:@@decoupage.generated:Découpage généré : les vacations ont remplacé les amplitudes.`,
         variant: 'success',
         timeout: 6000
       });

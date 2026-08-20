@@ -8,21 +8,6 @@
 <p class="bulk-hint" i18n="@@bulk.hint">Seuls les champs renseignés ci-dessous sont modifiés ; les autres gardent la valeur propre à chaque ligne.</p>
 
 <div class="bulk-field">
-  <h3 i18n="@@creneaux.field.groupe">Groupe de créneaux</h3>
-  <div class="bulk-field-row">
-    <mat-form-field appearance="outline">
-      <mat-label i18n="@@creneaux.field.groupe">Groupe de créneaux</mat-label>
-      <mat-select name="groupeId" [ngModel]="patch().groupeId" (ngModelChange)="update({ groupeId: $event })">
-        <mat-option [value]="null" i18n="@@bulk.mode.inchange">Ne pas modifier</mat-option>
-        @for (groupe of store.groupesCreneaux(); track groupe.id) {
-          <mat-option [value]="groupe.id">{{ groupe.nom || groupe.id }}</mat-option>
-        }
-      </mat-select>
-    </mat-form-field>
-  </div>
-</div>
-
-<div class="bulk-field">
   <h3 i18n="@@creneaux.bulk.horaires">Horaires</h3>
   <p class="bulk-hint" i18n="@@bulk.hint.emptyKeeps">Laissez un champ vide pour conserver la valeur de chaque ligne.</p>
   <div class="bulk-field-row">

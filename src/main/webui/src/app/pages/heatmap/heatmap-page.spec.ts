@@ -3,7 +3,7 @@ import { Animateur, Creneau, PosteAffectation, Stand } from '../../core/models';
 import { buildAnimateurHeatmap, buildStandHeatmap } from './heatmap-page';
 
 function creneau(overrides: Partial<Creneau> & { id: number; jour: number }): Creneau {
-  return { date: '2026-08-01', heureDebut: '13:40', heureFin: '19:00', groupe: null, ...overrides };
+  return { date: '2026-08-01', heureDebut: '13:40', heureFin: '19:00', ...overrides };
 }
 
 function stand(id: string, typologiesProposees: string[] = []): Stand {

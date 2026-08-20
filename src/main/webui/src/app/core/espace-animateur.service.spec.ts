@@ -12,7 +12,6 @@ function vue(): EspaceAnimateurView {
     prenom: 'Alice',
     nom: 'Martin',
     planningResoluLe: null,
-    groupeCreneauNom: null,
     foireOuverte: true,
     postes: [],
     joursRepos: [],
@@ -38,8 +37,6 @@ function demande(id: string): DemandeEchangeView {
     prevalidationOk: true,
     contraintesViolees: [],
     commentaireAdmin: null,
-    horsGroupe: false,
-    groupeCreneauNom: null,
     creeLe: '2026-07-01T10:00:00Z',
     decideLe: null
   };

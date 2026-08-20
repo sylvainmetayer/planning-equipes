@@ -3,7 +3,7 @@ import { Animateur, Creneau, PosteAffectation, Stand } from '../../core/models';
 import { buildAnimateurOptions, buildAnimateurTimeline, buildStandsSummary, exportFilename } from './animateur-timeline-page';
 
 function creneau(overrides: Partial<Creneau> & { id: number; jour: number }): Creneau {
-  return { date: '2026-08-01', heureDebut: '09:00', heureFin: '12:00', groupe: null, ...overrides };
+  return { date: '2026-08-01', heureDebut: '09:00', heureFin: '12:00', ...overrides };
 }
 
 function stand(id: string, typologiesProposees: string[] = []): Stand {

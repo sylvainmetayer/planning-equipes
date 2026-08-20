@@ -10,9 +10,9 @@ import java.util.Objects;
  * persisted solve. Two editions never see each other's rows, so a past edition
  * stays readable while the next one is being prepared.
  *
- * <p>Not to be confused with {@link GroupeCreneau}, the pre-existing and
- * narrower notion: a <i>grille de créneaux</i>, i.e. one alternative slicing of
- * the days <b>inside</b> one {@code Edition}. See {@code docs/editions.md} §3.</p>
+ * <p>Since issue #172 the edition is the <b>only</b> variant carrier: a
+ * "plan canicule" is a duplicated edition, and the découpage replaces the
+ * edition's créneaux in place. See {@code docs/editions.md}.</p>
  *
  * <p>{@code defaut} is not "the current edition" — that one is designated by
  * the client on every request through the {@code X-Edition-Id} header. It is

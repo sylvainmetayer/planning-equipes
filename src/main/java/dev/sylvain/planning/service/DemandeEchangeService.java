@@ -106,7 +106,6 @@ public class DemandeEchangeService {
 
         DemandeEchange demande = new DemandeEchange();
         demande.setId(UUID.randomUUID().toString());
-        demande.setGroupeCreneauId(resolution == null ? null : resolution.groupeCreneauId());
         demande.setDemandeurId(demandeurId);
         demande.setCibleId(nouvelle.cibleId());
         demande.setCreneauId(nouvelle.creneauId());
@@ -187,35 +186,6 @@ public class DemandeEchangeService {
         }
     }
 
-    /**
-     * An edition can hold several groupes de créneaux, but the persisted
-     * planning belongs to exactly one: a demande submitted on another groupe
-     * references créneaux that no longer exist in it. Refused with a business
-     * message, rather than the technical "Aucun poste…" the simulation would
-     * otherwise throw. The refusal of such a demande stays possible — it is
-     * how the admin purges them.
-     */
-    private void verifierGroupeCourant(DemandeEchange demande) {
-        PlanningPersistenceService.PlanningResolution resolution = persistenceService.loadResolution();
-        String groupeCourant = resolution == null ? null : resolution.groupeCreneauId();
-        if (demande.getGroupeCreneauId() == null || groupeCourant == null
-                || demande.getGroupeCreneauId().equals(groupeCourant)) {
-            return;
-        }
-        throw new IllegalArgumentException("Cette demande concerne le groupe de créneaux « "
-                + nomGroupe(demande.getGroupeCreneauId()) + " » ; le planning actuel est sur le groupe « "
-                + (resolution.groupeCreneauNom() == null ? groupeCourant : resolution.groupeCreneauNom())
-                + " ». Elle ne peut être ni mesurée ni acceptée en l'état — refusez-la, ou re-résolvez ce groupe.");
-    }
-
-    private String nomGroupe(String groupeId) {
-        return referenceDataService.listGroupesCreneaux().stream()
-                .filter(groupe -> groupeId.equals(groupe.getId()))
-                .map(groupe -> groupe.getNom() == null ? groupe.getId() : groupe.getNom())
-                .findFirst()
-                .orElse(groupeId);
-    }
-
     /* -------------------------------- Admin -------------------------------- */
 
     public List<DemandeEchange> lister() {
@@ -229,7 +199,6 @@ public class DemandeEchangeService {
      */
     public EchangeSimulation impact(String demandeId) {
         DemandeEchange demande = demandeRequise(demandeId);
-        verifierGroupeCourant(demande);
         PlanningFestival planning = persistenceService.loadPersistedPlanning();
         return planningService.simulerEchange(planning,
                 demande.getDemandeurId(), demande.getCibleId(), demande.getCreneauId(), demande.getStandId());
@@ -246,7 +215,6 @@ public class DemandeEchangeService {
     public DemandeEchange accepter(String demandeId, String commentaire) {
         DemandeEchange demande = demandeRequise(demandeId);
         exigerEnAttente(demande);
-        verifierGroupeCourant(demande);
         PlanningFestival planning = persistenceService.loadPersistedPlanning();
         EchangeSimulation simulation = planningService.simulerEchange(planning,
                 demande.getDemandeurId(), demande.getCibleId(), demande.getCreneauId(), demande.getStandId());
@@ -283,7 +251,6 @@ public class DemandeEchangeService {
             VerrouillagePlanning verrouillage = new VerrouillagePlanning(null, TypeVerrouillage.ANIMATEUR_CRENEAU);
             verrouillage.setAnimateurId(animateurId);
             verrouillage.setCreneauId(demande.getCreneauId());
-            verrouillage.setGroupeCreneauId(demande.getGroupeCreneauId());
             verrouillage.setRaison("Échange validé (demande " + demande.getId() + ")");
             referenceDataService.createVerrouillage(verrouillage);
         }
@@ -340,29 +307,28 @@ public class DemandeEchangeService {
 
     /* --------------------------------- SQL --------------------------------- */
 
-    private static final String COLONNES = "id, groupe_creneau_id, demandeur_id, cible_id, creneau_id, stand_id, "
+    private static final String COLONNES = "id, demandeur_id, cible_id, creneau_id, stand_id, "
             + "motif, statut, prevalidation_ok, contraintes_violees, commentaire_admin, cree_le, decide_le";
 
     private void inserer(DemandeEchange demande) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = prepareScoped(connection,
                         "INSERT INTO demande_echange (edition_id, " + COLONNES + ") "
-                                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             ps.setString(2, demande.getId());
-            ps.setString(3, demande.getGroupeCreneauId());
-            ps.setString(4, demande.getDemandeurId());
-            ps.setString(5, demande.getCibleId());
-            ps.setLong(6, demande.getCreneauId());
-            ps.setString(7, demande.getStandId());
-            ps.setString(8, demande.getMotif());
-            ps.setString(9, demande.getStatut().name());
-            ps.setObject(10, demande.getPrevalidationOk());
-            ps.setString(11, demande.getContraintesViolees().isEmpty()
+            ps.setString(3, demande.getDemandeurId());
+            ps.setString(4, demande.getCibleId());
+            ps.setLong(5, demande.getCreneauId());
+            ps.setString(6, demande.getStandId());
+            ps.setString(7, demande.getMotif());
+            ps.setString(8, demande.getStatut().name());
+            ps.setObject(9, demande.getPrevalidationOk());
+            ps.setString(10, demande.getContraintesViolees().isEmpty()
                     ? null
                     : String.join("\n", demande.getContraintesViolees()));
-            ps.setString(12, demande.getCommentaireAdmin());
-            ps.setTimestamp(13, Timestamp.from(demande.getCreeLe()));
-            ps.setTimestamp(14, demande.getDecideLe() == null ? null : Timestamp.from(demande.getDecideLe()));
+            ps.setString(11, demande.getCommentaireAdmin());
+            ps.setTimestamp(12, Timestamp.from(demande.getCreeLe()));
+            ps.setTimestamp(13, demande.getDecideLe() == null ? null : Timestamp.from(demande.getDecideLe()));
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to store demande " + demande.getId(), e);
@@ -400,7 +366,6 @@ public class DemandeEchangeService {
     private static DemandeEchange lire(ResultSet rs) throws SQLException {
         DemandeEchange demande = new DemandeEchange();
         demande.setId(rs.getString("id"));
-        demande.setGroupeCreneauId(rs.getString("groupe_creneau_id"));
         demande.setDemandeurId(rs.getString("demandeur_id"));
         demande.setCibleId(rs.getString("cible_id"));
         demande.setCreneauId(rs.getLong("creneau_id"));

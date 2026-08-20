@@ -8,10 +8,8 @@ import java.time.LocalDate;
  * touch again. Persistent state (one row per active lock in
  * {@code verrouillage_planning}), not a journal: deleting the row unlocks.
  *
- * <p>A lock carries exactly one target, matching its {@link TypeVerrouillage}.
- * It is scoped to the groupe de créneaux it was created for: switching the
- * active group is switching planning, and the seats of another group are not
- * the ones that were validated.</p>
+ * <p>A lock carries exactly one target, matching its {@link TypeVerrouillage},
+ * and belongs to its edition like the rest of the referential.</p>
  *
  * <p>Two mechanisms enforce it, both wired from
  * {@code PlanningService.construireDepuisReferenceData}:</p>
@@ -30,7 +28,6 @@ public class VerrouillagePlanning {
 
     private String id;
     private TypeVerrouillage type;
-    private String groupeCreneauId;
     private String animateurId;
     private String standId;
     private Long creneauId;
@@ -51,9 +48,6 @@ public class VerrouillagePlanning {
      * TypeVerrouillage#ANIMATEUR} case reads the poste's current animateur, so
      * it only answers usefully once the seat has been seeded from the persisted
      * planning.
-     *
-     * <p>Says nothing about the groupe de créneaux: the caller only ever
-     * evaluates locks already filtered on the active group.</p>
      */
     public boolean couvre(PosteAffectation poste) {
         if (poste == null || type == null) {
@@ -94,14 +88,6 @@ public class VerrouillagePlanning {
 
     public void setType(TypeVerrouillage type) {
         this.type = type;
-    }
-
-    public String getGroupeCreneauId() {
-        return groupeCreneauId;
-    }
-
-    public void setGroupeCreneauId(String groupeCreneauId) {
-        this.groupeCreneauId = groupeCreneauId;
     }
 
     public String getAnimateurId() {

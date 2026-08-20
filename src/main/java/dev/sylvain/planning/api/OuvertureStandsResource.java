@@ -36,6 +36,6 @@ public class OuvertureStandsResource {
     public RapportOuvertures analyser() {
         return OuvertureStandsAnalyzer.analyser(
                 referenceDataService.listStandsResolus(),
-                referenceDataService.listCreneauxGroupeActif());
+                referenceDataService.listCreneaux());
     }
 }

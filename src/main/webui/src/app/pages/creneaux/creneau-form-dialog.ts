@@ -7,21 +7,15 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
-import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
-import { slugify } from '../../core/slug';
-import { Creneau, GroupeCreneau } from '../../core/models';
+import { Creneau } from '../../core/models';
 
 /** Sentinel `mat-select` value that reveals the "new group" name field. */
-const NOUVEAU_GROUPE = '__nouveau__';
-const GROUPE_DEFAUT_ID = 'DEFAUT';
 
 interface CreneauDraft {
   date: string;
   heureDebut: string;
   heureFin: string;
-  groupeId: string;
-  nouveauGroupeNom: string;
 }
 
 export interface CreneauFormData {
@@ -48,17 +42,12 @@ export class CreneauFormDialog {
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
   protected readonly editingLocked = computed(() => this.jobs.solverBusy());
 
-  protected readonly store = inject(ReferenceDataStore);
   protected readonly dialogRef = inject<MatDialogRef<CreneauFormDialog, boolean>>(MatDialogRef);
   private readonly data = inject<CreneauFormData>(MAT_DIALOG_DATA);
   private readonly crud = inject(ReferenceCrudService);
 
-  protected readonly nouveauGroupeValue = NOUVEAU_GROUPE;
   protected readonly editingId = signal<number | null>(this.data.creneau?.id ?? null);
-  /** New créneaux default to the currently active group, not a fixed one. */
-  private readonly activeGroupeId =
-    this.store.groupesCreneaux().find((groupe) => groupe.actif)?.id ?? GROUPE_DEFAUT_ID;
-  protected readonly draft = signal<CreneauDraft>(toDraft(this.data.creneau, this.activeGroupeId));
+  protected readonly draft = signal<CreneauDraft>(toDraft(this.data.creneau));
   protected readonly formTitle = computed(() => {
     const creneau = this.data.creneau;
     return creneau
@@ -77,20 +66,11 @@ export class CreneauFormDialog {
 
   protected async save(): Promise<void> {
     const draft = this.draft();
-    let groupeId = draft.groupeId;
-    if (groupeId === NOUVEAU_GROUPE) {
-      const id = await this.creerGroupe(draft.nouveauGroupeNom.trim());
-      if (!id) {
-        return;
-      }
-      groupeId = id;
-    }
     const editingId = this.editingId();
     const creneau: Partial<Creneau> = {
       date: draft.date,
       heureDebut: draft.heureDebut,
-      heureFin: draft.heureFin,
-      groupe: { id: groupeId, nom: '', actif: false }
+      heureFin: draft.heureFin
     };
     if (editingId != null) {
       creneau.id = editingId;
@@ -104,41 +84,15 @@ export class CreneauFormDialog {
     }
   }
 
-  /** Creates the group typed in the "new group" field, deriving its id from the name. Returns the new id, or null on failure. */
-  private async creerGroupe(nom: string): Promise<string | null> {
-    if (!nom) {
-      return null;
-    }
-    const id = slugify(
-      nom,
-      this.store.groupesCreneaux().map((groupe) => groupe.id)
-    );
-    const groupe: GroupeCreneau = { id, nom, actif: false };
-    const created = await this.crud.save(
-      'groupes-creneaux',
-      groupe,
-      null,
-      $localize`:@@groupesCreneaux.entityLabel:Groupe de créneaux`
-    );
-    return created ? groupe.id : null;
-  }
 }
 
-function toDraft(creneau: Creneau | null, activeGroupeId: string): CreneauDraft {
+function toDraft(creneau: Creneau | null): CreneauDraft {
   if (!creneau) {
-    return {
-      date: '',
-      heureDebut: '',
-      heureFin: '',
-      groupeId: activeGroupeId,
-      nouveauGroupeNom: ''
-    };
+    return { date: '', heureDebut: '', heureFin: '' };
   }
   return {
     date: creneau.date ?? '',
     heureDebut: creneau.heureDebut ?? '',
-    heureFin: creneau.heureFin ?? '',
-    groupeId: creneau.groupe?.id ?? activeGroupeId,
-    nouveauGroupeNom: ''
+    heureFin: creneau.heureFin ?? ''
   };
 }

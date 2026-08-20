@@ -7,9 +7,7 @@ import java.util.Optional;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.DecoupageAutoConfig;
 import dev.sylvain.planning.domain.Emplacement;
-import dev.sylvain.planning.domain.GroupeCreneau;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresSolveur;
@@ -148,59 +146,25 @@ public class ReferenceDataResource {
         return Response.noContent().build();
     }
 
-    @GET
-    @Path("/groupes-creneaux")
-    public List<GroupeCreneau> listGroupesCreneaux() {
-        return referenceDataService.listGroupesCreneaux();
-    }
-
-    @POST
-    @Path("/groupes-creneaux")
-    public GroupeCreneau createGroupeCreneau(GroupeCreneau groupe) {
-        return referenceDataService.createGroupeCreneau(groupe);
-    }
-
-    @PUT
-    @Path("/groupes-creneaux/{id}")
-    public GroupeCreneau updateGroupeCreneau(@PathParam("id") String id, GroupeCreneau groupe) {
-        return referenceDataService.updateGroupeCreneau(id, groupe);
-    }
-
-    /** Activates this group for the next solve and deactivates every other one. */
-    @PUT
-    @Path("/groupes-creneaux/{id}/actif")
-    public Response activerGroupeCreneau(@PathParam("id") String id) {
-        referenceDataService.activerGroupeCreneau(id);
-        return Response.noContent().build();
-    }
-
-    @DELETE
-    @Path("/groupes-creneaux/{id}")
-    public Response deleteGroupeCreneau(@PathParam("id") String id) {
-        referenceDataService.deleteGroupeCreneau(id);
-        return Response.noContent().build();
-    }
-
-    /** Preview of the vacations a source "amplitudes" group would generate — nothing is persisted. */
+    /** Preview of the vacations the edition's current créneaux (read as amplitudes) would generate — nothing is persisted. */
     @GET
     @Path("/decoupage/preview")
-    public List<Creneau> previsualiserDecoupage(@QueryParam("groupeSourceId") String groupeSourceId) {
-        return referenceDataService.previsualiserDecoupage(groupeSourceId);
+    public List<Creneau> previsualiserDecoupage() {
+        return referenceDataService.previsualiserDecoupage();
     }
 
     /**
-     * Materializes the découpage into the target group (created if it doesn't
-     * exist yet), replacing that group's créneaux entirely.
+     * Materializes the découpage in place: the edition's créneaux — the
+     * amplitudes just previewed — are replaced by the generated vacations
+     * (issue #172). Re-running with other parameters means re-importing the
+     * scenario, or duplicating an "amplitudes" edition first.
      */
     @POST
     @Path("/decoupage/generer")
-    public GroupeCreneau genererDecoupage(DecoupageRequest requete) {
-        return referenceDataService.genererDecoupage(requete.groupeSourceId(), requete.groupeCibleId(),
-                requete.nomGroupeCible(), requete.activerGroupeCible());
-    }
-
-    public record DecoupageRequest(String groupeSourceId, String groupeCibleId, String nomGroupeCible,
-            boolean activerGroupeCible) {
+    @Consumes(MediaType.WILDCARD)
+    public Response genererDecoupage() {
+        referenceDataService.genererDecoupage();
+        return Response.noContent().build();
     }
 
     @GET
@@ -346,11 +310,10 @@ public class ReferenceDataResource {
                 .ifPresent(referenceDataService::updateParametresDecoupage);
         planningService.chargerParametresSolveurScenario(name).ifPresent(referenceDataService::updateParametresSolveur);
         PlanningFestival planning = planningService.construireExemple(name);
-        Optional<DecoupageAutoConfig> decoupageAuto = planningService.chargerDecoupageAutoScenario(name);
-        if (decoupageAuto.isPresent()) {
-            referenceDataService.appliquerDecoupageAutomatique(planning, decoupageAuto.get());
+        if (planningService.chargerDecoupageAutoScenario(name)) {
+            referenceDataService.appliquerDecoupageAutomatique(planning);
             appliquerTypologiesScenario(name);
-            return Response.ok(new ImportScenarioResult(decoupageAuto.get().groupeCibleNom())).build();
+            return Response.ok(new ImportScenarioResult(true)).build();
         }
         referenceDataService.importFromPlanning(planning);
         appliquerTypologiesScenario(name);
@@ -388,10 +351,10 @@ public class ReferenceDataResource {
             importe.parametresLegaux().ifPresent(referenceDataService::updateParametresLegaux);
             importe.parametresDecoupage().ifPresent(referenceDataService::updateParametresDecoupage);
             importe.parametresSolveur().ifPresent(referenceDataService::updateParametresSolveur);
-            if (importe.decoupageAuto().isPresent()) {
-                referenceDataService.appliquerDecoupageAutomatique(importe.planning(), importe.decoupageAuto().get());
+            if (importe.decoupageAuto()) {
+                referenceDataService.appliquerDecoupageAutomatique(importe.planning());
                 importe.typologies().forEach(referenceDataService::createTypologie);
-                return Response.ok(new ImportScenarioResult(importe.decoupageAuto().get().groupeCibleNom())).build();
+                return Response.ok(new ImportScenarioResult(true)).build();
             }
             referenceDataService.importFromPlanning(importe.planning());
             importe.typologies().forEach(referenceDataService::createTypologie);
@@ -406,11 +369,10 @@ public class ReferenceDataResource {
     /**
      * Body returned by {@link #importScenario} and {@link #importScenarioFichier}
      * when the scenario carried a {@code decoupageAuto:} section, so the
-     * frontend can notify the operator that the import was auto-sliced and
-     * which timeslot group now holds (and is active with) the resulting
-     * vacations — sparing them a silent group switch under the hood.
+     * frontend can notify the operator that the imported amplitudes were
+     * auto-sliced into the vacations the edition now holds.
      */
-    public record ImportScenarioResult(String decoupageAutoGroupeCibleNom) {
+    public record ImportScenarioResult(boolean decoupageAuto) {
     }
 
     /**

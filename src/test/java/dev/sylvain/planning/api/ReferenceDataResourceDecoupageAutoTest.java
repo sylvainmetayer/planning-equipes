@@ -14,61 +14,42 @@ import org.junit.jupiter.api.Test;
  * The optional {@code decoupageAuto:} scenario section (issue #110): a
  * scenario written straight in "amplitudes" (one long opening window per day)
  * can ask its import to auto-slice itself into vacations, sparing the
- * operator the manual "Découpage" screen round-trip. {@code scenario-decoupage-auto.yaml}
- * (test fixture) carries a single 14h amplitude — same shape as
- * {@code VacationGeneratorServiceTest}'s "continu" case — which
- * {@code VacationGeneratorService} always relay-splits into exactly 5
- * vacations under default {@code parametresDecoupage} (two real meal
- * breaks, each splitting an otherwise-3-vacation relay chain in two).
+ * operator the manual "Découpage" screen round-trip. Since issue #172 the
+ * découpage runs <b>in place</b>: the imported amplitudes are replaced by the
+ * generated vacations, the edition only ever holds one grid.
+ * {@code scenario-decoupage-auto.yaml} (test fixture) carries a single 14h
+ * amplitude — same shape as {@code VacationGeneratorServiceTest}'s "continu"
+ * case — which {@code VacationGeneratorService} always relay-splits into
+ * exactly 5 vacations under default {@code parametresDecoupage} (two real
+ * meal breaks, each splitting an otherwise-3-vacation relay chain in two).
  */
 @QuarkusTest
 class ReferenceDataResourceDecoupageAutoTest {
 
     @Test
-    void importScenarioAvecDecoupageAutoDecoupeEtActiveLeGroupeCible() {
+    void importScenarioAvecDecoupageAutoRemplaceLesAmplitudesParLesVacations() {
         given().when().post("/api/planning/reset").then().statusCode(200);
 
         given()
                 .when().post("/api/reference-data/import-scenario?name=scenario-decoupage-auto.yaml")
                 .then()
                 .statusCode(200)
-                .body("decoupageAutoGroupeCibleNom", equalTo("Vacations import auto"));
+                .body("decoupageAuto", equalTo(true));
 
-        List<Map<String, Object>> groupes = given()
-                .when().get("/api/groupes-creneaux")
-                .then()
-                .statusCode(200)
-                .extract().jsonPath().getList("$");
-
-        Map<String, Object> source = groupes.stream()
-                .filter(g -> "Amplitudes import auto".equals(g.get("nom")))
-                .findFirst()
-                .orElseThrow();
-        Map<String, Object> cible = groupes.stream()
-                .filter(g -> "Vacations import auto".equals(g.get("nom")))
-                .findFirst()
-                .orElseThrow();
-
-        assertThat(source.get("actif")).isEqualTo(false);
-        assertThat(cible.get("actif")).isEqualTo(true);
-        assertThat(cible.get("groupeSourceId")).isEqualTo(source.get("id"));
-
-        // Le groupe cible actif porte les vacations générées : le solveur les
-        // consomme via /api/creneaux (scopé au groupe actif) — /api/creneaux
-        // lui-même liste tous les groupes, ce test filtre donc sur le nom.
+        // The edition's créneaux ARE the generated vacations: the 14h
+        // amplitude the file carried was consumed by the in-place découpage.
         List<Map<String, Object>> creneaux = given()
                 .when().get("/api/creneaux")
                 .then()
                 .statusCode(200)
                 .extract().jsonPath().getList("$");
-        long creneauxCible = creneaux.stream()
-                .filter(c -> "Vacations import auto".equals(((Map<?, ?>) c.get("groupe")).get("nom")))
-                .count();
-        assertThat(creneauxCible).isEqualTo(5);
+        assertThat(creneaux).hasSize(5);
+        assertThat(creneaux).noneMatch(c -> "09:00:00".equals(c.get("heureDebut"))
+                && "23:00:00".equals(c.get("heureFin")));
     }
 
     @Test
-    void importScenarioSansDecoupageAutoNeCreeAucunGroupeSupplementaire() {
+    void importScenarioSansDecoupageAutoImporteLesCreneauxTelsQuels() {
         given().when().post("/api/planning/reset").then().statusCode(200);
 
         given()
@@ -76,12 +57,11 @@ class ReferenceDataResourceDecoupageAutoTest {
                 .then()
                 .statusCode(204);
 
-        List<Map<String, Object>> groupes = given()
-                .when().get("/api/groupes-creneaux")
+        List<Map<String, Object>> creneaux = given()
+                .when().get("/api/creneaux")
                 .then()
                 .statusCode(200)
                 .extract().jsonPath().getList("$");
-
-        assertThat(groupes).noneMatch(g -> "Amplitudes import auto".equals(g.get("nom")));
+        assertThat(creneaux).isNotEmpty();
     }
 }

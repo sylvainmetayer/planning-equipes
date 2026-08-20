@@ -4,15 +4,13 @@ import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from './api.service';
 import { PlanSnapshot } from './models';
-import { GroupeDifferentError, PlanSnapshotStore, ReferencesManquantesError } from './plan-snapshot.store';
+import { PlanSnapshotStore, ReferencesManquantesError } from './plan-snapshot.store';
 
-function snapshot(id: number, groupeCreneauId: string | null, libelle = 'S' + id): PlanSnapshot {
+function snapshot(id: number, libelle = 'S' + id): PlanSnapshot {
   return {
     id,
     libelle,
     automatique: false,
-    groupeCreneauId,
-    groupeNom: groupeCreneauId,
     score: '0hard/0medium/0soft',
     nombreAffectations: 12,
     creeLe: '2026-08-18T10:00:00Z'
@@ -36,21 +34,6 @@ describe('PlanSnapshotStore', () => {
     store = TestBed.inject(PlanSnapshotStore);
   });
 
-  it('keeps the most recent snapshot of each group', () => {
-    // The API answers newest first, so the first one seen for a group wins.
-    store.snapshots.set([
-      snapshot(3, 'CONTINU', 'récent'),
-      snapshot(2, 'CONTINU', 'ancien'),
-      snapshot(1, 'DEFAUT'),
-      snapshot(0, null)
-    ]);
-
-    const parGroupe = store.parGroupe();
-    expect(parGroupe.get('CONTINU')?.libelle).toBe('récent');
-    expect(parGroupe.get('DEFAUT')?.id).toBe(1);
-    // A snapshot whose group is unknown is not indexed under any group.
-    expect(parGroupe.size).toBe(2);
-  });
 
   it('surfaces the ids a refused restore names', async () => {
     api.postPreservingHttpError.mockRejectedValue(
@@ -73,27 +56,9 @@ describe('PlanSnapshotStore', () => {
     await expect(store.restaurer(7)).rejects.not.toBeInstanceOf(ReferencesManquantesError);
   });
 
-  it("distingue le refus « autre groupe de créneaux », rejouable avec l'option forcer", async () => {
-    api.postPreservingHttpError.mockRejectedValue(
-      new HttpErrorResponse({
-        status: 409,
-        error: { message: 'Autre groupe', referencesManquantes: [], groupeDifferent: true }
-      })
-    );
-
-    await expect(store.restaurer(7)).rejects.toBeInstanceOf(GroupeDifferentError);
-    expect(api.postPreservingHttpError).toHaveBeenLastCalledWith('/api/planning/snapshots/7/restore', {});
-
-    api.postPreservingHttpError.mockResolvedValue({ restaure: true, affectations: 12 });
-    await store.restaurer(7, true);
-    expect(api.postPreservingHttpError).toHaveBeenLastCalledWith(
-      '/api/planning/snapshots/7/restore?forcer=true',
-      {}
-    );
-  });
 
   it('reloads the list after a capture and after a delete', async () => {
-    api.get.mockResolvedValue([snapshot(1, 'DEFAUT')]);
+    api.get.mockResolvedValue([snapshot(1)]);
 
     await store.capturer('Essai');
     expect(api.post).toHaveBeenCalledWith('/api/planning/snapshots', { libelle: 'Essai' });

@@ -1,36 +1,21 @@
-// Tracks which groupe de créneaux the last persisted solve was computed for,
-// and the currently active group, so every créneaux-related screen can warn
-// when the two have diverged (the persisted planning is then stale for the
-// active group and the solver must be relaunched).
-//
-// Self-contained on purpose: it fetches its own copy of `/api/groupes-creneaux`
-// rather than depending on `ReferenceDataStore` being loaded, since it must
-// work on screens (e.g. the calendars) that never touch that store.
+// Tracks when the persisted plan was last solved, and whether reference data
+// was edited since — so the screens showing that plan can hint it may be
+// stale. Self-contained on purpose: it must work on screens (e.g. the
+// calendars) that never load `ReferenceDataStore`.
 
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { ApiService } from './api.service';
-import { GroupeCreneau, PlanningResolution } from './models';
+import { PlanningResolution } from './models';
 
 @Injectable({ providedIn: 'root' })
 export class PlanningResolutionStore {
   readonly resolution = signal<PlanningResolution | null>(null);
-  readonly groupesCreneaux = signal<GroupeCreneau[]>([]);
-
-  readonly activeGroupe = computed(() => this.groupesCreneaux().find((groupe) => groupe.actif) ?? null);
-
-  /** True once a solve has run and its groupe no longer matches the active one. */
-  readonly stale = computed(() => {
-    const resolution = this.resolution();
-    const active = this.activeGroupe();
-    return !!(resolution?.solved && active && resolution.groupeCreneauId !== active.id);
-  });
 
   /**
    * True once a solve has run and reference data was edited afterwards: the
-   * persisted planning may no longer reflect it. Independent of `stale` (which
-   * only tracks the groupe de créneaux switching), and deliberately soft: a
-   * left-over from an earlier server run before this one started is not known,
-   * so it never flags anything until an edit actually happens during this run.
+   * persisted planning may no longer reflect it. Deliberately soft: an edit
+   * from an earlier server run before this one started is not known, so it
+   * never flags anything until an edit actually happens during this run.
    */
   readonly dataStale = computed(() => {
     const resolution = this.resolution();
@@ -43,11 +28,6 @@ export class PlanningResolutionStore {
   private readonly api = inject(ApiService);
 
   async reload(): Promise<void> {
-    const [resolution, groupesCreneaux] = await Promise.all([
-      this.api.get<PlanningResolution>('/api/planning/persisted/resolution'),
-      this.api.get<GroupeCreneau[]>('/api/groupes-creneaux')
-    ]);
-    this.resolution.set(resolution);
-    this.groupesCreneaux.set(groupesCreneaux);
+    this.resolution.set(await this.api.get<PlanningResolution>('/api/planning/persisted/resolution'));
   }
 }

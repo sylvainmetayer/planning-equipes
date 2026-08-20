@@ -79,33 +79,32 @@ export function buildHelpSections(): HelpSection[] {
     {
       id: 'editions',
       icon: 'layers',
-      title: $localize`:@@aide.editions.title:Éditions et plannings alternatifs`,
-      summary: $localize`:@@aide.editions.summary:Deux niveaux de cloisonnement : l'édition du festival, et la grille de créneaux active à l'intérieur.`,
+      title: $localize`:@@aide.editions.title:Éditions et plans alternatifs`,
+      summary: $localize`:@@aide.editions.summary:L'édition est l'unique porteur de variante : un plan canicule est une édition dupliquée, pas une grille parallèle.`,
       blocks: [
         {
           kind: 'definitions',
           items: [
             {
               term: $localize`:@@aide.editions.term.edition:Édition`,
-              text: $localize`:@@aide.editions.def.edition:Une année de festival, avec ses propres stands, animateurs, créneaux, paramètres et planning résolu. Rien ne circule d'une édition à l'autre : « Année 2025 » reste consultable pendant qu'on prépare « Année 2026 ». L'édition consultée est propre à chaque onglet du navigateur, et rappelée par le bandeau en haut de l'écran.`
-            },
-            {
-              term: $localize`:@@aide.editions.term.groupe:Groupe de créneaux (planning)`,
-              text: $localize`:@@aide.editions.def.groupe:À l'intérieur d'une édition, les créneaux sont organisés en grilles : un planning normal, un planning de repli en cas d'imprévu, le résultat d'un découpage automatique… Une seule grille est active à la fois, et le solveur ne voit que celle-là.`
+              text: $localize`:@@aide.editions.def.edition:Une année de festival — ou une variante de plan — avec ses propres stands, animateurs, créneaux, paramètres et planning résolu. Rien ne circule d'une édition à l'autre : « Année 2025 » reste consultable pendant qu'on prépare « Année 2026 », et « 2026 canicule » vit à côté de « 2026 » sans la toucher. L'édition consultée est propre à chaque onglet du navigateur, et rappelée par le bandeau en haut de l'écran.`
             }
           ]
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.editions.stale:Si le groupe actif change après une résolution, ou si une donnée de référence est modifiée, l'application le signale — indicateur dans la barre d'outils, rappel sur la page Solveur. Le planning affiché reste consultable ; quand un instantané résolu existe pour la grille désormais active, le bandeau propose de le restaurer en un clic, sinon il invite à relancer une résolution.`
+          text: $localize`:@@aide.editions.variante:Pour préparer un plan alternatif (canicule, repli), dupliquez l'édition : la copie embarque stands, horaires, animateurs et leurs indisponibilités du moment — mais ni les affectations ni les jetons d'espace (chaque édition frappe les siens, un lien d'espace désigne toujours exactement une édition). Appliquez ensuite le delta dans la copie (l'édition en masse des horaires s'y prête), lancez la résolution, et basculez d'édition le matin venu.`
         },
         {
-          kind: 'paragraph',
-          text: $localize`:@@aide.editions.file:Pour préparer ces bascules à l'avance, le bouton « Résoudre tous les groupes » de la page Solveur résout chaque grille l'une après l'autre — la grille active en dernier — et conserve le résultat de chacune en instantané, sans toucher au planning affiché pendant le calcul. Chaque grille repart de son dernier instantané, donc une file relancée après quelques retouches se termine bien plus vite que la première ; le dernier instantané de chaque grille n'est jamais purgé. Une grille peut être exclue de la file depuis la gestion des groupes (page Créneaux) — typiquement des amplitudes pas encore découpées en vacations, que résoudre n'aurait aucun sens.`
-        },
-        {
-          kind: 'paragraph',
-          text: $localize`:@@aide.editions.warmstart:Ce réamorçage est automatique, sans réglage : le récapitulatif de la file indique pour chaque grille « réamorcé (N postes) » ou « à froid ». Pour forcer une exploration vierge, supprimez les instantanés de la grille (page Instantanés) ; le bouton « Résoudre avec Timefold », lui, repart toujours de zéro. Attention : l'arrêt anticipé de la file (« plus d'amélioration depuis quelques minutes ») ne s'arme qu'une fois le planning faisable — une grille dont le score dur reste négatif consomme tout son budget à chaque passage, réamorcée ou non : le réamorçage accélère, il ne répare pas un problème insoluble.`
+          kind: 'list',
+          items: [
+            $localize`:@@aide.editions.rituel1:1. La veille : dupliquer l'édition courante (« 2026 » → « 2026-canicule »).`,
+            $localize`:@@aide.editions.rituel2:2. Appliquer les restrictions dans la copie (horaires, effectifs…).`,
+            $localize`:@@aide.editions.rituel3:3. Lancer la résolution dans la copie (la nuit fait le reste).`,
+            $localize`:@@aide.editions.rituel4:4. Le matin : basculer d'édition dans le bandeau.`,
+            $localize`:@@aide.editions.rituel5:5. « Envoyer à tous » — les animateurs reçoivent le plan et les liens de cette édition.`,
+            $localize`:@@aide.editions.rituel6:6. Au retour à la normale : re-basculer vers l'édition nominale, intacte, et ré-envoyer les plannings.`
+          ]
         }
       ],
       links: [
@@ -133,7 +132,7 @@ export function buildHelpSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.data.term.creneaux:Créneaux`,
-              text: $localize`:@@aide.data.def.creneaux:Jour du festival, date, heures de début et de fin, et grille d'appartenance. C'est le découpage temporel que le solveur remplit ; l'effectif minimum d'un stand y est multiplié par le nombre de créneaux où il est ouvert.`
+              text: $localize`:@@aide.data.def.creneaux:Jour du festival, date, heures de début et de fin. C'est le découpage temporel que le solveur remplit ; l'effectif minimum d'un stand y est multiplié par le nombre de créneaux où il est ouvert.`
             },
             {
               term: $localize`:@@aide.data.term.autres:Emplacements et typologies`,
@@ -192,13 +191,13 @@ export function buildHelpSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.config.term.decoupage:Paramètres de découpage`,
-              text: $localize`:@@aide.config.def.decoupage:Pour un scénario « continu », la page Découpage transforme l'amplitude d'ouverture d'une journée en vacations réelles : durée cible, minimale et maximale d'une vacation, chevauchement de relais, fenêtres et durée de pause repas, et stratégie de couverture pendant la pause (fermer le stand, faire une relève, ou tourner à effectif réduit). Ces paramètres déterminent le nombre de postes à pourvoir : les modifier change la taille du problème bien plus que n'importe quel réglage du solveur.`
+              text: $localize`:@@aide.config.def.decoupage:Pour un scénario « continu », la page Découpage transforme l'amplitude d'ouverture d'une journée en vacations réelles : durée cible, minimale et maximale d'une vacation, chevauchement de relais, fenêtres et durée de pause repas, et stratégie de couverture pendant la pause (fermer le stand, faire une relève, ou tourner à effectif réduit). Le découpage remplace les créneaux de l'édition en place — pour re-découper avec d'autres paramètres, ré-importez le scénario source. Ces paramètres déterminent le nombre de postes à pourvoir : les modifier change la taille du problème bien plus que n'importe quel réglage du solveur.`
             }
           ]
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.config.lock:Une seule résolution tourne à la fois pour tout le serveur. Si les boutons sont verrouillés, c'est qu'un calcul est en cours — éventuellement lancé depuis un autre poste ou un autre navigateur ; le moniteur de la barre d'outils indique lequel et depuis combien de temps. Une file « Résoudre tous les groupes » garde ce verrou pendant toute sa durée ; l'arrêter conserve le résultat du groupe en cours et saute les suivants.`
+          text: $localize`:@@aide.config.lock:Une seule résolution tourne à la fois pour tout le serveur. Si les boutons sont verrouillés, c'est qu'un calcul est en cours — éventuellement lancé depuis un autre poste ou un autre navigateur ; le moniteur de la barre d'outils indique lequel et depuis combien de temps.`
         }
       ],
       links: [

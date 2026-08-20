@@ -138,7 +138,7 @@ export class CalendarDayPage {
     void this.verrous.reload().catch(() => undefined);
   }
 
-  /** True when the whole day is frozen by a JOUR lock on the active groupe de créneaux. */
+  /** True when the whole day is frozen by a JOUR lock on the edition. */
   protected estJourVerrouille(day: DayCard): boolean {
     return this.verrous.estJourVerrouille(day.date);
   }

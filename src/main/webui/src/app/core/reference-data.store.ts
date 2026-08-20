@@ -3,7 +3,7 @@
 
 import { Injectable, inject, signal } from '@angular/core';
 import { ApiService } from './api.service';
-import { Animateur, ContrainteAdHoc, Creneau, Emplacement, GroupeCreneau, Stand, TypologieItem, Volumetrie } from './models';
+import { Animateur, ContrainteAdHoc, Creneau, Emplacement, Stand, TypologieItem, Volumetrie } from './models';
 
 /**
  * Outcome of a bulk delete/save: the entities the server accepted, and one
@@ -19,7 +19,6 @@ export interface BulkResult {
 export class ReferenceDataStore {
   readonly typologies = signal<TypologieItem[]>([]);
   readonly creneaux = signal<Creneau[]>([]);
-  readonly groupesCreneaux = signal<GroupeCreneau[]>([]);
   readonly animateurs = signal<Animateur[]>([]);
   readonly stands = signal<Stand[]>([]);
   readonly emplacements = signal<Emplacement[]>([]);
@@ -30,11 +29,10 @@ export class ReferenceDataStore {
   private readonly api = inject(ApiService);
 
   async reload(): Promise<void> {
-    const [typologies, creneaux, groupesCreneaux, animateurs, stands, emplacements, contraintes, volumetrie] =
+    const [typologies, creneaux, animateurs, stands, emplacements, contraintes, volumetrie] =
       await Promise.all([
         this.api.get<TypologieItem[]>('/api/typologies'),
         this.api.get<Creneau[]>('/api/creneaux'),
-        this.api.get<GroupeCreneau[]>('/api/groupes-creneaux'),
         this.api.get<Animateur[]>('/api/animateurs'),
         this.api.get<Stand[]>('/api/stands'),
         this.api.get<Emplacement[]>('/api/emplacements'),
@@ -43,7 +41,6 @@ export class ReferenceDataStore {
       ]);
     this.typologies.set(typologies);
     this.creneaux.set(creneaux);
-    this.groupesCreneaux.set(groupesCreneaux);
     this.animateurs.set(animateurs);
     this.stands.set(stands);
     this.emplacements.set(emplacements);
@@ -105,18 +102,4 @@ export class ReferenceDataStore {
     return result;
   }
 
-  /**
-   * Refreshes the timeslot groups alone. Used by the shell's group selector,
-   * which is mounted on every screen and must not drag the whole referential
-   * in with it.
-   */
-  async reloadGroupesCreneaux(): Promise<void> {
-    this.groupesCreneaux.set(await this.api.get<GroupeCreneau[]>('/api/groupes-creneaux'));
-  }
-
-  /** Activates a timeslot group and deactivates every other one, then refreshes. */
-  async activerGroupeCreneau(id: string): Promise<void> {
-    await this.api.put(`/api/groupes-creneaux/${encodeURIComponent(id)}/actif`, {});
-    await this.reload();
-  }
 }

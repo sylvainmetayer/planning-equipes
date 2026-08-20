@@ -3,7 +3,7 @@ import { Animateur, Creneau, PosteAffectation, Stand } from '../../core/models';
 import { buildDays } from './calendar-day-page';
 
 function creneau(overrides: Partial<Creneau> & { id: number }): Creneau {
-  return { jour: 1, date: '2026-08-01', heureDebut: '13:40', heureFin: '19:00', groupe: null, ...overrides };
+  return { jour: 1, date: '2026-08-01', heureDebut: '13:40', heureFin: '19:00', ...overrides };
 }
 
 function stand(id: string, effectifMin = 1): Stand {

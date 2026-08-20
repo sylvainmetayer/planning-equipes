@@ -10,7 +10,6 @@ import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +22,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
-import dev.sylvain.planning.service.PlanningPersistenceService.PlanningResolution;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -89,8 +87,6 @@ public class PlanSnapshotService {
             long id,
             String libelle,
             boolean automatique,
-            String groupeCreneauId,
-            String groupeNom,
             String score,
             int nombreAffectations,
             Instant creeLe) {
@@ -108,27 +104,15 @@ public class PlanSnapshotService {
      *                             longer holds, prefixed by their kind
      *                             ({@code stand:…}, {@code creneau:…},
      *                             {@code animateur:…})
-     * @param groupeDifferent      true when the restore was refused because the
-     *                             snapshot belongs to another groupe de
-     *                             créneaux than the active one (overridable
-     *                             with {@code forcer})
-     * @param groupeSnapshotNom    display name of the snapshot's groupe, only
-     *                             set with {@code groupeDifferent}
-     * @param groupeActifNom       display name of the active groupe, idem
      */
-    public record RestaurationResult(boolean restaure, int affectations, List<String> referencesManquantes,
-            boolean groupeDifferent, String groupeSnapshotNom, String groupeActifNom) {
+    public record RestaurationResult(boolean restaure, int affectations, List<String> referencesManquantes) {
 
         static RestaurationResult ok(int affectations) {
-            return new RestaurationResult(true, affectations, List.of(), false, null, null);
+            return new RestaurationResult(true, affectations, List.of());
         }
 
         static RestaurationResult referencesPerdues(List<String> manquantes) {
-            return new RestaurationResult(false, 0, manquantes, false, null, null);
-        }
-
-        static RestaurationResult autreGroupe(String groupeSnapshotNom, String groupeActifNom) {
-            return new RestaurationResult(false, 0, List.of(), true, groupeSnapshotNom, groupeActifNom);
+            return new RestaurationResult(false, 0, manquantes);
         }
     }
 
@@ -142,69 +126,29 @@ public class PlanSnapshotService {
         if (affectations.isEmpty()) {
             return null;
         }
-        PlanningResolution resolution = persistenceService.loadResolution();
         ConstraintAnalysisStore.StoredAnalysis analysis = analysisStore.latest();
         String score = analysis == null ? null : analysis.diagnostic().score();
-        return inserer(libelle, automatique,
-                resolution == null ? null : resolution.groupeCreneauId(),
-                resolution == null ? null : resolution.groupeCreneauNom(),
-                score, affectations);
+        return inserer(libelle, automatique, score, affectations);
     }
 
-    /**
-     * Captures a solved plan straight from memory, without it ever touching
-     * {@code poste_affectation} — how the "résoudre tous les groupes" queue
-     * (issue #167) stores the result of a <b>non-active</b> group: the
-     * persisted plan, the espace animateur and the exports keep serving the
-     * active group's plan while the queue runs. The group is tagged
-     * explicitly (unlike {@link #capturer}, which describes whatever plan is
-     * persisted); the score comes from the diagnostic computed on this very
-     * solution, never from {@link ConstraintAnalysisStore} — the store only
-     * tracks the active group's analysis. Unassigned seats are skipped, like
-     * everywhere else. Returns {@code null} for a solution with no assigned
-     * seat (an empty or unsolvable group must not shadow a real snapshot).
-     */
-    public SnapshotMeta capturerDepuisSolution(PlanningFestival solved,
-            String groupeId, String groupeNom, String score, String libelle) {
-        List<AffectationSnapshot> affectations = new ArrayList<>();
-        for (PosteAffectation poste : solved.getPostes()) {
-            if (poste.getAnimateur() == null) {
-                continue;
-            }
-            affectations.add(new AffectationSnapshot(
-                    poste.getId(),
-                    poste.getStand().getId(),
-                    String.valueOf(poste.getCreneau().getId()),
-                    poste.getAnimateur().getId(),
-                    texte(poste.getHeureDebutEffective()),
-                    texte(poste.getHeureFinEffective())));
-        }
-        if (affectations.isEmpty()) {
-            return null;
-        }
-        return inserer(libelle, true, groupeId, groupeNom, score, affectations);
-    }
-
-    private SnapshotMeta inserer(String libelle, boolean automatique, String groupeId, String groupeNom, String score,
+    private SnapshotMeta inserer(String libelle, boolean automatique, String score,
             List<AffectationSnapshot> affectations) {
         String contenu = ecrireContenu(affectations);
         String sql = "INSERT INTO plan_snapshot "
-                + "(edition_id, libelle, automatique, groupe_creneau_id, groupe_nom, score, nombre_affectations, "
-                + "cree_le, contenu) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb) RETURNING id, cree_le";
+                + "(edition_id, libelle, automatique, score, nombre_affectations, "
+                + "cree_le, contenu) VALUES (?, ?, ?, ?, ?, ?, ?::jsonb) RETURNING id, cree_le";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = prepareScoped(connection, sql)) {
             ps.setString(2, libelle);
             ps.setBoolean(3, automatique);
-            ps.setString(4, groupeId);
-            ps.setString(5, groupeNom);
-            ps.setString(6, score);
-            ps.setInt(7, affectations.size());
-            ps.setTimestamp(8, Timestamp.from(Instant.now()));
-            ps.setString(9, contenu);
+            ps.setString(4, score);
+            ps.setInt(5, affectations.size());
+            ps.setTimestamp(6, Timestamp.from(Instant.now()));
+            ps.setString(7, contenu);
             try (ResultSet rs = ps.executeQuery()) {
                 rs.next();
                 SnapshotMeta meta = new SnapshotMeta(rs.getLong("id"), libelle, automatique,
-                        groupeId, groupeNom, score, affectations.size(), rs.getTimestamp("cree_le").toInstant());
+                        score, affectations.size(), rs.getTimestamp("cree_le").toInstant());
                 if (automatique) {
                     purgerAutomatiques(connection);
                 }
@@ -229,7 +173,7 @@ public class PlanSnapshotService {
     }
 
     public List<SnapshotMeta> lister() {
-        String sql = "SELECT id, libelle, automatique, groupe_creneau_id, groupe_nom, score, nombre_affectations, "
+        String sql = "SELECT id, libelle, automatique, score, nombre_affectations, "
                 + "cree_le FROM plan_snapshot WHERE edition_id = ? ORDER BY cree_le DESC, id DESC";
         List<SnapshotMeta> snapshots = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
@@ -244,52 +188,9 @@ public class PlanSnapshotService {
         return snapshots;
     }
 
-    /**
-     * The most recent snapshot captured for {@code groupeId}, with its content
-     * — what the warm start (issue #86) seeds a solve from, and what the queue
-     * of issue #167 keeps per group. {@code null} when the group never had one.
-     */
-    public SnapshotDetail dernierSnapshotDuGroupe(String groupeId) {
-        String sql = "SELECT id, libelle, automatique, groupe_creneau_id, groupe_nom, score, nombre_affectations, "
-                + "cree_le, contenu FROM plan_snapshot WHERE edition_id = ? AND groupe_creneau_id = ? "
-                + "ORDER BY cree_le DESC, id DESC LIMIT 1";
-        try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection, sql)) {
-            ps.setString(2, groupeId);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) {
-                    return null;
-                }
-                return new SnapshotDetail(lireMeta(rs), lireContenu(rs.getString("contenu")));
-            }
-        } catch (SQLException e) {
-            throw new IllegalStateException("Failed to load the latest snapshot of group " + groupeId, e);
-        }
-    }
-
-    /**
-     * A snapshot's assignments regrouped under the positional stand × créneau
-     * key of {@link PlanningPersistenceService#cleStandCreneau} — the seed
-     * format {@code PlanningService.seedDepuisAffectations} warm-starts from
-     * (issue #86). Static and side-effect free, like the seeding it feeds.
-     */
-    public static Map<String, List<String>> animateursParStandCreneau(SnapshotDetail detail) {
-        Map<String, List<String>> parStandCreneau = new LinkedHashMap<>();
-        for (AffectationSnapshot affectation : detail.affectations()) {
-            if (affectation.animateurId() == null) {
-                continue;
-            }
-            parStandCreneau
-                    .computeIfAbsent(PlanningPersistenceService.cleStandCreneau(
-                            affectation.standId(), Long.parseLong(affectation.creneauId())), key -> new ArrayList<>())
-                    .add(affectation.animateurId());
-        }
-        return parStandCreneau;
-    }
-
     /** {@code null} when no snapshot of this edition carries that id. */
     public SnapshotDetail charger(long id) {
-        String sql = "SELECT id, libelle, automatique, groupe_creneau_id, groupe_nom, score, nombre_affectations, "
+        String sql = "SELECT id, libelle, automatique, score, nombre_affectations, "
                 + "cree_le, contenu FROM plan_snapshot WHERE edition_id = ? AND id = ?";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = prepareScoped(connection, sql)) {
@@ -323,7 +224,7 @@ public class PlanSnapshotService {
      * stand, créneau or animateur has disappeared since the capture: a partial
      * restore would silently produce a plan nobody ever computed.
      */
-    public RestaurationResult restaurer(long id, boolean forcer) {
+    public RestaurationResult restaurer(long id) {
         SnapshotDetail detail = charger(id);
         if (detail == null) {
             return null;
@@ -331,18 +232,6 @@ public class PlanSnapshotService {
         List<String> manquantes = referencesManquantes(detail.affectations());
         if (!manquantes.isEmpty()) {
             return RestaurationResult.referencesPerdues(manquantes);
-        }
-        // Restoring a snapshot of ANOTHER groupe de créneaux silently replaces
-        // the whole persisted planning with one computed for a different set of
-        // créneaux — almost always a mistake, so it is refused unless the
-        // caller explicitly forces it (the UI asks a second confirmation).
-        GroupeActif groupeActif = groupeActif();
-        String groupeSnapshot = detail.meta().groupeCreneauId();
-        if (!forcer && groupeSnapshot != null && groupeActif != null
-                && !groupeSnapshot.equals(groupeActif.id())) {
-            return RestaurationResult.autreGroupe(
-                    detail.meta().groupeNom() == null ? groupeSnapshot : detail.meta().groupeNom(),
-                    groupeActif.nom() == null ? groupeActif.id() : groupeActif.nom());
         }
         try (Connection connection = dataSource.getConnection()) {
             boolean autoCommit = connection.getAutoCommit();
@@ -366,12 +255,10 @@ public class PlanSnapshotService {
                     }
                     ps.executeBatch();
                 }
-                String resolution = "INSERT INTO planning_resolution (edition_id, groupe_creneau_id, resolu_le) "
-                        + "VALUES (?, ?, ?) ON CONFLICT (edition_id) DO UPDATE SET "
-                        + "groupe_creneau_id = EXCLUDED.groupe_creneau_id, resolu_le = EXCLUDED.resolu_le";
+                String resolution = "INSERT INTO planning_resolution (edition_id, resolu_le) "
+                        + "VALUES (?, ?) ON CONFLICT (edition_id) DO UPDATE SET resolu_le = EXCLUDED.resolu_le";
                 try (PreparedStatement ps = prepareScoped(connection, resolution)) {
-                    ps.setString(2, detail.meta().groupeCreneauId());
-                    ps.setTimestamp(3, Timestamp.from(Instant.now()));
+                    ps.setTimestamp(2, Timestamp.from(Instant.now()));
                     ps.executeUpdate();
                 }
                 connection.commit();
@@ -385,10 +272,9 @@ public class PlanSnapshotService {
             throw new IllegalStateException("Failed to restore plan snapshot " + id, e);
         }
         // The restore rewrote the persisted plan outside of any solve, so the
-        // stored constraint analysis now describes a plan that is gone —
-        // after a group switch it kept showing the previous group's hard
-        // violations. Cleared first, then re-derived from the restored plan:
-        // a failed re-analysis leaves "no analysis yet", never a stale lie.
+        // stored constraint analysis now describes a plan that is gone.
+        // Cleared first, then re-derived from the restored plan: a failed
+        // re-analysis leaves "no analysis yet", never a stale lie.
         // Best-effort like capturerAvantSolve — it must not undo the restore.
         analysisStore.effacer();
         try {
@@ -400,21 +286,6 @@ public class PlanSnapshotService {
     }
 
     /* -------------------------------- Helpers ------------------------------ */
-
-    private record GroupeActif(String id, String nom) {
-    }
-
-    /** The active groupe de créneaux, {@code null} when none is flagged. */
-    private GroupeActif groupeActif() {
-        try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection,
-                        "SELECT id, nom FROM groupe_creneau WHERE edition_id = ? AND actif");
-                ResultSet rs = ps.executeQuery()) {
-            return rs.next() ? new GroupeActif(rs.getString("id"), rs.getString("nom")) : null;
-        } catch (SQLException e) {
-            throw new IllegalStateException("Failed to load the active groupe de créneaux", e);
-        }
-    }
 
     private List<AffectationSnapshot> lireAffectationsPersistees() {
         String sql = "SELECT id, stand_id, creneau_id, animateur_id, heure_debut_effective, heure_fin_effective "
@@ -488,27 +359,14 @@ public class PlanSnapshotService {
         return manquants;
     }
 
-    /**
-     * Drops the oldest automatic snapshots beyond the configured retention —
-     * except, since the "résoudre tous les groupes" queue (issue #167), the
-     * most recent snapshot of each still-existing groupe de créneaux, whatever
-     * its age: that snapshot <i>is</i> the group's pre-solved plan, the whole
-     * point of the queue, and a queue over N groups would otherwise evict the
-     * very results it just produced. A snapshot whose group was deleted loses
-     * that protection and ages out normally.
-     */
+    /** Drops the oldest automatic snapshots beyond the configured retention. */
     private void purgerAutomatiques(Connection connection) throws SQLException {
         String sql = "DELETE FROM plan_snapshot WHERE edition_id = ? AND automatique AND id NOT IN ("
                 + "SELECT id FROM plan_snapshot WHERE edition_id = ? AND automatique "
-                + "ORDER BY cree_le DESC, id DESC LIMIT ?) AND id NOT IN ("
-                + "SELECT DISTINCT ON (s.groupe_creneau_id) s.id FROM plan_snapshot s "
-                + "JOIN groupe_creneau g ON g.edition_id = s.edition_id AND g.id = s.groupe_creneau_id "
-                + "WHERE s.edition_id = ? "
-                + "ORDER BY s.groupe_creneau_id, s.cree_le DESC, s.id DESC)";
+                + "ORDER BY cree_le DESC, id DESC LIMIT ?)";
         try (PreparedStatement ps = prepareScoped(connection, sql)) {
             ps.setString(2, editionId());
             ps.setInt(3, Math.max(1, automatiquesConservees));
-            ps.setString(4, editionId());
             ps.executeUpdate();
         }
     }
@@ -519,8 +377,6 @@ public class PlanSnapshotService {
                 rs.getLong("id"),
                 rs.getString("libelle"),
                 rs.getBoolean("automatique"),
-                rs.getString("groupe_creneau_id"),
-                rs.getString("groupe_nom"),
                 rs.getString("score"),
                 rs.getInt("nombre_affectations"),
                 creeLe == null ? null : creeLe.toInstant());

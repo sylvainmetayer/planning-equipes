@@ -20,23 +20,6 @@
   <input matInput name="heureFin" type="time" required
          [ngModel]="draft().heureFin" (ngModelChange)="patch({ heureFin: $event })" />
 </mat-form-field>
-<mat-form-field appearance="outline" class="span-2">
-  <mat-label i18n="@@creneaux.field.groupe">Groupe de créneaux</mat-label>
-  <mat-select name="groupeId" required
-              [ngModel]="draft().groupeId" (ngModelChange)="patch({ groupeId: $event })">
-    @for (groupe of store.groupesCreneaux(); track groupe.id) {
-      <mat-option [value]="groupe.id">{{ groupe.nom || groupe.id }}</mat-option>
-    }
-    <mat-option [value]="nouveauGroupeValue" i18n="@@creneaux.field.groupeNouveau">+ Nouveau groupe…</mat-option>
-  </mat-select>
-</mat-form-field>
-@if (draft().groupeId === nouveauGroupeValue) {
-  <mat-form-field appearance="outline" class="span-2">
-    <mat-label i18n="@@creneaux.field.groupeNom">Nom du nouveau groupe</mat-label>
-    <input matInput name="nouveauGroupeNom" required
-           [ngModel]="draft().nouveauGroupeNom" (ngModelChange)="patch({ nouveauGroupeNom: $event })" />
-  </mat-form-field>
-}
 </fieldset>
 </mat-dialog-content>
 <mat-dialog-actions align="end">

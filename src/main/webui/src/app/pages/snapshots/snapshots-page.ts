@@ -10,7 +10,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ApiService } from '../../core/api.service';
 import { intlLocale } from '../../core/locale';
 import { PersistenceStatus, PlanSnapshot, RestaurationSnapshot } from '../../core/models';
-import { GroupeDifferentError, PlanSnapshotStore, ReferencesManquantesError } from '../../core/plan-snapshot.store';
+import { PlanSnapshotStore, ReferencesManquantesError } from '../../core/plan-snapshot.store';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
@@ -19,7 +19,6 @@ import { PromptDialog } from '../../shared/prompt-dialog';
 
 /**
  * Saved plans (issue #138). Until they existed, a single plan was persisted per
- * edition and every solve overwrote it: solving on another groupe de créneaux
  * destroyed the previous result for good.
  *
  * Restoring is disabled while a solve runs — it would be overwritten seconds
@@ -42,10 +41,9 @@ import { PromptDialog } from '../../shared/prompt-dialog';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SnapshotsPage {
-  protected readonly columns = ['libelle', 'groupe', 'score', 'affectations', 'creeLe', 'actions'];
+  protected readonly columns = ['libelle', 'score', 'affectations', 'creeLe', 'actions'];
   protected readonly columnsAuto = [
     'libelleAuto',
-    'groupeAuto',
     'scoreAuto',
     'affectationsAuto',
     'creeLeAuto',
@@ -67,15 +65,6 @@ export class SnapshotsPage {
   /** Assignments currently persisted, to compare a snapshot against. */
   protected readonly affectationsCourantes = signal<number | null>(null);
 
-  /**
-   * True for the most recent snapshot of each groupe de créneaux: those are
-   * spared by the automatic purge (issue #167) — they are the pre-solved
-   * plans a group switch restores in one click — and the badge says so.
-   */
-  protected dernierDuGroupe(snapshot: PlanSnapshot): boolean {
-    return snapshot.groupeCreneauId != null
-      && this.store.parGroupe().get(snapshot.groupeCreneauId)?.id === snapshot.id;
-  }
 
   /**
    * How a snapshot differs from the plan in place — restoring blind is exactly
@@ -170,7 +159,7 @@ export class SnapshotsPage {
     this.error.set('');
     this.message.set('');
     try {
-      const resultat = await this.restaurerAvecGardeDeGroupe(snapshot);
+      const resultat = await this.restaurerSnapshot(snapshot);
       if (!resultat) {
         return;
       }
@@ -185,27 +174,8 @@ export class SnapshotsPage {
     }
   }
 
-  /**
-   * A snapshot of another groupe de créneaux than the active one is refused
-   * server-side: surface the business message and ask a second, explicit
-   * confirmation before retrying with the override. `null` when the user
-   * backs out.
-   */
-  private async restaurerAvecGardeDeGroupe(snapshot: PlanSnapshot): Promise<RestaurationSnapshot | null> {
-    try {
-      return await this.store.restaurer(snapshot.id);
-    } catch (error) {
-      if (!(error instanceof GroupeDifferentError)) {
-        throw error;
-      }
-      const confirme = await this.confirm.ask({
-        title: $localize`:@@snapshots.groupeDifferent.titre:Restaurer un autre groupe de créneaux ?`,
-        message: error.message,
-        confirmLabel: $localize`:@@snapshots.groupeDifferent.confirm:Restaurer quand même`,
-        danger: true
-      });
-      return confirme ? this.store.restaurer(snapshot.id, true) : null;
-    }
+  private async restaurerSnapshot(snapshot: PlanSnapshot): Promise<RestaurationSnapshot | null> {
+    return this.store.restaurer(snapshot.id);
   }
 
   protected async supprimer(snapshot: PlanSnapshot): Promise<void> {
@@ -232,9 +202,6 @@ export class SnapshotsPage {
     return snapshot.creeLe ? new Date(snapshot.creeLe).toLocaleString(intlLocale()) : '';
   }
 
-  protected groupeLabel(snapshot: PlanSnapshot): string {
-    return snapshot.groupeNom ?? snapshot.groupeCreneauId ?? $localize`:@@snapshots.groupeInconnu:groupe inconnu`;
-  }
 
   /** A refused restore names what is missing: that list is the actionable part. */
   private messageErreur(error: unknown): string {

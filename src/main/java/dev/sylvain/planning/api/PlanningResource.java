@@ -166,14 +166,12 @@ public class PlanningResource {
         PlanningPersistenceService.PlanningResolution resolution = persistenceService.loadResolution();
         Instant derniereModificationDonnees = changeTracker.lastModifiedAt();
         if (resolution == null) {
-            return new PlanningResolutionView(false, null, null, null, derniereModificationDonnees);
+            return new PlanningResolutionView(false, null, derniereModificationDonnees);
         }
-        return new PlanningResolutionView(true, resolution.groupeCreneauId(), resolution.groupeCreneauNom(),
-                resolution.resoluLe(), derniereModificationDonnees);
+        return new PlanningResolutionView(true, resolution.resoluLe(), derniereModificationDonnees);
     }
 
-    public record PlanningResolutionView(boolean solved, String groupeCreneauId, String groupeCreneauNom,
-            Instant resoluLe, Instant derniereModificationDonnees) {
+    public record PlanningResolutionView(boolean solved, Instant resoluLe, Instant derniereModificationDonnees) {
     }
 
     /**
