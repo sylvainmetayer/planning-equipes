@@ -133,6 +133,16 @@ form.form-grid {
   padding: 0.5rem 0 1rem;
 }
 
+/*
+ * The timeslot-group panel reads as a list, not a grid: each row carries a
+ * name plus two action buttons (queue toggle, delete), and from three or four
+ * groups on, the multi-column packing made rows and actions hard to match.
+ */
+.stand-checklist.groupes-creneaux-liste {
+  grid-template-columns: 1fr;
+  gap: 0.25rem;
+}
+
 .table-wrapper table {
   width: 100%;
 }

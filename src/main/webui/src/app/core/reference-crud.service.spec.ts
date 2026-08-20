@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { SessionExpireeError } from './api.service';
 import { NotificationService } from './notification.service';
 import { PlanningResolutionStore } from './planning-resolution.store';
 import { ReferenceCrudService } from './reference-crud.service';
@@ -100,6 +101,20 @@ describe('ReferenceCrudService', () => {
       expect(notifications.notify).toHaveBeenCalledWith(
         expect.objectContaining({ variant: 'error', message: 'conflit' })
       );
+    });
+
+    /**
+     * Un 401 signifie « session expirée » : l'intercepteur redirige déjà vers
+     * /login, un toast « Échec de la requête (code 401) » par appel en vol ne
+     * ferait qu'empiler du bruit technique par-dessus la redirection.
+     */
+    it('ne notifie pas une session expirée', async () => {
+      store.save.mockRejectedValueOnce(new SessionExpireeError());
+
+      const ok = await service.save('stands', { id: 'S1' }, null, 'le stand');
+
+      expect(ok).toBe(false);
+      expect(notifications.notify).not.toHaveBeenCalled();
     });
 
     /**

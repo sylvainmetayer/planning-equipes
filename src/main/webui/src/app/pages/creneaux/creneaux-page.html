@@ -6,7 +6,7 @@
     <mat-card-subtitle i18n="@@groupesCreneaux.list.subtitle">Un seul groupe est actif à la fois : c'est lui que le solveur utilise. Cochez un groupe pour l'activer et désactiver les autres.</mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
-    <div class="stand-checklist">
+    <div class="stand-checklist groupes-creneaux-liste">
       @for (groupe of store.groupesCreneaux(); track groupe.id) {
         <span class="row-actions">
           <mat-checkbox [checked]="groupe.actif"
@@ -121,6 +121,13 @@
           <th mat-header-cell *matHeaderCellDef i18n="@@creneaux.column.horaires">Horaires</th>
           <td mat-cell *matCellDef="let creneau">{{ creneau.heureDebut }}–{{ creneau.heureFin }}</td>
         </ng-container>
+        <ng-container matColumnDef="famille">
+          <th mat-header-cell *matHeaderCellDef
+              i18n-matTooltip="@@creneaux.column.famille.tooltip"
+              matTooltip="Le découpage génère chaque vacation en plusieurs variantes aux coupures décalées (« familles ») ; chaque stand n'est affecté qu'à une seule famille. Des créneaux identiques de familles différentes ne sont donc pas des doublons."
+              i18n="@@creneaux.column.famille">Famille</th>
+          <td mat-cell *matCellDef="let creneau">{{ (creneau.famille ?? 0) + 1 }}</td>
+        </ng-container>
         <ng-container matColumnDef="groupe">
           <th mat-header-cell *matHeaderCellDef i18n="@@creneaux.column.groupe">Groupe</th>
           <td mat-cell *matCellDef="let creneau">{{ creneau.groupe?.nom || creneau.groupe?.id }}</td>
@@ -138,8 +145,8 @@
             </button>
           </td>
         </ng-container>
-        <tr mat-header-row *matHeaderRowDef="columns"></tr>
-        <tr mat-row *matRowDef="let row; columns: columns"></tr>
+        <tr mat-header-row *matHeaderRowDef="columns()"></tr>
+        <tr mat-row *matRowDef="let row; columns: columns()"></tr>
       </table>
     </div>
     @if (creneauxAffiches().length === 0) {

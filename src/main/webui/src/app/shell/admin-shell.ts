@@ -35,6 +35,7 @@ import { NotificationService } from '../core/notification.service';
 import { PlanningResolutionStore } from '../core/planning-resolution.store';
 import { SolverJobService } from '../core/solver-job.service';
 import { DataStaleIndicator } from '../shared/data-stale-indicator';
+import { SolverRunningIndicator } from '../shared/solver-running-indicator';
 import { EditionActuelleBar } from '../shared/edition-actuelle-bar';
 import { GroupeMismatchBanner } from '../shared/groupe-mismatch-banner';
 
@@ -188,6 +189,7 @@ function buildNavGroups(): NavGroup[] {
     MatBadgeModule,
     MatDividerModule,
     DataStaleIndicator,
+    SolverRunningIndicator,
     EditionActuelleBar,
     GroupeMismatchBanner
   ],

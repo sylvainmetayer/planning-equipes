@@ -109,7 +109,8 @@ connexion.
 Un job `SOLVE_FILE` (issue #167) expose en plus sa progression
 (`groupeCourantNom`, `groupeCourant`, `totalGroupes` — « groupe i/N ») et son
 résultat est une ligne par groupe (`statut` : `RESOLU`, `INTERROMPU`, `ECHEC`
-avec `erreur`, ou `NON_TRAITE` après annulation). Seul le groupe **actif**,
+avec `erreur`, ou `NON_TRAITE` après annulation ; `postesReamorces` : taille du
+seed de warm start — 0 signale un solve reparti de zéro). Seul le groupe **actif**,
 résolu en dernier, écrit dans `poste_affectation` ; chaque groupe non actif est
 conservé en instantané pris directement depuis la solution en mémoire, et
 chaque solve repart du dernier instantané de son groupe (warm start, issue

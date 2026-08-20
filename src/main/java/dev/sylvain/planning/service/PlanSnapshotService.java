@@ -69,6 +69,9 @@ public class PlanSnapshotService {
     @Inject
     ConstraintAnalysisStore analysisStore;
 
+    @Inject
+    PlanningService planningService;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /** One seat of a snapshotted plan, carrying everything needed to put it back. */
@@ -380,6 +383,18 @@ public class PlanSnapshotService {
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to restore plan snapshot " + id, e);
+        }
+        // The restore rewrote the persisted plan outside of any solve, so the
+        // stored constraint analysis now describes a plan that is gone —
+        // after a group switch it kept showing the previous group's hard
+        // violations. Cleared first, then re-derived from the restored plan:
+        // a failed re-analysis leaves "no analysis yet", never a stale lie.
+        // Best-effort like capturerAvantSolve — it must not undo the restore.
+        analysisStore.effacer();
+        try {
+            analysisStore.record(planningService.diagnostiquerPlanPersiste());
+        } catch (RuntimeException e) {
+            // Deliberately swallowed: see comment above.
         }
         return RestaurationResult.ok(detail.affectations().size());
     }

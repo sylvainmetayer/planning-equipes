@@ -123,6 +123,15 @@
               <td>{{ resultat.nom }}@if (resultat.actif) {&nbsp;<ng-container i18n="@@solver.fileResultatActif">(groupe actif)</ng-container>}</td>
               <td>{{ resultat.statut }}</td>
               <td>{{ resultat.score ?? '—' }}</td>
+              <td>
+                @if (resultat.statut === 'RESOLU' || resultat.statut === 'INTERROMPU') {
+                  @if (resultat.postesReamorces > 0) {
+                    <ng-container i18n="@@solver.fileResultatReamorce">réamorcé ({{ resultat.postesReamorces }} postes)</ng-container>
+                  } @else {
+                    <ng-container i18n="@@solver.fileResultatFroid">à froid</ng-container>
+                  }
+                }
+              </td>
               <td i18n="@@solver.fileResultatDuree">{{ resultat.dureeSecondes }} s</td>
               <td>{{ resultat.erreur ?? '' }}</td>
             </tr>

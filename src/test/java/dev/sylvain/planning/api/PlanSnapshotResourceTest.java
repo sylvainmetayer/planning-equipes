@@ -191,6 +191,35 @@ class PlanSnapshotResourceTest {
                 .body("affectations.size()", greaterThan(0));
     }
 
+    /**
+     * The constraints screen must describe the plan actually in place: a
+     * restore rewrites {@code poste_affectation} outside of any solve, so the
+     * stored analysis is re-derived from the restored plan (issue #167 —
+     * after a group switch plus a one-click restore, the screen kept showing
+     * the previous solve's hard violations against a plan they no longer
+     * described).
+     */
+    @Test
+    void restaurerMetAJourLAnalyseDeContraintes() throws InterruptedException {
+        planPersiste();
+        long id = capturer("Plan à analyser");
+        solve();
+        String avant = given()
+                .when().get("/api/constraints")
+                .then().statusCode(200)
+                .extract().jsonPath().getString("analysedAt");
+        assertThat(avant).isNotNull();
+
+        given().when().post("/api/planning/snapshots/" + id + "/restore").then().statusCode(200);
+
+        String apres = given()
+                .when().get("/api/constraints")
+                .then().statusCode(200)
+                .extract().jsonPath().getString("analysedAt");
+        assertThat(apres).isNotNull();
+        assertThat(java.time.Instant.parse(apres)).isAfter(java.time.Instant.parse(avant));
+    }
+
     private void attendreSolveurLibre() throws InterruptedException {
         for (int i = 0; i < MAX_POLLS; i++) {
             if (given().when().get("/api/jobs/active").then().extract().statusCode() == 204) {

@@ -88,11 +88,29 @@ export class ApiService {
 }
 
 /**
+ * A 401 on an admin API call: the session is missing or expired. The auth
+ * interceptor is already sending the user to /login when this happens, so
+ * this error is a technical detail, not news — {@code reportError} and the
+ * other toast paths skip it instead of stacking an « Échec de la requête
+ * (code 401) » notification on top of the redirect.
+ */
+export class SessionExpireeError extends Error {
+  constructor() {
+    super($localize`:@@api.sessionExpiree:Session expirée — reconnexion en cours.`);
+    this.name = 'SessionExpireeError';
+  }
+}
+
+/**
  * Turns an HTTP failure into a readable Error: the server message when the
- * backend sent one, the status code otherwise.
+ * backend sent one, the status code otherwise. A 401 becomes a
+ * {@link SessionExpireeError} so notification paths can stay silent about it.
  */
 export function toError(error: unknown): Error {
   if (error instanceof HttpErrorResponse) {
+    if (error.status === 401) {
+      return new SessionExpireeError();
+    }
     const body = error.error as { message?: string } | string | null;
     if (body && typeof body === 'object' && body.message) {
       return new Error(body.message);

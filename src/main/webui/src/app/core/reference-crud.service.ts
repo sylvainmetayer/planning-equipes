@@ -2,6 +2,7 @@
 // snack bar feedback and delete confirmation, so each page only owns its form.
 
 import { Injectable, inject } from '@angular/core';
+import { SessionExpireeError } from './api.service';
 import { NotificationService } from './notification.service';
 import { PlanningResolutionStore } from './planning-resolution.store';
 import { BulkResult, ReferenceDataStore } from './reference-data.store';
@@ -207,6 +208,11 @@ export class ReferenceCrudService {
   }
 
   reportError(error: unknown): void {
+    // An expired session is not news: the auth interceptor is already
+    // redirecting to /login, a toast on top would just be technical noise.
+    if (error instanceof SessionExpireeError) {
+      return;
+    }
     this.notifications.notify({
       title: $localize`:@@crud.error:Erreur`,
       message: error instanceof Error ? error.message : String(error),

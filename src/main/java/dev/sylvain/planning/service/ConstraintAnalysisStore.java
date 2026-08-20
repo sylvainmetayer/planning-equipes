@@ -39,6 +39,17 @@ public class ConstraintAnalysisStore {
     }
 
     /**
+     * Drops the edition's analysis. Called when the persisted plan is
+     * rewritten outside of any solve (a snapshot restore) right before the
+     * fresh diagnostic is recorded: if that re-analysis fails, the screen
+     * honestly shows "no analysis yet" instead of the previous solve's
+     * violations against a plan they no longer describe.
+     */
+    public void effacer() {
+        latestByEdition.remove(editionId());
+    }
+
+    /**
      * Null-guarded like {@code ReferenceDataService}'s repository: the plain
      * (non-CDI) tests build this store with {@code new}, so the context is not
      * injected and every analysis lands under one key.

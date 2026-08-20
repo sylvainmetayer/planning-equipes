@@ -1792,6 +1792,29 @@ public class PlanningService {
      * again. Used right after {@link #resoudre} so a solve is never run twice
      * just to produce its own analysis.
      */
+    /**
+     * Re-derives the constraint analysis of the plan currently persisted —
+     * called after a snapshot restore rewrote {@code poste_affectation}
+     * outside of any solve. Without it, the Contraintes screen kept
+     * describing the <b>last solve</b>: after a group switch plus a one-click
+     * restore (the issue #167 flow), it still showed the previous group's
+     * hard violations against the freshly restored plan. Runs the same
+     * preparation as a solve (ad hoc constraints, legal parameters, toggles,
+     * weights) so the diagnostic is comparable to a post-solve one. Returns
+     * {@code null} when nothing is persisted.
+     */
+    public PlanningDiagnostic diagnostiquerPlanPersiste() {
+        PlanningFestival persisted = planningPersistenceService.loadPersistedPlanning();
+        if (persisted.getPostes().isEmpty()) {
+            return null;
+        }
+        prepareProblem(persisted);
+        // diagnostiquer() reads the solution's own score (hardScore, medium
+        // breakdown): a freshly reloaded plan has none until update() sets it.
+        solutionManager.update(persisted);
+        return diagnostiquer(persisted);
+    }
+
     public PlanningDiagnostic diagnostiquer(PlanningFestival solved) {
         ScoreAnalysis<?> analysis = solutionManager.analyze(solved);
         List<ConstraintDiagnostic> constraintDiagnostics = new ArrayList<>();

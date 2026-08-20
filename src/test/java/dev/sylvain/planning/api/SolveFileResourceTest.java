@@ -89,6 +89,12 @@ class SolveFileResourceTest {
                 .containsEntry("statut", "RESOLU");
         assertThat(resultats.get(1)).containsEntry("groupeId", actifAvant).containsEntry("actif", true)
                 .containsEntry("statut", "RESOLU");
+        // Warm start surfaced per group: FILE-G2 never had a snapshot (from
+        // scratch), while the active group re-seeds from the plan its own
+        // solve just persisted — a zero here is the silent cold-solve
+        // regression this field exists to expose.
+        assertThat((int) resultats.get(0).get("postesReamorces")).isZero();
+        assertThat((int) resultats.get(1).get("postesReamorces")).isPositive();
 
         // The persisted plan still belongs to the active group: solving FILE-G2
         // never wrote through poste_affectation / planning_resolution.

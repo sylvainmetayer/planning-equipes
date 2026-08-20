@@ -161,12 +161,14 @@ public class SolverJobService {
         String libelle = "File du " + LIBELLE_FILE_FORMAT.format(ZonedDateTime.now()) + " — " + groupe.getNom();
         PlanningFestival solved;
         String score;
+        int postesReamorces;
         if (groupe.isActif()) {
             // The active group is the plain solve path, warm-started: same
             // safety-net snapshot, same persistence, same recorded analysis.
             snapshotService.capturerAvantSolve();
             PlanningFestival problem = planningService.construireDepuisReferenceData(groupe.getId(),
                     seedDuGroupeActif(groupe));
+            postesReamorces = compterSeeds(problem);
             solved = planningService.resoudreAvecBailoutPlateau(problem, secondsLimit, job::attachSolver);
             persistenceService.persist(solved);
             PlanningService.PlanningDiagnostic diagnostic = planningService.diagnostiquer(solved);
@@ -179,6 +181,7 @@ public class SolverJobService {
                     ? Map.of()
                     : PlanSnapshotService.animateursParStandCreneau(dernier);
             PlanningFestival problem = planningService.construireDepuisReferenceData(groupe.getId(), seed);
+            postesReamorces = compterSeeds(problem);
             solved = planningService.resoudreAvecBailoutPlateau(problem, secondsLimit, job::attachSolver);
             score = solved.getScore() == null ? null : solved.getScore().toString();
             snapshotService.capturerDepuisSolution(solved, groupe.getId(), groupe.getNom(), score, libelle);
@@ -186,7 +189,18 @@ public class SolverJobService {
         int affectations = (int) solved.getPostes().stream().filter(poste -> poste.getAnimateur() != null).count();
         String statut = job.isCancelRequested() ? "INTERROMPU" : "RESOLU";
         return new GroupeFileResultat(groupe.getId(), groupe.getNom(), groupe.isActif(), statut, score,
-                affectations, dureeSecondes(depart), null);
+                affectations, postesReamorces, dureeSecondes(depart), null);
+    }
+
+    /**
+     * Seats pre-filled by the warm start, counted before the solve runs. Zero
+     * means the group solved from scratch — exactly the silent degradation
+     * (mismatched seed keys, missing snapshot) that once burned a full budget
+     * and ended with hard violations; surfacing the count in the per-group
+     * summary makes it a visible diagnosis instead.
+     */
+    private static int compterSeeds(PlanningFestival problem) {
+        return (int) problem.getPostes().stream().filter(poste -> poste.getAnimateur() != null).count();
     }
 
     /**
@@ -216,20 +230,21 @@ public class SolverJobService {
      * each group, in queue order. {@code statut} is {@code RESOLU},
      * {@code INTERROMPU} (cancelled mid-solve, partial result captured),
      * {@code ECHEC} ({@code erreur} says why, the queue moved on) or
-     * {@code NON_TRAITE} (cancelled before its turn).
+     * {@code NON_TRAITE} (cancelled before its turn). {@code postesReamorces}
+     * is the warm-start seed size — zero flags a solve from scratch.
      */
     public record GroupeFileResultat(String groupeId, String nom, boolean actif, String statut, String score,
-            int affectations, long dureeSecondes, String erreur) {
+            int affectations, int postesReamorces, long dureeSecondes, String erreur) {
 
         static GroupeFileResultat nonTraite(GroupeCreneau groupe) {
             return new GroupeFileResultat(groupe.getId(), groupe.getNom(), groupe.isActif(), "NON_TRAITE",
-                    null, 0, 0, null);
+                    null, 0, 0, 0, null);
         }
 
         static GroupeFileResultat echec(GroupeCreneau groupe, Exception e, long depart) {
             String message = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
             return new GroupeFileResultat(groupe.getId(), groupe.getNom(), groupe.isActif(), "ECHEC",
-                    null, 0, SolverJobService.dureeSecondes(depart), message);
+                    null, 0, 0, SolverJobService.dureeSecondes(depart), message);
         }
     }
 
