@@ -12,7 +12,6 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import dev.sylvain.planning.domain.Emplacement;
-import dev.sylvain.planning.domain.FenetreHoraire;
 import dev.sylvain.planning.domain.HoraireStand;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.ModeHoraire;
@@ -83,6 +82,120 @@ public class StandMcpTools {
                 : McpArgs.enumeration(NiveauEffort.class, niveauEffort, "niveauEffort"));
         stand.setEmplacement(emplacementId == null ? null : trouverEmplacement(emplacementId));
         return toView(referenceDataService.createStand(stand));
+    }
+
+    @Tool(description = "Crée un stand ET tout ce dont il dépend en un seul appel : son emplacement, ses "
+            + "typologies, et ses horaires d'ouverture récurrents. Conçu pour la mise en place d'une édition, où "
+            + "créer un stand demande sinon quatre allers-retours — et où creer_stand échoue tant que les "
+            + "typologies citées n'existent pas. "
+            + "L'emplacement est créé s'il n'existe pas ET que emplacementNom est fourni ; les typologies "
+            + "manquantes ne sont créées que si creerTypologiesManquantes vaut true, sinon leur absence reste une "
+            + "erreur (une typologie inventée sur une faute de frappe est un référentiel pollué). "
+            + "horaires prend les fenêtres d'OUVERTURE au format « 10:00-12:00,14:00- » : le stand est alors fermé "
+            + "en dehors, ce qui est la façon d'exprimer « ce stand n\u0027ouvre que de tant à tant ». Pour une règle "
+            + "de fermeture, ou plusieurs règles de portées différentes, utiliser ajouter_horaire_stand. "
+            + "La réponse énumère ce qui a été créé au passage, pour que rien ne soit créé à l\u0027insu de "
+            + "l\u0027utilisateur.")
+    CreationStandComplet creer_stand_complet(
+            @ToolArg(description = "Id du stand (unique)") String id,
+            @ToolArg(description = "Nom affiché") String nom,
+            @ToolArg(description = "Ids de typologies de jeu proposées", required = false) List<String> typologiesProposees,
+            @ToolArg(description = "Créer les typologies absentes du référentiel au lieu d'échouer", required = false) Boolean creerTypologiesManquantes,
+            @ToolArg(description = "Nombre minimum d'animateurs par créneau", required = false) Integer effectifMin,
+            @ToolArg(description = "Nombre maximum d'animateurs par créneau", required = false) Integer effectifMax,
+            @ToolArg(description = "Réservé aux animateurs majeurs", required = false) Boolean reserveMajeurs,
+            @ToolArg(description = "Stand premium (nécessite un animateur référent)", required = false) Boolean premium,
+            @ToolArg(description = "Niveau d'effort : NORMAL ou EPUISANT", required = false) String niveauEffort,
+            @ToolArg(description = "Id de l'emplacement géographique", required = false) String emplacementId,
+            @ToolArg(description = "Nom de l'emplacement, à créer s'il n'existe pas encore", required = false) String emplacementNom,
+            @ToolArg(description = "Latitude de l'emplacement créé", required = false) Double latitude,
+            @ToolArg(description = "Longitude de l'emplacement créé", required = false) Double longitude,
+            @ToolArg(description = "Fenêtres d'ouverture, ex. « 10:00-12:00,14:00- »", required = false) String horaires,
+            @ToolArg(description = "Portée des horaires : TOUS, JOURS_SEMAINE, PLAGE ou DATES", required = false) String horairesJours,
+            @ToolArg(description = "Jours de la semaine (MONDAY…SUNDAY) si portée JOURS_SEMAINE", required = false) List<String> horairesJoursSemaine,
+            @ToolArg(description = "Début de la plage (AAAA-MM-JJ) si portée PLAGE", required = false) String horairesDateDebut,
+            @ToolArg(description = "Fin de la plage (AAAA-MM-JJ) si portée PLAGE", required = false) String horairesDateFin,
+            @ToolArg(description = "Dates (AAAA-MM-JJ) si portée DATES", required = false) List<String> horairesDates) {
+        List<String> typologiesCreees = creerTypologiesAbsentes(typologiesProposees,
+                Boolean.TRUE.equals(creerTypologiesManquantes));
+        String emplacementCree = creerEmplacementAbsent(emplacementId, emplacementNom, latitude, longitude);
+
+        Stand stand = new Stand();
+        stand.setId(id);
+        stand.setNom(nom);
+        stand.setTypologiesProposees(typologiesProposees == null ? new HashSet<>() : new HashSet<>(typologiesProposees));
+        stand.setEffectifMin(effectifMin == null ? 1 : effectifMin);
+        stand.setEffectifMax(effectifMax == null ? Math.max(1, stand.getEffectifMin()) : effectifMax);
+        stand.setReserveMajeurs(Boolean.TRUE.equals(reserveMajeurs));
+        stand.setPremium(Boolean.TRUE.equals(premium));
+        stand.setNiveauEffort(niveauEffort == null ? NiveauEffort.NORMAL
+                : McpArgs.enumeration(NiveauEffort.class, niveauEffort, "niveauEffort"));
+        stand.setEmplacement(emplacementId == null ? null : trouverEmplacement(emplacementId));
+        if (horaires != null && !horaires.isBlank()) {
+            stand.getHoraires().add(horaireOuverture(horaires, horairesJours, horairesJoursSemaine,
+                    horairesDateDebut, horairesDateFin, horairesDates));
+        }
+        return new CreationStandComplet(toView(referenceDataService.createStand(stand)), emplacementCree,
+                typologiesCreees);
+    }
+
+    /**
+     * Creates the typologies the stand cites but the referential lacks, and
+     * only those. Opt-in because {@code validateStand} rejecting an unknown
+     * typologie is a feature: it is what turns "NIJNA" into an error instead
+     * of into a second, near-identical entry nobody notices until the solver
+     * finds no competent animateur for it.
+     */
+    private List<String> creerTypologiesAbsentes(List<String> typologies, boolean autorise) {
+        if (typologies == null || typologies.isEmpty() || !autorise) {
+            return List.of();
+        }
+        Set<String> connues = referenceDataService.listTypologies().stream()
+                .map(TypologieItem::id)
+                .collect(Collectors.toCollection(HashSet::new));
+        List<String> creees = new ArrayList<>();
+        for (String typologie : typologies) {
+            if (connues.add(typologie)) {
+                referenceDataService.createTypologie(new TypologieItem(typologie, typologie));
+                creees.add(typologie);
+            }
+        }
+        return creees;
+    }
+
+    /** @return the id of the emplacement created here, or {@code null} when none was. */
+    private String creerEmplacementAbsent(String emplacementId, String nom, Double latitude, Double longitude) {
+        if (emplacementId == null || emplacementId.isBlank() || nom == null || nom.isBlank()) {
+            return null;
+        }
+        boolean existe = referenceDataService.listEmplacements().stream()
+                .anyMatch(emplacement -> emplacementId.equals(emplacement.getId()));
+        if (existe) {
+            return null;
+        }
+        referenceDataService.createEmplacement(new Emplacement(emplacementId, nom, latitude, longitude));
+        return emplacementId;
+    }
+
+    private static HoraireStand horaireOuverture(String fenetres, String jours, List<String> joursSemaine,
+            String dateDebut, String dateFin, List<String> dates) {
+        HoraireStand horaire = new HoraireStand();
+        horaire.setMode(ModeHoraire.OUVERTURE);
+        horaire.setJours(jours == null ? TypeJoursHoraire.TOUS
+                : McpArgs.enumeration(TypeJoursHoraire.class, jours, "horairesJours"));
+        horaire.setJoursSemaine(McpArgs.joursSemaine(joursSemaine, "horairesJoursSemaine"));
+        horaire.setDateDebut(McpArgs.date(dateDebut, "horairesDateDebut"));
+        horaire.setDateFin(McpArgs.date(dateFin, "horairesDateFin"));
+        horaire.setDates(new TreeSet<>(McpArgs.dates(dates, "horairesDates")));
+        horaire.setFenetres(McpArgs.fenetres(fenetres, false));
+        return horaire;
+    }
+
+    /**
+     * @param emplacementCree  id of the emplacement created along the way, {@code null} if none
+     * @param typologiesCreees ids of the typologies created along the way, empty if none
+     */
+    public record CreationStandComplet(StandView stand, String emplacementCree, List<String> typologiesCreees) {
     }
 
     @Tool(description = "Modifie un stand. Seuls les champs fournis sont modifiés ; les fermetures et ouvertures "
@@ -216,7 +329,7 @@ public class StandMcpTools {
             horaire.setDates(dates.stream().map(date -> McpArgs.date(date, "dates"))
                     .collect(Collectors.toCollection(TreeSet::new)));
         }
-        horaire.setFenetres(parserFenetres(fenetres));
+        horaire.setFenetres(McpArgs.fenetres(fenetres, false));
         horaire.setMotif(motif);
         stand.getHoraires().add(horaire);
         return toView(referenceDataService.updateStand(standId, stand));
@@ -227,39 +340,6 @@ public class StandMcpTools {
         Stand stand = trouverStand(standId);
         stand.getHoraires().clear();
         return toView(referenceDataService.updateStand(standId, stand));
-    }
-
-    /**
-     * Reads the compact {@code "10:00-12:00,14:00-"} window syntax the horaire
-     * tool takes. A trailing dash is the "until closing time" form — the reason
-     * the syntax is a string rather than a pair of arguments is that a rule
-     * routinely carries two windows (a lunch break), which named arguments would
-     * force into a fixed maximum.
-     */
-    private static List<FenetreHoraire> parserFenetres(String fenetres) {
-        if (fenetres == null || fenetres.isBlank()) {
-            throw new IllegalArgumentException("fenetres est requis, ex. « 10:00-12:00,14:00- »");
-        }
-        List<FenetreHoraire> resultat = new ArrayList<>();
-        for (String morceau : fenetres.split(",")) {
-            String fenetre = morceau.trim();
-            if (fenetre.isEmpty()) {
-                continue;
-            }
-            int separateur = fenetre.indexOf('-');
-            if (separateur < 0) {
-                throw new IllegalArgumentException(
-                        "Fenêtre invalide « " + fenetre + " » : attendu « HH:MM-HH:MM » ou « HH:MM- »");
-            }
-            String debut = fenetre.substring(0, separateur).trim();
-            String fin = fenetre.substring(separateur + 1).trim();
-            resultat.add(new FenetreHoraire(McpArgs.heure(debut, "fenetres.heureDebut"),
-                    fin.isEmpty() ? null : McpArgs.heure(fin, "fenetres.heureFin")));
-        }
-        if (resultat.isEmpty()) {
-            throw new IllegalArgumentException("fenetres ne contient aucune fenêtre exploitable");
-        }
-        return resultat;
     }
 
     /* ----------------------------- Emplacements ---------------------------- */

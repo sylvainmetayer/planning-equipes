@@ -3,6 +3,8 @@ package dev.sylvain.planning.service;
 import java.text.Normalizer;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -440,6 +442,47 @@ public class ReferenceDataService {
     public void deleteCreneau(Long id) {
         repository.deleteCreneau(id);
         markModified();
+    }
+
+    /**
+     * Inserts a batch of créneaux — the product of one recurrence rule — as a
+     * single reference-data change.
+     *
+     * <p>Not a loop over {@link #createCreneau} at the caller's level on
+     * purpose: that would stamp the "données modifiées depuis le dernier
+     * solve" marker once per row, so a rule covering fourteen days would look
+     * like fourteen separate edits in the toolbar warnings. One rule is one
+     * edit.</p>
+     *
+     * <p>Day numbers are deliberately not touched here: {@link Creneau#getJour()}
+     * is never persisted, it is recomputed on read by
+     * {@link Creneau#assignerJours} over the whole edition — which is also
+     * what keeps the numbering correct when a batch adds a date earlier than
+     * every existing one.</p>
+     */
+    public List<Creneau> createCreneaux(List<Creneau> creneaux) {
+        List<Creneau> crees = new ArrayList<>();
+        for (Creneau creneau : creneaux) {
+            creneau.setId(null); // ignore any client-supplied id — the database always generates it
+            crees.add(repository.insertCreneau(creneau));
+        }
+        if (!crees.isEmpty()) {
+            markModified();
+        }
+        return crees;
+    }
+
+    /** Deletes a batch of créneaux, for the same "one intent, one edit" reason as {@link #createCreneaux}. */
+    public int deleteCreneaux(Collection<Long> ids) {
+        int supprimes = 0;
+        for (Long id : ids) {
+            repository.deleteCreneau(id);
+            supprimes++;
+        }
+        if (supprimes > 0) {
+            markModified();
+        }
+        return supprimes;
     }
 
     /** Clients that don't send a group (older callers, tests) land in the default one. */

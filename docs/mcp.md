@@ -167,10 +167,21 @@ complet les effacerait à chaque modification.
 | --- | --- |
 | `lister_stands` / `consulter_stand` | Typologies, effectifs, réserve majeurs/premium, effort, emplacement, horaires récurrents et plages datées |
 | `creer_stand` / `modifier_stand` / `supprimer_stand` | CRUD, modification par fusion |
+| `creer_stand_complet` | Stand + emplacement + typologies + horaires d'ouverture en un seul appel |
 | `ajouter_horaire_stand` / `effacer_horaires_stand` | Règles d'horaire récurrentes : une règle au lieu d'une plage datée par jour de festival |
 | `ajouter_fermeture_stand` / `ajouter_ouverture_stand` / `effacer_plages_stand` | Plages datées, qui priment sur les règles pour le jour qu'elles nomment |
 | `lister_emplacements` / `creer_emplacement` / `modifier_emplacement` / `supprimer_emplacement` | Emplacements géographiques |
 | `lister_typologies` / `creer_typologie` / `modifier_typologie` / `supprimer_typologie` | Référentiel des typologies de jeu |
+
+`creer_stand_complet` existe pour la mise en place d'une édition, où créer un
+stand demande sinon quatre allers-retours — et où `creer_stand` échoue tant que
+les typologies citées n'existent pas. Il crée l'emplacement absent quand
+`emplacementNom` est fourni, et les typologies absentes **seulement** si
+`creerTypologiesManquantes` vaut `true` : le refus d'une typologie inconnue est
+une fonctionnalité, c'est lui qui transforme « NIJNA » en erreur au lieu d'une
+seconde entrée quasi identique que personne ne remarque avant que le solveur ne
+trouve aucun animateur compétent. La réponse énumère ce qui a été créé au
+passage, pour que rien ne le soit à l'insu de l'utilisateur.
 
 `ajouter_horaire_stand` prend ses fenêtres en une chaîne compacte,
 `« 10:00-12:00,14:00- »` : une règle en porte régulièrement deux (la coupure
@@ -185,8 +196,81 @@ notion que l'`heureFin` omise ailleurs. Omettre `heureFin` sur
 | Outil | Description |
 | --- | --- |
 | `lister_creneaux` | Créneaux de l'édition |
-| `creer_creneau` / `modifier_creneau` / `supprimer_creneau` | CRUD des créneaux |
+| `creer_creneau` / `modifier_creneau` / `supprimer_creneau` | CRUD unitaire |
+| `diagnostiquer_grille_creneaux` | Ce que contient la grille en place, et si ce sont des amplitudes ou des vacations |
+| `valider_creneaux` | Contrôle de cohérence de la grille (voir ci-dessous) |
+| `previsualiser_creneaux_recurrents` / `creer_creneaux_recurrents` | Une règle récurrente au lieu de N créations unitaires |
+| `supprimer_creneaux` | Suppression en lot, filtrée par dates ou heure de début |
 | `previsualiser_decoupage` / `generer_decoupage` | Découpage des créneaux courants (lus comme amplitudes) en vacations, en place |
+
+#### Amplitudes ou vacations : un choix qui ne se devine pas
+
+Les outils qui écrivent ou contrôlent une grille exigent un argument `mode`
+**sans valeur par défaut** (`ModeGrilleCreneaux`) :
+
+- `AMPLITUDES` — des journées d'ouverture, destinées à être découpées en
+  vacations par `generer_decoupage` avant résolution ;
+- `VACATIONS` — des vacations finales, solvables telles quelles, pour
+  l'utilisateur qui préfère poser lui-même toute sa grille.
+
+Le mode change le verdict, il n'est donc pas cosmétique : deux créneaux qui se
+chevauchent le même jour sont une double saisie entre amplitudes, et la
+situation normale entre vacations décalées en familles. Un validateur qui
+supposerait se tromperait une fois sur deux — d'où le refus d'un `mode` absent,
+avec un message qui demande de trancher. `diagnostiquer_grille_creneaux`
+renseigne l'assistant sans décider à sa place : son champ `modeCertain`
+distingue ce que les données **prouvent** (une famille de décalage ou un
+créneau de couverture de pause ne peut venir que du découpage) de ce qu'elles
+suggèrent seulement — une grille de vacations saisie à la main est
+indiscernable d'une grille d'amplitudes.
+
+#### Récurrence
+
+`creer_creneaux_recurrents` reprend le vocabulaire déjà appris sur les horaires
+de stand plutôt que d'en inventer un second : portée `TOUS` / `JOURS_SEMAINE`
+(avec `joursSemaine`) / `PLAGE` / `DATES`, et fenêtres compactes
+`« 09:00-12:00,14:00-18:00 »`. « De 8h à 12h tous les jours sauf le week-end »
+est donc *une* règle. Deux différences avec `ajouter_horaire_stand` :
+
+- l'heure de fin est **obligatoire** — la forme ouverte `« 14:00- »` signifie
+  « jusqu'à la fermeture », notion qui n'existe que pour un horaire évalué au
+  regard d'un créneau ; un créneau *est* l'amplitude, il n'a rien d'extérieur
+  dont hériter une fin ;
+- `exclusions` retire des dates précises quel que soit le sélecteur, pour le
+  cas « tous les jours sauf le 14 » qui obligerait sinon à tout énumérer.
+
+Le numéro de jour ne se saisit jamais : il n'est pas stocké, il est redérivé
+des dates à chaque lecture par `Creneau.assignerJours`, ce qui garde la
+numérotation juste même quand un lot ajoute une date antérieure à toutes les
+autres.
+
+`previsualiser_creneaux_recurrents` prend exactement les mêmes arguments et
+n'écrit rien : une règle qui se trompe d'une heure crée des dizaines de lignes
+d'un coup, l'aperçu est là pour que ça se voie avant.
+
+#### Ce que `valider_creneaux` contrôle
+
+L'outil **agrège** trois analyses plutôt que d'en réimplémenter une quatrième.
+`OuvertureStandsAnalyzer` juge déjà la relation stand↔créneau (stand jamais
+ouvert, fenêtre sans effet, segment trop court) et `FeasibilityAnalyzer` juge
+l'effectif ; ce que ni l'un ni l'autre ne regarde, c'est la cohérence interne
+de la grille, et c'est ce que `GrilleCreneauxService` ajoute :
+
+| Anomalie | Sévérité | Déclenchement |
+| --- | --- | --- |
+| `CRENEAU_INCOMPLET`, `DUREE_NULLE` | erreur | date ou heures manquantes, début égal à la fin |
+| `DOUBLON` | erreur | mêmes date, heures et famille |
+| `REPOS_QUOTIDIEN_IMPOSSIBLE` | erreur | vacation plus longue que `24 h − reposQuotidienMinimal` : toute affectation violera une contrainte dure |
+| `CHEVAUCHEMENT` | avertissement | deux **amplitudes** du même jour se recouvrent |
+| `TROU_DANS_LA_JOURNEE` | avertissement | plage intérieure qu'aucun créneau ne couvre |
+| `AMPLITUDE_PLUS_COURTE_QUE_LA_VACATION_MINIMALE` | avertissement | le découpage ne produira rien d'exploitable ce jour-là |
+| `VACATION_TROP_LONGUE` | avertissement | au-delà de `dureeVacationMaxMinutes` — amplitude déguisée ? |
+| `DATE_ISOLEE` | avertissement | date à plus de 7 jours de toute autre : erreur de mois ou d'année |
+
+Seules les erreurs rendent la grille invalide (`valide: false`) ; les
+avertissements décrivent ce qui est suspect **sans** rien refuser, parce que
+chacun d'eux a un cas légitime (une fermeture voulue entre midi et deux, un
+festival qui saute une semaine).
 
 ### Paramètres et contraintes
 

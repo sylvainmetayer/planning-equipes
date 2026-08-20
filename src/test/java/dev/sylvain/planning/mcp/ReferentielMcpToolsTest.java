@@ -100,9 +100,9 @@ class ReferentielMcpToolsTest {
 
     @Test
     void creerEtModifierUnCreneau() {
-        CreneauView creneau = creneauTools.creer_creneau(1, "2026-07-18", "09:00", "13:00");
+        CreneauView creneau = creneauTools.creer_creneau("2026-07-18", "09:00", "13:00");
 
-        CreneauView modifie = creneauTools.modifier_creneau(creneau.id(), null, null, "10:00", null);
+        CreneauView modifie = creneauTools.modifier_creneau(creneau.id(), null, "10:00", null);
         assertThat(modifie.heureDebut()).hasToString("10:00");
         assertThat(modifie.heureFin()).hasToString("13:00");
 
@@ -110,8 +110,82 @@ class ReferentielMcpToolsTest {
     }
 
     @Test
+    void creerUnStandCompletCreeSesDependancesEtLesEnumere() {
+        StandMcpTools.CreationStandComplet creation = standTools.creer_stand_complet(
+                "STAND-COMPLET-1", "Stand complet", List.of("TYPO-COMPLET-1"), true,
+                2, 4, null, null, null,
+                "EMP-COMPLET-1", "Kiosque du test", 46.6, -0.2,
+                "10:00-12:00,14:00-", null, null, null, null, null);
+
+        assertThat(creation.typologiesCreees()).containsExactly("TYPO-COMPLET-1");
+        assertThat(creation.emplacementCree()).isEqualTo("EMP-COMPLET-1");
+        assertThat(creation.stand().emplacementId()).isEqualTo("EMP-COMPLET-1");
+        assertThat(creation.stand().effectifMin()).isEqualTo(2);
+        assertThat(creation.stand().horaires()).hasSize(1);
+
+        standTools.supprimer_stand("STAND-COMPLET-1");
+        standTools.supprimer_emplacement("EMP-COMPLET-1");
+        standTools.supprimer_typologie("TYPO-COMPLET-1");
+    }
+
+    @Test
+    void creerUnStandCompletRefuseUneTypologieInconnueSansLOptionDeCreation() {
+        assertThatThrownBy(() -> standTools.creer_stand_complet(
+                "STAND-COMPLET-2", "Stand complet", List.of("TYPO-INEXISTANTE"), null,
+                null, null, null, null, null, null, null, null, null,
+                null, null, null, null, null, null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("TYPO-INEXISTANTE");
+    }
+
+    @Test
+    void creerDesCreneauxRecurrentsSauteLeWeekEndEtControleLaGrille() {
+        // Repart d'une grille vide pour que les comptages soient déterministes ; la classe la
+        // laisse vide en sortie, c'est-à-dire dans l'état d'une base de test fraîche.
+        creneauTools.supprimer_creneaux(null, null, null, true);
+
+        CreneauMcpTools.PrevisualisationRecurrence apercu = creneauTools.previsualiser_creneaux_recurrents(
+                "AMPLITUDES", "09:00-12:00,14:00-18:00", "JOURS_SEMAINE", "2026-07-06", "2026-07-12",
+                List.of("MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"), null, null);
+
+        assertThat(apercu.nombreGeneres()).isEqualTo(10);
+        assertThat(referenceDataService.listCreneaux()).isEmpty(); // la prévisualisation n'écrit rien
+
+        CreneauMcpTools.PrevisualisationRecurrence creation = creneauTools.creer_creneaux_recurrents(
+                "AMPLITUDES", "09:00-12:00,14:00-18:00", "JOURS_SEMAINE", "2026-07-06", "2026-07-12",
+                List.of("MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"), null, null);
+
+        assertThat(creation.nombreGeneres()).isEqualTo(10);
+        assertThat(referenceDataService.listCreneaux()).hasSize(10);
+        // Le jour n'est jamais stocké : il est redérivé des dates à la lecture.
+        assertThat(referenceDataService.listCreneaux()).extracting(dev.sylvain.planning.domain.Creneau::getJour)
+                .containsOnly(1, 2, 3, 4, 5);
+        // La coupure méridienne laisse 12h-14h à découvert : signalé en avertissement, sans bloquer.
+        assertThat(creation.controle().valide()).isTrue();
+        assertThat(creation.controle().anomalies()).extracting(anomalie -> anomalie.type().name())
+                .contains("TROU_DANS_LA_JOURNEE");
+
+        assertThat(creneauTools.supprimer_creneaux(null, null, "14:00", null).supprimes()).isEqualTo(5);
+        assertThat(creneauTools.supprimer_creneaux(null, null, null, true).restants()).isZero();
+    }
+
+    @Test
+    void supprimerDesCreneauxSansFiltreEstRefuse() {
+        assertThatThrownBy(() -> creneauTools.supprimer_creneaux(null, null, null, null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("tous=true");
+    }
+
+    @Test
+    void unModeDeGrilleManquantDemandeDeTrancherPlutotQueDeSupposer() {
+        assertThatThrownBy(() -> creneauTools.valider_creneaux(null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("AMPLITUDES");
+    }
+
+    @Test
     void uneDateMalFormeeRemonteUnMessageExploitable() {
-        assertThatThrownBy(() -> creneauTools.creer_creneau(1, "18/07/2026", "09:00", "13:00"))
+        assertThatThrownBy(() -> creneauTools.creer_creneau("18/07/2026", "09:00", "13:00"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("AAAA-MM-JJ");
     }

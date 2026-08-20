@@ -1,14 +1,20 @@
 package dev.sylvain.planning.mcp;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
+
+import dev.sylvain.planning.domain.FenetreHoraire;
 
 /**
  * Parsing of the scalar tool arguments an MCP client sends as plain strings.
@@ -50,6 +56,60 @@ final class McpArgs {
         } catch (DateTimeParseException e) {
             throw new IllegalArgumentException(champ + " : heure invalide « " + value + " », format attendu HH:MM");
         }
+    }
+
+    static Set<DayOfWeek> joursSemaine(Collection<String> values, String champ) {
+        if (values == null) {
+            return new TreeSet<>();
+        }
+        return values.stream()
+                .map(value -> enumeration(DayOfWeek.class, value, champ))
+                .collect(Collectors.toCollection(TreeSet::new));
+    }
+
+    /**
+     * Reads the compact {@code "10:00-12:00,14:00-"} window syntax shared by
+     * the stand-horaire and créneau-recurrence tools. A rule routinely carries
+     * two windows (the midday break), which named arguments would force into
+     * an arbitrary maximum — hence a string.
+     *
+     * @param finRequise when {@code true}, the open-ended {@code "14:00-"}
+     *                   form is rejected. A stand horaire may run "until
+     *                   closing time" because it is evaluated <em>against</em>
+     *                   a créneau; a créneau has nothing outer to inherit an
+     *                   end from — it <em>is</em> the day's amplitude — so
+     *                   leaving its end open would be meaningless rather than
+     *                   convenient.
+     */
+    static List<FenetreHoraire> fenetres(String fenetres, boolean finRequise) {
+        if (fenetres == null || fenetres.isBlank()) {
+            throw new IllegalArgumentException("fenetres est requis, ex. « 10:00-12:00,14:00-18:00 »");
+        }
+        List<FenetreHoraire> resultat = new ArrayList<>();
+        for (String morceau : fenetres.split(",")) {
+            String fenetre = morceau.trim();
+            if (fenetre.isEmpty()) {
+                continue;
+            }
+            int separateur = fenetre.indexOf('-');
+            if (separateur < 0) {
+                throw new IllegalArgumentException("Fenêtre invalide « " + fenetre + " » : attendu "
+                        + (finRequise ? "« HH:MM-HH:MM »" : "« HH:MM-HH:MM » ou « HH:MM- »"));
+            }
+            String debut = fenetre.substring(0, separateur).trim();
+            String fin = fenetre.substring(separateur + 1).trim();
+            if (fin.isEmpty() && finRequise) {
+                throw new IllegalArgumentException("Fenêtre invalide « " + fenetre + " » : une heure de fin est "
+                        + "obligatoire ici. La forme ouverte « HH:MM- » n'existe que pour les horaires de stand, "
+                        + "qui se lisent au regard d'un créneau ; un créneau est lui-même l'amplitude du jour.");
+            }
+            resultat.add(new FenetreHoraire(heure(debut, "fenetres.heureDebut"),
+                    fin.isEmpty() ? null : heure(fin, "fenetres.heureFin")));
+        }
+        if (resultat.isEmpty()) {
+            throw new IllegalArgumentException("fenetres ne contient aucune fenêtre exploitable");
+        }
+        return resultat;
     }
 
     static <E extends Enum<E>> E enumeration(Class<E> type, String value, String champ) {
