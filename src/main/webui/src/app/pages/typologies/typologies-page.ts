@@ -14,6 +14,7 @@ import { labelTypologiesPluriel } from '../../core/entity-labels';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
+import { StatusMessage } from '../../shared/status-message';
 import { TableSelection } from '../../core/table-selection';
 import { correspondAuFiltre } from '../../core/text-filter';
 import { TypologieItem } from '../../core/models';
@@ -44,7 +45,8 @@ import { TypologieFormData, TypologieFormDialog } from './typologie-form-dialog'
     MatTooltipModule,
     BulkActionsBar,
     TableFilter
-  ],
+  ,
+    StatusMessage],
   templateUrl: './typologies-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -87,6 +89,20 @@ export class TypologiesPage {
   constructor() {
     void this.crud.reload();
   }
+
+  /**
+   * Warning text when no typologie is flagged ninja (and the referential is
+   * not simply empty): without it, no animateur is polyvalent — nobody can be
+   * seated outside their own competences, and `preserverBufferPolyvalents`
+   * (keep one polyvalent free per créneau to absorb last-minute absences)
+   * has nothing to protect. A silent degradation worth a visible sentence.
+   */
+  protected readonly alerteNinjaManquant = computed(() => {
+    if (this.store.typologies().length === 0 || this.store.typologies().some((typologie) => typologie.ninja)) {
+      return '';
+    }
+    return $localize`:@@typologies.ninjaManquant:Aucune typologie « ninja » n'est désignée. Sans elle, aucun animateur n'est polyvalent : personne ne peut être affecté en dehors de ses compétences, et la contrainte « préserver un polyvalent libre par créneau » (votre marge de manœuvre en cas d'absence de dernière minute) ne protège plus rien. Choisissez la typologie qui joue ce rôle dans le sélecteur ci-dessus.`;
+  });
 
   /** Id of the typologie currently flagged ninja — at most one, `null` when none. */
   protected readonly typologieNinjaId = computed(

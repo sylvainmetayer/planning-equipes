@@ -7,7 +7,7 @@
       <mat-icon>add</mat-icon>
       <ng-container i18n="@@common.add">Ajouter</ng-container>
     </button>
-    <mat-form-field appearance="outline" class="ninja-select">
+    <mat-form-field appearance="outline" class="ninja-select" subscriptSizing="dynamic">
       <mat-label i18n="@@typologies.field.ninja">Typologie ninja</mat-label>
       <mat-select name="ninja" [disabled]="editingLocked()" [ngModel]="typologieNinjaId()"
                   (ngModelChange)="setNinja($event)">
@@ -20,6 +20,11 @@
     </mat-form-field>
     <app-table-filter [(value)]="filtre" [matches]="typologiesFiltrees().length" [total]="store.typologies().length" />
   </mat-card-actions>
+  @if (alerteNinjaManquant()) {
+    <mat-card-content class="typologies-alerte-ninja">
+      <app-status-message [text]="alerteNinjaManquant()" tone="warning" />
+    </mat-card-content>
+  }
   <mat-card-content class="table-wrapper">
     @if (selection.hasSelection()) {
       <app-bulk-actions-bar [count]="selection.count()" [disabled]="editingLocked()"

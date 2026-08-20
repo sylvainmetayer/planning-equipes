@@ -674,7 +674,7 @@
   "aide.data.term.creneaux": "Time slots",
   "aide.data.def.creneaux": "Festival day, date, start and end times. This is the time grid the solver fills; a stand's minimum headcount is multiplied by the number of slots it is open on.",
   "aide.data.term.autres": "Locations and categories",
-  "aide.data.def.autres": "Locations are geolocated places a stand can be attached to — they are what makes it possible to avoid distant location changes between two time slots. Categories are the shared vocabulary between a staff member's skills and a stand's games: nobody can work a stand without mastering at least one of its categories.",
+  "aide.data.def.autres": "Locations are geolocated places a stand attaches to — they help avoid distant venue changes from one slot to the next. Typologies are the shared vocabulary between a staff member's competences and a stand's games: someone can only run a stand if they master at least one of its typologies. Also designate the “ninja” typology there: its holders count as versatile (assignable to any stand), and the solver tries to keep one of them free on every slot — your margin for last-minute absences. Without a designated ninja typology that reserve does not exist and everyone stays within their own competences; the Typologies page warns you about it.",
   "aide.data.bulk": "Every reference screen lets you tick several rows to delete or edit them in one go. In a bulk edit, each field means “leave unchanged” until it is filled in: the per-row values of the other fields are preserved. This includes opening hours: a rule shared by several stands (“all closed before 18:00 on a heat-wave evening”) is entered once — tick the stands, “Edit selection”, then add, replace or clear their rules in one go. Time slots, on the other hand, are already shared by every stand: you never create one per stand, the opening hours are what restricts what each stand opens.",
   "aide.data.ouvertures": "Before any solve, open “Stand opening schedule”: the stand × day grid shows what the solver will actually read once rules are expanded and exceptions applied, and reports the three usual entry mistakes — a stand that ends up open on no day at all, a time window outside the day's hours (so with no effect), and an open range too short to be a real shift.",
   "aide.config.title": "Configuring the solver",
@@ -1038,5 +1038,6 @@
   "decoupage.generer.submitCourt": "Generate the shifts",
   "decoupage.generated": "Slicing generated: the shifts replaced the amplitudes.",
   "decoupage.preview": "Preview",
-  "decoupage.resume.vacationCount": " — {$INTERPOLATION} shift(s):"
+  "decoupage.resume.vacationCount": " — {$INTERPOLATION} shift(s):",
+  "typologies.ninjaManquant": "No “ninja” typology is designated. Without it, no staff member is versatile: nobody can be seated outside their own competences, and the “keep one versatile free per slot” constraint (your margin for last-minute absences) protects nothing. Pick the typology playing that role in the selector above."
 }

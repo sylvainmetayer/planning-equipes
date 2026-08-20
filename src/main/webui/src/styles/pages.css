@@ -407,3 +407,18 @@ table td.hours-verifier {
   gap: 0.35rem;
   color: var(--mat-sys-error);
 }
+
+/* Typologies: the "no ninja designated" warning reads as a soft banner, not a
+   bare line squeezed under the toolbar row — the missing reserve is a real
+   operational risk, it deserves a surface of its own. */
+.typologies-alerte-ninja {
+  margin: 0 1rem 0.75rem;
+  padding: 0.25rem 1rem 0.75rem;
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+  border-radius: 0.75rem;
+}
+
+.typologies-alerte-ninja .status-message-warning {
+  color: var(--mat-sys-on-tertiary-container);
+}

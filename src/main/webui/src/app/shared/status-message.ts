@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 
-export type StatusTone = 'error' | 'success' | 'info';
+export type StatusTone = 'error' | 'warning' | 'success' | 'info';
 
 /**
  * The one place a page reports the outcome of an action.
@@ -42,6 +42,9 @@ export type StatusTone = 'error' | 'success' | 'info';
     .status-message-error {
       color: var(--mat-sys-error);
     }
+    .status-message-warning {
+      color: var(--mat-sys-tertiary);
+    }
     .status-message-success {
       color: var(--mat-sys-primary);
     }
@@ -60,6 +63,8 @@ export class StatusMessage {
     switch (this.tone()) {
       case 'error':
         return 'error_outline';
+      case 'warning':
+        return 'warning_amber';
       case 'success':
         return 'check_circle_outline';
       default:
