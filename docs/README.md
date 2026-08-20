@@ -20,6 +20,7 @@ fonctionnalités métier) : **tout ajout de documentation technique se fait ici*
 | [`optimisation-solveur.md`](optimisation-solveur.md) | Investigation du déficit de couverture sur un scénario dense : cause racine (pic de simultanéité fabriqué par le découpage), bornes de faisabilité calculables sans solveur, réglage retenu |
 | [`solver-pause-effectif-reduit.md`](solver-pause-effectif-reduit.md) | Plan d'une troisième stratégie de couverture de pause (`EFFECTIF_REDUIT`, moitié d'effectif) : chiffrage, impact sur les contraintes, étapes d'implémentation |
 | [`revue-contraintes.md`](revue-contraintes.md) | Revue des 35 contraintes : performance (pistes mesurées, appliquées ou écartées) et conception (mutualisation, contraintes à ajouter, à supprimer) |
+| [`qa-navigateur-2026-08-18.md`](qa-navigateur-2026-08-18.md) | Compte-rendu de QA en navigateur réel (issues #58 MapPicker et #59 CRUD OnPush) : protocole Playwright/Chromium, 10 vérifications, résultats |
 
 La mémoire destinée aux agents IA (Copilot, Claude Code, …) est centralisée dans
 un fichier unique à la racine : [`../AGENTS.md`](../AGENTS.md).
