@@ -75,6 +75,11 @@
     puis de 14h à la fermeture, tous les jours » tient en une règle à deux fenêtres, au lieu d'une plage datée par jour
     de festival. Laissez l'heure de fin vide pour courir jusqu'à la fermeture du jour.
   </p>
+  <p class="empty-hint" i18n="@@stands.horaires.hintMasse">
+    Mêmes horaires sur plusieurs stands ? Inutile de les ressaisir ici stand par stand : cochez les stands concernés
+    dans la liste, puis « Modifier la sélection » applique un jeu de règles à tous d'un coup (ajouter, remplacer ou
+    effacer).
+  </p>
   @for (horaire of draft().horaires; track $index; let indexHoraire = $index) {
     <div class="horaire-carte">
       <div class="horaire-entete">

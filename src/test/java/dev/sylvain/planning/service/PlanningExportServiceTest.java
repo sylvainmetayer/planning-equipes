@@ -49,6 +49,54 @@ class PlanningExportServiceTest {
         writeSample("planning-sample-" + animateurId + ".pdf", pdf);
     }
 
+    /**
+     * A festival day without any seat for the animateur is an explicit
+     * « Repos » day — but only for animateurs who hold at least one seat:
+     * someone absent from the plan is not "resting every day".
+     */
+    @Test
+    void joursDeReposListsTheFestivalDaysWithoutAnyAssignment() {
+        PlanningFestival planning = new PlanningFestival();
+        Stand stand = new Stand("STAND-A", "Stand A", Set.of("STRATEGIE"), 1, 1, false);
+        Creneau jour1 = new Creneau(1L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
+        Creneau jour2 = new Creneau(2L, 2, LocalDate.of(2026, 8, 15), LocalTime.of(9, 0), LocalTime.of(13, 0));
+        Creneau jour3 = new Creneau(3L, 3, LocalDate.of(2026, 8, 16), LocalTime.of(9, 0), LocalTime.of(13, 0));
+        Animateur ada = new Animateur("A1", "Ada", "Lovelace", LocalDate.of(2000, 1, 1), false);
+        PosteAffectation posteJour1 = new PosteAffectation("p1", stand, jour1);
+        posteJour1.setAnimateur(ada);
+        PosteAffectation posteJour2 = new PosteAffectation("p2", stand, jour2);
+        PosteAffectation posteJour3 = new PosteAffectation("p3", stand, jour3);
+        posteJour3.setAnimateur(ada);
+        planning.setAnimateurs(List.of(ada));
+        planning.setPostes(List.of(posteJour1, posteJour2, posteJour3));
+
+        assertThat(service.joursDeRepos(planning, "A1"))
+                .containsExactly(new PlanningExportService.JourRepos(2, LocalDate.of(2026, 8, 15)));
+        // No seat at all: no repos days either — the exports keep their empty state.
+        assertThat(service.joursDeRepos(planning, "ABSENT")).isEmpty();
+    }
+
+    /** Rest days land in the ICS as all-day, transparent events. */
+    @Test
+    void exportAnimateurIcsMarksRestDaysAsTransparentAllDayEvents() {
+        PlanningFestival planning = new PlanningFestival();
+        Stand stand = new Stand("STAND-A", "Stand A", Set.of("STRATEGIE"), 1, 1, false);
+        Creneau jour1 = new Creneau(1L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
+        Creneau jour2 = new Creneau(2L, 2, LocalDate.of(2026, 8, 15), LocalTime.of(9, 0), LocalTime.of(13, 0));
+        Animateur ada = new Animateur("A1", "Ada", "Lovelace", LocalDate.of(2000, 1, 1), false);
+        PosteAffectation travaille = new PosteAffectation("p1", stand, jour1);
+        travaille.setAnimateur(ada);
+        planning.setAnimateurs(List.of(ada));
+        planning.setPostes(List.of(travaille, new PosteAffectation("p2", stand, jour2)));
+
+        String ics = service.exportAnimateurIcs(planning, "A1");
+
+        assertThat(ics).contains("SUMMARY:Repos")
+                .contains("DTSTART;VALUE=DATE:20260815")
+                .contains("DTEND;VALUE=DATE:20260816")
+                .contains("TRANSP:TRANSPARENT");
+    }
+
     @Test
     void coequipiersNamesTheOthersOnTheSameStandLineOnly() {
         PlanningFestival planning = new PlanningFestival();

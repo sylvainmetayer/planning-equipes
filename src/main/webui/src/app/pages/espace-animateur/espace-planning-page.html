@@ -30,6 +30,12 @@
         <mat-card-title>{{ jour.date ? (jour.date | date: 'EEEE d MMMM') : '—' }}</mat-card-title>
       </mat-card-header>
       <mat-card-content>
+        @if (jour.repos) {
+          <p class="espace-repos">
+            <mat-icon inline>self_improvement</mat-icon>
+            <span i18n="@@espace.planning.repos">Repos — aucune affectation ce jour.</span>
+          </p>
+        }
         <ul class="espace-postes">
           @for (poste of jour.postes; track poste.standId + '-' + poste.creneauId + '-' + poste.heureDebut) {
             <li class="espace-poste">

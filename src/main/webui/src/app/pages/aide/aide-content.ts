@@ -143,7 +143,7 @@ export function buildHelpSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.data.bulk:Chaque écran de référentiel permet de cocher plusieurs lignes pour les supprimer ou les modifier d'un seul geste. Dans une modification en masse, chaque champ vaut « ne pas modifier » tant qu'il n'est pas renseigné : les autres valeurs propres à chaque ligne sont préservées.`
+          text: $localize`:@@aide.data.bulk:Chaque écran de référentiel permet de cocher plusieurs lignes pour les supprimer ou les modifier d'un seul geste. Dans une modification en masse, chaque champ vaut « ne pas modifier » tant qu'il n'est pas renseigné : les autres valeurs propres à chaque ligne sont préservées. Cela vaut aussi pour les horaires d'ouverture : une règle valable pour plusieurs stands (« tous fermés avant 18h en soirée canicule ») se saisit une seule fois — cochez les stands, « Modifier la sélection », puis ajoutez, remplacez ou effacez leurs règles d'un coup. Les créneaux, eux, sont déjà communs à tous les stands : on n'en crée jamais par stand, ce sont les horaires qui restreignent ce que chaque stand ouvre.`
         },
         {
           kind: 'paragraph',

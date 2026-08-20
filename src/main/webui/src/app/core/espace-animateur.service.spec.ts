@@ -15,6 +15,7 @@ function vue(): EspaceAnimateurView {
     groupeCreneauNom: null,
     foireOuverte: true,
     postes: [],
+    joursRepos: [],
     collegues: []
   };
 }

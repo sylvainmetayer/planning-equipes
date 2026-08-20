@@ -10,6 +10,8 @@ interface JourPlanning {
   /** ISO date, `''` for postes without one. */
   date: string;
   postes: PosteAnimateurView[];
+  /** True for a festival day without any seat: the card says « Repos » instead of listing shifts. */
+  repos: boolean;
 }
 
 /**
@@ -45,8 +47,17 @@ export class EspacePlanningPage {
         parJour.set(date, [poste]);
       }
     }
-    return Array.from(parJour.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, postes]) => ({ date, postes }));
+    const jours: JourPlanning[] = Array.from(parJour.entries()).map(([date, postes]) => ({
+      date,
+      postes,
+      repos: false
+    }));
+    // Rest days take their chronological place among the worked ones: a day
+    // silently missing reads as an oversight, an explicit « Repos » card as a
+    // decision. The server sends none for an animateur without any seat.
+    for (const date of this.espace.vue()?.joursRepos ?? []) {
+      jours.push({ date, postes: [], repos: true });
+    }
+    return jours.sort((a, b) => a.date.localeCompare(b.date));
   });
 }

@@ -181,6 +181,16 @@
   gap: 0.5rem;
 }
 
+/* A rest day's card body: quiet, clearly not a shift. */
+.espace-repos {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+  font-style: italic;
+}
+
 .espace-poste {
   display: flex;
   flex-wrap: wrap;

@@ -57,6 +57,7 @@ public class PlanningExportService {
     private static final DateTimeFormatter ICS_UTC_DATE_TIME = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'")
             .withZone(ZoneOffset.UTC);
     private static final DateTimeFormatter ICS_LOCAL_DATE_TIME = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss");
+    private static final DateTimeFormatter ICS_LOCAL_DATE = DateTimeFormatter.ofPattern("yyyyMMdd");
     private static final DateTimeFormatter GENERATED_AT_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private static final String LOGO_RESOURCE = "/branding/logo.png";
@@ -106,7 +107,44 @@ public class PlanningExportService {
                 .sorted(byCreneauThenStand())
                 .toList();
         return buildPdf(resolveAnimateurName(planning, animateurId), animateurPostes,
-                coequipiersParPoste(planning, animateurId), lienEspaceAnimateur(planning, animateurId));
+                coequipiersParPoste(planning, animateurId), joursDeRepos(planning, animateurId),
+                lienEspaceAnimateur(planning, animateurId));
+    }
+
+    /** A festival day the animateur is off: its day number and its date. */
+    public record JourRepos(int jour, LocalDate date) {
+    }
+
+    /**
+     * The festival days {@code animateurId} holds no seat on — their rest
+     * days, worth saying out loud: a day silently missing from a planning
+     * reads as an oversight, an explicit « Repos » reads as a decision (the
+     * staffing workbook dedicates a whole sheet to that rotation). Days come from
+     * the planning's own créneaux, so the notion of "festival day" follows
+     * whatever group the plan was solved for. Empty when the animateur holds
+     * no seat at all: someone absent from the plan is not "resting every
+     * day", and their exports keep the plain empty state.
+     */
+    public List<JourRepos> joursDeRepos(PlanningFestival planning, String animateurId) {
+        java.util.Map<LocalDate, Integer> joursFestival = new java.util.TreeMap<>();
+        java.util.Set<LocalDate> joursTravailles = new java.util.HashSet<>();
+        for (PosteAffectation poste : planning.getPostes()) {
+            Creneau creneau = poste.getCreneau();
+            if (creneau == null || creneau.getDate() == null) {
+                continue;
+            }
+            joursFestival.putIfAbsent(creneau.getDate(), creneau.getJour());
+            if (poste.getAnimateur() != null && animateurId.equals(poste.getAnimateur().getId())) {
+                joursTravailles.add(creneau.getDate());
+            }
+        }
+        if (joursTravailles.isEmpty()) {
+            return List.of();
+        }
+        return joursFestival.entrySet().stream()
+                .filter(jour -> !joursTravailles.contains(jour.getKey()))
+                .map(jour -> new JourRepos(jour.getValue(), jour.getKey()))
+                .toList();
     }
 
     /**
@@ -521,6 +559,23 @@ public class PlanningExportService {
             builder.append("END:VEVENT\r\n");
         }
 
+        // Rest days as all-day, TRANSParent events: they show in the agenda
+        // without marking the animateur busy — a day silently absent from the
+        // calendar reads as a missing shift, an explicit « Repos » as a
+        // planned one.
+        for (JourRepos jourRepos : joursDeRepos(planning, animateurId)) {
+            builder.append("BEGIN:VEVENT\r\n")
+                    .append("UID:repos-").append(jourRepos.date()).append("-").append(animateurId)
+                    .append("@planning-equipes\r\n")
+                    .append("DTSTAMP:").append(ICS_UTC_DATE_TIME.format(Instant.now())).append("\r\n")
+                    .append("DTSTART;VALUE=DATE:").append(ICS_LOCAL_DATE.format(jourRepos.date())).append("\r\n")
+                    .append("DTEND;VALUE=DATE:").append(ICS_LOCAL_DATE.format(jourRepos.date().plusDays(1)))
+                    .append("\r\n")
+                    .append("SUMMARY:Repos\r\n")
+                    .append("TRANSP:TRANSPARENT\r\n")
+                    .append("END:VEVENT\r\n");
+        }
+
         builder.append("END:VCALENDAR\r\n");
         return builder.toString();
     }
@@ -534,7 +589,8 @@ public class PlanningExportService {
     }
 
     private byte[] buildPdf(String animateurName, List<PosteAffectation> postes,
-            java.util.Map<String, List<String>> coequipiersParPoste, String lienEspaceAnimateur) {
+            java.util.Map<String, List<String>> coequipiersParPoste, List<JourRepos> joursRepos,
+            String lienEspaceAnimateur) {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         Document document = new Document(PageSize.A4, 40, 40, 40, 54);
         PdfWriter writer = PdfWriter.getInstance(document, output);
@@ -549,8 +605,22 @@ public class PlanningExportService {
             document.add(emptyState());
         } else {
             document.add(buildStandsAffectesCard(postes));
+            // Rest days are interleaved at their chronological place, so the
+            // document reads as one continuous festival rather than a list of
+            // shifts with silently missing days.
+            java.util.Iterator<JourRepos> repos = joursRepos.iterator();
+            JourRepos prochainRepos = repos.hasNext() ? repos.next() : null;
             for (PosteAffectation poste : postes) {
+                LocalDate datePoste = poste.getCreneau() == null ? null : poste.getCreneau().getDate();
+                while (prochainRepos != null && datePoste != null && prochainRepos.date().isBefore(datePoste)) {
+                    document.add(reposCard(prochainRepos));
+                    prochainRepos = repos.hasNext() ? repos.next() : null;
+                }
                 document.add(buildAssignmentCard(poste, coequipiersParPoste.getOrDefault(poste.getId(), List.of())));
+            }
+            while (prochainRepos != null) {
+                document.add(reposCard(prochainRepos));
+                prochainRepos = repos.hasNext() ? repos.next() : null;
             }
         }
         if (lienEspaceAnimateur != null) {
@@ -791,18 +861,45 @@ public class PlanningExportService {
     }
 
     private PdfPCell dayCell(Creneau creneau) {
+        return dayCell(creneau.getJour(), creneau.getDate());
+    }
+
+    private PdfPCell dayCell(int jour, LocalDate date) {
         PdfPCell cell = new PdfPCell();
         cell.setBorder(Rectangle.NO_BORDER);
         cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
         cell.setPadding(14f);
 
-        cell.addElement(dayBadge(creneau.getJour()));
+        cell.addElement(dayBadge(jour));
 
-        Paragraph date = new Paragraph(formatFrenchDayDate(creneau.getDate()), DATE_FONT);
-        date.setSpacingBefore(7f);
+        Paragraph dateLine = new Paragraph(formatFrenchDayDate(date), DATE_FONT);
+        dateLine.setSpacingBefore(7f);
 
-        cell.addElement(date);
+        cell.addElement(dateLine);
         return cell;
+    }
+
+    /**
+     * A rest day, same silhouette as an assignment card but muted: the day
+     * badge and date on the left, a plain « Repos » where a stand would be —
+     * so a day off reads as planned, not as a hole in the document.
+     */
+    private PdfPTable reposCard(JourRepos jourRepos) {
+        PdfPTable card = new PdfPTable(new float[] { 2.4f, 6.6f });
+        card.setWidthPercentage(100);
+        card.setSpacingAfter(9f);
+        card.getDefaultCell().setBorder(Rectangle.NO_BORDER);
+        card.setTableEvent(new RoundedBackgroundEvent(CARD_BACKGROUND, MUTED, 10f));
+
+        card.addCell(dayCell(jourRepos.jour(), jourRepos.date()));
+
+        PdfPCell repos = new PdfPCell();
+        repos.setBorder(Rectangle.NO_BORDER);
+        repos.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        repos.setPadding(14f);
+        repos.addElement(new Paragraph("Repos", STAND_FONT));
+        card.addCell(repos);
+        return card;
     }
 
     /** A small pill-shaped "JOURx" badge, sized to hug its own text rather than stretching to the column width. */

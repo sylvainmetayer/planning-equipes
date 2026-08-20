@@ -820,6 +820,8 @@ export interface CollegueView {
 
 /** `/api/espace-animateur/{jeton}`: the espace's home payload. */
 export interface EspaceAnimateurView {
+  /** ISO dates of the festival days without any seat for this animateur — their « Repos » days. */
+  joursRepos: string[];
   animateurId: string;
   prenom: string;
   nom: string;

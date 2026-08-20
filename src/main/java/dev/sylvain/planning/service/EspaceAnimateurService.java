@@ -59,9 +59,14 @@ public class EspaceAnimateurService {
      * espace read-only: the closure itself is enforced server-side, this flag
      * only lets the interface say so instead of failing on submit).
      */
+    /**
+     * @param joursRepos festival days the animateur holds no seat on — shown
+     *                    as explicit « Repos » days rather than silently
+     *                    missing cards; empty when they hold no seat at all
+     */
     public record EspaceAnimateurView(String animateurId, String prenom, String nom, Instant planningResoluLe,
             String groupeCreneauNom, boolean foireOuverte, List<PosteAnimateurView> postes,
-            List<CollegueView> collegues) {
+            List<LocalDate> joursRepos, List<CollegueView> collegues) {
     }
 
     /**
@@ -112,11 +117,15 @@ public class EspaceAnimateurService {
                 .sorted(Comparator.comparing(CollegueView::nomComplet, String.CASE_INSENSITIVE_ORDER))
                 .toList();
 
+        List<LocalDate> joursRepos = exportService.joursDeRepos(planning, animateurId).stream()
+                .map(PlanningExportService.JourRepos::date)
+                .toList();
+
         PlanningPersistenceService.PlanningResolution resolution = persistenceService.loadResolution();
         return new EspaceAnimateurView(animateur.getId(), animateur.getPrenom(), animateur.getNom(),
                 resolution == null ? null : resolution.resoluLe(),
                 resolution == null ? null : resolution.groupeCreneauNom(),
-                demandeEchangeService.estFoireOuverte(), postes, collegues);
+                demandeEchangeService.estFoireOuverte(), postes, joursRepos, collegues);
     }
 
     /** Resolves labels for a batch of demandes, in their given order. */

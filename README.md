@@ -517,10 +517,13 @@ API, désactivé tant qu'aucune clé n'est configurée. Détails dans
   festival). Chaque ligne affiche l'effectif pourvu sur l'effectif attendu et
   signale en rouge les places restées vides ;
 - **Export PDF** du planning individuel d'un animateur, ou de tous les plannings
-  individuels en une archive ZIP ;
+  individuels en une archive ZIP. Les journées du festival sans affectation y
+  figurent explicitement comme jours de **repos**, dans le PDF comme dans
+  l'espace en ligne de l'animateur — un jour absent se lirait comme un oubli ;
 - **Export ICS** du planning individuel, importable directement dans Google
   Calendar, Apple Calendar ou Outlook (également disponible en archive ZIP pour
-  l'ensemble des animateurs) ;
+  l'ensemble des animateurs) ; les jours de repos y apparaissent en événements
+  « journée entière » qui ne bloquent pas la disponibilité du calendrier ;
 - **Export / import d'un dump SQL** complet, pour dupliquer ou restaurer un jeu de
   données ;
 - **Import d'un fichier scénario YAML** depuis le poste de l'utilisateur,
