@@ -18,11 +18,12 @@ Match what changed to the doc that owns it:
 | New/changed REST endpoint (`api/*Resource.java`) | `docs/api.md` |
 | New/changed Timefold constraint | `docs/contraintes.md` **and** `solver/ConstraintCatalog.java` |
 | New business capability visible to end users | `README.md` section 2 (*Fonctionnalités métier*) — business language only, no class names, no file paths |
+| New/changed **screen behaviour an operator must understand** (new button or workflow, changed meaning of a banner/badge/setting, new lifecycle rule like retention or locking) | the in-app help page: `src/main/webui/src/app/pages/aide/aide-content.ts` (+ its new keys in `public/i18n/messages.en.json`). The guide answers "how do I use this screen" in business language — update the section covering that screen, don't create a doc-like dump. Skip for invisible or purely technical changes |
 | Change to Timefold model / invariants (`domain/*`) | `docs/domaine.md` |
 | Change to backend/frontend module layout, new top-level package | `docs/architecture.md` |
 | Change to CSV/dump/PDF/ICS import-export formats | `docs/import-export.md` |
 | New command, CI job, tooling, Renovate behaviour | `docs/developpement.md` |
-| New route/page | verify `docs/architecture.md` frontend section still matches if the page list is enumerated there |
+| New route/page | verify `docs/architecture.md` frontend section still matches if the page list is enumerated there, and add the page to the in-app help (`aide-content.ts`) |
 
 ## Rules to enforce
 

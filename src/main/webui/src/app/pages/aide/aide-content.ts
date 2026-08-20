@@ -97,12 +97,17 @@ export function buildHelpSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.editions.stale:Si le groupe actif change après une résolution, ou si une donnée de référence est modifiée, l'application le signale — indicateur dans la barre d'outils, rappel sur la page Solveur. Le planning affiché reste consultable, mais il ne décrit plus tout à fait les données courantes : il faut relancer une résolution.`
+          text: $localize`:@@aide.editions.stale:Si le groupe actif change après une résolution, ou si une donnée de référence est modifiée, l'application le signale — indicateur dans la barre d'outils, rappel sur la page Solveur. Le planning affiché reste consultable ; quand un instantané résolu existe pour la grille désormais active, le bandeau propose de le restaurer en un clic, sinon il invite à relancer une résolution.`
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.editions.file:Pour préparer ces bascules à l'avance, le bouton « Résoudre tous les groupes » de la page Solveur résout chaque grille l'une après l'autre — la grille active en dernier — et conserve le résultat de chacune en instantané, sans toucher au planning affiché pendant le calcul. Chaque grille repart de son dernier instantané, donc une file relancée après quelques retouches se termine bien plus vite que la première ; le dernier instantané de chaque grille n'est jamais purgé. Une grille peut être exclue de la file depuis la gestion des groupes (page Créneaux) — typiquement des amplitudes pas encore découpées en vacations, que résoudre n'aurait aucun sens.`
         }
       ],
       links: [
         { route: '/editions', label: $localize`:@@nav.link.editions:Éditions` },
-        { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` }
+        { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
+        { route: '/instantanes', label: $localize`:@@nav.link.snapshots:Instantanés` }
       ]
     },
     {
@@ -189,7 +194,7 @@ export function buildHelpSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.config.lock:Une seule résolution tourne à la fois pour tout le serveur. Si les boutons sont verrouillés, c'est qu'un calcul est en cours — éventuellement lancé depuis un autre poste ou un autre navigateur ; le moniteur de la barre d'outils indique lequel et depuis combien de temps.`
+          text: $localize`:@@aide.config.lock:Une seule résolution tourne à la fois pour tout le serveur. Si les boutons sont verrouillés, c'est qu'un calcul est en cours — éventuellement lancé depuis un autre poste ou un autre navigateur ; le moniteur de la barre d'outils indique lequel et depuis combien de temps. Une file « Résoudre tous les groupes » garde ce verrou pendant toute sa durée ; l'arrêter conserve le résultat du groupe en cours et saute les suivants.`
         }
       ],
       links: [
