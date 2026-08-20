@@ -223,9 +223,14 @@ tourner deux solveurs Timefold simultanés sur la même JVM, ce que le
 dimensionnement mémoire actuel n'anticipe pas. Le job capte en revanche son
 `editionId` **à la soumission**, sur le thread de la requête, et le rebinde sur
 le worker : il continue d'écrire dans l'édition pour laquelle il a été lancé
-même si le navigateur a basculé entre-temps. La file « résoudre tous les
-groupes » (issue #167) respecte ce verrou plutôt que de le contourner : les
-groupes s'y enchaînent **en séquence** dans un seul job, jamais en parallèle.
+même si le navigateur a basculé entre-temps. Le job expose cet `editionId` (et
+le nom lisible `editionNom`, résolu à la soumission) dans l'API des jobs :
+l'IHM affiche ainsi sur quelle édition le solveur travaille, et ne verrouille
+la saisie et l'import de scénario **que sur cette édition-là** — après une
+bascule d'édition pendant un long solve, les autres éditions restent
+entièrement modifiables. Seules les actions qui touchent toute la base (dump
+SQL, réinitialisation) ou qui démarreraient un second job restent verrouillées
+globalement.
 
 ## 6. Ce que ça change ailleurs
 

@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from './api.service';
+import { EditionStore } from './edition.store';
 import { NotificationService } from './notification.service';
 import { SolverJobService } from './solver-job.service';
 import type { JobView } from './models';
@@ -13,6 +14,8 @@ function job(overrides: Partial<JobView> = {}): JobView {
     id: 'job-1',
     type: 'SOLVE',
     status: 'RUNNING',
+    editionId: 'ed-1',
+    editionNom: 'Année 2026',
     secondsLimit: 30,
     submittedAt: '2026-07-01T10:00:00Z',
     startedAt: '2026-07-01T10:00:00Z',
@@ -45,15 +48,19 @@ class FakeApi {
 describe('SolverJobService', () => {
   let service: SolverJobService;
   let api: FakeApi;
+  /** What EditionStore reports as the edition this browser works on. */
+  let editionCourante: { id: string } | null;
 
   beforeEach(() => {
     vi.useFakeTimers();
     api = new FakeApi();
+    editionCourante = { id: 'ed-1' };
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
         SolverJobService,
         { provide: ApiService, useValue: api },
+        { provide: EditionStore, useValue: { courant: () => editionCourante } },
         {
           provide: NotificationService,
           useValue: { notify: vi.fn(), notifyFeasibility: vi.fn(), requestDesktopPermission: vi.fn() }
@@ -137,6 +144,50 @@ describe('SolverJobService', () => {
 
       expect(service.solverBusy()).toBe(true);
       expect(service.activeJob()?.id).toBe('job-1');
+    });
+  });
+
+  describe('editingLocked', () => {
+    it('locks while the running job works on the edition this browser is on', async () => {
+      api.activeResponses = [{ status: 200, body: job({ editionId: 'ed-1' }) }];
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(service.editingLocked()).toBe(true);
+    });
+
+    it('does not lock when the job works on another edition', async () => {
+      api.activeResponses = [{ status: 200, body: job({ editionId: 'ed-2' }) }];
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(service.editingLocked()).toBe(false);
+      expect(service.solverBusy()).toBe(true);
+    });
+
+    it('stays pessimistic when the job does not say which edition it works on', async () => {
+      api.activeResponses = [{ status: 200, body: job({ editionId: null, editionNom: null }) }];
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(service.editingLocked()).toBe(true);
+    });
+
+    it('stays pessimistic while the current edition is not known yet', async () => {
+      editionCourante = null;
+      api.activeResponses = [{ status: 200, body: job({ editionId: 'ed-2' }) }];
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(service.editingLocked()).toBe(true);
+    });
+
+    it('is idle-unlocked once the server has answered, like solverBusy', async () => {
+      api.activeResponses = [{ status: 204, body: null }];
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(service.editingLocked()).toBe(false);
     });
   });
 

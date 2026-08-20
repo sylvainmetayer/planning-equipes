@@ -596,6 +596,10 @@ export interface JobView {
   id: string;
   type: JobType;
   status: JobStatus;
+  /** Edition the job was submitted for — the one its result is written to. */
+  editionId: string | null;
+  /** Display name of that edition, resolved server-side at submit time. */
+  editionNom: string | null;
   secondsLimit: number | null;
   submittedAt: string;
   startedAt: string | null;

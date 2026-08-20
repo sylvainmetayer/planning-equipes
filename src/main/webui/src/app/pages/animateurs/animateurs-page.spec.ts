@@ -68,7 +68,7 @@ describe('AnimateursPage alert badges', () => {
         provideZonelessChangeDetection(),
         { provide: ApiService, useValue: api },
         { provide: ReferenceCrudService, useValue: { reload: vi.fn(async () => undefined) } },
-        { provide: SolverJobService, useValue: { solverBusy: () => false } },
+        { provide: SolverJobService, useValue: { solverBusy: () => false, editingLocked: () => false } },
         { provide: MatDialog, useValue: { open: vi.fn() } }
       ]
     });

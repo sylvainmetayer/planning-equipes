@@ -46,7 +46,7 @@ export interface EmplacementBulkEditData {
 export class EmplacementBulkEditDialog {
   protected readonly jobs = inject(SolverJobService);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
-  protected readonly editingLocked = computed(() => this.jobs.solverBusy());
+  protected readonly editingLocked = computed(() => this.jobs.editingLocked());
 
   protected readonly dialogRef = inject<MatDialogRef<EmplacementBulkEditDialog, boolean>>(MatDialogRef);
   private readonly data = inject<EmplacementBulkEditData>(MAT_DIALOG_DATA);

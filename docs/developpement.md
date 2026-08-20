@@ -225,6 +225,11 @@ On distingue quatre familles de tests :
   planning toujours téléchargeable en PDF/ICS, réouverture par le même
   interrupteur), et un lien profond admin sans session qui repasse par
   `/login` ;
+- **verrou d'édition pendant un solve** (`e2e/verrou-edition.spec.ts`) : le
+  job est lié à l'édition depuis laquelle il a été soumis ; pendant qu'il
+  tourne, la saisie est verrouillée sur cette édition-là (et le moniteur de la
+  barre d'outils la nomme), tandis qu'une autre édition reste éditable et
+  ouverte à l'import de scénario ;
 - **fuzzing à invariants** (`e2e/solveur-fuzz.spec.ts`) : des référentiels
   aléatoires mais **reproductibles** (PRNG semé, graine affichée dans la
   sortie et rejouable avec `E2E_FUZZ_SEED=<graine>`) sont résolus pour de

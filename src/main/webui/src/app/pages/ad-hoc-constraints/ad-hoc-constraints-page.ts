@@ -40,7 +40,7 @@ export class AdHocConstraintsPage {
   protected readonly store = inject(ReferenceDataStore);
   protected readonly jobs = inject(SolverJobService);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
-  protected readonly editingLocked = computed(() => this.jobs.solverBusy());
+  protected readonly editingLocked = computed(() => this.jobs.editingLocked());
 
   private readonly crud = inject(ReferenceCrudService);
   private readonly dialog = inject(MatDialog);

@@ -89,7 +89,7 @@ export class SnapshotsPage {
   protected readonly error = signal('');
   protected readonly message = signal('');
   protected readonly enCours = signal<number | 'capture' | null>(null);
-  protected readonly locked = computed(() => this.jobs.solverBusy());
+  protected readonly locked = computed(() => this.jobs.editingLocked());
 
   private readonly api = inject(ApiService);
   private readonly resolution = inject(PlanningResolutionStore);

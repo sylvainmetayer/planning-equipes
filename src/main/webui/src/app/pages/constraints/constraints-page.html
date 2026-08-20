@@ -106,7 +106,7 @@
               <div class="constraint-toggle-row">
                 <mat-slide-toggle
                   [checked]="constraint.actif"
-                  [disabled]="togglingConstraint() === constraint.name || jobs.solverBusy()"
+                  [disabled]="togglingConstraint() === constraint.name || jobs.editingLocked()"
                   (change)="toggleConstraint(constraint, $event.checked)">
                   {{ actifLabel(constraint.actif) }}
                 </mat-slide-toggle>

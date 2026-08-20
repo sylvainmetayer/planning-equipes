@@ -38,7 +38,7 @@ describe('TypologiesPage ninja picker', () => {
         provideZonelessChangeDetection(),
         { provide: ApiService, useValue: { get: vi.fn() } },
         { provide: ReferenceCrudService, useValue: crud },
-        { provide: SolverJobService, useValue: { solverBusy: () => false } },
+        { provide: SolverJobService, useValue: { solverBusy: () => false, editingLocked: () => false } },
         { provide: MatDialog, useValue: { open: vi.fn() } }
       ]
     });

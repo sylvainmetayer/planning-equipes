@@ -24,6 +24,8 @@ describe('elapsedSeconds', () => {
     label: 'Timefold solve',
     startedAtMs: 10_000,
     mine: true,
+    editionId: 'ed-1',
+    editionNom: 'Année 2026',
     secondsLimit: 180
   };
 

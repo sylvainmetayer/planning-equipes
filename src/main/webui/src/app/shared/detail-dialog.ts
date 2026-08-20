@@ -91,7 +91,7 @@ export class DetailDialog {
 
   private readonly jobs = inject(SolverJobService);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
-  protected readonly editingLocked = computed(() => this.jobs.solverBusy());
+  protected readonly editingLocked = computed(() => this.jobs.editingLocked());
 
   protected readonly closeLabel = $localize`:@@violationDetails.close:Fermer`;
   protected readonly editLabel = $localize`:@@common.edit:Modifier`;

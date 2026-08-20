@@ -91,7 +91,10 @@ autre onglet) voit le même job actif et le même temps écoulé via
 | `GET` | `/api/jobs/{id}` | État et résultat d'un job |
 | `DELETE` | `/api/jobs/{id}` | Supprime un job terminé (`409` si le job tourne encore) |
 
-Chaque job expose `elapsedSeconds`, calculé côté serveur : le temps écoulé
+Chaque job expose `editionId` et `editionNom`, captés à la soumission :
+l'édition dans laquelle il écrit son résultat (voir `docs/editions.md` §5),
+que l'IHM affiche et utilise pour ne verrouiller la saisie que sur cette
+édition. Il expose aussi `elapsedSeconds`, calculé côté serveur : le temps écoulé
 affiché est identique quel que soit le client, son horloge ou son heure de
 connexion.
 

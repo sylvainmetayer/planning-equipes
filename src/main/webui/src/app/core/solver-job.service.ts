@@ -11,6 +11,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { ApiService, toError } from './api.service';
+import { EditionStore } from './edition.store';
 import { NotificationService } from './notification.service';
 import { JobType, JobView, MutationsWhatIf, PlanningDiagnostic, PlanningFestival } from './models';
 
@@ -50,6 +51,10 @@ export interface TrackedJob {
   startedAtMs: number;
   /** True when this browser submitted the job. */
   mine: boolean;
+  /** Edition the job writes to; null when the server did not say (defensive). */
+  editionId: string | null;
+  /** Display name of that edition, for every message naming the job. */
+  editionNom: string | null;
   /**
    * Wall-clock budget the server gave this job, in seconds — `null` when it
    * runs on the server default and the client was never told. Drives the
@@ -72,6 +77,24 @@ export class SolverJobService {
    * action that the server would refuse.
    */
   readonly solverBusy = computed(() => this.activeJob() !== null || !this.stateKnown());
+
+  /**
+   * True while writes to the CURRENT edition must wait. Unlike
+   * {@link solverBusy} (the global "no second job can start" lock), a job
+   * solving another edition does not freeze this one: after switching
+   * editions during a long solve, data entry and scenario imports stay
+   * available here — the job keeps reading and writing the edition it was
+   * submitted for (see EditionContext.executeDans on the backend). Stays
+   * pessimistic whenever either side's edition is not known yet.
+   */
+  readonly editingLocked = computed(() => {
+    const job = this.activeJob();
+    if (!job) {
+      return !this.stateKnown();
+    }
+    const courante = this.editions.courant()?.id;
+    return courante == null || job.editionId == null || job.editionId === courante;
+  });
 
   /**
    * When the running job is due to end at the latest: its start plus the
@@ -101,12 +124,14 @@ export class SolverJobService {
       return this.stateKnown() ? '' : $localize`:@@job.stateUnknown:L'état du solveur n'est pas encore connu.`;
     }
     const duration = formatDuration(elapsedSeconds(job, this.now()));
+    const edition = job.editionNom ?? job.editionId ?? '?';
     return job.mine
-      ? $localize`:@@job.runningMine:${job.label}:jobLabel: est en cours depuis ${duration}:duration:.`
-      : $localize`:@@job.runningOther:${job.label}:jobLabel: est en cours depuis ${duration}:duration: (démarré depuis une autre session).`;
+      ? $localize`:@@job.runningMine:${job.label}:jobLabel: est en cours sur l'édition « ${edition}:edition: » depuis ${duration}:duration:.`
+      : $localize`:@@job.runningOther:${job.label}:jobLabel: est en cours sur l'édition « ${edition}:edition: » depuis ${duration}:duration: (démarré depuis une autre session).`;
   });
 
   private readonly api = inject(ApiService);
+  private readonly editions = inject(EditionStore);
   private readonly notifications = inject(NotificationService);
   private readonly stateKnown = signal(false);
   private readonly resultHandlers = new Map<JobType, ResultHandler[]>();
@@ -303,6 +328,8 @@ export class SolverJobService {
       label: jobLabel(job.type),
       startedAtMs: Date.now() - (Number(job.elapsedSeconds) || 0) * 1000,
       mine,
+      editionId: job.editionId ?? null,
+      editionNom: job.editionNom ?? null,
       secondsLimit: job.secondsLimit == null ? null : Number(job.secondsLimit)
     };
     this.activeJob.set(entry);
@@ -311,9 +338,10 @@ export class SolverJobService {
     this.updateTicker();
     if (!entry.mine) {
       const duration = formatDuration(job.elapsedSeconds);
+      const edition = entry.editionNom ?? entry.editionId ?? '?';
       this.notifications.notify({
         title: $localize`:@@job.alreadyRunningTitle:${entry.label}:jobLabel: déjà en cours`,
-        message: $localize`:@@job.alreadyRunningMessage:Démarrage depuis une autre session il y a ${duration}:duration:. Les actions du solveur sont verrouillées jusqu'à la fin.`
+        message: $localize`:@@job.alreadyRunningMessage:Démarrage depuis une autre session il y a ${duration}:duration:, sur l'édition « ${edition}:edition: ». Les actions du solveur sont verrouillées jusqu'à la fin ; la saisie n'est bloquée que sur cette édition-là.`
       });
     }
   }

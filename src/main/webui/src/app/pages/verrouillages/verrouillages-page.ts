@@ -75,7 +75,7 @@ export class VerrouillagesPage {
   protected readonly verrous = inject(VerrouillageStore);
   protected readonly jobs = inject(SolverJobService);
   /** Locking is disabled while a solve runs: it would not be taken into account by the run in progress. */
-  protected readonly editingLocked = computed(() => this.jobs.solverBusy());
+  protected readonly editingLocked = computed(() => this.jobs.editingLocked());
 
   protected readonly type = signal<TypeVerrouillageManuel>('JOUR');
   protected readonly animateurId = signal('');

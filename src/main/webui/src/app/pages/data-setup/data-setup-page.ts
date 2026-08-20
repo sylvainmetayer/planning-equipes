@@ -58,7 +58,13 @@ export class DataSetupPage {
 
   /** The server-side solver lock: also covers a solve/analysis from another browser. */
   protected readonly solverBusy = computed(() => this.jobs.solverBusy());
-  /** Importing/replaying data while a solve reads it would corrupt the run. */
+  /**
+   * Scenario imports only write the current edition, so they follow the
+   * per-edition lock: a solve running on ANOTHER edition leaves them
+   * available (e.g. importing next year's data during a long solve).
+   */
+  protected readonly editionLocked = computed(() => this.jobs.editingLocked());
+  /** SQL dump replay rewrites the WHOLE database, every edition included: locked by any running job. */
   protected readonly transferLocked = computed(() => this.transferBusy() || this.solverBusy());
 
   private readonly sqlInput = viewChild.required<ElementRef<HTMLInputElement>>('sqlInput');
@@ -299,10 +305,11 @@ export class DataSetupPage {
     }
   }
 
-  // Guards against a race: the buttons are disabled while a solver job runs,
-  // but a job could have started between the last render and the click.
+  // Guards against a race: the buttons are disabled while a solver job runs
+  // on this edition, but a job could have started between the last render and
+  // the click.
   private solverActionBlocked(): boolean {
-    if (this.solverBusy()) {
+    if (this.editionLocked()) {
       const description = this.jobs.activeJobDescription();
       this.output.set(
         $localize`:@@dataSetup.lockedByJob:${description}:description: La configuration des données est verrouillée jusqu'à la fin.`

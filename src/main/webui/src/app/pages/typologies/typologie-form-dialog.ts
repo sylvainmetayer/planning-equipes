@@ -23,7 +23,7 @@ export interface TypologieFormData {
 export class TypologieFormDialog {
   protected readonly jobs = inject(SolverJobService);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
-  protected readonly editingLocked = computed(() => this.jobs.solverBusy());
+  protected readonly editingLocked = computed(() => this.jobs.editingLocked());
 
   protected readonly dialogRef = inject<MatDialogRef<TypologieFormDialog, boolean>>(MatDialogRef);
   private readonly data = inject<TypologieFormData>(MAT_DIALOG_DATA);

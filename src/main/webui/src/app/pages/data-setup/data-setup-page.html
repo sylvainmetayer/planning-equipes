@@ -17,7 +17,8 @@
   <mat-card-header>
     <h2 mat-card-title i18n="@@dataSetup.scenarios.title">Scénarios</h2>
     <mat-card-subtitle i18n="@@dataSetup.scenarios.description">
-      Ces actions sont verrouillées pendant que le solveur est en cours d'exécution.
+      Ces actions sont verrouillées pendant qu'un solveur s'exécute sur l'édition actuelle — une
+      résolution en cours sur une autre édition ne bloque pas l'import ici.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-actions class="card-actions">
@@ -26,7 +27,7 @@
       <mat-select
         [value]="selectedScenario()"
         (valueChange)="onSelectScenario($event)"
-        [disabled]="solverBusy() || sampleLoading() || scenarios().length === 0"
+        [disabled]="editionLocked() || sampleLoading() || scenarios().length === 0"
       >
         @for (name of scenarios(); track name) {
           <mat-option [value]="name">{{ name }}</mat-option>
@@ -35,7 +36,7 @@
     </mat-form-field>
     <button
       matButton="outlined"
-      [disabled]="solverBusy() || sampleLoading() || scenarios().length === 0"
+      [disabled]="editionLocked() || sampleLoading() || scenarios().length === 0"
       (click)="onLoadSample()"
     >
       <mat-icon>auto_awesome</mat-icon>
@@ -50,7 +51,7 @@
     <button
       matButton="outlined"
       class="danger-action"
-      [disabled]="transferLocked() || scenarioFileImporting()"
+      [disabled]="editionLocked() || transferBusy() || scenarioFileImporting()"
       (click)="pickScenarioFile()"
     >
       <mat-icon>upload_file</mat-icon>

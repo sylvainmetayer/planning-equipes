@@ -197,7 +197,7 @@ export function buildHelpSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.config.lock:Une seule résolution tourne à la fois pour tout le serveur. Si les boutons sont verrouillés, c'est qu'un calcul est en cours — éventuellement lancé depuis un autre poste ou un autre navigateur ; le moniteur de la barre d'outils indique lequel et depuis combien de temps.`
+          text: $localize`:@@aide.config.lock:Une seule résolution tourne à la fois pour tout le serveur. Si les boutons sont verrouillés, c'est qu'un calcul est en cours — éventuellement lancé depuis un autre poste ou un autre navigateur ; le moniteur de la barre d'outils indique lequel, sur quelle édition et depuis combien de temps. Le calcul travaille sur l'édition depuis laquelle il a été lancé : seule celle-ci est verrouillée en saisie et en import. Si vous basculez sur une autre édition, vous pouvez continuer à y saisir des données ou y importer un scénario pendant la résolution.`
         }
       ],
       links: [

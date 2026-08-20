@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import ai.timefold.solver.core.api.solver.Solver;
+import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.domain.PlanningFestival;
 import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -73,6 +74,9 @@ public class SolverJobService {
     @Inject
     EditionContext editionContext;
 
+    @Inject
+    EditionRepository editionRepository;
+
     private final Map<String, SolverJob> jobs = new ConcurrentHashMap<>();
     private final ExecutorService executor = Executors.newFixedThreadPool(2, new SolverThreadFactory());
 
@@ -121,11 +125,26 @@ public class SolverJobService {
         // its own to read the X-Edition-Id header from, and the job must keep
         // writing to the group it was launched for even if the browser has
         // switched to another one in the meantime.
+        String editionId = editionContext.editionIdCourant();
         SolverJob job = new SolverJob(UUID.randomUUID().toString(), type, secondsLimit,
-                editionContext.editionIdCourant());
+                editionId, nomEdition(editionId));
         jobs.put(job.getId(), job);
         executor.submit(() -> run(job, task));
         return job;
+    }
+
+    /**
+     * Human-readable name of the edition a job is submitted for, resolved once
+     * at submit time — the UI shows it wherever the job is reported, so an
+     * operator who switched editions still knows which one the solver writes
+     * to. Falls back to the id if the edition vanishes mid-lookup.
+     */
+    private String nomEdition(String editionId) {
+        return editionRepository.listEditions().stream()
+                .filter(edition -> edition.getId().equals(editionId))
+                .map(Edition::getNom)
+                .findFirst()
+                .orElse(editionId);
     }
 
     private void run(SolverJob job, JobTask task) {
@@ -266,8 +285,10 @@ public class SolverJobService {
         private final String id;
         private final JobType type;
         private final Long secondsLimit;
-        /** Group this job was submitted for, and the one its result is written to. */
+        /** Edition this job was submitted for, and the one its result is written to. */
         private final String editionId;
+        /** Display name of that edition, resolved at submit time. */
+        private final String editionNom;
         private final Instant submittedAt = Instant.now();
         private volatile JobStatus status = JobStatus.PENDING;
         private volatile Instant startedAt;
@@ -277,11 +298,12 @@ public class SolverJobService {
         private volatile boolean cancelRequested;
         private volatile Solver<PlanningFestival> solver;
 
-        private SolverJob(String id, JobType type, Long secondsLimit, String editionId) {
+        private SolverJob(String id, JobType type, Long secondsLimit, String editionId, String editionNom) {
             this.id = id;
             this.type = type;
             this.secondsLimit = secondsLimit;
             this.editionId = editionId;
+            this.editionNom = editionNom;
         }
 
         private void markRunning() {
@@ -368,6 +390,10 @@ public class SolverJobService {
 
         public String getEditionId() {
             return editionId;
+        }
+
+        public String getEditionNom() {
+            return editionNom;
         }
 
         public Instant getSubmittedAt() {
