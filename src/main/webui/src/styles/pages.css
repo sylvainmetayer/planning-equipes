@@ -14,6 +14,7 @@
    equal specificity the later rule wins, silently turning the grid back into
    block flow. Qualifying by tag name outranks it regardless of injection order. */
 mat-dialog-content.form-grid,
+fieldset.form-grid,
 form.form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -1311,7 +1311,11 @@ public class PlanningService {
      * edition's créneaux in place, there are no groups to name anymore).
      */
     private static boolean parseDecoupageAuto(Map<String, Object> scenarioData) {
-        return scenarioData.get("decoupageAuto") != null;
+        // Key presence, not value truthiness: a bare `decoupageAuto:` (YAML
+        // null) and the canonical `decoupageAuto: {}` both mean "slice on
+        // import"; only an explicit `decoupageAuto: false` opts out.
+        return scenarioData.containsKey("decoupageAuto")
+                && !Boolean.FALSE.equals(scenarioData.get("decoupageAuto"));
     }
 
     @SuppressWarnings("unchecked")

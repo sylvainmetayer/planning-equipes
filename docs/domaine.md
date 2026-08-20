@@ -569,7 +569,10 @@ anciens champs `groupeSourceNom:`/`groupeCibleNom:` de la section sont
 acceptés et ignorés (issue #172 : plus de groupes à nommer). Absente (cas de
 tous les scénarios `scenario-*.yaml` fournis, qui listent leurs `postes:`
 directement sur les créneaux découpés), l'import se comporte comme avant :
-les créneaux du scénario remplacent ceux de l'édition.
+les créneaux du scénario remplacent ceux de l'édition. La forme canonique de
+la section est `decoupageAuto: {}` (validée par le schéma JSON) ; une clé nue
+`decoupageAuto:` vaut présence, et `decoupageAuto: false` la désactive
+explicitement.
 
 Un scénario peut aussi fixer une section `typologies:` (liste de `{ id,
 label, ninja? }`) pour donner un libellé humain aux ids de typologie qu'il référence

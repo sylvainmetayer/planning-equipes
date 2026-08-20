@@ -9,3 +9,28 @@
   color: var(--mat-sys-on-surface-variant);
   font-size: 0.85rem;
 }
+
+/* The découpage form is hint-heavy: every field carries a two-line
+   explanation, so the rows need vertical air the generic form-grid (row-gap
+   0, subscript reserved for one line) does not provide. */
+.decoupage-groupe.form-grid {
+  row-gap: 0.75rem;
+}
+
+.decoupage-groupe {
+  margin-bottom: 1.25rem;
+}
+
+.decoupage-groupe > legend {
+  margin-bottom: 0.75rem;
+}
+
+/* One block per day in the preview: date line, then its chips. */
+.decoupage-resume {
+  margin-top: 1rem;
+}
+
+.decoupage-resume p {
+  margin: 0 0 0.75rem;
+  line-height: 1.9;
+}

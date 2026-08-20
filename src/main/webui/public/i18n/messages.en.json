@@ -1037,5 +1037,6 @@
   "decoupage.generer.submit": "Generate the shifts (replaces the slots)",
   "decoupage.generer.submitCourt": "Generate the shifts",
   "decoupage.generated": "Slicing generated: the shifts replaced the amplitudes.",
-  "decoupage.preview": "Preview"
+  "decoupage.preview": "Preview",
+  "decoupage.resume.vacationCount": " — {$INTERPOLATION} shift(s):"
 }

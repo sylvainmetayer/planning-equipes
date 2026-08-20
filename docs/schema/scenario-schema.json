@@ -75,15 +75,12 @@
       "type" : "object",
       "properties" : {
         "groupeCibleNom" : {
-          "type" : "string",
-          "minLength" : 1
+          "type" : "string"
         },
         "groupeSourceNom" : {
-          "type" : "string",
-          "minLength" : 1
+          "type" : "string"
         }
-      },
-      "required" : [ "groupeCibleNom", "groupeSourceNom" ]
+      }
     },
     "EmplacementDto" : {
       "type" : "object",

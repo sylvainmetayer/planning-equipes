@@ -82,6 +82,16 @@ export class DecoupagePage {
     void this.chargerParametres();
   }
 
+  /**
+   * Immutable field update: the « Avec ces réglages » preview is a computed
+   * over the `parametres` signal, and a zoneless app never notices an
+   * in-place mutation — the sentence only refreshed on load/save. Replacing
+   * the object is what makes it live while typing.
+   */
+  protected patchParametre(patch: Partial<ParametresDecoupage>): void {
+    this.parametres.update((p) => (p ? { ...p, ...patch } : p));
+  }
+
   private async chargerParametres(): Promise<void> {
     this.parametresLoading.set(true);
     try {

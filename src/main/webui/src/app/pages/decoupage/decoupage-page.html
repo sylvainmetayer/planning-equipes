@@ -16,65 +16,65 @@
       <form (ngSubmit)="sauvegarderParametres()">
         <fieldset class="decoupage-groupe form-grid">
         <legend i18n="@@decoupage.groupe.vacations">Durée des vacations</legend>
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label i18n="@@decoupage.field.dureeCible">Durée cible d'une vacation (min)</mat-label>
           <input matInput type="number" min="1" name="dureeVacationCibleMinutes"
-                 [ngModel]="p.dureeVacationCibleMinutes" (ngModelChange)="p.dureeVacationCibleMinutes = $event" />
+                 [ngModel]="p.dureeVacationCibleMinutes" (ngModelChange)="patchParametre({ dureeVacationCibleMinutes: $event })" />
           <mat-hint i18n="@@decoupage.hint.dureeCible">Longueur visée pour une vacation ; le générateur s'en écarte si l'amplitude du jour ne tombe pas juste.</mat-hint>
         </mat-form-field>
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label i18n="@@decoupage.field.dureeMin">Durée minimale (min)</mat-label>
           <input matInput type="number" min="1" name="dureeVacationMinMinutes"
-                 [ngModel]="p.dureeVacationMinMinutes" (ngModelChange)="p.dureeVacationMinMinutes = $event" />
+                 [ngModel]="p.dureeVacationMinMinutes" (ngModelChange)="patchParametre({ dureeVacationMinMinutes: $event })" />
           <mat-hint i18n="@@decoupage.hint.dureeMin">En dessous, aucune vacation n'est créée : le reliquat est absorbé par les vacations voisines.</mat-hint>
         </mat-form-field>
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label i18n="@@decoupage.field.dureeMax">Durée maximale (min)</mat-label>
           <input matInput type="number" min="1" name="dureeVacationMaxMinutes"
-                 [ngModel]="p.dureeVacationMaxMinutes" (ngModelChange)="p.dureeVacationMaxMinutes = $event" />
+                 [ngModel]="p.dureeVacationMaxMinutes" (ngModelChange)="patchParametre({ dureeVacationMaxMinutes: $event })" />
           <mat-hint i18n="@@decoupage.hint.dureeMax">Plafond dur : au-delà, le Code du travail impose une pause, donc le générateur coupe.</mat-hint>
         </mat-form-field>
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label i18n="@@decoupage.field.chevauchement">Chevauchement de relais (min)</mat-label>
           <input matInput type="number" min="0" name="dureeChevauchementMinutes"
-                 [ngModel]="p.dureeChevauchementMinutes" (ngModelChange)="p.dureeChevauchementMinutes = $event" />
+                 [ngModel]="p.dureeChevauchementMinutes" (ngModelChange)="patchParametre({ dureeChevauchementMinutes: $event })" />
           <mat-hint i18n="@@decoupage.hint.chevauchement">Temps pendant lequel les deux équipes sont présentes pour se passer le relais. 0 = passation sèche.</mat-hint>
         </mat-form-field>
         </fieldset>
         <fieldset class="decoupage-groupe form-grid">
         <legend i18n="@@decoupage.groupe.repas">Pauses repas</legend>
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label i18n="@@decoupage.field.dureePauseRepas">Durée de la pause repas (min)</mat-label>
           <input matInput type="number" min="0" name="dureePauseRepasMinutes"
-                 [ngModel]="p.dureePauseRepasMinutes" (ngModelChange)="p.dureePauseRepasMinutes = $event" />
+                 [ngModel]="p.dureePauseRepasMinutes" (ngModelChange)="patchParametre({ dureePauseRepasMinutes: $event })" />
           <mat-hint i18n="@@decoupage.hint.dureePauseRepas">Trou réservé dans la journée d'un animateur : il devient une vraie pause, pas une vacation.</mat-hint>
         </mat-form-field>
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label i18n="@@decoupage.field.repasMidiDebut">Fenêtre repas midi — début</mat-label>
           <input matInput type="time" name="fenetreRepasMidiDebut"
-                 [ngModel]="p.fenetreRepasMidiDebut" (ngModelChange)="p.fenetreRepasMidiDebut = $event" />
+                 [ngModel]="p.fenetreRepasMidiDebut" (ngModelChange)="patchParametre({ fenetreRepasMidiDebut: $event })" />
           <mat-hint i18n="@@decoupage.hint.repasMidi">Fenêtre dans laquelle la pause de midi doit tomber.</mat-hint>
         </mat-form-field>
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label i18n="@@decoupage.field.repasMidiFin">Fenêtre repas midi — fin</mat-label>
           <input matInput type="time" name="fenetreRepasMidiFin"
-                 [ngModel]="p.fenetreRepasMidiFin" (ngModelChange)="p.fenetreRepasMidiFin = $event" />
+                 [ngModel]="p.fenetreRepasMidiFin" (ngModelChange)="patchParametre({ fenetreRepasMidiFin: $event })" />
         </mat-form-field>
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label i18n="@@decoupage.field.repasSoirDebut">Fenêtre repas soir — début</mat-label>
           <input matInput type="time" name="fenetreRepasSoirDebut"
-                 [ngModel]="p.fenetreRepasSoirDebut" (ngModelChange)="p.fenetreRepasSoirDebut = $event" />
+                 [ngModel]="p.fenetreRepasSoirDebut" (ngModelChange)="patchParametre({ fenetreRepasSoirDebut: $event })" />
           <mat-hint i18n="@@decoupage.hint.repasSoir">Idem pour le soir ; laissez la fenêtre vide si le stand ferme avant.</mat-hint>
         </mat-form-field>
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label i18n="@@decoupage.field.repasSoirFin">Fenêtre repas soir — fin</mat-label>
           <input matInput type="time" name="fenetreRepasSoirFin"
-                 [ngModel]="p.fenetreRepasSoirFin" (ngModelChange)="p.fenetreRepasSoirFin = $event" />
+                 [ngModel]="p.fenetreRepasSoirFin" (ngModelChange)="patchParametre({ fenetreRepasSoirFin: $event })" />
         </mat-form-field>
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label i18n="@@decoupage.field.strategie">Couverture pendant une pause interne résiduelle</mat-label>
           <mat-select name="strategieCouverturePendantPause"
-                      [ngModel]="p.strategieCouverturePendantPause" (ngModelChange)="p.strategieCouverturePendantPause = $event">
+                      [ngModel]="p.strategieCouverturePendantPause" (ngModelChange)="patchParametre({ strategieCouverturePendantPause: $event })">
             <mat-option value="FERMETURE" i18n="@@decoupage.strategie.fermeture">Fermeture du stand</mat-option>
             <mat-option value="RELEVE" i18n="@@decoupage.strategie.releve">Poste de relève supplémentaire</mat-option>
             <mat-option value="EFFECTIF_REDUIT" i18n="@@decoupage.strategie.effectifReduit">Effectif réduit de moitié</mat-option>
@@ -84,16 +84,16 @@
         </fieldset>
         <fieldset class="decoupage-groupe form-grid">
         <legend i18n="@@decoupage.groupe.familles">Familles de relais</legend>
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label i18n="@@decoupage.field.nombreFamillesDecalage">Nombre de grilles de relais décalées</mat-label>
           <input matInput type="number" min="1" name="nombreFamillesDecalage"
-                 [ngModel]="p.nombreFamillesDecalage" (ngModelChange)="p.nombreFamillesDecalage = $event" />
+                 [ngModel]="p.nombreFamillesDecalage" (ngModelChange)="patchParametre({ nombreFamillesDecalage: $event })" />
           <mat-hint i18n="@@decoupage.field.nombreFamillesDecalage.hint">1 = désactivé, chaque stand partage la même grille</mat-hint>
         </mat-form-field>
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label i18n="@@decoupage.field.dureeDecalageMax">Étalement du décalage (min)</mat-label>
           <input matInput type="number" min="0" name="dureeDecalageMaxMinutes"
-                 [ngModel]="p.dureeDecalageMaxMinutes" (ngModelChange)="p.dureeDecalageMaxMinutes = $event" />
+                 [ngModel]="p.dureeDecalageMaxMinutes" (ngModelChange)="patchParametre({ dureeDecalageMaxMinutes: $event })" />
           <mat-hint i18n="@@decoupage.field.dureeDecalageMax.hint">Ignoré si le nombre de grilles est 1</mat-hint>
         </mat-form-field>
         </fieldset>
@@ -140,11 +140,11 @@
     </div>
 
     @if (resume().length > 0) {
-      <div class="table-wrapper">
+      <div class="table-wrapper decoupage-resume">
         @for (jour of resume(); track jour.date) {
           <p>
             <strong>{{ jour.date }}</strong>
-            <span i18n="@@decoupage.resume.vacationCount"> — {{ jour.vacations.length }}:count: vacation(s) :</span>
+            <span i18n="@@decoupage.resume.vacationCount"> — {{ jour.vacations.length }} vacation(s) :</span>
             @for (vacation of jour.vacations; track $index) {
               <span class="vacation-chip">{{ vacation.heureDebut }}–{{ vacation.heureFin }}</span>
             }
