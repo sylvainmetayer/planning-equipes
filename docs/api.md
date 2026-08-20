@@ -551,6 +551,10 @@ Contraintes ad hoc (pas de mise à jour, on supprime et on recrée) :
 | `POST` | `/api/contraintes-ad-hoc` |
 | `DELETE` | `/api/contraintes-ad-hoc/{id}` |
 
+Le `POST` répond `400` avec un message explicite quand la contrainte déclare
+une contradiction : une même paire d'animateurs ne peut pas être à la fois en
+`INCOMPATIBILITE` et en `AFFINITE` (issue #80).
+
 ### Verrouillages du planning
 
 Parties du planning validées par l'utilisateur et que le solveur ne doit plus

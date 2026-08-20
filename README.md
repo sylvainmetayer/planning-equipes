@@ -361,10 +361,16 @@ avec une raison tracée :
 - **incompatibilité** — ces deux animateurs ne doivent jamais travailler sur le
   même créneau ;
 - **affectation forcée** — cet animateur doit être présent sur ce créneau ou ce
-  stand.
+  stand ;
+- **affinité** — ces deux animateurs fonctionnent bien ensemble : les mettre
+  sur le même stand quand c'est possible, sans jamais l'imposer.
 
-Ces exceptions sont traitées par le moteur au même niveau que les contraintes
-dures : elles ne sont jamais contournées silencieusement.
+Les trois premières exceptions sont traitées par le moteur au même niveau que
+les contraintes dures : elles ne sont jamais contournées silencieusement.
+L'affinité est au contraire une préférence : le moteur récompense chaque
+créneau où la paire est réunie sur un même stand, mais ne sacrifie ni
+l'équilibre de charge ni les disponibilités pour y parvenir. Déclarer une même
+paire à la fois incompatible et en affinité est refusé à la saisie.
 
 La page « Contraintes ad hoc » est rangée dans la section « En cours de
 développement » de la navigation et affiche un bandeau d'avertissement : la

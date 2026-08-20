@@ -21,6 +21,8 @@ function contrainteTypeLabel(value: TypeContrainteAdHoc): string {
       return $localize`:@@adHoc.type.incompatibilite:Incompatibilité`;
     case 'AFFECTATION_FORCEE':
       return $localize`:@@adHoc.type.affectationForcee:Affectation forcée`;
+    case 'AFFINITE':
+      return $localize`:@@adHoc.type.affinite:Affinité (paire à privilégier)`;
   }
 }
 

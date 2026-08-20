@@ -620,13 +620,14 @@ particulier**.
 public enum TypeContrainteAdHoc {
     INDISPONIBILITE_FORCEE,   // un animateur ne doit jamais être affecté sur X
     INCOMPATIBILITE,          // deux animateurs ne doivent jamais être ensemble
-    AFFECTATION_FORCEE        // un animateur DOIT être sur ce créneau/stand
+    AFFECTATION_FORCEE,       // un animateur DOIT être sur ce créneau/stand
+    AFFINITE                  // paire à privilégier sur le même stand (soft)
 }
 
 public class ContrainteAdHoc {
     private String id;
     private TypeContrainteAdHoc type;
-    private List<Animateur> animateursConcernes;  // 1, ou 2 pour l'incompatibilité
+    private List<Animateur> animateursConcernes;  // 1, ou 2 pour l'incompatibilité et l'affinité
     private Creneau creneau;                      // nullable si la règle porte sur tout le festival
     private Stand stand;                          // nullable
     private String raison;                        // traçabilité
@@ -636,10 +637,15 @@ public class ContrainteAdHoc {
 ```
 
 Elles sont chargées dans `PlanningFestival` au même titre que le référentiel
-général et évaluées en `HardScore`, **au même niveau de priorité que les
-contraintes dures légales** — jamais reclassées en medium/soft.
-`ReferenceDataService` injecte les contraintes ad hoc dans un `PlanningFestival`
-résolu si aucune n'a été fournie.
+général. Les trois types prescriptifs (`INDISPONIBILITE_FORCEE`,
+`INCOMPATIBILITE`, `AFFECTATION_FORCEE`) sont évalués en `HardScore`, **au même
+niveau de priorité que les contraintes dures légales** — jamais reclassés en
+medium/soft. `AFFINITE` (issue #80) est l'unique exception, voulue : une
+**récompense soft** pour chaque créneau où les deux animateurs de la paire
+tiennent le même stand — en dur, elle serait une affectation forcée déguisée.
+Une même paire déclarée à la fois `INCOMPATIBILITE` et `AFFINITE` est refusée à
+la saisie. `ReferenceDataService` injecte les contraintes ad hoc dans un
+`PlanningFestival` résolu si aucune n'a été fournie.
 
 **Une affectation forcée ne passe pas au-dessus du cadre légal.** Puisqu'elle
 est évaluée au même rang dur qu'une règle du Code du travail, une
@@ -746,7 +752,9 @@ au démarrage. Détails et exemple dans [`contraintes.md`](contraintes.md#pondé
 - Un `PosteAffectation` = une place, jamais un couple stand × créneau.
 - `Animateur.souhaits` est un `Set` sans ordre ni priorité — ne pas le transformer en liste ordonnée.
 - Le statut mineur/majeur est calculé, jamais stocké.
-- Les contraintes ad hoc restent des contraintes dures.
+- Les contraintes ad hoc prescriptives (`INDISPONIBILITE_FORCEE`,
+  `INCOMPATIBILITE`, `AFFECTATION_FORCEE`) restent des contraintes dures ;
+  seule `AFFINITE` est une récompense soft, par conception (issue #80).
 - Les noms de domaine restent en français métier.
 - Un `Creneau` reste toujours l'unité de travail réellement assignable à un
   `PosteAffectation` (une vacation) — jamais une amplitude d'ouverture brute.

@@ -18,9 +18,11 @@ Ask (or infer from the request) which family the constraint belongs to, in
   min/max effectif, double-booking).
 - `LegalConstraints` — legal/regulatory rules (minor/adult status, rest time,
   max hours).
-- `AdHocConstraints` — per-instance overrides (`ContrainteAdHoc`:
-  `INDISPONIBILITE_FORCEE`, `INCOMPATIBILITE`, `AFFECTATION_FORCEE`) — always
-  `HardScore`, same priority as legal/minor constraints. Never demote these.
+- `AdHocConstraints` — per-instance overrides (`ContrainteAdHoc`). The
+  prescriptive types (`INDISPONIBILITE_FORCEE`, `INCOMPATIBILITE`,
+  `AFFECTATION_FORCEE`) are always `HardScore`, same priority as legal/minor
+  constraints — never demote these. `AFFINITE` is the one deliberate
+  exception: a soft reward (issue #80) — never promote it to hard.
 - `QualiteConstraints` — quality-of-assignment heuristics (skill/typologie
   match, continuity).
 - `PreferenceConstraints` — soft preferences (animateur wishes, stand

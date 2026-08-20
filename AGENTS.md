@@ -252,9 +252,12 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   boolean flag.
 - Availability is opt-out: an animateur is available unless the date is listed in
   `joursIndisponibles` (`estIndisponibleLe(LocalDate)`).
-- `ContrainteAdHoc` (`INDISPONIBILITE_FORCEE`, `INCOMPATIBILITE`,
-  `AFFECTATION_FORCEE`) is evaluated as `HardScore`, at the same priority as
-  legal/minor hard constraints — never demote these to medium/soft.
+- `ContrainteAdHoc`'s prescriptive types (`INDISPONIBILITE_FORCEE`,
+  `INCOMPATIBILITE`, `AFFECTATION_FORCEE`) are evaluated as `HardScore`, at the
+  same priority as legal/minor hard constraints — never demote these to
+  medium/soft. `AFFINITE` (issue #80) is the one deliberate exception: a soft
+  *reward* for co-assigning a preferred pair on the same stand — never promote
+  it to hard (that would be a forced assignment in disguise).
 - Every constraint has an isolated unit test in the matching
   `solver/constraints/*ConstraintsTest` (Timefold `ConstraintVerifier`, no
   Quarkus/DB, shared `ConstraintTestBase`): at least one penalized case and one

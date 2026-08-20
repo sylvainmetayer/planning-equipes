@@ -120,6 +120,7 @@
   "adHoc.type.indisponibiliteForcee": "Forced unavailability",
   "adHoc.type.incompatibilite": "Incompatibility",
   "adHoc.type.affectationForcee": "Forced assignment",
+  "adHoc.type.affinite": "Affinity (preferred pair)",
   "adHoc.form.editTitle": "Edit constraint {$id}",
   "adHoc.form.newTitle": "New ad hoc constraint",
   "adHoc.scope.creneau": "time slot J{$jour} · {$date} {$heureDebut}–{$heureFin}",

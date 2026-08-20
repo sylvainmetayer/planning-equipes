@@ -146,18 +146,22 @@ public class ParametresMcpTools {
     /* -------------------------- Contraintes ad hoc -------------------------- */
 
     @Tool(description = "Liste les contraintes ad hoc saisies au cas par cas (indisponibilité forcée, "
-            + "incompatibilité entre animateurs, affectation forcée). Les animateurs y sont désignés par id seul.")
+            + "incompatibilité entre animateurs, affectation forcée, affinité entre animateurs). "
+            + "Les animateurs y sont désignés par id seul.")
     List<ContrainteAdHocView> lister_contraintes_ad_hoc() {
         return referenceDataService.listContraintesAdHoc().stream().map(ParametresMcpTools::toView).toList();
     }
 
-    @Tool(description = "Crée une contrainte ad hoc, évaluée par le solveur au même niveau HARD que les "
-            + "contraintes légales. INDISPONIBILITE_FORCEE : l'animateur ne peut pas être affecté sur ce créneau. "
-            + "INCOMPATIBILITE : les animateurs listés ne peuvent pas être affectés au même stand sur le même "
-            + "créneau. AFFECTATION_FORCEE : l'animateur doit être affecté à ce stand sur ce créneau.")
+    @Tool(description = "Crée une contrainte ad hoc. INDISPONIBILITE_FORCEE, INCOMPATIBILITE et "
+            + "AFFECTATION_FORCEE sont évaluées par le solveur au même niveau HARD que les contraintes légales ; "
+            + "AFFINITE est une récompense SOFT. INDISPONIBILITE_FORCEE : l'animateur ne peut pas être affecté "
+            + "sur ce créneau. INCOMPATIBILITE : les animateurs listés ne peuvent pas être affectés au même stand "
+            + "sur le même créneau. AFFECTATION_FORCEE : l'animateur doit être affecté à ce stand sur ce créneau. "
+            + "AFFINITE : privilégier, sans l'imposer, les créneaux où les deux animateurs listés tiennent le "
+            + "même stand ; refusée si la même paire est déjà déclarée incompatible (et réciproquement).")
     ContrainteAdHocView creer_contrainte_ad_hoc(
             @ToolArg(description = "Id de la contrainte (unique)") String id,
-            @ToolArg(description = "Type : INDISPONIBILITE_FORCEE, INCOMPATIBILITE ou AFFECTATION_FORCEE") String type,
+            @ToolArg(description = "Type : INDISPONIBILITE_FORCEE, INCOMPATIBILITE, AFFECTATION_FORCEE ou AFFINITE") String type,
             @ToolArg(description = "Ids des animateurs concernés") List<String> animateurIds,
             @ToolArg(description = "Id du créneau concerné", required = false) Long creneauId,
             @ToolArg(description = "Id du stand concerné", required = false) String standId,

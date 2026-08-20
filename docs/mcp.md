@@ -312,7 +312,17 @@ festival qui saute une semaine).
 | `consulter_parametres_legaux` / `modifier_parametres_legaux` | Durées maximales, pauses, repos |
 | `consulter_parametres_decoupage` / `modifier_parametres_decoupage` | Paramètres de génération des vacations |
 | `consulter_parametres_solveur` / `modifier_parametres_solveur` | Durée de résolution par défaut |
-| `lister_contraintes_ad_hoc` / `creer_contrainte_ad_hoc` / `supprimer_contrainte_ad_hoc` | Contraintes au cas par cas (animateurs désignés par id) |
+| `lister_contraintes_ad_hoc` / `creer_contrainte_ad_hoc` / `supprimer_contrainte_ad_hoc` | Contraintes au cas par cas (animateurs désignés par id) — voir la note sur `AFFINITE` ci-dessous |
+
+Trois des quatre types de contrainte ad hoc sont **durs**
+(`INDISPONIBILITE_FORCEE`, `INCOMPATIBILITE`, `AFFECTATION_FORCEE`) ;
+`AFFINITE` est l'exception voulue (issue #80) : une **récompense soft** pour
+les créneaux où la paire tient le même stand. Un assistant qui la croirait
+dure se tromperait dans les deux sens — il annoncerait la paire garantie
+ensemble, et il chercherait une violation dure là où il n'y a qu'un score
+soft moins bon. Déclarer une même paire à la fois incompatible et en affinité
+est refusé à la saisie, avec un message explicite renvoyé tel quel par
+l'outil.
 
 ### Scénarios et données
 

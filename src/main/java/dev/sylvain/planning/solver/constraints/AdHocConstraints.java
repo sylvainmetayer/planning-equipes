@@ -10,9 +10,13 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 
 /**
- * One-off administrative exceptions. They are enforced as hard constraints, at
- * the same priority as the legal ones, so the optimiser can never silently
- * work around them.
+ * One-off administrative exceptions. The prescriptive ones
+ * (INDISPONIBILITE_FORCEE, INCOMPATIBILITE, AFFECTATION_FORCEE) are enforced
+ * as hard constraints, at the same priority as the legal ones, so the
+ * optimiser can never silently work around them. AFFINITE is the one
+ * deliberate exception: a soft reward — hard, a preferred pair would be a
+ * forced assignment in disguise, colliding with load balancing and individual
+ * availability (issue #80).
  */
 public final class AdHocConstraints {
 
@@ -20,7 +24,8 @@ public final class AdHocConstraints {
         return new Constraint[] {
                 indisponibiliteForcee(constraintFactory),
                 incompatibiliteAdHoc(constraintFactory),
-                affectationForcee(constraintFactory)
+                affectationForcee(constraintFactory),
+                affiniteAdHoc(constraintFactory)
         };
     }
 
@@ -75,13 +80,51 @@ public final class AdHocConstraints {
     }
 
     /**
+     * The positive counterpart of {@link #incompatibiliteAdHoc}: a soft reward
+     * for every créneau where both animateurs of an AFFINITE pair hold a poste
+     * on the <b>same stand</b> (within the constraint's optional
+     * créneau/stand perimeter). Reward rather than penalty: penalising the
+     * pair's absence would punish every créneau where one of the two simply
+     * does not work — permanent noise in the score (issue #80). Same
+     * fact-driven indexed-join shape as {@link #incompatibiliteAdHoc}, so the
+     * tuple count stays proportional to the number of recorded affinités and
+     * is exactly zero when there is none.
+     */
+    private Constraint affiniteAdHoc(ConstraintFactory constraintFactory) {
+        return ConstraintToggleSupport.actif(constraintFactory.forEach(ContrainteAdHoc.class), "affiniteAdHoc")
+                .filter(AdHocConstraints::porteSurPaireAffinite)
+                .join(PosteAffectation.class,
+                        Joiners.equal(contrainte -> idAnimateurConcerne(contrainte, 0),
+                                poste -> poste.getAnimateur().getId()))
+                .join(PosteAffectation.class,
+                        Joiners.equal((contrainte, postePremier) -> idAnimateurConcerne(contrainte, 1),
+                                poste -> poste.getAnimateur().getId()),
+                        Joiners.equal((contrainte, postePremier) -> postePremier.getCreneau(),
+                                PosteAffectation::getCreneau))
+                .filter((contrainte, postePremier, posteSecond) -> surMemeStand(postePremier, posteSecond)
+                        && correspondAuPerimetre(contrainte, postePremier)
+                        && correspondAuPerimetre(contrainte, posteSecond))
+                .reward(HardMediumSoftScore.ONE_SOFT)
+                .asConstraint("affiniteAdHoc");
+    }
+
+    /**
      * True for an INCOMPATIBILITE naming two distinct, identifiable animateurs —
      * the only shape the indexed join above can be evaluated on. A malformed
      * fact (fewer than two animateurs, a null id, or the same animateur twice)
      * is ignored rather than penalising an animateur against themselves.
      */
     private static boolean porteSurDeuxAnimateursIncompatibles(ContrainteAdHoc contrainte) {
-        if (contrainte.getType() != TypeContrainteAdHoc.INCOMPATIBILITE
+        return porteSurPaireIdentifiable(contrainte, TypeContrainteAdHoc.INCOMPATIBILITE);
+    }
+
+    /** Same well-formedness gate as the incompatibilité, for AFFINITE facts. */
+    private static boolean porteSurPaireAffinite(ContrainteAdHoc contrainte) {
+        return porteSurPaireIdentifiable(contrainte, TypeContrainteAdHoc.AFFINITE);
+    }
+
+    private static boolean porteSurPaireIdentifiable(ContrainteAdHoc contrainte, TypeContrainteAdHoc type) {
+        if (contrainte.getType() != type
                 || contrainte.getAnimateursConcernes() == null
                 || contrainte.getAnimateursConcernes().size() < 2) {
             return false;
@@ -89,6 +132,12 @@ public final class AdHocConstraints {
         String premier = idAnimateurConcerne(contrainte, 0);
         String second = idAnimateurConcerne(contrainte, 1);
         return premier != null && second != null && !premier.equals(second);
+    }
+
+    private static boolean surMemeStand(PosteAffectation postePremier, PosteAffectation posteSecond) {
+        return postePremier.getStand() != null
+                && posteSecond.getStand() != null
+                && postePremier.getStand().getId().equals(posteSecond.getStand().getId());
     }
 
     private static String idAnimateurConcerne(ContrainteAdHoc contrainte, int index) {

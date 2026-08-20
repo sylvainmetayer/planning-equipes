@@ -503,8 +503,14 @@ public class ReferenceDataResource {
 
     @POST
     @Path("/contraintes-ad-hoc")
-    public ContrainteAdHoc createContrainteAdHoc(ContrainteAdHoc contrainteAdHoc) {
-        return referenceDataService.createContrainteAdHoc(contrainteAdHoc);
+    public Response createContrainteAdHoc(ContrainteAdHoc contrainteAdHoc) {
+        try {
+            return Response.ok(referenceDataService.createContrainteAdHoc(contrainteAdHoc)).build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ErreurValidation(e.getMessage()))
+                    .build();
+        }
     }
 
     @DELETE

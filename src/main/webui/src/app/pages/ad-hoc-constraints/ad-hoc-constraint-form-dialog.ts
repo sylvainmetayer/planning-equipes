@@ -11,7 +11,7 @@ import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ContrainteAdHoc, TypeContrainteAdHoc } from '../../core/models';
 
-const CONTRAINTE_TYPE_VALUES: TypeContrainteAdHoc[] = ['INDISPONIBILITE_FORCEE', 'INCOMPATIBILITE', 'AFFECTATION_FORCEE'];
+const CONTRAINTE_TYPE_VALUES: TypeContrainteAdHoc[] = ['INDISPONIBILITE_FORCEE', 'INCOMPATIBILITE', 'AFFECTATION_FORCEE', 'AFFINITE'];
 
 /** Called lazily (never at module scope, see `app.ts`'s `buildNavGroups`). */
 function contrainteTypeLabel(value: TypeContrainteAdHoc): string {
@@ -22,6 +22,8 @@ function contrainteTypeLabel(value: TypeContrainteAdHoc): string {
       return $localize`:@@adHoc.type.incompatibilite:Incompatibilité`;
     case 'AFFECTATION_FORCEE':
       return $localize`:@@adHoc.type.affectationForcee:Affectation forcée`;
+    case 'AFFINITE':
+      return $localize`:@@adHoc.type.affinite:Affinité (paire à privilégier)`;
   }
 }
 

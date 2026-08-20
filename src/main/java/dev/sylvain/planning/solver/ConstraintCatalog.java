@@ -95,6 +95,10 @@ public final class ConstraintCatalog {
                     "Deux animateurs déclarés incompatibles ne doivent jamais travailler sur le même créneau."),
             new ConstraintDefinition("affectationForcee", Niveau.HARD, "Contraintes ad hoc",
                     "Affectation imposée par l'administrateur : l'animateur doit être présent sur le créneau ou le stand visé."),
+            new ConstraintDefinition("affiniteAdHoc", Niveau.SOFT, "Contraintes ad hoc",
+                    "Paire d'animateurs à privilégier : chaque créneau où les deux sont affectés au même stand est "
+                            + "récompensé. Contrainte souple : elle favorise la co-affectation quand c'est possible, "
+                            + "sans jamais la forcer."),
 
             new ConstraintDefinition("animateurVerrouilleFige", Niveau.HARD, "Verrouillage du planning",
                     "Le planning d'un animateur verrouillé ne bouge plus : ses postes validés sont figés et "

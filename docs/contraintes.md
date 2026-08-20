@@ -222,6 +222,11 @@ opposable au même titre qu'une règle légale.
 | `incompatibiliteAdHoc` | Deux animateurs incompatibles ne travaillent jamais sur le même créneau |
 | `affectationForcee` | L'animateur doit être présent sur le créneau ou le stand visé |
 
+La famille compte aussi une contrainte **soft**, `affiniteAdHoc` — voir
+« Soft — exceptions administrateur » plus bas. C'est la seule exception à la
+règle « les contraintes ad hoc sont dures », et elle est voulue : une paire
+privilégiée imposée en dur serait une affectation forcée déguisée.
+
 ### Dures — verrouillage du planning (`VerrouillageConstraints`)
 
 | Contrainte | Description |
@@ -353,6 +358,34 @@ souhaits — voir « Pondérer une contrainte » plus bas.
 | `favoriserMixiteDesNiveaux` | Associer un débutant à un référent pour la montée en compétence |
 | `equilibrerCreneauxPenibles` | Répartir équitablement entre animateurs les créneaux « pénibles » (stands épuisants ou premium) |
 | `preserverBufferPolyvalents` | Garder au moins un animateur polyvalent (porteur de la typologie « ninja ») libre sur chaque créneau, pour pouvoir réparer le planning en cas d'absence de dernière minute |
+
+### Soft — exceptions administrateur (`AdHocConstraints`)
+
+| Contrainte | Description |
+| --- | --- |
+| `affiniteAdHoc` | Paire d'animateurs à privilégier : chaque créneau où les deux tiennent le même stand est récompensé |
+
+`affiniteAdHoc` (issue #80) est le pendant positif d'`incompatibiliteAdHoc` :
+une contrainte ad hoc de type `AFFINITE` déclare « ces deux-là fonctionnent
+bien ensemble, mettez-les sur le même stand quand c'est possible ». Deux choix
+de conception, tous deux délibérés :
+
+- **Soft obligatoirement.** En dur, une paire privilégiée deviendrait une
+  affectation forcée déguisée et entrerait en collision frontale avec
+  `equilibrerCharge`, `repartitionMineursParCreneau` et la disponibilité
+  individuelle.
+- **Récompense, pas pénalité.** Pénaliser l'absence de la paire reviendrait à
+  punir tous les créneaux où l'un des deux ne travaille pas — un bruit
+  permanent dans le score. Seule la co-affectation effective (même créneau,
+  même stand, dans le périmètre créneau/stand optionnel de la contrainte)
+  rapporte un point soft.
+
+Le schéma de saisie est celui d'`incompatibiliteAdHoc`
+(`ContrainteAdHoc.animateursConcernes`, portée optionnelle par créneau et par
+stand) : ni migration de schéma ni nouveau modèle. Une même paire déclarée à la
+fois `INCOMPATIBILITE` et `AFFINITE` est refusée à la saisie avec un message
+explicite (`ReferenceDataService.createContrainteAdHoc`), plutôt que
+silencieusement arbitrée par le score.
 
 #### Typologie « ninja » et buffer de polyvalents
 

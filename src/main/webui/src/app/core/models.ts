@@ -3,7 +3,7 @@
 
 export type NiveauCompetence = 'DEBUTANT' | 'AUTONOME' | 'REFERENT';
 export type NiveauEffort = 'NORMAL' | 'EPUISANT';
-export type TypeContrainteAdHoc = 'INDISPONIBILITE_FORCEE' | 'INCOMPATIBILITE' | 'AFFECTATION_FORCEE';
+export type TypeContrainteAdHoc = 'INDISPONIBILITE_FORCEE' | 'INCOMPATIBILITE' | 'AFFECTATION_FORCEE' | 'AFFINITE';
 export type NiveauContrainte = 'HARD' | 'MEDIUM' | 'SOFT';
 
 /** `/api/typologies` items: the enum id plus a display label. */

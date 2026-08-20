@@ -89,4 +89,53 @@ class AdHocConstraintsTest extends ConstraintTestBase {
                         contrainte("C1", TypeContrainteAdHoc.AFFECTATION_FORCEE, creneauMatin, null, a1))
                 .penalizesBy(0);
     }
+
+    @Test
+    void affinitePaireCoAffecteeSurLeMemeStandEstRecompensee() {
+        Animateur a1 = majeurReferent("A1");
+        Animateur a2 = majeurAutonome("A2");
+        verify("affiniteAdHoc")
+                .given(a1, a2,
+                        poste(standStrat, creneauMatin, a1),
+                        poste(standStrat, creneauMatin, a2),
+                        contrainte("C1", TypeContrainteAdHoc.AFFINITE, null, null, a1, a2))
+                .rewardsWith(1);
+    }
+
+    @Test
+    void affinitePaireSepareeSurDeuxStandsEstNeutre() {
+        Animateur a1 = majeurReferent("A1");
+        Animateur a2 = majeurAutonome("A2");
+        verify("affiniteAdHoc")
+                .given(a1, a2,
+                        poste(standStrat, creneauMatin, a1),
+                        poste(standStrategie("STAND-2"), creneauMatin, a2),
+                        contrainte("C1", TypeContrainteAdHoc.AFFINITE, null, null, a1, a2))
+                .rewardsWith(0);
+    }
+
+    @Test
+    void affiniteAvecUnMembreQuiNeTravaillePasEstNeutre() {
+        Animateur a1 = majeurReferent("A1");
+        Animateur a2 = majeurAutonome("A2");
+        // A2 ne tient aucun poste : ni récompense ni pénalité.
+        verify("affiniteAdHoc")
+                .given(a1, a2,
+                        poste(standStrat, creneauMatin, a1),
+                        contrainte("C1", TypeContrainteAdHoc.AFFINITE, null, null, a1, a2))
+                .rewardsWith(0);
+    }
+
+    @Test
+    void affiniteHorsDuPerimetreDeclareEstNeutre() {
+        Animateur a1 = majeurReferent("A1");
+        Animateur a2 = majeurAutonome("A2");
+        // La paire est réunie le matin, mais l'affinité ne vise que l'après-midi.
+        verify("affiniteAdHoc")
+                .given(a1, a2,
+                        poste(standStrat, creneauMatin, a1),
+                        poste(standStrat, creneauMatin, a2),
+                        contrainte("C1", TypeContrainteAdHoc.AFFINITE, creneauAprem, null, a1, a2))
+                .rewardsWith(0);
+    }
 }
