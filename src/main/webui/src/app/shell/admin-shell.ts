@@ -20,6 +20,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatDialog } from '@angular/material/dialog';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
 import { ApiService } from '../core/api.service';
@@ -37,6 +38,7 @@ import { SolverJobService } from '../core/solver-job.service';
 import { DataStaleIndicator } from '../shared/data-stale-indicator';
 import { SolverRunningIndicator } from '../shared/solver-running-indicator';
 import { EditionActuelleBar } from '../shared/edition-actuelle-bar';
+import { MascotteDialog } from './mascotte-dialog';
 
 interface NavLink {
   path: string;
@@ -84,6 +86,22 @@ function buildNavGroups(): NavGroup[] {
     ]
   },
   {
+    id: 'decision-support',
+    title: $localize`:@@nav.group.decisionSupport:Aide à la décision`,
+    links: [
+      {
+        path: '/ouvertures',
+        label: $localize`:@@nav.link.ouvertures:Ouvertures des stands`,
+        icon: 'storefront'
+      },
+      {
+        path: '/staffing',
+        label: $localize`:@@nav.link.staffing:Besoin en animateurs`,
+        icon: 'engineering'
+      }
+    ]
+  },
+  {
     id: 'reference-data',
     title: $localize`:@@nav.group.referenceData:Données de référence`,
     links: [
@@ -110,16 +128,6 @@ function buildNavGroups(): NavGroup[] {
       },
       { path: '/hours', label: $localize`:@@nav.link.hours:Heures`, icon: 'schedule' },
       {
-        path: '/ouvertures',
-        label: $localize`:@@nav.link.ouvertures:Ouvertures des stands`,
-        icon: 'storefront'
-      },
-      {
-        path: '/staffing',
-        label: $localize`:@@nav.link.staffing:Besoin en animateurs`,
-        icon: 'engineering'
-      },
-      {
         path: '/heatmap',
         label: $localize`:@@nav.link.heatmap:Heatmap de charge`,
         icon: 'grid_view'
@@ -136,6 +144,7 @@ function buildNavGroups(): NavGroup[] {
     title: $localize`:@@nav.group.tools:Outils`,
     links: [
       { path: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres`, icon: 'settings' },
+      { path: '/mcp-client', label: $localize`:@@nav.link.mcp:MCP`, icon: 'smart_toy' },
       { path: '/debug', label: $localize`:@@nav.link.debug:Débogage`, icon: 'bug_report' }
     ]
   },
@@ -198,6 +207,7 @@ export class AdminShell {
   protected readonly locale: AppLocale = getStoredLocale();
 
   private readonly router = inject(Router);
+  private readonly dialog = inject(MatDialog);
   private readonly title = inject(Title);
   private readonly announcer = inject(LiveAnnouncer);
 
@@ -251,6 +261,32 @@ export class AdminShell {
         takeUntilDestroyed()
       )
       .subscribe(() => queueMicrotask(() => this.annoncerNavigation()));
+    this.ecouterKonami();
+  }
+
+  /**
+   * ↑↑↓↓←→←→BA summons the festival mascot. Pure easter egg: the
+   * listener only tracks the sequence position (no buffering of anything
+   * typed) and ignores keystrokes aimed at form fields.
+   */
+  private ecouterKonami(): void {
+    const sequence = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown',
+      'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+    let position = 0;
+    const onKey = (event: KeyboardEvent): void => {
+      const cible = event.target as HTMLElement | null;
+      if (cible && ['INPUT', 'TEXTAREA', 'SELECT'].includes(cible.tagName)) {
+        return;
+      }
+      const touche = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+      position = touche === sequence[position] ? position + 1 : touche === sequence[0] ? 1 : 0;
+      if (position === sequence.length) {
+        position = 0;
+        this.dialog.open(MascotteDialog, { autoFocus: false });
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    inject(DestroyRef).onDestroy(() => document.removeEventListener('keydown', onKey));
   }
 
   protected toggleDrawer(): void {

@@ -34,7 +34,7 @@ class ReferenceDataResourceTypologiesTest {
         given()
                 .when().post("/api/reference-data/import-scenario?name=scenario-typologies.yaml")
                 .then()
-                .statusCode(204);
+                .statusCode(200);
 
         List<Map<String, Object>> typologies = given()
                 .when().get("/api/typologies")
@@ -59,7 +59,7 @@ class ReferenceDataResourceTypologiesTest {
         given()
                 .when().post("/api/reference-data/import-scenario?name=scenario-typologies.yaml")
                 .then()
-                .statusCode(204);
+                .statusCode(200);
 
         assertThat(typologiesNinja()).containsExactly("STRATEGIE");
     }
@@ -70,7 +70,7 @@ class ReferenceDataResourceTypologiesTest {
         given()
                 .when().post("/api/reference-data/import-scenario?name=scenario-typologies.yaml")
                 .then()
-                .statusCode(204);
+                .statusCode(200);
         assertThat(typologiesNinja()).containsExactly("STRATEGIE");
 
         // Only one typologie may be ninja at a time: promoting another one must
@@ -114,7 +114,7 @@ class ReferenceDataResourceTypologiesTest {
                 .body(yamlContent)
                 .when().post("/api/reference-data/import-scenario-fichier")
                 .then()
-                .statusCode(204);
+                .statusCode(200);
 
         List<Map<String, Object>> typologies = given()
                 .when().get("/api/typologies")

@@ -147,6 +147,7 @@ Chaque bloc fonctionnel a **sa propre route et sa propre page**, chargée en
 | Route | Page | Contenu |
 | --- | --- | --- |
 | `/` (défaut) | `app/pages/solver/` | Scénario d'exemple, réinitialisation, résolution, analyse |
+| `/mcp-client` | `app/pages/mcp/` | Instructions de connexion au serveur MCP (clé API, jetons Pangolin détectés via l'en-tête `X-Pangolin`), et prompt d'exemple pour déboguer une solution |
 | `/debug` | `app/pages/debug/` | Diagnostics du solveur et état interne, outils base de données, validateur YAML de scénario |
 | `/problemes` | `app/pages/problemes/` | Vue centralisée des problèmes, triés par gravité : causes d'infaisabilité (`GET /api/feasibility`, sans résolution) + règles en défaut de la dernière analyse |
 | `/parametres` | `app/pages/parametres/` | Paramètres de l'édition (import/export de scénarios, paramètres de découpage, typologie ninja, renvois vers les réglages restés sur leur écran) et paramètres globaux (export/import de dump SQL) |

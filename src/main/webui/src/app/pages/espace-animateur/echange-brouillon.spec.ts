@@ -72,8 +72,20 @@ describe('versNouvellesDemandes', () => {
   it('ne transmet que les champs du backend et normalise le motif', () => {
     const demandes = versNouvellesDemandes([brouillon(1, 'S1', 'a2', '  repos  '), brouillon(2, 'S2', 'a3', '   ')]);
     expect(demandes).toEqual([
-      { creneauId: 1, standId: 'S1', cibleId: 'a2', motif: 'repos' },
-      { creneauId: 2, standId: 'S2', cibleId: 'a3', motif: null }
+      { creneauId: 1, standId: 'S1', cibleId: 'a2', motif: 'repos', creneauCibleId: null, standCibleId: null },
+      { creneauId: 2, standId: 'S2', cibleId: 'a3', motif: null, creneauCibleId: null, standCibleId: null }
+    ]);
+  });
+
+  it("transmet le créneau souhaité d'un échange dirigé, et l'ignore sans créneau cible", () => {
+    const dirige = {
+      ...brouillon(1, 'S1', 'a2', null),
+      creneauCibleId: 7,
+      standCibleId: 'S9',
+      creneauCibleLabel: 'mar. 14 juil. 10:00–12:00 · Stand neuf'
+    };
+    expect(versNouvellesDemandes([dirige])).toEqual([
+      { creneauId: 1, standId: 'S1', cibleId: 'a2', motif: null, creneauCibleId: 7, standCibleId: 'S9' }
     ]);
   });
 });

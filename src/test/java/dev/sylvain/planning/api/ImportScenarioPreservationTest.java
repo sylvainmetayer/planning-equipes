@@ -116,7 +116,7 @@ class ImportScenarioPreservationTest {
                 .body(SCENARIO.getBytes(java.nio.charset.StandardCharsets.UTF_8))
                 .when().post("/api/reference-data/import-scenario-fichier")
                 .then()
-                .statusCode(204);
+                .statusCode(200);
 
         // IMP-A came in the file: updated in place, token AND e-mail intact
         // (the file carries no email — it must not wipe the stored one).

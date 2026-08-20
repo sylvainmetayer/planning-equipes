@@ -82,6 +82,19 @@
         }
       }
     },
+    "EditionCibleDto" : {
+      "type" : "object",
+      "properties" : {
+        "id" : {
+          "type" : "string",
+          "minLength" : 1
+        },
+        "nom" : {
+          "type" : "string"
+        }
+      },
+      "required" : [ "id" ]
+    },
     "EmplacementDto" : {
       "type" : "object",
       "properties" : {
@@ -435,6 +448,9 @@
     },
     "decoupageAuto" : {
       "$ref" : "#/$defs/DecoupageAutoDto"
+    },
+    "edition" : {
+      "$ref" : "#/$defs/EditionCibleDto"
     },
     "emplacements" : {
       "type" : "array",

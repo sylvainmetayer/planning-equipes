@@ -117,6 +117,65 @@ class DemandeEchangeFlowTest {
     }
 
     @Test
+    void unEchangeDirigeTroqueDeuxCreneauxDistinctsEtVerrouilleChacun() {
+        persisterPlanningDeuxSieges();
+        // A second day: Bruno also holds a seat on créneau 9102 — the one
+        // Alice wants IN RETURN for her 9101 ("je te laisse mon vendredi,
+        // je prends ton samedi").
+        long creneauCibleId = 9102L;
+        Animateur alice = animateurPersiste("ECH-A");
+        Animateur bruno = animateurPersiste("ECH-B");
+        Creneau creneauA = new Creneau(CRENEAU_ID, 1, JOUR, LocalTime.of(10, 0), LocalTime.of(12, 0));
+        Creneau creneauB = new Creneau(creneauCibleId, 2, JOUR.plusDays(1), LocalTime.of(14, 0), LocalTime.of(16, 0));
+        Stand standUn = new Stand("ECH-S1", "Stand un", Set.of(), 1, 1, false);
+        Stand standDeux = new Stand("ECH-S2", "Stand deux", Set.of(), 1, 1, false);
+        PosteAffectation posteAlice = new PosteAffectation("ECH-P1", standUn, creneauA);
+        posteAlice.setAnimateur(alice);
+        PosteAffectation posteBruno = new PosteAffectation("ECH-P2", standDeux, creneauB);
+        posteBruno.setAnimateur(bruno);
+        persistence.persist(new PlanningFestival(JOUR, List.of(alice, bruno), List.of(posteAlice, posteBruno)));
+        String jeton = jetonDe("ECH-A");
+
+        // The picker's data source: Bruno's seats, slots and stands only.
+        given().when().get("/api/espace-animateur/" + jeton + "/collegues/ECH-B/postes")
+                .then()
+                .statusCode(200)
+                .body("[0].creneauId", equalTo((int) creneauCibleId))
+                .body("[0].standId", equalTo("ECH-S2"));
+
+        String demandeId = given()
+                .contentType(ContentType.JSON)
+                .body("[{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"ECH-S1\","
+                        + "\"cibleId\":\"ECH-B\",\"motif\":\"je préfère être libre ce jour-là\","
+                        + "\"creneauCibleId\":" + creneauCibleId + ",\"standCibleId\":\"ECH-S2\"}]")
+                .when().post("/api/espace-animateur/" + jeton + "/demandes")
+                .then()
+                .statusCode(200)
+                .body("[0].statut", equalTo("PROPOSEE"))
+                .body("[0].creneauCibleId", equalTo((int) creneauCibleId))
+                .body("[0].standCibleNom", equalTo("Stand deux"))
+                .extract().path("[0].id");
+
+        given().contentType(ContentType.JSON).body("{}")
+                .when().post("/api/echanges/" + demandeId + "/acceptation")
+                .then()
+                .statusCode(200)
+                .body("statut", equalTo("ACCEPTEE"));
+
+        // The seats really crossed the two créneaux.
+        PlanningFestival apres = persistence.loadPersistedPlanning();
+        assertThat(occupantSur(apres, "ECH-S1", CRENEAU_ID)).isEqualTo("ECH-B");
+        assertThat(occupantSur(apres, "ECH-S2", creneauCibleId)).isEqualTo("ECH-A");
+
+        // Each animateur is pinned on the créneau they now hold: the cible on
+        // the demandeur's, the demandeur on the cible's.
+        assertThat(referenceData.listVerrouillages())
+                .filteredOn(v -> v.getType() == TypeVerrouillage.ANIMATEUR_CRENEAU)
+                .extracting(v -> v.getAnimateurId() + "@" + v.getCreneauId())
+                .contains("ECH-B@" + CRENEAU_ID, "ECH-A@" + creneauCibleId);
+    }
+
+    @Test
     void unJetonInconnuRepondIntrouvable() {
         given().when().get("/api/espace-animateur/jeton-invente")
                 .then()
@@ -394,6 +453,23 @@ class DemandeEchangeFlowTest {
     }
 
     /** Occupant of the single seat of {@code standId} on the test créneau. */
+    private Animateur animateurPersiste(String id) {
+        return referenceData.listAnimateurs().stream()
+                .filter(candidat -> candidat.getId().equals(id))
+                .findFirst()
+                .orElseThrow();
+    }
+
+    private static String occupantSur(PlanningFestival planning, String standId, long creneauId) {
+        return planning.getPostes().stream()
+                .filter(poste -> poste.getStand() != null && standId.equals(poste.getStand().getId())
+                        && poste.getCreneau() != null && poste.getCreneau().getId() != null
+                        && poste.getCreneau().getId() == creneauId)
+                .findFirst()
+                .map(poste -> poste.getAnimateur() == null ? null : poste.getAnimateur().getId())
+                .orElse(null);
+    }
+
     private static String occupant(PlanningFestival planning, String standId) {
         return planning.getPostes().stream()
                 .filter(poste -> poste.getStand() != null && standId.equals(poste.getStand().getId())

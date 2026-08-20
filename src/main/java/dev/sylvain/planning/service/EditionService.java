@@ -113,6 +113,40 @@ public class EditionService {
         editionContext.invaliderCache();
     }
 
+    /**
+     * Resolves the edition a scenario's {@code edition:} section targets:
+     * reuses it when it exists (its display name wins over the file's), or
+     * creates it empty first. Reports which of the two happened — the UI must
+     * show that recap to the operator.
+     */
+    public CibleImport resoudrePourImport(String id, String nom) {
+        String idCible = requireNonBlank(id, "id de l'édition").trim();
+        return listEditions().stream()
+                .filter(edition -> edition.getId().equals(idCible))
+                .findFirst()
+                .map(edition -> new CibleImport(edition, false))
+                .orElseGet(() -> {
+                    // Only ids the import CREATES are constrained: an id is
+                    // reused verbatim in headers, URLs and localStorage, so a
+                    // file must not be able to smuggle an arbitrary blob in.
+                    // Existing editions (whatever the UI let through) are
+                    // matched above without this check.
+                    if (!idCible.matches("[\\p{L}0-9][\\p{L}0-9 ._-]{0,63}")) {
+                        throw new IllegalArgumentException(
+                                "Id d'édition invalide dans la section edition : lettres, chiffres, espaces,"
+                                        + " points, tirets et tirets bas uniquement (64 caractères max).");
+                    }
+                    return new CibleImport(
+                            creer(new Edition(idCible, nom == null || nom.isBlank() ? idCible : nom.trim(),
+                                    false, null)),
+                            true);
+                });
+    }
+
+    /** Result of {@link #resoudrePourImport}: the edition to import into, and whether it was just created. */
+    public record CibleImport(Edition edition, boolean creee) {
+    }
+
     private void exigerExistant(String id) {
         if (!repository.exists(id)) {
             throw new NotFoundException("Edition not found: " + id);

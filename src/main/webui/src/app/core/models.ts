@@ -687,8 +687,22 @@ export interface ImportSummary {
  * `.../import-scenario-fichier` when the scenario carried a `decoupageAuto:`
  * section — `null`/absent otherwise, in which case the import ran plain.
  */
+/** Pre-import answer of `/api/reference-data/cible-scenario(-fichier)`: where the file would write. */
+export interface CibleImport {
+  /** null = no `edition:` section — the import writes to the caller's current edition. */
+  editionId: string | null;
+  editionNomFichier: string | null;
+  existe: boolean;
+  editionNomExistant: string | null;
+}
+
 export interface ImportScenarioResult {
   decoupageAuto: boolean;
+  /** Edition the scenario's `edition:` section routed the import into — null when the file named none. */
+  editionId: string | null;
+  editionNom: string | null;
+  /** True when that edition was created by this very import; null without an `edition:` section. */
+  editionCreee: boolean | null;
 }
 
 /** `/api/config`: observability keys, blank when the matching feature is disabled server-side. */
@@ -795,6 +809,13 @@ export interface DemandeEchangeView {
   demandeurNom: string;
   cibleId: string;
   cibleNom: string;
+  /** Directed exchange only: the colleague's seat wanted in return — null on a plain (same-créneau) demande. */
+  creneauCibleId: number | null;
+  dateCible: string | null;
+  heureDebutCible: string | null;
+  heureFinCible: string | null;
+  standCibleId: string | null;
+  standCibleNom: string | null;
   motif: string | null;
   statut: StatutDemandeEchange;
   /** Hard-constraint prevalidation at submission; null while not evaluated. */
@@ -812,6 +833,9 @@ export interface NouvelleDemandeEchange {
   standId: string;
   cibleId: string;
   motif: string | null;
+  /** Set together, they make the exchange directed: the colleague's seat wanted in return. */
+  creneauCibleId?: number | null;
+  standCibleId?: string | null;
 }
 
 /** `/api/reference-data/impact-import`: what a scenario import would touch, for the confirmation dialog. */

@@ -33,6 +33,13 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/echanges/echanges-page').then((m) => m.EchangesPage)
   },
   {
+    // Not `/mcp`: that very path is the backend's MCP transport endpoint —
+    // the SPA would never be served there (405 on GET).
+    path: 'mcp-client',
+    title: 'MCP — Planning Équipes',
+    loadComponent: () => import('./pages/mcp/mcp-page').then((m) => m.McpPage)
+  },
+  {
     path: 'parametres',
     title: 'Paramètres — Planning Équipes',
     loadComponent: () => import('./pages/parametres/parametres-page').then((m) => m.ParametresPage)

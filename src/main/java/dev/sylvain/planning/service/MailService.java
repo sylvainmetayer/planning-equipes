@@ -125,6 +125,27 @@ public class MailService {
         mailer.send(Mail.withText(emailAnimateur, "Planning Équipes — votre code d'accès", corps));
     }
 
+    /** Admin address, trimmed — empty when the "new demandes" notifications are disabled. */
+    public Optional<String> adminEmailConfigure() {
+        return adminEmail.map(String::trim).filter(adresse -> !adresse.isBlank());
+    }
+
+    /**
+     * Sends a test mail to the admin address and PROPAGATES any failure —
+     * unlike every business send, which is best-effort by design: the whole
+     * point of the Débogage button is to surface a broken SMTP setup.
+     */
+    public String envoyerMailTest() {
+        String destinataire = adminEmailConfigure()
+                .orElseThrow(() -> new IllegalStateException(
+                        "Aucune adresse e-mail administrateur configurée (MAIL_ADMIN)."));
+        mailer.send(Mail.withText(destinataire,
+                "Planning Équipes — mail de test",
+                "Ce message confirme que l'envoi d'e-mails fonctionne pour cette instance.\n"
+                        + "Envoyé depuis la page Débogage le " + java.time.ZonedDateTime.now() + ".\n"));
+        return destinataire;
+    }
+
     private void envoyer(String destinataire, String sujet, String corps) {
         try {
             mailer.send(Mail.withText(destinataire, sujet, corps));

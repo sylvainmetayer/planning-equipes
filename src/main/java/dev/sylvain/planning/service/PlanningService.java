@@ -956,7 +956,8 @@ public class PlanningService {
         }
         return new ScenarioImporte(planning, parseParametresLegaux(scenarioData),
                 parseParametresDecoupage(scenarioData), parseParametresSolveur(scenarioData),
-                parseDecoupageAuto(scenarioData), parseTypologies(scenarioData));
+                parseDecoupageAuto(scenarioData), parseTypologies(scenarioData),
+                parseEditionCible(scenarioData));
     }
 
     private static String messageOu(Exception e) {
@@ -971,7 +972,8 @@ public class PlanningService {
      */
     public record ScenarioImporte(PlanningFestival planning, Optional<ParametresLegaux> parametresLegaux,
             Optional<ParametresDecoupage> parametresDecoupage, Optional<ParametresSolveur> parametresSolveur,
-            boolean decoupageAuto, List<ReferenceDataService.TypologieItem> typologies) {
+            boolean decoupageAuto, List<ReferenceDataService.TypologieItem> typologies,
+            Optional<dev.sylvain.planning.scenario.dto.EditionCibleDto> edition) {
     }
 
     /**
@@ -1228,6 +1230,30 @@ public class PlanningService {
      * Empty (not absent) when the section is missing, since a list has no
      * natural "absent" distinct from "empty".
      */
+    /**
+     * Optional {@code edition:} section of an uploaded scenario text, parsed
+     * alone — the pre-import step the UI uses to NAME the target edition in
+     * its confirmation dialog, before anything is written.
+     */
+    public Optional<dev.sylvain.planning.scenario.dto.EditionCibleDto> chargerEditionTexteScenario(
+            String yamlContent) {
+        if (yamlContent == null || yamlContent.isBlank()) {
+            throw new IllegalArgumentException("Le fichier est vide.");
+        }
+        try {
+            return parseEditionCible(parserYaml(new java.io.ByteArrayInputStream(
+                    yamlContent.getBytes(java.nio.charset.StandardCharsets.UTF_8))));
+        } catch (RuntimeException | IOException e) {
+            throw new IllegalArgumentException("YAML invalide : " + messageOu(e), e);
+        }
+    }
+
+    /** Optional {@code edition:} section of a named scenario — the edition its import must write into. */
+    public Optional<dev.sylvain.planning.scenario.dto.EditionCibleDto> chargerEditionScenario(
+            String scenarioName) {
+        return chargerSectionScenario(scenarioName, PlanningService::parseEditionCible);
+    }
+
     public List<ReferenceDataService.TypologieItem> chargerTypologiesScenario(String scenarioName) {
         return chargerSectionScenario(scenarioName, PlanningService::parseTypologies);
     }
@@ -1316,6 +1342,26 @@ public class PlanningService {
         // import"; only an explicit `decoupageAuto: false` opts out.
         return scenarioData.containsKey("decoupageAuto")
                 && !Boolean.FALSE.equals(scenarioData.get("decoupageAuto"));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Optional<dev.sylvain.planning.scenario.dto.EditionCibleDto> parseEditionCible(
+            Map<String, Object> scenarioData) {
+        Object data = scenarioData.get("edition");
+        if (data == null) {
+            return Optional.empty();
+        }
+        if (!(data instanceof Map)) {
+            throw new IllegalArgumentException(
+                    "La section edition doit être un objet { id, nom? }, pas une valeur simple.");
+        }
+        Map<String, Object> editionData = (Map<String, Object>) data;
+        String id = (String) editionData.get("id");
+        if (id == null || id.isBlank()) {
+            throw new IllegalArgumentException("La section edition exige un champ id non vide.");
+        }
+        return Optional.of(new dev.sylvain.planning.scenario.dto.EditionCibleDto(
+                id, (String) editionData.get("nom")));
     }
 
     @SuppressWarnings("unchecked")
@@ -1554,6 +1600,56 @@ public class PlanningService {
                 scoreAvant, scoreApres, scoreApres.subtract(scoreAvant),
                 scoreApres.hardScore() < scoreAvant.hardScore(),
                 violationsDuresSupplementaires(avant, apres));
+    }
+
+    /**
+     * Directed variant of {@link #simulerEchange}: the demandeur's seat on
+     * (créneau, stand) goes to the cible, and the CIBLE'S seat on
+     * (créneau cible, stand cible) goes to the demandeur — two different
+     * créneaux, "I give you my Monday, I take your Tuesday". Both seats must
+     * exist; feasibility is judged planning-wide like the plain variant.
+     */
+    public EchangeSimulation simulerEchangeDirige(PlanningFestival solved, String demandeurId, String cibleId,
+            long creneauId, String standId, long creneauCibleId, String standCibleId) {
+        PosteAffectation posteDemandeur = posteDe(solved, demandeurId, creneauId, standId);
+        PosteAffectation posteCible = posteDe(solved, cibleId, creneauCibleId, standCibleId);
+        Animateur demandeur = posteDemandeur.getAnimateur();
+        Animateur cible = posteCible.getAnimateur();
+
+        ScoreAnalysis<?> avant = solutionManager.analyze(solved);
+        ScoreAnalysis<?> apres;
+        posteDemandeur.setAnimateur(cible);
+        posteCible.setAnimateur(demandeur);
+        try {
+            apres = solutionManager.analyze(solved);
+        } finally {
+            posteDemandeur.setAnimateur(demandeur);
+            posteCible.setAnimateur(cible);
+        }
+
+        HardMediumSoftScore scoreAvant = (HardMediumSoftScore) avant.score();
+        HardMediumSoftScore scoreApres = (HardMediumSoftScore) apres.score();
+        return new EchangeSimulation(
+                posteDemandeur.getId(),
+                posteCible.getId(),
+                true,
+                posteCible.getStand().getId(),
+                scoreAvant, scoreApres, scoreApres.subtract(scoreAvant),
+                scoreApres.hardScore() < scoreAvant.hardScore(),
+                violationsDuresSupplementaires(avant, apres));
+    }
+
+    /** The seat {@code animateurId} holds on (créneau, stand), or throws in business words. */
+    private static PosteAffectation posteDe(PlanningFestival solved, String animateurId, long creneauId,
+            String standId) {
+        return solved.getPostes().stream()
+                .filter(poste -> poste.getStand() != null && standId.equals(poste.getStand().getId())
+                        && poste.getCreneau() != null && poste.getCreneau().getId() != null
+                        && poste.getCreneau().getId() == creneauId
+                        && poste.getAnimateur() != null && animateurId.equals(poste.getAnimateur().getId()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Aucun poste de l'animateur " + animateurId + " sur ce créneau et ce stand"));
     }
 
     /**

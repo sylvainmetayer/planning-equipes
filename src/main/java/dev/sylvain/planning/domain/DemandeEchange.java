@@ -7,7 +7,10 @@ import java.util.List;
 /**
  * A swap proposal an animateur submits from their espace (issue #165): "give
  * my seat on this créneau/stand to this colleague" — an échange croisé when
- * the colleague also works that créneau, a simple takeover otherwise. Never
+ * the colleague also works that créneau, a simple takeover otherwise. With
+ * {@code creneauCibleId}/{@code standCibleId} set, the exchange is DIRECTED:
+ * the demandeur names the colleague's seat they want IN RETURN ("I give you
+ * my Monday, I take your Tuesday — I'd rather be free on Monday"). Never
  * applied to the planning without an explicit admin acceptation.
  *
  * <p>The seat is referenced by its (créneau, stand) pair rather than a
@@ -22,6 +25,9 @@ public class DemandeEchange {
     private String cibleId;
     private Long creneauId;
     private String standId;
+    /** Directed exchange only: the colleague's seat the demandeur wants in return. Null = same-créneau semantics. */
+    private Long creneauCibleId;
+    private String standCibleId;
     private String motif;
     private StatutDemandeEchange statut = StatutDemandeEchange.PROPOSEE;
     /** Hard-constraint prevalidation verdict at submission; null while not evaluated. */
@@ -73,6 +79,22 @@ public class DemandeEchange {
 
     public void setStandId(String standId) {
         this.standId = standId;
+    }
+
+    public Long getCreneauCibleId() {
+        return creneauCibleId;
+    }
+
+    public void setCreneauCibleId(Long creneauCibleId) {
+        this.creneauCibleId = creneauCibleId;
+    }
+
+    public String getStandCibleId() {
+        return standCibleId;
+    }
+
+    public void setStandCibleId(String standCibleId) {
+        this.standCibleId = standCibleId;
     }
 
     public String getMotif() {

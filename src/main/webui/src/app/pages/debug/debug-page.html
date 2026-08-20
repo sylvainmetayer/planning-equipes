@@ -43,6 +43,24 @@
         <ng-container i18n="@@debug.testException.back">Exception back</ng-container>
       </button>
     </div>
+    <p class="debug-version" i18n="@@debug.mailTest.hint">
+      Vérifie la chaîne d'envoi d'e-mails de bout en bout, en envoyant un vrai message à l'adresse
+      administrateur configurée :
+    </p>
+    @if (mailAdmin() === null) {
+      <app-status-message
+        i18n-text="@@debug.mailTest.absent"
+        text="Aucune adresse e-mail administrateur n'est configurée (variable MAIL_ADMIN) : ce test et les notifications de nouvelles demandes d'échange sont désactivés."
+        tone="warning"
+      />
+    }
+    <div class="calendar-toolbar">
+      <button matButton="outlined" type="button" [disabled]="mailTestBusy() || mailAdmin() === null"
+              (click)="envoyerMailTest()">
+        <mat-icon>outgoing_mail</mat-icon>
+        <ng-container i18n="@@debug.mailTest.bouton">Envoyer un mail de test</ng-container>
+      </button>
+    </div>
     <p class="debug-version" i18n="@@debug.mail.hint">
       Les e-mails sortants (codes d'accès, plannings) sont visibles dans le débogueur d'e-mails :
     </p>

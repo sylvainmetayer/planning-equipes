@@ -1,0 +1,64 @@
+name: Erreur métier
+description: Un résultat faux ou un comportement métier incorrect (score, contrainte, export, import).
+title: "[Erreur métier] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        > **⚠️ GitHub est public : aucune information nominative ici.**
+        > Ne collez ni nom, ni prénom, ni e-mail, ni date de naissance d'un animateur.
+        > Désignez les personnes par leur **identifiant d'animateur** (colonne Id de la page
+        > Animateurs) et anonymisez vos captures d'écran. Les données nominatives passent
+        > par e-mail : planning@sylvain.dev.
+  - type: input
+    id: ecran
+    attributes:
+      label: Écran concerné
+      description: La page où l'erreur se voit (ex. Solveur, Contraintes, Heures, export PDF…).
+      placeholder: "ex. page Contraintes"
+    validations:
+      required: true
+  - type: textarea
+    id: attendu
+    attributes:
+      label: Comportement attendu
+      description: Ce que l'application aurait dû faire ou afficher, du point de vue métier.
+    validations:
+      required: true
+  - type: textarea
+    id: observe
+    attributes:
+      label: Comportement observé
+      description: Ce qui se passe réellement — score affiché, contrainte violée, valeur exportée…
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Étapes de reproduction
+      description: |
+        La suite d'actions qui mène à l'erreur, en partant d'un état connu si possible
+        (scénario importé, résolution lancée…). Ids d'animateurs uniquement, jamais de noms.
+      placeholder: |
+        1. Importer le scénario …
+        2. Lancer une résolution de … secondes
+        3. Ouvrir la page … : la ligne … affiche …
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Le numéro de version affiché en bas de la page Débogage.
+    validations:
+      required: false
+  - type: checkboxes
+    id: confidentialite
+    attributes:
+      label: Confidentialité
+      options:
+        - label: >-
+            Je confirme que ce rapport (texte et captures) ne contient aucune information
+            nominative — uniquement des identifiants.
+          required: true

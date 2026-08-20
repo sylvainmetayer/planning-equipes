@@ -21,7 +21,7 @@ class WhatIfResourceTest {
     @BeforeEach
     void chargerScenario() {
         given().when().post("/api/planning/reset").then().statusCode(200);
-        given().when().post("/api/reference-data/import-scenario?name=scenario.yml").then().statusCode(204);
+        given().when().post("/api/reference-data/import-scenario?name=scenario.yml").then().statusCode(200);
     }
 
     private io.restassured.path.json.JsonPath simuler(String mutations) {

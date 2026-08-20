@@ -14,10 +14,17 @@ describe('buildHelpSections', () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it('only links to routes declared with a leading slash', () => {
-    const routes = sections.flatMap((section) => section.links.map((link) => link.route));
-    expect(routes.length).toBeGreaterThan(0);
-    expect(routes.every((route) => route.startsWith('/'))).toBe(true);
+  it('gives every link exactly one destination: an in-app route or an external href', () => {
+    const links = sections.flatMap((section) => section.links);
+    expect(links.length).toBeGreaterThan(0);
+    for (const link of links) {
+      if (link.route !== undefined) {
+        expect(link.href).toBeUndefined();
+        expect(link.route.startsWith('/')).toBe(true);
+      } else {
+        expect(link.href).toMatch(/^(https:|mailto:)/);
+      }
+    }
   });
 
   it('covers the solver configuration and how to read a score', () => {

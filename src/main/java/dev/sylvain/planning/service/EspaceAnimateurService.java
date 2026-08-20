@@ -74,7 +74,11 @@ public class EspaceAnimateurService {
      */
     public record DemandeEchangeView(String id, Long creneauId, LocalDate date, LocalTime heureDebut,
             LocalTime heureFin, String standId, String standNom, String demandeurId, String demandeurNom,
-            String cibleId, String cibleNom, String motif, String statut, Boolean prevalidationOk,
+            String cibleId, String cibleNom,
+            // Directed exchange only — the colleague's seat wanted in return; null otherwise.
+            Long creneauCibleId, LocalDate dateCible, LocalTime heureDebutCible, LocalTime heureFinCible,
+            String standCibleId, String standCibleNom,
+            String motif, String statut, Boolean prevalidationOk,
             List<String> contraintesViolees, String commentaireAdmin, Instant creeLe, Instant decideLe) {
     }
 
@@ -87,7 +91,27 @@ public class EspaceAnimateurService {
 
         PlanningFestival planning = persistenceService.loadPersistedPlanning();
         Map<String, List<String>> coequipiers = exportService.coequipiersParPoste(planning, animateurId);
-        List<PosteAnimateurView> postes = planning.getPostes().stream()
+        List<PosteAnimateurView> postes = postesDe(planning, animateurId, coequipiers);
+
+        List<CollegueView> collegues = animateurs.stream()
+                .filter(candidat -> !candidat.getId().equals(animateurId))
+                .map(candidat -> new CollegueView(candidat.getId(), nomComplet(candidat)))
+                .sorted(Comparator.comparing(CollegueView::nomComplet, String.CASE_INSENSITIVE_ORDER))
+                .toList();
+
+        List<LocalDate> joursRepos = exportService.joursDeRepos(planning, animateurId).stream()
+                .map(PlanningExportService.JourRepos::date)
+                .toList();
+
+        PlanningPersistenceService.PlanningResolution resolution = persistenceService.loadResolution();
+        return new EspaceAnimateurView(animateur.getId(), animateur.getPrenom(), animateur.getNom(),
+                resolution == null ? null : resolution.resoluLe(),
+                demandeEchangeService.estFoireOuverte(), postes, joursRepos, collegues);
+    }
+
+    private static List<PosteAnimateurView> postesDe(PlanningFestival planning, String animateurId,
+            Map<String, List<String>> coequipiers) {
+        return planning.getPostes().stream()
                 .filter(poste -> poste.getAnimateur() != null && animateurId.equals(poste.getAnimateur().getId())
                         && poste.getCreneau() != null && poste.getStand() != null)
                 .sorted(Comparator
@@ -104,21 +128,15 @@ public class EspaceAnimateurService {
                         poste.getStand().getNom(),
                         coequipiers.getOrDefault(poste.getId(), List.of())))
                 .toList();
+    }
 
-        List<CollegueView> collegues = animateurs.stream()
-                .filter(candidat -> !candidat.getId().equals(animateurId))
-                .map(candidat -> new CollegueView(candidat.getId(), nomComplet(candidat)))
-                .sorted(Comparator.comparing(CollegueView::nomComplet, String.CASE_INSENSITIVE_ORDER))
-                .toList();
-
-        List<LocalDate> joursRepos = exportService.joursDeRepos(planning, animateurId).stream()
-                .map(PlanningExportService.JourRepos::date)
-                .toList();
-
-        PlanningPersistenceService.PlanningResolution resolution = persistenceService.loadResolution();
-        return new EspaceAnimateurView(animateur.getId(), animateur.getPrenom(), animateur.getNom(),
-                resolution == null ? null : resolution.resoluLe(),
-                demandeEchangeService.estFoireOuverte(), postes, joursRepos, collegues);
+    /**
+     * A colleague's seats, for the « créneau souhaité en échange » picker of a
+     * directed exchange: nothing but slots and stands — the same information
+     * the printed global planning already shows — without teammates.
+     */
+    public List<PosteAnimateurView> postesCollegue(String collegueId) {
+        return postesDe(persistenceService.loadPersistedPlanning(), collegueId, Map.of());
     }
 
     /** Resolves labels for a batch of demandes, in their given order. */
@@ -139,6 +157,9 @@ public class EspaceAnimateurService {
             Map<Long, Creneau> creneaux, Map<String, Stand> stands) {
         Creneau creneau = creneaux.get(demande.getCreneauId());
         Stand stand = stands.get(demande.getStandId());
+        Creneau creneauCible = demande.getCreneauCibleId() == null ? null
+                : creneaux.get(demande.getCreneauCibleId());
+        Stand standCible = demande.getStandCibleId() == null ? null : stands.get(demande.getStandCibleId());
         return new DemandeEchangeView(
                 demande.getId(),
                 demande.getCreneauId(),
@@ -151,6 +172,12 @@ public class EspaceAnimateurService {
                 nomComplet(animateurs.get(demande.getDemandeurId()), demande.getDemandeurId()),
                 demande.getCibleId(),
                 nomComplet(animateurs.get(demande.getCibleId()), demande.getCibleId()),
+                demande.getCreneauCibleId(),
+                creneauCible == null ? null : creneauCible.getDate(),
+                creneauCible == null ? null : creneauCible.getHeureDebut(),
+                creneauCible == null ? null : creneauCible.getHeureFin(),
+                demande.getStandCibleId(),
+                standCible == null ? demande.getStandCibleId() : standCible.getNom(),
                 demande.getMotif(),
                 demande.getStatut().name(),
                 demande.getPrevalidationOk(),

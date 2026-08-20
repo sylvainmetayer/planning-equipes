@@ -8,9 +8,14 @@
  * — the guide answers "how do I use this screen", not "how is it built".
  */
 
-/** Route the reader should open to act on what a section describes. */
+/**
+ * Where the reader should go to act on what a section describes: an in-app
+ * route, or an external destination (mailto:, GitHub) for the contact section.
+ * Exactly one of `route`/`href` is set.
+ */
 export interface HelpLink {
-  route: string;
+  route?: string;
+  href?: string;
   label: string;
 }
 
@@ -135,6 +140,10 @@ export function buildHelpSections(): HelpSection[] {
               text: $localize`:@@aide.data.def.creneaux:Jour du festival, date, heures de début et de fin. C'est le découpage temporel que le solveur remplit ; l'effectif minimum d'un stand y est multiplié par le nombre de créneaux où il est ouvert.`
             },
             {
+              term: $localize`:@@aide.data.term.familles:Familles de créneaux`,
+              text: $localize`:@@aide.data.def.familles:Quand le découpage est généré avec plusieurs grilles de relais décalées, chaque vacation existe en plusieurs variantes aux coupures légèrement décalées : les « familles » (colonne Famille de la page Créneaux). Chaque stand est rattaché à une seule famille, si bien que tous les stands ne changent pas d'équipe au même instant — sans décalage, chaque relais viderait simultanément l'ensemble du festival. Des créneaux identiques appartenant à des familles différentes ne sont donc pas des doublons. Côté besoins, un stand ne génère des postes que sur les créneaux de sa propre famille : le besoin total en animateurs ne se multiplie pas avec le nombre de familles, il se répartit — la page Besoin en animateurs en tient compte.`
+            },
+            {
               term: $localize`:@@aide.data.term.autres:Emplacements et typologies`,
               text: $localize`:@@aide.data.def.autres:Les emplacements sont des lieux géolocalisés auxquels rattacher un stand — ils servent à éviter les changements de lieu éloignés d'un créneau à l'autre. Les typologies sont le vocabulaire commun entre les compétences d'un animateur et les jeux d'un stand : un animateur ne peut tenir un stand que s'il en maîtrise au moins une typologie. Désignez-y aussi la typologie « ninja » : ses porteurs sont considérés polyvalents (affectables sur n'importe quel stand), et le solveur essaie d'en garder un libre sur chaque créneau — votre marge de manœuvre en cas d'absence de dernière minute. Sans typologie ninja désignée, cette réserve n'existe pas et chacun reste cantonné à ses compétences ; elle se choisit sur la page Paramètres, qui vous avertit si elle manque.`
             }
@@ -247,7 +256,7 @@ export function buildHelpSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.results.term.problemes:Page Problèmes`,
-              text: $localize`:@@aide.results.def.problemes:La liste complète et hiérarchisée des causes, là où le bandeau n'affiche que les plus sévères. C'est le premier écran à ouvrir quand une résolution ne donne pas zéro.`
+              text: $localize`:@@aide.results.def.problemes:La liste complète et hiérarchisée des causes, là où le bandeau n'affiche que les plus sévères. Elle mêle deux sources : les causes d'infaisabilité structurelles, calculées sans résolution (capacité insuffisante sur une tranche horaire, typologie que personne ne maîtrise, stand réservé aux majeurs sans majeur disponible…) — visibles dès la saisie des données, avant tout solve — et les règles en défaut de la dernière analyse, avec leur nombre de correspondances. Chaque ligne est triée par gravité et pointe vers l'écran où corriger. C'est le premier écran à ouvrir quand une résolution ne donne pas zéro, et un bon réflexe avant même de lancer la première.`
             },
             {
               term: $localize`:@@aide.results.term.contraintes:Page Contraintes`,
@@ -369,7 +378,7 @@ export function buildHelpSections(): HelpSection[] {
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.foire.intro:Chaque animateur dispose d'un espace personnel, accessible par le lien imprimé sur son planning PDF — aucun compte à créer, mais un code d'accès envoyé à l'adresse e-mail de sa fiche est demandé une fois par appareil (le planning se télécharge depuis l'espace, un minimum d'authentification s'impose ; un animateur sans adresse doit la faire ajouter). Il y consulte son planning à jour (avec ses coéquipiers) et peut proposer d'échanger un de ses créneaux avec un collègue. Chaque demande est prévalidée contre les règles dures du planning ; une demande irréalisable est signalée en langage métier, mais transmise quand même : c'est vous qui tranchez.`
+          text: $localize`:@@aide.foire.intro:Chaque animateur dispose d'un espace personnel, accessible par le lien imprimé sur son planning PDF — aucun compte à créer, mais un code d'accès envoyé à l'adresse e-mail de sa fiche est demandé une fois par appareil (le planning se télécharge depuis l'espace, un minimum d'authentification s'impose ; un animateur sans adresse doit la faire ajouter). Il y consulte son planning à jour (avec ses coéquipiers) et peut proposer d'échanger un de ses créneaux avec un collègue — soit en cédant simplement son créneau, soit en désignant en plus le créneau du collègue qu'il veut récupérer en échange (« je te laisse mon lundi, je prends ton mardi »). Chaque demande est prévalidée contre les règles dures du planning ; une demande irréalisable est signalée en langage métier, mais transmise quand même : c'est vous qui tranchez.`
         },
         {
           kind: 'definitions',
@@ -425,6 +434,29 @@ export function buildHelpSections(): HelpSection[] {
         { route: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres` },
         { route: '/debug', label: $localize`:@@nav.link.debug:Débogage` },
         { route: '/notifications', label: $localize`:@@nav.link.notifications:Notifications` }
+      ]
+    },
+    {
+      id: 'contact',
+      icon: 'contact_support',
+      title: $localize`:@@aide.contact.title:Contact et support`,
+      summary: $localize`:@@aide.contact.summary:Une question, un blocage, une erreur métier : à qui s'adresser et comment.`,
+      blocks: [
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.contact.mail:Pour une question d'utilisation, un doute sur un résultat ou un besoin d'accompagnement, écrivez à planning@sylvain.dev — joignez si possible une capture d'écran et la version affichée en bas de la page Débogage.`
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.contact.issue:Pour une erreur métier reproductible (un score faux, une contrainte non respectée, un export incorrect), ouvrez un rapport de problème sur GitHub : le formulaire guide la description. Attention, GitHub est public : n'y mettez aucune information nominative — désignez les personnes par leur identifiant d'animateur (visible sur la page Animateurs), jamais par leur nom. Les données nominatives, elles, passent par l'e-mail ci-dessus.`
+        }
+      ],
+      links: [
+        { href: 'mailto:planning@sylvain.dev', label: $localize`:@@aide.contact.lienMail:Contacter le support` },
+        {
+          href: 'https://github.com/sylvainmetayer/planning-equipes/issues/new?template=erreur-metier.yml',
+          label: $localize`:@@aide.contact.lienIssue:Rapporter un problème (GitHub)`
+        }
       ]
     }
   ];

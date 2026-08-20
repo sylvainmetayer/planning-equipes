@@ -26,7 +26,13 @@ export async function contexteAdmin(
   playwright: Playwright,
   baseURL: string
 ): Promise<APIRequestContext> {
-  const request = await playwright.request.newContext({ baseURL });
+  // Pinned on the DEFAUT edition: the suite seeds hard-coded 'DEFAUT' rows,
+  // while an unpinned request follows whatever edition the target instance
+  // flags as default — which any real deployment may have changed.
+  const request = await playwright.request.newContext({
+    baseURL,
+    extraHTTPHeaders: { 'X-Edition-Id': 'DEFAUT' }
+  });
   const connexion = await request.post('/j_security_check', {
     form: { j_username: 'admin', j_password: MOT_DE_PASSE_ADMIN },
     maxRedirects: 0
@@ -247,6 +253,15 @@ export function postesDe(planning: PlanningPersiste, animateurId: string): strin
  */
 export async function pageAdmin(browser: Browser, admin: APIRequestContext): Promise<Page> {
   const contexte = await browser.newContext({ storageState: await admin.storageState() });
+  // Same edition pinning as contexteAdmin, browser-side: the SPA reads its
+  // edition from localStorage. Conditional, so a test that deliberately
+  // switches editions (setStoredEditionIdAndReload writes before reloading)
+  // is not snapped back on the next navigation.
+  await contexte.addInitScript(() => {
+    if (!localStorage.getItem('planning-equipes.editionId')) {
+      localStorage.setItem('planning-equipes.editionId', 'DEFAUT');
+    }
+  });
   return contexte.newPage();
 }
 

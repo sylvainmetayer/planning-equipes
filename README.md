@@ -399,7 +399,10 @@ Chaque animateur dispose d'un **espace personnel** accessible par un lien
 imprimé sur son planning PDF — aucun compte à créer. Il y consulte son
 planning à jour (avec ses coéquipiers), et peut y proposer d'**échanger un de
 ses créneaux** avec un collègue : il constitue sa liste de demandes (créneau,
-collègue, motif) puis la soumet en une fois.
+collègue, motif) puis la soumet en une fois. Il peut aussi **désigner le
+créneau du collègue qu'il veut récupérer** en échange du sien (« je te laisse
+mon lundi et je prends ton mardi, je préfère être libre lundi ») — sans ce
+choix, l'échange se joue sur son seul créneau.
 
 Chaque demande est **prévalidée** contre les règles dures du planning : si
 l'échange poserait un problème (temps de travail dépassé, repos insuffisant…),

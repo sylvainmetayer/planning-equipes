@@ -136,6 +136,17 @@ la section reste possible pour un staffing qui s'écarte de cette règle
 (certains scénarios, ex. `scenario-complet.yaml`, l'énumèrent explicitement) ;
 dans ce cas elle est reprise telle quelle.
 
+Une section optionnelle `edition: { id, nom? }` en tête de fichier désigne
+l'édition dans laquelle l'import doit écrire, au lieu de l'édition courante de
+l'appelant : si elle n'existe pas, elle est créée vide (avec `nom` comme
+libellé, `id` à défaut) puis reçoit l'import ; si elle existe, elle est
+réutilisée telle quelle (son libellé en base prime sur celui du fichier). La
+réponse de l'import indique toujours où les données ont atterri et si
+l'édition a été créée (`editionId`, `editionNom`, `editionCreee`), et
+l'interface affiche systématiquement ce récapitulatif — l'opérateur peut être
+en train de consulter une autre édition que celle qui vient d'être écrite.
+Sans cette section, l'import écrit dans l'édition courante, comme avant.
+
 Un scénario écrit directement en amplitudes (ex. `scenario-continu.yaml`) peut
 fixer une section `decoupageAuto: {}` en tête de fichier pour que ces deux
 imports (nom ou fichier) déclenchent eux-mêmes le découpage en vacations

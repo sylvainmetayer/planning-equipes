@@ -47,6 +47,12 @@
         <mat-icon inline>swap_horiz</mat-icon>
         <strong>{{ demande.cibleNom }}</strong>
         <span>{{ demande.date | date: 'EEE d MMM' }} {{ demande.heureDebut }}–{{ demande.heureFin }} · {{ demande.standNom }}</span>
+        @if (demande.creneauCibleId) {
+          <span class="espace-brouillon-contre">
+            <ng-container i18n="@@echanges.contre">contre son créneau</ng-container>
+            {{ demande.dateCible | date: 'EEE d MMM' }} {{ demande.heureDebutCible }}–{{ demande.heureFinCible }} · {{ demande.standCibleNom }}
+          </span>
+        }
         <span class="echanges-demande-date" i18n="@@echanges.soumiseLe">soumise le {{ demande.creeLe | date: 'short' }}</span>
       </div>
       @if (demande.motif) {
@@ -118,6 +124,12 @@
         <mat-icon inline>swap_horiz</mat-icon>
         <strong>{{ demande.cibleNom }}</strong>
         <span>{{ demande.date | date: 'EEE d MMM' }} {{ demande.heureDebut }}–{{ demande.heureFin }} · {{ demande.standNom }}</span>
+        @if (demande.creneauCibleId) {
+          <span class="espace-brouillon-contre">
+            <ng-container i18n="@@echanges.contre">contre son créneau</ng-container>
+            {{ demande.dateCible | date: 'EEE d MMM' }} {{ demande.heureDebutCible }}–{{ demande.heureFinCible }} · {{ demande.standCibleNom }}
+          </span>
+        }
         @if (demande.decideLe) {
           <span class="echanges-demande-date" i18n="@@echanges.decideeLe">décidée le {{ demande.decideLe | date: 'short' }}</span>
         }

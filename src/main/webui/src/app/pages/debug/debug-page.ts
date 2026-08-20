@@ -16,6 +16,7 @@ import { ConfirmService } from '../../shared/confirm-dialog';
 import { InstantaneAvantAction } from '../../shared/instantane-avant-action';
 import { OutputPanel } from '../../shared/output-panel';
 import { APP_VERSION, REPO_URL } from '../../version';
+import { StatusMessage } from '../../shared/status-message';
 import { YamlValidator } from './yaml-validator';
 
 /**
@@ -34,7 +35,7 @@ import { YamlValidator } from './yaml-validator';
 @Component({
   selector: 'app-debug-page',
   imports: [MatCardModule, MatButtonModule, MatIconModule, MatProgressBarModule, OutputPanel,
-    YamlValidator],
+    StatusMessage, YamlValidator],
   templateUrl: './debug-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -65,6 +66,7 @@ export class DebugPage {
   private readonly problemes = inject(ProblemesStore);
 
   constructor() {
+    void this.chargerMailConfig();
     void this.refresh();
   }
 
@@ -150,6 +152,44 @@ export class DebugPage {
    */
   protected triggerFrontException(): void {
     throw new Error('Test exception (bouton Débogage / Exception front)');
+  }
+
+  /** Admin address the mail notifications go to — null once loaded when MAIL_ADMIN is not set. */
+  protected readonly mailAdmin = signal<string | null | undefined>(undefined);
+  protected readonly mailTestBusy = signal(false);
+
+  private async chargerMailConfig(): Promise<void> {
+    try {
+      const config = await this.api.get<{ adminEmail: string | null }>('/api/debug/mail-config');
+      this.mailAdmin.set(config.adminEmail);
+    } catch {
+      // Endpoint unreachable: leave the state unknown, no warning either way.
+    }
+  }
+
+  /**
+   * Really sends a mail to the admin address — and surfaces the failure,
+   * unlike the business sends which are best-effort: verifying the SMTP
+   * plumbing is the whole point of this button.
+   */
+  protected async envoyerMailTest(): Promise<void> {
+    this.mailTestBusy.set(true);
+    try {
+      const result = await this.api.post<{ adminEmail: string }>('/api/debug/test-mail', {});
+      this.notifications.notify({
+        title: $localize`:@@debug.mailTest.envoye:Mail de test envoyé à ${result.adminEmail}:adresse:.`,
+        variant: 'success',
+        timeout: 6000
+      });
+    } catch (error) {
+      this.notifications.notify({
+        title: $localize`:@@debug.mailTest.echec:Échec de l'envoi du mail de test`,
+        message: message(error),
+        variant: 'error'
+      });
+    } finally {
+      this.mailTestBusy.set(false);
+    }
   }
 
   /**

@@ -58,7 +58,7 @@ public class PlanningExportService {
             .withZone(ZoneOffset.UTC);
     private static final DateTimeFormatter ICS_LOCAL_DATE_TIME = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss");
     private static final DateTimeFormatter ICS_LOCAL_DATE = DateTimeFormatter.ofPattern("yyyyMMdd");
-    private static final DateTimeFormatter GENERATED_AT_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final DateTimeFormatter GENERATED_AT_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy 'à' HH:mm");
 
     private static final String LOGO_RESOURCE = "/branding/logo.png";
     private static final String STRIP_RESOURCE = "/branding/bandeau.png";
@@ -529,6 +529,9 @@ public class PlanningExportService {
         builder.append("BEGIN:VCALENDAR\r\n")
                 .append("VERSION:2.0\r\n")
                 .append("PRODID:-//planning-equipes//planning//EN\r\n")
+                .append("X-WR-CALDESC:Généré le ")
+                .append(GENERATED_AT_FORMAT.format(Instant.now().atZone(ZoneOffset.systemDefault())))
+                .append("\r\n")
                 .append("CALSCALE:GREGORIAN\r\n");
 
         for (PosteAffectation poste : postes) {

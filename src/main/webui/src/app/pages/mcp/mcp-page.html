@@ -1,0 +1,83 @@
+<h1 class="page-title" i18n="@@nav.link.mcp">MCP</h1>
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h2 mat-card-title i18n="@@mcp.connexion.title">Se connecter au serveur MCP</h2>
+    <mat-card-subtitle i18n="@@mcp.connexion.subtitle">
+      L'application expose un serveur MCP (Model Context Protocol) qui permet à un assistant IA —
+      Claude, un IDE, un agent — de consulter et piloter le planning en langage naturel : lister les
+      référentiels, lancer une résolution, expliquer un score.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <p i18n="@@mcp.connexion.endpoint">
+      Le point d'entrée est <code>{{ origin }}/mcp</code> (transport HTTP streamable). Chaque requête
+      doit présenter la clé API partagée dans l'en-tête <code>X-MCP-Api-Key</code> — c'est la valeur
+      de la variable serveur <code>PLANNING_MCP_API_KEY</code> ; tant qu'elle n'est pas configurée côté
+      serveur, le MCP répond 401 à tout le monde.
+    </p>
+    <p i18n="@@mcp.confidentialite">
+      Confidentialité des animateurs : le serveur MCP ne renvoie jamais leurs données personnelles —
+      ni nom, ni prénom, ni date de naissance, ni e-mail. Seuls circulent l'identifiant et les
+      attributs de planification (statut majeur/mineur, manager, compétences et leur niveau,
+      souhaits, indisponibilités). Ces données personnelles ne sont donc pas modifiables par MCP
+      non plus : un animateur ne s'y met à jour que sur ses compétences, ses souhaits, ses
+      indisponibilités et son statut manager. Un assistant qui ne lit jamais un nom ne peut pas le
+      divulguer.
+    </p>
+    <p i18n="@@mcp.connexion.config">Configuration à déclarer dans votre client MCP :</p>
+    <pre class="mcp-pre">{{ configurationClient() }}</pre>
+    <div class="card-actions">
+      <button matButton="tonal" type="button" (click)="copier(configurationClient())">
+        <mat-icon>content_copy</mat-icon>
+        <ng-container i18n="@@mcp.copierConfig">Copier la configuration</ng-container>
+      </button>
+    </div>
+  </mat-card-content>
+</mat-card>
+
+@if (pangolin()) {
+  <mat-card appearance="outlined" class="page-card">
+    <mat-card-header>
+      <h2 mat-card-title i18n="@@mcp.pangolin.title">Proxy d'accès Pangolin détecté</h2>
+    </mat-card-header>
+    <mat-card-content>
+      <app-status-message
+        i18n-text="@@mcp.pangolin.warning"
+        text="Cette instance répond derrière un proxy d'accès Pangolin : en plus de la clé API, chaque requête MCP doit présenter un jeton d'accès du proxy, à créer dans Pangolin puis à paramétrer dans le client."
+        tone="warning"
+      />
+      <p i18n="@@mcp.pangolin.headers">
+        Les en-têtes standard attendus par Pangolin sont <code>P-Access-Token-Id</code> (l'identifiant
+        du jeton) et <code>P-Access-Token</code> (le jeton lui-même) — la configuration ci-dessus les
+        inclut déjà. Un client incapable d'ajouter des en-têtes peut passer le jeton en query string :
+        <code>?p_token=&lt;id&gt;.&lt;jeton&gt;</code>.
+      </p>
+      <p i18n="@@mcp.pangolin.authorization">
+        Utilisez bien l'en-tête dédié <code>X-MCP-Api-Key</code> pour la clé API plutôt que
+        <code>Authorization: Bearer</code> : un proxy d'accès consomme fréquemment
+        <code>Authorization</code> pour son propre compte, et la clé n'arriverait jamais à
+        l'application.
+      </p>
+    </mat-card-content>
+  </mat-card>
+}
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h2 mat-card-title i18n="@@mcp.prompt.title">Exemple : déboguer une solution avec des contraintes dures</h2>
+    <mat-card-subtitle i18n="@@mcp.prompt.subtitle">
+      Une fois le client connecté, collez ce prompt dans votre assistant : il analysera les violations
+      dures du dernier planning et vous dira concrètement quoi corriger dans les données.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <pre class="mcp-pre mcp-prompt">{{ promptExemple }}</pre>
+    <div class="card-actions">
+      <button matButton="tonal" type="button" (click)="copier(promptExemple)">
+        <mat-icon>content_copy</mat-icon>
+        <ng-container i18n="@@mcp.copierPrompt">Copier le prompt</ng-container>
+      </button>
+    </div>
+  </mat-card-content>
+</mat-card>

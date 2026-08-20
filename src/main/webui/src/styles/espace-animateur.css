@@ -388,3 +388,9 @@
     align-items: stretch;
   }
 }
+
+/* Directed exchange: the "in return" seat, visually subordinate to the main line. */
+.espace-brouillon-contre {
+  font-style: italic;
+  color: var(--mat-sys-on-surface-variant);
+}

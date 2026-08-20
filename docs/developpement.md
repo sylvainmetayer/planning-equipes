@@ -241,7 +241,24 @@ On distingue quatre familles de tests :
 Les créneaux de test vivent dans la plage réservée `987000–987999` et toutes
 les lignes ensemencées portent un préfixe `E2E-`/`SOLV-`/`FUZZ-` : la suite ne
 touche jamais à des données hors de ce périmètre, mais elle réécrit le
-planning persisté de l'édition courante — d'où la pile jetable.
+planning persisté de l'édition courante — d'où la pile jetable. La suite
+épingle l'édition `DEFAUT` (en-tête `X-Edition-Id` côté API, `localStorage`
+côté navigateur, voir `e2e/support.ts`) : elle ne dépend pas de l'édition que
+l'instance visée flague par défaut.
+
+Attention, le profil `%dev` pointe sur le Postgres du docker-compose
+(`localhost:5432/festival`) : deux `quarkus:dev` (même sur des ports
+différents) partagent **la même base**. Pour une pile réellement jetable :
+
+```bash
+podman run -d --name planning-e2e-pg -p 5433:5432 \
+  -e POSTGRES_USER=festival -e POSTGRES_PASSWORD=festival \
+  -e POSTGRES_DB=festival docker.io/library/postgres:17
+DB_URL="jdbc:postgresql://localhost:5433/festival" \
+  ./mvnw quarkus:dev -Dquarkus.http.port=8081
+E2E_BASE_URL=http://localhost:8081 npm run e2e   # depuis src/main/webui
+podman rm -f planning-e2e-pg                          # à la fin
+```
 
 Ils sont **volontairement exclus de la CI** : ils exigent la pile complète et
 écrivent en base (ensemencement idempotent d'identifiants `E2E-*` via
@@ -583,6 +600,13 @@ démarrage. **Un changement de schéma = un nouveau fichier versionné** ; ne ja
 éditer une migration déjà appliquée.
 
 ## Intégration continue
+
+Tous les jobs tournent sur le runner **self-hosted** (`runs-on: self-hosted`),
+minutes GitHub-hébergées comprises dans aucun budget. Un choix de runner
+dynamique selon les crédits restants n'est pas praticable : le job qui
+choisirait le runner aurait lui-même besoin d'un runner (et l'API de
+facturation exige un PAT dédié) — la bascule éventuelle vers `ubuntu-latest`
+en début de mois se fait donc à la main, en éditant les `runs-on`.
 
 - `.github/workflows/tests.yml` — deux jobs sur chaque push `main` et chaque
   pull request : `test` (`./mvnw verify -DskipITs=false`, avec upload des

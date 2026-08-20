@@ -206,7 +206,7 @@ class PlanningResourceTest {
         given()
                 .when().post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
-                .statusCode(204);
+                .statusCode(200);
 
         JsonPath sample = JsonPath.from(given()
                 .when().get("/api/planning/sample?name=scenario.yml")
@@ -276,7 +276,7 @@ class PlanningResourceTest {
         given()
                 .when().post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
-                .statusCode(204);
+                .statusCode(200);
 
         String yaml = given()
                 .when().get("/api/planning/export-scenario")

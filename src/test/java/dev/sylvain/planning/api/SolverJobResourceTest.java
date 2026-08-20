@@ -57,7 +57,7 @@ class SolverJobResourceTest {
     void solveFromReferenceDataBuildsProblemServerSide() throws InterruptedException {
         given()
                 .when().post("/api/reference-data/import-scenario?name=scenario.yml")
-                .then().statusCode(204);
+                .then().statusCode(200);
 
         String jobId = given()
                 .when().post("/api/solve/async/reference-data")

@@ -27,7 +27,7 @@ class PlanSnapshotResourceTest {
     /** Loads the sample scenario and solves it once, so a plan is persisted. */
     private void planPersiste() throws InterruptedException {
         given().when().post("/api/planning/reset").then().statusCode(200);
-        given().when().post("/api/reference-data/import-scenario?name=scenario.yml").then().statusCode(204);
+        given().when().post("/api/reference-data/import-scenario?name=scenario.yml").then().statusCode(200);
         solve();
         assertThat(nombreAffectations()).isPositive();
     }

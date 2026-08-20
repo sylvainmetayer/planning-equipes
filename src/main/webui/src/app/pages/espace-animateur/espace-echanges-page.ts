@@ -53,6 +53,13 @@ export class EspaceEchangesPage {
 
   protected readonly posteChoisi = signal<PosteAnimateurView | null>(null);
   protected readonly cibleId = signal('');
+  /**
+   * Directed exchange: the colleague's seat the demandeur wants in return —
+   * null keeps the historical "same créneau" semantics. Options are the
+   * colleague's real seats, loaded when the colleague is picked.
+   */
+  protected readonly posteCibleChoisi = signal<PosteAnimateurView | null>(null);
+  protected readonly postesCollegue = signal<PosteAnimateurView[]>([]);
   protected readonly motif = signal('');
   protected readonly brouillons = signal<BrouillonDemande[]>([]);
   protected readonly envoiEnCours = signal(false);
@@ -72,25 +79,49 @@ export class EspaceEchangesPage {
     }))
   );
 
+  /** Colleague picked: load their seats so the optional "wanted in return" select has real options. */
+  protected async choisirCible(cibleId: string): Promise<void> {
+    this.cibleId.set(cibleId);
+    this.posteCibleChoisi.set(null);
+    this.postesCollegue.set([]);
+    if (!cibleId) {
+      return;
+    }
+    try {
+      this.postesCollegue.set(await this.espace.postesCollegue(cibleId));
+    } catch {
+      // No seats loadable (no persisted planning, network...): the picker
+      // simply stays empty and the demande falls back to the plain semantics.
+    }
+  }
+
   protected ajouter(): void {
     const poste = this.posteChoisi();
     if (!poste || !this.formulaireComplet()) {
       return;
     }
     const cible = this.espace.vue()?.collegues.find((collegue) => collegue.id === this.cibleId());
+    const posteCible = this.posteCibleChoisi();
     this.brouillons.set(
       ajouterBrouillon(this.brouillons(), {
         creneauId: poste.creneauId,
         standId: poste.standId,
         cibleId: this.cibleId(),
         motif: this.motif() || null,
+        creneauCibleId: posteCible?.creneauId ?? null,
+        standCibleId: posteCible?.standId ?? null,
         creneauLabel: `${poste.date ?? ''} ${poste.heureDebut}–${poste.heureFin}`.trim(),
         standNom: poste.standNom,
-        cibleNom: cible?.nomComplet ?? this.cibleId()
+        cibleNom: cible?.nomComplet ?? this.cibleId(),
+        creneauCibleLabel: posteCible
+          ? `${posteCible.date ?? ''} ${posteCible.heureDebut}–${posteCible.heureFin} · ${posteCible.standNom}`.trim()
+          : null
       })
     );
     this.posteChoisi.set(null);
     this.cibleId.set('');
+    this.posteCibleChoisi.set(null);
+    this.postesCollegue.set([]);
     this.motif.set('');
   }
 

@@ -73,6 +73,19 @@ public class EspaceAnimateurResource {
         return espaceAnimateurService.construireVue(animateurCourant());
     }
 
+    /**
+     * A colleague's seats, for the « créneau souhaité en échange » picker of
+     * a directed exchange — the same slots-and-stands information the printed
+     * global planning already circulates, nothing more.
+     */
+    @GET
+    @Path("/{jeton}/collegues/{collegueId}/postes")
+    @SessionEspaceRequise
+    public List<dev.sylvain.planning.service.EspaceAnimateurService.PosteAnimateurView> postesCollegue(
+            @PathParam("collegueId") String collegueId) {
+        return espaceAnimateurService.postesCollegue(collegueId);
+    }
+
     /** My demandes d'échange, most recent first, whatever their statut. */
     @GET
     @Path("/{jeton}/demandes")

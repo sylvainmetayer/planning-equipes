@@ -24,6 +24,14 @@ export class ApiService {
   }
 
   /**
+   * GET scoped to an explicit edition, bypassing the browser's ambient one —
+   * the edition interceptor leaves a pre-set `X-Edition-Id` untouched.
+   */
+  getDansEdition<T>(url: string, editionId: string): Promise<T> {
+    return this.run(this.http.get<T>(url, { headers: { 'X-Edition-Id': editionId } }));
+  }
+
+  /**
    * POST rejecting with the untouched `HttpErrorResponse` instead of the
    * flattened Error, for the callers that must read the status and the body of
    * a failure — the solver job service turns a 409 into "this other job is

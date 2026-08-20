@@ -437,3 +437,18 @@ table td.hours-verifier {
   display: grid;
   gap: 0.5rem;
 }
+
+/* MCP: configuration and prompt blocks — selectable, copyable, scrollable. */
+.mcp-pre {
+  margin: 0.5rem 0;
+  padding: 0.75rem 1rem;
+  background: var(--mat-sys-surface-container);
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.mcp-prompt {
+  white-space: pre-wrap;
+}

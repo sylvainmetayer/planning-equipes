@@ -152,7 +152,8 @@ ici). Un jeton inconnu répond `404 { "message": "…" }`, jamais `401`.
 | --- | --- | --- |
 | `GET` | `/api/espace-animateur/{jeton}` | Identité, planning personnel (postes + coéquipiers, lecture seule) et collègues avec qui échanger |
 | `GET` | `/api/espace-animateur/{jeton}/demandes` | Ses demandes d'échange, tous statuts, la plus récente d'abord |
-| `POST` | `/api/espace-animateur/{jeton}/demandes` | Soumet une **liste** de demandes `[{ creneauId, standId, cibleId, motif? }]`. Chacune est prévalidée contre les contraintes dures (`simulerEchange`) mais enregistrée quel que soit le verdict ; la réponse porte `prevalidationOk` et `contraintesViolees` (descriptions métier du catalogue). Un mail est envoyé à l'admin (si `planning.mail.admin` est configurée) |
+| `GET` | `/api/espace-animateur/{jeton}/collegues/{collegueId}/postes` | Les postes d'un collègue (créneaux et stands, sans coéquipiers) — la source du sélecteur « son créneau que je veux en échange » d'un échange dirigé |
+| `POST` | `/api/espace-animateur/{jeton}/demandes` | Soumet une **liste** de demandes `[{ creneauId, standId, cibleId, motif?, creneauCibleId?, standCibleId? }]`. `creneauCibleId`/`standCibleId` renseignés = échange **dirigé** : le demandeur cède son créneau ET récupère le créneau désigné du collègue (« je te laisse mon lundi, je prends ton mardi »). Chacune est prévalidée contre les contraintes dures (`simulerEchange`/`simulerEchangeDirige`) mais enregistrée quel que soit le verdict ; la réponse porte `prevalidationOk` et `contraintesViolees` (descriptions métier du catalogue). Un mail est envoyé à l'admin (si `planning.mail.admin` est configurée) |
 | `POST` | `/api/espace-animateur/{jeton}/demandes/{id}/annulation` | Annule une de **ses** demandes encore en attente (`204` ; `400` si déjà décidée) |
 | `GET` | `/api/espace-animateur/{jeton}/planning.pdf` | Son planning individuel en PDF (même document que l'export admin), toujours disponible — foire fermée comprise |
 | `GET` | `/api/espace-animateur/{jeton}/planning.ics` | Son planning au format calendrier ICS |
@@ -174,7 +175,7 @@ vue (`foireOuverte`) ne sert qu'à l'afficher.
 | --- | --- | --- |
 | `GET` | `/api/echanges` | Toutes les demandes de l'édition courante, la plus récente d'abord |
 | `GET` | `/api/echanges/{id}/impact` | Re-simule la demande contre le planning persisté **actuel** : delta de score, échange croisé ou reprise simple, contraintes dures nouvellement violées. |
-| `POST` | `/api/echanges/{id}/acceptation` | Applique l'échange exactement comme simulé (mise à jour chirurgicale de `poste_affectation`), pose deux verrous `ANIMATEUR_CRENEAU` (un par animateur sur le créneau) et notifie le demandeur par mail. Corps optionnel `{ "commentaire": "…" }`. Le solveur n'est **pas** relancé. |
+| `POST` | `/api/echanges/{id}/acceptation` | Applique l'échange exactement comme simulé (mise à jour chirurgicale de `poste_affectation`), pose deux verrous `ANIMATEUR_CRENEAU` — sur le créneau échangé pour un échange simple, sur le créneau que chacun REÇOIT pour un échange dirigé — et notifie le demandeur par mail. Corps optionnel `{ "commentaire": "…" }`. Le solveur n'est **pas** relancé. |
 | `POST` | `/api/echanges/{id}/refus` | Refuse sans rien modifier ; `{ "commentaire": "…" }` est transmis à l'animateur |
 | `GET` | `/api/echanges/configuration` | État de la foire : `{ "foireOuverte": true }` (ouverte par défaut) |
 | `PUT` | `/api/echanges/configuration` | Ouvre ou ferme la foire pour l'édition courante. Fermée, les espaces animateurs passent en consultation seule (planning visible et téléchargeable, soumissions et annulations refusées côté serveur) |
@@ -561,6 +562,12 @@ optionnelle fixe le libellé du référentiel `typologie` (voir
 [`import-export.md`](import-export.md#chargement-de-scénario)) pour les ids
 que le fichier utilise, au lieu de laisser l'import leur donner un libellé
 identique à leur id.
+
+Les deux imports honorent la section optionnelle `edition:` du fichier (voir
+[`import-export.md`](import-export.md)) : l'import est alors routé vers
+l'édition désignée — créée vide au besoin — et la réponse (`200`) porte
+`{ decoupageAuto, editionId, editionNom, editionCreee }`, `editionId` restant
+`null` quand le fichier ne désigne rien.
 
 `POST /api/reference-data/import-scenario-fichier` fait la même chose pour un
 scénario envoyé en corps de requête (bouton « Importer un fichier » de

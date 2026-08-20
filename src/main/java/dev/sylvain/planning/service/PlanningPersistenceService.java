@@ -365,6 +365,26 @@ public class PlanningPersistenceService {
         }, "Failed to apply the échange to the persisted planning");
     }
 
+    /**
+     * Directed variant of {@link #appliquerEchange}: the two reassigned seats
+     * sit on two different créneaux — the demandeur's goes to the cible, the
+     * cible's goes to the demandeur. Same one-transaction surgical updates.
+     */
+    public void appliquerEchangeDirige(long creneauId, String standDemandeurId, String demandeurId,
+            String cibleId, long creneauCibleId, String standCibleId) {
+        inTransaction(connection -> {
+            int updated = reaffecterSiege(connection, creneauId, standDemandeurId, demandeurId, cibleId);
+            if (updated == 0) {
+                throw new SQLException("Aucun poste de " + demandeurId + " sur ce créneau et ce stand");
+            }
+            int updatedCible = reaffecterSiege(connection, creneauCibleId, standCibleId, cibleId, demandeurId);
+            if (updatedCible == 0) {
+                throw new SQLException("Aucun poste de " + cibleId + " sur ce créneau et ce stand");
+            }
+            return updated;
+        }, "Failed to apply the échange dirigé to the persisted planning");
+    }
+
     private int reaffecterSiege(Connection connection, long creneauId, String standId,
             String occupantActuelId, String nouvelOccupantId) throws SQLException {
         // Not prepareScoped: the SET clause claims placeholder 1, so the

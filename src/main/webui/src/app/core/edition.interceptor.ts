@@ -12,7 +12,10 @@ import { getStoredEditionId } from './edition-courante';
  */
 export const editionInterceptor: HttpInterceptorFn = (request, next) => {
   const editionId = getStoredEditionId();
-  if (!editionId || !request.url.startsWith('/api/')) {
+  // A caller that set the header itself is deliberately reading ANOTHER
+  // edition (e.g. the import-impact counts for a scenario's target edition):
+  // never overwrite that explicit choice with the browser's ambient one.
+  if (!editionId || !request.url.startsWith('/api/') || request.headers.has('X-Edition-Id')) {
     return next(request);
   }
   return next(request.clone({ setHeaders: { 'X-Edition-Id': editionId } }));

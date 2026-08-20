@@ -15,6 +15,8 @@ export interface ConfirmData {
   title: string;
   message: string;
   confirmLabel?: string;
+  /** Label of the dismiss button — defaults to « Annuler ». */
+  cancelLabel?: string;
   danger?: boolean;
 }
 
@@ -30,7 +32,9 @@ export type ConfirmResult = boolean | null;
       <p>{{ data.message }}</p>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
-      <button matButton (click)="dialogRef.close(null)" i18n="@@confirmDialog.cancel">Annuler</button>
+      <button matButton (click)="dialogRef.close(null)">
+        {{ data.cancelLabel ?? defaultCancelLabel }}
+      </button>
       <button matButton="filled" [color]="data.danger ? 'warn' : 'primary'" (click)="dialogRef.close(true)">
         {{ data.confirmLabel ?? defaultConfirmLabel }}
       </button>
@@ -42,6 +46,7 @@ export class ConfirmDialog {
   protected readonly dialogRef = inject<MatDialogRef<ConfirmDialog, ConfirmResult>>(MatDialogRef);
   protected readonly data = inject<ConfirmData>(MAT_DIALOG_DATA);
   protected readonly defaultConfirmLabel = $localize`:@@confirmDialog.confirm:Confirmer`;
+  protected readonly defaultCancelLabel = $localize`:@@confirmDialog.cancel:Annuler`;
 }
 
 @Injectable({ providedIn: 'root' })

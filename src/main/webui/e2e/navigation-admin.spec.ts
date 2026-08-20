@@ -47,6 +47,7 @@ const ROUTES: { path: string; marker?: string }[] = [
   { path: '/what-if' },
   { path: '/verrouillages', marker: 'Verrouiller une partie du planning' },
   { path: '/parametres', marker: 'Paramètres de découpage' },
+  { path: '/mcp-client', marker: 'Se connecter au serveur MCP' },
   { path: '/debug', marker: 'Validateur YAML' }
 ];
 

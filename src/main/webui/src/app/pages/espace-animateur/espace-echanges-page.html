@@ -13,9 +13,11 @@
   <mat-card-header>
     <mat-card-title i18n="@@espace.echanges.formTitre">Proposer un échange</mat-card-title>
     <mat-card-subtitle i18n="@@espace.echanges.formSousTitre">
-      Choisissez un de vos créneaux, le ou la collègue avec qui échanger, et un motif. Ajoutez
-      autant de demandes que nécessaire puis soumettez la liste : l'organisation valide (ou non)
-      chaque échange.
+      Choisissez un de vos créneaux, le ou la collègue avec qui échanger, et un motif. Vous pouvez
+      aussi désigner le créneau du collègue que vous voulez récupérer en échange (« je te laisse mon
+      lundi, je prends ton mardi ») — sans ce choix, l'échange se joue sur votre seul créneau.
+      Ajoutez autant de demandes que nécessaire puis soumettez la liste : l'organisation valide (ou
+      non) chaque échange.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
@@ -32,12 +34,26 @@
       </mat-form-field>
       <mat-form-field appearance="outline">
         <mat-label i18n="@@espace.echanges.collegue">Échanger avec</mat-label>
-        <mat-select [ngModel]="cibleId()" (ngModelChange)="cibleId.set($event)">
+        <mat-select [ngModel]="cibleId()" (ngModelChange)="choisirCible($event)">
           @for (collegue of espace.vue()?.collegues ?? []; track collegue.id) {
             <mat-option [value]="collegue.id">{{ collegue.nomComplet }}</mat-option>
           }
         </mat-select>
       </mat-form-field>
+      @if (cibleId() && postesCollegue().length > 0) {
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label i18n="@@espace.echanges.creneauSouhaite">Son créneau que je veux en échange (optionnel)</mat-label>
+          <mat-select [ngModel]="posteCibleChoisi()" (ngModelChange)="posteCibleChoisi.set($event)">
+            <mat-option [value]="null" i18n="@@espace.echanges.creneauSouhaiteAucun">Peu importe — échange sur mon créneau</mat-option>
+            @for (poste of postesCollegue(); track poste.standId + '-' + poste.creneauId + '-' + poste.heureDebut) {
+              <mat-option [value]="poste">
+                {{ poste.date | date: 'EEE d MMM' }} {{ poste.heureDebut }}–{{ poste.heureFin }} · {{ poste.standNom }}
+              </mat-option>
+            }
+          </mat-select>
+          <mat-hint i18n="@@espace.echanges.creneauSouhaiteHint">Je lui laisse mon créneau ci-dessus et je reprends celui-ci.</mat-hint>
+        </mat-form-field>
+      }
       <mat-form-field appearance="outline" class="espace-form-motif">
         <mat-label i18n="@@espace.echanges.motif">Motif</mat-label>
         <input matInput [ngModel]="motif()" (ngModelChange)="motif.set($event)"
@@ -58,6 +74,12 @@
               <mat-icon inline>swap_horiz</mat-icon>
               {{ brouillon.cibleNom }}
             </span>
+            @if (brouillon.creneauCibleLabel) {
+              <span class="espace-brouillon-contre">
+                <ng-container i18n="@@espace.echanges.contre">contre</ng-container>
+                {{ brouillon.creneauCibleLabel }}
+              </span>
+            }
             @if (brouillon.motif) {
               <span class="espace-brouillon-motif">{{ brouillon.motif }}</span>
             }
@@ -91,6 +113,12 @@
             <mat-icon inline>swap_horiz</mat-icon>
             {{ demande.cibleNom }}
           </span>
+          @if (demande.creneauCibleId) {
+            <span class="espace-brouillon-contre">
+              <ng-container i18n="@@espace.echanges.contre">contre</ng-container>
+              {{ demande.dateCible | date: 'EEE d MMM' }} {{ demande.heureDebutCible }}–{{ demande.heureFinCible }} · {{ demande.standCibleNom }}
+            </span>
+          }
         </div>
         @if (demande.motif) {
           <p class="espace-demande-motif">{{ demande.motif }}</p>

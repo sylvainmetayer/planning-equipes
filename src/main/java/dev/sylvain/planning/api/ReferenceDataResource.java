@@ -14,7 +14,10 @@ import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.scenario.ScenarioValidator;
+import dev.sylvain.planning.scenario.dto.EditionCibleDto;
 import dev.sylvain.planning.service.CompactageHoraires;
+import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.EditionService;
 import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.ReferenceDataService;
 import dev.sylvain.planning.service.ReferenceDataService.TypologieItem;
@@ -42,6 +45,12 @@ public class ReferenceDataResource {
 
     @Inject
     PlanningService planningService;
+
+    @Inject
+    EditionService editionService;
+
+    @Inject
+    EditionContext editionContext;
 
     @GET
     @Path("/stands")
@@ -301,23 +310,96 @@ public class ReferenceDataResource {
         return referenceDataService.compterImpactImport();
     }
 
+    /**
+     * What the confirmation dialog must say about WHERE a scenario import
+     * would write, before anything is imported: the {@code edition:} section
+     * of the file (or named scenario), resolved against the existing
+     * editions. {@code editionId} null = no section, the import would write
+     * to the caller's current edition.
+     */
+    public record CibleImportView(String editionId, String editionNomFichier, boolean existe,
+            String editionNomExistant) {
+    }
+
+    private CibleImportView versCibleView(Optional<EditionCibleDto> cible) {
+        if (cible.isEmpty()) {
+            return new CibleImportView(null, null, false, null);
+        }
+        EditionCibleDto dto = cible.get();
+        return editionService.listEditions().stream()
+                .filter(edition -> edition.getId().equals(dto.id().trim()))
+                .findFirst()
+                .map(edition -> new CibleImportView(edition.getId(), dto.nom(), true, edition.getNom()))
+                .orElseGet(() -> new CibleImportView(dto.id().trim(), dto.nom(), false, null));
+    }
+
+    @GET
+    @Path("/reference-data/cible-scenario")
+    public CibleImportView cibleScenario(@QueryParam("name") String name) {
+        return versCibleView(planningService.chargerEditionScenario(name));
+    }
+
+    @POST
+    @Path("/reference-data/cible-scenario-fichier")
+    @Consumes(MediaType.WILDCARD)
+    public Response cibleScenarioFichier(String yamlContent) {
+        try {
+            return Response.ok(versCibleView(planningService.chargerEditionTexteScenario(yamlContent))).build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ErreurValidation(e.getMessage()))
+                    .build();
+        }
+    }
+
     @POST
     @Path("/reference-data/import-scenario")
     @Consumes(MediaType.WILDCARD)
     public Response importScenario(@QueryParam("name") String name) {
-        planningService.chargerParametresLegauxScenario(name).ifPresent(referenceDataService::updateParametresLegaux);
-        planningService.chargerParametresDecoupageScenario(name)
-                .ifPresent(referenceDataService::updateParametresDecoupage);
-        planningService.chargerParametresSolveurScenario(name).ifPresent(referenceDataService::updateParametresSolveur);
-        PlanningFestival planning = planningService.construireExemple(name);
-        if (planningService.chargerDecoupageAutoScenario(name)) {
-            referenceDataService.appliquerDecoupageAutomatique(planning);
+        return importerDansCible(planningService.chargerEditionScenario(name), () -> {
+            planningService.chargerParametresLegauxScenario(name)
+                    .ifPresent(referenceDataService::updateParametresLegaux);
+            planningService.chargerParametresDecoupageScenario(name)
+                    .ifPresent(referenceDataService::updateParametresDecoupage);
+            planningService.chargerParametresSolveurScenario(name)
+                    .ifPresent(referenceDataService::updateParametresSolveur);
+            PlanningFestival planning = planningService.construireExemple(name);
+            if (planningService.chargerDecoupageAutoScenario(name)) {
+                referenceDataService.appliquerDecoupageAutomatique(planning);
+                appliquerTypologiesScenario(name);
+                return true;
+            }
+            referenceDataService.importFromPlanning(planning);
             appliquerTypologiesScenario(name);
-            return Response.ok(new ImportScenarioResult(true)).build();
+            return false;
+        });
+    }
+
+    /**
+     * Runs {@code importAction} against the edition the scenario's optional
+     * {@code edition:} section designates — created empty when missing, reused
+     * otherwise — or plainly against the caller's current edition when the
+     * file names none. The response always reports where the data landed (and
+     * whether the edition was just created), because the operator's browser
+     * may be sitting on a different edition than the one that was written:
+     * the UI shows that recap unconditionally.
+     */
+    private Response importerDansCible(Optional<EditionCibleDto> cibleDto,
+            java.util.concurrent.Callable<Boolean> importAction) {
+        try {
+            if (cibleDto.isEmpty()) {
+                return Response.ok(new ImportScenarioResult(importAction.call(), null, null, null)).build();
+            }
+            EditionService.CibleImport cible =
+                    editionService.resoudrePourImport(cibleDto.get().id(), cibleDto.get().nom());
+            boolean decoupageAuto = editionContext.executeDans(cible.edition().getId(), importAction);
+            return Response.ok(new ImportScenarioResult(decoupageAuto,
+                    cible.edition().getId(), cible.edition().getNom(), cible.creee())).build();
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalStateException("Import de scénario échoué", e);
         }
-        referenceDataService.importFromPlanning(planning);
-        appliquerTypologiesScenario(name);
-        return Response.noContent().build();
     }
 
     /**
@@ -348,17 +430,19 @@ public class ReferenceDataResource {
     public Response importScenarioFichier(String yamlContent) {
         try {
             PlanningService.ScenarioImporte importe = planningService.construireDepuisTexteScenario(yamlContent);
-            importe.parametresLegaux().ifPresent(referenceDataService::updateParametresLegaux);
-            importe.parametresDecoupage().ifPresent(referenceDataService::updateParametresDecoupage);
-            importe.parametresSolveur().ifPresent(referenceDataService::updateParametresSolveur);
-            if (importe.decoupageAuto()) {
-                referenceDataService.appliquerDecoupageAutomatique(importe.planning());
+            return importerDansCible(importe.edition(), () -> {
+                importe.parametresLegaux().ifPresent(referenceDataService::updateParametresLegaux);
+                importe.parametresDecoupage().ifPresent(referenceDataService::updateParametresDecoupage);
+                importe.parametresSolveur().ifPresent(referenceDataService::updateParametresSolveur);
+                if (importe.decoupageAuto()) {
+                    referenceDataService.appliquerDecoupageAutomatique(importe.planning());
+                    importe.typologies().forEach(referenceDataService::createTypologie);
+                    return true;
+                }
+                referenceDataService.importFromPlanning(importe.planning());
                 importe.typologies().forEach(referenceDataService::createTypologie);
-                return Response.ok(new ImportScenarioResult(true)).build();
-            }
-            referenceDataService.importFromPlanning(importe.planning());
-            importe.typologies().forEach(referenceDataService::createTypologie);
-            return Response.noContent().build();
+                return false;
+            });
         } catch (IllegalArgumentException e) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(new ErreurValidation(e.getMessage()))
@@ -372,7 +456,8 @@ public class ReferenceDataResource {
      * frontend can notify the operator that the imported amplitudes were
      * auto-sliced into the vacations the edition now holds.
      */
-    public record ImportScenarioResult(boolean decoupageAuto) {
+    public record ImportScenarioResult(boolean decoupageAuto, String editionId, String editionNom,
+            Boolean editionCreee) {
     }
 
     /**

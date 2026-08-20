@@ -54,8 +54,14 @@ public class DemandeEchangeService {
     @Inject
     MailService mailService;
 
-    /** One demande as typed in the espace animateur, before any validation. */
-    public record NouvelleDemande(Long creneauId, String standId, String cibleId, String motif) {
+    /**
+     * One demande as typed in the espace animateur, before any validation.
+     * {@code creneauCibleId}/{@code standCibleId} optional: set, they make the
+     * exchange DIRECTED — the demandeur names the colleague's seat they want
+     * in return ("I give you my Monday, I take your Tuesday").
+     */
+    public record NouvelleDemande(Long creneauId, String standId, String cibleId, String motif,
+            Long creneauCibleId, String standCibleId) {
     }
 
     /* ------------------------------ Animateur ------------------------------ */
@@ -99,10 +105,15 @@ public class DemandeEchangeService {
         if (nouvelle.cibleId().equals(demandeurId)) {
             throw new IllegalArgumentException("Impossible d'échanger un créneau avec soi-même");
         }
+        if (nouvelle.creneauCibleId() != null
+                && (nouvelle.standCibleId() == null || nouvelle.standCibleId().isBlank())) {
+            throw new IllegalArgumentException("Stand du créneau souhaité manquant sur une demande dirigée");
+        }
         // Throws on an unknown seat/cible — the UI only offers the animateur's
-        // own seats, so this only rejects stale or hand-crafted payloads.
-        EchangeSimulation simulation = planningService.simulerEchange(planning,
-                demandeurId, nouvelle.cibleId(), nouvelle.creneauId(), nouvelle.standId());
+        // own seats (and the colleague's real ones for a directed exchange),
+        // so this only rejects stale or hand-crafted payloads.
+        EchangeSimulation simulation = simuler(planning, demandeurId, nouvelle.cibleId(),
+                nouvelle.creneauId(), nouvelle.standId(), nouvelle.creneauCibleId(), nouvelle.standCibleId());
 
         DemandeEchange demande = new DemandeEchange();
         demande.setId(UUID.randomUUID().toString());
@@ -110,6 +121,8 @@ public class DemandeEchangeService {
         demande.setCibleId(nouvelle.cibleId());
         demande.setCreneauId(nouvelle.creneauId());
         demande.setStandId(nouvelle.standId());
+        demande.setCreneauCibleId(nouvelle.creneauCibleId());
+        demande.setStandCibleId(nouvelle.creneauCibleId() == null ? null : nouvelle.standCibleId());
         demande.setMotif(nouvelle.motif());
         demande.setStatut(StatutDemandeEchange.PROPOSEE);
         demande.setPrevalidationOk(!simulation.casseContrainteDure());
@@ -200,8 +213,19 @@ public class DemandeEchangeService {
     public EchangeSimulation impact(String demandeId) {
         DemandeEchange demande = demandeRequise(demandeId);
         PlanningFestival planning = persistenceService.loadPersistedPlanning();
-        return planningService.simulerEchange(planning,
-                demande.getDemandeurId(), demande.getCibleId(), demande.getCreneauId(), demande.getStandId());
+        return simuler(planning, demande.getDemandeurId(), demande.getCibleId(),
+                demande.getCreneauId(), demande.getStandId(),
+                demande.getCreneauCibleId(), demande.getStandCibleId());
+    }
+
+    /** Dispatches to the plain or the directed simulation, depending on the demande's shape. */
+    private EchangeSimulation simuler(PlanningFestival planning, String demandeurId, String cibleId,
+            Long creneauId, String standId, Long creneauCibleId, String standCibleId) {
+        if (creneauCibleId == null) {
+            return planningService.simulerEchange(planning, demandeurId, cibleId, creneauId, standId);
+        }
+        return planningService.simulerEchangeDirige(planning, demandeurId, cibleId,
+                creneauId, standId, creneauCibleId, standCibleId);
     }
 
     /**
@@ -216,10 +240,17 @@ public class DemandeEchangeService {
         DemandeEchange demande = demandeRequise(demandeId);
         exigerEnAttente(demande);
         PlanningFestival planning = persistenceService.loadPersistedPlanning();
-        EchangeSimulation simulation = planningService.simulerEchange(planning,
-                demande.getDemandeurId(), demande.getCibleId(), demande.getCreneauId(), demande.getStandId());
-        persistenceService.appliquerEchange(demande.getCreneauId(), demande.getStandId(),
-                demande.getDemandeurId(), demande.getCibleId(), simulation.standCibleId());
+        EchangeSimulation simulation = simuler(planning, demande.getDemandeurId(), demande.getCibleId(),
+                demande.getCreneauId(), demande.getStandId(),
+                demande.getCreneauCibleId(), demande.getStandCibleId());
+        if (demande.getCreneauCibleId() != null) {
+            persistenceService.appliquerEchangeDirige(demande.getCreneauId(), demande.getStandId(),
+                    demande.getDemandeurId(), demande.getCibleId(),
+                    demande.getCreneauCibleId(), demande.getStandCibleId());
+        } else {
+            persistenceService.appliquerEchange(demande.getCreneauId(), demande.getStandId(),
+                    demande.getDemandeurId(), demande.getCibleId(), simulation.standCibleId());
+        }
         poserVerrouillages(demande);
         marquerDecision(demande, StatutDemandeEchange.ACCEPTEE, commentaire);
         notifierDemandeur(demande);
@@ -247,10 +278,21 @@ public class DemandeEchangeService {
      * there after the swap is frozen, the rest of their planning stays free.
      */
     private void poserVerrouillages(DemandeEchange demande) {
-        for (String animateurId : List.of(demande.getDemandeurId(), demande.getCibleId())) {
+        // Directed exchange: each animateur is pinned on the créneau they now
+        // hold a seat on (the cible took the demandeur's créneau and vice
+        // versa). Plain exchange: both end up on the demandeur's créneau.
+        boolean dirige = demande.getCreneauCibleId() != null;
+        record Verrou(String animateurId, Long creneauId) {
+        }
+        List<Verrou> verrous = dirige
+                ? List.of(new Verrou(demande.getCibleId(), demande.getCreneauId()),
+                        new Verrou(demande.getDemandeurId(), demande.getCreneauCibleId()))
+                : List.of(new Verrou(demande.getDemandeurId(), demande.getCreneauId()),
+                        new Verrou(demande.getCibleId(), demande.getCreneauId()));
+        for (Verrou verrou : verrous) {
             VerrouillagePlanning verrouillage = new VerrouillagePlanning(null, TypeVerrouillage.ANIMATEUR_CRENEAU);
-            verrouillage.setAnimateurId(animateurId);
-            verrouillage.setCreneauId(demande.getCreneauId());
+            verrouillage.setAnimateurId(verrou.animateurId());
+            verrouillage.setCreneauId(verrou.creneauId());
             verrouillage.setRaison("Échange validé (demande " + demande.getId() + ")");
             referenceDataService.createVerrouillage(verrouillage);
         }
@@ -308,27 +350,30 @@ public class DemandeEchangeService {
     /* --------------------------------- SQL --------------------------------- */
 
     private static final String COLONNES = "id, demandeur_id, cible_id, creneau_id, stand_id, "
+            + "creneau_cible_id, stand_cible_id, "
             + "motif, statut, prevalidation_ok, contraintes_violees, commentaire_admin, cree_le, decide_le";
 
     private void inserer(DemandeEchange demande) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = prepareScoped(connection,
                         "INSERT INTO demande_echange (edition_id, " + COLONNES + ") "
-                                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             ps.setString(2, demande.getId());
             ps.setString(3, demande.getDemandeurId());
             ps.setString(4, demande.getCibleId());
             ps.setLong(5, demande.getCreneauId());
             ps.setString(6, demande.getStandId());
-            ps.setString(7, demande.getMotif());
-            ps.setString(8, demande.getStatut().name());
-            ps.setObject(9, demande.getPrevalidationOk());
-            ps.setString(10, demande.getContraintesViolees().isEmpty()
+            ps.setObject(7, demande.getCreneauCibleId());
+            ps.setString(8, demande.getStandCibleId());
+            ps.setString(9, demande.getMotif());
+            ps.setString(10, demande.getStatut().name());
+            ps.setObject(11, demande.getPrevalidationOk());
+            ps.setString(12, demande.getContraintesViolees().isEmpty()
                     ? null
                     : String.join("\n", demande.getContraintesViolees()));
-            ps.setString(11, demande.getCommentaireAdmin());
-            ps.setTimestamp(12, Timestamp.from(demande.getCreeLe()));
-            ps.setTimestamp(13, demande.getDecideLe() == null ? null : Timestamp.from(demande.getDecideLe()));
+            ps.setString(13, demande.getCommentaireAdmin());
+            ps.setTimestamp(14, Timestamp.from(demande.getCreeLe()));
+            ps.setTimestamp(15, demande.getDecideLe() == null ? null : Timestamp.from(demande.getDecideLe()));
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to store demande " + demande.getId(), e);
@@ -370,6 +415,8 @@ public class DemandeEchangeService {
         demande.setCibleId(rs.getString("cible_id"));
         demande.setCreneauId(rs.getLong("creneau_id"));
         demande.setStandId(rs.getString("stand_id"));
+        demande.setCreneauCibleId(rs.getObject("creneau_cible_id", Long.class));
+        demande.setStandCibleId(rs.getString("stand_cible_id"));
         demande.setMotif(rs.getString("motif"));
         demande.setStatut(StatutDemandeEchange.valueOf(rs.getString("statut")));
         demande.setPrevalidationOk(rs.getObject("prevalidation_ok", Boolean.class));

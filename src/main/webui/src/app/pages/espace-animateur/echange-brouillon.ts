@@ -11,6 +11,8 @@ export interface BrouillonDemande extends NouvelleDemandeEchange {
   creneauLabel: string;
   standNom: string;
   cibleNom: string;
+  /** Directed exchange only: label of the colleague's seat wanted in return. */
+  creneauCibleLabel?: string | null;
 }
 
 /** True when the form holds everything a demande needs (the motif stays optional). */
@@ -49,10 +51,12 @@ export function retirerBrouillon(
 export function versNouvellesDemandes(
   brouillons: readonly BrouillonDemande[]
 ): NouvelleDemandeEchange[] {
-  return brouillons.map(({ creneauId, standId, cibleId, motif }) => ({
+  return brouillons.map(({ creneauId, standId, cibleId, motif, creneauCibleId, standCibleId }) => ({
     creneauId,
     standId,
     cibleId,
-    motif: motif && motif.trim() ? motif.trim() : null
+    motif: motif && motif.trim() ? motif.trim() : null,
+    creneauCibleId: creneauCibleId ?? null,
+    standCibleId: creneauCibleId != null ? (standCibleId ?? null) : null
   }));
 }

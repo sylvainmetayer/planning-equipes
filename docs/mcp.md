@@ -52,6 +52,13 @@ tout chemin quelle que soit l'extension qui l'a monté.
 
 ## Derrière un proxy d'accès (Pangolin, en-têtes personnalisés)
 
+La page **MCP** de l'interface (menu Outils) reprend ces instructions pour
+l'opérateur : elle affiche la configuration client prête à copier pour
+l'instance en cours, et détecte le proxy via l'en-tête de réponse
+`X-Pangolin: true` que le déploiement ajoute aux réponses de l'application —
+quand il est présent, la page rappelle qu'il faut créer un jeton d'accès et
+le présenter dans `P-Access-Token-Id`/`P-Access-Token`.
+
 Quand l'application est déployée derrière un proxy d'accès type
 [Pangolin](https://docs.pangolin.net/manage/access-control/links#use-the-access-token),
 le proxy s'intercale avant le serveur MCP et exige son propre jeton. Le trajet

@@ -100,6 +100,6 @@ class OuvertureStandsResourceTest {
         given()
                 .when().post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
-                .statusCode(204);
+                .statusCode(200);
     }
 }

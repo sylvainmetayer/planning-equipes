@@ -1,21 +1,63 @@
 package dev.sylvain.planning.api;
 
+import dev.sylvain.planning.service.MailService;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.core.Response;
 
 /**
- * Deliberately broken endpoint, wired to the "Exception back" button on the
- * Débogage tab: throwing here exercises {@code GlobalExceptionMapper}'s
- * report-to-Sentry/Bugsink path end-to-end, the same way the "Exception
- * front" button exercises the frontend's {@code ErrorHandler}. Not a
- * meaningful business operation, only a way to verify error tracking is
- * actually wired up in a given environment.
+ * Endpoints backing the Débogage tab's plumbing checks — none of them is a
+ * business operation.
+ *
+ * <ul>
+ * <li>{@code POST /debug/test-exception} throws on purpose: it exercises
+ * {@code GlobalExceptionMapper}'s report-to-Sentry/Bugsink path end-to-end,
+ * the same way the "Exception front" button exercises the frontend's
+ * {@code ErrorHandler}.</li>
+ * <li>{@code GET /debug/mail-config} says whether an admin address is
+ * configured, so the tab can warn when mail-dependent features are off.</li>
+ * <li>{@code POST /debug/test-mail} really sends a mail to that address and
+ * FAILS loudly when SMTP is broken — unlike the business sends, which are
+ * best-effort by design.</li>
+ * </ul>
  */
-@Path("/debug/test-exception")
+@Path("/debug")
 public class DebugResource {
 
+    @Inject
+    MailService mailService;
+
     @POST
+    @Path("/test-exception")
     public void throwTestException() {
         throw new IllegalStateException("Test exception (bouton Débogage / Exception back)");
+    }
+
+    /** {@code adminEmail} is {@code null} when MAIL_ADMIN is not set: mail notifications are disabled. */
+    public record MailConfigView(String adminEmail) {
+    }
+
+    /** Mirror of the other resources' error body: {@code {"message": "…"}}. */
+    public record ErreurValidation(String message) {
+    }
+
+    @GET
+    @Path("/mail-config")
+    public MailConfigView mailConfig() {
+        return new MailConfigView(mailService.adminEmailConfigure().orElse(null));
+    }
+
+    @POST
+    @Path("/test-mail")
+    public Response envoyerMailTest() {
+        try {
+            return Response.ok(new MailConfigView(mailService.envoyerMailTest())).build();
+        } catch (IllegalStateException e) {
+            return Response.status(Response.Status.CONFLICT)
+                    .entity(new ErreurValidation(e.getMessage()))
+                    .build();
+        }
     }
 }

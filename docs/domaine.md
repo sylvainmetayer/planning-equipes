@@ -408,11 +408,18 @@ Trois briques l'entourent :
   `simulerSwap` au cas à deux places — échange croisé si la cible tient aussi
   un poste sur le créneau, reprise simple sinon — et juge la faisabilité sur
   le **score dur global** (un échange peut casser une contrainte sur un poste
-  qu'il ne touche pas : heures hebdomadaires, repos…) ;
+  qu'il ne touche pas : heures hebdomadaires, repos…). L'**échange dirigé**
+  (`simulerEchangeDirige`) troque deux créneaux distincts : le demandeur
+  désigne, en plus de son propre créneau, le créneau du collègue qu'il veut
+  récupérer (« je te laisse mon lundi, je prends ton mardi ») — champs
+  `creneauCibleId`/`standCibleId` de la demande, NULL = sémantique
+  historique ;
 - **l'application** : accepter met à jour chirurgicalement les places
   concernées de `poste_affectation` (jamais de re-résolution implicite), puis
-  pose deux verrous `ANIMATEUR_CRENEAU` — la régénération suivante ne défera
-  pas l'échange, sans geler le reste du planning des deux animateurs.
+  pose deux verrous `ANIMATEUR_CRENEAU` — sur le créneau échangé pour un
+  échange simple, sur le créneau que chacun **reçoit** pour un échange
+  dirigé — la régénération suivante ne défera pas l'échange, sans geler le
+  reste du planning des deux animateurs.
 
 La foire s'**ouvre et se ferme** par édition (table `parametres_echange`, une
 ligne par édition, absente = ouverte) : fermée, soumissions et annulations

@@ -162,7 +162,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   #165) render outside it — no admin navigation, no polling.
 - **One route = one page = one block.** Admin routes (children of the shell):
   `/` (default, the solver page),
-  `/debug`, `/notifications`, `/parametres`, `/stands`, `/emplacements`,
+  `/debug`, `/mcp-client`, `/notifications`, `/parametres`, `/stands`, `/emplacements`,
   `/animateurs`, `/creneaux`, `/typologies`,
   `/ad-hoc-constraints`, `/calendar`, `/day-calendar`, `/constraints`,
   `/problemes`, `/echanges`, `/hours`, `/staffing`, `/aide` (`/solver`,

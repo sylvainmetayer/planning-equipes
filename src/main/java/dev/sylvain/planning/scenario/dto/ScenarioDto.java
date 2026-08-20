@@ -12,6 +12,7 @@ import java.util.List;
  * file validates cleanly — but are not given extra meaning.
  */
 public record ScenarioDto(
+        @Valid EditionCibleDto edition,
         @NotNull @Valid FestivalDto festival,
         @NotNull List<@Valid CreneauDto> creneaux,
         List<@Valid EmplacementDto> emplacements,

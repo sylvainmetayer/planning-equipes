@@ -10,7 +10,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { EditionStore } from '../../core/edition.store';
-import { ImpactImport, ImportSummary, ImportScenarioResult, ParametresDecoupage } from '../../core/models';
+import { CibleImport, Edition, ImpactImport, ImportSummary, ImportScenarioResult, ParametresDecoupage } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { PlanningStateService } from '../../core/planning-state.service';
@@ -143,18 +143,40 @@ export class ParametresPage {
    * an automatic snapshot of the resolved plan (when there is one) so the
    * operation stays reversible on the planning side. `false` aborts.
    */
-  private async confirmerImportScenario(intitule: string): Promise<boolean> {
-    let impact: ImpactImport | null = null;
-    try {
-      impact = await this.api.get<ImpactImport>('/api/reference-data/impact-import');
-    } catch {
-      // Counting is comfort, not safety: without it the dialog still warns.
+  private async confirmerImportScenario(intitule: string, cible: CibleImport): Promise<boolean> {
+    const courante = this.editions.courant()?.nom ?? '';
+    const lignes: string[] = [];
+    // Which edition the impact must be counted on, and whether the automatic
+    // snapshot makes sense (it protects the CURRENT edition's plan only).
+    let editionImpact: string | null = null;
+    let importDansEditionCourante = true;
+    let compterImpact = true;
+    if (!cible.editionId) {
+      lignes.push($localize`:@@parametres.impact.edition:L'import écrit dans l'édition « ${courante}:edition: », et elle seule.`);
+    } else if (!cible.existe) {
+      const nom = cible.editionNomFichier ?? cible.editionId;
+      lignes.push($localize`:@@parametres.cible.creation:Ce fichier désigne l'édition « ${nom}:cible: » : elle sera CRÉÉE et recevra l'import — votre édition actuelle « ${courante}:courante: » ne sera pas modifiée.`);
+      importDansEditionCourante = false;
+      compterImpact = false;
+    } else if (cible.editionId === this.editions.courant()?.id) {
+      lignes.push($localize`:@@parametres.cible.courante:Ce fichier désigne l'édition « ${courante}:edition: » — votre édition actuelle : l'import y écrit, et dans elle seule.`);
+    } else {
+      const nom = cible.editionNomExistant ?? cible.editionId;
+      lignes.push($localize`:@@parametres.cible.existante:Ce fichier désigne l'édition existante « ${nom}:cible: » : l'import remplacera SES données — votre édition actuelle « ${courante}:courante: » ne sera pas modifiée.`);
+      editionImpact = cible.editionId;
+      importDansEditionCourante = false;
     }
-    const edition = this.editions.courant()?.nom ?? '';
-    const lignes = [
-      $localize`:@@parametres.impact.edition:L'import écrit dans l'édition « ${edition}:edition: », et elle seule.`,
-      messageImpactImport(impact, intitule)
-    ];
+    let impact: ImpactImport | null = null;
+    if (compterImpact) {
+      try {
+        impact = editionImpact
+          ? await this.api.getDansEdition<ImpactImport>('/api/reference-data/impact-import', editionImpact)
+          : await this.api.get<ImpactImport>('/api/reference-data/impact-import');
+      } catch {
+        // Counting is comfort, not safety: without it the dialog still warns.
+      }
+    }
+    lignes.push(messageImpactImport(impact, intitule, importDansEditionCourante));
     const confirme = await this.confirm.ask({
       title: $localize`:@@dataSetup.impact.titre:Importer et remplacer les données ?`,
       message: lignes.join(' '),
@@ -164,7 +186,7 @@ export class ParametresPage {
     if (!confirme) {
       return false;
     }
-    if (impact?.planningResolu) {
+    if (impact?.planningResolu && importDansEditionCourante) {
       try {
         await this.snapshots.capturer(
           $localize`:@@dataSetup.snapshotBefore.libelle:Avant ${intitule}:action:`
@@ -184,13 +206,47 @@ export class ParametresPage {
     return true;
   }
 
+  /**
+   * After an import routed by the file's `edition:` section into ANOTHER
+   * edition than the one this browser shows: an unmissable dialog says what
+   * happened and offers to switch right away — a passing notification proved
+   * too easy to miss, leaving the operator staring at an unchanged screen.
+   */
+  private async proposerBascule(result: ImportScenarioResult | null): Promise<void> {
+    if (!result?.editionId || result.editionId === this.editions.courant()?.id) {
+      return;
+    }
+    const nom = result.editionNom ?? result.editionId;
+    const courante = this.editions.courant()?.nom ?? '';
+    const destination = result.editionCreee
+      ? $localize`:@@parametres.recap.editionCreee:Édition « ${nom}:edition: » créée : les données du scénario y ont été importées.`
+      : $localize`:@@parametres.recap.editionExistante:Données du scénario importées dans l'édition existante « ${nom}:edition: ».`;
+    const basculer = await this.confirm.ask({
+      title: $localize`:@@parametres.recap.titre:Import dans une édition désignée par le fichier`,
+      message: destination + ' ' + $localize`:@@parametres.recap.question:Voulez-vous basculer dessus maintenant ? (La page se recharge.)`,
+      confirmLabel: $localize`:@@parametres.recap.oui:Basculer sur « ${nom}:edition: »`,
+      cancelLabel: $localize`:@@parametres.recap.non:Rester sur « ${courante}:courante: »`
+    });
+    if (basculer) {
+      this.editions.basculer({ id: result.editionId } as Edition);
+    }
+  }
+
   protected async onLoadSample(): Promise<void> {
     if (this.solverActionBlocked()) {
       return;
     }
     const name = this.selectedScenario();
+    let cible: CibleImport;
+    try {
+      cible = await this.api.get<CibleImport>(
+        `/api/reference-data/cible-scenario?name=${encodeURIComponent(name ?? '')}`);
+    } catch (error) {
+      this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
+      return;
+    }
     if (!(await this.confirmerImportScenario(
-      $localize`:@@dataSetup.action.importScenario:charger un scénario`))) {
+      $localize`:@@dataSetup.action.importScenario:charger un scénario`, cible))) {
       return;
     }
     this.sampleLoading.set(true);
@@ -207,9 +263,10 @@ export class ParametresPage {
         : '/api/reference-data/import-scenario';
       const result = await this.api.post<ImportScenarioResult | null>(url, {});
       await this.refreshAfterImport();
-      this.output.set(
+      await this.proposerBascule(result);
+      this.output.set(this.recapImport(result,
         $localize`:@@dataSetup.sampleLoaded:Planning d'exemple chargé. Les données de référence sont peuplées et modifiables depuis les pages de référence.`
-      );
+      ));
       this.notifyDecoupageAuto(result);
     } catch (error) {
       this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
@@ -242,8 +299,23 @@ export class ParametresPage {
     if (!file) {
       return;
     }
+    const contenu = await file.text();
+    let cible: CibleImport;
+    try {
+      cible = await this.api.postRaw<CibleImport>(
+        '/api/reference-data/cible-scenario-fichier', contenu, 'application/x-yaml');
+    } catch (error) {
+      const errorMessage = message(error);
+      this.output.set($localize`:@@common.errorPrefix:Erreur : ${errorMessage}:message:`);
+      this.notifications.notify({
+        title: $localize`:@@dataSetup.importScenarioFileInvalid:Fichier scénario invalide`,
+        message: errorMessage,
+        variant: 'error'
+      });
+      return;
+    }
     if (!(await this.confirmerImportScenario(
-      $localize`:@@dataSetup.action.importScenarioFichier:importer un fichier scénario`))) {
+      $localize`:@@dataSetup.action.importScenarioFichier:importer un fichier scénario`, cible))) {
       return;
     }
     this.scenarioFileImporting.set(true);
@@ -251,13 +323,14 @@ export class ParametresPage {
     try {
       const result = await this.api.postRaw<ImportScenarioResult | null>(
         '/api/reference-data/import-scenario-fichier',
-        await file.text(),
+        contenu,
         'application/x-yaml'
       );
       await this.refreshAfterImport();
-      this.output.set(
+      await this.proposerBascule(result);
+      this.output.set(this.recapImport(result,
         $localize`:@@dataSetup.scenarioFileImported:Scénario ${file.name}:fileName: importé. Les données de référence sont peuplées et modifiables depuis les pages de référence.`
-      );
+      ));
       this.notifyDecoupageAuto(result);
     } catch (error) {
       const errorMessage = message(error);
@@ -270,6 +343,22 @@ export class ParametresPage {
     } finally {
       this.scenarioFileImporting.set(false);
     }
+  }
+
+  /** Output-panel recap; the cross-edition case additionally raises the {@link proposerBascule} dialog. */
+  private recapImport(result: ImportScenarioResult | null, fallback: string): string {
+    if (!result?.editionId) {
+      return fallback;
+    }
+    const nom = result.editionNom ?? result.editionId;
+    const destination = result.editionCreee
+      ? $localize`:@@parametres.recap.editionCreee:Édition « ${nom}:edition: » créée : les données du scénario y ont été importées.`
+      : $localize`:@@parametres.recap.editionExistante:Données du scénario importées dans l'édition existante « ${nom}:edition: ».`;
+    const courante = this.editions.courant();
+    const ailleurs = courante && courante.id !== result.editionId
+      ? ' ' + $localize`:@@parametres.recap.basculer:Vous consultez actuellement « ${courante.nom}:courante: » : basculez d'édition (bandeau en haut de l'écran) pour voir les données importées.`
+      : '';
+    return destination + ailleurs;
   }
 
   // Surfaces the scenario's decoupageAuto section, when present: the import
@@ -474,7 +563,10 @@ export class ParametresPage {
       this.resolution.reload(),
       this.solverSettings.refresh(),
       this.problemes.reloadFeasibility(),
-      this.chargerParametresDecoupage()
+      this.chargerParametresDecoupage(),
+      // An `edition:` scenario section may just have created an edition: the
+      // switcher in the shell must list it right away.
+      this.editions.reload()
     ]);
   }
 }
@@ -485,7 +577,7 @@ export class ParametresPage {
  * With `impact` null (the counting call failed), a generic warning remains —
  * counting is comfort, never the safety net itself.
  */
-export function messageImpactImport(impact: ImpactImport | null, intitule: string): string {
+export function messageImpactImport(impact: ImpactImport | null, intitule: string, avecInstantane = true): string {
   const lignes: string[] = [
     $localize`:@@dataSetup.impact.base:Cette action va ${intitule}:action: : les stands et animateurs sont remplacés par ceux du fichier, et ceux qui n'y figurent pas sont supprimés — avec leurs demandes d'échange, sessions et codes d'accès. Les animateurs conservés gardent leur lien d'espace et leur e-mail.`
   ];
@@ -495,7 +587,9 @@ export function messageImpactImport(impact: ImpactImport | null, intitule: strin
     );
     if (impact.planningResolu) {
       lignes.push(
-        $localize`:@@dataSetup.impact.planning:Le planning résolu (${impact.postes}:postes: affectation(s)) sera effacé, ainsi que ${impact.verrous}:verrous: verrouillage(s) ; un instantané sera enregistré automatiquement avant l'import.`
+        avecInstantane
+          ? $localize`:@@dataSetup.impact.planning:Le planning résolu (${impact.postes}:postes: affectation(s)) sera effacé, ainsi que ${impact.verrous}:verrous: verrouillage(s) ; un instantané sera enregistré automatiquement avant l'import.`
+          : $localize`:@@dataSetup.impact.planningSansInstantane:Le planning résolu de cette édition (${impact.postes}:postes: affectation(s)) sera effacé, ainsi que ${impact.verrous}:verrous: verrouillage(s).`
       );
     }
     if (impact.demandesEchange > 0) {

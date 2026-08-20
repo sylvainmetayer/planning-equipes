@@ -41,7 +41,7 @@ class DatabaseResourceTest {
         given()
                 .when().post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
-                .statusCode(204);
+                .statusCode(200);
 
         int animateurs = given()
                 .when().get("/api/animateurs")
@@ -82,7 +82,7 @@ class DatabaseResourceTest {
         given()
                 .when().post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
-                .statusCode(204);
+                .statusCode(200);
 
         String dump = given()
                 .when().get("/api/database/export")
@@ -108,7 +108,7 @@ class DatabaseResourceTest {
         given()
                 .when().post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
-                .statusCode(204);
+                .statusCode(200);
 
         given()
                 .contentType(ContentType.JSON)
@@ -172,7 +172,7 @@ class DatabaseResourceTest {
         given()
                 .when().post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
-                .statusCode(204);
+                .statusCode(200);
 
         String dump = given()
                 .when().get("/api/database/export")

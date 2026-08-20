@@ -78,8 +78,12 @@
       @if (section.links.length > 0) {
         <div class="aide-links">
           <span class="aide-links-label" i18n="@@aide.links.label">Écrans concernés :</span>
-          @for (link of section.links; track link.route) {
-            <a matButton [routerLink]="link.route">{{ link.label }}</a>
+          @for (link of section.links; track link.label) {
+            @if (link.route) {
+              <a matButton [routerLink]="link.route">{{ link.label }}</a>
+            } @else {
+              <a matButton [href]="link.href" target="_blank" rel="noopener">{{ link.label }}</a>
+            }
           }
         </div>
       }

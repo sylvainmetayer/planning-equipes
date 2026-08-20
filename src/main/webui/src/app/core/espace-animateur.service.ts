@@ -5,7 +5,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { ApiService, toError } from './api.service';
-import { DemandeEchangeView, EspaceAnimateurView, NouvelleDemandeEchange } from './models';
+import { DemandeEchangeView, EspaceAnimateurView, NouvelleDemandeEchange, PosteAnimateurView } from './models';
 
 @Injectable({ providedIn: 'root' })
 export class EspaceAnimateurService {
@@ -71,6 +71,12 @@ export class EspaceAnimateurService {
    * Submits a batch of demandes and returns them as stored — including the
    * hard-constraint prevalidation verdicts the animateur must be shown.
    */
+  /** A colleague's seats, for the « créneau souhaité en échange » picker of a directed exchange. */
+  async postesCollegue(collegueId: string): Promise<PosteAnimateurView[]> {
+    return this.api.get<PosteAnimateurView[]>(
+      `/api/espace-animateur/${this.jeton()}/collegues/${encodeURIComponent(collegueId)}/postes`);
+  }
+
   async soumettre(nouvelles: NouvelleDemandeEchange[]): Promise<DemandeEchangeView[]> {
     const jeton = this.jetonRequis();
     const soumises = await this.api.post<DemandeEchangeView[]>(

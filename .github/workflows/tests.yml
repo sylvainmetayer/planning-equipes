@@ -68,7 +68,10 @@ jobs:
           retention-days: 7
 
   frontend:
-    runs-on: ubuntu-latest
+    # Self-hosted like every other job: GitHub-hosted minutes are a metered
+    # budget, and a runner choice cannot be made dynamic on remaining credits
+    # (the job picking the runner would itself need one — see docs/developpement.md).
+    runs-on: self-hosted
 
     defaults:
       run:
