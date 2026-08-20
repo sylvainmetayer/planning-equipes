@@ -3,9 +3,10 @@
 // decision, and the outcome back on the animateur's side.
 
 import { APIRequestContext, expect, test } from '@playwright/test';
-import { SEED, contexteAdmin, dernierCodeMailpit, jetonDe, ouvrirSessionEspace, pageAdmin, seedPlanning } from './support';
+import { SEED, contexteAdmin, dernierCodeMailpit, jetonDe, ouvrirSessionEspace, pageAdmin, seedPlanning, ouvrirSelect } from './support';
 
 const EMAIL_ALICE = `${SEED.demandeur}@example.org`;
+const EMAIL_BRUNO = `${SEED.cible}@example.org`;
 
 let admin: APIRequestContext;
 let jeton: string;
@@ -60,20 +61,42 @@ test.describe('espace animateur', () => {
     await expect(page.getByRole('navigation', { name: 'Navigation principale' })).toHaveCount(0);
   });
 
+  /**
+   * The targeted colleague must agree before the admin sees the demande: this
+   * opens Bruno's espace (he gets an e-mail address here only — the shared
+   * seed deliberately leaves him without one) and clicks his agreement.
+   */
+  async function accordDeBruno(browser: import('@playwright/test').Browser): Promise<void> {
+    const animateurs = (await (await admin.get('/api/animateurs')).json()) as { id: string }[];
+    const bruno = animateurs.find((animateur) => animateur.id === SEED.cible);
+    await admin.put(`/api/animateurs/${SEED.cible}`, { data: { ...bruno, email: EMAIL_BRUNO } });
+    const jetonBruno = await jetonDe(admin, SEED.cible);
+    const contexteBruno = await browser.newContext();
+    const pageBruno = await contexteBruno.newPage();
+    await ouvrirSessionEspace(pageBruno.request, jetonBruno, EMAIL_BRUNO);
+    await pageBruno.goto(`/animateur/${jetonBruno}/echanges`);
+    await pageBruno.getByRole('button', { name: "Je suis d'accord" }).first().click();
+    await expect(pageBruno.getByText('Votre accord est transmis', { exact: false })).toBeVisible();
+    await contexteBruno.close();
+  }
+
   test("soumettre un échange, le voir accepté par l'admin, retrouver le résultat", async ({ page, browser }) => {
     // Two browser contexts and a decision round trip: triple the budget.
     test.slow();
     // --- Animateur side: build then submit one demande. ---
     await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
     await page.goto(`/animateur/${jeton}/echanges`);
-    await page.getByLabel('Créneau concerné').click();
+    await ouvrirSelect(page, 'Créneau concerné');
     await page.getByRole('option').first().click();
-    await page.getByLabel('Échanger avec').click();
+    await ouvrirSelect(page, 'Échanger avec');
     await page.getByRole('option', { name: 'Bruno E2E' }).click();
     await page.getByLabel('Motif').fill('rendez-vous médical');
     await page.getByRole('button', { name: 'Ajouter à la liste' }).click();
     await page.getByRole('button', { name: 'Soumettre mes demandes' }).click();
-    await expect(page.getByText('En attente').first()).toBeVisible();
+    await expect(page.getByText('En attente du collègue').first()).toBeVisible();
+
+    // --- Colleague side: Bruno agrees, the demande enters the admin queue. ---
+    await accordDeBruno(browser);
 
     // --- Admin side: the demande shows up and gets accepted. ---
     const contexteAdminNavigateur = await browser.newContext({
@@ -107,15 +130,16 @@ test.describe('espace animateur', () => {
     // After the accepted swap, Alice proposes another one from her new seat.
     await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
     await page.goto(`/animateur/${jeton}/echanges`);
-    await page.getByLabel('Créneau concerné').click();
+    await ouvrirSelect(page, 'Créneau concerné');
     await page.getByRole('option').first().click();
-    await page.getByLabel('Échanger avec').click();
+    await ouvrirSelect(page, 'Échanger avec');
     await page.getByRole('option', { name: 'Bruno E2E' }).click();
     await page.getByRole('button', { name: 'Ajouter à la liste' }).click();
     await page.getByRole('button', { name: 'Soumettre mes demandes' }).click();
-    await expect(page.getByText('En attente').first()).toBeVisible();
+    await expect(page.getByText('En attente du collègue').first()).toBeVisible();
 
-    // The admin refuses, with a reason.
+    // Bruno agrees, then the admin refuses, with a reason.
+    await accordDeBruno(browser);
     const pageAdminEchanges = await pageAdmin(browser, admin);
     await pageAdminEchanges.goto('/echanges');
     await pageAdminEchanges.getByRole('button', { name: 'Refuser' }).first().click();
@@ -136,9 +160,9 @@ test.describe('espace animateur', () => {
   test("annuler une demande en attente depuis l'espace", async ({ page }) => {
     await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
     await page.goto(`/animateur/${jeton}/echanges`);
-    await page.getByLabel('Créneau concerné').click();
+    await ouvrirSelect(page, 'Créneau concerné');
     await page.getByRole('option').first().click();
-    await page.getByLabel('Échanger avec').click();
+    await ouvrirSelect(page, 'Échanger avec');
     await page.getByRole('option', { name: 'Bruno E2E' }).click();
     await page.getByRole('button', { name: 'Ajouter à la liste' }).click();
     await page.getByRole('button', { name: 'Soumettre mes demandes' }).click();

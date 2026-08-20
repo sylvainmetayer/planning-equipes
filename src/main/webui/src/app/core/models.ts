@@ -794,7 +794,13 @@ export interface EspaceAnimateurView {
   collegues: CollegueView[];
 }
 
-export type StatutDemandeEchange = 'PROPOSEE' | 'ACCEPTEE' | 'REFUSEE' | 'ANNULEE';
+export type StatutDemandeEchange =
+  | 'EN_ATTENTE_CIBLE'
+  | 'PROPOSEE'
+  | 'ACCEPTEE'
+  | 'REFUSEE'
+  | 'REFUSEE_CIBLE'
+  | 'ANNULEE';
 
 /** One demande d'échange with every label resolved, shared by the espace and the admin screen. */
 export interface DemandeEchangeView {
@@ -824,6 +830,8 @@ export interface DemandeEchangeView {
   contraintesViolees: string[];
   commentaireAdmin: string | null;
   creeLe: string;
+  /** When the targeted colleague agreed or declined; null while they have not answered. */
+  cibleDecideLe: string | null;
   decideLe: string | null;
 }
 

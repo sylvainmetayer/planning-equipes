@@ -195,9 +195,9 @@ On distingue quatre familles de tests :
   redirection `/login`, connexion/déconnexion), frontière de l'espace
   animateur (jeton inconnu, absence de chrome admin, pas de session offerte
   par le jeton) ;
-- **foire au planning de bout en bout** : soumission → acceptation admin →
-  échange appliqué côté animateur, refus avec motif transmis, annulation
-  depuis l'espace ;
+- **foire au planning de bout en bout** : soumission → accord du collègue
+  ciblé (depuis son propre espace) → acceptation admin → échange appliqué
+  côté animateur, refus avec motif transmis, annulation depuis l'espace ;
 - **balayage de l'admin** : chaque route du menu se charge et affiche son
   contenu, bascule de langue FR/EN, catalogue des contraintes ;
 - **CRUD référentiels** via l'interface (animateur avec e-mail et lien

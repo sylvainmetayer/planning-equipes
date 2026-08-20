@@ -394,3 +394,25 @@
   font-style: italic;
   color: var(--mat-sys-on-surface-variant);
 }
+
+/* Received demandes: the agreement card stands out slightly, actions inline. */
+.espace-demande-recue {
+  border-color: var(--mat-sys-primary);
+}
+
+.espace-recue-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.espace-demande-explication {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.9rem;
+}
+
+.echanges-section-hint {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.9rem;
+  margin: -0.25rem 0 0.75rem;
+}

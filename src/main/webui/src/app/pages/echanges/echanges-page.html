@@ -1,9 +1,11 @@
 <div class="page-header">
   <h1 i18n="@@echanges.titre">Échanges de créneaux</h1>
   <p i18n="@@echanges.intro">
-    Les demandes d'échange soumises par les animateurs depuis leur espace. Accepter applique
-    l'échange immédiatement au planning enregistré et le verrouille sur son créneau ; refuser ne
-    modifie rien. La régénération du planning reste une action à part, depuis la page Solveur.
+    Les demandes d'échange soumises par les animateurs depuis leur espace. Une demande n'arrive
+    dans la file qu'une fois acceptée par le collègue concerné : vous n'avez pas à demander à
+    chacun s'il est d'accord. Accepter applique l'échange immédiatement au planning enregistré et
+    le verrouille sur son créneau ; refuser ne modifie rien. La régénération du planning reste une
+    action à part, depuis la page Solveur.
   </p>
   <button matButton (click)="reload()" [disabled]="chargement()">
     <mat-icon>refresh</mat-icon>
@@ -34,7 +36,11 @@
   <mat-progress-bar mode="indeterminate" />
 }
 
-<h2 i18n="@@echanges.enAttenteTitre">En attente</h2>
+<h2 i18n="@@echanges.enAttenteTitre">En attente de votre décision</h2>
+<p class="echanges-section-hint" i18n="@@echanges.enAttenteHint">
+  Le collègue concerné a déjà donné son accord : les deux animateurs sont d'accord, il ne manque
+  que le vôtre.
+</p>
 @if (enAttente().length === 0) {
   <p class="espace-vide" i18n="@@echanges.aucuneEnAttente">Aucune demande en attente.</p>
 }
@@ -109,6 +115,49 @@
       </div>
     </mat-card-content>
   </mat-card>
+}
+
+@if (enAttenteCible().length > 0) {
+  <h2 i18n="@@echanges.attenteCibleTitre">En attente de l'accord du collègue</h2>
+  <p class="echanges-section-hint" i18n="@@echanges.attenteCibleHint">
+    Soumises mais pas encore acceptées par le collègue concerné : rien à faire pour le moment —
+    vous pouvez toutefois refuser une demande pour la clore sans attendre.
+  </p>
+  @for (demande of enAttenteCible(); track demande.id) {
+    <mat-card class="echanges-demande echanges-demande-decidee" appearance="outlined">
+      <mat-card-content>
+        <div class="echanges-demande-entete">
+          <span class="espace-statut espace-statut-{{ demande.statutClasse }}">{{ demande.statutLabel }}</span>
+          <strong>{{ demande.demandeurNom }}</strong>
+          <mat-icon inline>swap_horiz</mat-icon>
+          <strong>{{ demande.cibleNom }}</strong>
+          <span>{{ demande.date | date: 'EEE d MMM' }} {{ demande.heureDebut }}–{{ demande.heureFin }} · {{ demande.standNom }}</span>
+          @if (demande.creneauCibleId) {
+            <span class="espace-brouillon-contre">
+              <ng-container i18n="@@echanges.contre">contre son créneau</ng-container>
+              {{ demande.dateCible | date: 'EEE d MMM' }} {{ demande.heureDebutCible }}–{{ demande.heureFinCible }} · {{ demande.standCibleNom }}
+            </span>
+          }
+          <span class="echanges-demande-date" i18n="@@echanges.soumiseLe">soumise le {{ demande.creeLe | date: 'short' }}</span>
+        </div>
+        @if (demande.motif) {
+          <p class="espace-demande-motif">{{ demande.motif }}</p>
+        }
+        @if (demande.prevalidationOk === false) {
+          <p class="espace-demande-alerte">
+            <mat-icon inline>warning</mat-icon>
+            <ng-container i18n="@@echanges.signaleInfaisable">Signalée infaisable à la soumission.</ng-container>
+          </p>
+        }
+        <div class="echanges-actions">
+          <button matButton (click)="refuser(demande)" [disabled]="decisionEnCours() === demande.id">
+            <mat-icon>close</mat-icon>
+            <span i18n="@@echanges.refuser">Refuser</span>
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  }
 }
 
 <h2 i18n="@@echanges.decideesTitre">Décidées</h2>

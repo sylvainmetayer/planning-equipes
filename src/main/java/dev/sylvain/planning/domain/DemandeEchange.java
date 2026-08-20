@@ -29,7 +29,9 @@ public class DemandeEchange {
     private Long creneauCibleId;
     private String standCibleId;
     private String motif;
-    private StatutDemandeEchange statut = StatutDemandeEchange.PROPOSEE;
+    private StatutDemandeEchange statut = StatutDemandeEchange.EN_ATTENTE_CIBLE;
+    /** When the targeted colleague agreed or declined; null while they have not answered. */
+    private Instant cibleDecideLe;
     /** Hard-constraint prevalidation verdict at submission; null while not evaluated. */
     private Boolean prevalidationOk;
     /** Business descriptions of the hard constraints the échange would break, one per entry. */
@@ -135,6 +137,14 @@ public class DemandeEchange {
 
     public void setCommentaireAdmin(String commentaireAdmin) {
         this.commentaireAdmin = commentaireAdmin;
+    }
+
+    public Instant getCibleDecideLe() {
+        return cibleDecideLe;
+    }
+
+    public void setCibleDecideLe(Instant cibleDecideLe) {
+        this.cibleDecideLe = cibleDecideLe;
     }
 
     public Instant getCreeLe() {

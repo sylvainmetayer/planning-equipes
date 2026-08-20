@@ -90,7 +90,10 @@ public class DemandeEchangeService {
         for (DemandeEchange demande : demandes) {
             inserer(demande);
         }
-        mailService.notifierNouvellesDemandes(nomComplet(demandeurId), demandes);
+        // The colleague agrees first (see accepterParCible); the admin is only
+        // notified once that agreement lands — never having to ask both sides.
+        String emailCible = emailDe(nouvelles.get(0).cibleId());
+        mailService.notifierCibleNouvellesDemandes(emailCible, nomComplet(demandeurId), demandes.size());
         return demandes;
     }
 
@@ -124,7 +127,7 @@ public class DemandeEchangeService {
         demande.setCreneauCibleId(nouvelle.creneauCibleId());
         demande.setStandCibleId(nouvelle.creneauCibleId() == null ? null : nouvelle.standCibleId());
         demande.setMotif(nouvelle.motif());
-        demande.setStatut(StatutDemandeEchange.PROPOSEE);
+        demande.setStatut(StatutDemandeEchange.EN_ATTENTE_CIBLE);
         demande.setPrevalidationOk(!simulation.casseContrainteDure());
         demande.setContraintesViolees(simulation.nouvellesViolationsDures().stream()
                 .map(ViolationDure::description)
@@ -141,7 +144,8 @@ public class DemandeEchangeService {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement(
                         "UPDATE demande_echange SET statut = 'ANNULEE', decide_le = ? "
-                                + "WHERE edition_id = ? AND id = ? AND demandeur_id = ? AND statut = 'PROPOSEE'")) {
+                                + "WHERE edition_id = ? AND id = ? AND demandeur_id = ? "
+                                + "AND statut IN ('PROPOSEE', 'EN_ATTENTE_CIBLE')")) {
             ps.setTimestamp(1, Timestamp.from(Instant.now()));
             ps.setString(2, editionContext.editionIdCourant());
             ps.setString(3, demandeId);
@@ -156,6 +160,65 @@ public class DemandeEchangeService {
 
     public List<DemandeEchange> listerPourDemandeur(String demandeurId) {
         return lister(" AND demandeur_id = ?", demandeurId);
+    }
+
+    /** Demandes targeting {@code cibleId} — the "reçues" tab of their espace, every statut for context. */
+    public List<DemandeEchange> listerPourCible(String cibleId) {
+        return lister(" AND cible_id = ?", cibleId);
+    }
+
+    /**
+     * The targeted colleague agrees: the demande enters the admin queue
+     * (PROPOSEE) and the admin is notified — with the guarantee that both
+     * sides are already OK with the swap.
+     */
+    public DemandeEchange accepterParCible(String cibleId, String demandeId) {
+        verifierFoireOuverte();
+        DemandeEchange demande = decideeParCible(cibleId, demandeId, StatutDemandeEchange.PROPOSEE);
+        mailService.notifierNouvellesDemandes(nomComplet(demande.getDemandeurId()), List.of(demande));
+        return demande;
+    }
+
+    /** The targeted colleague declines: terminal, the admin never has to arbitrate; the demandeur is told. */
+    public DemandeEchange declinerParCible(String cibleId, String demandeId) {
+        verifierFoireOuverte();
+        DemandeEchange demande = decideeParCible(cibleId, demandeId, StatutDemandeEchange.REFUSEE_CIBLE);
+        mailService.notifierDeclinParCible(emailDe(demande.getDemandeurId()),
+                nomComplet(cibleId), libelleCreneau(demande));
+        return demande;
+    }
+
+    private DemandeEchange decideeParCible(String cibleId, String demandeId, StatutDemandeEchange statut) {
+        Instant maintenant = Instant.now();
+        // Not prepareScoped: the SET clause claims placeholder 1, so the
+        // edition_id predicate is bound explicitly. The cible_id predicate is
+        // the authorisation: nobody answers a demande that does not target them.
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = connection.prepareStatement(
+                        "UPDATE demande_echange SET statut = ?, cible_decide_le = ? "
+                                + "WHERE edition_id = ? AND id = ? AND cible_id = ? AND statut = 'EN_ATTENTE_CIBLE'")) {
+            ps.setString(1, statut.name());
+            ps.setTimestamp(2, Timestamp.from(maintenant));
+            ps.setString(3, editionContext.editionIdCourant());
+            ps.setString(4, demandeId);
+            ps.setString(5, cibleId);
+            if (ps.executeUpdate() == 0) {
+                throw new IllegalArgumentException(
+                        "Demande introuvable, déjà traitée, ou ne vous concernant pas");
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to answer demande " + demandeId, e);
+        }
+        DemandeEchange demande = demandeRequise(demandeId);
+        return demande;
+    }
+
+    private String emailDe(String animateurId) {
+        return referenceDataService.listAnimateurs().stream()
+                .filter(animateur -> animateur.getId().equals(animateurId))
+                .findFirst()
+                .map(Animateur::getEmail)
+                .orElse(null);
     }
 
     /* --------------------------- Foire open/close --------------------------- */
@@ -260,14 +323,27 @@ public class DemandeEchangeService {
     /** Refuses a pending demande: the planning is untouched, the demandeur is told why. */
     public DemandeEchange refuser(String demandeId, String commentaire) {
         DemandeEchange demande = demandeRequise(demandeId);
-        exigerEnAttente(demande);
+        exigerRefusable(demande);
         marquerDecision(demande, StatutDemandeEchange.REFUSEE, commentaire);
         notifierDemandeur(demande);
         return demande;
     }
 
     private static void exigerEnAttente(DemandeEchange demande) {
+        if (demande.getStatut() == StatutDemandeEchange.EN_ATTENTE_CIBLE) {
+            throw new IllegalArgumentException(
+                    "Le collègue concerné n'a pas encore donné son accord — l'acceptation attend le sien");
+        }
         if (demande.getStatut() != StatutDemandeEchange.PROPOSEE) {
+            throw new IllegalArgumentException("La demande n'est plus en attente (statut "
+                    + demande.getStatut() + ")");
+        }
+    }
+
+    /** A refusal may also kill a demande still waiting for the colleague — the admin always has the last word. */
+    private static void exigerRefusable(DemandeEchange demande) {
+        if (demande.getStatut() != StatutDemandeEchange.PROPOSEE
+                && demande.getStatut() != StatutDemandeEchange.EN_ATTENTE_CIBLE) {
             throw new IllegalArgumentException("La demande n'est plus en attente (statut "
                     + demande.getStatut() + ")");
         }
@@ -304,7 +380,7 @@ public class DemandeEchangeService {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement(
                         "UPDATE demande_echange SET statut = ?, commentaire_admin = ?, decide_le = ? "
-                                + "WHERE edition_id = ? AND id = ? AND statut = 'PROPOSEE'")) {
+                                + "WHERE edition_id = ? AND id = ? AND statut IN ('PROPOSEE', 'EN_ATTENTE_CIBLE')")) {
             ps.setString(1, statut.name());
             ps.setString(2, commentaire == null || commentaire.isBlank() ? null : commentaire);
             ps.setTimestamp(3, Timestamp.from(decideLe));
@@ -351,13 +427,14 @@ public class DemandeEchangeService {
 
     private static final String COLONNES = "id, demandeur_id, cible_id, creneau_id, stand_id, "
             + "creneau_cible_id, stand_cible_id, "
-            + "motif, statut, prevalidation_ok, contraintes_violees, commentaire_admin, cree_le, decide_le";
+            + "motif, statut, prevalidation_ok, contraintes_violees, commentaire_admin, cree_le, "
+            + "cible_decide_le, decide_le";
 
     private void inserer(DemandeEchange demande) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = prepareScoped(connection,
                         "INSERT INTO demande_echange (edition_id, " + COLONNES + ") "
-                                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             ps.setString(2, demande.getId());
             ps.setString(3, demande.getDemandeurId());
             ps.setString(4, demande.getCibleId());
@@ -373,7 +450,8 @@ public class DemandeEchangeService {
                     : String.join("\n", demande.getContraintesViolees()));
             ps.setString(13, demande.getCommentaireAdmin());
             ps.setTimestamp(14, Timestamp.from(demande.getCreeLe()));
-            ps.setTimestamp(15, demande.getDecideLe() == null ? null : Timestamp.from(demande.getDecideLe()));
+            ps.setTimestamp(15, demande.getCibleDecideLe() == null ? null : Timestamp.from(demande.getCibleDecideLe()));
+            ps.setTimestamp(16, demande.getDecideLe() == null ? null : Timestamp.from(demande.getDecideLe()));
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to store demande " + demande.getId(), e);
@@ -427,6 +505,8 @@ public class DemandeEchangeService {
         demande.setCommentaireAdmin(rs.getString("commentaire_admin"));
         Timestamp creeLe = rs.getTimestamp("cree_le");
         demande.setCreeLe(creeLe == null ? null : creeLe.toInstant());
+        Timestamp cibleDecideLe = rs.getTimestamp("cible_decide_le");
+        demande.setCibleDecideLe(cibleDecideLe == null ? null : cibleDecideLe.toInstant());
         Timestamp decideLe = rs.getTimestamp("decide_le");
         demande.setDecideLe(decideLe == null ? null : decideLe.toInstant());
         return demande;

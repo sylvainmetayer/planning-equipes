@@ -3,7 +3,7 @@
 // both sides, and admin deep links without a session.
 
 import { APIRequestContext, expect, test } from '@playwright/test';
-import { SEED, contexteAdmin, jetonDe, ouvrirSessionEspace, pageAdmin, seedPlanning } from './support';
+import { SEED, contexteAdmin, jetonDe, ouvrirSessionEspace, pageAdmin, seedPlanning, ouvrirSelect } from './support';
 
 const EMAIL_ALICE = `${SEED.demandeur}@example.org`;
 
@@ -58,9 +58,9 @@ test.describe('cas limites', () => {
 
     // Alice asks to swap with Chloé, who declared the day off.
     await page.goto(`/animateur/${jeton}/echanges`);
-    await page.getByLabel('Créneau concerné').click();
+    await ouvrirSelect(page, 'Créneau concerné');
     await page.getByRole('option').first().click();
-    await page.getByLabel('Échanger avec').click();
+    await ouvrirSelect(page, 'Échanger avec');
     await page.getByRole('option', { name: 'Chloé E2E' }).click();
     await page.getByRole('button', { name: 'Ajouter à la liste' }).click();
     await page.getByRole('button', { name: 'Soumettre mes demandes' }).click();

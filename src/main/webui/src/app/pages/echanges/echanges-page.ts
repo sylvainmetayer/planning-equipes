@@ -58,8 +58,13 @@ export class EchangesPage {
     }))
   );
 
+  /** Actionable queue: the colleague already agreed, only the admin's word is missing. */
   protected readonly enAttente = computed(() => this.rows().filter((row) => row.statut === 'PROPOSEE'));
-  protected readonly decidees = computed(() => this.rows().filter((row) => row.statut !== 'PROPOSEE'));
+  /** Still waiting for the targeted colleague: informative — refusable, but not acceptable yet. */
+  protected readonly enAttenteCible = computed(() =>
+    this.rows().filter((row) => row.statut === 'EN_ATTENTE_CIBLE'));
+  protected readonly decidees = computed(() =>
+    this.rows().filter((row) => row.statut !== 'PROPOSEE' && row.statut !== 'EN_ATTENTE_CIBLE'));
 
   constructor() {
     void this.reload();

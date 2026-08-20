@@ -39,6 +39,41 @@ public class MailService {
     @ConfigProperty(name = "planning.public-url")
     Optional<String> publicUrl;
 
+    /**
+     * Tells the targeted colleague that demandes await THEIR agreement — the
+     * step that spares the admin from asking both sides. No-op without an
+     * email address on the colleague's fiche (they still see the demandes in
+     * their espace).
+     */
+    public void notifierCibleNouvellesDemandes(String emailCible, String demandeurNomComplet, int nombre) {
+        if (emailCible == null || emailCible.isBlank()) {
+            return;
+        }
+        String sujet = "Planning Équipes — " + demandeurNomComplet
+                + (nombre == 1 ? " vous propose un échange de créneau" : " vous propose des échanges de créneaux");
+        StringBuilder corps = new StringBuilder()
+                .append(demandeurNomComplet).append(" vous propose ")
+                .append(nombre == 1 ? "un échange de créneau" : nombre + " échanges de créneaux")
+                .append(".\n\nAcceptez ou déclinez depuis votre espace personnel (lien imprimé sur votre ")
+                .append("planning PDF), onglet Échanges : votre accord est nécessaire avant que ")
+                .append("l'organisation ne tranche.\n");
+        envoyer(emailCible, sujet, corps.toString());
+    }
+
+    /** Tells the demandeur their colleague declined; the admin never had to arbitrate. */
+    public void notifierDeclinParCible(String emailDemandeur, String cibleNomComplet, String libelleCreneau) {
+        if (emailDemandeur == null || emailDemandeur.isBlank()) {
+            return;
+        }
+        StringBuilder corps = new StringBuilder()
+                .append(cibleNomComplet).append(" a décliné votre demande d'échange");
+        if (libelleCreneau != null) {
+            corps.append(" (créneau ").append(libelleCreneau).append(")");
+        }
+        corps.append(".\nVous pouvez proposer l'échange à quelqu'un d'autre depuis votre espace.\n");
+        envoyer(emailDemandeur, "Planning Équipes — votre demande d'échange a été déclinée", corps.toString());
+    }
+
     /** One mail to the admin per submission batch, not one per demande. */
     public void notifierNouvellesDemandes(String demandeurNomComplet, List<DemandeEchange> demandes) {
         if (adminEmail.isEmpty() || adminEmail.get().isBlank() || demandes.isEmpty()) {
@@ -51,7 +86,9 @@ public class MailService {
                 .append(demandeurNomComplet)
                 .append(" a soumis ")
                 .append(demandes.size() == 1 ? "une demande d'échange de créneau" : demandes.size() + " demandes d'échange de créneaux")
-                .append(".\n\n");
+                .append(", déjà acceptée")
+                .append(demandes.size() == 1 ? "" : "s")
+                .append(" par le collègue concerné.\n\n");
         long infaisables = demandes.stream()
                 .filter(demande -> Boolean.FALSE.equals(demande.getPrevalidationOk()))
                 .count();

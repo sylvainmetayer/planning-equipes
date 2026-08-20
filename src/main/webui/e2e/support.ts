@@ -251,6 +251,16 @@ export function postesDe(planning: PlanningPersiste, animateurId: string): strin
  * A browser page carrying the admin session of {@code admin} (its cookies are
  * copied into a fresh context). The caller closes the page's context.
  */
+/**
+ * Opens a mat-select by clicking its whole form field: aiming at the select
+ * itself trips Playwright's actionability check — the floating `mat-label`
+ * sits at the aim point and "intercepts pointer events" — while a click
+ * anywhere on the field opens the panel for real users and tests alike.
+ */
+export async function ouvrirSelect(page: Page, label: string): Promise<void> {
+  await page.locator('mat-form-field').filter({ hasText: label }).first().click();
+}
+
 export async function pageAdmin(browser: Browser, admin: APIRequestContext): Promise<Page> {
   const contexte = await browser.newContext({ storageState: await admin.storageState() });
   // Same edition pinning as contexteAdmin, browser-side: the SPA reads its

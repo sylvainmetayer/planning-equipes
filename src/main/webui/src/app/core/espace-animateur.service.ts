@@ -15,6 +15,8 @@ export class EspaceAnimateurService {
   readonly jeton = signal<string | null>(null);
   readonly vue = signal<EspaceAnimateurView | null>(null);
   readonly demandes = signal<DemandeEchangeView[]>([]);
+  /** Demandes targeting ME — awaiting my agreement before the admin sees them, plus history. */
+  readonly demandesRecues = signal<DemandeEchangeView[]>([]);
   readonly chargement = signal(false);
   /** Message of the load failure, `null` while everything is fine. */
   readonly erreur = signal<string | null>(null);
@@ -31,15 +33,18 @@ export class EspaceAnimateurService {
     this.erreur.set(null);
     this.authRequise.set(false);
     try {
-      const [vue, demandes] = await Promise.all([
+      const [vue, demandes, recues] = await Promise.all([
         this.api.getPreservingHttpError<EspaceAnimateurView>(`/api/espace-animateur/${jeton}`),
-        this.api.getPreservingHttpError<DemandeEchangeView[]>(`/api/espace-animateur/${jeton}/demandes`)
+        this.api.getPreservingHttpError<DemandeEchangeView[]>(`/api/espace-animateur/${jeton}/demandes`),
+        this.api.getPreservingHttpError<DemandeEchangeView[]>(`/api/espace-animateur/${jeton}/demandes-recues`)
       ]);
       this.vue.set(vue);
       this.demandes.set(demandes);
+      this.demandesRecues.set(recues);
     } catch (error) {
       this.vue.set(null);
       this.demandes.set([]);
+      this.demandesRecues.set([]);
       if (error instanceof HttpErrorResponse && error.status === 401) {
         this.authRequise.set(true);
       } else {
@@ -71,6 +76,22 @@ export class EspaceAnimateurService {
    * Submits a batch of demandes and returns them as stored — including the
    * hard-constraint prevalidation verdicts the animateur must be shown.
    */
+  /** Agrees with a demande targeting me: it enters the admin queue, both sides now OK. */
+  async accorderRecue(demandeId: string): Promise<void> {
+    const jeton = this.jetonRequis();
+    const demande = await this.api.post<DemandeEchangeView>(
+      `/api/espace-animateur/${jeton}/demandes-recues/${demandeId}/accord`, null);
+    this.demandesRecues.set(this.demandesRecues().map((d) => (d.id === demandeId ? demande : d)));
+  }
+
+  /** Declines a demande targeting me: terminal, the demandeur is told. */
+  async declinerRecue(demandeId: string): Promise<void> {
+    const jeton = this.jetonRequis();
+    const demande = await this.api.post<DemandeEchangeView>(
+      `/api/espace-animateur/${jeton}/demandes-recues/${demandeId}/refus`, null);
+    this.demandesRecues.set(this.demandesRecues().map((d) => (d.id === demandeId ? demande : d)));
+  }
+
   /** A colleague's seats, for the « créneau souhaité en échange » picker of a directed exchange. */
   async postesCollegue(collegueId: string): Promise<PosteAnimateurView[]> {
     return this.api.get<PosteAnimateurView[]>(

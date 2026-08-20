@@ -79,7 +79,8 @@ public class EspaceAnimateurService {
             Long creneauCibleId, LocalDate dateCible, LocalTime heureDebutCible, LocalTime heureFinCible,
             String standCibleId, String standCibleNom,
             String motif, String statut, Boolean prevalidationOk,
-            List<String> contraintesViolees, String commentaireAdmin, Instant creeLe, Instant decideLe) {
+            List<String> contraintesViolees, String commentaireAdmin, Instant creeLe,
+            Instant cibleDecideLe, Instant decideLe) {
     }
 
     public EspaceAnimateurView construireVue(String animateurId) {
@@ -184,6 +185,7 @@ public class EspaceAnimateurService {
                 demande.getContraintesViolees(),
                 demande.getCommentaireAdmin(),
                 demande.getCreeLe(),
+                demande.getCibleDecideLe(),
                 demande.getDecideLe());
     }
 

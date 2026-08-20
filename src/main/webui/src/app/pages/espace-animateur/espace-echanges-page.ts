@@ -79,6 +79,51 @@ export class EspaceEchangesPage {
     }))
   );
 
+  /** Demandes targeting me and still waiting for MY agreement — the actionable ones. */
+  protected readonly recuesEnAttente = computed<DemandeRow[]>(() =>
+    this.espace.demandesRecues()
+      .filter((demande) => demande.statut === 'EN_ATTENTE_CIBLE')
+      .map((demande) => ({
+        ...demande,
+        statutLabel: statutDemandeLabel(demande.statut),
+        statutClasse: statutDemandeClasse(demande.statut)
+      }))
+  );
+
+  protected async accorder(demande: DemandeRow): Promise<void> {
+    try {
+      await this.espace.accorderRecue(demande.id);
+      this.notifications.notify({
+        title: $localize`:@@espace.recues.accordee:Votre accord est transmis : l'organisation tranchera.`,
+        variant: 'success',
+        timeout: 5000
+      });
+    } catch (error) {
+      this.notifications.notify({
+        title: $localize`:@@crud.error:Erreur`,
+        message: error instanceof Error ? error.message : String(error),
+        variant: 'error'
+      });
+    }
+  }
+
+  protected async decliner(demande: DemandeRow): Promise<void> {
+    try {
+      await this.espace.declinerRecue(demande.id);
+      this.notifications.notify({
+        title: $localize`:@@espace.recues.declinee:Demande déclinée — votre collègue en est informé.`,
+        variant: 'success',
+        timeout: 5000
+      });
+    } catch (error) {
+      this.notifications.notify({
+        title: $localize`:@@crud.error:Erreur`,
+        message: error instanceof Error ? error.message : String(error),
+        variant: 'error'
+      });
+    }
+  }
+
   /** Colleague picked: load their seats so the optional "wanted in return" select has real options. */
   protected async choisirCible(cibleId: string): Promise<void> {
     this.cibleId.set(cibleId);

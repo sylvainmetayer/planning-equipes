@@ -99,6 +99,46 @@
 </mat-card>
 }
 
+@if (recuesEnAttente().length > 0) {
+  <h2 class="espace-section-titre" i18n="@@espace.recues.titre">Demandes reçues — votre accord est attendu</h2>
+  @for (demande of recuesEnAttente(); track demande.id) {
+    <mat-card class="espace-demande espace-demande-recue" appearance="outlined">
+      <mat-card-content>
+        <div class="espace-demande-entete">
+          <strong>{{ demande.demandeurNom }}</strong>
+          <span i18n="@@espace.recues.propose">vous propose de reprendre :</span>
+          <span>{{ demande.date | date: 'EEE d MMM' }} {{ demande.heureDebut }}–{{ demande.heureFin }} · {{ demande.standNom }}</span>
+          @if (demande.creneauCibleId) {
+            <span class="espace-brouillon-contre">
+              <ng-container i18n="@@espace.recues.contreVotre">contre votre créneau</ng-container>
+              {{ demande.dateCible | date: 'EEE d MMM' }} {{ demande.heureDebutCible }}–{{ demande.heureFinCible }} · {{ demande.standCibleNom }}
+            </span>
+          }
+        </div>
+        @if (demande.motif) {
+          <p class="espace-demande-motif">{{ demande.motif }}</p>
+        }
+        <p class="espace-demande-explication" i18n="@@espace.recues.explication">
+          Votre accord envoie la demande à l'organisation, qui tranche — rien n'est échangé sans sa
+          validation. Décliner clôt la demande.
+        </p>
+        @if (foireOuverte()) {
+          <div class="espace-recue-actions">
+            <button matButton="filled" (click)="accorder(demande)">
+              <mat-icon>thumb_up</mat-icon>
+              <span i18n="@@espace.recues.accepter">Je suis d'accord</span>
+            </button>
+            <button matButton (click)="decliner(demande)">
+              <mat-icon>thumb_down</mat-icon>
+              <span i18n="@@espace.recues.decliner">Décliner</span>
+            </button>
+          </div>
+        }
+      </mat-card-content>
+    </mat-card>
+  }
+}
+
 <h2 class="espace-section-titre" i18n="@@espace.echanges.listeTitre">Mes demandes</h2>
 @if (demandes().length === 0) {
   <p class="espace-vide" i18n="@@espace.echanges.aucune">Aucune demande pour le moment.</p>
@@ -123,7 +163,7 @@
         @if (demande.motif) {
           <p class="espace-demande-motif">{{ demande.motif }}</p>
         }
-        @if (demande.prevalidationOk === false && demande.statut === 'PROPOSEE') {
+        @if (demande.prevalidationOk === false && (demande.statut === 'PROPOSEE' || demande.statut === 'EN_ATTENTE_CIBLE')) {
           <div class="espace-demande-alerte">
             <mat-icon inline>warning</mat-icon>
             <div>
@@ -148,7 +188,7 @@
             {{ demande.commentaireAdmin }}
           </p>
         }
-        @if (demande.statut === 'PROPOSEE' && foireOuverte()) {
+        @if ((demande.statut === 'PROPOSEE' || demande.statut === 'EN_ATTENTE_CIBLE') && foireOuverte()) {
           <button matButton (click)="annuler(demande)">
             <mat-icon>undo</mat-icon>
             <span i18n="@@espace.echanges.annuler">Annuler cette demande</span>

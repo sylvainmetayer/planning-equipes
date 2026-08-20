@@ -404,6 +404,12 @@ Trois briques l'entourent :
   session de 30 jours portée par un cookie HttpOnly — pas de compte ni de mot
   de passe (issue #63 reste ouverte), la boîte mail est le second facteur, et
   un animateur sans adresse doit la faire ajouter par l'organisation ;
+- **l'accord du collègue** : une demande naît `EN_ATTENTE_CIBLE` ; le
+  collègue ciblé l'accepte (elle devient `PROPOSEE` et l'admin est notifié —
+  les deux animateurs sont alors d'accord, l'admin n'a plus à le leur
+  demander) ou la décline (`REFUSEE_CIBLE`, terminal, le demandeur est
+  prévenu). L'admin peut refuser une demande encore `EN_ATTENTE_CIBLE`, mais
+  ne peut l'accepter qu'après l'accord du collègue ;
 - **la simulation** : `PlanningService.simulerEchange` généralise
   `simulerSwap` au cas à deux places — échange croisé si la cible tient aussi
   un poste sur le créneau, reprise simple sinon — et juge la faisabilité sur

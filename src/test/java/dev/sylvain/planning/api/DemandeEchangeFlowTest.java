@@ -80,10 +80,18 @@ class DemandeEchangeFlowTest {
                 .when().post("/api/espace-animateur/" + jeton + "/demandes")
                 .then()
                 .statusCode(200)
-                .body("[0].statut", equalTo("PROPOSEE"))
+                .body("[0].statut", equalTo("EN_ATTENTE_CIBLE"))
                 .body("[0].prevalidationOk", notNullValue())
                 .body("[0].cibleNom", equalTo("Bruno Petit"))
                 .extract().path("[0].id");
+
+        // The admin cannot accept while the colleague has not agreed.
+        given().contentType(ContentType.JSON).body("{}")
+                .when().post("/api/echanges/" + demandeId + "/acceptation")
+                .then()
+                .statusCode(400);
+
+        accordDeBruno(demandeId);
 
         given().when().get("/api/echanges/" + demandeId + "/impact")
                 .then()
@@ -151,10 +159,12 @@ class DemandeEchangeFlowTest {
                 .when().post("/api/espace-animateur/" + jeton + "/demandes")
                 .then()
                 .statusCode(200)
-                .body("[0].statut", equalTo("PROPOSEE"))
+                .body("[0].statut", equalTo("EN_ATTENTE_CIBLE"))
                 .body("[0].creneauCibleId", equalTo((int) creneauCibleId))
                 .body("[0].standCibleNom", equalTo("Stand deux"))
                 .extract().path("[0].id");
+
+        accordDeBruno(demandeId);
 
         given().contentType(ContentType.JSON).body("{}")
                 .when().post("/api/echanges/" + demandeId + "/acceptation")
@@ -181,6 +191,64 @@ class DemandeEchangeFlowTest {
                 .then()
                 .statusCode(404)
                 .body("message", notNullValue());
+    }
+
+    @Test
+    void laCibleDeclineEtLAdminNArbitreJamais() {
+        persisterPlanningDeuxSieges();
+        String jeton = jetonDe("ECH-A");
+
+        String demandeId = given()
+                .contentType(ContentType.JSON)
+                .body("[{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"ECH-S1\",\"cibleId\":\"ECH-B\"}]")
+                .when().post("/api/espace-animateur/" + jeton + "/demandes")
+                .then()
+                .statusCode(200)
+                .extract().path("[0].id");
+
+        // Bruno sees it among his received demandes, and declines.
+        given().cookie("planning-espace", sessionBruno)
+                .when().get("/api/espace-animateur/" + jetonDe("ECH-B") + "/demandes-recues")
+                .then()
+                .statusCode(200)
+                .body("find { it.id == '" + demandeId + "' }.statut", equalTo("EN_ATTENTE_CIBLE"));
+        given().cookie("planning-espace", sessionBruno).contentType(ContentType.JSON)
+                .when().post("/api/espace-animateur/" + jetonDe("ECH-B") + "/demandes-recues/" + demandeId + "/refus")
+                .then()
+                .statusCode(200)
+                .body("statut", equalTo("REFUSEE_CIBLE"));
+
+        // Terminal: neither the admin nor a second answer can touch it.
+        given().contentType(ContentType.JSON).body("{}")
+                .when().post("/api/echanges/" + demandeId + "/acceptation")
+                .then()
+                .statusCode(400);
+        given().cookie("planning-espace", sessionBruno).contentType(ContentType.JSON)
+                .when().post("/api/espace-animateur/" + jetonDe("ECH-B") + "/demandes-recues/" + demandeId + "/accord")
+                .then()
+                .statusCode(400);
+
+        // And only the targeted colleague may answer: Alice cannot agree in
+        // Bruno's stead on a fresh demande.
+        String autreDemande = given()
+                .contentType(ContentType.JSON)
+                .body("[{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"ECH-S1\",\"cibleId\":\"ECH-B\"}]")
+                .when().post("/api/espace-animateur/" + jeton + "/demandes")
+                .then().statusCode(200)
+                .extract().path("[0].id");
+        given().contentType(ContentType.JSON)
+                .when().post("/api/espace-animateur/" + jeton + "/demandes-recues/" + autreDemande + "/accord")
+                .then()
+                .statusCode(400);
+    }
+
+    /** Bruno (the cible) agrees: the demande enters the admin queue. */
+    private void accordDeBruno(String demandeId) {
+        given().cookie("planning-espace", sessionBruno).contentType(ContentType.JSON)
+                .when().post("/api/espace-animateur/" + jetonDe("ECH-B") + "/demandes-recues/" + demandeId + "/accord")
+                .then()
+                .statusCode(200)
+                .body("statut", equalTo("PROPOSEE"));
     }
 
     @Test
@@ -361,7 +429,7 @@ class DemandeEchangeFlowTest {
         given().when().get("/api/espace-animateur/" + jetonAlice + "/demandes")
                 .then()
                 .statusCode(200)
-                .body("find { it.id == '" + demandeId + "' }.statut", equalTo("PROPOSEE"));
+                .body("find { it.id == '" + demandeId + "' }.statut", equalTo("EN_ATTENTE_CIBLE"));
     }
 
     /**

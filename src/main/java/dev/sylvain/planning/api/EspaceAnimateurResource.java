@@ -95,6 +95,43 @@ public class EspaceAnimateurResource {
     }
 
     /**
+     * Demandes targeting ME — the ones awaiting my agreement before the admin
+     * ever sees them, plus their history for context.
+     */
+    @GET
+    @Path("/{jeton}/demandes-recues")
+    @SessionEspaceRequise
+    public List<DemandeEchangeView> demandesRecues() {
+        return espaceAnimateurService.versVues(demandeEchangeService.listerPourCible(animateurCourant()));
+    }
+
+    /** I agree with a demande targeting me: it enters the admin queue, both sides now OK. */
+    @POST
+    @Path("/{jeton}/demandes-recues/{demandeId}/accord")
+    @SessionEspaceRequise
+    public Response accorderDemandeRecue(@PathParam("demandeId") String demandeId) {
+        try {
+            return Response.ok(espaceAnimateurService.versVues(
+                    List.of(demandeEchangeService.accepterParCible(animateurCourant(), demandeId))).get(0)).build();
+        } catch (IllegalArgumentException e) {
+            return badRequest(e);
+        }
+    }
+
+    /** I decline a demande targeting me: terminal, the demandeur is told, the admin never arbitrates. */
+    @POST
+    @Path("/{jeton}/demandes-recues/{demandeId}/refus")
+    @SessionEspaceRequise
+    public Response declinerDemandeRecue(@PathParam("demandeId") String demandeId) {
+        try {
+            return Response.ok(espaceAnimateurService.versVues(
+                    List.of(demandeEchangeService.declinerParCible(animateurCourant(), demandeId))).get(0)).build();
+        } catch (IllegalArgumentException e) {
+            return badRequest(e);
+        }
+    }
+
+    /**
      * Submits a batch of demandes. Each one is prevalidated against the hard
      * constraints; the batch is stored whatever the verdicts (the response
      * tells which ones are infeasible in the current planning), and the admin

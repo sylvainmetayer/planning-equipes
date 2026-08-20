@@ -152,6 +152,9 @@ ici). Un jeton inconnu répond `404 { "message": "…" }`, jamais `401`.
 | --- | --- | --- |
 | `GET` | `/api/espace-animateur/{jeton}` | Identité, planning personnel (postes + coéquipiers, lecture seule) et collègues avec qui échanger |
 | `GET` | `/api/espace-animateur/{jeton}/demandes` | Ses demandes d'échange, tous statuts, la plus récente d'abord |
+| `GET` | `/api/espace-animateur/{jeton}/demandes-recues` | Les demandes qui ME ciblent — celles qui attendent mon accord avant d'atteindre l'admin, plus leur historique |
+| `POST` | `/api/espace-animateur/{jeton}/demandes-recues/{id}/accord` | J'accepte une demande qui me cible : elle passe `EN_ATTENTE_CIBLE` → `PROPOSEE` (file admin) et l'admin est notifié |
+| `POST` | `/api/espace-animateur/{jeton}/demandes-recues/{id}/refus` | Je décline : terminal (`REFUSEE_CIBLE`), le demandeur est prévenu, l'admin n'arbitre jamais |
 | `GET` | `/api/espace-animateur/{jeton}/collegues/{collegueId}/postes` | Les postes d'un collègue (créneaux et stands, sans coéquipiers) — la source du sélecteur « son créneau que je veux en échange » d'un échange dirigé |
 | `POST` | `/api/espace-animateur/{jeton}/demandes` | Soumet une **liste** de demandes `[{ creneauId, standId, cibleId, motif?, creneauCibleId?, standCibleId? }]`. `creneauCibleId`/`standCibleId` renseignés = échange **dirigé** : le demandeur cède son créneau ET récupère le créneau désigné du collègue (« je te laisse mon lundi, je prends ton mardi »). Chacune est prévalidée contre les contraintes dures (`simulerEchange`/`simulerEchangeDirige`) mais enregistrée quel que soit le verdict ; la réponse porte `prevalidationOk` et `contraintesViolees` (descriptions métier du catalogue). Un mail est envoyé à l'admin (si `planning.mail.admin` est configurée) |
 | `POST` | `/api/espace-animateur/{jeton}/demandes/{id}/annulation` | Annule une de **ses** demandes encore en attente (`204` ; `400` si déjà décidée) |
@@ -173,7 +176,7 @@ vue (`foireOuverte`) ne sert qu'à l'afficher.
 
 | Méthode | Chemin | Description |
 | --- | --- | --- |
-| `GET` | `/api/echanges` | Toutes les demandes de l'édition courante, la plus récente d'abord |
+| `GET` | `/api/echanges` | Toutes les demandes de l'édition courante, la plus récente d'abord. Une demande naît `EN_ATTENTE_CIBLE` : elle n'entre dans la file décidable (`PROPOSEE`) qu'une fois acceptée par le collègue ciblé |
 | `GET` | `/api/echanges/{id}/impact` | Re-simule la demande contre le planning persisté **actuel** : delta de score, échange croisé ou reprise simple, contraintes dures nouvellement violées. |
 | `POST` | `/api/echanges/{id}/acceptation` | Applique l'échange exactement comme simulé (mise à jour chirurgicale de `poste_affectation`), pose deux verrous `ANIMATEUR_CRENEAU` — sur le créneau échangé pour un échange simple, sur le créneau que chacun REÇOIT pour un échange dirigé — et notifie le demandeur par mail. Corps optionnel `{ "commentaire": "…" }`. Le solveur n'est **pas** relancé. |
 | `POST` | `/api/echanges/{id}/refus` | Refuse sans rien modifier ; `{ "commentaire": "…" }` est transmis à l'animateur |

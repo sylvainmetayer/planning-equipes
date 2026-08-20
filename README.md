@@ -404,6 +404,10 @@ créneau du collègue qu'il veut récupérer** en échange du sien (« je te lai
 mon lundi et je prends ton mardi, je préfère être libre lundi ») — sans ce
 choix, l'échange se joue sur son seul créneau.
 
+Le **collègue ciblé donne d'abord son accord** depuis son propre espace :
+la demande n'atteint l'organisation qu'une fois les deux animateurs d'accord
+(décliner la clôt directement) — plus besoin de demander à chacun.
+
 Chaque demande est **prévalidée** contre les règles dures du planning : si
 l'échange poserait un problème (temps de travail dépassé, repos insuffisant…),
 l'animateur en est informé en langage métier — la demande part quand même,
