@@ -1,10 +1,18 @@
 # Tests de scénario grande échelle, lancés ponctuellement.
 #
+# Les tests `scenario-lent` résolvent de gros scénarios jusqu'à la faisabilité
+# et affirment un score dur nul. Trop lents pour le workflow Tests qui tourne
+# sur chaque push, ils sont exclus par défaut (voir `test.excludedGroups` dans
+# le pom).
+#
 # PlanningServiceScenarioCompletTest et PlanningServiceScenarioContinuTest
-# résolvent des scénarios de plusieurs milliers de postes jusqu'à la
-# faisabilité et affirment un score dur nul. Trop lents (~8 min) pour le
-# workflow Tests qui tourne sur chaque push, ils sont taggés `scenario-lent`
-# et exclus par défaut (voir `test.excludedGroups` dans le pom).
+# portent sur des scénarios construits à la main : réguliers, sans stand
+# premium, avec peu d'exceptions d'ouverture.
+# PlanningServiceScenarioFestivalRealisteTest porte sur les deux fixtures
+# anonymisées issues du réel — 45 stands premium, horaires récurrents avec
+# coupure méridienne, matrice de compétences irrégulière — et c'est là que la
+# convergence a historiquement cassé sans qu'aucun scénario fabriqué ne le
+# voie. Il pèse l'essentiel de la durée du job.
 #
 # Ils sont pourtant le seul filet contre une régression de convergence, et
 # rien ne les déclenchait : un réglage du solveur pouvait partir en production
@@ -52,6 +60,10 @@ concurrency:
 jobs:
   scenario:
     runs-on: self-hosted
+    # Le runner est auto-hébergé : un solve parti en boucle l'immobiliserait
+    # sans que la facturation ne le signale. Large par rapport à l'heure et
+    # quelques minutes attendues, assez serré pour libérer la machine.
+    timeout-minutes: 150
 
     steps:
       - name: Checkout repository
@@ -68,12 +80,18 @@ jobs:
       # base de données, donc rien à packager — et donc pas de Quinoa à
       # réveiller, contrairement au workflow Tests.
       # Le profil `scenario-tests` lève l'exclusion du tag ; `-Dtest` limite le
-      # run aux deux classes concernées, le reste de la suite étant déjà
+      # run aux trois classes concernées, le reste de la suite étant déjà
       # couvert par le workflow Tests.
+      #
+      # PlanningServiceScenarioFestivalRealisteTest pèse à lui seul l'essentiel
+      # de la durée (deux solves de 1800 s au pire). C'est assumé : c'est le
+      # seul des trois à porter sur des données réelles, et c'est exactement la
+      # raison d'être d'un workflow qui ne se déclenche que sur ce qui peut
+      # casser la convergence.
       - name: Run the large-scenario tests
         run: >-
           ./mvnw -B --no-transfer-progress test -Pscenario-tests
-          -Dtest='PlanningServiceScenarioCompletTest,PlanningServiceScenarioContinuTest'
+          -Dtest='PlanningServiceScenarioCompletTest,PlanningServiceScenarioContinuTest,PlanningServiceScenarioFestivalRealisteTest'
 
       - name: Upload test reports
         if: always()

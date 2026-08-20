@@ -195,6 +195,47 @@ eux-mêmes (`typologiesProposees`, `competences`, `souhaits`, et la section
 `typologies`) sont de simples chaînes, pas un enum : le référentiel
 `typologie` est CRUD-managé, pas figé dans le code.
 
+### Fixtures réalistes anonymisées
+
+Deux scénarios livrés ne sont pas écrits à la main : `festival-realiste.yaml`
+et `festival-realiste-canicule.yaml` sont **dérivés d'une édition réelle**
+(153 animateurs, 65 stands dont 45 premium, 23 emplacements, horaires
+récurrents avec coupure méridienne). Ils servent à deux choses — une démo
+grandeur nature depuis l'IHM, et la régression de convergence de
+`PlanningServiceScenarioFestivalRealisteTest`, qui les résout jusqu'à 0 hard.
+
+Ce qui a été réécrit : prénoms et noms des animateurs, ids et noms des
+emplacements et des stands, nom de l'édition. Ce qui ne l'a pas été : dates,
+heures, effectifs, compétences, horaires, typologies, paramètres — parce qu'une
+fixture qui ne converge pas comme sa source ne teste pas ce qu'elle prétend
+tester.
+
+Deux détails valent d'être connus avant de les régénérer :
+
+- **les coordonnées sont translatées en longitude, à latitude constante**, et
+  non supprimées. Une contrainte de qualité pénalise deux emplacements distants
+  de plus d'un seuil (`QualiteConstraints`, `Emplacement.distanceMetresVers`) :
+  les retirer changerait le score. À latitude et delta de longitude inchangés,
+  la haversine rend exactement les mêmes distances — vérifié au mètre près ;
+- **les ids anonymes sont numérotés dans l'ordre d'apparition** et l'ordre des
+  sections est préservé. Timefold épingle `randomSeed=0`, mais un tri ou un
+  hachage s'appuyant sur les ids ferait diverger la trajectoire de recherche ;
+  à cardinalité et ordre identiques, il n'y a rien à faire diverger.
+
+Régénération, après une évolution du scénario source :
+
+```bash
+python3 src/main/resources/anonymiser-scenario.py \
+  docs/reel-1708.yaml src/main/resources/scenarios/festival-realiste.yaml \
+  --edition-id festival-realiste --edition-nom "Festival réaliste"
+```
+
+Les sources restent hors dépôt (`docs/reel-*.yaml` et
+`src/main/resources/scenarios/reel-*.yaml` sont dans `.gitignore` : elles
+portent des données personnelles réelles). Le préfixe `reel-` est précisément
+ce qui les rend invisibles à git — d'où le nom `festival-realiste`, sans quoi
+la fixture ne serait pas versionnée et le test casserait en CI.
+
 Le schéma n'est pas écrit à la main : il est **généré** à partir des DTOs
 Jackson + Bean Validation de `dev.sylvain.planning.scenario.dto`
 (`ScenarioDto` et les classes qu'il référence), pour qu'il ne puisse pas

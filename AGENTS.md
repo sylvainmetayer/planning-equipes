@@ -48,9 +48,14 @@ Read before working on constraints or the domain model:
 
 ### Costly test jobs
 
-`PlanningServiceScenarioCompletTest` and `PlanningServiceScenarioContinuTest`
-solve a ~2000-poste scenario to hard-feasibility and take ~25s/~75s
-respectively — tagged `@Tag("scenario-lent")`, excluded from the default
+`PlanningServiceScenarioCompletTest`, `PlanningServiceScenarioContinuTest`
+and `PlanningServiceScenarioFestivalRealisteTest` solve large scenarios to
+hard-feasibility — the first two take ~25s/~75s on hand-built problems, the
+third runs the two **anonymised real-world fixtures**
+(`festival-realiste.yaml` and its `-canicule` variant: 153 animateurs, 65
+stands, 45 premium, per-stand recurring schedules) and is by far the slowest
+of the suite. They are tagged `@Tag("scenario-lent")`, excluded from the
+default
 `./mvnw test`/`./mvnw verify` run via the `test.excludedGroups` property in
 `pom.xml`, and not run by the main CI workflow (`.github/workflows/tests.yml`
 uses the default exclusion). Run them explicitly with
