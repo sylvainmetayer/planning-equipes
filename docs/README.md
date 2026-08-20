@@ -14,7 +14,7 @@ fonctionnalités métier) : **tout ajout de documentation technique se fait ici*
 | [`import-export.md`](import-export.md) | Formats d'import / export : dump SQL, PDF, ICS, schéma de validation des scénarios |
 | [`editions.md`](editions.md) | Cloisonnement de tout le référentiel et des résultats de solveur par édition (« Année 2025 » / « Année 2026 ») : modèle, en-tête `X-Edition-Id`, duplication d'édition, plan de migration |
 | [`developpement.md`](developpement.md) | Build, tests, CI, Podman, réglage du solveur, mises à jour Renovate |
-| [`observabilite.md`](observabilite.md) | Suivi d'erreurs (Bugsink) et analytics d'usage (PostHog) en production : choix, intégration, variables d'environnement |
+| [`observabilite.md`](observabilite.md) | Suivi d'erreurs (Bugsink) et analytics d'usage (Cloudflare Web Analytics) en production : choix, intégration, variables d'environnement |
 | [`audit-conformite-rh.md`](audit-conformite-rh.md) | Audit de conformité RH du référentiel de contraintes (Code du travail, CCN ÉCLAT) — constats, articles et suites données |
 | [`product_owner_report.md`](product_owner_report.md) | Rapport de toilettage du backlog GitHub Issues — issues fermées, priorisation, points d'attention |
 | [`optimisation-solveur.md`](optimisation-solveur.md) | Investigation du déficit de couverture sur un scénario dense : cause racine (pic de simultanéité fabriqué par le découpage), bornes de faisabilité calculables sans solveur, réglage retenu |

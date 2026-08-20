@@ -28,7 +28,6 @@
     "@angular/router": "^22.0.0",
     "@sentry/angular": "^10.69.0",
     "leaflet": "^1.9.4",
-    "posthog-js": "^1.413.3",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },

@@ -1,11 +1,9 @@
-// Error tracking (Sentry-protocol, typically a Bugsink instance) and product
-// analytics (PostHog + Cloudflare Web Analytics) for the frontend. All stay
-// off unless the server-side
-// env vars are set: see docs/observabilite.md.
+// Error tracking (Sentry-protocol, typically a Bugsink instance) and audience
+// analytics (Cloudflare Web Analytics) for the frontend. Both stay off unless
+// the server-side env vars are set: see docs/observabilite.md.
 
 import { ErrorHandler, Provider } from '@angular/core';
 import { createErrorHandler, init as initSentry } from '@sentry/angular';
-import posthog from 'posthog-js';
 
 import { APP_VERSION } from '../version';
 import { ObservabilityConfig } from './models';
@@ -13,8 +11,6 @@ import { ObservabilityConfig } from './models';
 const DISABLED_CONFIG: ObservabilityConfig = {
   sentryDsn: '',
   sentryEnvironment: 'local',
-  posthogApiKey: '',
-  posthogHost: '',
   cloudflareWebAnalyticsToken: ''
 };
 
@@ -36,22 +32,13 @@ export async function loadObservabilityConfig(): Promise<ObservabilityConfig> {
   }
 }
 
-/** No-ops on whichever half of `config` is blank (dsn / apiKey unset server-side). */
+/** No-ops on whichever half of `config` is blank (dsn / token unset server-side). */
 export function initObservability(config: ObservabilityConfig): void {
   if (config.sentryDsn) {
     initSentry({
       dsn: config.sentryDsn,
       environment: config.sentryEnvironment,
       release: APP_VERSION
-    });
-  }
-  if (config.posthogApiKey) {
-    posthog.init(config.posthogApiKey, {
-      api_host: config.posthogHost,
-      person_profiles: 'identified_only',
-      // Angular's router changes the URL through the History API without a
-      // full page load, which the plain pageview default does not see.
-      capture_pageview: 'history_change'
     });
   }
   if (config.cloudflareWebAnalyticsToken && !document.querySelector('script[data-cf-beacon]')) {

@@ -76,8 +76,6 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 | `HTTP_PORT` | `8080` | Port HTTP exposé |
 | `SENTRY_DSN` | *(vide = désactivé)* | Suivi d'erreurs (Bugsink ou tout endpoint compatible Sentry) |
 | `SENTRY_ENVIRONMENT` | `local` | Étiquette d'environnement jointe aux erreurs remontées |
-| `POSTHOG_API_KEY` | *(vide = désactivé)* | Analytics d'usage (PostHog) |
-| `POSTHOG_HOST` | `https://eu.i.posthog.com` | Hôte d'ingestion PostHog |
 | `PLANNING_MCP_API_KEY` | *(vide = MCP inutilisable)* | Clé API attendue pour authentifier le serveur MCP |
 | `PLANNING_MCP_API_KEY_HEADER` | `X-MCP-Api-Key` | En-tête HTTP portant la clé (ou `Authorization: Bearer <clé>`) |
 | `PLANNING_MCP_REQUIRED_HEADERS` | *(vide)* | En-têtes supplémentaires exigés en plus de la clé, `Nom=valeur` séparés par des virgules (déploiement derrière un proxy type Pangolin) |
@@ -92,7 +90,7 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 | `MAIL_ADMIN` | *(vide = désactivé)* | Adresse prévenue quand des demandes d'échange sont soumises |
 | `PUBLIC_URL` | `http://localhost:8080` | URL publique de l'application, imprimée comme lien « espace animateur » sur les PDF |
 
-Détails et mise en place : [`docs/observabilite.md`](docs/observabilite.md) (Sentry/PostHog),
+Détails et mise en place : [`docs/observabilite.md`](docs/observabilite.md) (Sentry/Cloudflare),
 [`docs/mcp.md`](docs/mcp.md) (serveur MCP).
 
 ### Lancer les tests

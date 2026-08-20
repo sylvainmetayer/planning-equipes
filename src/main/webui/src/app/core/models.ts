@@ -709,8 +709,6 @@ export interface ImportScenarioResult {
 export interface ObservabilityConfig {
   sentryDsn: string;
   sentryEnvironment: string;
-  posthogApiKey: string;
-  posthogHost: string;
   cloudflareWebAnalyticsToken: string;
 }
 

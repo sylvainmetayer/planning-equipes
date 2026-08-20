@@ -5,8 +5,7 @@ Deux briques optionnelles, toutes deux **désactivées par défaut** en dev/test
 
 - **Suivi d'erreurs** — [Bugsink](https://www.bugsink.com/), auto-hébergé,
   compatible avec le protocole/SDK Sentry.
-- **Analytics d'usage** — [PostHog](https://posthog.com/) (événements produit)
-  + [Cloudflare Web Analytics](https://www.cloudflare.com/web-analytics/)
+- **Analytics d'usage** — [Cloudflare Web Analytics](https://www.cloudflare.com/web-analytics/)
   (mesure légère des pages vues/navigation).
 
 ## Pourquoi ces choix
@@ -14,15 +13,20 @@ Deux briques optionnelles, toutes deux **désactivées par défaut** en dev/test
 | Besoin | Outil | Pourquoi |
 | --- | --- | --- |
 | Erreurs backend + frontend | Bugsink | Auto-hébergé (Docker, SQLite par défaut, pas de dépendance Redis/Celery), donc pas de donnée envoyée à un tiers ; **compatible avec les SDK Sentry** — n'importe quel SDK Sentry officiel (Java, JavaScript, …) fonctionne en pointant simplement son DSN vers l'instance Bugsink. Alternative plus légère à un Sentry auto-hébergé. |
-| Analytics produit (usage des écrans, événements) | PostHog | Palier gratuit le plus généreux du marché pour ce type d'usage (1 million d'événements/mois, hébergement EU disponible pour rester RGPD-friendly) ; alternative *hébergée* à Matomo (qui, lui, ne propose pas de palier gratuit hébergé — seul l'auto-hébergement est gratuit). SDK JavaScript officiel (`posthog-js`), simple à intégrer dans une SPA. |
 | Audience / pages vues légères | Cloudflare Web Analytics | Script minimal, sans cookie, facile à activer uniquement en production ; capte les pages vues même en navigation SPA (History API) via le beacon officiel Cloudflare. |
 
-Autres pistes envisagées et écartées : **Umami** (palier cloud gratuit plus
-restreint, ~100k événements/mois) et **Plausible** (pas de palier gratuit
-hébergé, uniquement l'auto-hébergement) — voir leurs sites respectifs si ce
-compromis convient mieux à un déploiement donné ; le code frontend
-(`app/core/observability.ts`) n'est pas verrouillé sur PostHog au point de
-rendre un changement coûteux.
+**Analytics produit retirée.** Le projet a un temps embarqué PostHog pour
+mesurer l'usage des écrans. La brique a été déposée : personne ne consultait
+les tableaux de bord, et elle coûtait une dépendance JavaScript, deux variables
+d'environnement et un traitement de données personnelles à justifier — trois
+prix payés pour rien. Cloudflare Web Analytics couvre le besoin restant
+(combien de pages vues, lesquelles) sans cookie ni SDK.
+
+Si le besoin d'événements produit revient, les candidats regardés à l'époque
+étaient PostHog (palier gratuit le plus généreux, hébergement EU),
+**Umami** (~100k événements/mois) et **Plausible** (pas de palier gratuit
+hébergé). `app/core/observability.ts` reste le seul point d'entrée à
+reprendre : rien d'autre dans le code ne connaissait PostHog.
 
 ## Suivi d'erreurs (Bugsink / Sentry)
 
@@ -66,35 +70,26 @@ serveur pour passer par `GlobalExceptionMapper`. Utile pour confirmer qu'un
 DSN fraîchement configuré remonte bien jusqu'à Bugsink/Sentry, sans attendre
 un vrai bug.
 
-## Analytics d'usage (PostHog + Cloudflare Web Analytics)
+## Analytics d'usage (Cloudflare Web Analytics)
 
-### Mise en place de PostHog
+### Mise en place
 
-Créer un compte gratuit sur [posthog.com](https://posthog.com/) (ou
-auto-héberger PostHog Open Source si un service géré n'est pas souhaité),
-créer un projet : la clé API du projet (`phc_…`) va dans
-`POSTHOG_API_KEY`, l'hôte d'ingestion (`https://eu.i.posthog.com` par défaut
-dans ce projet, `https://us.i.posthog.com` si le projet est hébergé aux
-États-Unis) dans `POSTHOG_HOST`.
+Activer Web Analytics sur le site dans le tableau de bord Cloudflare : le
+token fourni va dans `CLOUDFLARE_WEB_ANALYTICS_TOKEN`.
 
 ### Intégration dans l'application
 
-Uniquement côté frontend (`posthog-js` + script Cloudflare), initialisé dans
-`src/main.ts` via `app/core/observability.ts` :
-
-- PostHog est un no-op si `POSTHOG_API_KEY` est vide, avec
-  `capture_pageview: 'history_change'` pour que les changements de route
-  Angular (History API, sans rechargement complet) comptent bien comme des
-  pages vues ;
-- Cloudflare est un no-op si son token est vide, puis injecte le script beacon
-  officiel (`beacon.min.js`) avec le token fourni par `/api/config`.
+Uniquement côté frontend, initialisé dans `src/main.ts` via
+`app/core/observability.ts` : no-op si le token est vide, sinon injection du
+script beacon officiel (`beacon.min.js`) avec le token fourni par
+`/api/config`. Le beacon capte les pages vues même en navigation SPA
+(History API), ce qui est précisément ce qu'un compteur de pages naïf raterait
+sur cette application.
 
 ### Variables d'environnement
 
 | Variable | Défaut | Usage |
 | --- | --- | --- |
-| `POSTHOG_API_KEY` | *(vide)* | Clé API du projet PostHog. Vide = événements PostHog désactivés. |
-| `POSTHOG_HOST` | `https://eu.i.posthog.com` | Hôte d'ingestion PostHog du projet. |
 | `CLOUDFLARE_WEB_ANALYTICS_TOKEN` | `987d563a0f264bbbb484df80ab2ab0f8` (profil `%prod`) | Token Cloudflare Web Analytics. Le profil production active ce token par défaut, la variable permet de le surcharger (ou de le vider pour désactiver). |
 
 ## Comment le frontend récupère ces clés
@@ -106,8 +101,7 @@ environnement. Le backend les expose à la place via
 [`GET /api/config`](api.md#configuration), lu par `src/main.ts` avant
 `bootstrapApplication()` (même endroit et même filet de sécurité — un échec
 réseau désactive juste l'observabilité pour cette session — que le
-chargement du catalogue de traductions anglais). Un DSN Sentry, une clé de
-projet PostHog et un token Cloudflare sont par construction des identifiants
-publics, prévus pour être embarqués dans du code navigateur (contrairement à
-un secret) : les
-exposer par cette route ne crée pas de fuite.
+chargement du catalogue de traductions anglais). Un DSN Sentry et un token
+Cloudflare sont par construction des identifiants publics, prévus pour être
+embarqués dans du code navigateur (contrairement à un secret) : les exposer
+par cette route ne crée pas de fuite.

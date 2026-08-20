@@ -5,8 +5,6 @@ import { ObservabilityConfig } from './models';
 const CONFIG: ObservabilityConfig = {
   sentryDsn: 'https://key@bugsink.example.com/1',
   sentryEnvironment: 'production',
-  posthogApiKey: 'phc_test',
-  posthogHost: 'https://eu.i.posthog.com',
   cloudflareWebAnalyticsToken: '987d563a0f264bbbb484df80ab2ab0f8'
 };
 
@@ -28,8 +26,6 @@ describe('loadObservabilityConfig', () => {
     await expect(loadObservabilityConfig()).resolves.toEqual({
       sentryDsn: '',
       sentryEnvironment: 'local',
-      posthogApiKey: '',
-      posthogHost: '',
       cloudflareWebAnalyticsToken: ''
     });
   });
@@ -39,8 +35,6 @@ describe('loadObservabilityConfig', () => {
     await expect(loadObservabilityConfig()).resolves.toEqual({
       sentryDsn: '',
       sentryEnvironment: 'local',
-      posthogApiKey: '',
-      posthogHost: '',
       cloudflareWebAnalyticsToken: ''
     });
   });
@@ -63,11 +57,7 @@ describe('initObservability', () => {
   });
 
   it('injects Cloudflare Web Analytics when a token is configured', () => {
-    initObservability({
-      ...CONFIG,
-      sentryDsn: '',
-      posthogApiKey: ''
-    });
+    initObservability({ ...CONFIG, sentryDsn: '' });
 
     const script = document.head.querySelector('script[data-cf-beacon]');
     expect(script).not.toBeNull();
@@ -79,11 +69,7 @@ describe('initObservability', () => {
   });
 
   it('does not inject duplicate Cloudflare scripts', () => {
-    const config = {
-      ...CONFIG,
-      sentryDsn: '',
-      posthogApiKey: ''
-    };
+    const config = { ...CONFIG, sentryDsn: '' };
 
     initObservability(config);
     initObservability(config);

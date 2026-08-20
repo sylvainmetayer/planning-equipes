@@ -360,6 +360,6 @@ Mo.
 | `GET /api/planning/export-scenario` | Le YAML exporté contient prénom, nom et date de naissance de chaque animateur (il doit être ré-importable) — exactement ce que l'issue #107 interdit de faire sortir. |
 | `GET /api/database/export`, `POST /api/database/import` | Le dump SQL contient toutes les données personnelles ; c'est de plus un fichier binaire/volumineux destiné à une sauvegarde, pas à une conversation. |
 | `POST /api/planning/export/pdf/*`, `GET /api/planning/export/pdf/global`, `/ics/*`, `/api/planning/hours/export` | Exports binaires ou CSV nominatifs, destinés au téléchargement depuis l'interface. |
-| `GET /api/config` | Clés publiques destinées au navigateur (Sentry, PostHog) : aucun intérêt pour un assistant. |
+| `GET /api/config` | Clés publiques destinées au navigateur (Sentry, Cloudflare) : aucun intérêt pour un assistant. |
 | `POST /api/debug/test-exception` | Endpoint de test de la remontée d'erreurs. |
 | `GET /api/planning/sample`, `GET /api/planning/persisted` | Renvoient un `PlanningFestival` entier (plusieurs dizaines de Mo, avec les données personnelles) ; `lister_affectations` et `lister_scenarios` couvrent le besoin en restant filtrés. |
