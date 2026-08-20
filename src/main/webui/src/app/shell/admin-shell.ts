@@ -137,7 +137,8 @@ function buildNavGroups(): NavGroup[] {
         label: $localize`:@@nav.link.timeline:Timeline animateur`,
         icon: 'timeline'
       },
-      { path: '/graphe', label: $localize`:@@nav.link.graphe:Graphe`, icon: 'hub' }
+      { path: '/graphe', label: $localize`:@@nav.link.graphe:Graphe`, icon: 'hub' },
+      { path: '/kpi', label: $localize`:@@nav.link.kpi:Historique des KPI`, icon: 'query_stats' }
     ]
   },
   {

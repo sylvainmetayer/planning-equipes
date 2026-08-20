@@ -82,6 +82,8 @@ dans [`domaine.md`](domaine.md).
 | `EditionService` / `EditionRepository` | Gestion des éditions elles-mêmes : création, duplication, suppression — voir [`editions.md`](editions.md) |
 | `EditionContext` / `EditionRequestScope` | Résout l'édition que la requête courante lit et écrit (en-tête `X-Edition-Id`, repli sur l'édition par défaut), et permet de lier une édition à un thread sans requête (worker du solveur) |
 | `PlanningPersistenceService` | Lecture / écriture du planning persisté, cloisonnée par édition |
+| `PlanningKpiService` | KPI agrégés et non nominatifs d'un plan (score par niveau, couverture, dispersion des heures, taux de modifications manuelles) — issue #89 |
+| `KpiHistoriqueService` | Une ligne de KPI par solve terminé, toutes éditions, sans clé étrangère (l'historique survit à la suppression d'une édition) — issue #89 |
 | `DatabaseDumpService` | Export / import de dump SQL |
 | `PlanningExportService` | Génération PDF (OpenPDF) et ICS, **côté serveur uniquement** |
 
@@ -89,7 +91,8 @@ dans [`domaine.md`](domaine.md).
 
 Ressources JAX-RS : `PlanningResource`, `SolverJobResource`, `ReferenceDataResource`,
 `EditionResource`, `ConstraintResource`, `AffectationExplanationResource`,
-`CsvImportResource`, `DatabaseResource`, `PlanningExportResource`, plus le filtre
+`CsvImportResource`, `DatabaseResource`, `PlanningExportResource`, `KpiResource`,
+plus le filtre
 `EditionHeaderFilter` qui dépose l'en-tête `X-Edition-Id` dans le scope de requête.
 Voir [`api.md`](api.md).
 

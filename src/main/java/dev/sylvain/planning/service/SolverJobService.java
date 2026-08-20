@@ -72,6 +72,9 @@ public class SolverJobService {
     PlanSnapshotService snapshotService;
 
     @Inject
+    KpiHistoriqueService kpiHistoriqueService;
+
+    @Inject
     EditionContext editionContext;
 
     @Inject
@@ -95,10 +98,16 @@ public class SolverJobService {
             // is captured first, so a solve no longer destroys the previous
             // result.
             snapshotService.capturerAvantSolve();
+            Instant debutSolve = Instant.now();
             PlanningFestival solved = planningService.resoudre(problem, secondsLimit, job::attachSolver);
+            long dureeSolveSecondes = Duration.between(debutSolve, Instant.now()).getSeconds();
             persistenceService.persist(solved);
             PlanningService.PlanningDiagnostic diagnostic = planningService.diagnostiquer(solved);
             analysisStore.record(diagnostic);
+            // KPI history (issue #89): one row per completed solve, carrying the
+            // real duration. Deliberately after the analysis — the KPI read the
+            // score it just recorded — and never able to fail the job.
+            kpiHistoriqueService.enregistrerApresSolve(dureeSolveSecondes);
             return diagnostic;
         });
     }

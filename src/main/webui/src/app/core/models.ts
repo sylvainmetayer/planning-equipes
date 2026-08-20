@@ -892,3 +892,41 @@ export interface EchangeSimulation {
   casseContrainteDure: boolean;
   nouvellesViolationsDures: ViolationDure[];
 }
+
+/**
+ * Aggregate KPI of a plan (issue #89). The nullable fields are the ones that
+ * depend on a stored score analysis: absent rather than invented when none
+ * exists, because a zero score and an unknown score are not the same fact.
+ * Deliberately non-nominative — fairness is a dispersion of hours, never a
+ * ranking of named animateurs.
+ */
+export interface PlanningKpi {
+  score: string | null;
+  scoreHard: number | null;
+  scoreMedium: number | null;
+  scoreSoft: number | null;
+  postesTotal: number;
+  postesPourvus: number;
+  animateursAffectes: number;
+  standsDistincts: number;
+  creneauxDistincts: number;
+  heuresTotal: number | null;
+  heuresMoyenne: number | null;
+  heuresEcartType: number | null;
+  heuresMin: number | null;
+  heuresMax: number | null;
+  heuresIncompletes: boolean;
+  modificationsManuelles: number | null;
+  tauxModificationsManuelles: number | null;
+  dureeSolveSecondes: number | null;
+  violationsParContrainte: Record<string, number>;
+}
+
+/** One row of `GET /api/kpi/historique` (issue #89) — survives its edition's deletion. */
+export interface KpiHistoriqueEntry {
+  id: number;
+  editionId: string;
+  editionNom: string | null;
+  kpi: PlanningKpi;
+  creeLe: string | null;
+}

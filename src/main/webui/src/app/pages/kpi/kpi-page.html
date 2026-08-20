@@ -1,0 +1,96 @@
+<mat-card appearance="outlined">
+  <mat-card-header>
+    <h1 mat-card-title i18n="@@kpi.title">Historique des KPI</h1>
+    <mat-card-subtitle i18n="@@kpi.subtitle">
+      Une ligne par résolution terminée, toutes éditions confondues : score, couverture, fairness (dispersion des
+      heures, jamais nominative), modifications manuelles et durée. L'historique survit à la suppression d'une édition.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-actions class="card-actions">
+    <button matButton type="button" [disabled]="chargement()" (click)="recharger()">
+      <mat-icon>refresh</mat-icon>
+      <ng-container i18n="@@common.refresh">Rafraîchir</ng-container>
+    </button>
+  </mat-card-actions>
+  <mat-card-content>
+    @if (chargement()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    <app-status-message [text]="error()" tone="error" />
+    <div class="table-wrapper">
+      <table mat-table [dataSource]="entries()">
+        <caption class="visually-hidden" i18n="@@kpi.table.caption">
+          Historique des KPI par résolution : date, édition, score, couverture, fairness, modifications
+          manuelles et durée
+        </caption>
+        <ng-container matColumnDef="creeLe">
+          <th mat-header-cell *matHeaderCellDef i18n="@@kpi.column.creeLe">Résolution du</th>
+          <td mat-cell *matCellDef="let entry">{{ dateLabel(entry) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="edition">
+          <th mat-header-cell *matHeaderCellDef i18n="@@kpi.column.edition">Édition</th>
+          <td mat-cell *matCellDef="let entry">{{ editionLabel(entry) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="score">
+          <th mat-header-cell *matHeaderCellDef i18n="@@kpi.column.score">Score</th>
+          <td mat-cell *matCellDef="let entry">{{ scoreLabel(entry) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="couverture">
+          <th mat-header-cell *matHeaderCellDef i18n="@@kpi.column.couverture">Couverture</th>
+          <td mat-cell *matCellDef="let entry">{{ couvertureLabel(entry) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="fairness">
+          <th
+            mat-header-cell
+            *matHeaderCellDef
+            i18n-matTooltip="@@kpi.fairness.tooltip"
+            matTooltip="Écart-type des heures par animateur : plus il est bas, plus la charge est équitable."
+            i18n="@@kpi.column.fairness"
+          >
+            Fairness
+          </th>
+          <td mat-cell *matCellDef="let entry">{{ fairnessLabel(entry) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="modifications">
+          <th
+            mat-header-cell
+            *matHeaderCellDef
+            i18n-matTooltip="@@kpi.modifications.tooltip"
+            matTooltip="Contraintes ad hoc et verrouillages actifs au moment de la résolution, rapportés au nombre de postes."
+            i18n="@@kpi.column.modifications"
+          >
+            Modifications manuelles
+          </th>
+          <td mat-cell *matCellDef="let entry">{{ modificationsLabel(entry) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="duree">
+          <th mat-header-cell *matHeaderCellDef i18n="@@kpi.column.duree">Durée</th>
+          <td mat-cell *matCellDef="let entry">{{ dureeLabel(entry) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>
+          <td mat-cell *matCellDef="let entry" class="row-actions">
+            <button
+              matIconButton
+              class="danger-action"
+              i18n-matTooltip="@@common.delete"
+              matTooltip="Supprimer"
+              i18n-aria-label="@@common.delete"
+              aria-label="Supprimer"
+              (click)="supprimer(entry)"
+            >
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="columns"></tr>
+        <tr mat-row *matRowDef="let row; columns: columns"></tr>
+      </table>
+    </div>
+    @if (entries().length === 0 && !chargement()) {
+      <p class="empty-hint" i18n="@@kpi.empty">
+        Aucune mesure enregistrée pour l'instant : chaque résolution terminée en ajoute une automatiquement.
+      </p>
+    }
+  </mat-card-content>
+</mat-card>

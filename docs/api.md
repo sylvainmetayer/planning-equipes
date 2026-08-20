@@ -117,6 +117,23 @@ instantanés-là sont purgés au-delà des N derniers
 (`planning.snapshots.automatiques-conservees`, 5 par défaut) ; ceux créés à la
 main ne le sont jamais.
 
+
+## Historique des KPI
+
+Une mesure par résolution terminée, écrite par le job de solve lui-même
+(jamais par cette API). Volontairement **non cloisonné par édition** et sans
+clé étrangère : comparer 2025 à 2026 est l'objet même de la table, et une
+ligne doit survivre à la suppression de l'édition qu'elle décrit — c'est
+pourquoi le libellé de l'édition y est dénormalisé.
+
+Aucune donnée nominative : l'équité est stockée en dispersion agrégée des
+heures (total, moyenne, écart-type, min, max), jamais par animateur.
+
+| Méthode | Chemin | Description |
+| --- | --- | --- |
+| `GET` | `/api/kpi/historique` | Toutes les mesures, toutes éditions confondues, de la plus récente à la plus ancienne |
+| `DELETE` | `/api/kpi/historique/{id}` | Supprime une mesure |
+
 ## Résolution asynchrone
 
 La résolution complète dure plusieurs minutes : l'IHM lance un job, reste

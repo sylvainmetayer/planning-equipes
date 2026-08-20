@@ -209,6 +209,23 @@ Restaurer est refusé, sans rien écrire, si le référentiel a trop bougé depu
 la capture (un stand ou un créneau cité n'existe plus) : l'application dit ce
 qui manque plutôt que de reconstituer un planning que personne n'a calculé.
 
+### Historique des KPI
+
+Chaque résolution terminée laisse une ligne de mesures : score par niveau,
+couverture des postes, **équité** (dispersion des heures par animateur),
+nombre de retouches manuelles actives au moment du calcul, et durée réelle du
+solve. La page « Historique des KPI » les affiche **toutes éditions
+confondues**, ce qui permet de répondre à « est-ce que 2026 est mieux réparti
+que 2025 ? » sans rejouer quoi que ce soit.
+
+L'historique est délibérément découplé du reste : aucune clé étrangère, et le
+nom de l'édition recopié sur chaque ligne. Supprimer une édition efface son
+référentiel et son planning, jamais la trace de ce qu'elle a produit — c'est
+précisément ce qui doit lui survivre.
+
+Rien de nominatif n'y est stocké : l'équité est un écart-type d'heures, pas un
+classement de personnes.
+
 ### Simulation « et si ? »
 
 Trois désistements, un recrutement de dernière minute, un stand fermé par la

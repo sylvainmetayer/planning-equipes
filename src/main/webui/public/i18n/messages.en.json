@@ -1204,5 +1204,21 @@
   "affectationExplanation.resolved": "Violations resolved by this replacement:",
   "affectationExplanation.newViolations": "New violations introduced by this replacement:",
   "violationDetails.close": "Close",
-  "violationDetails.truncated": " Showing only the first {$INTERPOLATION} occurrences out of {$INTERPOLATION_1}. "
+  "violationDetails.truncated": " Showing only the first {$INTERPOLATION} occurrences out of {$INTERPOLATION_1}. ",
+  "nav.link.kpi": "KPI history",
+  "kpi.title": "KPI history",
+  "kpi.subtitle": " One row per completed solve, across all editions: score, coverage, fairness (hours dispersion, never nominative), manual modifications and duration. The history survives an edition's deletion. ",
+  "kpi.table.caption": " KPI history per solve: date, edition, score, coverage, fairness, manual modifications and duration ",
+  "kpi.column.creeLe": "Solved on",
+  "kpi.column.edition": "Edition",
+  "kpi.column.score": "Score",
+  "kpi.column.couverture": "Coverage",
+  "kpi.column.fairness": " Fairness ",
+  "kpi.column.modifications": " Manual modifications ",
+  "kpi.column.duree": "Duration",
+  "kpi.fairness.tooltip": "Standard deviation of hours per staff member: the lower, the fairer the workload.",
+  "kpi.modifications.tooltip": "Ad hoc constraints and locks active at solve time, relative to the number of seats.",
+  "kpi.delete.title": "Delete this history row?",
+  "kpi.delete.message": "The measurement of {$date} will be lost for good.",
+  "kpi.empty": " No measurement recorded yet: each completed solve adds one automatically. "
 }

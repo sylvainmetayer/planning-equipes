@@ -60,6 +60,11 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/graphe/graphe-page').then((m) => m.GraphePage)
   },
   {
+    path: 'kpi',
+    title: 'KPI — Planning Équipes',
+    loadComponent: () => import('./pages/kpi/kpi-page').then((m) => m.KpiPage)
+  },
+  {
     path: 'instantanes',
     title: 'Instantanés — Planning Équipes',
     loadComponent: () => import('./pages/snapshots/snapshots-page').then((m) => m.SnapshotsPage)
