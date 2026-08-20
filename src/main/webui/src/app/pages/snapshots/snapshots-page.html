@@ -39,7 +39,7 @@
               <mat-chip
                 class="snapshot-auto-chip"
                 i18n-matTooltip="@@snapshots.autoTooltip"
-                matTooltip="Pris automatiquement avant une résolution ; les plus anciens sont purgés."
+                matTooltip="Pris automatiquement avant une résolution ; les plus anciens sont purgés, sauf le dernier de chaque groupe de créneaux."
                 i18n="@@snapshots.auto"
                 >auto</mat-chip
               >
@@ -114,7 +114,18 @@
           </caption>
           <ng-container matColumnDef="libelleAuto">
             <th mat-header-cell *matHeaderCellDef i18n="@@snapshots.column.libelle">Instantané</th>
-            <td mat-cell *matCellDef="let snapshot">{{ snapshot.libelle }}</td>
+            <td mat-cell *matCellDef="let snapshot">
+              {{ snapshot.libelle }}
+              @if (dernierDuGroupe(snapshot)) {
+                <mat-chip
+                  class="snapshot-auto-chip"
+                  i18n-matTooltip="@@snapshots.dernierGroupeTooltip"
+                  matTooltip="Dernier instantané de ce groupe de créneaux : jamais purgé tant que le groupe existe, c'est lui qu'une bascule de groupe restaure."
+                  i18n="@@snapshots.dernierGroupe"
+                  >dernier du groupe</mat-chip
+                >
+              }
+            </td>
           </ng-container>
           <ng-container matColumnDef="groupeAuto">
             <th mat-header-cell *matHeaderCellDef i18n="@@snapshots.column.groupe">Groupe de créneaux</th>

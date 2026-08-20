@@ -162,6 +162,26 @@ règle : il ne remplace que les créneaux du groupe actif, ce qui permet de
 charger un scénario différent dans chaque groupe sans écraser les autres —
 voir [`import-export.md`](import-export.md).
 
+Exception à « seul le groupe actif est résolu » : la **file de résolution**
+(issue #167, bouton « Résoudre tous les groupes » de la page Solveur,
+`POST /api/solve/file/async`) enchaîne un solve par groupe marqué
+`resoudreEnFile`, en séquence sous le verrou global, le groupe actif **en
+dernier**. Le résultat d'un groupe non actif ne touche jamais
+`poste_affectation` : il est capturé en instantané directement depuis la
+solution en mémoire (`PlanSnapshotService.capturerDepuisSolution`), si bien que
+l'espace animateur, les exports et les calendriers continuent de servir le plan
+du groupe actif pendant toute la file — basculer de groupe restaure ensuite
+l'instantané en un clic. Chaque solve de la file est **réamorcé** depuis le
+dernier instantané de son groupe (warm start, premier volet de l'issue #86,
+`PlanningService.seedDepuisAffectations` : ré-ancrage positionnel par clé
+stand × créneau, tolérant aux références disparues, appliqué avant les
+verrouillages qui gardent leur priorité) — un groupe déjà bon s'arrête alors
+sur le critère « faisable et plus d'amélioration depuis N s » au lieu de
+consommer tout son budget. Le drapeau `resoudreEnFile` (défaut `true`) existe
+parce que rien ne distingue structurellement un groupe d'amplitudes non
+découpées d'un groupe de vacations : le découpage le positionne seul (source →
+`false`, cible → `true`), l'utilisateur peut aussi exclure un brouillon.
+
 L'id d'un `Creneau` est un entier auto-généré par la base (colonne identity),
 jamais saisi par l'utilisateur ni affiché dans l'IHM. Deux groupes ne peuvent
 donc structurellement plus entrer en collision d'id (contrairement à l'ancien

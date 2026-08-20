@@ -57,6 +57,12 @@
       <mat-icon>play_arrow</mat-icon>
       <ng-container i18n="@@solver.solve">Résoudre avec Timefold</ng-container>
     </button>
+    <button matButton="tonal" [disabled]="solverBusy() || groupesFile().length === 0" (click)="onSolveFile()"
+            i18n-matTooltip="@@solver.solveFile.tooltip"
+            matTooltip="Résout successivement chaque groupe de créneaux marqué « résoudre en file », le groupe actif en dernier. Les groupes non actifs sont conservés en instantanés, prêts pour une bascule sans re-résolution.">
+      <mat-icon>playlist_play</mat-icon>
+      <ng-container i18n="@@solver.solveFileBouton">Résoudre tous les groupes ({{ groupesFile().length }})</ng-container>
+    </button>
     <button matButton="tonal" [disabled]="!solverBusy() || arretEnCours()" (click)="onArreterSolveur()">
       <mat-icon>stop_circle</mat-icon>
       <ng-container i18n="@@solver.arreter">Arrêter le solveur</ng-container>
@@ -97,6 +103,34 @@
         Fin estimée de la résolution en cours : {{ estimatedEnd() }} (dans {{ estimatedRemaining() }}) — au plus tard,
         le solveur peut s'arrêter avant s'il n'améliore plus le score.
       </p>
+    </mat-card-content>
+  }
+  @if (groupesExclusFile() > 0) {
+    <mat-card-content>
+      <p class="calendar-meta" i18n="@@solver.fileExclus">
+        {{ groupesExclusFile() }} groupe(s) de créneaux exclu(s) de la file (amplitudes non découpées ou brouillons) —
+        modifiable dans la gestion des groupes, page Créneaux.
+      </p>
+    </mat-card-content>
+  }
+  @if (fileResultats(); as resultats) {
+    <mat-card-content>
+      <p class="calendar-meta" i18n="@@solver.fileResultatsTitre">Dernière file de résolution :</p>
+      <table class="file-resultats">
+        <tbody>
+          @for (resultat of resultats; track resultat.groupeId) {
+            <tr>
+              <td>{{ resultat.nom }}@if (resultat.actif) {&nbsp;<ng-container i18n="@@solver.fileResultatActif">(groupe actif)</ng-container>}</td>
+              <td>{{ resultat.statut }}</td>
+              <td>{{ resultat.score ?? '—' }}</td>
+              <td i18n="@@solver.fileResultatDuree">{{ resultat.dureeSecondes }} s</td>
+              @if (resultat.erreur) {
+                <td>{{ resultat.erreur }}</td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
     </mat-card-content>
   }
   @if (lastRunAt()) {

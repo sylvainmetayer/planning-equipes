@@ -189,8 +189,8 @@ public class EditionRepository {
      */
     private void copierGroupesCreneaux(Connection connection, String sourceId, String cibleId) throws SQLException {
         try (PreparedStatement ps = connection.prepareStatement(
-                "INSERT INTO groupe_creneau (edition_id, id, nom, actif) "
-                        + "SELECT ?, id, nom, actif FROM groupe_creneau WHERE edition_id = ?")) {
+                "INSERT INTO groupe_creneau (edition_id, id, nom, actif, resoudre_en_file) "
+                        + "SELECT ?, id, nom, actif, resoudre_en_file FROM groupe_creneau WHERE edition_id = ?")) {
             ps.setString(1, cibleId);
             ps.setString(2, sourceId);
             ps.executeUpdate();

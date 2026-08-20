@@ -68,6 +68,16 @@ export class SnapshotsPage {
   protected readonly affectationsCourantes = signal<number | null>(null);
 
   /**
+   * True for the most recent snapshot of each groupe de créneaux: those are
+   * spared by the automatic purge (issue #167) — they are the pre-solved
+   * plans a group switch restores in one click — and the badge says so.
+   */
+  protected dernierDuGroupe(snapshot: PlanSnapshot): boolean {
+    return snapshot.groupeCreneauId != null
+      && this.store.parGroupe().get(snapshot.groupeCreneauId)?.id === snapshot.id;
+  }
+
+  /**
    * How a snapshot differs from the plan in place — restoring blind is exactly
    * what the screen should spare the user.
    */

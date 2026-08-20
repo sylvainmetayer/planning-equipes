@@ -12,7 +12,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { ApiService, toError } from './api.service';
 import { NotificationService } from './notification.service';
-import { JobType, JobView, MutationsWhatIf, PlanningDiagnostic, PlanningFestival } from './models';
+import { GroupeFileResultat, JobType, JobView, MutationsWhatIf, PlanningDiagnostic, PlanningFestival } from './models';
 
 const POLL_INTERVAL_MS = 2000;
 
@@ -27,6 +27,9 @@ function jobLabel(type: string): string {
   }
   if (type === 'ANALYZE') {
     return $localize`:@@job.type.analyze:Analyse de la solution`;
+  }
+  if (type === 'SOLVE_FILE') {
+    return $localize`:@@job.type.solveFile:Résolution de tous les groupes`;
   }
   return type;
 }
@@ -56,6 +59,10 @@ export interface TrackedJob {
    * estimated finishing time; see {@link estimatedEndMs}.
    */
   secondsLimit: number | null;
+  /** SOLVE_FILE progress, refreshed on every poll — null on other job types. */
+  groupeCourantNom: string | null;
+  groupeCourant: number | null;
+  totalGroupes: number | null;
 }
 
 type ResultHandler = (result: unknown) => void;
@@ -86,7 +93,11 @@ export class SolverJobService {
     if (!job || job.secondsLimit == null || job.secondsLimit <= 0) {
       return null;
     }
-    return job.startedAtMs + job.secondsLimit * 1000;
+    // A SOLVE_FILE budget applies to EACH queued group: the upper bound is
+    // the whole queue's worth of it (each warm-started group may bail out
+    // far earlier — see the plateau termination server-side).
+    const facteur = job.type === 'SOLVE_FILE' && job.totalGroupes ? job.totalGroupes : 1;
+    return job.startedAtMs + job.secondsLimit * facteur * 1000;
   });
 
   /** Seconds left before {@link estimatedEndMs}, floored at 0; null when unknown. */
@@ -101,9 +112,14 @@ export class SolverJobService {
       return this.stateKnown() ? '' : $localize`:@@job.stateUnknown:L'état du solveur n'est pas encore connu.`;
     }
     const duration = formatDuration(elapsedSeconds(job, this.now()));
-    return job.mine
+    const base = job.mine
       ? $localize`:@@job.runningMine:${job.label}:jobLabel: est en cours depuis ${duration}:duration:.`
       : $localize`:@@job.runningOther:${job.label}:jobLabel: est en cours depuis ${duration}:duration: (démarré depuis une autre session).`;
+    if (job.type === 'SOLVE_FILE' && job.groupeCourant && job.totalGroupes) {
+      const progression = $localize`:@@job.fileProgress:Groupe ${job.groupeCourant}:current:/${job.totalGroupes}:total: — ${job.groupeCourantNom ?? ''}:groupe:.`;
+      return `${base} ${progression}`;
+    }
+    return base;
   });
 
   private readonly api = inject(ApiService);
@@ -178,6 +194,16 @@ export class SolverJobService {
   /** Server-side-built counterpart of {@link submitAnalyze}. */
   submitAnalyzeFromReferenceData(seconds?: number): Promise<JobView> {
     return this.submit('/api/solve/analyze/async/reference-data', {}, 'ANALYZE', seconds);
+  }
+
+  /**
+   * The "résoudre tous les groupes" queue (issue #167): one sequential solve
+   * per flagged groupe de créneaux, warm-started from each group's last
+   * snapshot, the active group last. Progress is reported through the normal
+   * job polling (`groupeCourant`/`totalGroupes`).
+   */
+  submitSolveFile(seconds?: number): Promise<JobView> {
+    return this.submit('/api/solve/file/async', {}, 'SOLVE_FILE', seconds);
   }
 
   /**
@@ -292,8 +318,21 @@ export class SolverJobService {
   private adopt(job: JobView, mine: boolean): void {
     const tracked = this.activeJob();
     if (tracked?.id === job.id) {
-      if (mine && !tracked.mine) {
-        this.activeJob.set({ ...tracked, mine: true });
+      const mineChanged = mine && !tracked.mine;
+      // The queue's progress is the one thing that moves between two polls of
+      // the same job: refresh it, or « groupe 1/N » would stay on screen for
+      // the whole file.
+      const progressChanged =
+        tracked.groupeCourant !== (job.groupeCourant ?? null) ||
+        tracked.groupeCourantNom !== (job.groupeCourantNom ?? null);
+      if (mineChanged || progressChanged) {
+        this.activeJob.set({
+          ...tracked,
+          mine: tracked.mine || mine,
+          groupeCourantNom: job.groupeCourantNom ?? null,
+          groupeCourant: job.groupeCourant ?? null,
+          totalGroupes: job.totalGroupes ?? null
+        });
       }
       return;
     }
@@ -303,7 +342,10 @@ export class SolverJobService {
       label: jobLabel(job.type),
       startedAtMs: Date.now() - (Number(job.elapsedSeconds) || 0) * 1000,
       mine,
-      secondsLimit: job.secondsLimit == null ? null : Number(job.secondsLimit)
+      secondsLimit: job.secondsLimit == null ? null : Number(job.secondsLimit),
+      groupeCourantNom: job.groupeCourantNom ?? null,
+      groupeCourant: job.groupeCourant ?? null,
+      totalGroupes: job.totalGroupes ?? null
     };
     this.activeJob.set(entry);
     // A submit() adopts its job without waiting for the next poll: start the
@@ -340,7 +382,7 @@ export class SolverJobService {
     const duration = formatDuration(job.elapsedSeconds);
     this.notifications.notify({
       title: $localize`:@@job.completedTitle:${entry.label}:jobLabel: terminée en ${duration}:duration:`,
-      message: describeResult(job.result),
+      message: job.type === 'SOLVE_FILE' ? describeFileResult(job.result) : describeResult(job.result),
       variant: 'success',
       desktop: true
     });
@@ -348,9 +390,12 @@ export class SolverJobService {
     // that handler only exists while its page is mounted, so a solve finishing
     // after the user navigated away would otherwise never surface this. This
     // runs unconditionally, whichever page (if any) is open when the job ends.
-    const diagnostic = job.result as PlanningDiagnostic | null;
-    if (diagnostic) {
-      this.notifications.notifyFeasibility(diagnostic.faisabilite, diagnostic.hardScore);
+    // A SOLVE_FILE result is a per-group summary, not a diagnostic.
+    if (job.type !== 'SOLVE_FILE') {
+      const diagnostic = job.result as PlanningDiagnostic | null;
+      if (diagnostic) {
+        this.notifications.notifyFeasibility(diagnostic.faisabilite, diagnostic.hardScore);
+      }
     }
     // Iterate a copy: a handler may unregister itself (or its page) while running.
     [...(this.resultHandlers.get(job.type) ?? [])].forEach((handler) => handler(job.result));
@@ -375,5 +420,21 @@ function describeResult(result: unknown): string {
   const score = diagnostic.score;
   const postesNonPourvus = diagnostic.postesNonPourvus;
   return $localize`:@@job.result:Score ${score}:score: — ${postesNonPourvus}:count: poste(s) non pourvu(s).`;
+}
+
+/**
+ * A SOLVE_FILE payload is one line per group. The notification only counts:
+ * every group's snapshot is one click away on the Snapshots page, and the
+ * detail lives in the solver page's summary.
+ */
+function describeFileResult(result: unknown): string {
+  if (!Array.isArray(result)) {
+    return '';
+  }
+  const resultats = result as GroupeFileResultat[];
+  const resolus = resultats.filter((r) => r.statut === 'RESOLU').length;
+  const echecs = resultats.filter((r) => r.statut === 'ECHEC').length;
+  const compte = $localize`:@@job.fileResult:${resolus}:count:/${resultats.length}:total: groupe(s) résolu(s).`;
+  return echecs > 0 ? `${compte} ${$localize`:@@job.fileResultEchecs:${echecs}:count: en échec.`}` : compte;
 }
 

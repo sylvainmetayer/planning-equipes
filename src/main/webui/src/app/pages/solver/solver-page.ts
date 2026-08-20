@@ -11,7 +11,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ApiService } from '../../core/api.service';
 import { resumeEnvoi } from '../../core/envoi-planning';
 import { intlLocale } from '../../core/locale';
-import { CompteRenduEnvoi, FeasibilityReport, PlanningDiagnostic } from '../../core/models';
+import { CompteRenduEnvoi, FeasibilityReport, GroupeFileResultat, PlanningDiagnostic } from '../../core/models';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningStateService } from '../../core/planning-state.service';
@@ -193,6 +193,21 @@ export class SolverPage {
   protected readonly creneauTotal = computed(
     () => this.referenceData.creneaux().filter((creneau) => creneau.groupe?.id === this.activeGroupeId()).length
   );
+
+  /**
+   * The "résoudre tous les groupes" queue (issue #167). Eligibility mirrors
+   * the backend's `resoudreEnFile` flag (absent on old payloads = true); the
+   * excluded count is displayed so an amplitudes group silently skipped never
+   * looks like a bug.
+   */
+  protected readonly groupesFile = computed(() =>
+    this.referenceData.groupesCreneaux().filter((groupe) => groupe.resoudreEnFile !== false)
+  );
+  protected readonly groupesExclusFile = computed(
+    () => this.referenceData.groupesCreneaux().filter((groupe) => groupe.resoudreEnFile === false).length
+  );
+  /** Per-group summary of the last finished queue, shown under the actions. */
+  protected readonly fileResultats = signal<GroupeFileResultat[] | null>(null);
   /**
    * Timefold's own "approximate problem scale": log10 of the search space size,
    * i.e. `entityCount * log10(valueCount)` (valueCount ^ entityCount, not a
@@ -236,6 +251,16 @@ export class SolverPage {
         void this.loadLastRun();
         // The solve rewrote both problem sources server-side (fresh feasibility
         // input and a new constraint analysis): re-read them for the summary.
+        void this.problemes.reload();
+      })
+    );
+    inject(DestroyRef).onDestroy(
+      this.jobs.onResult('SOLVE_FILE', (result) => {
+        this.fileResultats.set(Array.isArray(result) ? (result as GroupeFileResultat[]) : null);
+        // The queue's last step re-solved and persisted the active group
+        // through the plain path: same cache invalidations as a plain solve.
+        this.planningState.set(null);
+        void this.loadLastRun();
         void this.problemes.reload();
       })
     );
@@ -322,15 +347,20 @@ export class SolverPage {
       : $localize`:@@solver.locked.unknown:L'état du solveur n'est pas encore connu : les actions se débloquent dès la première réponse du serveur.`;
   });
 
-  /** Progress of the running job, as a share of the budget it was given. */
+  /**
+   * Progress of the running job, as a share of the budget it was given —
+   * derived from the estimated end rather than from `secondsLimit` alone,
+   * since a SOLVE_FILE budget applies to each of its N groups.
+   */
   protected readonly progression = computed(() => {
     const job = this.jobs.activeJob();
+    const end = this.jobs.estimatedEndMs();
     const restant = this.jobs.remainingSeconds();
-    if (!job?.secondsLimit || restant === null) {
+    if (!job || end === null || restant === null) {
       return null;
     }
-    const ecoule = job.secondsLimit - restant;
-    return Math.min(100, Math.max(0, Math.round((ecoule / job.secondsLimit) * 100)));
+    const total = Math.max(1, Math.round((end - job.startedAtMs) / 1000));
+    return Math.min(100, Math.max(0, Math.round(((total - restant) / total) * 100)));
   });
 
   protected async onTimefoldSolve(): Promise<void> {
@@ -348,6 +378,40 @@ export class SolverPage {
       await this.jobs.submitSolveFromReferenceData(this.solverSettings.secondsLimit());
       this.output.set(
         $localize`:@@solver.submitted:Résolution avec Timefold sur le serveur, puis analyse automatique du résultat. Vous pouvez continuer à naviguer ; une notification apparaîtra à chaque étape, ici et dans tout autre navigateur observant ce serveur.`
+      );
+    } catch (error) {
+      this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
+    }
+  }
+
+  /**
+   * The "résoudre tous les groupes" queue (issue #167): confirmed first with
+   * its worst-case duration (N groups × the budget — each warm-started group
+   * usually bails out much earlier), since it holds the solver lock for the
+   * whole run.
+   */
+  protected async onSolveFile(): Promise<void> {
+    if (this.solverJobAlreadyRunning()) {
+      return;
+    }
+    const groupes = this.groupesFile();
+    const budget = this.solverSettings.secondsLimit();
+    const dureeMax = formatDuration(groupes.length * budget);
+    const noms = groupes.map((groupe) => groupe.nom).join(', ');
+    const confirme = await this.confirm.ask({
+      title: $localize`:@@solver.solveFile:Résoudre tous les groupes`,
+      message: $localize`:@@solver.solveFileConfirm:Résoudre successivement ${groupes.length}:count: groupe(s) de créneaux (${noms}:groupes:), le groupe actif en dernier ? Durée maximale : ${dureeMax}:duree: — chaque groupe repartant de son dernier instantané, la file s'arrête généralement bien avant. Le solveur restera verrouillé pendant toute la file.`,
+      confirmLabel: $localize`:@@solver.solveFileAction:Lancer la file`
+    });
+    if (!confirme) {
+      return;
+    }
+    this.fileResultats.set(null);
+    this.output.set($localize`:@@solver.fileSubmitting:Envoi de la file de résolution au serveur...`);
+    try {
+      await this.jobs.submitSolveFile(budget);
+      this.output.set(
+        $localize`:@@solver.fileSubmitted:Résolution de tous les groupes en arrière-plan, le groupe actif en dernier. Les groupes non actifs sont conservés en instantanés : basculez de groupe pour les utiliser.`
       );
     } catch (error) {
       this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);

@@ -203,6 +203,17 @@ le planning de repli), l'application avertit l'utilisateur, sur tous les
 groupe actif et qu'une nouvelle résolution est nécessaire — et propose, si un
 instantané existe pour cette grille, de le restaurer sur place.
 
+Pour que cette bascule soit réellement immédiate, le bouton « Résoudre tous
+les groupes » de la page Solveur résout chaque grille l'une après l'autre — la
+grille active en dernier — et conserve le résultat de chacune en instantané,
+sans jamais toucher au planning affiché pendant le calcul. Changer de grille
+devient alors une restauration en un clic plutôt qu'une nouvelle résolution de
+plusieurs minutes. Chaque grille repart de son dernier instantané, si bien
+qu'une file relancée après quelques retouches se termine bien plus vite que la
+première. Une grille peut être exclue de la file (par exemple des amplitudes
+pas encore découpées en vacations, ou un brouillon) depuis la gestion des
+groupes.
+
 ### Instantanés de plan
 
 Un seul planning est enregistré à la fois par édition : chaque résolution
@@ -210,7 +221,9 @@ Un seul planning est enregistré à la fois par édition : chaque résolution
 grille de créneaux et sa date, et permet de le remettre en place plus tard.
 Un instantané est pris **automatiquement avant chaque résolution** — c'est le
 filet qui protège même l'utilisateur qui n'y a pas pensé ; les cinq derniers
-sont conservés, ceux enregistrés à la main ne sont jamais purgés.
+sont conservés, ceux enregistrés à la main ne sont jamais purgés, et le plus
+récent de chaque grille de créneaux encore existante est lui aussi toujours
+gardé : c'est lui qu'une bascule de grille restaure.
 
 Restaurer est refusé, sans rien écrire, si le référentiel a trop bougé depuis
 la capture (un stand ou un créneau cité n'existe plus) : l'application dit ce

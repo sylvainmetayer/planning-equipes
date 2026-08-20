@@ -14,6 +14,21 @@
                         (change)="activerGroupe(groupe)">
             {{ groupe.nom || groupe.id }}
           </mat-checkbox>
+          @if (groupe.resoudreEnFile === false) {
+            <button matIconButton i18n-matTooltip="@@groupesCreneaux.file.inclure"
+                    matTooltip="Exclu de la file « résoudre tous les groupes » (amplitudes non découpées ou brouillon). Cliquer pour l'inclure."
+                    i18n-aria-label="@@groupesCreneaux.file.inclureAria" aria-label="Inclure dans la file de résolution"
+                    [disabled]="editingLocked()" (click)="basculerResoudreEnFile(groupe)">
+              <mat-icon>playlist_remove</mat-icon>
+            </button>
+          } @else {
+            <button matIconButton i18n-matTooltip="@@groupesCreneaux.file.exclure"
+                    matTooltip="Résolu par la file « résoudre tous les groupes ». Cliquer pour l'exclure (par ex. un groupe d'amplitudes non découpées)."
+                    i18n-aria-label="@@groupesCreneaux.file.exclureAria" aria-label="Exclure de la file de résolution"
+                    [disabled]="editingLocked()" (click)="basculerResoudreEnFile(groupe)">
+              <mat-icon>playlist_play</mat-icon>
+            </button>
+          }
           <button matIconButton i18n-matTooltip="@@common.delete" matTooltip="Supprimer" i18n-aria-label="@@common.delete" aria-label="Supprimer" class="danger-action"
                   [disabled]="groupe.actif || editingLocked()" (click)="supprimerGroupe(groupe)">
             <mat-icon>delete</mat-icon>

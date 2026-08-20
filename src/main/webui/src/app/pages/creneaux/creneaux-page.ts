@@ -190,6 +190,22 @@ export class CreneauxPage {
     await this.crud.remove('groupes-creneaux', groupe.id, $localize`:@@groupesCreneaux.entityLabel:Groupe de créneaux`);
   }
 
+  /**
+   * Toggles whether the "résoudre tous les groupes" queue solves this group
+   * (issue #167) — e.g. an amplitudes group awaiting its découpage must stay
+   * out, or every queue run wastes a full budget on a garbage plan. The whole
+   * group is round-tripped so the rename path and this toggle never clobber
+   * each other's fields.
+   */
+  protected async basculerResoudreEnFile(groupe: GroupeCreneau): Promise<void> {
+    await this.crud.save(
+      'groupes-creneaux',
+      { ...groupe, resoudreEnFile: groupe.resoudreEnFile === false },
+      groupe.id,
+      $localize`:@@groupesCreneaux.entityLabel:Groupe de créneaux`
+    );
+  }
+
   protected async ajouterGroupe(): Promise<void> {
     const nom = this.nouveauGroupeNom().trim();
     if (!nom) {

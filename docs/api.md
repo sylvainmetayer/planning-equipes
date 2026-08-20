@@ -68,7 +68,11 @@ true`, libellé « Avant solve du … ») : c'est le vrai filet anti-écrasement
 celui qui protège l'utilisateur qui n'a pas pensé à enregistrer. Ces
 instantanés-là sont purgés au-delà des N derniers
 (`planning.snapshots.automatiques-conservees`, 5 par défaut) ; ceux créés à la
-main ne le sont jamais.
+main ne le sont jamais, et depuis la file « résoudre tous les groupes » (issue
+#167) le plus récent instantané de **chaque groupe de créneaux encore
+existant** est lui aussi épargné, quel que soit son âge — c'est le plan
+pré-résolu qu'une bascule de groupe restaure en un clic (un groupe supprimé
+rend son instantané de nouveau purgeable).
 
 Le contenu est stocké **dénormalisé** en JSONB, jamais comme une copie de
 lignes `poste_affectation` : ces lignes sont liées aux `creneau` par clé
@@ -92,6 +96,7 @@ autre onglet) voit le même job actif et le même temps écoulé via
 | --- | --- | --- |
 | `POST` | `/api/solve/async?seconds={n}` | Démarre une résolution en tâche de fond (`202`, ou `409` si le solveur est occupé) |
 | `POST` | `/api/solve/analyze/async?seconds={n}` | Démarre une analyse en tâche de fond (`202`, ou `409` si le solveur est occupé) |
+| `POST` | `/api/solve/file/async?seconds={n}` | Résout **tous** les groupes de créneaux marqués `resoudreEnFile`, en séquence sous le même verrou, le groupe actif en dernier (`202` ; `409` si occupé ; `400` si aucun groupe éligible). `{n}` s'applique à **chaque** groupe |
 | `GET` | `/api/jobs` | Liste des jobs |
 | `GET` | `/api/jobs/active` | Job en cours (`200`) ou solveur libre (`204`) |
 | `GET` | `/api/jobs/{id}` | État et résultat d'un job |
@@ -100,6 +105,17 @@ autre onglet) voit le même job actif et le même temps écoulé via
 Chaque job expose `elapsedSeconds`, calculé côté serveur : le temps écoulé
 affiché est identique quel que soit le client, son horloge ou son heure de
 connexion.
+
+Un job `SOLVE_FILE` (issue #167) expose en plus sa progression
+(`groupeCourantNom`, `groupeCourant`, `totalGroupes` — « groupe i/N ») et son
+résultat est une ligne par groupe (`statut` : `RESOLU`, `INTERROMPU`, `ECHEC`
+avec `erreur`, ou `NON_TRAITE` après annulation). Seul le groupe **actif**,
+résolu en dernier, écrit dans `poste_affectation` ; chaque groupe non actif est
+conservé en instantané pris directement depuis la solution en mémoire, et
+chaque solve repart du dernier instantané de son groupe (warm start, issue
+#86) — l'arrêt « plus d'amélioration depuis N s, une fois faisable » écourte
+alors les groupes déjà bons. L'annulation (`/api/jobs/{id}/cancel`) conserve le
+résultat partiel du groupe en cours et saute les suivants.
 
 ## Contraintes
 
@@ -413,6 +429,12 @@ peuvent porter les mêmes identifiants métier sans se marcher dessus.
 prochain solve et désactive toutes les autres **de l'édition courante** (une
 seule grille active à la fois, par édition : activer une grille dans l'édition
 2026 ne touche pas à celle de 2025).
+
+Chaque groupe porte un booléen `resoudreEnFile` (défaut `true`) : participe-t-il
+à `POST /api/solve/file/async` ? Le découpage le gère seul (groupe source
+d'amplitudes → `false`, groupe de vacations généré → `true`), et il reste
+éditable via `PUT /api/groupes-creneaux/{id}` — résoudre un groupe d'amplitudes
+jamais découpé ne produirait qu'un plan-poubelle de vacations de 14 h.
 
 Les typologies de jeux sont un référentiel comme les autres, pas un enum figé
 côté serveur : `stands.typologiesProposees` et

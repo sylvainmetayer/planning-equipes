@@ -652,12 +652,12 @@ public class ReferenceDataRepository {
         List<GroupeCreneau> groupes = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = prepareScoped(connection,
-                        "SELECT id, nom, actif, groupe_source_id FROM groupe_creneau "
+                        "SELECT id, nom, actif, groupe_source_id, resoudre_en_file FROM groupe_creneau "
                                 + "WHERE edition_id = ? ORDER BY nom");
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 groupes.add(new GroupeCreneau(rs.getString("id"), rs.getString("nom"), rs.getBoolean("actif"),
-                        rs.getString("groupe_source_id")));
+                        rs.getString("groupe_source_id"), rs.getBoolean("resoudre_en_file")));
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to list timeslot groups", e);
@@ -670,19 +670,21 @@ public class ReferenceDataRepository {
     }
 
     /**
-     * Upserts id/nom/groupeSourceId only — {@code actif} is never touched
-     * here, see {@link #activerGroupeCreneau(String)}.
+     * Upserts id/nom/groupeSourceId/resoudreEnFile only — {@code actif} is
+     * never touched here, see {@link #activerGroupeCreneau(String)}.
      */
     public void saveGroupeCreneau(GroupeCreneau groupe) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = prepareScoped(connection,
-                        "INSERT INTO groupe_creneau (edition_id, id, nom, actif, groupe_source_id) "
-                                + "VALUES (?, ?, ?, FALSE, ?) "
+                        "INSERT INTO groupe_creneau (edition_id, id, nom, actif, groupe_source_id, resoudre_en_file) "
+                                + "VALUES (?, ?, ?, FALSE, ?, ?) "
                                 + "ON CONFLICT (edition_id, id) DO UPDATE SET nom = EXCLUDED.nom, "
-                                + "groupe_source_id = EXCLUDED.groupe_source_id")) {
+                                + "groupe_source_id = EXCLUDED.groupe_source_id, "
+                                + "resoudre_en_file = EXCLUDED.resoudre_en_file")) {
             ps.setString(2, groupe.getId());
             ps.setString(3, groupe.getNom());
             ps.setString(4, groupe.getGroupeSourceId());
+            ps.setBoolean(5, groupe.isResoudreEnFile());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to save timeslot group " + groupe.getId(), e);

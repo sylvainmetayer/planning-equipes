@@ -88,7 +88,13 @@ export class GroupeMismatchBanner {
     const solvedNom =
       this.resolution.resolution()?.groupeCreneauNom ?? $localize`:@@groupeMismatch.deletedGroup:groupe supprimé`;
     const activeNom = this.resolution.activeGroupe()?.nom ?? '';
-    return $localize`:@@groupeMismatch.message:Le dernier calcul du planning a été effectué pour le groupe de créneaux « ${solvedNom}:solvedNom: », mais le groupe actif est désormais « ${activeNom}:activeNom: ». Relancez le solveur pour obtenir un résultat à jour pour ce groupe.`;
+    const constat = $localize`:@@groupeMismatch.constat:Le dernier calcul du planning a été effectué pour le groupe de créneaux « ${solvedNom}:solvedNom: », mais le groupe actif est désormais « ${activeNom}:activeNom: ».`;
+    // Two very different situations behind one mismatch (issue #167): a
+    // pre-solved group is one click away, an unsolved one needs the solver.
+    const remede = this.snapshotDuGroupeActif()
+      ? $localize`:@@groupeMismatch.remedeSnapshot:Un instantané résolu de ce groupe est disponible : restaurez-le, sans re-résolution.`
+      : $localize`:@@groupeMismatch.remedeSolve:Ce groupe n'a pas encore été résolu : relancez le solveur, ou « Résoudre tous les groupes » (page Solveur) pour préparer chaque bascule à l'avance.`;
+    return `${constat} ${remede}`;
   });
 
   /** Most recent snapshot computed for the group that is active now, if any. */

@@ -2,6 +2,9 @@ package dev.sylvain.planning.service;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +18,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import ai.timefold.solver.core.api.solver.Solver;
+import dev.sylvain.planning.domain.GroupeCreneau;
 import dev.sylvain.planning.domain.PlanningFestival;
 import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -46,8 +50,13 @@ public class SolverJobService {
 
     public enum JobType {
         SOLVE,
-        ANALYZE
+        ANALYZE,
+        /** One sequential solve per groupe de créneaux flagged for the queue — see {@link #submitSolveFile}. */
+        SOLVE_FILE
     }
+
+    /** Label prefix of the snapshots the queue captures, same zone convention as {@code PlanSnapshotService}. */
+    private static final DateTimeFormatter LIBELLE_FILE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     public enum JobStatus {
         PENDING,
@@ -71,6 +80,9 @@ public class SolverJobService {
 
     @Inject
     EditionContext editionContext;
+
+    @Inject
+    ReferenceDataService referenceDataService;
 
     private final Map<String, SolverJob> jobs = new ConcurrentHashMap<>();
     private final ExecutorService executor = Executors.newFixedThreadPool(2, new SolverThreadFactory());
@@ -96,6 +108,111 @@ public class SolverJobService {
             analysisStore.record(diagnostic);
             return diagnostic;
         });
+    }
+
+    /**
+     * The "résoudre tous les groupes" queue (issue #167): one sequential solve
+     * per groupe de créneaux flagged {@code resoudreEnFile}, under the same
+     * global solver lock as any other job. Each problem is built <b>when its
+     * turn comes</b> (the referential may change while earlier groups solve)
+     * and warm-started from the group's last snapshot (issue #86). A
+     * non-active group's result becomes a snapshot straight from memory —
+     * {@code poste_affectation}, the espace animateur and the exports keep
+     * serving the active group's plan throughout. The active group goes
+     * <b>last</b>, through the exact same path as a plain solve (persist +
+     * analysis), so the constraint-analysis screen ends on its diagnostic. A
+     * group that fails (e.g. emptied since the queue started) is reported in
+     * the summary and the queue moves on; a cancel keeps the current group's
+     * partial result and skips the rest.
+     */
+    public SolverJob submitSolveFile(Long secondsLimit) {
+        List<GroupeCreneau> aResoudre = referenceDataService.listGroupesCreneaux().stream()
+                .filter(GroupeCreneau::isResoudreEnFile)
+                .sorted(Comparator.comparing(GroupeCreneau::isActif))
+                .toList();
+        if (aResoudre.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Aucun groupe de créneaux ne participe à la file (drapeau « résoudre en file »)");
+        }
+        return submit(JobType.SOLVE_FILE, secondsLimit, job -> {
+            job.marquerProgressionFile(null, 0, aResoudre.size());
+            List<GroupeFileResultat> resultats = new ArrayList<>();
+            int index = 0;
+            for (GroupeCreneau groupe : aResoudre) {
+                index++;
+                if (job.isCancelRequested()) {
+                    resultats.add(GroupeFileResultat.nonTraite(groupe));
+                    continue;
+                }
+                job.marquerProgressionFile(groupe.getNom(), index, aResoudre.size());
+                long depart = System.nanoTime();
+                try {
+                    resultats.add(resoudreGroupeDeFile(job, groupe, secondsLimit, depart));
+                } catch (Exception e) {
+                    resultats.add(GroupeFileResultat.echec(groupe, e, depart));
+                }
+            }
+            return resultats;
+        });
+    }
+
+    private GroupeFileResultat resoudreGroupeDeFile(SolverJob job, GroupeCreneau groupe, Long secondsLimit,
+            long depart) {
+        String libelle = "File du " + LIBELLE_FILE_FORMAT.format(ZonedDateTime.now()) + " — " + groupe.getNom();
+        PlanningFestival solved;
+        String score;
+        if (groupe.isActif()) {
+            // The active group is the plain solve path, warm-started: same
+            // safety-net snapshot, same persistence, same recorded analysis.
+            snapshotService.capturerAvantSolve();
+            Map<String, List<String>> seed = persistenceService.chargerAnimateursParStandCreneau();
+            PlanningFestival problem = planningService.construireDepuisReferenceData(groupe.getId(), seed);
+            solved = planningService.resoudreAvecBailoutPlateau(problem, secondsLimit, job::attachSolver);
+            persistenceService.persist(solved);
+            PlanningService.PlanningDiagnostic diagnostic = planningService.diagnostiquer(solved);
+            analysisStore.record(diagnostic);
+            score = diagnostic.score();
+            snapshotService.capturer(libelle, true);
+        } else {
+            PlanSnapshotService.SnapshotDetail dernier = snapshotService.dernierSnapshotDuGroupe(groupe.getId());
+            Map<String, List<String>> seed = dernier == null
+                    ? Map.of()
+                    : PlanSnapshotService.animateursParStandCreneau(dernier);
+            PlanningFestival problem = planningService.construireDepuisReferenceData(groupe.getId(), seed);
+            solved = planningService.resoudreAvecBailoutPlateau(problem, secondsLimit, job::attachSolver);
+            score = solved.getScore() == null ? null : solved.getScore().toString();
+            snapshotService.capturerDepuisSolution(solved, groupe.getId(), groupe.getNom(), score, libelle);
+        }
+        int affectations = (int) solved.getPostes().stream().filter(poste -> poste.getAnimateur() != null).count();
+        String statut = job.isCancelRequested() ? "INTERROMPU" : "RESOLU";
+        return new GroupeFileResultat(groupe.getId(), groupe.getNom(), groupe.isActif(), statut, score,
+                affectations, dureeSecondes(depart), null);
+    }
+
+    private static long dureeSecondes(long departNanos) {
+        return Math.max(0, (System.nanoTime() - departNanos) / 1_000_000_000L);
+    }
+
+    /**
+     * One line of a {@link JobType#SOLVE_FILE} job's result: what happened to
+     * each group, in queue order. {@code statut} is {@code RESOLU},
+     * {@code INTERROMPU} (cancelled mid-solve, partial result captured),
+     * {@code ECHEC} ({@code erreur} says why, the queue moved on) or
+     * {@code NON_TRAITE} (cancelled before its turn).
+     */
+    public record GroupeFileResultat(String groupeId, String nom, boolean actif, String statut, String score,
+            int affectations, long dureeSecondes, String erreur) {
+
+        static GroupeFileResultat nonTraite(GroupeCreneau groupe) {
+            return new GroupeFileResultat(groupe.getId(), groupe.getNom(), groupe.isActif(), "NON_TRAITE",
+                    null, 0, 0, null);
+        }
+
+        static GroupeFileResultat echec(GroupeCreneau groupe, Exception e, long depart) {
+            String message = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
+            return new GroupeFileResultat(groupe.getId(), groupe.getNom(), groupe.isActif(), "ECHEC",
+                    null, 0, SolverJobService.dureeSecondes(depart), message);
+        }
     }
 
     public SolverJob submitAnalyze(PlanningFestival problem, Long secondsLimit) {
@@ -275,6 +392,10 @@ public class SolverJobService {
         private volatile String error;
         private volatile boolean cancelRequested;
         private volatile Solver<PlanningFestival> solver;
+        /** {@link JobType#SOLVE_FILE} progress: the group being solved, 1-based, and the queue length. */
+        private volatile String groupeCourantNom;
+        private volatile Integer groupeCourant;
+        private volatile Integer totalGroupes;
 
         private SolverJob(String id, JobType type, Long secondsLimit, String editionId) {
             this.id = id;
@@ -337,6 +458,24 @@ public class SolverJobService {
 
         private boolean isCancelRequested() {
             return cancelRequested;
+        }
+
+        private void marquerProgressionFile(String nom, int courant, int total) {
+            this.groupeCourantNom = nom;
+            this.groupeCourant = courant == 0 ? null : courant;
+            this.totalGroupes = total;
+        }
+
+        public String getGroupeCourantNom() {
+            return groupeCourantNom;
+        }
+
+        public Integer getGroupeCourant() {
+            return groupeCourant;
+        }
+
+        public Integer getTotalGroupes() {
+            return totalGroupes;
         }
 
         public boolean isFinished() {

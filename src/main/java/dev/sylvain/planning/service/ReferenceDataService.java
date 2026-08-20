@@ -427,6 +427,16 @@ public class ReferenceDataService {
         return repository == null ? List.of() : repository.listCreneauxGroupeActif();
     }
 
+    /**
+     * Timeslots of an explicit group, active or not — what the "résoudre tous
+     * les groupes" queue (issue #167) builds each problem from: relying on the
+     * active-group flag there would have every queued solve target the same
+     * group.
+     */
+    public List<Creneau> listCreneauxParGroupe(String groupeCreneauId) {
+        return repository == null ? List.of() : repository.listCreneauxParGroupe(groupeCreneauId);
+    }
+
     public Creneau createCreneau(Creneau creneau) {
         creneau.setId(null); // ignore any client-supplied id — the database always generates it
         defaultGroupeIfMissing(creneau);
@@ -544,6 +554,17 @@ public class ReferenceDataService {
                 .orElseGet(() -> new GroupeCreneau(requiredId(groupeCibleId, "target timeslot group id"),
                         requiredId(nomGroupeCible, "target timeslot group name"), false));
         cible.setGroupeSourceId(groupeSourceId);
+        // The découpage settles the amplitudes/vacations question for this
+        // pair: raw amplitudes must not be solved by the queue (issue #167),
+        // their vacations are exactly what it is for.
+        cible.setResoudreEnFile(true);
+        repository.listGroupesCreneaux().stream()
+                .filter(g -> g.getId().equals(groupeSourceId) && g.isResoudreEnFile())
+                .findFirst()
+                .ifPresent(source -> {
+                    source.setResoudreEnFile(false);
+                    repository.saveGroupeCreneau(source);
+                });
         repository.saveGroupeCreneau(cible);
         repository.replaceCreneauxDuGroupe(cible.getId(), vacations);
         markModified();
@@ -697,6 +718,15 @@ public class ReferenceDataService {
             return List.of();
         }
         return repository.listVerrouillagesGroupe(repository.groupeCreneauActifId());
+    }
+
+    /**
+     * The locks recorded for an explicit group — what a queued solve of that
+     * group (issue #167) must apply, where {@link #snapshotVerrouillagesGroupeActif()}
+     * would silently apply the active group's locks to another group's problem.
+     */
+    public List<VerrouillagePlanning> snapshotVerrouillagesGroupe(String groupeCreneauId) {
+        return repository == null ? List.of() : repository.listVerrouillagesGroupe(groupeCreneauId);
     }
 
     /**

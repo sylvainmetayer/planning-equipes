@@ -261,6 +261,53 @@ public class PlanningService {
     }
 
     /**
+     * The problem for an <b>explicit</b> groupe de créneaux, active or not —
+     * what each step of the "résoudre tous les groupes" queue builds (issue
+     * #167). Both group-dependent reads are parametrised (créneaux <i>and</i>
+     * locks: the active-group lock read would otherwise pin another group's
+     * seats onto this problem), and the seats are warm-started from
+     * {@code seed} (issue #86): every seeded seat keeps its animateur as a
+     * movable starting point — the construction heuristic then only fills the
+     * holes and local search improves from the seed's score instead of from
+     * scratch, which is what lets the plateau bailout (see
+     * {@link #applyTermination}) finish a re-solve of an already-good plan in
+     * a fraction of the full budget. Seats covered by one of the group's locks
+     * are pinned, exactly as in the cold path. An empty {@code seed} degrades
+     * to a plain cold solve.
+     *
+     * @param seed animateur ids per {@link PlanningPersistenceService#cleStandCreneau}
+     *             key, in seat order — the group's last snapshot, or the
+     *             persisted plan for the active group
+     */
+    public PlanningFestival construireDepuisReferenceData(String groupeCreneauId, Map<String, List<String>> seed) {
+        List<Animateur> animateurs = referenceDataService.listAnimateurs();
+        // Raw stands resolved against THIS group's créneaux — listStandsResolus()
+        // expands the recurring horaires against the active group's days, which
+        // are not necessarily the same days.
+        List<Stand> stands = referenceDataService.listStands();
+        List<Creneau> creneaux = referenceDataService.listCreneauxParGroupe(groupeCreneauId);
+        if (animateurs.isEmpty() || stands.isEmpty() || creneaux.isEmpty()) {
+            throw new IllegalStateException(
+                    "Aucune donnée de référence pour le groupe " + groupeCreneauId
+                            + ". Chargez un scénario ou créez des stands, des animateurs et des créneaux d'abord.");
+        }
+        HoraireStandResolver.appliquer(stands, creneaux);
+        List<PosteAffectation> postes = construirePostes(stands, creneaux);
+        List<VerrouillagePlanning> verrouillages = referenceDataService.snapshotVerrouillagesGroupe(groupeCreneauId);
+        seedDepuisAffectations(postes, animateurs, verrouillages, seed, true);
+        LocalDate dateDebut = creneaux.stream()
+                .map(Creneau::getDate)
+                .filter(java.util.Objects::nonNull)
+                .min(LocalDate::compareTo)
+                .orElse(null);
+        PlanningFestival festival = new PlanningFestival(dateDebut, animateurs, postes,
+                referenceDataService.snapshotContraintes());
+        festival.setParametresLegaux(List.of(referenceDataService.getParametresLegaux()));
+        festival.setVerrouillages(verrouillages);
+        return festival;
+    }
+
+    /**
      * Same problem, built from lists the caller provides instead of reading the
      * referential — what {@link WhatIfService} uses to evaluate a variant
      * (animateurs added or removed, a stand closed) without writing anything.
@@ -322,7 +369,29 @@ public class PlanningService {
      */
     static void appliquerVerrouillages(List<PosteAffectation> postes, List<Animateur> animateurs,
             List<VerrouillagePlanning> verrouillages, Map<String, List<String>> animateursPersistes) {
-        if (verrouillages.isEmpty() || animateursPersistes.isEmpty()) {
+        if (verrouillages.isEmpty()) {
+            return;
+        }
+        seedDepuisAffectations(postes, animateurs, verrouillages, animateursPersistes, false);
+    }
+
+    /**
+     * Re-seeds the seats positionally from {@code seed} (animateur ids per
+     * stand × créneau key, seat order — ids are interchangeable within one
+     * key, see {@link PlanningPersistenceService#chargerAnimateursParStandCreneau()}),
+     * then pins the seats covered by a lock. What happens to a seeded seat
+     * <b>not</b> covered by any lock is the whole difference between the two
+     * callers: the cold path ({@code conserverSeedsLibres = false}, historical
+     * behaviour) clears it again so the solver restarts from scratch, while
+     * the warm start of issue #86 ({@code true}) keeps it as a movable
+     * starting point. An animateur id the referential no longer knows simply
+     * leaves its seat empty — a stale seed is a worse starting point, never an
+     * error.
+     */
+    static void seedDepuisAffectations(List<PosteAffectation> postes, List<Animateur> animateurs,
+            List<VerrouillagePlanning> verrouillages, Map<String, List<String>> seed,
+            boolean conserverSeedsLibres) {
+        if (seed.isEmpty()) {
             return;
         }
         Map<String, Animateur> animateursParId = new HashMap<>();
@@ -336,7 +405,7 @@ public class PlanningService {
             }
             String cle = PlanningPersistenceService.cleStandCreneau(
                     poste.getStand().getId(), poste.getCreneau().getId());
-            List<String> tenants = animateursPersistes.getOrDefault(cle, List.of());
+            List<String> tenants = seed.getOrDefault(cle, List.of());
             int place = prochaineePlace.merge(cle, 1, Integer::sum) - 1;
             if (place < tenants.size()) {
                 poste.setAnimateur(animateursParId.get(tenants.get(place)));
@@ -346,7 +415,7 @@ public class PlanningService {
             }
             boolean gele = verrouillages.stream().anyMatch(verrouillage -> verrouillage.couvre(poste));
             poste.setVerrouille(gele);
-            if (!gele) {
+            if (!gele && !conserverSeedsLibres) {
                 poste.setAnimateur(null);
             }
         }
@@ -1377,6 +1446,35 @@ public class PlanningService {
             Consumer<Solver<PlanningFestival>> onSolverReady) {
         prepareProblem(problem);
         Solver<PlanningFestival> solver = resolveSolverFactory(secondsLimitOverride).buildSolver();
+        if (onSolverReady != null) {
+            onSolverReady.accept(solver);
+        }
+        return solver.solve(problem);
+    }
+
+    /**
+     * Same as {@link #resoudre(PlanningFestival, Long, Consumer)}, but an
+     * explicit budget <b>keeps</b> the ambient feasible-plateau bailout instead
+     * of disabling it (see {@link #resolveSolverFactory}) — what each solve of
+     * the "résoudre tous les groupes" queue uses: a warm-started group whose
+     * seed is already feasible stops a few unimproved seconds in rather than
+     * consuming its whole slice of the queue's budget, while a group still
+     * chasing hard-feasibility keeps the full slice.
+     */
+    public PlanningFestival resoudreAvecBailoutPlateau(PlanningFestival problem, Long secondsLimitOverride,
+            Consumer<Solver<PlanningFestival>> onSolverReady) {
+        prepareProblem(problem);
+        SolverFactory<PlanningFestival> factory;
+        if (secondsLimitOverride == null || secondsLimitOverride.equals(defaultSecondsLimit)) {
+            factory = solverFactory;
+        } else {
+            SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
+            solverConfig.setScoreDirectorFactoryConfig(new ScoreDirectorFactoryConfig()
+                    .withConstraintProviderClass(PlanningConstraintProvider.class));
+            applyTermination(solverConfig, secondsLimitOverride, defaultUnimprovedSecondsLimit);
+            factory = SolverFactory.create(solverConfig);
+        }
+        Solver<PlanningFestival> solver = factory.buildSolver();
         if (onSolverReady != null) {
             onSolverReady.accept(solver);
         }

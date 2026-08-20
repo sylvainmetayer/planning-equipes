@@ -295,6 +295,12 @@ export interface GroupeCreneau {
   actif: boolean;
   /** Id of the "amplitudes" group this group's vacations were auto-generated from, or `null`. */
   groupeSourceId?: string | null;
+  /**
+   * Whether the "résoudre tous les groupes" queue solves this group (issue
+   * #167). Defaults to true; the découpage flips it off on the amplitudes
+   * source it slices from. Absent on payloads predating the flag.
+   */
+  resoudreEnFile?: boolean;
 }
 
 /**
@@ -606,7 +612,7 @@ export const DUREE_HEBDOMADAIRE_MAX_HEURES = 48;
 /** Ordre public ceiling for minors, in hours (Code du travail art. L3162-1). */
 export const DUREE_HEBDOMADAIRE_MAX_MINEUR_HEURES = 35;
 
-export type JobType = 'SOLVE' | 'ANALYZE';
+export type JobType = 'SOLVE' | 'ANALYZE' | 'SOLVE_FILE';
 export type JobStatus = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
 
 /** `/api/jobs/...` view: the server owns the solver state, elapsed included. */
@@ -620,7 +626,28 @@ export interface JobView {
   finishedAt: string | null;
   elapsedSeconds: number;
   error: string | null;
+  /** SOLVE_FILE progress (« groupe i/N ») — null on other job types. */
+  groupeCourantNom: string | null;
+  groupeCourant: number | null;
+  totalGroupes: number | null;
   result: unknown;
+}
+
+/**
+ * One line of a SOLVE_FILE job's result: what happened to each groupe de
+ * créneaux, in queue order. `statut` is RESOLU, INTERROMPU (cancelled
+ * mid-solve, partial result captured), ECHEC (`erreur` says why) or
+ * NON_TRAITE (cancelled before its turn).
+ */
+export interface GroupeFileResultat {
+  groupeId: string;
+  nom: string;
+  actif: boolean;
+  statut: 'RESOLU' | 'INTERROMPU' | 'ECHEC' | 'NON_TRAITE';
+  score: string | null;
+  affectations: number;
+  dureeSecondes: number;
+  erreur: string | null;
 }
 
 /**

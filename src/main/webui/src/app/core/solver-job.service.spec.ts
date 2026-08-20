@@ -19,6 +19,9 @@ function job(overrides: Partial<JobView> = {}): JobView {
     finishedAt: null,
     elapsedSeconds: 3,
     error: null,
+    groupeCourantNom: null,
+    groupeCourant: null,
+    totalGroupes: null,
     result: null,
     ...overrides
   };
@@ -161,6 +164,58 @@ describe('SolverJobService', () => {
       await vi.advanceTimersByTimeAsync(3000);
 
       expect(service.now()).toBeGreaterThan(before);
+    });
+  });
+
+  describe('SOLVE_FILE (résoudre tous les groupes, issue #167)', () => {
+    const fileJob = (overrides: Partial<JobView> = {}): JobView =>
+      job({ type: 'SOLVE_FILE', groupeCourantNom: 'Canicule', groupeCourant: 1, totalGroupes: 3, ...overrides });
+
+    it('refreshes the queue progress between two polls of the same job', async () => {
+      api.activeResponses = [
+        { status: 200, body: fileJob() },
+        { status: 200, body: fileJob({ groupeCourantNom: 'Défaut', groupeCourant: 2 }) }
+      ];
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(service.activeJob()?.groupeCourant).toBe(1);
+
+      await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
+
+      expect(service.activeJob()?.groupeCourant).toBe(2);
+      expect(service.activeJob()?.groupeCourantNom).toBe('Défaut');
+      expect(service.activeJobDescription()).toContain('2/3');
+    });
+
+    it('stretches the estimated end to the whole queue: the budget applies to each group', async () => {
+      api.activeResponses = [{ status: 200, body: fileJob({ elapsedSeconds: 0, secondsLimit: 60 }) }];
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+
+      const tracked = service.activeJob();
+      expect(tracked).not.toBeNull();
+      expect(service.estimatedEndMs()).toBe(tracked!.startedAtMs + 3 * 60 * 1000);
+    });
+
+    it('dispatches the per-group summary to SOLVE_FILE handlers, not to SOLVE ones', async () => {
+      const surFile = vi.fn();
+      const surSolve = vi.fn();
+      service.onResult('SOLVE_FILE', surFile);
+      service.onResult('SOLVE', surSolve);
+      const resume = [{ groupeId: 'G1', nom: 'Canicule', actif: false, statut: 'RESOLU' }];
+      api.activeResponses = [
+        { status: 200, body: fileJob() },
+        { status: 204, body: null }
+      ];
+      api.jobsById['job-1'] = fileJob({ status: 'COMPLETED', finishedAt: '2026-07-01T10:05:00Z', result: resume });
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+      await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(surFile).toHaveBeenCalledTimes(1);
+      expect(surFile.mock.calls[0][0]).toEqual(resume);
+      expect(surSolve).not.toHaveBeenCalled();
     });
   });
 });

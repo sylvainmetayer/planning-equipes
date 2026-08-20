@@ -20,6 +20,14 @@ public class GroupeCreneau {
      * action in the découpage UI; the solver never reads it.
      */
     private String groupeSourceId;
+    /**
+     * Whether this group takes part in the "résoudre tous les groupes" queue
+     * (issue #167). Defaults to {@code true}; the découpage paths flip it to
+     * {@code false} on the amplitudes source they slice from, since solving
+     * raw amplitudes only yields a garbage plan. User-editable — the
+     * amplitudes/vacations distinction is not derivable reliably.
+     */
+    private boolean resoudreEnFile = true;
 
     public GroupeCreneau() {
     }
@@ -35,6 +43,14 @@ public class GroupeCreneau {
         this.nom = nom;
         this.actif = actif;
         this.groupeSourceId = groupeSourceId;
+    }
+
+    public GroupeCreneau(String id, String nom, boolean actif, String groupeSourceId, boolean resoudreEnFile) {
+        this.id = id;
+        this.nom = nom;
+        this.actif = actif;
+        this.groupeSourceId = groupeSourceId;
+        this.resoudreEnFile = resoudreEnFile;
     }
 
     public String getId() {
@@ -67,6 +83,14 @@ public class GroupeCreneau {
 
     public void setGroupeSourceId(String groupeSourceId) {
         this.groupeSourceId = groupeSourceId;
+    }
+
+    public boolean isResoudreEnFile() {
+        return resoudreEnFile;
+    }
+
+    public void setResoudreEnFile(boolean resoudreEnFile) {
+        this.resoudreEnFile = resoudreEnFile;
     }
 
     @Override
