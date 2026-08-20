@@ -12,5 +12,5 @@ interactive = true
 [tasks.dev]
 run = "podman compose up -d"
 
-
-
+[env]
+MAIL_ADMIN="admin@localhost"
