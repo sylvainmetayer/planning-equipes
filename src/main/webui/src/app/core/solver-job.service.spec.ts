@@ -197,6 +197,27 @@ describe('SolverJobService', () => {
       expect(service.estimatedEndMs()).toBe(tracked!.startedAtMs + 3 * 60 * 1000);
     });
 
+    it('still dispatches the partial summary when the queue was cancelled', async () => {
+      const surFile = vi.fn();
+      service.onResult('SOLVE_FILE', surFile);
+      const partiel = [
+        { groupeId: 'G1', nom: 'Canicule', actif: false, statut: 'INTERROMPU' },
+        { groupeId: 'G2', nom: 'Défaut', actif: true, statut: 'NON_TRAITE' }
+      ];
+      api.activeResponses = [
+        { status: 200, body: fileJob() },
+        { status: 204, body: null }
+      ];
+      api.jobsById['job-1'] = fileJob({ status: 'CANCELLED', finishedAt: '2026-07-01T10:02:00Z', result: partiel });
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+      await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(surFile).toHaveBeenCalledTimes(1);
+      expect(surFile.mock.calls[0][0]).toEqual(partiel);
+    });
+
     it('dispatches the per-group summary to SOLVE_FILE handlers, not to SOLVE ones', async () => {
       const surFile = vi.fn();
       const surSolve = vi.fn();

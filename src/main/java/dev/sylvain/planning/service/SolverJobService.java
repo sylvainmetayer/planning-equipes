@@ -165,8 +165,8 @@ public class SolverJobService {
             // The active group is the plain solve path, warm-started: same
             // safety-net snapshot, same persistence, same recorded analysis.
             snapshotService.capturerAvantSolve();
-            Map<String, List<String>> seed = persistenceService.chargerAnimateursParStandCreneau();
-            PlanningFestival problem = planningService.construireDepuisReferenceData(groupe.getId(), seed);
+            PlanningFestival problem = planningService.construireDepuisReferenceData(groupe.getId(),
+                    seedDuGroupeActif(groupe));
             solved = planningService.resoudreAvecBailoutPlateau(problem, secondsLimit, job::attachSolver);
             persistenceService.persist(solved);
             PlanningService.PlanningDiagnostic diagnostic = planningService.diagnostiquer(solved);
@@ -187,6 +187,24 @@ public class SolverJobService {
         String statut = job.isCancelRequested() ? "INTERROMPU" : "RESOLU";
         return new GroupeFileResultat(groupe.getId(), groupe.getNom(), groupe.isActif(), statut, score,
                 affectations, dureeSecondes(depart), null);
+    }
+
+    /**
+     * Seed of the active group's warm start. The persisted plan is the
+     * freshest source, but only when it was actually solved <b>for this
+     * group</b>: its seed keys carry the previously-solved group's créneau
+     * ids, and after a group switch (the queue's primary flow) none of them
+     * would match this group's postes — a silently cold solve burning the
+     * whole budget. In that case the group's own last snapshot, exactly like
+     * the non-active branch, is the right starting point.
+     */
+    private Map<String, List<String>> seedDuGroupeActif(GroupeCreneau groupe) {
+        PlanningPersistenceService.PlanningResolution resolution = persistenceService.loadResolution();
+        if (resolution != null && groupe.getId().equals(resolution.groupeCreneauId())) {
+            return persistenceService.chargerAnimateursParStandCreneau();
+        }
+        PlanSnapshotService.SnapshotDetail dernier = snapshotService.dernierSnapshotDuGroupe(groupe.getId());
+        return dernier == null ? Map.of() : PlanSnapshotService.animateursParStandCreneau(dernier);
     }
 
     private static long dureeSecondes(long departNanos) {

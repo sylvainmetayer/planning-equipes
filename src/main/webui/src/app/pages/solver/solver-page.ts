@@ -257,8 +257,10 @@ export class SolverPage {
     inject(DestroyRef).onDestroy(
       this.jobs.onResult('SOLVE_FILE', (result) => {
         this.fileResultats.set(Array.isArray(result) ? (result as GroupeFileResultat[]) : null);
-        // The queue's last step re-solved and persisted the active group
-        // through the plain path: same cache invalidations as a plain solve.
+        // The queue's last step re-solved and persisted the active group, so
+        // the cached planning and the problem summary are stale. The
+        // feasibility banner is not repopulated (the queue's payload carries
+        // no diagnostic); it was cleared at submission.
         this.planningState.set(null);
         void this.loadLastRun();
         void this.problemes.reload();
@@ -407,6 +409,12 @@ export class SolverPage {
       return;
     }
     this.fileResultats.set(null);
+    // Same pre-submit clearing as onTimefoldSolve: the feasibility banner
+    // describes a previous solve's diagnostic, which the queue is about to
+    // make stale — better gone than contradicting the refreshed summary.
+    this.feasibility.set(null);
+    this.hardScore.set(null);
+    this.hardIssues.set([]);
     this.output.set($localize`:@@solver.fileSubmitting:Envoi de la file de résolution au serveur...`);
     try {
       await this.jobs.submitSolveFile(budget);

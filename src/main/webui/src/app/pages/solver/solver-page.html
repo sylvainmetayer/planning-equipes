@@ -124,9 +124,7 @@
               <td>{{ resultat.statut }}</td>
               <td>{{ resultat.score ?? '—' }}</td>
               <td i18n="@@solver.fileResultatDuree">{{ resultat.dureeSecondes }} s</td>
-              @if (resultat.erreur) {
-                <td>{{ resultat.erreur }}</td>
-              }
+              <td>{{ resultat.erreur ?? '' }}</td>
             </tr>
           }
         </tbody>

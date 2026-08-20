@@ -377,6 +377,14 @@ export class SolverJobService {
         desktop: true,
         timeout: 0
       });
+      // A cancelled job is not an empty job: the server keeps its partial
+      // result (a stopped solve is still persisted and analyzed, a stopped
+      // queue keeps its per-group summary — see SolverJobService.cancel on
+      // the backend). The pages must still consume it, or their caches
+      // silently diverge from what the database now holds.
+      if (job.status === 'CANCELLED' && job.result != null) {
+        [...(this.resultHandlers.get(job.type) ?? [])].forEach((handler) => handler(job.result));
+      }
       return;
     }
     const duration = formatDuration(job.elapsedSeconds);
