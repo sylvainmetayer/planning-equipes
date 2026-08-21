@@ -47,7 +47,7 @@ import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
 import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
-import dev.sylvain.planning.service.ReferenceDataService.TypologieItem;
+import dev.sylvain.planning.service.TypologieItem;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 

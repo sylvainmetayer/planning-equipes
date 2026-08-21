@@ -20,7 +20,7 @@ import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.EditionService;
 import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.ReferenceDataService;
-import dev.sylvain.planning.service.ReferenceDataService.TypologieItem;
+import dev.sylvain.planning.service.TypologieItem;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;

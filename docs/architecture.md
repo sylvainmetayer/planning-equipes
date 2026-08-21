@@ -79,7 +79,10 @@ dans [`domaine.md`](domaine.md).
 | `SolverJobService` | Résolutions et analyses asynchrones ; porte le verrou « un seul solveur à la fois », partagé par tous les clients, et la **file d'attente** des tâches planifiées derrière celle qui tourne ; la rejoue au démarrage |
 | `SolverJobRepository` | Persistance de cette file et du journal des jobs (table `solver_job`) : l'**intention** d'un job, jamais un état de solveur ni le résultat — voir [`api.md`](api.md#la-file-survit-au-redémarrage) |
 | `ConstraintAnalysisStore` | Mémorise le résultat de la dernière analyse pour l'onglet « Constraints » |
-| `ReferenceDataService` / `ReferenceDataRepository` | CRUD référentiels (stands, créneaux, animateurs, typologies, contraintes ad hoc) ; point de passage unique du SQL référentiel |
+| `ReferenceDataService` | Façade de lecture/écriture sur l'ensemble du référentiel, sans logique propre : une porte unique pour la vingtaine de classes qui lisent plusieurs familles à la fois (ressources JAX-RS, outils MCP, construction du problème) |
+| `StandService`, `AnimateurService`, `CreneauService`, `EmplacementService`, `TypologieService`, `ContrainteAdHocService`, `VerrouillageService`, `ParametresService` | Une famille de référentiel chacun : sa validation et ses écritures. Un appelant qui ne touche qu'une famille injecte ce service-là, pas la façade |
+| `Referentiel` | Ce que la construction d'un problème lit du référentiel, et rien d'autre. Implémenté par `ReferenceDataService` ; les tests hors CDI en fournissent une version vide, qui vit dans `src/test` |
+| `ReferenceDataRepository` | Point de passage unique du SQL référentiel |
 | `JdbcEditionScope` | Le seul endroit qui emprunte une connexion, lie l'édition courante au **premier** paramètre d'une requête (`prepareScoped`) et porte la transaction (`lire` / `ecrire` / `ecrireEtRendre`). C'est ce qui rend le prédicat `edition_id` mécanique — voir [`editions.md`](editions.md) |
 | `EditionService` / `EditionRepository` | Gestion des éditions elles-mêmes : création, duplication, suppression — voir [`editions.md`](editions.md) |
 | `EditionContext` / `EditionRequestScope` | Résout l'édition que la requête courante lit et écrit (en-tête `X-Edition-Id`, repli sur l'édition par défaut), et permet de lier une édition à un thread sans requête (worker du solveur) |

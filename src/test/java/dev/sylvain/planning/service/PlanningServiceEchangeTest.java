@@ -33,8 +33,7 @@ class PlanningServiceEchangeTest {
 
     private static final PlanningService planningService;
     static {
-        ReferenceDataService referenceDataService = new ReferenceDataService();
-        referenceDataService.init();
+        Referentiel referenceDataService = new ReferentielVide();
         planningService = new PlanningService(3L, 2L,
                 ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT,
                 referenceDataService, new FeasibilityAnalyzer(), ConfigProvider.getConfig());

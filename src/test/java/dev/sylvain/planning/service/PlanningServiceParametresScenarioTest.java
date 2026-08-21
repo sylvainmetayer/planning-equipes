@@ -25,8 +25,7 @@ import dev.sylvain.planning.domain.PlanningFestival;
 class PlanningServiceParametresScenarioTest {
 
     private static PlanningService service() {
-        ReferenceDataService referenceDataService = new ReferenceDataService();
-        referenceDataService.init();
+        Referentiel referenceDataService = new ReferentielVide();
         return new PlanningService(3L, 2L, ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT, referenceDataService, new FeasibilityAnalyzer(),
                 ConfigProvider.getConfig());
     }

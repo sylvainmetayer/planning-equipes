@@ -76,7 +76,7 @@ public class PlanningService {
 
     private final SolverFactory<PlanningFestival> solverFactory;
     private final SolutionManager<PlanningFestival, ?> solutionManager;
-    private final ReferenceDataService referenceDataService;
+    private final Referentiel referenceDataService;
     private final FeasibilityAnalyzer feasibilityAnalyzer;
     private final long defaultSecondsLimit;
     private final ConstraintWeightOverrides<HardMediumSoftScore> constraintWeightOverrides;
@@ -96,7 +96,7 @@ public class PlanningService {
             @ConfigProperty(name = "planning.solver.unimproved-seconds-limit", defaultValue = "30") Long unimprovedSecondsLimit,
             @ConfigProperty(name = "planning.contraintes.max-emplacements-par-jour",
                     defaultValue = "" + ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT) Integer maxEmplacementsParJour,
-            ReferenceDataService referenceDataService,
+            Referentiel referenceDataService,
             FeasibilityAnalyzer feasibilityAnalyzer,
             Config config) {
         SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
@@ -710,7 +710,7 @@ public class PlanningService {
             List<Stand> stands,
             List<Creneau> creneaux,
             List<PosteAffectation> postes,
-            List<ReferenceDataService.TypologieItem> typologies,
+            List<TypologieItem> typologies,
             List<Emplacement> emplacements,
             ParametresLegaux parametresLegaux,
             ParametresDecoupage parametresDecoupage,
@@ -880,9 +880,9 @@ public class PlanningService {
         return item;
     }
 
-    private static List<Map<String, Object>> typologiesYaml(List<ReferenceDataService.TypologieItem> typologies) {
+    private static List<Map<String, Object>> typologiesYaml(List<TypologieItem> typologies) {
         List<Map<String, Object>> result = new ArrayList<>();
-        for (ReferenceDataService.TypologieItem typologie : typologies) {
+        for (TypologieItem typologie : typologies) {
             Map<String, Object> item = new LinkedHashMap<>();
             item.put("id", typologie.id());
             item.put("label", typologie.label());
@@ -1283,8 +1283,8 @@ public class PlanningService {
         // comes from the file itself — the database one may not be loaded yet (or
         // may describe a different festival entirely).
         String typologieNinja = parseTypologies(scenarioData).stream()
-                .filter(ReferenceDataService.TypologieItem::ninja)
-                .map(ReferenceDataService.TypologieItem::id)
+                .filter(TypologieItem::ninja)
+                .map(TypologieItem::id)
                 .findFirst()
                 .orElse(null);
         animateurs.forEach(animateur -> animateur.appliquerTypologieNinja(typologieNinja));
@@ -1373,7 +1373,7 @@ public class PlanningService {
             Optional<ParametresDecoupage> parametresDecoupage,
             Optional<ParametresSolveur> parametresSolveur,
             boolean decoupageAuto,
-            List<ReferenceDataService.TypologieItem> typologies,
+            List<TypologieItem> typologies,
             Optional<dev.sylvain.planning.scenario.dto.EditionCibleDto> edition) {
     }
 
@@ -1529,14 +1529,14 @@ public class PlanningService {
                 id, (String) editionData.get("nom")));
     }
 
-    private static List<ReferenceDataService.TypologieItem> parseTypologies(Map<String, Object> scenarioData) {
+    private static List<TypologieItem> parseTypologies(Map<String, Object> scenarioData) {
         List<Map<String, Object>> data = YamlSections.objets(scenarioData, "typologies");
         if (data == null) {
             return List.of();
         }
-        List<ReferenceDataService.TypologieItem> typologies = new ArrayList<>();
+        List<TypologieItem> typologies = new ArrayList<>();
         for (Map<String, Object> typologieData : data) {
-            typologies.add(new ReferenceDataService.TypologieItem(
+            typologies.add(new TypologieItem(
                     (String) typologieData.get("id"), (String) typologieData.get("label"),
                     Boolean.TRUE.equals(typologieData.get("ninja"))));
         }

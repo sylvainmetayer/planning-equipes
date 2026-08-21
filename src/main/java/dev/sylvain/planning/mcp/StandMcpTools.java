@@ -20,7 +20,7 @@ import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
 import dev.sylvain.planning.service.ReferenceDataService;
-import dev.sylvain.planning.service.ReferenceDataService.TypologieItem;
+import dev.sylvain.planning.service.TypologieItem;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import jakarta.enterprise.context.ApplicationScoped;

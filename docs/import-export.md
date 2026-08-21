@@ -190,7 +190,7 @@ obligatoires, durées non négatives, valeurs d'enum (`NiveauCompetence`,
 `TypeJoursHoraire`). Il ne peut pas exprimer les règles conditionnelles d'un
 sélecteur d'`horaires` (`joursSemaine` requis pour `JOURS_SEMAINE`,
 `dateDebut`/`dateFin` pour `PLAGE`, `dates` pour `DATES`) : celles-là sont
-vérifiées à l'écriture par `ReferenceDataService.validateHoraires`. Les ids de typologie
+vérifiées à l'écriture par `ValidationStand`. Les ids de typologie
 eux-mêmes (`typologiesProposees`, `competences`, `souhaits`, et la section
 `typologies`) sont de simples chaînes, pas un enum : le référentiel
 `typologie` est CRUD-managé, pas figé dans le code.

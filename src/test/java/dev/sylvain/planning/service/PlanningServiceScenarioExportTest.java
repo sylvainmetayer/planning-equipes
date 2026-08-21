@@ -187,7 +187,7 @@ class PlanningServiceScenarioExportTest {
 
         String yaml = PlanningService.construireScenarioYaml(new PlanningService.ScenarioExport(
                 List.of(animateur), List.of(stand), List.of(creneau), List.of(),
-                List.of(new ReferenceDataService.TypologieItem("STRATEGIE", "Stratégie", true)),
+                List.of(new TypologieItem("STRATEGIE", "Stratégie", true)),
                 List.of(new Emplacement("PLACE", "Place du Drapeau", 46.6487, 2.2503)),
                 legaux, decoupage, new ParametresSolveur(1800)));
         Map<String, Object> parsed = new Yaml().load(yaml);
@@ -240,8 +240,7 @@ class PlanningServiceScenarioExportTest {
 
     @Test
     void exportingWithoutReferenceDataFails() {
-        ReferenceDataService referenceDataService = new ReferenceDataService();
-        referenceDataService.init();
+        Referentiel referenceDataService = new ReferentielVide();
         PlanningService planningService = new PlanningService(3L, 2L, ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT, referenceDataService, new FeasibilityAnalyzer(),
                 ConfigProvider.getConfig());
 

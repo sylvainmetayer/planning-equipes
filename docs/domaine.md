@@ -249,7 +249,7 @@ en trois couches :
 2. **sinon les règles qui couvrent ce jour** → on ne garde que celles de
    spécificité maximale et on prend l'union de leurs fenêtres. Deux règles de
    même spécificité et de modes opposés sur des jours qui se croisent sont
-   refusées à l'écriture (`ReferenceDataService.validateHoraires`) ; le résolveur
+   refusées à l'écriture (`ValidationStand`) ; le résolveur
    garde malgré tout un arbitrage déterministe pour une donnée arrivée
    autrement (un fichier de scénario écrit à la main) : `OUVERTURE` l'emporte,
    parce que c'est la lecture la plus restrictive des deux ;

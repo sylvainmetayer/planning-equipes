@@ -34,12 +34,7 @@ public class ReferenceDataChangeTracker {
         return lastModifiedByEdition.get(editionId());
     }
 
-    /**
-     * Null-guarded like {@code ReferenceDataService}'s repository: the plain
-     * (non-CDI) tests build this tracker with {@code new}, so the context is
-     * not injected and every mark lands under one key.
-     */
     private String editionId() {
-        return editionContext == null ? EditionRepository.EDITION_DEFAUT_ID : editionContext.editionIdCourant();
+        return editionContext.editionIdCourant();
     }
 }

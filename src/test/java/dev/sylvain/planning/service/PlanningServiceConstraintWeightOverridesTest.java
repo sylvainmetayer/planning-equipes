@@ -32,8 +32,7 @@ class PlanningServiceConstraintWeightOverridesTest {
 
     @Test
     void overriddenConstraintWeightChangesTheScore() {
-        ReferenceDataService referenceDataService = new ReferenceDataService();
-        referenceDataService.init();
+        Referentiel referenceDataService = new ReferentielVide();
 
         Config config = ConfigProviderResolver.instance().getBuilder()
                 .withSources(mapConfigSource(Map.of(

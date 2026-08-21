@@ -114,7 +114,9 @@ Single Quarkus service, no separate solver microservice. Package root:
   loads `scenario.yml` via SnakeYAML), `SolverJobService` (async solve/analyze,
   plus the solver queue — persisted through `SolverJobRepository` and replayed
   at startup, so a restart no longer loses the planned runs),
-  `ConstraintAnalysisStore`, `ReferenceDataService` / `ReferenceDataRepository`,
+  `ConstraintAnalysisStore`, `ReferenceDataService` (facade over one service
+  per referential family — `StandService`, `AnimateurService`,
+  `CreneauService`, …) / `ReferenceDataRepository`,
   `PlanningPersistenceService`, `DatabaseDumpService`,
   `PlanningExportService` (PDF/ICS, server-side only),
   `DemandeEchangeService` / `EspaceAnimateurService` (foire au planning, issue

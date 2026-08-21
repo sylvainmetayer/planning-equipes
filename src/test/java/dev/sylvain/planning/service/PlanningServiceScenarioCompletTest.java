@@ -43,8 +43,7 @@ class PlanningServiceScenarioCompletTest {
 
     @Test
     void scenarioCompletNeViolateAucuneContrainteHard() {
-        ReferenceDataService referenceDataService = new ReferenceDataService();
-        referenceDataService.init();
+        Referentiel referenceDataService = new ReferentielVide();
         PlanningService planningService = new PlanningService(420L, 0L, ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT, referenceDataService, new FeasibilityAnalyzer(),
                 ConfigProvider.getConfig());
 
