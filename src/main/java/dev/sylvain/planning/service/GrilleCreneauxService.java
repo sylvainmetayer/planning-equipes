@@ -75,7 +75,7 @@ public class GrilleCreneauxService {
      * window), ordered by date then start time.
      *
      * <p>{@link Creneau#getJour()} is left at its default: the day number is
-     * never stored, {@code ReferenceDataRepository} recomputes it with
+     * never stored, {@code CreneauRepository} recomputes it with
      * {@link Creneau#assignerJours} on every read so that consecutive calendar
      * days always differ by one. Setting it here would be write-only noise —
      * and would be wrong the moment these créneaux join an edition whose

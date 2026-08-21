@@ -116,7 +116,9 @@ Single Quarkus service, no separate solver microservice. Package root:
   at startup, so a restart no longer loses the planned runs),
   `ConstraintAnalysisStore`, `ReferenceDataService` (facade over one service
   per referential family — `StandService`, `AnimateurService`,
-  `CreneauService`, …) / `ReferenceDataRepository`,
+  `CreneauService`, …) over one repository per family
+  (`StandRepository`, `AnimateurRepository`, …, plus
+  `ImportReferentielRepository` for the one write that spans all of them),
   `PlanningPersistenceService`, `DatabaseDumpService`,
   `PlanningExportService` (PDF/ICS, server-side only),
   `DemandeEchangeService` / `EspaceAnimateurService` (foire au planning, issue
@@ -180,9 +182,14 @@ Single Quarkus service, no separate solver microservice. Package root:
   table must follow the same convention, and its SQL must go through
   `JdbcEditionScope` — the single helper that binds the edition to the
   statement's first placeholder and owns the transaction dance.
-  `IsolationEditionStructurelleTest` enforces it by reading the backend's SQL
-  and failing on any business-table statement without an `edition_id`
-  predicate. See `docs/editions.md`.
+  **The invariant is the helper, not one class.** It used to say "all SQL goes
+  through `ReferenceDataRepository`", a 1 600-line class holding eight
+  referentials; the referential SQL now lives in one repository per family in
+  the `service` package, which keeps the predicate auditable by a `grep` over
+  the package instead of over a file. What makes that safe is not the reader's
+  diligence: `IsolationEditionStructurelleTest` reads the backend's SQL and
+  fails on any business-table statement without an `edition_id` predicate. See
+  `docs/editions.md`.
 - Solver tuning: `planning.solver.seconds-limit` /
   `planning.solver.unimproved-seconds-limit` in `application.properties`.
 

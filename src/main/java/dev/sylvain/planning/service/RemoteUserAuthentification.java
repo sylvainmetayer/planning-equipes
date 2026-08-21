@@ -51,7 +51,7 @@ public class RemoteUserAuthentification {
     ConfigRemoteUser config;
 
     @Inject
-    ReferenceDataRepository repository;
+    AnimateurRepository repository;
 
     public boolean actif() {
         return config.enabled();

@@ -18,6 +18,7 @@ import dev.sylvain.planning.scenario.dto.EditionCibleDto;
 import dev.sylvain.planning.service.CompactageHoraires;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.EditionService;
+import dev.sylvain.planning.service.ImpactImport;
 import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.ReferenceDataService;
 import dev.sylvain.planning.service.TypologieItem;
@@ -270,7 +271,7 @@ public class ReferenceDataResource {
      */
     @GET
     @Path("/reference-data/impact-import")
-    public dev.sylvain.planning.service.ReferenceDataRepository.ImpactImport impactImport() {
+    public ImpactImport impactImport() {
         return referenceDataService.compterImpactImport();
     }
 
@@ -347,7 +348,7 @@ public class ReferenceDataResource {
     /**
      * Applies the scenario's optional {@code typologies:} section, if any,
      * <b>after</b> the planning itself has been imported: {@code
-     * ReferenceDataRepository#importFromPlanning} auto-derives an id-as-its-
+     * ImportReferentielRepository#importFromPlanning} auto-derives an id-as-its-
      * own-label typologie entry for every id a stand/animateur references and
      * unconditionally overwrites any existing label when it does — so an
      * explicit {@code {id, label}} pair from the scenario must be applied

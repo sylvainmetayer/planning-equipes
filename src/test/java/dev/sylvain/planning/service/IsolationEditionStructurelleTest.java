@@ -65,7 +65,14 @@ class IsolationEditionStructurelleTest {
             "SELECT 1 FROM animateur WHERE lower(email) = lower(?) LIMIT 1");
 
     private static final Pattern APPEL = Pattern.compile("prepare(?:Statement|Scoped)\\(");
-    private static final Pattern LITTERAL = Pattern.compile("\"((?:[^\"\\\\]|\\\\.)*)\"");
+
+    /**
+     * Un bloc de texte <b>ou</b> un littéral classique — les deux formes
+     * cohabitent : le SQL long est passé en bloc de texte, les requêtes d'une
+     * ligne restent des littéraux.
+     */
+    private static final Pattern LITTERAL =
+            Pattern.compile("\"\"\"(.*?)\"\"\"|\"((?:[^\"\\\\]|\\\\.)*)\"", Pattern.DOTALL);
     private static final Pattern COLONNES_INSERT =
             Pattern.compile("insert\\s+into\\s+\\w+\\s*\\(([^)]*)\\)");
 
@@ -87,7 +94,8 @@ class IsolationEditionStructurelleTest {
             StringBuilder sql = new StringBuilder();
             Matcher litteral = LITTERAL.matcher(source.substring(appel.end(), i - 1));
             while (litteral.find()) {
-                sql.append(litteral.group(1)).append(' ');
+                String morceau = litteral.group(1) != null ? litteral.group(1) : litteral.group(2);
+                sql.append(morceau).append(' ');
             }
             if (!sql.isEmpty()) {
                 enonces.add(sql.toString().replaceAll("\\s+", " ").trim());

@@ -1362,7 +1362,7 @@ public class PlanningService {
      * @param typologies          {@code {id, label}} pairs defining the scenario's own
      *                            typologie referential entries up front, instead of
      *                            leaving every referenced id to the id-as-its-own-label
-     *                            default {@code ReferenceDataRepository#importFromPlanning}
+     *                            default {@code ImportReferentielRepository#importFromPlanning}
      *                            derives on the fly. Empty, not absent, when the section
      *                            is missing: a list has no "absent" distinct from "empty"
      * @param edition             the edition the import must write into; absent means

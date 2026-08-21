@@ -3,7 +3,7 @@ package dev.sylvain.planning.api;
 import java.util.Locale;
 
 import dev.sylvain.planning.service.EspaceAccesService;
-import dev.sylvain.planning.service.ReferenceDataRepository;
+import dev.sylvain.planning.service.ProprietaireJeton;
 import dev.sylvain.planning.service.RemoteUserAuthentification;
 import jakarta.annotation.Priority;
 import jakarta.inject.Inject;
@@ -48,7 +48,7 @@ public class SessionEspaceFilter implements ContainerRequestFilter {
 
     @Override
     public void filter(ContainerRequestContext contexte) {
-        ReferenceDataRepository.ProprietaireJeton proprietaire = jetonFilter.resoudreOuAborter(contexte);
+        ProprietaireJeton proprietaire = jetonFilter.resoudreOuAborter(contexte);
         if (proprietaire == null) {
             return;
         }
@@ -75,7 +75,7 @@ public class SessionEspaceFilter implements ContainerRequestFilter {
      * address is the second factor.
      */
     private boolean proxyAtteste(ContainerRequestContext contexte,
-            ReferenceDataRepository.ProprietaireJeton proprietaire) {
+            ProprietaireJeton proprietaire) {
         if (proprietaire.email() == null || proprietaire.email().isBlank()) {
             return false;
         }

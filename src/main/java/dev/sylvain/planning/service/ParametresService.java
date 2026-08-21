@@ -17,7 +17,7 @@ import jakarta.inject.Inject;
 public class ParametresService {
 
     @Inject
-    ReferenceDataRepository repository;
+    ParametresRepository repository;
 
     @Inject
     ReferenceDataChangeTracker changeTracker;

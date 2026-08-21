@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
  * {@code {id, label}} pairs for the CRUD-managed {@code typologie}
  * referential up front, instead of letting every id a stand/animateur
  * references fall back to the id-as-its-own-label default {@code
- * ReferenceDataRepository#importFromPlanning} derives on the fly. See
+ * ImportReferentielRepository#importFromPlanning} derives on the fly. See
  * {@code scenario-typologies.yaml} (test fixture): {@code STRATEGIE} is a
  * seeded typologie (label {@code STRATEGIE} by default) redeclared with a
  * real label, {@code JEUX_VIDEO} is only referenced by the stand.

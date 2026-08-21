@@ -158,7 +158,7 @@ jamais saisi par l'utilisateur ni affiché dans l'IHM.
 
 Le `jour` (« jour du festival ») n'est pas non plus saisi : il est calculé à
 chaque lecture (`Creneau.assignerJours`, appelé par
-`ReferenceDataRepository.listCreneaux`) comme le nombre de jours calendaires
+`CreneauRepository.listCreneaux`) comme le nombre de jours calendaires
 entre la date la plus ancienne de l'édition et la date du créneau, plus un. Ce
 calcul garantit que deux créneaux sur des jours calendaires consécutifs ont
 toujours des numéros de jour consécutifs, même si un jour de l'édition ne
@@ -631,7 +631,7 @@ label, ninja? }`) pour donner un libellé humain aux ids de typologie qu'il réf
 voir [`import-export.md`](import-export.md#chargement-de-scénario) pour le
 détail de l'ordre d'application (après l'import du référentiel lui-même, pour
 ne pas être écrasée par le libellé-egal-à-l'id que dérive automatiquement
-`ReferenceDataRepository#importFromPlanning` pour tout id non déclaré ici).
+`ImportReferentielRepository#importFromPlanning` pour tout id non déclaré ici).
 Absente, chaque id non déjà présent dans le référentiel `typologie` se voit
 créé avec ce libellé-egal-à-l'id par défaut.
 

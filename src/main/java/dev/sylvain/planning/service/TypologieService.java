@@ -20,7 +20,7 @@ import jakarta.ws.rs.NotFoundException;
 public class TypologieService {
 
     @Inject
-    ReferenceDataRepository repository;
+    TypologieRepository repository;
 
     @Inject
     ReferenceDataChangeTracker changeTracker;

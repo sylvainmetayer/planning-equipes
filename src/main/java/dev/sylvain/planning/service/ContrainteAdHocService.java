@@ -16,7 +16,7 @@ import jakarta.inject.Inject;
 public class ContrainteAdHocService {
 
     @Inject
-    ReferenceDataRepository repository;
+    ContrainteAdHocRepository repository;
 
     @Inject
     ReferenceDataChangeTracker changeTracker;

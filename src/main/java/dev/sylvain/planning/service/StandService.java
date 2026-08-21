@@ -16,7 +16,7 @@ import jakarta.ws.rs.NotFoundException;
 public class StandService {
 
     @Inject
-    ReferenceDataRepository repository;
+    StandRepository repository;
 
     @Inject
     CreneauService creneaux;

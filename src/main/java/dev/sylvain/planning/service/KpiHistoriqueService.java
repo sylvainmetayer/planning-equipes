@@ -86,8 +86,9 @@ public class KpiHistoriqueService {
                 .map(Edition::getNom)
                 .findFirst()
                 .orElse(editionId);
-        String sql = "INSERT INTO kpi_historique (edition_id, edition_nom, kpi, cree_le) "
-                + "VALUES (?, ?, ?::jsonb, ?)";
+        String sql = """
+ INSERT INTO kpi_historique (edition_id, edition_nom, kpi, cree_le)
+ VALUES (?, ?, ?::jsonb, ?)""";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, editionId);
@@ -102,8 +103,10 @@ public class KpiHistoriqueService {
 
     /** Every edition's history, newest first — see the class javadoc for why it is unscoped. */
     public List<KpiHistoriqueEntry> lister() {
-        String sql = "SELECT id, edition_id, edition_nom, kpi, cree_le "
-                + "FROM kpi_historique ORDER BY cree_le DESC, id DESC";
+        String sql = """
+ SELECT id, edition_id, edition_nom, kpi, cree_le
+ FROM kpi_historique
+ ORDER BY cree_le DESC, id DESC""";
         List<KpiHistoriqueEntry> entries = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement(sql);

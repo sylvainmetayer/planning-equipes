@@ -75,11 +75,13 @@ public class SolverJobRepository {
      * update: a job keeps the queue position it was given when submitted.</p>
      */
     public void enregistrer(LigneJob ligne) {
-        String sql = "INSERT INTO solver_job (id, edition_id, edition_nom, type, statut, seconds_limit, "
-                + "perimetre, rejouable, erreur, soumis_le, demarre_le, termine_le) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?) "
-                + "ON CONFLICT (id) DO UPDATE SET statut = EXCLUDED.statut, erreur = EXCLUDED.erreur, "
-                + "demarre_le = EXCLUDED.demarre_le, termine_le = EXCLUDED.termine_le";
+        String sql = """
+ INSERT INTO solver_job (id, edition_id, edition_nom, type, statut, seconds_limit,
+ perimetre, rejouable, erreur, soumis_le, demarre_le, termine_le)
+ VALUES (?, ?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?)
+ ON CONFLICT (id)
+ DO UPDATE SET statut = EXCLUDED.statut, erreur = EXCLUDED.erreur, demarre_le = EXCLUDED.demarre_le,
+ termine_le = EXCLUDED.termine_le""";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, ligne.id());
@@ -105,8 +107,11 @@ public class SolverJobRepository {
      * queue must be replayed in.
      */
     public List<LigneJob> lister() {
-        String sql = "SELECT id, edition_id, edition_nom, type, statut, seconds_limit, perimetre::text AS perimetre, "
-                + "rejouable, erreur, soumis_le, demarre_le, termine_le FROM solver_job ORDER BY ordre";
+        String sql = """
+ SELECT id, edition_id, edition_nom, type, statut, seconds_limit, perimetre::text AS perimetre,
+ rejouable, erreur, soumis_le, demarre_le, termine_le
+ FROM solver_job
+ ORDER BY ordre""";
         List<LigneJob> lignes = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement(sql);

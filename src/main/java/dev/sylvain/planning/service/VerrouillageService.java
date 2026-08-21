@@ -13,7 +13,17 @@ import jakarta.inject.Inject;
 public class VerrouillageService {
 
     @Inject
-    ReferenceDataRepository repository;
+    VerrouillageRepository repository;
+
+    /** The three referentials a lock can point at — probed, never written, from here. */
+    @Inject
+    AnimateurRepository animateurs;
+
+    @Inject
+    StandRepository stands;
+
+    @Inject
+    CreneauRepository creneaux;
 
     @Inject
     ReferenceDataChangeTracker changeTracker;
@@ -62,7 +72,7 @@ public class VerrouillageService {
             }
             case STAND -> {
                 String standId = Identifiants.requis(verrouillage.getStandId(), "stand id");
-                if (!repository.standExists(standId)) {
+                if (!stands.standExists(standId)) {
                     throw new ErreurMetier.Invalide("Stand inconnu : " + standId);
                 }
                 verrouillage.setAnimateurId(null);
@@ -94,7 +104,7 @@ public class VerrouillageService {
 
     private void verifierAnimateur(String animateurId) {
         String id = Identifiants.requis(animateurId, "animateur id");
-        if (!repository.animateurExists(id)) {
+        if (!animateurs.animateurExists(id)) {
             throw new ErreurMetier.Invalide("Animateur inconnu : " + id);
         }
     }
@@ -103,7 +113,7 @@ public class VerrouillageService {
         if (creneauId == null) {
             throw new ErreurMetier.Invalide("Missing créneau id");
         }
-        if (!repository.creneauExists(creneauId)) {
+        if (!creneaux.creneauExists(creneauId)) {
             throw new ErreurMetier.Invalide("Créneau inconnu : " + creneauId);
         }
     }

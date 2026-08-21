@@ -204,7 +204,8 @@ entrée utilisateur ; l'import de dump vérifie même la sienne contre
 | `DatabaseDumpService` | `appendTable` (nom de table issu de `TABLES`) |
 | `DemandeEchangeService` | `lister` (liste de colonnes et prédicat, littéraux des appelants) |
 | `PlanSnapshotService` | `absents` (table et colonne, littéraux des appelants) |
-| `ReferenceDataRepository` | `compter`, `supprimerAbsentsTx`, `exists`, `existsLong` |
+| `ImportReferentielRepository` | `compter`, `supprimerAbsentsTx` (noms de tables issus de listes littérales) |
+| `JdbcEditionScope` | `existe` (nom de table issu des sites d'appel des dépôts) |
 
 **Avant d'ajouter un `nosemgrep`**, vérifier les appelants : si un identifiant
 peut venir d'une requête HTTP, c'est une injection SQL et non un faux positif.

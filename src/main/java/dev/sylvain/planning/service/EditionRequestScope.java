@@ -19,7 +19,7 @@ import jakarta.enterprise.context.RequestScoped;
 public class EditionRequestScope {
 
     private String editionIdDemande;
-    private ReferenceDataRepository.ProprietaireJeton proprietaireJeton;
+    private ProprietaireJeton proprietaireJeton;
 
     public String getEditionIdDemande() {
         return editionIdDemande;
@@ -30,11 +30,11 @@ public class EditionRequestScope {
     }
 
     /** The (édition, animateur) of the request's espace token, {@code null} off the espace routes. */
-    public ReferenceDataRepository.ProprietaireJeton getProprietaireJeton() {
+    public ProprietaireJeton getProprietaireJeton() {
         return proprietaireJeton;
     }
 
-    public void setProprietaireJeton(ReferenceDataRepository.ProprietaireJeton proprietaireJeton) {
+    public void setProprietaireJeton(ProprietaireJeton proprietaireJeton) {
         this.proprietaireJeton = proprietaireJeton;
     }
 }

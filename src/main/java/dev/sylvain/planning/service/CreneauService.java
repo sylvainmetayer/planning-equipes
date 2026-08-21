@@ -17,7 +17,7 @@ import jakarta.ws.rs.NotFoundException;
 public class CreneauService {
 
     @Inject
-    ReferenceDataRepository repository;
+    CreneauRepository repository;
 
     @Inject
     ParametresService parametres;

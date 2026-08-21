@@ -12,7 +12,7 @@ import jakarta.ws.rs.NotFoundException;
 public class AnimateurService {
 
     @Inject
-    ReferenceDataRepository repository;
+    AnimateurRepository repository;
 
     @Inject
     TypologieService typologies;
@@ -58,8 +58,8 @@ public class AnimateurService {
         }
     }
 
-    /** See {@link ReferenceDataRepository#resoudreJetonAnimateur}. */
-    public ReferenceDataRepository.ProprietaireJeton resoudreJeton(String jeton) {
+    /** See {@link AnimateurRepository#resoudreJetonAnimateur}. */
+    public ProprietaireJeton resoudreJeton(String jeton) {
         return repository.resoudreJetonAnimateur(jeton);
     }
 

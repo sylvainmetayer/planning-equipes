@@ -107,10 +107,12 @@ public class EspaceAccesService {
         String code = String.format("%06d", random.nextInt(1_000_000));
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection,
-                        "INSERT INTO espace_acces (edition_id, animateur_id, code_hash, expire_le, tentatives_restantes) "
-                                + "VALUES (?, ?, ?, ?, ?) ON CONFLICT (edition_id, animateur_id) DO UPDATE SET "
-                                + "code_hash = EXCLUDED.code_hash, expire_le = EXCLUDED.expire_le, "
-                                + "tentatives_restantes = EXCLUDED.tentatives_restantes")) {
+                        """
+                        INSERT INTO espace_acces (edition_id, animateur_id, code_hash, expire_le, tentatives_restantes)
+                        VALUES (?, ?, ?, ?, ?)
+                        ON CONFLICT (edition_id, animateur_id)
+                        DO UPDATE SET code_hash = EXCLUDED.code_hash, expire_le = EXCLUDED.expire_le,
+                        tentatives_restantes = EXCLUDED.tentatives_restantes""")) {
             ps.setString(2, animateurId);
             ps.setString(3, hacher(code + animateur.getJetonAcces()));
             ps.setTimestamp(4, Timestamp.from(Instant.now().plus(VALIDITE_CODE)));
@@ -140,8 +142,9 @@ public class EspaceAccesService {
         String session = Base64.getUrlEncoder().withoutPadding().encodeToString(brut);
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection,
-                        "INSERT INTO espace_session (edition_id, session_hash, animateur_id, expire_le) "
-                                + "VALUES (?, ?, ?, ?)")) {
+                        """
+                        INSERT INTO espace_session (edition_id, session_hash, animateur_id, expire_le)
+                        VALUES (?, ?, ?, ?)""")) {
             ps.setString(2, hacher(session));
             ps.setString(3, animateurId);
             ps.setTimestamp(4, Timestamp.from(Instant.now().plus(VALIDITE_SESSION)));
@@ -168,8 +171,10 @@ public class EspaceAccesService {
         }
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection,
-                        "SELECT animateur_id, expire_le FROM espace_session "
-                                + "WHERE edition_id = ? AND session_hash = ?")) {
+                        """
+                        SELECT animateur_id, expire_le
+                        FROM espace_session
+                        WHERE edition_id = ? AND session_hash = ?""")) {
             ps.setString(2, hacher(cookieValue));
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next()
@@ -187,9 +192,11 @@ public class EspaceAccesService {
         }
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection,
-                        "UPDATE espace_acces SET tentatives_restantes = tentatives_restantes - 1 "
-                                + "WHERE edition_id = ? AND animateur_id = ? AND tentatives_restantes > 0 "
-                                + "AND expire_le > now() RETURNING code_hash")) {
+                        """
+                        UPDATE espace_acces
+                        SET tentatives_restantes = tentatives_restantes - 1
+                        WHERE edition_id = ? AND animateur_id = ? AND tentatives_restantes > 0 AND expire_le > now()
+                        RETURNING code_hash""")) {
             ps.setString(2, animateurId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) {

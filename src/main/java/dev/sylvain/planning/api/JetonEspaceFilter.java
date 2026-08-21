@@ -1,7 +1,7 @@
 package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.service.EditionRequestScope;
-import dev.sylvain.planning.service.ReferenceDataRepository;
+import dev.sylvain.planning.service.ProprietaireJeton;
 import dev.sylvain.planning.service.ReferenceDataService;
 import jakarta.annotation.Priority;
 import jakarta.inject.Inject;
@@ -36,9 +36,9 @@ public class JetonEspaceFilter implements ContainerRequestFilter {
     }
 
     /** Shared with {@link SessionEspaceFilter}: {@code null} means the request was aborted with a 404. */
-    ReferenceDataRepository.ProprietaireJeton resoudreOuAborter(ContainerRequestContext contexte) {
+    ProprietaireJeton resoudreOuAborter(ContainerRequestContext contexte) {
         String jeton = contexte.getUriInfo().getPathParameters().getFirst("jeton");
-        ReferenceDataRepository.ProprietaireJeton proprietaire =
+        ProprietaireJeton proprietaire =
                 jeton == null ? null : referenceDataService.resoudreJetonAnimateur(jeton);
         if (proprietaire == null) {
             contexte.abortWith(Response.status(Response.Status.NOT_FOUND)

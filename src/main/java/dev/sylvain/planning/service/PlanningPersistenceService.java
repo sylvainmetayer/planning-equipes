@@ -113,10 +113,12 @@ public class PlanningPersistenceService {
             }
         }
 
-        String upsertStand = "INSERT INTO stand (edition_id, id, nom, effectif_min, effectif_max, reserve_majeurs) "
-                + "VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (edition_id, id) DO UPDATE SET "
-                + "nom = EXCLUDED.nom, effectif_min = EXCLUDED.effectif_min, "
-                + "effectif_max = EXCLUDED.effectif_max, reserve_majeurs = EXCLUDED.reserve_majeurs";
+        String upsertStand = """
+ INSERT INTO stand (edition_id, id, nom, effectif_min, effectif_max, reserve_majeurs)
+ VALUES (?, ?, ?, ?, ?, ?)
+ ON CONFLICT (edition_id, id)
+ DO UPDATE SET nom = EXCLUDED.nom, effectif_min = EXCLUDED.effectif_min, effectif_max = EXCLUDED.effectif_max,
+ reserve_majeurs = EXCLUDED.reserve_majeurs""";
         List<Stand> distinctStands = dedupById(stands, Stand::getId);
         try (PreparedStatement ps = scope.prepareScoped(connection, upsertStand)) {
             for (Stand stand : distinctStands) {
@@ -133,10 +135,11 @@ public class PlanningPersistenceService {
         rewriteStandIndisponibilites(connection, distinctStands);
         rewriteStandOuvertures(connection, distinctStands);
 
-        String upsertCreneau = "INSERT INTO creneau (edition_id, id, date_creneau, heure_debut, heure_fin) "
-                + "VALUES (?, ?, ?, ?, ?) ON CONFLICT (id) DO UPDATE SET "
-                + "date_creneau = EXCLUDED.date_creneau, "
-                + "heure_debut = EXCLUDED.heure_debut, heure_fin = EXCLUDED.heure_fin";
+        String upsertCreneau = """
+ INSERT INTO creneau (edition_id, id, date_creneau, heure_debut, heure_fin)
+ VALUES (?, ?, ?, ?, ?)
+ ON CONFLICT (id)
+ DO UPDATE SET date_creneau = EXCLUDED.date_creneau, heure_debut = EXCLUDED.heure_debut, heure_fin = EXCLUDED.heure_fin""";
         try (PreparedStatement ps = scope.prepareScoped(connection, upsertCreneau)) {
             for (Creneau creneau : dedupById(creneaux, Creneau::getId)) {
                 ps.setLong(2, creneau.getId());
@@ -148,10 +151,12 @@ public class PlanningPersistenceService {
             ps.executeBatch();
         }
 
-        String upsertAnimateur = "INSERT INTO animateur (edition_id, id, prenom, nom, date_naissance, manager) "
-                + "VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (edition_id, id) DO UPDATE SET "
-                + "prenom = EXCLUDED.prenom, nom = EXCLUDED.nom, "
-                + "date_naissance = EXCLUDED.date_naissance, manager = EXCLUDED.manager";
+        String upsertAnimateur = """
+ INSERT INTO animateur (edition_id, id, prenom, nom, date_naissance, manager)
+ VALUES (?, ?, ?, ?, ?, ?)
+ ON CONFLICT (edition_id, id)
+ DO UPDATE SET prenom = EXCLUDED.prenom, nom = EXCLUDED.nom, date_naissance = EXCLUDED.date_naissance,
+ manager = EXCLUDED.manager""";
         try (PreparedStatement ps = scope.prepareScoped(connection, upsertAnimateur)) {
             List<Animateur> animateurs = planning.getAnimateurs() != null
                     ? planning.getAnimateurs()
@@ -195,8 +200,10 @@ public class PlanningPersistenceService {
         try (PreparedStatement delete = scope.prepareScoped(connection,
                         "DELETE FROM stand_indisponibilite WHERE edition_id = ? AND stand_id = ?");
                 PreparedStatement insert = scope.prepareScoped(connection,
-                        "INSERT INTO stand_indisponibilite (edition_id, stand_id, date_indisponibilite, heure_debut, "
-                                + "heure_fin, motif) VALUES (?, ?, ?, ?, ?, ?)")) {
+                        """
+                        INSERT INTO stand_indisponibilite (edition_id, stand_id, date_indisponibilite,
+                        heure_debut, heure_fin, motif)
+                        VALUES (?, ?, ?, ?, ?, ?)""")) {
             for (Stand stand : stands) {
                 delete.setString(2, stand.getId());
                 delete.addBatch();
@@ -220,8 +227,10 @@ public class PlanningPersistenceService {
         try (PreparedStatement delete = scope.prepareScoped(connection,
                         "DELETE FROM stand_ouverture WHERE edition_id = ? AND stand_id = ?");
                 PreparedStatement insert = scope.prepareScoped(connection,
-                        "INSERT INTO stand_ouverture (edition_id, stand_id, date_ouverture, heure_debut, heure_fin, "
-                                + "motif) VALUES (?, ?, ?, ?, ?, ?)")) {
+                        """
+                        INSERT INTO stand_ouverture (edition_id, stand_id, date_ouverture,
+                        heure_debut, heure_fin, motif)
+                        VALUES (?, ?, ?, ?, ?, ?)""")) {
             for (Stand stand : stands) {
                 delete.setString(2, stand.getId());
                 delete.addBatch();
@@ -245,8 +254,9 @@ public class PlanningPersistenceService {
         try (PreparedStatement deleteComp = scope.prepareScoped(connection,
                         "DELETE FROM animateur_competence WHERE edition_id = ? AND animateur_id = ?");
                 PreparedStatement insertComp = scope.prepareScoped(connection,
-                        "INSERT INTO animateur_competence (edition_id, animateur_id, typologie, niveau) "
-                                + "VALUES (?, ?, ?, ?)");
+                        """
+                        INSERT INTO animateur_competence (edition_id, animateur_id, typologie, niveau)
+                        VALUES (?, ?, ?, ?)""");
                 PreparedStatement deleteJour = scope.prepareScoped(connection,
                         "DELETE FROM animateur_jour_indispo WHERE edition_id = ? AND animateur_id = ?");
                 PreparedStatement insertJour = scope.prepareScoped(connection,
@@ -285,9 +295,10 @@ public class PlanningPersistenceService {
             ps.executeUpdate();
         }
 
-        String insert = "INSERT INTO poste_affectation "
-                + "(edition_id, id, stand_id, creneau_id, animateur_id, heure_debut_effective, heure_fin_effective) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String insert = """
+ INSERT INTO poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id,
+ heure_debut_effective, heure_fin_effective)
+ VALUES (?, ?, ?, ?, ?, ?, ?)""";
         int count = 0;
         try (PreparedStatement ps = scope.prepareScoped(connection, insert)) {
             for (PosteAffectation poste : postes) {
@@ -362,8 +373,10 @@ public class PlanningPersistenceService {
         // Not prepareScoped: the SET clause claims placeholder 1, so the
         // edition_id predicate is bound explicitly here.
         try (PreparedStatement ps = connection.prepareStatement(
-                "UPDATE poste_affectation SET animateur_id = ? "
-                        + "WHERE edition_id = ? AND creneau_id = ? AND stand_id = ? AND animateur_id = ?")) {
+                """
+                UPDATE poste_affectation
+                SET animateur_id = ?
+                WHERE edition_id = ? AND creneau_id = ? AND stand_id = ? AND animateur_id = ?""")) {
             ps.setString(1, nouvelOccupantId);
             ps.setString(2, editionId());
             ps.setLong(3, creneauId);
@@ -375,8 +388,11 @@ public class PlanningPersistenceService {
 
     /** Stamps when this edition's plan was last solved and persisted. */
     private void recordResolution(Connection connection) throws SQLException {
-        String sql = "INSERT INTO planning_resolution (edition_id, resolu_le) VALUES (?, ?) "
-                + "ON CONFLICT (edition_id) DO UPDATE SET resolu_le = EXCLUDED.resolu_le";
+        String sql = """
+ INSERT INTO planning_resolution (edition_id, resolu_le)
+ VALUES (?, ?)
+ ON CONFLICT (edition_id)
+ DO UPDATE SET resolu_le = EXCLUDED.resolu_le""";
         try (PreparedStatement ps = scope.prepareScoped(connection, sql)) {
             ps.setTimestamp(2, Timestamp.from(Instant.now()));
             ps.executeUpdate();
@@ -433,8 +449,11 @@ public class PlanningPersistenceService {
      */
     public Map<String, List<String>> chargerAnimateursParStandCreneau() {
         Map<String, List<String>> parStandCreneau = new java.util.LinkedHashMap<>();
-        String sql = "SELECT stand_id, creneau_id, animateur_id FROM poste_affectation "
-                + "WHERE edition_id = ? AND animateur_id IS NOT NULL ORDER BY id";
+        String sql = """
+ SELECT stand_id, creneau_id, animateur_id
+ FROM poste_affectation
+ WHERE edition_id = ? AND animateur_id IS NOT NULL
+ ORDER BY id""";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, sql);
                 ResultSet rs = ps.executeQuery()) {
@@ -474,8 +493,11 @@ public class PlanningPersistenceService {
         Map<Long, Creneau> creneauxById = indexById(creneaux, Creneau::getId);
 
         List<PosteAffectation> postes = new ArrayList<>();
-        String sql = "SELECT id, stand_id, creneau_id, animateur_id, heure_debut_effective, heure_fin_effective "
-                + "FROM poste_affectation WHERE edition_id = ? ORDER BY id";
+        String sql = """
+ SELECT id, stand_id, creneau_id, animateur_id, heure_debut_effective, heure_fin_effective
+ FROM poste_affectation
+ WHERE edition_id = ?
+ ORDER BY id""";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, sql);
                 ResultSet rs = ps.executeQuery()) {

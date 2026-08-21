@@ -82,7 +82,8 @@ dans [`domaine.md`](domaine.md).
 | `ReferenceDataService` | Façade de lecture/écriture sur l'ensemble du référentiel, sans logique propre : une porte unique pour la vingtaine de classes qui lisent plusieurs familles à la fois (ressources JAX-RS, outils MCP, construction du problème) |
 | `StandService`, `AnimateurService`, `CreneauService`, `EmplacementService`, `TypologieService`, `ContrainteAdHocService`, `VerrouillageService`, `ParametresService` | Une famille de référentiel chacun : sa validation et ses écritures. Un appelant qui ne touche qu'une famille injecte ce service-là, pas la façade |
 | `Referentiel` | Ce que la construction d'un problème lit du référentiel, et rien d'autre. Implémenté par `ReferenceDataService` ; les tests hors CDI en fournissent une version vide, qui vit dans `src/test` |
-| `ReferenceDataRepository` | Point de passage unique du SQL référentiel |
+| `StandRepository`, `AnimateurRepository`, `CreneauRepository`, `EmplacementRepository`, `TypologieRepository`, `ContrainteAdHocRepository`, `VerrouillageRepository`, `ParametresRepository` | Le SQL d'une famille chacun. Le prédicat `edition_id` reste auditable d'un `grep` sur le paquet, et `IsolationEditionStructurelleTest` le vérifie mécaniquement |
+| `ImportReferentielRepository` | La seule écriture qui traverse toutes les familles : remplacer le référentiel entier par celui d'un scénario, en une transaction. Il emprunte une connexion et la passe à chaque dépôt de famille |
 | `JdbcEditionScope` | Le seul endroit qui emprunte une connexion, lie l'édition courante au **premier** paramètre d'une requête (`prepareScoped`) et porte la transaction (`lire` / `ecrire` / `ecrireEtRendre`). C'est ce qui rend le prédicat `edition_id` mécanique — voir [`editions.md`](editions.md) |
 | `EditionService` / `EditionRepository` | Gestion des éditions elles-mêmes : création, duplication, suppression — voir [`editions.md`](editions.md) |
 | `EditionContext` / `EditionRequestScope` | Résout l'édition que la requête courante lit et écrit (en-tête `X-Edition-Id`, repli sur l'édition par défaut), et permet de lier une édition à un thread sans requête (worker du solveur) |
@@ -290,7 +291,8 @@ versionné** ; ne jamais modifier une migration déjà appliquée.
 Toutes les tables métier sont cloisonnées par `edition_id` depuis `V32`–`V36`,
 et les identifiants métier (`stand.id`, `animateur.id`, …) ont une clé primaire
 composite `(edition_id, id)` : une nouvelle table du référentiel doit suivre la
-même convention, et sa requête doit passer par `JdbcEditionScope`.
+même convention, et sa requête doit passer par `JdbcEditionScope` — l'invariant
+porte sur le helper, pas sur une classe unique.
 `IsolationEditionStructurelleTest` le vérifie mécaniquement : il lit le SQL de
 tout le backend et échoue sur toute requête visant une table métier sans
 prédicat `edition_id`. Voir [`editions.md`](editions.md).

@@ -160,10 +160,10 @@ public class PlanSnapshotService {
             List<AffectationSnapshot> affectations) {
         String contenu = ecrireContenu(affectations);
         PlanningKpiService.PlanningKpi kpi = kpiCourant();
-        String sql = "INSERT INTO plan_snapshot "
-                + "(edition_id, libelle, automatique, score, nombre_affectations, "
-                + "cree_le, contenu, kpi) VALUES (?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb) "
-                + "RETURNING id, cree_le";
+        String sql = """
+ INSERT INTO plan_snapshot (edition_id, libelle, automatique, score, nombre_affectations, cree_le, contenu, kpi)
+ VALUES (?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb)
+ RETURNING id, cree_le""";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, sql)) {
             ps.setString(2, libelle);
@@ -320,8 +320,10 @@ public class PlanSnapshotService {
                     "DELETE FROM poste_affectation WHERE edition_id = ?")) {
                 ps.executeUpdate();
             }
-            String insert = "INSERT INTO poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id, "
-                    + "heure_debut_effective, heure_fin_effective) VALUES (?, ?, ?, ?, ?, ?, ?)";
+            String insert = """
+ INSERT INTO poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id,
+ heure_debut_effective, heure_fin_effective)
+ VALUES (?, ?, ?, ?, ?, ?, ?)""";
             try (PreparedStatement ps = scope.prepareScoped(connection, insert)) {
                 for (AffectationSnapshot affectation : detail.affectations()) {
                     ps.setString(2, affectation.posteId());
@@ -334,8 +336,11 @@ public class PlanSnapshotService {
                 }
                 ps.executeBatch();
             }
-            String resolution = "INSERT INTO planning_resolution (edition_id, resolu_le) "
-                    + "VALUES (?, ?) ON CONFLICT (edition_id) DO UPDATE SET resolu_le = EXCLUDED.resolu_le";
+            String resolution = """
+ INSERT INTO planning_resolution (edition_id, resolu_le)
+ VALUES (?, ?)
+ ON CONFLICT (edition_id)
+ DO UPDATE SET resolu_le = EXCLUDED.resolu_le""";
             try (PreparedStatement ps = scope.prepareScoped(connection, resolution)) {
                 ps.setTimestamp(2, Timestamp.from(Instant.now()));
                 ps.executeUpdate();
@@ -358,8 +363,11 @@ public class PlanSnapshotService {
     /* -------------------------------- Helpers ------------------------------ */
 
     private List<AffectationSnapshot> lireAffectationsPersistees() {
-        String sql = "SELECT id, stand_id, creneau_id, animateur_id, heure_debut_effective, heure_fin_effective "
-                + "FROM poste_affectation WHERE edition_id = ? ORDER BY id";
+        String sql = """
+ SELECT id, stand_id, creneau_id, animateur_id, heure_debut_effective, heure_fin_effective
+ FROM poste_affectation
+ WHERE edition_id = ?
+ ORDER BY id""";
         List<AffectationSnapshot> affectations = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, sql);
@@ -432,9 +440,12 @@ public class PlanSnapshotService {
 
     /** Drops the oldest automatic snapshots beyond the configured retention. */
     private void purgerAutomatiques(Connection connection) throws SQLException {
-        String sql = "DELETE FROM plan_snapshot WHERE edition_id = ? AND automatique AND id NOT IN ("
-                + "SELECT id FROM plan_snapshot WHERE edition_id = ? AND automatique "
-                + "ORDER BY cree_le DESC, id DESC LIMIT ?)";
+        String sql = """
+ DELETE FROM plan_snapshot
+ WHERE edition_id = ?
+ AND automatique
+ AND id NOT IN (SELECT id FROM plan_snapshot WHERE edition_id = ?
+ AND automatique ORDER BY cree_le DESC, id DESC LIMIT ?)""";
         try (PreparedStatement ps = scope.prepareScoped(connection, sql)) {
             ps.setString(2, editionId());
             ps.setInt(3, Math.max(1, automatiquesConservees));

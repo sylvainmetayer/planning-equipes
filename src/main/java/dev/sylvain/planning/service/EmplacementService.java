@@ -12,7 +12,7 @@ import jakarta.ws.rs.NotFoundException;
 public class EmplacementService {
 
     @Inject
-    ReferenceDataRepository repository;
+    EmplacementRepository repository;
 
     @Inject
     ReferenceDataChangeTracker changeTracker;

@@ -21,9 +21,6 @@ public class EditionService {
     @Inject
     EditionContext editionContext;
 
-    @Inject
-    ReferenceDataRepository referenceDataRepository;
-
     public List<Edition> listEditions() {
         return repository.listEditions();
     }

@@ -19,7 +19,7 @@ import jakarta.inject.Inject;
  * Direct JDBC access to the {@code edition} table — the editions the whole
  * reference model is partitioned into (see {@code docs/editions.md}).
  *
- * <p>Deliberately separate from {@link ReferenceDataRepository}: that one reads
+ * <p>Deliberately separate from {@link StandRepository} and its siblings: those read
  * and writes <i>inside</i> an edition and gets its scope from
  * {@link EditionContext}, this one manipulates the scopes themselves and must
  * therefore stay edition-agnostic.</p>
@@ -133,8 +133,11 @@ public class EditionRepository {
     public void save(Edition edition) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement(
-                        "INSERT INTO edition (id, nom, defaut) VALUES (?, ?, FALSE) "
-                                + "ON CONFLICT (id) DO UPDATE SET nom = EXCLUDED.nom")) {
+                        """
+                        INSERT INTO edition (id, nom, defaut)
+                        VALUES (?, ?, FALSE)
+                        ON CONFLICT (id)
+                        DO UPDATE SET nom = EXCLUDED.nom""")) {
             ps.setString(1, edition.getId());
             ps.setString(2, edition.getNom());
             ps.executeUpdate();
@@ -221,26 +224,32 @@ public class EditionRepository {
                     + "ancien_id BIGINT PRIMARY KEY, nouvel_id BIGINT NOT NULL) ON COMMIT DROP");
         }
         try (PreparedStatement ps = connection.prepareStatement(
-                "INSERT INTO creneau_remap (ancien_id, nouvel_id) "
-                        + "SELECT id, nextval(pg_get_serial_sequence('creneau', 'id')) "
-                        + "FROM creneau WHERE edition_id = ?")) {
+                """
+                INSERT INTO creneau_remap (ancien_id, nouvel_id)
+                SELECT id, nextval(pg_get_serial_sequence('creneau', 'id'))
+                FROM creneau
+                WHERE edition_id = ?""")) {
             ps.setString(1, sourceId);
             ps.executeUpdate();
         }
         try (PreparedStatement ps = connection.prepareStatement(
-                "INSERT INTO creneau (id, edition_id, date_creneau, heure_debut, heure_fin, famille, "
-                        + "couverture_pause) "
-                        + "SELECT r.nouvel_id, ?, c.date_creneau, c.heure_debut, c.heure_fin, "
-                        + "c.famille, c.couverture_pause FROM creneau c JOIN creneau_remap r ON r.ancien_id = c.id "
-                        + "WHERE c.edition_id = ?")) {
+                """
+                INSERT INTO creneau (id, edition_id, date_creneau, heure_debut, heure_fin, famille, couverture_pause)
+                SELECT r.nouvel_id, ?, c.date_creneau, c.heure_debut, c.heure_fin, c.famille, c.couverture_pause
+                FROM creneau c
+                JOIN creneau_remap r ON r.ancien_id = c.id
+                WHERE c.edition_id = ?""")) {
             ps.setString(1, cibleId);
             ps.setString(2, sourceId);
             ps.executeUpdate();
         }
         try (PreparedStatement ps = connection.prepareStatement(
-                "INSERT INTO creneau_stand_ouvert (edition_id, creneau_id, stand_id) "
-                        + "SELECT ?, r.nouvel_id, cso.stand_id FROM creneau_stand_ouvert cso "
-                        + "JOIN creneau_remap r ON r.ancien_id = cso.creneau_id WHERE cso.edition_id = ?")) {
+                """
+                INSERT INTO creneau_stand_ouvert (edition_id, creneau_id, stand_id)
+                SELECT ?, r.nouvel_id, cso.stand_id
+                FROM creneau_stand_ouvert cso
+                JOIN creneau_remap r ON r.ancien_id = cso.creneau_id
+                WHERE cso.edition_id = ?""")) {
             ps.setString(1, cibleId);
             ps.setString(2, sourceId);
             ps.executeUpdate();
@@ -250,18 +259,22 @@ public class EditionRepository {
     /** Ad hoc constraints last: they reference both a stand and a (remapped) créneau. */
     private void copierContraintesAdHoc(Connection connection, String sourceId, String cibleId) throws SQLException {
         try (PreparedStatement ps = connection.prepareStatement(
-                "INSERT INTO contrainte_ad_hoc (edition_id, id, type, creneau_id, stand_id, raison, cree_par, cree_le) "
-                        + "SELECT ?, c.id, c.type, r.nouvel_id, c.stand_id, c.raison, c.cree_par, c.cree_le "
-                        + "FROM contrainte_ad_hoc c LEFT JOIN creneau_remap r ON r.ancien_id = c.creneau_id "
-                        + "WHERE c.edition_id = ?")) {
+                """
+                INSERT INTO contrainte_ad_hoc (edition_id, id, type, creneau_id, stand_id, raison, cree_par, cree_le)
+                SELECT ?, c.id, c.type, r.nouvel_id, c.stand_id, c.raison, c.cree_par, c.cree_le
+                FROM contrainte_ad_hoc c
+                LEFT JOIN creneau_remap r ON r.ancien_id = c.creneau_id
+                WHERE c.edition_id = ?""")) {
             ps.setString(1, cibleId);
             ps.setString(2, sourceId);
             ps.executeUpdate();
         }
         try (PreparedStatement ps = connection.prepareStatement(
-                "INSERT INTO contrainte_animateur (edition_id, contrainte_id, animateur_id, position) "
-                        + "SELECT ?, contrainte_id, animateur_id, position FROM contrainte_animateur "
-                        + "WHERE edition_id = ?")) {
+                """
+                INSERT INTO contrainte_animateur (edition_id, contrainte_id, animateur_id, position)
+                SELECT ?, contrainte_id, animateur_id, position
+                FROM contrainte_animateur
+                WHERE edition_id = ?""")) {
             ps.setString(1, cibleId);
             ps.setString(2, sourceId);
             ps.executeUpdate();

@@ -36,7 +36,7 @@ import jakarta.inject.Inject;
 public class ReferenceDataService implements Referentiel {
 
     @Inject
-    ReferenceDataRepository repository;
+    ImportReferentielRepository imports;
 
     @Inject
     AnimateurService animateurs;
@@ -240,13 +240,13 @@ public class ReferenceDataService implements Referentiel {
 
     /* ----------------------- Espace animateur (jeton) ----------------------- */
 
-    /** See {@link ReferenceDataRepository#compterImpactImport}. */
-    public ReferenceDataRepository.ImpactImport compterImpactImport() {
-        return repository.compterImpactImport();
+    /** See {@link ImportReferentielRepository#compterImpactImport}. */
+    public ImpactImport compterImpactImport() {
+        return imports.compterImpactImport();
     }
 
-    /** See {@link ReferenceDataRepository#resoudreJetonAnimateur}. */
-    public ReferenceDataRepository.ProprietaireJeton resoudreJetonAnimateur(String jeton) {
+    /** See {@link AnimateurRepository#resoudreJetonAnimateur}. */
+    public ProprietaireJeton resoudreJetonAnimateur(String jeton) {
         return animateurs.resoudreJeton(jeton);
     }
 
@@ -261,7 +261,7 @@ public class ReferenceDataService implements Referentiel {
      * why it belongs to the facade rather than to any one of them.
      */
     public void importFromPlanning(PlanningFestival planning) {
-        repository.importFromPlanning(planning);
+        imports.importFromPlanning(planning);
         changeTracker.markModified();
     }
 

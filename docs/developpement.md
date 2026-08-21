@@ -331,7 +331,7 @@ défaut ni la CI ne l'activent, l'instrumentation JaCoCo n'ayant d'intérêt que
 lorsqu'on cherche activement des trous. Référence actuelle : **82,8 %**
 d'instructions, avec `solver/constraints` à 99,3 % et `solver` à 98,6 %, contre
 68 % pour `api` et 80 % pour `service` — ce dernier dominé par
-`ReferenceDataRepository`, du code d'accès aux données dont le test coûte cher
+les dépôts du référentiel, du code d'accès aux données dont le test coûte cher
 pour ce qu'il protège.
 
 Le pourcentage n'est pas un objectif en soi : les tests d'accesseurs le font

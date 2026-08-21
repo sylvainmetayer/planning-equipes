@@ -429,7 +429,7 @@ règle, elle empêche simplement le stream de produire des matches. Toutes les
 contraintes sont actives par défaut.
 
 - Persistance : table `constraint_toggle` (présence d'une ligne = désactivée,
-  absence = active) via `ReferenceDataRepository`/`ReferenceDataService`.
+  absence = active) via `ParametresRepository`/`ParametresService`.
 - API : `GET /api/constraints` renvoie `actif` pour chaque contrainte,
   `PUT /api/constraints/{name}` bascule l'état.
 - Solveur : l'état désactivé est injecté comme fait de planification

@@ -33,7 +33,7 @@ import jakarta.inject.Inject;
  *
  * <p>Carries its own {@code demande_echange} SQL, like
  * {@link PlanSnapshotService}: every statement is edition-scoped through
- * {@code prepareScoped}, same convention as {@link ReferenceDataRepository}.</p>
+ * {@code prepareScoped}, same convention as the referential repositories.</p>
  */
 @ApplicationScoped
 public class DemandeEchangeService {
@@ -162,9 +162,13 @@ public class DemandeEchangeService {
         // edition_id predicate is bound explicitly.
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement(
-                        "UPDATE demande_echange SET statut = 'ANNULEE', decide_le = ? "
-                                + "WHERE edition_id = ? AND id = ? AND demandeur_id = ? "
-                                + "AND statut IN ('PROPOSEE', 'EN_ATTENTE_CIBLE')")) {
+                        """
+                        UPDATE demande_echange
+                        SET statut = 'ANNULEE', decide_le = ?
+                        WHERE edition_id = ?
+                        AND id = ?
+                        AND demandeur_id = ?
+                        AND statut IN ('PROPOSEE', 'EN_ATTENTE_CIBLE')""")) {
             ps.setTimestamp(1, Timestamp.from(Instant.now()));
             ps.setString(2, editionContext.editionIdCourant());
             ps.setString(3, demandeId);
@@ -215,8 +219,10 @@ public class DemandeEchangeService {
         // the authorisation: nobody answers a demande that does not target them.
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement(
-                        "UPDATE demande_echange SET statut = ?, cible_decide_le = ? "
-                                + "WHERE edition_id = ? AND id = ? AND cible_id = ? AND statut = 'EN_ATTENTE_CIBLE'")) {
+                        """
+                        UPDATE demande_echange
+                        SET statut = ?, cible_decide_le = ?
+                        WHERE edition_id = ? AND id = ? AND cible_id = ? AND statut = 'EN_ATTENTE_CIBLE'""")) {
             ps.setString(1, statut.name());
             ps.setTimestamp(2, Timestamp.from(maintenant));
             ps.setString(3, editionContext.editionIdCourant());
@@ -266,8 +272,11 @@ public class DemandeEchangeService {
     public void ouvrirFoire(boolean ouverte) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection,
-                        "INSERT INTO parametres_echange (edition_id, foire_ouverte) VALUES (?, ?) "
-                                + "ON CONFLICT (edition_id) DO UPDATE SET foire_ouverte = EXCLUDED.foire_ouverte")) {
+                        """
+                        INSERT INTO parametres_echange (edition_id, foire_ouverte)
+                        VALUES (?, ?)
+                        ON CONFLICT (edition_id)
+                        DO UPDATE SET foire_ouverte = EXCLUDED.foire_ouverte""")) {
             ps.setBoolean(2, ouverte);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -398,8 +407,10 @@ public class DemandeEchangeService {
         // Not prepareScoped for the same reason as annuler: SET comes first.
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement(
-                        "UPDATE demande_echange SET statut = ?, commentaire_admin = ?, decide_le = ? "
-                                + "WHERE edition_id = ? AND id = ? AND statut IN ('PROPOSEE', 'EN_ATTENTE_CIBLE')")) {
+                        """
+                        UPDATE demande_echange
+                        SET statut = ?, commentaire_admin = ?, decide_le = ?
+                        WHERE edition_id = ? AND id = ? AND statut IN ('PROPOSEE', 'EN_ATTENTE_CIBLE')""")) {
             ps.setString(1, statut.name());
             ps.setString(2, commentaire == null || commentaire.isBlank() ? null : commentaire);
             ps.setTimestamp(3, Timestamp.from(decideLe));

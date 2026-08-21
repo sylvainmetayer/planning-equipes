@@ -2,6 +2,7 @@ package dev.sylvain.planning.service;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import javax.sql.DataSource;
@@ -126,5 +127,64 @@ public class JdbcEditionScope {
     /** The edition every statement above is scoped to. */
     public String editionId() {
         return editionContext.editionIdCourant();
+    }
+
+    /**
+     * Does {@code table} hold this id in the current edition?
+     *
+     * <p>Written once here rather than in each repository: the probe is the
+     * same statement every time, and the one thing that must never vary — the
+     * {@code edition_id} predicate — should not be retyped eight times.</p>
+     *
+     * <p>{@code table} comes from a repository's own call sites, never from
+     * user input: a table name cannot be bound as a parameter, so it is
+     * concatenated, while the id that varies travels bound. Same reasoning for
+     * every {@code nosemgrep} below (see {@code docs/securite.md}).</p>
+     */
+    public boolean existe(String table, String id) {
+        return existe(table, ps -> ps.setString(2, id), table + " " + id);
+    }
+
+    /** Same probe for a table whose id is database-generated ({@code creneau}). */
+    public boolean existe(String table, long id) {
+        return existe(table, ps -> ps.setLong(2, id), table + " " + id);
+    }
+
+    /** Deletes by id, {@code sql} naming the table and putting {@code edition_id = ?} first. */
+    public void supprimer(String sql, String id) {
+        supprimer(sql, ps -> ps.setString(2, id), id);
+    }
+
+    /** Same, for a database-generated id. */
+    public void supprimer(String sql, long id) {
+        supprimer(sql, ps -> ps.setLong(2, id), String.valueOf(id));
+    }
+
+    /** Binds whatever the probe or the delete needs beyond the edition. */
+    @FunctionalInterface
+    private interface Liaison {
+        void lier(PreparedStatement ps) throws SQLException;
+    }
+
+    private boolean existe(String table, Liaison liaison, String quoi) {
+        return lire("Failed to probe " + quoi, connection -> {
+            try (PreparedStatement ps = prepareScoped(connection,
+                    "SELECT 1 FROM " + table + " WHERE edition_id = ? AND id = ?")) {
+                liaison.lier(ps);
+                // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string
+                try (ResultSet rs = ps.executeQuery()) {
+                    return rs.next();
+                }
+            }
+        });
+    }
+
+    private void supprimer(String sql, Liaison liaison, String quoi) {
+        ecrireEtRendre("Failed to delete " + quoi, connection -> {
+            try (PreparedStatement ps = prepareScoped(connection, sql)) {
+                liaison.lier(ps);
+                return ps.executeUpdate();
+            }
+        });
     }
 }
