@@ -1,8 +1,11 @@
-// Solver settings (server-persisted via /api/parametres-solveur), currently
-// just the termination duration exposed on the Débogage page. Read by the
-// pages that submit a solve or analyze job so every job — not only ones
-// started from Débogage — honors the configured duration. Persisted
-// server-side (not localStorage) so the same value is seen from any browser.
+// Solver settings, persisted server-side via /api/parametres-solveur (not in
+// localStorage, so every browser reads and writes the same value): the
+// termination duration, edited on the Solveur page and honored by every job
+// whoever starts it, and whether a finished solve mails its outcome to the
+// admin, edited on the Paramètres page.
+//
+// Both travel in one payload, so every write sends both: a PUT carrying only
+// one of them would silently reset the other to its default.
 
 import { Injectable, inject, signal } from '@angular/core';
 import { ApiService } from './api.service';
@@ -14,6 +17,8 @@ export const DEFAULT_SOLVER_SECONDS_LIMIT = 180;
 @Injectable({ providedIn: 'root' })
 export class SolverSettingsService {
   readonly secondsLimit = signal(DEFAULT_SOLVER_SECONDS_LIMIT);
+  /** Off by default, and inert until an admin address is configured server-side. */
+  readonly mailFinResolution = signal(false);
 
   private readonly api = inject(ApiService);
 
@@ -26,15 +31,24 @@ export class SolverSettingsService {
   }
 
   async refresh(): Promise<void> {
-    const parametres = await this.api.get<ParametresSolveur>('/api/parametres-solveur');
-    this.secondsLimit.set(parametres.dureeResolutionSecondes);
+    this.appliquer(await this.api.get<ParametresSolveur>('/api/parametres-solveur'));
   }
 
   async setSecondsLimit(seconds: number): Promise<void> {
     const value = Number.isFinite(seconds) && seconds > 0 ? Math.round(seconds) : DEFAULT_SOLVER_SECONDS_LIMIT;
-    const saved = await this.api.put<ParametresSolveur>('/api/parametres-solveur', {
-      dureeResolutionSecondes: value
-    });
-    this.secondsLimit.set(saved.dureeResolutionSecondes);
+    await this.enregistrer({ dureeResolutionSecondes: value, mailFinResolution: this.mailFinResolution() });
+  }
+
+  async setMailFinResolution(actif: boolean): Promise<void> {
+    await this.enregistrer({ dureeResolutionSecondes: this.secondsLimit(), mailFinResolution: actif });
+  }
+
+  private async enregistrer(parametres: ParametresSolveur): Promise<void> {
+    this.appliquer(await this.api.put<ParametresSolveur>('/api/parametres-solveur', parametres));
+  }
+
+  private appliquer(parametres: ParametresSolveur): void {
+    this.secondsLimit.set(parametres.dureeResolutionSecondes);
+    this.mailFinResolution.set(parametres.mailFinResolution ?? false);
   }
 }

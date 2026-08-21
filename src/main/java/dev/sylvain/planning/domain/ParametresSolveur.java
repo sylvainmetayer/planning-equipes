@@ -13,11 +13,23 @@ public class ParametresSolveur {
 
     private int dureeResolutionSecondes = DUREE_RESOLUTION_SECONDES_PAR_DEFAUT;
 
+    /**
+     * Whether a finished solve mails its outcome to the admin address. Off by
+     * default — sending mail is never something an application should start
+     * doing on its own — and inert until {@code MAIL_ADMIN} is configured.
+     */
+    private boolean mailFinResolution;
+
     public ParametresSolveur() {
     }
 
     public ParametresSolveur(int dureeResolutionSecondes) {
         this.dureeResolutionSecondes = dureeResolutionSecondes;
+    }
+
+    public ParametresSolveur(int dureeResolutionSecondes, boolean mailFinResolution) {
+        this.dureeResolutionSecondes = dureeResolutionSecondes;
+        this.mailFinResolution = mailFinResolution;
     }
 
     public int getDureeResolutionSecondes() {
@@ -26,5 +38,13 @@ public class ParametresSolveur {
 
     public void setDureeResolutionSecondes(int dureeResolutionSecondes) {
         this.dureeResolutionSecondes = dureeResolutionSecondes;
+    }
+
+    public boolean isMailFinResolution() {
+        return mailFinResolution;
+    }
+
+    public void setMailFinResolution(boolean mailFinResolution) {
+        this.mailFinResolution = mailFinResolution;
     }
 }

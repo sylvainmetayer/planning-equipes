@@ -1278,10 +1278,12 @@ public class ReferenceDataRepository {
     public ParametresSolveur getParametresSolveur() {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = prepareScoped(connection,
-                        "SELECT duree_resolution_secondes FROM parametres_solveur WHERE edition_id = ?");
+                        "SELECT duree_resolution_secondes, mail_fin_resolution "
+                                + "FROM parametres_solveur WHERE edition_id = ?");
                 ResultSet rs = ps.executeQuery()) {
             if (rs.next()) {
-                return new ParametresSolveur(rs.getInt("duree_resolution_secondes"));
+                return new ParametresSolveur(rs.getInt("duree_resolution_secondes"),
+                        rs.getBoolean("mail_fin_resolution"));
             }
             return new ParametresSolveur();
         } catch (SQLException e) {
@@ -1292,10 +1294,13 @@ public class ReferenceDataRepository {
     public void saveParametresSolveur(ParametresSolveur parametres) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = prepareScoped(connection,
-                        "INSERT INTO parametres_solveur (edition_id, duree_resolution_secondes) VALUES (?, ?) "
+                        "INSERT INTO parametres_solveur (edition_id, duree_resolution_secondes, "
+                                + "mail_fin_resolution) VALUES (?, ?, ?) "
                                 + "ON CONFLICT (edition_id) DO UPDATE SET "
-                                + "duree_resolution_secondes = EXCLUDED.duree_resolution_secondes")) {
+                                + "duree_resolution_secondes = EXCLUDED.duree_resolution_secondes, "
+                                + "mail_fin_resolution = EXCLUDED.mail_fin_resolution")) {
             ps.setInt(2, parametres.getDureeResolutionSecondes());
+            ps.setBoolean(3, parametres.isMailFinResolution());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to save solver parameters", e);

@@ -184,6 +184,10 @@ export function buildHelpSections(): HelpSection[] {
               text: $localize`:@@aide.config.def.duree:Temps maximal accordé à une résolution, réglé sur la page Solveur (3 min par défaut) et partagé par tous les navigateurs. C'est le réglage qui compte le plus : sur un festival complet, quelques minutes suffisent rarement à atteindre un score dur nul. Commencez court (1 à 3 min) pour révéler les blocages structurels, puis passez à 15-30 min, voire davantage, pour la résolution finale.`
             },
             {
+              term: $localize`:@@aide.config.term.mailFin:Prévenir à la fin d'une résolution`,
+              text: $localize`:@@aide.config.def.mailFin:Sur la page Paramètres, un interrupteur fait écrire à l'administrateur dès qu'une résolution de cette édition se termine : l'édition, le score et si le planning est faisable. De quoi lancer un calcul de trente minutes et partir. Le réglage vaut pour l'édition, pas pour le serveur : on est prévenu de la résolution qu'on attend, pas de chaque essai lancé ailleurs. Il reste sans effet tant qu'aucune adresse administrateur n'est configurée sur le serveur — l'écran le dit alors explicitement.`
+            },
+            {
               term: $localize`:@@aide.config.term.legaux:Paramètres légaux`,
               text: $localize`:@@aide.config.def.legaux:Plafonds hebdomadaires de temps de travail, sur la page Contraintes : 48 h pour les majeurs, 35 h pour les mineurs. Ces maximums sont d'ordre public — une valeur supérieure est refusée. Une valeur inférieure, plus protectrice, est acceptée mais durcit fortement le problème : c'est souvent elle, et non le nombre d'animateurs, qui rend un planning infaisable.`
             },

@@ -18,6 +18,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import ai.timefold.solver.core.api.solver.Solver;
+import org.jboss.logging.Logger;
 import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.domain.PlanningFestival;
 import jakarta.annotation.PreDestroy;
@@ -52,6 +53,8 @@ import jakarta.inject.Inject;
  */
 @ApplicationScoped
 public class SolverJobService {
+
+    private static final Logger LOG = Logger.getLogger(SolverJobService.class);
 
     /** Completed jobs are dropped from the registry after this delay. */
     private static final Duration COMPLETED_JOB_RETENTION = Duration.ofHours(1);
@@ -99,6 +102,12 @@ public class SolverJobService {
     KpiHistoriqueService kpiHistoriqueService;
 
     @Inject
+    ReferenceDataService referenceDataService;
+
+    @Inject
+    MailService mailService;
+
+    @Inject
     EditionContext editionContext;
 
     @Inject
@@ -138,6 +147,7 @@ public class SolverJobService {
             // real duration. Deliberately after the analysis — the KPI read the
             // score it just recorded — and never able to fail the job.
             kpiHistoriqueService.enregistrerApresSolve(dureeSolveSecondes);
+            notifierFinResolution(job, diagnostic);
             return diagnostic;
         });
     }
@@ -162,8 +172,28 @@ public class SolverJobService {
             PlanningService.PlanningDiagnostic diagnostic = planningService.diagnostiquer(solved);
             analysisStore.record(diagnostic);
             kpiHistoriqueService.enregistrerApresSolve(dureeSolveSecondes);
+            notifierFinResolution(job, diagnostic);
             return diagnostic;
         });
+    }
+
+    /**
+     * Mails the outcome to the admin when the edition asks for it — the point
+     * of a long solve launched before walking away. Never fails the job, and
+     * never fails the run it describes: a mail that could not be sent must not
+     * cost the user their result.
+     */
+    private void notifierFinResolution(SolverJob job, PlanningService.PlanningDiagnostic diagnostic) {
+        try {
+            if (!referenceDataService.getParametresSolveur().isMailFinResolution()) {
+                return;
+            }
+            // Feasible in Timefold's own sense: no hard constraint left broken.
+            mailService.notifierFinResolution(job.getEditionNom(), diagnostic.score(),
+                    diagnostic.hardScore() >= 0);
+        } catch (RuntimeException e) {
+            LOG.warn("End-of-solve mail could not be sent; the solve result is unaffected", e);
+        }
     }
 
     /**
@@ -205,6 +235,7 @@ public class SolverJobService {
             PlanningService.PlanningDiagnostic diagnostic = planningService.diagnostiquer(solved);
             analysisStore.record(diagnostic);
             kpiHistoriqueService.enregistrerApresSolve(dureeSolveSecondes);
+            notifierFinResolution(job, diagnostic);
             return new ResultatSolveIncremental(diagnostic, probleme.statistiques(),
                     ReplanificationDiff.calculer(probleme.affectationsPrecedentes(), solved));
         });

@@ -1305,5 +1305,16 @@
   "job.fileIndicator": "{$count} task(s) planned next.",
   "job.refusedTitle": "Launch refused",
   "solver.diffusion.title": "Sharing the schedule",
-  "solver.diffusion.hint": " What leaves the application once the schedule is good enough: the documents to print or archive, and the mailing to each animateur. These actions read the saved plan; they stay unavailable while a solve runs, since it is busy rewriting it. "
+  "solver.diffusion.hint": " What leaves the application once the schedule is good enough: the documents to print or archive, and the mailing to each animateur. These actions read the saved plan; they stay unavailable while a solve runs, since it is busy rewriting it. ",
+  "scrollHint.label": "There is more content below — click to scroll down",
+  "parametres.mailFin.title": "Email me when a solve finishes",
+  "parametres.mailFin.subtitle": " A full solve takes several minutes: instead of waiting in front of the screen, get a message as soon as it ends, with the edition concerned, the score obtained and whether the plan is feasible as is. ",
+  "parametres.mailFin.toggle": "Email me at the end of every solve of this edition",
+  "parametres.mailFin.tooltip": "Applies to this edition: every solve finishing on it writes to the administrator.",
+  "parametres.mailFin.destinataire": "Recipient: {$INTERPOLATION}",
+  "parametres.mailFin.sansAdresse": " No administrator address is configured on this server (MAIL_ADMIN variable): until it is set, no email can be sent and the setting stays inert. ",
+  "parametres.mailFin.active": "End-of-solve notification enabled",
+  "parametres.mailFin.desactive": "End-of-solve notification disabled",
+  "aide.config.term.mailFin": "Get an email when a solve finishes",
+  "aide.config.def.mailFin": "On the Paramètres page, a switch makes the application write to the administrator as soon as a solve of this edition finishes: the edition, the score, and whether the plan is feasible. Enough to launch a thirty-minute run and walk away. The setting belongs to the edition, not to the server: you are told about the solve you are waiting for, not about every trial run started elsewhere. It stays inert until an administrator address is configured on the server — the screen says so explicitly."
 }

@@ -528,16 +528,24 @@ est acceptée.
 
 | Méthode | Chemin | Description |
 | --- | --- | --- |
-| `GET` | `/api/parametres-solveur` | Durée de résolution par défaut (réglée sur la page Solveur) |
-| `PUT` | `/api/parametres-solveur` | Met à jour cette durée |
+| `GET` | `/api/parametres-solveur` | Durée de résolution par défaut (page Solveur) et notification de fin de résolution (page Paramètres) |
+| `PUT` | `/api/parametres-solveur` | Met à jour les deux |
 
 ```json
-{ "dureeResolutionSecondes": 180 }
+{ "dureeResolutionSecondes": 180, "mailFinResolution": false }
 ```
 
-Persistée côté serveur (et non en `localStorage`) : la même valeur est lue et
-modifiée depuis n'importe quel navigateur. Le `PUT` répond **400** avec
-`{ "message": "…" }` si la valeur n'est pas strictement positive.
+Persistés côté serveur (et non en `localStorage`) : les mêmes valeurs sont lues
+et modifiées depuis n'importe quel navigateur. Le `PUT` porte l'objet
+**entier** — n'envoyer qu'un champ remet l'autre à sa valeur par défaut — et
+répond **400** avec `{ "message": "…" }` si la durée n'est pas strictement
+positive.
+
+`mailFinResolution` (par édition, `false` par défaut) fait écrire à
+l'administrateur à la fin de chaque résolution de cette édition : l'édition, le
+score et la faisabilité, rien d'autre. L'envoi est *best-effort* et
+silencieusement inerte tant qu'aucune adresse n'est configurée
+(`MAIL_ADMIN`) ; `GET /api/debug/mail-config` dit laquelle, ou `null`.
 
 ## Éditions
 

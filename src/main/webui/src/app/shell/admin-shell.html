@@ -74,10 +74,16 @@
     </nav>
   </mat-sidenav>
 
-  <mat-sidenav-content>
+  <mat-sidenav-content #zoneDefilante>
     <app-edition-actuelle-bar />
     <main id="contenu" class="app-page" tabindex="-1" #contenu>
       <router-outlet />
     </main>
   </mat-sidenav-content>
 </mat-sidenav-container>
+
+<!-- Outside the drawer container on purpose: the hint is fixed to the viewport,
+     and a transformed ancestor would anchor it to the container instead. It is
+     fed the element that actually scrolls here — the drawer content, not the
+     window. -->
+<app-scroll-hint [conteneur]="zoneDefilante.getElementRef().nativeElement" />

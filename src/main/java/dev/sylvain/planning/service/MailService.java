@@ -162,6 +162,34 @@ public class MailService {
         mailer.send(Mail.withText(emailAnimateur, "Planning Équipes — votre code d'accès", corps));
     }
 
+    /**
+     * Tells the admin a solve just finished: which edition, what score, and
+     * whether the plan is feasible — the three facts one waits for when a
+     * multi-minute run was launched before walking away. Best-effort and
+     * silent without an admin address, like every other notification here.
+     *
+     * @param faisable no hard constraint left broken; anything else means the
+     *                 plan cannot be used as is, which is the whole point of
+     *                 saying it in the subject line rather than in the body
+     */
+    public void notifierFinResolution(String editionNom, String score, boolean faisable) {
+        if (adminEmailConfigure().isEmpty()) {
+            return;
+        }
+        String etat = faisable ? "planning faisable" : "planning NON faisable";
+        String sujet = "Planning Équipes — résolution terminée sur « " + editionNom + " » : " + etat;
+        StringBuilder corps = new StringBuilder()
+                .append("Édition : ").append(editionNom).append('\n')
+                .append("Score : ").append(score == null ? "non mesuré" : score).append('\n')
+                .append("Faisabilité : ").append(faisable
+                        ? "aucune contrainte dure violée"
+                        : "au moins une contrainte dure reste violée — le planning n'est pas utilisable en l'état")
+                .append('\n');
+        publicUrl.filter(url -> !url.isBlank()).ifPresent(url -> corps
+                .append("\nDétail des contraintes en défaut : ").append(url).append("/problemes\n"));
+        envoyer(adminEmailConfigure().get(), sujet, corps.toString());
+    }
+
     /** Admin address, trimmed — empty when the "new demandes" notifications are disabled. */
     public Optional<String> adminEmailConfigure() {
         return adminEmail.map(String::trim).filter(adresse -> !adresse.isBlank());

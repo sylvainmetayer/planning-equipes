@@ -234,4 +234,51 @@ class MailServiceTest {
             service.notifierDecision("alice@example.org", demande, null);
         }).doesNotThrowAnyException();
     }
+
+    @Test
+    void laFinDeResolutionAnnonceLEditionLeScoreEtLaFaisabilite() {
+        service.notifierFinResolution("Année 2026", "0hard/-3medium/-120soft", true);
+
+        assertThat(envoyes).singleElement().satisfies(mail -> {
+            assertThat(mail.getTo()).containsExactly("admin@example.org");
+            // L'état tient dans l'objet : c'est ce qu'on lit sur un téléphone
+            // sans ouvrir le message, après avoir lancé un solve et être parti.
+            assertThat(mail.getSubject()).contains("Année 2026").contains("planning faisable");
+            assertThat(mail.getText())
+                    .contains("Édition : Année 2026")
+                    .contains("Score : 0hard/-3medium/-120soft")
+                    .contains("aucune contrainte dure violée");
+        });
+    }
+
+    @Test
+    void unPlanningInfaisableLeDitDesLObjetDuMessage() {
+        service.notifierFinResolution("Canicule", "-4hard/0medium/0soft", false);
+
+        assertThat(envoyes).singleElement().satisfies(mail -> {
+            assertThat(mail.getSubject()).contains("NON faisable");
+            assertThat(mail.getText()).contains("n'est pas utilisable en l'état");
+        });
+    }
+
+    @Test
+    void sansAdresseAdminLaFinDeResolutionNEnvoieRien() {
+        service.adminEmail = Optional.empty();
+        service.notifierFinResolution("Année 2026", "0hard/0medium/0soft", true);
+
+        service.adminEmail = Optional.of("   ");
+        service.notifierFinResolution("Année 2026", "0hard/0medium/0soft", true);
+
+        assertThat(envoyes).isEmpty();
+    }
+
+    @Test
+    void unScoreNonMesureNEmpechePasLaNotification() {
+        // Un solve annulé très tôt peut n'avoir aucun score à annoncer : on
+        // prévient quand même, en le disant.
+        service.notifierFinResolution("Année 2026", null, false);
+
+        assertThat(envoyes).singleElement()
+                .satisfies(mail -> assertThat(mail.getText()).contains("Score : non mesuré"));
+    }
 }

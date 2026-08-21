@@ -580,6 +580,8 @@ export interface ParametresDecoupage {
  */
 export interface ParametresSolveur {
   dureeResolutionSecondes: number;
+  /** Mails the outcome of a finished solve to the admin address (off by default). */
+  mailFinResolution: boolean;
 }
 
 /** Ordre public ceiling for adults, in hours (Code du travail art. L3121-20). */

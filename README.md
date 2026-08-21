@@ -89,7 +89,7 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 | `MAIL_HOST` / `MAIL_PORT` | `localhost` / `1025` | Serveur SMTP des notifications d'échange (Mailpit en local) |
 | `MAIL_MOCK` | `false` (tests : toujours mockés) | `true` : les mails sont journalisés au lieu d'être envoyés |
 | `MAIL_FROM` | `planning-equipes@localhost` | Adresse expéditrice |
-| `MAIL_ADMIN` | *(vide = désactivé)* | Adresse prévenue quand des demandes d'échange sont soumises |
+| `MAIL_ADMIN` | *(vide = désactivé)* | Adresse de l'administrateur : demandes d'échange soumises, et fin de résolution si l'édition le demande |
 | `PUBLIC_URL` | `http://localhost:8080` | URL publique de l'application, imprimée comme lien « espace animateur » sur les PDF |
 
 Détails et mise en place : [`docs/observabilite.md`](docs/observabilite.md) (Sentry/Cloudflare),
@@ -140,6 +140,7 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 | Catalogue des contraintes | Toutes les règles, leur niveau, et le résultat de la dernière analyse — activables ou désactivables une par une pour diagnostiquer |
 | Simulation « et si ? » | Impact d'un désistement, d'un recrutement ou de la fermeture d'un stand, sans rien écrire |
 | Comparateur A/B | Deux plannings côte à côte — deux instantanés, ou un instantané et le plan actuel — sur le score, la couverture, l'équité et les violations, toutes éditions confondues |
+| Notification de fin de résolution | Un e-mail à l'administrateur dès qu'une résolution se termine — édition, score, faisabilité — pour ne pas rester devant l'écran ; s'active par édition sur la page Paramètres |
 | Historique des KPI | Une ligne de mesures par résolution terminée, toutes éditions confondues et sans rien de nominatif ; survit à la suppression de l'édition décrite |
 | Instantanés de plan | Met un planning de côté avec son score et sa date, et le remet en place plus tard ; une capture est prise automatiquement avant chaque résolution |
 

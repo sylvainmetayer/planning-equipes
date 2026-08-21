@@ -208,6 +208,35 @@
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
+    <h3 mat-card-title i18n="@@parametres.mailFin.title">Prévenir par e-mail à la fin d'une résolution</h3>
+    <mat-card-subtitle i18n="@@parametres.mailFin.subtitle">
+      Une résolution complète dure plusieurs minutes : au lieu de rester devant l'écran, recevez un message dès
+      qu'elle se termine, avec l'édition concernée, le score obtenu et si le planning est faisable en l'état.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <mat-slide-toggle
+      [checked]="mailFinResolution()"
+      [disabled]="mailFinResolutionBusy() || adminEmail() === null"
+      (change)="basculerMailFinResolution($event.checked)"
+      i18n-matTooltip="@@parametres.mailFin.tooltip"
+      matTooltip="S'applique à cette édition : chaque résolution qui s'y termine écrit à l'administrateur."
+    >
+      <ng-container i18n="@@parametres.mailFin.toggle">M'écrire à la fin de chaque résolution de cette édition</ng-container>
+    </mat-slide-toggle>
+    @if (adminEmail(); as adresse) {
+      <p class="calendar-meta" i18n="@@parametres.mailFin.destinataire">Destinataire : {{ adresse }}</p>
+    } @else {
+      <p class="locked-hint" i18n="@@parametres.mailFin.sansAdresse">
+        Aucune adresse administrateur n'est configurée sur ce serveur (variable MAIL_ADMIN) : tant qu'elle manque,
+        aucun e-mail ne peut partir et le réglage reste sans effet.
+      </p>
+    }
+  </mat-card-content>
+</mat-card>
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
     <h3 mat-card-title i18n="@@parametres.ailleurs.title">Réglés sur leur propre écran</h3>
     <mat-card-subtitle i18n="@@parametres.ailleurs.subtitle">
       Ces paramètres d'édition restent sur l'écran qu'ils pilotent directement :

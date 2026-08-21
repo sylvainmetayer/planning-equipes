@@ -7,6 +7,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { EditionStore } from '../../core/edition.store';
@@ -53,6 +55,8 @@ import { StatusMessage } from '../../shared/status-message';
     MatInputModule,
     MatProgressSpinnerModule,
     MatSelectModule,
+    MatTooltipModule,
+    MatSlideToggleModule,
     RouterLink,
     FeasibilityBanner,
     OutputPanel,
@@ -71,6 +75,11 @@ export class ParametresPage {
   /** Scenario files offered by the backend, and the one currently selected. */
   protected readonly scenarios = signal<string[]>([]);
   protected readonly selectedScenario = signal<string | null>(null);
+
+  /** Admin address configured server-side, `null` when mail is disabled entirely. */
+  protected readonly adminEmail = signal<string | null>(null);
+  protected readonly mailFinResolutionBusy = signal(false);
+  protected readonly mailFinResolution = computed(() => this.solverSettings.mailFinResolution());
 
   /** The server-side solver lock: also covers a solve/analysis from another browser. */
   protected readonly solverBusy = computed(() => this.jobs.solverBusy());
@@ -103,7 +112,7 @@ export class ParametresPage {
   private readonly instantane = inject(InstantaneAvantAction);
 
   private readonly jobs = inject(SolverJobService);
-  private readonly solverSettings = inject(SolverSettingsService);
+  protected readonly solverSettings = inject(SolverSettingsService);
   private readonly notifications = inject(NotificationService);
 
   constructor() {
@@ -111,6 +120,42 @@ export class ParametresPage {
     void this.problemes.reloadFeasibility();
     void this.crud.reload();
     void this.chargerParametresDecoupage();
+    void this.chargerReglagesNotification();
+  }
+
+  /* --------------------- Notification de fin de résolution -------------------- */
+
+  /**
+   * Loads the toggle's own state and the server's mail configuration. Both
+   * matter: without an admin address the setting is inert, and a switch that
+   * silently does nothing is worse than no switch at all.
+   */
+  private async chargerReglagesNotification(): Promise<void> {
+    await Promise.all([
+      this.solverSettings.refresh().catch(() => undefined),
+      this.api
+        .get<{ adminEmail: string | null }>('/api/debug/mail-config')
+        .then((config) => this.adminEmail.set(config.adminEmail))
+        .catch(() => this.adminEmail.set(null))
+    ]);
+  }
+
+  protected async basculerMailFinResolution(actif: boolean): Promise<void> {
+    this.mailFinResolutionBusy.set(true);
+    try {
+      await this.solverSettings.setMailFinResolution(actif);
+      this.notifications.notify({
+        title: actif
+          ? $localize`:@@parametres.mailFin.active:Notification de fin de résolution activée`
+          : $localize`:@@parametres.mailFin.desactive:Notification de fin de résolution désactivée`,
+        variant: 'success',
+        timeout: 4000
+      });
+    } catch (error) {
+      this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
+    } finally {
+      this.mailFinResolutionBusy.set(false);
+    }
   }
 
   /* ----------------------------- Scenario import ---------------------------- */
