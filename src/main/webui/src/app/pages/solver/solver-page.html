@@ -71,24 +71,6 @@
       <mat-icon>stop_circle</mat-icon>
       <ng-container i18n="@@solver.arreter">Arrêter le solveur</ng-container>
     </button>
-    <button matButton="tonal" [disabled]="exportBusy() || solverBusy()" (click)="onExportPlanning()">
-      <mat-icon>archive</mat-icon>
-      <ng-container i18n="@@solver.export">Exporter le planning (PDF + ICS)</ng-container>
-    </button>
-    <button matButton="tonal" [disabled]="exportBusy() || solverBusy()"
-            i18n-matTooltip="@@solver.exportGlobal.tooltip"
-            matTooltip="Le planning complet dans un seul PDF, pour l'organisateur : toutes les affectations, présentées journée par journée puis stand par stand."
-            (click)="onExportGlobalPdf()">
-      <mat-icon>picture_as_pdf</mat-icon>
-      <ng-container i18n="@@solver.exportGlobal">Exporter le planning global (PDF)</ng-container>
-    </button>
-    <button matButton="tonal" [disabled]="envoiBusy() || solverBusy()"
-            i18n-matTooltip="@@solver.envoiTous.tooltip"
-            matTooltip="Envoyer à chaque animateur du planning son planning individuel par e-mail (PDF + lien vers son espace)"
-            (click)="onEnvoyerPlannings()">
-      <mat-icon>forward_to_inbox</mat-icon>
-      <ng-container i18n="@@solver.envoiTous">Envoyer à tous</ng-container>
-    </button>
   </mat-card-actions>
   @if (raisonVerrou()) {
     <mat-card-content>
@@ -267,6 +249,37 @@
     </mat-card-content>
   </mat-card>
 }
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h2 mat-card-title i18n="@@solver.diffusion.title">Diffusion du planning</h2>
+    <mat-card-subtitle i18n="@@solver.diffusion.hint">
+      Ce qui sort de l'application une fois le planning satisfaisant : les documents à imprimer ou à archiver, et
+      l'envoi à chaque animateur. Ces actions lisent le planning enregistré ; elles restent indisponibles pendant
+      qu'une résolution tourne, puisqu'elle est en train de le réécrire.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-actions class="card-actions">
+    <button matButton="tonal" [disabled]="exportBusy() || solverBusy()" (click)="onExportPlanning()">
+      <mat-icon>archive</mat-icon>
+      <ng-container i18n="@@solver.export">Exporter le planning (PDF + ICS)</ng-container>
+    </button>
+    <button matButton="tonal" [disabled]="exportBusy() || solverBusy()"
+            i18n-matTooltip="@@solver.exportGlobal.tooltip"
+            matTooltip="Le planning complet dans un seul PDF, pour l'organisateur : toutes les affectations, présentées journée par journée puis stand par stand."
+            (click)="onExportGlobalPdf()">
+      <mat-icon>picture_as_pdf</mat-icon>
+      <ng-container i18n="@@solver.exportGlobal">Exporter le planning global (PDF)</ng-container>
+    </button>
+    <button matButton="tonal" [disabled]="envoiBusy() || solverBusy()"
+            i18n-matTooltip="@@solver.envoiTous.tooltip"
+            matTooltip="Envoyer à chaque animateur du planning son planning individuel par e-mail (PDF + lien vers son espace)"
+            (click)="onEnvoyerPlannings()">
+      <mat-icon>forward_to_inbox</mat-icon>
+      <ng-container i18n="@@solver.envoiTous">Envoyer à tous</ng-container>
+    </button>
+  </mat-card-actions>
+</mat-card>
 
 <app-feasibility-banner [report]="feasibility()" [hardScore]="hardScore()" [hardIssues]="hardIssues()" />
 <app-output-panel [text]="output()" />
