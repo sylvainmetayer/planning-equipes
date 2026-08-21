@@ -11,7 +11,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Standalone structural validator for scenario YAML files (see
@@ -41,7 +40,7 @@ public final class ScenarioValidator {
             return violations.stream()
                     .map(violation -> violation.getPropertyPath() + ": " + violation.getMessage())
                     .sorted()
-                    .collect(Collectors.toList());
+                    .toList();
         }
     }
 

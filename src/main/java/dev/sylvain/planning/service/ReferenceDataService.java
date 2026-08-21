@@ -417,8 +417,6 @@ public class ReferenceDataService {
 
     /* ------------------------------ Timeslots ------------------------------ */
 
-    private static final String GROUPE_CRENEAU_DEFAUT_ID = "DEFAUT";
-
     public List<Creneau> listCreneaux() {
         return repository == null ? List.of() : repository.listCreneaux();
     }

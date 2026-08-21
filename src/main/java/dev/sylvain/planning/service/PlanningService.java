@@ -78,7 +78,6 @@ public class PlanningService {
     private final ReferenceDataService referenceDataService;
     private final FeasibilityAnalyzer feasibilityAnalyzer;
     private final long defaultSecondsLimit;
-    private final long defaultUnimprovedSecondsLimit;
     private final ConstraintWeightOverrides<HardMediumSoftScore> constraintWeightOverrides;
     /** Cap fed to {@code limiterEmplacementsParJour} through {@link ParametresQualite}. */
     private final int maxEmplacementsParJour;
@@ -108,7 +107,6 @@ public class PlanningService {
         this.referenceDataService = referenceDataService;
         this.feasibilityAnalyzer = feasibilityAnalyzer;
         this.defaultSecondsLimit = secondsLimit;
-        this.defaultUnimprovedSecondsLimit = unimprovedSecondsLimit;
         this.maxEmplacementsParJour = maxEmplacementsParJour;
         this.constraintWeightOverrides = buildConstraintWeightOverrides(config);
     }
@@ -798,7 +796,7 @@ public class PlanningService {
                     : animateur.getJoursIndisponibles().stream()
                             .sorted()
                             .map(PlanningService::asString)
-                            .collect(Collectors.toList());
+                            .toList();
             item.put("joursIndisponibles", joursIndisponibles);
             List<String> souhaits = animateur.getSouhaits() == null
                     ? List.of()
