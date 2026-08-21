@@ -13,7 +13,15 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { ApiService, toError } from './api.service';
 import { EditionStore } from './edition.store';
 import { NotificationService } from './notification.service';
-import { JobType, JobView, MutationsWhatIf, PlanningDiagnostic, PlanningFestival } from './models';
+import {
+  JobType,
+  JobView,
+  MutationsWhatIf,
+  PerimetreReplanification,
+  PlanningDiagnostic,
+  PlanningFestival,
+  ResultatSolveIncremental
+} from './models';
 
 const POLL_INTERVAL_MS = 2000;
 
@@ -194,6 +202,18 @@ export class SolverJobService {
    */
   submitSolveFromReferenceData(seconds?: number): Promise<JobView> {
     return this.submit('/api/solve/async/reference-data', {}, 'SOLVE', seconds);
+  }
+
+  /**
+   * Incremental re-solve (issue #86): the server starts from the persisted
+   * plan, pins whatever a late change did not invalidate and `perimetre` does
+   * not re-open, then re-fills only the rest. Its SOLVE payload is a
+   * {@link ResultatSolveIncremental}, not a bare diagnostic — see
+   * {@link extraireDiagnostic}. Without `seconds`, the server applies its own
+   * short budget rather than the full-solve one.
+   */
+  submitSolveIncremental(perimetre: PerimetreReplanification, seconds?: number): Promise<JobView> {
+    return this.submit('/api/solve/incremental/async', perimetre, 'SOLVE', seconds);
   }
 
   submitAnalyze(planning: PlanningFestival, seconds?: number): Promise<JobView> {
@@ -384,7 +404,10 @@ export class SolverJobService {
     // that handler only exists while its page is mounted, so a solve finishing
     // after the user navigated away would otherwise never surface this. This
     // runs unconditionally, whichever page (if any) is open when the job ends.
-    const diagnostic = job.result as PlanningDiagnostic | null;
+    // extraireDiagnostic, not a bare cast: an incremental solve wraps its
+    // diagnostic (issue #86), and the feasibility notification must fire for it
+    // exactly like for a full solve.
+    const diagnostic = extraireDiagnostic(job.result);
     if (diagnostic) {
       this.notifications.notifyFeasibility(diagnostic.faisabilite, diagnostic.hardScore);
     }
@@ -403,11 +426,24 @@ export function formatDuration(totalSeconds: number): string {
   return minutes > 0 ? `${minutes}m ${String(seconds % 60).padStart(2, '0')}s` : `${seconds}s`;
 }
 
+/**
+ * The diagnostic inside a SOLVE payload: the payload itself for a full solve,
+ * the `diagnostic` field for an incremental one (issue #86). Null when the job
+ * carries no result at all — a cancelled job, or one still running.
+ */
+export function extraireDiagnostic(result: unknown): PlanningDiagnostic | null {
+  if (!result || typeof result !== 'object') {
+    return null;
+  }
+  const incremental = result as Partial<ResultatSolveIncremental>;
+  return (incremental.diagnostic ?? (result as PlanningDiagnostic)) || null;
+}
+
 function describeResult(result: unknown): string {
-  if (!result) {
+  const diagnostic = extraireDiagnostic(result);
+  if (!diagnostic) {
     return '';
   }
-  const diagnostic = result as PlanningDiagnostic;
   const score = diagnostic.score;
   const postesNonPourvus = diagnostic.postesNonPourvus;
   return $localize`:@@job.result:Score ${score}:score: — ${postesNonPourvus}:count: poste(s) non pourvu(s).`;

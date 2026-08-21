@@ -38,7 +38,7 @@ public final class AdHocConstraints {
     private Constraint indisponibiliteForcee(ConstraintFactory constraintFactory) {
         return ConstraintToggleSupport.actif(constraintFactory.forEach(ContrainteAdHoc.class), "indisponibiliteForcee")
                 .filter(contrainte -> contrainte.getType() == TypeContrainteAdHoc.INDISPONIBILITE_FORCEE)
-                .join(PosteAffectation.class, Joiners.filtering(this::violeIndisponibiliteForcee))
+                .join(PosteAffectation.class, Joiners.filtering(AdHocConstraints::violeIndisponibiliteForcee))
                 .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint("indisponibiliteForcee");
     }
@@ -153,7 +153,14 @@ public final class AdHocConstraints {
                 .asConstraint("affectationForcee");
     }
 
-    private boolean violeIndisponibiliteForcee(ContrainteAdHoc contrainte, PosteAffectation poste) {
+    /**
+     * Whether this seat, as currently staffed, breaks that forced
+     * unavailability. Public and static because the incremental reconciliation
+     * (issue #86) asks the same question outside the solver: a seat it would
+     * pin must not carry a violation nobody can then fix — and the two must
+     * never drift apart, hence one implementation.
+     */
+    public static boolean violeIndisponibiliteForcee(ContrainteAdHoc contrainte, PosteAffectation poste) {
         return concerneAnimateur(contrainte, poste.getAnimateur())
                 && correspondAuPerimetre(contrainte, poste);
     }
@@ -164,19 +171,19 @@ public final class AdHocConstraints {
                 && correspondAuPerimetre(contrainte, poste);
     }
 
-    private boolean concerneAnimateur(ContrainteAdHoc contrainte, Animateur animateur) {
+    private static boolean concerneAnimateur(ContrainteAdHoc contrainte, Animateur animateur) {
         return contrainte.getAnimateursConcernes() != null
                 && contrainte.getAnimateursConcernes().stream().anyMatch(cible -> correspondAnimateur(cible, animateur));
     }
 
-    private boolean correspondAnimateur(Animateur expected, Animateur actual) {
+    private static boolean correspondAnimateur(Animateur expected, Animateur actual) {
         return expected != null
                 && actual != null
                 && expected.getId() != null
                 && expected.getId().equals(actual.getId());
     }
 
-    private boolean correspondAuPerimetre(ContrainteAdHoc contrainte, PosteAffectation poste) {
+    private static boolean correspondAuPerimetre(ContrainteAdHoc contrainte, PosteAffectation poste) {
         boolean creneauOk = contrainte.getCreneau() == null
                 || (poste.getCreneau() != null && contrainte.getCreneau().getId().equals(poste.getCreneau().getId()));
         boolean standOk = contrainte.getStand() == null

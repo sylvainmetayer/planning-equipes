@@ -206,45 +206,6 @@ class PlanningServiceVerrouillageTest {
     }
 
     /**
-     * Warm start (issue #86): unlike the lock path, the seeded seats are kept
-     * as movable starting points, not cleared — the whole point of re-solving
-     * from a group's last snapshot instead of from scratch.
-     */
-    @Test
-    void leWarmStartConserveLesSeedsNonVerrouillesSansLesFiger() {
-        List<PosteAffectation> postes = List.of(
-                poste("poste-0", standA, matinJ1),
-                poste("poste-1", standA, matinJ1));
-
-        PlanningService.seedDepuisAffectations(postes, animateurs, List.of(),
-                Map.of(PlanningPersistenceService.cleStandCreneau("STAND-A", 1L), List.of("A1", "A2")), true);
-
-        assertThat(postes.get(0).getAnimateur()).isEqualTo(alice);
-        assertThat(postes.get(0).isVerrouille()).isFalse();
-        assertThat(postes.get(1).getAnimateur()).isEqualTo(bob);
-        assertThat(postes.get(1).isVerrouille()).isFalse();
-    }
-
-    /** A seeded seat covered by a lock is pinned, warm start or not. */
-    @Test
-    void leWarmStartFigeQuandMemeLesPostesCouvertsParUnVerrouillage() {
-        List<PosteAffectation> postes = List.of(
-                poste("poste-0", standA, matinJ1),
-                poste("poste-1", standA, matinJ2));
-        VerrouillagePlanning verrouillage = verrou(TypeVerrouillage.JOUR);
-        verrouillage.setJour(J1);
-
-        PlanningService.seedDepuisAffectations(postes, animateurs, List.of(verrouillage), Map.of(
-                PlanningPersistenceService.cleStandCreneau("STAND-A", 1L), List.of("A1"),
-                PlanningPersistenceService.cleStandCreneau("STAND-A", 2L), List.of("A2")), true);
-
-        assertThat(postes.get(0).isVerrouille()).isTrue();
-        assertThat(postes.get(0).getAnimateur()).isEqualTo(alice);
-        assertThat(postes.get(1).isVerrouille()).isFalse();
-        assertThat(postes.get(1).getAnimateur()).isEqualTo(bob);
-    }
-
-    /**
      * An animateur id the referential no longer knows leaves its seat empty: a
      * stale seed is a degraded starting point, never an error (the missing-ref
      * strictness of a snapshot <i>restore</i> does not apply to a seed).
@@ -254,7 +215,7 @@ class PlanningServiceVerrouillageTest {
         List<PosteAffectation> postes = List.of(poste("poste-0", standA, matinJ1));
 
         PlanningService.seedDepuisAffectations(postes, animateurs, List.of(),
-                Map.of(PlanningPersistenceService.cleStandCreneau("STAND-A", 1L), List.of("DISPARU")), true);
+                Map.of(PlanningPersistenceService.cleStandCreneau("STAND-A", 1L), List.of("DISPARU")));
 
         assertThat(postes.get(0).getAnimateur()).isNull();
         assertThat(postes.get(0).isVerrouille()).isFalse();

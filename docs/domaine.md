@@ -378,6 +378,44 @@ les postes non pourvus, seul `forEachIncludingUnassigned(...)` les voit — d'o�
 son usage dans `posteDoitEtrePourvu`, et l'inutilité d'un test
 `animateur != null` après un `forEach`.
 
+### Replanification incrémentale
+
+La replanification incrémentale (`POST /api/solve/incremental/async`, issue
+#86) répond à la question « il est 9 h, untel se désiste, que fait-on ? ». Elle
+**repart du planning persisté** au lieu d'une solution vierge, épingle tout ce
+qui reste valable et ne rouvre que le reste — d'où un budget par défaut de
+60 s, un ordre de grandeur sous celui d'une résolution complète.
+
+Le rapprochement est **positionnel**, sur stand × créneau, exactement comme
+celui des verrous : les places d'un même stand sur un même créneau sont
+interchangeables, aucun identifiant de poste n'a donc besoin de survivre à un
+changement de référentiel. Place par place :
+
+| Situation | Ce qui est fait |
+| --- | --- |
+| Désignée par le périmètre demandé (animateur, journée ou stand) | Libérée, quoi qu'il arrive : c'est l'utilisateur qui dit « refais ça » |
+| Titulaire encore valable (il existe, il n'est pas indisponible ce jour-là) | **Épinglée** — le solveur n'y touche pas |
+| Titulaire invalidé par un changement tardif : animateur supprimé, jour d'indisponibilité fraîchement saisi, ou contrainte ad hoc d'indisponibilité forcée le couvrant | Libérée : c'est précisément ce que la replanification doit refaire. Épingler une telle place figerait une violation dure que plus personne ne pourrait corriger — le test de validité réutilise d'ailleurs le prédicat du solveur (`AdHocConstraints.violeIndisponibiliteForcee`), pour que les deux ne puissent pas diverger |
+| Jamais pourvue, ou nouvelle (stand ou créneau ajouté) | Laissée libre, comme dans une résolution complète |
+
+Deux choix méritent d'être explicités, parce qu'ils tranchent les questions
+ouvertes de l'issue :
+
+- **le gel est volatil.** Il vit le temps du job et n'écrit rien : un
+  `VerrouillagePlanning` reste ce que l'utilisateur verrouille délibérément,
+  jamais un artefact technique laissé par une replanification ;
+- **tout ce qui est valable est épinglé**, y compris hors verrou explicite. Une
+  replanification incrémentale existe pour *stabiliser* le plan en place, pas
+  pour le ré-optimiser. Rouvrir une zone est donc un acte explicite — la
+  nommer dans le périmètre, ou lancer une résolution complète protégée par des
+  verrous.
+
+Le résultat du job porte les statistiques (figés / libérés / rouverts à la
+demande / nouveaux) et le **diff des équipes** par stand × créneau : replanifier
+partiellement n'a d'intérêt que si l'on peut dire qui est impacté. Une
+permutation entre places interchangeables d'un même stand n'y figure pas — le
+planning de personne n'a changé.
+
 ### Demandes d'échange
 
 La « foire au planning » (issue #165) permet à un animateur de proposer un

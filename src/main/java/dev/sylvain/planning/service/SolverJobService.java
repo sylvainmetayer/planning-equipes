@@ -46,6 +46,15 @@ public class SolverJobService {
     /** Completed jobs are dropped from the registry after this delay. */
     private static final Duration COMPLETED_JOB_RETENTION = Duration.ofHours(1);
 
+    /**
+     * Default budget of an incremental re-solve (issue #86). An order of
+     * magnitude under a full solve's (180 s by default, 600 s on the reference
+     * scenario) because the effective problem is a fraction of the full one:
+     * most seats are pinned, and the whole point is a fast answer to a
+     * last-minute change.
+     */
+    static final long DUREE_INCREMENTALE_DEFAUT_SECONDES = 60L;
+
     public enum JobType {
         SOLVE,
         ANALYZE
@@ -109,6 +118,49 @@ public class SolverJobService {
             // score it just recorded — and never able to fail the job.
             kpiHistoriqueService.enregistrerApresSolve(dureeSolveSecondes);
             return diagnostic;
+        });
+    }
+
+    /**
+     * Result of an incremental re-solve (issue #86): the usual diagnostic, plus
+     * how much of the problem was frozen and exactly which stand × créneau
+     * crews changed — replanning partially is only worth it if one can say who
+     * is impacted.
+     */
+    public record ResultatSolveIncremental(
+            PlanningService.PlanningDiagnostic diagnostic,
+            PlanningService.StatistiquesIncremental statistiques,
+            List<ReplanificationDiff.ChangementAffectation> changements) {
+    }
+
+    /**
+     * Incremental re-solve (issue #86): starts from the persisted plan, pins
+     * everything a late change did not invalidate and {@code perimetre} does
+     * not re-open (see
+     * {@link PlanningService#construireIncrementalDepuisReferenceData}), and
+     * re-fills only the rest — which is why a far shorter budget than a full
+     * solve is enough.
+     *
+     * <p>The problem is built <b>inside</b> the job, on the job's edition,
+     * because it reads the persisted plan: building it on the request thread
+     * would race with the previous job's persistence.</p>
+     */
+    public SolverJob submitSolveIncremental(Long secondsLimitDemande, PerimetreReplanification perimetre) {
+        Long secondsLimit = secondsLimitDemande != null ? secondsLimitDemande : DUREE_INCREMENTALE_DEFAUT_SECONDES;
+        return submit(JobType.SOLVE, secondsLimit, job -> {
+            snapshotService.capturerAvantSolve();
+            PlanningService.ProblemeIncremental probleme =
+                    planningService.construireIncrementalDepuisReferenceData(perimetre);
+            Instant debutSolve = Instant.now();
+            PlanningFestival solved =
+                    planningService.resoudre(probleme.planning(), secondsLimit, job::attachSolver);
+            long dureeSolveSecondes = Duration.between(debutSolve, Instant.now()).getSeconds();
+            persistenceService.persist(solved);
+            PlanningService.PlanningDiagnostic diagnostic = planningService.diagnostiquer(solved);
+            analysisStore.record(diagnostic);
+            kpiHistoriqueService.enregistrerApresSolve(dureeSolveSecondes);
+            return new ResultatSolveIncremental(diagnostic, probleme.statistiques(),
+                    ReplanificationDiff.calculer(probleme.affectationsPrecedentes(), solved));
         });
     }
 

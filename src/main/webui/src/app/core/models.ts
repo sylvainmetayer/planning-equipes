@@ -763,6 +763,46 @@ export interface ComparaisonSnapshots {
   diffViolations: DiffContrainte[];
 }
 
+/**
+ * What an incremental re-solve (issue #86) re-opens on purpose, on top of what
+ * a late change already invalidated. Empty everywhere = purely automatic
+ * perimeter.
+ */
+export interface PerimetreReplanification {
+  animateurIds: string[];
+  /** ISO days (`2026-07-08`). */
+  jours: string[];
+  standIds: string[];
+}
+
+/** How much of an incremental problem was frozen versus re-opened. */
+export interface StatistiquesIncremental {
+  postesTotal: number;
+  postesFiges: number;
+  postesLiberes: number;
+  postesLiberesManuellement: number;
+  postesNouveaux: number;
+}
+
+/** One stand × créneau whose crew changed, both crews spelled out by name. */
+export interface ChangementAffectation {
+  standId: string;
+  standNom: string;
+  creneauId: number;
+  date: string | null;
+  heureDebut: string | null;
+  heureFin: string | null;
+  avant: string[];
+  apres: string[];
+}
+
+/** Payload of a finished incremental SOLVE job: a diagnostic plus what moved. */
+export interface ResultatSolveIncremental {
+  diagnostic: PlanningDiagnostic;
+  statistiques: StatistiquesIncremental;
+  changements: ChangementAffectation[];
+}
+
 /** `POST /api/planning/snapshots/{id}/restore` on success. */
 export interface RestaurationSnapshot {
   restaure: boolean;

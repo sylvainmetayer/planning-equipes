@@ -227,6 +227,29 @@ précisément ce qui doit lui survivre.
 Rien de nominatif n'y est stocké : l'équité est un écart-type d'heures, pas un
 classement de personnes.
 
+### Replanification incrémentale
+
+Un désistement à 9 h du matin ne justifie pas de tout recalculer. La
+**replanification incrémentale** repart du planning enregistré : tout ce qui
+reste valable est figé, et seuls les postes qu'un changement tardif a invalidés
+— animateur supprimé, indisponibilité ou contrainte ad hoc saisie depuis la
+résolution — sont recalculés, avec les postes restés vides. Quelques dizaines de secondes au lieu
+de plusieurs minutes.
+
+On peut rouvrir davantage à la demande : un animateur, une journée, un stand.
+Tout le reste du planning est garanti inchangé — c'est ce que vérifie le test
+de bout en bout, et c'est ce qui rend l'outil utilisable sur un planning déjà
+communiqué.
+
+Le compte rendu dit exactement **qui est impacté** : les équipes qui ont changé,
+stand par stand et créneau par créneau, avant et après. Une permutation entre
+deux places interchangeables du même stand n'y apparaît pas : le planning de
+personne n'a bougé.
+
+Ce gel-là est volatil, le temps du calcul : les verrouillages restent ce que
+vous verrouillez vous-même, jamais une trace technique laissée par une
+replanification.
+
 ### Comparateur A/B
 
 Confronte une **référence** et une **variante** — deux instantanés, ou un

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.service.PerimetreReplanification;
 import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.SolverJobService;
 import dev.sylvain.planning.service.SolverJobService.SolverBusyException;
@@ -72,6 +73,28 @@ public class SolverJobResource {
         try {
             SolverJob job = solverJobService.submitSolve(
                     planningService.construireDepuisReferenceData(), secondsLimit);
+            return Response.accepted(JobView.withoutResult(job)).build();
+        } catch (SolverBusyException e) {
+            return busy(e);
+        }
+    }
+
+    /**
+     * Incremental re-solve (issue #86): starts from the persisted plan, pins
+     * whatever a late change did not invalidate, re-opens what the body names,
+     * and re-fills only the rest — so a much shorter budget than a full solve
+     * is enough (60 s by default). The problem is built inside the job itself,
+     * from the persisted plan and today's reference data. Refused like any
+     * other solve while one is running.
+     *
+     * <p>The body is optional: without it, the perimeter is exactly what the
+     * late changes invalidated.</p>
+     */
+    @POST
+    @Path("/solve/incremental/async")
+    public Response solveIncremental(PerimetreReplanification perimetre, @QueryParam("seconds") Long secondsLimit) {
+        try {
+            SolverJob job = solverJobService.submitSolveIncremental(secondsLimit, perimetre);
             return Response.accepted(JobView.withoutResult(job)).build();
         } catch (SolverBusyException e) {
             return busy(e);

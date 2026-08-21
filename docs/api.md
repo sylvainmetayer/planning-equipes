@@ -159,6 +159,34 @@ heures (total, moyenne, écart-type, min, max), jamais par animateur.
 | `GET` | `/api/kpi/historique` | Toutes les mesures, toutes éditions confondues, de la plus récente à la plus ancienne |
 | `DELETE` | `/api/kpi/historique/{id}` | Supprime une mesure |
 
+## Replanification incrémentale
+
+| Méthode | Chemin | Description |
+| --- | --- | --- |
+| `POST` | `/api/solve/incremental/async?seconds=` | Replanification incrémentale (issue #86) : repart du plan persisté, épingle tout ce qu'un changement tardif n'a pas invalidé, ne recalcule que le reste. `202` avec le job, `409` si le solveur est déjà occupé |
+
+Corps **facultatif** — le périmètre rouvert *en plus* de ce que les changements
+ont invalidé :
+
+```json
+{ "animateurIds": ["ANIM-12"], "jours": ["2026-08-22"], "standIds": ["STAND-A"] }
+```
+
+Les trois axes sont une **union** : un poste est rouvert dès qu'il correspond à
+l'un d'eux. Sans corps, le périmètre est exactement ce que les changements
+tardifs ont invalidé, plus les postes restés vides.
+
+Sans `seconds`, le serveur applique son propre budget court (60 s), et non la
+durée configurée pour une résolution complète. Le job échoue explicitement s'il
+n'y a aucun plan persisté à reprendre : la replanification part d'un résultat,
+pas de rien.
+
+Le résultat du job (`GET /api/jobs/{id}`) porte `diagnostic` (comme une
+résolution complète), `statistiques` (`postesFiges`, `postesLiberes`,
+`postesLiberesManuellement`, `postesNouveaux`) et `changements` : le diff des
+équipes par stand × créneau, avec les noms de chaque côté. Voir
+[`domaine.md`](domaine.md#replanification-incrémentale) pour la mécanique.
+
 ## Comparateur A/B
 
 `GET /api/planning/snapshots/compare` confronte deux plans et **ne déclenche

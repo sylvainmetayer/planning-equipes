@@ -84,6 +84,7 @@ dans [`domaine.md`](domaine.md).
 | `PlanningPersistenceService` | Lecture / écriture du planning persisté, cloisonnée par édition |
 | `PlanningKpiService` | KPI agrégés et non nominatifs d'un plan (score par niveau, couverture, dispersion des heures, taux de modifications manuelles) — issue #89 |
 | `KpiHistoriqueService` | Une ligne de KPI par solve terminé, toutes éditions, sans clé étrangère (l'historique survit à la suppression d'une édition) — issue #89 |
+| `ReplanificationDiff` / `PerimetreReplanification` | Périmètre volatil d'une replanification incrémentale et diff des équipes qu'elle a fait bouger — issue #86 |
 | `SnapshotComparaisonService` | Comparateur A/B : confronte deux plans (instantanés ou plan courant), **toutes éditions confondues**, en lecture seule — aucune résolution, aucun score recalculé — issue #70 |
 | `DatabaseDumpService` | Export / import de dump SQL |
 | `PlanningExportService` | Génération PDF (OpenPDF) et ICS, **côté serveur uniquement** |

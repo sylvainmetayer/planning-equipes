@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -7,24 +8,35 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { MatDialog } from '@angular/material/dialog';
+import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ApiService } from '../../core/api.service';
 import { resumeEnvoi } from '../../core/envoi-planning';
 import { intlLocale } from '../../core/locale';
-import { CompteRenduEnvoi, FeasibilityReport, PlanningDiagnostic } from '../../core/models';
+import {
+  ChangementAffectation,
+  CompteRenduEnvoi,
+  FeasibilityReport,
+  PerimetreReplanification,
+  PlanningDiagnostic,
+  ResultatSolveIncremental,
+  StatistiquesIncremental
+} from '../../core/models';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
-import { SolverJobService, formatDuration } from '../../core/solver-job.service';
+import { SolverJobService, extraireDiagnostic, formatDuration } from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { FeasibilityBanner, HardIssue } from '../../shared/feasibility-banner';
 import { OutputPanel } from '../../shared/output-panel';
 import { ProblemSummaryBanner } from '../../shared/problem-summary-banner';
 import { StatusMessage } from '../../shared/status-message';
+import { ReplanificationDialog } from './replanification-dialog';
 
 /**
  * A constraint's raw score string looks like `-14hard/0medium/0soft`
@@ -93,6 +105,7 @@ function bestUnitFor(seconds: number): SolverDurationUnit {
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
+    MatTableModule,
     MatTooltipModule,
     FeasibilityBanner,
     ProblemSummaryBanner,
@@ -109,6 +122,15 @@ export class SolverPage {
   protected readonly exportBusy = signal(false);
   protected readonly envoiBusy = signal(false);
   protected readonly arretEnCours = signal(false);
+
+  /**
+   * Result of the last incremental re-solve (issue #86), cleared as soon as a
+   * full solve replaces the whole plan: the diff would then describe a
+   * planning that no longer exists.
+   */
+  protected readonly incrementalStats = signal<StatistiquesIncremental | null>(null);
+  protected readonly incrementalChangements = signal<ChangementAffectation[]>([]);
+  protected readonly columnsChangements = ['quand', 'stand', 'avant', 'apres'];
 
   protected readonly solverDurationLoading = signal(false);
   protected readonly solverDurationSaving = signal(false);
@@ -206,6 +228,7 @@ export class SolverPage {
   private readonly solverSettings = inject(SolverSettingsService);
   private readonly notifications = inject(NotificationService);
   private readonly confirm = inject(ConfirmService);
+  private readonly dialog = inject(MatDialog);
   private readonly crud = inject(ReferenceCrudService);
 
   constructor() {
@@ -220,7 +243,13 @@ export class SolverPage {
     // navigation, so keeping the handler would stack one more copy per visit.
     inject(DestroyRef).onDestroy(
       this.jobs.onResult('SOLVE', (result) => {
-        this.applySolveResult(result as PlanningDiagnostic);
+        // A SOLVE payload is a bare diagnostic (full solve) or an incremental
+        // wrapper carrying one (issue #86).
+        const diagnostic = extraireDiagnostic(result);
+        if (diagnostic) {
+          this.applySolveResult(diagnostic);
+        }
+        this.applyIncrementalResult(result);
         void this.loadLastRun();
         // The solve rewrote both problem sources server-side (fresh feasibility
         // input and a new constraint analysis): re-read them for the summary.
@@ -325,6 +354,68 @@ export class SolverPage {
     const total = Math.max(1, Math.round((end - job.startedAtMs) / 1000));
     return Math.min(100, Math.max(0, Math.round(((total - restant) / total) * 100)));
   });
+
+  /**
+   * Incremental re-solve (issue #86): the server restarts from the persisted
+   * plan, pins whatever a late change did not invalidate and the perimeter
+   * does not re-open, then re-fills only the rest — on a short budget. The
+   * result says exactly which crews moved.
+   */
+  protected async onSolveIncremental(): Promise<void> {
+    if (this.solverJobAlreadyRunning()) {
+      return;
+    }
+    const perimetre = await firstValueFrom(
+      this.dialog.open(ReplanificationDialog, { width: '640px' }).afterClosed()
+    );
+    if (!perimetre) {
+      return;
+    }
+    this.output.set(
+      $localize`:@@solver.incremental.submitting:Envoi de la replanification incrémentale au solveur...`
+    );
+    try {
+      // No duration passed on purpose: the server applies its own short budget,
+      // an order of magnitude under the full-solve one.
+      await this.jobs.submitSolveIncremental(perimetre as PerimetreReplanification);
+      this.output.set(
+        $localize`:@@solver.incremental.submitted:Replanification incrémentale en cours : le planning enregistré sert de point de départ, seuls les postes rouverts sont recalculés.`
+      );
+    } catch (error) {
+      this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
+    }
+  }
+
+  /** Fills — or clears — the "what moved" panel from a finished SOLVE result. */
+  private applyIncrementalResult(result: unknown): void {
+    const incremental = result as Partial<ResultatSolveIncremental> | null;
+    if (incremental && incremental.statistiques && Array.isArray(incremental.changements)) {
+      this.incrementalStats.set(incremental.statistiques);
+      this.incrementalChangements.set(incremental.changements);
+      return;
+    }
+    this.incrementalStats.set(null);
+    this.incrementalChangements.set([]);
+  }
+
+  /** An empty crew is a hole in the plan, and must read as one. */
+  protected equipeLabel(equipe: string[]): string {
+    return equipe.length === 0 ? $localize`:@@solver.incremental.personne:(personne)` : equipe.join(', ');
+  }
+
+  protected quandLabel(changement: ChangementAffectation): string {
+    const jour = changement.date
+      ? new Date(`${changement.date}T00:00:00`).toLocaleDateString(intlLocale(), {
+          weekday: 'short',
+          day: 'numeric',
+          month: 'short'
+        })
+      : '';
+    const heures = changement.heureDebut && changement.heureFin
+      ? `${changement.heureDebut.slice(0, 5)} – ${changement.heureFin.slice(0, 5)}`
+      : '';
+    return [jour, heures].filter((part) => part.length > 0).join(' ');
+  }
 
   protected async onTimefoldSolve(): Promise<void> {
     if (this.solverJobAlreadyRunning()) {

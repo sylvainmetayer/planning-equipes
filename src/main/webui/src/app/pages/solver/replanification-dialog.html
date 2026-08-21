@@ -1,0 +1,51 @@
+<h2 mat-dialog-title i18n="@@solver.incremental.dialog.title">Replanifier (incrémental)</h2>
+<mat-dialog-content>
+  <p i18n="@@solver.incremental.dialog.hint">
+    La replanification repart du planning enregistré : tout ce qui reste valable est figé, et seuls les postes qu'un
+    changement tardif a invalidés — animateur supprimé, indisponibilité saisie depuis la résolution — sont recalculés,
+    avec les postes restés vides. C'est pourquoi elle tient en quelques dizaines de secondes là où une résolution
+    complète prend plusieurs minutes.
+  </p>
+  <p i18n="@@solver.incremental.dialog.perimetre">
+    Vous pouvez rouvrir davantage : désignez ci-dessous ce qui doit être refait de toute façon. Tout le reste du
+    planning est garanti inchangé. Laissez vide pour vous en tenir aux seules conséquences des changements.
+  </p>
+  <div class="replanification-perimetre">
+    <mat-form-field appearance="outline">
+      <mat-label i18n="@@solver.incremental.dialog.animateurs">Animateurs à replanifier</mat-label>
+      <mat-select multiple [ngModel]="animateurIds()" (ngModelChange)="animateurIds.set($event)" name="animateurIds">
+        @for (animateur of animateursTries(); track animateur.id) {
+          <mat-option [value]="animateur.id">{{ animateur.prenom }} {{ animateur.nom }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label i18n="@@solver.incremental.dialog.jours">Journées à replanifier</mat-label>
+      <mat-select multiple [ngModel]="jours()" (ngModelChange)="jours.set($event)" name="jours">
+        @for (jour of joursDisponibles(); track jour) {
+          <mat-option [value]="jour">{{ jourLabel(jour) }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label i18n="@@solver.incremental.dialog.stands">Stands à replanifier</mat-label>
+      <mat-select multiple [ngModel]="standIds()" (ngModelChange)="standIds.set($event)" name="standIds">
+        @for (stand of standsTries(); track stand.id) {
+          <mat-option [value]="stand.id">{{ stand.nom }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+  @if (perimetreVide()) {
+    <p class="calendar-meta" i18n="@@solver.incremental.dialog.automatique">
+      Périmètre automatique : seuls les postes invalidés par un changement et les postes vides seront recalculés.
+    </p>
+  }
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" mat-dialog-close i18n="@@common.cancel">Annuler</button>
+  <button matButton="filled" type="button" (click)="lancer()">
+    <mat-icon>bolt</mat-icon>
+    <ng-container i18n="@@solver.incremental.dialog.lancer">Lancer la replanification</ng-container>
+  </button>
+</mat-dialog-actions>

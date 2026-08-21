@@ -45,6 +45,7 @@ import org.yaml.snakeyaml.Yaml;
 import ai.timefold.solver.core.config.solver.SolverConfig;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ConstraintToggle;
+import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.FenetreHoraire;
@@ -61,10 +62,12 @@ import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
 import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.solver.ConstraintCatalog;
+import dev.sylvain.planning.solver.constraints.AdHocConstraints;
 import dev.sylvain.planning.solver.PlanningConstraintProvider;
 
 @ApplicationScoped
@@ -287,6 +290,168 @@ public class PlanningService {
         return festival;
     }
 
+    /** How much of an incremental problem is frozen versus re-opened (issue #86). */
+    public record StatistiquesIncremental(
+            int postesTotal,
+            int postesFiges,
+            int postesLiberes,
+            int postesLiberesManuellement,
+            int postesNouveaux) {
+    }
+
+    /**
+     * An incremental re-solve problem: the planning to hand to the solver, how
+     * much of it is frozen, and the persisted assignments it was seeded from —
+     * kept so the caller can diff the result against them.
+     */
+    public record ProblemeIncremental(PlanningFestival planning, StatistiquesIncremental statistiques,
+            Map<String, List<String>> affectationsPrecedentes) {
+    }
+
+    /**
+     * Builds an incremental re-solve problem (issue #86): the same seats as
+     * {@link #construireDepuisReferenceData()}, but seeded from the persisted
+     * plan and <b>pinned wherever that plan is still valid</b>, so a short
+     * solve only has to fill what a late change actually opened — a fresh
+     * unavailability, a new stand, seats the previous solve left empty, plus
+     * whatever {@code perimetre} re-opens on purpose.
+     *
+     * <p>Seats are matched positionally on stand × créneau, the same convention
+     * as the locks of issue #87 (see
+     * {@link PlanningPersistenceService#chargerAnimateursParStandCreneau()}):
+     * the seats of one stand and créneau are interchangeable, so no seat id has
+     * to survive a reference-data change for the reconciliation to hold.</p>
+     *
+     * <p>Everything still valid and outside the perimeter is pinned, including
+     * seats covered by no explicit lock: an incremental re-solve exists to keep
+     * the standing plan stable, not to re-optimise it. Re-opening a validated
+     * area is therefore an explicit act — name it in {@code perimetre}, or run
+     * a full solve with locks protecting what must survive it.</p>
+     */
+    public ProblemeIncremental construireIncrementalDepuisReferenceData(PerimetreReplanification perimetre) {
+        List<Animateur> animateurs = referenceDataService.listAnimateurs();
+        List<Stand> stands = referenceDataService.listStandsResolus();
+        List<Creneau> creneaux = referenceDataService.listCreneaux();
+        if (animateurs.isEmpty() || stands.isEmpty() || creneaux.isEmpty()) {
+            throw new IllegalStateException(
+                    "Aucune donnée de référence. Chargez un scénario ou créez des stands, "
+                            + "des animateurs et des créneaux d'abord.");
+        }
+        Map<String, List<String>> affectationsPrecedentes =
+                planningPersistenceService.chargerAnimateursParStandCreneau();
+        if (affectationsPrecedentes.isEmpty()) {
+            throw new IllegalStateException(
+                    "Aucun plan persisté : lancez d'abord une résolution complète, "
+                            + "la replanification incrémentale repart de son résultat.");
+        }
+        List<PosteAffectation> postes = construirePostes(stands, creneaux);
+        List<ContrainteAdHoc> contraintesAdHoc = referenceDataService.snapshotContraintes();
+        StatistiquesIncremental statistiques = figerPostesIncremental(postes, animateurs, affectationsPrecedentes,
+                perimetre == null ? PerimetreReplanification.automatique() : perimetre, contraintesAdHoc);
+        LocalDate dateDebut = creneaux.stream()
+                .map(Creneau::getDate)
+                .filter(java.util.Objects::nonNull)
+                .min(LocalDate::compareTo)
+                .orElse(null);
+        PlanningFestival festival = new PlanningFestival(dateDebut, animateurs, postes, contraintesAdHoc);
+        festival.setParametresLegaux(List.of(referenceDataService.getParametresLegaux()));
+        festival.setVerrouillages(referenceDataService.listVerrouillages());
+        return new ProblemeIncremental(festival, statistiques, affectationsPrecedentes);
+    }
+
+    /**
+     * The incremental reconciliation itself (issue #86), positional like
+     * {@link #appliquerVerrouillages}: every seat is re-seeded with the
+     * animateur the persisted plan gave it, then
+     * <ul>
+     * <li>named by {@code perimetre} → cleared and left free, whatever its
+     * state: this is the operator saying "redo that";</li>
+     * <li>still valid (the animateur exists and is not unavailable on the
+     * seat's day) → pinned, the solver may not touch it;</li>
+     * <li>invalidated by a late change (animateur deleted, freshly declared
+     * unavailable that day, or covered by a fresh forced-unavailability ad hoc
+     * constraint) → cleared and left free: exactly what the incremental solve
+     * has to re-fill. Pinning such a seat would freeze a hard violation nobody
+     * could then fix;</li>
+     * <li>never staffed, or newly created (added stand or créneau) → left
+     * free, as in a full solve.</li>
+     * </ul>
+     * Package-private and static so it can be unit-tested without a database.
+     */
+    static StatistiquesIncremental figerPostesIncremental(List<PosteAffectation> postes, List<Animateur> animateurs,
+            Map<String, List<String>> animateursPersistes, PerimetreReplanification perimetre,
+            List<ContrainteAdHoc> contraintesAdHoc) {
+        Map<String, Animateur> animateursParId = new HashMap<>();
+        for (Animateur animateur : animateurs) {
+            animateursParId.put(animateur.getId(), animateur);
+        }
+        // Filtered once: the loop below runs on thousands of seats, and this
+        // list is normally empty.
+        List<ContrainteAdHoc> indisponibilitesForcees = contraintesAdHoc == null
+                ? List.of()
+                : contraintesAdHoc.stream()
+                        .filter(contrainte -> contrainte.getType() == TypeContrainteAdHoc.INDISPONIBILITE_FORCEE)
+                        .toList();
+        Map<String, Integer> prochainePlace = new HashMap<>();
+        int figes = 0;
+        int liberes = 0;
+        int liberesManuellement = 0;
+        int nouveaux = 0;
+        for (PosteAffectation poste : postes) {
+            if (poste.getStand() == null || poste.getCreneau() == null) {
+                continue;
+            }
+            String cle = PlanningPersistenceService.cleStandCreneau(
+                    poste.getStand().getId(), poste.getCreneau().getId());
+            List<String> tenants = animateursPersistes.getOrDefault(cle, List.of());
+            int place = prochainePlace.merge(cle, 1, Integer::sum) - 1;
+            String tenantId = place < tenants.size() ? tenants.get(place) : null;
+            if (tenantId == null) {
+                nouveaux++;
+                continue;
+            }
+            if (perimetre.liberer(poste, tenantId)) {
+                liberesManuellement++;
+                continue;
+            }
+            Animateur tenant = animateursParId.get(tenantId);
+            // Seeded first: the ad hoc check below reads the seat as staffed,
+            // exactly like the constraint it shares its implementation with.
+            poste.setAnimateur(tenant);
+            if (tenant == null || indisponible(tenant, poste)
+                    || interditParContrainteAdHoc(indisponibilitesForcees, poste)) {
+                poste.setAnimateur(null);
+                liberes++;
+                continue;
+            }
+            poste.setVerrouille(true);
+            figes++;
+        }
+        return new StatistiquesIncremental(postes.size(), figes, liberes, liberesManuellement, nouveaux);
+    }
+
+    private static boolean indisponible(Animateur animateur, PosteAffectation poste) {
+        return animateur.getJoursIndisponibles() != null
+                && animateur.getJoursIndisponibles().contains(poste.getCreneau().getDate());
+    }
+
+    /**
+     * Whether a forced-unavailability ad hoc constraint forbids this seat as
+     * staffed — the other way a late change lands, alongside a day off. The
+     * predicate is the solver's own
+     * ({@link AdHocConstraints#violeIndisponibiliteForcee}), so the two can
+     * never disagree about what is allowed.
+     */
+    private static boolean interditParContrainteAdHoc(List<ContrainteAdHoc> indisponibilitesForcees,
+            PosteAffectation poste) {
+        for (ContrainteAdHoc contrainte : indisponibilitesForcees) {
+            if (AdHocConstraints.violeIndisponibiliteForcee(contrainte, poste)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Freezes the seats covered by the active group's locks (issue #87): each
      * one is re-seeded with the animateur the last persisted solve gave it and
@@ -323,25 +488,25 @@ public class PlanningService {
         if (verrouillages.isEmpty()) {
             return;
         }
-        seedDepuisAffectations(postes, animateurs, verrouillages, animateursPersistes, false);
+        seedDepuisAffectations(postes, animateurs, verrouillages, animateursPersistes);
     }
 
     /**
      * Re-seeds the seats positionally from {@code seed} (animateur ids per
      * stand × créneau key, seat order — ids are interchangeable within one
      * key, see {@link PlanningPersistenceService#chargerAnimateursParStandCreneau()}),
-     * then pins the seats covered by a lock. What happens to a seeded seat
-     * <b>not</b> covered by any lock is the whole difference between the two
-     * callers: the cold path ({@code conserverSeedsLibres = false}, historical
-     * behaviour) clears it again so the solver restarts from scratch, while
-     * the warm start of issue #86 ({@code true}) keeps it as a movable
-     * starting point. An animateur id the referential no longer knows simply
-     * leaves its seat empty — a stale seed is a worse starting point, never an
-     * error.
+     * pins the seats covered by a lock, and clears the others again so the
+     * solver restarts from scratch everywhere it is free to. An animateur id
+     * the referential no longer knows simply leaves its seat empty — a stale
+     * seed is a worse starting point, never an error.
+     *
+     * <p>The variant that <em>keeps</em> the unlocked seeds as a warm start
+     * belongs to the incremental re-solve of issue #86, and lives in
+     * {@link #figerPostesIncremental}: it has its own notion of what stays
+     * valid, and pins rather than merely seeds.</p>
      */
     static void seedDepuisAffectations(List<PosteAffectation> postes, List<Animateur> animateurs,
-            List<VerrouillagePlanning> verrouillages, Map<String, List<String>> seed,
-            boolean conserverSeedsLibres) {
+            List<VerrouillagePlanning> verrouillages, Map<String, List<String>> seed) {
         if (seed.isEmpty()) {
             return;
         }
@@ -366,7 +531,7 @@ public class PlanningService {
             }
             boolean gele = verrouillages.stream().anyMatch(verrouillage -> verrouillage.couvre(poste));
             poste.setVerrouille(gele);
-            if (!gele && !conserverSeedsLibres) {
+            if (!gele) {
                 poste.setAnimateur(null);
             }
         }

@@ -57,6 +57,13 @@
       <mat-icon>play_arrow</mat-icon>
       <ng-container i18n="@@solver.solve">Résoudre avec Timefold</ng-container>
     </button>
+    <button matButton="tonal" [disabled]="solverBusy()"
+            i18n-matTooltip="@@solver.incremental.tooltip"
+            matTooltip="Repart du planning enregistré : ce qui reste valable est figé, seuls les postes rouverts par un changement tardif (ou par vous) sont recalculés. Quelques dizaines de secondes au lieu de plusieurs minutes."
+            (click)="onSolveIncremental()">
+      <mat-icon>bolt</mat-icon>
+      <ng-container i18n="@@solver.incremental">Replanifier (incrémental)</ng-container>
+    </button>
     <button matButton="tonal" [disabled]="!solverBusy() || arretEnCours()" (click)="onArreterSolveur()">
       <mat-icon>stop_circle</mat-icon>
       <ng-container i18n="@@solver.arreter">Arrêter le solveur</ng-container>
@@ -165,6 +172,68 @@
     }
   </mat-card-content>
 </mat-card>
+
+@if (incrementalStats(); as stats) {
+  <mat-card appearance="outlined" class="page-card">
+    <mat-card-header>
+      <h2 mat-card-title i18n="@@solver.incremental.result.title">Dernière replanification incrémentale</h2>
+      <mat-card-subtitle i18n="@@solver.incremental.result.subtitle">
+        Ce que la replanification a rouvert, et qui en ressort avec un planning différent.
+      </mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="solver-volumetry">
+        <mat-card appearance="outlined" class="staffing-stat">
+          <div class="staffing-stat-value">{{ stats.postesFiges }}</div>
+          <div class="staffing-stat-label" i18n="@@solver.incremental.stat.figes">Postes figés</div>
+        </mat-card>
+        <mat-card appearance="outlined" class="staffing-stat">
+          <div class="staffing-stat-value">{{ stats.postesLiberes }}</div>
+          <div class="staffing-stat-label" i18n="@@solver.incremental.stat.liberes">Libérés par un changement</div>
+        </mat-card>
+        <mat-card appearance="outlined" class="staffing-stat">
+          <div class="staffing-stat-value">{{ stats.postesLiberesManuellement }}</div>
+          <div class="staffing-stat-label" i18n="@@solver.incremental.stat.liberesManuellement">Rouverts à la demande</div>
+        </mat-card>
+        <mat-card appearance="outlined" class="staffing-stat">
+          <div class="staffing-stat-value">{{ stats.postesNouveaux }}</div>
+          <div class="staffing-stat-label" i18n="@@solver.incremental.stat.nouveaux">Nouveaux ou restés vides</div>
+        </mat-card>
+      </div>
+      @if (incrementalChangements().length === 0) {
+        <p class="calendar-meta" i18n="@@solver.incremental.aucunChangement">
+          Aucune équipe n'a changé : la replanification a retrouvé exactement les mêmes affectations.
+        </p>
+      } @else {
+        <div class="table-wrapper solver-changements">
+          <table mat-table [dataSource]="incrementalChangements()">
+            <caption class="visually-hidden" i18n="@@solver.incremental.table.caption">
+              Équipes modifiées par la replanification, par stand et par créneau
+            </caption>
+            <ng-container matColumnDef="quand">
+              <th mat-header-cell *matHeaderCellDef i18n="@@solver.incremental.column.quand">Créneau</th>
+              <td mat-cell *matCellDef="let changement">{{ quandLabel(changement) }}</td>
+            </ng-container>
+            <ng-container matColumnDef="stand">
+              <th mat-header-cell *matHeaderCellDef i18n="@@solver.incremental.column.stand">Stand</th>
+              <td mat-cell *matCellDef="let changement">{{ changement.standNom }}</td>
+            </ng-container>
+            <ng-container matColumnDef="avant">
+              <th mat-header-cell *matHeaderCellDef i18n="@@solver.incremental.column.avant">Avant</th>
+              <td mat-cell *matCellDef="let changement">{{ equipeLabel(changement.avant) }}</td>
+            </ng-container>
+            <ng-container matColumnDef="apres">
+              <th mat-header-cell *matHeaderCellDef i18n="@@solver.incremental.column.apres">Après</th>
+              <td mat-cell *matCellDef="let changement">{{ equipeLabel(changement.apres) }}</td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="columnsChangements"></tr>
+            <tr mat-row *matRowDef="let row; columns: columnsChangements"></tr>
+          </table>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+}
 
 <app-feasibility-banner [report]="feasibility()" [hardScore]="hardScore()" [hardIssues]="hardIssues()" />
 <app-output-panel [text]="output()" />

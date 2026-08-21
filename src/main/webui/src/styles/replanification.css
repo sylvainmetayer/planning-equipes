@@ -1,0 +1,12 @@
+/* Incremental replanning (issue #86): perimeter dialog and "what moved" panel. */
+
+.replanification-perimetre {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-block: 1rem 0.5rem;
+}
+
+.solver-changements {
+  margin-block: 1rem 0.5rem;
+}
