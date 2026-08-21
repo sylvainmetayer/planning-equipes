@@ -12,6 +12,7 @@ import {
   effect,
   input,
   output,
+  signal,
   viewChild
 } from '@angular/core';
 import * as L from 'leaflet';
@@ -52,7 +53,15 @@ export class MapPicker implements AfterViewInit, OnDestroy {
 
   private map?: L.Map;
   private marker?: L.Marker;
-  private ready = false;
+  /**
+   * Signal, not a plain field: both effects below bail out on it, and a plain
+   * field notifies nothing — they would never re-run once the map exists. The
+   * component is correct today only because `placeMarker` re-derives
+   * `draggable` from `disabled()` at creation time; that is an invariant no
+   * one can see from here. As a signal, the effects are the single source of
+   * truth for the marker's drag state again.
+   */
+  private readonly ready = signal(false);
 
   constructor() {
     // Keeps the marker in sync when latitude/longitude are set from outside
@@ -63,7 +72,7 @@ export class MapPicker implements AfterViewInit, OnDestroy {
     effect(() => {
       const latitude = this.latitude();
       const longitude = this.longitude();
-      if (!this.ready || !this.map || latitude == null || longitude == null) {
+      if (!this.ready() || !this.map || latitude == null || longitude == null) {
         return;
       }
       this.placeMarker(latitude, longitude);
@@ -71,7 +80,7 @@ export class MapPicker implements AfterViewInit, OnDestroy {
     });
     effect(() => {
       const disabled = this.disabled();
-      if (!this.ready || !this.marker) {
+      if (!this.ready() || !this.marker) {
         return;
       }
       if (disabled) {
@@ -111,8 +120,9 @@ export class MapPicker implements AfterViewInit, OnDestroy {
       this.emit(event.latlng.lat, event.latlng.lng);
     });
     // Marks init as done only after this callback runs; the sync effects fire
-    // before ngAfterViewInit on the first pass, when there's no map yet.
-    this.ready = true;
+    // before ngAfterViewInit on the first pass, when there's no map yet. Being
+    // a signal, this write makes both of them run again now that it exists.
+    this.ready.set(true);
   }
 
   ngOnDestroy(): void {
