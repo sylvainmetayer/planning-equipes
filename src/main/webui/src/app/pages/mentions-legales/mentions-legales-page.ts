@@ -62,8 +62,13 @@ export class MentionsLegalesPage {
   private async charger(): Promise<void> {
     try {
       this.mentions.set(await this.api.get<MentionsLegales>('/api/mentions-legales'));
-    } catch (error) {
-      this.erreur.set(error instanceof Error ? error.message : String(error));
+    } catch {
+      // Le détail technique n'apprend rien au lecteur de cette page — souvent
+      // un animateur sur son téléphone, réseau incertain : lui dire quoi faire
+      // vaut mieux que lui montrer une erreur d'analyse JSON.
+      this.erreur.set(
+        $localize`:@@mentions.chargementImpossible:Ces informations n'ont pas pu être chargées. Réessayez dans un instant ; si cela persiste, prévenez l'organisation.`
+      );
     }
   }
 

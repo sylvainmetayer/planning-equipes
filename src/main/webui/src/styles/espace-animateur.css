@@ -38,9 +38,21 @@
   position: sticky;
   top: 0;
   z-index: 3;
-  gap: 0.5rem;
+  gap: 0.25rem;
   background: #0098d7;
   color: #fff;
+  /* Les cibles de frappe de Material débordent de quelques pixels sur les
+     écrans étroits ; sans cela, la page entière gagne une barre de défilement
+     horizontale pour 9 px. */
+  padding-inline: 0.5rem;
+  overflow-x: clip;
+}
+
+@media (min-width: 30rem) {
+  .espace-toolbar {
+    gap: 0.5rem;
+    padding-inline: 1rem;
+  }
 }
 
 .espace-toolbar .app-logo,
@@ -51,6 +63,15 @@
 
 .espace-toolbar .app-title {
   font: var(--mat-sys-title-medium);
+  /* Sur un téléphone, le logo suffit à dire où l'on est : le titre cède la
+     place à ce qui est utile ici, le nom de la personne connectée. */
+  display: none;
+}
+
+@media (min-width: 30rem) {
+  .espace-toolbar .app-title {
+    display: inline;
+  }
 }
 
 .espace-toolbar .app-toolbar-spacer {
@@ -60,20 +81,51 @@
 .espace-page {
   max-width: 56rem;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 0.75rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.75rem;
+}
+
+@media (min-width: 40rem) {
+  .espace-page {
+    padding: 1rem;
+    gap: 1rem;
+  }
 }
 
 .espace-identite {
-  margin-right: 0.75rem;
+  margin-right: 0.25rem;
   font-size: 0.95rem;
+  /* Un nom long doit se tronquer, jamais pousser le reste hors de l'écran. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 40vw;
+}
+
+@media (min-width: 30rem) {
+  .espace-identite {
+    margin-right: 0.75rem;
+    max-width: 50vw;
+  }
 }
 
 .espace-nav {
   display: flex;
   gap: 0.5rem;
+}
+
+/* Pleine largeur au doigt : deux cibles de frappe qui se partagent l'écran
+   plutôt que deux petits boutons collés à gauche. */
+.espace-nav a {
+  flex: 1 1 0;
+}
+
+@media (min-width: 40rem) {
+  .espace-nav a {
+    flex: 0 0 auto;
+  }
 }
 
 .espace-nav a.espace-nav-active {
@@ -109,13 +161,26 @@
 /* Écran du code d'accès par e-mail (issue #165). */
 .espace-code {
   max-width: 34rem;
-  margin: 2rem auto;
+  margin: 1rem auto;
+}
+
+@media (min-width: 40rem) {
+  .espace-code {
+    margin: 2rem auto;
+  }
+
+  /* Le formulaire du code tient sur une ligne dès qu'il y a la place. */
+  .espace-code-form {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
 }
 
 .espace-code-form {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   gap: 0.75rem;
   margin-top: 0.75rem;
 }
@@ -156,9 +221,35 @@
 /* Téléchargements du planning personnel (PDF / ICS). */
 .espace-telechargements {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 0.5rem;
   margin-bottom: 1rem;
+}
+
+/*
+ * Les deux actions qu'un animateur cherche sur son téléphone. Étirés sans
+ * contour, ils se lisaient comme des liens flottants au milieu de la page :
+ * un contour et un contenu aligné à gauche disent « bouton », et la cible de
+ * frappe couvre alors toute la largeur.
+ */
+.espace-telechargements a {
+  justify-content: flex-start;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 999px;
+}
+
+@media (min-width: 40rem) {
+  .espace-telechargements a {
+    justify-content: center;
+    border: 0;
+  }
+}
+
+@media (min-width: 40rem) {
+  .espace-telechargements {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
 }
 
 .espace-vide {
@@ -191,17 +282,41 @@
   font-style: italic;
 }
 
+/*
+ * Une affectation se lit d'abord sur un téléphone : l'horaire en tête, le
+ * stand en dessous, les coéquipiers à la ligne. En rangée, la troisième
+ * information passait à la ligne toute seule et le bloc devenait illisible dès
+ * qu'un nom de stand était long.
+ */
 .espace-poste {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.75rem;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding-block: 0.35rem;
 }
 
 .espace-poste-horaire {
   font-variant-numeric: tabular-nums;
   color: var(--mat-sys-on-surface-variant);
-  min-width: 7.5rem;
+}
+
+.espace-poste-equipe {
+  /* Une liste de coéquipiers doit pouvoir revenir à la ligne, pas déborder. */
+  flex-wrap: wrap;
+}
+
+@media (min-width: 40rem) {
+  .espace-poste {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.75rem;
+    padding-block: 0;
+  }
+
+  .espace-poste-horaire {
+    min-width: 7.5rem;
+  }
 }
 
 .espace-poste-stand {
@@ -246,8 +361,8 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.35rem 0.75rem;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
   border: 1px solid var(--mat-sys-outline-variant);
   border-radius: 0.75rem;
 }
@@ -378,14 +493,16 @@
   margin-top: 0.75rem;
 }
 
-@media (max-width: 640px) {
-  .espace-poste-horaire {
-    min-width: 0;
-  }
+/* Le formulaire de demande d'échange s'empile tant qu'il n'a pas la place. */
+.espace-form-champs {
+  flex-direction: column;
+  align-items: stretch;
+}
 
+@media (min-width: 40rem) {
   .espace-form-champs {
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
+    align-items: center;
   }
 }
 
@@ -402,8 +519,18 @@
 
 .espace-recue-actions {
   display: flex;
-  gap: 0.75rem;
+  flex-direction: column;
+  gap: 0.5rem;
   margin-top: 0.5rem;
+}
+
+/* Accepter et décliner côte à côte seulement quand la largeur le permet :
+   au doigt, deux boutons voisins de 4 mm sont une erreur de manipulation. */
+@media (min-width: 30rem) {
+  .espace-recue-actions {
+    flex-direction: row;
+    gap: 0.75rem;
+  }
 }
 
 .espace-demande-explication {

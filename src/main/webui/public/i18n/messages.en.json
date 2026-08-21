@@ -1320,7 +1320,6 @@
   "aide.config.term.mailFin": "Get an email when a solve finishes",
   "aide.config.def.mailFin": "On the Paramètres page, a switch makes the application write to the administrator as soon as a solve of this edition finishes: the edition, the score, and whether the plan is feasible. Enough to launch a thirty-minute run and walk away. The setting belongs to the edition, not to the server: you are told about the solve you are waiting for, not about every trial run started elsewhere. It stays inert until an administrator address is configured on the server — the screen says so explicitly.",
   "nav.link.mentionsLegales": "Legal notice",
-  "espace.mentionsLegales.tooltip": "Who publishes and hosts this site, and what becomes of your data (new tab)",
   "mentions.title": "Legal notice",
   "common.retour": "Back",
   "mentions.nonConfigure": " No legal information has been filled in on this deployment. The notice below is therefore incomplete: the operator must configure the publisher, the host and the contact address on the server. ",
@@ -1350,7 +1349,6 @@
   "debug.api.swaggerUi": "Explore the API (Swagger UI)",
   "debug.api.openapi": "Download the OpenAPI description",
   "nav.link.confidentialite": "Privacy policy",
-  "espace.confidentialite.tooltip": "What the application does with your data, and what you can require (new tab)",
   "mentions.donnees.renvoi": " Which data the application processes, why, for how long, who has access to it and what you can require: all of that is detailed in the privacy policy. ",
   "confidentialite.title": "Privacy policy",
   "confidentialite.intro.title": "What becomes of what you entrust to us",
@@ -1378,7 +1376,6 @@
   "confidentialite.droits.texte": " You may request access to the data concerning you, its rectification, its erasure, the restriction of its processing, and where applicable its portability. Where the processing rests on the organisation's legitimate interest, you may also object to it on grounds relating to your particular situation. To exercise these rights, write to the contact address given above: you will be answered within one month, extendable by two months for a complex request. ",
   "confidentialite.droits.cnil": " You may also lodge a complaint with the French data protection authority (CNIL), 3 place de Fontenoy, TSA 80715, 75334 Paris Cedex 07 — www.cnil.fr. ",
   "nav.link.cgu": "Terms of use",
-  "espace.cgu.tooltip": "What the application does, and what the organisation remains responsible for (new tab)",
   "cgu.title": "Terms of use",
   "cgu.objet.title": "Purpose",
   "cgu.objet.texte": " This application helps a festival's organisation build, share and adjust the schedule of its animateurs. It is made available by the organisation named in the legal notice, for its own needs and those of the people it schedules. Using it — as an administrator or from an animateur's personal space — constitutes acceptance of these terms. ",
@@ -1400,5 +1397,7 @@
   "cgu.usage.donneesTiers": " Information about other people, seen as part of the schedule, must only serve to organise with them. ",
   "cgu.usage.evolution": " The application evolves; screens may change or disappear. These terms may be updated accordingly. ",
   "mentions.responsabilite.title": "Responsibility",
-  "mentions.responsabilite.texte": " The organisation operating this application remains the employer or principal of the people being scheduled, and remains responsible for the data entered as well as for the schedule produced and shared: compliance with employment rules, accuracy of the information, assignment decisions. The application computes proposals and flags anomalies — it is a decision aid, never a legal validation. "
+  "mentions.responsabilite.texte": " The organisation operating this application remains the employer or principal of the people being scheduled, and remains responsible for the data entered as well as for the schedule produced and shared: compliance with employment rules, accuracy of the information, assignment decisions. The application computes proposals and flags anomalies — it is a decision aid, never a legal validation. ",
+  "mentions.chargementImpossible": "This information could not be loaded. Try again in a moment; if it persists, let the organisation know.",
+  "espace.menuLegal": "Legal information"
 }

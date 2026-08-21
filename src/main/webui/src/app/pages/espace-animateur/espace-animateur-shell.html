@@ -5,27 +5,28 @@
   @if (espace.vue(); as vue) {
     <span class="espace-identite">{{ vue.prenom }} {{ vue.nom }}</span>
   }
-  <!-- Nouvel onglet : l'URL de cet espace porte le jeton d'accès, on ne peut
-       pas y revenir sans elle. `noreferrer` et non le seul `noopener` : sans
-       lui, cette URL — jeton compris — part dans l'en-tête Referer. -->
-  <a matButton href="/mentions-legales" target="_blank" rel="noopener noreferrer"
-     i18n-matTooltip="@@espace.mentionsLegales.tooltip"
-     matTooltip="Éditeur du site, hébergeur, et ce que deviennent vos données (nouvel onglet)">
-    <mat-icon>gavel</mat-icon>
-    <span i18n="@@nav.link.mentionsLegales">Mentions légales</span>
-  </a>
-  <a matButton href="/politique-confidentialite" target="_blank" rel="noopener noreferrer"
-     i18n-matTooltip="@@espace.confidentialite.tooltip"
-     matTooltip="Ce que l'application fait de vos données, et ce que vous pouvez exiger (nouvel onglet)">
-    <mat-icon>privacy_tip</mat-icon>
-    <span i18n="@@nav.link.confidentialite">Politique de confidentialité</span>
-  </a>
-  <a matButton href="/conditions-utilisation" target="_blank" rel="noopener noreferrer"
-     i18n-matTooltip="@@espace.cgu.tooltip"
-     matTooltip="Ce que l'application fait, et ce dont l'organisation reste responsable (nouvel onglet)">
-    <mat-icon>handshake</mat-icon>
-    <span i18n="@@nav.link.cgu">Conditions d'utilisation</span>
-  </a>
+  <!-- Repliés dans un menu : sur un téléphone, trois libellés de plus dans la
+       barre repoussaient l'identité et le sélecteur de langue hors de l'écran.
+       `noreferrer` et pas seulement `noopener` : l'URL de cet espace porte le
+       jeton d'accès, elle ne doit pas partir dans le Referer. -->
+  <button matIconButton [matMenuTriggerFor]="menuLegal"
+          i18n-aria-label="@@espace.menuLegal" aria-label="Informations légales">
+    <mat-icon>more_vert</mat-icon>
+  </button>
+  <mat-menu #menuLegal="matMenu">
+    <a mat-menu-item href="/mentions-legales" target="_blank" rel="noopener noreferrer">
+      <mat-icon>gavel</mat-icon>
+      <span i18n="@@nav.link.mentionsLegales">Mentions légales</span>
+    </a>
+    <a mat-menu-item href="/politique-confidentialite" target="_blank" rel="noopener noreferrer">
+      <mat-icon>privacy_tip</mat-icon>
+      <span i18n="@@nav.link.confidentialite">Politique de confidentialité</span>
+    </a>
+    <a mat-menu-item href="/conditions-utilisation" target="_blank" rel="noopener noreferrer">
+      <mat-icon>handshake</mat-icon>
+      <span i18n="@@nav.link.cgu">Conditions d'utilisation</span>
+    </a>
+  </mat-menu>
   <button matButton (click)="toggleLocale()" i18n-aria-label="@@shell.switchLanguage" aria-label="Changer de langue">
     {{ locale === 'fr' ? 'EN' : 'FR' }}
   </button>
