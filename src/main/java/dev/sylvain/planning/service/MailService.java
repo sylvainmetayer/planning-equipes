@@ -35,9 +35,9 @@ public class MailService {
     @ConfigProperty(name = "planning.mail.admin")
     Optional<String> adminEmail;
 
-    /** Public base URL of the app, used to link the admin screen in mails. */
-    @ConfigProperty(name = "planning.public-url")
-    Optional<String> publicUrl;
+    /** Builds the links to the admin screens; empty when no public URL is set. */
+    @Inject
+    LiensApplication liens;
 
     /**
      * Tells the targeted colleague that demandes await THEIR agreement — the
@@ -97,9 +97,9 @@ public class MailService {
                     .append(infaisables == 1 ? " demande casse" : " demandes cassent")
                     .append(" une contrainte dure en l'état du planning.\n\n");
         }
-        publicUrl.filter(url -> !url.isBlank()).ifPresent(url -> corps
+        liens.ecranEchanges().ifPresent(lien -> corps
                 .append("À valider ou refuser depuis l'écran Échanges : ")
-                .append(url).append("/echanges\n"));
+                .append(lien).append('\n'));
         envoyer(adminEmail.get(), sujet, corps.toString());
     }
 
@@ -185,8 +185,8 @@ public class MailService {
                         ? "aucune contrainte dure violée"
                         : "au moins une contrainte dure reste violée — le planning n'est pas utilisable en l'état")
                 .append('\n');
-        publicUrl.filter(url -> !url.isBlank()).ifPresent(url -> corps
-                .append("\nDétail des contraintes en défaut : ").append(url).append("/problemes\n"));
+        liens.ecranProblemes().ifPresent(lien -> corps
+                .append("\nDétail des contraintes en défaut : ").append(lien).append('\n'));
         envoyer(adminEmailConfigure().get(), sujet, corps.toString());
     }
 

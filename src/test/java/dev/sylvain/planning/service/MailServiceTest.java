@@ -30,7 +30,14 @@ class MailServiceTest {
         service = new MailService();
         service.mailer = mails -> envoyes.addAll(List.of(mails));
         service.adminEmail = Optional.of("admin@example.org");
-        service.publicUrl = Optional.of("https://planning.example.org");
+        service.liens = liensVers("https://planning.example.org");
+    }
+
+    /** A {@link LiensApplication} built by hand, like the service under test. */
+    private static LiensApplication liensVers(String baseUrl) {
+        LiensApplication liens = new LiensApplication();
+        liens.baseUrl = Optional.ofNullable(baseUrl);
+        return liens;
     }
 
     private static DemandeEchange demande(Boolean prevalidationOk) {
@@ -85,7 +92,7 @@ class MailServiceTest {
     /** Sans URL publique configurée, le mail part quand même — sans lien. */
     @Test
     void sansUrlPubliqueLeMailPartSansLien() {
-        service.publicUrl = Optional.empty();
+        service.liens = liensVers(null);
         service.notifierNouvellesDemandes("Alice Dupont", List.of(demande(true)));
 
         assertThat(envoyes).hasSize(1);

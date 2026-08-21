@@ -330,6 +330,17 @@ Timefold bumps must be validated with `./mvnw verify -DskipITs=false`.
 ## Working conventions
 
 - Code and comments in English, domain names in French business vocabulary.
+- **Public links go through `LiensApplication`, never through concatenation.**
+  URLs printed outside the app (notification mails, individual PDFs) target
+  **Angular SPA routes** (`src/main/webui/src/app/app.routes.ts`), not JAX-RS
+  paths: the API is mounted under `quarkus.rest.path=/api`, so
+  `UriBuilder.fromResource(...)` would yield `/api/echanges` — the JSON
+  endpoint instead of the screen — and two of the three links have no resource
+  to derive from. One method per link there; renaming an Angular route means
+  renaming it there too.
+- **Inject `ObjectMapper`, never `new ObjectMapper()`** — a bare one lacks the
+  modules Quarkus registers (JSR-310), which forces records to flatten
+  `LocalDate`/`Instant` fields to `String` and only fails at write time.
 - Write/extend a test proving no hard constraint is violated before considering a
   step done.
 - No additional frontend dependency (UI kit, state library, CSS framework)

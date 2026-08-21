@@ -9,6 +9,7 @@ import ai.timefold.solver.core.impl.heuristic.selector.move.generic.SwapMove;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.JoursFeries;
+import dev.sylvain.planning.domain.PlafondsLegauxMineurs;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
 
@@ -44,9 +45,11 @@ public final class EligibleAnimateurMoveFilter {
      * {@code standReserveAuxMajeurs}, {@code travailInterditJourFerieMineur},
      * {@code travailDeNuitInterditPourMineur}, {@code dureeQuotidienneMaxMineur}
      * and {@code travailContinuMaxMineur} (the last two only in their
-     * single-créneau form). Keep this list and {@code LegalConstraints} in
-     * sync: a filter stricter than the constraints would hide feasible
-     * solutions.</p>
+     * single-créneau form). A filter stricter than the constraints would hide
+     * feasible solutions, so the caps both sides check come from the single
+     * {@link PlafondsLegauxMineurs} declaration rather than from a copy kept
+     * in sync by hand; keep the <i>list of mirrored rules</i> above in step
+     * with {@code LegalConstraints} the same way.</p>
      *
      * <p>Competence is deliberately <b>not</b> excluded here: the business now
      * treats it as an administrator's appreciation, enforced only as a medium
@@ -54,7 +57,7 @@ public final class EligibleAnimateurMoveFilter {
      * animateur without a matching appreciation is a valid — just penalised —
      * assignment, one this filter must let through.</p>
      */
-    private static boolean estEligible(PosteAffectation poste, Animateur animateur) {
+    public static boolean estEligible(PosteAffectation poste, Animateur animateur) {
         if (animateur == null) {
             return true;
         }
@@ -69,22 +72,13 @@ public final class EligibleAnimateurMoveFilter {
         LocalTime debutNuit = moinsDe16Ans
                 ? Creneau.DEBUT_NUIT_MOINS_DE_16_ANS
                 : Creneau.DEBUT_NUIT_16_A_18_ANS;
-        int plafondQuotidien = moinsDe16Ans ? DUREE_QUOTIDIENNE_MAX_MOINS_DE_16_ANS : DUREE_QUOTIDIENNE_MAX_MINEUR;
+        int plafondQuotidien = PlafondsLegauxMineurs.dureeQuotidienneMaxMinutes(moinsDe16Ans);
         return !poste.getStand().isReserveMajeurs()
                 && !JoursFeries.estFerieEnFrance(creneau.getDate())
                 && !creneau.chevaucheNuit(debutNuit)
                 && creneau.getDureeMinutes() <= plafondQuotidien
-                && creneau.getDureeMinutes() <= TRAVAIL_CONTINU_MAX_MINEUR;
+                && creneau.getDureeMinutes() <= PlafondsLegauxMineurs.TRAVAIL_CONTINU_MAX_MINUTES;
     }
-
-    /** Art. L3162-1, mirrored from {@code LegalConstraints}. */
-    private static final int DUREE_QUOTIDIENNE_MAX_MINEUR = 8 * 60;
-
-    /** Art. D4153-3, mirrored from {@code LegalConstraints}. */
-    private static final int DUREE_QUOTIDIENNE_MAX_MOINS_DE_16_ANS = 7 * 60;
-
-    /** Art. L3162-3, mirrored from {@code LegalConstraints}. */
-    private static final int TRAVAIL_CONTINU_MAX_MINEUR = 4 * 60 + 30;
 
     public static final class ChangeMoveFilter implements SelectionFilter<PlanningFestival, ChangeMove<PlanningFestival>> {
         @Override

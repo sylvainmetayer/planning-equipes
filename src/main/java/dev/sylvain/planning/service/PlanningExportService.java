@@ -94,12 +94,12 @@ public class PlanningExportService {
     private static final Font TABLE_ALERT_FONT = new Font(Font.HELVETICA, 8, Font.BOLD, RED);
 
     /**
-     * Base URL printed as the espace-animateur link (issue #165); injected
-     * when the service runs in the container, {@code null} in plain unit
-     * tests — the link is simply omitted then.
+     * Builds the espace-animateur link (issue #165); injected when the service
+     * runs in the container, {@code null} in plain unit tests — the link is
+     * simply omitted then.
      */
-    @org.eclipse.microprofile.config.inject.ConfigProperty(name = "planning.public-url")
-    java.util.Optional<String> publicUrl;
+    @jakarta.inject.Inject
+    LiensApplication liens;
 
     public byte[] exportAnimateurPdf(PlanningFestival planning, String animateurId) {
         List<PosteAffectation> animateurPostes = planning.getPostes().stream()
@@ -155,19 +155,14 @@ public class PlanningExportService {
      * ({@code EnvoiPlanningResource}).
      */
     public String lienEspaceAnimateur(PlanningFestival planning, String animateurId) {
-        if (publicUrl == null || publicUrl.isEmpty() || publicUrl.get().isBlank()
-                || planning.getAnimateurs() == null) {
+        if (liens == null || planning.getAnimateurs() == null) {
             return null;
         }
-        String base = publicUrl.get().endsWith("/")
-                ? publicUrl.get().substring(0, publicUrl.get().length() - 1)
-                : publicUrl.get();
         return planning.getAnimateurs().stream()
                 .filter(animateur -> animateurId.equals(animateur.getId()))
                 .map(Animateur::getJetonAcces)
-                .filter(jeton -> jeton != null && !jeton.isBlank())
                 .findFirst()
-                .map(jeton -> base + "/animateur/" + jeton)
+                .flatMap(liens::espaceAnimateur)
                 .orElse(null);
     }
 

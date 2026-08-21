@@ -48,7 +48,14 @@ public class KpiHistoriqueService {
     @Inject
     PlanningKpiService kpiService;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    /**
+     * The CDI-managed mapper, not a bare {@code new ObjectMapper()}: it carries
+     * the modules Quarkus registers (JSR-310 in particular), so a field of a
+     * persisted record may be a {@code LocalDate}/{@code Instant} instead of
+     * having to be flattened to a {@code String} to keep a bare mapper happy.
+     */
+    @Inject
+    ObjectMapper objectMapper;
 
     /** One history row: where it came from (labels survive deletions) and the KPI. */
     public record KpiHistoriqueEntry(

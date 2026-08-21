@@ -19,6 +19,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.JoursFeries;
 import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.PlafondsLegauxMineurs;
 import dev.sylvain.planning.domain.PosteAffectation;
 
 /**
@@ -53,12 +54,6 @@ import dev.sylvain.planning.domain.PosteAffectation;
  */
 public final class LegalConstraints {
 
-    /** Art. L3162-1: 8 h/day for a young worker aged 16 to 18. */
-    private static final int DUREE_QUOTIDIENNE_MAX_MINEUR_MINUTES = 8 * 60;
-
-    /** Art. D4153-3: 7 h/day for a minor aged 14 to under 16 (school holidays). */
-    private static final int DUREE_QUOTIDIENNE_MAX_MOINS_DE_16_ANS_MINUTES = 7 * 60;
-
     /** Art. L3121-18: 10 h/day of travail effectif for an adult. */
     private static final int DUREE_QUOTIDIENNE_MAX_MAJEUR_MINUTES = 10 * 60;
 
@@ -76,9 +71,6 @@ public final class LegalConstraints {
 
     /** Art. L3121-16: the break that interrupts an adult's working stretch lasts at least 20 min. */
     private static final int PAUSE_MIN_MAJEUR_MINUTES = 20;
-
-    /** Art. L3162-3: a young worker's uninterrupted work may not exceed 4 h 30. */
-    private static final int TRAVAIL_CONTINU_MAX_MINEUR_MINUTES = 4 * 60 + 30;
 
     /** Art. L3162-3: the break that interrupts a young worker's stretch lasts at least 30 min. */
     private static final int PAUSE_MIN_MINEUR_MINUTES = 30;
@@ -240,8 +232,8 @@ public final class LegalConstraints {
     /** Daily working-time cap applicable to this minor on this date (art. L3162-1 / D4153-3). */
     private static int plafondQuotidienMineur(Animateur animateur, LocalDate date) {
         return animateur.estMoinsDe16AnsLe(date)
-                ? DUREE_QUOTIDIENNE_MAX_MOINS_DE_16_ANS_MINUTES
-                : DUREE_QUOTIDIENNE_MAX_MINEUR_MINUTES;
+                ? PlafondsLegauxMineurs.DUREE_QUOTIDIENNE_MAX_MOINS_DE_16_ANS_MINUTES
+                : PlafondsLegauxMineurs.DUREE_QUOTIDIENNE_MAX_MINUTES;
     }
 
     /**
@@ -401,10 +393,10 @@ public final class LegalConstraints {
                         poste -> poste.getCreneau().getDate(),
                         ConstraintCollectors.toList())
                 .filter((animateur, date, postes) -> plusLongueSequenceMinutes(postes, PAUSE_MIN_MINEUR_MINUTES)
-                        > TRAVAIL_CONTINU_MAX_MINEUR_MINUTES)
+                        > PlafondsLegauxMineurs.TRAVAIL_CONTINU_MAX_MINUTES)
                 .penalize(HardMediumSoftScore.ONE_HARD,
                         (animateur, date, postes) -> plusLongueSequenceMinutes(postes, PAUSE_MIN_MINEUR_MINUTES)
-                                - TRAVAIL_CONTINU_MAX_MINEUR_MINUTES)
+                                - PlafondsLegauxMineurs.TRAVAIL_CONTINU_MAX_MINUTES)
                 .asConstraint("travailContinuMaxMineur");
     }
 

@@ -821,6 +821,22 @@ stricte des deux versions.
 ## Conventions de code
 
 - Code et commentaires en anglais ; noms de domaine en français métier.
+- **Un lien public se construit dans `LiensApplication`, jamais par
+  concaténation.** Les URL imprimées hors de l'application (mails de
+  notification, PDF individuels) visent des **routes du SPA Angular**
+  (`src/main/webui/src/app/app.routes.ts`), pas des chemins JAX-RS : l'API est
+  montée sous `quarkus.rest.path=/api`, donc `UriBuilder.fromResource(…)`
+  produirait `/api/echanges` — le JSON au lieu de l'écran — et deux des trois
+  liens n'ont aucune ressource dont partir. `LiensApplication` est le seul
+  endroit qui connaît `planning.public-url` et le nom de ces routes ; ajouter un
+  lien = ajouter une méthode nommée là, et renommer une route Angular = la
+  renommer là aussi. `UriBuilder` y normalise le `/` final et encode les
+  segments variables (le jeton de l'espace animateur voyage comme valeur de
+  gabarit, jamais concaténé).
+- **Un `ObjectMapper` s'injecte, il ne se construit pas.** `new ObjectMapper()`
+  n'a pas les modules enregistrés par Quarkus (JSR-310 en tête) et force à
+  aplatir en `String` des champs qui sont des `LocalDate`/`Instant` — un
+  contournement qui ne se voit qu'à l'exécution, à l'écriture.
 - Frontend Angular : composants standalone, `signal()` / `computed()` pour
   l'état, nouveau flot de contrôle `@if` / `@for` ; les appels HTTP passent par
   les services de `app/core/`.
