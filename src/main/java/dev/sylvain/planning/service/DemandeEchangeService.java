@@ -20,7 +20,9 @@ import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.service.PlanningService.EchangeSimulation;
 import dev.sylvain.planning.service.PlanningService.ViolationDure;
+import dev.sylvain.planning.service.notification.Notification;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 
 /**
@@ -51,8 +53,13 @@ public class DemandeEchangeService {
     @Inject
     ReferenceDataService referenceDataService;
 
+    /**
+     * Notifications are fired as facts, not sent: their best-effort delivery
+     * policy lives in {@code ExpediteurNotifications}, so a broken SMTP server
+     * can never roll back a demande that was really submitted.
+     */
     @Inject
-    MailService mailService;
+    Event<Notification> notifications;
 
     /**
      * One demande as typed in the espace animateur, before any validation.
@@ -101,7 +108,8 @@ public class DemandeEchangeService {
         // The colleague agrees first (see accepterParCible); the admin is only
         // notified once that agreement lands — never having to ask both sides.
         String emailCible = emailDe(nouvelles.get(0).cibleId());
-        mailService.notifierCibleNouvellesDemandes(emailCible, nomComplet(demandeurId), demandes.size());
+        notifications.fire(new Notification.CibleSollicitee(
+                emailCible, nomComplet(demandeurId), demandes.size()));
         return demandes;
     }
 
@@ -183,7 +191,8 @@ public class DemandeEchangeService {
     public DemandeEchange accepterParCible(String cibleId, String demandeId) {
         verifierFoireOuverte();
         DemandeEchange demande = decideeParCible(cibleId, demandeId, StatutDemandeEchange.PROPOSEE);
-        mailService.notifierNouvellesDemandes(nomComplet(demande.getDemandeurId()), List.of(demande));
+        notifications.fire(new Notification.DemandesSoumises(
+                nomComplet(demande.getDemandeurId()), List.of(demande)));
         return demande;
     }
 
@@ -191,8 +200,8 @@ public class DemandeEchangeService {
     public DemandeEchange declinerParCible(String cibleId, String demandeId) {
         verifierFoireOuverte();
         DemandeEchange demande = decideeParCible(cibleId, demandeId, StatutDemandeEchange.REFUSEE_CIBLE);
-        mailService.notifierDeclinParCible(emailDe(demande.getDemandeurId()),
-                nomComplet(cibleId), libelleCreneau(demande));
+        notifications.fire(new Notification.DemandeDeclinee(emailDe(demande.getDemandeurId()),
+                nomComplet(cibleId), libelleCreneau(demande)));
         return demande;
     }
 
@@ -410,7 +419,8 @@ public class DemandeEchangeService {
                 .findFirst()
                 .orElse(null);
         if (demandeur != null) {
-            mailService.notifierDecision(demandeur.getEmail(), demande, libelleCreneau(demande));
+            notifications.fire(new Notification.DemandeTranchee(
+                    demandeur.getEmail(), demande, libelleCreneau(demande)));
         }
     }
 

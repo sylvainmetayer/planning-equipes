@@ -161,6 +161,10 @@ public class PlanningExportService {
         return planning.getAnimateurs().stream()
                 .filter(animateur -> animateurId.equals(animateur.getId()))
                 .map(Animateur::getJetonAcces)
+                // Before findFirst, not after: Stream.findFirst throws on a null
+                // element, and an animateur who never opened their espace has no
+                // token — the common case on a freshly imported plan.
+                .filter(jeton -> jeton != null && !jeton.isBlank())
                 .findFirst()
                 .flatMap(liens::espaceAnimateur)
                 .orElse(null);

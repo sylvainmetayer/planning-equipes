@@ -68,12 +68,12 @@ class PlanningServiceScenarioDepuisTexteTest {
 
         PlanningService.ScenarioImporte importe = service.construireDepuisTexteScenario(yaml);
 
-        assertThat(importe.parametresLegaux()).isPresent();
-        assertThat(importe.parametresLegaux().orElseThrow().getReposQuotidienMinimalMinutes()).isEqualTo(500);
-        assertThat(importe.parametresDecoupage()).isPresent();
-        assertThat(importe.parametresSolveur()).isPresent();
-        assertThat(importe.parametresSolveur().orElseThrow().getDureeResolutionSecondes()).isEqualTo(400);
-        assertThat(importe.decoupageAuto()).isFalse();
+        assertThat(importe.sections().parametresLegaux()).isPresent();
+        assertThat(importe.sections().parametresLegaux().orElseThrow().getReposQuotidienMinimalMinutes()).isEqualTo(500);
+        assertThat(importe.sections().parametresDecoupage()).isPresent();
+        assertThat(importe.sections().parametresSolveur()).isPresent();
+        assertThat(importe.sections().parametresSolveur().orElseThrow().getDureeResolutionSecondes()).isEqualTo(400);
+        assertThat(importe.sections().decoupageAuto()).isFalse();
     }
 
     @Test
@@ -83,7 +83,7 @@ class PlanningServiceScenarioDepuisTexteTest {
 
         PlanningService.ScenarioImporte importe = service.construireDepuisTexteScenario(yaml);
 
-        assertThat(importe.decoupageAuto()).isTrue();
+        assertThat(importe.sections().decoupageAuto()).isTrue();
     }
 
     @Test

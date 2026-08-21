@@ -22,10 +22,12 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.service.notification.Notification;
 import dev.sylvain.planning.service.SolverJobRepository.LigneJob;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Event;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 
@@ -125,7 +127,7 @@ public class SolverJobService {
     ReferenceDataService referenceDataService;
 
     @Inject
-    MailService mailService;
+    Event<Notification> notifications;
 
     @Inject
     EditionContext editionContext;
@@ -217,22 +219,19 @@ public class SolverJobService {
     }
 
     /**
-     * Mails the outcome to the admin when the edition asks for it — the point
-     * of a long solve launched before walking away. Never fails the job, and
-     * never fails the run it describes: a mail that could not be sent must not
-     * cost the user their result.
+     * Announces the outcome when the edition asks for it — the point of a long
+     * solve launched before walking away. Fires a fact rather than sending a
+     * mail: "never costs the user their result" is no longer a {@code
+     * try/catch} written here, it is the delivery policy
+     * {@code ExpediteurNotifications} applies to every notification.
      */
     private void notifierFinResolution(SolverJob job, PlanningService.PlanningDiagnostic diagnostic) {
-        try {
-            if (!referenceDataService.getParametresSolveur().isMailFinResolution()) {
-                return;
-            }
-            // Feasible in Timefold's own sense: no hard constraint left broken.
-            mailService.notifierFinResolution(job.getEditionNom(), diagnostic.score(),
-                    diagnostic.hardScore() >= 0);
-        } catch (RuntimeException e) {
-            LOG.warn("End-of-solve mail could not be sent; the solve result is unaffected", e);
+        if (!referenceDataService.getParametresSolveur().isMailFinResolution()) {
+            return;
         }
+        // Feasible in Timefold's own sense: no hard constraint left broken.
+        notifications.fire(new Notification.ResolutionTerminee(
+                job.getEditionNom(), diagnostic.score(), diagnostic.hardScore() >= 0));
     }
 
     /**

@@ -5,6 +5,7 @@ import java.util.Optional;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.core.UriBuilder;
 
 /**
@@ -39,25 +40,37 @@ public class LiensApplication {
     /** Espace animateur, whose {@code :jeton} segment IS the credential. */
     private static final String ESPACE_ANIMATEUR = "animateur";
 
+    /** Configured base URL, trimmed, or empty when unset or blank. */
+    private final Optional<String> base;
+
     /**
-     * Public base URL of the application. {@link Optional} because a deployment
-     * that has none simply prints no link — every accessor is empty then, and
-     * every caller already treats a missing link as "say nothing".
+     * Constructor injection rather than a field: the value is immutable, and a
+     * test builds the component with the base URL it wants instead of writing
+     * into a package-private field from outside.
+     *
+     * @param baseUrl public base URL of the application. {@link Optional}
+     *                because a deployment that has none simply prints no link
+     *                — every accessor is empty then, and every caller already
+     *                treats a missing link as "say nothing"
      */
-    @ConfigProperty(name = "planning.public-url")
-    Optional<String> baseUrl;
+    @Inject
+    public LiensApplication(@ConfigProperty(name = "planning.public-url") Optional<String> baseUrl) {
+        this.base = baseUrl == null
+                ? Optional.empty()
+                : baseUrl.map(String::trim).filter(url -> !url.isBlank());
+    }
 
     /** Whether links can be printed at all — false when no base URL is configured. */
     public boolean disponible() {
-        return base().isPresent();
+        return base.isPresent();
     }
 
     public Optional<String> ecranEchanges() {
-        return base().map(base -> UriBuilder.fromUri(base).path(ECRAN_ECHANGES).build().toString());
+        return base.map(url -> UriBuilder.fromUri(url).path(ECRAN_ECHANGES).build().toString());
     }
 
     public Optional<String> ecranProblemes() {
-        return base().map(base -> UriBuilder.fromUri(base).path(ECRAN_PROBLEMES).build().toString());
+        return base.map(url -> UriBuilder.fromUri(url).path(ECRAN_PROBLEMES).build().toString());
     }
 
     /**
@@ -69,20 +82,8 @@ public class LiensApplication {
         if (jeton == null || jeton.isBlank()) {
             return Optional.empty();
         }
-        return base().map(base -> UriBuilder.fromUri(base)
+        return base.map(url -> UriBuilder.fromUri(url)
                 .path(ESPACE_ANIMATEUR).path("{jeton}")
                 .build(jeton).toString());
-    }
-
-    /**
-     * The configured base URL, trimmed, or empty when unset or blank. Also
-     * guards {@code baseUrl == null}: the plain (non-CDI) tests of
-     * {@code PlanningExportService} build their service with {@code new} and
-     * never inject this one.
-     */
-    private Optional<String> base() {
-        return baseUrl == null
-                ? Optional.empty()
-                : baseUrl.map(String::trim).filter(url -> !url.isBlank());
     }
 }

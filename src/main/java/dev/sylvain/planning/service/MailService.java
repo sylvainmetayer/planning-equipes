@@ -1,29 +1,30 @@
 package dev.sylvain.planning.service;
 
-import java.util.List;
-import java.util.Optional;
-
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
-import dev.sylvain.planning.domain.DemandeEchange;
-import dev.sylvain.planning.domain.StatutDemandeEchange;
-import io.quarkus.logging.Log;
 import io.quarkus.mailer.Mail;
 import io.quarkus.mailer.Mailer;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 /**
- * Échange notifications (issue #165): tells the admin when demandes are
- * submitted, and the animateur when one of theirs is decided. Plain-text
- * French mails, written for the animateur — business words, no technical
- * vocabulary.
+ * The mails an administrator <b>asks for</b>, and only those: sending an
+ * animateur their individual planning, sending an espace access code, sending
+ * the test mail of the Débogage screen.
  *
- * <p>Every send is best-effort: a mail failure is logged and never fails the
- * business operation it decorates (a submission or a decision must not be
- * rolled back because SMTP is down). With {@code planning.mail.admin} blank, admin
- * notifications are silently disabled; an animateur without an email address
- * simply receives nothing.</p>
+ * <p>What these three have in common — and what separates them from every
+ * notification of
+ * {@link dev.sylvain.planning.service.notification} — is that
+ * <b>a failure must propagate</b>. The mail is not decorating an operation
+ * here, it <i>is</i> the operation: without it the animateur has no code and
+ * cannot get in, or the admin believes a planning was delivered that never
+ * left. The caller reports who could not be reached, so nothing is swallowed.
+ *
+ * <p>Everything that is best-effort — échange notifications, end-of-solve —
+ * fires a
+ * {@link dev.sylvain.planning.service.notification.Notification}
+ * instead, whose delivery policy lives in one place. Adding a
+ * {@code notifierXxx} method here would recreate the fork this split removed:
+ * two opposite failure policies behind identically-shaped methods, with no way
+ * to tell from the signature which one you were calling.</p>
  */
 @ApplicationScoped
 public class MailService {
@@ -31,108 +32,12 @@ public class MailService {
     @Inject
     Mailer mailer;
 
-    /** Recipient of the "new demandes" notifications; blank disables them. */
-    @ConfigProperty(name = "planning.mail.admin")
-    Optional<String> adminEmail;
-
-    /** Builds the links to the admin screens; empty when no public URL is set. */
     @Inject
-    LiensApplication liens;
-
-    /**
-     * Tells the targeted colleague that demandes await THEIR agreement — the
-     * step that spares the admin from asking both sides. No-op without an
-     * email address on the colleague's fiche (they still see the demandes in
-     * their espace).
-     */
-    public void notifierCibleNouvellesDemandes(String emailCible, String demandeurNomComplet, int nombre) {
-        if (emailCible == null || emailCible.isBlank()) {
-            return;
-        }
-        String sujet = "Planning Équipes — " + demandeurNomComplet
-                + (nombre == 1 ? " vous propose un échange de créneau" : " vous propose des échanges de créneaux");
-        StringBuilder corps = new StringBuilder()
-                .append(demandeurNomComplet).append(" vous propose ")
-                .append(nombre == 1 ? "un échange de créneau" : nombre + " échanges de créneaux")
-                .append(".\n\nAcceptez ou déclinez depuis votre espace personnel (lien imprimé sur votre ")
-                .append("planning PDF), onglet Échanges : votre accord est nécessaire avant que ")
-                .append("l'organisation ne tranche.\n");
-        envoyer(emailCible, sujet, corps.toString());
-    }
-
-    /** Tells the demandeur their colleague declined; the admin never had to arbitrate. */
-    public void notifierDeclinParCible(String emailDemandeur, String cibleNomComplet, String libelleCreneau) {
-        if (emailDemandeur == null || emailDemandeur.isBlank()) {
-            return;
-        }
-        StringBuilder corps = new StringBuilder()
-                .append(cibleNomComplet).append(" a décliné votre demande d'échange");
-        if (libelleCreneau != null) {
-            corps.append(" (créneau ").append(libelleCreneau).append(")");
-        }
-        corps.append(".\nVous pouvez proposer l'échange à quelqu'un d'autre depuis votre espace.\n");
-        envoyer(emailDemandeur, "Planning Équipes — votre demande d'échange a été déclinée", corps.toString());
-    }
-
-    /** One mail to the admin per submission batch, not one per demande. */
-    public void notifierNouvellesDemandes(String demandeurNomComplet, List<DemandeEchange> demandes) {
-        if (adminEmail.isEmpty() || adminEmail.get().isBlank() || demandes.isEmpty()) {
-            return;
-        }
-        String sujet = demandes.size() == 1
-                ? "Planning Équipes — nouvelle demande d'échange de " + demandeurNomComplet
-                : "Planning Équipes — " + demandes.size() + " nouvelles demandes d'échange de " + demandeurNomComplet;
-        StringBuilder corps = new StringBuilder()
-                .append(demandeurNomComplet)
-                .append(" a soumis ")
-                .append(demandes.size() == 1 ? "une demande d'échange de créneau" : demandes.size() + " demandes d'échange de créneaux")
-                .append(", déjà acceptée")
-                .append(demandes.size() == 1 ? "" : "s")
-                .append(" par le collègue concerné.\n\n");
-        long infaisables = demandes.stream()
-                .filter(demande -> Boolean.FALSE.equals(demande.getPrevalidationOk()))
-                .count();
-        if (infaisables > 0) {
-            corps.append("Attention : ").append(infaisables)
-                    .append(infaisables == 1 ? " demande casse" : " demandes cassent")
-                    .append(" une contrainte dure en l'état du planning.\n\n");
-        }
-        liens.ecranEchanges().ifPresent(lien -> corps
-                .append("À valider ou refuser depuis l'écran Échanges : ")
-                .append(lien).append('\n'));
-        envoyer(adminEmail.get(), sujet, corps.toString());
-    }
-
-    /**
-     * Tells the demandeur the outcome of one of their demandes. No-op without
-     * an email address on their fiche.
-     */
-    public void notifierDecision(String emailAnimateur, DemandeEchange demande, String libelleCreneau) {
-        if (emailAnimateur == null || emailAnimateur.isBlank()) {
-            return;
-        }
-        boolean acceptee = demande.getStatut() == StatutDemandeEchange.ACCEPTEE;
-        String sujet = acceptee
-                ? "Planning Équipes — votre demande d'échange est acceptée"
-                : "Planning Équipes — votre demande d'échange est refusée";
-        StringBuilder corps = new StringBuilder()
-                .append("Votre demande d'échange")
-                .append(libelleCreneau == null || libelleCreneau.isBlank() ? "" : " (" + libelleCreneau + ")")
-                .append(acceptee
-                        ? " a été acceptée : le planning a été mis à jour.\n"
-                        : " a été refusée : le planning reste inchangé.\n");
-        if (demande.getCommentaireAdmin() != null && !demande.getCommentaireAdmin().isBlank()) {
-            corps.append("\nCommentaire de l'organisation : ")
-                    .append(demande.getCommentaireAdmin()).append('\n');
-        }
-        envoyer(emailAnimateur, sujet, corps.toString());
-    }
+    AdresseAdministrateur adresseAdmin;
 
     /**
      * Sends one animateur their individual planning: the PDF attached, the
-     * espace link in the body. Unlike the notifications above, this is an
-     * explicit admin action ("envoyer les plannings"), so a failure is NOT
-     * swallowed here — the caller reports who could not be reached.
+     * espace link in the body.
      */
     public void envoyerPlanningIndividuel(String emailAnimateur, String prenom, String lienEspace,
             byte[] pdf, String nomFichier) {
@@ -148,12 +53,7 @@ public class MailService {
                 .addAttachment(nomFichier, pdf, "application/pdf"));
     }
 
-    /**
-     * Sends the espace access code — the second factor of the espace
-     * animateur. Like {@link #envoyerPlanningIndividuel}, a failure is NOT
-     * swallowed: without the mail the animateur cannot get in, so the caller
-     * must be able to say "send failed" instead of "check your inbox".
-     */
+    /** Sends the espace access code — the second factor of the espace animateur. */
     public void envoyerCodeAcces(String emailAnimateur, String prenom, String code) {
         String corps = "Bonjour" + (prenom == null || prenom.isBlank() ? "" : " " + prenom) + ",\n\n"
                 + "Voici votre code d'accès à votre espace animateur : " + code + "\n\n"
@@ -163,45 +63,12 @@ public class MailService {
     }
 
     /**
-     * Tells the admin a solve just finished: which edition, what score, and
-     * whether the plan is feasible — the three facts one waits for when a
-     * multi-minute run was launched before walking away. Best-effort and
-     * silent without an admin address, like every other notification here.
-     *
-     * @param faisable no hard constraint left broken; anything else means the
-     *                 plan cannot be used as is, which is the whole point of
-     *                 saying it in the subject line rather than in the body
-     */
-    public void notifierFinResolution(String editionNom, String score, boolean faisable) {
-        if (adminEmailConfigure().isEmpty()) {
-            return;
-        }
-        String etat = faisable ? "planning faisable" : "planning NON faisable";
-        String sujet = "Planning Équipes — résolution terminée sur « " + editionNom + " » : " + etat;
-        StringBuilder corps = new StringBuilder()
-                .append("Édition : ").append(editionNom).append('\n')
-                .append("Score : ").append(score == null ? "non mesuré" : score).append('\n')
-                .append("Faisabilité : ").append(faisable
-                        ? "aucune contrainte dure violée"
-                        : "au moins une contrainte dure reste violée — le planning n'est pas utilisable en l'état")
-                .append('\n');
-        liens.ecranProblemes().ifPresent(lien -> corps
-                .append("\nDétail des contraintes en défaut : ").append(lien).append('\n'));
-        envoyer(adminEmailConfigure().get(), sujet, corps.toString());
-    }
-
-    /** Admin address, trimmed — empty when the "new demandes" notifications are disabled. */
-    public Optional<String> adminEmailConfigure() {
-        return adminEmail.map(String::trim).filter(adresse -> !adresse.isBlank());
-    }
-
-    /**
-     * Sends a test mail to the admin address and PROPAGATES any failure —
-     * unlike every business send, which is best-effort by design: the whole
-     * point of the Débogage button is to surface a broken SMTP setup.
+     * Sends a test mail to the admin address. The whole point of the Débogage
+     * button is to surface a broken SMTP setup, so this propagates like the
+     * two above.
      */
     public String envoyerMailTest() {
-        String destinataire = adminEmailConfigure()
+        String destinataire = adresseAdmin.resolue()
                 .orElseThrow(() -> new IllegalStateException(
                         "Aucune adresse e-mail administrateur configurée (MAIL_ADMIN)."));
         mailer.send(Mail.withText(destinataire,
@@ -209,13 +76,5 @@ public class MailService {
                 "Ce message confirme que l'envoi d'e-mails fonctionne pour cette instance.\n"
                         + "Envoyé depuis la page Débogage le " + java.time.ZonedDateTime.now() + ".\n"));
         return destinataire;
-    }
-
-    private void envoyer(String destinataire, String sujet, String corps) {
-        try {
-            mailer.send(Mail.withText(destinataire, sujet, corps));
-        } catch (RuntimeException e) {
-            Log.errorf(e, "Failed to send mail \"%s\" to %s", sujet, destinataire);
-        }
     }
 }

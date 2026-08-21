@@ -17,9 +17,7 @@ import org.junit.jupiter.api.Test;
 class LiensApplicationTest {
 
     private static LiensApplication liensVers(String baseUrl) {
-        LiensApplication liens = new LiensApplication();
-        liens.baseUrl = Optional.ofNullable(baseUrl);
-        return liens;
+        return new LiensApplication(Optional.ofNullable(baseUrl));
     }
 
     @Test

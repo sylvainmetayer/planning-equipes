@@ -66,6 +66,7 @@ import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
 import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
+import dev.sylvain.planning.scenario.YamlSections;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.constraints.AdHocConstraints;
 import dev.sylvain.planning.solver.PlanningConstraintProvider;
@@ -203,7 +204,7 @@ public class PlanningService {
      */
     public PlanningFestival construireExemple(String scenarioName) {
         try {
-            return chargerScenarioYaml(cheminScenario(scenarioName));
+            return construirePlanningDepuisDonnees(lireDonneesScenario(cheminScenario(scenarioName)));
         } catch (IOException e) {
             throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
         }
@@ -234,7 +235,8 @@ public class PlanningService {
      */
     public PlanningFestival construireExempleSimple() {
         try {
-            return chargerScenarioYaml(SCENARIOS_DIR + "/scenario.yml");
+            return construirePlanningDepuisDonnees(
+                    lireDonneesScenario(SCENARIOS_DIR + "/scenario.yml"));
         } catch (IOException e) {
             throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
         }
@@ -639,7 +641,7 @@ public class PlanningService {
 
     /**
      * Serializes the current reference data into the same YAML shape read by
-     * {@link #chargerScenarioYaml}, so the result can be dropped into the
+     * {@link #construirePlanningDepuisDonnees}, so the result can be dropped into the
      * {@link #SCENARIOS_DIR} folder and reloaded as-is.
      *
      * <p>Everything that shapes a solve is written, not only the entities:
@@ -852,7 +854,7 @@ public class PlanningService {
         return value == null ? null : value.toString();
     }
 
-    /** Only the three fields a scenario file is read back with (see {@code chargerParametresLegauxScenario}). */
+    /** Only the three fields a scenario file is read back with (see {@link SectionsScenario}). */
     private static Map<String, Object> parametresLegauxYaml(ParametresLegaux parametres) {
         Map<String, Object> item = new LinkedHashMap<>();
         item.put("dureeHebdomadaireMaxMinutes", parametres.getDureeHebdomadaireMaxMinutes());
@@ -1027,11 +1029,6 @@ public class PlanningService {
         return lower.endsWith(".yaml") || lower.endsWith(".yml");
     }
 
-    private PlanningFestival chargerScenarioYaml(String scenarioPath) throws IOException {
-        return construirePlanningDepuisDonnees(lireDonneesScenario(scenarioPath));
-    }
-
-    @SuppressWarnings("unchecked")
     private PlanningFestival construirePlanningDepuisDonnees(Map<String, Object> scenarioData) {
         ReferenceScenario reference = chargerReferenceScenario(scenarioData);
 
@@ -1045,7 +1042,7 @@ public class PlanningService {
         // présente, sinon générés à partir des stands/créneaux (mêmes règles que
         // construireDepuisReferenceData) — un fichier n'a plus besoin d'énumérer
         // ses postes à la main pour être importé.
-        List<Map<String, Object>> postesList = (List<Map<String, Object>>) scenarioData.get("postes");
+        List<Map<String, Object>> postesList = YamlSections.objets(scenarioData, "postes");
         List<PosteAffectation> postes;
         if (postesList == null) {
             postes = construirePostes(new ArrayList<>(reference.standsParId().values()),
@@ -1117,10 +1114,7 @@ public class PlanningService {
         } catch (RuntimeException e) {
             throw new IllegalArgumentException("Scénario invalide : " + messageOu(e), e);
         }
-        return new ScenarioImporte(planning, parseParametresLegaux(scenarioData),
-                parseParametresDecoupage(scenarioData), parseParametresSolveur(scenarioData),
-                parseDecoupageAuto(scenarioData), parseTypologies(scenarioData),
-                parseEditionCible(scenarioData));
+        return new ScenarioImporte(planning, sectionsDe(scenarioData));
     }
 
     private static String messageOu(Exception e) {
@@ -1133,10 +1127,7 @@ public class PlanningService {
      * {@code POST /reference-data/import-scenario} applies for a named
      * built-in scenario.
      */
-    public record ScenarioImporte(PlanningFestival planning, Optional<ParametresLegaux> parametresLegaux,
-            Optional<ParametresDecoupage> parametresDecoupage, Optional<ParametresSolveur> parametresSolveur,
-            boolean decoupageAuto, List<ReferenceDataService.TypologieItem> typologies,
-            Optional<dev.sylvain.planning.scenario.dto.EditionCibleDto> edition) {
+    public record ScenarioImporte(PlanningFestival planning, SectionsScenario sections) {
     }
 
     /**
@@ -1156,7 +1147,6 @@ public class PlanningService {
             List<Animateur> animateurs) {
     }
 
-    @SuppressWarnings("unchecked")
     private ReferenceScenario chargerReferenceScenario(Map<String, Object> scenarioData) {
         // Charger les creneaux : le fichier YAML porte un id texte historique
         // (utilisé seulement pour relier postes/creneaux entre eux), remplacé
@@ -1164,7 +1154,7 @@ public class PlanningService {
         // Creneau.assignerJours), la valeur du fichier est ignorée.
         Map<String, Creneau> creneauxMap = new HashMap<>();
         long compteurCreneauId = 1;
-        List<Map<String, Object>> creneauxList = (List<Map<String, Object>>) scenarioData.get("creneaux");
+        List<Map<String, Object>> creneauxList = YamlSections.objets(scenarioData, "creneaux");
         for (Map<String, Object> creneauData : creneauxList) {
             String id = (String) creneauData.get("id");
             String heureDebutStr = (String) creneauData.get("heureDebut");
@@ -1181,7 +1171,7 @@ public class PlanningService {
 
         // Charger les emplacements
         Map<String, Emplacement> emplacementsMap = new HashMap<>();
-        List<Map<String, Object>> emplacementsList = (List<Map<String, Object>>) scenarioData.get("emplacements");
+        List<Map<String, Object>> emplacementsList = YamlSections.objets(scenarioData, "emplacements");
         if (emplacementsList != null) {
             for (Map<String, Object> emplacementData : emplacementsList) {
                 String id = (String) emplacementData.get("id");
@@ -1198,11 +1188,11 @@ public class PlanningService {
 
         // Charger les stands
         Map<String, Stand> standsMap = new HashMap<>();
-        List<Map<String, Object>> standsList = (List<Map<String, Object>>) scenarioData.get("stands");
+        List<Map<String, Object>> standsList = YamlSections.objets(scenarioData, "stands");
         for (Map<String, Object> standData : standsList) {
             String id = (String) standData.get("id");
             String nom = (String) standData.get("nom");
-            List<String> typologiesStr = (List<String>) standData.get("typologiesProposees");
+            List<String> typologiesStr = YamlSections.chaines(standData, "typologiesProposees");
             Set<String> typologies = new java.util.HashSet<>(typologiesStr);
             int effectifMin = ((Number) standData.get("effectifMin")).intValue();
             int effectifMax = ((Number) standData.get("effectifMax")).intValue();
@@ -1216,7 +1206,7 @@ public class PlanningService {
             if (emplacementId != null) {
                 stand.setEmplacement(emplacementsMap.get(emplacementId));
             }
-            List<Map<String, Object>> indisponibilitesData = (List<Map<String, Object>>) standData.get("indisponibilites");
+            List<Map<String, Object>> indisponibilitesData = YamlSections.objets(standData, "indisponibilites");
             if (indisponibilitesData != null) {
                 List<IndisponibiliteStand> indisponibilites = new ArrayList<>();
                 for (Map<String, Object> indispoData : indisponibilitesData) {
@@ -1228,7 +1218,7 @@ public class PlanningService {
                 }
                 stand.setIndisponibilites(indisponibilites);
             }
-            List<Map<String, Object>> ouverturesData = (List<Map<String, Object>>) standData.get("ouvertures");
+            List<Map<String, Object>> ouverturesData = YamlSections.objets(standData, "ouvertures");
             if (ouverturesData != null) {
                 List<OuvertureStand> ouvertures = new ArrayList<>();
                 for (Map<String, Object> ouvertureData : ouverturesData) {
@@ -1240,7 +1230,7 @@ public class PlanningService {
                 }
                 stand.setOuvertures(ouvertures);
             }
-            List<Map<String, Object>> horairesData = (List<Map<String, Object>>) standData.get("horaires");
+            List<Map<String, Object>> horairesData = YamlSections.objets(standData, "horaires");
             if (horairesData != null) {
                 stand.setHoraires(lireHoraires(horairesData));
             }
@@ -1249,7 +1239,7 @@ public class PlanningService {
 
         // Charger les animateurs
         List<Animateur> animateurs = new ArrayList<>();
-        List<Map<String, Object>> animateursList = (List<Map<String, Object>>) scenarioData.get("animateurs");
+        List<Map<String, Object>> animateursList = YamlSections.objets(scenarioData, "animateurs");
         for (Map<String, Object> animateurData : animateursList) {
             String id = (String) animateurData.get("id");
             String prenom = (String) animateurData.get("prenom");
@@ -1269,7 +1259,7 @@ public class PlanningService {
             animateur.setCompetences(competences);
 
             // Charger les jours d'indisponibilité (opt-out: available by default)
-            List<Object> joursOffData = (List<Object>) animateurData.get("joursIndisponibles");
+            List<Object> joursOffData = YamlSections.valeurs(animateurData, "joursIndisponibles");
             Set<LocalDate> joursIndisponibles = joursOffData == null
                     ? new java.util.HashSet<>()
                     : joursOffData.stream()
@@ -1278,7 +1268,7 @@ public class PlanningService {
             animateur.setJoursIndisponibles(joursIndisponibles);
 
             // Charger les souhaits (typologies de stand souhaitées, sans niveau ni priorité)
-            List<Object> souhaitsData = (List<Object>) animateurData.get("souhaits");
+            List<Object> souhaitsData = YamlSections.valeurs(animateurData, "souhaits");
             Set<String> souhaits = souhaitsData == null
                     ? new java.util.HashSet<>()
                     : souhaitsData.stream()
@@ -1300,13 +1290,13 @@ public class PlanningService {
         animateurs.forEach(animateur -> animateur.appliquerTypologieNinja(typologieNinja));
 
         LocalDate dateDebut = parseLocalDate(
-            ((Map<String, Object>) scenarioData.get("festival")).get("dateDebut"),
+            YamlSections.objet(scenarioData, "festival").get("dateDebut"),
             "festival.dateDebut");
 
         return new ReferenceScenario(dateDebut, creneauxMap, standsMap, animateurs);
     }
 
-    /** Shared YAML loading for {@link #chargerScenarioYaml} and the optional-section accessors below. */
+    /** Shared YAML loading for {@link #construirePlanningDepuisDonnees} and the optional-section accessors below. */
     private Map<String, Object> lireDonneesScenario(String scenarioPath) throws IOException {
         InputStream inputStream = getClass().getClassLoader().getResourceAsStream(scenarioPath);
         if (inputStream == null) {
@@ -1319,6 +1309,11 @@ public class PlanningService {
      * Parses a scenario's raw YAML bytes, from the classpath ({@link #lireDonneesScenario})
      * or from a user-uploaded file ({@link #construireDepuisTexteScenario}).
      */
+    // The one unchecked cast left in this class, and the only one that has no
+    // alternative: this IS the entry point that turns SnakeYAML's untyped
+    // Object into the scenario document every parseXxx below reads. The check
+    // just above it is what makes it safe; every nested section goes through
+    // YamlSections instead.
     @SuppressWarnings("unchecked")
     private Map<String, Object> parserYaml(InputStream inputStream) throws IOException {
         LoaderOptions loaderOptions = new LoaderOptions();
@@ -1335,64 +1330,92 @@ public class PlanningService {
     }
 
     /**
-     * Reads the optional top-level {@code parametresLegaux:} section of a
-     * scenario file, if present — lets a scenario pin the legal parameters it
-     * was authored/verified against (with a YAML comment explaining why),
-     * instead of silently depending on whatever is currently configured in the
-     * database. Absent fields within the section fall back to
-     * {@link ParametresLegaux}'s own defaults, not to the live database value,
-     * so the scenario stays fully reproducible on its own.
+     * Every optional top-level section a scenario file may pin, read in
+     * <b>one</b> pass over the file.
+     *
+     * <p>There used to be one public accessor per section, each three lines
+     * long and each re-reading and re-parsing the whole file. Importing a
+     * scenario called five of them plus the planning build, so a single click
+     * parsed {@code festival-realiste.yaml} seven times — and adding a section
+     * meant adding a seventh near-identical method. One record, one read.</p>
+     *
+     * @param parametresLegaux    lets a scenario pin the legal parameters it was
+     *                            authored and verified against instead of silently
+     *                            depending on whatever the database currently holds.
+     *                            Absent fields fall back to {@link ParametresLegaux}'s
+     *                            own defaults, never to the live value, so the
+     *                            scenario stays reproducible on its own
+     * @param parametresDecoupage generation-time only (never a solver problem fact,
+     *                            see its javadoc), hence read separately and applied
+     *                            by the scenario-import endpoint alone — it has no
+     *                            place on {@link PlanningFestival}
+     * @param parametresSolveur   lets a large scenario pin the termination duration
+     *                            it actually needs ({@code scenario-complet.yaml}
+     *                            takes ~8 min to reach a good score) rather than
+     *                            relying on the Données tab. Absent, the current
+     *                            database value is left untouched
+     * @param decoupageAuto       a scenario written in "amplitudes" (one long opening
+     *                            window per day, e.g. {@code scenario-continu.yaml})
+     *                            asks its import to slice itself into vacations,
+     *                            instead of leaving the operator to run the
+     *                            "Découpage" screen by hand afterwards
+     * @param typologies          {@code {id, label}} pairs defining the scenario's own
+     *                            typologie referential entries up front, instead of
+     *                            leaving every referenced id to the id-as-its-own-label
+     *                            default {@code ReferenceDataRepository#importFromPlanning}
+     *                            derives on the fly. Empty, not absent, when the section
+     *                            is missing: a list has no "absent" distinct from "empty"
+     * @param edition             the edition the import must write into; absent means
+     *                            the caller's current one
      */
-    public Optional<ParametresLegaux> chargerParametresLegauxScenario(String scenarioName) {
-        return chargerSectionScenario(scenarioName, PlanningService::parseParametresLegaux);
+    public record SectionsScenario(
+            Optional<ParametresLegaux> parametresLegaux,
+            Optional<ParametresDecoupage> parametresDecoupage,
+            Optional<ParametresSolveur> parametresSolveur,
+            boolean decoupageAuto,
+            List<ReferenceDataService.TypologieItem> typologies,
+            Optional<dev.sylvain.planning.scenario.dto.EditionCibleDto> edition) {
+    }
+
+    /** Reads {@link SectionsScenario} out of an already-parsed scenario document. */
+    private static SectionsScenario sectionsDe(Map<String, Object> scenarioData) {
+        return new SectionsScenario(
+                parseParametresLegaux(scenarioData),
+                parseParametresDecoupage(scenarioData),
+                parseParametresSolveur(scenarioData),
+                parseDecoupageAuto(scenarioData),
+                parseTypologies(scenarioData),
+                parseEditionCible(scenarioData));
     }
 
     /**
-     * Reads the optional top-level {@code parametresDecoupage:} section of a
-     * scenario file, if present. {@link ParametresDecoupage} is
-     * generation-time-only (never a solver problem fact, see its javadoc), so
-     * unlike {@link #chargerParametresLegauxScenario} this has no place on
-     * {@link PlanningFestival} — it is read separately and applied by the
-     * scenario-import endpoint only.
+     * The optional sections of a bundled scenario, <b>without</b> building its
+     * planning: the pre-import step that names the target edition, and the
+     * cheap read the tests use to assert what a file pins.
      */
-    public Optional<ParametresDecoupage> chargerParametresDecoupageScenario(String scenarioName) {
-        return chargerSectionScenario(scenarioName, PlanningService::parseParametresDecoupage);
+    public SectionsScenario chargerSectionsScenario(String scenarioName) {
+        try {
+            return sectionsDe(lireDonneesScenario(cheminScenario(scenarioName)));
+        } catch (IOException e) {
+            throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
+        }
     }
 
     /**
-     * Reads the optional top-level {@code parametresSolveur:} section of a
-     * scenario file, if present — lets a large/slow scenario pin the
-     * termination duration it actually needs (e.g. {@code scenario-complet.yaml}
-     * takes ~8 min to reach a good score) instead of relying on whichever
-     * duration is currently configured in the Données tab. Absent, the
-     * current database value is left untouched, same as
-     * {@link #chargerParametresDecoupageScenario}.
+     * A bundled scenario, whole: its planning and its optional sections, from
+     * a single parse. The named-file counterpart of
+     * {@link #construireDepuisTexteScenario}, so the two import paths differ
+     * only in where the bytes come from.
      */
-    public Optional<ParametresSolveur> chargerParametresSolveurScenario(String scenarioName) {
-        return chargerSectionScenario(scenarioName, PlanningService::parseParametresSolveur);
+    public ScenarioImporte chargerScenario(String scenarioName) {
+        try {
+            Map<String, Object> scenarioData = lireDonneesScenario(cheminScenario(scenarioName));
+            return new ScenarioImporte(construirePlanningDepuisDonnees(scenarioData), sectionsDe(scenarioData));
+        } catch (IOException e) {
+            throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
+        }
     }
 
-    /**
-     * Reads the optional top-level {@code decoupageAuto:} section of a
-     * scenario file, if present — lets a scenario written straight in
-     * "amplitudes" (one long opening window per day, e.g. {@code scenario-continu.yaml})
-     * ask its import to auto-slice itself into vacations instead of leaving
-     * the operator to run the "Découpage" screen by hand afterwards.
-     */
-    public boolean chargerDecoupageAutoScenario(String scenarioName) {
-        return chargerSectionScenario(scenarioName, PlanningService::parseDecoupageAuto);
-    }
-
-    /**
-     * Reads the optional top-level {@code typologies:} section of a scenario
-     * file, if present — a list of {@code {id, label}} pairs let the scenario
-     * define its own typologie referential entries (e.g. {@code ENF} ->
-     * {@code "Enfance"}) up front, instead of leaving every id a stand or
-     * animateur references to fall back to the id-as-its-own-label default
-     * {@code ReferenceDataRepository#importFromPlanning} derives on the fly.
-     * Empty (not absent) when the section is missing, since a list has no
-     * natural "absent" distinct from "empty".
-     */
     /**
      * Optional {@code edition:} section of an uploaded scenario text, parsed
      * alone — the pre-import step the UI uses to NAME the target edition in
@@ -1411,28 +1434,8 @@ public class PlanningService {
         }
     }
 
-    /** Optional {@code edition:} section of a named scenario — the edition its import must write into. */
-    public Optional<dev.sylvain.planning.scenario.dto.EditionCibleDto> chargerEditionScenario(
-            String scenarioName) {
-        return chargerSectionScenario(scenarioName, PlanningService::parseEditionCible);
-    }
-
-    public List<ReferenceDataService.TypologieItem> chargerTypologiesScenario(String scenarioName) {
-        return chargerSectionScenario(scenarioName, PlanningService::parseTypologies);
-    }
-
-    /** Loads the scenario's YAML and hands it to one of the {@code parseXxx} section readers. */
-    private <T> T chargerSectionScenario(String scenarioName, Function<Map<String, Object>, T> parseSection) {
-        try {
-            return parseSection.apply(lireDonneesScenario(cheminScenario(scenarioName)));
-        } catch (IOException e) {
-            throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
     private static Optional<ParametresLegaux> parseParametresLegaux(Map<String, Object> scenarioData) {
-        Map<String, Object> data = (Map<String, Object>) scenarioData.get("parametresLegaux");
+        Map<String, Object> data = YamlSections.objet(scenarioData, "parametresLegaux");
         if (data == null) {
             return Optional.empty();
         }
@@ -1459,9 +1462,8 @@ public class PlanningService {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private static Optional<ParametresDecoupage> parseParametresDecoupage(Map<String, Object> scenarioData) {
-        Map<String, Object> data = (Map<String, Object>) scenarioData.get("parametresDecoupage");
+        Map<String, Object> data = YamlSections.objet(scenarioData, "parametresDecoupage");
         if (data == null) {
             return Optional.empty();
         }
@@ -1484,9 +1486,8 @@ public class PlanningService {
         return Optional.of(parametres);
     }
 
-    @SuppressWarnings("unchecked")
     private static Optional<ParametresSolveur> parseParametresSolveur(Map<String, Object> scenarioData) {
-        Map<String, Object> data = (Map<String, Object>) scenarioData.get("parametresSolveur");
+        Map<String, Object> data = YamlSections.objet(scenarioData, "parametresSolveur");
         if (data == null || data.get("dureeResolutionSecondes") == null) {
             return Optional.empty();
         }
@@ -1507,18 +1508,19 @@ public class PlanningService {
                 && !Boolean.FALSE.equals(scenarioData.get("decoupageAuto"));
     }
 
-    @SuppressWarnings("unchecked")
     private static Optional<dev.sylvain.planning.scenario.dto.EditionCibleDto> parseEditionCible(
             Map<String, Object> scenarioData) {
         Object data = scenarioData.get("edition");
         if (data == null) {
             return Optional.empty();
         }
-        if (!(data instanceof Map)) {
+        // Pattern matching rather than a cast: a wildcard Map reads its own
+        // values as Object, which is all this section needs, so there is
+        // nothing left to suppress.
+        if (!(data instanceof Map<?, ?> editionData)) {
             throw new IllegalArgumentException(
                     "La section edition doit être un objet { id, nom? }, pas une valeur simple.");
         }
-        Map<String, Object> editionData = (Map<String, Object>) data;
         String id = (String) editionData.get("id");
         if (id == null || id.isBlank()) {
             throw new IllegalArgumentException("La section edition exige un champ id non vide.");
@@ -1527,9 +1529,8 @@ public class PlanningService {
                 id, (String) editionData.get("nom")));
     }
 
-    @SuppressWarnings("unchecked")
     private static List<ReferenceDataService.TypologieItem> parseTypologies(Map<String, Object> scenarioData) {
-        List<Map<String, Object>> data = (List<Map<String, Object>>) scenarioData.get("typologies");
+        List<Map<String, Object>> data = YamlSections.objets(scenarioData, "typologies");
         if (data == null) {
             return List.of();
         }
@@ -2102,7 +2103,6 @@ public class PlanningService {
      * {@code jours} reads as {@link TypeJoursHoraire#TOUS}, which is what makes
      * the common case a two-line entry.
      */
-    @SuppressWarnings("unchecked")
     private List<HoraireStand> lireHoraires(List<Map<String, Object>> horairesData) {
         List<HoraireStand> horaires = new ArrayList<>();
         for (Map<String, Object> horaireData : horairesData) {
@@ -2114,7 +2114,7 @@ public class PlanningService {
             horaire.setMode(ModeHoraire.valueOf(modeStr));
             String joursStr = (String) horaireData.getOrDefault("jours", TypeJoursHoraire.TOUS.name());
             horaire.setJours(TypeJoursHoraire.valueOf(joursStr));
-            List<String> joursSemaine = (List<String>) horaireData.get("joursSemaine");
+            List<String> joursSemaine = YamlSections.chaines(horaireData, "joursSemaine");
             if (joursSemaine != null) {
                 horaire.setJoursSemaine(joursSemaine.stream().map(DayOfWeek::valueOf)
                         .collect(Collectors.toCollection(TreeSet::new)));
@@ -2125,12 +2125,12 @@ public class PlanningService {
             if (horaireData.get("dateFin") != null) {
                 horaire.setDateFin(parseLocalDate(horaireData.get("dateFin"), "stands.horaires.dateFin"));
             }
-            List<Object> dates = (List<Object>) horaireData.get("dates");
+            List<Object> dates = YamlSections.valeurs(horaireData, "dates");
             if (dates != null) {
                 horaire.setDates(dates.stream().map(date -> parseLocalDate(date, "stands.horaires.dates"))
                         .collect(Collectors.toCollection(TreeSet::new)));
             }
-            List<Map<String, Object>> fenetresData = (List<Map<String, Object>>) horaireData.get("fenetres");
+            List<Map<String, Object>> fenetresData = YamlSections.objets(horaireData, "fenetres");
             if (fenetresData == null || fenetresData.isEmpty()) {
                 throw new IllegalArgumentException("Champ manquant: stands.horaires.fenetres (au moins une fenêtre)");
             }

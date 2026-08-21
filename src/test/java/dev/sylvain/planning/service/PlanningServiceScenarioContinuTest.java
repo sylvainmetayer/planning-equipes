@@ -68,7 +68,7 @@ class PlanningServiceScenarioContinuTest {
         // construireExemple(), which would instead use the file's raw,
         // undivided one-créneau-per-day amplitudes directly.
         PlanningService.ReferenceScenario reference = planningService.chargerReferenceScenario(scenarioName);
-        ParametresDecoupage parametresDecoupage = planningService.chargerParametresDecoupageScenario(scenarioName)
+        ParametresDecoupage parametresDecoupage = planningService.chargerSectionsScenario(scenarioName).parametresDecoupage()
                 .orElseGet(ParametresDecoupage::new);
         List<Creneau> creneauxScindes = VacationGeneratorService.genererVacations(
                 List.copyOf(reference.creneauxParId().values()), parametresDecoupage);

@@ -1,5 +1,6 @@
 package dev.sylvain.planning.api;
 
+import dev.sylvain.planning.service.AdresseAdministrateur;
 import dev.sylvain.planning.service.MailService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
@@ -29,6 +30,9 @@ public class DebugResource {
     @Inject
     MailService mailService;
 
+    @Inject
+    AdresseAdministrateur adresseAdmin;
+
     @POST
     @Path("/test-exception")
     public void throwTestException() {
@@ -46,7 +50,7 @@ public class DebugResource {
     @GET
     @Path("/mail-config")
     public MailConfigView mailConfig() {
-        return new MailConfigView(mailService.adminEmailConfigure().orElse(null));
+        return new MailConfigView(adresseAdmin.resolue().orElse(null));
     }
 
     @POST

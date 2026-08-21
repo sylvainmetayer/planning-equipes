@@ -89,6 +89,27 @@ dans [`domaine.md`](domaine.md).
 | `SnapshotComparaisonService` | Comparateur A/B : confronte deux plans (instantanés ou plan courant), **toutes éditions confondues**, en lecture seule — aucune résolution, aucun score recalculé — issue #70 |
 | `DatabaseDumpService` | Export / import de dump SQL |
 | `PlanningExportService` | Génération PDF (OpenPDF) et ICS, **côté serveur uniquement** |
+| `LiensApplication` | Toute URL publique imprimée hors de l'application (mail, PDF) : seul endroit qui connaît `planning.public-url` et les routes du SPA visées — voir [`developpement.md`](developpement.md#conventions-de-code) |
+| `AdresseAdministrateur` | Seul lecteur de `planning.mail.admin` ; vide = notifications administrateur désactivées |
+| `MailService` | Les mails qu'un administrateur **demande** (planning individuel, code d'accès, mail de test) — un échec **remonte** |
+| `service/notification/` | Les mails best-effort : le métier émet une `Notification` (interface scellée), `RedacteurNotifications` la rédige par `switch` exhaustif, `ExpediteurNotifications` l'observe et porte l'unique `catch` — voir ci-dessous |
+
+#### Deux politiques d'échec, séparées structurellement
+
+Un mail qui **accompagne** une opération déjà faite (une demande soumise, une
+décision prise, un solve terminé) ne doit jamais la faire échouer : un SMTP en
+panne ne peut pas annuler ce qui a eu lieu. Un mail qui **est** l'opération
+(le code d'accès sans lequel l'animateur ne peut pas entrer, le planning qu'on
+croit diffusé) doit au contraire échouer bruyamment pour que l'appelant dise
+qui n'a pas été joint.
+
+Ces deux politiques étaient auparavant portées par des méthodes de forme
+identique sur la même classe, la première réécrite à la main autour de chaque
+appel dans cinq services. Elles sont désormais dans deux endroits distincts —
+`MailService` pour la seconde, `service/notification/` pour la première, où le
+`catch` n'est écrit qu'une fois. Le métier n'envoie plus rien : il émet un
+fait.
+
 
 ### `api/`
 

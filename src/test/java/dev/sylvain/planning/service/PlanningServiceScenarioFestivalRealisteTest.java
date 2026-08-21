@@ -105,7 +105,7 @@ class PlanningServiceScenarioFestivalRealisteTest {
                 new FeasibilityAnalyzer(), ConfigProvider.getConfig());
 
         PlanningService.ReferenceScenario reference = planningService.chargerReferenceScenario(scenario);
-        ParametresDecoupage parametresDecoupage = planningService.chargerParametresDecoupageScenario(scenario)
+        ParametresDecoupage parametresDecoupage = planningService.chargerSectionsScenario(scenario).parametresDecoupage()
                 .orElseGet(ParametresDecoupage::new);
         List<Creneau> vacations = VacationGeneratorService.genererVacations(
                 List.copyOf(reference.creneauxParId().values()), parametresDecoupage);

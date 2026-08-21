@@ -336,7 +336,7 @@ public class ReferenceDataResource {
     @GET
     @Path("/reference-data/cible-scenario")
     public CibleImportView cibleScenario(@QueryParam("name") String name) {
-        return versCibleView(planningService.chargerEditionScenario(name));
+        return versCibleView(planningService.chargerSectionsScenario(name).edition());
     }
 
     @POST
@@ -356,23 +356,7 @@ public class ReferenceDataResource {
     @Path("/reference-data/import-scenario")
     @Consumes(MediaType.WILDCARD)
     public Response importScenario(@QueryParam("name") String name) {
-        return importerDansCible(planningService.chargerEditionScenario(name), () -> {
-            planningService.chargerParametresLegauxScenario(name)
-                    .ifPresent(referenceDataService::updateParametresLegaux);
-            planningService.chargerParametresDecoupageScenario(name)
-                    .ifPresent(referenceDataService::updateParametresDecoupage);
-            planningService.chargerParametresSolveurScenario(name)
-                    .ifPresent(referenceDataService::updateParametresSolveur);
-            PlanningFestival planning = planningService.construireExemple(name);
-            if (planningService.chargerDecoupageAutoScenario(name)) {
-                referenceDataService.appliquerDecoupageAutomatique(planning);
-                appliquerTypologiesScenario(name);
-                return true;
-            }
-            referenceDataService.importFromPlanning(planning);
-            appliquerTypologiesScenario(name);
-            return false;
-        });
+        return importer(planningService.chargerScenario(name));
     }
 
     /**
@@ -411,8 +395,8 @@ public class ReferenceDataResource {
      * explicit {@code {id, label}} pair from the scenario must be applied
      * afterwards to actually stick, not before.
      */
-    private void appliquerTypologiesScenario(String name) {
-        planningService.chargerTypologiesScenario(name).forEach(referenceDataService::createTypologie);
+    private void appliquerTypologies(PlanningService.SectionsScenario sections) {
+        sections.typologies().forEach(referenceDataService::createTypologie);
     }
 
     /**
@@ -429,25 +413,35 @@ public class ReferenceDataResource {
     @Consumes(MediaType.WILDCARD)
     public Response importScenarioFichier(String yamlContent) {
         try {
-            PlanningService.ScenarioImporte importe = planningService.construireDepuisTexteScenario(yamlContent);
-            return importerDansCible(importe.edition(), () -> {
-                importe.parametresLegaux().ifPresent(referenceDataService::updateParametresLegaux);
-                importe.parametresDecoupage().ifPresent(referenceDataService::updateParametresDecoupage);
-                importe.parametresSolveur().ifPresent(referenceDataService::updateParametresSolveur);
-                if (importe.decoupageAuto()) {
-                    referenceDataService.appliquerDecoupageAutomatique(importe.planning());
-                    importe.typologies().forEach(referenceDataService::createTypologie);
-                    return true;
-                }
-                referenceDataService.importFromPlanning(importe.planning());
-                importe.typologies().forEach(referenceDataService::createTypologie);
-                return false;
-            });
+            return importer(planningService.construireDepuisTexteScenario(yamlContent));
         } catch (IllegalArgumentException e) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(new ErreurValidation(e.getMessage()))
                     .build();
         }
+    }
+
+    /**
+     * The import itself, identical whether the scenario came bundled or was
+     * uploaded — the two endpoints now differ only in where the bytes were
+     * read from. It used to be written out twice, and the two copies had
+     * drifted: the bundled path re-read the file once per optional section.
+     */
+    private Response importer(PlanningService.ScenarioImporte importe) {
+        PlanningService.SectionsScenario sections = importe.sections();
+        return importerDansCible(sections.edition(), () -> {
+            sections.parametresLegaux().ifPresent(referenceDataService::updateParametresLegaux);
+            sections.parametresDecoupage().ifPresent(referenceDataService::updateParametresDecoupage);
+            sections.parametresSolveur().ifPresent(referenceDataService::updateParametresSolveur);
+            if (sections.decoupageAuto()) {
+                referenceDataService.appliquerDecoupageAutomatique(importe.planning());
+                appliquerTypologies(sections);
+                return true;
+            }
+            referenceDataService.importFromPlanning(importe.planning());
+            appliquerTypologies(sections);
+            return false;
+        });
     }
 
     /**

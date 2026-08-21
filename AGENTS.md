@@ -117,8 +117,19 @@ Single Quarkus service, no separate solver microservice. Package root:
   `ConstraintAnalysisStore`, `ReferenceDataService` / `ReferenceDataRepository`,
   `PlanningPersistenceService`, `DatabaseDumpService`,
   `PlanningExportService` (PDF/ICS, server-side only),
-  `DemandeEchangeService` / `EspaceAnimateurService` / `MailService` (foire au
-  planning, issue #165).
+  `DemandeEchangeService` / `EspaceAnimateurService` (foire au planning, issue
+  #165), `LiensApplication` (every public URL printed in a mail or a PDF).
+- **Mails follow two opposite failure policies, and the split is structural.**
+  `MailService` holds only what an admin explicitly asks for (an animateur's
+  planning, an espace access code, the Débogage test mail): the mail *is* the
+  operation, so a failure **propagates** and the caller reports who could not
+  be reached. Everything best-effort — échange notifications, end-of-solve —
+  goes through `service/notification/`: business code fires a `Notification`
+  (a sealed interface; `RedacteurNotifications` switches over it exhaustively,
+  so a new case does not compile until its wording exists), and
+  `ExpediteurNotifications` observes it and owns the single `catch`. Do not add
+  a `notifierXxx` to `MailService`: that would put two opposite policies behind
+  identically-shaped methods again, which is what this split removed.
 - `api/` — JAX-RS resources: `PlanningResource`, `SolverJobResource`,
   `ReferenceDataResource`, `EditionResource`, `ConstraintResource`,
   `DatabaseResource`, `PlanningExportResource`, `EspaceAnimateurResource`

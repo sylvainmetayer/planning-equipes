@@ -330,4 +330,25 @@ class PlanningExportServiceTest {
     private Set<String> typologies(String... typologies) {
         return new HashSet<>(List.of(typologies));
     }
+
+    /**
+     * La régression exacte que la centralisation des liens a introduite : un
+     * animateur qui n'a jamais ouvert son espace n'a pas de jeton, et c'est le
+     * cas courant sur un plan fraîchement importé. Poser {@code findFirst()}
+     * avant le filtre faisait alors lever une {@code NullPointerException} à
+     * l'export PDF de <b>tous</b> les animateurs.
+     */
+    @Test
+    void unAnimateurSansJetonNaPasDeLienEspaceMaisNeFaitPasEchouerLExport() {
+        service.liens = new LiensApplication(java.util.Optional.of("https://planning.example.org"));
+        PlanningFestival planning = new PlanningFestival();
+        Animateur sansJeton = new Animateur("SANS", "Sans", "Jeton", LocalDate.of(2000, 1, 1), false);
+        Animateur avecJeton = new Animateur("AVEC", "Avec", "Jeton", LocalDate.of(2000, 1, 1), false);
+        avecJeton.setJetonAcces("jeton-1");
+        planning.setAnimateurs(List.of(sansJeton, avecJeton));
+
+        assertThat(service.lienEspaceAnimateur(planning, "SANS")).isNull();
+        assertThat(service.lienEspaceAnimateur(planning, "AVEC"))
+                .isEqualTo("https://planning.example.org/animateur/jeton-1");
+    }
 }

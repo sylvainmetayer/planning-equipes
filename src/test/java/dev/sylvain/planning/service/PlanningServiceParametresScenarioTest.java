@@ -35,17 +35,17 @@ class PlanningServiceParametresScenarioTest {
     void scenarioSansSectionNeDefinitAucunParametre() {
         PlanningService service = service();
 
-        assertThat(service.chargerParametresLegauxScenario("scenario.yml")).isEmpty();
-        assertThat(service.chargerParametresDecoupageScenario("scenario.yml")).isEmpty();
-        assertThat(service.chargerParametresSolveurScenario("scenario.yml")).isEmpty();
-        assertThat(service.chargerDecoupageAutoScenario("scenario.yml")).isFalse();
+        assertThat(service.chargerSectionsScenario("scenario.yml").parametresLegaux()).isEmpty();
+        assertThat(service.chargerSectionsScenario("scenario.yml").parametresDecoupage()).isEmpty();
+        assertThat(service.chargerSectionsScenario("scenario.yml").parametresSolveur()).isEmpty();
+        assertThat(service.chargerSectionsScenario("scenario.yml").decoupageAuto()).isFalse();
     }
 
     @Test
     void scenarioAvecSectionPartielleNeSurchargeQueLesChampsNommes() {
         PlanningService service = service();
 
-        ParametresLegaux legaux = service.chargerParametresLegauxScenario("scenario-parametres-optionnels.yaml")
+        ParametresLegaux legaux = service.chargerSectionsScenario("scenario-parametres-optionnels.yaml").parametresLegaux()
                 .orElseThrow();
         assertThat(legaux.getReposQuotidienMinimalMinutes()).isEqualTo(500);
         // Champs non mentionnés dans le YAML : valeurs par défaut de la classe,
@@ -56,7 +56,7 @@ class PlanningServiceParametresScenarioTest {
                 .isEqualTo(ParametresLegaux.PAUSE_MINIMALE_ENTRE_VACATIONS_MINUTES_PAR_DEFAUT);
 
         ParametresDecoupage decoupage = service
-                .chargerParametresDecoupageScenario("scenario-parametres-optionnels.yaml").orElseThrow();
+                .chargerSectionsScenario("scenario-parametres-optionnels.yaml").parametresDecoupage().orElseThrow();
         assertThat(decoupage.getDureeVacationMinMinutes()).isEqualTo(250);
         assertThat(decoupage.getStrategieCouverturePendantPause())
                 .isEqualTo(ParametresDecoupage.StrategieCouverturePendantPause.RELEVE);
@@ -73,7 +73,7 @@ class PlanningServiceParametresScenarioTest {
         assertThat(decoupage.getNombreFamillesDecalage()).isEqualTo(3);
         assertThat(decoupage.getDureeDecalageMaxMinutes()).isEqualTo(75);
 
-        ParametresSolveur solveur = service.chargerParametresSolveurScenario("scenario-parametres-optionnels.yaml")
+        ParametresSolveur solveur = service.chargerSectionsScenario("scenario-parametres-optionnels.yaml").parametresSolveur()
                 .orElseThrow();
         assertThat(solveur.getDureeResolutionSecondes()).isEqualTo(400);
     }
@@ -94,7 +94,7 @@ class PlanningServiceParametresScenarioTest {
 
         // Les anciens champs groupeSourceNom/groupeCibleNom du fichier sont
         // acceptés et ignorés (issue #172) : seule la présence de la section compte.
-        assertThat(service.chargerDecoupageAutoScenario("scenario-decoupage-auto.yaml")).isTrue();
+        assertThat(service.chargerSectionsScenario("scenario-decoupage-auto.yaml").decoupageAuto()).isTrue();
     }
 
     /**
@@ -109,14 +109,14 @@ class PlanningServiceParametresScenarioTest {
         PlanningService service = service();
 
         for (String nom : new String[] { null, "", "   " }) {
-            assertThat(service.chargerParametresLegauxScenario(nom).isPresent())
-                    .isEqualTo(service.chargerParametresLegauxScenario(PlanningService.DEFAULT_SCENARIO).isPresent());
-            assertThat(service.chargerParametresDecoupageScenario(nom)).isNotNull();
-            assertThat(service.chargerParametresSolveurScenario(nom)).isNotNull();
-            assertThat(service.chargerDecoupageAutoScenario(nom)).isEqualTo(
-                    service.chargerDecoupageAutoScenario(PlanningService.DEFAULT_SCENARIO));
-            assertThat(service.chargerTypologiesScenario(nom))
-                    .isEqualTo(service.chargerTypologiesScenario(PlanningService.DEFAULT_SCENARIO));
+            assertThat(service.chargerSectionsScenario(nom).parametresLegaux().isPresent())
+                    .isEqualTo(service.chargerSectionsScenario(PlanningService.DEFAULT_SCENARIO).parametresLegaux().isPresent());
+            assertThat(service.chargerSectionsScenario(nom).parametresDecoupage()).isNotNull();
+            assertThat(service.chargerSectionsScenario(nom).parametresSolveur()).isNotNull();
+            assertThat(service.chargerSectionsScenario(nom).decoupageAuto()).isEqualTo(
+                    service.chargerSectionsScenario(PlanningService.DEFAULT_SCENARIO).decoupageAuto());
+            assertThat(service.chargerSectionsScenario(nom).typologies())
+                    .isEqualTo(service.chargerSectionsScenario(PlanningService.DEFAULT_SCENARIO).typologies());
         }
     }
 
@@ -124,7 +124,7 @@ class PlanningServiceParametresScenarioTest {
     void nomDeScenarioAvecComposantDeCheminEstRejete() {
         PlanningService service = service();
 
-        assertThatThrownBy(() -> service.chargerParametresLegauxScenario("../application.properties"))
+        assertThatThrownBy(() -> service.chargerSectionsScenario("../application.properties"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Nom de scénario invalide");
     }

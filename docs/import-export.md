@@ -268,6 +268,17 @@ requis, plages de valeurs) : ils ne remplacent pas le chargement réel par
 l'import) et seul à vérifier les références croisées (`standId`/`creneauId`
 d'un poste correspondant bien à un stand/créneau déclaré).
 
+> **Note pour qui touche au format.** Le fichier est lu **en une seule passe**,
+> par un unique point d'entrée qui rend le planning et toutes les sections
+> optionnelles ensemble (`PlanningService.chargerScenario` pour un scénario
+> livré, `construireDepuisTexteScenario` pour un fichier téléversé — les deux
+> ne diffèrent que par la provenance des octets et l'import qui suit est le
+> même code). Ajouter une section optionnelle = ajouter un champ à
+> `SectionsScenario` et une ligne à `sectionsDe`, pas une méthode publique de
+> plus : il y en avait une par section, chacune relisant et reparsant le
+> fichier entier, ce qui faisait sept parses complets pour un seul clic sur
+> « importer ».
+
 ## Exports de planning (PDF / ICS)
 
 Générés **côté serveur** — pas de génération dans le navigateur :
