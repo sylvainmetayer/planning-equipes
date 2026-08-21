@@ -17,6 +17,7 @@ import { PlanningFestival, TypeVerrouillage, VerrouillagePlanning } from '../../
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { StatusMessage } from '../../shared/status-message';
 import { WorkInProgressBanner } from '../../shared/work-in-progress-banner';
+import { errorMessage } from '../../core/error-message';
 
 /** Manually creatable types: ANIMATEUR_CRENEAU locks are only ever posed by an accepted échange (issue #165). */
 type TypeVerrouillageManuel = Exclude<TypeVerrouillage, 'ANIMATEUR_CRENEAU'>;
@@ -256,7 +257,7 @@ export class VerrouillagesPage {
   private report(error: unknown): void {
     this.notifications.notify({
       title: $localize`:@@crud.error:Erreur`,
-      message: error instanceof Error ? error.message : String(error),
+      message: errorMessage(error),
       variant: 'error'
     });
   }

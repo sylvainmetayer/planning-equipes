@@ -25,6 +25,7 @@ import { TableFilter } from '../../shared/table-filter';
 import { AnimateurBulkEditData, AnimateurBulkEditDialog } from './animateur-bulk-edit-dialog';
 import { buildAnimateurDetail } from './animateur-detail';
 import { AnimateurFormData, AnimateurFormDialog } from './animateur-form-dialog';
+import { errorMessage } from '../../core/error-message';
 
 /**
  * Animateurs CRUD. Minor/adult status is never stored: it is derived from the
@@ -152,7 +153,7 @@ export class AnimateursPage {
     } catch (error) {
       this.notifications.notify({
         title: $localize`:@@crud.error:Erreur`,
-        message: error instanceof Error ? error.message : String(error),
+        message: errorMessage(error),
         variant: 'error'
       });
     }

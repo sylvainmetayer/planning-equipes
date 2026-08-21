@@ -27,6 +27,7 @@ import { FeasibilityBanner } from '../../shared/feasibility-banner';
 import { InstantaneAvantAction } from '../../shared/instantane-avant-action';
 import { OutputPanel } from '../../shared/output-panel';
 import { StatusMessage } from '../../shared/status-message';
+import { errorMessage, errorPrefix } from '../../core/error-message';
 
 /**
  * The single settings page, split in two sections mirroring the data model:
@@ -152,7 +153,7 @@ export class ParametresPage {
         timeout: 4000
       });
     } catch (error) {
-      this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
+      this.output.set(errorPrefix(error));
     } finally {
       this.mailFinResolutionBusy.set(false);
     }
@@ -171,7 +172,7 @@ export class ParametresPage {
       }
     } catch (error) {
       this.output.set(
-        $localize`:@@dataSetup.scenarioListError:Erreur lors du chargement de la liste des scénarios : ${message(error)}:message:`
+        $localize`:@@dataSetup.scenarioListError:Erreur lors du chargement de la liste des scénarios : ${errorMessage(error)}:message:`
       );
     }
   }
@@ -243,7 +244,7 @@ export class ParametresPage {
       } catch (error) {
         this.notifications.notify({
           title: $localize`:@@dataSetup.snapshotBefore.failed:Instantané non enregistré`,
-          message: message(error),
+          message: errorMessage(error),
           variant: 'error'
         });
       }
@@ -287,7 +288,7 @@ export class ParametresPage {
       cible = await this.api.get<CibleImport>(
         `/api/reference-data/cible-scenario?name=${encodeURIComponent(name ?? '')}`);
     } catch (error) {
-      this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
+      this.output.set(errorPrefix(error));
       return;
     }
     if (!(await this.confirmerImportScenario(
@@ -314,7 +315,7 @@ export class ParametresPage {
       ));
       this.notifyDecoupageAuto(result);
     } catch (error) {
-      this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
+      this.output.set(errorPrefix(error));
     } finally {
       this.sampleLoading.set(false);
     }
@@ -329,7 +330,7 @@ export class ParametresPage {
       const result = await this.api.downloadGet('/api/planning/export-scenario', 'scenario.yaml', 'application/x-yaml');
       this.output.set(result);
     } catch (error) {
-      this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
+      this.output.set(errorPrefix(error));
     } finally {
       this.exporting.set(false);
     }
@@ -350,11 +351,11 @@ export class ParametresPage {
       cible = await this.api.postRaw<CibleImport>(
         '/api/reference-data/cible-scenario-fichier', contenu, 'application/x-yaml');
     } catch (error) {
-      const errorMessage = message(error);
-      this.output.set($localize`:@@common.errorPrefix:Erreur : ${errorMessage}:message:`);
+      const failure = errorMessage(error);
+      this.output.set($localize`:@@common.errorPrefix:Erreur : ${failure}:message:`);
       this.notifications.notify({
         title: $localize`:@@dataSetup.importScenarioFileInvalid:Fichier scénario invalide`,
-        message: errorMessage,
+        message: failure,
         variant: 'error'
       });
       return;
@@ -378,11 +379,11 @@ export class ParametresPage {
       ));
       this.notifyDecoupageAuto(result);
     } catch (error) {
-      const errorMessage = message(error);
-      this.output.set($localize`:@@common.errorPrefix:Erreur : ${errorMessage}:message:`);
+      const failure = errorMessage(error);
+      this.output.set($localize`:@@common.errorPrefix:Erreur : ${failure}:message:`);
       this.notifications.notify({
         title: $localize`:@@dataSetup.importScenarioFileInvalid:Fichier scénario invalide`,
-        message: errorMessage,
+        message: failure,
         variant: 'error'
       });
     } finally {
@@ -538,7 +539,7 @@ export class ParametresPage {
     try {
       this.output.set(await this.api.downloadGet('/api/database/export', 'planning-equipes.sql', 'application/sql'));
     } catch (error) {
-      this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
+      this.output.set(errorPrefix(error));
     } finally {
       this.transferBusy.set(false);
     }
@@ -574,7 +575,7 @@ export class ParametresPage {
       await this.refreshAfterImport();
       this.output.set(summary.message);
     } catch (error) {
-      this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
+      this.output.set(errorPrefix(error));
     } finally {
       this.transferBusy.set(false);
     }
@@ -654,6 +655,3 @@ function takeFile(event: Event): File | null {
   return file;
 }
 
-function message(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}

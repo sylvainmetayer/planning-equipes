@@ -7,6 +7,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ApiService } from '../../core/api.service';
 import { JourStaffing, StaffingSummary } from '../../core/models';
+import { errorPrefix } from '../../core/error-message';
 
 /**
  * Staffing-need calculator: how many animateurs the stands and créneaux
@@ -49,8 +50,7 @@ export class StaffingPage {
       this.summary.set(await this.api.get<StaffingSummary>('/api/staffing'));
       this.error.set('');
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      this.error.set($localize`:@@common.errorPrefix:Erreur : ${message}:message:`);
+      this.error.set(errorPrefix(error));
     } finally {
       this.loading.set(false);
     }

@@ -25,6 +25,7 @@ import { SolverSettingsService } from '../../core/solver-settings.service';
 import { FeasibilityBanner } from '../../shared/feasibility-banner';
 import { StatusMessage } from '../../shared/status-message';
 import { ViolationDetailsDialog } from '../../shared/violation-details-dialog';
+import { errorPrefix } from '../../core/error-message';
 
 /** Called lazily (never at module scope, see `app.ts`'s `buildNavGroups`). */
 function niveauLabel(niveau: NiveauContrainte): string {
@@ -161,7 +162,7 @@ export class ConstraintsPage {
       this.problemes.constraints.set(view);
     } catch (error) {
       this.view.set(null);
-      this.error.set($localize`:@@common.errorPrefix:Erreur : ${error instanceof Error ? error.message : String(error)}:message:`);
+      this.error.set(errorPrefix(error));
     } finally {
       this.loading.set(false);
     }
@@ -173,7 +174,7 @@ export class ConstraintsPage {
     try {
       await this.jobs.submitAnalyzeFromReferenceData(this.solverSettings.secondsLimit());
     } catch (error) {
-      this.error.set($localize`:@@common.errorPrefix:Erreur : ${error instanceof Error ? error.message : String(error)}:message:`);
+      this.error.set(errorPrefix(error));
     }
   }
 
@@ -185,7 +186,7 @@ export class ConstraintsPage {
       this.dureeHebdomadaireMaxHeures.set(parametres.dureeHebdomadaireMaxMinutes / 60);
       this.dureeHebdomadaireMaxMineurHeures.set(parametres.dureeHebdomadaireMaxMineurMinutes / 60);
     } catch (error) {
-      this.parametresError.set($localize`:@@common.errorPrefix:Erreur : ${error instanceof Error ? error.message : String(error)}:message:`);
+      this.parametresError.set(errorPrefix(error));
     } finally {
       this.parametresLoading.set(false);
     }
@@ -228,7 +229,7 @@ export class ConstraintsPage {
       this.dureeHebdomadaireMaxMineurHeures.set(parametres.dureeHebdomadaireMaxMineurMinutes / 60);
       this.parametresSaved.set(true);
     } catch (error) {
-      this.parametresError.set($localize`:@@common.errorPrefix:Erreur : ${error instanceof Error ? error.message : String(error)}:message:`);
+      this.parametresError.set(errorPrefix(error));
     } finally {
       this.parametresLoading.set(false);
     }
@@ -246,8 +247,7 @@ export class ConstraintsPage {
       await this.api.put<{ actif: boolean }>(`/api/constraints/${encodeURIComponent(constraint.name)}`, { actif });
     } catch (error) {
       this.setConstraintActif(constraint.name, !actif);
-      const message = error instanceof Error ? error.message : String(error);
-      this.error.set($localize`:@@common.errorPrefix:Erreur : ${message}:message:`);
+      this.error.set(errorPrefix(error));
     } finally {
       this.togglingConstraint.set(null);
     }

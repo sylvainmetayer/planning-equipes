@@ -10,6 +10,7 @@ import { intlLocale } from '../../core/locale';
 import { KpiHistoriqueEntry } from '../../core/models';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { StatusMessage } from '../../shared/status-message';
+import { errorMessage } from '../../core/error-message';
 
 /**
  * KPI history (issue #89): one row per completed solve, kept across editions
@@ -60,7 +61,7 @@ export class KpiPage {
     try {
       this.entries.set(await this.api.get<KpiHistoriqueEntry[]>('/api/kpi/historique'));
     } catch (error) {
-      this.error.set(error instanceof Error ? error.message : String(error));
+      this.error.set(errorMessage(error));
     } finally {
       this.chargement.set(false);
     }
@@ -79,7 +80,7 @@ export class KpiPage {
       await this.api.delete(`/api/kpi/historique/${entry.id}`);
       await this.recharger();
     } catch (error) {
-      this.error.set(error instanceof Error ? error.message : String(error));
+      this.error.set(errorMessage(error));
     }
   }
 

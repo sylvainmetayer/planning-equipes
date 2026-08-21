@@ -26,6 +26,7 @@ import {
   toMonthKey,
   uniqueById
 } from '../../core/date-utils';
+import { errorPrefix } from '../../core/error-message';
 
 interface AssignedEntry {
   poste: PosteAffectation;
@@ -320,8 +321,7 @@ export class CalendarMonthPage {
       this.loaded.set(true);
     } catch (error) {
       this.planning.set(null);
-      const message = error instanceof Error ? error.message : String(error);
-      this.error.set($localize`:@@common.errorPrefix:Erreur : ${message}:message:`);
+      this.error.set(errorPrefix(error));
     } finally {
       this.loading.set(false);
     }

@@ -25,6 +25,7 @@ import {
   Stand,
   SwapSimulation
 } from '../core/models';
+import { errorPrefix } from '../core/error-message';
 
 export interface AffectationExplanationDialogData {
   poste: PosteAffectation;
@@ -224,7 +225,7 @@ export class AffectationExplanationDialog {
       const explication = await this.explanationService.explique(this.data.planning, this.data.poste.id);
       this.explanation.set(explication);
     } catch (error) {
-      this.error.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
+      this.error.set(errorPrefix(error));
     } finally {
       this.loading.set(false);
     }
@@ -241,7 +242,7 @@ export class AffectationExplanationDialog {
       const simulation = await this.explanationService.simulerSwap(this.data.planning, this.data.poste.id, animateurId);
       this.simulation.set(simulation);
     } catch (error) {
-      this.simulationError.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
+      this.simulationError.set(errorPrefix(error));
     } finally {
       this.simulationLoading.set(false);
     }
@@ -266,9 +267,6 @@ function compareDelta(delta: HardMediumSoftScore): 'better' | 'worse' | 'same' {
   return 'same';
 }
 
-function message(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
 
 /** True when the animateur holds an appreciation on at least one typologie this stand offers. */
 export function aUneAppreciationPour(animateur: Animateur, stand: Stand): boolean {

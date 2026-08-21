@@ -18,6 +18,7 @@ import {
   retirerBrouillon,
   versNouvellesDemandes
 } from './echange-brouillon';
+import { errorMessage } from '../../core/error-message';
 
 interface DemandeRow extends DemandeEchangeView {
   statutLabel: string;
@@ -101,7 +102,7 @@ export class EspaceEchangesPage {
     } catch (error) {
       this.notifications.notify({
         title: $localize`:@@crud.error:Erreur`,
-        message: error instanceof Error ? error.message : String(error),
+        message: errorMessage(error),
         variant: 'error'
       });
     }
@@ -118,7 +119,7 @@ export class EspaceEchangesPage {
     } catch (error) {
       this.notifications.notify({
         title: $localize`:@@crud.error:Erreur`,
-        message: error instanceof Error ? error.message : String(error),
+        message: errorMessage(error),
         variant: 'error'
       });
     }
@@ -199,7 +200,7 @@ export class EspaceEchangesPage {
     } catch (error) {
       this.notifications.notify({
         title: $localize`:@@crud.error:Erreur`,
-        message: error instanceof Error ? error.message : String(error),
+        message: errorMessage(error),
         variant: 'error'
       });
     } finally {
@@ -218,7 +219,7 @@ export class EspaceEchangesPage {
     } catch (error) {
       this.notifications.notify({
         title: $localize`:@@crud.error:Erreur`,
-        message: error instanceof Error ? error.message : String(error),
+        message: errorMessage(error),
         variant: 'error'
       });
     }

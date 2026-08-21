@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { NotificationService } from '../core/notification.service';
 import { PlanSnapshotStore } from '../core/plan-snapshot.store';
 import { ConfirmService } from './confirm-dialog';
+import { errorMessage } from '../core/error-message';
 
 /**
  * Offers to save the current plan before an action that destroys it.
@@ -35,7 +36,7 @@ export class InstantaneAvantAction {
     } catch (error) {
       this.notifications.notify({
         title: $localize`:@@dataSetup.snapshotBefore.failed:Instantané non enregistré`,
-        message: error instanceof Error ? error.message : String(error),
+        message: errorMessage(error),
         variant: 'error'
       });
     }

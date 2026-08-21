@@ -38,6 +38,7 @@ import { OutputPanel } from '../../shared/output-panel';
 import { ProblemSummaryBanner } from '../../shared/problem-summary-banner';
 import { StatusMessage } from '../../shared/status-message';
 import { ReplanificationDialog } from './replanification-dialog';
+import { errorPrefix } from '../../core/error-message';
 
 /**
  * A constraint's raw score string looks like `-14hard/0medium/0soft`
@@ -316,7 +317,7 @@ export class SolverPage {
       const seconds = this.solverSettings.secondsLimit();
       this.applySolverDurationSeconds(seconds, bestUnitFor(seconds));
     } catch (error) {
-      this.solverDurationError.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
+      this.solverDurationError.set(errorPrefix(error));
     } finally {
       this.solverDurationLoading.set(false);
     }
@@ -345,7 +346,7 @@ export class SolverPage {
         variant: 'success'
       });
     } catch (error) {
-      this.solverDurationError.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
+      this.solverDurationError.set(errorPrefix(error));
     } finally {
       this.solverDurationSaving.set(false);
     }
@@ -425,7 +426,7 @@ export class SolverPage {
           : $localize`:@@solver.incremental.submitted:Replanification incrémentale en cours : le planning enregistré sert de point de départ, seuls les postes rouverts sont recalculés.`
       );
     } catch (error) {
-      this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
+      this.output.set(errorPrefix(error));
     }
   }
 
@@ -493,7 +494,7 @@ export class SolverPage {
           : $localize`:@@solver.submitted:Résolution avec Timefold sur le serveur, puis analyse automatique du résultat. Vous pouvez continuer à naviguer ; une notification apparaîtra à chaque étape, ici et dans tout autre navigateur observant ce serveur.`
       );
     } catch (error) {
-      this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
+      this.output.set(errorPrefix(error));
     }
   }
 
@@ -506,7 +507,7 @@ export class SolverPage {
     try {
       await this.jobs.retirerDeLaFile(job.id);
     } catch (error) {
-      this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
+      this.output.set(errorPrefix(error));
     }
   }
 
@@ -524,7 +525,7 @@ export class SolverPage {
         await this.api.downloadGet('/api/planning/export/pdf/global', 'planning-global.pdf', 'application/pdf')
       );
     } catch (error) {
-      this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
+      this.output.set(errorPrefix(error));
     } finally {
       this.exportBusy.set(false);
     }
@@ -553,7 +554,7 @@ export class SolverPage {
     try {
       await this.jobs.cancel(job.id);
     } catch (error) {
-      this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
+      this.output.set(errorPrefix(error));
     } finally {
       this.arretEnCours.set(false);
     }
@@ -584,7 +585,7 @@ export class SolverPage {
       const resume = resumeEnvoi(compteRendu);
       this.output.set(resume.details ? `${resume.titre} — ${resume.details}` : resume.titre);
     } catch (error) {
-      this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
+      this.output.set(errorPrefix(error));
     } finally {
       this.envoiBusy.set(false);
     }
@@ -599,7 +600,7 @@ export class SolverPage {
         await this.api.downloadPost('/api/planning/export/bundle/all', 'planning.zip', planning, 'application/zip')
       );
     } catch (error) {
-      this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
+      this.output.set(errorPrefix(error));
     } finally {
       this.exportBusy.set(false);
     }
@@ -635,6 +636,3 @@ export class SolverPage {
   }
 }
 
-function message(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}

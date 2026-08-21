@@ -14,6 +14,7 @@ import { ActivatedRoute, RouterLink, RouterLinkActive, RouterOutlet } from '@ang
 import { map } from 'rxjs';
 import { EspaceAnimateurService } from '../../core/espace-animateur.service';
 import { AppLocale, getStoredLocale, setStoredLocaleAndReload } from '../../core/locale';
+import { errorMessage } from '../../core/error-message';
 
 /**
  * Standalone layout of the espace animateur (issue #165): a minimal toolbar
@@ -78,7 +79,7 @@ export class EspaceAnimateurShell {
       this.codeEnvoyeA.set(await this.espace.demanderCode());
       this.codeSaisi.set('');
     } catch (error) {
-      this.erreurAuth.set(error instanceof Error ? error.message : String(error));
+      this.erreurAuth.set(errorMessage(error));
     } finally {
       this.authEnCours.set(false);
     }
@@ -95,7 +96,7 @@ export class EspaceAnimateurShell {
       // flips back and the espace renders in place of this screen.
       await this.espace.validerCode(this.codeSaisi().trim());
     } catch (error) {
-      this.erreurAuth.set(error instanceof Error ? error.message : String(error));
+      this.erreurAuth.set(errorMessage(error));
     } finally {
       this.authEnCours.set(false);
     }

@@ -13,6 +13,7 @@ import { NotificationService } from '../../core/notification.service';
 import { formatDeltaScore } from '../../core/score-format';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { PromptDialog } from '../../shared/prompt-dialog';
+import { errorMessage } from '../../core/error-message';
 
 interface DemandeRow extends DemandeEchangeView {
   statutLabel: string;
@@ -176,7 +177,7 @@ export class EchangesPage {
   private report(error: unknown): void {
     this.notifications.notify({
       title: $localize`:@@crud.error:Erreur`,
-      message: error instanceof Error ? error.message : String(error),
+      message: errorMessage(error),
       variant: 'error'
     });
   }

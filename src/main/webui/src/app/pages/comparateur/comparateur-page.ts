@@ -12,6 +12,7 @@ import { intlLocale } from '../../core/locale';
 import { ComparaisonSnapshots, CoteComparaison, PlanSnapshot } from '../../core/models';
 import { StatusMessage } from '../../shared/status-message';
 import { LigneMetrique, construireLignesMetriques } from './comparateur-metrics';
+import { errorMessage } from '../../core/error-message';
 
 /** Value designating the currently persisted plan instead of a snapshot id. */
 const COURANT = 'courant';
@@ -96,7 +97,7 @@ export class ComparateurPage {
         this.varianteId.set(String(instantanes[0].id));
       }
     } catch (error) {
-      this.error.set(message(error));
+      this.error.set(errorMessage(error));
     } finally {
       this.chargement.set(false);
     }
@@ -113,7 +114,7 @@ export class ComparateurPage {
       const params = new URLSearchParams({ base: this.baseId(), variante: this.varianteId() });
       this.comparaison.set(await this.api.get<ComparaisonSnapshots>(`/api/planning/snapshots/compare?${params}`));
     } catch (error) {
-      this.error.set(message(error));
+      this.error.set(errorMessage(error));
     } finally {
       this.chargement.set(false);
     }
@@ -155,6 +156,3 @@ function arrondi(valeur: number): string {
   return Number.isInteger(valeur) ? String(valeur) : valeur.toFixed(1);
 }
 
-function message(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}

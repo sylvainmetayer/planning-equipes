@@ -16,6 +16,7 @@ import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { StatusMessage } from '../../shared/status-message';
 import { PromptDialog } from '../../shared/prompt-dialog';
+import { errorPrefix } from '../../core/error-message';
 
 /**
  * Saved plans (issue #138). Until they existed, a single plan was persisted per
@@ -208,6 +209,6 @@ export class SnapshotsPage {
     if (error instanceof ReferencesManquantesError) {
       return $localize`:@@snapshots.error.references:${error.message}:message: Références manquantes : ${error.references.join(', ')}:references:`;
     }
-    return $localize`:@@common.errorPrefix:Erreur : ${error instanceof Error ? error.message : String(error)}:message:`;
+    return errorPrefix(error);
   }
 }

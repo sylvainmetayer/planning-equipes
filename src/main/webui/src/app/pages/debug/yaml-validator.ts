@@ -4,6 +4,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ApiService } from '../../core/api.service';
+import { errorPrefix } from '../../core/error-message';
 
 /** Body of `POST /api/reference-data/valider-scenario-fichier` — see docs/api.md. */
 interface ScenarioValidationResult {
@@ -61,7 +62,7 @@ export class YamlValidator {
           : $localize`:@@yamlValidator.invalid:${file.name}:fileName: contient ${result.erreurs.length}:count: erreur(s) :`
       );
     } catch (err) {
-      this.error.set($localize`:@@common.errorPrefix:Erreur : ${message(err)}:message:`);
+      this.error.set(errorPrefix(err));
     } finally {
       this.validating.set(false);
     }
@@ -76,6 +77,3 @@ function takeFile(event: Event): File | null {
   return file;
 }
 
-function message(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}

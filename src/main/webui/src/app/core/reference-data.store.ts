@@ -4,6 +4,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { ApiService } from './api.service';
 import { Animateur, ContrainteAdHoc, Creneau, Emplacement, Stand, TypologieItem, Volumetrie } from './models';
+import { errorMessage } from './error-message';
 
 /**
  * Outcome of a bulk delete/save: the entities the server accepted, and one
@@ -95,7 +96,7 @@ export class ReferenceDataStore {
         await action(id);
         result.succes.push(id);
       } catch (error) {
-        result.echecs.push({ id, message: error instanceof Error ? error.message : String(error) });
+        result.echecs.push({ id, message: errorMessage(error) });
       }
     }
     await this.reload();

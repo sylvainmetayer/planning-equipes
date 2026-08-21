@@ -15,6 +15,7 @@ import { slugify } from '../../core/slug';
 import { Edition } from '../../core/models';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { PromptDialog } from '../../shared/prompt-dialog';
+import { errorMessage } from '../../core/error-message';
 
 /**
  * Manages the editions the whole referential is partitioned into: create an
@@ -134,7 +135,7 @@ export class EditionsPage {
       await this.store.reload();
     } catch (error) {
       this.notifications.notify({
-        title: error instanceof Error ? error.message : String(error),
+        title: errorMessage(error),
         variant: 'error'
       });
     } finally {
@@ -147,7 +148,7 @@ export class EditionsPage {
       await this.store.reload();
     } catch (error) {
       this.notifications.notify({
-        title: error instanceof Error ? error.message : String(error),
+        title: errorMessage(error),
         variant: 'error'
       });
     }

@@ -7,6 +7,7 @@ import { NotificationService } from './notification.service';
 import { PlanningResolutionStore } from './planning-resolution.store';
 import { BulkResult, ReferenceDataStore } from './reference-data.store';
 import { ConfirmService } from '../shared/confirm-dialog';
+import { errorMessage } from './error-message';
 
 /** Failures detailed in the snack bar before it degrades to a plain count. */
 const MAX_ECHECS_DETAILLES = 3;
@@ -215,7 +216,7 @@ export class ReferenceCrudService {
     }
     this.notifications.notify({
       title: $localize`:@@crud.error:Erreur`,
-      message: error instanceof Error ? error.message : String(error),
+      message: errorMessage(error),
       variant: 'error'
     });
   }

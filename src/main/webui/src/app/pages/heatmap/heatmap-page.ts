@@ -12,6 +12,7 @@ import { ApiService } from '../../core/api.service';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { PlanningFestival, PosteAffectation, TypologieItem } from '../../core/models';
 import { standTypologies, typologieColorClass, typologieLabel, typologieLabels } from '../../core/typologie-colors';
+import { errorPrefix } from '../../core/error-message';
 
 export type HeatmapView = 'stand' | 'animateur';
 
@@ -180,8 +181,7 @@ export class HeatmapPage {
       this.typologies.set(typologies);
     } catch (error) {
       this.planning.set(null);
-      const message = error instanceof Error ? error.message : String(error);
-      this.error.set($localize`:@@common.errorPrefix:Erreur : ${message}:message:`);
+      this.error.set(errorPrefix(error));
     } finally {
       this.loading.set(false);
     }

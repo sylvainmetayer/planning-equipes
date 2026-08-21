@@ -16,6 +16,7 @@ import { FeasibilityBanner } from '../../shared/feasibility-banner';
 import { SelectionRecherche } from '../../shared/selection-recherche';
 import { StatusMessage } from '../../shared/status-message';
 import { WorkInProgressBanner } from '../../shared/work-in-progress-banner';
+import { errorPrefix } from '../../core/error-message';
 
 /**
  * "What if?" screen (issue #73): recruit three more, three cancel, close the
@@ -192,6 +193,6 @@ export class WhatIfPage {
   }
 
   private messageErreur(error: unknown): string {
-    return $localize`:@@common.errorPrefix:Erreur : ${error instanceof Error ? error.message : String(error)}:message:`;
+    return errorPrefix(error);
   }
 }

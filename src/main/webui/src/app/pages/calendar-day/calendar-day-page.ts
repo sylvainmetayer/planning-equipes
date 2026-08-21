@@ -12,6 +12,7 @@ import { PlanningStateService } from '../../core/planning-state.service';
 import { VerrouillageStore } from '../../core/verrouillage.store';
 import { Creneau, PersistenceStatus, PlanningFestival, PosteAffectation, Stand } from '../../core/models';
 import { aUneAppreciationPour, ouvrirExplication } from '../../shared/affectation-explanation-dialog';
+import { errorPrefix } from '../../core/error-message';
 
 interface AssignedEntry {
   poste: PosteAffectation;
@@ -158,8 +159,7 @@ export class CalendarDayPage {
       this.planning.set(await this.planningState.loadForDisplay());
     } catch (error) {
       this.planning.set(null);
-      const message = error instanceof Error ? error.message : String(error);
-      this.error.set($localize`:@@common.errorPrefix:Erreur : ${message}:message:`);
+      this.error.set(errorPrefix(error));
     } finally {
       this.loading.set(false);
     }

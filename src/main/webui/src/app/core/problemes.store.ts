@@ -15,6 +15,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { ApiService } from './api.service';
 import { CauseInfaisabilite, ConstraintsView, FeasibilityReport } from './models';
 import { compterProblemes, construireProblemes } from './problemes';
+import { errorMessage } from './error-message';
 
 @Injectable({ providedIn: 'root' })
 export class ProblemesStore {
@@ -115,7 +116,7 @@ export class ProblemesStore {
       this.error.set('');
     } catch (error) {
       this.report.set(null);
-      this.error.set(error instanceof Error ? error.message : String(error));
+      this.error.set(errorMessage(error));
     } finally {
       this.loading.set(false);
     }

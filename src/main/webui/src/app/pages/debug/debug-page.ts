@@ -18,6 +18,7 @@ import { OutputPanel } from '../../shared/output-panel';
 import { APP_VERSION, REPO_URL } from '../../version';
 import { StatusMessage } from '../../shared/status-message';
 import { YamlValidator } from './yaml-validator';
+import { errorMessage, errorPrefix } from '../../core/error-message';
 
 /**
  * Raw dump of the last solve/analyze diagnostic (`GET /api/constraints`):
@@ -78,7 +79,7 @@ export class DebugPage {
       this.output.set(JSON.stringify(view, null, 2));
     } catch (error) {
       this.output.set('');
-      this.error.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
+      this.error.set(errorPrefix(error));
     } finally {
       this.loading.set(false);
     }
@@ -126,7 +127,7 @@ export class DebugPage {
     } catch (error) {
       this.notifications.notify({
         title: $localize`:@@debug.resetFailed:Base de données non vidée`,
-        message: message(error),
+        message: errorMessage(error),
         variant: 'error'
       });
     } finally {
@@ -184,7 +185,7 @@ export class DebugPage {
     } catch (error) {
       this.notifications.notify({
         title: $localize`:@@debug.mailTest.echec:Échec de l'envoi du mail de test`,
-        message: message(error),
+        message: errorMessage(error),
         variant: 'error'
       });
     } finally {
@@ -206,6 +207,3 @@ export class DebugPage {
   }
 }
 
-function message(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}

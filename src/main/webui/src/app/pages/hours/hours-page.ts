@@ -15,6 +15,7 @@ import {
 } from '../../core/models';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { OutputPanel } from '../../shared/output-panel';
+import { errorPrefix } from '../../core/error-message';
 
 /**
  * Hours screen: hours planned per animateur, broken down by ISO calendar
@@ -119,7 +120,7 @@ export class HoursPage {
       this.rapport.set(await this.api.post<HeuresRapport>('/api/planning/hours', planning));
     } catch (error) {
       this.rapport.set(null);
-      this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
+      this.output.set(errorPrefix(error));
     } finally {
       this.busy.set(false);
     }
@@ -134,16 +135,13 @@ export class HoursPage {
         await this.api.downloadPost('/api/planning/hours/export', 'heures-planning.csv', planning, 'text/csv')
       );
     } catch (error) {
-      this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
+      this.output.set(errorPrefix(error));
     } finally {
       this.exportBusy.set(false);
     }
   }
 }
 
-function message(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
 
 function compareByColumn(a: HeuresAnimateur, b: HeuresAnimateur, column: string): number {
   if (column === 'animateur') {

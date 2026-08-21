@@ -14,6 +14,7 @@ import { PlanningStateService } from '../../core/planning-state.service';
 import { Animateur, CompteRenduEnvoi, PlanningFestival, PosteAffectation, TypologieItem } from '../../core/models';
 import { standTypologies, typologieColorClass, typologieLabel, typologieLabels, typologiePrincipale } from '../../core/typologie-colors';
 import { SelectionRecherche } from '../../shared/selection-recherche';
+import { errorMessage, errorPrefix } from '../../core/error-message';
 
 export interface AnimateurOption {
   id: string;
@@ -177,8 +178,7 @@ export class AnimateurTimelinePage {
       }
     } catch (error) {
       this.planning.set(null);
-      const message = error instanceof Error ? error.message : String(error);
-      this.error.set($localize`:@@common.errorPrefix:Erreur : ${message}:message:`);
+      this.error.set(errorPrefix(error));
     } finally {
       this.loading.set(false);
     }
@@ -227,7 +227,7 @@ export class AnimateurTimelinePage {
         variant: 'success'
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
+      const message = errorMessage(error);
       this.notifications.notify({
         title: $localize`:@@timeline.exportFailed:Export impossible`,
         message,
@@ -263,7 +263,7 @@ export class AnimateurTimelinePage {
         variant: 'success'
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
+      const message = errorMessage(error);
       this.notifications.notify({
         title: $localize`:@@timeline.envoi.echec:Envoi impossible`,
         message,
