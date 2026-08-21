@@ -120,7 +120,8 @@ Single Quarkus service, no separate solver microservice. Package root:
   (`StandRepository`, `AnimateurRepository`, …, plus
   `ImportReferentielRepository` for the one write that spans all of them),
   `PlanningPersistenceService`, `DatabaseDumpService`,
-  `PlanningExportService` (PDF/ICS, server-side only),
+  `PlanningExportService` (facade over `PlanningPdfAnimateur`,
+  `PlanningPdfGlobal` and `PlanningIcs`, sharing `ChartePdf` — server-side only),
   `DemandeEchangeService` / `EspaceAnimateurService` (foire au planning, issue
   #165), `LiensApplication` (every public URL printed in a mail or a PDF).
 - **Mails follow two opposite failure policies, and the split is structural.**

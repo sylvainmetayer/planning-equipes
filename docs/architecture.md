@@ -94,7 +94,10 @@ dans [`domaine.md`](domaine.md).
 | `SnapshotComparaisonService` | Comparateur A/B : confronte deux plans (instantanés ou plan courant), **toutes éditions confondues**, en lecture seule — aucune résolution, aucun score recalculé — issue #70 |
 | `EnvoiPlanningService` | Envoi des plannings individuels par mail : qui est concerné, le PDF, le compte rendu. Action d'administration explicite, donc un compte rendu nominatif — à l'opposé des notifications d'échange, best-effort par nature |
 | `DatabaseDumpService` | Export / import de dump SQL |
-| `PlanningExportService` | Génération PDF (OpenPDF) et ICS, **côté serveur uniquement** |
+| `PlanningExportService` | Façade des exports d'un planning, **côté serveur uniquement** : qui est concerné, comment on le nomme, ses jours de repos, le lien de son espace, et les ZIP qui distribuent le tout |
+| `PlanningPdfAnimateur` / `PlanningPdfGlobal` / `PlanningIcs` | Un document chacun : le PDF en cartes qu'on lit sur un téléphone, le récapitulatif paysage de l'organisateur, le calendrier iCalendar |
+| `ChartePdf` | L'identité visuelle des PDF (palette, fontes, logo, icônes, coins arrondis). Séparée parce qu'elle change quand la charte change, jamais quand la façon de planifier change |
+| `StatistiquesPostes` | Ce qu'un ensemble de sièges représente — jours, stands, créneaux, heures — et la tuile qui l'affiche. Partagée par les deux PDF, pour que « 3 JOURS » veuille dire la même chose sur les deux |
 | `LiensApplication` | Toute URL publique imprimée hors de l'application (mail, PDF) : seul endroit qui connaît `planning.public-url` et les routes du SPA visées — voir [`developpement.md`](developpement.md#conventions-de-code) |
 | `AdresseAdministrateur` | Seul lecteur de `planning.mail.admin` ; vide = notifications administrateur désactivées |
 | `MailService` | Les mails qu'un administrateur **demande** (planning individuel, code d'accès, mail de test) — un échec **remonte** |

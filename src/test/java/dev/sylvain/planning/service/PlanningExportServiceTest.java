@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -34,7 +35,8 @@ import dev.sylvain.planning.domain.Stand;
  */
 class PlanningExportServiceTest {
 
-    private final PlanningExportService service = new PlanningExportService();
+    private final PlanningExportService service = new PlanningExportService(new LiensApplication(Optional.empty()),
+            new PlanningPdfAnimateur(), new PlanningPdfGlobal(), new PlanningIcs());
     private final AtomicInteger posteSequence = new AtomicInteger();
 
     @Test
@@ -327,6 +329,12 @@ class PlanningExportServiceTest {
         return animateur;
     }
 
+    /** Le même service, mais avec une URL publique configurée : les liens d'espace deviennent imprimables. */
+    private static PlanningExportService exportsAvecLiens(String baseUrl) {
+        return new PlanningExportService(new LiensApplication(Optional.of(baseUrl)),
+                new PlanningPdfAnimateur(), new PlanningPdfGlobal(), new PlanningIcs());
+    }
+
     private Set<String> typologies(String... typologies) {
         return new HashSet<>(List.of(typologies));
     }
@@ -340,7 +348,7 @@ class PlanningExportServiceTest {
      */
     @Test
     void unAnimateurSansJetonNaPasDeLienEspaceMaisNeFaitPasEchouerLExport() {
-        service.liens = new LiensApplication(java.util.Optional.of("https://planning.example.org"));
+        PlanningExportService service = exportsAvecLiens("https://planning.example.org");
         PlanningFestival planning = new PlanningFestival();
         Animateur sansJeton = new Animateur("SANS", "Sans", "Jeton", LocalDate.of(2000, 1, 1), false);
         Animateur avecJeton = new Animateur("AVEC", "Avec", "Jeton", LocalDate.of(2000, 1, 1), false);
