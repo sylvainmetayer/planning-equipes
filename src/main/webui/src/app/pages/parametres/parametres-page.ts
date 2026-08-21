@@ -21,6 +21,7 @@ import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';
+import { ScenarioImportService } from '../../core/scenario-import.service';
 import { PlanSnapshotStore } from '../../core/plan-snapshot.store';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { FeasibilityBanner } from '../../shared/feasibility-banner';
@@ -101,6 +102,7 @@ export class ParametresPage {
   protected readonly store = inject(ReferenceDataStore);
 
   private readonly api = inject(ApiService);
+  private readonly scenarioImport = inject(ScenarioImportService);
   private readonly crud = inject(ReferenceCrudService);
   private readonly planningState = inject(PlanningStateService);
   private readonly referenceData = inject(ReferenceDataStore);
@@ -181,120 +183,11 @@ export class ParametresPage {
     this.selectedScenario.set(name);
   }
 
-  /**
-   * The gate of both scenario-import buttons: names the edition the import
-   * will write into (a scenario import only ever touches the current one —
-   * the operator confirms the target, not just the action), then what it
-   * will replace or erase — counted server-side — and, once confirmed, saves
-   * an automatic snapshot of the resolved plan (when there is one) so the
-   * operation stays reversible on the planning side. `false` aborts.
-   */
-  private async confirmerImportScenario(intitule: string, cible: CibleImport): Promise<boolean> {
-    const courante = this.editions.courant()?.nom ?? '';
-    const lignes: string[] = [];
-    // Which edition the impact must be counted on, and whether the automatic
-    // snapshot makes sense (it protects the CURRENT edition's plan only).
-    let editionImpact: string | null = null;
-    let importDansEditionCourante = true;
-    let compterImpact = true;
-    if (!cible.editionId) {
-      lignes.push($localize`:@@parametres.impact.edition:L'import écrit dans l'édition « ${courante}:edition: », et elle seule.`);
-    } else if (!cible.existe) {
-      const nom = cible.editionNomFichier ?? cible.editionId;
-      lignes.push($localize`:@@parametres.cible.creation:Ce fichier désigne l'édition « ${nom}:cible: » : elle sera CRÉÉE et recevra l'import — votre édition actuelle « ${courante}:courante: » ne sera pas modifiée.`);
-      importDansEditionCourante = false;
-      compterImpact = false;
-    } else if (cible.editionId === this.editions.courant()?.id) {
-      lignes.push($localize`:@@parametres.cible.courante:Ce fichier désigne l'édition « ${courante}:edition: » — votre édition actuelle : l'import y écrit, et dans elle seule.`);
-    } else {
-      const nom = cible.editionNomExistant ?? cible.editionId;
-      lignes.push($localize`:@@parametres.cible.existante:Ce fichier désigne l'édition existante « ${nom}:cible: » : l'import remplacera SES données — votre édition actuelle « ${courante}:courante: » ne sera pas modifiée.`);
-      editionImpact = cible.editionId;
-      importDansEditionCourante = false;
-    }
-    let impact: ImpactImport | null = null;
-    if (compterImpact) {
-      try {
-        impact = editionImpact
-          ? await this.api.getDansEdition<ImpactImport>('/api/reference-data/impact-import', editionImpact)
-          : await this.api.get<ImpactImport>('/api/reference-data/impact-import');
-      } catch {
-        // Counting is comfort, not safety: without it the dialog still warns.
-      }
-    }
-    lignes.push(messageImpactImport(impact, intitule, importDansEditionCourante));
-    const confirme = await this.confirm.ask({
-      title: $localize`:@@dataSetup.impact.titre:Importer et remplacer les données ?`,
-      message: lignes.join(' '),
-      confirmLabel: $localize`:@@dataTransfer.importAction:Importer`,
-      danger: true
-    });
-    if (!confirme) {
-      return false;
-    }
-    if (impact?.planningResolu && importDansEditionCourante) {
-      try {
-        await this.snapshots.capturer(
-          $localize`:@@dataSetup.snapshotBefore.libelle:Avant ${intitule}:action:`
-        );
-        this.notifications.notify({
-          title: $localize`:@@dataSetup.impact.instantane:Instantané du plan enregistré avant l'import.`,
-          variant: 'info'
-        });
-      } catch (error) {
-        this.notifications.notify({
-          title: $localize`:@@dataSetup.snapshotBefore.failed:Instantané non enregistré`,
-          message: errorMessage(error),
-          variant: 'error'
-        });
-      }
-    }
-    return true;
-  }
-
-  /**
-   * After an import routed by the file's `edition:` section into ANOTHER
-   * edition than the one this browser shows: an unmissable dialog says what
-   * happened and offers to switch right away — a passing notification proved
-   * too easy to miss, leaving the operator staring at an unchanged screen.
-   */
-  private async proposerBascule(result: ImportScenarioResult | null): Promise<void> {
-    if (!result?.editionId || result.editionId === this.editions.courant()?.id) {
-      return;
-    }
-    const nom = result.editionNom ?? result.editionId;
-    const courante = this.editions.courant()?.nom ?? '';
-    const destination = result.editionCreee
-      ? $localize`:@@parametres.recap.editionCreee:Édition « ${nom}:edition: » créée : les données du scénario y ont été importées.`
-      : $localize`:@@parametres.recap.editionExistante:Données du scénario importées dans l'édition existante « ${nom}:edition: ».`;
-    const basculer = await this.confirm.ask({
-      title: $localize`:@@parametres.recap.titre:Import dans une édition désignée par le fichier`,
-      message: destination + ' ' + $localize`:@@parametres.recap.question:Voulez-vous basculer dessus maintenant ? (La page se recharge.)`,
-      confirmLabel: $localize`:@@parametres.recap.oui:Basculer sur « ${nom}:edition: »`,
-      cancelLabel: $localize`:@@parametres.recap.non:Rester sur « ${courante}:courante: »`
-    });
-    if (basculer) {
-      this.editions.basculer({ id: result.editionId } as Edition);
-    }
-  }
-
   protected async onLoadSample(): Promise<void> {
     if (this.solverActionBlocked()) {
       return;
     }
     const name = this.selectedScenario();
-    let cible: CibleImport;
-    try {
-      cible = await this.api.get<CibleImport>(
-        `/api/reference-data/cible-scenario?name=${encodeURIComponent(name ?? '')}`);
-    } catch (error) {
-      this.output.set(errorPrefix(error));
-      return;
-    }
-    if (!(await this.confirmerImportScenario(
-      $localize`:@@dataSetup.action.importScenario:charger un scénario`, cible))) {
-      return;
-    }
     this.sampleLoading.set(true);
     this.output.set(
       name
@@ -302,18 +195,15 @@ export class ParametresPage {
         : $localize`:@@dataSetup.loadingSample:Chargement du planning d'exemple...`
     );
     try {
-      // The scenario is parsed and imported entirely server-side: we only send
-      // its name, so a large scenario never travels to the browser and back.
-      const url = name
-        ? `/api/reference-data/import-scenario?name=${encodeURIComponent(name)}`
-        : '/api/reference-data/import-scenario';
-      const result = await this.api.post<ImportScenarioResult | null>(url, {});
-      await this.refreshAfterImport();
-      await this.proposerBascule(result);
-      this.output.set(this.recapImport(result,
+      const outcome = await this.scenarioImport.importer({ kind: 'name', name });
+      if (outcome.status === 'cancelled') {
+        this.output.set('');
+        return;
+      }
+      await this.chargerParametresDecoupage();
+      this.output.set(this.recapImport(outcome.result,
         $localize`:@@dataSetup.sampleLoaded:Planning d'exemple chargé. Les données de référence sont peuplées et modifiables depuis les pages de référence.`
       ));
-      this.notifyDecoupageAuto(result);
     } catch (error) {
       this.output.set(errorPrefix(error));
     } finally {
@@ -345,47 +235,21 @@ export class ParametresPage {
     if (!file) {
       return;
     }
-    const contenu = await file.text();
-    let cible: CibleImport;
-    try {
-      cible = await this.api.postRaw<CibleImport>(
-        '/api/reference-data/cible-scenario-fichier', contenu, 'application/x-yaml');
-    } catch (error) {
-      const failure = errorMessage(error);
-      this.output.set($localize`:@@common.errorPrefix:Erreur : ${failure}:message:`);
-      this.notifications.notify({
-        title: $localize`:@@dataSetup.importScenarioFileInvalid:Fichier scénario invalide`,
-        message: failure,
-        variant: 'error'
-      });
-      return;
-    }
-    if (!(await this.confirmerImportScenario(
-      $localize`:@@dataSetup.action.importScenarioFichier:importer un fichier scénario`, cible))) {
-      return;
-    }
+    const content = await file.text();
     this.scenarioFileImporting.set(true);
     this.output.set($localize`:@@dataSetup.importingScenarioFile:Import de ${file.name}:fileName: en cours...`);
     try {
-      const result = await this.api.postRaw<ImportScenarioResult | null>(
-        '/api/reference-data/import-scenario-fichier',
-        contenu,
-        'application/x-yaml'
-      );
-      await this.refreshAfterImport();
-      await this.proposerBascule(result);
-      this.output.set(this.recapImport(result,
+      const outcome = await this.scenarioImport.importer({ kind: 'file', fileName: file.name, content });
+      if (outcome.status === 'cancelled') {
+        this.output.set('');
+        return;
+      }
+      await this.chargerParametresDecoupage();
+      this.output.set(this.recapImport(outcome.result,
         $localize`:@@dataSetup.scenarioFileImported:Scénario ${file.name}:fileName: importé. Les données de référence sont peuplées et modifiables depuis les pages de référence.`
       ));
-      this.notifyDecoupageAuto(result);
     } catch (error) {
-      const failure = errorMessage(error);
-      this.output.set($localize`:@@common.errorPrefix:Erreur : ${failure}:message:`);
-      this.notifications.notify({
-        title: $localize`:@@dataSetup.importScenarioFileInvalid:Fichier scénario invalide`,
-        message: failure,
-        variant: 'error'
-      });
+      this.output.set(errorPrefix(error));
     } finally {
       this.scenarioFileImporting.set(false);
     }
@@ -405,20 +269,6 @@ export class ParametresPage {
       ? ' ' + $localize`:@@parametres.recap.basculer:Vous consultez actuellement « ${courante.nom}:courante: » : basculez d'édition (bandeau en haut de l'écran) pour voir les données importées.`
       : '';
     return destination + ailleurs;
-  }
-
-  // Surfaces the scenario's decoupageAuto section, when present: the import
-  // replaced the file's amplitudes with the generated vacations in place, so
-  // the operator is told without having to open the Créneaux page.
-  private notifyDecoupageAuto(result: ImportScenarioResult | null): void {
-    if (!result?.decoupageAuto) {
-      return;
-    }
-    this.notifications.notify({
-      title: $localize`:@@dataSetup.decoupageAuto.applied:Découpage automatique appliqué`,
-      message: $localize`:@@dataSetup.decoupageAuto.appliedHint:Les amplitudes du scénario ont été découpées : l'édition porte désormais les vacations générées.`,
-      variant: 'info'
-    });
   }
 
   /* --------------------------- Découpage parameters -------------------------- */
@@ -572,7 +422,8 @@ export class ParametresPage {
         await file.text(),
         'application/sql'
       );
-      await this.refreshAfterImport();
+      await this.scenarioImport.rechargerApresImport();
+      await this.chargerParametresDecoupage();
       this.output.set(summary.message);
     } catch (error) {
       this.output.set(errorPrefix(error));
@@ -602,50 +453,8 @@ export class ParametresPage {
   // import-scenario), so those are refreshed too — harmless when unchanged.
   // The feasibility diagnostic is recomputed from the new dataset for the
   // same reason: it is about to drive the decision to launch a solve.
-  private async refreshAfterImport(): Promise<void> {
-    this.planningState.set(null);
-    await Promise.all([
-      this.referenceData.reload(),
-      this.resolution.reload(),
-      this.solverSettings.refresh(),
-      this.problemes.reloadFeasibility(),
-      this.chargerParametresDecoupage(),
-      // An `edition:` scenario section may just have created an edition: the
-      // switcher in the shell must list it right away.
-      this.editions.reload()
-    ]);
-  }
 }
 
-/**
- * The confirmation message of a scenario import, built from the server-side
- * impact counts: what gets replaced, what disappears with it, what stays.
- * With `impact` null (the counting call failed), a generic warning remains —
- * counting is comfort, never the safety net itself.
- */
-export function messageImpactImport(impact: ImpactImport | null, intitule: string, avecInstantane = true): string {
-  const lignes: string[] = [
-    $localize`:@@dataSetup.impact.base:Cette action va ${intitule}:action: : les stands et animateurs sont remplacés par ceux du fichier, et ceux qui n'y figurent pas sont supprimés — avec leurs demandes d'échange, sessions et codes d'accès. Les animateurs conservés gardent leur lien d'espace et leur e-mail.`
-  ];
-  if (impact) {
-    lignes.push(
-      $localize`:@@dataSetup.impact.referentiel:Actuellement : ${impact.animateurs}:animateurs: animateur(s) et ${impact.stands}:stands: stand(s).`
-    );
-    if (impact.planningResolu) {
-      lignes.push(
-        avecInstantane
-          ? $localize`:@@dataSetup.impact.planning:Le planning résolu (${impact.postes}:postes: affectation(s)) sera effacé, ainsi que ${impact.verrous}:verrous: verrouillage(s) ; un instantané sera enregistré automatiquement avant l'import.`
-          : $localize`:@@dataSetup.impact.planningSansInstantane:Le planning résolu de cette édition (${impact.postes}:postes: affectation(s)) sera effacé, ainsi que ${impact.verrous}:verrous: verrouillage(s).`
-      );
-    }
-    if (impact.demandesEchange > 0) {
-      lignes.push(
-        $localize`:@@dataSetup.impact.demandes:${impact.demandesEchange}:demandes: demande(s) d'échange (dont ${impact.demandesEnAttente}:enAttente: en attente) seront perdues si leurs créneaux sont remplacés ou leurs animateurs supprimés.`
-      );
-    }
-  }
-  return lignes.join(' ');
-}
 
 // Reads the picked file and clears the input so the same file can be picked twice.
 function takeFile(event: Event): File | null {
