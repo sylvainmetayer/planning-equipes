@@ -105,3 +105,10 @@ jobs:
       # l'affichage et en anglais seulement : le plus discret des trois cas.
       - name: Check the English catalogue against the source strings
         run: npm run i18n-check
+
+      # The production build was only ever exercised by the `test` job, through
+      # Quinoa (`./mvnw verify`): a broken template therefore failed in the
+      # *backend* job, which made the signal unreadable. It also enforces the
+      # bundle budget of angular.json, which nothing else does.
+      - name: Build the production bundle
+        run: npm run build
