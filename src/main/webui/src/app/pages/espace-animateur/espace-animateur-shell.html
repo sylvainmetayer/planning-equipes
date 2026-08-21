@@ -5,6 +5,14 @@
   @if (espace.vue(); as vue) {
     <span class="espace-identite">{{ vue.prenom }} {{ vue.nom }}</span>
   }
+  <!-- Nouvel onglet : l'URL de cet espace porte le jeton d'accès, on ne peut
+       pas y revenir sans elle. -->
+  <a matButton href="/mentions-legales" target="_blank" rel="noopener"
+     i18n-matTooltip="@@espace.mentionsLegales.tooltip"
+     matTooltip="Éditeur du site, hébergeur, et ce que deviennent vos données (nouvel onglet)">
+    <mat-icon>gavel</mat-icon>
+    <span i18n="@@nav.link.mentionsLegales">Mentions légales</span>
+  </a>
   <button matButton (click)="toggleLocale()" i18n-aria-label="@@shell.switchLanguage" aria-label="Changer de langue">
     {{ locale === 'fr' ? 'EN' : 'FR' }}
   </button>

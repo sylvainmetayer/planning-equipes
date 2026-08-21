@@ -173,6 +173,15 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/login/login-page').then((m) => m.LoginPage)
   },
   {
+    // Outside both shells on purpose: a legal notice must stay readable
+    // without a session and without a valid access token — the reader who
+    // needs it most is often the one who has neither.
+    path: 'mentions-legales',
+    title: 'Mentions légales — Planning Équipes',
+    loadComponent: () =>
+      import('./pages/mentions-legales/mentions-legales-page').then((m) => m.MentionsLegalesPage)
+  },
+  {
     path: 'animateur/:jeton',
     loadComponent: () =>
       import('./pages/espace-animateur/espace-animateur-shell').then((m) => m.EspaceAnimateurShell),

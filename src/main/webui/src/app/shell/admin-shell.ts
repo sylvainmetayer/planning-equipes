@@ -153,7 +153,12 @@ function buildNavGroups(): NavGroup[] {
     links: [
       { path: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres`, icon: 'settings' },
       { path: '/mcp-client', label: $localize`:@@nav.link.mcp:MCP`, icon: 'smart_toy' },
-      { path: '/debug', label: $localize`:@@nav.link.debug:Débogage`, icon: 'bug_report' }
+      { path: '/debug', label: $localize`:@@nav.link.debug:Débogage`, icon: 'bug_report' },
+      {
+        path: '/mentions-legales',
+        label: $localize`:@@nav.link.mentionsLegales:Mentions légales`,
+        icon: 'gavel'
+      }
     ]
   },
   {

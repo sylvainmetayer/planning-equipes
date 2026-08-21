@@ -19,7 +19,7 @@ import io.quarkus.test.junit.TestProfile;
  * so the functional tests don't need a session; this profile restores the real
  * {@code authenticated} policy and exercises the whole form-login flow — the
  * 401 wall, the login endpoint, the session cookie, and the two deliberate
- * public exceptions (espace animateur, auth status).
+ * public exceptions (espace animateur, auth status, legal notice).
  */
 @QuarkusTest
 @TestProfile(AuthentificationAdminTest.Profil.class)
@@ -47,6 +47,16 @@ class AuthentificationAdminTest {
     void lEspaceAnimateurResteAccessibleSansSession() {
         // 404 (unknown token), never 401: the token itself is the credential.
         given().when().get("/api/espace-animateur/jeton-inconnu").then().statusCode(404);
+    }
+
+    /**
+     * A legal notice readable only once logged in would miss the reader it
+     * exists for: someone deciding whether to trust the site, or an animateur
+     * whose access link has expired and who needs to know whom to contact.
+     */
+    @Test
+    void lesMentionsLegalesSontLisiblesSansSession() {
+        given().when().get("/api/mentions-legales").then().statusCode(200);
     }
 
     @Test

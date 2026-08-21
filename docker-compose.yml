@@ -39,6 +39,14 @@ services:
       MAIL_FROM: ${MAIL_FROM:-planning-equipes@localhost}
       MAIL_ADMIN: ${MAIL_ADMIN:-}
       PUBLIC_URL: ${PUBLIC_URL:-http://localhost:8080}
+      # Mentions légales (page publique /mentions-legales). Vides = la page
+      # affiche ce qui manque plutôt que d'inventer un éditeur.
+      LEGAL_EDITEUR: ${LEGAL_EDITEUR:-}
+      LEGAL_DIRECTEUR_PUBLICATION: ${LEGAL_DIRECTEUR_PUBLICATION:-}
+      LEGAL_HEBERGEUR: ${LEGAL_HEBERGEUR:-}
+      LEGAL_CONTACT: ${LEGAL_CONTACT:-}
+      LEGAL_BASE_LEGALE: ${LEGAL_BASE_LEGALE:-}
+      LEGAL_CONSERVATION: ${LEGAL_CONSERVATION:-}
     depends_on:
       postgres:
         condition: service_healthy

@@ -584,6 +584,20 @@ export interface ParametresSolveur {
   mailFinResolution: boolean;
 }
 
+/**
+ * `GET /api/mentions-legales` — deployment-specific facts of the legal notice.
+ * Every field is an empty string when the deployment did not configure it; the
+ * page then says what is missing rather than inventing it.
+ */
+export interface MentionsLegales {
+  editeur: string;
+  directeurPublication: string;
+  hebergeur: string;
+  contact: string;
+  baseLegale: string;
+  conservation: string;
+}
+
 /** Ordre public ceiling for adults, in hours (Code du travail art. L3121-20). */
 export const DUREE_HEBDOMADAIRE_MAX_HEURES = 48;
 

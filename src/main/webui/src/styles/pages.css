@@ -479,3 +479,35 @@ table td.hours-verifier {
   font-size: 0.85rem;
   color: var(--mat-sys-on-surface-variant);
 }
+
+/* Mentions légales (page publique, hors des deux coques). */
+.mentions-page {
+  padding: 1.25rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.mentions-liste {
+  display: grid;
+  grid-template-columns: minmax(10rem, auto) 1fr;
+  gap: 0.35rem 1rem;
+  margin: 0;
+}
+
+.mentions-liste dt {
+  font-weight: 500;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.mentions-liste dd {
+  margin: 0;
+}
+
+/*
+ * Ce qui manque se lit comme tel : une mention légale incomplète doit se
+ * signaler, jamais se faire passer pour renseignée.
+ */
+.mentions-manquant {
+  color: var(--mat-sys-error);
+  font-style: italic;
+}

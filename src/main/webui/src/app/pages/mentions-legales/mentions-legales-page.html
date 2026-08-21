@@ -1,0 +1,148 @@
+<mat-toolbar class="app-toolbar">
+  <img src="logo.png" alt="Planning Équipes" class="app-logo" />
+  <span class="app-title" i18n="@@mentions.title">Mentions légales</span>
+  <span class="app-toolbar-spacer"></span>
+  @if (peutRevenir()) {
+    <button matButton (click)="revenir()">
+      <mat-icon>arrow_back</mat-icon>
+      <ng-container i18n="@@common.retour">Retour</ng-container>
+    </button>
+  }
+</mat-toolbar>
+
+<main class="mentions-page">
+  <app-status-message [text]="erreur()" tone="error" />
+
+  @if (mentions(); as infos) {
+    @if (rienDeRenseigne()) {
+      <p class="locked-hint" i18n="@@mentions.nonConfigure">
+        Aucune information légale n'a été renseignée sur ce déploiement. Les mentions ci-dessous sont donc
+        incomplètes : l'exploitant doit renseigner l'éditeur, l'hébergeur et l'adresse de contact dans la
+        configuration du serveur.
+      </p>
+    }
+
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-header>
+        <h2 mat-card-title i18n="@@mentions.editeur.title">Éditeur du site</h2>
+      </mat-card-header>
+      <mat-card-content>
+        <dl class="mentions-liste">
+          <dt i18n="@@mentions.editeur.label">Éditeur</dt>
+          <dd>
+            @if (infos.editeur) {
+              {{ infos.editeur }}
+            } @else {
+              <span class="mentions-manquant" i18n="@@mentions.manquant">Non renseigné</span>
+            }
+          </dd>
+          <dt i18n="@@mentions.directeur.label">Directeur de la publication</dt>
+          <dd>
+            @if (infos.directeurPublication) {
+              {{ infos.directeurPublication }}
+            } @else {
+              <span class="mentions-manquant" i18n="@@mentions.manquant">Non renseigné</span>
+            }
+          </dd>
+          <dt i18n="@@mentions.contact.label">Contact</dt>
+          <dd>
+            @if (infos.contact) {
+              {{ infos.contact }}
+            } @else {
+              <span class="mentions-manquant" i18n="@@mentions.manquant">Non renseigné</span>
+            }
+          </dd>
+        </dl>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-header>
+        <h2 mat-card-title i18n="@@mentions.hebergeur.title">Hébergement</h2>
+      </mat-card-header>
+      <mat-card-content>
+        @if (infos.hebergeur) {
+          <p>{{ infos.hebergeur }}</p>
+        } @else {
+          <p class="mentions-manquant" i18n="@@mentions.manquant">Non renseigné</p>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-header>
+        <h2 mat-card-title i18n="@@mentions.donnees.title">Données personnelles</h2>
+        <mat-card-subtitle i18n="@@mentions.donnees.subtitle">
+          Cette application sert à construire et à diffuser le planning d'un festival. Elle traite pour cela des
+          données concernant les animateurs qui y participent.
+        </mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <h3 i18n="@@mentions.donnees.quoi.title">Quelles données</h3>
+        <ul>
+          <li i18n="@@mentions.donnees.quoi.identite">
+            Identité : nom, prénom, et adresse e-mail lorsqu'elle est fournie à l'organisation.
+          </li>
+          <li i18n="@@mentions.donnees.quoi.naissance">
+            Date de naissance. Elle sert uniquement à déterminer, à la date de chaque créneau, le cadre légal
+            applicable — le travail des mineurs est plus strictement encadré (horaires de nuit, amplitude
+            quotidienne, pauses, jours de repos). Elle n'est jamais affichée comme un âge ni utilisée à d'autres fins.
+          </li>
+          <li i18n="@@mentions.donnees.quoi.disponibilites">
+            Disponibilités et souhaits : jours d'indisponibilité déclarés, préférences de stands, compétences par
+            type de jeu.
+          </li>
+          <li i18n="@@mentions.donnees.quoi.affectations">
+            Affectations : les créneaux attribués, les demandes d'échange soumises et leur suite.
+          </li>
+        </ul>
+
+        <h3 i18n="@@mentions.donnees.pourquoi.title">Pourquoi</h3>
+        <p i18n="@@mentions.donnees.pourquoi.texte">
+          Établir un planning qui respecte le cadre légal, les compétences et les disponibilités de chacun, le
+          communiquer aux personnes concernées, et instruire les demandes d'échange de créneaux. Aucune donnée n'est
+          utilisée à des fins publicitaires, ni cédée à un tiers.
+        </p>
+        @if (infos.baseLegale) {
+          <p><strong i18n="@@mentions.donnees.base.label">Base légale :</strong> {{ infos.baseLegale }}</p>
+        }
+
+        <h3 i18n="@@mentions.donnees.duree.title">Combien de temps</h3>
+        @if (infos.conservation) {
+          <p>{{ infos.conservation }}</p>
+        } @else {
+          <p class="mentions-manquant" i18n="@@mentions.donnees.duree.manquante">
+            Durée de conservation non renseignée sur ce déploiement.
+          </p>
+        }
+
+        <h3 i18n="@@mentions.donnees.qui.title">Qui y a accès</h3>
+        <p i18n="@@mentions.donnees.qui.texte">
+          L'organisation du festival, pour construire et diffuser le planning. Chaque animateur accède à son propre
+          planning par un lien personnel, protégé par un code envoyé à son adresse e-mail. Les données sont
+          hébergées par le prestataire indiqué plus haut.
+        </p>
+
+        <h3 i18n="@@mentions.donnees.droits.title">Vos droits</h3>
+        <p i18n="@@mentions.donnees.droits.texte">
+          Vous pouvez demander l'accès à vos données, leur rectification ou leur effacement, ainsi que la limitation
+          ou l'opposition à leur traitement. Pour l'exercer, écrivez à l'adresse de contact indiquée plus haut. Vous
+          pouvez également introduire une réclamation auprès de la CNIL (www.cnil.fr).
+        </p>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-header>
+        <h2 mat-card-title i18n="@@mentions.proprieteIntellectuelle.title">Propriété intellectuelle</h2>
+      </mat-card-header>
+      <mat-card-content>
+        <p i18n="@@mentions.proprieteIntellectuelle.texte">
+          Le code de l'application est publié sous licence libre ; son dépôt et sa licence sont accessibles
+          publiquement. Les contenus saisis dans l'application (données du festival, plannings) restent la propriété
+          de l'organisation qui l'exploite.
+        </p>
+      </mat-card-content>
+    </mat-card>
+  }
+</main>

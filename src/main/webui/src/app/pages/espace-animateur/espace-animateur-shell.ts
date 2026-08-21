@@ -8,6 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { map } from 'rxjs';
 import { EspaceAnimateurService } from '../../core/espace-animateur.service';
@@ -33,7 +34,8 @@ import { AppLocale, getStoredLocale, setStoredLocaleAndReload } from '../../core
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
-    MatProgressBarModule
+    MatProgressBarModule,
+    MatTooltipModule
   ],
   templateUrl: './espace-animateur-shell.html',
   changeDetection: ChangeDetectionStrategy.OnPush
