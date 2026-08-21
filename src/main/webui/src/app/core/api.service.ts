@@ -96,15 +96,54 @@ export class ApiService {
 }
 
 /**
+ * What kind of refusal the server expressed, in the client's own words.
+ *
+ * <p>Mirrors the sealed hierarchy the backend answers with (`ErreurMetierMapper`:
+ * `Invalide` to 400, `Introuvable` to 404, `Conflit` to 409, body `{message}`).
+ * Flattening every failure into a bare `Error` threw the status away, and with
+ * it the only thing telling "this reference no longer exists, reload the list"
+ * (404) from "your form is wrong" (400) and from "someone else changed it, try
+ * again" (409) — three situations that all ended in the same red banner.</p>
+ */
+export type ApiErrorKind = 'invalid' | 'notFound' | 'conflict' | 'session' | 'technical';
+
+/** A server refusal that still knows what it was. */
+export class ApiError extends Error {
+  constructor(
+    readonly status: number,
+    readonly kind: ApiErrorKind,
+    message: string
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
+function kindForStatus(status: number): ApiErrorKind {
+  switch (status) {
+    case 400:
+      return 'invalid';
+    case 401:
+      return 'session';
+    case 404:
+      return 'notFound';
+    case 409:
+      return 'conflict';
+    default:
+      return 'technical';
+  }
+}
+
+/**
  * A 401 on an admin API call: the session is missing or expired. The auth
  * interceptor is already sending the user to /login when this happens, so
  * this error is a technical detail, not news — {@code reportError} and the
  * other toast paths skip it instead of stacking an « Échec de la requête
  * (code 401) » notification on top of the redirect.
  */
-export class SessionExpireeError extends Error {
+export class SessionExpireeError extends ApiError {
   constructor() {
-    super($localize`:@@api.sessionExpiree:Session expirée — reconnexion en cours.`);
+    super(401, 'session', $localize`:@@api.sessionExpiree:Session expirée — reconnexion en cours.`);
     this.name = 'SessionExpireeError';
   }
 }
@@ -120,10 +159,13 @@ export function toError(error: unknown): Error {
       return new SessionExpireeError();
     }
     const body = error.error as { message?: string } | string | null;
-    if (body && typeof body === 'object' && body.message) {
-      return new Error(body.message);
-    }
-    return new Error($localize`:@@api.requestFailed:Échec de la requête (code ${error.status}:status:)`);
+    const message =
+      body && typeof body === 'object' && body.message
+        ? body.message
+        : $localize`:@@api.requestFailed:Échec de la requête (code ${error.status}:status:)`;
+    // Produced here and nowhere else: every caller can now switch on `kind`
+    // instead of re-deriving the meaning from the message text.
+    return new ApiError(error.status, kindForStatus(error.status), message);
   }
   return error instanceof Error ? error : new Error(String(error));
 }

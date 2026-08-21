@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { SessionExpireeError } from './api.service';
+import { ApiError, SessionExpireeError } from './api.service';
 import { NotificationService } from './notification.service';
 import { PlanningResolutionStore } from './planning-resolution.store';
 import { ReferenceCrudService } from './reference-crud.service';
@@ -231,6 +231,36 @@ describe('ReferenceCrudService', () => {
       expect(notifications.notify).toHaveBeenCalledWith(
         expect.objectContaining({ variant: 'error', message: 'indisponible' })
       );
+    });
+  });
+
+  describe('reportError', () => {
+    it('names a vanished row instead of labelling it "Erreur"', () => {
+      service.reportError(new ApiError(404, 'notFound', 'Stand introuvable'));
+
+      expect(notifications.notify).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "Cette donnée n'existe plus", message: 'Stand introuvable' })
+      );
+    });
+
+    it('tells a concurrent edit apart from a rejected form', () => {
+      service.reportError(new ApiError(409, 'conflict', 'Modifié'));
+      expect(notifications.notify).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'Modifiée entre-temps' })
+      );
+
+      service.reportError(new ApiError(400, 'invalid', 'Champ manquant'));
+      expect(notifications.notify).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'Saisie refusée' })
+      );
+    });
+
+    it('keeps the generic title for a technical failure and for a plain Error', () => {
+      service.reportError(new ApiError(500, 'technical', 'Boum'));
+      expect(notifications.notify).toHaveBeenCalledWith(expect.objectContaining({ title: 'Erreur' }));
+
+      service.reportError(new Error('Boum'));
+      expect(notifications.notify).toHaveBeenCalledWith(expect.objectContaining({ title: 'Erreur' }));
     });
   });
 });

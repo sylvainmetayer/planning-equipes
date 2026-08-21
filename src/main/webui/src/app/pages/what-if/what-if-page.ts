@@ -125,8 +125,7 @@ export class WhatIfPage {
     // job's result, whichever browser is watching. Unregistered on destroy —
     // this page is lazy-loaded and rebuilt on every navigation.
     inject(DestroyRef).onDestroy(
-      this.jobs.onResult('ANALYZE', (result) => {
-        const diagnostic = result as PlanningDiagnostic | null;
+      this.jobs.onResult('ANALYZE', (diagnostic) => {
         this.scoreSimule.set(diagnostic?.score ?? '');
         this.solveEnCours.set(false);
       })

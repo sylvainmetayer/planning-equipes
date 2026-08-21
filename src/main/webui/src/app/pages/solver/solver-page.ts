@@ -30,7 +30,7 @@ import { PlanningStateService } from '../../core/planning-state.service';
 import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
-import { SolverJobService, extraireDiagnostic, formatDuration } from '../../core/solver-job.service';
+import { JobResults, SolverJobService, extraireDiagnostic, formatDuration } from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { FeasibilityBanner, HardIssue } from '../../shared/feasibility-banner';
@@ -280,7 +280,7 @@ export class SolverPage {
     // are two job types server-side, and unregistered together on destroy —
     // this page is lazy-loaded and rebuilt on every navigation, so a handler
     // left behind would stack one more copy per visit.
-    const surResultatSolve = (result: unknown): void => {
+    const surResultatSolve = (result: JobResults['SOLVE'] | null): void => {
       const diagnostic = extraireDiagnostic(result);
       if (diagnostic) {
         this.applySolveResult(diagnostic);
@@ -430,8 +430,13 @@ export class SolverPage {
     }
   }
 
-  /** Fills — or clears — the "what moved" panel from a finished SOLVE result. */
-  private applyIncrementalResult(result: unknown): void {
+  /**
+   * Fills — or clears — the "what moved" panel from a finished SOLVE result.
+   * A full solve answers a bare diagnostic, which carries neither field: the
+   * union is narrowed by looking for them rather than by the job type, because
+   * both types arrive through the same handler.
+   */
+  private applyIncrementalResult(result: JobResults['SOLVE'] | null): void {
     const incremental = result as Partial<ResultatSolveIncremental> | null;
     if (incremental && incremental.statistiques && Array.isArray(incremental.changements)) {
       this.incrementalStats.set(incremental.statistiques);

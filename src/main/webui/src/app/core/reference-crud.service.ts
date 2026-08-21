@@ -2,7 +2,7 @@
 // snack bar feedback and delete confirmation, so each page only owns its form.
 
 import { Injectable, inject } from '@angular/core';
-import { SessionExpireeError } from './api.service';
+import { ApiError, SessionExpireeError } from './api.service';
 import { NotificationService } from './notification.service';
 import { PlanningResolutionStore } from './planning-resolution.store';
 import { BulkResult, ReferenceDataStore } from './reference-data.store';
@@ -215,9 +215,31 @@ export class ReferenceCrudService {
       return;
     }
     this.notifications.notify({
-      title: $localize`:@@crud.error:Erreur`,
+      title: titreErreur(error),
       message: errorMessage(error),
       variant: 'error'
     });
+  }
+}
+
+/**
+ * Names the refusal instead of labelling everything "Erreur". The three cases
+ * the backend distinguishes by status say genuinely different things to the
+ * operator: a row someone else already deleted is not a typo in the form, and
+ * neither is a concurrent edit.
+ */
+function titreErreur(error: unknown): string {
+  if (!(error instanceof ApiError)) {
+    return $localize`:@@crud.error:Erreur`;
+  }
+  switch (error.kind) {
+    case 'notFound':
+      return $localize`:@@crud.error.introuvable:Cette donnée n'existe plus`;
+    case 'conflict':
+      return $localize`:@@crud.error.conflit:Modifiée entre-temps`;
+    case 'invalid':
+      return $localize`:@@crud.error.invalide:Saisie refusée`;
+    default:
+      return $localize`:@@crud.error:Erreur`;
   }
 }

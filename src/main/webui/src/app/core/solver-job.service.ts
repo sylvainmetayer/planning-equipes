@@ -85,7 +85,25 @@ export interface TrackedJob {
   secondsLimit: number | null;
 }
 
-type ResultHandler = (result: unknown) => void;
+/**
+ * What each kind of job hands back when it completes. `JobType` *is* the
+ * discriminant — the payload's shape is a function of it — but nothing said so
+ * to the compiler: every result crossed the application as `unknown` and was
+ * re-asserted by a cast at each consumer. Adding a job type, or changing a
+ * payload server-side, then broke nothing at compile time and everything at
+ * runtime, on the user's screen, on an `undefined`.
+ *
+ * <p>SOLVE is genuinely a union: a full solve answers a bare diagnostic, an
+ * incremental one wraps it (issue #86) — see {@link extraireDiagnostic}.</p>
+ */
+export interface JobResults {
+  SOLVE: PlanningDiagnostic | ResultatSolveIncremental;
+  SOLVE_INCREMENTAL: ResultatSolveIncremental;
+  ANALYZE: PlanningDiagnostic;
+}
+
+/** What a finished job of type `T` is handed to. */
+export type ResultHandler<T extends JobType> = (result: JobResults[T] | null) => void;
 
 @Injectable({ providedIn: 'root' })
 export class SolverJobService {
@@ -164,7 +182,13 @@ export class SolverJobService {
   private readonly stateKnown = signal(false);
   /** Ids submitted from this browser, including the ones still queued. */
   private readonly mesJobs = new Set<string>();
-  private readonly resultHandlers = new Map<JobType, ResultHandler[]>();
+  /**
+   * Stored loosely and handed out typed: a Map cannot express "the handler
+   * list of key T takes JobResults[T]". The one cast lives at the single
+   * dispatch point below, where the key and the payload come from the same
+   * JobView.
+   */
+  private readonly resultHandlers = new Map<JobType, ResultHandler<JobType>[]>();
   private started = false;
   /** Non-null only while a job runs: see {@link updateTicker}. */
   private tickHandle: ReturnType<typeof setInterval> | null = null;
@@ -210,16 +234,17 @@ export class SolverJobService {
    * updates this one when it completes. Multiple independent callers can
    * subscribe to the same job type (e.g. the app shell and the page showing it).
    */
-  onResult(type: JobType, handler: ResultHandler): () => void {
+  onResult<T extends JobType>(type: T, handler: ResultHandler<T>): () => void {
+    const registered = handler as ResultHandler<JobType>;
     const handlers = this.resultHandlers.get(type);
     if (handlers) {
-      handlers.push(handler);
+      handlers.push(registered);
     } else {
-      this.resultHandlers.set(type, [handler]);
+      this.resultHandlers.set(type, [registered]);
     }
     return () => {
       const registered = this.resultHandlers.get(type);
-      const index = registered?.indexOf(handler) ?? -1;
+      const index = registered?.indexOf(handler as ResultHandler<JobType>) ?? -1;
       if (registered && index >= 0) {
         registered.splice(index, 1);
       }
@@ -566,7 +591,7 @@ export class SolverJobService {
       // the backend). The pages must still consume it, or their caches
       // silently diverge from what the database now holds.
       if (job.status === 'CANCELLED' && job.result != null) {
-        [...(this.resultHandlers.get(job.type) ?? [])].forEach((handler) => handler(job.result));
+        this.dispatchResult(job);
       }
       return;
     }
@@ -589,7 +614,18 @@ export class SolverJobService {
       this.notifications.notifyFeasibility(diagnostic.faisabilite, diagnostic.hardScore);
     }
     // Iterate a copy: a handler may unregister itself (or its page) while running.
-    [...(this.resultHandlers.get(job.type) ?? [])].forEach((handler) => handler(job.result));
+    this.dispatchResult(job);
+  }
+  /**
+   * The one place a job payload is narrowed. `JobView.result` is `unknown`
+   * because it comes straight off the wire; the key and the payload here come
+   * from the same `JobView`, so the pairing the cast asserts is exactly the
+   * one the server produced. Iterates a copy: a handler may unregister itself
+   * (or its page) while running.
+   */
+  private dispatchResult(job: JobView): void {
+    const result = job.result as JobResults[JobType] | null;
+    [...(this.resultHandlers.get(job.type) ?? [])].forEach((handler) => handler(result));
   }
 }
 
