@@ -1,6 +1,8 @@
 package dev.sylvain.planning.service;
 
+import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -12,6 +14,7 @@ import java.util.regex.Pattern;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.service.PlanSnapshotService.AffectationSnapshot;
 import dev.sylvain.planning.service.PlanningService.PlanningDiagnostic;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -105,6 +108,48 @@ public class PlanningKpiService {
                 violationsParContrainte(diagnostic),
                 modifications,
                 dureeSolveSecondes);
+    }
+
+    /**
+     * Degraded recomputation for a snapshot captured before KPI were stored
+     * (issue #70): coverage and volumetry stay exact, the hours are resolved
+     * against the referential of the snapshot's own edition — so the caller
+     * must already be running in that edition (see
+     * {@code SnapshotComparaisonService}) — and score details are limited to
+     * what the snapshot's meta carries. Violations are left empty rather than
+     * zeroed: nothing measured them, and an unmeasured constraint is not a
+     * respected one.
+     */
+    public PlanningKpi calculerDepuisSnapshot(List<AffectationSnapshot> affectations, String score) {
+        Map<String, Creneau> creneauxParId = new HashMap<>();
+        for (Creneau creneau : referenceDataService.listCreneaux()) {
+            creneauxParId.put(String.valueOf(creneau.getId()), creneau);
+        }
+        List<AffectationKpi> reduites = new ArrayList<>();
+        for (AffectationSnapshot affectation : affectations) {
+            reduites.add(new AffectationKpi(
+                    affectation.standId(),
+                    affectation.creneauId(),
+                    affectation.animateurId(),
+                    dureeMinutes(affectation, creneauxParId.get(affectation.creneauId()))));
+        }
+        return calculer(reduites, score, Map.of(), null, null);
+    }
+
+    /**
+     * Effective duration of a snapshotted seat: its own effective window when
+     * the capture stored one (a stand closed for part of a créneau), the
+     * créneau's own span otherwise, and {@code null} when the créneau no longer
+     * exists to answer — which is what raises {@code heuresIncompletes}.
+     */
+    private static Integer dureeMinutes(AffectationSnapshot affectation, Creneau creneau) {
+        if (affectation.heureDebutEffective() != null && affectation.heureFinEffective() != null) {
+            PosteAffectation fenetre = new PosteAffectation(affectation.posteId(), null, null);
+            fenetre.setHeureDebutEffective(LocalTime.parse(affectation.heureDebutEffective()));
+            fenetre.setHeureFinEffective(LocalTime.parse(affectation.heureFinEffective()));
+            return fenetre.getDureeEffectiveMinutes();
+        }
+        return creneau == null ? null : creneau.getDureeMinutes();
     }
 
     /** Match counts per constraint, in the diagnostic's order. Never nominative. */

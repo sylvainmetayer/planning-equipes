@@ -1,0 +1,134 @@
+<mat-card appearance="outlined">
+  <mat-card-header>
+    <h1 mat-card-title i18n="@@comparateur.title">Comparateur A/B</h1>
+    <mat-card-subtitle i18n="@@comparateur.subtitle">
+      Confronte une référence et une variante — deux instantanés, ou un instantané et le plan actuel — sur le score, la
+      couverture, la fairness et les violations. Les instantanés de toutes les éditions sont proposés : depuis la
+      suppression des groupes de créneaux, une variante est une autre édition. Lecture seule : aucune résolution n'est
+      déclenchée.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-actions class="card-actions">
+    <button matButton type="button" [disabled]="chargement()" (click)="rafraichir()">
+      <mat-icon>refresh</mat-icon>
+      <ng-container i18n="@@common.refresh">Rafraîchir</ng-container>
+    </button>
+  </mat-card-actions>
+  <mat-card-content>
+    <app-status-message [text]="error()" tone="error" />
+    @if (instantanes().length === 0 && !chargement()) {
+      <p class="empty-hint" i18n="@@comparateur.empty">
+        Aucun instantané enregistré : capturez-en un depuis la page « Instantanés » (un instantané est aussi pris
+        automatiquement avant chaque résolution), puis revenez le comparer au plan actuel.
+      </p>
+    } @else {
+      <div class="comparateur-selection">
+        <mat-form-field appearance="outline">
+          <mat-label i18n="@@comparateur.base.label">Référence (A)</mat-label>
+          <mat-select [value]="baseId()" (valueChange)="baseId.set($event)">
+            <mat-option [value]="courant" i18n="@@comparateur.option.courant">Plan actuellement persisté</mat-option>
+            @for (snapshot of instantanes(); track snapshot.id) {
+              <mat-option [value]="valeurSelection(snapshot)">{{ libelle(snapshot) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label i18n="@@comparateur.variante.label">Variante (B)</mat-label>
+          <mat-select [value]="varianteId()" (valueChange)="varianteId.set($event)">
+            <mat-option [value]="courant" i18n="@@comparateur.option.courant">Plan actuellement persisté</mat-option>
+            @for (snapshot of instantanes(); track snapshot.id) {
+              <mat-option [value]="valeurSelection(snapshot)">{{ libelle(snapshot) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <button matButton="filled" type="button" [disabled]="!pretAComparer() || chargement()" (click)="comparer()">
+          <mat-icon>compare_arrows</mat-icon>
+          <ng-container i18n="@@comparateur.action">Comparer</ng-container>
+        </button>
+      </div>
+      @if (chargement()) {
+        <mat-progress-bar mode="indeterminate" />
+      }
+      @if (comparaison(); as resultat) {
+        @if (resultat.editionsDifferentes) {
+          <p class="locked-hint" i18n="@@comparateur.warning.editions">
+            Ces deux plans appartiennent à des éditions différentes, donc à des référentiels différents (stands,
+            animateurs, créneaux) : les écarts ne sont pas « toutes choses égales par ailleurs ».
+          </p>
+        }
+        @if (resultat.volumetriesDifferentes) {
+          <p class="locked-hint" i18n="@@comparateur.warning.volumetries">
+            Les deux plans n'ont pas le même nombre de postes : une partie des écarts reflète la volumétrie, pas la
+            qualité de la résolution.
+          </p>
+        }
+        @if (kpiRecalcule()) {
+          <p class="locked-hint" i18n="@@comparateur.warning.recalcule">
+            Au moins un instantané a été pris avant l'enregistrement des KPI : ses métriques ont été recalculées depuis
+            son contenu. Couverture et volumétrie restent exactes, les violations ne sont pas mesurées (mode dégradé).
+          </p>
+        }
+        <div class="table-wrapper">
+          <table mat-table [dataSource]="lignes()">
+            <caption class="visually-hidden" i18n="@@comparateur.table.caption">
+              Métriques des deux plans côte à côte, avec le sens de chaque écart
+            </caption>
+            <ng-container matColumnDef="metrique">
+              <th mat-header-cell *matHeaderCellDef i18n="@@comparateur.column.metrique">Métrique</th>
+              <td mat-cell *matCellDef="let ligne">{{ ligne.label }}</td>
+            </ng-container>
+            <ng-container matColumnDef="base">
+              <th mat-header-cell *matHeaderCellDef>{{ libelleCote(resultat.base) }}</th>
+              <td mat-cell *matCellDef="let ligne">{{ ligne.base }}</td>
+            </ng-container>
+            <ng-container matColumnDef="variante">
+              <th mat-header-cell *matHeaderCellDef>{{ libelleCote(resultat.variante) }}</th>
+              <td mat-cell *matCellDef="let ligne">{{ ligne.variante }}</td>
+            </ng-container>
+            <ng-container matColumnDef="delta">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                i18n-matTooltip="@@comparateur.delta.tooltip"
+                matTooltip="Les scores sont des pénalités négatives : se rapprocher de zéro est une amélioration."
+                i18n="@@comparateur.column.delta"
+              >
+                Écart (B − A)
+              </th>
+              <td mat-cell *matCellDef="let ligne" [class]="'comparateur-' + (ligne.tendance ?? 'neutre')">
+                {{ deltaLabel(ligne) }}
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="columns"></tr>
+            <tr mat-row *matRowDef="let row; columns: columns"></tr>
+          </table>
+        </div>
+
+        @if (resultat.diffViolations.length > 0) {
+          <h2 class="comparateur-sous-titre" i18n="@@comparateur.violations.title">Violations par contrainte</h2>
+          <div class="table-wrapper">
+            <table mat-table [dataSource]="resultat.diffViolations">
+              <caption class="visually-hidden" i18n="@@comparateur.violations.caption">
+                Nombre de violations par contrainte, pour chacun des deux plans
+              </caption>
+              <ng-container matColumnDef="contrainte">
+                <th mat-header-cell *matHeaderCellDef i18n="@@comparateur.column.contrainte">Contrainte</th>
+                <td mat-cell *matCellDef="let diff">{{ diff.contrainte }}</td>
+              </ng-container>
+              <ng-container matColumnDef="baseViolations">
+                <th mat-header-cell *matHeaderCellDef>{{ libelleCote(resultat.base) }}</th>
+                <td mat-cell *matCellDef="let diff">{{ violationsLabel(diff.base) }}</td>
+              </ng-container>
+              <ng-container matColumnDef="varianteViolations">
+                <th mat-header-cell *matHeaderCellDef>{{ libelleCote(resultat.variante) }}</th>
+                <td mat-cell *matCellDef="let diff">{{ violationsLabel(diff.variante) }}</td>
+              </ng-container>
+              <tr mat-header-row *matHeaderRowDef="columnsViolations"></tr>
+              <tr mat-row *matRowDef="let row; columns: columnsViolations"></tr>
+            </table>
+          </div>
+        }
+      }
+    }
+  </mat-card-content>
+</mat-card>

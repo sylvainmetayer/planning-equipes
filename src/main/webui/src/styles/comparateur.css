@@ -1,0 +1,33 @@
+/* A/B comparator between two plans (issue #70). */
+
+.comparateur-selection {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-block: 0.5rem 1rem;
+}
+
+.comparateur-selection mat-form-field {
+  flex: 1 1 18rem;
+}
+
+.comparateur-sous-titre {
+  font: var(--mat-sys-title-medium);
+  margin-block: 1.5rem 0.5rem;
+}
+
+/*
+ * The direction of a variation. The wording already says "amélioration" /
+ * "dégradation", so the colour reinforces the text and is never its only
+ * carrier.
+ */
+.comparateur-amelioration {
+  color: var(--mat-sys-tertiary);
+  font-weight: 500;
+}
+
+.comparateur-degradation {
+  color: var(--mat-sys-error);
+  font-weight: 500;
+}

@@ -227,6 +227,25 @@ précisément ce qui doit lui survivre.
 Rien de nominatif n'y est stocké : l'équité est un écart-type d'heures, pas un
 classement de personnes.
 
+### Comparateur A/B
+
+Confronte une **référence** et une **variante** — deux instantanés, ou un
+instantané et le plan actuellement enregistré — sur le score par niveau, la
+couverture, l'équité, la volumétrie et les violations par contrainte, avec le
+sens de chaque écart écrit noir sur blanc (les scores étant des pénalités
+négatives, se rapprocher de zéro est une amélioration).
+
+Les instantanés proposés couvrent **toutes les éditions** : depuis que
+l'édition est la seule porteuse de variante, comparer deux essais revient le
+plus souvent à comparer deux éditions. L'écran le signale alors explicitement,
+comme il signale deux plannings de tailles différentes : dans les deux cas, une
+partie de l'écart vient du problème posé, pas de la qualité de la résolution.
+
+Le comparateur ne lance **jamais** de résolution : il relit des mesures déjà
+prises. Un instantané enregistré avant l'arrivée de ces mesures est traité en
+mode dégradé — couverture et volumétrie exactes, violations « non mesurées »,
+jamais zéro.
+
 ### Simulation « et si ? »
 
 Trois désistements, un recrutement de dernière minute, un stand fermé par la

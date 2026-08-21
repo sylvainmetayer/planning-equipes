@@ -132,6 +132,8 @@ capable d'en garder plusieurs : ils mettent un plan de côté avant qu'il ne soi
 | `POST` | `/api/planning/snapshots` | Enregistre le plan actuellement persisté. Corps : `{ "libelle": "…" }`. `409` s'il n'y a aucun plan à enregistrer |
 | `POST` | `/api/planning/snapshots/{id}/restore` | Réécrit `poste_affectation` et `planning_resolution` depuis l'instantané, puis re-dérive l'analyse de contraintes du plan restauré. `409` **sans rien écrire** si des références ont disparu (liste `referencesManquantes` : `stand:…`, `creneau:…`, `animateur:…`) |
 | `DELETE` | `/api/planning/snapshots/{id}` | Supprime un instantané |
+| `GET` | `/api/planning/snapshots/comparables` | Les instantanés de **toutes** les éditions, pour le comparateur A/B — la seule lecture d'instantanés non cloisonnée |
+| `GET` | `/api/planning/snapshots/compare?base=&variante=` | Comparaison A/B (issue #70). Chaque côté vaut un id d'instantané ou `courant` (le plan actuellement persisté). `404` si un instantané cité n'existe pas |
 
 Un instantané est pris **automatiquement avant chaque solve** (`automatique:
 true`, libellé « Avant solve du … ») : c'est le vrai filet anti-écrasement,
@@ -156,6 +158,35 @@ heures (total, moyenne, écart-type, min, max), jamais par animateur.
 | --- | --- | --- |
 | `GET` | `/api/kpi/historique` | Toutes les mesures, toutes éditions confondues, de la plus récente à la plus ancienne |
 | `DELETE` | `/api/kpi/historique/{id}` | Supprime une mesure |
+
+## Comparateur A/B
+
+`GET /api/planning/snapshots/compare` confronte deux plans et **ne déclenche
+aucune résolution** : il lit des KPI déjà mesurés, jamais un score recalculé.
+Chaque instantané emporte ses KPI au moment de la capture (colonne
+`plan_snapshot.kpi`, migration V49).
+
+Chaque côté (`base`, `variante`) désigne soit un id d'instantané, soit
+`courant` pour le plan actuellement persisté dans l'édition de la requête.
+La réponse porte :
+
+- `base` / `variante` : `snapshotId` (`null` pour le plan courant), `libelle`
+  (`null` pour le plan courant — le nommer est le travail de l'IHM, dans la
+  langue de l'utilisateur), `editionId`, `editionNom`, `creeLe`, `kpi`, et
+  `kpiRecalcule` ;
+- `editionsDifferentes` : les deux côtés appartiennent à des éditions
+  différentes, donc à des référentiels différents. Ce n'est **pas** une
+  anomalie — depuis la suppression des groupes de créneaux, une variante *est*
+  une autre édition — mais l'IHM doit le dire ;
+- `volumetriesDifferentes` : les deux plans n'ont pas le même nombre de postes,
+  une partie des écarts vient donc de la taille du problème ;
+- `diffViolations` : nombre de violations par contrainte de chaque côté.
+  `null` d'un côté signifie **non mesuré**, jamais zéro.
+
+`kpiRecalcule` marque le **mode dégradé** : un instantané antérieur à la
+migration V49 n'a pas de KPI stockés, ils sont alors recalculés depuis son
+contenu, dans l'édition qui l'a produit. Couverture et volumétrie restent
+exactes ; les violations ne sont pas mesurées.
 
 ## Résolution asynchrone
 

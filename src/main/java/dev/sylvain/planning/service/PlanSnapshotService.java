@@ -70,6 +70,9 @@ public class PlanSnapshotService {
     @Inject
     PlanningService planningService;
 
+    @Inject
+    PlanningKpiService kpiService;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /** One seat of a snapshotted plan, carrying everything needed to put it back. */
@@ -82,14 +85,29 @@ public class PlanSnapshotService {
             String heureFinEffective) {
     }
 
-    /** A snapshot without its content: what the management screen lists. */
+    /**
+     * A snapshot without its content: what the management screen lists.
+     *
+     * @param editionId  edition the snapshot was captured in — carried because
+     *                   the A/B comparator (issue #70) reads across editions,
+     *                   the edition being the variant carrier since #172
+     * @param editionNom display name of that edition, {@code null} once the
+     *                   edition itself is gone (the row cascades with it, so
+     *                   this only happens mid-deletion)
+     * @param kpi        the plan's KPI at capture time (issue #70),
+     *                   {@code null} on snapshots captured before they were
+     *                   stored — the comparator then recomputes what it can
+     */
     public record SnapshotMeta(
             long id,
             String libelle,
             boolean automatique,
             String score,
             int nombreAffectations,
-            Instant creeLe) {
+            Instant creeLe,
+            String editionId,
+            String editionNom,
+            PlanningKpiService.PlanningKpi kpi) {
     }
 
     /** A snapshot with its content. */
@@ -134,9 +152,11 @@ public class PlanSnapshotService {
     private SnapshotMeta inserer(String libelle, boolean automatique, String score,
             List<AffectationSnapshot> affectations) {
         String contenu = ecrireContenu(affectations);
+        PlanningKpiService.PlanningKpi kpi = kpiCourant();
         String sql = "INSERT INTO plan_snapshot "
                 + "(edition_id, libelle, automatique, score, nombre_affectations, "
-                + "cree_le, contenu) VALUES (?, ?, ?, ?, ?, ?, ?::jsonb) RETURNING id, cree_le";
+                + "cree_le, contenu, kpi) VALUES (?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb) "
+                + "RETURNING id, cree_le";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = prepareScoped(connection, sql)) {
             ps.setString(2, libelle);
@@ -145,10 +165,12 @@ public class PlanSnapshotService {
             ps.setInt(5, affectations.size());
             ps.setTimestamp(6, Timestamp.from(Instant.now()));
             ps.setString(7, contenu);
+            ps.setString(8, kpi == null ? null : ecrireKpi(kpi));
             try (ResultSet rs = ps.executeQuery()) {
                 rs.next();
                 SnapshotMeta meta = new SnapshotMeta(rs.getLong("id"), libelle, automatique,
-                        score, affectations.size(), rs.getTimestamp("cree_le").toInstant());
+                        score, affectations.size(), rs.getTimestamp("cree_le").toInstant(),
+                        editionId(), nomEdition(connection, editionId()), kpi);
                 if (automatique) {
                     purgerAutomatiques(connection);
                 }
@@ -172,37 +194,90 @@ public class PlanSnapshotService {
         }
     }
 
+    /** Columns every read below projects, so {@link #lireMeta} always finds them. */
+    private static final String COLONNES_META = "s.id, s.libelle, s.automatique, s.score, "
+            + "s.nombre_affectations, s.cree_le, s.edition_id, e.nom AS edition_nom";
+
+    private static final String DEPUIS_SNAPSHOT = " FROM plan_snapshot s "
+            + "LEFT JOIN edition e ON e.id = s.edition_id";
+
     public List<SnapshotMeta> lister() {
-        String sql = "SELECT id, libelle, automatique, score, nombre_affectations, "
-                + "cree_le FROM plan_snapshot WHERE edition_id = ? ORDER BY cree_le DESC, id DESC";
-        List<SnapshotMeta> snapshots = new ArrayList<>();
+        String sql = "SELECT " + COLONNES_META + ", s.kpi" + DEPUIS_SNAPSHOT
+                + " WHERE s.edition_id = ? ORDER BY s.cree_le DESC, s.id DESC";
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection, sql);
-                ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                snapshots.add(lireMeta(rs));
-            }
+                PreparedStatement ps = prepareScoped(connection, sql)) {
+            return lireMetas(ps);
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to list plan snapshots", e);
         }
-        return snapshots;
+    }
+
+    /**
+     * Every edition's snapshots, newest first — the one read that deliberately
+     * ignores the edition scope. The A/B comparator (issue #70) exists to
+     * confront a baseline with a variant, and since #172 a variant <b>is</b>
+     * another edition: scoping this listing would hide exactly the pair the
+     * user wants to compare. Nothing can be restored through it: restoring
+     * stays edition-scoped ({@link #restaurer}).
+     */
+    public List<SnapshotMeta> listerToutesEditions() {
+        String sql = "SELECT " + COLONNES_META + ", s.kpi" + DEPUIS_SNAPSHOT
+                + " ORDER BY s.cree_le DESC, s.id DESC";
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = connection.prepareStatement(sql)) {
+            return lireMetas(ps);
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to list plan snapshots of every edition", e);
+        }
     }
 
     /** {@code null} when no snapshot of this edition carries that id. */
     public SnapshotDetail charger(long id) {
-        String sql = "SELECT id, libelle, automatique, score, nombre_affectations, "
-                + "cree_le, contenu FROM plan_snapshot WHERE edition_id = ? AND id = ?";
+        String sql = "SELECT " + COLONNES_META + ", s.contenu, s.kpi" + DEPUIS_SNAPSHOT
+                + " WHERE s.edition_id = ? AND s.id = ?";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = prepareScoped(connection, sql)) {
             ps.setLong(2, id);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) {
-                    return null;
-                }
-                return new SnapshotDetail(lireMeta(rs), lireContenu(rs.getString("contenu")));
-            }
+            return lireDetail(ps);
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to load plan snapshot " + id, e);
+        }
+    }
+
+    /**
+     * Same as {@link #charger(long)} but across editions, for the comparator —
+     * see {@link #listerToutesEditions()} for why. Snapshot ids are unique
+     * server-wide (a single {@code BIGSERIAL}), so an id identifies one
+     * snapshot without its edition having to be named.
+     */
+    public SnapshotDetail chargerToutesEditions(long id) {
+        String sql = "SELECT " + COLONNES_META + ", s.contenu, s.kpi" + DEPUIS_SNAPSHOT
+                + " WHERE s.id = ?";
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setLong(1, id);
+            return lireDetail(ps);
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to load plan snapshot " + id, e);
+        }
+    }
+
+    private List<SnapshotMeta> lireMetas(PreparedStatement ps) throws SQLException {
+        List<SnapshotMeta> snapshots = new ArrayList<>();
+        try (ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                snapshots.add(lireMeta(rs));
+            }
+        }
+        return snapshots;
+    }
+
+    private SnapshotDetail lireDetail(PreparedStatement ps) throws SQLException {
+        try (ResultSet rs = ps.executeQuery()) {
+            if (!rs.next()) {
+                return null;
+            }
+            return new SnapshotDetail(lireMeta(rs), lireContenu(rs.getString("contenu")));
         }
     }
 
@@ -379,7 +454,54 @@ public class PlanSnapshotService {
                 rs.getBoolean("automatique"),
                 rs.getString("score"),
                 rs.getInt("nombre_affectations"),
-                creeLe == null ? null : creeLe.toInstant());
+                creeLe == null ? null : creeLe.toInstant(),
+                rs.getString("edition_id"),
+                rs.getString("edition_nom"),
+                lireKpi(rs.getString("kpi")));
+    }
+
+    /** Display name of an edition, read on the connection already open. */
+    private String nomEdition(Connection connection, String editionId) throws SQLException {
+        try (PreparedStatement ps = connection.prepareStatement("SELECT nom FROM edition WHERE id = ?")) {
+            ps.setString(1, editionId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getString("nom") : null;
+            }
+        }
+    }
+
+    /**
+     * KPI of the plan being captured, or {@code null} when they cannot be
+     * computed: a capture must never fail because a metric did — the plan is
+     * what the user asked to preserve, the KPI are a bonus the comparator
+     * knows how to do without (degraded mode, issue #70).
+     */
+    private PlanningKpiService.PlanningKpi kpiCourant() {
+        try {
+            return kpiService.calculerCourant(null);
+        } catch (RuntimeException e) {
+            return null;
+        }
+    }
+
+    private String ecrireKpi(PlanningKpiService.PlanningKpi kpi) {
+        try {
+            return objectMapper.writeValueAsString(kpi);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** A KPI payload written by an older format is treated as absent, never as an error. */
+    private PlanningKpiService.PlanningKpi lireKpi(String json) {
+        if (json == null) {
+            return null;
+        }
+        try {
+            return objectMapper.readValue(json, PlanningKpiService.PlanningKpi.class);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private String ecrireContenu(List<AffectationSnapshot> affectations) {

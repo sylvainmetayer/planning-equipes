@@ -13,7 +13,10 @@ function snapshot(id: number, libelle = 'S' + id): PlanSnapshot {
     automatique: false,
     score: '0hard/0medium/0soft',
     nombreAffectations: 12,
-    creeLe: '2026-08-18T10:00:00Z'
+    creeLe: '2026-08-18T10:00:00Z',
+    editionId: 'DEFAUT',
+    editionNom: 'Édition par défaut',
+    kpi: null
   };
 }
 

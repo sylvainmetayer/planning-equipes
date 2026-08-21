@@ -724,6 +724,43 @@ export interface PlanSnapshot {
   score: string | null;
   nombreAffectations: number;
   creeLe: string | null;
+  /** Edition the snapshot was captured in — `/comparables` spans them all (issue #70). */
+  editionId: string;
+  editionNom: string | null;
+  /** KPI at capture time, null on snapshots taken before they were stored. */
+  kpi: PlanningKpi | null;
+}
+
+/**
+ * One side of the A/B comparison (issue #70). `snapshotId` null means the side
+ * is the currently persisted plan rather than a capture, and `libelle` is then
+ * null too: naming that side is the UI's job, in the user's language.
+ */
+export interface CoteComparaison {
+  snapshotId: number | null;
+  libelle: string | null;
+  editionId: string;
+  editionNom: string | null;
+  creeLe: string | null;
+  kpi: PlanningKpi;
+  /** The KPI were not stored and had to be recomputed: violations are unmeasured. */
+  kpiRecalcule: boolean;
+}
+
+/** Violations of one constraint on each side; null = not measured, which is not zero. */
+export interface DiffContrainte {
+  contrainte: string;
+  base: number | null;
+  variante: number | null;
+}
+
+/** `GET /api/planning/snapshots/compare` — a read of measured metrics, never a solve. */
+export interface ComparaisonSnapshots {
+  base: CoteComparaison;
+  variante: CoteComparaison;
+  editionsDifferentes: boolean;
+  volumetriesDifferentes: boolean;
+  diffViolations: DiffContrainte[];
 }
 
 /** `POST /api/planning/snapshots/{id}/restore` on success. */

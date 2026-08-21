@@ -84,6 +84,7 @@ dans [`domaine.md`](domaine.md).
 | `PlanningPersistenceService` | Lecture / écriture du planning persisté, cloisonnée par édition |
 | `PlanningKpiService` | KPI agrégés et non nominatifs d'un plan (score par niveau, couverture, dispersion des heures, taux de modifications manuelles) — issue #89 |
 | `KpiHistoriqueService` | Une ligne de KPI par solve terminé, toutes éditions, sans clé étrangère (l'historique survit à la suppression d'une édition) — issue #89 |
+| `SnapshotComparaisonService` | Comparateur A/B : confronte deux plans (instantanés ou plan courant), **toutes éditions confondues**, en lecture seule — aucune résolution, aucun score recalculé — issue #70 |
 | `DatabaseDumpService` | Export / import de dump SQL |
 | `PlanningExportService` | Génération PDF (OpenPDF) et ICS, **côté serveur uniquement** |
 
@@ -171,6 +172,7 @@ Chaque bloc fonctionnel a **sa propre route et sa propre page**, chargée en
 | `/heatmap` | `app/pages/heatmap/` | Heatmap de charge par jour, croisée avec le stand (trous de couverture) ou l'animateur (surcharge) |
 | `/timeline` | `app/pages/animateur-timeline/` | Timeline individuelle d'un animateur : amplitude, vacations et pauses/déplacements jour par jour |
 | `/instantanes` | `app/pages/snapshots/` | Instantanés de plan : enregistrer, restaurer, supprimer un plan mis de côté (un instantané est aussi pris automatiquement avant chaque résolution) |
+| `/comparateur` | `app/pages/comparateur/` | Comparateur A/B : une référence contre une variante (deux instantanés, ou un instantané et le plan courant), toutes éditions confondues, avec le sens de chaque écart |
 | `/what-if` | `app/pages/what-if/` | Simulation « et si ? » : impact d'un désistement, d'un recrutement ou de la fermeture d'un stand, sans rien écrire |
 
 `/exports` et `/solver` (son ancienne route) redirigent vers `/` (les exports

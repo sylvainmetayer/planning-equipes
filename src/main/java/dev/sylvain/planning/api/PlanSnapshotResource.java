@@ -6,6 +6,8 @@ import dev.sylvain.planning.service.PlanSnapshotService;
 import dev.sylvain.planning.service.PlanSnapshotService.RestaurationResult;
 import dev.sylvain.planning.service.PlanSnapshotService.SnapshotDetail;
 import dev.sylvain.planning.service.PlanSnapshotService.SnapshotMeta;
+import dev.sylvain.planning.service.SnapshotComparaisonService;
+import dev.sylvain.planning.service.SnapshotComparaisonService.ComparaisonSnapshots;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -15,6 +17,7 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -30,9 +33,41 @@ public class PlanSnapshotResource {
     @Inject
     PlanSnapshotService snapshotService;
 
+    @Inject
+    SnapshotComparaisonService comparaisonService;
+
     @GET
     public List<SnapshotMeta> list() {
         return snapshotService.lister();
+    }
+
+    /**
+     * Every edition's snapshots, for the A/B comparator (issue #70) to offer
+     * them as sides. Deliberately not edition-scoped, unlike {@link #list()}:
+     * since #172 the variant of an edition <b>is</b> another edition, so the
+     * pair worth comparing usually straddles two of them. Read-only — nothing
+     * here can restore anything.
+     */
+    @GET
+    @Path("/comparables")
+    public List<SnapshotMeta> comparables() {
+        return snapshotService.listerToutesEditions();
+    }
+
+    /**
+     * A/B comparison (issue #70) of two sides, each designated by a snapshot id
+     * or by {@code courant} for the currently persisted plan. Reads metrics
+     * already measured: <b>no solve is launched and no score is recomputed</b>.
+     */
+    @GET
+    @Path("/compare")
+    public ComparaisonSnapshots compare(@QueryParam("base") String base,
+            @QueryParam("variante") String variante) {
+        ComparaisonSnapshots comparaison = comparaisonService.comparer(base, variante);
+        if (comparaison == null) {
+            throw new NotFoundException("Unknown snapshot: " + base + " or " + variante);
+        }
+        return comparaison;
     }
 
     @GET

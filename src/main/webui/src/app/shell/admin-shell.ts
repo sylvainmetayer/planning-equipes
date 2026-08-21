@@ -138,7 +138,12 @@ function buildNavGroups(): NavGroup[] {
         icon: 'timeline'
       },
       { path: '/graphe', label: $localize`:@@nav.link.graphe:Graphe`, icon: 'hub' },
-      { path: '/kpi', label: $localize`:@@nav.link.kpi:Historique des KPI`, icon: 'query_stats' }
+      { path: '/kpi', label: $localize`:@@nav.link.kpi:Historique des KPI`, icon: 'query_stats' },
+      {
+        path: '/comparateur',
+        label: $localize`:@@nav.link.comparateur:Comparateur A/B`,
+        icon: 'compare_arrows'
+      }
     ]
   },
   {

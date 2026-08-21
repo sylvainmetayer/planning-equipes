@@ -65,6 +65,11 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/kpi/kpi-page').then((m) => m.KpiPage)
   },
   {
+    path: 'comparateur',
+    title: 'Comparateur A/B — Planning Équipes',
+    loadComponent: () => import('./pages/comparateur/comparateur-page').then((m) => m.ComparateurPage)
+  },
+  {
     path: 'instantanes',
     title: 'Instantanés — Planning Équipes',
     loadComponent: () => import('./pages/snapshots/snapshots-page').then((m) => m.SnapshotsPage)
