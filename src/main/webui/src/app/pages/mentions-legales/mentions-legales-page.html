@@ -87,6 +87,24 @@
 
     <mat-card appearance="outlined" class="page-card">
       <mat-card-header>
+        <h2 mat-card-title i18n="@@mentions.responsabilite.title">Responsabilité</h2>
+      </mat-card-header>
+      <mat-card-content>
+        <p i18n="@@mentions.responsabilite.texte">
+          L'organisation qui exploite cette application reste l'employeur ou le donneur d'ordre des personnes
+          planifiées, et demeure responsable des données saisies comme du planning produit et diffusé : respect de la
+          réglementation du travail, exactitude des informations, décisions d'affectation. L'application calcule des
+          propositions et signale des anomalies — c'est une aide à la décision, jamais une validation juridique.
+        </p>
+        <a matButton="filled" routerLink="/conditions-utilisation">
+          <mat-icon>handshake</mat-icon>
+          <ng-container i18n="@@nav.link.cgu">Conditions d'utilisation</ng-container>
+        </a>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-header>
         <h2 mat-card-title i18n="@@mentions.proprieteIntellectuelle.title">Propriété intellectuelle</h2>
       </mat-card-header>
       <mat-card-content>

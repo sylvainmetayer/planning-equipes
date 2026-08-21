@@ -171,6 +171,11 @@ function buildNavGroups(devMode: boolean): NavGroup[] {
         label: $localize`:@@nav.link.confidentialite:Politique de confidentialité`,
         icon: 'privacy_tip'
       },
+      {
+        path: '/conditions-utilisation',
+        label: $localize`:@@nav.link.cgu:Conditions d'utilisation`,
+        icon: 'handshake'
+      },
       // Dev mode only: in a packaged application the Dev UI does not exist,
       // and the entry would lead nowhere.
       ...(devMode

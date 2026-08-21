@@ -1,0 +1,130 @@
+<mat-toolbar class="app-toolbar">
+  <img src="logo.png" alt="Planning Équipes" class="app-logo" />
+  <span class="app-title" i18n="@@cgu.title">Conditions générales d'utilisation</span>
+  <span class="app-toolbar-spacer"></span>
+  @if (peutRevenir()) {
+    <button matButton (click)="revenir()">
+      <mat-icon>arrow_back</mat-icon>
+      <ng-container i18n="@@common.retour">Retour</ng-container>
+    </button>
+  }
+</mat-toolbar>
+
+<main class="mentions-page">
+  <app-status-message [text]="erreur()" tone="error" />
+
+  @if (mentions(); as infos) {
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-header>
+        <h2 mat-card-title i18n="@@cgu.objet.title">Objet</h2>
+      </mat-card-header>
+      <mat-card-content>
+        <p i18n="@@cgu.objet.texte">
+          Cette application aide une organisation de festival à construire, diffuser et ajuster le planning de ses
+          animateurs. Elle est mise à disposition par l'organisation indiquée dans les mentions légales, pour ses
+          besoins propres et ceux des personnes qu'elle planifie. L'utiliser — comme administrateur ou depuis un
+          espace personnel d'animateur — vaut acceptation des présentes conditions.
+        </p>
+        <p>
+          <a routerLink="/mentions-legales" i18n="@@cgu.versMentions">Voir les mentions légales</a>
+          &nbsp;·&nbsp;
+          <a routerLink="/politique-confidentialite" i18n="@@nav.link.confidentialite">Politique de confidentialité</a>
+        </p>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-header>
+        <h2 mat-card-title i18n="@@cgu.aideDecision.title">L'outil assiste la décision, il ne la prend pas</h2>
+      </mat-card-header>
+      <mat-card-content>
+        <p i18n="@@cgu.aideDecision.texte">
+          L'application calcule des propositions de planning à partir des données saisies : stands, créneaux,
+          disponibilités, compétences, et règles de temps de travail paramétrées. Ce calcul est une
+          <strong>aide à la décision</strong>. Il ne vaut ni validation juridique, ni certification de conformité,
+          ni engagement sur la faisabilité réelle d'un planning.
+        </p>
+        <p i18n="@@cgu.aideDecision.humain">
+          Aucun planning n'est appliqué sans avoir été examiné et validé par l'organisation, qui peut le corriger,
+          imposer ou interdire une affectation. De même, aucune demande d'échange n'est appliquée sans sa décision
+          explicite.
+        </p>
+        <p i18n="@@cgu.aideDecision.limites">
+          Les résultats dépendent entièrement de l'exactitude des données saisies et des paramètres retenus. Une date
+          de naissance erronée, une indisponibilité non déclarée ou un plafond horaire mal réglé produisent un
+          planning que l'application jugera valide et qui ne le sera pas.
+        </p>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-header>
+        <h2 mat-card-title i18n="@@cgu.organisateur.title">L'organisateur reste l'employeur et le responsable</h2>
+      </mat-card-header>
+      <mat-card-content>
+        <p i18n="@@cgu.organisateur.employeur">
+          L'organisation qui exploite l'application demeure <strong>l'employeur ou le donneur d'ordre</strong> des
+          personnes planifiées. À ce titre, elle reste seule responsable du respect de la réglementation applicable :
+          droit du travail et convention collective, durées maximales et repos, encadrement du travail des mineurs,
+          déclarations sociales, assurances, sécurité des personnes sur site.
+        </p>
+        <p i18n="@@cgu.organisateur.donnees">
+          Elle reste également <strong>responsable des données</strong> qu'elle saisit ou importe, de leur exactitude
+          et de leur licéité, ainsi que du planning produit et diffusé : elle en est le responsable de traitement au
+          sens du RGPD, et l'auteur des décisions d'affectation qui en découlent.
+        </p>
+        <p i18n="@@cgu.organisateur.controle">
+          Les contrôles intégrés à l'application — règles de temps de travail, alertes d'infaisabilité, diagnostics —
+          sont des garde-fous destinés à révéler des erreurs. Ils ne dispensent d'aucune vérification et ne
+          garantissent pas qu'un planning respecte la réglementation applicable à un cas particulier.
+        </p>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-header>
+        <h2 mat-card-title i18n="@@cgu.responsabilite.title">Limitation de responsabilité</h2>
+      </mat-card-header>
+      <mat-card-content>
+        <p i18n="@@cgu.responsabilite.enLetat">
+          Le logiciel est fourni <strong>en l'état</strong>, sans garantie d'aucune sorte, expresse ou implicite, y
+          compris de qualité marchande, d'adéquation à un usage particulier ou d'absence de défaut. Il est publié sous
+          licence Apache 2.0, dont les clauses de garantie et de responsabilité s'appliquent à son code.
+        </p>
+        <p i18n="@@cgu.responsabilite.disponibilite">
+          Aucune disponibilité ininterrompue n'est garantie : l'application peut être indisponible pour maintenance,
+          incident technique ou défaillance d'un prestataire. Les données doivent faire l'objet de sauvegardes par
+          l'organisation qui exploite l'application.
+        </p>
+        <p i18n="@@cgu.responsabilite.dommages">
+          Dans la limite permise par la loi, la responsabilité des auteurs et contributeurs du logiciel ne saurait
+          être engagée à raison des plannings produits, des décisions prises sur leur fondement, d'une perte de
+          données, ni d'un préjudice indirect. Ces limitations ne s'appliquent ni en cas de faute lourde ou
+          intentionnelle, ni aux dommages corporels, ni à ce que la loi interdit d'écarter — notamment les droits que
+          la réglementation reconnaît aux personnes concernées par un traitement de données.
+        </p>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-header>
+        <h2 mat-card-title i18n="@@cgu.usage.title">Usage attendu</h2>
+      </mat-card-header>
+      <mat-card-content>
+        <ul>
+          <li i18n="@@cgu.usage.acces">
+            Les accès sont personnels : un lien d'espace animateur et le code reçu par e-mail ne se partagent pas.
+          </li>
+          <li i18n="@@cgu.usage.donneesTiers">
+            Les informations concernant d'autres personnes, consultées dans le cadre du planning, ne doivent servir
+            qu'à s'organiser avec elles.
+          </li>
+          <li i18n="@@cgu.usage.evolution">
+            L'application évolue ; des écrans peuvent changer ou disparaître. Les présentes conditions peuvent être
+            mises à jour en conséquence.
+          </li>
+        </ul>
+      </mat-card-content>
+    </mat-card>
+  }
+</main>

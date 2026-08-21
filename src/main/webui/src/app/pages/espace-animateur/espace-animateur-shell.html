@@ -20,6 +20,12 @@
     <mat-icon>privacy_tip</mat-icon>
     <span i18n="@@nav.link.confidentialite">Politique de confidentialité</span>
   </a>
+  <a matButton href="/conditions-utilisation" target="_blank" rel="noopener noreferrer"
+     i18n-matTooltip="@@espace.cgu.tooltip"
+     matTooltip="Ce que l'application fait, et ce dont l'organisation reste responsable (nouvel onglet)">
+    <mat-icon>handshake</mat-icon>
+    <span i18n="@@nav.link.cgu">Conditions d'utilisation</span>
+  </a>
   <button matButton (click)="toggleLocale()" i18n-aria-label="@@shell.switchLanguage" aria-label="Changer de langue">
     {{ locale === 'fr' ? 'EN' : 'FR' }}
   </button>

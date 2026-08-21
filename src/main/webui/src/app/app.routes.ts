@@ -193,6 +193,12 @@ export const routes: Routes = [
       )
   },
   {
+    path: 'conditions-utilisation',
+    title: "Conditions d'utilisation — Planning Équipes",
+    loadComponent: () =>
+      import('./pages/mentions-legales/conditions-utilisation-page').then((m) => m.ConditionsUtilisationPage)
+  },
+  {
     path: 'animateur/:jeton',
     loadComponent: () =>
       import('./pages/espace-animateur/espace-animateur-shell').then((m) => m.EspaceAnimateurShell),
