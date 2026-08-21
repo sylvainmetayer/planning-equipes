@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service;
 
+import dev.sylvain.planning.config.ConfigRemoteUser;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Locale;
@@ -46,26 +47,14 @@ public class RemoteUserAuthentification {
     /** Principal name of the header-authenticated admin, distinct from the form login's {@code admin}. */
     public static final String PRINCIPAL_ADMIN = "admin";
 
-    @ConfigProperty(name = "planning.auth.remote-user.enabled", defaultValue = "false")
-    boolean actif;
-
-    @ConfigProperty(name = "planning.auth.remote-user.header", defaultValue = "Remote-Email")
-    String enTeteEmail;
-
-    @ConfigProperty(name = "planning.auth.remote-user.secret-header", defaultValue = "Remote-Auth-Secret")
-    String enTeteSecret;
-
-    @ConfigProperty(name = "planning.auth.remote-user.secret")
-    Optional<String> secret;
-
-    @ConfigProperty(name = "planning.auth.remote-user.admin-email")
-    Optional<String> emailAdmin;
+    @Inject
+    ConfigRemoteUser config;
 
     @Inject
     ReferenceDataRepository repository;
 
     public boolean actif() {
-        return actif;
+        return config.enabled();
     }
 
     /**
@@ -79,13 +68,13 @@ public class RemoteUserAuthentification {
      *               guard), which share no header API
      */
     public Optional<String> emailDeConfiance(Function<String, String> enTete) {
-        if (!actif || secret.isEmpty() || secret.get().isBlank()) {
+        if (!config.enabled() || config.secret().isEmpty() || config.secret().get().isBlank()) {
             return Optional.empty();
         }
-        if (!secretsEgaux(secret.get(), enTete.apply(enTeteSecret))) {
+        if (!secretsEgaux(config.secret().get(), enTete.apply(config.secretHeader()))) {
             return Optional.empty();
         }
-        String email = enTete.apply(enTeteEmail);
+        String email = enTete.apply(config.header());
         if (email == null || email.isBlank()) {
             return Optional.empty();
         }
@@ -94,8 +83,8 @@ public class RemoteUserAuthentification {
 
     /** True when {@code email} is the single address configured as the administrator's. */
     public boolean estAdmin(String email) {
-        return emailAdmin.isPresent() && !emailAdmin.get().isBlank()
-                && normaliser(emailAdmin.get()).equals(normaliser(email));
+        return config.adminEmail().isPresent() && !config.adminEmail().get().isBlank()
+                && normaliser(config.adminEmail().get()).equals(normaliser(email));
     }
 
     /**
@@ -109,23 +98,23 @@ public class RemoteUserAuthentification {
      * immediately when the mode is off.</p>
      */
     void verifierConfiguration(@Observes StartupEvent demarrage) {
-        if (!actif) {
+        if (!config.enabled()) {
             return;
         }
-        if (secret.isEmpty() || secret.get().isBlank()) {
+        if (config.secret().isEmpty() || config.secret().get().isBlank()) {
             throw new IllegalStateException("planning.auth.remote-user.enabled=true exige "
                     + "planning.auth.remote-user.secret : sans secret partagé, l'en-tête "
-                    + enTeteEmail + " est une simple affirmation du client et n'importe qui atteignant "
+                    + config.header() + " est une simple affirmation du client et n'importe qui atteignant "
                     + "l'origine sans passer par le proxy obtiendrait le rôle admin.");
         }
-        if (emailAdmin.isEmpty() || emailAdmin.get().isBlank()) {
+        if (config.adminEmail().isEmpty() || config.adminEmail().get().isBlank()) {
             Log.warn("planning.auth.remote-user.admin-email n'est pas renseignée : aucun porteur de l'en-tête "
-                    + enTeteEmail + " n'obtiendra le rôle admin, seuls les animateurs seront reconnus.");
+                    + config.header() + " n'obtiendra le rôle admin, seuls les animateurs seront reconnus.");
             return;
         }
         try {
-            if (repository.emailAnimateurExiste(emailAdmin.get())) {
-                Log.warn("planning.auth.remote-user.admin-email (" + emailAdmin.get() + ") est aussi l'adresse "
+            if (repository.emailAnimateurExiste(config.adminEmail().get())) {
+                Log.warn("planning.auth.remote-user.admin-email (" + config.adminEmail().get() + ") est aussi l'adresse "
                         + "d'un animateur : cette personne sera authentifiée comme administratrice et perdra "
                         + "l'accès à son espace animateur. Utiliser une adresse distincte.");
             }

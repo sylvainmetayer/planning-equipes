@@ -1,5 +1,7 @@
 package dev.sylvain.planning.mcp;
 
+import jakarta.inject.Inject;
+import dev.sylvain.planning.config.ConfigMcp;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.List;
@@ -47,21 +49,16 @@ public class McpApiKeyAuthenticationMechanism implements HttpAuthenticationMecha
 
     static final String PRINCIPAL = "mcp";
 
-    @ConfigProperty(name = "planning.mcp.api-key")
-    Optional<String> apiKey;
-
-    @ConfigProperty(name = "planning.mcp.api-key-header", defaultValue = "X-MCP-Api-Key")
-    String headerName;
-
-    @ConfigProperty(name = "planning.mcp.required-headers")
-    Optional<List<String>> requiredHeaders;
+    @Inject
+    ConfigMcp config;
 
     @Override
     public Uni<SecurityIdentity> authenticate(RoutingContext context, IdentityProviderManager identityProviderManager) {
         if (!context.request().path().startsWith("/mcp")) {
             return Uni.createFrom().nullItem();
         }
-        if (apiKey.isEmpty() || apiKey.get().isBlank() || !clesEgales(apiKey.get(), clePresentee(context))) {
+        if (config.apiKey().isEmpty() || config.apiKey().get().isBlank()
+                || !clesEgales(config.apiKey().get(), clePresentee(context))) {
             return Uni.createFrom().nullItem();
         }
         if (!enTetesRequisPresents(context)) {
@@ -85,10 +82,10 @@ public class McpApiKeyAuthenticationMechanism implements HttpAuthenticationMecha
      * "header optional".
      */
     private boolean enTetesRequisPresents(RoutingContext context) {
-        if (requiredHeaders.isEmpty()) {
+        if (config.requiredHeaders().isEmpty()) {
             return true;
         }
-        return requiredHeaders.get().stream().allMatch(paire -> {
+        return config.requiredHeaders().get().stream().allMatch(paire -> {
             int separateur = paire.indexOf('=');
             String nom = separateur < 0 ? paire.trim() : paire.substring(0, separateur).trim();
             String valeurAttendue = separateur < 0 ? "" : paire.substring(separateur + 1);
@@ -130,7 +127,7 @@ public class McpApiKeyAuthenticationMechanism implements HttpAuthenticationMecha
     }
 
     private String clePresentee(RoutingContext context) {
-        String header = context.request().getHeader(headerName);
+        String header = context.request().getHeader(config.apiKeyHeader());
         if (header != null) {
             return header;
         }

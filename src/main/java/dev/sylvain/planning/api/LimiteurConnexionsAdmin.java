@@ -1,5 +1,7 @@
 package dev.sylvain.planning.api;
 
+import jakarta.inject.Inject;
+import dev.sylvain.planning.config.ConfigConnexionAdmin;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
@@ -62,11 +64,8 @@ public class LimiteurConnexionsAdmin {
     /** Après les en-têtes de sécurité, avant tout traitement de la requête. */
     private static final int PRIORITE = 250;
 
-    @ConfigProperty(name = "planning.auth.connexion.max-echecs")
-    int maxEchecs;
-
-    @ConfigProperty(name = "planning.auth.connexion.duree-blocage")
-    Duration dureeBlocage;
+    @Inject
+    ConfigConnexionAdmin config;
 
     /** Lu de la configuration pour que les deux ne dérivent jamais l'un de l'autre. */
     @ConfigProperty(name = "quarkus.http.auth.form.cookie-name")
@@ -116,7 +115,7 @@ public class LimiteurConnexionsAdmin {
         }
         Instant maintenant = Instant.now();
         parAdresse.compute(adresse(routage), (ignore, courant) -> {
-            if (courant == null || courant.dernier().plus(dureeBlocage).isBefore(maintenant)) {
+            if (courant == null || courant.dernier().plus(config.dureeBlocage()).isBefore(maintenant)) {
                 return new Echecs(1, maintenant);
             }
             return new Echecs(courant.nombre() + 1, maintenant);
@@ -146,10 +145,10 @@ public class LimiteurConnexionsAdmin {
     /** Secondes restantes de blocage, {@code 0} si l'adresse peut tenter sa chance. */
     private long secondesDeBlocage(String adresse) {
         Echecs echecs = parAdresse.get(adresse);
-        if (echecs == null || echecs.nombre() < maxEchecs) {
+        if (echecs == null || echecs.nombre() < config.maxEchecs()) {
             return 0;
         }
-        long restant = Duration.between(Instant.now(), echecs.dernier().plus(dureeBlocage)).toSeconds();
+        long restant = Duration.between(Instant.now(), echecs.dernier().plus(config.dureeBlocage())).toSeconds();
         if (restant <= 0) {
             parAdresse.remove(adresse);
             return 0;

@@ -50,6 +50,9 @@ public class EspaceAccesService {
     DataSource dataSource;
 
     @Inject
+    JdbcEditionScope scope;
+
+    @Inject
     EditionContext editionContext;
 
     @Inject
@@ -103,7 +106,7 @@ public class EspaceAccesService {
         }
         String code = String.format("%06d", random.nextInt(1_000_000));
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection,
+                PreparedStatement ps = scope.prepareScoped(connection,
                         "INSERT INTO espace_acces (edition_id, animateur_id, code_hash, expire_le, tentatives_restantes) "
                                 + "VALUES (?, ?, ?, ?, ?) ON CONFLICT (edition_id, animateur_id) DO UPDATE SET "
                                 + "code_hash = EXCLUDED.code_hash, expire_le = EXCLUDED.expire_le, "
@@ -136,7 +139,7 @@ public class EspaceAccesService {
         random.nextBytes(brut);
         String session = Base64.getUrlEncoder().withoutPadding().encodeToString(brut);
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection,
+                PreparedStatement ps = scope.prepareScoped(connection,
                         "INSERT INTO espace_session (edition_id, session_hash, animateur_id, expire_le) "
                                 + "VALUES (?, ?, ?, ?)")) {
             ps.setString(2, hacher(session));
@@ -164,7 +167,7 @@ public class EspaceAccesService {
             return false;
         }
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection,
+                PreparedStatement ps = scope.prepareScoped(connection,
                         "SELECT animateur_id, expire_le FROM espace_session "
                                 + "WHERE edition_id = ? AND session_hash = ?")) {
             ps.setString(2, hacher(cookieValue));
@@ -183,7 +186,7 @@ public class EspaceAccesService {
             throw new ErreurMetier.Invalide("Code manquant");
         }
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection,
+                PreparedStatement ps = scope.prepareScoped(connection,
                         "UPDATE espace_acces SET tentatives_restantes = tentatives_restantes - 1 "
                                 + "WHERE edition_id = ? AND animateur_id = ? AND tentatives_restantes > 0 "
                                 + "AND expire_le > now() RETURNING code_hash")) {
@@ -206,7 +209,7 @@ public class EspaceAccesService {
 
     private void supprimerCode(String animateurId) {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection,
+                PreparedStatement ps = scope.prepareScoped(connection,
                         "DELETE FROM espace_acces WHERE edition_id = ? AND animateur_id = ?")) {
             ps.setString(2, animateurId);
             ps.executeUpdate();
@@ -245,14 +248,4 @@ public class EspaceAccesService {
         return editionContext.editionIdCourant() + "/" + animateurId;
     }
 
-    private PreparedStatement prepareScoped(Connection connection, String sql) throws SQLException {
-        PreparedStatement ps = connection.prepareStatement(sql);
-        try {
-            ps.setString(1, editionContext.editionIdCourant());
-            return ps;
-        } catch (SQLException | RuntimeException e) {
-            ps.close();
-            throw e;
-        }
-    }
 }

@@ -59,7 +59,7 @@ public class PlanSnapshotService {
     DataSource dataSource;
 
     @Inject
-    EditionContext editionContext;
+    JdbcEditionScope scope;
 
     @Inject
     PlanningPersistenceService persistenceService;
@@ -165,7 +165,7 @@ public class PlanSnapshotService {
                 + "cree_le, contenu, kpi) VALUES (?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb) "
                 + "RETURNING id, cree_le";
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection, sql)) {
+                PreparedStatement ps = scope.prepareScoped(connection, sql)) {
             ps.setString(2, libelle);
             ps.setBoolean(3, automatique);
             ps.setString(4, score);
@@ -212,7 +212,7 @@ public class PlanSnapshotService {
         String sql = "SELECT " + COLONNES_META + ", s.kpi" + DEPUIS_SNAPSHOT
                 + " WHERE s.edition_id = ? ORDER BY s.cree_le DESC, s.id DESC";
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection, sql)) {
+                PreparedStatement ps = scope.prepareScoped(connection, sql)) {
             return lireMetas(ps);
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to list plan snapshots", e);
@@ -243,7 +243,7 @@ public class PlanSnapshotService {
         String sql = "SELECT " + COLONNES_META + ", s.contenu, s.kpi" + DEPUIS_SNAPSHOT
                 + " WHERE s.edition_id = ? AND s.id = ?";
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection, sql)) {
+                PreparedStatement ps = scope.prepareScoped(connection, sql)) {
             ps.setLong(2, id);
             return lireDetail(ps);
         } catch (SQLException e) {
@@ -291,7 +291,7 @@ public class PlanSnapshotService {
     /** @return true when a row was actually deleted. */
     public boolean supprimer(long id) {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection,
+                PreparedStatement ps = scope.prepareScoped(connection,
                         "DELETE FROM plan_snapshot WHERE edition_id = ? AND id = ?")) {
             ps.setLong(2, id);
             return ps.executeUpdate() > 0;
@@ -315,44 +315,32 @@ public class PlanSnapshotService {
         if (!manquantes.isEmpty()) {
             return RestaurationResult.referencesPerdues(manquantes);
         }
-        try (Connection connection = dataSource.getConnection()) {
-            boolean autoCommit = connection.getAutoCommit();
-            connection.setAutoCommit(false);
-            try {
-                try (PreparedStatement ps = prepareScoped(connection,
-                        "DELETE FROM poste_affectation WHERE edition_id = ?")) {
-                    ps.executeUpdate();
-                }
-                String insert = "INSERT INTO poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id, "
-                        + "heure_debut_effective, heure_fin_effective) VALUES (?, ?, ?, ?, ?, ?, ?)";
-                try (PreparedStatement ps = prepareScoped(connection, insert)) {
-                    for (AffectationSnapshot affectation : detail.affectations()) {
-                        ps.setString(2, affectation.posteId());
-                        ps.setString(3, affectation.standId());
-                        ps.setLong(4, Long.parseLong(affectation.creneauId()));
-                        ps.setString(5, affectation.animateurId());
-                        ps.setObject(6, heure(affectation.heureDebutEffective()));
-                        ps.setObject(7, heure(affectation.heureFinEffective()));
-                        ps.addBatch();
-                    }
-                    ps.executeBatch();
-                }
-                String resolution = "INSERT INTO planning_resolution (edition_id, resolu_le) "
-                        + "VALUES (?, ?) ON CONFLICT (edition_id) DO UPDATE SET resolu_le = EXCLUDED.resolu_le";
-                try (PreparedStatement ps = prepareScoped(connection, resolution)) {
-                    ps.setTimestamp(2, Timestamp.from(Instant.now()));
-                    ps.executeUpdate();
-                }
-                connection.commit();
-            } catch (SQLException | RuntimeException e) {
-                connection.rollback();
-                throw e;
-            } finally {
-                connection.setAutoCommit(autoCommit);
+        scope.ecrire("Failed to restore plan snapshot " + id, connection -> {
+            try (PreparedStatement ps = scope.prepareScoped(connection,
+                    "DELETE FROM poste_affectation WHERE edition_id = ?")) {
+                ps.executeUpdate();
             }
-        } catch (SQLException e) {
-            throw new IllegalStateException("Failed to restore plan snapshot " + id, e);
-        }
+            String insert = "INSERT INTO poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id, "
+                    + "heure_debut_effective, heure_fin_effective) VALUES (?, ?, ?, ?, ?, ?, ?)";
+            try (PreparedStatement ps = scope.prepareScoped(connection, insert)) {
+                for (AffectationSnapshot affectation : detail.affectations()) {
+                    ps.setString(2, affectation.posteId());
+                    ps.setString(3, affectation.standId());
+                    ps.setLong(4, Long.parseLong(affectation.creneauId()));
+                    ps.setString(5, affectation.animateurId());
+                    ps.setObject(6, heure(affectation.heureDebutEffective()));
+                    ps.setObject(7, heure(affectation.heureFinEffective()));
+                    ps.addBatch();
+                }
+                ps.executeBatch();
+            }
+            String resolution = "INSERT INTO planning_resolution (edition_id, resolu_le) "
+                    + "VALUES (?, ?) ON CONFLICT (edition_id) DO UPDATE SET resolu_le = EXCLUDED.resolu_le";
+            try (PreparedStatement ps = scope.prepareScoped(connection, resolution)) {
+                ps.setTimestamp(2, Timestamp.from(Instant.now()));
+                ps.executeUpdate();
+            }
+        });
         // The restore rewrote the persisted plan outside of any solve, so the
         // stored constraint analysis now describes a plan that is gone.
         // Cleared first, then re-derived from the restored plan: a failed
@@ -374,7 +362,7 @@ public class PlanSnapshotService {
                 + "FROM poste_affectation WHERE edition_id = ? ORDER BY id";
         List<AffectationSnapshot> affectations = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection, sql);
+                PreparedStatement ps = scope.prepareScoped(connection, sql);
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 affectations.add(new AffectationSnapshot(
@@ -422,7 +410,7 @@ public class PlanSnapshotService {
         List<String> manquants = new ArrayList<>();
         String sql = "SELECT 1 FROM " + table + " WHERE edition_id = ? AND " + colonne + " = ?";
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection, sql)) {
+                PreparedStatement ps = scope.prepareScoped(connection, sql)) {
             for (String id : ids) {
                 if (numerique) {
                     ps.setLong(2, Long.parseLong(id));
@@ -447,7 +435,7 @@ public class PlanSnapshotService {
         String sql = "DELETE FROM plan_snapshot WHERE edition_id = ? AND automatique AND id NOT IN ("
                 + "SELECT id FROM plan_snapshot WHERE edition_id = ? AND automatique "
                 + "ORDER BY cree_le DESC, id DESC LIMIT ?)";
-        try (PreparedStatement ps = prepareScoped(connection, sql)) {
+        try (PreparedStatement ps = scope.prepareScoped(connection, sql)) {
             ps.setString(2, editionId());
             ps.setInt(3, Math.max(1, automatiquesConservees));
             ps.executeUpdate();
@@ -538,18 +526,6 @@ public class PlanSnapshotService {
     }
 
     private String editionId() {
-        return editionContext.editionIdCourant();
-    }
-
-    /** Same convention as the other repositories: edition bound to placeholder 1. */
-    private PreparedStatement prepareScoped(Connection connection, String sql) throws SQLException {
-        PreparedStatement ps = connection.prepareStatement(sql);
-        try {
-            ps.setString(1, editionId());
-            return ps;
-        } catch (SQLException | RuntimeException e) {
-            ps.close();
-            throw e;
-        }
+        return scope.editionId();
     }
 }

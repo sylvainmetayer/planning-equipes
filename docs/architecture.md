@@ -79,7 +79,8 @@ dans [`domaine.md`](domaine.md).
 | `SolverJobService` | Résolutions et analyses asynchrones ; porte le verrou « un seul solveur à la fois », partagé par tous les clients, et la **file d'attente** des tâches planifiées derrière celle qui tourne ; la rejoue au démarrage |
 | `SolverJobRepository` | Persistance de cette file et du journal des jobs (table `solver_job`) : l'**intention** d'un job, jamais un état de solveur ni le résultat — voir [`api.md`](api.md#la-file-survit-au-redémarrage) |
 | `ConstraintAnalysisStore` | Mémorise le résultat de la dernière analyse pour l'onglet « Constraints » |
-| `ReferenceDataService` / `ReferenceDataRepository` | CRUD référentiels (stands, créneaux, animateurs, typologies, contraintes ad hoc) ; point de passage unique du SQL référentiel, et donc du prédicat `edition_id` |
+| `ReferenceDataService` / `ReferenceDataRepository` | CRUD référentiels (stands, créneaux, animateurs, typologies, contraintes ad hoc) ; point de passage unique du SQL référentiel |
+| `JdbcEditionScope` | Le seul endroit qui emprunte une connexion, lie l'édition courante au **premier** paramètre d'une requête (`prepareScoped`) et porte la transaction (`lire` / `ecrire` / `ecrireEtRendre`). C'est ce qui rend le prédicat `edition_id` mécanique — voir [`editions.md`](editions.md) |
 | `EditionService` / `EditionRepository` | Gestion des éditions elles-mêmes : création, duplication, suppression — voir [`editions.md`](editions.md) |
 | `EditionContext` / `EditionRequestScope` | Résout l'édition que la requête courante lit et écrit (en-tête `X-Edition-Id`, repli sur l'édition par défaut), et permet de lier une édition à un thread sans requête (worker du solveur) |
 | `PlanningPersistenceService` | Lecture / écriture du planning persisté, cloisonnée par édition |
@@ -286,8 +287,10 @@ versionné** ; ne jamais modifier une migration déjà appliquée.
 Toutes les tables métier sont cloisonnées par `edition_id` depuis `V32`–`V36`,
 et les identifiants métier (`stand.id`, `animateur.id`, …) ont une clé primaire
 composite `(edition_id, id)` : une nouvelle table du référentiel doit suivre la
-même convention, et sa requête doit passer par `ReferenceDataRepository`. Voir
-[`editions.md`](editions.md).
+même convention, et sa requête doit passer par `JdbcEditionScope`.
+`IsolationEditionStructurelleTest` le vérifie mécaniquement : il lit le SQL de
+tout le backend et échoue sur toute requête visant une table métier sans
+prédicat `edition_id`. Voir [`editions.md`](editions.md).
 
 ## Conteneurisation
 

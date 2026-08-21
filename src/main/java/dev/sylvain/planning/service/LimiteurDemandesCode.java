@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service;
 
+import jakarta.inject.Inject;
+import dev.sylvain.planning.config.ConfigEspaceCode;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
@@ -39,11 +41,8 @@ public class LimiteurDemandesCode {
         }
     }
 
-    @ConfigProperty(name = "planning.espace.code.max-demandes")
-    int maxDemandes;
-
-    @ConfigProperty(name = "planning.espace.code.fenetre")
-    Duration fenetre;
+    @Inject
+    ConfigEspaceCode config;
 
     private final Map<String, Fenetre> parAnimateur = new ConcurrentHashMap<>();
 
@@ -59,15 +58,15 @@ public class LimiteurDemandesCode {
     public Verdict demander(String cle) {
         Instant maintenant = Instant.now();
         Fenetre apres = parAnimateur.compute(cle, (ignore, courante) -> {
-            if (courante == null || courante.debut().plus(fenetre).isBefore(maintenant)) {
+            if (courante == null || courante.debut().plus(config.fenetre()).isBefore(maintenant)) {
                 return new Fenetre(1, maintenant);
             }
             return new Fenetre(courante.demandes() + 1, courante.debut());
         });
-        if (apres.demandes() <= maxDemandes) {
+        if (apres.demandes() <= config.maxDemandes()) {
             return Verdict.ok();
         }
-        long restant = Duration.between(maintenant, apres.debut().plus(fenetre)).toSeconds();
+        long restant = Duration.between(maintenant, apres.debut().plus(config.fenetre())).toSeconds();
         return new Verdict(false, Math.max(restant, 1));
     }
 

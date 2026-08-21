@@ -70,13 +70,11 @@ public class ReferenceDataRepository {
     DataSource dataSource;
 
     @Inject
-    EditionContext editionContext;
-
-    /** Timeslot group seeded by V10 in every {@code edition}, and the fallback for callers that name none. */
+    JdbcEditionScope scope;
 
     /** Edition every statement below reads and writes. */
     private String editionId() {
-        return editionContext.editionIdCourant();
+        return scope.editionId();
     }
 
     /**
@@ -115,7 +113,7 @@ public class ReferenceDataRepository {
     public List<Stand> listStands() {
         Map<String, Stand> byId = new LinkedHashMap<>();
         try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement ps = prepareScoped(connection,
+            try (PreparedStatement ps = scope.prepareScoped(connection,
                     "SELECT s.id, s.nom, s.effectif_min, s.effectif_max, s.reserve_majeurs, s.premium, s.niveau_effort, "
                             + "e.id AS emplacement_id, e.nom AS emplacement_nom, e.latitude AS emplacement_latitude, "
                             + "e.longitude AS emplacement_longitude "
@@ -141,7 +139,7 @@ public class ReferenceDataRepository {
                     byId.put(stand.getId(), stand);
                 }
             }
-            try (PreparedStatement ps = prepareScoped(connection,
+            try (PreparedStatement ps = scope.prepareScoped(connection,
                     "SELECT stand_id, typologie FROM stand_typologie WHERE edition_id = ?");
                     ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -151,7 +149,7 @@ public class ReferenceDataRepository {
                     }
                 }
             }
-            try (PreparedStatement ps = prepareScoped(connection,
+            try (PreparedStatement ps = scope.prepareScoped(connection,
                     "SELECT id, stand_id, date_indisponibilite, heure_debut, heure_fin, motif "
                             + "FROM stand_indisponibilite WHERE edition_id = ? ORDER BY id");
                     ResultSet rs = ps.executeQuery()) {
@@ -167,7 +165,7 @@ public class ReferenceDataRepository {
                     }
                 }
             }
-            try (PreparedStatement ps = prepareScoped(connection,
+            try (PreparedStatement ps = scope.prepareScoped(connection,
                     "SELECT id, stand_id, date_ouverture, heure_debut, heure_fin, motif "
                             + "FROM stand_ouverture WHERE edition_id = ? ORDER BY id");
                     ResultSet rs = ps.executeQuery()) {
@@ -200,7 +198,7 @@ public class ReferenceDataRepository {
      */
     private void chargerHoraires(Connection connection, Map<String, Stand> standsById) throws SQLException {
         Map<Long, HoraireStand> horairesParId = new LinkedHashMap<>();
-        try (PreparedStatement ps = prepareScoped(connection,
+        try (PreparedStatement ps = scope.prepareScoped(connection,
                 "SELECT id, stand_id, mode, type_jours, jours_semaine, date_debut, date_fin, dates, motif "
                         + "FROM stand_horaire WHERE edition_id = ? ORDER BY stand_id, id");
                 ResultSet rs = ps.executeQuery()) {
@@ -225,7 +223,7 @@ public class ReferenceDataRepository {
         if (horairesParId.isEmpty()) {
             return;
         }
-        try (PreparedStatement ps = prepareScoped(connection,
+        try (PreparedStatement ps = scope.prepareScoped(connection,
                 "SELECT horaire_id, heure_debut, heure_fin FROM stand_horaire_fenetre "
                         + "WHERE edition_id = ? ORDER BY horaire_id, position, id");
                 ResultSet rs = ps.executeQuery()) {
@@ -268,18 +266,9 @@ public class ReferenceDataRepository {
     }
 
     public void saveStand(Stand stand) {
-        try (Connection connection = dataSource.getConnection()) {
-            connection.setAutoCommit(false);
-            try {
-                upsertStand(connection, stand);
-                connection.commit();
-            } catch (SQLException e) {
-                connection.rollback();
-                throw e;
-            }
-        } catch (SQLException e) {
-            throw new IllegalStateException("Failed to save stand " + stand.getId(), e);
-        }
+        scope.ecrire("Failed to save stand " + stand.getId(), connection -> {
+            upsertStand(connection, stand);
+        });
     }
 
     public void deleteStand(String id) {
@@ -287,7 +276,7 @@ public class ReferenceDataRepository {
     }
 
     private void upsertEmplacementTx(Connection connection, Emplacement emplacement) throws SQLException {
-        try (PreparedStatement ps = prepareScoped(connection,
+        try (PreparedStatement ps = scope.prepareScoped(connection,
                 "INSERT INTO emplacement (edition_id, id, nom, latitude, longitude) VALUES (?, ?, ?, ?, ?) "
                         + "ON CONFLICT (edition_id, id) DO UPDATE SET nom = EXCLUDED.nom, "
                         + "latitude = EXCLUDED.latitude, longitude = EXCLUDED.longitude")) {
@@ -300,7 +289,7 @@ public class ReferenceDataRepository {
     }
 
     private void upsertStand(Connection connection, Stand stand) throws SQLException {
-        try (PreparedStatement ps = prepareScoped(connection,
+        try (PreparedStatement ps = scope.prepareScoped(connection,
                 "INSERT INTO stand (edition_id, id, nom, effectif_min, effectif_max, reserve_majeurs, premium, "
                         + "emplacement_id, niveau_effort) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) "
                         + "ON CONFLICT (edition_id, id) DO UPDATE SET nom = EXCLUDED.nom, "
@@ -318,13 +307,13 @@ public class ReferenceDataRepository {
             ps.setString(9, stand.getNiveauEffort().name());
             ps.executeUpdate();
         }
-        try (PreparedStatement del = prepareScoped(connection,
+        try (PreparedStatement del = scope.prepareScoped(connection,
                 "DELETE FROM stand_typologie WHERE edition_id = ? AND stand_id = ?")) {
             del.setString(2, stand.getId());
             del.executeUpdate();
         }
         if (stand.getTypologiesProposees() != null && !stand.getTypologiesProposees().isEmpty()) {
-            try (PreparedStatement ins = prepareScoped(connection,
+            try (PreparedStatement ins = scope.prepareScoped(connection,
                     "INSERT INTO stand_typologie (edition_id, stand_id, typologie) VALUES (?, ?, ?)")) {
                 for (String typologie : stand.getTypologiesProposees()) {
                     ins.setString(2, stand.getId());
@@ -334,13 +323,13 @@ public class ReferenceDataRepository {
                 ins.executeBatch();
             }
         }
-        try (PreparedStatement del = prepareScoped(connection,
+        try (PreparedStatement del = scope.prepareScoped(connection,
                 "DELETE FROM stand_indisponibilite WHERE edition_id = ? AND stand_id = ?")) {
             del.setString(2, stand.getId());
             del.executeUpdate();
         }
         if (stand.getIndisponibilites() != null && !stand.getIndisponibilites().isEmpty()) {
-            try (PreparedStatement ins = prepareScoped(connection,
+            try (PreparedStatement ins = scope.prepareScoped(connection,
                     "INSERT INTO stand_indisponibilite (edition_id, stand_id, date_indisponibilite, heure_debut, "
                             + "heure_fin, motif) VALUES (?, ?, ?, ?, ?, ?)")) {
                 for (IndisponibiliteStand indispo : stand.getIndisponibilites()) {
@@ -354,13 +343,13 @@ public class ReferenceDataRepository {
                 ins.executeBatch();
             }
         }
-        try (PreparedStatement del = prepareScoped(connection,
+        try (PreparedStatement del = scope.prepareScoped(connection,
                 "DELETE FROM stand_ouverture WHERE edition_id = ? AND stand_id = ?")) {
             del.setString(2, stand.getId());
             del.executeUpdate();
         }
         if (stand.getOuvertures() != null && !stand.getOuvertures().isEmpty()) {
-            try (PreparedStatement ins = prepareScoped(connection,
+            try (PreparedStatement ins = scope.prepareScoped(connection,
                     "INSERT INTO stand_ouverture (edition_id, stand_id, date_ouverture, heure_debut, heure_fin, motif) "
                             + "VALUES (?, ?, ?, ?, ?, ?)")) {
                 for (OuvertureStand ouverture : stand.getOuvertures()) {
@@ -386,7 +375,7 @@ public class ReferenceDataRepository {
      * expansion into a few hundred dated rows.
      */
     private void upsertHoraires(Connection connection, Stand stand) throws SQLException {
-        try (PreparedStatement del = prepareScoped(connection,
+        try (PreparedStatement del = scope.prepareScoped(connection,
                 "DELETE FROM stand_horaire WHERE edition_id = ? AND stand_id = ?")) {
             del.setString(2, stand.getId());
             del.executeUpdate();
@@ -396,7 +385,7 @@ public class ReferenceDataRepository {
         }
         for (HoraireStand horaire : stand.getHoraires()) {
             long horaireId;
-            try (PreparedStatement ins = prepareScoped(connection,
+            try (PreparedStatement ins = scope.prepareScoped(connection,
                     "INSERT INTO stand_horaire (edition_id, stand_id, mode, type_jours, jours_semaine, date_debut, "
                             + "date_fin, dates, motif) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id")) {
                 ins.setString(2, stand.getId());
@@ -416,7 +405,7 @@ public class ReferenceDataRepository {
             if (horaire.getFenetres().isEmpty()) {
                 continue;
             }
-            try (PreparedStatement ins = prepareScoped(connection,
+            try (PreparedStatement ins = scope.prepareScoped(connection,
                     "INSERT INTO stand_horaire_fenetre (edition_id, horaire_id, position, heure_debut, heure_fin) "
                             + "VALUES (?, ?, ?, ?, ?)")) {
                 int position = 0;
@@ -437,7 +426,7 @@ public class ReferenceDataRepository {
     public List<Emplacement> listEmplacements() {
         List<Emplacement> emplacements = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection,
+                PreparedStatement ps = scope.prepareScoped(connection,
                         "SELECT id, nom, latitude, longitude FROM emplacement WHERE edition_id = ? ORDER BY id");
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
@@ -483,32 +472,20 @@ public class ReferenceDataRepository {
      * créneaux it referenced.
      */
     public void replaceCreneaux(List<Creneau> creneaux) {
-        try (Connection connection = dataSource.getConnection()) {
-            boolean previousAutoCommit = connection.getAutoCommit();
-            connection.setAutoCommit(false);
-            try {
-                try (PreparedStatement ps = prepareScoped(connection,
-                        "DELETE FROM poste_affectation WHERE edition_id = ?")) {
-                    ps.executeUpdate();
-                }
-                try (PreparedStatement ps = prepareScoped(connection,
-                        "DELETE FROM creneau WHERE edition_id = ?")) {
-                    ps.executeUpdate();
-                }
-                for (Creneau creneau : creneaux) {
-                    creneau.setId(null);
-                    insertCreneauTx(connection, creneau);
-                }
-                connection.commit();
-            } catch (SQLException e) {
-                connection.rollback();
-                throw e;
-            } finally {
-                connection.setAutoCommit(previousAutoCommit);
+        scope.ecrire("Failed to replace timeslots", connection -> {
+            try (PreparedStatement ps = scope.prepareScoped(connection,
+                    "DELETE FROM poste_affectation WHERE edition_id = ?")) {
+                ps.executeUpdate();
             }
-        } catch (SQLException e) {
-            throw new IllegalStateException("Failed to replace timeslots", e);
-        }
+            try (PreparedStatement ps = scope.prepareScoped(connection,
+                    "DELETE FROM creneau WHERE edition_id = ?")) {
+                ps.executeUpdate();
+            }
+            for (Creneau creneau : creneaux) {
+                creneau.setId(null);
+                insertCreneauTx(connection, creneau);
+            }
+        });
     }
 
     /**
@@ -531,7 +508,7 @@ public class ReferenceDataRepository {
     private List<Creneau> listCreneaux(String sql) {
         Map<Long, Creneau> byId = new LinkedHashMap<>();
         try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement ps = prepareScoped(connection, sql);
+            try (PreparedStatement ps = scope.prepareScoped(connection, sql);
                     ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Creneau creneau = readCreneau(rs);
@@ -565,35 +542,17 @@ public class ReferenceDataRepository {
 
     /** Inserts a new timeslot; the database generates its id, which is set back onto {@code creneau}. */
     public Creneau insertCreneau(Creneau creneau) {
-        try (Connection connection = dataSource.getConnection()) {
-            connection.setAutoCommit(false);
-            try {
-                insertCreneauTx(connection, creneau);
-                connection.commit();
-                return creneau;
-            } catch (SQLException e) {
-                connection.rollback();
-                throw e;
-            }
-        } catch (SQLException e) {
-            throw new IllegalStateException("Failed to save timeslot", e);
-        }
+        return scope.ecrireEtRendre("Failed to save timeslot", connection -> {
+            insertCreneauTx(connection, creneau);
+            return creneau;
+        });
     }
 
     /** Updates an existing timeslot in place; its id is left untouched. */
     public void updateCreneau(Creneau creneau) {
-        try (Connection connection = dataSource.getConnection()) {
-            connection.setAutoCommit(false);
-            try {
-                updateCreneauTx(connection, creneau);
-                connection.commit();
-            } catch (SQLException e) {
-                connection.rollback();
-                throw e;
-            }
-        } catch (SQLException e) {
-            throw new IllegalStateException("Failed to save timeslot " + creneau.getId(), e);
-        }
+        scope.ecrire("Failed to save timeslot " + creneau.getId(), connection -> {
+            updateCreneauTx(connection, creneau);
+        });
     }
 
     public void deleteCreneau(Long id) {
@@ -605,7 +564,7 @@ public class ReferenceDataRepository {
     public List<Animateur> listAnimateurs() {
         Map<String, Animateur> byId = new LinkedHashMap<>();
         try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement ps = prepareScoped(connection,
+            try (PreparedStatement ps = scope.prepareScoped(connection,
                     "SELECT id, prenom, nom, date_naissance, manager, email, jeton_acces FROM animateur "
                             + "WHERE edition_id = ? ORDER BY id");
                     ResultSet rs = ps.executeQuery()) {
@@ -621,7 +580,7 @@ public class ReferenceDataRepository {
                     byId.put(animateur.getId(), animateur);
                 }
             }
-            try (PreparedStatement ps = prepareScoped(connection,
+            try (PreparedStatement ps = scope.prepareScoped(connection,
                     "SELECT animateur_id, typologie, niveau FROM animateur_competence WHERE edition_id = ?");
                     ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -633,7 +592,7 @@ public class ReferenceDataRepository {
                     }
                 }
             }
-            try (PreparedStatement ps = prepareScoped(connection,
+            try (PreparedStatement ps = scope.prepareScoped(connection,
                     "SELECT animateur_id, jour FROM animateur_jour_indispo WHERE edition_id = ?");
                     ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -643,7 +602,7 @@ public class ReferenceDataRepository {
                     }
                 }
             }
-            try (PreparedStatement ps = prepareScoped(connection,
+            try (PreparedStatement ps = scope.prepareScoped(connection,
                     "SELECT animateur_id, typologie FROM animateur_souhait WHERE edition_id = ?");
                     ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -657,7 +616,7 @@ public class ReferenceDataRepository {
             // holding the ninja typologie is what makes an animateur dispatchable
             // on any stand, so the flag is derived here once competences are known.
             String typologieNinja = null;
-            try (PreparedStatement ps = prepareScoped(connection, "SELECT id FROM typologie WHERE edition_id = ? AND ninja LIMIT 1");
+            try (PreparedStatement ps = scope.prepareScoped(connection, "SELECT id FROM typologie WHERE edition_id = ? AND ninja LIMIT 1");
                     ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     typologieNinja = rs.getString("id");
@@ -679,18 +638,9 @@ public class ReferenceDataRepository {
     }
 
     public void saveAnimateur(Animateur animateur) {
-        try (Connection connection = dataSource.getConnection()) {
-            connection.setAutoCommit(false);
-            try {
-                upsertAnimateur(connection, animateur);
-                connection.commit();
-            } catch (SQLException e) {
-                connection.rollback();
-                throw e;
-            }
-        } catch (SQLException e) {
-            throw new IllegalStateException("Failed to save animator " + animateur.getId(), e);
-        }
+        scope.ecrire("Failed to save animator " + animateur.getId(), connection -> {
+            upsertAnimateur(connection, animateur);
+        });
     }
 
     public void deleteAnimateur(String id) {
@@ -705,7 +655,7 @@ public class ReferenceDataRepository {
      */
     public String regenererJetonAnimateur(String id) {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection,
+                PreparedStatement ps = scope.prepareScoped(connection,
                         "UPDATE animateur SET jeton_acces = gen_random_uuid()::text "
                                 + "WHERE edition_id = ? AND id = ? RETURNING jeton_acces")) {
             ps.setString(2, id);
@@ -799,7 +749,7 @@ public class ReferenceDataRepository {
         String miseAJourEmail = conserverEmailSiAbsent
                 ? "email = COALESCE(EXCLUDED.email, animateur.email)"
                 : "email = EXCLUDED.email";
-        try (PreparedStatement ps = prepareScoped(connection,
+        try (PreparedStatement ps = scope.prepareScoped(connection,
                 "INSERT INTO animateur (edition_id, id, prenom, nom, date_naissance, manager, email) "
                         + "VALUES (?, ?, ?, ?, ?, ?, ?) "
                         + "ON CONFLICT (edition_id, id) DO UPDATE SET prenom = EXCLUDED.prenom, nom = EXCLUDED.nom, "
@@ -813,13 +763,13 @@ public class ReferenceDataRepository {
             ps.setString(7, animateur.getEmail());
             ps.executeUpdate();
         }
-        try (PreparedStatement del = prepareScoped(connection,
+        try (PreparedStatement del = scope.prepareScoped(connection,
                 "DELETE FROM animateur_competence WHERE edition_id = ? AND animateur_id = ?")) {
             del.setString(2, animateur.getId());
             del.executeUpdate();
         }
         if (animateur.getCompetences() != null && !animateur.getCompetences().isEmpty()) {
-            try (PreparedStatement ins = prepareScoped(connection,
+            try (PreparedStatement ins = scope.prepareScoped(connection,
                     "INSERT INTO animateur_competence (edition_id, animateur_id, typologie, niveau) "
                             + "VALUES (?, ?, ?, ?)")) {
                 for (Map.Entry<String, NiveauCompetence> entry : animateur.getCompetences().entrySet()) {
@@ -831,13 +781,13 @@ public class ReferenceDataRepository {
                 ins.executeBatch();
             }
         }
-        try (PreparedStatement del = prepareScoped(connection,
+        try (PreparedStatement del = scope.prepareScoped(connection,
                 "DELETE FROM animateur_jour_indispo WHERE edition_id = ? AND animateur_id = ?")) {
             del.setString(2, animateur.getId());
             del.executeUpdate();
         }
         if (animateur.getJoursIndisponibles() != null && !animateur.getJoursIndisponibles().isEmpty()) {
-            try (PreparedStatement ins = prepareScoped(connection,
+            try (PreparedStatement ins = scope.prepareScoped(connection,
                     "INSERT INTO animateur_jour_indispo (edition_id, animateur_id, jour) VALUES (?, ?, ?)")) {
                 for (LocalDate jour : animateur.getJoursIndisponibles()) {
                     ins.setString(2, animateur.getId());
@@ -847,13 +797,13 @@ public class ReferenceDataRepository {
                 ins.executeBatch();
             }
         }
-        try (PreparedStatement del = prepareScoped(connection,
+        try (PreparedStatement del = scope.prepareScoped(connection,
                 "DELETE FROM animateur_souhait WHERE edition_id = ? AND animateur_id = ?")) {
             del.setString(2, animateur.getId());
             del.executeUpdate();
         }
         if (animateur.getSouhaits() != null && !animateur.getSouhaits().isEmpty()) {
-            try (PreparedStatement ins = prepareScoped(connection,
+            try (PreparedStatement ins = scope.prepareScoped(connection,
                     "INSERT INTO animateur_souhait (edition_id, animateur_id, typologie) VALUES (?, ?, ?)")) {
                 for (String typologie : animateur.getSouhaits()) {
                     ins.setString(2, animateur.getId());
@@ -870,7 +820,7 @@ public class ReferenceDataRepository {
     public List<TypologieItem> listTypologies() {
         List<TypologieItem> typologies = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection,
+                PreparedStatement ps = scope.prepareScoped(connection,
                         "SELECT id, label, ninja FROM typologie WHERE edition_id = ? ORDER BY id");
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
@@ -885,7 +835,7 @@ public class ReferenceDataRepository {
     /** Id of the single typologie flagged ninja, empty when the referential has none. */
     public Optional<String> findTypologieNinja() {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection, "SELECT id FROM typologie WHERE edition_id = ? AND ninja LIMIT 1");
+                PreparedStatement ps = scope.prepareScoped(connection, "SELECT id FROM typologie WHERE edition_id = ? AND ninja LIMIT 1");
                 ResultSet rs = ps.executeQuery()) {
             return rs.next() ? Optional.of(rs.getString("id")) : Optional.empty();
         } catch (SQLException e) {
@@ -898,32 +848,23 @@ public class ReferenceDataRepository {
     }
 
     public void saveTypologie(TypologieItem typologie) {
-        try (Connection connection = dataSource.getConnection()) {
-            connection.setAutoCommit(false);
-            try {
-                // Only one typologie may be ninja *per edition*: demote the previous
-                // holder in the same transaction, otherwise the partial unique index
-                // (V31, scoped per edition by V33) rejects the insert and the user
-                // sees a raw constraint violation. The demotion carries the same
-                // edition predicate as the index it protects — without it, flagging a
-                // ninja here would silently clear the one of every other edition.
-                if (typologie.ninja()) {
-                    try (PreparedStatement ps = prepareScoped(connection,
-                            "UPDATE typologie SET ninja = FALSE "
-                                    + "WHERE edition_id = ? AND ninja AND id <> ?")) {
-                        ps.setString(2, typologie.id());
-                        ps.executeUpdate();
-                    }
+        scope.ecrire("Failed to save typology " + typologie.id(), connection -> {
+            // Only one typologie may be ninja *per edition*: demote the previous
+            // holder in the same transaction, otherwise the partial unique index
+            // (V31, scoped per edition by V33) rejects the insert and the user
+            // sees a raw constraint violation. The demotion carries the same
+            // edition predicate as the index it protects — without it, flagging a
+            // ninja here would silently clear the one of every other edition.
+            if (typologie.ninja()) {
+                try (PreparedStatement ps = scope.prepareScoped(connection,
+                        "UPDATE typologie SET ninja = FALSE "
+                                + "WHERE edition_id = ? AND ninja AND id <> ?")) {
+                    ps.setString(2, typologie.id());
+                    ps.executeUpdate();
                 }
-                upsertTypologie(connection, typologie);
-                connection.commit();
-            } catch (SQLException e) {
-                connection.rollback();
-                throw e;
             }
-        } catch (SQLException e) {
-            throw new IllegalStateException("Failed to save typology " + typologie.id(), e);
-        }
+            upsertTypologie(connection, typologie);
+        });
     }
 
     public void deleteTypologie(String id) {
@@ -932,7 +873,7 @@ public class ReferenceDataRepository {
 
     public boolean typologieEnUsage(String id) {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection,
+                PreparedStatement ps = scope.prepareScoped(connection,
                         "SELECT 1 WHERE EXISTS "
                                 + "(SELECT 1 FROM stand_typologie WHERE edition_id = ? AND typologie = ?) "
                                 + "OR EXISTS "
@@ -953,7 +894,7 @@ public class ReferenceDataRepository {
     }
 
     private void upsertTypologie(Connection connection, TypologieItem typologie) throws SQLException {
-        try (PreparedStatement ps = prepareScoped(connection,
+        try (PreparedStatement ps = scope.prepareScoped(connection,
                 "INSERT INTO typologie (edition_id, id, label, ninja) VALUES (?, ?, ?, ?) "
                         + "ON CONFLICT (edition_id, id) DO UPDATE SET label = EXCLUDED.label, "
                         + "ninja = EXCLUDED.ninja")) {
@@ -971,7 +912,7 @@ public class ReferenceDataRepository {
      * typologie just because the derived item carries the default {@code false}.
      */
     private void upsertTypologieDerivee(Connection connection, TypologieItem typologie) throws SQLException {
-        try (PreparedStatement ps = prepareScoped(connection,
+        try (PreparedStatement ps = scope.prepareScoped(connection,
                 "INSERT INTO typologie (edition_id, id, label, ninja) VALUES (?, ?, ?, FALSE) "
                         + "ON CONFLICT (edition_id, id) DO UPDATE SET label = EXCLUDED.label")) {
             ps.setString(2, typologie.id());
@@ -985,7 +926,7 @@ public class ReferenceDataRepository {
     public List<ContrainteAdHoc> listContraintes() {
         Map<String, ContrainteAdHoc> byId = new LinkedHashMap<>();
         try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement ps = prepareScoped(connection,
+            try (PreparedStatement ps = scope.prepareScoped(connection,
                     "SELECT id, type, creneau_id, stand_id, raison, cree_par, cree_le FROM contrainte_ad_hoc "
                             + "WHERE edition_id = ? ORDER BY id");
                     ResultSet rs = ps.executeQuery()) {
@@ -1011,7 +952,7 @@ public class ReferenceDataRepository {
                     byId.put(contrainte.getId(), contrainte);
                 }
             }
-            try (PreparedStatement ps = prepareScoped(connection,
+            try (PreparedStatement ps = scope.prepareScoped(connection,
                     "SELECT contrainte_id, animateur_id FROM contrainte_animateur WHERE edition_id = ? "
                             + "ORDER BY contrainte_id, position");
                     ResultSet rs = ps.executeQuery()) {
@@ -1031,18 +972,9 @@ public class ReferenceDataRepository {
     }
 
     public void saveContrainte(ContrainteAdHoc contrainte) {
-        try (Connection connection = dataSource.getConnection()) {
-            connection.setAutoCommit(false);
-            try {
-                upsertContrainte(connection, contrainte);
-                connection.commit();
-            } catch (SQLException e) {
-                connection.rollback();
-                throw e;
-            }
-        } catch (SQLException e) {
-            throw new IllegalStateException("Failed to save constraint " + contrainte.getId(), e);
-        }
+        scope.ecrire("Failed to save constraint " + contrainte.getId(), connection -> {
+            upsertContrainte(connection, contrainte);
+        });
     }
 
     public void deleteContrainte(String id) {
@@ -1050,7 +982,7 @@ public class ReferenceDataRepository {
     }
 
     private void upsertContrainte(Connection connection, ContrainteAdHoc contrainte) throws SQLException {
-        try (PreparedStatement ps = prepareScoped(connection,
+        try (PreparedStatement ps = scope.prepareScoped(connection,
                 "INSERT INTO contrainte_ad_hoc (edition_id, id, type, creneau_id, stand_id, raison, cree_par, cree_le) "
                         + "VALUES (?, ?, ?, ?, ?, ?, ?, ?) "
                         + "ON CONFLICT (edition_id, id) DO UPDATE SET type = EXCLUDED.type, "
@@ -1066,14 +998,14 @@ public class ReferenceDataRepository {
             ps.setTimestamp(8, Timestamp.from(creeLe));
             ps.executeUpdate();
         }
-        try (PreparedStatement del = prepareScoped(connection,
+        try (PreparedStatement del = scope.prepareScoped(connection,
                 "DELETE FROM contrainte_animateur WHERE edition_id = ? AND contrainte_id = ?")) {
             del.setString(2, contrainte.getId());
             del.executeUpdate();
         }
         List<Animateur> cibles = contrainte.getAnimateursConcernes();
         if (cibles != null && !cibles.isEmpty()) {
-            try (PreparedStatement ins = prepareScoped(connection,
+            try (PreparedStatement ins = scope.prepareScoped(connection,
                     "INSERT INTO contrainte_animateur (edition_id, contrainte_id, animateur_id, position) "
                             + "VALUES (?, ?, ?, ?)")) {
                 int position = 0;
@@ -1101,7 +1033,7 @@ public class ReferenceDataRepository {
     public List<VerrouillagePlanning> listVerrouillages() {
         List<VerrouillagePlanning> verrouillages = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection,
+                PreparedStatement ps = scope.prepareScoped(connection,
                         SELECT_VERROUILLAGE_SQL + " ORDER BY cree_le DESC, id")) {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -1140,7 +1072,7 @@ public class ReferenceDataRepository {
                 + "(edition_id, id, type, animateur_id, stand_id, creneau_id, jour, raison, cree_le) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING";
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection, sql)) {
+                PreparedStatement ps = scope.prepareScoped(connection, sql)) {
             ps.setString(2, verrouillage.getId());
             ps.setString(3, verrouillage.getType() != null ? verrouillage.getType().name() : null);
             ps.setString(4, verrouillage.getAnimateurId());
@@ -1164,7 +1096,7 @@ public class ReferenceDataRepository {
 
     public ParametresLegaux getParametresLegaux() {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection,
+                PreparedStatement ps = scope.prepareScoped(connection,
                         "SELECT duree_hebdomadaire_max_minutes, duree_hebdomadaire_max_mineur_minutes, "
                                 + "pause_minimale_entre_vacations_minutes, repos_quotidien_minimal_minutes "
                                 + "FROM parametres_legaux WHERE edition_id = ?");
@@ -1185,7 +1117,7 @@ public class ReferenceDataRepository {
 
     public void saveParametresLegaux(ParametresLegaux parametres) {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection,
+                PreparedStatement ps = scope.prepareScoped(connection,
                         "INSERT INTO parametres_legaux (edition_id, duree_hebdomadaire_max_minutes, "
                                 + "duree_hebdomadaire_max_mineur_minutes, pause_minimale_entre_vacations_minutes, "
                                 + "repos_quotidien_minimal_minutes) VALUES (?, ?, ?, ?, ?) "
@@ -1210,7 +1142,7 @@ public class ReferenceDataRepository {
 
     public ParametresDecoupage getParametresDecoupage() {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection,
+                PreparedStatement ps = scope.prepareScoped(connection,
                         "SELECT duree_vacation_cible_minutes, duree_vacation_min_minutes, duree_vacation_max_minutes, "
                                 + "duree_chevauchement_minutes, duree_pause_repas_minutes, fenetre_repas_midi_debut, "
                                 + "fenetre_repas_midi_fin, fenetre_repas_soir_debut, fenetre_repas_soir_fin, "
@@ -1243,7 +1175,7 @@ public class ReferenceDataRepository {
 
     public void saveParametresDecoupage(ParametresDecoupage parametres) {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection,
+                PreparedStatement ps = scope.prepareScoped(connection,
                         "INSERT INTO parametres_decoupage (edition_id, duree_vacation_cible_minutes, "
                                 + "duree_vacation_min_minutes, duree_vacation_max_minutes, duree_chevauchement_minutes, "
                                 + "duree_pause_repas_minutes, fenetre_repas_midi_debut, fenetre_repas_midi_fin, "
@@ -1285,7 +1217,7 @@ public class ReferenceDataRepository {
 
     public ParametresSolveur getParametresSolveur() {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection,
+                PreparedStatement ps = scope.prepareScoped(connection,
                         "SELECT duree_resolution_secondes, mail_fin_resolution "
                                 + "FROM parametres_solveur WHERE edition_id = ?");
                 ResultSet rs = ps.executeQuery()) {
@@ -1301,7 +1233,7 @@ public class ReferenceDataRepository {
 
     public void saveParametresSolveur(ParametresSolveur parametres) {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection,
+                PreparedStatement ps = scope.prepareScoped(connection,
                         "INSERT INTO parametres_solveur (edition_id, duree_resolution_secondes, "
                                 + "mail_fin_resolution) VALUES (?, ?, ?) "
                                 + "ON CONFLICT (edition_id) DO UPDATE SET "
@@ -1319,7 +1251,7 @@ public class ReferenceDataRepository {
 
     public java.util.Set<String> getContraintesDesactivees() {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection,
+                PreparedStatement ps = scope.prepareScoped(connection,
                         "SELECT nom FROM constraint_toggle WHERE edition_id = ?");
                 ResultSet rs = ps.executeQuery()) {
             java.util.Set<String> desactivees = new java.util.HashSet<>();
@@ -1340,13 +1272,13 @@ public class ReferenceDataRepository {
     public void setContrainteActive(String nom, boolean actif) {
         try (Connection connection = dataSource.getConnection()) {
             if (actif) {
-                try (PreparedStatement ps = prepareScoped(connection,
+                try (PreparedStatement ps = scope.prepareScoped(connection,
                         "DELETE FROM constraint_toggle WHERE edition_id = ? AND nom = ?")) {
                     ps.setString(2, nom);
                     ps.executeUpdate();
                 }
             } else {
-                try (PreparedStatement ps = prepareScoped(connection,
+                try (PreparedStatement ps = scope.prepareScoped(connection,
                         "INSERT INTO constraint_toggle (edition_id, nom) VALUES (?, ?) "
                                 + "ON CONFLICT (edition_id, nom) DO NOTHING")) {
                     ps.setString(2, nom);
@@ -1392,82 +1324,73 @@ public class ReferenceDataRepository {
                 ? planning.getContraintesAdHoc()
                 : List.of();
 
-        try (Connection connection = dataSource.getConnection()) {
-            connection.setAutoCommit(false);
-            try {
-                // verrouillage_planning goes with the assignments it freezes: the
-                // reference dataset is being replaced, so the validated planning
-                // those locks protected no longer exists — and planning_resolution
-                // goes with it, so nothing keeps claiming "résolu le …" over an
-                // empty plan. Stands and animateurs, on the other hand, are
-                // DIFFED, not wiped: the file's rows are upserted (which keeps
-                // an existing animateur's access token, sessions and demandes
-                // alive) and only the rows absent from the file are deleted.
-                for (String table : List.of("contrainte_animateur", "contrainte_ad_hoc", "verrouillage_planning",
-                        "poste_affectation", "planning_resolution")) {
-                    // Table names come from the literal list above, never from user input.
-                    try (PreparedStatement ps = prepareScoped(connection,
-                            "DELETE FROM " + table + " WHERE edition_id = ?")) {
-                        ps.executeUpdate();
-                    }
-                }
-                try (PreparedStatement ps = prepareScoped(connection,
-                        "DELETE FROM creneau WHERE edition_id = ?")) {
+        scope.ecrire("Failed to import reference data from planning", connection -> {
+            // verrouillage_planning goes with the assignments it freezes: the
+            // reference dataset is being replaced, so the validated planning
+            // those locks protected no longer exists — and planning_resolution
+            // goes with it, so nothing keeps claiming "résolu le …" over an
+            // empty plan. Stands and animateurs, on the other hand, are
+            // DIFFED, not wiped: the file's rows are upserted (which keeps
+            // an existing animateur's access token, sessions and demandes
+            // alive) and only the rows absent from the file are deleted.
+            for (String table : List.of("contrainte_animateur", "contrainte_ad_hoc", "verrouillage_planning",
+                    "poste_affectation", "planning_resolution")) {
+                // Table names come from the literal list above, never from user input.
+                try (PreparedStatement ps = scope.prepareScoped(connection,
+                        "DELETE FROM " + table + " WHERE edition_id = ?")) {
                     ps.executeUpdate();
                 }
-                Map<Long, Long> idsRemap = new LinkedHashMap<>();
-                for (Creneau creneau : creneauxById.values()) {
-                    Long ancienId = creneau.getId();
-                    Long nouvelId = insertCreneauTx(connection, creneau);
-                    idsRemap.put(ancienId, nouvelId);
-                }
-                Map<String, Emplacement> emplacementsById = new LinkedHashMap<>();
-                for (Stand stand : standsById.values()) {
-                    if (stand.getEmplacement() != null) {
-                        emplacementsById.putIfAbsent(stand.getEmplacement().getId(), stand.getEmplacement());
-                    }
-                }
-                for (Emplacement emplacement : emplacementsById.values()) {
-                    upsertEmplacementTx(connection, emplacement);
-                }
-                for (TypologieItem typologie : derivedTypologies(standsById.values(), animateurs)) {
-                    upsertTypologieDerivee(connection, typologie);
-                }
-                for (Stand stand : standsById.values()) {
-                    upsertStand(connection, stand);
-                }
-                for (Animateur animateur : animateurs) {
-                    if (animateur != null && animateur.getId() != null) {
-                        upsertAnimateur(connection, animateur, true);
-                    }
-                }
-                // Rows the file does not carry are the only ones deleted — for
-                // an animateur that also drops, by cascade, their demandes
-                // d'échange, sessions and access code.
-                supprimerAbsentsTx(connection, "stand", standsById.keySet());
-                supprimerAbsentsTx(connection, "animateur", animateurs.stream()
-                        .filter(animateur -> animateur != null && animateur.getId() != null)
-                        .map(Animateur::getId)
-                        .collect(java.util.stream.Collectors.toSet()));
-                for (ContrainteAdHoc contrainte : contraintes) {
-                    if (contrainte != null && contrainte.getId() != null) {
-                        if (contrainte.getCreneau() != null && contrainte.getCreneau().getId() != null) {
-                            Long nouvelId = idsRemap.get(contrainte.getCreneau().getId());
-                            if (nouvelId != null) {
-                                contrainte.getCreneau().setId(nouvelId);
-                            }
-                        }
-                        upsertContrainte(connection, contrainte);
-                    }
-                }
-                connection.commit();
-            } catch (SQLException e) {
-                connection.rollback();
-                throw e;
             }
-        } catch (SQLException e) {
-            throw new IllegalStateException("Failed to import reference data from planning", e);
-        }
+            try (PreparedStatement ps = scope.prepareScoped(connection,
+                    "DELETE FROM creneau WHERE edition_id = ?")) {
+                ps.executeUpdate();
+            }
+            Map<Long, Long> idsRemap = new LinkedHashMap<>();
+            for (Creneau creneau : creneauxById.values()) {
+                Long ancienId = creneau.getId();
+                Long nouvelId = insertCreneauTx(connection, creneau);
+                idsRemap.put(ancienId, nouvelId);
+            }
+            Map<String, Emplacement> emplacementsById = new LinkedHashMap<>();
+            for (Stand stand : standsById.values()) {
+                if (stand.getEmplacement() != null) {
+                    emplacementsById.putIfAbsent(stand.getEmplacement().getId(), stand.getEmplacement());
+                }
+            }
+            for (Emplacement emplacement : emplacementsById.values()) {
+                upsertEmplacementTx(connection, emplacement);
+            }
+            for (TypologieItem typologie : derivedTypologies(standsById.values(), animateurs)) {
+                upsertTypologieDerivee(connection, typologie);
+            }
+            for (Stand stand : standsById.values()) {
+                upsertStand(connection, stand);
+            }
+            for (Animateur animateur : animateurs) {
+                if (animateur != null && animateur.getId() != null) {
+                    upsertAnimateur(connection, animateur, true);
+                }
+            }
+            // Rows the file does not carry are the only ones deleted — for
+            // an animateur that also drops, by cascade, their demandes
+            // d'échange, sessions and access code.
+            supprimerAbsentsTx(connection, "stand", standsById.keySet());
+            supprimerAbsentsTx(connection, "animateur", animateurs.stream()
+                    .filter(animateur -> animateur != null && animateur.getId() != null)
+                    .map(Animateur::getId)
+                    .collect(java.util.stream.Collectors.toSet()));
+            for (ContrainteAdHoc contrainte : contraintes) {
+                if (contrainte != null && contrainte.getId() != null) {
+                    if (contrainte.getCreneau() != null && contrainte.getCreneau().getId() != null) {
+                        Long nouvelId = idsRemap.get(contrainte.getCreneau().getId());
+                        if (nouvelId != null) {
+                            contrainte.getCreneau().setId(nouvelId);
+                        }
+                    }
+                    upsertContrainte(connection, contrainte);
+                }
+            }
+        });
     }
 
     /**
@@ -1488,7 +1411,7 @@ public class ReferenceDataRepository {
             int verrous = compter(connection, "verrouillage_planning");
             int demandes = 0;
             int enAttente = 0;
-            try (PreparedStatement ps = prepareScoped(connection,
+            try (PreparedStatement ps = scope.prepareScoped(connection,
                     "SELECT COUNT(*) AS total, COUNT(*) FILTER (WHERE statut = 'PROPOSEE') AS en_attente "
                             + "FROM demande_echange WHERE edition_id = ?");
                     ResultSet rs = ps.executeQuery()) {
@@ -1498,7 +1421,7 @@ public class ReferenceDataRepository {
                 }
             }
             boolean resolu = false;
-            try (PreparedStatement ps = prepareScoped(connection,
+            try (PreparedStatement ps = scope.prepareScoped(connection,
                     "SELECT 1 FROM planning_resolution WHERE edition_id = ?");
                     ResultSet rs = ps.executeQuery()) {
                 resolu = rs.next();
@@ -1511,7 +1434,7 @@ public class ReferenceDataRepository {
 
     /** COUNT(*) of one edition-scoped table from the literal list of {@link #compterImpactImport}. */
     private int compter(Connection connection, String table) throws SQLException {
-        try (PreparedStatement ps = prepareScoped(connection,
+        try (PreparedStatement ps = scope.prepareScoped(connection,
                 "SELECT COUNT(*) FROM " + table + " WHERE edition_id = ?");
                 // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string
                 ResultSet rs = ps.executeQuery()) {
@@ -1528,7 +1451,7 @@ public class ReferenceDataRepository {
     private void supprimerAbsentsTx(Connection connection, String table, java.util.Set<String> idsConserves)
             throws SQLException {
         List<String> absents = new ArrayList<>();
-        try (PreparedStatement ps = prepareScoped(connection,
+        try (PreparedStatement ps = scope.prepareScoped(connection,
                 "SELECT id FROM " + table + " WHERE edition_id = ?");
                 // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string
                 ResultSet rs = ps.executeQuery()) {
@@ -1542,7 +1465,7 @@ public class ReferenceDataRepository {
         if (absents.isEmpty()) {
             return;
         }
-        try (PreparedStatement ps = prepareScoped(connection,
+        try (PreparedStatement ps = scope.prepareScoped(connection,
                 "DELETE FROM " + table + " WHERE edition_id = ? AND id = ?")) {
             for (String id : absents) {
                 ps.setString(2, id);
@@ -1556,7 +1479,7 @@ public class ReferenceDataRepository {
 
     /** Inserts a new timeslot row; the generated id is set back onto {@code creneau} and returned. */
     private Long insertCreneauTx(Connection connection, Creneau creneau) throws SQLException {
-        try (PreparedStatement ps = prepareScoped(connection,
+        try (PreparedStatement ps = scope.prepareScoped(connection,
                 "INSERT INTO creneau (edition_id, date_creneau, heure_debut, heure_fin, famille, "
                         + "couverture_pause) VALUES (?, ?, ?, ?, ?, ?) RETURNING id")) {
             ps.setObject(2, creneau.getDate());
@@ -1620,16 +1543,6 @@ public class ReferenceDataRepository {
      * remaining parameters from index 2. An UPDATE, whose first placeholder
      * necessarily belongs to its SET clause, binds the group by hand instead.
      */
-    private PreparedStatement prepareScoped(Connection connection, String sql) throws SQLException {
-        PreparedStatement ps = connection.prepareStatement(sql);
-        try {
-            ps.setString(1, editionId());
-            return ps;
-        } catch (SQLException | RuntimeException e) {
-            ps.close();
-            throw e;
-        }
-    }
 
     /**
      * Table names come from this class's own call sites, never from user input —
@@ -1639,7 +1552,7 @@ public class ReferenceDataRepository {
      */
     private boolean exists(String table, String id) {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection,
+                PreparedStatement ps = scope.prepareScoped(connection,
                         "SELECT 1 FROM " + table + " WHERE edition_id = ? AND id = ?")) {
             ps.setString(2, id);
             // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string
@@ -1653,7 +1566,7 @@ public class ReferenceDataRepository {
 
     private void delete(String sql, String id) {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection, sql)) {
+                PreparedStatement ps = scope.prepareScoped(connection, sql)) {
             ps.setString(2, id);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -1663,7 +1576,7 @@ public class ReferenceDataRepository {
 
     private boolean existsLong(String table, Long id) {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection,
+                PreparedStatement ps = scope.prepareScoped(connection,
                         "SELECT 1 FROM " + table + " WHERE edition_id = ? AND id = ?")) {
             ps.setLong(2, id);
             // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string
@@ -1677,7 +1590,7 @@ public class ReferenceDataRepository {
 
     private void deleteLong(String sql, Long id) {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection, sql)) {
+                PreparedStatement ps = scope.prepareScoped(connection, sql)) {
             ps.setLong(2, id);
             ps.executeUpdate();
         } catch (SQLException e) {

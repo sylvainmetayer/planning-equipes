@@ -87,6 +87,9 @@ public class DatabaseDumpService {
     @Inject
     DataSource dataSource;
 
+    @Inject
+    JdbcEditionScope scope;
+
     /**
      * Builds a self-contained SQL script that wipes and repopulates every
      * business table.
@@ -121,25 +124,19 @@ public class DatabaseDumpService {
             throw new ErreurMetier.Invalide("The SQL script does not contain any statement");
         }
         statements.forEach(DatabaseDumpService::checkStatementIsAllowed);
-        try (Connection connection = dataSource.getConnection()) {
-            boolean previousAutoCommit = connection.getAutoCommit();
-            connection.setAutoCommit(false);
+        return scope.ecrireEtRendre("Failed to import the database", connection -> {
             try (Statement statement = connection.createStatement()) {
                 for (String sql : statements) {
                     statement.execute(sql);
                 }
                 resyncIdentitySequences(statement);
-                connection.commit();
                 return statements.size();
             } catch (SQLException e) {
-                connection.rollback();
+                // Rolled back by the caller, which lets this one through unwrapped:
+                // a rejected script is the operator's mistake (400), not a database failure.
                 throw new ErreurMetier.Invalide("The SQL script could not be replayed: " + e.getMessage(), e);
-            } finally {
-                connection.setAutoCommit(previousAutoCommit);
             }
-        } catch (SQLException e) {
-            throw new IllegalStateException("Failed to import the database", e);
-        }
+        });
     }
 
     /**

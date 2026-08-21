@@ -1,5 +1,6 @@
 package dev.sylvain.planning.observability;
 
+import dev.sylvain.planning.config.ConfigObservabilite;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
@@ -30,13 +31,9 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 @ApplicationScoped
 public class SentryInitializer {
 
-    // Optional<String>, not String with defaultValue="": SmallRye Config's
-    // built-in String converter turns a blank value into null, which fails
-    // Quarkus' startup validation of every @ConfigProperty injection point
-    // unless the type is Optional.
-    void onStart(@Observes StartupEvent event,
-            @ConfigProperty(name = "observability.sentry.dsn") Optional<String> dsn,
-            @ConfigProperty(name = "observability.sentry.environment", defaultValue = "local") String environment) {
+    void onStart(@Observes StartupEvent event, ConfigObservabilite observabilite) {
+        Optional<String> dsn = observabilite.sentry().dsn();
+        String environment = observabilite.sentry().environment();
         if (dsn.isEmpty()) {
             return;
         }

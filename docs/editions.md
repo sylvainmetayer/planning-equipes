@@ -199,18 +199,30 @@ Mise en œuvre :
 - le contexte n'est pas lui-même `@RequestScoped` parce qu'il doit servir des
   threads sans requête (worker du solveur) : `EditionContext.executeDans(id, …)`
   lie explicitement une édition au thread courant ;
-- `ReferenceDataRepository`, `PlanningPersistenceService` (ainsi que
-  `PlanSnapshotService` et `DemandeEchangeService`) ajoutent
-  `edition_id = ?` à toutes leurs requêtes. Être le point de passage unique de
-  tout le SQL rend le changement mécanique et **vérifiable** : une requête sans
-  prédicat d'édition s'y voit. La convention est portée par un helper,
-  `prepareScoped`, qui lie l'édition au **premier** paramètre de l'instruction.
-  Unique exception assumée : `resoudreJetonAnimateur` (issue #165), qui résout
-  un jeton d'espace animateur **globalement** — le jeton arrive sur une URL
+- toutes les classes qui parlent à la base ajoutent `edition_id = ?` à leurs
+  requêtes, et elles le font toutes par le **même** helper :
+  `JdbcEditionScope.prepareScoped`, qui lie l'édition au **premier** paramètre
+  de l'instruction (écrire donc le prédicat `edition_id = ?`, ou la colonne
+  `edition_id` d'un `INSERT`, en premier et lier le reste à partir de
+  l'indice 2). `JdbcEditionScope` porte aussi l'emprunt de connexion et la
+  transaction (`lire`, `ecrire`, `ecrireEtRendre`), pour que personne n'ait à
+  réécrire le trio `setAutoCommit`/`commit`/`rollback`. Ce n'était pas
+  cosmétique : chaque classe en gardait sa copie, et c'est exactement par là
+  que le bug ninja inter-éditions est entré — un `prepareStatement` direct,
+  parce que le helper local n'offrait pas la position de paramètre voulue, et
+  le prédicat d'édition est parti avec, sans bruit ;
+- le filet est structurel, pas humain : `IsolationEditionStructurelleTest` lit
+  le SQL de tout le backend et échoue sur toute requête visant une table métier
+  sans prédicat d'édition. Les deux exceptions assumées y sont listées et
+  justifiées, et le test vérifie qu'elles correspondent encore à une requête
+  réelle. La première est `resoudreJetonAnimateur` (issue #165), qui résout un
+  jeton d'espace animateur **globalement** — le jeton arrive sur une URL
   publique sans en-tête d'édition à croire, et est justement unique toutes
   éditions confondues pour désigner la sienne ; les gardes de l'espace lient
   ensuite l'édition résolue à la requête (`EditionRequestScope`), et tout le
-  reste s'exécute dedans sans enveloppe explicite ;
+  reste s'exécute dedans sans enveloppe explicite. La seconde est la détection
+  de collision d'adresse e-mail au démarrage du mode « en-tête de confiance »,
+  qui n'a aucune édition à considérer ;
 - côté Angular, un `HttpInterceptor` (`core/edition.interceptor.ts`) pose
   l'en-tête depuis `core/edition-courante.ts`, dont la valeur est persistée en
   `localStorage`. C'est un module et non un service : l'intercepteur tourne à

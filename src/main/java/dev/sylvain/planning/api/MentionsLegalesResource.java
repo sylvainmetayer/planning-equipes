@@ -1,5 +1,7 @@
 package dev.sylvain.planning.api;
 
+import jakarta.inject.Inject;
+import dev.sylvain.planning.config.ConfigMentionsLegales;
 import java.util.Optional;
 
 import jakarta.ws.rs.GET;
@@ -31,45 +33,19 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 @Produces(MediaType.APPLICATION_JSON)
 public class MentionsLegalesResource {
 
-    // Optional<String>, not String: SmallRye turns a blank value into null,
-    // which fails startup validation on a plain String injection point (same
-    // reasoning as ConfigResource).
-    @ConfigProperty(name = "planning.legal.editeur")
-    Optional<String> editeur;
-
-    @ConfigProperty(name = "planning.legal.directeur-publication")
-    Optional<String> directeurPublication;
-
-    @ConfigProperty(name = "planning.legal.hebergeur")
-    Optional<String> hebergeur;
-
-    @ConfigProperty(name = "planning.legal.contact")
-    Optional<String> contact;
-
-    /**
-     * Data controller, when it is not the publisher. "Éditeur" belongs to the
-     * LCEN, "responsable de traitement" to the GDPR: usually the same body,
-     * not necessarily. Blank falls back to the publisher.
-     */
-    @ConfigProperty(name = "planning.legal.responsable-traitement")
-    Optional<String> responsableTraitement;
-
-    @ConfigProperty(name = "planning.legal.donnees.base-legale")
-    Optional<String> baseLegale;
-
-    @ConfigProperty(name = "planning.legal.donnees.conservation")
-    Optional<String> conservation;
+    @Inject
+    ConfigMentionsLegales mentions;
 
     @GET
     public MentionsLegalesView get() {
         return new MentionsLegalesView(
-                texte(editeur),
-                texte(directeurPublication),
-                texte(hebergeur),
-                texte(contact),
-                texte(responsableTraitement),
-                texte(baseLegale),
-                texte(conservation));
+                texte(mentions.editeur()),
+                texte(mentions.directeurPublication()),
+                texte(mentions.hebergeur()),
+                texte(mentions.contact()),
+                texte(mentions.responsableTraitement()),
+                texte(mentions.donnees().baseLegale()),
+                texte(mentions.donnees().conservation()));
     }
 
     /** Trimmed, and empty rather than blank: the UI has one single "not filled in" case to handle. */

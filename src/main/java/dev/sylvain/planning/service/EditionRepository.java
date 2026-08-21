@@ -82,6 +82,9 @@ public class EditionRepository {
     @Inject
     DataSource dataSource;
 
+    @Inject
+    JdbcEditionScope scope;
+
     public List<Edition> listEditions() {
         List<Edition> editions = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
@@ -147,7 +150,7 @@ public class EditionRepository {
      * the former {@code groupe_creneau.actif}).
      */
     public void definirParDefaut(String id) {
-        inTransaction(connection -> {
+        scope.ecrire("Failed to set edition " + id + " as default", connection -> {
             try (PreparedStatement ps = connection.prepareStatement("UPDATE edition SET defaut = FALSE")) {
                 ps.executeUpdate();
             }
@@ -156,7 +159,7 @@ public class EditionRepository {
                 ps.setString(1, id);
                 ps.executeUpdate();
             }
-        }, "Failed to set edition " + id + " as default");
+        });
     }
 
     /** Drops the edition and, by {@code ON DELETE CASCADE}, its whole reference model. */
@@ -184,13 +187,13 @@ public class EditionRepository {
      * through it.</p>
      */
     public void dupliquer(String sourceId, String cibleId) {
-        inTransaction(connection -> {
+        scope.ecrire("Failed to duplicate edition " + sourceId + " into " + cibleId, connection -> {
             for (TableACopier table : TABLES_A_COPIER) {
                 copierTable(connection, table, sourceId, cibleId);
             }
             copierCreneaux(connection, sourceId, cibleId);
             copierContraintesAdHoc(connection, sourceId, cibleId);
-        }, "Failed to duplicate edition " + sourceId + " into " + cibleId);
+        });
     }
 
     private void copierTable(Connection connection, TableACopier table, String sourceId, String cibleId)
@@ -265,26 +268,4 @@ public class EditionRepository {
         }
     }
 
-    private void inTransaction(TransactionalWork work, String errorMessage) {
-        try (Connection connection = dataSource.getConnection()) {
-            boolean previousAutoCommit = connection.getAutoCommit();
-            connection.setAutoCommit(false);
-            try {
-                work.execute(connection);
-                connection.commit();
-            } catch (SQLException e) {
-                connection.rollback();
-                throw e;
-            } finally {
-                connection.setAutoCommit(previousAutoCommit);
-            }
-        } catch (SQLException e) {
-            throw new IllegalStateException(errorMessage, e);
-        }
-    }
-
-    @FunctionalInterface
-    private interface TransactionalWork {
-        void execute(Connection connection) throws SQLException;
-    }
 }

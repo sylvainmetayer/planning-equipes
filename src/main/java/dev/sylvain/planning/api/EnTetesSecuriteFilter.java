@@ -1,5 +1,7 @@
 package dev.sylvain.planning.api;
 
+import jakarta.inject.Inject;
+import dev.sylvain.planning.config.ConfigSecurite;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -57,17 +59,8 @@ public class EnTetesSecuriteFilter {
     /** Quarkus' own management endpoints (Swagger UI, dev UI): no CSP, see the class javadoc. */
     private static final String PREFIXE_QUARKUS = "/q/";
 
-    /**
-     * {@link Optional} et non {@code String} : MicroProfile Config traite une
-     * valeur vide comme une propriété absente, donc {@code CSP=} — la façon
-     * documentée de désactiver l'en-tête — ferait échouer le démarrage sur une
-     * injection obligatoire.
-     */
-    @ConfigProperty(name = "planning.securite.csp")
-    Optional<String> csp;
-
-    @ConfigProperty(name = "planning.securite.hsts")
-    Optional<String> hsts;
+    @Inject
+    ConfigSecurite config;
 
     public void enregistrer(@Observes Filters filters) {
         filters.register(this::appliquer, PRIORITE);
@@ -85,11 +78,11 @@ public class EnTetesSecuriteFilter {
         reponse.putHeader("Referrer-Policy", "no-referrer");
         reponse.putHeader("Cross-Origin-Opener-Policy", "same-origin");
         reponse.putHeader("Permissions-Policy", "geolocation=(), camera=(), microphone=(), payment=()");
-        if (csp.isPresent() && !contexte.normalizedPath().startsWith(PREFIXE_QUARKUS)) {
-            reponse.putHeader("Content-Security-Policy", csp.get());
+        if (config.csp().isPresent() && !contexte.normalizedPath().startsWith(PREFIXE_QUARKUS)) {
+            reponse.putHeader("Content-Security-Policy", config.csp().get());
         }
-        if (hsts.isPresent() && visiteChiffree(contexte)) {
-            reponse.putHeader("Strict-Transport-Security", hsts.get());
+        if (config.hsts().isPresent() && visiteChiffree(contexte)) {
+            reponse.putHeader("Strict-Transport-Security", config.hsts().get());
         }
         contexte.next();
     }

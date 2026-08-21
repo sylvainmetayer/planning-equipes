@@ -42,6 +42,9 @@ public class DemandeEchangeService {
     DataSource dataSource;
 
     @Inject
+    JdbcEditionScope scope;
+
+    @Inject
     EditionContext editionContext;
 
     @Inject
@@ -246,7 +249,7 @@ public class DemandeEchangeService {
      */
     public boolean estFoireOuverte() {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection,
+                PreparedStatement ps = scope.prepareScoped(connection,
                         "SELECT foire_ouverte FROM parametres_echange WHERE edition_id = ?");
                 ResultSet rs = ps.executeQuery()) {
             return !rs.next() || rs.getBoolean("foire_ouverte");
@@ -262,7 +265,7 @@ public class DemandeEchangeService {
      */
     public void ouvrirFoire(boolean ouverte) {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection,
+                PreparedStatement ps = scope.prepareScoped(connection,
                         "INSERT INTO parametres_echange (edition_id, foire_ouverte) VALUES (?, ?) "
                                 + "ON CONFLICT (edition_id) DO UPDATE SET foire_ouverte = EXCLUDED.foire_ouverte")) {
             ps.setBoolean(2, ouverte);
@@ -449,7 +452,7 @@ public class DemandeEchangeService {
 
     private void inserer(DemandeEchange demande) {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection,
+                PreparedStatement ps = scope.prepareScoped(connection,
                         "INSERT INTO demande_echange (edition_id, " + COLONNES + ") "
                                 + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             ps.setString(2, demande.getId());
@@ -491,7 +494,7 @@ public class DemandeEchangeService {
         String sql = "SELECT " + COLONNES + " FROM demande_echange WHERE edition_id = ?"
                 + predicatSupplementaire + " ORDER BY cree_le DESC, id";
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = prepareScoped(connection, sql)) {
+                PreparedStatement ps = scope.prepareScoped(connection, sql)) {
             if (parametre != null) {
                 ps.setString(2, parametre);
             }
@@ -531,17 +534,5 @@ public class DemandeEchangeService {
         Timestamp decideLe = rs.getTimestamp("decide_le");
         demande.setDecideLe(decideLe == null ? null : decideLe.toInstant());
         return demande;
-    }
-
-    /** Same convention as {@link ReferenceDataRepository}: edition bound to placeholder 1. */
-    private PreparedStatement prepareScoped(Connection connection, String sql) throws SQLException {
-        PreparedStatement ps = connection.prepareStatement(sql);
-        try {
-            ps.setString(1, editionContext.editionIdCourant());
-            return ps;
-        } catch (SQLException | RuntimeException e) {
-            ps.close();
-            throw e;
-        }
     }
 }

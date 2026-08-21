@@ -6,6 +6,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.util.Map;
 import java.util.Optional;
 
+import dev.sylvain.planning.config.ConfigRemoteUser;
+
 import org.junit.jupiter.api.Test;
 
 /**
@@ -74,12 +76,19 @@ class RemoteUserAuthentificationTest {
 
     private static RemoteUserAuthentification configure(boolean actif, String secret, String emailAdmin) {
         RemoteUserAuthentification remote = new RemoteUserAuthentification();
-        remote.actif = actif;
-        remote.enTeteEmail = "Remote-Email";
-        remote.enTeteSecret = "Remote-Auth-Secret";
-        remote.secret = Optional.of(secret);
-        remote.emailAdmin = Optional.of(emailAdmin);
+        remote.config = new ConfigRemoteUserFixe(actif, "Remote-Email", "Remote-Auth-Secret",
+                Optional.of(secret), Optional.of(emailAdmin));
         return remote;
+    }
+
+    /**
+     * Le mode « en-tête de confiance » est lu par
+     * {@link dev.sylvain.planning.config.ConfigRemoteUser},
+     * une interface {@code @ConfigMapping} : un test la fournit en la
+     * réalisant, plutôt qu'en écrivant dans cinq champs.
+     */
+    private record ConfigRemoteUserFixe(boolean enabled, String header, String secretHeader,
+            Optional<String> secret, Optional<String> adminEmail) implements ConfigRemoteUser {
     }
 
     private static java.util.function.Function<String, String> enTetes(Map<String, String> valeurs) {

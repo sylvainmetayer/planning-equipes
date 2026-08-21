@@ -176,8 +176,11 @@ Single Quarkus service, no separate solver microservice. Package root:
   composite `(edition_id, id)` primary key, and the edition a request works in
   comes from its `X-Edition-Id` header via `EditionContext`. A new reference
   table must follow the same convention, and its SQL must go through
-  `ReferenceDataRepository` — the single point of passage that makes the
-  `edition_id` predicate verifiable. See `docs/editions.md`.
+  `JdbcEditionScope` — the single helper that binds the edition to the
+  statement's first placeholder and owns the transaction dance.
+  `IsolationEditionStructurelleTest` enforces it by reading the backend's SQL
+  and failing on any business-table statement without an `edition_id`
+  predicate. See `docs/editions.md`.
 - Solver tuning: `planning.solver.seconds-limit` /
   `planning.solver.unimproved-seconds-limit` in `application.properties`.
 

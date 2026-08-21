@@ -1,5 +1,6 @@
 package dev.sylvain.planning.api;
 
+import dev.sylvain.planning.config.ConfigMcp;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Duration;
@@ -9,6 +10,7 @@ import java.util.Optional;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -58,11 +60,8 @@ public class McpResource {
     static final int MAX_ESSAIS = 5;
     static final Duration DUREE_BLOCAGE = Duration.ofMinutes(5);
 
-    @ConfigProperty(name = "planning.mcp.api-key")
-    Optional<String> apiKey;
-
-    @ConfigProperty(name = "planning.mcp.api-key-header", defaultValue = "X-MCP-Api-Key")
-    String headerName;
+    @Inject
+    ConfigMcp mcp;
 
     /**
      * The Pangolin access-proxy token, set server-side so the operator can
@@ -70,11 +69,7 @@ public class McpResource {
      * a client needs configuring. Both empty by default: nothing to reveal
      * unless the deployment actually sits behind Pangolin.
      */
-    @ConfigProperty(name = "planning.mcp.pangolin.access-token-id")
-    Optional<String> pangolinAccessTokenId;
 
-    @ConfigProperty(name = "planning.mcp.pangolin.access-token")
-    Optional<String> pangolinAccessToken;
 
     /**
      * The admin password, read from the very property the embedded security
@@ -96,7 +91,7 @@ public class McpResource {
     @GET
     @Path("/statut")
     public StatutMcp statut() {
-        return new StatutMcp(apiKey.isPresent() && !apiKey.get().isBlank(), headerName);
+        return new StatutMcp(mcp.apiKey().isPresent() && !mcp.apiKey().get().isBlank(), mcp.apiKeyHeader());
     }
 
     /** Exchanges the admin password for the API key. {@code 401} on a wrong password, {@code 429} once locked out. */
@@ -117,14 +112,14 @@ public class McpResource {
         }
         essaisRates = 0;
         blocageJusqua = null;
-        if (apiKey.isEmpty() || apiKey.get().isBlank()) {
+        if (mcp.apiKey().isEmpty() || mcp.apiKey().get().isBlank()) {
             // Right password, nothing to reveal: 404 rather than an empty
             // string, so the page can tell "clé absente" from "clé vide".
             return Response.status(Response.Status.NOT_FOUND).build();
         }
-        return Response.ok(new CleMcp(apiKey.get(),
-                pangolinAccessTokenId.filter(v -> !v.isBlank()).orElse(null),
-                pangolinAccessToken.filter(v -> !v.isBlank()).orElse(null))).build();
+        return Response.ok(new CleMcp(mcp.apiKey().get(),
+                mcp.pangolin().accessTokenId().filter(v -> !v.isBlank()).orElse(null),
+                mcp.pangolin().accessToken().filter(v -> !v.isBlank()).orElse(null))).build();
     }
 
     /** Constant-time comparison: a wrong password must not leak its correct prefix through timing. */

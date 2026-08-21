@@ -1,5 +1,7 @@
 package dev.sylvain.planning.api;
 
+import jakarta.inject.Inject;
+import dev.sylvain.planning.config.ConfigObservabilite;
 import java.util.Optional;
 
 import io.quarkus.runtime.LaunchMode;
@@ -29,25 +31,15 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 @Produces(MediaType.APPLICATION_JSON)
 public class ConfigResource {
 
-    // Optional<String>, not String: SmallRye Config's built-in String
-    // converter turns a blank value into null, which fails Quarkus' startup
-    // validation of every @ConfigProperty injection point unless the type is
-    // Optional (see SentryInitializer for the same reasoning).
-    @ConfigProperty(name = "observability.sentry.dsn")
-    Optional<String> sentryDsn;
-
-    @ConfigProperty(name = "observability.sentry.environment", defaultValue = "local")
-    String sentryEnvironment;
-
-    @ConfigProperty(name = "observability.cloudflare.web-analytics-token")
-    Optional<String> cloudflareWebAnalyticsToken;
+    @Inject
+    ConfigObservabilite observabilite;
 
     @GET
     public ConfigView get() {
         return new ConfigView(
-                sentryDsn.orElse(""),
-                sentryEnvironment,
-                cloudflareWebAnalyticsToken.orElse(""),
+                observabilite.sentry().dsn().orElse(""),
+                observabilite.sentry().environment(),
+                observabilite.cloudflare().webAnalyticsToken().orElse(""),
                 LaunchMode.current() == LaunchMode.DEVELOPMENT);
     }
 
