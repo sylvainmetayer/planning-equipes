@@ -22,10 +22,10 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.PlanningService.EchangeSimulation;
 
 /**
- * Simulation d'une demande d'échange (issue #165) sur
- * {@code PlanningService.simulerEchange} directement : pas de base, pas de
- * contexte Quarkus — un planning résolu construit à la main, et le
- * {@code SolutionManager} réel pour l'analyse des scores.
+ * Simulation of a swap request (issue #165) straight on
+ * {@code PlanningService.simulerEchange}: no database, no Quarkus context — a
+ * solved planning built by hand, and the real {@code SolutionManager} for the
+ * score analysis.
  */
 class PlanningServiceEchangeTest {
 
@@ -62,7 +62,7 @@ class PlanningServiceEchangeTest {
         return poste;
     }
 
-    /** Quand la cible tient aussi un siège sur le créneau, l'échange est croisé. */
+    /** When the target also holds a seat on the timeslot, the swap is a crossed one. */
     @Test
     void uneCibleDejaEnPosteSurLeCreneauDonneUnEchangeCroise() {
         PosteAffectation posteAlice = poste("P1", standS1, creneau, alice);
@@ -79,7 +79,7 @@ class PlanningServiceEchangeTest {
         assertThat(simulation.nouvellesViolationsDures()).isEmpty();
     }
 
-    /** Une cible libre sur le créneau reprend simplement le siège du demandeur. */
+    /** A target free on the timeslot simply takes over the requester's seat. */
     @Test
     void uneCibleLibreSurLeCreneauDonneUneRepriseSimple() {
         PosteAffectation posteAlice = poste("P1", standS1, creneau, alice);
@@ -94,10 +94,10 @@ class PlanningServiceEchangeTest {
     }
 
     /**
-     * Le verdict de prévalidation est global : donner le siège à une cible
-     * indisponible ce jour-là casse {@code animateurDisponible}, et la
-     * violation revient avec sa description métier du catalogue — pas un nom
-     * technique brut.
+     * The prevalidation verdict is global: giving the seat to a target
+     * unavailable that day breaks {@code animateurDisponible}, and the violation
+     * comes back with its business description from the catalog — not a raw
+     * technical name.
      */
     @Test
     void uneCibleIndisponibleCeJourLaCasseUneContrainteDure() {
@@ -118,8 +118,8 @@ class PlanningServiceEchangeTest {
     }
 
     /**
-     * La simulation est une mutation temporaire : quel que soit le verdict, le
-     * planning ressort avec ses occupants d'origine.
+     * The simulation is a temporary mutation: whatever the verdict, the planning
+     * comes back out with its original occupants.
      */
     @Test
     void laSimulationLaisseLePlanningInchange() {
@@ -134,7 +134,7 @@ class PlanningServiceEchangeTest {
         assertThat(posteBruno.getAnimateur()).isSameAs(bruno);
     }
 
-    /** Le poste désigné doit être celui du demandeur : stand et créneau comptent. */
+    /** The seat named must be the requester's: stand and timeslot both count. */
     @Test
     void unPosteQuiNAppartientPasAuDemandeurEstRejete() {
         PosteAffectation posteAlice = poste("P1", standS1, creneau, alice);

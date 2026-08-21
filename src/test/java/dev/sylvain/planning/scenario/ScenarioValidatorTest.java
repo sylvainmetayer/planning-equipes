@@ -123,9 +123,9 @@ class ScenarioValidatorTest {
                     .filter(Files::isRegularFile)
                     .filter(f -> f.getFileName().toString().endsWith(".yaml")
                             || f.getFileName().toString().endsWith(".yml"))
-                    // Les scénarios reel-*.yaml sont gitignorés (données
-                    // personnelles réelles) : présents seulement sur le poste de
-                    // qui les a produits, jamais dans le dépôt ni en CI.
+                    // The reel-*.yaml scenarios are gitignored (real personal
+                    // data): present only on the machine of whoever produced
+                    // them, never in the repository nor in CI.
                     .filter(f -> !f.getFileName().toString().startsWith("reel-"))
                     .sorted()
                     .toList()

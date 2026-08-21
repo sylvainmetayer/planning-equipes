@@ -33,16 +33,15 @@ import dev.sylvain.planning.domain.Stand;
 import jakarta.enterprise.context.ApplicationScoped;
 
 /**
- * Tout le planning dans un seul PDF paysage, pour l'organisateur plutôt que
- * pour les animateurs : qui tient quel siège, partout, d'un coup.
+ * The whole planning in a single landscape PDF, for the organiser rather than
+ * for the animateurs: who holds which seat, everywhere, at a glance.
  *
- * <p>Les mêmes affectations y sont posées deux fois, parce que les deux
- * questions qu'on se pose sur le terrain ne sont pas la même : <b>par
- * journée</b> répond à « qui est où en ce moment », <b>par stand</b> à « qui
- * fait tourner ce stand sur toute la durée ». Les sièges que personne ne tient
- * sont écrits en rouge sur leur ligne plutôt qu'absents en silence : un stand
- * non tenu est exactement ce que l'organisateur ouvre ce document pour
- * trouver.</p>
+ * <p>The same assignments are laid out twice, because the two questions asked
+ * in the field are not the same one: <b>by day</b> answers "who is where right
+ * now", <b>by stand</b> answers "who keeps this stand running over the whole
+ * festival". The seats nobody holds are written in red on their row rather than
+ * silently absent: an unstaffed stand is exactly what the organiser opens this
+ * document to find.</p>
  */
 @ApplicationScoped
 public class PlanningPdfGlobal {

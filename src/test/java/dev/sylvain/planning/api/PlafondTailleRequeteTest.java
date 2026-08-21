@@ -16,10 +16,10 @@ import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
 
 /**
- * Le plafond de taille de corps, vérifié là où il compte : l'import de dump
- * SQL est le seul endpoint qui reçoit un gros corps, et c'est donc lui qui
- * dimensionne le réglage. Le profil abaisse le plafond au lieu de fabriquer un
- * corps de 10 Mo, mais c'est le même mécanisme qui coupe.
+ * The body size ceiling, checked where it matters: importing an SQL dump is
+ * the only endpoint that receives a large body, so it is the one that sizes the
+ * setting. The profile lowers the ceiling instead of building a 10 MB body, but
+ * it is the same mechanism that cuts.
  */
 @QuarkusTest
 @TestProfile(PlafondTailleRequeteTest.Profil.class)
@@ -32,7 +32,7 @@ class PlafondTailleRequeteTest {
         }
     }
 
-    /** Même encodage que {@code DatabaseResourceTest} : le navigateur envoie du {@code application/sql}. */
+    /** Same encoding as {@code DatabaseResourceTest}: the browser sends {@code application/sql}. */
     private static RequestSpecification requeteSql(String script) {
         return given()
                 .config(RestAssured.config().encoderConfig(
@@ -50,9 +50,9 @@ class PlafondTailleRequeteTest {
     }
 
     /**
-     * Sous le plafond, la requête arrive bien jusqu'au service : le script ne
-     * porte aucune instruction, donc c'est son refus métier (400) qui prouve
-     * qu'il a été lu, pas un refus de transport.
+     * Under the ceiling the request does reach the service: the script carries
+     * no statement, so its business refusal (400) is what proves it was read,
+     * not a transport refusal.
      */
     @Test
     void unCorpsSousLePlafondAtteintLApplication() {

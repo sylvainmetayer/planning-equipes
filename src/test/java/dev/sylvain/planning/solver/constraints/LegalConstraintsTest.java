@@ -61,11 +61,11 @@ class LegalConstraintsTest extends ConstraintTestBase {
                 .penalizesBy(0);
     }
 
-    // --- Art. L3163-1 : fenêtre de nuit selon la tranche d'âge -------------
+    // --- Art. L3163-1: the night window depends on the age bracket ---------
 
     @Test
     void mineurDeMoinsDe16AnsEstPenaliseDes20Heures() {
-        // 20 h-22 h : nuit pour un moins de 16 ans (art. L3163-1).
+        // 20:00-22:00: night work for an under-16 (art. L3163-1).
         Creneau soiree = creneau("J1-SOIREE", 1, D1, LocalTime.of(20, 0), LocalTime.of(22, 0));
         verify("travailDeNuitInterditPourMineur")
                 .given(poste(standStrat, soiree, mineurMoinsDe16Debutant("M15")))
@@ -74,8 +74,8 @@ class LegalConstraintsTest extends ConstraintTestBase {
 
     @Test
     void mineurDe16A18AnsNEstPasPenaliseEntre20HEt22H() {
-        // Même créneau, 16-18 ans : la nuit ne commence qu'à 22 h (art. L3163-1).
-        // Avant le correctif, la fenêtre 20 h était appliquée à tous les mineurs.
+        // Same timeslot, 16-18: night only starts at 22:00 (art. L3163-1).
+        // Before the fix, the 20:00 window was applied to every minor.
         Creneau soiree = creneau("J1-SOIREE", 1, D1, LocalTime.of(20, 0), LocalTime.of(22, 0));
         verify("travailDeNuitInterditPourMineur")
                 .given(poste(standStrat, soiree, mineurDebutant("M17")))
@@ -92,7 +92,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
 
     @Test
     void mineurDepassantHuitHeuresParJourEstPenalise() {
-        // Un créneau de 9h (540 min) dépasse de 60 min le plafond de 8h (480 min).
+        // A 9 h timeslot (540 min) exceeds the 8 h ceiling (480 min) by 60 min.
         Creneau journee = journeeLongue("J1-LONG", 1, D1);
         verify("dureeQuotidienneMaxMineur")
                 .given(poste(standStrat, journee, mineurDebutant("M1")))
@@ -108,8 +108,8 @@ class LegalConstraintsTest extends ConstraintTestBase {
 
     @Test
     void mineurDeMoinsDe16AnsDepassantSeptHeuresParJourEstPenalise() {
-        // Art. D4153-3 : 7 h/jour sous 16 ans. Un créneau de 9 h dépasse de 120 min,
-        // là où un 16-18 ans ne dépasserait que de 60 min (plafond de 8 h, L3162-1).
+        // Art. D4153-3: 7 h a day under 16. A 9 h timeslot exceeds it by 120 min,
+        // where a 16-18 would only exceed by 60 min (8 h ceiling, L3162-1).
         Creneau journee = journeeLongue("J1-LONG", 1, D1);
         verify("dureeQuotidienneMaxMineur")
                 .given(poste(standStrat, journee, mineurMoinsDe16Debutant("M15")))
@@ -136,8 +136,9 @@ class LegalConstraintsTest extends ConstraintTestBase {
 
     @Test
     void majeurAvecMoinsDeOnzeHeuresDeReposEstPenalise() {
-        // B1 de l'audit, cas exact de scenario-complet.yaml : 20 h → 00 h puis
-        // 08 h → 12 h le lendemain, soit 8 h de repos au lieu de 11 h (L3131-1).
+        // B1 of the audit, the exact case of scenario-complet.yaml: 20:00 → 00:00
+        // then 08:00 → 12:00 the next day, that is 8 h of rest instead of 11 h
+        // (L3131-1).
         Animateur majeur = majeurReferent("A1");
         Creneau matin8J2 = creneau("J2-8-12", 2, D2, LocalTime.of(8, 0), LocalTime.of(12, 0));
         verify("reposQuotidienMinimal")
@@ -148,7 +149,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
 
     @Test
     void majeurAvecOnzeHeuresDeReposNEstPasPenalise() {
-        // 20 h → 00 h puis 14 h → 18 h le lendemain : 14 h de repos.
+        // 20:00 → 00:00 then 14:00 → 18:00 the next day: 14 h of rest.
         Animateur majeur = majeurReferent("A1");
         verify("reposQuotidienMinimal")
                 .given(poste(standStrat, creneauNuit, majeur),
@@ -158,9 +159,9 @@ class LegalConstraintsTest extends ConstraintTestBase {
 
     @Test
     void mineurDe16A18AnsExigeDouzeHeuresDeRepos() {
-        // 09 h → 13 h puis 00 h 30 → ... : ici 18 h → 22 h puis 09 h → 13 h,
-        // soit 11 h de repos : conforme pour un majeur, 60 min trop court pour
-        // un mineur (12 h, art. L3164-1).
+        // 09:00 → 13:00 then 00:30 → …: here 18:00 → 22:00 then 09:00 → 13:00,
+        // that is 11 h of rest: compliant for an adult, 60 min too short for a
+        // minor (12 h, art. L3164-1).
         Animateur mineur = mineurDebutant("M17");
         Creneau soirJ1 = creneau("J1-18-22", 1, D1, LocalTime.of(18, 0), LocalTime.of(22, 0));
         verify("reposQuotidienMinimal")
@@ -171,7 +172,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
 
     @Test
     void mineurDeMoinsDe16AnsExigeQuatorzeHeuresDeRepos() {
-        // Même paire de créneaux, moins de 16 ans : 14 h exigées, 11 h obtenues.
+        // Same pair of timeslots, under 16: 14 h required, 11 h obtained.
         Animateur mineur = mineurMoinsDe16Debutant("M15");
         Creneau soirJ1 = creneau("J1-18-22", 1, D1, LocalTime.of(18, 0), LocalTime.of(22, 0));
         verify("reposQuotidienMinimal")
@@ -189,12 +190,12 @@ class LegalConstraintsTest extends ConstraintTestBase {
                 .penalizesBy(0);
     }
 
-    // --- Art. L3121-18 : 10 h/jour pour un majeur --------------------------
+    // --- Art. L3121-18: 10 h a day for an adult ----------------------------
 
     @Test
     void majeurDepassantDixHeuresParJourEstPenalise() {
-        // B2 de l'audit : les trois créneaux d'une journée de scenario-complet
-        // totalisent 14 h (4 + 6 + 4), soit 240 min au-dessus du plafond.
+        // B2 of the audit: the three timeslots of one day of scenario-complet
+        // add up to 14 h (4 + 6 + 4), that is 240 min above the ceiling.
         Animateur majeur = majeurReferent("A1");
         Creneau matin = creneau("J1-8-12", 1, D1, LocalTime.of(8, 0), LocalTime.of(12, 0));
         Creneau aprem = creneau("J1-14-20", 1, D1, LocalTime.of(14, 0), LocalTime.of(20, 0));
@@ -241,12 +242,12 @@ class LegalConstraintsTest extends ConstraintTestBase {
                 .penalizesBy(0);
     }
 
-    // --- Art. L3121-16 : 6 h de travail continu / pause de 20 min ----------
+    // --- Art. L3121-16: 6 h of continuous work / a 20 min break ------------
 
     @Test
     void majeurEnchainantDeuxCreneauxSansPauseSuffisanteEstPenalise() {
-        // B6 : 14 h → 20 h puis 20 h → 00 h, aucune interruption : 10 h d'un
-        // seul tenant, soit 240 min au-dessus du maximum de 6 h.
+        // B6: 14:00 → 20:00 then 20:00 → 00:00, no interruption: 10 h in one
+        // stretch, that is 240 min above the 6 h maximum.
         Animateur majeur = majeurReferent("A1");
         Creneau aprem = creneau("J1-14-20", 1, D1, LocalTime.of(14, 0), LocalTime.of(20, 0));
         Creneau soiree = creneau("J1-20-00", 1, D1, LocalTime.of(20, 0), LocalTime.of(0, 0));
@@ -258,8 +259,8 @@ class LegalConstraintsTest extends ConstraintTestBase {
 
     @Test
     void unePauseDeVingtMinutesCoupeLaSequenceDuMajeur() {
-        // Même journée, mais 20 minutes d'interruption : deux séquences de
-        // 5 h 40 et 4 h, toutes deux sous le maximum de 6 h.
+        // Same day, but with a 20 minute interruption: two sequences of 5 h 40
+        // and 4 h, both under the 6 h maximum.
         Animateur majeur = majeurReferent("A1");
         Creneau aprem = creneau("J1-14-1940", 1, D1, LocalTime.of(14, 0), LocalTime.of(19, 40));
         Creneau soiree = creneau("J1-20-00", 1, D1, LocalTime.of(20, 0), LocalTime.of(0, 0));
@@ -271,8 +272,8 @@ class LegalConstraintsTest extends ConstraintTestBase {
 
     @Test
     void unePauseTropCourteNeCoupePasLaSequenceDuMajeur() {
-        // 10 minutes d'interruption : la loi exige 20 minutes consécutives, la
-        // séquence reste donc continue (6 h 10 mesurées bord à bord).
+        // A 10 minute interruption: the law requires 20 consecutive minutes, so
+        // the sequence stays continuous (6 h 10 measured edge to edge).
         Animateur majeur = majeurReferent("A1");
         Creneau debut = creneau("J1-14-17", 1, D1, LocalTime.of(14, 0), LocalTime.of(17, 0));
         Creneau suite = creneau("J1-1710-2010", 1, D1, LocalTime.of(17, 10), LocalTime.of(20, 10));
@@ -282,12 +283,12 @@ class LegalConstraintsTest extends ConstraintTestBase {
                 .penalizesBy(10);
     }
 
-    // --- Art. L3162-3 : 4 h 30 de travail continu / pause de 30 min --------
+    // --- Art. L3162-3: 4 h 30 of continuous work / a 30 min break ----------
 
     @Test
     void mineurSurUnCreneauDeSixHeuresEstPenalise() {
-        // B7 : le créneau 14 h → 20 h de scenario-complet.yaml, tenu par un
-        // mineur, dépasse de 1 h 30 la durée maximale de travail continu.
+        // B7: the 14:00 → 20:00 timeslot of scenario-complet.yaml, held by a
+        // minor, exceeds the maximum continuous working time by 1 h 30.
         Animateur mineur = mineurDebutant("M1");
         Creneau aprem = creneau("J1-14-20", 1, D1, LocalTime.of(14, 0), LocalTime.of(20, 0));
         verify("travailContinuMaxMineur")
@@ -317,8 +318,9 @@ class LegalConstraintsTest extends ConstraintTestBase {
 
     @Test
     void unePauseDeVingtMinutesNeSuffitPasAUnMineur() {
-        // 20 minutes suffisent à un majeur, pas à un mineur (30 min, L3162-3) :
-        // la séquence court de 9 h à 16 h 20, soit 7 h 20, donc 170 min de trop.
+        // 20 minutes are enough for an adult, not for a minor (30 min, L3162-3):
+        // the sequence runs from 9:00 to 16:20, that is 7 h 20, hence 170 min too
+        // many.
         Animateur mineur = mineurDebutant("M1");
         Creneau debut = creneau("J1-9-13", 1, D1, LocalTime.of(9, 0), LocalTime.of(13, 0));
         Creneau suite = creneau("J1-1320-1620", 1, D1, LocalTime.of(13, 20), LocalTime.of(16, 20));
@@ -361,12 +363,12 @@ class LegalConstraintsTest extends ConstraintTestBase {
                 .penalizesBy(0);
     }
 
-    // --- Art. L3162-1 : 35 h/semaine pour un mineur ------------------------
+    // --- Art. L3162-1: 35 h a week for a minor -----------------------------
 
     @Test
     void mineurDepassant35HeuresParSemaineEstPenalise() {
-        // Quatre journées de 9 h dans la même semaine ISO = 36 h, soit 60 min
-        // au-dessus du plafond d'ordre public de 35 h (art. L3162-1).
+        // Four 9 h days in the same ISO week = 36 h, that is 60 min above the
+        // public-order ceiling of 35 h (art. L3162-1).
         Animateur mineur = mineurDebutant("M1");
         verify("dureeHebdomadaireMaxMineur")
                 .given(poste(standStrat, journeeLongue("J1-LONG", 1, D1), mineur),
@@ -402,8 +404,8 @@ class LegalConstraintsTest extends ConstraintTestBase {
 
     @Test
     void mineurNEstPlusSoumisAuPlafondHebdomadaireMajeur() {
-        // Régression de la violation B3 de l'audit : avant le correctif, un
-        // mineur était plafonné à 48 h par dureeHebdomadaireMax.
+        // Regression test for violation B3 of the audit: before the fix, a minor
+        // was capped at 48 h by dureeHebdomadaireMax.
         Animateur mineur = mineurDebutant("M1");
         ParametresLegaux parametres = new ParametresLegaux(400);
         verify("dureeHebdomadaireMax")
@@ -417,8 +419,8 @@ class LegalConstraintsTest extends ConstraintTestBase {
 
     @Test
     void mineurTravaillantLeQuatorzeJuilletEstPenalise() {
-        // B8 : les scénarios livrés courent en juillet 2026 et couvrent le
-        // 14 juillet (art. L3164-6, liste de l'art. L3133-1).
+        // B8: the bundled scenarios run in July 2026 and cover 14 July
+        // (art. L3164-6, list of art. L3133-1).
         Creneau quatorzeJuillet = creneau("FETE-NAT", 7, java.time.LocalDate.of(2026, 7, 14),
                 LocalTime.of(11, 0), LocalTime.of(15, 0));
         verify("travailInterditJourFerieMineur")
@@ -444,7 +446,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
 
     // --- Art. L3132-1 / L3132-2 / L3164-2 : repos hebdomadaire -------------
 
-    /** Créneau court (11 h → 15 h) du jour J de la semaine ISO 2026-W29. */
+    /** A short timeslot (11:00 → 15:00) on day D of ISO week 2026-W29. */
     private Creneau jourSemaine29(int offsetDepuisLundi) {
         java.time.LocalDate lundi = java.time.LocalDate.of(2026, 7, 13);
         return creneau("W29-J" + offsetDepuisLundi, 6 + offsetDepuisLundi, lundi.plusDays(offsetDepuisLundi),
@@ -453,8 +455,8 @@ class LegalConstraintsTest extends ConstraintTestBase {
 
     @Test
     void septJoursTravaillesDansLaSemaineEstPenalise() {
-        // B4 : le festival dure 15 jours ; rien n'empêchait d'affecter un
-        // animateur sept jours d'affilée (art. L3132-1).
+        // B4: the festival lasts 15 days; nothing stopped an animateur from being
+        // assigned seven days in a row (art. L3132-1).
         Animateur majeur = majeurReferent("A1");
         Object[] postes = new Object[7];
         for (int i = 0; i < 7; i++) {
@@ -475,8 +477,8 @@ class LegalConstraintsTest extends ConstraintTestBase {
 
     @Test
     void semaineSansTrenteCinqHeuresDeReposConsecutivesEstPenalisee() {
-        // Sept jours de 11 h à 15 h : le plus long repos est de 20 h
-        // (15 h → 11 h le lendemain), soit 900 min sous le minimum de 35 h.
+        // Seven days from 11:00 to 15:00: the longest rest is 20 h (15:00 → 11:00
+        // the next day), that is 900 min under the 35 h minimum.
         Animateur majeur = majeurReferent("A1");
         Object[] postes = new Object[7];
         for (int i = 0; i < 7; i++) {
@@ -487,8 +489,8 @@ class LegalConstraintsTest extends ConstraintTestBase {
 
     @Test
     void semaineAvecUnJourEtDemiDeReposNEstPasPenalisee() {
-        // Travail lundi à vendredi, puis rien : de vendredi 15 h au lundi
-        // suivant 00 h, largement plus de 35 h consécutives.
+        // Work from Monday to Friday, then nothing: from Friday 15:00 to the
+        // following Monday 00:00, well over 35 consecutive hours.
         Animateur majeur = majeurReferent("A1");
         Object[] postes = new Object[5];
         for (int i = 0; i < 5; i++) {
@@ -499,8 +501,8 @@ class LegalConstraintsTest extends ConstraintTestBase {
 
     @Test
     void mineurSansDeuxJoursDeReposConsecutifsEstPenalise() {
-        // Travail lundi, mardi, jeudi, vendredi, dimanche : les jours libres
-        // (mercredi, samedi) ne sont jamais consécutifs (art. L3164-2).
+        // Work on Monday, Tuesday, Thursday, Friday, Sunday: the free days
+        // (Wednesday, Saturday) are never consecutive (art. L3164-2).
         Animateur mineur = mineurDebutant("M1");
         verify("reposHebdomadaireMineur")
                 .given(poste(standStrat, jourSemaine29(0), mineur),
@@ -548,8 +550,8 @@ class LegalConstraintsTest extends ConstraintTestBase {
 
     @Test
     void pauseEntreDeuxVacationsLeMemeJourTropCourteEstPenalisee() {
-        // creneauMatin finit à 13h ; cette vacation démarre à 13h15, soit
-        // seulement 15 min de pause — sous le plafond par défaut de 30 min.
+        // creneauMatin ends at 13:00; this shift starts at 13:15, that is only
+        // 15 min of break — under the default floor of 30 min.
         Animateur majeur = majeurReferent("A1");
         Creneau vacationProche = creneau("J1-PROCHE", 1, D1, java.time.LocalTime.of(13, 15), java.time.LocalTime.of(17, 15));
         verify("pauseMinimaleEntreVacations")

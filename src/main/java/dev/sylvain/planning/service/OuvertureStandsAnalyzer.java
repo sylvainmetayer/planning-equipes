@@ -122,8 +122,8 @@ public final class OuvertureStandsAnalyzer {
                     minutes, duJour.size()));
         });
 
-        // Les postes que le solveur recevrait, groupés par stand puis par jour :
-        // c'est la source unique de vérité de cet écran.
+        // The seats the solver would receive, grouped by stand then by day:
+        // this is the single source of truth of that screen.
         Map<String, Map<LocalDate, List<PosteAffectation>>> postesParStandEtJour = new LinkedHashMap<>();
         for (PosteAffectation poste : PlanningService.construirePostes(stands, creneaux)) {
             if (poste.getStand() == null || poste.getCreneau() == null || poste.getCreneau().getDate() == null) {
@@ -242,13 +242,13 @@ public final class OuvertureStandsAnalyzer {
         if (date == null || heureDebut == null) {
             return;
         }
-        // Une fenêtre ouverte (heureFin nulle) s'arrête à la fin du créneau
-        // évalué : elle a donc un effet dès qu'un créneau commence après son
-        // début, ou l'englobe.
+        // An open-ended window (null heureFin) stops at the end of the timeslot
+        // being evaluated: it therefore has an effect as soon as a timeslot
+        // starts after its own start, or encloses it.
         List<Creneau> duJour = creneauxParJour.get(date);
         if (duJour == null) {
-            // Aucun créneau ce jour-là : la fenêtre ne peut viser que le
-            // lendemain d'un créneau traversant minuit, cas légitime.
+            // No timeslot that day: the window can only aim at the morning
+            // after a timeslot crossing midnight, which is legitimate.
             return;
         }
         int debut = heureDebut.toSecondOfDay() / 60;

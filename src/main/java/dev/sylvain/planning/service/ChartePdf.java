@@ -30,14 +30,13 @@ import org.openpdf.text.pdf.PdfTemplate;
 import org.openpdf.text.pdf.PdfWriter;
 
 /**
- * L'identité visuelle des PDF : la palette, les fontes, le logo, les icônes
- * dessinées à la main et les événements de cellule qui posent les coins
- * arrondis.
+ * The visual identity of the PDFs: the palette, the fonts, the logo, the
+ * hand-drawn icons and the cell events that draw the rounded corners.
  *
- * <p>Séparé des trois documents parce que ça change pour d'autres raisons
- * qu'eux : une couleur ou une graisse bougent quand la charte bouge, jamais
- * quand la façon de planifier change. Le PDF global et le PDF individuel s'en
- * servent tous les deux — c'est ce qui garantit qu'ils se ressemblent.</p>
+ * <p>Kept apart from the three documents because it changes for other reasons
+ * than they do: a colour or a font weight moves when the theme moves, never
+ * when the way of planning changes. The global PDF and the individual one both
+ * use it — which is what makes them look alike.</p>
  */
 final class ChartePdf {
 

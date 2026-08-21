@@ -14,14 +14,15 @@ import dev.sylvain.planning.service.AdresseAdministrateur;
 import dev.sylvain.planning.service.LiensApplication;
 
 /**
- * La rédaction des notifications (issue #165), sans {@code Mailer}, sans SMTP
- * et sans contexte Quarkus : la rédaction étant une fonction pure de la
- * notification et de la configuration, chaque assertion de formulation se lit
- * directement sur le {@link Courrier} produit.
+ * The writing of the notifications (issue #165), with no {@code Mailer}, no
+ * SMTP and no Quarkus context: since writing is a pure function of the
+ * notification and of the configuration, every assertion on the wording is read
+ * straight off the {@link Courrier} produced.
  *
- * <p>Un {@link Optional} vide veut dire « personne à prévenir » — pas d'adresse
- * admin configurée, ou un animateur sans adresse sur sa fiche. C'est un
- * résultat normal, pas un échec : l'intéressé voit tout dans son espace.</p>
+ * <p>An empty {@link Optional} means "nobody to notify" — no admin address
+ * configured, or an animateur with no address on their record. That is a normal
+ * result, not a failure: the person concerned sees everything in their
+ * espace.</p>
  */
 class RedacteurNotificationsTest {
 
@@ -70,7 +71,7 @@ class RedacteurNotificationsTest {
         assertThat(redacteur.rediger(new Notification.DemandesSoumises("Alice Dupont", List.of()))).isEmpty();
     }
 
-    /** Un lot = un seul courrier, avec le compte des demandes et le lien admin. */
+    /** One batch = one single mail, with the count of requests and the admin link. */
     @Test
     void unLotDeDemandesDonneUnSeulCourrierAvecLeLienAdmin() {
         Courrier courrier = rediger(new Notification.DemandesSoumises("Alice Dupont",
@@ -92,7 +93,7 @@ class RedacteurNotificationsTest {
         assertThat(courrier.corps()).doesNotContain("Attention");
     }
 
-    /** Sans URL publique configurée, le courrier part quand même — sans lien. */
+    /** With no public URL configured the mail still leaves — without the link. */
     @Test
     void sansUrlPubliqueLeCourrierPartSansLien() {
         redacteur.liens = liensVers(null);
@@ -102,7 +103,7 @@ class RedacteurNotificationsTest {
         assertThat(courrier.corps()).doesNotContain("http");
     }
 
-    /** Une prévalidation non renseignée n'est pas un échec de prévalidation. */
+    /** An unfilled prevalidation is not a failed prevalidation. */
     @Test
     void unePrevalidationInconnueNAlertePas() {
         Courrier courrier = rediger(new Notification.DemandesSoumises(
@@ -177,7 +178,7 @@ class RedacteurNotificationsTest {
                 .contains("proposer l'échange à quelqu'un d'autre");
     }
 
-    // --- Fin de résolution (admin) -----------------------------------------
+    // --- End of a solve (admin) --------------------------------------------
 
     @Test
     void laFinDeResolutionAnnonceLEditionLeScoreEtLaFaisabilite() {
@@ -185,8 +186,8 @@ class RedacteurNotificationsTest {
                 "Année 2026", "0hard/-3medium/-120soft", true));
 
         assertThat(courrier.destinataire()).isEqualTo("admin@example.org");
-        // L'état tient dans l'objet : c'est ce qu'on lit sur un téléphone sans
-        // ouvrir le message, après avoir lancé un solve et être parti.
+        // The state fits in the subject: that is what is read on a phone without
+        // opening the message, after starting a solve and leaving.
         assertThat(courrier.sujet()).contains("Année 2026").contains("planning faisable");
         assertThat(courrier.corps())
                 .contains("Édition : Année 2026")
@@ -216,8 +217,8 @@ class RedacteurNotificationsTest {
 
     @Test
     void unScoreNonMesureNEmpechePasLaNotification() {
-        // Un solve annulé très tôt peut n'avoir aucun score à annoncer : on
-        // prévient quand même, en le disant.
+        // A solve cancelled very early may have no score to announce: the mail
+        // still goes out, and says so.
         Courrier courrier = rediger(new Notification.ResolutionTerminee("Année 2026", null, false));
 
         assertThat(courrier.corps()).contains("Score : non mesuré");

@@ -44,7 +44,7 @@ class QualiteConstraintsTest extends ConstraintTestBase {
 
     @Test
     void chargeEquilibreeNEstPasPenalisee() {
-        // Deux animateurs avec un poste chacun : répartition parfaite.
+        // Two animateurs with one seat each: a perfect spread.
         verify("equilibrerCharge")
                 .given(poste(standStrat, creneauMatin, majeurReferent("A1")),
                         poste(standStrat, creneauAprem, majeurAutonome("A2")))
@@ -54,7 +54,7 @@ class QualiteConstraintsTest extends ConstraintTestBase {
     @Test
     void chargeDesequilibreeEstPenalisee() {
         Animateur a1 = majeurReferent("A1");
-        // A1 porte quatre postes contre un seul pour A2 : déséquilibre marqué.
+        // A1 carries four seats against a single one for A2: a marked imbalance.
         verify("equilibrerCharge")
                 .given(poste(standStrat, creneauMatin, a1),
                         poste(standStrat, creneauAprem, a1),
@@ -66,11 +66,11 @@ class QualiteConstraintsTest extends ConstraintTestBase {
 
     @Test
     void petitDesequilibreEstDesormaisPenalise() {
-        // A1 porte deux postes contre un seul pour A2 : avant la mise à l'échelle
-        // de l'unfairness (UNFAIRNESS_SCALE dans QualiteConstraints), ce faible
-        // écart tronquait exactement à 0 via intValue() et le solveur n'avait
-        // aucun gradient pour corriger un déséquilibre modéré. C'est exactement le
-        // piège que la mise à l'échelle corrige.
+        // A1 carries two seats against a single one for A2: before the unfairness
+        // was scaled up (UNFAIRNESS_SCALE in QualiteConstraints), that small gap
+        // truncated to exactly 0 through intValue() and the solver had no gradient
+        // to fix a moderate imbalance. That is precisely the score trap the
+        // scaling removes.
         Animateur a1 = majeurReferent("A1");
         verify("equilibrerCharge")
                 .given(poste(standStrat, creneauMatin, a1),
@@ -424,8 +424,8 @@ class QualiteConstraintsTest extends ConstraintTestBase {
 
     @Test
     void cinqTypologiesDistinctesSontPenaliseesTroisPoints() {
-        // Reprend l'exemple métier cité pour justifier la contrainte : un
-        // animateur maîtrisant 5 typologies différentes est un mauvais cas.
+        // Takes up the business example quoted to justify the constraint: an
+        // animateur mastering 5 different typologies is a bad case.
         Animateur a1 = animateur("A1", D1.minusYears(30), Map.of(
                 "STRATEGIE", NiveauCompetence.AUTONOME,
                 "AMBIANCE", NiveauCompetence.AUTONOME,

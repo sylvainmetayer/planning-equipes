@@ -127,7 +127,7 @@ class OuvertureStandsAnalyzerTest {
         CelluleJour cellule = rapport.stands().get(0).jours().get(0);
         assertThat(cellule.fenetres()).hasSize(2);
         assertThat(cellule.minutesOuvertes()).isEqualTo(120 + 360);
-        // Un poste par segment ouvert, comme construirePostes.
+        // One seat per open segment, like construirePostes.
         assertThat(cellule.postes()).isEqualTo(2);
     }
 
@@ -197,9 +197,9 @@ class OuvertureStandsAnalyzerTest {
     }
 
     /**
-     * L'anomalie doit rester silencieuse sur une ouverture courte mais voulue :
-     * un stand ouvert deux heures est parfaitement armable, et une alerte qui se
-     * déclenche sur de la donnée correcte cesse d'être lue.
+     * The anomaly must stay silent on a short but deliberate opening: a stand
+     * open for two hours can perfectly well be staffed, and an alert that fires
+     * on correct data stops being read.
      */
     @Test
     void uneOuvertureCourteMaisVoulueNEstPasSignalee() {
@@ -228,7 +228,7 @@ class OuvertureStandsAnalyzerTest {
                 .filteredOn(anomalie -> anomalie.type() == TypeAnomalie.FENETRE_SANS_EFFET)
                 .singleElement()
                 .satisfies(anomalie -> assertThat(anomalie.date()).isEqualTo(JOUR_1));
-        // Et la conséquence : ce jour-là le stand est fermé, malgré l'ouverture saisie.
+        // And the consequence: that day the stand is closed, despite the opening entered.
         assertThat(rapport.stands().get(0).jours().get(0).etat()).isEqualTo(EtatOuverture.FERME);
     }
 

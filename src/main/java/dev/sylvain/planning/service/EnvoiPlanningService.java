@@ -12,16 +12,16 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 /**
- * Envoyer aux animateurs leur planning individuel — leur PDF en pièce jointe,
- * le lien de leur espace dans le corps.
+ * Sends the animateurs their individual planning — their PDF as an attachment,
+ * the link to their espace in the body.
  *
- * <p>Tout est lu côté serveur depuis le planning <b>persisté</b> : ce qui part
- * par mail est exactement ce que montrent l'espace et les calendriers, et le
- * planning (potentiellement énorme) ne transite pas par le navigateur.</p>
+ * <p>Everything is read server-side from the <b>persisted</b> planning: what
+ * leaves by mail is exactly what the espace and the calendars show, and the
+ * planning (potentially huge) never travels through the browser.</p>
  *
- * <p>Contrairement aux notifications d'échange, best-effort par nature, c'est
- * une action d'administration explicite : le compte rendu dit qui a été
- * touché, qui n'a pas d'adresse, et pour qui l'envoi a échoué.</p>
+ * <p>Unlike the swap notifications, best-effort by nature, this is an explicit
+ * administration action: the report says who was reached, who has no address,
+ * and whose delivery failed.</p>
  */
 @ApplicationScoped
 public class EnvoiPlanningService {

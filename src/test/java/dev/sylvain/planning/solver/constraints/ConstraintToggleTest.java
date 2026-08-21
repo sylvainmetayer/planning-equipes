@@ -47,7 +47,7 @@ class ConstraintToggleTest extends ConstraintTestBase {
 
     @Test
     void appreciationIncompatiblePeutEtreDesactivee() {
-        // majeurAutonome ne maîtrise que STRATEGIE : sans appréciation sur un stand ADRESSE.
+        // majeurAutonome only masters STRATEGIE: no liking for an ADRESSE stand.
         verify("appreciationIncompatible")
                 .given(poste(standAdresse, creneauMatin, majeurAutonome("A1")))
                 .penalizesBy(1);
@@ -105,7 +105,7 @@ class ConstraintToggleTest extends ConstraintTestBase {
                 .penalizesBy(0);
     }
 
-    /** Le niveau SOFT est gaté comme les autres — un cas par niveau de score. */
+    /** The SOFT level is gated like the others — one case per score level. */
     @Test
     void favoriserMixiteDesNiveauxPeutEtreDesactivee() {
         verify("favoriserMixiteDesNiveaux")

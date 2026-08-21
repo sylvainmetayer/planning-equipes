@@ -15,23 +15,23 @@ import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 
 /**
- * Ce qu'un solve fait <b>toujours</b>, de bout en bout : capturer le plan qu'il
- * va écraser, construire son problème, résoudre, persister, diagnostiquer,
- * alimenter l'écran Contraintes, écrire la ligne de KPI, annoncer la fin.
+ * What a solve <b>always</b> does, end to end: snapshot the plan it is about
+ * to overwrite, build its problem, solve, persist, diagnose, feed the
+ * Contraintes screen, write the KPI row, announce the end.
  *
- * <p>C'était écrit quatre fois. Trois copies étaient complètes, la quatrième —
- * le solve synchrone de {@code POST /api/planning/solve} — s'arrêtait après
- * « persister ». La conséquence n'était pas cosmétique : l'écran Contraintes
- * restait sur l'analyse du solve <i>précédent</i>, donc affichait des
- * violations qui ne décrivaient plus le plan persisté, et aucun KPI n'était
- * écrit. C'est la raison d'être de cette classe : il n'y a plus de « chemin
- * qui oublie une étape », il n'y a qu'un chemin.</p>
+ * <p>It used to be written four times. Three copies were complete, the fourth —
+ * the synchronous solve of {@code POST /api/planning/solve} — stopped after
+ * "persist". The consequence was not cosmetic: the Contraintes screen stayed on
+ * the analysis of the <i>previous</i> solve, so it displayed violations that no
+ * longer described the persisted plan, and no KPI row was written at all. That
+ * is what this class exists for: there is no "path that forgets a step" any
+ * more, there is one path.</p>
  *
- * <p>Deux coutures seulement, parce que ce sont les deux seules choses qui
- * varient réellement d'un appelant à l'autre : <b>comment le problème est
- * construit</b> (fourni par la requête, bâti depuis le référentiel, ou
- * incrémental) et <b>ce qui doit tenir le solveur</b> pour pouvoir l'arrêter
- * — un job de fond en a besoin, un appel synchrone non.</p>
+ * <p>Two seams only, because they are the two things that really vary from one
+ * caller to the next: <b>how the problem is built</b> (handed over by the
+ * request, built from the reference data, or incremental) and <b>what has to
+ * hold the solver</b> to be able to stop it — a background job needs that, a
+ * synchronous call does not.</p>
  */
 @ApplicationScoped
 public class ResolutionPipeline {
@@ -61,49 +61,50 @@ public class ResolutionPipeline {
     Event<Notification> notifications;
 
     /**
-     * Ce qu'un solve a produit.
+     * What a solve produced.
      *
-     * @param probleme    l'objet dont il est parti, rendu tel quel — une
-     *                    replanification incrémentale a besoin de le relire
-     *                    ensuite (périmètre gelé, affectations précédentes)
-     * @param planning    le plan résolu, déjà persisté
-     * @param diagnostic  son score et ses violations, déjà enregistrés
+     * @param probleme    the object it started from, returned as is — an
+     *                    incremental replanning needs to read it back afterwards
+     *                    (frozen scope, previous assignments)
+     * @param planning    the solved plan, already persisted
+     * @param diagnostic  its score and its violations, already recorded
      */
     public record Resolution<P>(P probleme, PlanningFestival planning,
             PlanningService.PlanningDiagnostic diagnostic) {
     }
 
     /**
-     * Le cas courant : le problème est déjà là, et l'édition est celle du
-     * thread courant. C'est la forme qu'appelle {@code POST /api/planning/solve}.
+     * The common case: the problem is already there, and the edition is the one
+     * of the current thread. This is the form {@code POST /api/planning/solve}
+     * calls.
      */
     public Resolution<PlanningFestival> executer(PlanningFestival probleme, Long secondsLimit) {
         return executer(editionService.editionCourante().getNom(), () -> probleme,
                 Function.identity(), secondsLimit, null);
     }
 
-    /** Même chose, pour un job de fond qui doit pouvoir arrêter son solveur. */
+    /** The same, for a background job that must be able to stop its solver. */
     public Resolution<PlanningFestival> executer(String editionNom, PlanningFestival probleme,
             Long secondsLimit, Consumer<Solver<PlanningFestival>> attacheSolveur) {
         return executer(editionNom, () -> probleme, Function.identity(), secondsLimit, attacheSolveur);
     }
 
     /**
-     * La forme complète, pour un problème qui doit être bâti <b>dans</b> le
-     * job : une tâche mise en file doit résoudre l'édition telle qu'elle est
-     * quand son tour vient, pas telle qu'elle était au clic.
+     * The complete form, for a problem that has to be built <b>inside</b> the
+     * job: a queued task must solve the edition as it stands when its turn
+     * comes, not as it stood when the button was clicked.
      *
-     * @param construireProbleme appelé après la capture du plan précédent, donc
-     *                           jamais avant que le filet soit posé
-     * @param planningDe         extrait le planning à résoudre du problème,
-     *                           quand celui-ci porte plus que ça
-     * @param attacheSolveur     {@code null} quand l'appelant n'a rien à arrêter
+     * @param construireProbleme called after the previous plan has been
+     *                           snapshotted, so never before the net is in place
+     * @param planningDe         extracts the planning to solve from the problem,
+     *                           when the latter carries more than that
+     * @param attacheSolveur     {@code null} when the caller has nothing to stop
      */
     public <P> Resolution<P> executer(String editionNom, Supplier<P> construireProbleme,
             Function<P, PlanningFestival> planningDe, Long secondsLimit,
             Consumer<Solver<PlanningFestival>> attacheSolveur) {
-        // Le filet de l'issue #138 : le plan sur le point d'être écrasé est
-        // capturé d'abord, donc un solve ne détruit plus le résultat précédent.
+        // The net of issue #138: the plan about to be overwritten is
+        // snapshotted first, so a solve no longer destroys the previous result.
         snapshotService.capturerAvantSolve();
         P probleme = construireProbleme.get();
         Instant debutSolve = Instant.now();
@@ -112,27 +113,26 @@ public class ResolutionPipeline {
         persistenceService.persist(resolu);
         PlanningService.PlanningDiagnostic diagnostic = planningService.diagnostiquer(resolu);
         analysisStore.record(diagnostic);
-        // Historique KPI (issue #89) : une ligne par solve terminé, portant la
-        // durée réelle. Délibérément après l'analyse — le KPI lit le score
-        // qu'elle vient d'enregistrer — et jamais en mesure de faire échouer
-        // la résolution.
+        // KPI history (issue #89): one row per finished solve, carrying the real
+        // duration. Deliberately after the analysis — the KPI reads the score it
+        // has just recorded — and never in a position to fail the solve.
         kpiHistoriqueService.enregistrerApresSolve(dureeSolveSecondes);
         annoncer(editionNom, diagnostic);
         return new Resolution<>(probleme, resolu, diagnostic);
     }
 
     /**
-     * Annonce le résultat quand l'édition le demande — l'intérêt d'un long
-     * solve lancé avant de partir. Émet un fait plutôt qu'un mail : « ne coûte
-     * jamais son résultat à l'utilisateur » n'est plus un {@code try/catch}
-     * écrit ici, c'est la politique de livraison qu'{@code ExpediteurNotifications}
-     * applique à toute notification.
+     * Announces the result when the edition asks for it — the whole point of a
+     * long solve started before leaving. It fires a fact rather than a mail:
+     * "never costs the user their result" is no longer a {@code try/catch}
+     * written here, it is the delivery policy {@code ExpediteurNotifications}
+     * applies to every notification.
      */
     private void annoncer(String editionNom, PlanningService.PlanningDiagnostic diagnostic) {
         if (!referenceDataService.getParametresSolveur().mailFinResolution()) {
             return;
         }
-        // Faisable au sens de Timefold : plus aucune contrainte dure violée.
+        // Feasible in the Timefold sense: no hard constraint violated any more.
         notifications.fire(new Notification.ResolutionTerminee(
                 editionNom, diagnostic.score(), diagnostic.hardScore() >= 0));
     }

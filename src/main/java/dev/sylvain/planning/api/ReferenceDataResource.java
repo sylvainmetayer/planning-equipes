@@ -24,13 +24,14 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 /**
- * Importer un référentiel entier — d'un scénario livré, d'un fichier envoyé,
- * ou d'un planning brut — et dire à l'avance ce que ça toucherait.
+ * Import a whole set of reference data — from a bundled scenario, from an
+ * uploaded file, or from a raw planning — and say up front what that would
+ * touch.
  *
- * <p>Les CRUD par famille vivent chacun dans leur ressource
- * ({@link StandResource}, {@link AnimateurResource}, …). Ce qui reste ici est
- * ce qui traverse toutes les familles à la fois, et qui a besoin de résoudre
- * l'édition cible avant d'écrire quoi que ce soit.</p>
+ * <p>The per-family CRUD each live in their own resource
+ * ({@link StandResource}, {@link AnimateurResource}, …). What is left here is
+ * what crosses every family at once, and what has to resolve the target
+ * edition before writing anything at all.</p>
  */
 @Path("/reference-data")
 @Produces(MediaType.APPLICATION_JSON)

@@ -17,7 +17,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 /**
- * CRUD de la grille de créneaux.
+ * CRUD of the timeslot grid.
  */
 @Path("/creneaux")
 @Produces(MediaType.APPLICATION_JSON)

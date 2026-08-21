@@ -70,7 +70,7 @@ class ReferenceDataServiceContrainteAdHocTest {
         referenceDataService.createContrainteAdHoc(
                 contrainte(PREFIXE + "C1", TypeContrainteAdHoc.AFFINITE, premier, second));
 
-        // Même paire, déclarée dans l'autre sens : la contradiction doit être vue.
+        // The same pair, declared the other way round: the contradiction must be seen.
         assertThatThrownBy(() -> referenceDataService.createContrainteAdHoc(
                 contrainte(PREFIXE + "C2", TypeContrainteAdHoc.INCOMPATIBILITE, second, premier)))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -96,7 +96,7 @@ class ReferenceDataServiceContrainteAdHocTest {
         referenceDataService.createContrainteAdHoc(
                 contrainte(PREFIXE + "C1", TypeContrainteAdHoc.INCOMPATIBILITE, premier, second));
 
-        // L'enregistrement remplace l'ancienne version : pas de coexistence, pas de conflit.
+        // Saving replaces the previous version: no coexistence, no conflict.
         assertThatCode(() -> referenceDataService.createContrainteAdHoc(
                 contrainte(PREFIXE + "C1", TypeContrainteAdHoc.AFFINITE, premier, second)))
                 .doesNotThrowAnyException();

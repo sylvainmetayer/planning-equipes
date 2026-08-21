@@ -25,14 +25,14 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 /**
- * Une porte unique sur les trois exports d'un planning : le PDF individuel,
- * le récapitulatif global, le calendrier — et les ZIP qui les distribuent.
+ * A single door onto the three exports of a planning: the individual PDF, the
+ * global summary, the calendar — and the ZIPs that hand them out.
  *
- * <p>Elle n'assemble aucun document elle-même. Chaque format a sa classe
+ * <p>It assembles no document itself. Every format has its own class
  * ({@link PlanningPdfAnimateur}, {@link PlanningPdfGlobal},
- * {@link PlanningIcs}) et leur identité visuelle commune vit dans
- * {@link ChartePdf}. Ce qui reste ici est ce qui vaut pour les trois : qui est
- * concerné, comment on le nomme, ses jours de repos, le lien de son espace.</p>
+ * {@link PlanningIcs}) and their shared visual identity lives in
+ * {@link ChartePdf}. What is left here is what holds for all three: who is
+ * concerned, how they are named, their days off, the link to their espace.</p>
  */
 @ApplicationScoped
 public class PlanningExportService {
@@ -43,10 +43,9 @@ public class PlanningExportService {
     private final PlanningIcs ics;
 
     /**
-     * Injection par constructeur plutôt que par champs : les quatre
-     * collaborateurs sont immuables, et un test hors CDI les fournit
-     * explicitement — il n'y a plus de {@code liens == null} écrit pour lui
-     * dans le code de production.
+     * Constructor injection rather than field injection: the four collaborators
+     * are immutable, and a test outside CDI provides them explicitly — no
+     * {@code liens == null} is written for it in production code any more.
      */
     @Inject
     public PlanningExportService(LiensApplication liens, PlanningPdfAnimateur pdfAnimateur,
@@ -237,10 +236,10 @@ public class PlanningExportService {
     }
 
     /**
-     * Nom de fichier d'un planning individuel : {@code planning-Prenom-Nom.pdf}.
-     * Écrit ici plutôt que dans chaque ressource — l'admin qui reçoit le PDF
-     * par mail et l'animateur qui le télécharge depuis son espace doivent lire
-     * le même nom.
+     * File name of an individual planning: {@code planning-Prenom-Nom.pdf}.
+     * Written here rather than in every resource — the admin who gets the PDF by
+     * mail and the animateur who downloads it from their espace must read the
+     * same name.
      */
     public static String nomFichierPlanning(String nomAffiche, String extension) {
         String sansAccroc = nomAffiche.replaceAll("[^\\p{L}\\p{N}]+", "-").replaceAll("^-+|-+$", "");
@@ -255,7 +254,7 @@ public class PlanningExportService {
                 .orElse(animateurId);
     }
 
-    /** Chronologique, puis par stand — l'ordre dans lequel un animateur lit sa journée. */
+    /** Chronological, then by stand — the order an animateur reads their day in. */
     static Comparator<PosteAffectation> parCreneauPuisStand() {
         return Comparator
                 .comparing((PosteAffectation poste) -> poste.getCreneau().getDate())

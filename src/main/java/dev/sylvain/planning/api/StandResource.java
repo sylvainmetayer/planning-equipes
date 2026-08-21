@@ -20,7 +20,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 /**
- * CRUD des stands, plus le compactage de leurs horaires.
+ * CRUD of the stands, plus the compaction of their opening hours.
  */
 @Path("/stands")
 @Produces(MediaType.APPLICATION_JSON)

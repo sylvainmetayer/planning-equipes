@@ -82,10 +82,10 @@ class RemoteUserAuthentificationTest {
     }
 
     /**
-     * Le mode « en-tête de confiance » est lu par
-     * {@link dev.sylvain.planning.config.ConfigRemoteUser},
-     * une interface {@code @ConfigMapping} : un test la fournit en la
-     * réalisant, plutôt qu'en écrivant dans cinq champs.
+     * The "trusted header" mode is read through
+     * {@link dev.sylvain.planning.config.ConfigRemoteUser}, a
+     * {@code @ConfigMapping} interface: a test provides it by implementing it,
+     * rather than by writing into five fields.
      */
     private record ConfigRemoteUserFixe(boolean enabled, String header, String secretHeader,
             Optional<String> secret, Optional<String> adminEmail) implements ConfigRemoteUser {

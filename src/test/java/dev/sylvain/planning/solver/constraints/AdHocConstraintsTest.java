@@ -72,7 +72,7 @@ class AdHocConstraintsTest extends ConstraintTestBase {
     @Test
     void affectationForceeNonSatisfaiteEstPenalisee() {
         Animateur a1 = majeurReferent("A1");
-        // Aucun poste n'affecte A1 sur le créneau visé.
+        // No seat assigns A1 on the timeslot aimed at.
         verify("affectationForcee")
                 .given(a1,
                         poste(standStrat, creneauMatin, majeurAutonome("A2")),
@@ -118,7 +118,7 @@ class AdHocConstraintsTest extends ConstraintTestBase {
     void affiniteAvecUnMembreQuiNeTravaillePasEstNeutre() {
         Animateur a1 = majeurReferent("A1");
         Animateur a2 = majeurAutonome("A2");
-        // A2 ne tient aucun poste : ni récompense ni pénalité.
+        // A2 holds no seat: neither reward nor penalty.
         verify("affiniteAdHoc")
                 .given(a1, a2,
                         poste(standStrat, creneauMatin, a1),
@@ -130,7 +130,7 @@ class AdHocConstraintsTest extends ConstraintTestBase {
     void affiniteHorsDuPerimetreDeclareEstNeutre() {
         Animateur a1 = majeurReferent("A1");
         Animateur a2 = majeurAutonome("A2");
-        // La paire est réunie le matin, mais l'affinité ne vise que l'après-midi.
+        // The pair is together in the morning, but the affinity only aims at the afternoon.
         verify("affiniteAdHoc")
                 .given(a1, a2,
                         poste(standStrat, creneauMatin, a1),

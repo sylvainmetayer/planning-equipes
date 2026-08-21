@@ -119,7 +119,7 @@ class AuthentificationRemoteUserTest {
     void lAnimateurAttesteParLeProxyEntreDansSonEspaceSansCode() {
         String jeton = creerAnimateur("A-REMOTE-1", EMAIL_ANIMATEUR);
 
-        // Sans attestation, le jeton seul ne suffit pas : l'e-mail est le second facteur.
+        // With no assertion, the token alone is not enough: the e-mail is the second factor.
         given().when().get("/api/espace-animateur/" + jeton).then().statusCode(401);
 
         given()
@@ -134,8 +134,8 @@ class AuthentificationRemoteUserTest {
     void uneAttestationNOuvrePasLEspaceDUnAutreQueSoi() {
         String jetonDuCollegue = creerAnimateur("A-REMOTE-2", "collegue@exemple.fr");
 
-        // Le lien d'un collègue, ramassé sur un PDF, plus sa propre attestation :
-        // l'adresse ne correspond pas à la fiche que le jeton désigne.
+        // A colleague's link, picked up from a PDF, plus one's own assertion:
+        // the address does not match the record the token names.
         given()
                 .header("Remote-Auth-Secret", SECRET)
                 .header("Remote-Email", EMAIL_ANIMATEUR)

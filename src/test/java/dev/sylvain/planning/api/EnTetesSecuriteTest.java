@@ -11,8 +11,8 @@ import org.junit.jupiter.api.Test;
 import io.quarkus.test.junit.QuarkusTest;
 
 /**
- * En-têtes de durcissement navigateur ({@link EnTetesSecuriteFilter}), posés
- * sur toute réponse avant l'ouverture de l'application sur Internet.
+ * Browser hardening headers ({@link EnTetesSecuriteFilter}), set on every
+ * response before the application is opened onto the Internet.
  */
 @QuarkusTest
 class EnTetesSecuriteTest {
@@ -30,9 +30,9 @@ class EnTetesSecuriteTest {
     }
 
     /**
-     * Le jeton de l'espace animateur voyage dans l'URL : sans
-     * {@code Referrer-Policy} il partirait dans le {@code Referer} de chaque
-     * navigation sortante de la page.
+     * The espace animateur token travels in the URL: without
+     * {@code Referrer-Policy} it would leave in the {@code Referer} of every
+     * navigation out of the page.
      */
     @Test
     void lEspaceAnimateurAussiEstCouvert() {
@@ -57,10 +57,10 @@ class EnTetesSecuriteTest {
     }
 
     /**
-     * Swagger UI sert des scripts inline qui ne sont pas les nôtres : la CSP
-     * s'arrête au seuil de {@code /q/*} plutôt que de casser la page — c'est
-     * la raison d'être du filtre, la configuration {@code quarkus.http.header.*}
-     * ne sachant pas donner deux valeurs au même en-tête selon le chemin.
+     * Swagger UI serves inline scripts that are not ours: the CSP stops at the
+     * doorstep of {@code /q/*} rather than breaking the page — which is what the
+     * filter exists for, {@code quarkus.http.header.*} being unable to give the
+     * same header two values depending on the path.
      */
     @Test
     void laCspEpargneLesPagesQuarkus() {

@@ -164,8 +164,8 @@ public class EditionMcpTools {
     }
 
     /**
-     * @param courante l'édition dans laquelle travaillent les outils qui ne précisent pas d'{@code edition}
-     * @param defaut   l'édition sur laquelle retombe tout appelant qui n'en désigne aucune (en-tête HTTP absent)
+     * @param courante the edition the tools that name no {@code edition} work in
+     * @param defaut   the edition every caller that names none falls back to (no HTTP header)
      */
     public record EditionView(String id, String nom, boolean defaut, boolean courante, int nombreCreneaux,
             LocalDate premiereDate, LocalDate derniereDate, int nombreStands, int nombreAnimateurs) {

@@ -145,10 +145,10 @@ public final class VacationGeneratorService {
             for (int[] fenetre : fenetresRepas) {
                 int debutFenetre = Math.max(fenetre[0], borneBasse);
                 int finFenetre = Math.min(fenetre[1], borneHaute);
-                // La fenêtre repas n'est retenue comme plage de coupure que si
-                // elle est assez large pour contenir tout l'éventail : sinon
-                // toutes les familles s'y écraseraient sur le même instant et
-                // la désynchronisation serait perdue (cf. finDeVacation).
+                // The meal window is only kept as a cut range when it is wide
+                // enough to hold the whole spread: otherwise every family would
+                // collapse onto the same instant inside it and the
+                // desynchronisation would be lost (see finDeVacation).
                 if (debutFenetre <= finFenetre && finFenetre - debutFenetre >= etalement) {
                     plageBasse = debutFenetre;
                     plageHaute = finFenetre;
@@ -156,10 +156,10 @@ public final class VacationGeneratorService {
                 }
             }
             if (nombreFamilles > 1) {
-                // Réserve de quoi tenir une dernière vacation complète après ce
-                // relais, en rétrécissant la plage plutôt qu'en corrigeant la
-                // coupure après coup : une correction a posteriori ramènerait
-                // toutes les familles sur le même point et annulerait l'éventail.
+                // Keeps room for one last full shift after this handover, by
+                // shrinking the range rather than fixing the cut afterwards: an
+                // after-the-fact correction would bring every family back onto
+                // the same point and cancel the spread.
                 int plafondReliquat = duree - min + chevauchement;
                 if (plafondReliquat >= plageBasse) {
                     plageHaute = Math.min(plageHaute, plafondReliquat);
@@ -167,10 +167,10 @@ public final class VacationGeneratorService {
             }
             int fin = finDeVacation(cibleFin, plageBasse, plageHaute, famille, nombreFamilles, etalement);
             fin = clamp(fin, borneBasse, borneHaute);
-            // Ne jamais laisser un reliquat plus court que le minimum après ce
-            // relais : sans ce garde-fou, un cut proche de borneHaute (par ex.
-            // pour tomber dans une fenêtre repas) peut réduire la dernière
-            // vacation de l'amplitude à quelques dizaines de minutes.
+            // Never leave a remainder shorter than the minimum after this
+            // handover: without that guard, a cut close to borneHaute (to fall
+            // inside a meal window, say) can shrink the last shift of the opening
+            // span to a few dozen minutes.
             int resteApresRelais = duree - (fin - chevauchement);
             if (resteApresRelais > 0 && resteApresRelais < min) {
                 fin = Math.max(fin - (min - resteApresRelais), borneBasse);
@@ -269,21 +269,20 @@ public final class VacationGeneratorService {
         ParametresDecoupage.StrategieCouverturePendantPause strategie = parametres
                 .getStrategieCouverturePendantPause();
         List<Segment> resultat = new ArrayList<>();
-        // Les trois morceaux ne sont ajoutés que s'ils sont non vides. Une
-        // pause qui commence sur le début du segment, ou qui finit sur sa fin,
-        // produit sinon une vacation de durée nulle — et une vacation dont
-        // heureFin == heureDebut est relue par Creneau#getDureeMinutes() comme
-        // chevauchant minuit, donc longue de 24 h. Le cas se produit dès qu'une
-        // fenêtre repas touche un bord de l'amplitude : par exemple une
-        // fenêtre 20:00-21:00 sur une journée qui ferme à 21:00 faisait
-        // générer une vacation 21:00→21:00 par famille, chacune réclamant un
-        // effectif complet pour 24 h fictives.
+        // The three pieces are only added when they are non-empty. A break
+        // starting on the start of the segment, or ending on its end, otherwise
+        // produces a zero-length shift — and a shift whose heureFin ==
+        // heureDebut is read back by Creneau#getDureeMinutes() as crossing
+        // midnight, hence 24 h long. The case shows up as soon as a meal window
+        // touches an edge of the opening span: a 20:00-21:00 window on a day
+        // closing at 21:00, for instance, used to generate a 21:00→21:00 shift
+        // per family, each one claiming full staffing for a fictitious 24 h.
         if (pauseDebut > segment[0]) {
             resultat.add(new Segment(segment[0], pauseDebut, false));
         }
         if (strategie != ParametresDecoupage.StrategieCouverturePendantPause.FERMETURE && pauseFin > pauseDebut) {
-            // RELEVE et EFFECTIF_REDUIT couvrent tous deux la pause ; seul le
-            // second réduit l'effectif, d'où le marqueur porté par la vacation.
+            // RELEVE and EFFECTIF_REDUIT both cover the break; only the second
+            // one reduces the staffing, hence the marker the shift carries.
             boolean effectifReduit = strategie == ParametresDecoupage.StrategieCouverturePendantPause.EFFECTIF_REDUIT;
             resultat.add(new Segment(pauseDebut, pauseFin, effectifReduit));
         }

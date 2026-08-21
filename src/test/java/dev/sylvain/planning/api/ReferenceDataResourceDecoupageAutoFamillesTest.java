@@ -60,9 +60,9 @@ class ReferenceDataResourceDecoupageAutoFamillesTest {
     void lesParametresDuScenarioSontAppliquesAvantLeDecoupageAutomatique() {
         given().when().post("/api/planning/reset").then().statusCode(200);
 
-        // État de départ volontairement contraire au scénario : une seule
-        // famille. Si l'import appliquait le découpage avant les paramètres,
-        // les vacations naîtraient toutes en famille 0 et le test échouerait.
+        // A starting state deliberately at odds with the scenario: a single
+        // family. If the import applied the slicing before the parameters, every
+        // shift would be born in family 0 and the test would fail.
         given().contentType("application/json").body(PARAMETRES_PAR_DEFAUT)
                 .when().put("/api/parametres-decoupage")
                 .then().statusCode(200);

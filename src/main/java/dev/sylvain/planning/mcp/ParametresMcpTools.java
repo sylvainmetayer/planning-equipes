@@ -145,7 +145,7 @@ public class ParametresMcpTools {
     ParametresSolveurView modifier_parametres_solveur(
             @ToolArg(description = "Durée de résolution par défaut, en secondes") int dureeResolutionSecondes,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        // Seule la durée est réglable ici ; le reste des paramètres est conservé.
+        // Only the duration is tunable here; the rest of the parameters is kept as is.
         ParametresSolveur actuels = referenceDataService.getParametresSolveur();
         return toView(referenceDataService.updateParametresSolveur(
                 new ParametresSolveur(dureeResolutionSecondes, actuels.mailFinResolution())));

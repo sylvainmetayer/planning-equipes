@@ -33,10 +33,10 @@ import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
 
 /**
- * Authentification passwordless de l'espace animateur : le lien ne suffit
- * plus, un code envoyé à l'adresse de la fiche ouvre une session durable.
- * Exercé de bout en bout — le code est lu dans la boîte mock, comme un
- * animateur le lirait dans la sienne.
+ * Passwordless authentication of the espace animateur: the link is no longer
+ * enough, a code sent to the address on the record opens a lasting session.
+ * Exercised end to end — the code is read from the mock mailbox, the way an
+ * animateur would read it from their own.
  */
 @QuarkusTest
 class EspaceAccesTest {
@@ -113,11 +113,11 @@ class EspaceAccesTest {
     }
 
     /**
-     * Le cookie de session vaut 30 jours : sur une visite HTTPS il doit porter
-     * {@code Secure}, sinon il repartirait aussi en clair sur une requête
-     * {@code http://} vers le même hôte. Derrière un proxy qui termine le TLS
-     * l'origine reçoit du http : c'est {@code X-Forwarded-Proto} qui dit le
-     * schéma de la visite réelle.
+     * The session cookie is worth 30 days: on an HTTPS visit it must carry
+     * {@code Secure}, otherwise it would also leave in clear on an
+     * {@code http://} request to the same host. Behind a proxy terminating TLS
+     * the origin sees plain http: {@code X-Forwarded-Proto} is what tells the
+     * scheme of the real visit.
      */
     @Test
     void leCookieDeSessionPorteSecureQuandLaVisiteEstEnHttps() {
@@ -134,7 +134,7 @@ class EspaceAccesTest {
                 .contains("Secure");
     }
 
-    /** Sur la pile locale en http, le flag est absent — sinon le navigateur jetterait le cookie. */
+    /** On the local http stack the flag is absent — otherwise the browser would drop the cookie. */
     @Test
     void leCookieDeSessionResteUtilisableSurUneVisiteEnClair() {
         String jeton = jetonDe("ACCES-A");
@@ -193,7 +193,7 @@ class EspaceAccesTest {
                 .body("message", containsString("nouveau code"));
     }
 
-    /** Demande un code et le relit dans la boîte mock, comme l'animateur dans la sienne. */
+    /** Asks for a code and reads it back from the mock mailbox, as the animateur would. */
     private String codeEnvoye(String jeton) {
         given().contentType(ContentType.JSON)
                 .when().post("/api/espace-animateur/" + jeton + "/code")

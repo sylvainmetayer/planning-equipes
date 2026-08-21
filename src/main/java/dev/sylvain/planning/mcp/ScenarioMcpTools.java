@@ -129,11 +129,11 @@ public class ScenarioMcpTools {
     }
 
     /**
-     * @param decoupageAuto  le scénario portait une section {@code decoupageAuto:}, ses amplitudes ont donc été
-     *                       découpées en vacations à l'import
-     * @param editionId      l'édition où les données ont réellement atterri : celle que le scénario désigne s'il
-     *                       en nomme une, sinon celle de l'appel
-     * @param editionCreee   l'édition n'existait pas et vient d'être créée par cet import
+     * @param decoupageAuto  the scenario carried a {@code decoupageAuto:} section, so its opening spans were
+     *                       sliced into shifts at import time
+     * @param editionId      the edition the data really landed in: the one the scenario names if it names one,
+     *                       otherwise the one of the call
+     * @param editionCreee   the edition did not exist and has just been created by this import
      */
     public record ImportResult(boolean importe, boolean decoupageAuto, String editionId, String editionNom,
             boolean editionCreee) {

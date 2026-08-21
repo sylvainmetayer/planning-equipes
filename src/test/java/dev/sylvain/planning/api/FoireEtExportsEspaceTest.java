@@ -29,10 +29,10 @@ import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
 
 /**
- * Ouverture/fermeture de la foire au planning et téléchargements de l'espace
- * (suite de l'issue #165) : la fermeture est un refus côté serveur, pas un
- * simple masquage d'interface, et l'espace reste consultable — planning,
- * PDF et ICS compris — foire fermée.
+ * Opening and closing the foire au planning, and the espace downloads
+ * (follow-up to issue #165): closing is a server-side refusal, not merely a
+ * hidden button, and the espace stays readable — planning, PDF and ICS
+ * included — while the foire is closed.
  */
 @QuarkusTest
 class FoireEtExportsEspaceTest {

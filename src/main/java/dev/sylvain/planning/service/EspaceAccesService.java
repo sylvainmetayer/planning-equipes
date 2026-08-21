@@ -68,7 +68,7 @@ public class EspaceAccesService {
     public record CodeEnvoye(String emailMasque) {
     }
 
-    /** Trop de codes demandés sans en utiliser aucun : porte le délai avant le prochain essai. */
+    /** Too many codes asked for without using any: carries the delay before the next try. */
     public static class TropDeDemandes extends RuntimeException {
 
         private final long secondesAvantNouvelEssai;
@@ -98,8 +98,8 @@ public class EspaceAccesService {
                     "Aucune adresse e-mail n'est enregistrée pour vous : contactez l'organisation "
                             + "pour la faire ajouter à votre fiche.");
         }
-        // Après le contrôle d'adresse, avant l'envoi : une fiche sans adresse
-        // ne consomme rien, et tout mail réellement parti est compté.
+        // After the address check, before the send: a record without an address
+        // consumes nothing, and every mail actually sent is counted.
         LimiteurDemandesCode.Verdict verdict = limiteurDemandesCode.demander(cleDebit(animateurId));
         if (!verdict.autorise()) {
             throw new TropDeDemandes(verdict.secondesAvantNouvelEssai());
@@ -153,7 +153,7 @@ public class EspaceAccesService {
             throw new IllegalStateException("Failed to open an espace session", e);
         }
         supprimerCode(animateurId);
-        // Le code a servi : la série de demandes sans suite s'arrête là.
+        // The code was used: the run of requests with no follow-up stops there.
         limiteurDemandesCode.oublier(cleDebit(animateurId));
         return session;
     }
@@ -250,7 +250,7 @@ public class EspaceAccesService {
         }
     }
 
-    /** Le débit se compte par animateur ET par édition, comme tout le reste de l'espace. */
+    /** The rate is counted per animateur AND per edition, like the rest of the espace. */
     private String cleDebit(String animateurId) {
         return editionContext.editionIdCourant() + "/" + animateurId;
     }

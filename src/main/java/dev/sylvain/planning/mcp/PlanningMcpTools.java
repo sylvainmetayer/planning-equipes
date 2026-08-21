@@ -195,7 +195,7 @@ public class PlanningMcpTools {
     public record VolumetrieView(int animateurCount, int posteCount, int contrainteAdHocCount) {
     }
 
-    /** @param resolu false quand rien n'a jamais été résolu */
+    /** @param resolu false when nothing has ever been solved */
     public record EtatPlanningView(boolean resolu,
             Instant resoluLe, int affectationsPersistees, Instant derniereModificationDonnees) {
     }
@@ -219,7 +219,7 @@ public class PlanningMcpTools {
             List<ContrainteImpactView> contraintesVioleesAvant, List<ContrainteImpactView> contraintesVioleesApres) {
     }
 
-    /** @param details lignes lisibles décrivant chaque correspondance, anonymisées (id d'animateur, jamais de nom) */
+    /** @param details readable lines describing every match, anonymised (animateur id, never a name) */
     public record ContrainteImpactView(String nom, String niveau, String categorie, String description,
             int nombreCorrespondances, List<String> details) {
     }

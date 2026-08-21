@@ -15,14 +15,13 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 
 /**
- * Ce qu'un ensemble de sièges représente — combien de jours, de stands, de
- * créneaux, d'heures — et la tuile qui l'affiche.
+ * What a set of seats amounts to — how many days, stands, timeslots, hours —
+ * and the tile that displays it.
  *
- * <p>Le PDF individuel et le PDF global posent la même rangée de tuiles en
- * en-tête, sur des ensembles différents : l'un les affectations d'une
- * personne, l'autre celles du festival entier. Compter et afficher au même
- * endroit est ce qui garantit que « 3 JOURS » veut dire la même chose sur les
- * deux documents.</p>
+ * <p>The individual PDF and the global PDF lay the same row of tiles in their
+ * header, over different sets: one the assignments of a single person, the
+ * other those of the whole festival. Counting and displaying in the same place
+ * is what guarantees that "3 JOURS" means the same thing on both documents.</p>
  */
 final class StatistiquesPostes {
 

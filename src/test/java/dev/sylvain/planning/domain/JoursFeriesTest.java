@@ -14,7 +14,7 @@ class JoursFeriesTest {
 
     @Test
     void paquesEstCalculeCorrectement() {
-        // Dates de référence du comput grégorien.
+        // Reference dates of the Gregorian computus.
         assertThat(JoursFeries.paques(2026)).isEqualTo(LocalDate.of(2026, 4, 5));
         assertThat(JoursFeries.paques(2025)).isEqualTo(LocalDate.of(2025, 4, 20));
         assertThat(JoursFeries.paques(2024)).isEqualTo(LocalDate.of(2024, 3, 31));
@@ -49,8 +49,8 @@ class JoursFeriesTest {
 
     @Test
     void lesJoursFeriesDAlsaceMoselleNeSontPasRetenus() {
-        // Vendredi saint et 26 décembre : fériés uniquement en Alsace-Moselle,
-        // hors du modèle tant qu'aucune notion de région n'existe.
+        // Good Friday and 26 December: public holidays in Alsace-Moselle only,
+        // outside the model as long as there is no notion of region.
         assertThat(JoursFeries.estFerieEnFrance(LocalDate.of(2026, 4, 3))).isFalse();
         assertThat(JoursFeries.estFerieEnFrance(LocalDate.of(2026, 12, 26))).isFalse();
     }

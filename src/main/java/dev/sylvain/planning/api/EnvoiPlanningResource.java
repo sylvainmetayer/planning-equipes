@@ -12,12 +12,13 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 /**
- * Les deux boutons d'envoi des plannings individuels (suite de l'issue #165).
+ * The two buttons that send the individual plannings (follow-up to issue
+ * #165).
  *
- * <p>Rien d'autre ici que le transport : {@link EnvoiPlanningService} décide
- * qui est concerné, construit les PDF et rend le compte rendu ; les erreurs
- * métier portent leur propre statut HTTP (voir {@code ErreurMetier}), donc
- * aucun {@code try/catch} n'a de raison d'être à cet étage.</p>
+ * <p>Nothing but transport here: {@link EnvoiPlanningService} decides who is
+ * concerned, builds the PDFs and returns the report; a business error carries
+ * its own HTTP status (see {@code ErreurMetier}), so no {@code try/catch} has
+ * any reason to exist at this level.</p>
  */
 @Path("/planning/envoi")
 @Produces(MediaType.APPLICATION_JSON)

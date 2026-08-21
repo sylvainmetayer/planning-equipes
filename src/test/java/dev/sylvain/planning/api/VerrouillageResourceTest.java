@@ -65,13 +65,12 @@ class VerrouillageResourceTest {
     }
 
     /**
-     * Un payload qui désigne deux cibles à la fois ne garde que celle de son
-     * type. C'était garanti par le fait que chaque branche de validation
-     * pensait à mettre les quatre autres colonnes à {@code null} ; en oublier
-     * une passait la contrainte {@code CHECK} et laissait en base un verrou
-     * visant deux choses. C'est maintenant structurel : la cible est une
-     * hiérarchie scellée qui ne peut pas en porter deux, et un seul endroit
-     * la repose dans les colonnes.
+     * A payload naming two targets at once keeps only the one of its type. That
+     * used to be guaranteed by every validation branch remembering to set the
+     * four other columns to {@code null}; forgetting one passed the
+     * {@code CHECK} constraint and left a lock aiming at two things in the
+     * database. It is structural now: the target is a sealed hierarchy that
+     * cannot carry two, and a single place lays it back into the columns.
      */
     @Test
     void unPayloadPortantDeuxCiblesNeGardeQueCelleDeSonType() {

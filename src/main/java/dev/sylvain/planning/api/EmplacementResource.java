@@ -17,7 +17,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 /**
- * CRUD des emplacements — les lieux physiques où les stands sont posés.
+ * CRUD of the locations — the physical places the stands sit on.
  */
 @Path("/emplacements")
 @Produces(MediaType.APPLICATION_JSON)

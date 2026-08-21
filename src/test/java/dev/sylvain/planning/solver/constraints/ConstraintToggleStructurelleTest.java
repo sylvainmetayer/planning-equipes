@@ -16,32 +16,32 @@ import org.junit.jupiter.api.Test;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 
 /**
- * Le nom d'une contrainte est écrit trois fois sans qu'aucun compilateur ne
- * relie les trois : {@code ConstraintToggleSupport.actif(stream, "X")} qui
- * l'éteint, {@code .asConstraint("X")} qui la déclare, et
- * {@code ConstraintCatalog} qui la décrit à l'IHM. {@code ConstraintCatalogTest}
- * ne compare que les deux dernières ; une faute de frappe — ou un oubli — du
- * côté {@code actif} n'était donc détectée par rien, et l'interrupteur proposé
- * par l'IHM ne faisait simplement rien.
+ * The name of a constraint is written three times without any compiler tying
+ * the three together: {@code ConstraintToggleSupport.actif(stream, "X")} which
+ * switches it off, {@code .asConstraint("X")} which declares it, and
+ * {@code ConstraintCatalog} which describes it to the UI.
+ * {@code ConstraintCatalogTest} only compares the last two; a typo — or an
+ * omission — on the {@code actif} side was therefore caught by nothing, and the
+ * switch the UI offered simply did nothing.
  *
- * <p>Ce n'est pas théorique : {@code eviterChangementEmplacementEloigne} a été
- * livrée sans son enveloppe {@code actif} (voir {@link ConstraintToggleTest}).
- * Ce test-ci couvre les 39 contraintes, là où {@link ConstraintToggleTest}
- * vérifie le mécanisme lui-même sur un représentant par famille — les deux se
- * complètent, aucun ne remplace l'autre.</p>
+ * <p>This is not theoretical: {@code eviterChangementEmplacementEloigne} shipped
+ * without its {@code actif} wrapper (see {@link ConstraintToggleTest}). This
+ * test covers the 39 constraints, where {@link ConstraintToggleTest} checks the
+ * mechanism itself on one representative per family — the two complete each
+ * other, neither replaces the other.</p>
  */
 class ConstraintToggleStructurelleTest {
 
     private static final Path FAMILLES =
             Path.of("src/main/java/dev/sylvain/planning/solver/constraints");
 
-    /** {@code asConstraint("nom")} — la déclaration de la contrainte. */
+    /** {@code asConstraint("nom")} — where the constraint is declared. */
     private static final Pattern DECLARATION = Pattern.compile("asConstraint\\(\"([A-Za-z0-9_]+)\"\\)");
 
-    /** Début d'un appel à {@code actif(…)} ; l'argument fermant est extrait à la main. */
+    /** The start of an {@code actif(…)} call; the closing argument is extracted by hand. */
     private static final Pattern ENVELOPPE = Pattern.compile("\\bactif\\(");
 
-    /** Dernier littéral chaîne d'un appel, c'est-à-dire le nom passé à {@code actif}. */
+    /** The last string literal of a call, that is, the name passed to {@code actif}. */
     private static final Pattern DERNIER_LITTERAL = Pattern.compile("\"([A-Za-z0-9_]+)\"\\s*$");
 
     private static List<Path> familles() throws IOException {
@@ -50,7 +50,7 @@ class ConstraintToggleStructurelleTest {
         }
     }
 
-    /** Les noms passés à {@code actif(…)}, en équilibrant les parenthèses de l'appel. */
+    /** The names passed to {@code actif(…)}, balancing the parentheses of the call. */
     private static List<String> nomsEnveloppes(String source) {
         List<String> noms = new ArrayList<>();
         Matcher debut = ENVELOPPE.matcher(source);
@@ -78,8 +78,8 @@ class ConstraintToggleStructurelleTest {
     }
 
     /**
-     * Toute contrainte déclarée est éteignable, et rien n'est éteignable qui ne
-     * soit déclaré — sinon l'interrupteur pointe dans le vide.
+     * Every declared constraint can be switched off, and nothing can be switched
+     * off that is not declared — otherwise the switch points at nothing.
      */
     @Test
     void chaqueContrainteDeclareeEstEteignableSousExactementLeMemeNom() throws IOException {
@@ -93,8 +93,8 @@ class ConstraintToggleStructurelleTest {
     }
 
     /**
-     * Et le compte y est : les contraintes trouvées dans les sources sont
-     * exactement celles que l'IHM propose d'éteindre.
+     * And the count matches: the constraints found in the sources are exactly
+     * the ones the UI offers to switch off.
      */
     @Test
     void lesContraintesEteignablesSontExactementCellesDuCatalogue() throws IOException {

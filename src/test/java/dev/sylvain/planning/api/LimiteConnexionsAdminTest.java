@@ -17,14 +17,14 @@ import io.quarkus.test.junit.TestProfile;
 import io.restassured.response.Response;
 
 /**
- * Verrouillage du form login admin ({@link LimiteurConnexionsAdmin}). Le
- * compte est unique et sans second facteur : sans ce verrou, une seule paire
- * d'identifiants s'attaque au rythme du réseau.
+ * Lockout of the admin form login ({@link LimiteurConnexionsAdmin}). The
+ * account is unique and has no second factor: without that lock, a single pair
+ * of credentials can be attacked at the speed of the network.
  *
- * <p>Le profil abaisse le plafond à deux échecs. Le compteur étant tenu par
- * adresse, chaque test annonce la sienne via {@code X-Forwarded-For} plutôt
- * que de partager le {@code 127.0.0.1} de tous les autres — c'est aussi ce que
- * fait un vrai déploiement derrière un reverse proxy.</p>
+ * <p>The profile lowers the ceiling to two failures. The counter being kept per
+ * address, every test announces its own through {@code X-Forwarded-For} rather
+ * than sharing the {@code 127.0.0.1} of all the others — which is also what a
+ * real deployment behind a reverse proxy does.</p>
  */
 @QuarkusTest
 @TestProfile(LimiteConnexionsAdminTest.Profil.class)
@@ -38,7 +38,7 @@ class LimiteConnexionsAdminTest {
         }
     }
 
-    /** Le défaut de développement d'{@code ADMIN_PASSWORD} — ce n'est pas un secret. */
+    /** The development default of {@code ADMIN_PASSWORD} — this is not a secret. */
     private static final String MOT_DE_PASSE_DEV = "admin";
 
     @Test
@@ -47,14 +47,14 @@ class LimiteConnexionsAdminTest {
         connexion(adresse, "mauvais").then().statusCode(anyOf(is(401), is(302)));
         connexion(adresse, "mauvais").then().statusCode(anyOf(is(401), is(302)));
 
-        // Le verrou tient même contre le bon mot de passe : c'est ce qui fait
-        // qu'une attaque en ligne ne se contente pas d'attendre son tour.
+        // The lock holds even against the right password: that is what stops an
+        // online attack from simply waiting for its turn.
         connexion(adresse, MOT_DE_PASSE_DEV).then()
                 .statusCode(429)
                 .header("Retry-After", notNullValue())
                 .body("message", containsString("Trop de tentatives"));
 
-        // Et il ne déborde pas sur les autres visiteurs.
+        // And it does not spill over onto the other visitors.
         String cookie = connexion("203.0.113.11", MOT_DE_PASSE_DEV).then()
                 .statusCode(anyOf(is(302), is(200)))
                 .extract().cookie("planning-session");
@@ -62,8 +62,8 @@ class LimiteConnexionsAdminTest {
     }
 
     /**
-     * Une connexion réussie efface le compteur : sinon deux fautes de frappe
-     * espacées d'une semaine finiraient par verrouiller l'administrateur.
+     * A successful login clears the counter: otherwise two typos a week apart
+     * would end up locking the administrator out.
      */
     @Test
     void uneConnexionReussieEffaceLesEchecsPrecedents() {
@@ -72,8 +72,8 @@ class LimiteConnexionsAdminTest {
         connexion(adresse, MOT_DE_PASSE_DEV).then().statusCode(anyOf(is(302), is(200)));
 
         connexion(adresse, "mauvais").then().statusCode(anyOf(is(401), is(302)));
-        // Sans l'effacement, ce deuxième échec serait le deuxième d'une série
-        // et la tentative suivante répondrait 429.
+        // Without that clearing, this second failure would be the second of a
+        // run and the next attempt would answer 429.
         String cookie = connexion(adresse, MOT_DE_PASSE_DEV).then()
                 .statusCode(anyOf(is(302), is(200)))
                 .extract().cookie("planning-session");

@@ -13,16 +13,15 @@ import org.junit.jupiter.api.Test;
 import io.quarkus.mailer.Mail;
 
 /**
- * Les mails qu'un administrateur <b>demande</b>, sur un {@code MailService}
- * construit à la main avec un {@code Mailer} de capture : ni SMTP, ni contexte
- * Quarkus.
+ * The mails an administrator <b>asks for</b>, over a {@code MailService} built
+ * by hand with a capturing {@code Mailer}: no SMTP, no Quarkus context.
  *
- * <p>L'invariant propre à cette classe est l'inverse de celui des
- * notifications : ici un échec <b>doit remonter</b>. Le mail n'accompagne pas
- * une opération, il <i>est</i> l'opération — sans lui l'animateur n'a pas son
- * code et ne peut pas entrer, ou l'administrateur croit avoir diffusé un
- * planning qui n'est jamais parti. La politique best-effort est testée à part,
- * dans {@code ExpediteurNotificationsTest}.</p>
+ * <p>The invariant of this class is the opposite of the one of the
+ * notifications: here a failure <b>must propagate</b>. The mail does not
+ * accompany an operation, it <i>is</i> the operation — without it the animateur
+ * has no code and cannot get in, or the administrator believes they have
+ * delivered a planning that never left. The best-effort policy is tested
+ * separately, in {@code ExpediteurNotificationsTest}.</p>
  */
 class MailServiceTest {
 
@@ -56,7 +55,7 @@ class MailServiceTest {
         assertThat(mail.getAttachments().get(0).getContentType()).isEqualTo("application/pdf");
     }
 
-    /** Sans URL publique (pas de lien d'espace), le mail part sans le lien. */
+    /** With no public URL (no espace link), the mail leaves without the link. */
     @Test
     void lEnvoiDuPlanningSansLienEspaceResteComplet() {
         service.envoyerPlanningIndividuel("alice@example.org", null, null,
@@ -68,7 +67,7 @@ class MailServiceTest {
                 .doesNotContain("espace en ligne");
     }
 
-    /** Le code d'accès part en clair dans le corps, avec sa durée de validité. */
+    /** The access code leaves in clear in the body, with how long it is valid. */
     @Test
     void leCodeDAccesEstEnvoyeAvecSaDureeDeValidite() {
         service.envoyerCodeAcces("alice@example.org", "Alice", "042137");
@@ -81,7 +80,7 @@ class MailServiceTest {
                 .contains("10 minutes");
     }
 
-    /** Sans le mail, pas d'accès : un échec d'envoi du code doit remonter. */
+    /** No mail, no access: a failure to send the code must propagate. */
     @Test
     void unEchecDEnvoiDeCodeRemonteALAppelant() {
         service.mailer = mails -> {
@@ -93,9 +92,8 @@ class MailServiceTest {
     }
 
     /**
-     * Contrairement aux notifications, l'envoi du planning est une action
-     * admin explicite : un échec doit remonter pour être montré, pas être
-     * avalé.
+     * Unlike the notifications, sending the planning is an explicit admin
+     * action: a failure must propagate to be shown, not be swallowed.
      */
     @Test
     void unEchecDEnvoiDePlanningRemonteALAppelant() {
@@ -108,7 +106,7 @@ class MailServiceTest {
                 .isInstanceOf(IllegalStateException.class);
     }
 
-    /** Le mail de test de l'écran Débogage existe pour révéler un SMTP cassé. */
+    /** The test mail of the Débogage screen exists to reveal a broken SMTP. */
     @Test
     void leMailDeTestPropageSonEchec() {
         service.mailer = mails -> {

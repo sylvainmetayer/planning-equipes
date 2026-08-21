@@ -102,9 +102,9 @@ class PlanningServicePosteGenerationTest {
         List<PosteAffectation> postes = PlanningService.construirePostes(
                 List.of(standA, standB), List.of(creneauFamille0, creneauFamille1));
 
-        // Chaque stand n'apparaît que sur UNE des deux familles, jamais les
-        // deux (sinon on aurait 4 postes, pas 2 : le produit cartésien
-        // complet d'avant l'introduction du décalage).
+        // Every stand shows up on ONE of the two families only, never on both
+        // (otherwise there would be 4 seats, not 2: the full cartesian product
+        // of the days before the offset was introduced).
         assertThat(postes).hasSize(2);
         assertThat(postes).extracting(p -> p.getStand().getId() + "->" + p.getCreneau().getFamille())
                 .containsExactlyInAnyOrder("STAND-A->0", "STAND-B->1");
@@ -157,8 +157,8 @@ class PlanningServicePosteGenerationTest {
     }
 
     /**
-     * Stratégie EFFECTIF_REDUIT : sur la vacation qui couvre la pause repas, le
-     * stand ne mobilise que la moitié de son effectif, arrondie au supérieur.
+     * EFFECTIF_REDUIT strategy: on the shift covering the meal break, the stand
+     * calls up half of its staffing only, rounded up.
      */
     @Test
     void vacationDeCouverturePauseNeGenereQueLaMoitieDesSieges() {
@@ -175,10 +175,9 @@ class PlanningServicePosteGenerationTest {
     }
 
     /**
-     * Cas limite qui motive l'arrondi au supérieur : un stand tenu par une
-     * seule personne la garde pendant la pause. Avec un arrondi à l'inférieur
-     * il fermerait, ce qui reviendrait à FERMETURE sans que personne l'ait
-     * demandé.
+     * The edge case that motivates rounding up: a stand held by a single person
+     * keeps that person during the break. Rounding down it would close, which
+     * would amount to FERMETURE without anybody having asked for it.
      */
     @Test
     void standAUnSeulSiegeResteOuvertPendantLaPause() {
@@ -190,7 +189,7 @@ class PlanningServicePosteGenerationTest {
         assertThat(postes).hasSize(1);
     }
 
-    /** Hors vacation de pause, l'effectif reste plein — non-régression. */
+    /** Outside the break-covering shift the staffing stays full — no regression. */
     @Test
     void creneauOrdinaireGardeLEffectifPlein() {
         Stand quatre = new Stand("STAND-4", "Quatre", Set.of(), 4, 4, false);

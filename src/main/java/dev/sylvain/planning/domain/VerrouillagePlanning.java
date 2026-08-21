@@ -58,14 +58,15 @@ public class VerrouillagePlanning {
     }
 
     /**
-     * Les colonnes relues comme la cible qu'elles décrivent — la moitié lecture
-     * de l'adaptateur.
+     * The columns read back as the target they describe — the reading half of
+     * the adapter.
      *
-     * <p>Vide quand la ligne ne décrit rien d'exploitable : le {@code CHECK} de
-     * `V30`/`V41` interdit ce cas en base, mais un verrouillage construit en
-     * mémoire (corps de requête pas encore validé, test) peut très bien
-     * n'avoir ni type ni cible. Rendre {@link Optional#empty()} plutôt que de
-     * lever garde le comportement d'avant : un verrou incomplet ne gèle rien.</p>
+     * <p>Empty when the row describes nothing usable: the {@code CHECK} of
+     * `V30`/`V41` forbids that case in the database, but a lock built in memory
+     * (a request body not validated yet, a test) may perfectly well carry
+     * neither type nor target. Returning {@link Optional#empty()} rather than
+     * throwing keeps the previous behaviour: an incomplete lock freezes
+     * nothing.</p>
      */
     public Optional<CibleVerrouillage> cible() {
         if (type == null) {
@@ -91,16 +92,16 @@ public class VerrouillagePlanning {
     }
 
     /**
-     * La cible réécrite dans les colonnes — la moitié écriture de
-     * l'adaptateur, et le seul endroit du code qui remet les autres à
+     * The target written back into the columns — the writing half of the
+     * adapter, and the only place in the code that resets the others to
      * {@code null}.
      *
-     * <p>C'était écrit cinq fois, une par branche de validation, et chaque
-     * branche devait penser à annuler les quatre colonnes qu'elle n'utilisait
-     * pas. Ici l'effacement précède l'affectation, une bonne fois, et le
-     * {@code switch} sur la hiérarchie scellée est exhaustif sans
-     * {@code default} : une nouvelle façon de verrouiller ne compilera pas
-     * tant que personne n'aura dit dans quelle colonne elle atterrit.</p>
+     * <p>It used to be written five times, once per validation branch, and
+     * every branch had to remember to clear the four columns it did not use.
+     * Here the clearing comes before the assignment, once and for all, and the
+     * {@code switch} over the sealed hierarchy is exhaustive with no
+     * {@code default}: a new way to lock will not compile until somebody has
+     * said which column it lands in.</p>
      */
     public void appliquer(CibleVerrouillage cible) {
         this.type = cible.type();

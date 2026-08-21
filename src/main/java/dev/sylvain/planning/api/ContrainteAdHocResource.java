@@ -17,7 +17,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 /**
- * Les contraintes saisies à la main (affinités, incompatibilités, …).
+ * The constraints entered by hand (affinities, incompatibilities, …).
  */
 @Path("/contraintes-ad-hoc")
 @Produces(MediaType.APPLICATION_JSON)

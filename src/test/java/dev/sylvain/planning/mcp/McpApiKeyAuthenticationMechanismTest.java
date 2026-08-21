@@ -41,9 +41,9 @@ class McpApiKeyAuthenticationMechanismTest {
                 .header("X-MCP-Api-Key", "test-mcp-key")
                 .when().post("/mcp")
                 .then()
-                // Ne vérifie pas la sémantique du protocole MCP (dépend du transport
-                // streamable-http), seulement que l'authentification a laissé passer
-                // la requête jusqu'au handler MCP : pas de 401.
+                // Does not check the semantics of the MCP protocol (that depends on the
+                // streamable-http transport), only that authentication let the request
+                // through to the MCP handler: no 401.
                 .statusCode(not(401));
     }
 

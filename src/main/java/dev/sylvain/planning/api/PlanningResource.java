@@ -104,9 +104,9 @@ public class PlanningResource {
     @Path("/solve")
     public PlanningFestival solve(PlanningFestival planningFestival,
             @QueryParam("seconds") Long secondsLimit) {
-        // Exactement le même chemin que les solves asynchrones — capture du plan
-        // précédent, résolution, persistance, diagnostic, écran Contraintes,
-        // KPI, annonce. C'est ici que la copie incomplète vivait.
+        // Exactly the same path as the asynchronous solves — snapshot of the
+        // previous plan, solve, persistence, diagnosis, Contraintes screen,
+        // KPIs, announcement. This is where the incomplete copy used to live.
         return pipeline.executer(planningFestival, secondsLimit).planning();
     }
 

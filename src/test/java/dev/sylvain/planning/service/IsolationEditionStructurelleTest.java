@@ -15,29 +15,29 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
 /**
- * Tout est cloisonné par édition (voir {@code docs/editions.md}), et une
- * requête qui oublie son prédicat {@code edition_id} ne se voit pas : elle ne
- * lève rien, elle lit ou écrit simplement chez les voisins.
+ * Everything is partitioned by edition (see {@code docs/editions.md}), and a
+ * statement that forgets its {@code edition_id} predicate does not show: it
+ * throws nothing, it simply reads or writes at the neighbours'.
  *
- * <p>C'est arrivé. La rétrogradation de la typologie ninja s'écrivait
- * {@code UPDATE typologie SET ninja = FALSE WHERE ninja AND id <> ?}, sans
- * édition, alors que l'index unique qu'elle protège est scopé par édition
- * depuis {@code V33} : marquer un ninja sur une édition effaçait celui de
- * toutes les autres, et comme le drapeau alimente l'ordonnancement de la
- * construction heuristique, le solve suivant de l'édition voisine partait
- * ailleurs sans que rien ne le signale.</p>
+ * <p>It happened. Demoting the ninja typologie was written
+ * {@code UPDATE typologie SET ninja = FALSE WHERE ninja AND id <> ?}, with no
+ * edition, while the unique index it protects has been scoped per edition since
+ * {@code V33}: marking a ninja on one edition erased the ninja of every other
+ * one, and since that flag feeds the ordering of the construction heuristic,
+ * the next solve of the neighbouring edition started somewhere else without
+ * anything reporting it.</p>
  *
- * <p>Ce test lit le SQL de tout le backend et refuse une requête visant une
- * table métier sans prédicat d'édition. La liste d'exceptions est courte et
- * chacune est justifiée ici : c'est le seul endroit où « cette requête est
- * volontairement inter-éditions » est une affirmation vérifiée plutôt qu'un
- * commentaire.</p>
+ * <p>This test reads the SQL of the whole backend and refuses a statement
+ * aiming at a business table without an edition predicate. The list of
+ * exceptions is short and each one is justified here: it is the only place
+ * where "this statement is deliberately cross-edition" is a verified claim
+ * rather than a comment.</p>
  */
 class IsolationEditionStructurelleTest {
 
     private static final Path SOURCES = Path.of("src/main/java/dev/sylvain/planning");
 
-    /** Toute table portant une colonne {@code edition_id} (migrations V33/V36). */
+    /** Every table carrying an {@code edition_id} column (migrations V33/V36). */
     private static final List<String> TABLES_METIER = List.of(
             "stand", "animateur", "creneau", "emplacement", "typologie",
             "contrainte_ad_hoc", "contrainte_animateur", "constraint_toggle", "verrouillage_planning",
@@ -48,16 +48,16 @@ class IsolationEditionStructurelleTest {
             "demande_echange", "espace_session", "espace_code", "plan_snapshot", "creneau_remap");
 
     /**
-     * Les deux requêtes délibérément inter-éditions, et pourquoi.
+     * The two deliberately cross-edition statements, and why.
      *
      * <ul>
-     *   <li>Le jeton d'espace animateur arrive sur une URL publique, sans
-     *       {@code X-Edition-Id} à croire : il est globalement unique
-     *       précisément pour désigner l'édition tout seul, l'appelant
-     *       enchaînant dans {@code EditionContext.executeDans}.</li>
-     *   <li>La collision d'adresse e-mail est vérifiée au démarrage du mode
-     *       « en-tête de confiance », qui n'a aucune édition à considérer et
-     *       veut savoir si la collision existe où que ce soit.</li>
+     *   <li>The espace animateur token arrives on a public URL, with no
+     *       {@code X-Edition-Id} to believe: it is globally unique precisely so
+     *       it can name the edition on its own, the caller carrying on inside
+     *       {@code EditionContext.executeDans}.</li>
+     *   <li>The e-mail address collision is checked when the "trusted header"
+     *       mode boots, which has no edition to consider and wants to know
+     *       whether the collision exists anywhere at all.</li>
      * </ul>
      */
     private static final List<String> EXCEPTIONS_ASSUMEES = List.of(
@@ -67,16 +67,15 @@ class IsolationEditionStructurelleTest {
     private static final Pattern APPEL = Pattern.compile("prepare(?:Statement|Scoped)\\(");
 
     /**
-     * Un bloc de texte <b>ou</b> un littéral classique — les deux formes
-     * cohabitent : le SQL long est passé en bloc de texte, les requêtes d'une
-     * ligne restent des littéraux.
+     * A text block <b>or</b> a plain literal — both forms live side by side:
+     * long SQL is passed as a text block, one-line statements stay literals.
      */
     private static final Pattern LITTERAL =
             Pattern.compile("\"\"\"(.*?)\"\"\"|\"((?:[^\"\\\\]|\\\\.)*)\"", Pattern.DOTALL);
     private static final Pattern COLONNES_INSERT =
             Pattern.compile("insert\\s+into\\s+\\w+\\s*\\(([^)]*)\\)");
 
-    /** Le SQL de chaque appel, littéraux concaténés recollés. */
+    /** The SQL of every call, concatenated literals glued back together. */
     private static List<String> enonces(String source) {
         List<String> enonces = new ArrayList<>();
         Matcher appel = APPEL.matcher(source);
@@ -105,9 +104,9 @@ class IsolationEditionStructurelleTest {
     }
 
     /**
-     * L'édition doit être <b>filtrée</b>, pas seulement lue : {@code SELECT
-     * edition_id … WHERE jeton = ?} ramène la colonne sans cloisonner quoi que
-     * ce soit.
+     * The edition must be <b>filtered on</b>, not merely read: {@code SELECT
+     * edition_id … WHERE jeton = ?} brings the column back without partitioning
+     * anything at all.
      */
     private static boolean estScopee(String sql) {
         String bas = sql.toLowerCase(Locale.ROOT);
@@ -144,9 +143,9 @@ class IsolationEditionStructurelleTest {
     }
 
     /**
-     * Le test ci-dessus ne vaut que s'il regarde vraiment du SQL : une
-     * expression rationnelle qui ne trouverait plus rien passerait au vert
-     * pour la pire des raisons.
+     * The test above is only worth what its scan is worth: a regular expression
+     * that stopped matching anything would turn green for the worst possible
+     * reason.
      */
     @Test
     void leScanTrouveBienLeSqlDuBackend() throws IOException {
@@ -162,7 +161,7 @@ class IsolationEditionStructurelleTest {
                 .isGreaterThan(80);
     }
 
-    /** Une exception qui n'existe plus dans le code doit sortir de la liste. */
+    /** An exception that no longer exists in the code must leave the list. */
     @Test
     void chaqueExceptionAssumeeCorrespondAUneRequeteReelle() throws IOException {
         List<String> toutes = new ArrayList<>();

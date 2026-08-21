@@ -34,8 +34,8 @@ class OuvertureStandsResourceTest {
                 .extract().jsonPath();
 
         int nombreJours = rapport.getList("jours").size();
-        // Chaque ligne porte exactement une cellule par jour : c'est ce qui rend
-        // la grille lisible sans que le client ait à combler des trous.
+        // Every row carries exactly one cell per day: that is what makes the
+        // grid readable without the client having to fill in holes.
         int nombreStands = rapport.getList("stands").size();
         for (int index = 0; index < nombreStands; index++) {
             assertThat(rapport.getList("stands[" + index + "].jours"))
@@ -50,7 +50,7 @@ class OuvertureStandsResourceTest {
         }
     }
 
-    /** Les valeurs d'énumération exposées doivent rester celles que le frontend type. */
+    /** The exposed enum values must stay the ones the frontend types. */
     @Test
     void chaqueCelluleExposeUnEtatEtUneSourceConnus() {
         seedScenario();
@@ -69,8 +69,8 @@ class OuvertureStandsResourceTest {
     }
 
     /**
-     * Le total d'une ligne doit être la somme de ses cellules : c'est ce que
-     * l'administrateur lit en bout de ligne pour valider d'un coup d'œil.
+     * The total of a row must be the sum of its cells: that is what the
+     * administrator reads at the end of the row to check it at a glance.
      */
     @Test
     void leTotalDUneLigneEstLaSommeDeSesCellules() {

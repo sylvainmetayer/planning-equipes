@@ -31,13 +31,13 @@ import dev.sylvain.planning.domain.Stand;
 import jakarta.enterprise.context.ApplicationScoped;
 
 /**
- * Le planning d'un animateur, en cartes plutôt qu'en tableau : une carte par
- * affectation, avec le jour, la plage, le stand, son emplacement et les
- * coéquipiers de la même ligne.
+ * The planning of one animateur, as cards rather than as a table: one card per
+ * assignment, with the day, the time range, the stand, its location and the
+ * team-mates on the same row.
  *
- * <p>C'est le document qu'on lit sur un téléphone entre deux vacations, d'où
- * la mise en page en cartes ; le récapitulatif de l'organisateur, lui, tient
- * en tableaux compacts ({@link PlanningPdfGlobal}).</p>
+ * <p>This is the document read on a phone between two shifts, hence the card
+ * layout; the organiser's summary holds in compact tables instead
+ * ({@link PlanningPdfGlobal}).</p>
  */
 @ApplicationScoped
 public class PlanningPdfAnimateur {

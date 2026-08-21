@@ -12,28 +12,28 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import jakarta.enterprise.context.ApplicationScoped;
 
 /**
- * Débit des demandes de code d'accès de l'espace animateur.
+ * Rate limit on the espace animateur access-code requests.
  *
- * <p>Sans lui, {@code POST /api/espace-animateur/{jeton}/code} est un envoi de
- * mail déclenchable en boucle par quiconque tient le lien : on noie la boîte
- * de l'animateur sous les codes, on épuise le quota du serveur SMTP, et on
- * remet à cinq le compteur d'essais du code à chaque demande.</p>
+ * <p>Without it, {@code POST /api/espace-animateur/{jeton}/code} is a mail send
+ * anybody holding the link can trigger in a loop: it drowns the animateur's
+ * inbox under codes, exhausts the SMTP server quota, and resets the code
+ * attempt counter to five on every request.</p>
  *
- * <p>Ce qui est compté, ce sont les codes <b>jamais utilisés</b> : ouvrir la
- * session avec le code reçu efface le compteur. Un animateur qui se connecte
- * normalement, même souvent, n'atteint donc jamais le plafond — seule
- * l'accumulation de demandes sans suite, qui est exactement l'abus, y mène.
- * La fenêtre est glissante depuis la première demande non suivie d'effet.</p>
+ * <p>What is counted are the codes that were <b>never used</b>: opening the
+ * session with the code received clears the counter. An animateur logging in
+ * normally, even often, therefore never reaches the ceiling — only the
+ * accumulation of requests with no follow-up, which is exactly the abuse, leads
+ * there. The window slides from the first request left without effect.</p>
  *
- * <p>En mémoire, comme le verrouillage de {@code McpResource} : l'application
- * est mono-instance, et un redémarrage n'est pas à la portée de l'attaquant
- * que ce compteur vise. La limitation par adresse IP, elle, appartient au
- * reverse proxy — voir {@code docs/securite.md}.</p>
+ * <p>In memory, like the {@code McpResource} lockout: the application is
+ * single-instance, and a restart is not within reach of the attacker this
+ * counter aims at. Rate limiting per IP address belongs to the reverse proxy —
+ * see {@code docs/securite.md}.</p>
  */
 @ApplicationScoped
 public class LimiteurDemandesCode {
 
-    /** Ce que la demande apprend à l'appelant : passe, ou repasse dans tant de secondes. */
+    /** What the request tells the caller: go ahead, or come back in so many seconds. */
     public record Verdict(boolean autorise, long secondesAvantNouvelEssai) {
 
         static Verdict ok() {
@@ -46,13 +46,13 @@ public class LimiteurDemandesCode {
 
     private final Map<String, Fenetre> parAnimateur = new ConcurrentHashMap<>();
 
-    /** Demandes non consommées et début de la fenêtre qui les compte. */
+    /** Unconsumed requests, and the start of the window counting them. */
     private record Fenetre(int demandes, Instant debut) {
     }
 
     /**
-     * Consomme un jeton de débit pour {@code cle}. Le verdict négatif porte le
-     * délai restant avant que la fenêtre ne se rouvre, tel quel pour
+     * Consumes one rate-limit token for {@code cle}. A negative verdict carries
+     * the delay left before the window reopens, ready to be used as is for
      * {@code Retry-After}.
      */
     public Verdict demander(String cle) {
@@ -70,7 +70,7 @@ public class LimiteurDemandesCode {
         return new Verdict(false, Math.max(restant, 1));
     }
 
-    /** Le code a servi : la série de demandes sans suite s'arrête là. */
+    /** The code was used: the run of requests with no follow-up stops there. */
     public void oublier(String cle) {
         parAnimateur.remove(cle);
     }

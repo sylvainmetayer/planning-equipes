@@ -16,10 +16,10 @@ import dev.sylvain.planning.service.LiensApplication;
 import io.quarkus.mailer.Mail;
 
 /**
- * La politique de livraison des notifications, désormais écrite à un seul
- * endroit. Elle l'était auparavant à la main sur chaque appel — un
- * {@code try/catch (RuntimeException)} autour de chaque envoi, dans cinq
- * services — et rien n'empêchait d'en oublier un.
+ * The delivery policy of the notifications, now written in a single place. It
+ * used to be written by hand on every call — a
+ * {@code try/catch (RuntimeException)} around every send, in five services —
+ * and nothing stopped anyone from forgetting one.
  */
 class ExpediteurNotificationsTest {
 
@@ -54,7 +54,7 @@ class ExpediteurNotificationsTest {
         });
     }
 
-    /** Personne à prévenir : rien ne part, et surtout rien n'échoue. */
+    /** Nobody to notify: nothing leaves, and above all nothing fails. */
     @Test
     void uneNotificationSansDestinataireNEnvoieRien() {
         expediteur.surNotification(new Notification.DemandesSoumises("Alice Dupont", List.of()));
@@ -63,8 +63,8 @@ class ExpediteurNotificationsTest {
     }
 
     /**
-     * L'invariant central : un SMTP en panne ne doit jamais faire échouer
-     * l'opération métier que la notification décrit — elle a déjà eu lieu.
+     * The central invariant: a broken SMTP must never fail the business
+     * operation the notification describes — that operation already happened.
      */
     @Test
     void unEchecDEnvoiEstAvaleSansCasserLOperation() {
@@ -75,7 +75,7 @@ class ExpediteurNotificationsTest {
         assertThatCode(() -> expediteur.surNotification(uneSoumission())).doesNotThrowAnyException();
     }
 
-    /** Le {@code catch} couvre la rédaction autant que l'envoi. */
+    /** The {@code catch} covers the writing as much as the sending. */
     @Test
     void unEchecDeRedactionEstAvaleAussi() {
         expediteur.redacteur = new RedacteurNotifications() {

@@ -71,12 +71,12 @@ class AffectationConstraintsTest extends ConstraintTestBase {
                 .penalizesBy(0);
     }
 
-    // --- B10 : deux créneaux distincts qui se recouvrent -------------------
+    // --- B10: two distinct timeslots that overlap -------------------------
 
     @Test
     void deuxCreneauxDistinctsQuiSeChevauchentSontPenalises() {
-        // Cas exact cité par l'audit : 10 h-14 h et 12 h-16 h, deux créneaux
-        // différents, donc invisibles pour l'ancienne comparaison d'identité.
+        // The exact case the audit quotes: 10:00-14:00 and 12:00-16:00, two
+        // different timeslots, hence invisible to the old identity comparison.
         Animateur a1 = majeurReferent("A1");
         Creneau matinee = creneau("J1-10-14", 1, D1, LocalTime.of(10, 0), LocalTime.of(14, 0));
         Creneau midi = creneau("J1-12-16", 1, D1, LocalTime.of(12, 0), LocalTime.of(16, 0));
@@ -88,8 +88,8 @@ class AffectationConstraintsTest extends ConstraintTestBase {
 
     @Test
     void deuxCreneauxContigusNeSontPasPenalises() {
-        // Bout à bout (fin = début) : pas de chevauchement — c'est exactement
-        // le passage de témoin d'un relais type découpage automatique.
+        // End to end (end = start): no overlap — this is exactly the handover of
+        // a relay the way automatic slicing produces it.
         Animateur a1 = majeurReferent("A1");
         Creneau avant = creneau("J1-10-14", 1, D1, LocalTime.of(10, 0), LocalTime.of(14, 0));
         Creneau apres = creneau("J1-14-18", 1, D1, LocalTime.of(14, 0), LocalTime.of(18, 0));
@@ -101,8 +101,8 @@ class AffectationConstraintsTest extends ConstraintTestBase {
 
     @Test
     void creneauFranchissantMinuitChevauchantLeLendemainEstPenalise() {
-        // 20 h → 00 h le jour J recouvre 23 h → 01 h : la fin du créneau de nuit
-        // doit être calculée sur le jour suivant, pas avant son propre début.
+        // 20:00 → 00:00 on day D overlaps 23:00 → 01:00: the end of the night
+        // timeslot must be computed on the next day, not before its own start.
         Animateur a1 = majeurReferent("A1");
         Creneau nuitJ1 = creneau("J1-NUIT-CH", 1, D1, LocalTime.of(20, 0), LocalTime.of(0, 0));
         Creneau tardJ1 = creneau("J1-TARD-CH", 1, D1, LocalTime.of(23, 0), LocalTime.of(1, 0));

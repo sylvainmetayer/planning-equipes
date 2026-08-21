@@ -30,7 +30,7 @@ class AnimateurMcpToolsTest {
 
         assertThat(view.id()).isEqualTo("A-1");
         assertThat(view.statut()).isEqualTo("mineur");
-        // Troisième régime du droit du travail : 16-18 ans, distinct des moins de 16 ans.
+        // The third regime of labour law: 16-18, distinct from the under-16s.
         assertThat(view.moinsDe16Ans()).isFalse();
         assertThat(view.manager()).isFalse();
         assertThat(view.competences()).containsEntry("cirque", NiveauCompetence.AUTONOME);
@@ -49,8 +49,8 @@ class AnimateurMcpToolsTest {
 
     @Test
     void neRenvoieAucuneDonneePersonnelleIdentifiante() {
-        // AnimateurView n'a structurellement aucun accesseur nom/prenom/dateNaissance :
-        // toute régression qui en ajouterait un ferait échouer cette liste de composants.
+        // AnimateurView structurally has no nom/prenom/dateNaissance accessor:
+        // any regression adding one would fail this list of components.
         assertThat(AnimateurView.class.getRecordComponents())
                 .extracting(component -> component.getName().toLowerCase())
                 .containsExactlyInAnyOrder("id", "statut", "moinsde16ans", "manager", "competences", "souhaits",

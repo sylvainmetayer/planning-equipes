@@ -217,23 +217,23 @@ class PlanningServiceScenarioDepuisTexteTest {
 
         PlanningFestival planning = service.construireDepuisTexteScenario(yaml).planning();
 
-        // BOURSE : « 10h-12h puis 14h jusqu'à la fermeture, tous les jours » ouvre
-        // chacun des cinq créneaux en entier — la fenêtre ouverte s'adapte au jour
-        // qui ferme à 20h comme à celui qui ferme à minuit.
+        // BOURSE: "10:00-12:00 then 14:00 until closing time, every day" opens
+        // each of the five timeslots entirely — the open-ended window adapts to
+        // the day closing at 20:00 as well as to the one closing at midnight.
         assertThat(postesDe(planning, "BOURSE")).hasSize(5);
         assertThat(postesDe(planning, "BOURSE"))
                 .allSatisfy(poste -> assertThat(poste.getHeureFinEffective()).isNull());
 
-        // PODIUM : ouvert l'après-midi par la règle, sauf le 9 où une exception
-        // datée le ferme — et elle prime, donc aucun poste ce jour-là.
+        // PODIUM: open in the afternoon by the rule, except on the 9th where a
+        // dated exception closes it — and that one wins, hence no seat that day.
         assertThat(postesDe(planning, "PODIUM")).hasSize(2);
         assertThat(postesDe(planning, "PODIUM"))
                 .extracting(poste -> poste.getCreneau().getDate())
                 .containsExactlyInAnyOrder(LocalDate.of(2026, 7, 8), LocalDate.of(2026, 7, 10));
 
-        // MEDIATHEQUE : fermée 10h-12h les mercredis seulement. Le 8 juillet est un
-        // mercredi, le 9 un jeudi : le créneau du matin disparaît le premier jour
-        // et subsiste le second.
+        // MEDIATHEQUE: closed 10:00-12:00 on Wednesdays only. 8 July is a
+        // Wednesday, the 9th a Thursday: the morning timeslot disappears on the
+        // first day and survives on the second.
         assertThat(creneauxDe(planning, "MEDIATHEQUE"))
                 .doesNotContain(entree(LocalDate.of(2026, 7, 8), LocalTime.of(10, 0)))
                 .contains(entree(LocalDate.of(2026, 7, 9), LocalTime.of(10, 0)));

@@ -78,9 +78,9 @@ class FeasibilityAnalyzerTest {
         Animateur a1 = animateur("a1", "STRATEGIE");
         Animateur a2 = animateur("a2", "STRATEGIE");
         a1.setJoursIndisponibles(Set.of(samedi));
-        // Le samedi : 1 animateur pour 3 places (manque 2) ; le dimanche : 2
-        // animateurs pour 3 places (manque 1). Les deux créneaux doivent
-        // apparaître, le plus critique en premier.
+        // Saturday: 1 animateur for 3 seats (2 missing); Sunday: 2 animateurs
+        // for 3 seats (1 missing). Both timeslots must show up, the most
+        // critical one first.
 
         FeasibilityReport report = analyzer.analyser(List.of(a1, a2), List.of(stand),
                 List.of(creneauDimanche, creneauSamedi));
@@ -107,8 +107,8 @@ class FeasibilityAnalyzerTest {
         FeasibilityReport report = analyzer.analyser(List.of(a1), List.of(stand),
                 List.of(creneauSamedi, creneauDimanche));
 
-        // Samedi : personne, donc manque (2) >= demande (2) -> CRITIQUE, et en
-        // tête de liste. Dimanche : un animateur sur deux places -> ELEVE.
+        // Saturday: nobody, so missing (2) >= demand (2) -> CRITIQUE, and at the
+        // top of the list. Sunday: one animateur for two seats -> ELEVE.
         assertThat(report.causes()).extracting(CauseInfaisabilite::severite)
                 .containsExactly(SeveriteInfaisabilite.CRITIQUE, SeveriteInfaisabilite.ELEVE);
         assertThat(report.causes().getFirst().date()).isEqualTo(samedi);
@@ -117,10 +117,10 @@ class FeasibilityAnalyzerTest {
 
     @Test
     void standSansAucunAnimateurCompetentNEstPlusUneCause() {
-        // Compétence désormais medium (appréciation), pas une exigence de
-        // couverture : un animateur disponible mais sans appréciation sur
-        // « stand-2 » compte quand même pour la capacité, et le planning reste
-        // faisable au sens de FeasibilityAnalyzer.
+        // A competence is now medium (a liking), not a coverage requirement: an
+        // available animateur with no liking for "stand-2" still counts towards
+        // the capacity, and the planning stays feasible in the sense of
+        // FeasibilityAnalyzer.
         Stand couvert = stand("stand-1", 1, "STRATEGIE");
         Stand orphelin = stand("stand-2", 1, "ADRESSE");
         Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
@@ -143,7 +143,7 @@ class FeasibilityAnalyzerTest {
             creneaux.add(creneau(jour, date));
             jours.add(date);
         }
-        // Absent tout le festival : aucun jour ne compte dans la capacité.
+        // Away for the whole festival: no day counts towards the capacity.
         Animateur absent = animateur("a1", "STRATEGIE");
         absent.setJoursIndisponibles(jours);
 
@@ -156,9 +156,9 @@ class FeasibilityAnalyzerTest {
 
     @Test
     void animateurWithoutMatchingCompetenceStillCountsTowardsCapacity() {
-        // Compétence = appréciation medium désormais, plus une exigence de
-        // couverture : un animateur disponible mais non "compétent" pour le
-        // stand compte quand même dans la capacité brute.
+        // A competence is a medium liking now, no longer a coverage
+        // requirement: an available animateur who is not "competent" for the
+        // stand still counts in the raw capacity.
         Stand stand = stand("stand-1", 1, "STRATEGIE");
         Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
         Animateur incompetent = animateur("a2", "ADRESSE");
@@ -171,8 +171,8 @@ class FeasibilityAnalyzerTest {
 
     @Test
     void standFermeSurUnCreneauNeComptePasDansLaDemande() {
-        // Le stand exige 3 places mais est fermé (indisponibilité couvrant tout
-        // le créneau) : aucun poste n'est généré, donc aucune demande (cf.
+        // The stand requires 3 seats but is closed (an indisponibilite covering
+        // the whole timeslot): no seat is generated, hence no demand (see
         // PlanningService.construirePostes).
         Stand stand = stand("stand-1", 3, "STRATEGIE");
         Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
@@ -189,8 +189,8 @@ class FeasibilityAnalyzerTest {
 
     @Test
     void laDemandeSuitEffectifMinPasEffectifMax() {
-        // effectifMin = 2 (deux places générées), effectifMax = 4 : deux
-        // animateurs suffisent. Compter effectifMax annoncerait un manque de 2.
+        // effectifMin = 2 (two seats generated), effectifMax = 4: two animateurs
+        // are enough. Counting effectifMax would announce 2 missing.
         Stand stand = new Stand("stand-1", "stand-1", Set.of("STRATEGIE"), 2, 4, false);
         Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
 

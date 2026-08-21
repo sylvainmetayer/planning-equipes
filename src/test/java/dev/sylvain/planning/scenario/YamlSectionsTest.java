@@ -9,10 +9,10 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 /**
- * Les lectures typées du graphe d'objets rendu par SnakeYAML. Deux invariants
- * seulement, mais ce sont ceux qui justifient l'existence de la classe :
- * l'absence d'une section n'est pas son vide, et une section mal formée doit
- * nommer la clé fautive plutôt que deux classes Java.
+ * The typed reads over the object graph SnakeYAML returns. Two invariants
+ * only, but they are the ones that justify the existence of the class: a
+ * missing section is not an empty one, and a malformed section must name the
+ * offending key rather than two Java classes.
  */
 class YamlSectionsTest {
 
@@ -37,10 +37,10 @@ class YamlSectionsTest {
     }
 
     /**
-     * {@code null} et non une valeur vide : le format distingue « la clé n'est
-     * pas là » de « la clé est là et vide » — un fichier sans section
-     * {@code postes:} voit ses postes générés, un fichier avec une section vide
-     * n'en a aucun.
+     * {@code null} and not an empty value: the format tells "the key is not
+     * there" from "the key is there and empty" — a file with no {@code postes:}
+     * section gets its seats generated, a file with an empty section has
+     * none.
      */
     @Test
     void uneSectionAbsenteEstNulleEtNonVide() {

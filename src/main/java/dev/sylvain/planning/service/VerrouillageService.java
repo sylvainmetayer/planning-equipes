@@ -59,14 +59,14 @@ public class VerrouillageService {
     }
 
     /**
-     * La cible que le corps de requête décrit, validée : le type doit désigner
-     * quelque chose, et ce quelque chose doit exister.
+     * The target the request body describes, validated: the type must name
+     * something, and that something must exist.
      *
-     * <p>Elle n'écrit rien elle-même. C'est {@link VerrouillagePlanning#appliquer}
-     * qui la repose dans les colonnes, et qui est donc le seul endroit à
-     * remettre les autres à {@code null} — un payload portant deux cibles
-     * serait ambigu, et la contrainte {@code CHECK} le refuserait avec une
-     * erreur SQL brute au lieu d'un message lisible.</p>
+     * <p>It writes nothing itself. {@link VerrouillagePlanning#appliquer} is
+     * what lays it back into the columns, and is therefore the only place that
+     * resets the others to {@code null} — a payload carrying two targets would
+     * be ambiguous, and the {@code CHECK} constraint would refuse it with a raw
+     * SQL error instead of a readable message.</p>
      */
     private CibleVerrouillage cibleValidee(VerrouillagePlanning verrouillage) {
         return switch (verrouillage.getType()) {

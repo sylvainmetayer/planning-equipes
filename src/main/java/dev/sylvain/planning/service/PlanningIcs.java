@@ -13,13 +13,13 @@ import dev.sylvain.planning.domain.Stand;
 import jakarta.enterprise.context.ApplicationScoped;
 
 /**
- * Le planning d'un animateur en calendrier iCalendar, pour qu'il l'ajoute au
- * sien.
+ * The planning of one animateur as an iCalendar calendar, so they can add it
+ * to their own.
  *
- * <p>Seul document des trois à ne pas être un PDF, et il n'a rien en commun
- * avec eux : pas de mise en page, mais un format à la ligne près — {@code
- * CRLF} obligatoire, échappements sur les virgules et les points-virgules,
- * fuseau nommé plutôt que décalage horaire.</p>
+ * <p>The only one of the three documents that is not a PDF, and it has nothing
+ * in common with them: no layout, but a format specified down to the line —
+ * mandatory {@code CRLF}, escaping on commas and semicolons, a named time zone
+ * rather than an offset.</p>
  */
 @ApplicationScoped
 public class PlanningIcs {

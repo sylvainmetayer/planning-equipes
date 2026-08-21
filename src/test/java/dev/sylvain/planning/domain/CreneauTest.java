@@ -61,8 +61,8 @@ class CreneauTest {
     @Test
     void fermetureDebordantLeCreneauEstClampee() {
         Creneau creneau = new Creneau(1L, 1, JOUR, LocalTime.of(9, 0), LocalTime.of(14, 0));
-        // La fermeture commence avant le créneau et finit après : elle doit
-        // quand même le fermer intégralement, sans erreur ni décalage négatif.
+        // The closing starts before the timeslot and ends after it: it must
+        // still close it entirely, with no error and no negative offset.
         Stand stand = fermer(LocalTime.of(8, 0), LocalTime.of(15, 0));
 
         assertThat(creneau.segmentsOuvertsMinutes(stand)).isEmpty();
@@ -99,7 +99,7 @@ class CreneauTest {
     void fermetureInvalideEstIgnoreeDefensivement() {
         Creneau creneau = new Creneau(1L, 1, JOUR, LocalTime.of(9, 0), LocalTime.of(14, 0));
         Stand stand = new Stand("S", "S", java.util.Set.of(), 1, 1, false);
-        // heureFin avant heureDebut : ne doit jamais fermer le créneau.
+        // heureFin before heureDebut: must never close the timeslot.
         stand.setIndisponibilites(List.of(
                 new IndisponibiliteStand(null, JOUR, LocalTime.of(13, 0), LocalTime.of(11, 0), null)));
 
@@ -120,8 +120,8 @@ class CreneauTest {
 
     @Test
     void ouvertureAuMilieuNeLaisseQueCeSegmentOuvert() {
-        // Inverse de fermetureAuMilieuLaisseDeuxSegmentsOuverts : une ouverture
-        // ne couvrant qu'une partie du créneau ferme tout le reste par défaut.
+        // The mirror of fermetureAuMilieuLaisseDeuxSegmentsOuverts: an opening
+        // covering only part of the timeslot closes all the rest by default.
         Creneau creneau = new Creneau(1L, 1, JOUR, LocalTime.of(9, 0), LocalTime.of(14, 0));
         Stand stand = ouvrir(LocalTime.of(11, 0), LocalTime.of(13, 0));
 
@@ -133,7 +133,7 @@ class CreneauTest {
     @Test
     void ouvertureSansChevauchementFermeLeCreneauIntegralement() {
         Creneau creneau = new Creneau(1L, 1, JOUR, LocalTime.of(9, 0), LocalTime.of(14, 0));
-        // Le stand n'ouvre que le soir : aucun chevauchement avec ce créneau.
+        // The stand only opens in the evening: no overlap with this timeslot.
         Stand stand = ouvrir(LocalTime.of(20, 0), LocalTime.of(23, 0));
 
         assertThat(creneau.segmentsOuvertsMinutes(stand)).isEmpty();
@@ -167,7 +167,7 @@ class CreneauTest {
         stand.setOuvertures(List.of(
                 new OuvertureStand(null, JOUR.plusDays(5), LocalTime.of(9, 0), LocalTime.of(14, 0), null)));
 
-        // Pas d'ouverture ce jour-là (et pas de fermeture non plus) : ouvert par défaut.
+        // No opening that day (and no closing either): open by default.
         assertThat(creneau.segmentsOuvertsMinutes(stand)).containsExactly(new int[] {0, 300});
     }
 
@@ -185,8 +185,8 @@ class CreneauTest {
     void ouvertureInvalideEstIgnoreeDefensivement() {
         Creneau creneau = new Creneau(1L, 1, JOUR, LocalTime.of(9, 0), LocalTime.of(14, 0));
         Stand stand = new Stand("S", "S", java.util.Set.of(), 1, 1, false);
-        // heureFin avant heureDebut : ne doit jamais ouvrir le créneau — un
-        // stand sans ouverture valide ce jour-là reste ouvert par défaut.
+        // heureFin before heureDebut: must never open the timeslot — a stand
+        // with no valid opening that day stays open by default.
         stand.setOuvertures(List.of(
                 new OuvertureStand(null, JOUR, LocalTime.of(13, 0), LocalTime.of(11, 0), null)));
 
@@ -211,7 +211,7 @@ class CreneauTest {
         assertThat(creneauFerme.segmentsOuvertsMinutes(stand)).containsExactly(new int[] {120, 660});
     }
 
-    /* ---------------- « Jusqu'à la fermeture » (heureFin nulle) ---------------- */
+    /* ---------------- "Until closing time" (null heureFin) ---------------- */
 
     @Test
     void ouvertureSansHeureFinCourtJusquALaFinDuCreneau() {
@@ -253,7 +253,7 @@ class CreneauTest {
         assertThat(matin.segmentsOuvertsMinutes(ouvrir(LocalTime.of(14, 0), null))).isEmpty();
     }
 
-    /* ------------------- Fenêtre datée du lendemain ------------------- */
+    /* ------------------- Dated window of the next day ------------------- */
 
     /**
      * A window dated the day <i>after</i> a slot that does not cross midnight

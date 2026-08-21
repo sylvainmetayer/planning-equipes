@@ -247,11 +247,12 @@ class CompactageHorairesTest {
     }
 
     /**
-     * Le cas que la mesure en minutes existe pour accepter : un stand absent toute
-     * la journée s'écrivait « fermé 10:00-23:59 » un jour fermant à minuit, ce qui
-     * laissait une minute ouverte — donc un poste d'une minute. Réécrit en « fermé
-     * de 10:00 à la fermeture », le stand ne génère plus aucun poste : le nombre de
-     * segments passe de 1 à 0 alors que le désaccord réel est cette seule minute.
+     * The case the measure in minutes exists to accept: a stand away all day long
+     * used to be written "closed 10:00-23:59" on a day closing at midnight, which
+     * left one minute open — hence a one-minute seat. Rewritten as "closed from
+     * 10:00 until closing time", the stand generates no seat at all: the number of
+     * segments falls from 1 to 0 while the real disagreement is that single
+     * minute.
      */
     @Test
     void unPosteDUneMinuteHeriteDu2359NEmpechePasLeCompactage() {
@@ -262,7 +263,7 @@ class CompactageHorairesTest {
         }
         List<Creneau> creneaux = amplitudes(LocalTime.MIDNIGHT);
 
-        // Avant : une minute ouverte par jour, à 23:59.
+        // Before: one open minute a day, at 23:59.
         assertThat(creneaux.get(0).segmentsOuvertsMinutes(stand)).containsExactly(new int[] {839, 840});
 
         CompactageHoraires.RapportCompactage rapport =
@@ -273,7 +274,7 @@ class CompactageHorairesTest {
         assertThat(stand.getHoraires()).hasSize(1);
         assertThat(stand.getHoraires().get(0).getFenetres())
                 .containsExactly(new FenetreHoraire(LocalTime.of(10, 0), null));
-        // Après : le stand est fermé toute la journée, donc plus aucun poste.
+        // After: the stand is closed all day, hence no seat at all.
         HoraireStandResolver.appliquer(List.of(stand), creneaux);
         assertThat(creneaux.get(0).segmentsOuvertsMinutes(stand)).isEmpty();
     }

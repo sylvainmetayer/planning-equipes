@@ -11,18 +11,17 @@ import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 
 /**
- * Le solve synchrone (`POST /api/solve`) doit suivre exactement le même chemin
- * que les solves asynchrones.
+ * The synchronous solve (`POST /api/solve`) must follow exactly the same path
+ * as the asynchronous ones.
  *
- * <p>Il ne le suivait pas : le pipeline était écrit quatre fois, et cette
- * copie-là s'arrêtait après « persister ». L'écran Contraintes restait donc sur
- * l'analyse du solve <b>précédent</b> — il affichait des violations qui ne
- * décrivaient plus le plan persisté — et aucune ligne de KPI n'était écrite.
- * Rien ne levait, rien ne se voyait dans les logs : le seul symptôme était un
- * écran qui mentait.</p>
+ * <p>It did not: the pipeline was written four times, and that copy stopped
+ * after "persist". The Contraintes screen therefore stayed on the analysis of
+ * the <b>previous</b> solve — it displayed violations that no longer described
+ * the persisted plan — and no KPI row was written. Nothing threw, nothing
+ * showed in the logs: the only symptom was a screen that lied.</p>
  *
- * <p>Ce test tient les deux bouts que {@code ResolutionPipeline} garantit
- * désormais pour ses quatre appelants.</p>
+ * <p>This test holds the two ends {@code ResolutionPipeline} now guarantees for
+ * its four callers.</p>
  */
 @QuarkusTest
 class SolveSynchronePipelineTest {
@@ -35,8 +34,8 @@ class SolveSynchronePipelineTest {
 
     @Test
     void unSolveSynchroneAlimenteLEcranContraintesEtLHistoriqueKpi() {
-        // Une analyse d'un autre plan est en place : c'est elle qui restait
-        // affichée après un solve synchrone.
+        // An analysis of another plan is in place: that is the one that stayed
+        // on screen after a synchronous solve.
         analysisStore.effacer();
         int kpiAvant = kpiHistorique.lister().size();
 

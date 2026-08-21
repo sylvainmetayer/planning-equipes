@@ -33,13 +33,13 @@ import io.restassured.response.Response;
 import jakarta.inject.Inject;
 
 /**
- * Débit des demandes de code d'accès : le lien seul ne doit pas suffire à
- * déclencher un envoi de mail en boucle vers la boîte de l'animateur.
+ * Rate limit on the access-code requests: the link alone must not be enough to
+ * trigger a loop of mails towards the animateur's inbox.
  *
- * <p>Le profil abaisse le plafond à deux demandes pour que le test tienne en
- * quelques requêtes ; c'est le même compteur qu'en production. Le compteur
- * vivant en mémoire pour toute la durée de l'application, chaque test a son
- * propre animateur plutôt qu'un compteur remis à zéro entre deux.</p>
+ * <p>The profile lowers the ceiling to two requests so the test holds in a few
+ * calls; it is the same counter as in production. Since that counter lives in
+ * memory for the whole life of the application, every test has its own
+ * animateur rather than a counter reset in between.</p>
  */
 @QuarkusTest
 @TestProfile(LimiteDemandesCodeTest.Profil.class)
@@ -95,14 +95,14 @@ class LimiteDemandesCodeTest {
                 .header("Retry-After", notNullValue())
                 .body("message", containsString("Trop de codes"));
 
-        // Aucun mail de plus n'est parti : c'est tout l'objet du plafond.
+        // Not one more mail left: that is the whole point of the ceiling.
         assertThat(mailbox.getMailsSentTo(EMAIL_PLAFOND)).hasSize(2);
     }
 
     /**
-     * Ce qui est compté, ce sont les codes jamais utilisés : ouvrir la session
-     * efface le compteur, sinon un animateur qui se connecte régulièrement
-     * finirait par se voir refuser l'accès à son propre planning.
+     * What is counted are the codes never used: opening the session clears the
+     * counter, otherwise an animateur logging in regularly would end up being
+     * refused access to their own planning.
      */
     @Test
     void ouvrirLaSessionRendSonCreditAuCompteur() {

@@ -17,7 +17,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 /**
- * CRUD des animateurs, et la rotation du jeton de leur espace.
+ * CRUD of the animateurs, plus the rotation of their espace token.
  */
 @Path("/animateurs")
 @Produces(MediaType.APPLICATION_JSON)

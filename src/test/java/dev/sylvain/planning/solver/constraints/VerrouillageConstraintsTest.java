@@ -99,7 +99,7 @@ class VerrouillageConstraintsTest extends ConstraintTestBase {
                 .penalizesBy(0);
     }
 
-    /** Le verrou (animateur, créneau) ne bride que cet animateur-là. */
+    /** The (animateur, timeslot) lock restrains that animateur only. */
     @Test
     void unAutreAnimateurResteLibreSurLeCreneauVerrouille() {
         Animateur a1 = majeurReferent("A1");

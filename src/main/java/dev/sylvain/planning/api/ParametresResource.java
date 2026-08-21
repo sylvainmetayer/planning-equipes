@@ -14,10 +14,10 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 /**
- * Les trois jeux de paramètres réglables depuis les onglets Données et
- * Débogage. Trois racines d'URL distinctes et publiées, d'où le {@code @Path}
- * de classe à la racine : les regrouper sous un préfixe commun casserait le
- * frontend et les clients MCP pour un gain purement cosmétique.
+ * The three sets of parameters the Données and Débogage tabs can tune. Three
+ * distinct published URL roots, hence the class-level {@code @Path} at the
+ * root: grouping them under a common prefix would break the frontend and every
+ * MCP client for a purely cosmetic gain.
  */
 @Path("/")
 @Produces(MediaType.APPLICATION_JSON)

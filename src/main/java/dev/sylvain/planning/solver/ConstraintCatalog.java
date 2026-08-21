@@ -31,9 +31,9 @@ public final class ConstraintCatalog {
 
             new ConstraintDefinition("standReserveAuxMajeurs", Niveau.HARD, "Légal (mineurs)",
                     "Les stands réservés aux majeurs ne peuvent accueillir aucun mineur."),
-            // Reclassée « Sécurité (mineurs) » : aucun article du Code du travail n'impose la présence
-            // d'un majeur aux côtés d'un jeune travailleur sur son poste. C'est une politique de sécurité
-            // de l'organisateur, maintenue en contrainte DURE par choix. Voir docs/contraintes.md.
+            // Reclassified under "Sécurité (mineurs)": no article of the Code du travail requires an
+            // adult next to a young worker on their seat. It is a safety policy of the organiser, kept
+            // as a HARD constraint by choice. See docs/contraintes.md.
             new ConstraintDefinition("mineurNecessiteEncadrementMajeur", Niveau.HARD, "Sécurité (mineurs)",
                     "Un mineur doit toujours être accompagné d'au moins un majeur sur le même stand et le même "
                             + "créneau. Règle de sécurité posée par l'organisateur, pas une obligation du Code du "

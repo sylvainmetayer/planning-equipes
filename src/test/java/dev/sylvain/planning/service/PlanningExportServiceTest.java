@@ -329,7 +329,7 @@ class PlanningExportServiceTest {
         return animateur;
     }
 
-    /** Le même service, mais avec une URL publique configurée : les liens d'espace deviennent imprimables. */
+    /** The same service, but with a public URL configured: the espace links become printable. */
     private static PlanningExportService exportsAvecLiens(String baseUrl) {
         return new PlanningExportService(new LiensApplication(Optional.of(baseUrl)),
                 new PlanningPdfAnimateur(), new PlanningPdfGlobal(), new PlanningIcs());
@@ -340,11 +340,11 @@ class PlanningExportServiceTest {
     }
 
     /**
-     * La régression exacte que la centralisation des liens a introduite : un
-     * animateur qui n'a jamais ouvert son espace n'a pas de jeton, et c'est le
-     * cas courant sur un plan fraîchement importé. Poser {@code findFirst()}
-     * avant le filtre faisait alors lever une {@code NullPointerException} à
-     * l'export PDF de <b>tous</b> les animateurs.
+     * The exact regression centralising the links introduced: an animateur who
+     * has never opened their espace has no token, and that is the common case on
+     * a freshly imported plan. Putting {@code findFirst()} before the filter
+     * then made the PDF export of <b>every</b> animateur throw a
+     * {@code NullPointerException}.
      */
     @Test
     void unAnimateurSansJetonNaPasDeLienEspaceMaisNeFaitPasEchouerLExport() {

@@ -81,10 +81,10 @@ class McpResourceTest {
     @Test
     @Order(99)
     void lesEssaisRepetesFinissentParBloquerLEndpoint() {
-        // Le compteur est global au processus : les deux échecs des tests
-        // précédents comptent déjà. On boucle donc jusqu'au blocage plutôt que
-        // de miser sur un nombre exact d'essais, en exigeant que tout ce qui
-        // précède le 429 soit bien un 401.
+        // The counter is global to the process: the two failures of the
+        // previous tests already count. So this loops until the lockout rather
+        // than betting on an exact number of tries, requiring everything before
+        // the 429 to be a 401.
         int statut = 401;
         for (int essai = 0; essai < McpResource.MAX_ESSAIS + 1 && statut == 401; essai++) {
             statut = given()
@@ -95,8 +95,8 @@ class McpResourceTest {
         }
         assertThat(statut).isEqualTo(429);
 
-        // Le bon mot de passe ne lève pas le blocage : sinon il suffirait de le
-        // deviner une fois pour annuler toute la limitation.
+        // The right password does not lift the lockout: otherwise guessing it
+        // once would be enough to cancel the whole limit.
         given()
                 .contentType(ContentType.JSON)
                 .body("{\"motDePasse\":\"admin\"}")

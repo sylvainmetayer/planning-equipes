@@ -140,8 +140,8 @@ class ReferentielMcpToolsTest {
 
     @Test
     void creerDesCreneauxRecurrentsSauteLeWeekEndEtControleLaGrille() {
-        // Repart d'une grille vide pour que les comptages soient déterministes ; la classe la
-        // laisse vide en sortie, c'est-à-dire dans l'état d'une base de test fraîche.
+        // Starts from an empty grid so the counts are deterministic; the class leaves it
+        // empty on the way out, that is, in the state of a fresh test database.
         creneauTools.supprimer_creneaux(null, null, null, true, null);
 
         CreneauMcpTools.PrevisualisationRecurrence apercu = creneauTools.previsualiser_creneaux_recurrents(
@@ -157,10 +157,10 @@ class ReferentielMcpToolsTest {
 
         assertThat(creation.nombreGeneres()).isEqualTo(10);
         assertThat(referenceDataService.listCreneaux()).hasSize(10);
-        // Le jour n'est jamais stocké : il est redérivé des dates à la lecture.
+        // The day is never stored: it is derived back from the dates when read.
         assertThat(referenceDataService.listCreneaux()).extracting(dev.sylvain.planning.domain.Creneau::getJour)
                 .containsOnly(1, 2, 3, 4, 5);
-        // La coupure méridienne laisse 12h-14h à découvert : signalé en avertissement, sans bloquer.
+        // The midday break leaves 12:00-14:00 uncovered: reported as a warning, without blocking.
         assertThat(creation.controle().valide()).isTrue();
         assertThat(creation.controle().anomalies()).extracting(anomalie -> anomalie.type().name())
                 .contains("TROU_DANS_LA_JOURNEE");

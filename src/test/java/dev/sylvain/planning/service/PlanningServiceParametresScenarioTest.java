@@ -47,8 +47,8 @@ class PlanningServiceParametresScenarioTest {
         ParametresLegaux legaux = service.chargerSectionsScenario("scenario-parametres-optionnels.yaml").parametresLegaux()
                 .orElseThrow();
         assertThat(legaux.getReposQuotidienMinimalMinutes()).isEqualTo(500);
-        // Champs non mentionnés dans le YAML : valeurs par défaut de la classe,
-        // pas celles de la base (ici absente).
+        // Fields the YAML does not mention: the defaults of the class, not those
+        // of the database (absent here).
         assertThat(legaux.getDureeHebdomadaireMaxMinutes())
                 .isEqualTo(ParametresLegaux.DUREE_HEBDOMADAIRE_MAX_MINUTES_PAR_DEFAUT);
         assertThat(legaux.getPauseMinimaleEntreVacationsMinutes())
@@ -65,10 +65,9 @@ class PlanningServiceParametresScenarioTest {
         // sexagesimal Number (43830 = 12*3600 + 30*60), not a String — a naive
         // (String) cast throws ClassCastException instead of parsing it.
         assertThat(decoupage.getFenetreRepasMidiDebut()).isEqualTo(LocalTime.of(12, 30));
-        // Découpage par familles décalées : le paramétrage qui rend un scénario
-        // dense faisable (voir docs/optimisation-solveur.md) doit pouvoir être
-        // épinglé dans le scénario lui-même, pas seulement réglé à la main
-        // après import.
+        // Slicing into offset families: the setting that makes a dense scenario
+        // feasible (see docs/optimisation-solveur.md) must be pinnable in the
+        // scenario itself, not only tuned by hand after the import.
         assertThat(decoupage.getNombreFamillesDecalage()).isEqualTo(3);
         assertThat(decoupage.getDureeDecalageMaxMinutes()).isEqualTo(75);
 
@@ -91,17 +90,17 @@ class PlanningServiceParametresScenarioTest {
     void scenarioAvecDecoupageAutoEstDetecte() {
         PlanningService service = service();
 
-        // Les anciens champs groupeSourceNom/groupeCibleNom du fichier sont
-        // acceptés et ignorés (issue #172) : seule la présence de la section compte.
+        // The old groupeSourceNom/groupeCibleNom fields of the file are accepted
+        // and ignored (issue #172): only the presence of the section counts.
         assertThat(service.chargerSectionsScenario("scenario-decoupage-auto.yaml").decoupageAuto()).isTrue();
     }
 
     /**
-     * Un nom absent ou vide (import sans scénario sélectionné) doit retomber
-     * sur le scénario par défaut, comme {@code construireExemple} : concaténé
-     * tel quel il visait {@code scenarios/null}, ou pire le dossier
-     * {@code scenarios/} lui-même, dont le listing se parse en simple chaîne
-     * YAML et cassait l'import en ClassCastException.
+     * A missing or blank name (an import with no scenario selected) must fall
+     * back on the default scenario, like {@code construireExemple}: concatenated
+     * as is, it used to aim at {@code scenarios/null}, or worse at the
+     * {@code scenarios/} folder itself, whose listing parses as a plain YAML
+     * string and broke the import with a ClassCastException.
      */
     @Test
     void nomDeScenarioAbsentOuVideRetombeSurLeScenarioParDefaut() {

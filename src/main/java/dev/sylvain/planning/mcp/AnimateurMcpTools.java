@@ -147,8 +147,8 @@ public class AnimateurMcpTools {
     }
 
     /**
-     * @param statut         "majeur" ou "mineur", calculé à la date du premier créneau du groupe de créneaux actif
-     * @param moinsDe16Ans   troisième régime du droit du travail, dérivé de la même date de référence
+     * @param statut         "majeur" or "mineur", computed at the date of the first timeslot of the active group
+     * @param moinsDe16Ans   the third regime of French labour law, derived from the same reference date
      */
     public record AnimateurView(String id, String statut, boolean moinsDe16Ans, boolean manager,
             Map<String, NiveauCompetence> competences, Set<String> souhaits, Set<LocalDate> joursIndisponibles) {

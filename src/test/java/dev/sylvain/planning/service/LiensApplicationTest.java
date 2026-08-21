@@ -7,12 +7,12 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 /**
- * Les liens publics imprimés dans les mails et sur les PDF. Le point de ce
- * composant est qu'il n'existe qu'une seule façon d'assembler ces URL : avant
- * lui, {@code MailService} concaténait l'URL de base telle que configurée
- * tandis que {@code PlanningExportService} lui retirait son {@code /} final —
- * deux conventions, donc un double slash dans les mails dès que
- * {@code planning.public-url} se terminait par un slash.
+ * The public links printed in the mails and on the PDFs. The point of this
+ * component is that there is exactly one way of assembling those URLs: before
+ * it, {@code MailService} concatenated the base URL as configured while
+ * {@code PlanningExportService} stripped its trailing {@code /} — two
+ * conventions, hence a double slash in the mails as soon as
+ * {@code planning.public-url} ended with a slash.
  */
 class LiensApplicationTest {
 
@@ -29,7 +29,7 @@ class LiensApplicationTest {
         assertThat(liens.disponible()).isTrue();
     }
 
-    /** La régression que ce composant existe pour empêcher. */
+    /** The regression this component exists to prevent. */
     @Test
     void unSlashFinalDansLUrlPubliqueNeDonneJamaisUnDoubleSlash() {
         LiensApplication liens = liensVers("https://planning.example.org/");
@@ -38,7 +38,7 @@ class LiensApplicationTest {
         assertThat(liens.espaceAnimateur("a1b2")).contains("https://planning.example.org/animateur/a1b2");
     }
 
-    /** Un déploiement sans URL publique n'imprime pas de lien, il n'en invente pas. */
+    /** A deployment with no public URL prints no link, it does not invent one. */
     @Test
     void sansUrlPubliqueAucunLienNEstConstruit() {
         for (String base : new String[] { null, "", "   " }) {
@@ -60,9 +60,9 @@ class LiensApplicationTest {
     }
 
     /**
-     * Le jeton voyage comme valeur de gabarit et non par concaténation : il est
-     * encodé, et un caractère de gabarit dans un jeton importé d'un scénario ne
-     * peut pas être réinterprété par {@code UriBuilder}.
+     * The token travels as a template value rather than by concatenation: it is
+     * encoded, and a template character inside a token imported from a scenario
+     * cannot be reinterpreted by {@code UriBuilder}.
      */
     @Test
     void leJetonEstEncodeEtJamaisReluCommeUnGabarit() {

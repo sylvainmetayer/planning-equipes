@@ -24,12 +24,12 @@ import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 
 /**
- * L'import de scénario est un DIFF, pas un remplacement aveugle : les
- * animateurs du fichier sont mis à jour EN PLACE (jeton d'accès et e-mail
- * conservés — les liens d'espace imprimés survivent), seuls les absents du
- * fichier disparaissent, et le planning résolu s'efface proprement
- * (affectations ET trace de résolution). L'endpoint d'impact fournit les
- * chiffres du dialogue de confirmation.
+ * Importing a scenario is a DIFF, not a blind replacement: the animateurs of
+ * the file are updated IN PLACE (access token and e-mail kept — the espace
+ * links already printed survive), only those absent from the file disappear,
+ * and the solved planning is cleared properly (assignments AND the trace of the
+ * solve). The impact endpoint provides the figures of the confirmation
+ * dialog.
  */
 @QuarkusTest
 class ImportScenarioPreservationTest {

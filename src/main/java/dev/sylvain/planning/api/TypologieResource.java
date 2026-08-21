@@ -17,8 +17,8 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 /**
- * CRUD du référentiel des typologies — le vocabulaire que stands et
- * animateurs désignent.
+ * CRUD of the typologie reference data — the game categories stands and
+ * animateurs point at.
  */
 @Path("/typologies")
 @Produces(MediaType.APPLICATION_JSON)

@@ -3,37 +3,36 @@ package dev.sylvain.planning.domain;
 import java.time.LocalDate;
 
 /**
- * Ce qu'un verrouillage gèle : un animateur, un stand, un créneau, une
- * journée, ou un animateur sur un créneau précis.
+ * What a lock freezes: an animateur, a stand, a timeslot, a day, or an
+ * animateur on one precise timeslot.
  *
- * <p>{@link VerrouillagePlanning} porte ça à plat — cinq colonnes cibles
- * nullables et un discriminant — parce que c'est ce qu'exigent une ligne SQL,
- * un DTO JSON et un fait de problème Timefold. Le coût de cette mise à plat
- * était un {@code switch} où <b>chaque branche devait penser à mettre les
- * quatre autres colonnes à {@code null}</b> : en oublier une passait la
- * contrainte {@code CHECK} de la base et laissait un verrou visant deux cibles
- * à la fois.</p>
+ * <p>{@link VerrouillagePlanning} carries that flat — five nullable target
+ * columns and a discriminator — because that is what an SQL row, a JSON DTO
+ * and a Timefold problem fact all require. The price of that flattening was a
+ * {@code switch} where <b>every branch had to remember to set the four other
+ * columns to {@code null}</b>: forgetting one passed the {@code CHECK}
+ * constraint of the database and left a lock aiming at two targets at
+ * once.</p>
  *
- * <p>Ici, la cible ne peut structurellement pas en désigner deux : chaque
- * variante ne porte que ses propres champs. Le passage aux colonnes est écrit
- * une seule fois, dans {@link VerrouillagePlanning#appliquer}, et sa
- * conversion est un {@code switch} exhaustif sans {@code default} — ajouter une
- * façon de verrouiller ne compilera pas tant que personne n'aura dit ce qu'elle
- * gèle.</p>
+ * <p>Here the target structurally cannot name two: each variant carries its own
+ * fields and nothing else. The move to the columns is written once, in
+ * {@link VerrouillagePlanning#appliquer}, and converting it is an exhaustive
+ * {@code switch} with no {@code default} — adding a way to lock will not
+ * compile until somebody has said what it freezes.</p>
  */
 public sealed interface CibleVerrouillage {
 
-    /** Le discriminant persisté, celui que porte la colonne {@code type}. */
+    /** The persisted discriminator, the one the {@code type} column carries. */
     TypeVerrouillage type();
 
     /**
-     * Est-ce que ce siège est gelé ? La variante {@link SurAnimateur} lit
-     * l'animateur courant du poste, donc elle ne répond utilement qu'une fois
-     * le siège réamorcé depuis le planning persisté.
+     * Is this seat frozen? The {@link SurAnimateur} variant reads the current
+     * animateur of the seat, so it only answers usefully once the seat has been
+     * seeded back from the persisted planning.
      */
     boolean couvre(PosteAffectation poste);
 
-    /** Tout ce que cet animateur tient, partout. */
+    /** Everything this animateur holds, everywhere. */
     record SurAnimateur(String animateurId) implements CibleVerrouillage {
 
         @Override
@@ -47,7 +46,7 @@ public sealed interface CibleVerrouillage {
         }
     }
 
-    /** Tout ce qui se joue sur ce stand. */
+    /** Everything played on this stand. */
     record SurStand(String standId) implements CibleVerrouillage {
 
         @Override
@@ -61,7 +60,7 @@ public sealed interface CibleVerrouillage {
         }
     }
 
-    /** Toute cette vacation, sur tous les stands. */
+    /** This whole shift, on every stand. */
     record SurCreneau(long creneauId) implements CibleVerrouillage {
 
         @Override
@@ -75,7 +74,7 @@ public sealed interface CibleVerrouillage {
         }
     }
 
-    /** Toute cette journée. */
+    /** This whole day. */
     record SurJour(LocalDate jour) implements CibleVerrouillage {
 
         @Override
@@ -89,7 +88,7 @@ public sealed interface CibleVerrouillage {
         }
     }
 
-    /** Cet animateur, sur ce créneau-là seulement — ce que pose un échange accepté. */
+    /** This animateur, on that one timeslot only — what an accepted swap sets. */
     record SurAnimateurEtCreneau(String animateurId, long creneauId) implements CibleVerrouillage {
 
         @Override

@@ -593,9 +593,9 @@ public class PlanningService {
         int counter = 0;
         for (Stand stand : stands) {
             int effectif = Math.max(1, stand.getEffectifMin());
-            // Sur une vacation de couverture de pause (stratégie EFFECTIF_REDUIT),
-            // le stand tourne à demi-effectif, arrondi au supérieur : un stand
-            // tenu par une seule personne la garde plutôt que de fermer.
+            // On a break-covering shift (EFFECTIF_REDUIT strategy) the stand
+            // runs at half staffing, rounded up: a stand held by a single person
+            // keeps that person rather than closing.
             int effectifPause = (effectif + 1) / 2;
             int familleStand = familleParStand.get(stand.getId());
             for (Creneau creneau : creneaux) {
@@ -1043,16 +1043,16 @@ public class PlanningService {
     private PlanningFestival construirePlanningDepuisDonnees(Map<String, Object> scenarioData) {
         ReferenceScenario reference = chargerReferenceScenario(scenarioData);
 
-        // Étendre les horaires récurrents avant toute décision d'ouverture : un
-        // fichier peut décrire les horaires d'un stand en règles plutôt qu'en
-        // fenêtres datées, et c'est bien sur les jours de ses propres créneaux
-        // qu'il faut les résoudre. Sans règle, l'appel ne change rien.
+        // Expand the recurring opening hours before deciding anything about
+        // openings: a file may describe the opening hours of a stand as rules
+        // rather than as dated windows, and they must be resolved on the days of
+        // its own timeslots. With no rule, the call changes nothing.
         HoraireStandResolver.appliquer(reference.standsParId().values(), reference.creneauxParId().values());
 
-        // Charger les postes : repris tels quels du fichier si la section est
-        // présente, sinon générés à partir des stands/créneaux (mêmes règles que
-        // construireDepuisReferenceData) — un fichier n'a plus besoin d'énumérer
-        // ses postes à la main pour être importé.
+        // Load the seats: taken as they are from the file when the section is
+        // there, otherwise generated from the stands/timeslots (same rules as
+        // construireDepuisReferenceData) — a file no longer has to enumerate its
+        // seats by hand to be imported.
         List<Map<String, Object>> postesList = YamlSections.objets(scenarioData, "postes");
         List<PosteAffectation> postes;
         if (postesList == null) {
@@ -1159,10 +1159,10 @@ public class PlanningService {
     }
 
     private ReferenceScenario chargerReferenceScenario(Map<String, Object> scenarioData) {
-        // Charger les creneaux : le fichier YAML porte un id texte historique
-        // (utilisé seulement pour relier postes/creneaux entre eux), remplacé
-        // ici par un id numérique synthétique ; jour est recalculé (voir
-        // Creneau.assignerJours), la valeur du fichier est ignorée.
+        // Load the creneaux: the YAML file carries a historical text id (used
+        // only to tie postes and creneaux together), replaced here by a synthetic
+        // numeric id; jour is recomputed (see Creneau.assignerJours), the value
+        // from the file is ignored.
         Map<String, Creneau> creneauxMap = new HashMap<>();
         long compteurCreneauId = 1;
         List<Map<String, Object>> creneauxList = YamlSections.objets(scenarioData, "creneaux");
@@ -1180,7 +1180,7 @@ public class PlanningService {
         }
         Creneau.assignerJours(creneauxMap.values());
 
-        // Charger les emplacements
+        // Load the emplacements
         Map<String, Emplacement> emplacementsMap = new HashMap<>();
         List<Map<String, Object>> emplacementsList = YamlSections.objets(scenarioData, "emplacements");
         if (emplacementsList != null) {
@@ -1197,7 +1197,7 @@ public class PlanningService {
             }
         }
 
-        // Charger les stands
+        // Load the stands
         Map<String, Stand> standsMap = new HashMap<>();
         List<Map<String, Object>> standsList = YamlSections.objets(scenarioData, "stands");
         for (Map<String, Object> standData : standsList) {
@@ -1248,7 +1248,7 @@ public class PlanningService {
             standsMap.put(id, stand);
         }
 
-        // Charger les animateurs
+        // Load the animateurs
         List<Animateur> animateurs = new ArrayList<>();
         List<Map<String, Object>> animateursList = YamlSections.objets(scenarioData, "animateurs");
         for (Map<String, Object> animateurData : animateursList) {
@@ -1261,7 +1261,7 @@ public class PlanningService {
             Animateur animateur = new Animateur(id, prenom, nom, dateNaissance, manager);
             animateur.setEmail((String) animateurData.get("email"));
 
-            // Charger les compétences
+            // Load the competences
             Map<String, String> competencesData = (Map<String, String>) animateurData.get("competences");
             Map<String, NiveauCompetence> competences = new HashMap<>();
             for (Map.Entry<String, String> entry : competencesData.entrySet()) {
@@ -1278,7 +1278,7 @@ public class PlanningService {
                             .collect(Collectors.toCollection(HashSet::new));
             animateur.setJoursIndisponibles(joursIndisponibles);
 
-            // Charger les souhaits (typologies de stand souhaitées, sans niveau ni priorité)
+            // Load the souhaits (wished-for stand typologies, with no level and no priority)
             List<Object> souhaitsData = YamlSections.valeurs(animateurData, "souhaits");
             Set<String> souhaits = souhaitsData == null
                     ? new HashSet<>()

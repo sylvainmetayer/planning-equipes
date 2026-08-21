@@ -9,16 +9,14 @@ import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresSolveur;
 
 /**
- * Constat C1 de l'audit de conformité RH : `updateParametresLegaux` ne
- * vérifiait que la positivité, si bien qu'un administrateur pouvait
- * enregistrer 100 h/semaine sans le moindre avertissement — et le solveur
- * produisait alors un planning « valide » (score dur à zéro) manifestement
- * illégal.
+ * Finding C1 of the HR compliance audit: `updateParametresLegaux` only checked
+ * for positivity, so an administrator could save 100 h a week without the
+ * slightest warning — and the solver would then produce a "valid" planning (a
+ * zero hard score) that was plainly illegal.
  *
- * <p>Les règles sont des fonctions pures : une valeur acceptée est un appel
- * qui rend la main. Ces tests lisaient auparavant un
- * {@code NullPointerException} — le service était construit sans dépôt — comme
- * preuve que la validation était passée.</p>
+ * <p>The rules are pure functions: an accepted value is a call that returns.
+ * These tests used to read a {@code NullPointerException} — the service was
+ * built without a repository — as proof that the validation had passed.</p>
  */
 class ValidationParametresTest {
 
@@ -48,16 +46,16 @@ class ValidationParametresTest {
 
     @Test
     void uneValeurInferieureAuPlafondLegalResteLibre() {
-        // Plus protecteur que la loi : rien ne doit s'y opposer.
+        // Stricter than the law: nothing must stand in its way.
         assertThatCode(() -> ValidationParametres.verifierLegaux(new ParametresLegaux(35 * 60, 20 * 60)))
                 .doesNotThrowAnyException();
     }
 
     /**
-     * La durée de résolution vivait dans le localStorage, ce qui la rendait
-     * incohérente d'un navigateur à l'autre ; elle est désormais persistée
-     * côté serveur, avec la même forme de CRUD que les autres paramètres
-     * réglables.
+     * The solve duration used to live in localStorage, which made it
+     * inconsistent from one browser to the next; it is now persisted
+     * server-side, with the same shape of CRUD as the other tunable
+     * parameters.
      */
     @Test
     void uneDureeDeResolutionNulleOuNegativeEstRefusee() {

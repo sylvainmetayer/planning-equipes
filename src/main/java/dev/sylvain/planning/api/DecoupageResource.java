@@ -17,8 +17,8 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 /**
- * Le découpage des amplitudes de l'édition en vacations : l'aperçu, puis la
- * matérialisation.
+ * Slicing the opening spans of the edition into shifts: the preview first,
+ * then the real thing.
  */
 @Path("/decoupage")
 @Produces(MediaType.APPLICATION_JSON)

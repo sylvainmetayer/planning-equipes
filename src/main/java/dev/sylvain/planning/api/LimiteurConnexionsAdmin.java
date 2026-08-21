@@ -18,62 +18,60 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 
 /**
- * Verrouillage du form login admin après une série d'échecs.
+ * Locks the admin form login out after a run of failures.
  *
- * <p>L'application n'a qu'un compte, {@code admin}, sans second facteur : une
- * seule paire d'identifiants ouvre les données personnelles de ~150 personnes,
- * mineurs compris. {@code /j_security_check} acceptait pourtant les tentatives
- * au rythme du réseau — alors que la révélation de la clé MCP, elle, se
- * verrouillait déjà au bout de cinq essais. C'est le même verrou, posé là où
- * il manquait le plus.</p>
+ * <p>The application has a single account, {@code admin}, with no second
+ * factor: one pair of credentials opens the personal data of ~150 people,
+ * minors included. {@code /j_security_check} nonetheless accepted attempts at
+ * the speed of the network — while revealing the MCP key already locked out
+ * after five tries. This is the same lock, put where it was missing most.</p>
  *
- * <h2>Comment un échec et un succès se reconnaissent</h2>
+ * <h2>How a failure and a success are told apart</h2>
  *
- * <p>Les deux répondent une redirection vers la même page ({@code landing-page}
- * et {@code error-page} pointent au même endroit), donc ni le statut ni
- * {@code Location} ne les distinguent. Les deux côtés se lisent donc ailleurs,
- * et pas au même endroit :</p>
+ * <p>Both answer with a redirect to the same page ({@code landing-page} and
+ * {@code error-page} point at the same place), so neither the status nor
+ * {@code Location} separates them. Both sides are therefore read elsewhere,
+ * and not in the same place:</p>
  *
  * <ul>
- * <li><b>l'échec</b> est l'{@link AuthenticationFailureEvent} de Quarkus
- * ({@code quarkus.security.events.enabled}), qui porte le
- * {@link RoutingContext} de la tentative — donc son adresse ;</li>
- * <li><b>le succès</b> se lit sur la requête elle-même. Quarkus a bien un
- * événement de connexion réussie ({@code FormAuthenticationEvent}), mais il ne
- * transporte que son propre type : aucun contexte HTTP, donc aucune adresse à
- * qui rendre son crédit. Une connexion réussie se reconnaît alors à ce qu'elle
- * produit — une identité posée sur la requête, un cookie de session dans la
- * réponse — et l'un des deux suffit.</li>
+ * <li><b>the failure</b> is the Quarkus {@link AuthenticationFailureEvent}
+ * ({@code quarkus.security.events.enabled}), which carries the
+ * {@link RoutingContext} of the attempt — hence its address;</li>
+ * <li><b>the success</b> is read off the request itself. Quarkus does have a
+ * successful-login event ({@code FormAuthenticationEvent}), but it carries
+ * nothing except its own type: no HTTP context, so no address to give the
+ * credit back to. A successful login is then recognised by what it leaves
+ * behind — an identity set on the request, a session cookie in the response —
+ * and either one of the two is enough.</li>
  * </ul>
  *
- * <p>La fenêtre court depuis le <b>dernier</b> échec : une requête bloquée
- * n'atteint jamais l'authentification, donc n'en produit pas de nouveau, et le
- * verrou se lève bien {@code duree-blocage} après la dernière tentative
- * réelle.</p>
+ * <p>The window runs from the <b>last</b> failure: a blocked request never
+ * reaches authentication, so it produces no new one, and the lock does lift
+ * {@code duree-blocage} after the last real attempt.</p>
  *
- * <p>En mémoire et par adresse : voir {@link #adresse(RoutingContext)} pour ce
- * que « adresse » veut dire derrière un proxy, et {@code docs/securite.md}
- * pour ce qui reste au reverse proxy.</p>
+ * <p>In memory and per address: see {@link #adresse(RoutingContext)} for what
+ * "address" means behind a proxy, and {@code docs/securite.md} for what is
+ * left to the reverse proxy.</p>
  */
 @ApplicationScoped
 public class LimiteurConnexionsAdmin {
 
-    /** Cible du form login Quarkus ({@code quarkus.http.auth.form.post-location} par défaut). */
+    /** Target of the Quarkus form login ({@code quarkus.http.auth.form.post-location} by default). */
     static final String CHEMIN_CONNEXION = "/j_security_check";
 
-    /** Après les en-têtes de sécurité, avant tout traitement de la requête. */
+    /** After the security headers, before anything handles the request. */
     private static final int PRIORITE = 250;
 
     @Inject
     ConfigConnexionAdmin config;
 
-    /** Lu de la configuration pour que les deux ne dérivent jamais l'un de l'autre. */
+    /** Read from the configuration so the two can never drift apart. */
     @ConfigProperty(name = "quarkus.http.auth.form.cookie-name")
     String nomCookieSession;
 
     private final Map<String, Echecs> parAdresse = new ConcurrentHashMap<>();
 
-    /** Échecs consécutifs d'une adresse, et l'instant du dernier. */
+    /** Consecutive failures of one address, and the instant of the last one. */
     private record Echecs(int nombre, Instant dernier) {
     }
 
@@ -107,8 +105,8 @@ public class LimiteurConnexionsAdmin {
 
     void surEchec(@Observes AuthenticationFailureEvent evenement) {
         Object contexte = evenement.getEventProperties().get(RoutingContext.class.getName());
-        // Les autres mécanismes (clé MCP, en-tête remote user, session déjà
-        // ouverte) produisent le même événement et ne concernent pas ce verrou.
+        // The other mechanisms (MCP key, remote-user header, session already
+        // open) raise the same event and have nothing to do with this lock.
         if (!(contexte instanceof RoutingContext routage)
                 || !CHEMIN_CONNEXION.equals(routage.normalizedPath())) {
             return;
@@ -123,10 +121,11 @@ public class LimiteurConnexionsAdmin {
     }
 
     /**
-     * Ce qu'une connexion réussie laisse derrière elle : l'identité établie sur
-     * la requête, et le cookie de session dans la réponse. Un échec ne produit
-     * ni l'un ni l'autre — c'est d'ailleurs ce que vérifie déjà
-     * {@code AuthentificationAdminTest#unMauvaisMotDePasseEstRefuse}.
+     * What a successful login leaves behind: the identity established on the
+     * request, and the session cookie in the response. A failure produces
+     * neither — which is exactly what
+     * {@code AuthentificationAdminTest#unMauvaisMotDePasseEstRefuse} already
+     * checks.
      */
     private boolean connexionReussie(RoutingContext contexte) {
         if (contexte.user() != null) {
@@ -134,7 +133,7 @@ public class LimiteurConnexionsAdmin {
         }
         HttpServerResponse reponse = contexte.response();
         for (String entete : reponse.headers().getAll(HttpHeaders.SET_COOKIE)) {
-            // Une valeur vide est une suppression de cookie, pas une session.
+            // An empty value is a cookie deletion, not a session.
             if (entete.startsWith(nomCookieSession + "=") && !entete.startsWith(nomCookieSession + "=;")) {
                 return true;
             }
@@ -142,7 +141,7 @@ public class LimiteurConnexionsAdmin {
         return false;
     }
 
-    /** Secondes restantes de blocage, {@code 0} si l'adresse peut tenter sa chance. */
+    /** Seconds of lockout left, {@code 0} when the address may try its luck. */
     private long secondesDeBlocage(String adresse) {
         Echecs echecs = parAdresse.get(adresse);
         if (echecs == null || echecs.nombre() < config.maxEchecs()) {
@@ -157,13 +156,13 @@ public class LimiteurConnexionsAdmin {
     }
 
     /**
-     * L'adresse annoncée par le proxy est préférée à celle de la connexion :
-     * derrière un reverse proxy, toutes les requêtes arrivent de la même
-     * adresse, et compter là-dessus laisserait le premier attaquant venu
-     * verrouiller la connexion de tout le monde. Cet en-tête n'est digne de
-     * confiance que si l'origine n'est pas joignable sans passer par le proxy —
-     * c'est la même condition que {@code proxy-address-forwarding}, et
-     * {@code docs/securite.md} en fait un prérequis de déploiement.
+     * The address the proxy announces wins over the one of the connection:
+     * behind a reverse proxy every request comes from the same address, and
+     * counting on that would let the first attacker who shows up lock everybody
+     * else out. This header is only worth trusting when the origin cannot be
+     * reached without going through the proxy — the same condition as
+     * {@code proxy-address-forwarding}, which {@code docs/securite.md} makes a
+     * deployment prerequisite.
      */
     private static String adresse(RoutingContext contexte) {
         String transmise = contexte.request().getHeader("X-Forwarded-For");

@@ -44,11 +44,11 @@ class VacationGeneratorServiceTest {
 
     @Test
     void amplitudeCourteQuiEngloutitLaFenetreRepasEstQuandMemeCoupeePourLaPause() {
-        // Bug réel observé : une amplitude de 5h (10:00-15:00), largement sous le
-        // plafond de 6h, ne déclenchait jamais de pause interne — l'animateur
-        // seul sur cette unique vacation travaillait tout le service de midi
-        // sans manger, la "pause" du mécanisme de relais ne s'appliquant que
-        // s'il enchaînait une deuxième vacation le même jour.
+        // A real bug seen in the field: a 5 h opening span (10:00-15:00), well
+        // under the 6 h ceiling, never triggered an internal break — the
+        // animateur alone on that single shift worked the whole lunch service
+        // without eating, the "break" of the handover mechanism only applying if
+        // they took a second shift the same day.
         Creneau amplitude = amplitude(LocalTime.of(10, 0), LocalTime.of(15, 0)); // 5h, sous le plafond de 6h
 
         List<Creneau> vacations = VacationGeneratorService.genererVacations(
@@ -61,29 +61,29 @@ class VacationGeneratorServiceTest {
         assertThat(avantPause.getHeureFin()).isEqualTo(LocalTime.of(12, 30));
         assertThat(apresPause.getHeureDebut()).isEqualTo(LocalTime.of(13, 15));
         assertThat(apresPause.getHeureFin()).isEqualTo(LocalTime.of(15, 0));
-        // 45 min de vraie coupure entre les deux, alignée sur la fenêtre repas
-        // de midi par défaut (12h-14h).
+        // 45 min of real break between the two, aligned on the default midday
+        // meal window (12:00-14:00).
         assertThat(java.time.Duration.between(avantPause.getHeureFin(), apresPause.getHeureDebut()).toMinutes())
                 .isEqualTo(45);
     }
 
     @Test
     void journeeContinueDeQuatorzeHeuresEstDecoupeeEnVacationsRelaisSousLePlafond() {
-        // 10:00 -> 00:00 : la journée + nocturne fusionnées du scénario continu.
+        // 10:00 -> 00:00: the day and night merged, as in the continuous scenario.
         Creneau amplitude = amplitude(LocalTime.of(10, 0), LocalTime.of(0, 0));
         ParametresDecoupage parametres = new ParametresDecoupage();
 
         List<Creneau> vacations = VacationGeneratorService.genererVacations(List.of(amplitude), parametres);
 
-        // 5 vacations, pas 3 : les deux premiers relais (10:00-14:00 puis
-        // 13:30-19:00) et le dernier (18:30-00:00) englobaient chacun une
-        // fenêtre repas entière — midi pour le premier, dîner pour le
-        // dernier — donc chacun est coupé en deux par une vraie pause. Le
-        // relais du milieu (13:30-19:00) ne fait qu'effleurer le début de la
-        // fenêtre dîner (19h) sans l'englober, donc reste entier.
+        // 5 shifts, not 3: the first two handovers (10:00-14:00 then
+        // 13:30-19:00) and the last one (18:30-00:00) each enclosed a whole meal
+        // window — midday for the first, dinner for the last — so each one is cut
+        // in two by a real break. The middle handover (13:30-19:00) only grazes
+        // the start of the dinner window (19:00) without enclosing it, so it
+        // stays whole.
         assertThat(vacations).hasSize(5);
 
-        // Aucune vacation ne dépasse le plafond configuré (6h par défaut).
+        // No shift goes over the configured ceiling (6 h by default).
         for (Creneau vacation : vacations) {
             assertThat(vacation.getDureeMinutes()).isLessThanOrEqualTo(parametres.getDureeVacationMaxMinutes());
         }
@@ -94,24 +94,24 @@ class VacationGeneratorServiceTest {
         Creneau avantDiner = vacations.get(3);
         Creneau apresDiner = vacations.get(4);
 
-        // La première vacation démarre à l'ouverture, la dernière finit à la
-        // fermeture (minuit) : toute l'amplitude est couverte, coupures repas
-        // mises à part.
+        // The first shift starts at opening time, the last one ends at closing
+        // time (midnight): the whole opening span is covered, meal breaks
+        // aside.
         assertThat(avantDejeuner.getHeureDebut()).isEqualTo(LocalTime.of(10, 0));
         assertThat(apresDiner.getHeureFin()).isEqualTo(LocalTime.of(0, 0));
 
-        // Vraie pause déjeuner (45 min par défaut) entre les deux premières.
+        // A real lunch break (45 min by default) between the first two.
         assertThat(avantDejeuner.getHeureFin()).isEqualTo(LocalTime.of(12, 0));
         assertThat(apresDejeuner.getHeureDebut()).isEqualTo(LocalTime.of(12, 45));
 
-        // Chevauchement de relais de 30 min avec le segment du milieu :
-        // pendant cette fenêtre, deux PosteAffectation existent sur le même
-        // stand, donc la couverture n'est jamais en déficit.
+        // A 30 min handover overlap with the middle segment: during that window
+        // two PosteAffectation exist on the same stand, so the coverage is never
+        // short.
         assertThat(relaisMilieu.getHeureDebut()).isBefore(apresDejeuner.getHeureFin());
         assertThat(relaisMilieu.getHeureFin()).isEqualTo(LocalTime.of(19, 0));
 
-        // Vraie pause dîner (45 min) sur le dernier segment, qui chevauche le
-        // milieu et englobe entièrement la fenêtre dîner (19h-21h).
+        // A real dinner break (45 min) on the last segment, which overlaps the
+        // middle one and entirely encloses the dinner window (19:00-21:00).
         assertThat(avantDiner.getHeureDebut()).isBefore(relaisMilieu.getHeureFin());
         assertThat(avantDiner.getHeureFin()).isEqualTo(LocalTime.of(21, 0));
         assertThat(apresDiner.getHeureDebut()).isEqualTo(LocalTime.of(21, 45));
@@ -119,22 +119,22 @@ class VacationGeneratorServiceTest {
 
     @Test
     void aucuneVacationNeTombeSousLeMinimumMemeQuandLeDernierRelaisApprocheLaFenetreRepas() {
-        // 10:00 -> 20:00 : 10h d'amplitude (scénario continu, jour sans
-        // nocturne). Le relais du soir est attiré vers la fenêtre repas
-        // 19h-21h, ce qui — sans garde-fou — laissait un reliquat de 18h30 à
-        // 20h00, une vacation de 90 min bien sous le minimum configuré (3h).
+        // 10:00 -> 20:00: a 10 h opening span (continuous scenario, a day with
+        // no night). The evening handover is drawn towards the 19:00-21:00 meal
+        // window, which — with no guard — used to leave a remainder from 18:30 to
+        // 20:00, a 90 min shift well under the configured minimum (3 h).
         Creneau amplitude = amplitude(LocalTime.of(10, 0), LocalTime.of(20, 0));
         ParametresDecoupage parametres = new ParametresDecoupage();
 
         List<Creneau> vacations = VacationGeneratorService.genererVacations(List.of(amplitude), parametres);
 
-        // Le dernier segment (17:00-20:00) n'est *pas* coupé pour une pause
-        // dîner : la fenêtre 19h-21h est tronquée par la fermeture (20h), donc
-        // moins de la moitié en reste dans l'amplitude — forcer une coupure
-        // là ne ferait que laisser un reliquat de quelques minutes juste avant
-        // la fermeture, sans aucun intérêt. Le premier segment (10:00-14:00),
-        // lui, englobe entièrement la fenêtre déjeuner et est bien coupé pour
-        // une vraie pause repas, donc descend sous le minimum — attendu.
+        // The last segment (17:00-20:00) is *not* cut for a dinner break: the
+        // 19:00-21:00 window is truncated by closing time (20:00), so less than
+        // half of it is left inside the opening span — forcing a cut there would
+        // only leave a remainder of a few minutes just before closing, which is
+        // of no use. The first segment (10:00-14:00) does enclose the lunch
+        // window entirely and is cut for a real meal break, so it falls under the
+        // minimum — as expected.
         for (Creneau vacation : vacations) {
             assertThat(vacation.getDureeMinutes()).isLessThanOrEqualTo(parametres.getDureeVacationMaxMinutes());
         }
@@ -145,7 +145,7 @@ class VacationGeneratorServiceTest {
 
     @Test
     void aucuneVacationNeDepasseLePlafondMemeSurUneAmplitudeNonDivisibleProprement() {
-        // 22h d'amplitude, plafond par défaut de 6h : force plusieurs relais.
+        // A 22 h opening span, default ceiling of 6 h: forces several handovers.
         Creneau amplitude = amplitude(LocalTime.of(8, 0), LocalTime.of(6, 0));
         ParametresDecoupage parametres = new ParametresDecoupage();
 
@@ -159,10 +159,10 @@ class VacationGeneratorServiceTest {
 
     @Test
     void plafondAuDessusDuSeuilLegalDeclencheUnePauseInterneAuMilieuDeLaFenetreRepas() {
-        // Un admin qui configure un plafond de 8h (> seuil légal de 6h) sur une
-        // amplitude qui rentre pile dans ce plafond : la vacation générée
-        // dépasserait le seuil légal, donc une pause interne est insérée,
-        // alignée sur la fenêtre repas de midi.
+        // An admin configuring an 8 h ceiling (> the 6 h legal threshold) on an
+        // opening span that fits exactly in that ceiling: the shift generated
+        // would go over the legal threshold, so an internal break is inserted,
+        // aligned on the midday meal window.
         Creneau amplitude = amplitude(LocalTime.of(10, 0), LocalTime.of(18, 0)); // 8h
         ParametresDecoupage parametres = new ParametresDecoupage();
         parametres.setDureeVacationMaxMinutes(8 * 60);
@@ -183,9 +183,9 @@ class VacationGeneratorServiceTest {
 
     @Test
     void strategieReleveCouvreLaPauseInterneAuLieuDeFermerLeStand() {
-        // Même scénario que ci-dessus (plafond de 8h > seuil légal), mais avec
-        // la stratégie RELEVE : une troisième vacation, courte, doit couvrir
-        // exactement la pause pour que le stand reste ouvert.
+        // The same scenario as above (an 8 h ceiling > the legal threshold), but
+        // with the RELEVE strategy: a third, short shift must cover the break
+        // exactly so the stand stays open.
         Creneau amplitude = amplitude(LocalTime.of(10, 0), LocalTime.of(18, 0)); // 8h
         ParametresDecoupage parametres = new ParametresDecoupage();
         parametres.setDureeVacationMaxMinutes(8 * 60);
@@ -201,17 +201,17 @@ class VacationGeneratorServiceTest {
         Creneau apresPause = vacations.get(2);
         assertThat(avantPause.getHeureFin()).isEqualTo(LocalTime.of(14, 0));
         assertThat(apresPause.getHeureDebut()).isEqualTo(LocalTime.of(14, 45));
-        // La relève comble exactement le trou : aucune interruption de
-        // couverture du stand.
+        // The relief shift fills the hole exactly: no interruption in the
+        // coverage of the stand.
         assertThat(releve.getHeureDebut()).isEqualTo(avantPause.getHeureFin());
         assertThat(releve.getHeureFin()).isEqualTo(apresPause.getHeureDebut());
     }
 
     @Test
     void strategieEffectifReduitCouvreLaPauseEtMarqueLaVacation() {
-        // Même scénario que RELEVE — la pause est couverte, sans interruption —
-        // mais la vacation de couverture porte en plus le marqueur qui fera
-        // tourner le stand à demi-effectif (PlanningService#construirePostes).
+        // The same scenario as RELEVE — the break is covered, with no
+        // interruption — but the covering shift also carries the marker that will
+        // run the stand at half staffing (PlanningService#construirePostes).
         Creneau amplitude = amplitude(LocalTime.of(10, 0), LocalTime.of(18, 0)); // 8h
         ParametresDecoupage parametres = new ParametresDecoupage();
         parametres.setDureeVacationMaxMinutes(8 * 60);
@@ -227,8 +227,8 @@ class VacationGeneratorServiceTest {
         Creneau apresPause = vacations.get(2);
         assertThat(couverture.getHeureDebut()).isEqualTo(avantPause.getHeureFin());
         assertThat(couverture.getHeureFin()).isEqualTo(apresPause.getHeureDebut());
-        // Seule la vacation de couverture est marquée : les deux vacations
-        // encadrantes tournent à effectif plein.
+        // Only the covering shift is marked: the two shifts framing it run at
+        // full staffing.
         assertThat(couverture.isCouverturePause()).isTrue();
         assertThat(avantPause.isCouverturePause()).isFalse();
         assertThat(apresPause.isCouverturePause()).isFalse();
@@ -236,9 +236,9 @@ class VacationGeneratorServiceTest {
 
     @Test
     void strategieReleveNeMarqueAucuneVacationCommeEffectifReduit() {
-        // RELEVE couvre la pause à effectif PLEIN : le marqueur doit rester à
-        // false, sans quoi le passage de FERMETURE/RELEVE à EFFECTIF_REDUIT
-        // n'aurait aucun effet observable.
+        // RELEVE covers the break at FULL staffing: the marker must stay false,
+        // otherwise moving from FERMETURE/RELEVE to EFFECTIF_REDUIT would have no
+        // observable effect.
         Creneau amplitude = amplitude(LocalTime.of(10, 0), LocalTime.of(18, 0));
         ParametresDecoupage parametres = new ParametresDecoupage();
         parametres.setDureeVacationMaxMinutes(8 * 60);
@@ -253,11 +253,11 @@ class VacationGeneratorServiceTest {
 
     @Test
     void unePauseQuiFinitSurLaFermetureNeGenerePasDeVacationVide() {
-        // Régression : une fenêtre repas collée au bord de l'amplitude faisait
-        // émettre un segment de queue [pauseFin, fin] de longueur nulle. Une
-        // vacation dont heureFin == heureDebut est relue comme chevauchant
-        // minuit (donc 24 h) par Creneau#getDureeMinutes(), et réclamait un
-        // effectif complet sur ces 24 h fictives.
+        // Regression: a meal window stuck to the edge of the opening span made a
+        // zero-length tail segment [pauseFin, fin] be emitted. A shift whose
+        // heureFin == heureDebut is read back as crossing midnight (hence 24 h)
+        // by Creneau#getDureeMinutes(), and claimed full staffing over those
+        // fictitious 24 h.
         Creneau amplitude = amplitude(LocalTime.of(10, 0), LocalTime.of(21, 0));
         ParametresDecoupage parametres = new ParametresDecoupage();
         parametres.setFenetreRepasSoirDebut(LocalTime.of(20, 0));
@@ -272,17 +272,16 @@ class VacationGeneratorServiceTest {
             assertThat(v.getHeureFin()).as("vacation vide %s", v.getHeureDebut()).isNotEqualTo(v.getHeureDebut());
             assertThat(v.getDureeMinutes()).isPositive().isLessThanOrEqualTo(24 * 60);
         });
-        // Et aucune ne doit approcher les 24 h : l'amplitude n'en fait que 11.
+        // And none may come near 24 h: the opening span is only 11 h long.
         assertThat(vacations).allSatisfy(v -> assertThat(v.getDureeMinutes()).isLessThanOrEqualTo(11 * 60));
     }
 
     @Test
     void sansDecalageToutesLesVacationsSontTagueesFamilleZero() {
-        // Comportement par défaut (nombreFamillesDecalage=1) : aucun
-        // changement de comportement, chaque vacation générée porte la
-        // famille 0 — c'est ce qui garantit la compatibilité ascendante côté
-        // PlanningService#construirePostes (une seule famille => pas de
-        // filtrage par stand).
+        // Default behaviour (nombreFamillesDecalage=1): nothing changes, every
+        // shift generated carries family 0 — which is what guarantees backward
+        // compatibility on the PlanningService#construirePostes side (a single
+        // family => no filtering per stand).
         Creneau amplitude = amplitude(LocalTime.of(10, 0), LocalTime.of(0, 0));
 
         List<Creneau> vacations = VacationGeneratorService.genererVacations(
@@ -293,12 +292,11 @@ class VacationGeneratorServiceTest {
 
     @Test
     void decalageEtaleLesCoupuresDeRelaisEntreFamillesDistinctes() {
-        // Reproduit le "mur de 14h" observé en pratique : sur une amplitude
-        // de 14h (10:00->00:00, jour continu), le premier relais vise
-        // toujours la fin de la fenêtre déjeuner (14:00) quelle que soit
-        // l'amplitude, car la cible de 5h dépasse systématiquement la
-        // fenêtre. Avec 4 familles décalées de ±45 min, au moins une famille
-        // doit couper à un autre instant que 14:00.
+        // Reproduces the "14:00 wall" seen in practice: on a 14 h opening span
+        // (10:00->00:00, a continuous day) the first handover always aims at the
+        // end of the lunch window (14:00) whatever the span, because the 5 h
+        // target systematically overshoots the window. With 4 families offset by
+        // ±45 min, at least one family must cut somewhere other than 14:00.
         Creneau amplitude = amplitude(LocalTime.of(10, 0), LocalTime.of(0, 0));
         ParametresDecoupage parametres = new ParametresDecoupage();
         parametres.setNombreFamillesDecalage(4);
@@ -306,11 +304,10 @@ class VacationGeneratorServiceTest {
 
         List<Creneau> vacations = VacationGeneratorService.genererVacations(List.of(amplitude), parametres);
 
-        // 4 familles, chacune tranchant l'amplitude indépendamment (5
-        // vacations par famille sans décalage, voir le test "journée
-        // continue" ci-dessus) : la famille 0..3 doit apparaître, et chaque
-        // vacation générée reste dans les bornes de l'amplitude et sous le
-        // plafond légal.
+        // 4 families, each slicing the opening span independently (5 shifts per
+        // family with no offset, see the "continuous day" test above): families 0
+        // to 3 must all show up, and every shift generated stays within the
+        // bounds of the span and under the legal ceiling.
         Set<Integer> famillesVues = new java.util.HashSet<>();
         for (Creneau vacation : vacations) {
             famillesVues.add(vacation.getFamille());
@@ -318,9 +315,9 @@ class VacationGeneratorServiceTest {
         }
         assertThat(famillesVues).containsExactlyInAnyOrder(0, 1, 2, 3);
 
-        // Premières fins de vacation (le "premier relais") par famille :
-        // au moins deux valeurs distinctes, la preuve que le décalage change
-        // effectivement où tombe la coupure au lieu de tout aligner sur 14h.
+        // First shift ends (the "first handover") per family: at least two
+        // distinct values, the proof that the offset really moves where the cut
+        // falls instead of aligning everything on 14:00.
         Set<LocalTime> premieresFins = new java.util.HashSet<>();
         for (int famille = 0; famille < 4; famille++) {
             int f = famille;

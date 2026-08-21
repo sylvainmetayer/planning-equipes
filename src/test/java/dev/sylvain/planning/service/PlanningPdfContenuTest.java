@@ -25,18 +25,17 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 
 /**
- * Ce que les PDF <b>disent</b>, et pas seulement qu'ils commencent par
- * {@code %PDF}.
+ * What the PDFs <b>say</b>, and not merely that they start with {@code %PDF}.
  *
- * <p>Les exports étaient couverts par « le fichier n'est pas vide et son
- * en-tête est correct » : une carte disparue, un nom qui s'affiche à vide, un
- * repos qui ne s'imprime plus passaient au vert. Ce test lit le texte rendu
- * page par page, ce qui est aussi le filet des découpages de
- * {@code PlanningExportService} — le rendu doit traverser un déplacement de
- * code sans bouger d'un mot.</p>
+ * <p>The exports used to be covered by "the file is not empty and its header is
+ * correct": a card gone missing, a name displayed blank, a day off that no
+ * longer prints all passed green. This test reads the rendered text page by
+ * page, which is also the net under the splits of
+ * {@code PlanningExportService} — the rendering must survive a move of code
+ * without a word changing.</p>
  *
- * <p>Le texte extrait est écrit dans {@code target/sample-exports/} : deux
- * exécutions encadrant un refactoring se comparent alors au {@code diff}.</p>
+ * <p>The extracted text is written to {@code target/sample-exports/}: two runs
+ * framing a refactoring can then be compared with {@code diff}.</p>
  */
 class PlanningPdfContenuTest {
 
@@ -61,7 +60,7 @@ class PlanningPdfContenuTest {
         ecrire("contenu-animateur.txt", texte);
     }
 
-    /** Les coéquipiers de la même ligne sont nommés, l'animateur lui-même non. */
+    /** The team-mates on the same row are named, the animateur themselves is not. */
     @Test
     void lePdfIndividuelNommeLesCoequipiersDeLaMemeLigne() throws IOException {
         PlanningFestival planning = planning();
@@ -72,8 +71,8 @@ class PlanningPdfContenuTest {
     }
 
     /**
-     * Le PDF global présente deux fois les mêmes affectations — par journée
-     * puis par stand — et écrit en clair les sièges que personne ne tient.
+     * The global PDF presents the same assignments twice — by day, then by
+     * stand — and writes in plain sight the seats nobody holds.
      */
     @Test
     void lePdfGlobalPresenteLesAffectationsParJourneePuisParStand() throws IOException {
@@ -92,7 +91,7 @@ class PlanningPdfContenuTest {
         ecrire("contenu-global.txt", texte);
     }
 
-    /** Un animateur sans prénom ni nom s'affiche par son id, jamais « null null » ni à vide. */
+    /** An animateur with neither prenom nor nom shows by id, never as "null null" nor blank. */
     @Test
     void unAnimateurSansNomSAfficheParSonId() throws IOException {
         PlanningFestival planning = planning();
@@ -126,7 +125,7 @@ class PlanningPdfContenuTest {
         Files.writeString(dossier.resolve(nom), texte, StandardCharsets.UTF_8);
     }
 
-    /** Deux animateurs sur un même stand, un stand géocodé, et une journée sans siège pour Ada. */
+    /** Two animateurs on one stand, a geocoded stand, and a day with no seat for Ada. */
     private static PlanningFestival planning() {
         Stand strategie = new Stand("STAND-1", "Stratèges Associés", Set.of("STRATEGIE"), 1, 2, false);
         Stand vedette = new Stand("STAND-2", "Éditeur Vedette", Set.of("AMBIANCE"), 1, 2, false);
