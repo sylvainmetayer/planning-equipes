@@ -55,6 +55,23 @@ class EditionResourceTest {
                 .then().statusCode(200);
     }
 
+    private void creerTypologie(String editionId, String typologieId, boolean ninja) {
+        given().header(HEADER, editionId)
+                .contentType("application/json")
+                .body("{\"id\":\"" + typologieId + "\",\"label\":\"" + typologieId + "\",\"ninja\":" + ninja + "}")
+                .when().post("/api/typologies")
+                .then().statusCode(200);
+    }
+
+    private boolean estNinja(String editionId, String typologieId) {
+        return given().header(HEADER, editionId)
+                .when().get("/api/typologies")
+                .then().statusCode(200)
+                .extract().jsonPath()
+                .getList("findAll { it.id == '" + typologieId + "' }.ninja", Boolean.class)
+                .getFirst();
+    }
+
     private List<String> listerStandIds(String editionId) {
         return given().header(HEADER, editionId)
                 .when().get("/api/stands")
@@ -213,5 +230,28 @@ class EditionResourceTest {
                 .body("{\"id\":\"ANNEE-2026\",\"nom\":\"Doublon\"}")
                 .when().post("/api/editions")
                 .then().statusCode(400);
+    }
+
+    /**
+     * Writing in one edition must never reach across into another — the
+     * invariant every business table's {@code edition_id} exists for. The
+     * "one ninja typologie" rule is where it is easiest to break: the write
+     * demotes the previous holder, and the unique index it protects has been
+     * scoped per edition since {@code V33}, so the demotion must be scoped
+     * too. Ninja drives {@code Animateur#possedeCompetencePour}, hence the
+     * construction-heuristic ordering and the polyvalent-buffer constraint:
+     * losing it silently changes what the next solve of the other edition
+     * explores.
+     */
+    @Test
+    void marquerUneTypologieNinjaNeDeflaguePasCelleDuneAutreEdition() {
+        creerEdition("ANNEE-2025", "Année 2025");
+        creerEdition("ANNEE-2026", "Année 2026");
+        creerTypologie("ANNEE-2025", "NINJA_2025", true);
+
+        creerTypologie("ANNEE-2026", "NINJA_2026", true);
+
+        assertThat(estNinja("ANNEE-2026", "NINJA_2026")).isTrue();
+        assertThat(estNinja("ANNEE-2025", "NINJA_2025")).isTrue();
     }
 }

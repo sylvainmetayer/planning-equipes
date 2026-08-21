@@ -717,23 +717,19 @@ public class ReferenceDataRepository {
         }
     }
 
-    /** (édition, animateur) behind an espace-animateur access token. */
     /**
-     * @param email address on the animateur's fiche, {@code null} when none was
-     *              collected — carried here so the espace guard can match a
-     *              proxy-asserted identity without a second query
+     * (édition, animateur) behind an espace-animateur access token.
+     *
+     * @param editionId  edition the token designates by itself, with no
+     *                   {@code X-Edition-Id} to trust
+     * @param animateurId owner of the token inside that edition
+     * @param email      address on the animateur's fiche, {@code null} when none
+     *                   was collected — carried here so the espace guard can
+     *                   match a proxy-asserted identity without a second query
      */
     public record ProprietaireJeton(String editionId, String animateurId, String email) {
     }
 
-    /**
-     * Resolves an espace-animateur token to its owner. Deliberately <b>not</b>
-     * edition-scoped — the single exception to this repository's rule: the
-     * token arrives on a public URL with no {@code X-Edition-Id} to trust, and
-     * is globally unique precisely so it can designate the edition by itself
-     * (the caller then runs everything else inside
-     * {@code EditionContext.executeDans}).
-     */
     /**
      * Whether any animateur, in any edition, carries this address. Like
      * {@link #resoudreJetonAnimateur}, deliberately not edition-scoped: the
@@ -757,6 +753,14 @@ public class ReferenceDataRepository {
         }
     }
 
+    /**
+     * Resolves an espace-animateur token to its owner. Deliberately <b>not</b>
+     * edition-scoped — the single exception to this repository's rule: the
+     * token arrives on a public URL with no {@code X-Edition-Id} to trust, and
+     * is globally unique precisely so it can designate the edition by itself
+     * (the caller then runs everything else inside
+     * {@code EditionContext.executeDans}).
+     */
     public ProprietaireJeton resoudreJetonAnimateur(String jeton) {
         if (jeton == null || jeton.isBlank()) {
             return null;
@@ -897,13 +901,17 @@ public class ReferenceDataRepository {
         try (Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
             try {
-                // Only one typologie may be ninja: demote the previous holder in the
-                // same transaction, otherwise the partial unique index of V30 rejects
-                // the insert and the user sees a raw constraint violation.
+                // Only one typologie may be ninja *per edition*: demote the previous
+                // holder in the same transaction, otherwise the partial unique index
+                // (V31, scoped per edition by V33) rejects the insert and the user
+                // sees a raw constraint violation. The demotion carries the same
+                // edition predicate as the index it protects — without it, flagging a
+                // ninja here would silently clear the one of every other edition.
                 if (typologie.ninja()) {
-                    try (PreparedStatement ps = connection
-                            .prepareStatement("UPDATE typologie SET ninja = FALSE WHERE ninja AND id <> ?")) {
-                        ps.setString(1, typologie.id());
+                    try (PreparedStatement ps = prepareScoped(connection,
+                            "UPDATE typologie SET ninja = FALSE "
+                                    + "WHERE edition_id = ? AND ninja AND id <> ?")) {
+                        ps.setString(2, typologie.id());
                         ps.executeUpdate();
                     }
                 }
