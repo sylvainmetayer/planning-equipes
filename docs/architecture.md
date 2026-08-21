@@ -76,7 +76,7 @@ dans [`domaine.md`](domaine.md).
 | Service | Rôle |
 | --- | --- |
 | `PlanningService` | Construit la `SolverFactory` depuis `solver/solverConfig.xml`, charge `scenario.yml`, expose `construireExemple()` / `resoudre()` / `analyser()`, et l'explicabilité par affectation (`expliquerAffectation()`, `simulerSwap()`) |
-| `SolverJobService` | Résolutions et analyses asynchrones ; porte le verrou « un seul solveur à la fois », partagé par tous les clients |
+| `SolverJobService` | Résolutions et analyses asynchrones ; porte le verrou « un seul solveur à la fois », partagé par tous les clients, et la **file d'attente** des tâches planifiées derrière celle qui tourne |
 | `ConstraintAnalysisStore` | Mémorise le résultat de la dernière analyse pour l'onglet « Constraints » |
 | `ReferenceDataService` / `ReferenceDataRepository` | CRUD référentiels (stands, créneaux, animateurs, typologies, contraintes ad hoc) ; point de passage unique du SQL référentiel, et donc du prédicat `edition_id` |
 | `EditionService` / `EditionRepository` | Gestion des éditions elles-mêmes : création, duplication, suppression — voir [`editions.md`](editions.md) |

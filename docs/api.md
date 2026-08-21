@@ -163,7 +163,7 @@ heures (total, moyenne, écart-type, min, max), jamais par animateur.
 
 | Méthode | Chemin | Description |
 | --- | --- | --- |
-| `POST` | `/api/solve/incremental/async?seconds=` | Replanification incrémentale (issue #86) : repart du plan persisté, épingle tout ce qu'un changement tardif n'a pas invalidé, ne recalcule que le reste. `202` avec le job, `409` si le solveur est déjà occupé |
+| `POST` | `/api/solve/incremental/async?seconds=&enFile=` | Replanification incrémentale (issue #86) : repart du plan persisté, épingle tout ce qu'un changement tardif n'a pas invalidé, ne recalcule que le reste. `202` avec le job, `409` si le solveur est déjà occupé — sauf `enFile=true`, qui la met alors en file (voir *Résolution asynchrone*) |
 
 Corps **facultatif** — le périmètre rouvert *en plus* de ce que les changements
 ont invalidé :
@@ -234,8 +234,34 @@ autre onglet) voit le même job actif et le même temps écoulé via
 | `POST` | `/api/solve/analyze/async?seconds={n}` | Démarre une analyse en tâche de fond (`202`, ou `409` si le solveur est occupé) |
 | `GET` | `/api/jobs` | Liste des jobs |
 | `GET` | `/api/jobs/active` | Job en cours (`200`) ou solveur libre (`204`) |
+| `GET` | `/api/jobs/file` | Les tâches en attente, dans l'ordre où elles démarreront |
 | `GET` | `/api/jobs/{id}` | État et résultat d'un job |
-| `DELETE` | `/api/jobs/{id}` | Supprime un job terminé (`409` si le job tourne encore) |
+| `DELETE` | `/api/jobs/{id}` | Retire une tâche de la file, ou supprime un job terminé (`409` si le job tourne encore) |
+
+### File d'attente
+
+`enFile=true` sur `/api/solve/async/reference-data` ou
+`/api/solve/incremental/async` **met la tâche en file** au lieu de la refuser
+quand le solveur est occupé : elle démarre d'elle-même dès que la tâche en
+cours se termine. C'est ce qui permet de préparer une autre édition pendant un
+solve et de planifier le suivant sans rester devant l'écran.
+
+Trois propriétés à connaître :
+
+- **le problème est construit au démarrage effectif**, pas au moment du clic :
+  une tâche en file lit le référentiel tel qu'il sera quand son tour viendra —
+  on peut donc continuer à préparer l'édition visée entre-temps ;
+- **une tâche en file ne tient pas le solveur** : `GET /api/jobs/active`
+  continue de renvoyer la tâche en cours, et la saisie reste ouverte sur
+  l'édition visée par la tâche planifiée (le verrou de saisie est par édition) ;
+- **un doublon est refusé en `409`** : même édition et même type déjà en cours
+  ou déjà planifié. Le corps porte le job fautif, dont le `status`
+  (`RUNNING` / `QUEUED`) dit s'il tourne ou s'il attend.
+
+La file est FIFO, vit **en mémoire** comme les jobs eux-mêmes, et disparaît
+donc au redémarrage du serveur. `statut` d'un job : `QUEUED` (en attente, ne
+tient rien), `PENDING` (promu, sur le point de démarrer), `RUNNING`, puis
+`COMPLETED` / `FAILED` / `CANCELLED`.
 
 Chaque job expose `editionId` et `editionNom`, captés à la soumission :
 l'édition dans laquelle il écrit son résultat (voir `docs/editions.md` §5),

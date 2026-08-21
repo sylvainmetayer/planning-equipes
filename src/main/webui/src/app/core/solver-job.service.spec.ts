@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -34,15 +35,29 @@ function job(overrides: Partial<JobView> = {}): JobView {
 class FakeApi {
   activeResponses: { status: number; body: JobView | null }[] = [];
   jobsById: Record<string, JobView> = {};
+  /** What `/api/jobs/file` answers: the solves planned behind the running one. */
+  file: JobView[] = [];
+  /** Next answer of a submit: a JobView to return, or an error to throw. */
+  postResult: JobView | HttpErrorResponse | null = null;
 
   getResponse = vi.fn(async () => this.activeResponses.shift() ?? { status: 204, body: null });
   get = vi.fn(async (url: string) => {
+    if (url === '/api/jobs/file') {
+      return this.file;
+    }
     const id = url.replace('/api/jobs/', '');
     if (!(id in this.jobsById)) {
       throw new Error(`Unexpected GET ${url}`);
     }
     return this.jobsById[id];
   });
+  postPreservingHttpError = vi.fn(async (_url: string, _payload?: unknown) => {
+    if (this.postResult instanceof HttpErrorResponse) {
+      throw this.postResult;
+    }
+    return this.postResult;
+  });
+  delete = vi.fn(async () => undefined);
 }
 
 describe('SolverJobService', () => {
@@ -121,6 +136,83 @@ describe('SolverJobService', () => {
       await runJobToCompletion();
 
       expect(analyze).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('file d’attente', () => {
+    /** 409 the server answers when something already covers this run. */
+    function conflit(vue: JobView): HttpErrorResponse {
+      return new HttpErrorResponse({ status: 409, error: vue });
+    }
+
+    it('publie la file telle que le serveur la rapporte', async () => {
+      api.activeResponses = [{ status: 200, body: job() }];
+      api.file = [job({ id: 'job-2', status: 'QUEUED', editionId: 'ed-2', editionNom: 'Canicule' })];
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(service.file().map((planifie) => planifie.id)).toEqual(['job-2']);
+    });
+
+    it('une tâche planifiée ne prend pas le solveur et ne verrouille pas sa saisie', async () => {
+      // Le job en cours porte sur une AUTRE édition que celle du navigateur :
+      // c'est tout l'intérêt de la file, préparer ed-1 pendant que ed-2 tourne.
+      api.activeResponses = [{ status: 200, body: job({ id: 'job-2', editionId: 'ed-2' }) }];
+      api.file = [job({ id: 'job-3', status: 'QUEUED', editionId: 'ed-1' })];
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(service.activeJob()?.id).toBe('job-2');
+      // La tâche planifiée sur ed-1 ne gèle pas la saisie de ed-1.
+      expect(service.editingLocked()).toBe(false);
+    });
+
+    it('demande explicitement la mise en file et n’adopte pas la tâche planifiée', async () => {
+      api.activeResponses = [{ status: 204, body: null }];
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+      api.postResult = job({ id: 'job-9', status: 'QUEUED' });
+
+      const planifie = await service.submitSolveFromReferenceData(120, true);
+
+      expect(api.postPreservingHttpError.mock.calls[0][0]).toContain('enFile=true');
+      expect(planifie.status).toBe('QUEUED');
+      // Planifiée n'est pas démarrée : rien ne doit prendre la place du job actif.
+      expect(service.activeJob()).toBeNull();
+    });
+
+    it('reconnaît comme sienne la tâche qu’elle a planifiée quand elle démarre', async () => {
+      api.activeResponses = [{ status: 204, body: null }];
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+      api.postResult = job({ id: 'job-9', status: 'QUEUED' });
+      await service.submitSolveFromReferenceData(120, true);
+
+      // Le serveur la promeut : elle arrive par le poll, pas par un submit.
+      api.activeResponses = [{ status: 200, body: job({ id: 'job-9', status: 'RUNNING' }) }];
+      await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
+
+      expect(service.activeJob()?.id).toBe('job-9');
+      // Sans quoi l'IHM annoncerait un démarrage « depuis une autre session ».
+      expect(service.activeJob()?.mine).toBe(true);
+    });
+
+    it('distingue « déjà en cours » de « déjà planifiée » sur un 409', async () => {
+      api.activeResponses = [{ status: 204, body: null }];
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+
+      api.postResult = conflit(job({ id: 'job-2', status: 'RUNNING' }));
+      await expect(service.submitSolveFromReferenceData(120)).rejects.toThrow(/déjà en cours/);
+
+      // Le 409 « en cours » a fait découvrir job-2 : c'est voulu, il tient
+      // vraiment le solveur.
+      expect(service.activeJob()?.id).toBe('job-2');
+
+      api.postResult = conflit(job({ id: 'job-3', status: 'QUEUED' }));
+      await expect(service.submitSolveFromReferenceData(120, true)).rejects.toThrow(/déjà planifiée/);
+      // Une tâche seulement planifiée, elle, ne prend la place de personne.
+      expect(service.activeJob()?.id).toBe('job-2');
     });
   });
 

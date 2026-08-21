@@ -34,6 +34,9 @@ function jobLabel(type: string): string {
   if (type === 'SOLVE') {
     return $localize`:@@job.type.solve:Résolution Timefold`;
   }
+  if (type === 'SOLVE_INCREMENTAL') {
+    return $localize`:@@job.type.solveIncremental:Replanification incrémentale`;
+  }
   if (type === 'ANALYZE') {
     return $localize`:@@job.type.analyze:Analyse de la solution`;
   }
@@ -77,6 +80,12 @@ type ResultHandler = (result: unknown) => void;
 export class SolverJobService {
   /** null when the solver is idle. */
   readonly activeJob = signal<TrackedJob | null>(null);
+  /**
+   * Solves planned behind the running one, in the order they will start.
+   * Server-side state shared by every client: a run planned from another
+   * browser shows up (and can be removed) here too.
+   */
+  readonly file = signal<JobView[]>([]);
   /** Ticks every second so the monitor can display a live duration. */
   readonly now = signal(Date.now());
 
@@ -142,6 +151,8 @@ export class SolverJobService {
   private readonly editions = inject(EditionStore);
   private readonly notifications = inject(NotificationService);
   private readonly stateKnown = signal(false);
+  /** Ids submitted from this browser, including the ones still queued. */
+  private readonly mesJobs = new Set<string>();
   private readonly resultHandlers = new Map<JobType, ResultHandler[]>();
   private started = false;
   /** Non-null only while a job runs: see {@link updateTicker}. */
@@ -200,8 +211,13 @@ export class SolverJobService {
    * scenario (whose planning JSON would exceed the HTTP body limit and fail
    * with a network error) can be solved.
    */
-  submitSolveFromReferenceData(seconds?: number): Promise<JobView> {
-    return this.submit('/api/solve/async/reference-data', {}, 'SOLVE', seconds);
+  /**
+   * @param enFile queue the solve behind the running one instead of being
+   *               refused; it starts by itself, and reads the referential as
+   *               it stands at that moment
+   */
+  submitSolveFromReferenceData(seconds?: number, enFile = false): Promise<JobView> {
+    return this.submit('/api/solve/async/reference-data', {}, 'SOLVE', seconds, enFile);
   }
 
   /**
@@ -212,8 +228,22 @@ export class SolverJobService {
    * {@link extraireDiagnostic}. Without `seconds`, the server applies its own
    * short budget rather than the full-solve one.
    */
-  submitSolveIncremental(perimetre: PerimetreReplanification, seconds?: number): Promise<JobView> {
-    return this.submit('/api/solve/incremental/async', perimetre, 'SOLVE', seconds);
+  submitSolveIncremental(
+    perimetre: PerimetreReplanification,
+    seconds?: number,
+    enFile = false
+  ): Promise<JobView> {
+    return this.submit('/api/solve/incremental/async', perimetre, 'SOLVE_INCREMENTAL', seconds, enFile);
+  }
+
+  /**
+   * Takes a planned solve out of the queue before it starts. Nothing ran, so
+   * there is nothing to stop and no partial result to keep.
+   */
+  async retirerDeLaFile(jobId: string): Promise<void> {
+    await this.api.delete(`/api/jobs/${encodeURIComponent(jobId)}`);
+    this.mesJobs.delete(jobId);
+    await this.rafraichirFile();
   }
 
   submitAnalyze(planning: PlanningFestival, seconds?: number): Promise<JobView> {
@@ -250,15 +280,41 @@ export class SolverJobService {
     return this.api.get<JobView[]>('/api/jobs');
   }
 
-  private async submit(endpoint: string, payload: unknown, type: JobType, seconds?: number): Promise<JobView> {
+  private async submit(
+    endpoint: string,
+    payload: unknown,
+    type: JobType,
+    seconds?: number,
+    enFile = false
+  ): Promise<JobView> {
     this.notifications.requestDesktopPermission();
-    const url = seconds ? `${endpoint}?seconds=${encodeURIComponent(seconds)}` : endpoint;
+    const params = new URLSearchParams();
+    if (seconds) {
+      params.set('seconds', String(seconds));
+    }
+    if (enFile) {
+      params.set('enFile', 'true');
+    }
+    const url = params.size > 0 ? `${endpoint}?${params}` : endpoint;
     let job: JobView;
     try {
       // Raw errors: the 409 branch below needs the status and the body.
       job = await this.api.postPreservingHttpError<JobView>(url, payload);
     } catch (error) {
       throw this.explainSubmitFailure(error);
+    }
+    // Remembered whichever way it goes: a job planned here must still count as
+    // "mine" when it starts on its own, minutes later.
+    this.mesJobs.add(job.id);
+    if (job.status === 'QUEUED') {
+      const edition = job.editionNom ?? job.editionId ?? '?';
+      this.notifications.notify({
+        title: $localize`:@@job.queued:${jobLabel(type)}:jobLabel: planifiée`,
+        message: $localize`:@@job.queuedMessage:Elle démarrera d'elle-même sur l'édition « ${edition}:edition: » dès que la tâche en cours sera terminée. Vous pouvez fermer cet écran.`,
+        timeout: 6000
+      });
+      await this.rafraichirFile();
+      return job;
     }
     this.adopt(job, true);
     this.notifications.notify({
@@ -269,14 +325,26 @@ export class SolverJobService {
     return job;
   }
 
-  // 409: the server already runs a solve, possibly submitted by another client.
+  /**
+   * 409: something already covers this. Either the solver is busy and the
+   * caller did not ask to queue, or the very same run is already planned on
+   * that edition — two different messages, told apart by the conflicting job's
+   * own status rather than by a second error shape.
+   */
   private explainSubmitFailure(error: unknown): Error {
     if (error instanceof HttpErrorResponse && error.status === 409 && error.error) {
-      const running = error.error as JobView;
-      this.adopt(running, false);
-      const duration = formatDuration(running.elapsedSeconds);
+      const conflit = error.error as JobView;
+      if (conflit.status === 'QUEUED') {
+        const edition = conflit.editionNom ?? conflit.editionId ?? '?';
+        return new Error(
+          $localize`:@@job.alreadyQueued:${jobLabel(conflit.type)}:jobLabel: est déjà planifiée sur l'édition « ${edition}:edition: ». Retirez-la de la file si vous voulez la replanifier.`
+        );
+      }
+      this.adopt(conflit, false);
+      const duration = formatDuration(conflit.elapsedSeconds);
+      const edition = conflit.editionNom ?? conflit.editionId ?? '?';
       return new Error(
-        $localize`:@@job.alreadyRunning:${jobLabel(running.type)}:jobLabel: est déjà en cours (${duration}:duration:). Veuillez attendre la fin avant d'en démarrer une autre.`
+        $localize`:@@job.alreadyRunningEdition:${jobLabel(conflit.type)}:jobLabel: est déjà en cours sur l'édition « ${edition}:edition: » (${duration}:duration:). Planifiez-la pour qu'elle démarre à la suite, ou attendez la fin.`
       );
     }
     return toError(error);
@@ -288,6 +356,7 @@ export class SolverJobService {
     if (server === undefined) {
       return; // transient network error: keep the last known state
     }
+    await this.rafraichirFile();
     const tracked = this.activeJob();
     if (tracked && (!server || server.id !== tracked.id)) {
       this.activeJob.set(null);
@@ -301,6 +370,14 @@ export class SolverJobService {
       this.stateKnown.set(true);
     }
     this.updateTicker();
+  }
+
+  /** Server-side queue, re-read on every poll: another client may add to it. */
+  private async rafraichirFile(): Promise<void> {
+    const file = await this.api.get<JobView[]>('/api/jobs/file').catch(() => null);
+    if (file) {
+      this.file.set(file);
+    }
   }
 
   /** 204 means idle, undefined means "could not ask". */
@@ -342,12 +419,15 @@ export class SolverJobService {
       }
       return;
     }
+    // A job planned from this browser stays "mine" when it starts on its own,
+    // long after the submit() that queued it.
+    const mienne = mine || this.mesJobs.has(job.id);
     const entry: TrackedJob = {
       id: job.id,
       type: job.type,
       label: jobLabel(job.type),
       startedAtMs: Date.now() - (Number(job.elapsedSeconds) || 0) * 1000,
-      mine,
+      mine: mienne,
       editionId: job.editionId ?? null,
       editionNom: job.editionNom ?? null,
       secondsLimit: job.secondsLimit == null ? null : Number(job.secondsLimit)
@@ -356,6 +436,16 @@ export class SolverJobService {
     // A submit() adopts its job without waiting for the next poll: start the
     // duration clock right away rather than up to two seconds later.
     this.updateTicker();
+    if (mienne && !mine) {
+      // Discovered by polling, yet ours: the queue just handed it the solver.
+      const edition = entry.editionNom ?? entry.editionId ?? '?';
+      this.notifications.notify({
+        title: $localize`:@@job.queuedStartedTitle:${entry.label}:jobLabel: planifiée : c'est parti`,
+        message: $localize`:@@job.queuedStartedMessage:La tâche en attente vient de prendre le solveur, sur l'édition « ${edition}:edition: ».`,
+        timeout: 6000
+      });
+      return;
+    }
     if (!entry.mine) {
       const duration = formatDuration(job.elapsedSeconds);
       const edition = entry.editionNom ?? entry.editionId ?? '?';
@@ -367,6 +457,7 @@ export class SolverJobService {
   }
 
   private async reportFinishedJob(entry: TrackedJob): Promise<void> {
+    this.mesJobs.delete(entry.id);
     const job = await this.api.get<JobView>(`/api/jobs/${entry.id}`).catch(() => null);
     if (!job) {
       this.notifications.notify({

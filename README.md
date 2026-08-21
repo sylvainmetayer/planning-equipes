@@ -250,6 +250,25 @@ Ce gel-là est volatil, le temps du calcul : les verrouillages restent ce que
 vous verrouillez vous-même, jamais une trace technique laissée par une
 replanification.
 
+### File d'attente du solveur
+
+Une résolution tourne ? Le bouton « Résoudre avec Timefold » devient
+**« Planifier la résolution »** (idem pour la replanification incrémentale) :
+la tâche est mise en file et démarre d'elle-même dès que la précédente se
+termine. On peut donc préparer l'édition suivante pendant qu'un solve tourne,
+planifier son calcul, et fermer l'écran — plus besoin d'attendre la fin pour
+cliquer.
+
+Une tâche en attente **ne bloque rien** : la saisie reste ouverte sur l'édition
+qu'elle vise, et elle lit cette édition telle qu'elle sera au moment de
+démarrer — les retouches faites entre-temps sont donc prises en compte. La file
+est visible depuis n'importe quelle édition (édition et type de calcul), et
+chaque ligne peut en être retirée tant qu'elle n'a pas démarré.
+
+Deux garde-fous : planifier deux fois le même calcul sur la même édition est
+refusé avec un message clair (le classique double-clic), et la file vit en
+mémoire — un redémarrage du serveur la vide.
+
 ### Comparateur A/B
 
 Confronte une **référence** et une **variante** — deux instantanés, ou un

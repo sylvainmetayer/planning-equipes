@@ -18,6 +18,7 @@ import {
   ChangementAffectation,
   CompteRenduEnvoi,
   FeasibilityReport,
+  JobView,
   PerimetreReplanification,
   PlanningDiagnostic,
   ResultatSolveIncremental,
@@ -156,6 +157,29 @@ export class SolverPage {
   protected readonly solverBusy = computed(() => this.jobs.solverBusy());
 
   /**
+   * Solves planned behind the running one. Server-side and shared: one planned
+   * from another browser shows up here too, and can be removed from here.
+   */
+  protected readonly file = computed(() => this.jobs.file());
+
+  /**
+   * The two solve buttons say what the click will actually do. While the
+   * solver is busy they plan the run instead of being greyed out — the whole
+   * point being to prepare the next edition without waiting in front of the
+   * screen.
+   */
+  protected readonly libelleSolve = computed(() =>
+    this.solverBusy()
+      ? $localize`:@@solver.planifierSolve:Planifier la résolution`
+      : $localize`:@@solver.solve:Résoudre avec Timefold`
+  );
+  protected readonly libelleIncremental = computed(() =>
+    this.solverBusy()
+      ? $localize`:@@solver.planifierIncremental:Planifier la replanification`
+      : $localize`:@@solver.incremental:Replanifier (incrémental)`
+  );
+
+  /**
    * "Fin estimée" of the run in progress: its start time plus the duration it
    * was submitted with. An upper bound — the solver stops earlier when its
    * unimproved-seconds budget runs out, and anyone can stop it by hand.
@@ -241,21 +265,27 @@ export class SolverPage {
     // analyzed.
     // Unregistered on destroy: this page is lazy-loaded and rebuilt on every
     // navigation, so keeping the handler would stack one more copy per visit.
-    inject(DestroyRef).onDestroy(
-      this.jobs.onResult('SOLVE', (result) => {
-        // A SOLVE payload is a bare diagnostic (full solve) or an incremental
-        // wrapper carrying one (issue #86).
-        const diagnostic = extraireDiagnostic(result);
-        if (diagnostic) {
-          this.applySolveResult(diagnostic);
-        }
-        this.applyIncrementalResult(result);
-        void this.loadLastRun();
-        // The solve rewrote both problem sources server-side (fresh feasibility
-        // input and a new constraint analysis): re-read them for the summary.
-        void this.problemes.reload();
-      })
-    );
+    // Both kinds of solve land here: a full one carries a bare diagnostic, an
+    // incremental one wraps it (issue #86). Registered separately because they
+    // are two job types server-side, and unregistered together on destroy —
+    // this page is lazy-loaded and rebuilt on every navigation, so a handler
+    // left behind would stack one more copy per visit.
+    const surResultatSolve = (result: unknown): void => {
+      const diagnostic = extraireDiagnostic(result);
+      if (diagnostic) {
+        this.applySolveResult(diagnostic);
+      }
+      this.applyIncrementalResult(result);
+      void this.loadLastRun();
+      // The solve rewrote both problem sources server-side (fresh feasibility
+      // input and a new constraint analysis): re-read them for the summary.
+      void this.problemes.reload();
+    };
+    const desabonner = [
+      this.jobs.onResult('SOLVE', surResultatSolve),
+      this.jobs.onResult('SOLVE_INCREMENTAL', surResultatSolve)
+    ];
+    inject(DestroyRef).onDestroy(() => desabonner.forEach((retirer) => retirer()));
     // Explains why the solver buttons are locked when the job comes from
     // somewhere else (another tab, another browser, a private window).
     effect(() => {
@@ -341,8 +371,7 @@ export class SolverPage {
 
   /**
    * Progress of the running job, as a share of the budget it was given —
-   * derived from the estimated end rather than from `secondsLimit` alone,
-   * since a SOLVE_FILE budget applies to each of its N groups.
+   * derived from the estimated end rather than from `secondsLimit` alone.
    */
   protected readonly progression = computed(() => {
     const job = this.jobs.activeJob();
@@ -362,24 +391,29 @@ export class SolverPage {
    * result says exactly which crews moved.
    */
   protected async onSolveIncremental(): Promise<void> {
-    if (this.solverJobAlreadyRunning()) {
-      return;
-    }
     const perimetre = await firstValueFrom(
       this.dialog.open(ReplanificationDialog, { width: '640px' }).afterClosed()
     );
     if (!perimetre) {
       return;
     }
+    // Busy solver: plan it instead of refusing. Read once, before the await, so
+    // the message and the request agree even if the solver frees up meanwhile
+    // (the server then simply starts it at once).
+    const enFile = this.jobs.solverBusy();
     this.output.set(
-      $localize`:@@solver.incremental.submitting:Envoi de la replanification incrémentale au solveur...`
+      enFile
+        ? $localize`:@@solver.incremental.planning:Planification de la replanification incrémentale...`
+        : $localize`:@@solver.incremental.submitting:Envoi de la replanification incrémentale au solveur...`
     );
     try {
       // No duration passed on purpose: the server applies its own short budget,
       // an order of magnitude under the full-solve one.
-      await this.jobs.submitSolveIncremental(perimetre as PerimetreReplanification);
+      await this.jobs.submitSolveIncremental(perimetre as PerimetreReplanification, undefined, enFile);
       this.output.set(
-        $localize`:@@solver.incremental.submitted:Replanification incrémentale en cours : le planning enregistré sert de point de départ, seuls les postes rouverts sont recalculés.`
+        enFile
+          ? $localize`:@@solver.incremental.planned:Replanification planifiée : elle démarrera d'elle-même sur cette édition dès que la tâche en cours sera terminée.`
+          : $localize`:@@solver.incremental.submitted:Replanification incrémentale en cours : le planning enregistré sert de point de départ, seuls les postes rouverts sont recalculés.`
       );
     } catch (error) {
       this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
@@ -396,6 +430,17 @@ export class SolverPage {
     }
     this.incrementalStats.set(null);
     this.incrementalChangements.set([]);
+  }
+
+  /** What a planned job will do, and to which edition — the two things worth reading in the queue. */
+  protected typeFileLabel(job: JobView): string {
+    return job.type === 'SOLVE_INCREMENTAL'
+      ? $localize`:@@job.type.solveIncremental:Replanification incrémentale`
+      : $localize`:@@job.type.solve:Résolution Timefold`;
+  }
+
+  protected editionFileLabel(job: JobView): string {
+    return job.editionNom ?? job.editionId ?? '?';
   }
 
   /** An empty crew is a hole in the plan, and must read as one. */
@@ -418,38 +463,42 @@ export class SolverPage {
   }
 
   protected async onTimefoldSolve(): Promise<void> {
-    if (this.solverJobAlreadyRunning()) {
-      return;
-    }
-    this.output.set($localize`:@@solver.submitting:Envoi de la résolution au solveur en arrière-plan...`);
+    const enFile = this.jobs.solverBusy();
+    this.output.set(
+      enFile
+        ? $localize`:@@solver.planning:Planification de la résolution...`
+        : $localize`:@@solver.submitting:Envoi de la résolution au solveur en arrière-plan...`
+    );
     this.feasibility.set(null);
     this.hardScore.set(null);
     this.hardIssues.set([]);
     try {
       // The problem is built server-side from the reference data: no planning is
       // uploaded, so even a very large scenario can be solved without hitting the
-      // HTTP body limit (which would fail with a network error).
-      await this.jobs.submitSolveFromReferenceData(this.solverSettings.secondsLimit());
+      // HTTP body limit (which would fail with a network error). A planned solve
+      // builds it when it starts, not now — the edition can keep being prepared.
+      await this.jobs.submitSolveFromReferenceData(this.solverSettings.secondsLimit(), enFile);
       this.output.set(
-        $localize`:@@solver.submitted:Résolution avec Timefold sur le serveur, puis analyse automatique du résultat. Vous pouvez continuer à naviguer ; une notification apparaîtra à chaque étape, ici et dans tout autre navigateur observant ce serveur.`
+        enFile
+          ? $localize`:@@solver.planned:Résolution planifiée : elle démarrera d'elle-même sur cette édition dès que la tâche en cours sera terminée. Vous pouvez fermer cet écran.`
+          : $localize`:@@solver.submitted:Résolution avec Timefold sur le serveur, puis analyse automatique du résultat. Vous pouvez continuer à naviguer ; une notification apparaîtra à chaque étape, ici et dans tout autre navigateur observant ce serveur.`
       );
     } catch (error) {
       this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
     }
   }
 
-  // Only one solver job at a time for the whole server: a solve and an analysis
-  // both run the solver, so they must never be started in parallel — including
-  // from two different browsers.
-  private solverJobAlreadyRunning(): boolean {
-    if (!this.jobs.solverBusy()) {
-      return false;
+  /**
+   * Removes a solve from the queue before it starts. Nothing ran, so there is
+   * nothing to stop — unlike stopping the running job, which keeps its partial
+   * result.
+   */
+  protected async onRetirerDeLaFile(job: JobView): Promise<void> {
+    try {
+      await this.jobs.retirerDeLaFile(job.id);
+    } catch (error) {
+      this.output.set($localize`:@@common.errorPrefix:Erreur : ${message(error)}:message:`);
     }
-    const description = this.jobs.activeJobDescription();
-    this.output.set(
-      $localize`:@@solver.alreadyRunning:${description}:description: Veuillez attendre la fin avant d'en démarrer une autre.`
-    );
-    return true;
   }
 
   /**

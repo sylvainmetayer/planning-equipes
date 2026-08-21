@@ -2,8 +2,10 @@ package dev.sylvain.planning.service;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -31,6 +33,14 @@ import jakarta.inject.Inject;
  * only: a restart loses them, which is fine because every completed solve is
  * also persisted by {@link PlanningPersistenceService}.</p>
  *
+ * <p>A job can also be <b>queued</b> instead of refused when the solver is
+ * busy (the "Planifier" buttons): it starts by itself as soon as the running
+ * one finishes, so preparing another edition no longer means waiting in front
+ * of the screen for a solve to end. The queue is FIFO, in memory like the jobs
+ * themselves, and a queued job builds its problem only when it actually
+ * starts — the referential it reads is the one in place at that moment, not
+ * the one of the click.</p>
+ *
  * <p>The "a solver run is in progress" state lives here, not in the browser:
  * only one solve or analyze may run at a time for the whole server, so any
  * client (other browser, private window) sees the same lock and the same
@@ -57,11 +67,16 @@ public class SolverJobService {
 
     public enum JobType {
         SOLVE,
+        /** Incremental re-solve (issue #86) — its own type so the UI can name it. */
+        SOLVE_INCREMENTAL,
         ANALYZE
     }
 
     public enum JobStatus {
+        /** Handed to the worker pool, about to run: already holds the solver. */
         PENDING,
+        /** Waiting for the running job to finish; does not hold the solver yet. */
+        QUEUED,
         RUNNING,
         COMPLETED,
         FAILED,
@@ -90,7 +105,13 @@ public class SolverJobService {
     EditionRepository editionRepository;
 
     private final Map<String, SolverJob> jobs = new ConcurrentHashMap<>();
+    /** FIFO of jobs waiting for the solver. Guarded by this service's monitor. */
+    private final Deque<TacheEnFile> file = new ArrayDeque<>();
     private final ExecutorService executor = Executors.newFixedThreadPool(2, new SolverThreadFactory());
+
+    /** A queued job and the work it will run once the solver frees up. */
+    private record TacheEnFile(SolverJob job, JobTask task) {
+    }
 
     /**
      * Solves, then always analyzes the result in the same job — the two are
@@ -102,7 +123,7 @@ public class SolverJobService {
      * stays limited to the diagnostic.
      */
     public SolverJob submitSolve(PlanningFestival problem, Long secondsLimit) {
-        return submit(JobType.SOLVE, secondsLimit, job -> {
+        return submit(JobType.SOLVE, secondsLimit, false, job -> {
             // The safety net of issue #138: the plan about to be overwritten
             // is captured first, so a solve no longer destroys the previous
             // result.
@@ -116,6 +137,30 @@ public class SolverJobService {
             // KPI history (issue #89): one row per completed solve, carrying the
             // real duration. Deliberately after the analysis — the KPI read the
             // score it just recorded — and never able to fail the job.
+            kpiHistoriqueService.enregistrerApresSolve(dureeSolveSecondes);
+            return diagnostic;
+        });
+    }
+
+    /**
+     * Full solve whose problem is built <b>inside the job</b>, from the
+     * reference data of the job's edition. Deferring the build is what makes
+     * queueing meaningful: a job planned while another one runs must solve the
+     * edition as it stands when its turn comes, not as it stood at the click —
+     * the whole point being to keep preparing that edition meanwhile.
+     *
+     * @param enFile when the solver is busy, wait for it instead of being refused
+     */
+    public SolverJob submitSolveDepuisReferenceData(Long secondsLimit, boolean enFile) {
+        return submit(JobType.SOLVE, secondsLimit, enFile, job -> {
+            snapshotService.capturerAvantSolve();
+            PlanningFestival problem = planningService.construireDepuisReferenceData();
+            Instant debutSolve = Instant.now();
+            PlanningFestival solved = planningService.resoudre(problem, secondsLimit, job::attachSolver);
+            long dureeSolveSecondes = Duration.between(debutSolve, Instant.now()).getSeconds();
+            persistenceService.persist(solved);
+            PlanningService.PlanningDiagnostic diagnostic = planningService.diagnostiquer(solved);
+            analysisStore.record(diagnostic);
             kpiHistoriqueService.enregistrerApresSolve(dureeSolveSecondes);
             return diagnostic;
         });
@@ -145,9 +190,10 @@ public class SolverJobService {
      * because it reads the persisted plan: building it on the request thread
      * would race with the previous job's persistence.</p>
      */
-    public SolverJob submitSolveIncremental(Long secondsLimitDemande, PerimetreReplanification perimetre) {
+    public SolverJob submitSolveIncremental(Long secondsLimitDemande, PerimetreReplanification perimetre,
+            boolean enFile) {
         Long secondsLimit = secondsLimitDemande != null ? secondsLimitDemande : DUREE_INCREMENTALE_DEFAUT_SECONDES;
-        return submit(JobType.SOLVE, secondsLimit, job -> {
+        return submit(JobType.SOLVE_INCREMENTAL, secondsLimit, enFile, job -> {
             snapshotService.capturerAvantSolve();
             PlanningService.ProblemeIncremental probleme =
                     planningService.construireIncrementalDepuisReferenceData(perimetre);
@@ -165,7 +211,7 @@ public class SolverJobService {
     }
 
     public SolverJob submitAnalyze(PlanningFestival problem, Long secondsLimit) {
-        return submit(JobType.ANALYZE, secondsLimit, job -> {
+        return submit(JobType.ANALYZE, secondsLimit, false, job -> {
             PlanningService.PlanningDiagnostic diagnostic =
                     planningService.analyser(problem, secondsLimit, job::attachSolver);
             analysisStore.record(diagnostic);
@@ -174,24 +220,59 @@ public class SolverJobService {
     }
 
     /**
-     * Registers the job and hands it to the worker pool. Synchronized so two
-     * simultaneous requests cannot both pass the "no active job" check.
+     * Registers the job and either hands it to the worker pool or queues it.
+     * Synchronized so two simultaneous requests cannot both pass the "no
+     * active job" check — the same monitor {@link #terminerEtEnchainer} holds
+     * while it promotes the next queued job, so there is no window in which
+     * the solver looks free while a hand-over is under way.
      */
-    private synchronized SolverJob submit(JobType type, Long secondsLimit, JobTask task) {
+    private synchronized SolverJob submit(JobType type, Long secondsLimit, boolean enFile, JobTask task) {
         purgeExpiredJobs();
-        findActive().ifPresent(active -> {
-            throw new SolverBusyException(active);
-        });
+        Optional<SolverJob> actif = findActive();
+        if (actif.isPresent() && !enFile) {
+            throw new SolverBusyException(actif.get());
+        }
         // Captured here, on the request thread: the worker has no request of
         // its own to read the X-Edition-Id header from, and the job must keep
-        // writing to the group it was launched for even if the browser has
+        // writing to the edition it was launched for even if the browser has
         // switched to another one in the meantime.
         String editionId = editionContext.editionIdCourant();
+        if (actif.isPresent()) {
+            refuserDoublon(type, editionId);
+        }
         SolverJob job = new SolverJob(UUID.randomUUID().toString(), type, secondsLimit,
                 editionId, nomEdition(editionId));
         jobs.put(job.getId(), job);
-        executor.submit(() -> run(job, task));
+        if (actif.isPresent()) {
+            job.markQueued();
+            file.addLast(new TacheEnFile(job, task));
+        } else {
+            executor.submit(() -> run(job, task));
+        }
         return job;
+    }
+
+    /**
+     * Refuses a second job of the same kind on the same edition, whether the
+     * first one is running or merely queued. This is the double-click guard:
+     * queueing what is already under way would silently solve the same edition
+     * twice in a row, and the second run would discard the first one's result.
+     * Two <b>different</b> kinds stay allowed — chaining a full solve and an
+     * incremental replanning on one edition is a legitimate sequence.
+     */
+    private void refuserDoublon(JobType type, String editionId) {
+        jobs.values().stream()
+                .filter(job -> !job.isFinished())
+                .filter(job -> job.getType() == type && job.getEditionId().equals(editionId))
+                .findFirst()
+                .ifPresent(dejaPrevu -> {
+                    throw new SolverBusyException(dejaPrevu);
+                });
+    }
+
+    /** The jobs waiting for the solver, in the order they will run. */
+    public synchronized List<SolverJob> fileAttente() {
+        return file.stream().map(TacheEnFile::job).toList();
     }
 
     /**
@@ -210,22 +291,64 @@ public class SolverJobService {
 
     private void run(SolverJob job, JobTask task) {
         if (job.getStatus() == JobStatus.CANCELLED) {
+            // Cancelled between promotion and start: the solver is free, so the
+            // queue must still move on rather than stall behind a dead job.
+            enchainer();
             return;
         }
         job.markRunning();
+        Object result = null;
+        Exception echec = null;
         try {
-            Object result = editionContext.executeDans(job.getEditionId(), () -> task.execute(job));
-            if (job.isCancelRequested()) {
-                job.markCancelled(result);
-            } else {
-                job.markCompleted(result);
-            }
+            result = editionContext.executeDans(job.getEditionId(), () -> task.execute(job));
         } catch (Exception e) {
+            echec = e;
+        }
+        terminerEtEnchainer(job, result, echec);
+    }
+
+    /**
+     * Records the job's outcome and starts the next queued one, both under the
+     * service monitor. Atomic on purpose: between "this job is finished" and
+     * "the next one holds the solver" there must be no instant where a
+     * concurrent {@link #submit} sees an idle solver — it would start a second
+     * run alongside the one being promoted.
+     */
+    private synchronized void terminerEtEnchainer(SolverJob job, Object result, Exception echec) {
+        if (echec != null) {
             if (job.isCancelRequested()) {
                 job.markCancelled(null);
             } else {
-                job.markFailed(e);
+                job.markFailed(echec);
             }
+        } else if (job.isCancelRequested()) {
+            job.markCancelled(result);
+        } else {
+            job.markCompleted(result);
+        }
+        demarrerSuivant();
+    }
+
+    private synchronized void enchainer() {
+        demarrerSuivant();
+    }
+
+    /**
+     * Promotes the first queued job that is still wanted. Marking it PENDING
+     * before releasing the monitor is what makes it visible to
+     * {@link #findActive()} — and therefore what keeps the solver lock held
+     * across the hand-over. Must be called while holding the monitor.
+     */
+    private void demarrerSuivant() {
+        TacheEnFile suivante;
+        while ((suivante = file.pollFirst()) != null) {
+            if (suivante.job().getStatus() == JobStatus.CANCELLED) {
+                continue;
+            }
+            suivante.job().markPending();
+            TacheEnFile aLancer = suivante;
+            executor.submit(() -> run(aLancer.job(), aLancer.task()));
+            return;
         }
     }
 
@@ -236,10 +359,15 @@ public class SolverJobService {
     /**
      * The job currently holding the solver, if any. Shared by every client so
      * the "solver busy" state does not depend on browser-local storage.
+     *
+     * <p>A {@link JobStatus#QUEUED} job is deliberately <b>not</b> active: it
+     * holds nothing yet, and reporting it as active would freeze data entry on
+     * its edition — precisely the edition the operator queued it to keep
+     * preparing.</p>
      */
     public Optional<SolverJob> findActive() {
         return jobs.values().stream()
-                .filter(job -> !job.isFinished())
+                .filter(job -> job.getStatus() == JobStatus.PENDING || job.getStatus() == JobStatus.RUNNING)
                 .min(Comparator.comparing(SolverJob::getSubmittedAt));
     }
 
@@ -260,7 +388,10 @@ public class SolverJobService {
         if (job == null) {
             return false;
         }
-        if (job.getStatus() == JobStatus.PENDING) {
+        if (job.getStatus() == JobStatus.QUEUED) {
+            // Taking a job out of the queue: nothing ran, nothing to stop.
+            file.removeIf(tache -> tache.job().getId().equals(jobId));
+        } else if (job.getStatus() == JobStatus.PENDING) {
             job.markCancelledIfPending();
         } else if (!job.isFinished()) {
             throw new SolverBusyException(job);
@@ -283,7 +414,10 @@ public class SolverJobService {
         if (job == null) {
             return Optional.empty();
         }
-        if (job.getStatus() == JobStatus.PENDING) {
+        if (job.getStatus() == JobStatus.QUEUED) {
+            job.markCancelledIfPending();
+            file.removeIf(tache -> tache.job().getId().equals(jobId));
+        } else if (job.getStatus() == JobStatus.PENDING) {
             job.markCancelledIfPending();
         } else if (job.getStatus() == JobStatus.RUNNING) {
             job.requestCancel();
@@ -367,6 +501,15 @@ public class SolverJobService {
             this.editionNom = editionNom;
         }
 
+        private void markQueued() {
+            status = JobStatus.QUEUED;
+        }
+
+        /** Queued job promoted to "about to run": from here it holds the solver. */
+        private void markPending() {
+            status = JobStatus.PENDING;
+        }
+
         private void markRunning() {
             status = JobStatus.RUNNING;
             startedAt = Instant.now();
@@ -385,7 +528,7 @@ public class SolverJobService {
         }
 
         private void markCancelledIfPending() {
-            if (status == JobStatus.PENDING) {
+            if (status == JobStatus.PENDING || status == JobStatus.QUEUED) {
                 status = JobStatus.CANCELLED;
                 finishedAt = Instant.now();
             }
@@ -433,6 +576,11 @@ public class SolverJobService {
          * whatever its own clock or when it connected.
          */
         public long getElapsedSeconds() {
+            if (status == JobStatus.QUEUED) {
+                // Time spent waiting is not time spent solving: a queued job
+                // must not display a duration that suggests it is under way.
+                return 0;
+            }
             Instant end = finishedAt == null ? Instant.now() : finishedAt;
             return Math.max(0, Duration.between(submittedAt, end).getSeconds());
         }

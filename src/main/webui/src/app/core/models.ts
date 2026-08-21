@@ -588,8 +588,9 @@ export const DUREE_HEBDOMADAIRE_MAX_HEURES = 48;
 /** Ordre public ceiling for minors, in hours (Code du travail art. L3162-1). */
 export const DUREE_HEBDOMADAIRE_MAX_MINEUR_HEURES = 35;
 
-export type JobType = 'SOLVE' | 'ANALYZE' | 'SOLVE_FILE';
-export type JobStatus = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+export type JobType = 'SOLVE' | 'SOLVE_INCREMENTAL' | 'ANALYZE';
+/** `QUEUED` waits for the solver without holding it; `PENDING` already holds it. */
+export type JobStatus = 'PENDING' | 'QUEUED' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
 
 /** `/api/jobs/...` view: the server owns the solver state, elapsed included. */
 export interface JobView {

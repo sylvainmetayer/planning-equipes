@@ -207,7 +207,11 @@ export function buildHelpSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.config.lock:Une seule résolution tourne à la fois pour tout le serveur. Si les boutons sont verrouillés, c'est qu'un calcul est en cours — éventuellement lancé depuis un autre poste ou un autre navigateur ; le moniteur de la barre d'outils indique lequel, sur quelle édition et depuis combien de temps. Le calcul travaille sur l'édition depuis laquelle il a été lancé : seule celle-ci est verrouillée en saisie et en import. Si vous basculez sur une autre édition, vous pouvez continuer à y saisir des données ou y importer un scénario pendant la résolution.`
+          text: $localize`:@@aide.config.lock:Une seule résolution tourne à la fois pour tout le serveur — éventuellement lancée depuis un autre poste ou un autre navigateur ; le moniteur de la barre d'outils indique laquelle, sur quelle édition et depuis combien de temps. Le calcul travaille sur l'édition depuis laquelle il a été lancé : seule celle-ci est verrouillée en saisie et en import. Si vous basculez sur une autre édition, vous pouvez continuer à y saisir des données ou y importer un scénario pendant la résolution.`
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.config.file:Pendant qu'un calcul tourne, les deux boutons de lancement deviennent « Planifier la résolution » et « Planifier la replanification » : la tâche est mise en file et démarre d'elle-même dès que la précédente se termine. C'est le geste à faire pour enchaîner deux éditions sans attendre devant l'écran — préparez la suivante, planifiez son calcul, fermez l'écran. Une tâche en attente ne verrouille rien, et elle lit son édition telle qu'elle sera au moment de démarrer : une correction apportée entre-temps sera bien prise en compte. La file s'affiche sous les boutons, on peut en retirer une ligne tant qu'elle n'a pas démarré, et planifier deux fois le même calcul sur la même édition est refusé. Elle vit en mémoire : un redémarrage du serveur la vide.`
         }
       ],
       links: [

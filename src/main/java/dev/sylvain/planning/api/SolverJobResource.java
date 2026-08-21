@@ -12,6 +12,7 @@ import dev.sylvain.planning.service.SolverJobService.SolverBusyException;
 import dev.sylvain.planning.service.SolverJobService.SolverJob;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -65,14 +66,19 @@ public class SolverJobResource {
      * persisted reference data. The browser sends no planning at all, so even a
      * very large scenario (whose planning JSON would exceed the HTTP body limit)
      * can be solved.
+     *
+     * <p>{@code enFile=true} queues the solve instead of being refused when the
+     * solver is busy: it starts by itself once the running job finishes, and
+     * builds its problem at that moment — so the edition can keep being
+     * prepared in the meantime.</p>
      */
     @POST
     @Path("/solve/async/reference-data")
     @Consumes(MediaType.WILDCARD)
-    public Response solveFromReferenceData(@QueryParam("seconds") Long secondsLimit) {
+    public Response solveFromReferenceData(@QueryParam("seconds") Long secondsLimit,
+            @QueryParam("enFile") @DefaultValue("false") boolean enFile) {
         try {
-            SolverJob job = solverJobService.submitSolve(
-                    planningService.construireDepuisReferenceData(), secondsLimit);
+            SolverJob job = solverJobService.submitSolveDepuisReferenceData(secondsLimit, enFile);
             return Response.accepted(JobView.withoutResult(job)).build();
         } catch (SolverBusyException e) {
             return busy(e);
@@ -88,13 +94,15 @@ public class SolverJobResource {
      * other solve while one is running.
      *
      * <p>The body is optional: without it, the perimeter is exactly what the
-     * late changes invalidated.</p>
+     * late changes invalidated. {@code enFile=true} queues it behind the
+     * running job instead of being refused.</p>
      */
     @POST
     @Path("/solve/incremental/async")
-    public Response solveIncremental(PerimetreReplanification perimetre, @QueryParam("seconds") Long secondsLimit) {
+    public Response solveIncremental(PerimetreReplanification perimetre, @QueryParam("seconds") Long secondsLimit,
+            @QueryParam("enFile") @DefaultValue("false") boolean enFile) {
         try {
-            SolverJob job = solverJobService.submitSolveIncremental(secondsLimit, perimetre);
+            SolverJob job = solverJobService.submitSolveIncremental(secondsLimit, perimetre, enFile);
             return Response.accepted(JobView.withoutResult(job)).build();
         } catch (SolverBusyException e) {
             return busy(e);
@@ -129,6 +137,18 @@ public class SolverJobResource {
     @Path("/jobs")
     public List<JobView> listJobs() {
         return solverJobService.list().stream().map(JobView::withoutResult).toList();
+    }
+
+    /**
+     * The jobs waiting for the solver, in the order they will run. Polled by
+     * every client, like {@code /jobs/active}: the queue is server-side state,
+     * shared by whoever is looking — a solve planned from another browser must
+     * be visible (and removable) from this one.
+     */
+    @GET
+    @Path("/jobs/file")
+    public List<JobView> fileAttente() {
+        return solverJobService.fileAttente().stream().map(JobView::withoutResult).toList();
     }
 
     /**

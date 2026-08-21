@@ -53,16 +53,19 @@
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-actions class="card-actions">
-    <button matButton="filled" [disabled]="solverBusy()" (click)="onTimefoldSolve()">
-      <mat-icon>play_arrow</mat-icon>
-      <ng-container i18n="@@solver.solve">Résoudre avec Timefold</ng-container>
+    <button matButton="filled"
+            i18n-matTooltip="@@solver.solve.tooltip"
+            matTooltip="Quand le solveur est occupé, la résolution est mise en file : elle démarre d'elle-même sur l'édition courante dès que la tâche en cours se termine."
+            (click)="onTimefoldSolve()">
+      <mat-icon>{{ solverBusy() ? 'schedule_send' : 'play_arrow' }}</mat-icon>
+      {{ libelleSolve() }}
     </button>
-    <button matButton="tonal" [disabled]="solverBusy()"
+    <button matButton="tonal"
             i18n-matTooltip="@@solver.incremental.tooltip"
             matTooltip="Repart du planning enregistré : ce qui reste valable est figé, seuls les postes rouverts par un changement tardif (ou par vous) sont recalculés. Quelques dizaines de secondes au lieu de plusieurs minutes."
             (click)="onSolveIncremental()">
-      <mat-icon>bolt</mat-icon>
-      <ng-container i18n="@@solver.incremental">Replanifier (incrémental)</ng-container>
+      <mat-icon>{{ solverBusy() ? 'schedule_send' : 'bolt' }}</mat-icon>
+      {{ libelleIncremental() }}
     </button>
     <button matButton="tonal" [disabled]="!solverBusy() || arretEnCours()" (click)="onArreterSolveur()">
       <mat-icon>stop_circle</mat-icon>
@@ -104,6 +107,36 @@
         Fin estimée de la résolution en cours : {{ estimatedEnd() }} (dans {{ estimatedRemaining() }}) — au plus tard,
         le solveur peut s'arrêter avant s'il n'améliore plus le score.
       </p>
+    </mat-card-content>
+  }
+  @if (file().length > 0) {
+    <mat-card-content>
+      <h3 class="solver-file-titre" i18n="@@solver.file.titre">
+        File d'attente ({{ file().length }})
+      </h3>
+      <p class="calendar-meta" i18n="@@solver.file.hint">
+        Ces tâches démarrent d'elles-mêmes, dans cet ordre, dès que le solveur se libère. Chacune lit son édition
+        telle qu'elle sera à ce moment-là : vous pouvez continuer à la préparer.
+      </p>
+      <ol class="solver-file">
+        @for (job of file(); track job.id) {
+          <li class="solver-file-ligne">
+            <span class="solver-file-tache">{{ typeFileLabel(job) }}</span>
+            <span class="solver-file-edition">{{ editionFileLabel(job) }}</span>
+            <button
+              matIconButton
+              class="danger-action"
+              i18n-matTooltip="@@solver.file.retirer"
+              matTooltip="Retirer de la file"
+              i18n-aria-label="@@solver.file.retirer"
+              aria-label="Retirer de la file"
+              (click)="onRetirerDeLaFile(job)"
+            >
+              <mat-icon>delete</mat-icon>
+            </button>
+          </li>
+        }
+      </ol>
     </mat-card-content>
   }
   @if (lastRunAt()) {
