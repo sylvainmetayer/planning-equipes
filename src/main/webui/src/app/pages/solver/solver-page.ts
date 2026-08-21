@@ -39,6 +39,13 @@ import { ProblemSummaryBanner } from '../../shared/problem-summary-banner';
 import { StatusMessage } from '../../shared/status-message';
 import { ReplanificationDialog } from './replanification-dialog';
 import { errorPrefix } from '../../core/error-message';
+import {
+  SOLVER_DURATION_UNIT_STEP,
+  SolverDurationUnit,
+  bestUnitFor,
+  secondsToValue,
+  valueToSeconds
+} from './solver-duration';
 
 /**
  * A constraint's raw score string looks like `-14hard/0medium/0soft`
@@ -52,40 +59,6 @@ function hardPart(score: string): number {
   return match ? Number(match[1]) : 0;
 }
 
-/** Unit the solver page edits the solver duration in — always converted to/from seconds for the API. */
-export type SolverDurationUnit = 'SECONDES' | 'MINUTES' | 'HEURES';
-
-const SOLVER_DURATION_UNIT_FACTORS: Record<SolverDurationUnit, number> = {
-  SECONDES: 1,
-  MINUTES: 60,
-  HEURES: 3600
-};
-
-/** Per-unit `<input type="number">` granularity: whole seconds, half-minutes, quarter-hours. */
-const SOLVER_DURATION_UNIT_STEP: Record<SolverDurationUnit, number> = {
-  SECONDES: 1,
-  MINUTES: 0.5,
-  HEURES: 0.25
-};
-
-function secondsToValue(seconds: number, unit: SolverDurationUnit): number {
-  return seconds / SOLVER_DURATION_UNIT_FACTORS[unit];
-}
-
-function valueToSeconds(value: number, unit: SolverDurationUnit): number {
-  return value * SOLVER_DURATION_UNIT_FACTORS[unit];
-}
-
-/** Picks the largest unit that represents `seconds` as a whole number, so e.g. 180s shows as "3 min", not "0.05 h". */
-function bestUnitFor(seconds: number): SolverDurationUnit {
-  if (seconds !== 0 && seconds % SOLVER_DURATION_UNIT_FACTORS.HEURES === 0) {
-    return 'HEURES';
-  }
-  if (seconds % SOLVER_DURATION_UNIT_FACTORS.MINUTES === 0) {
-    return 'MINUTES';
-  }
-  return 'SECONDES';
-}
 
 /**
  * Solver page: launches the background solve job, and exports the resulting
