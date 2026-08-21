@@ -52,13 +52,23 @@ import dev.sylvain.planning.domain.Stand;
 class PlanningServiceScenarioFestivalRealisteTest {
 
     /**
-     * The production budget of the fixtures themselves
-     * ({@code parametresSolveur.dureeResolutionSecondes: 1800}). Deliberately
-     * not shaved to the observed convergence time: these two are the slowest
-     * scenarios in the suite, and a guardrail set to the minimum that happened
-     * to work once turns every unrelated solver tuning into a red build.
+     * Safety ceiling, not a target: {@code resoudreJusquaFaisabilite} returns
+     * as soon as the hard score reaches zero, so this only bounds a run that
+     * is <em>not</em> converging.
+     *
+     * <p>Measured convergence, once the stand horaires are resolved (see
+     * below): 150 s on the base fixture and 10 s on the canicule variant.
+     * 900 s therefore leaves roughly a sixfold margin locally, and still two
+     * to three times the CI runner's slower pace (7 700–9 800 move
+     * evaluations/s there against 10 400–29 900 here).</p>
+     *
+     * <p>Deliberately not the fixtures' own 1800 s production budget: at that
+     * ceiling a genuine convergence regression would burn an hour of the
+     * self-hosted runner before turning the build red. Not shaved to the
+     * observed 150 s either — a guardrail set to the minimum that happened to
+     * work once turns every unrelated solver tuning into a false alarm.</p>
      */
-    private static final long SECONDS_LIMITE_SECURITE = 1800L;
+    private static final long SECONDS_LIMITE_SECURITE = 900L;
 
     @Test
     void festivalRealisteNeViolateAucuneContrainteHard() throws IOException {
@@ -75,6 +85,17 @@ class PlanningServiceScenarioFestivalRealisteTest {
      * créneaux are daily amplitudes, sliced into vacations before any poste
      * exists. Going through {@code construireExemple()} instead would solve
      * the raw amplitudes and test a pipeline nobody runs.
+     *
+     * <p>The {@link HoraireStandResolver} call is not optional decoration, and
+     * it is what the sibling scenario tests get away with omitting: they run on
+     * scenarios where no stand carries a recurring horaire, so resolving is a
+     * no-op there. Here 65 stands do carry them, and skipping the expansion
+     * makes {@link Creneau#segmentsOuvertsMinutes} see every stand as open
+     * around the clock — 16 924 seats instead of 3 499, a problem five times
+     * too large that no roster of 153 animateurs could ever fill. The
+     * production path never has this problem because it goes through
+     * {@code ReferenceDataService.listStandsResolus()}; a plain-Java test has
+     * to do it by hand.</p>
      */
     private void assertDecoupeEtResoluSansHard(String scenario) throws IOException {
         ReferenceDataService referenceDataService = new ReferenceDataService();
@@ -89,6 +110,7 @@ class PlanningServiceScenarioFestivalRealisteTest {
         List<Creneau> vacations = VacationGeneratorService.genererVacations(
                 List.copyOf(reference.creneauxParId().values()), parametresDecoupage);
         List<Stand> stands = List.copyOf(reference.standsParId().values());
+        HoraireStandResolver.appliquer(stands, vacations);
         List<PosteAffectation> postes = PlanningService.construirePostes(stands, vacations);
         PlanningFestival problem = new PlanningFestival(reference.dateDebut(), reference.animateurs(), postes);
 

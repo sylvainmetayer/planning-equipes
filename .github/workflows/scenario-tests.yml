@@ -61,9 +61,9 @@ jobs:
   scenario:
     runs-on: self-hosted
     # Le runner est auto-hébergé : un solve parti en boucle l'immobiliserait
-    # sans que la facturation ne le signale. Large par rapport à l'heure et
-    # quelques minutes attendues, assez serré pour libérer la machine.
-    timeout-minutes: 150
+    # sans que la facturation ne le signale. Large par rapport aux ~10 min
+    # attendues, assez serré pour libérer la machine.
+    timeout-minutes: 60
 
     steps:
       - name: Checkout repository
@@ -83,11 +83,10 @@ jobs:
       # run aux trois classes concernées, le reste de la suite étant déjà
       # couvert par le workflow Tests.
       #
-      # PlanningServiceScenarioFestivalRealisteTest pèse à lui seul l'essentiel
-      # de la durée (deux solves de 1800 s au pire). C'est assumé : c'est le
-      # seul des trois à porter sur des données réelles, et c'est exactement la
-      # raison d'être d'un workflow qui ne se déclenche que sur ce qui peut
-      # casser la convergence.
+      # PlanningServiceScenarioFestivalRealisteTest est le seul des trois à
+      # porter sur des données réelles, et donc sur des stands à horaires
+      # récurrents. Il converge en ~150 s et ~10 s ; son plafond de sécurité de
+      # 900 s ne borne qu'un run qui ne converge pas.
       - name: Run the large-scenario tests
         run: >-
           ./mvnw -B --no-transfer-progress test -Pscenario-tests

@@ -55,8 +55,10 @@ and `PlanningServiceScenarioFestivalRealisteTest` solve large scenarios to
 hard-feasibility — the first two take ~25s/~75s on hand-built problems, the
 third runs the two **anonymised real-world fixtures**
 (`festival-realiste.yaml` and its `-canicule` variant: 153 animateurs, 65
-stands, 45 premium, per-stand recurring schedules) and is by far the slowest
-of the suite. They are tagged `@Tag("scenario-lent")`, excluded from the
+stands, 45 premium, per-stand recurring schedules) — the only ones whose
+stands carry recurring horaires, which a plain-Java harness must expand with
+`HoraireStandResolver.appliquer` before building postes or it solves a problem
+five times too large. They are tagged `@Tag("scenario-lent")`, excluded from the
 default
 `./mvnw test`/`./mvnw verify` run via the `test.excludedGroups` property in
 `pom.xml`, and not run by the main CI workflow (`.github/workflows/tests.yml`
