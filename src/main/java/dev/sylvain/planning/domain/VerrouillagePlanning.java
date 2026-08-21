@@ -2,6 +2,7 @@ package dev.sylvain.planning.domain;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Optional;
 
 /**
  * A part of the planning the user has validated and does not want the solver to
@@ -50,28 +51,73 @@ public class VerrouillagePlanning {
      * planning.
      */
     public boolean couvre(PosteAffectation poste) {
-        if (poste == null || type == null) {
+        if (poste == null) {
             return false;
         }
+        return cible().map(cible -> cible.couvre(poste)).orElse(false);
+    }
+
+    /**
+     * Les colonnes relues comme la cible qu'elles décrivent — la moitié lecture
+     * de l'adaptateur.
+     *
+     * <p>Vide quand la ligne ne décrit rien d'exploitable : le {@code CHECK} de
+     * `V30`/`V41` interdit ce cas en base, mais un verrouillage construit en
+     * mémoire (corps de requête pas encore validé, test) peut très bien
+     * n'avoir ni type ni cible. Rendre {@link Optional#empty()} plutôt que de
+     * lever garde le comportement d'avant : un verrou incomplet ne gèle rien.</p>
+     */
+    public Optional<CibleVerrouillage> cible() {
+        if (type == null) {
+            return Optional.empty();
+        }
         return switch (type) {
-            case ANIMATEUR -> animateurId != null
-                    && poste.getAnimateur() != null
-                    && animateurId.equals(poste.getAnimateur().getId());
-            case STAND -> standId != null
-                    && poste.getStand() != null
-                    && standId.equals(poste.getStand().getId());
-            case JOUR -> jour != null
-                    && poste.getCreneau() != null
-                    && jour.equals(poste.getCreneau().getDate());
-            case CRENEAU -> creneauId != null
-                    && poste.getCreneau() != null
-                    && creneauId.equals(poste.getCreneau().getId());
-            case ANIMATEUR_CRENEAU -> animateurId != null && creneauId != null
-                    && poste.getAnimateur() != null
-                    && poste.getCreneau() != null
-                    && animateurId.equals(poste.getAnimateur().getId())
-                    && creneauId.equals(poste.getCreneau().getId());
+            case ANIMATEUR -> animateurId == null
+                    ? Optional.empty()
+                    : Optional.of(new CibleVerrouillage.SurAnimateur(animateurId));
+            case STAND -> standId == null
+                    ? Optional.empty()
+                    : Optional.of(new CibleVerrouillage.SurStand(standId));
+            case CRENEAU -> creneauId == null
+                    ? Optional.empty()
+                    : Optional.of(new CibleVerrouillage.SurCreneau(creneauId));
+            case JOUR -> jour == null
+                    ? Optional.empty()
+                    : Optional.of(new CibleVerrouillage.SurJour(jour));
+            case ANIMATEUR_CRENEAU -> animateurId == null || creneauId == null
+                    ? Optional.empty()
+                    : Optional.of(new CibleVerrouillage.SurAnimateurEtCreneau(animateurId, creneauId));
         };
+    }
+
+    /**
+     * La cible réécrite dans les colonnes — la moitié écriture de
+     * l'adaptateur, et le seul endroit du code qui remet les autres à
+     * {@code null}.
+     *
+     * <p>C'était écrit cinq fois, une par branche de validation, et chaque
+     * branche devait penser à annuler les quatre colonnes qu'elle n'utilisait
+     * pas. Ici l'effacement précède l'affectation, une bonne fois, et le
+     * {@code switch} sur la hiérarchie scellée est exhaustif sans
+     * {@code default} : une nouvelle façon de verrouiller ne compilera pas
+     * tant que personne n'aura dit dans quelle colonne elle atterrit.</p>
+     */
+    public void appliquer(CibleVerrouillage cible) {
+        this.type = cible.type();
+        this.animateurId = null;
+        this.standId = null;
+        this.creneauId = null;
+        this.jour = null;
+        switch (cible) {
+            case CibleVerrouillage.SurAnimateur sur -> this.animateurId = sur.animateurId();
+            case CibleVerrouillage.SurStand sur -> this.standId = sur.standId();
+            case CibleVerrouillage.SurCreneau sur -> this.creneauId = sur.creneauId();
+            case CibleVerrouillage.SurJour sur -> this.jour = sur.jour();
+            case CibleVerrouillage.SurAnimateurEtCreneau sur -> {
+                this.animateurId = sur.animateurId();
+                this.creneauId = sur.creneauId();
+            }
+        }
     }
 
     public String getId() {

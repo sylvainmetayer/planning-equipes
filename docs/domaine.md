@@ -352,6 +352,19 @@ automatiquement quand l'admin valide une demande d'échange — voir
 [Demandes d'échange](#demandes-déchange)), et appartient à son édition comme
 le reste du référentiel.
 
+**Une cible, jamais deux.** En base et sur le fil JSON, un verrou est une ligne
+plate : cinq colonnes cibles nullables et un discriminant `type`. Ce que la
+contrainte `CHECK` de `V30`/`V41` interdit, le code le garantissait en écrivant
+cinq fois « je pose ma colonne et j'annule les quatre autres » — en oublier une
+laissait un verrou visant deux choses à la fois. Dans le code, la cible est
+désormais une hiérarchie scellée `CibleVerrouillage` (`SurAnimateur`,
+`SurStand`, `SurCreneau`, `SurJour`, `SurAnimateurEtCreneau`) : une variante ne
+porte que ses propres champs, elle ne *peut* pas en désigner deux. Le passage
+aux colonnes est écrit une seule fois, dans `VerrouillagePlanning.appliquer`,
+et son `switch` est exhaustif sans `default` — ajouter une façon de verrouiller
+ne compile pas tant que personne n'a dit dans quelle colonne elle atterrit. Le
+format persisté et le DTO JSON, eux, ne changent pas.
+
 Deux règles encadrent le mécanisme :
 
 - **une place non pourvue n'est jamais figée.** Les places couvertes par un

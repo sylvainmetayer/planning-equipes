@@ -4,6 +4,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
@@ -60,6 +61,44 @@ class VerrouillageResourceTest {
         } finally {
             given().when().delete("/api/verrouillages/" + premier).then().statusCode(204);
             given().when().delete("/api/verrouillages/" + second).then().statusCode(204);
+        }
+    }
+
+    /**
+     * Un payload qui désigne deux cibles à la fois ne garde que celle de son
+     * type. C'était garanti par le fait que chaque branche de validation
+     * pensait à mettre les quatre autres colonnes à {@code null} ; en oublier
+     * une passait la contrainte {@code CHECK} et laissait en base un verrou
+     * visant deux choses. C'est maintenant structurel : la cible est une
+     * hiérarchie scellée qui ne peut pas en porter deux, et un seul endroit
+     * la repose dans les colonnes.
+     */
+    @Test
+    void unPayloadPortantDeuxCiblesNeGardeQueCelleDeSonType() {
+        String id = given()
+                .contentType(ContentType.JSON)
+                .body("{\"type\":\"JOUR\",\"jour\":\"2026-07-14\","
+                        + "\"animateurId\":\"INTRUS\",\"standId\":\"INTRUS\",\"creneauId\":42,"
+                        + "\"raison\":\"Journée validée\"}")
+                .when().post("/api/verrouillages")
+                .then()
+                .statusCode(200)
+                .body("type", equalTo("JOUR"))
+                .body("jour", equalTo("2026-07-14"))
+                .body("animateurId", nullValue())
+                .body("standId", nullValue())
+                .body("creneauId", nullValue())
+                .extract().path("id");
+
+        try {
+            given().when().get("/api/verrouillages")
+                    .then()
+                    .statusCode(200)
+                    .body("find { it.id == '" + id + "' }.animateurId", nullValue())
+                    .body("find { it.id == '" + id + "' }.standId", nullValue())
+                    .body("find { it.id == '" + id + "' }.creneauId", nullValue());
+        } finally {
+            given().when().delete("/api/verrouillages/" + id).then().statusCode(204);
         }
     }
 

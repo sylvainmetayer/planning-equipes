@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import dev.sylvain.planning.domain.CibleVerrouillage;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -40,7 +41,7 @@ public class VerrouillageService {
         if (verrouillage.getType() == null) {
             throw new ErreurMetier.Invalide("Type de verrouillage manquant");
         }
-        normaliserCible(verrouillage);
+        verrouillage.appliquer(cibleValidee(verrouillage));
         if (verrouillage.getId() == null || verrouillage.getId().isBlank()) {
             verrouillage.setId(UUID.randomUUID().toString());
         }
@@ -58,63 +59,58 @@ public class VerrouillageService {
     }
 
     /**
-     * Keeps only the target column the type expects — a payload carrying two
-     * targets would be ambiguous, and the check constraint would reject it with
-     * a raw SQL error instead of a usable message.
+     * La cible que le corps de requête décrit, validée : le type doit désigner
+     * quelque chose, et ce quelque chose doit exister.
+     *
+     * <p>Elle n'écrit rien elle-même. C'est {@link VerrouillagePlanning#appliquer}
+     * qui la repose dans les colonnes, et qui est donc le seul endroit à
+     * remettre les autres à {@code null} — un payload portant deux cibles
+     * serait ambigu, et la contrainte {@code CHECK} le refuserait avec une
+     * erreur SQL brute au lieu d'un message lisible.</p>
      */
-    private void normaliserCible(VerrouillagePlanning verrouillage) {
-        switch (verrouillage.getType()) {
-            case ANIMATEUR -> {
-                verifierAnimateur(verrouillage.getAnimateurId());
-                verrouillage.setStandId(null);
-                verrouillage.setCreneauId(null);
-                verrouillage.setJour(null);
-            }
-            case STAND -> {
-                String standId = Identifiants.requis(verrouillage.getStandId(), "stand id");
-                if (!stands.standExists(standId)) {
-                    throw new ErreurMetier.Invalide("Stand inconnu : " + standId);
-                }
-                verrouillage.setAnimateurId(null);
-                verrouillage.setCreneauId(null);
-                verrouillage.setJour(null);
-            }
-            case CRENEAU -> {
-                verifierCreneau(verrouillage.getCreneauId());
-                verrouillage.setAnimateurId(null);
-                verrouillage.setStandId(null);
-                verrouillage.setJour(null);
-            }
+    private CibleVerrouillage cibleValidee(VerrouillagePlanning verrouillage) {
+        return switch (verrouillage.getType()) {
+            case ANIMATEUR -> new CibleVerrouillage.SurAnimateur(
+                    animateurExistant(verrouillage.getAnimateurId()));
+            case STAND -> new CibleVerrouillage.SurStand(
+                    standExistant(verrouillage.getStandId()));
+            case CRENEAU -> new CibleVerrouillage.SurCreneau(
+                    creneauExistant(verrouillage.getCreneauId()));
             case JOUR -> {
                 if (verrouillage.getJour() == null) {
                     throw new ErreurMetier.Invalide("Missing jour");
                 }
-                verrouillage.setAnimateurId(null);
-                verrouillage.setStandId(null);
-                verrouillage.setCreneauId(null);
+                yield new CibleVerrouillage.SurJour(verrouillage.getJour());
             }
-            case ANIMATEUR_CRENEAU -> {
-                verifierAnimateur(verrouillage.getAnimateurId());
-                verifierCreneau(verrouillage.getCreneauId());
-                verrouillage.setStandId(null);
-                verrouillage.setJour(null);
-            }
-        }
+            case ANIMATEUR_CRENEAU -> new CibleVerrouillage.SurAnimateurEtCreneau(
+                    animateurExistant(verrouillage.getAnimateurId()),
+                    creneauExistant(verrouillage.getCreneauId()));
+        };
     }
 
-    private void verifierAnimateur(String animateurId) {
+    private String animateurExistant(String animateurId) {
         String id = Identifiants.requis(animateurId, "animateur id");
         if (!animateurs.animateurExists(id)) {
             throw new ErreurMetier.Invalide("Animateur inconnu : " + id);
         }
+        return id;
     }
 
-    private void verifierCreneau(Long creneauId) {
+    private String standExistant(String standId) {
+        String id = Identifiants.requis(standId, "stand id");
+        if (!stands.standExists(id)) {
+            throw new ErreurMetier.Invalide("Stand inconnu : " + id);
+        }
+        return id;
+    }
+
+    private long creneauExistant(Long creneauId) {
         if (creneauId == null) {
             throw new ErreurMetier.Invalide("Missing créneau id");
         }
         if (!creneaux.creneauExists(creneauId)) {
             throw new ErreurMetier.Invalide("Créneau inconnu : " + creneauId);
         }
+        return creneauId;
     }
 }
