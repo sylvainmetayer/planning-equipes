@@ -15,8 +15,13 @@ cela, l'identifiant partait chez un tiers à chaque page vue, et dormait dans
 la base de suivi d'erreurs à chaque incident. L'en-tête `Referrer-Policy:
 same-origin` ferme le troisième canal, celui des liens sortants.
 
-- **Suivi d'erreurs** — [Bugsink](https://www.bugsink.com/), auto-hébergé,
-  compatible avec le protocole/SDK Sentry.
+- **Suivi d'erreurs** — [Bugsink](https://www.bugsink.com/), compatible avec le
+  protocole/SDK Sentry. Ce déploiement utilise **l'offre hébergée** de Bugsink
+  (espace dédié), et non une instance auto-hébergée : c'est donc un
+  **sous-traitant** au sens du RGPD, ce que la politique de confidentialité doit
+  dire. L'éditeur annonce un hébergement dans l'Union européenne
+  (« Data location: EU (managed) »), il n'y a donc pas de transfert hors UE à
+  déclarer — contrairement à Cloudflare.
 - **Analytics d'usage** — [Cloudflare Web Analytics](https://www.cloudflare.com/web-analytics/)
   (mesure légère des pages vues/navigation).
 
@@ -24,7 +29,7 @@ same-origin` ferme le troisième canal, celui des liens sortants.
 
 | Besoin | Outil | Pourquoi |
 | --- | --- | --- |
-| Erreurs backend + frontend | Bugsink | Auto-hébergé (Docker, SQLite par défaut, pas de dépendance Redis/Celery), donc pas de donnée envoyée à un tiers ; **compatible avec les SDK Sentry** — n'importe quel SDK Sentry officiel (Java, JavaScript, …) fonctionne en pointant simplement son DSN vers l'instance Bugsink. Alternative plus légère à un Sentry auto-hébergé. |
+| Erreurs backend + frontend | Bugsink | **Compatible avec les SDK Sentry** — n'importe quel SDK officiel (Java, JavaScript, …) fonctionne en pointant simplement son DSN vers l'instance. Bien plus léger qu'un Sentry auto-hébergé (Docker, SQLite par défaut, pas de dépendance Redis/Celery), et s'auto-héberge si on le souhaite — mais ce déploiement-ci utilise l'offre hébergée, hébergement UE annoncé par l'éditeur. |
 | Audience / pages vues légères | Cloudflare Web Analytics | Script minimal, sans cookie, facile à activer uniquement en production ; capte les pages vues même en navigation SPA (History API) via le beacon officiel Cloudflare. |
 
 **Analytics produit retirée.** Le projet a un temps embarqué PostHog pour
@@ -44,8 +49,9 @@ reprendre : rien d'autre dans le code ne connaissait PostHog.
 
 ### Mise en place de Bugsink
 
-Bugsink s'auto-héberge (image Docker officielle, voir sa documentation) :
-créer une organisation puis un projet y donne un DSN
+Bugsink se consomme en offre hébergée (le cas de ce déploiement) ou
+s'auto-héberge (image Docker officielle, voir sa documentation). Dans les deux
+cas, créer une organisation puis un projet y donne un DSN
 (`https://<clé>@<host>/<projet>`) à copier dans `SENTRY_DSN`. N'importe quel
 autre service compatible avec le protocole d'ingestion Sentry (y compris
 Sentry SaaS lui-même) fonctionne de la même façon : seule la valeur du DSN

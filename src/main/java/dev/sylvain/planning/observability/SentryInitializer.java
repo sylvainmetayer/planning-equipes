@@ -13,7 +13,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  * Sentry, so the plain SDK is wired manually here instead. Left disabled
  * (every {@code Sentry.*} call becomes a no-op) unless {@code SENTRY_DSN} is
  * set, so local/dev/test runs never send anything anywhere by default. The
- * DSN is expected to point at a Bugsink instance (self-hosted, Sentry-SDK
+ * DSN is expected to point at a Bugsink instance (hosted or self-hosted, Sentry-SDK
  * compatible error tracker) rather than Sentry SaaS, but any Sentry-protocol
  * endpoint works — see docs/observabilite.md.
  */
