@@ -63,12 +63,18 @@ class FakeApi {
 describe('SolverJobService', () => {
   let service: SolverJobService;
   let api: FakeApi;
+  let notifications: {
+    notify: ReturnType<typeof vi.fn>;
+    notifyFeasibility: ReturnType<typeof vi.fn>;
+    requestDesktopPermission: ReturnType<typeof vi.fn>;
+  };
   /** What EditionStore reports as the edition this browser works on. */
   let editionCourante: { id: string } | null;
 
   beforeEach(() => {
     vi.useFakeTimers();
     api = new FakeApi();
+    notifications = { notify: vi.fn(), notifyFeasibility: vi.fn(), requestDesktopPermission: vi.fn() };
     editionCourante = { id: 'ed-1' };
     TestBed.configureTestingModule({
       providers: [
@@ -76,10 +82,7 @@ describe('SolverJobService', () => {
         SolverJobService,
         { provide: ApiService, useValue: api },
         { provide: EditionStore, useValue: { courant: () => editionCourante } },
-        {
-          provide: NotificationService,
-          useValue: { notify: vi.fn(), notifyFeasibility: vi.fn(), requestDesktopPermission: vi.fn() }
-        }
+        { provide: NotificationService, useValue: notifications }
       ]
     });
     service = TestBed.inject(SolverJobService);
@@ -213,6 +216,24 @@ describe('SolverJobService', () => {
       await expect(service.submitSolveFromReferenceData(120, true)).rejects.toThrow(/déjà planifiée/);
       // Une tâche seulement planifiée, elle, ne prend la place de personne.
       expect(service.activeJob()?.id).toBe('job-2');
+    });
+
+    it('signale tout refus par une notification, pas seulement par l’erreur rendue', async () => {
+      api.activeResponses = [{ status: 204, body: null }];
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+      notifications.notify.mockClear();
+      api.postResult = conflit(job({ id: 'job-3', status: 'QUEUED', editionNom: 'Canicule' }));
+
+      await expect(service.submitSolveFromReferenceData(120, true)).rejects.toThrow();
+
+      // Sans elle, le bouton refusé est indiscernable d'un bouton sans effet :
+      // le message n'apparaîtrait qu'au bas de la page de résolution.
+      expect(notifications.notify).toHaveBeenCalledTimes(1);
+      const notifiee = notifications.notify.mock.calls[0][0];
+      expect(notifiee.variant).toBe('error');
+      expect(notifiee.message).toMatch(/déjà planifiée/);
+      expect(notifiee.message).toContain('Canicule');
     });
   });
 

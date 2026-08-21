@@ -73,22 +73,38 @@ class SolveFileAttenteResourceTest {
         planImporte();
         lancerSolve(6);
 
-        // The double-click guard: the running job already covers this edition
-        // with this kind of run, queueing it again would solve it twice and
-        // throw away the first result.
-        given().when().post("/api/solve/async/reference-data?enFile=true&seconds=1")
-                .then().statusCode(409);
-        assertThat(idsEnFile()).isEmpty();
-
         String planifieId = given().contentType(ContentType.JSON)
                 .when().post("/api/solve/incremental/async?enFile=true&seconds=1")
                 .then().statusCode(202)
                 .extract().path("id");
-        // Same refusal once it is merely queued, not only while it runs.
+
+        // The double-click guard: the very same run is already planned.
         given().contentType(ContentType.JSON)
                 .when().post("/api/solve/incremental/async?enFile=true&seconds=1")
-                .then().statusCode(409);
+                .then().statusCode(409)
+                .body("id", equalTo(planifieId))
+                .body("status", equalTo("QUEUED"));
         assertThat(idsEnFile()).containsExactly(planifieId);
+    }
+
+    @Test
+    void replanifierLEditionEnCoursDeResolutionResteAutorise() throws InterruptedException {
+        planImporte();
+        String enCours = lancerSolve(6);
+
+        // Same edition, same kind as the running job: legitimate, and the whole
+        // point of the queue. The run under way started before the last
+        // corrections and cannot account for them — planning another is how one
+        // says "redo it with what I just fixed".
+        String planifieId = given()
+                .when().post("/api/solve/async/reference-data?enFile=true&seconds=1")
+                .then().statusCode(202)
+                .body("status", equalTo("QUEUED"))
+                .extract().path("id");
+        assertThat(idsEnFile()).containsExactly(planifieId);
+
+        assertThat(pollUntilFinished(enCours).getString("status")).isEqualTo("COMPLETED");
+        assertThat(pollUntilFinished(planifieId).getString("status")).isEqualTo("COMPLETED");
     }
 
     @Test

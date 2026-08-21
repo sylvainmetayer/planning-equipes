@@ -253,20 +253,25 @@ public class SolverJobService {
     }
 
     /**
-     * Refuses a second job of the same kind on the same edition, whether the
-     * first one is running or merely queued. This is the double-click guard:
-     * queueing what is already under way would silently solve the same edition
-     * twice in a row, and the second run would discard the first one's result.
-     * Two <b>different</b> kinds stay allowed — chaining a full solve and an
-     * incremental replanning on one edition is a legitimate sequence.
+     * Refuses a second job of the same kind on the same edition <b>already in
+     * the queue</b>. This is the double-click guard: two identical planned runs
+     * would solve the same edition twice in a row, the second discarding the
+     * first one's result.
+     *
+     * <p>Deliberately blind to the <em>running</em> job: planning a fresh solve
+     * of the edition currently being solved is a legitimate — and expected —
+     * move. The run under way started before the last corrections and cannot
+     * account for them; queueing another is precisely how one says "redo it
+     * with what I just fixed". Two different kinds are likewise allowed:
+     * chaining a full solve and an incremental replanning is a real sequence.</p>
      */
     private void refuserDoublon(JobType type, String editionId) {
-        jobs.values().stream()
-                .filter(job -> !job.isFinished())
+        file.stream()
+                .map(TacheEnFile::job)
                 .filter(job -> job.getType() == type && job.getEditionId().equals(editionId))
                 .findFirst()
-                .ifPresent(dejaPrevu -> {
-                    throw new SolverBusyException(dejaPrevu);
+                .ifPresent(dejaPlanifie -> {
+                    throw new SolverBusyException(dejaPlanifie);
                 });
     }
 

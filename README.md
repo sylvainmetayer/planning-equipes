@@ -265,9 +265,14 @@ démarrer — les retouches faites entre-temps sont donc prises en compte. La fi
 est visible depuis n'importe quelle édition (édition et type de calcul), et
 chaque ligne peut en être retirée tant qu'elle n'a pas démarré.
 
-Deux garde-fous : planifier deux fois le même calcul sur la même édition est
-refusé avec un message clair (le classique double-clic), et la file vit en
-mémoire — un redémarrage du serveur la vide.
+Garde-fou : planifier **deux fois la même tâche** (même édition, même type)
+est refusé avec un message clair — le classique double-clic. Planifier une
+nouvelle résolution de l'édition en cours de calcul reste en revanche permis :
+le calcul en cours a démarré avant vos dernières corrections et ne peut pas en
+tenir compte, en planifier un autre est justement la façon de dire « refais-le
+avec ce que je viens de corriger ».
+
+La file vit en mémoire : un redémarrage du serveur la vide.
 
 ### Comparateur A/B
 

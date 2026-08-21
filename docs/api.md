@@ -254,9 +254,14 @@ Trois propriétés à connaître :
 - **une tâche en file ne tient pas le solveur** : `GET /api/jobs/active`
   continue de renvoyer la tâche en cours, et la saisie reste ouverte sur
   l'édition visée par la tâche planifiée (le verrou de saisie est par édition) ;
-- **un doublon est refusé en `409`** : même édition et même type déjà en cours
-  ou déjà planifié. Le corps porte le job fautif, dont le `status`
-  (`RUNNING` / `QUEUED`) dit s'il tourne ou s'il attend.
+- **un doublon en file est refusé en `409`** : même édition et même type
+  **déjà planifié**. Le corps porte le job fautif, dont le `status`
+  (`RUNNING` / `QUEUED`) dit s'il tourne ou s'il attend — l'IHM en tire deux
+  messages distincts. Planifier une résolution de l'édition **en cours de
+  calcul** reste au contraire autorisé : le calcul en cours a démarré avant les
+  dernières corrections et ne peut pas en tenir compte, en planifier un autre
+  est précisément la façon de dire « refais-le avec ce que je viens de
+  corriger ».
 
 La file est FIFO, vit **en mémoire** comme les jobs eux-mêmes, et disparaît
 donc au redémarrage du serveur. `statut` d'un job : `QUEUED` (en attente, ne

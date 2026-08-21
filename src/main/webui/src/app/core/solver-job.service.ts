@@ -326,12 +326,30 @@ export class SolverJobService {
   }
 
   /**
+   * Reports a refused launch and hands the caller the error to display.
+   *
+   * <p>The snack bar is not decoration: every other outcome of a solver job —
+   * started, planned, finished, failed — pops one and lands in the
+   * notifications log. A refusal that only wrote into the page's result panel
+   * looked, from the button, exactly like nothing happening at all.</p>
+   */
+  private explainSubmitFailure(error: unknown): Error {
+    const refus = this.decrireRefus(error);
+    this.notifications.notify({
+      title: $localize`:@@job.refusedTitle:Lancement refusé`,
+      message: refus.message,
+      variant: 'error'
+    });
+    return refus;
+  }
+
+  /**
    * 409: something already covers this. Either the solver is busy and the
    * caller did not ask to queue, or the very same run is already planned on
    * that edition — two different messages, told apart by the conflicting job's
    * own status rather than by a second error shape.
    */
-  private explainSubmitFailure(error: unknown): Error {
+  private decrireRefus(error: unknown): Error {
     if (error instanceof HttpErrorResponse && error.status === 409 && error.error) {
       const conflit = error.error as JobView;
       if (conflit.status === 'QUEUED') {
