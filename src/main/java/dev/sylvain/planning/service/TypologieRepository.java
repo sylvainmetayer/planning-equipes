@@ -145,7 +145,7 @@ public class TypologieRepository {
     }
 
     List<TypologieItem> derivedTypologies(Iterable<Stand> stands, List<Animateur> animateurs) {
-        java.util.LinkedHashSet<String> vues = new java.util.LinkedHashSet<>();
+        LinkedHashSet<String> vues = new LinkedHashSet<>();
         stands.forEach(stand -> {
             if (stand.getTypologiesProposees() != null) {
                 vues.addAll(stand.getTypologiesProposees());

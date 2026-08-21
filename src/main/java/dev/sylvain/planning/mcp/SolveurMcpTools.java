@@ -1,6 +1,8 @@
 package dev.sylvain.planning.mcp;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -160,7 +162,7 @@ public class SolveurMcpTools {
     }
 
     public record AffectationView(String posteId, String standId, String standNom, Long creneauId,
-            java.time.LocalDate date, java.time.LocalTime heureDebut, java.time.LocalTime heureFin) {
+            LocalDate date, LocalTime heureDebut, LocalTime heureFin) {
     }
 
     public record ViolationHardView(String contrainte, int nombreCorrespondances, List<String> violations) {

@@ -7,8 +7,11 @@ import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.openpdf.text.Chunk;
@@ -73,7 +76,7 @@ public class PlanningPdfGlobal {
      * readable at festival scale (3 500 seats becoming ~2 000 lines).
      */
     private List<LigneAffectation> lignesAffectation(PlanningFestival planning) {
-        java.util.Map<String, LigneAffectation> parCle = new java.util.LinkedHashMap<>();
+        Map<String, LigneAffectation> parCle = new LinkedHashMap<>();
         for (PosteAffectation poste : planning.getPostes()) {
             Creneau creneau = poste.getCreneau();
             Stand stand = poste.getStand();
@@ -137,7 +140,7 @@ public class PlanningPdfGlobal {
         document.add(sectionTitle("Planning par journée"));
         List<LocalDate> dates = lignes.stream()
                 .map(ligne -> ligne.creneau().getDate())
-                .filter(java.util.Objects::nonNull)
+                .filter(Objects::nonNull)
                 .distinct()
                 .sorted()
                 .toList();
@@ -173,7 +176,7 @@ public class PlanningPdfGlobal {
         List<Stand> stands = lignes.stream()
                 .map(LigneAffectation::stand)
                 .collect(Collectors.toMap(Stand::getId, stand -> stand, (left, right) -> left,
-                        java.util.LinkedHashMap::new))
+                        LinkedHashMap::new))
                 .values().stream()
                 .sorted(Comparator.comparing(Stand::getNom, String.CASE_INSENSITIVE_ORDER))
                 .toList();

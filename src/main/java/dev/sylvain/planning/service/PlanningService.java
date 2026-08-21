@@ -2,6 +2,10 @@ package dev.sylvain.planning.service;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -9,17 +13,24 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntConsumer;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import ai.timefold.solver.core.api.domain.solution.ConstraintWeightOverrides;
 import ai.timefold.solver.core.api.score.analysis.ConstraintAnalysis;
@@ -280,7 +291,7 @@ public class PlanningService {
         appliquerVerrouillages(postes, animateurs, verrouillages);
         LocalDate dateDebut = creneaux.stream()
                 .map(Creneau::getDate)
-                .filter(java.util.Objects::nonNull)
+                .filter(Objects::nonNull)
                 .min(LocalDate::compareTo)
                 .orElse(null);
         PlanningFestival festival = new PlanningFestival(dateDebut, animateurs, postes,
@@ -350,7 +361,7 @@ public class PlanningService {
                 perimetre == null ? PerimetreReplanification.automatique() : perimetre, contraintesAdHoc);
         LocalDate dateDebut = creneaux.stream()
                 .map(Creneau::getDate)
-                .filter(java.util.Objects::nonNull)
+                .filter(Objects::nonNull)
                 .min(LocalDate::compareTo)
                 .orElse(null);
         PlanningFestival festival = new PlanningFestival(dateDebut, animateurs, postes, contraintesAdHoc);
@@ -736,7 +747,7 @@ public class PlanningService {
         List<PosteAffectation> postes = export.postes();
         LocalDate dateDebut = creneaux.stream()
                 .map(Creneau::getDate)
-                .filter(java.util.Objects::nonNull)
+                .filter(Objects::nonNull)
                 .min(LocalDate::compareTo)
                 .orElse(null);
 
@@ -824,7 +835,7 @@ public class PlanningService {
         root.put("festival", festival);
         if (export.parametresSolveur() != null) {
             root.put("parametresSolveur",
-                    Map.of("dureeResolutionSecondes", export.parametresSolveur().getDureeResolutionSecondes()));
+                    Map.of("dureeResolutionSecondes", export.parametresSolveur().dureeResolutionSecondes()));
         }
         if (export.parametresLegaux() != null) {
             root.put("parametresLegaux", parametresLegauxYaml(export.parametresLegaux()));
@@ -993,11 +1004,11 @@ public class PlanningService {
             if (dirUrl == null) {
                 return List.of();
             }
-            Set<String> names = new java.util.TreeSet<>();
+            Set<String> names = new TreeSet<>();
             if ("file".equals(dirUrl.getProtocol())) {
-                java.nio.file.Path dir = java.nio.file.Paths.get(dirUrl.toURI());
-                try (java.util.stream.Stream<java.nio.file.Path> files = java.nio.file.Files.list(dir)) {
-                    files.filter(java.nio.file.Files::isRegularFile)
+                Path dir = Paths.get(dirUrl.toURI());
+                try (Stream<Path> files = Files.list(dir)) {
+                    files.filter(Files::isRegularFile)
                             .map(p -> p.getFileName().toString())
                             .filter(PlanningService::estFichierScenario)
                             .forEach(names::add);
@@ -1005,8 +1016,8 @@ public class PlanningService {
             } else if ("jar".equals(dirUrl.getProtocol())) {
                 java.net.JarURLConnection conn = (java.net.JarURLConnection) dirUrl.openConnection();
                 String prefix = SCENARIOS_DIR + "/";
-                try (java.util.jar.JarFile jar = conn.getJarFile()) {
-                    java.util.Enumeration<java.util.jar.JarEntry> entries = jar.entries();
+                try (JarFile jar = conn.getJarFile()) {
+                    Enumeration<JarEntry> entries = jar.entries();
                     while (entries.hasMoreElements()) {
                         String entry = entries.nextElement().getName();
                         if (entry.startsWith(prefix) && !entry.endsWith("/")) {
@@ -1025,7 +1036,7 @@ public class PlanningService {
     }
 
     private static boolean estFichierScenario(String fileName) {
-        String lower = fileName.toLowerCase(java.util.Locale.ROOT);
+        String lower = fileName.toLowerCase(Locale.ROOT);
         return lower.endsWith(".yaml") || lower.endsWith(".yml");
     }
 
@@ -1104,7 +1115,7 @@ public class PlanningService {
         Map<String, Object> scenarioData;
         try {
             scenarioData = parserYaml(
-                    new java.io.ByteArrayInputStream(yamlContent.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+                    new java.io.ByteArrayInputStream(yamlContent.getBytes(StandardCharsets.UTF_8)));
         } catch (RuntimeException | IOException e) {
             throw new ErreurMetier.Invalide("YAML invalide : " + messageOu(e), e);
         }
@@ -1193,7 +1204,7 @@ public class PlanningService {
             String id = (String) standData.get("id");
             String nom = (String) standData.get("nom");
             List<String> typologiesStr = YamlSections.chaines(standData, "typologiesProposees");
-            Set<String> typologies = new java.util.HashSet<>(typologiesStr);
+            Set<String> typologies = new HashSet<>(typologiesStr);
             int effectifMin = ((Number) standData.get("effectifMin")).intValue();
             int effectifMax = ((Number) standData.get("effectifMax")).intValue();
             boolean reserveMajeurs = (Boolean) standData.getOrDefault("reserveMajeurs", false);
@@ -1261,19 +1272,19 @@ public class PlanningService {
             // Charger les jours d'indisponibilité (opt-out: available by default)
             List<Object> joursOffData = YamlSections.valeurs(animateurData, "joursIndisponibles");
             Set<LocalDate> joursIndisponibles = joursOffData == null
-                    ? new java.util.HashSet<>()
+                    ? new HashSet<>()
                     : joursOffData.stream()
                             .map(value -> parseLocalDate(value, "animateurs.joursIndisponibles"))
-                            .collect(Collectors.toCollection(java.util.HashSet::new));
+                            .collect(Collectors.toCollection(HashSet::new));
             animateur.setJoursIndisponibles(joursIndisponibles);
 
             // Charger les souhaits (typologies de stand souhaitées, sans niveau ni priorité)
             List<Object> souhaitsData = YamlSections.valeurs(animateurData, "souhaits");
             Set<String> souhaits = souhaitsData == null
-                    ? new java.util.HashSet<>()
+                    ? new HashSet<>()
                     : souhaitsData.stream()
                             .map(value -> (String) value)
-                            .collect(Collectors.toCollection(java.util.HashSet::new));
+                            .collect(Collectors.toCollection(HashSet::new));
             animateur.setSouhaits(souhaits);
 
             animateurs.add(animateur);
@@ -1428,7 +1439,7 @@ public class PlanningService {
         }
         try {
             return parseEditionCible(parserYaml(new java.io.ByteArrayInputStream(
-                    yamlContent.getBytes(java.nio.charset.StandardCharsets.UTF_8))));
+                    yamlContent.getBytes(StandardCharsets.UTF_8))));
         } catch (RuntimeException | IOException e) {
             throw new ErreurMetier.Invalide("YAML invalide : " + messageOu(e), e);
         }
@@ -1654,7 +1665,7 @@ public class PlanningService {
     private static final Map<String, ConstraintCatalog.ConstraintDefinition> DEFINITIONS_PAR_NOM =
             ConstraintCatalog.definitions().stream()
                     .collect(Collectors.toUnmodifiableMap(ConstraintCatalog.ConstraintDefinition::name,
-                            java.util.function.Function.identity()));
+                            Function.identity()));
 
     /**
      * Per-assignment explainability ("Pourquoi lui ?"): every constraint match
@@ -2025,7 +2036,7 @@ public class PlanningService {
     }
 
     private static List<Stand> distinctStands(PlanningFestival solved) {
-        Map<String, Stand> byId = new java.util.LinkedHashMap<>();
+        Map<String, Stand> byId = new LinkedHashMap<>();
         for (PosteAffectation poste : solved.getPostes()) {
             byId.putIfAbsent(poste.getStand().getId(), poste.getStand());
         }
@@ -2033,7 +2044,7 @@ public class PlanningService {
     }
 
     private static List<Creneau> distinctCreneaux(PlanningFestival solved) {
-        Map<Long, Creneau> byId = new java.util.LinkedHashMap<>();
+        Map<Long, Creneau> byId = new LinkedHashMap<>();
         for (PosteAffectation poste : solved.getPostes()) {
             byId.putIfAbsent(poste.getCreneau().getId(), poste.getCreneau());
         }

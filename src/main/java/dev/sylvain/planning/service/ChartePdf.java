@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service;
 
+import java.awt.Color;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDate;
@@ -53,12 +54,12 @@ final class ChartePdf {
     static final String STRIP_RESOURCE = "/branding/bandeau.png";
 
     // --- Palette, sampled from the festival brand mark: crimson red, golden yellow, warm dark ink ---
-    static final java.awt.Color HEADLINE = new java.awt.Color(43, 33, 24);
-    static final java.awt.Color MUTED = new java.awt.Color(146, 121, 87);
-    static final java.awt.Color RED = new java.awt.Color(200, 29, 37);
-    static final java.awt.Color YELLOW = new java.awt.Color(255, 214, 62);
-    static final java.awt.Color CARD_BACKGROUND = java.awt.Color.WHITE;
-    static final java.awt.Color PILL_BACKGROUND = new java.awt.Color(250, 235, 208);
+    static final Color HEADLINE = new Color(43, 33, 24);
+    static final Color MUTED = new Color(146, 121, 87);
+    static final Color RED = new Color(200, 29, 37);
+    static final Color YELLOW = new Color(255, 214, 62);
+    static final Color CARD_BACKGROUND = Color.WHITE;
+    static final Color PILL_BACKGROUND = new Color(250, 235, 208);
 
     // --- Fonts: bold rounded sans for headline figures, plain sans for supporting text ---
     static final Font BRAND_LABEL_FONT = new Font(Font.HELVETICA, 8.5f, Font.BOLD, RED);
@@ -69,7 +70,7 @@ final class ChartePdf {
     static final Font DATE_FONT = new Font(Font.HELVETICA, 13, Font.BOLD, HEADLINE);
     static final Font CALLOUT_TITLE_FONT = new Font(Font.HELVETICA, 8.5f, Font.BOLD, RED);
     static final Font CALLOUT_TEXT_FONT = new Font(Font.HELVETICA, 10.5f, Font.NORMAL, HEADLINE);
-    static final Font BADGE_FONT = new Font(Font.HELVETICA, 7.5f, Font.BOLD, java.awt.Color.WHITE);
+    static final Font BADGE_FONT = new Font(Font.HELVETICA, 7.5f, Font.BOLD, Color.WHITE);
     static final Font TIME_FONT = new Font(Font.HELVETICA, 8.5f, Font.BOLD, MUTED);
     static final Font STAND_FONT = new Font(Font.HELVETICA, 10.5f, Font.BOLD, HEADLINE);
     static final Font LOCATION_FONT = new Font(Font.HELVETICA, 9, Font.NORMAL, MUTED);
@@ -143,7 +144,7 @@ final class ChartePdf {
     }
 
     /** Draws a small clock face (circle + two hands) used ahead of a time-slot pill's text. */
-    static void drawClockIcon(PdfContentByte canvas, float centerX, float centerY, float radius, java.awt.Color color) {
+    static void drawClockIcon(PdfContentByte canvas, float centerX, float centerY, float radius, Color color) {
         canvas.saveState();
         canvas.setColorStroke(color);
         canvas.setLineWidth(0.8f);
@@ -158,7 +159,7 @@ final class ChartePdf {
     }
 
     /** Draws a small outlined map-pin (circle head, pointed tail, center dot) used ahead of a location's text. */
-    static void drawPinIcon(PdfContentByte canvas, float centerX, float centerY, float radius, java.awt.Color color) {
+    static void drawPinIcon(PdfContentByte canvas, float centerX, float centerY, float radius, Color color) {
         float headCenterY = centerY + radius * 0.55f;
         canvas.saveState();
         canvas.setColorStroke(color);
@@ -177,10 +178,10 @@ final class ChartePdf {
 
     /** Fills a cell's own box with a rounded rectangle, used for stat tiles and pill badges. */
     static final class RoundedCellFillEvent implements PdfPCellEvent {
-        private final java.awt.Color fill;
+        private final Color fill;
         private final float radius;
 
-        RoundedCellFillEvent(java.awt.Color fill, float radius) {
+        RoundedCellFillEvent(Color fill, float radius) {
             this.fill = fill;
             this.radius = radius;
         }
@@ -200,14 +201,14 @@ final class ChartePdf {
     /** Draws a centered pill (background + clock icon + text) sized to its own content, ignoring the cell's own padding. */
     static final class TimePillEvent implements PdfPCellEvent {
         private final String text;
-        private final java.awt.Color background;
-        private final java.awt.Color contentColor;
+        private final Color background;
+        private final Color contentColor;
         private final float pillWidth;
         private final float pillHeight;
         private final float iconDiameter;
         private final float iconGap;
 
-        TimePillEvent(String text, java.awt.Color background, java.awt.Color contentColor, float pillWidth,
+        TimePillEvent(String text, Color background, Color contentColor, float pillWidth,
                 float pillHeight, float iconDiameter, float iconGap) {
             this.text = text;
             this.background = background;
@@ -254,12 +255,12 @@ final class ChartePdf {
     static final class LocationPinEvent implements PdfPCellEvent {
         private final String text;
         private final Font font;
-        private final java.awt.Color color;
+        private final Color color;
         private final float iconDiameter;
         private final float iconGap;
         private final String url;
 
-        LocationPinEvent(String text, Font font, java.awt.Color color, float iconDiameter, float iconGap, String url) {
+        LocationPinEvent(String text, Font font, Color color, float iconDiameter, float iconGap, String url) {
             this.text = text;
             this.font = font;
             this.color = color;
@@ -299,11 +300,11 @@ final class ChartePdf {
 
     /** Draws a single seamless rounded rectangle behind a whole (single-row) table, used for the assignment cards. */
     static final class RoundedBackgroundEvent implements PdfPTableEvent {
-        private final java.awt.Color fill;
-        private final java.awt.Color border;
+        private final Color fill;
+        private final Color border;
         private final float radius;
 
-        RoundedBackgroundEvent(java.awt.Color fill, java.awt.Color border, float radius) {
+        RoundedBackgroundEvent(Color fill, Color border, float radius) {
             this.fill = fill;
             this.border = border;
             this.radius = radius;

@@ -145,9 +145,10 @@ public class ParametresMcpTools {
     ParametresSolveurView modifier_parametres_solveur(
             @ToolArg(description = "Durée de résolution par défaut, en secondes") int dureeResolutionSecondes,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        ParametresSolveur parametres = referenceDataService.getParametresSolveur();
-        parametres.setDureeResolutionSecondes(dureeResolutionSecondes);
-        return toView(referenceDataService.updateParametresSolveur(parametres));
+        // Seule la durée est réglable ici ; le reste des paramètres est conservé.
+        ParametresSolveur actuels = referenceDataService.getParametresSolveur();
+        return toView(referenceDataService.updateParametresSolveur(
+                new ParametresSolveur(dureeResolutionSecondes, actuels.mailFinResolution())));
     }
 
     /* -------------------------- Contraintes ad hoc -------------------------- */
@@ -235,7 +236,7 @@ public class ParametresMcpTools {
     }
 
     static ParametresSolveurView toView(ParametresSolveur parametres) {
-        return new ParametresSolveurView(parametres.getDureeResolutionSecondes());
+        return new ParametresSolveurView(parametres.dureeResolutionSecondes());
     }
 
     static ContrainteAdHocView toView(ContrainteAdHoc contrainte) {

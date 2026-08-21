@@ -10,9 +10,14 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
 
 import javax.sql.DataSource;
 
@@ -448,7 +453,7 @@ public class PlanningPersistenceService {
      * plan without depending on ids surviving a reference-data change.</p>
      */
     public Map<String, List<String>> chargerAnimateursParStandCreneau() {
-        Map<String, List<String>> parStandCreneau = new java.util.LinkedHashMap<>();
+        Map<String, List<String>> parStandCreneau = new LinkedHashMap<>();
         String sql = """
  SELECT stand_id, creneau_id, animateur_id
  FROM poste_affectation
@@ -522,15 +527,15 @@ public class PlanningPersistenceService {
 
         LocalDate dateDebut = postes.stream()
                 .map(poste -> poste.getCreneau().getDate())
-                .filter(java.util.Objects::nonNull)
+                .filter(Objects::nonNull)
                 .min(LocalDate::compareTo)
                 .orElse(null);
         return new PlanningFestival(dateDebut, animateurs, postes,
                 referenceDataService.snapshotContraintes());
     }
 
-    private <T, K> Map<K, T> indexById(List<T> items, java.util.function.Function<T, K> idFn) {
-        Map<K, T> byId = new java.util.HashMap<>();
+    private <T, K> Map<K, T> indexById(List<T> items, Function<T, K> idFn) {
+        Map<K, T> byId = new HashMap<>();
         for (T item : items) {
             K id = idFn.apply(item);
             if (id != null) {
@@ -540,9 +545,9 @@ public class PlanningPersistenceService {
         return byId;
     }
 
-    private <T, K> List<T> dedupById(List<T> items, java.util.function.Function<T, K> idFn) {
+    private <T, K> List<T> dedupById(List<T> items, Function<T, K> idFn) {
         List<T> result = new ArrayList<>();
-        java.util.Set<K> seen = new java.util.HashSet<>();
+        Set<K> seen = new HashSet<>();
         for (T item : items) {
             K id = idFn.apply(item);
             if (id != null && seen.add(id)) {

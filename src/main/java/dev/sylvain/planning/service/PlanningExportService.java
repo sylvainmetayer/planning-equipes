@@ -2,12 +2,17 @@ package dev.sylvain.planning.service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -77,8 +82,8 @@ public class PlanningExportService {
      * day", and their exports keep the plain empty state.
      */
     public static List<JourRepos> joursDeRepos(PlanningFestival planning, String animateurId) {
-        java.util.Map<LocalDate, Integer> joursFestival = new java.util.TreeMap<>();
-        java.util.Set<LocalDate> joursTravailles = new java.util.HashSet<>();
+        Map<LocalDate, Integer> joursFestival = new TreeMap<>();
+        Set<LocalDate> joursTravailles = new HashSet<>();
         for (PosteAffectation poste : planning.getPostes()) {
             Creneau creneau = poste.getCreneau();
             if (creneau == null || creneau.getDate() == null) {
@@ -135,8 +140,8 @@ public class PlanningExportService {
      * <p>Package-private so the rule is unit-tested on plain objects rather
      * than through the bytes of a generated PDF.</p>
      */
-    static java.util.Map<String, List<String>> coequipiersParPoste(PlanningFestival planning, String animateurId) {
-        java.util.Map<String, List<String>> equipeParLigne = new java.util.LinkedHashMap<>();
+    static Map<String, List<String>> coequipiersParPoste(PlanningFestival planning, String animateurId) {
+        Map<String, List<String>> equipeParLigne = new LinkedHashMap<>();
         for (PosteAffectation poste : planning.getPostes()) {
             if (poste.getAnimateur() == null || poste.getCreneau() == null || poste.getStand() == null) {
                 continue;
@@ -144,7 +149,7 @@ public class PlanningExportService {
             equipeParLigne.computeIfAbsent(ligneKey(poste), ignored -> new ArrayList<>())
                     .add(poste.getAnimateur().nomAffiche());
         }
-        java.util.Map<String, List<String>> parPoste = new java.util.LinkedHashMap<>();
+        Map<String, List<String>> parPoste = new LinkedHashMap<>();
         for (PosteAffectation poste : planning.getPostes()) {
             if (poste.getAnimateur() == null || !animateurId.equals(poste.getAnimateur().getId())
                     || poste.getCreneau() == null || poste.getStand() == null) {
@@ -162,7 +167,6 @@ public class PlanningExportService {
         return poste.getStand().getId() + "@" + poste.getCreneau().getId() + "#" + poste.heureDebutEffectif() + "-"
                 + poste.heureFinEffectif();
     }
-
 
     /** The whole planning in one landscape PDF, for the organiser — see {@link PlanningPdfGlobal}. */
     public byte[] exportGlobalPdf(PlanningFestival planning) {
@@ -184,7 +188,7 @@ public class PlanningExportService {
 
     public byte[] exportAllIcsZip(PlanningFestival planning) {
         return buildZip(planning, List.of(new NamedFileBuilder(".ics",
-                id -> ics.exportAnimateurIcs(planning, id).getBytes(java.nio.charset.StandardCharsets.UTF_8))));
+                id -> ics.exportAnimateurIcs(planning, id).getBytes(StandardCharsets.UTF_8))));
     }
 
     /**
@@ -195,7 +199,7 @@ public class PlanningExportService {
         return buildZip(planning, List.of(
                 new NamedFileBuilder(".pdf", id -> exportAnimateurPdf(planning, id)),
                 new NamedFileBuilder(".ics",
-                        id -> ics.exportAnimateurIcs(planning, id).getBytes(java.nio.charset.StandardCharsets.UTF_8))));
+                        id -> ics.exportAnimateurIcs(planning, id).getBytes(StandardCharsets.UTF_8))));
     }
 
     /** Bundles one or more files per animateur, named after the animateur, into a ZIP. */

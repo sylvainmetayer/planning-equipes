@@ -3,6 +3,7 @@ package dev.sylvain.planning.api;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.service.ConstraintAnalysisStore;
@@ -49,7 +50,7 @@ public class PlanningResource {
      */
     @GET
     @Path("/planning/scenarios")
-    public java.util.List<String> scenarios() {
+    public List<String> scenarios() {
         return planningService.listerScenarios();
     }
 

@@ -136,7 +136,7 @@ public class ImportReferentielRepository {
             supprimerAbsentsTx(connection, "animateur", animateurs.stream()
                     .filter(animateur -> animateur != null && animateur.getId() != null)
                     .map(Animateur::getId)
-                    .collect(java.util.stream.Collectors.toSet()));
+                    .collect(Collectors.toSet()));
             for (ContrainteAdHoc contrainte : contraintes) {
                 if (contrainte != null && contrainte.getId() != null) {
                     if (contrainte.getCreneau() != null && contrainte.getCreneau().getId() != null) {
@@ -198,7 +198,7 @@ public class ImportReferentielRepository {
      * is not in {@code idsConserves} — the diff half of the import: what the
      * file does not name disappears, what it names was upserted in place.
      */
-    private void supprimerAbsentsTx(Connection connection, String table, java.util.Set<String> idsConserves)
+    private void supprimerAbsentsTx(Connection connection, String table, Set<String> idsConserves)
             throws SQLException {
         List<String> absents = new ArrayList<>();
         try (PreparedStatement ps = scope.prepareScoped(connection,

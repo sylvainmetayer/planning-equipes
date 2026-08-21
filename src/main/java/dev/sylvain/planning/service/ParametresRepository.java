@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalTime;
+import java.util.HashSet;
 import java.util.Set;
 
 import javax.sql.DataSource;
@@ -186,8 +187,8 @@ public class ParametresRepository {
                         ON CONFLICT (edition_id)
                         DO UPDATE SET duree_resolution_secondes = EXCLUDED.duree_resolution_secondes,
                         mail_fin_resolution = EXCLUDED.mail_fin_resolution""")) {
-            ps.setInt(2, parametres.getDureeResolutionSecondes());
-            ps.setBoolean(3, parametres.isMailFinResolution());
+            ps.setInt(2, parametres.dureeResolutionSecondes());
+            ps.setBoolean(3, parametres.mailFinResolution());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to save solver parameters", e);
@@ -196,12 +197,12 @@ public class ParametresRepository {
 
     /* ---------------------------- Constraint toggles ------------------------- */
 
-    public java.util.Set<String> getContraintesDesactivees() {
+    public Set<String> getContraintesDesactivees() {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection,
                         "SELECT nom FROM constraint_toggle WHERE edition_id = ?");
                 ResultSet rs = ps.executeQuery()) {
-            java.util.Set<String> desactivees = new java.util.HashSet<>();
+            Set<String> desactivees = new HashSet<>();
             while (rs.next()) {
                 desactivees.add(rs.getString("nom"));
             }

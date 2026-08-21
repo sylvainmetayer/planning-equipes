@@ -226,7 +226,7 @@ public class SolverJobService {
      * {@code ExpediteurNotifications} applies to every notification.
      */
     private void notifierFinResolution(SolverJob job, PlanningService.PlanningDiagnostic diagnostic) {
-        if (!referenceDataService.getParametresSolveur().isMailFinResolution()) {
+        if (!referenceDataService.getParametresSolveur().mailFinResolution()) {
             return;
         }
         // Feasible in Timefold's own sense: no hard constraint left broken.

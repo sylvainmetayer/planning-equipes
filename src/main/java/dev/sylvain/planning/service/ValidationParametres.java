@@ -66,7 +66,7 @@ final class ValidationParametres {
     }
 
     static void verifierSolveur(ParametresSolveur parametres) {
-        if (parametres.getDureeResolutionSecondes() <= 0) {
+        if (parametres.dureeResolutionSecondes() <= 0) {
             throw new ErreurMetier.Invalide("dureeResolutionSecondes must be positive");
         }
     }

@@ -74,7 +74,7 @@ class PlanningServiceParametresScenarioTest {
 
         ParametresSolveur solveur = service.chargerSectionsScenario("scenario-parametres-optionnels.yaml").parametresSolveur()
                 .orElseThrow();
-        assertThat(solveur.getDureeResolutionSecondes()).isEqualTo(400);
+        assertThat(solveur.dureeResolutionSecondes()).isEqualTo(400);
     }
 
     @Test

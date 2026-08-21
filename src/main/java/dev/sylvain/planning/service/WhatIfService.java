@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -146,7 +147,7 @@ public class WhatIfService {
     private Animateur animateurFictif(int numero) {
         Animateur animateur = new Animateur(PREFIXE_ANIMATEUR_FICTIF + numero,
                 "Animateur", "fictif " + numero,
-                java.time.LocalDate.now().minusYears(30), false);
+                LocalDate.now().minusYears(30), false);
         animateur.setNinja(true);
         return animateur;
     }

@@ -71,7 +71,7 @@ class PlanningServiceScenarioDepuisTexteTest {
         assertThat(importe.sections().parametresLegaux().orElseThrow().getReposQuotidienMinimalMinutes()).isEqualTo(500);
         assertThat(importe.sections().parametresDecoupage()).isPresent();
         assertThat(importe.sections().parametresSolveur()).isPresent();
-        assertThat(importe.sections().parametresSolveur().orElseThrow().getDureeResolutionSecondes()).isEqualTo(400);
+        assertThat(importe.sections().parametresSolveur().orElseThrow().dureeResolutionSecondes()).isEqualTo(400);
         assertThat(importe.sections().decoupageAuto()).isFalse();
     }
 

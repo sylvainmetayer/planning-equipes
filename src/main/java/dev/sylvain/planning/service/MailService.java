@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service;
 
+import java.time.ZonedDateTime;
+
 import io.quarkus.mailer.Mail;
 import io.quarkus.mailer.Mailer;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -74,7 +76,7 @@ public class MailService {
         mailer.send(Mail.withText(destinataire,
                 "Planning Équipes — mail de test",
                 "Ce message confirme que l'envoi d'e-mails fonctionne pour cette instance.\n"
-                        + "Envoyé depuis la page Débogage le " + java.time.ZonedDateTime.now() + ".\n"));
+                        + "Envoyé depuis la page Débogage le " + ZonedDateTime.now() + ".\n"));
         return destinataire;
     }
 }

@@ -3,12 +3,14 @@ package dev.sylvain.planning.service;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -350,9 +352,9 @@ public class GrilleCreneauxService {
         List<AnomalieGrille> anomalies = new ArrayList<>();
         for (int i = 0; i < distinctes.size(); i++) {
             long avant = i == 0 ? Long.MAX_VALUE
-                    : java.time.temporal.ChronoUnit.DAYS.between(distinctes.get(i - 1), distinctes.get(i));
+                    : ChronoUnit.DAYS.between(distinctes.get(i - 1), distinctes.get(i));
             long apres = i == distinctes.size() - 1 ? Long.MAX_VALUE
-                    : java.time.temporal.ChronoUnit.DAYS.between(distinctes.get(i), distinctes.get(i + 1));
+                    : ChronoUnit.DAYS.between(distinctes.get(i), distinctes.get(i + 1));
             if (Math.min(avant, apres) > ECART_DATE_ISOLEE_JOURS) {
                 anomalies.add(new AnomalieGrille(SeveriteGrille.AVERTISSEMENT, TypeAnomalieGrille.DATE_ISOLEE,
                         distinctes.get(i), distinctes.get(i) + " est isolée de plus de " + ECART_DATE_ISOLEE_JOURS
@@ -378,7 +380,7 @@ public class GrilleCreneauxService {
             return new DiagnosticGrille(0, null, null, 0, false, null, false,
                     "L'édition n'a aucun créneau : la grille est à créer.");
         }
-        List<LocalDate> dates = creneaux.stream().map(Creneau::getDate).filter(java.util.Objects::nonNull)
+        List<LocalDate> dates = creneaux.stream().map(Creneau::getDate).filter(Objects::nonNull)
                 .distinct().sorted().toList();
         int familles = (int) creneaux.stream().map(Creneau::getFamille).distinct().count();
         boolean pauses = creneaux.stream().anyMatch(Creneau::isCouverturePause);

@@ -5,8 +5,10 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import org.openpdf.text.Chunk;
 import org.openpdf.text.Document;
@@ -41,7 +43,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 public class PlanningPdfAnimateur {
 
     byte[] construire(String animateurName, List<PosteAffectation> postes,
-            java.util.Map<String, List<String>> coequipiersParPoste, List<PlanningExportService.JourRepos> joursRepos,
+            Map<String, List<String>> coequipiersParPoste, List<PlanningExportService.JourRepos> joursRepos,
             String lienEspaceAnimateur) {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         Document document = new Document(PageSize.A4, 40, 40, 40, 54);
@@ -60,7 +62,7 @@ public class PlanningPdfAnimateur {
             // Rest days are interleaved at their chronological place, so the
             // document reads as one continuous festival rather than a list of
             // shifts with silently missing days.
-            java.util.Iterator<PlanningExportService.JourRepos> repos = joursRepos.iterator();
+            Iterator<PlanningExportService.JourRepos> repos = joursRepos.iterator();
             PlanningExportService.JourRepos prochainRepos = repos.hasNext() ? repos.next() : null;
             for (PosteAffectation poste : postes) {
                 LocalDate datePoste = poste.getCreneau() == null ? null : poste.getCreneau().getDate();

@@ -734,8 +734,10 @@ créneaux d'un même animateur**, et non comme un attribut de créneau.
 ## Paramètres de qualité
 
 `ParametresQualite` est un fait de problème du même type que `ParametresLegaux`,
-pour les seuils qui règlent le **confort** d'un planning et non la loi. Il ne
-porte aujourd'hui qu'un champ :
+pour les seuils qui règlent le **confort** d'un planning et non la loi. C'est un
+`record`, contrairement à `ParametresLegaux` : un fait de problème est immuable
+par nature — le solveur le lit des milliers de fois par seconde et ne l'écrit
+jamais. Il ne porte aujourd'hui qu'un champ :
 
 | Champ | Défaut | Réglage | Contrainte qui le consomme |
 | --- | --- | --- | --- |

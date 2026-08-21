@@ -2,6 +2,7 @@ package dev.sylvain.planning.service;
 
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -220,7 +221,7 @@ public class PlanningKpiService {
     private record Dispersion(double total, double moyenne, double ecartType, double min, double max) {
     }
 
-    private static Dispersion dispersion(java.util.Collection<Double> valeurs) {
+    private static Dispersion dispersion(Collection<Double> valeurs) {
         if (valeurs.isEmpty()) {
             return null;
         }

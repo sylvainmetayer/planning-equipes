@@ -225,10 +225,10 @@ public final class QualiteConstraints {
                         ConstraintCollectors.toSet(poste -> poste.getStand().getEmplacement()))
                 .join(ParametresQualite.class)
                 .filter((animateur, jour, emplacements, parametres) -> emplacements
-                        .size() > parametres.getMaxEmplacementsDistinctsParJour())
+                        .size() > parametres.maxEmplacementsDistinctsParJour())
                 .penalize(HardMediumSoftScore.ONE_MEDIUM,
                         (animateur, jour, emplacements, parametres) -> emplacements.size()
-                                - parametres.getMaxEmplacementsDistinctsParJour())
+                                - parametres.maxEmplacementsDistinctsParJour())
                 .asConstraint("limiterEmplacementsParJour");
     }
 
