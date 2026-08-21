@@ -191,7 +191,7 @@ public class PlanningExportService {
                 continue;
             }
             equipeParLigne.computeIfAbsent(ligneKey(poste), ignored -> new ArrayList<>())
-                    .add(toDisplayName(poste.getAnimateur()));
+                    .add(poste.getAnimateur().nomAffiche());
         }
         java.util.Map<String, List<String>> parPoste = new java.util.LinkedHashMap<>();
         for (PosteAffectation poste : planning.getPostes()) {
@@ -200,7 +200,7 @@ public class PlanningExportService {
                 continue;
             }
             List<String> equipe = new ArrayList<>(equipeParLigne.getOrDefault(ligneKey(poste), List.of()));
-            equipe.remove(toDisplayName(poste.getAnimateur()));
+            equipe.remove(poste.getAnimateur().nomAffiche());
             equipe.sort(String.CASE_INSENSITIVE_ORDER);
             parPoste.put(poste.getId(), equipe);
         }
@@ -271,7 +271,7 @@ public class PlanningExportService {
                             poste.heureFinEffectif(), new ArrayList<>(), new int[] { 0 }));
             ligne.sieges()[0]++;
             if (poste.getAnimateur() != null) {
-                ligne.animateurs().add(toDisplayName(poste.getAnimateur()));
+                ligne.animateurs().add(poste.getAnimateur().nomAffiche());
             }
         }
         List<LigneAffectation> lignes = new ArrayList<>(parCle.values());
@@ -489,8 +489,7 @@ public class PlanningExportService {
         try (ZipOutputStream zip = new ZipOutputStream(output)) {
             Set<String> usedFilenames = new LinkedHashSet<>();
             for (Animateur animateur : planning.getAnimateurs()) {
-                String displayName = resolveAnimateurName(planning, animateur.getId());
-                String baseName = (displayName == null || displayName.isBlank() ? animateur.getId() : displayName)
+                String baseName = resolveAnimateurName(planning, animateur.getId())
                         .replaceAll("[\\\\/\\r\\n\\\"]", "_");
                 for (NamedFileBuilder fileBuilder : fileBuilders) {
                     String filename = baseName + fileBuilder.extension();
@@ -582,11 +581,22 @@ public class PlanningExportService {
         return builder.toString();
     }
 
+    /**
+     * Nom de fichier d'un planning individuel : {@code planning-Prenom-Nom.pdf}.
+     * Écrit ici plutôt que dans chaque ressource — l'admin qui reçoit le PDF
+     * par mail et l'animateur qui le télécharge depuis son espace doivent lire
+     * le même nom.
+     */
+    public static String nomFichierPlanning(String nomAffiche, String extension) {
+        String sansAccroc = nomAffiche.replaceAll("[^\\p{L}\\p{N}]+", "-").replaceAll("^-+|-+$", "");
+        return "planning-" + (sansAccroc.isEmpty() ? "animateur" : sansAccroc) + "." + extension;
+    }
+
     public String resolveAnimateurName(PlanningFestival planning, String animateurId) {
         return planning.getAnimateurs().stream()
                 .filter(animateur -> animateurId.equals(animateur.getId()))
                 .findFirst()
-                .map(this::toDisplayName)
+                .map(Animateur::nomAffiche)
                 .orElse(animateurId);
     }
 
@@ -999,12 +1009,6 @@ public class PlanningExportService {
                 .comparing((PosteAffectation poste) -> poste.getCreneau().getDate())
                 .thenComparing(poste -> poste.getCreneau().getHeureDebut())
                 .thenComparing(poste -> poste.getStand().getNom());
-    }
-
-    private String toDisplayName(Animateur animateur) {
-        return List.of(animateur.getPrenom(), animateur.getNom()).stream()
-                .filter(value -> value != null && !value.isBlank())
-                .collect(Collectors.joining(" "));
     }
 
     private String escapeIcs(String value) {

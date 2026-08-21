@@ -66,7 +66,7 @@ final class ViolationFormatter {
     }
 
     private static String animateurLabel(Animateur animateur) {
-        return animateur.getPrenom() + " " + animateur.getNom() + " (" + animateur.getId() + ")";
+        return animateur.nomAvecId();
     }
 
     private static String posteLabel(PosteAffectation poste) {

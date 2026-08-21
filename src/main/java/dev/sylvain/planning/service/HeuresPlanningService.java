@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.PlanningFestival;
@@ -50,7 +49,7 @@ public class HeuresPlanningService {
         for (Animateur animateur : planning.getAnimateurs()) {
             Map<String, Double> parSemaine = heuresParAnimateurEtSemaine.getOrDefault(animateur.getId(), Map.of());
             double total = totalParAnimateur.getOrDefault(animateur.getId(), 0.0);
-            lignes.add(new HeuresAnimateur(animateur.getId(), nomAffiche(animateur), new LinkedHashMap<>(parSemaine), total));
+            lignes.add(new HeuresAnimateur(animateur.getId(), animateur.nomAffiche(), new LinkedHashMap<>(parSemaine), total));
         }
         return new HeuresRapport(semainesTriees, lignes);
     }
@@ -70,13 +69,6 @@ public class HeuresPlanningService {
             csv.append(';').append(formater(ligne.total())).append('\n');
         }
         return csv.toString();
-    }
-
-    private String nomAffiche(Animateur animateur) {
-        String nom = List.of(animateur.getPrenom(), animateur.getNom()).stream()
-                .filter(value -> value != null && !value.isBlank())
-                .collect(Collectors.joining(" "));
-        return nom.isBlank() ? animateur.getId() : nom;
     }
 
     private String formater(double heures) {

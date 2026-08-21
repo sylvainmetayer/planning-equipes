@@ -450,7 +450,7 @@ public class DemandeEchangeService {
         return referenceDataService.listAnimateurs().stream()
                 .filter(animateur -> animateur.getId().equals(animateurId))
                 .findFirst()
-                .map(animateur -> animateur.getPrenom() + " " + animateur.getNom())
+                .map(Animateur::nomAffiche)
                 .orElse(animateurId);
     }
 

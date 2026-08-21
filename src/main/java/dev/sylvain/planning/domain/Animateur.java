@@ -126,6 +126,26 @@ public class Animateur {
         return stand.getTypologiesProposees().stream().anyMatch(souhaits::contains);
     }
 
+    /**
+     * How this animateur is named to a human — in a mail, a PDF, a CSV, an
+     * error message. Falls back to the id when the fiche carries no name at
+     * all, so a line never reads « null null » nor comes back empty.
+     *
+     * <p>Five callers each had their own version of this, and they disagreed:
+     * two fell back to the id, one returned an empty string, one printed the
+     * literal {@code null}. Deliberately not a {@code getX()} — it is derived,
+     * and neither Jackson nor Timefold has any business seeing it.</p>
+     */
+    public String nomAffiche() {
+        String complet = ((prenom == null ? "" : prenom) + " " + (nom == null ? "" : nom)).trim();
+        return complet.isEmpty() ? id : complet;
+    }
+
+    /** Same, followed by the id — for diagnostics, where the id is what the reader acts on. */
+    public String nomAvecId() {
+        return nomAffiche() + " (" + id + ")";
+    }
+
     public String getId() {
         return id;
     }

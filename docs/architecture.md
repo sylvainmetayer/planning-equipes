@@ -92,6 +92,7 @@ dans [`domaine.md`](domaine.md).
 | `KpiHistoriqueService` | Une ligne de KPI par solve terminé, toutes éditions, sans clé étrangère (l'historique survit à la suppression d'une édition) — issue #89 |
 | `ReplanificationDiff` / `PerimetreReplanification` | Périmètre volatil d'une replanification incrémentale et diff des équipes qu'elle a fait bouger — issue #86 |
 | `SnapshotComparaisonService` | Comparateur A/B : confronte deux plans (instantanés ou plan courant), **toutes éditions confondues**, en lecture seule — aucune résolution, aucun score recalculé — issue #70 |
+| `EnvoiPlanningService` | Envoi des plannings individuels par mail : qui est concerné, le PDF, le compte rendu. Action d'administration explicite, donc un compte rendu nominatif — à l'opposé des notifications d'échange, best-effort par nature |
 | `DatabaseDumpService` | Export / import de dump SQL |
 | `PlanningExportService` | Génération PDF (OpenPDF) et ICS, **côté serveur uniquement** |
 | `LiensApplication` | Toute URL publique imprimée hors de l'application (mail, PDF) : seul endroit qui connaît `planning.public-url` et les routes du SPA visées — voir [`developpement.md`](developpement.md#conventions-de-code) |
@@ -118,11 +119,18 @@ fait.
 
 ### `api/`
 
-Ressources JAX-RS : `PlanningResource`, `SolverJobResource`, `ReferenceDataResource`,
-`EditionResource`, `ConstraintResource`, `AffectationExplanationResource`,
-`CsvImportResource`, `DatabaseResource`, `PlanningExportResource`, `KpiResource`,
-plus le filtre
+Ressources JAX-RS : `PlanningResource`, `SolverJobResource`, `EditionResource`,
+`ConstraintResource`, `AffectationExplanationResource`, `CsvImportResource`,
+`DatabaseResource`, `PlanningExportResource`, `KpiResource`, plus le filtre
 `EditionHeaderFilter` qui dépose l'en-tête `X-Edition-Id` dans le scope de requête.
+
+Le CRUD du référentiel a une ressource par famille — `StandResource`,
+`AnimateurResource`, `CreneauResource`, `DecoupageResource`,
+`EmplacementResource`, `TypologieResource`, `ContrainteAdHocResource`,
+`ParametresResource` —, chacune montée sur sa propre racine d'URL.
+`ReferenceDataResource` ne garde que l'import de référentiel, qui traverse
+toutes les familles. **Aucun chemin HTTP n'a changé** : c'est le même découpage
+côté transport que côté service.
 Voir [`api.md`](api.md).
 
 ### `mcp/`

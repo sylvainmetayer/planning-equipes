@@ -97,7 +97,7 @@ public class EspaceAnimateurService {
 
         List<CollegueView> collegues = animateurs.stream()
                 .filter(candidat -> !candidat.getId().equals(animateurId))
-                .map(candidat -> new CollegueView(candidat.getId(), nomComplet(candidat)))
+                .map(candidat -> new CollegueView(candidat.getId(), candidat.nomAffiche()))
                 .sorted(Comparator.comparing(CollegueView::nomComplet, String.CASE_INSENSITIVE_ORDER))
                 .toList();
 
@@ -209,11 +209,8 @@ public class EspaceAnimateurService {
                 demande.getDecideLe());
     }
 
-    private static String nomComplet(Animateur animateur) {
-        return animateur.getPrenom() + " " + animateur.getNom();
-    }
-
+    /** {@code null} happens: an échange can name an animateur the referential no longer holds. */
     private static String nomComplet(Animateur animateur, String fallbackId) {
-        return animateur == null ? fallbackId : nomComplet(animateur);
+        return animateur == null ? fallbackId : animateur.nomAffiche();
     }
 }

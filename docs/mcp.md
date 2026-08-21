@@ -453,7 +453,7 @@ Chaque outil délègue au service métier existant (`ReferenceDataService`,
 `HeuresPlanningService`, `FeasibilityAnalyzer`, `ConstraintAnalysisStore`) —
 aucune logique n'est dupliquée, voir le package
 `dev.sylvain.planning.mcp`. Les outils d'import de scénario
-délèguent à `ReferenceDataResource`, qui possède l'orchestration
+délèguent à `ReferenceDataResource`, qui possède encore l'orchestration
 (paramètres épinglés, puis planning, puis `decoupageAuto:` et `typologies:`)
 dont l'ordre est significatif.
 

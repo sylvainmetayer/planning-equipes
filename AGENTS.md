@@ -135,10 +135,13 @@ Single Quarkus service, no separate solver microservice. Package root:
   a `notifierXxx` to `MailService`: that would put two opposite policies behind
   identically-shaped methods again, which is what this split removed.
 - `api/` — JAX-RS resources: `PlanningResource`, `SolverJobResource`,
-  `ReferenceDataResource`, `EditionResource`, `ConstraintResource`,
-  `DatabaseResource`, `PlanningExportResource`, `EspaceAnimateurResource`
-  (token-authenticated, the only public part of the API), `DemandeEchangeResource`,
-  `AuthResource`. Endpoint list in `docs/api.md`.
+  `EditionResource`, `ConstraintResource`, `DatabaseResource`,
+  `PlanningExportResource`, `EspaceAnimateurResource` (token-authenticated, the
+  only public part of the API), `DemandeEchangeResource`, `AuthResource`, plus
+  one resource per referential family (`StandResource`, `AnimateurResource`, …)
+  and `ReferenceDataResource` for scenario import. A resource holds transport
+  only — status codes and payload shapes; anything that decides something
+  belongs to a service. Endpoint list in `docs/api.md`.
 - HTTP security (issue #165): everything under `/api` requires the admin form
   login (single `admin` account from config) **except**
   `/api/espace-animateur/*` (its URL token is the credential and resolves the

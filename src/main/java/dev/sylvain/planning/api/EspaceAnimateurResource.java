@@ -23,6 +23,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 
@@ -228,12 +229,15 @@ public class EspaceAnimateurResource {
     public Response ouvrirSession(CodeSession codeSession, @Context UriInfo uriInfo) {
         String session = espaceAccesService.ouvrirSession(animateurCourant(),
                 codeSession == null ? null : codeSession.code());
-        return Response.noContent()
-                .header("Set-Cookie", COOKIE_SESSION + "=" + session
-                        + "; Path=/api/espace-animateur; HttpOnly; SameSite=Strict"
-                        + (requeteChiffree(uriInfo) ? "; Secure" : "")
-                        + "; Max-Age=" + EspaceAccesService.VALIDITE_SESSION.toSeconds())
+        NewCookie cookie = new NewCookie.Builder(COOKIE_SESSION)
+                .value(session)
+                .path("/api/espace-animateur")
+                .httpOnly(true)
+                .sameSite(NewCookie.SameSite.STRICT)
+                .secure(requeteChiffree(uriInfo))
+                .maxAge((int) EspaceAccesService.VALIDITE_SESSION.toSeconds())
                 .build();
+        return Response.noContent().cookie(cookie).build();
     }
 
     /** True when the visitor's own request was HTTPS, proxy headers included. */
@@ -250,13 +254,10 @@ public class EspaceAnimateurResource {
         return editionRequestScope.getProprietaireJeton().animateurId();
     }
 
-    /** Same readable convention as the admin exports: {@code planning-Prenom-Nom.pdf}. */
+    /** Same readable convention as the admin exports — the very same code, in fact. */
     private String nomFichier(PlanningFestival planning, String extension) {
-        String nom = planningExportService.resolveAnimateurName(planning, animateurCourant());
-        String safe = (nom == null ? animateurCourant() : nom)
-                .replaceAll("[^\\p{L}\\p{N}]+", "-")
-                .replaceAll("^-+|-+$", "");
-        return "planning-" + (safe.isEmpty() ? "animateur" : safe) + "." + extension;
+        return PlanningExportService.nomFichierPlanning(
+                planningExportService.resolveAnimateurName(planning, animateurCourant()), extension);
     }
 
     private static Response badRequest(IllegalArgumentException e) {
