@@ -32,9 +32,13 @@ import jakarta.enterprise.event.Observes;
  * a page is refused execution. {@code style-src} keeps {@code 'unsafe-inline'}:
  * Angular Material writes inline styles.</li>
  * <li><b>Referrer-Policy: no-referrer</b> — the espace animateur carries its
- * access token <b>in the URL</b>, and the planning pages link out (map tiles,
- * OpenStreetMap attribution, the issue tracker). Without this, that token
- * leaves in the {@code Referer} of every outbound navigation.</li>
+ * access token <b>in the URL</b>, and the planning pages link out
+ * (OpenStreetMap attribution, the issue tracker). Without this, that token
+ * leaves in the {@code Referer} of every outbound navigation. The map tiles
+ * opt back out per-image: openstreetmap.org refuses requests carrying no
+ * {@code Referer} at all, so {@code MapPicker} sets
+ * {@code referrerPolicy: 'strict-origin-when-cross-origin'} on its tile
+ * layer, which sends the origin and never the token-bearing path.</li>
  * <li><b>X-Frame-Options / frame-ancestors</b> — nothing in the application
  * is meant to be embedded, and clickjacking a session that can rewrite the
  * whole planning is worth refusing.</li>

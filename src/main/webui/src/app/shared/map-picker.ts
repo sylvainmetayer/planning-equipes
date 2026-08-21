@@ -90,7 +90,15 @@ export class MapPicker implements AfterViewInit, OnDestroy {
     );
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      maxZoom: 19
+      maxZoom: 19,
+      // The server sends Referrer-Policy: no-referrer on every response, to
+      // keep the espace animateur token — which travels in the URL — out of
+      // outbound requests. But openstreetmap.org blocks tile traffic that
+      // arrives with no Referer at all (https://osm.wiki/blocked), so the map
+      // would come up blank. This per-tile policy wins over the document one
+      // and still never sends the path: only the origin leaves, and only when
+      // the tile request isn't a downgrade to http.
+      referrerPolicy: 'strict-origin-when-cross-origin'
     }).addTo(this.map);
     if (position) {
       this.placeMarker(position[0], position[1]);

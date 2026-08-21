@@ -17,21 +17,29 @@ compris — les en-têtes suivants :
 | En-tête | Valeur | Pourquoi ici |
 | --- | --- | --- |
 | `Content-Security-Policy` | `planning.securite.csp` (voir ci-dessous) | Le SPA ne charge aucun script tiers hormis la balise Cloudflare Web Analytics : tout ce qui serait injecté dans une page est refusé à l'exécution |
-| `Referrer-Policy` | `no-referrer` | Le jeton de l'espace animateur voyage **dans l'URL** ; sans cet en-tête il part dans le `Referer` de chaque navigation sortante (tuiles OpenStreetMap, lien d'attribution, lien vers le dépôt) |
+| `Referrer-Policy` | `no-referrer` | Le jeton de l'espace animateur voyage **dans l'URL** ; sans cet en-tête il part dans le `Referer` de chaque navigation sortante (lien d'attribution OpenStreetMap, lien vers le dépôt). Une exception pour les tuiles, ci-dessous |
 | `X-Frame-Options` | `DENY` | Rien n'est prévu pour être encadré, et détourner un clic dans une session qui peut réécrire tout le planning n'a pas de contrepartie |
 | `Cross-Origin-Opener-Policy` | `same-origin` | Isole la fenêtre de tout `window.opener` ouvert depuis un autre site |
 | `X-Content-Type-Options` | `nosniff` | Les exports (PDF, ICS, SQL, CSV) sont servis avec leur type ; qu'un navigateur en devine un autre n'apporte rien |
 | `Permissions-Policy` | `geolocation=(), camera=(), microphone=(), payment=()` | Aucune de ces API n'est utilisée — le sélecteur de carte place un point à la souris |
 | `Strict-Transport-Security` | `planning.securite.hsts`, **seulement sur une visite HTTPS** | Un an, sous-domaines compris. Absent sur la pile locale, qui est en clair |
 
-Deux exceptions volontaires :
+Trois exceptions volontaires :
 
 - la CSP s'arrête au seuil de `/q/*` : Swagger UI y sert des scripts *inline*
   que le projet ne contrôle pas. Les autres en-têtes, eux, s'y appliquent ;
 - HSTS n'est envoyé que si la visite est en HTTPS (`X-Forwarded-Proto`
   compris, comme pour la redirection de connexion et le cookie de l'espace) :
   un navigateur l'ignorerait de toute façon en clair, et le poser en local
-  épinglerait `localhost` en https.
+  épinglerait `localhost` en https ;
+- les tuiles de la carte échappent au `no-referrer`. `tile.openstreetmap.org`
+  [bloque le trafic sans `Referer`](https://osm.wiki/blocked) : la carte
+  resterait grise. `MapPicker` pose donc
+  `referrerPolicy: 'strict-origin-when-cross-origin'` sur sa couche de tuiles
+  ([option Leaflet](https://leafletjs.com/reference.html#tilelayer-referrerpolicy)),
+  qui l'emporte sur la politique du document pour ces images seules. Le jeton
+  ne fuit pas pour autant : cette politique n'envoie que l'origine, jamais le
+  chemin ni la requête — et rien du tout si la tuile était servie en clair.
 
 ### Réglage
 
@@ -48,7 +56,7 @@ connaît les siens gagne à les nommer :
 ```bash
 CSP="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; \
 form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; \
-img-src 'self' data: https://tile.openstreetmap.org; \
+img-src 'self' data: https://*.tile.openstreetmap.org; \
 connect-src 'self' https://bugsink.example.org"
 ```
 
