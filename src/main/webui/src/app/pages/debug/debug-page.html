@@ -120,6 +120,26 @@
   </mat-card-actions>
 </mat-card>
 
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h2 mat-card-title i18n="@@debug.api.title">Documentation de l'API</h2>
+    <mat-card-subtitle i18n="@@debug.api.subtitle">
+      La description OpenAPI de l'API REST, et l'explorateur qui permet de l'essayer endpoint par endpoint.
+      Ces deux adresses exigent une session administrateur, comme le reste de l'API.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-actions class="card-actions">
+    <a matButton="outlined" href="/q/swagger-ui" target="_blank" rel="noopener">
+      <mat-icon>api</mat-icon>
+      <ng-container i18n="@@debug.api.swaggerUi">Explorer l'API (Swagger UI)</ng-container>
+    </a>
+    <a matButton="outlined" href="/q/openapi" target="_blank" rel="noopener">
+      <mat-icon>description</mat-icon>
+      <ng-container i18n="@@debug.api.openapi">Télécharger la description OpenAPI</ng-container>
+    </a>
+  </mat-card-actions>
+</mat-card>
+
 <app-yaml-validator />
 
 <app-output-panel [text]="output()" />

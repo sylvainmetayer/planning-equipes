@@ -1348,5 +1348,9 @@
   "mentions.donnees.droits.texte": " You may request access to your data, its rectification or its erasure, as well as the restriction of or objection to its processing. To do so, write to the contact address given above. You may also lodge a complaint with the CNIL (www.cnil.fr). ",
   "mentions.proprieteIntellectuelle.title": "Intellectual property",
   "mentions.proprieteIntellectuelle.texte": " The application's code is published under a free software licence; its repository and licence are publicly accessible. The content entered into the application (festival data, schedules) remains the property of the organisation operating it. ",
-  "nav.link.devUi": "Quarkus Dev UI"
+  "nav.link.devUi": "Quarkus Dev UI",
+  "debug.api.title": "API documentation",
+  "debug.api.subtitle": " The OpenAPI description of the REST API, and the explorer that lets you try it endpoint by endpoint. Both addresses require an administrator session, like the rest of the API. ",
+  "debug.api.swaggerUi": "Explore the API (Swagger UI)",
+  "debug.api.openapi": "Download the OpenAPI description"
 }

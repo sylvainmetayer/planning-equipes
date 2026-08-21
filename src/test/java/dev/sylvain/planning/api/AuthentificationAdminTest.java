@@ -31,7 +31,9 @@ class AuthentificationAdminTest {
             // Only the policy is restored; the account stays the built-in dev
             // default (ADMIN_PASSWORD unset), so no credential-looking literal
             // lives in this file.
-            return Map.of("quarkus.http.auth.permission.admin-api.policy", "authenticated");
+            return Map.of(
+                    "quarkus.http.auth.permission.admin-api.policy", "authenticated",
+                    "quarkus.http.auth.permission.api-docs.policy", "authenticated");
         }
     }
 
@@ -54,6 +56,17 @@ class AuthentificationAdminTest {
      * exists for: someone deciding whether to trust the site, or an animateur
      * whose access link has expired and who needs to know whom to contact.
      */
+    /**
+     * The OpenAPI description and Swagger UI ship in production so the deployed
+     * instance documents itself. Public, they would hand a map of every
+     * endpoint and payload to anyone — and Swagger UI would offer to call them.
+     */
+    @Test
+    void laDocumentationDeLApiExigeUneSession() {
+        given().when().get("/q/openapi").then().statusCode(401);
+        given().when().get("/q/swagger-ui").then().statusCode(401);
+    }
+
     @Test
     void lesMentionsLegalesSontLisiblesSansSession() {
         given().when().get("/api/mentions-legales").then().statusCode(200);
