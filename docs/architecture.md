@@ -248,7 +248,7 @@ standalone) :
 | `app/core/bulk-edit.ts` | Briques des modifications en masse : modes « ne pas modifier / ajouter / retirer / remplacer » appliqués à une ligne |
 | `app/core/entity-labels.ts` | Libellés au pluriel des référentiels, utilisés par les actions de masse |
 | `app/core/typologie-colors.ts` | Couleur stable d'une typologie de jeu (dérivée de son id, pas d'un rang) et libellés associés, partagés par la heatmap et la timeline |
-| `app/core/solver-job.service.ts` | Suivi des jobs asynchrones : lit `/api/jobs/active` toutes les 2 s, aucun stockage navigateur |
+| `app/core/solver-job.service.ts` | Suivi des jobs asynchrones : lit `/api/jobs/active` toutes les 2 s en activité, toutes les 30 s au repos, aucun stockage navigateur |
 | `app/core/notification.service.ts` | Notifications via `MatSnackBar` (+ notifications système) |
 | `app/core/affectation-explanation.service.ts` | Appelle `/api/postes/{id}/explication` et `/api/postes/{id}/simulation-swap` (« Pourquoi lui ? ») |
 | `app/shared/job-monitor.ts` | Indicateur « une résolution est en cours » dans la barre d'outils, temps écoulé calculé par le serveur |
@@ -277,10 +277,12 @@ Conventions :
   seule (ils ne lancent jamais de résolution) ;
 - l'état « un solveur tourne » n'est jamais stocké dans le navigateur
   (`localStorage` / `sessionStorage`) : `SolverJobService` interroge
-  `/api/jobs/active` toutes les 2 secondes, de sorte qu'une résolution lancée
-  depuis un autre navigateur ou une fenêtre privée verrouille aussi les boutons
-  ici, affiche le temps écoulé calculé par le serveur, et pousse son résultat à
-  la fin.
+  `/api/jobs/active`, de sorte qu'une résolution lancée depuis un autre
+  navigateur ou une fenêtre privée verrouille aussi les boutons ici, affiche le
+  temps écoulé calculé par le serveur, et pousse son résultat à la fin. La
+  boucle adapte son rythme : toutes les 2 secondes tant qu'un job tourne ou
+  qu'un job est en file, toutes les 30 secondes au repos ; elle s'arrête avec
+  le shell qui l'a démarrée.
 
 Le CSS global se limite à ce que Material ne couvre pas : `src/styles.css` n'est
 qu'un agrégateur de règles `@import` et chaque partial vit sous `src/styles/`

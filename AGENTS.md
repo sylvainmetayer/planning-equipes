@@ -253,9 +253,11 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   solve. Components don't call `fetch` directly.
 - The "a solver is running" state is never stored in the browser
   (`localStorage` / `sessionStorage`): `SolverJobService` polls
-  `/api/jobs/active` every 2 s so a solve started from another browser or a
-  private window also locks the buttons here, shows the server-computed elapsed
-  time and delivers its result.
+  `/api/jobs/active` so a solve started from another browser or a private
+  window also locks the buttons here, shows the server-computed elapsed time
+  and delivers its result. The loop paces itself: every 2 s while a job runs or
+  one is queued, every 30 s otherwise, and it is stopped with the shell that
+  started it (the service is `providedIn: 'root'` and would outlive it).
 - CSS stays **global** and limited to what Material does not cover:
   `src/styles.css` is a thin aggregator of `@import` rules only and the partials
   live in `src/styles/` (`pages.css` for the shared card/form/table scaffolding,

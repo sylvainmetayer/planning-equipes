@@ -289,8 +289,13 @@ export class AdminShell {
   protected readonly drawerOpen = linkedSignal(() => !this.handset());
 
   constructor() {
-    // Starts polling the server-side solver lock for the whole session.
+    const destroyRef = inject(DestroyRef);
+    // Starts polling the server-side solver lock for the whole session, and
+    // stops it with this shell: the service is `providedIn: 'root'`, so a
+    // session expiring (401 -> /login destroys this shell) would otherwise
+    // leave the loop polling forever, each tick redirecting again.
     this.jobs.start();
+    destroyRef.onDestroy(() => this.jobs.stop());
     // Loaded once here (not per-page) so the mismatch banner is correct on
     // every screen, including ones that never touch ReferenceDataStore (e.g.
     // the calendars). Refreshed after every solve, wherever it was started.
@@ -298,7 +303,7 @@ export class AdminShell {
     // Same reasoning for the "Édition actuelle" strip: it sits in the shell, so
     // the list of editions is loaded here rather than by any single page.
     void this.editions.reload();
-    inject(DestroyRef).onDestroy(this.jobs.onResult('SOLVE', () => void this.resolution.reload()));
+    destroyRef.onDestroy(this.jobs.onResult('SOLVE', () => void this.resolution.reload()));
     // Router `title` is applied on NavigationEnd too; subscribing after it in
     // the same microtask order means `Title.getTitle()` already holds the new
     // page's title when the announcement is built.

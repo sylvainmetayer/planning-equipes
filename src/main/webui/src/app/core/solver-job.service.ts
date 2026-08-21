@@ -23,7 +23,15 @@ import {
   ResultatSolveIncremental
 } from './models';
 
-const POLL_INTERVAL_MS = 2000;
+/**
+ * How often the server-side solver lock is re-read. Two paces rather than one:
+ * a running job needs a responsive elapsed time and a prompt hand-over of its
+ * result, while an idle solver only needs to be noticed reasonably soon. Idling
+ * at the fast pace cost one request every two seconds per open tab, forever,
+ * for a state that had not changed in hours.
+ */
+const POLL_ACTIVE_MS = 2000;
+const POLL_IDLE_MS = 30000;
 
 /**
  * Called lazily (from methods, never at module scope): $localize only sees
@@ -160,6 +168,12 @@ export class SolverJobService {
   private started = false;
   /** Non-null only while a job runs: see {@link updateTicker}. */
   private tickHandle: ReturnType<typeof setInterval> | null = null;
+  /** Non-null while the polling loop runs: see {@link start} and {@link stop}. */
+  private pollHandle: ReturnType<typeof setInterval> | null = null;
+  /** Pace {@link pollHandle} currently runs at, so it is only rescheduled on a real change. */
+  private pollIntervalMs = 0;
+  /** Id of the job the last poll saw, to reload the queue only on a real hand-over. */
+  private dernierJobVu: string | null = null;
 
   /** Starts the shared polling loop. Called once by the app shell. */
   start(): void {
@@ -168,7 +182,23 @@ export class SolverJobService {
     }
     this.started = true;
     void this.sync();
-    setInterval(() => void this.sync(), POLL_INTERVAL_MS);
+    this.schedulePolling();
+  }
+
+  /**
+   * Stops the shared polling loop. This service is `providedIn: 'root'`, so it
+   * outlives the shell that started it: without this, a session expiring would
+   * leave the loop running on the login page, every tick producing a fresh 401
+   * and a fresh redirect. Called from the shell's `DestroyRef`; `start()` works
+   * again afterwards, as a new shell after a re-login does.
+   */
+  stop(): void {
+    this.started = false;
+    if (this.pollHandle !== null) {
+      clearInterval(this.pollHandle);
+      this.pollHandle = null;
+      this.pollIntervalMs = 0;
+    }
   }
 
   /**
@@ -371,13 +401,44 @@ export class SolverJobService {
     return toError(error);
   }
 
+  /**
+   * (Re)schedules the loop at the pace the current state calls for. Called
+   * after every poll and after every local adoption, so submitting a job from
+   * this tab switches to the fast pace immediately instead of waiting out the
+   * idle interval.
+   */
+  private schedulePolling(): void {
+    if (!this.started) {
+      return;
+    }
+    // A non-empty queue counts as "busy" even with no job adopted yet: a run
+    // planned from here is about to take the solver, and waiting out a whole
+    // idle interval to notice would make it look like nothing happened.
+    const idle = this.activeJob() === null && this.file().length === 0;
+    const wanted = idle ? POLL_IDLE_MS : POLL_ACTIVE_MS;
+    if (this.pollHandle !== null && this.pollIntervalMs === wanted) {
+      return;
+    }
+    if (this.pollHandle !== null) {
+      clearInterval(this.pollHandle);
+    }
+    this.pollIntervalMs = wanted;
+    this.pollHandle = setInterval(() => void this.sync(), wanted);
+  }
+
   // Single source of truth: what the server reports as its active job.
   private async sync(): Promise<void> {
     const server = await this.fetchActiveJob();
     if (server === undefined) {
       return; // transient network error: keep the last known state
     }
-    await this.rafraichirFile();
+    // The queue only ever changes when the solver hands over: re-reading it on
+    // every tick doubled the request count to re-publish an identical list.
+    const vu = server?.id ?? null;
+    if (vu !== this.dernierJobVu) {
+      this.dernierJobVu = vu;
+      await this.rafraichirFile();
+    }
     const tracked = this.activeJob();
     if (tracked && (!server || server.id !== tracked.id)) {
       this.activeJob.set(null);
@@ -391,6 +452,7 @@ export class SolverJobService {
       this.stateKnown.set(true);
     }
     this.updateTicker();
+    this.schedulePolling();
   }
 
   /** Server-side queue, re-read on every poll: another client may add to it. */
@@ -398,6 +460,7 @@ export class SolverJobService {
     const file = await this.api.get<JobView[]>('/api/jobs/file').catch(() => null);
     if (file) {
       this.file.set(file);
+      this.schedulePolling();
     }
   }
 
@@ -455,8 +518,10 @@ export class SolverJobService {
     };
     this.activeJob.set(entry);
     // A submit() adopts its job without waiting for the next poll: start the
-    // duration clock right away rather than up to two seconds later.
+    // duration clock — and the fast polling pace — right away rather than up
+    // to a whole idle interval later.
     this.updateTicker();
+    this.schedulePolling();
     if (mienne && !mine) {
       // Discovered by polling, yet ours: the queue just handed it the solver.
       const edition = entry.editionNom ?? entry.editionId ?? '?';

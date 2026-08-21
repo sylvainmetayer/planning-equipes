@@ -189,6 +189,10 @@ describe('SolverJobService', () => {
       service.start();
       await vi.advanceTimersByTimeAsync(0);
       api.postResult = job({ id: 'job-9', status: 'QUEUED' });
+      // A server that just answered QUEUED also lists that job in its queue:
+      // without this the fake contradicts itself, and the poll pace derived
+      // from the queue would read "nothing pending".
+      api.file = [job({ id: 'job-9', status: 'QUEUED' })];
       await service.submitSolveFromReferenceData(120, true);
 
       // Le serveur la promeut : elle arrive par le poll, pas par un submit.
@@ -325,6 +329,113 @@ describe('SolverJobService', () => {
       await vi.advanceTimersByTimeAsync(3000);
 
       expect(service.now()).toBeGreaterThan(before);
+    });
+  });
+
+  describe('polling loop', () => {
+    /** Answers "a job is running" for as many polls as a test needs. */
+    function alwaysRunning(view: JobView = job()): void {
+      api.getResponse = vi.fn(async () => ({ status: 200, body: view }));
+    }
+
+    it('stops querying the server once the loop is stopped', async () => {
+      api.getResponse = vi.fn(async () => ({ status: 204, body: null }));
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+      const afterStart = api.getResponse.mock.calls.length;
+
+      service.stop();
+      await vi.advanceTimersByTimeAsync(10 * 60 * 1000);
+
+      expect(api.getResponse.mock.calls.length).toBe(afterStart);
+    });
+
+    it('can be restarted after a stop, as a new shell would', async () => {
+      api.getResponse = vi.fn(async () => ({ status: 204, body: null }));
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+      service.stop();
+      const afterStop = api.getResponse.mock.calls.length;
+
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(api.getResponse.mock.calls.length).toBeGreaterThan(afterStop);
+    });
+
+    it('polls every two seconds while a job runs', async () => {
+      alwaysRunning();
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+      const afterStart = api.getResponse.mock.calls.length;
+
+      await vi.advanceTimersByTimeAsync(6000);
+
+      expect(api.getResponse.mock.calls.length - afterStart).toBe(3);
+    });
+
+    it('backs off to one poll every thirty seconds while the solver is idle', async () => {
+      api.getResponse = vi.fn(async () => ({ status: 204, body: null }));
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+      const afterStart = api.getResponse.mock.calls.length;
+
+      await vi.advanceTimersByTimeAsync(6000);
+      expect(api.getResponse.mock.calls.length - afterStart).toBe(0);
+
+      await vi.advanceTimersByTimeAsync(30_000);
+      expect(api.getResponse.mock.calls.length - afterStart).toBe(1);
+    });
+
+    it('speeds back up as soon as a job is picked up', async () => {
+      api.activeResponses = [
+        { status: 204, body: null },
+        { status: 200, body: job() }
+      ];
+      const responses = api.activeResponses;
+      api.getResponse = vi.fn(async () => responses.shift() ?? { status: 200, body: job() });
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+
+      // Idle: the next poll only happens after the slow interval.
+      await vi.advanceTimersByTimeAsync(30_000);
+      const afterPickup = api.getResponse.mock.calls.length;
+
+      // A job is running now, so the loop must be back to the fast interval.
+      await vi.advanceTimersByTimeAsync(4000);
+
+      expect(api.getResponse.mock.calls.length - afterPickup).toBe(2);
+    });
+
+    it('reloads the queue only when the identity of the active job changes', async () => {
+      alwaysRunning();
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+      const afterFirstPoll = api.get.mock.calls.filter(([url]) => url === '/api/jobs/file').length;
+
+      await vi.advanceTimersByTimeAsync(6000);
+
+      const later = api.get.mock.calls.filter(([url]) => url === '/api/jobs/file').length;
+      expect(afterFirstPoll).toBe(1);
+      expect(later).toBe(afterFirstPoll);
+    });
+
+    it('reloads the queue when another job takes the solver', async () => {
+      const responses = [
+        { status: 200, body: job({ id: 'job-1' }) },
+        { status: 200, body: job({ id: 'job-2' }) }
+      ];
+      api.getResponse = vi.fn(async () => responses.shift() ?? { status: 200, body: job({ id: 'job-2' }) });
+      api.jobsById['job-1'] = job({ id: 'job-1', status: 'COMPLETED' });
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+      const afterFirstPoll = api.get.mock.calls.filter(([url]) => url === '/api/jobs/file').length;
+
+      await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
+      await vi.advanceTimersByTimeAsync(0);
+
+      const later = api.get.mock.calls.filter(([url]) => url === '/api/jobs/file').length;
+      expect(later).toBe(afterFirstPoll + 1);
     });
   });
 
