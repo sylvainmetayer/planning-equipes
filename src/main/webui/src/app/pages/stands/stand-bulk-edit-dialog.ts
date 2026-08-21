@@ -60,7 +60,7 @@ export class StandBulkEditDialog {
   protected readonly store = inject(ReferenceDataStore);
   protected readonly jobs = inject(SolverJobService);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
-  protected readonly editingLocked = computed(() => this.jobs.editingLocked());
+  protected readonly editingLocked = this.jobs.editingLocked;
 
   protected readonly dialogRef = inject<MatDialogRef<StandBulkEditDialog, boolean>>(MatDialogRef);
   private readonly data = inject<StandBulkEditData>(MAT_DIALOG_DATA);

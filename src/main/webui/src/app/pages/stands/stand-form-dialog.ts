@@ -80,7 +80,7 @@ export class StandFormDialog {
   protected readonly store = inject(ReferenceDataStore);
   protected readonly jobs = inject(SolverJobService);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
-  protected readonly editingLocked = computed(() => this.jobs.editingLocked());
+  protected readonly editingLocked = this.jobs.editingLocked;
 
   protected readonly dialogRef = inject<MatDialogRef<StandFormDialog, boolean>>(MatDialogRef);
   private readonly data = inject<StandFormData>(MAT_DIALOG_DATA);

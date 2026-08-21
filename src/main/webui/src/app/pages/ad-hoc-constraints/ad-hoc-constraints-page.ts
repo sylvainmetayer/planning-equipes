@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
@@ -42,7 +42,7 @@ export class AdHocConstraintsPage {
   protected readonly store = inject(ReferenceDataStore);
   protected readonly jobs = inject(SolverJobService);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
-  protected readonly editingLocked = computed(() => this.jobs.editingLocked());
+  protected readonly editingLocked = this.jobs.editingLocked;
 
   private readonly crud = inject(ReferenceCrudService);
   private readonly dialog = inject(MatDialog);

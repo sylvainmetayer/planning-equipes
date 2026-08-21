@@ -40,7 +40,7 @@ export interface CreneauFormData {
 export class CreneauFormDialog {
   protected readonly jobs = inject(SolverJobService);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
-  protected readonly editingLocked = computed(() => this.jobs.editingLocked());
+  protected readonly editingLocked = this.jobs.editingLocked;
 
   protected readonly dialogRef = inject<MatDialogRef<CreneauFormDialog, boolean>>(MatDialogRef);
   private readonly data = inject<CreneauFormData>(MAT_DIALOG_DATA);

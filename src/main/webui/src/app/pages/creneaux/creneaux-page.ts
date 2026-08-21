@@ -60,7 +60,7 @@ export class CreneauxPage {
   protected readonly store = inject(ReferenceDataStore);
   protected readonly jobs = inject(SolverJobService);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
-  protected readonly editingLocked = computed(() => this.jobs.editingLocked());
+  protected readonly editingLocked = this.jobs.editingLocked;
 
   private readonly problemes = inject(ProblemesStore);
   private readonly crud = inject(ReferenceCrudService);

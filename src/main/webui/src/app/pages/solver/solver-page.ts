@@ -164,7 +164,7 @@ export class SolverPage {
    * another edition leaves this one exactly as it was saved. Same rule as the
    * data-entry screens (see `docs/editions.md`, §5).
    */
-  protected readonly editingLocked = computed(() => this.jobs.editingLocked());
+  protected readonly editingLocked = inject(SolverJobService).editingLocked;
 
   /**
    * Solves planned behind the running one. Server-side and shared: one planned

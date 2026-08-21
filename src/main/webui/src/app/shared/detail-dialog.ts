@@ -7,7 +7,7 @@
 // bulk-edit rules), so what a detail view shows is unit-tested without
 // rendering anything.
 
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -91,7 +91,7 @@ export class DetailDialog {
 
   private readonly jobs = inject(SolverJobService);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
-  protected readonly editingLocked = computed(() => this.jobs.editingLocked());
+  protected readonly editingLocked = this.jobs.editingLocked;
 
   protected readonly closeLabel = $localize`:@@violationDetails.close:Fermer`;
   protected readonly editLabel = $localize`:@@common.edit:Modifier`;
