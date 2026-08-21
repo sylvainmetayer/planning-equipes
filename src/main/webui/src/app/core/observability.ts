@@ -56,6 +56,37 @@ export function masquerJetonEspace(valeur: string): string {
   return valeur.replace(/\/(api\/espace-animateur|animateur)\/[^/?#\s"']+/g, '/$1/<jeton>');
 }
 
+/**
+ * Applies {@link masquerJetonEspace} to every string of a report, however deep.
+ *
+ * <p>Masking a handful of named fields was not enough, and the misses were the
+ * likely ones: a route change inside the espace lands in a navigation
+ * breadcrumb as `data.from` / `data.to`, and an HTTP failure reads
+ * "Http failure response for /api/espace-animateur/…" inside
+ * `exception.values[].value` — the single most common error there is. Walking
+ * the whole payload removes the question of whether the next SDK version puts
+ * the URL somewhere new; reports are rare, so the cost is nil.</p>
+ */
+export function masquerJetonPartout<T>(valeur: T): T {
+  if (typeof valeur === 'string') {
+    return masquerJetonEspace(valeur) as T;
+  }
+  if (Array.isArray(valeur)) {
+    valeur.forEach((element, index) => {
+      valeur[index] = masquerJetonPartout(element);
+    });
+    return valeur;
+  }
+  if (valeur && typeof valeur === 'object') {
+    const objet = valeur as Record<string, unknown>;
+    for (const cle of Object.keys(objet)) {
+      objet[cle] = masquerJetonPartout(objet[cle]);
+    }
+    return valeur;
+  }
+  return valeur;
+}
+
 function estPageEspaceAnimateur(): boolean {
   return typeof location !== 'undefined' && location.pathname.startsWith(PREFIXE_ESPACE);
 }
@@ -69,24 +100,8 @@ export function initObservability(config: AppConfig): void {
       release: APP_VERSION,
       // The SDK always attaches the full request URL, and records fetch/xhr
       // calls as breadcrumbs — both carry the access token here.
-      beforeSend: (event) => {
-        if (event.request?.url) {
-          event.request.url = masquerJetonEspace(event.request.url);
-        }
-        if (event.message) {
-          event.message = masquerJetonEspace(event.message);
-        }
-        return event;
-      },
-      beforeBreadcrumb: (breadcrumb) => {
-        if (typeof breadcrumb.data?.['url'] === 'string') {
-          breadcrumb.data['url'] = masquerJetonEspace(breadcrumb.data['url'] as string);
-        }
-        if (breadcrumb.message) {
-          breadcrumb.message = masquerJetonEspace(breadcrumb.message);
-        }
-        return breadcrumb;
-      }
+      beforeSend: (event) => masquerJetonPartout(event),
+      beforeBreadcrumb: (breadcrumb) => masquerJetonPartout(breadcrumb)
     });
   }
   if (

@@ -7,13 +7,23 @@ token de repli (`application.properties`). Un exploitant qui n'en veut pas doit
 donc positionner `CLOUDFLARE_WEB_ANALYTICS_TOKEN` à vide, et non simplement
 « ne rien configurer ».
 
-Deux garde-fous s'appliquent aux pages de l'espace animateur, dont l'URL porte
-le jeton d'accès — un identifiant unique de personne, souvent mineure : le
-beacon Cloudflare **n'y est pas chargé du tout**, et les rapports d'erreur
-remplacent le jeton par `<jeton>` avant de partir (`masquerJetonEspace`). Sans
-cela, l'identifiant partait chez un tiers à chaque page vue, et dormait dans
-la base de suivi d'erreurs à chaque incident. L'en-tête `Referrer-Policy:
-same-origin` ferme le troisième canal, celui des liens sortants.
+Trois garde-fous s'appliquent à l'espace animateur, dont l'URL porte le jeton
+d'accès — un identifiant unique de personne, souvent mineure :
+
+- le beacon Cloudflare **n'est pas chargé du tout** sur `/animateur/*` ;
+- **les rapports d'erreur sont expurgés des deux côtés** : côté navigateur,
+  `masquerJetonPartout` parcourt l'intégralité du rapport (`beforeSend`,
+  `beforeBreadcrumb`) plutôt qu'une liste de champs — ne masquer que
+  `request.url` et `data.url` laissait passer les cas les plus probables, un
+  changement de page interne (`data.from` / `data.to`) et un échec HTTP
+  (`exception.values[].value`, « Http failure response for /api/espace-animateur/… »).
+  Côté serveur, `SentryInitializer.masquerJetonsDuRapport` fait de même sur le
+  message et les exceptions ;
+- l'en-tête `Referrer-Policy: same-origin` ferme le canal des liens sortants.
+
+C'est ce qui rend vraie la phrase que la politique de confidentialité adresse
+aux animateurs : l'identifiant de leur lien personnel est retiré du rapport
+avant son envoi. Toute nouvelle voie d'envoi doit préserver cette propriété.
 
 - **Suivi d'erreurs** — [Bugsink](https://www.bugsink.com/), compatible avec le
   protocole/SDK Sentry. Ce déploiement utilise **l'offre hébergée** de Bugsink

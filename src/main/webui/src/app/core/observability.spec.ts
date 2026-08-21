@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { initObservability, loadAppConfig, masquerJetonEspace, observabilityProviders } from './observability';
+import { initObservability, loadAppConfig, masquerJetonEspace, masquerJetonPartout, observabilityProviders } from './observability';
 import { AppConfig } from './models';
 
 const CONFIG: AppConfig = {
@@ -104,5 +104,48 @@ describe('masquerJetonEspace', () => {
     expect(masquerJetonEspace('/animateur/aaa -> /animateur/bbb?x=1')).toBe(
       '/animateur/<jeton> -> /animateur/<jeton>?x=1'
     );
+  });
+});
+
+describe('masquerJetonPartout', () => {
+  it('masque un fil d’Ariane de navigation, dont les champs ne s’appellent pas « url »', () => {
+    // Une navigation interne à l'espace produit `data.from` / `data.to` : ne
+    // masquer que `data.url` laissait passer le jeton à chaque changement de page.
+    const breadcrumb = {
+      category: 'navigation',
+      data: { from: '/animateur/a1b2c3', to: '/animateur/a1b2c3/echanges' }
+    };
+
+    expect(masquerJetonPartout(breadcrumb).data).toEqual({
+      from: '/animateur/<jeton>',
+      to: '/animateur/<jeton>/echanges'
+    });
+  });
+
+  it('masque le message d’exception, là où atterrit l’erreur la plus fréquente', () => {
+    // Angular formule ses échecs HTTP ainsi : c'est l'erreur la plus probable
+    // dans l'espace animateur, et elle porte l'URL appelée.
+    const event = {
+      exception: {
+        values: [
+          {
+            type: 'HttpErrorResponse',
+            value: 'Http failure response for /api/espace-animateur/a1b2c3/postes: 500 Server Error'
+          }
+        ]
+      }
+    };
+
+    expect(masquerJetonPartout(event).exception.values[0].value).toBe(
+      'Http failure response for /api/espace-animateur/<jeton>/postes: 500 Server Error'
+    );
+  });
+
+  it('laisse le reste du rapport intact', () => {
+    const event = { level: 'error', extra: { compteur: 3, actif: true, vide: null } };
+    expect(masquerJetonPartout(event)).toEqual({
+      level: 'error',
+      extra: { compteur: 3, actif: true, vide: null }
+    });
   });
 });
