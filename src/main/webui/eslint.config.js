@@ -65,7 +65,13 @@ module.exports = tseslint.config(
     // Specs legitimately reach into privates and build partial fixtures.
     files: ['**/*.spec.ts', 'e2e/**/*.ts'],
     rules: {
-      '@typescript-eslint/no-explicit-any': 'off'
+      '@typescript-eslint/no-explicit-any': 'off',
+      // Playwright *requires* the first test argument to be a destructuring
+      // pattern, and `{}` is how a test declares it needs no fixture. Renaming
+      // it to satisfy the linter makes the runner refuse to load the file
+      // ("First argument must use the object destructuring pattern") — which is
+      // exactly what happened, and what the e2e run caught.
+      'no-empty-pattern': 'off'
     }
   }
 );

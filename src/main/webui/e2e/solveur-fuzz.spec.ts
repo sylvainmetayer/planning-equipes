@@ -180,7 +180,7 @@ test.afterAll(async () => {
 for (const iteration of [0, 1]) {
   // The graine stays OUT of the title: a random title would differ between the
   // runner and the worker process ("Test not found in the worker process").
-  test(`fuzz #${iteration} : les règles dures tiennent sur un problème aléatoire`, async (_fixtures, testInfo) => {
+  test(`fuzz #${iteration} : les règles dures tiennent sur un problème aléatoire`, async ({}, testInfo) => {
     test.slow();
     testInfo.annotations.push({ type: 'graine', description: String(graine) });
     console.log(`solveur-fuzz : graine ${graine}, itération ${iteration}`);
