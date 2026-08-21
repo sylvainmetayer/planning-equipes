@@ -50,24 +50,18 @@
 </mat-form-field>
 <mat-checkbox name="reserveMajeurs" [disabled]="editingLocked()"
               [ngModel]="draft().reserveMajeurs" (ngModelChange)="patch({ reserveMajeurs: $event })"
-              i18n="@@stands.field.reserveMajeurs">
-  Réservé aux majeurs
-</mat-checkbox>
+              i18n="@@stands.field.reserveMajeurs">Réservé aux majeurs</mat-checkbox>
 <mat-checkbox name="premium" [disabled]="editingLocked()"
               i18n-matTooltip="@@stands.premium.tooltip"
               matTooltip="Stand éditeur : le solveur évite la rotation du personnel et privilégie les animateurs expérimentés."
               [ngModel]="draft().premium" (ngModelChange)="patch({ premium: $event })"
-              i18n="@@stands.field.premium">
-  Premium (stand éditeur)
-</mat-checkbox>
+              i18n="@@stands.field.premium">Premium (stand éditeur)</mat-checkbox>
 <mat-checkbox name="epuisant" [disabled]="editingLocked()"
               i18n-matTooltip="@@stands.niveauEffort.tooltip"
               matTooltip="Stand physiquement épuisant : le solveur évite d'enchaîner deux créneaux épuisants sans repos et équilibre ces créneaux entre animateurs."
               [ngModel]="draft().niveauEffort === 'EPUISANT'"
               (ngModelChange)="patch({ niveauEffort: $event ? 'EPUISANT' : 'NORMAL' })"
-              i18n="@@stands.field.niveauEffort">
-  Épuisant physiquement
-</mat-checkbox>
+              i18n="@@stands.field.niveauEffort">Épuisant physiquement</mat-checkbox>
 <fieldset class="span-2 horaires-section stand-section">
   <legend i18n="@@stands.horaires.title">Horaires récurrents</legend>
   <p class="empty-hint" i18n="@@stands.horaires.hint">

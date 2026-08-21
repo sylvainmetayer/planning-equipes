@@ -44,9 +44,7 @@
 }
 <mat-checkbox name="manager" [disabled]="editingLocked()"
               [ngModel]="draft().manager" (ngModelChange)="patch({ manager: $event })"
-              i18n="@@animateurs.field.manager">
-  Manager
-</mat-checkbox>
+              i18n="@@animateurs.field.manager">Manager</mat-checkbox>
 
 <div class="span-2 subform">
   <div class="subform-header">

@@ -266,11 +266,17 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `problemes.css`), each holding its
   own `@media` rules. Add new styles as new partials; don't recreate a monolithic
   stylesheet and don't restyle what a Material component already themes.
-- Keep the frontend dependency-light: Angular, its CLI, Angular Material and
-  `@angular/localize` are the whole frontend stack. Don't add another UI
-  component library, a state-management library, a CSS framework or a
-  third-party i18n library (`ngx-translate`, `transloco`, …) without explicit
-  sign-off.
+- Keep the frontend dependency-light. What is actually there, and why: Angular
+  + its CLI + Angular Material + `@angular/localize` (the stack proper);
+  `@sentry/angular` (error reporting, loaded by a dynamic `import()` only when a
+  DSN is configured — see `core/observability.ts`); `leaflet` + `@types/leaflet`
+  (the emplacement map picker, reached only by the lazy `/emplacements` route).
+  Dev-only: `@playwright/test`, `vitest`, `jsdom`, `prettier`, `typescript`.
+  The rule is an intent, not that list: **no state-management library, no second
+  UI kit, no CSS framework, no third-party i18n library** (`ngx-translate`,
+  `transloco`, …) — and any other addition, runtime or dev, needs explicit
+  sign-off. Keep this list correct when it changes: a rule that describes a
+  false state stops being obeyed.
 - Frontend tests are Vitest specs (`*.spec.ts` next to the code, `TestBed` for
   anything DI/rendering, `provideZonelessChangeDetection()` since the app is
   zoneless). They run via `npm test` in a Node/jsdom environment — no browser,
@@ -380,6 +386,7 @@ Timefold bumps must be validated with `./mvnw verify -DskipITs=false`.
   `LocalDate`/`Instant` fields to `String` and only fails at write time.
 - Write/extend a test proving no hard constraint is violated before considering a
   step done.
-- No additional frontend dependency (UI kit, state library, CSS framework)
-  without explicit sign-off — plain Angular served by Quinoa is a deliberate
-  choice.
+- No additional frontend dependency (UI kit, state library, CSS framework, i18n
+  library) without explicit sign-off — plain Angular served by Quinoa is a
+  deliberate choice. The dependencies that *are* present, and the reason for
+  each, are listed in the Frontend section above.
