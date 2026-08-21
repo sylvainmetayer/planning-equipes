@@ -255,23 +255,24 @@
     <h2 mat-card-title i18n="@@solver.diffusion.title">Diffusion du planning</h2>
     <mat-card-subtitle i18n="@@solver.diffusion.hint">
       Ce qui sort de l'application une fois le planning satisfaisant : les documents à imprimer ou à archiver, et
-      l'envoi à chaque animateur. Ces actions lisent le planning enregistré ; elles restent indisponibles pendant
-      qu'une résolution tourne, puisqu'elle est en train de le réécrire.
+      l'envoi à chaque animateur. Ces actions lisent le planning enregistré de l'édition affichée ; elles ne sont
+      indisponibles que pendant une résolution sur cette édition-là, puisqu'elle est en train de le réécrire. Une
+      résolution lancée sur une autre édition ne les bloque pas.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-actions class="card-actions">
-    <button matButton="tonal" [disabled]="exportBusy() || solverBusy()" (click)="onExportPlanning()">
+    <button matButton="tonal" [disabled]="exportBusy() || editingLocked()" (click)="onExportPlanning()">
       <mat-icon>archive</mat-icon>
       <ng-container i18n="@@solver.export">Exporter le planning (PDF + ICS)</ng-container>
     </button>
-    <button matButton="tonal" [disabled]="exportBusy() || solverBusy()"
+    <button matButton="tonal" [disabled]="exportBusy() || editingLocked()"
             i18n-matTooltip="@@solver.exportGlobal.tooltip"
             matTooltip="Le planning complet dans un seul PDF, pour l'organisateur : toutes les affectations, présentées journée par journée puis stand par stand."
             (click)="onExportGlobalPdf()">
       <mat-icon>picture_as_pdf</mat-icon>
       <ng-container i18n="@@solver.exportGlobal">Exporter le planning global (PDF)</ng-container>
     </button>
-    <button matButton="tonal" [disabled]="envoiBusy() || solverBusy()"
+    <button matButton="tonal" [disabled]="envoiBusy() || editingLocked()"
             i18n-matTooltip="@@solver.envoiTous.tooltip"
             matTooltip="Envoyer à chaque animateur du planning son planning individuel par e-mail (PDF + lien vers son espace)"
             (click)="onEnvoyerPlannings()">

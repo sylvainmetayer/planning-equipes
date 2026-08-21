@@ -1308,7 +1308,7 @@
   "job.fileIndicator": "{$count} task(s) planned next.",
   "job.refusedTitle": "Launch refused",
   "solver.diffusion.title": "Sharing the schedule",
-  "solver.diffusion.hint": " What leaves the application once the schedule is good enough: the documents to print or archive, and the mailing to each animateur. These actions read the saved plan; they stay unavailable while a solve runs, since it is busy rewriting it. ",
+  "solver.diffusion.hint": " What leaves the application once the schedule is good enough: the documents to print or archive, and the mailing to each animateur. These actions read the plan saved for the edition on screen; they are only unavailable while a solve runs on that edition, since it is busy rewriting it. A solve started on another edition does not block them. ",
   "scrollHint.label": "There is more content below — click to scroll down",
   "parametres.mailFin.title": "Email me when a solve finishes",
   "parametres.mailFin.subtitle": " A full solve takes several minutes: instead of waiting in front of the screen, get a message as soon as it ends, with the edition concerned, the score obtained and whether the plan is feasible as is. ",

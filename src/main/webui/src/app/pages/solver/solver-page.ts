@@ -157,6 +157,15 @@ export class SolverPage {
   protected readonly solverBusy = computed(() => this.jobs.solverBusy());
 
   /**
+   * The narrower, per-edition lock — what the diffusion actions wait on. They
+   * read the planning persisted for the edition on screen, so only a solve
+   * writing to THAT edition can hand out a half-rewritten planning; a run on
+   * another edition leaves this one exactly as it was saved. Same rule as the
+   * data-entry screens (see `docs/editions.md`, §5).
+   */
+  protected readonly editingLocked = computed(() => this.jobs.editingLocked());
+
+  /**
    * Solves planned behind the running one. Server-side and shared: one planned
    * from another browser shows up here too, and can be removed from here.
    */

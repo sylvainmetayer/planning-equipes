@@ -238,10 +238,11 @@ le worker : il continue d'écrire dans l'édition pour laquelle il a été lanc�
 même si le navigateur a basculé entre-temps. Le job expose cet `editionId` (et
 le nom lisible `editionNom`, résolu à la soumission) dans l'API des jobs :
 l'IHM affiche ainsi sur quelle édition le solveur travaille, et ne verrouille
-la saisie et l'import de scénario **que sur cette édition-là** — après une
-bascule d'édition pendant un long solve, les autres éditions restent
-entièrement modifiables. Seules les actions qui touchent toute la base (dump
-SQL, réinitialisation) ou qui démarreraient un second job restent verrouillées
+la saisie, l'import de scénario et la diffusion du planning (exports PDF/ICS,
+« Envoyer à tous ») **que sur cette édition-là** — après une bascule d'édition
+pendant un long solve, les autres éditions restent entièrement modifiables et
+diffusables. Seules les actions qui touchent toute la base (dump SQL,
+réinitialisation) ou qui démarreraient un second job restent verrouillées
 globalement.
 
 ## 6. Ce que ça change ailleurs
