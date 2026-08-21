@@ -105,6 +105,29 @@ class AuthentificationAdminTest {
                 .body("nom", equalTo("admin"));
     }
 
+    /**
+     * Behind a TLS-terminating reverse proxy the request reaches the origin in
+     * clear text, so the redirect Quarkus builds from the request scheme used
+     * to point back to {@code http://<host>/api/auth/me} — active mixed
+     * content the browser refuses to follow from an https page, which made
+     * logging in impossible. {@code quarkus.http.proxy.proxy-address-forwarding}
+     * makes the scheme follow {@code X-Forwarded-Proto}.
+     */
+    @Test
+    void laRedirectionDeConnexionSuitLeSchemaAnnonceParLeProxy() {
+        String location = given()
+                .contentType("application/x-www-form-urlencoded")
+                .header("X-Forwarded-Proto", "https")
+                .formParam("j_username", "admin")
+                .formParam("j_password", MOT_DE_PASSE_DEV)
+                .redirects().follow(false)
+                .when().post("/j_security_check")
+                .then()
+                .statusCode(302)
+                .extract().header("Location");
+        assertThat(location).startsWith("https://").endsWith("/api/auth/me");
+    }
+
     @Test
     void laDeconnexionEffaceLeCookie() {
         given().when().post("/api/auth/logout")

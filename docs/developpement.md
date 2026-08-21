@@ -592,6 +592,7 @@ contraintes. Détail des mesures dans
 | `DB_PASSWORD` | `festival` | Mot de passe base |
 | `HTTP_PORT` | `8080` | Port HTTP exposé |
 | `ADMIN_PASSWORD` | `admin` | Mot de passe du compte `admin` (form login, issue #165) |
+| `PROXY_ADDRESS_FORWARDING` | `true` | Suivre les en-têtes `X-Forwarded-*` derrière un reverse proxy TLS — voir [`api.md`](api.md#derrière-un-reverse-proxy-qui-termine-le-tls) |
 | `SESSION_ENCRYPTION_KEY` | *(vide)* | Clé (≥ 16 caractères) du cookie de session ; générée au démarrage si absente (les sessions ne survivent alors pas à un redémarrage) |
 | `MAIL_HOST` / `MAIL_PORT` / `MAIL_FROM` / `MAIL_MOCK` / `MAIL_ADMIN` | voir `application.properties` | Notifications d'échange par mail |
 | `PUBLIC_URL` | `http://localhost:8080` | Base des liens « espace animateur » imprimés sur les PDF |

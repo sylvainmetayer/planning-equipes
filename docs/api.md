@@ -37,6 +37,29 @@ redirection HTML.
 | `GET` | `/api/mcp/statut` | `{ configuree, header }` : si une clé MCP est configurée côté serveur, et l'en-tête qui la porte. **Jamais la clé** — c'est ce qui permet à la page MCP d'avertir « MCP inutilisable en l'état » au lieu de laisser paramétrer un client qui n'obtiendra que des 401 |
 | `POST` | `/api/mcp/cle` | Échange `{ motDePasse }` (celui de l'admin) contre `{ cle }`. `401` mot de passe faux ou absent, `404` mot de passe bon mais aucune clé configurée, `429` après cinq échecs (blocage de 5 min, que le bon mot de passe ne lève pas). La session admin ne suffit pas : la clé donne un accès complet en écriture et **survit à la session** d'où elle a été copiée, donc la révélation est liée à quelqu'un présent au clavier |
 
+### Derrière un reverse proxy qui termine le TLS
+
+La redirection émise par une connexion réussie est fabriquée par Quarkus en
+**absolu**, à partir du schéma de la requête reçue. Derrière un proxy qui
+termine le TLS, cette requête arrive en clair sur l'origine : la redirection
+repartait donc vers `http://<hôte>/api/auth/me`, que le navigateur refuse de
+suivre depuis une page `https` (« blocage du contenu mixte actif »), rendant la
+connexion impossible.
+
+`quarkus.http.proxy.proxy-address-forwarding` (variable `PROXY_ADDRESS_FORWARDING`,
+**activé par défaut**) fait suivre à Quarkus les en-têtes `X-Forwarded-*` du
+proxy : schéma, hôte et « la requête est-elle chiffrée » correspondent alors à
+ce que le visiteur a réellement demandé — redirections en `https`, et cookie de
+session marqué `Secure`. Sans proxy en amont, aucun en-tête `X-Forwarded-*`
+n'arrive et rien ne change.
+
+Deux réglages Quarkus le complètent au besoin, par variable d'environnement :
+
+| Variable | Usage |
+| --- | --- |
+| `QUARKUS_HTTP_PROXY_TRUSTED_PROXIES` | Épingle les adresses des proxys dont les en-têtes `X-Forwarded-*` sont acceptés. À renseigner si l'origine est joignable sans passer par le proxy, sinon n'importe quel client peut annoncer le schéma et l'adresse de son choix |
+| `QUARKUS_HTTP_PROXY_ENABLE_FORWARDED_HOST` | À activer si le proxy réécrit `Host` au lieu de transmettre celui du visiteur (l'hôte est alors lu dans `X-Forwarded-Host`) |
+
 ### Authentification par en-tête (remote user, facultative)
 
 Pour un déploiement derrière un proxy d'accès qui authentifie lui-même ses
