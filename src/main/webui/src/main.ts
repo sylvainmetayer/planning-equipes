@@ -8,7 +8,7 @@ import { appConfig } from './app/app.config';
 import { App } from './app/app';
 import { getStoredLocale } from './app/core/locale';
 import { APP_CONFIG } from './app/core/app-config';
-import { initObservability, loadAppConfig, observabilityProviders } from './app/core/observability';
+import { initObservability, loadAppConfig } from './app/core/observability';
 
 registerLocaleData(localeFr, 'fr');
 registerLocaleData(localeEn, 'en');
@@ -18,7 +18,9 @@ async function bootstrap(): Promise<void> {
   // locale survives a reload, so a catalog that cannot be fetched (offline,
   // bad deploy, 404) would otherwise leave the app permanently unbootable.
   const [isEnglish, appConfig_] = await Promise.all([loadEnglishTranslations(), loadAppConfig()]);
-  initObservability(appConfig_);
+  // Awaited: when a DSN is configured, this is where the Sentry SDK is
+  // fetched. Errors thrown during bootstrap are worth catching too.
+  const observability = await initObservability(appConfig_);
   const locale = isEnglish ? 'en' : 'fr';
   // `index.html` can only declare one language; the UI picks its own at
   // runtime. Without this, a screen reader reads the English catalog with
@@ -28,7 +30,7 @@ async function bootstrap(): Promise<void> {
     ...appConfig,
     providers: [
       ...appConfig.providers,
-      ...observabilityProviders(appConfig_),
+      ...observability,
       // Fetched once before bootstrap: every screen reads the same answer
       // instead of asking the server again.
       { provide: APP_CONFIG, useValue: appConfig_ },

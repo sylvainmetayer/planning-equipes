@@ -3,7 +3,6 @@
 // the server-side env vars are set: see docs/observabilite.md.
 
 import { ErrorHandler, Provider } from '@angular/core';
-import { createErrorHandler, init as initSentry } from '@sentry/angular';
 
 import { APP_VERSION } from '../version';
 import { AppConfig } from './models';
@@ -91,10 +90,24 @@ function estPageEspaceAnimateur(): boolean {
   return typeof location !== 'undefined' && location.pathname.startsWith(PREFIXE_ESPACE);
 }
 
-/** No-ops on whichever half of `config` is blank (dsn / token unset server-side). */
-export function initObservability(config: AppConfig): void {
+/**
+ * No-ops on whichever half of `config` is blank (dsn / token unset
+ * server-side), and returns the providers the app must be bootstrapped with —
+ * today, Sentry's `ErrorHandler`, or nothing at all.
+ *
+ * <p>The SDK is imported dynamically, inside the branch that needs it. A static
+ * import put it in the initial bundle of *every* visitor, including the ones on
+ * `/animateur/:jeton` — a public page, often on a phone, often a minor — and
+ * including deployments where `sentryDsn` is blank and this function does
+ * nothing at all. Returning the providers rather than exposing a second
+ * function keeps that import in one place: a caller cannot ask for the error
+ * handler without having gone through the branch that loaded the SDK.</p>
+ */
+export async function initObservability(config: AppConfig): Promise<Provider[]> {
+  const providers: Provider[] = [];
   if (config.sentryDsn) {
-    initSentry({
+    const Sentry = await import('@sentry/angular');
+    Sentry.init({
       dsn: config.sentryDsn,
       environment: config.sentryEnvironment,
       release: APP_VERSION,
@@ -103,6 +116,7 @@ export function initObservability(config: AppConfig): void {
       beforeSend: (event) => masquerJetonPartout(event),
       beforeBreadcrumb: (breadcrumb) => masquerJetonPartout(breadcrumb)
     });
+    providers.push({ provide: ErrorHandler, useValue: Sentry.createErrorHandler() });
   }
   if (
     config.cloudflareWebAnalyticsToken &&
@@ -115,9 +129,5 @@ export function initObservability(config: AppConfig): void {
     script.dataset['cfBeacon'] = JSON.stringify({ token: config.cloudflareWebAnalyticsToken });
     document.head.append(script);
   }
-}
-
-/** Swaps in Sentry's `ErrorHandler` — only meaningful once `initObservability` actually called `Sentry.init`. */
-export function observabilityProviders(config: AppConfig): Provider[] {
-  return config.sentryDsn ? [{ provide: ErrorHandler, useValue: createErrorHandler() }] : [];
+  return providers;
 }

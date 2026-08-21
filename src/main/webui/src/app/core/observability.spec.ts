@@ -1,5 +1,16 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { initObservability, loadAppConfig, masquerJetonEspace, masquerJetonPartout, observabilityProviders } from './observability';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+/**
+ * The SDK is now loaded by a dynamic `import()` inside the DSN branch, so it is
+ * mocked at module level: that is also how these tests can assert it is never
+ * reached at all when no DSN is configured.
+ */
+const sentry = vi.hoisted(() => ({
+  init: vi.fn(),
+  createErrorHandler: vi.fn(() => ({ handleError: vi.fn() }))
+}));
+vi.mock('@sentry/angular', () => sentry);
+import { initObservability, loadAppConfig, masquerJetonEspace, masquerJetonPartout } from './observability';
 import { AppConfig } from './models';
 
 const CONFIG: AppConfig = {
@@ -43,24 +54,51 @@ describe('loadAppConfig', () => {
   });
 });
 
-describe('observabilityProviders', () => {
-  it('registers no provider when Sentry has no DSN', () => {
-    expect(observabilityProviders({ ...CONFIG, sentryDsn: '' })).toEqual([]);
-  });
-
-  it("registers Sentry's ErrorHandler when a DSN is configured", () => {
-    expect(observabilityProviders(CONFIG)).toHaveLength(1);
-  });
-});
-
-
 describe('initObservability', () => {
+  beforeEach(() => {
+    sentry.init.mockClear();
+    sentry.createErrorHandler.mockClear();
+  });
+
   afterEach(() => {
     document.head.innerHTML = '';
   });
 
-  it('injects Cloudflare Web Analytics when a token is configured', () => {
-    initObservability({ ...CONFIG, sentryDsn: '' });
+  it('registers no provider — and never loads the SDK — when Sentry has no DSN', async () => {
+    await expect(initObservability({ ...CONFIG, sentryDsn: '' })).resolves.toEqual([]);
+    expect(sentry.init).not.toHaveBeenCalled();
+    expect(sentry.createErrorHandler).not.toHaveBeenCalled();
+  });
+
+  it("registers Sentry's ErrorHandler when a DSN is configured", async () => {
+    await expect(initObservability({ ...CONFIG, cloudflareWebAnalyticsToken: '' })).resolves.toHaveLength(1);
+  });
+
+  it('initialises the SDK with the release and both token-masking hooks', async () => {
+    await initObservability({ ...CONFIG, cloudflareWebAnalyticsToken: '' });
+
+    expect(sentry.init).toHaveBeenCalledTimes(1);
+    const options = sentry.init.mock.calls[0][0];
+    expect(options.dsn).toBe(CONFIG.sentryDsn);
+    expect(options.environment).toBe(CONFIG.sentryEnvironment);
+    // The two guards keeping the espace animateur token out of a third party.
+    expect(options.beforeSend).toBeTypeOf('function');
+    expect(options.beforeBreadcrumb).toBeTypeOf('function');
+  });
+
+  it('masks the espace animateur token in what the SDK is about to send', async () => {
+    await initObservability({ ...CONFIG, cloudflareWebAnalyticsToken: '' });
+
+    const { beforeSend, beforeBreadcrumb } = sentry.init.mock.calls[0][0];
+    const event = beforeSend({ request: { url: 'https://app.example.com/animateur/abc123' } });
+    const breadcrumb = beforeBreadcrumb({ data: { to: '/api/espace-animateur/abc123/planning' } });
+
+    expect(event.request.url).toBe('https://app.example.com/animateur/<jeton>');
+    expect(breadcrumb.data.to).toBe('/api/espace-animateur/<jeton>/planning');
+  });
+
+  it('injects Cloudflare Web Analytics when a token is configured', async () => {
+    await initObservability({ ...CONFIG, sentryDsn: '' });
 
     const script = document.head.querySelector('script[data-cf-beacon]');
     expect(script).not.toBeNull();
@@ -71,11 +109,11 @@ describe('initObservability', () => {
     );
   });
 
-  it('does not inject duplicate Cloudflare scripts', () => {
+  it('does not inject duplicate Cloudflare scripts', async () => {
     const config = { ...CONFIG, sentryDsn: '' };
 
-    initObservability(config);
-    initObservability(config);
+    await initObservability(config);
+    await initObservability(config);
 
     expect(document.head.querySelectorAll('script[data-cf-beacon]')).toHaveLength(1);
   });

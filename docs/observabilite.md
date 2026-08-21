@@ -79,7 +79,12 @@ change.
 - **Frontend** : `@sentry/angular`, initialisé dans `src/main.ts` via
   `app/core/observability.ts`, avant `bootstrapApplication()`. Remplace
   l'`ErrorHandler` Angular par celui de Sentry uniquement quand un DSN est
-  configuré.
+  configuré. Le SDK est chargé par un `import()` dynamique **à l'intérieur de
+  cette condition** : sans DSN, il n'est jamais téléchargé. Il pèse 462 ko
+  (130 ko transférés) et vit dans son propre *chunk* ; l'inclure au *bundle*
+  initial le faisait payer à tous les visiteurs, y compris sur
+  `/animateur/:jeton` — page publique, souvent consultée depuis un téléphone —
+  et y compris sur un déploiement sans DSN.
 
 ### Variables d'environnement
 
