@@ -1,0 +1,299 @@
+// The entry rules of one stand — the largest untested logic of the repository
+// before this file: 442 lines of dialog holding six validation rules and
+// fifteen list mutations, covered by nothing.
+
+import { describe, expect, it } from 'vitest';
+import {
+  StandDraft,
+  ajouterA,
+  basculerJour,
+  brouillonInvalide,
+  conflitOuvertureFermeture,
+  datesDepuisTexte,
+  effectifInvalide,
+  indisponibiliteInvalide,
+  normaliserHoraire,
+  ouvertureInvalide,
+  patchDansListe,
+  plageVide,
+  retirerDe,
+  toDraft,
+  versStand
+} from './stand-draft';
+import type { Emplacement, HoraireStand, Stand } from '../../core/models';
+
+function draft(overrides: Partial<StandDraft> = {}): StandDraft {
+  return { ...toDraft(null), id: 'S1', nom: 'Stand 1', ...overrides };
+}
+
+function plage(overrides: Partial<ReturnType<typeof plageVide>> = {}) {
+  return { ...plageVide(), date: '2026-07-10', heureDebut: '10:00', ...overrides };
+}
+
+function horaire(overrides: Partial<HoraireStand> = {}): HoraireStand {
+  return {
+    id: null,
+    mode: 'OUVERTURE',
+    jours: 'TOUS',
+    joursSemaine: [],
+    dateDebut: null,
+    dateFin: null,
+    dates: [],
+    fenetres: [{ heureDebut: '10:00', heureFin: '18:00' }],
+    ...overrides
+  } as HoraireStand;
+}
+
+describe('list edits', () => {
+  it('patches the item at the index and leaves its neighbours untouched', () => {
+    const liste = [{ n: 1 }, { n: 2 }, { n: 3 }];
+
+    const result = patchDansListe(liste, 1, { n: 20 });
+
+    expect(result).toEqual([{ n: 1 }, { n: 20 }, { n: 3 }]);
+    // A new array and a new item: a signal holding a mutated object notifies nobody.
+    expect(result).not.toBe(liste);
+    expect(result[1]).not.toBe(liste[1]);
+    expect(result[0]).toBe(liste[0]);
+  });
+
+  it('leaves the list alone when the index is out of range', () => {
+    const liste = [{ n: 1 }];
+    expect(patchDansListe(liste, 5, { n: 9 })).toEqual([{ n: 1 }]);
+    expect(patchDansListe(liste, -1, { n: 9 })).toEqual([{ n: 1 }]);
+  });
+
+  it('removes exactly one row, by position and not by value', () => {
+    const liste = [{ n: 1 }, { n: 1 }, { n: 2 }];
+
+    expect(retirerDe(liste, 0)).toEqual([{ n: 1 }, { n: 2 }]);
+    expect(retirerDe(liste, 9)).toEqual(liste);
+  });
+
+  it('appends without touching the original', () => {
+    const liste = [{ n: 1 }];
+
+    expect(ajouterA(liste, { n: 2 })).toEqual([{ n: 1 }, { n: 2 }]);
+    expect(liste).toHaveLength(1);
+  });
+});
+
+describe('basculerJour', () => {
+  it('adds a day once, however many times it is ticked', () => {
+    expect(basculerJour(['MONDAY'], 'FRIDAY', true)).toEqual(['MONDAY', 'FRIDAY']);
+    expect(basculerJour(['MONDAY', 'FRIDAY'], 'FRIDAY', true)).toEqual(['MONDAY', 'FRIDAY']);
+  });
+
+  it('removes a day, and does nothing when it was not there', () => {
+    expect(basculerJour(['MONDAY', 'FRIDAY'], 'MONDAY', false)).toEqual(['FRIDAY']);
+    expect(basculerJour(['FRIDAY'], 'MONDAY', false)).toEqual(['FRIDAY']);
+  });
+});
+
+describe('datesDepuisTexte', () => {
+  it('keeps the ISO dates and trims the spacing around them', () => {
+    expect(datesDepuisTexte(' 2026-07-10 , 2026-07-11 ')).toEqual(['2026-07-10', '2026-07-11']);
+  });
+
+  it('drops anything that is not an ISO date rather than sending it to the backend', () => {
+    expect(datesDepuisTexte('2026-07-10, 10/07/2026, demain, ')).toEqual(['2026-07-10']);
+  });
+
+  it('gives an empty list for an empty field', () => {
+    expect(datesDepuisTexte('')).toEqual([]);
+  });
+});
+
+describe('effectifInvalide', () => {
+  it('refuses a maximum below the minimum', () => {
+    expect(effectifInvalide(draft({ effectifMin: 3, effectifMax: 2 }))).toBe(true);
+  });
+
+  it('accepts a maximum equal to the minimum', () => {
+    expect(effectifInvalide(draft({ effectifMin: 2, effectifMax: 2 }))).toBe(false);
+  });
+});
+
+describe('dated exceptions', () => {
+  it('refuses a closure without a date or without a start time', () => {
+    expect(indisponibiliteInvalide(draft({ indisponibilites: [plage({ date: '' })] }))).toBe(true);
+    expect(indisponibiliteInvalide(draft({ indisponibilites: [plage({ heureDebut: '' })] }))).toBe(true);
+  });
+
+  it('refuses an end time that is not strictly after the start', () => {
+    expect(indisponibiliteInvalide(draft({ indisponibilites: [plage({ heureFin: '10:00' })] }))).toBe(true);
+    expect(indisponibiliteInvalide(draft({ indisponibilites: [plage({ heureFin: '09:00' })] }))).toBe(true);
+  });
+
+  it('accepts an empty end time, which means "until closing time"', () => {
+    expect(indisponibiliteInvalide(draft({ indisponibilites: [plage({ heureFin: null })] }))).toBe(false);
+    expect(indisponibiliteInvalide(draft({ indisponibilites: [plage({ heureFin: '' })] }))).toBe(false);
+  });
+
+  it('applies exactly the same rules to the opening exceptions', () => {
+    expect(ouvertureInvalide(draft({ ouvertures: [plage({ date: '' })] }))).toBe(true);
+    expect(ouvertureInvalide(draft({ ouvertures: [plage({ heureFin: '09:00' })] }))).toBe(true);
+    expect(ouvertureInvalide(draft({ ouvertures: [plage()] }))).toBe(false);
+  });
+
+  it('is happy with no exception at all', () => {
+    expect(indisponibiliteInvalide(draft())).toBe(false);
+    expect(ouvertureInvalide(draft())).toBe(false);
+  });
+});
+
+describe('conflitOuvertureFermeture', () => {
+  it('refuses the same day being both closed and opened', () => {
+    const invalide = draft({
+      indisponibilites: [plage({ date: '2026-07-10' })],
+      ouvertures: [plage({ date: '2026-07-10' })]
+    });
+
+    expect(conflitOuvertureFermeture(invalide)).toBe(true);
+  });
+
+  it('accepts a closure and an opening on two different days', () => {
+    const valide = draft({
+      indisponibilites: [plage({ date: '2026-07-10' })],
+      ouvertures: [plage({ date: '2026-07-11' })]
+    });
+
+    expect(conflitOuvertureFermeture(valide)).toBe(false);
+  });
+
+  it('does not count a row whose date has not been filled in yet as a conflict', () => {
+    const enCoursDeSaisie = draft({
+      indisponibilites: [plage({ date: '' })],
+      ouvertures: [plage({ date: '' })]
+    });
+
+    expect(conflitOuvertureFermeture(enCoursDeSaisie)).toBe(false);
+  });
+});
+
+describe('brouillonInvalide', () => {
+  it('is false for a freshly opened form', () => {
+    expect(brouillonInvalide(draft())).toBe(false);
+  });
+
+  it('catches each rule on its own', () => {
+    expect(brouillonInvalide(draft({ effectifMin: 3, effectifMax: 1 }))).toBe(true);
+    expect(brouillonInvalide(draft({ indisponibilites: [plage({ date: '' })] }))).toBe(true);
+    expect(brouillonInvalide(draft({ ouvertures: [plage({ heureDebut: '' })] }))).toBe(true);
+    expect(
+      brouillonInvalide(
+        draft({ indisponibilites: [plage({ date: '2026-07-10' })], ouvertures: [plage({ date: '2026-07-10' })] })
+      )
+    ).toBe(true);
+  });
+});
+
+describe('toDraft', () => {
+  it('opens a new stand on a one-seat default rather than on zero', () => {
+    const vierge = toDraft(null);
+
+    expect(vierge.effectifMin).toBe(1);
+    expect(vierge.effectifMax).toBe(1);
+    expect(vierge.niveauEffort).toBe('NORMAL');
+    expect(vierge.horaires).toEqual([]);
+  });
+
+  it('never aliases the store objects: editing the draft must not write through', () => {
+    const stand = {
+      id: 'S1',
+      nom: 'Stand',
+      effectifMin: 1,
+      effectifMax: 2,
+      typologiesProposees: ['t1'],
+      indisponibilites: [plage()],
+      ouvertures: [],
+      horaires: [horaire({ joursSemaine: ['MONDAY'], dates: ['2026-07-10'] })]
+    } as unknown as Stand;
+
+    const copie = toDraft(stand);
+    copie.typologiesProposees.push('t2');
+    copie.indisponibilites[0].date = '1999-01-01';
+    copie.horaires[0].joursSemaine.push('FRIDAY');
+    copie.horaires[0].fenetres[0].heureDebut = '00:00';
+
+    expect(stand.typologiesProposees).toEqual(['t1']);
+    expect(stand.indisponibilites[0].date).toBe('2026-07-10');
+    expect(stand.horaires[0].joursSemaine).toEqual(['MONDAY']);
+    expect(stand.horaires[0].fenetres[0].heureDebut).toBe('10:00');
+  });
+
+  it('falls back on the defaults for the fields the server left null', () => {
+    const stand = { id: 'S1', effectifMin: 1, effectifMax: 1 } as unknown as Stand;
+
+    const copie = toDraft(stand);
+
+    expect(copie.nom).toBe('');
+    expect(copie.niveauEffort).toBe('NORMAL');
+    expect(copie.reserveMajeurs).toBe(false);
+    expect(copie.emplacementId).toBeNull();
+    expect(copie.horaires).toEqual([]);
+  });
+});
+
+describe('versStand', () => {
+  const emplacements = [{ id: 'salle-1', nom: 'Salle 1' }] as Emplacement[];
+
+  it('trims the identifier and the name', () => {
+    const stand = versStand(draft({ id: '  S1  ', nom: '  Stand 1  ' }), emplacements);
+
+    expect(stand.id).toBe('S1');
+    expect(stand.nom).toBe('Stand 1');
+  });
+
+  it('resolves the emplacement against the store, and stays null when none is picked', () => {
+    expect(versStand(draft({ emplacementId: 'salle-1' }), emplacements).emplacement).toEqual(emplacements[0]);
+    expect(versStand(draft({ emplacementId: null }), emplacements).emplacement).toBeNull();
+    // Picked then deleted elsewhere: null rather than a dangling reference.
+    expect(versStand(draft({ emplacementId: 'disparue' }), emplacements).emplacement).toBeNull();
+  });
+
+  it('turns an emptied time field back into "until closing time"', () => {
+    const stand = versStand(
+      draft({ indisponibilites: [plage({ heureFin: '' })], ouvertures: [plage({ heureFin: '' })] }),
+      emplacements
+    );
+
+    expect(stand.indisponibilites[0].heureFin).toBeNull();
+    expect(stand.ouvertures[0].heureFin).toBeNull();
+  });
+
+  it('reads an empty effectif as zero rather than as NaN', () => {
+    const stand = versStand(
+      draft({ effectifMin: '' as unknown as number, effectifMax: '' as unknown as number }),
+      emplacements
+    );
+
+    expect(stand.effectifMin).toBe(0);
+    expect(stand.effectifMax).toBe(0);
+  });
+});
+
+describe('normaliserHoraire', () => {
+  it('drops the bounds a rule switched away from PLAGE was still dragging along', () => {
+    const regle = horaire({ jours: 'TOUS', dateDebut: '2026-07-10', dateFin: '2026-07-12', dates: ['2026-07-10'], joursSemaine: ['MONDAY'] });
+
+    const normalise = normaliserHoraire(regle);
+
+    expect(normalise.dateDebut).toBeNull();
+    expect(normalise.dateFin).toBeNull();
+    expect(normalise.dates).toEqual([]);
+    expect(normalise.joursSemaine).toEqual([]);
+  });
+
+  it('keeps only what the chosen scope uses', () => {
+    expect(normaliserHoraire(horaire({ jours: 'JOURS_SEMAINE', joursSemaine: ['MONDAY'], dates: ['2026-07-10'] })).joursSemaine).toEqual(['MONDAY']);
+    expect(normaliserHoraire(horaire({ jours: 'DATES', dates: ['2026-07-10'], joursSemaine: ['MONDAY'] })).dates).toEqual(['2026-07-10']);
+    expect(normaliserHoraire(horaire({ jours: 'PLAGE', dateDebut: '2026-07-10', dateFin: '2026-07-12' })).dateDebut).toBe('2026-07-10');
+  });
+
+  it('normalises the end time of every window, not just the first', () => {
+    const regle = horaire({ fenetres: [{ heureDebut: '10:00', heureFin: '' }, { heureDebut: '14:00', heureFin: '' }] });
+
+    expect(normaliserHoraire(regle).fenetres.every((fenetre) => fenetre.heureFin === null)).toBe(true);
+  });
+});

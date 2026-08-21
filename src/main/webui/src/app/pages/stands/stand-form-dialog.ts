@@ -20,30 +20,24 @@ import {
   JourResolu,
   resoudreHoraires
 } from '../../core/horaire-stand';
+import { FenetreHoraire, HoraireStand, IndisponibiliteStand, JourSemaine, OuvertureStand, Stand } from '../../core/models';
 import {
-  FenetreHoraire,
-  HoraireStand,
-  IndisponibiliteStand,
-  JourSemaine,
-  NiveauEffort,
-  OuvertureStand,
-  Stand
-} from '../../core/models';
-
-interface StandDraft {
-  id: string;
-  nom: string;
-  effectifMin: number;
-  effectifMax: number;
-  reserveMajeurs: boolean;
-  premium: boolean;
-  niveauEffort: NiveauEffort;
-  typologiesProposees: string[];
-  emplacementId: string | null;
-  indisponibilites: IndisponibiliteStand[];
-  ouvertures: OuvertureStand[];
-  horaires: HoraireStand[];
-}
+  StandDraft,
+  ajouterA,
+  basculerJour,
+  brouillonInvalide,
+  conflitOuvertureFermeture,
+  datesDepuisTexte,
+  effectifInvalide,
+  fenetreVide,
+  indisponibiliteInvalide,
+  ouvertureInvalide,
+  patchDansListe,
+  plageVide,
+  retirerDe,
+  toDraft,
+  versStand
+} from './stand-draft';
 
 export interface StandFormData {
   stand: Stand | null;
@@ -106,10 +100,7 @@ export class StandFormDialog {
     'SUNDAY'
   ];
 
-  protected readonly effectifInvalid = computed(() => {
-    const draft = this.draft();
-    return Number(draft.effectifMax) < Number(draft.effectifMin);
-  });
+  protected readonly effectifInvalid = computed(() => effectifInvalide(this.draft()));
   protected readonly formTitle = computed(() => {
     const id = this.editingId();
     return id ? $localize`:@@stands.form.editTitle:Modifier le stand ${id}:id:` : $localize`:@@stands.form.newTitle:Nouveau stand`;
@@ -118,34 +109,11 @@ export class StandFormDialog {
     this.editingId() ? $localize`:@@stands.submit.edit:Modifier le stand` : $localize`:@@stands.submit.create:Créer le stand`
   );
 
-  /**
-   * Any closure missing a date or a start time, or whose end time isn't strictly
-   * after its start — the backend rejects these outright. An *empty* end time is
-   * valid and means "until closing time".
-   */
-  protected readonly indisponibiliteInvalide = computed(() =>
-    this.draft().indisponibilites.some(
-      (indispo) =>
-        !indispo.date || !indispo.heureDebut || (!!indispo.heureFin && indispo.heureFin <= indispo.heureDebut)
-    )
-  );
+  protected readonly indisponibiliteInvalide = computed(() => indisponibiliteInvalide(this.draft()));
 
-  /** Same rules as {@link indisponibiliteInvalide}, for the opening exceptions. */
-  protected readonly ouvertureInvalide = computed(() =>
-    this.draft().ouvertures.some(
-      (ouverture) =>
-        !ouverture.date ||
-        !ouverture.heureDebut ||
-        (!!ouverture.heureFin && ouverture.heureFin <= ouverture.heureDebut)
-    )
-  );
+  protected readonly ouvertureInvalide = computed(() => ouvertureInvalide(this.draft()));
 
-  /** A day can't carry both a closure and an opening — the backend rejects this outright. */
-  protected readonly conflitOuvertureFermeture = computed(() => {
-    const draft = this.draft();
-    const joursFermeture = new Set(draft.indisponibilites.map((indispo) => indispo.date).filter(Boolean));
-    return draft.ouvertures.some((ouverture) => ouverture.date && joursFermeture.has(ouverture.date));
-  });
+  protected readonly conflitOuvertureFermeture = computed(() => conflitOuvertureFermeture(this.draft()));
 
   /** First problem among the recurring rules, or `null` — mirrors the backend's own check. */
   protected readonly erreurHoraires = computed(() => {
@@ -232,79 +200,56 @@ export class StandFormDialog {
   }
 
   protected ajouterIndisponibilite(): void {
-    this.draft.update((draft) => ({
-      ...draft,
-      indisponibilites: [...draft.indisponibilites, { id: null, date: '', heureDebut: '', heureFin: null, motif: null }]
-    }));
+    this.patch({ indisponibilites: ajouterA(this.draft().indisponibilites, plageVide()) });
   }
 
   protected patchIndisponibilite(index: number, patch: Partial<IndisponibiliteStand>): void {
-    this.draft.update((draft) => ({
-      ...draft,
-      indisponibilites: draft.indisponibilites.map((indispo, i) => (i === index ? { ...indispo, ...patch } : indispo))
-    }));
+    this.patch({ indisponibilites: patchDansListe(this.draft().indisponibilites, index, patch) });
   }
 
   protected retirerIndisponibilite(index: number): void {
-    this.draft.update((draft) => ({
-      ...draft,
-      indisponibilites: draft.indisponibilites.filter((_, i) => i !== index)
-    }));
+    this.patch({ indisponibilites: retirerDe(this.draft().indisponibilites, index) });
     this.focusApres('[data-focus="ajouter-indisponibilite"]');
   }
 
   protected ajouterOuverture(): void {
-    this.draft.update((draft) => ({
-      ...draft,
-      ouvertures: [...draft.ouvertures, { id: null, date: '', heureDebut: '', heureFin: null, motif: null }]
-    }));
+    this.patch({ ouvertures: ajouterA(this.draft().ouvertures, plageVide()) });
   }
 
   protected patchOuverture(index: number, patch: Partial<OuvertureStand>): void {
-    this.draft.update((draft) => ({
-      ...draft,
-      ouvertures: draft.ouvertures.map((ouverture, i) => (i === index ? { ...ouverture, ...patch } : ouverture))
-    }));
+    this.patch({ ouvertures: patchDansListe(this.draft().ouvertures, index, patch) });
   }
 
   protected retirerOuverture(index: number): void {
-    this.draft.update((draft) => ({
-      ...draft,
-      ouvertures: draft.ouvertures.filter((_, i) => i !== index)
-    }));
+    this.patch({ ouvertures: retirerDe(this.draft().ouvertures, index) });
     this.focusApres('[data-focus="ajouter-ouverture"]');
   }
 
   /* ------------------------- Recurring horaires ------------------------- */
 
   protected ajouterHoraire(): void {
-    this.draft.update((draft) => ({ ...draft, horaires: [...draft.horaires, horaireVide()] }));
+    this.patch({ horaires: ajouterA(this.draft().horaires, horaireVide()) });
   }
 
   protected patchHoraire(index: number, patch: Partial<HoraireStand>): void {
-    this.draft.update((draft) => ({
-      ...draft,
-      horaires: draft.horaires.map((horaire, i) => (i === index ? { ...horaire, ...patch } : horaire))
-    }));
+    this.patch({ horaires: patchDansListe(this.draft().horaires, index, patch) });
   }
 
   protected retirerHoraire(index: number): void {
-    this.draft.update((draft) => ({ ...draft, horaires: draft.horaires.filter((_, i) => i !== index) }));
+    this.patch({ horaires: retirerDe(this.draft().horaires, index) });
     this.focusApres('[data-focus="ajouter-horaire"]');
   }
 
   protected ajouterFenetre(indexHoraire: number): void {
-    this.majFenetres(indexHoraire, (fenetres) => [...fenetres, { heureDebut: '', heureFin: null }]);
+    this.majFenetres(indexHoraire, (fenetres) => ajouterA(fenetres, fenetreVide()));
   }
 
   protected patchFenetre(indexHoraire: number, indexFenetre: number, patch: Partial<FenetreHoraire>): void {
-    this.majFenetres(indexHoraire, (fenetres) =>
-      fenetres.map((fenetre, i) => (i === indexFenetre ? { ...fenetre, ...patch } : fenetre))
-    );
+    this.majFenetres(indexHoraire, (fenetres) => patchDansListe(fenetres, indexFenetre, patch));
   }
 
   protected retirerFenetre(indexHoraire: number, indexFenetre: number): void {
-    this.majFenetres(indexHoraire, (fenetres) => fenetres.filter((_, i) => i !== indexFenetre));
+    this.majFenetres(indexHoraire, (fenetres) => retirerDe(fenetres, indexFenetre));
     this.focusApres(`[data-focus="ajouter-fenetre-${indexHoraire}"]`);
   }
 
@@ -314,129 +259,35 @@ export class StandFormDialog {
    * question actually has ("which days does the weekend schedule cover?").
    */
   protected basculerJourSemaine(indexHoraire: number, jour: JourSemaine, coche: boolean): void {
-    this.draft.update((draft) => ({
-      ...draft,
-      horaires: draft.horaires.map((horaire, i) => {
-        if (i !== indexHoraire) {
-          return horaire;
-        }
-        const joursSemaine = coche
-          ? [...new Set([...horaire.joursSemaine, jour])]
-          : horaire.joursSemaine.filter((autre) => autre !== jour);
-        return { ...horaire, joursSemaine };
-      })
-    }));
+    const horaire = this.draft().horaires[indexHoraire];
+    if (horaire) {
+      this.patchHoraire(indexHoraire, { joursSemaine: basculerJour(horaire.joursSemaine, jour, coche) });
+    }
   }
 
   /** Comma-separated ISO dates, for the `DATES` scope — a plain text field beats seven date pickers. */
   protected patchDates(indexHoraire: number, valeur: string): void {
-    const dates = valeur
-      .split(',')
-      .map((date) => date.trim())
-      .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date));
-    this.patchHoraire(indexHoraire, { dates });
+    this.patchHoraire(indexHoraire, { dates: datesDepuisTexte(valeur) });
   }
 
   private majFenetres(indexHoraire: number, transformer: (fenetres: FenetreHoraire[]) => FenetreHoraire[]): void {
-    this.draft.update((draft) => ({
-      ...draft,
-      horaires: draft.horaires.map((horaire, i) =>
-        i === indexHoraire ? { ...horaire, fenetres: transformer(horaire.fenetres) } : horaire
-      )
-    }));
+    const horaire = this.draft().horaires[indexHoraire];
+    if (horaire) {
+      this.patchHoraire(indexHoraire, { fenetres: transformer(horaire.fenetres) });
+    }
   }
 
   protected readonly formulaireInvalide = computed(
-    () =>
-      this.effectifInvalid() ||
-      this.indisponibiliteInvalide() ||
-      this.ouvertureInvalide() ||
-      this.conflitOuvertureFermeture() ||
-      this.erreurHoraires() !== null
+    () => brouillonInvalide(this.draft()) || this.erreurHoraires() !== null
   );
 
   protected async save(): Promise<void> {
     if (this.formulaireInvalide()) {
       return;
     }
-    const draft = this.draft();
-    const stand: Stand = {
-      id: draft.id.trim(),
-      nom: draft.nom.trim(),
-      typologiesProposees: draft.typologiesProposees,
-      effectifMin: Number(draft.effectifMin) || 0,
-      effectifMax: Number(draft.effectifMax) || 0,
-      reserveMajeurs: draft.reserveMajeurs,
-      premium: draft.premium,
-      niveauEffort: draft.niveauEffort,
-      emplacement: draft.emplacementId
-        ? (this.store.emplacements().find((e) => e.id === draft.emplacementId) ?? null)
-        : null,
-      indisponibilites: draft.indisponibilites.map(normaliserPlage),
-      ouvertures: draft.ouvertures.map(normaliserPlage),
-      horaires: draft.horaires.map(normaliserHoraire)
-    };
+    const stand = versStand(this.draft(), this.store.emplacements());
     if (await this.crud.save('stands', stand, this.editingId(), $localize`:@@stands.entityLabel:Stand`)) {
       this.dialogRef.close(true);
     }
   }
-}
-
-/**
- * An emptied `<input type="time">` gives back `''`, not `null` — and `''` would
- * reach the backend as a malformed time rather than as "until closing time".
- */
-function normaliserPlage<T extends { heureFin: string | null }>(plage: T): T {
-  return { ...plage, heureFin: plage.heureFin || null };
-}
-
-function normaliserHoraire(horaire: HoraireStand): HoraireStand {
-  return {
-    ...horaire,
-    fenetres: horaire.fenetres.map((fenetre) => ({ ...fenetre, heureFin: fenetre.heureFin || null })),
-    // Only the fields the chosen scope uses are sent, so a rule switched from
-    // PLAGE to TOUS doesn't keep dragging its old bounds along.
-    joursSemaine: horaire.jours === 'JOURS_SEMAINE' ? horaire.joursSemaine : [],
-    dateDebut: horaire.jours === 'PLAGE' ? horaire.dateDebut : null,
-    dateFin: horaire.jours === 'PLAGE' ? horaire.dateFin : null,
-    dates: horaire.jours === 'DATES' ? horaire.dates : []
-  };
-}
-
-function toDraft(stand: Stand | null): StandDraft {
-  if (!stand) {
-    return {
-      id: '',
-      nom: '',
-      effectifMin: 1,
-      effectifMax: 1,
-      reserveMajeurs: false,
-      premium: false,
-      niveauEffort: 'NORMAL',
-      typologiesProposees: [],
-      emplacementId: null,
-      indisponibilites: [],
-      ouvertures: [],
-      horaires: []
-    };
-  }
-  return {
-    id: stand.id,
-    nom: stand.nom ?? '',
-    effectifMin: stand.effectifMin,
-    effectifMax: stand.effectifMax,
-    reserveMajeurs: Boolean(stand.reserveMajeurs),
-    premium: Boolean(stand.premium),
-    niveauEffort: stand.niveauEffort ?? 'NORMAL',
-    typologiesProposees: [...(stand.typologiesProposees ?? [])],
-    emplacementId: stand.emplacement?.id ?? null,
-    indisponibilites: (stand.indisponibilites ?? []).map((indispo) => ({ ...indispo })),
-    ouvertures: (stand.ouvertures ?? []).map((ouverture) => ({ ...ouverture })),
-    horaires: (stand.horaires ?? []).map((horaire) => ({
-      ...horaire,
-      joursSemaine: [...horaire.joursSemaine],
-      dates: [...horaire.dates],
-      fenetres: horaire.fenetres.map((fenetre) => ({ ...fenetre }))
-    }))
-  };
 }
