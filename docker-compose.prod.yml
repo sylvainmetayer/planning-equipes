@@ -1,0 +1,87 @@
+# Pile de production, à ne pas confondre avec `docker-compose.yml`, qui est une
+# pile de DÉVELOPPEMENT : celle-ci publie PostgreSQL sur l'hôte, ajoute pgAdmin
+# en `admin/admin` sans mode serveur et un puits SMTP qui n'envoie rien — trois
+# choses qui n'ont pas à exister sur une machine exposée.
+#
+# Ici, un seul port est publié, et encore : sur la boucle locale, parce que
+# c'est le reverse proxy qui termine le TLS et qui doit être le seul chemin
+# vers l'application (voir docs/securite.md § Déploiement).
+#
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+#
+# Tout ce qui est repris de l'environnement est OBLIGATOIRE et sans valeur par
+# défaut : un `?` fait échouer le démarrage plutôt que de laisser passer un
+# mot de passe de développement en production.
+
+services:
+  app:
+    image: ghcr.io/sylvainmetayer/planning-equipes:main
+    restart: unless-stopped
+    # Sur la boucle locale seulement : le reverse proxy est le seul chemin
+    # d'entrée, et l'origine ne doit pas être joignable sans passer par lui —
+    # c'est ce qui rend dignes de confiance les en-têtes X-Forwarded-*.
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/festival
+      DB_USER: festival
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD est obligatoire}
+      # Compte admin unique : un mot de passe long et propre à ce déploiement.
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD est obligatoire}
+      # Sans clé fixe, les sessions admin sont invalidées à chaque redémarrage.
+      QUARKUS_HTTP_AUTH_SESSION_ENCRYPTION_KEY: ${SESSION_ENCRYPTION_KEY:?SESSION_ENCRYPTION_KEY est obligatoire (>= 16 caractères)}
+      # URL publique, imprimée comme lien « espace animateur » sur les PDF.
+      PUBLIC_URL: ${PUBLIC_URL:?PUBLIC_URL est obligatoire}
+      # Le proxy termine le TLS : sans cela, la redirection de connexion repart
+      # en http et le cookie de session perd son flag Secure.
+      PROXY_ADDRESS_FORWARDING: "true"
+      # Adresses dont les en-têtes X-Forwarded-* sont acceptés. À renseigner
+      # dès que l'origine est joignable autrement que par le proxy.
+      QUARKUS_HTTP_PROXY_TRUSTED_PROXIES: ${TRUSTED_PROXIES:-}
+      # Serveur MCP : vide = inutilisable, ce qui est le bon défaut tant que
+      # personne ne s'en sert. Voir docs/mcp.md.
+      PLANNING_MCP_API_KEY: ${PLANNING_MCP_API_KEY:-}
+      # Suivi d'erreurs : vide = désactivé. Voir docs/observabilite.md.
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}
+      # Mentions légales, servies publiquement sur /mentions-legales : vides,
+      # la page existe mais n'annonce rien — ce qui est précisément ce qu'un
+      # site accessible au public ne peut pas se permettre.
+      LEGAL_EDITEUR: ${LEGAL_EDITEUR:-}
+      LEGAL_DIRECTEUR_PUBLICATION: ${LEGAL_DIRECTEUR_PUBLICATION:-}
+      LEGAL_HEBERGEUR: ${LEGAL_HEBERGEUR:-}
+      LEGAL_CONTACT: ${LEGAL_CONTACT:-}
+      LEGAL_BASE_LEGALE: ${LEGAL_BASE_LEGALE:-}
+      LEGAL_CONSERVATION: ${LEGAL_CONSERVATION:-}
+      # SMTP réel : c'est par là que partent les codes d'accès de l'espace
+      # animateur, donc l'espace ne s'ouvre pas sans lui.
+      MAIL_MOCK: "false"
+      MAIL_HOST: ${MAIL_HOST:?MAIL_HOST est obligatoire}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_FROM: ${MAIL_FROM:?MAIL_FROM est obligatoire}
+      MAIL_ADMIN: ${MAIL_ADMIN:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:18
+    restart: unless-stopped
+    # Aucun `ports:` : la base n'est jamais publiée sur l'hôte, seul le réseau
+    # interne de la pile la voit.
+    environment:
+      POSTGRES_DB: festival
+      POSTGRES_USER: festival
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD est obligatoire}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U festival -d festival"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    volumes:
+      - postgres_data:/var/lib/postgresql
+
+volumes:
+  postgres_data:
+    name: postgres_data_pg18

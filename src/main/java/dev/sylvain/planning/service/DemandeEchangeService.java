@@ -64,6 +64,14 @@ public class DemandeEchangeService {
             Long creneauCibleId, String standCibleId) {
     }
 
+    /**
+     * The single wording of a closed-foire refusal, shared with
+     * {@code FoireOuverteFilter}: the reads guarded at the route and the writes
+     * guarded here say the same thing to the animateur.
+     */
+    public static final String FOIRE_FERMEE =
+            "La foire au planning est fermée : les demandes d'échange ne sont plus ouvertes";
+
     /* ------------------------------ Animateur ------------------------------ */
 
     /**
@@ -257,8 +265,7 @@ public class DemandeEchangeService {
 
     private void verifierFoireOuverte() {
         if (!estFoireOuverte()) {
-            throw new IllegalArgumentException(
-                    "La foire au planning est fermée : les demandes d'échange ne sont plus ouvertes");
+            throw new IllegalArgumentException(FOIRE_FERMEE);
         }
     }
 
@@ -468,6 +475,9 @@ public class DemandeEchangeService {
 
     private List<DemandeEchange> lister(String predicatSupplementaire, String parametre) {
         List<DemandeEchange> demandes = new ArrayList<>();
+        // Only the column list and the extra predicate are concatenated, and both
+        // are literals from this class's own call sites; the value that varies
+        // travels as a bound parameter below.
         String sql = "SELECT " + COLONNES + " FROM demande_echange WHERE edition_id = ?"
                 + predicatSupplementaire + " ORDER BY cree_le DESC, id";
         try (Connection connection = dataSource.getConnection();
@@ -475,6 +485,7 @@ public class DemandeEchangeService {
             if (parametre != null) {
                 ps.setString(2, parametre);
             }
+            // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     demandes.add(lire(rs));

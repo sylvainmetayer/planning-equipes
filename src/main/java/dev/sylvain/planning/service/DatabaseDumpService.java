@@ -155,7 +155,11 @@ public class DatabaseDumpService {
     }
 
     private void appendTable(Connection connection, String table, StringBuilder sql) throws SQLException {
+        // A table name cannot be bound as a parameter. {@code table} is one of
+        // the hardcoded {@link #TABLES} entries, never user input — and the import
+        // side additionally checks it against {@link #ALLOWED_TABLES}.
         try (Statement statement = connection.createStatement();
+                // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string
                 ResultSet rows = statement.executeQuery("SELECT * FROM " + table)) {
             ResultSetMetaData metaData = rows.getMetaData();
             int columnCount = metaData.getColumnCount();

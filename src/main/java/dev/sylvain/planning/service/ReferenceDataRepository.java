@@ -1505,6 +1505,7 @@ public class ReferenceDataRepository {
     private int compter(Connection connection, String table) throws SQLException {
         try (PreparedStatement ps = prepareScoped(connection,
                 "SELECT COUNT(*) FROM " + table + " WHERE edition_id = ?");
+                // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string
                 ResultSet rs = ps.executeQuery()) {
             return rs.next() ? rs.getInt(1) : 0;
         }
@@ -1521,6 +1522,7 @@ public class ReferenceDataRepository {
         List<String> absents = new ArrayList<>();
         try (PreparedStatement ps = prepareScoped(connection,
                 "SELECT id FROM " + table + " WHERE edition_id = ?");
+                // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 String id = rs.getString("id");
@@ -1536,8 +1538,10 @@ public class ReferenceDataRepository {
                 "DELETE FROM " + table + " WHERE edition_id = ? AND id = ?")) {
             for (String id : absents) {
                 ps.setString(2, id);
+                // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string
                 ps.addBatch();
             }
+            // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string
             ps.executeBatch();
         }
     }
@@ -1619,12 +1623,18 @@ public class ReferenceDataRepository {
         }
     }
 
+    /**
+     * Table names come from this class's own call sites, never from user input —
+     * a table name cannot be bound as a parameter, so it is concatenated; the id
+     * that varies travels as a bound parameter. Same reasoning for every
+     * {@code nosemgrep} of this file (see {@code docs/securite.md}).
+     */
     private boolean exists(String table, String id) {
-        // Table names come from this class's own call sites, never from user input.
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = prepareScoped(connection,
                         "SELECT 1 FROM " + table + " WHERE edition_id = ? AND id = ?")) {
             ps.setString(2, id);
+            // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
             }
@@ -1648,6 +1658,7 @@ public class ReferenceDataRepository {
                 PreparedStatement ps = prepareScoped(connection,
                         "SELECT 1 FROM " + table + " WHERE edition_id = ? AND id = ?")) {
             ps.setLong(2, id);
+            // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
             }

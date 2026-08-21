@@ -1,6 +1,7 @@
 package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 
@@ -10,6 +11,8 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.sql.DataSource;
 
@@ -23,6 +26,7 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.PlanningPersistenceService;
 import dev.sylvain.planning.service.ReferenceDataService;
+import io.quarkus.mailer.Mail;
 import io.quarkus.mailer.MockMailbox;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
@@ -108,6 +112,40 @@ class EspaceAccesTest {
                 .then().statusCode(401);
     }
 
+    /**
+     * Le cookie de session vaut 30 jours : sur une visite HTTPS il doit porter
+     * {@code Secure}, sinon il repartirait aussi en clair sur une requête
+     * {@code http://} vers le même hôte. Derrière un proxy qui termine le TLS
+     * l'origine reçoit du http : c'est {@code X-Forwarded-Proto} qui dit le
+     * schéma de la visite réelle.
+     */
+    @Test
+    void leCookieDeSessionPorteSecureQuandLaVisiteEstEnHttps() {
+        String jeton = jetonDe("ACCES-A");
+        String setCookie = given().contentType(ContentType.JSON)
+                .header("X-Forwarded-Proto", "https")
+                .body("{\"code\":\"" + codeEnvoye(jeton) + "\"}")
+                .when().post("/api/espace-animateur/" + jeton + "/session")
+                .then().statusCode(204)
+                .extract().header("Set-Cookie");
+        assertThat(setCookie)
+                .contains("HttpOnly")
+                .contains("SameSite=Strict")
+                .contains("Secure");
+    }
+
+    /** Sur la pile locale en http, le flag est absent — sinon le navigateur jetterait le cookie. */
+    @Test
+    void leCookieDeSessionResteUtilisableSurUneVisiteEnClair() {
+        String jeton = jetonDe("ACCES-A");
+        String setCookie = given().contentType(ContentType.JSON)
+                .body("{\"code\":\"" + codeEnvoye(jeton) + "\"}")
+                .when().post("/api/espace-animateur/" + jeton + "/session")
+                .then().statusCode(204)
+                .extract().header("Set-Cookie");
+        assertThat(setCookie).doesNotContain("Secure");
+    }
+
     @Test
     void sansAdresseEmailAucunCodeNEstPossible() {
         given().contentType(ContentType.JSON)
@@ -153,6 +191,18 @@ class EspaceAccesTest {
                 .when().post("/api/espace-animateur/" + jeton + "/session")
                 .then().statusCode(400)
                 .body("message", containsString("nouveau code"));
+    }
+
+    /** Demande un code et le relit dans la boîte mock, comme l'animateur dans la sienne. */
+    private String codeEnvoye(String jeton) {
+        given().contentType(ContentType.JSON)
+                .when().post("/api/espace-animateur/" + jeton + "/code")
+                .then().statusCode(200);
+        List<Mail> mails = mailbox.getMailsSentTo(EMAIL_ALICE);
+        assertThat(mails).isNotEmpty();
+        Matcher matcher = Pattern.compile("\\b(\\d{6})\\b").matcher(mails.get(mails.size() - 1).getText());
+        assertThat(matcher.find()).isTrue();
+        return matcher.group(1);
     }
 
     private void donnerEmail(String animateurId, String email) {

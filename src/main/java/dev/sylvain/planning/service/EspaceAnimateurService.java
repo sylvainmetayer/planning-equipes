@@ -17,6 +17,7 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
 
 /**
  * Read views of the espace animateur (issue #165): the animateur's own slice
@@ -135,8 +136,27 @@ public class EspaceAnimateurService {
      * A colleague's seats, for the « créneau souhaité en échange » picker of a
      * directed exchange: nothing but slots and stands — the same information
      * the printed global planning already shows — without teammates.
+     *
+     * <p>Two guards narrow an access that is broad <b>by design</b>: the roster
+     * is already handed out in full by {@link #construireVue}, and a colleague's
+     * slots and stands are what the printed global planning circulates anyway.
+     * What they take away is the ability to harvest the lot — one session would
+     * otherwise reconstruct the whole festival's nominative planning, minors
+     * included, in as many requests as there are animateurs.</p>
+     *
+     * <p>An id nobody bears answers 404 — like every other unknown entity of
+     * this codebase, and like an unknown jeton. It used to answer {@code 200 []},
+     * which let anyone probe which ids exist.</p>
+     *
+     * <p>The other half of the narrowing — the foire must be open — is declared
+     * on the route itself, {@code @FoireOuverteRequise}.</p>
      */
     public List<PosteAnimateurView> postesCollegue(String collegueId) {
+        boolean connu = referenceDataService.listAnimateurs().stream()
+                .anyMatch(candidat -> candidat.getId().equals(collegueId));
+        if (!connu) {
+            throw new NotFoundException("Animateur not found: " + collegueId);
+        }
         return postesDe(persistenceService.loadPersistedPlanning(), collegueId, Map.of());
     }
 

@@ -151,6 +151,14 @@ class DemandeEchangeFlowTest {
                 .body("[0].creneauId", equalTo((int) creneauCibleId))
                 .body("[0].standId", equalTo("ECH-S2"));
 
+        // An id nobody bears answers 404, not an empty list: an empty 200 tells
+        // the caller the id simply has no seat, which is a different fact and
+        // one worth probing for. Bare 404, like every other unknown entity here
+        // — a body would give the prober something to read.
+        given().when().get("/api/espace-animateur/" + jeton + "/collegues/ECH-INEXISTANT/postes")
+                .then()
+                .statusCode(404);
+
         String demandeId = given()
                 .contentType(ContentType.JSON)
                 .body("[{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"ECH-S1\","

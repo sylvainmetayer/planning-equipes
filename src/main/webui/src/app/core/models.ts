@@ -607,8 +607,19 @@ export const DUREE_HEBDOMADAIRE_MAX_HEURES = 48;
 export const DUREE_HEBDOMADAIRE_MAX_MINEUR_HEURES = 35;
 
 export type JobType = 'SOLVE' | 'SOLVE_INCREMENTAL' | 'ANALYZE';
-/** `QUEUED` waits for the solver without holding it; `PENDING` already holds it. */
-export type JobStatus = 'PENDING' | 'QUEUED' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+/**
+ * `QUEUED` waits for the solver without holding it; `PENDING` already holds it.
+ * `INTERROMPU` is a job the server was running when it stopped: terminal, since
+ * nothing will ever finish it (see SolverJobService.restaurer on the backend).
+ */
+export type JobStatus =
+  | 'PENDING'
+  | 'QUEUED'
+  | 'RUNNING'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'CANCELLED'
+  | 'INTERROMPU';
 
 /** `/api/jobs/...` view: the server owns the solver state, elapsed included. */
 export interface JobView {

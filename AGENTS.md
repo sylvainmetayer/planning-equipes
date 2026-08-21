@@ -111,7 +111,9 @@ Single Quarkus service, no separate solver microservice. Package root:
   served by `GET /api/constraints`; **every new constraint must be registered
   there too**.
 - `service/` — `PlanningService` (SolverFactory from `solver/solverConfig.xml`,
-  loads `scenario.yml` via SnakeYAML), `SolverJobService` (async solve/analyze),
+  loads `scenario.yml` via SnakeYAML), `SolverJobService` (async solve/analyze,
+  plus the solver queue — persisted through `SolverJobRepository` and replayed
+  at startup, so a restart no longer loses the planned runs),
   `ConstraintAnalysisStore`, `ReferenceDataService` / `ReferenceDataRepository`,
   `PlanningPersistenceService`, `DatabaseDumpService`,
   `PlanningExportService` (PDF/ICS, server-side only),
@@ -130,7 +132,13 @@ Single Quarkus service, no separate solver microservice. Package root:
   off by default) lets an access proxy assert an already-authenticated
   address: `admin-email` gets the admin role, any other recognised address is
   an animateur whose espace opens without the e-mail code. It refuses to boot
-  without a shared secret — a header is a claim, not a proof. The `%test`
+  without a shared secret — a header is a claim, not a proof. Hardening for an
+  Internet-facing deployment — browser security headers
+  (`EnTetesSecuriteFilter`), HTTP limits, the two rate limiters
+  (`LimiteurConnexionsAdmin` on `/j_security_check`,
+  `LimiteurDemandesCode` on the espace access codes), the production compose
+  stack and what is left to the reverse proxy — lives in `docs/securite.md`;
+  a change to any of them belongs there. The `%test`
   profile opens the API (`permit`) so
   functional tests skip the session; `AuthentificationAdminTest` restores and
   covers the real policy.

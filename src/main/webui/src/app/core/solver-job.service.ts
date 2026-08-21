@@ -50,6 +50,9 @@ function statusLabel(status: string): string {
   if (status === 'CANCELLED') {
     return $localize`:@@job.status.cancelled:annulée`;
   }
+  if (status === 'INTERROMPU') {
+    return $localize`:@@job.status.interrompu:interrompue par un redémarrage`;
+  }
   return status.toLowerCase();
 }
 

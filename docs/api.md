@@ -31,7 +31,7 @@ redirection HTML.
 
 | Méthode | Chemin | Description |
 | --- | --- | --- |
-| `POST` | `/j_security_check` | Form login Quarkus : corps `application/x-www-form-urlencoded` avec `j_username` / `j_password`. Succès : cookie `planning-session` chiffré + `302` vers `/api/auth/me` (que le navigateur suit) ; échec : `401` (jamais de page HTML). Compte unique `admin`, mot de passe via `ADMIN_PASSWORD` |
+| `POST` | `/j_security_check` | Form login Quarkus : corps `application/x-www-form-urlencoded` avec `j_username` / `j_password`. Succès : cookie `planning-session` chiffré + `302` vers `/api/auth/me` (que le navigateur suit) ; échec : `401` (jamais de page HTML). Compte unique `admin`, mot de passe via `ADMIN_PASSWORD`. `429` + `Retry-After` après cinq échecs consécutifs depuis la même adresse, **y compris avec le bon mot de passe** (voir [`securite.md`](securite.md)) |
 | `GET` | `/api/auth/me` | Statut de session : `{ "authentifie": bool, "nom": "admin" \| null }` — accessible anonymement |
 | `POST` | `/api/auth/logout` | Supprime le cookie de session (`204`), idempotent |
 | `GET` | `/api/mcp/statut` | `{ configuree, header }` : si une clé MCP est configurée côté serveur, et l'en-tête qui la porte. **Jamais la clé** — c'est ce qui permet à la page MCP d'avertir « MCP inutilisable en l'état » au lieu de laisser paramétrer un client qui n'obtiendra que des 401 |
@@ -263,10 +263,37 @@ Trois propriétés à connaître :
   est précisément la façon de dire « refais-le avec ce que je viens de
   corriger ».
 
-La file est FIFO, vit **en mémoire** comme les jobs eux-mêmes, et disparaît
-donc au redémarrage du serveur. `statut` d'un job : `QUEUED` (en attente, ne
-tient rien), `PENDING` (promu, sur le point de démarrer), `RUNNING`, puis
-`COMPLETED` / `FAILED` / `CANCELLED`.
+La file est FIFO. `statut` d'un job : `QUEUED` (en attente, ne tient rien),
+`PENDING` (promu, sur le point de démarrer), `RUNNING`, puis `COMPLETED` /
+`FAILED` / `CANCELLED` / `INTERROMPU`.
+
+### La file survit au redémarrage
+
+La file et le journal des jobs sont **persistés** (table `solver_job`) : un
+redémarrage du serveur ne perd plus les résolutions planifiées. Au démarrage,
+elles retournent en file dans leur ordre d'arrivée et la première prend le
+solveur d'elle-même.
+
+Ce qui est stocké est l'**intention** (type, budget, édition visée, périmètre
+d'une replanification incrémentale), jamais l'état du solveur Timefold. C'est
+suffisant justement parce qu'une tâche en file construit déjà son problème au
+moment où elle démarre : une file rejouée lit le référentiel du redémarrage,
+exactement comme elle aurait lu celui de son tour de file.
+
+Deux conséquences à connaître :
+
+- **le calcul en cours, lui, est perdu.** Un job qui tenait le solveur revient
+  en `INTERROMPU` — un état terminal, pour ne pas garder le verrou global
+  indéfiniment. Ce qui reste en base est ce qu'un solve précédent y avait écrit.
+  Reprendre le calcul lui-même (warm start depuis un instantané) est
+  l'objet de l'issue #174 ;
+- **le résultat d'un job n'est pas stocké** : un job restauré expose
+  `result: null`. Ce qu'il décrivait est déjà en base (plan persisté,
+  historique de KPI, instantanés). La rétention d'une heure des jobs terminés
+  est inchangée, et s'applique aussi aux lignes en base.
+
+La reprise se désactive avec `planning.jobs.reprise-au-demarrage=false` (voir
+[`developpement.md`](developpement.md#réglage-du-solveur)).
 
 Chaque job expose `editionId` et `editionNom`, captés à la soumission :
 l'édition dans laquelle il écrit son résultat (voir `docs/editions.md` §5),
@@ -332,13 +359,13 @@ ici). Un jeton inconnu répond `404 { "message": "…" }`, jamais `401`.
 | `GET` | `/api/espace-animateur/{jeton}/demandes-recues` | Les demandes qui ME ciblent — celles qui attendent mon accord avant d'atteindre l'admin, plus leur historique |
 | `POST` | `/api/espace-animateur/{jeton}/demandes-recues/{id}/accord` | J'accepte une demande qui me cible : elle passe `EN_ATTENTE_CIBLE` → `PROPOSEE` (file admin) et l'admin est notifié |
 | `POST` | `/api/espace-animateur/{jeton}/demandes-recues/{id}/refus` | Je décline : terminal (`REFUSEE_CIBLE`), le demandeur est prévenu, l'admin n'arbitre jamais |
-| `GET` | `/api/espace-animateur/{jeton}/collegues/{collegueId}/postes` | Les postes d'un collègue (créneaux et stands, sans coéquipiers) — la source du sélecteur « son créneau que je veux en échange » d'un échange dirigé |
+| `GET` | `/api/espace-animateur/{jeton}/collegues/{collegueId}/postes` | Les postes d'un collègue (créneaux et stands, sans coéquipiers) — la source du sélecteur « son créneau que je veux en échange » d'un échange dirigé. `400` **foire fermée** (`@FoireOuverteRequise` ; le sélecteur n'existe alors pas côté interface), `404` collègue inconnu de l'édition — voir [`securite.md`](securite.md#lecture-des-cr%C3%A9neaux-dun-coll%C3%A8gue) |
 | `POST` | `/api/espace-animateur/{jeton}/demandes` | Soumet une **liste** de demandes `[{ creneauId, standId, cibleId, motif?, creneauCibleId?, standCibleId? }]`. `creneauCibleId`/`standCibleId` renseignés = échange **dirigé** : le demandeur cède son créneau ET récupère le créneau désigné du collègue (« je te laisse mon lundi, je prends ton mardi »). Chacune est prévalidée contre les contraintes dures (`simulerEchange`/`simulerEchangeDirige`) mais enregistrée quel que soit le verdict ; la réponse porte `prevalidationOk` et `contraintesViolees` (descriptions métier du catalogue). Un mail est envoyé à l'admin (si `planning.mail.admin` est configurée) |
 | `POST` | `/api/espace-animateur/{jeton}/demandes/{id}/annulation` | Annule une de **ses** demandes encore en attente (`204` ; `400` si déjà décidée) |
 | `GET` | `/api/espace-animateur/{jeton}/planning.pdf` | Son planning individuel en PDF (même document que l'export admin), toujours disponible — foire fermée comprise |
 | `GET` | `/api/espace-animateur/{jeton}/planning.ics` | Son planning au format calendrier ICS |
-| `POST` | `/api/espace-animateur/{jeton}/code` | Envoie un code d'accès à 6 chiffres (10 min, 5 essais) à l'adresse de la fiche ; répond `{ emailMasque }`. `400` si la fiche n'a pas d'adresse — l'e-mail EST le second facteur |
-| `POST` | `/api/espace-animateur/{jeton}/session` | Échange `{ "code": "…" }` contre une session de 30 jours, posée dans le cookie HttpOnly `planning-espace` (`Path=/api/espace-animateur`, `SameSite=Strict`) — `204`, ou `400` (code faux, expiré ou épuisé) |
+| `POST` | `/api/espace-animateur/{jeton}/code` | Envoie un code d'accès à 6 chiffres (10 min, 5 essais) à l'adresse de la fiche ; répond `{ emailMasque }`. `400` si la fiche n'a pas d'adresse — l'e-mail EST le second facteur. `429` + `Retry-After` au-delà de trois codes **jamais utilisés** dans la fenêtre de 10 min (voir [`securite.md`](securite.md)) : ouvrir la session efface le compteur |
+| `POST` | `/api/espace-animateur/{jeton}/session` | Échange `{ "code": "…" }` contre une session de 30 jours, posée dans le cookie HttpOnly `planning-espace` (`Path=/api/espace-animateur`, `SameSite=Strict`, et `Secure` dès que la visite est en HTTPS — `X-Forwarded-Proto` compris) — `204`, ou `400` (code faux, expiré ou épuisé) |
 
 **Authentification de l'espace** : le lien (jeton) ne suffit plus — l'espace
 sert le planning en téléchargement, donc toutes les routes ci-dessus **sauf**

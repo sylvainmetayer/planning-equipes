@@ -422,6 +422,7 @@ public class PlanSnapshotService {
                 } else {
                     ps.setString(2, id);
                 }
+                // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string
                 try (ResultSet rs = ps.executeQuery()) {
                     if (!rs.next()) {
                         manquants.add(kind + ":" + id);

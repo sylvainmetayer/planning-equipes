@@ -58,14 +58,35 @@ public class EspaceAccesService {
     @Inject
     MailService mailService;
 
+    @Inject
+    LimiteurDemandesCode limiteurDemandesCode;
+
     /** What the "send me a code" call tells the interface. */
     public record CodeEnvoye(String emailMasque) {
+    }
+
+    /** Trop de codes demandés sans en utiliser aucun : porte le délai avant le prochain essai. */
+    public static class TropDeDemandes extends RuntimeException {
+
+        private final long secondesAvantNouvelEssai;
+
+        TropDeDemandes(long secondesAvantNouvelEssai) {
+            super("Trop de codes demandés sans en utiliser aucun : réessayez dans "
+                    + Math.max(1, (secondesAvantNouvelEssai + 59) / 60) + " minute(s).");
+            this.secondesAvantNouvelEssai = secondesAvantNouvelEssai;
+        }
+
+        public long secondesAvantNouvelEssai() {
+            return secondesAvantNouvelEssai;
+        }
     }
 
     /**
      * Generates and mails a fresh code to the animateur. Replaces any pending
      * one. Throws {@link IllegalArgumentException} when the fiche carries no
-     * email address — the business message is shown as-is.
+     * email address — the business message is shown as-is, and
+     * {@link TropDeDemandes} when codes pile up unused (see
+     * {@link LimiteurDemandesCode}).
      */
     public CodeEnvoye demanderCode(String animateurId) {
         Animateur animateur = animateurRequis(animateurId);
@@ -73,6 +94,12 @@ public class EspaceAccesService {
             throw new IllegalArgumentException(
                     "Aucune adresse e-mail n'est enregistrée pour vous : contactez l'organisation "
                             + "pour la faire ajouter à votre fiche.");
+        }
+        // Après le contrôle d'adresse, avant l'envoi : une fiche sans adresse
+        // ne consomme rien, et tout mail réellement parti est compté.
+        LimiteurDemandesCode.Verdict verdict = limiteurDemandesCode.demander(cleDebit(animateurId));
+        if (!verdict.autorise()) {
+            throw new TropDeDemandes(verdict.secondesAvantNouvelEssai());
         }
         String code = String.format("%06d", random.nextInt(1_000_000));
         try (Connection connection = dataSource.getConnection();
@@ -120,6 +147,8 @@ public class EspaceAccesService {
             throw new IllegalStateException("Failed to open an espace session", e);
         }
         supprimerCode(animateurId);
+        // Le code a servi : la série de demandes sans suite s'arrête là.
+        limiteurDemandesCode.oublier(cleDebit(animateurId));
         return session;
     }
 
@@ -209,6 +238,11 @@ public class EspaceAccesService {
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("SHA-256 unavailable", e);
         }
+    }
+
+    /** Le débit se compte par animateur ET par édition, comme tout le reste de l'espace. */
+    private String cleDebit(String animateurId) {
+        return editionContext.editionIdCourant() + "/" + animateurId;
     }
 
     private PreparedStatement prepareScoped(Connection connection, String sql) throws SQLException {

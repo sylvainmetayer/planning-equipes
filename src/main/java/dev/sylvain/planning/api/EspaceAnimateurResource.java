@@ -20,9 +20,11 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
 
 /**
  * The animateur self-service espace (issue #165), the only part of the API
@@ -81,7 +83,8 @@ public class EspaceAnimateurResource {
     @GET
     @Path("/{jeton}/collegues/{collegueId}/postes")
     @SessionEspaceRequise
-    public List<dev.sylvain.planning.service.EspaceAnimateurService.PosteAnimateurView> postesCollegue(
+    @FoireOuverteRequise
+    public List<EspaceAnimateurService.PosteAnimateurView> postesCollegue(
             @PathParam("collegueId") String collegueId) {
         return espaceAnimateurService.postesCollegue(collegueId);
     }
@@ -206,6 +209,11 @@ public class EspaceAnimateurResource {
     public Response demanderCode() {
         try {
             return Response.ok(espaceAccesService.demanderCode(animateurCourant())).build();
+        } catch (EspaceAccesService.TropDeDemandes e) {
+            return Response.status(429)
+                    .header(HttpHeaders.RETRY_AFTER, e.secondesAvantNouvelEssai())
+                    .entity(new ReferenceDataResource.ErreurValidation(e.getMessage()))
+                    .build();
         } catch (IllegalArgumentException e) {
             return badRequest(e);
         } catch (RuntimeException e) {
@@ -217,22 +225,40 @@ public class EspaceAnimateurResource {
         }
     }
 
-    /** Exchanges a valid code for the durable session cookie. */
+    /**
+     * Exchanges a valid code for the durable session cookie.
+     *
+     * <p>{@code Secure} is added as soon as the visitor reached the
+     * application over HTTPS — the scheme of the request the visitor really
+     * made, so a TLS-terminating reverse proxy announcing
+     * {@code X-Forwarded-Proto: https} counts (see
+     * {@code quarkus.http.proxy.proxy-address-forwarding}). Without it the
+     * 30-day session cookie would also travel on a plain http request to the
+     * same host, which is exactly what an attacker on the network needs.
+     * Attaching it unconditionally instead would make the espace unusable on
+     * the http-only local stack, so the flag follows the connection.</p>
+     */
     @POST
     @Path("/{jeton}/session")
     @JetonRequis
-    public Response ouvrirSession(CodeSession codeSession) {
+    public Response ouvrirSession(CodeSession codeSession, @Context UriInfo uriInfo) {
         try {
             String session = espaceAccesService.ouvrirSession(animateurCourant(),
                     codeSession == null ? null : codeSession.code());
             return Response.noContent()
                     .header("Set-Cookie", COOKIE_SESSION + "=" + session
-                            + "; Path=/api/espace-animateur; HttpOnly; SameSite=Strict; Max-Age="
-                            + EspaceAccesService.VALIDITE_SESSION.toSeconds())
+                            + "; Path=/api/espace-animateur; HttpOnly; SameSite=Strict"
+                            + (requeteChiffree(uriInfo) ? "; Secure" : "")
+                            + "; Max-Age=" + EspaceAccesService.VALIDITE_SESSION.toSeconds())
                     .build();
         } catch (IllegalArgumentException e) {
             return badRequest(e);
         }
+    }
+
+    /** True when the visitor's own request was HTTPS, proxy headers included. */
+    private static boolean requeteChiffree(UriInfo uriInfo) {
+        return "https".equalsIgnoreCase(uriInfo.getRequestUri().getScheme());
     }
 
     /** Body of the session opener: the code received by e-mail. */

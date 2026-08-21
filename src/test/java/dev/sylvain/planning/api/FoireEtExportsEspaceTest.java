@@ -118,6 +118,15 @@ class FoireEtExportsEspaceTest {
                 .statusCode(400)
                 .body("message", containsString("fermée"));
 
+        // The picker follows the same rule as the writes it serves: it exists
+        // only to build a demande, and the interface hides it once the foire is
+        // closed. Left open, it would keep serving every colleague's schedule
+        // the rest of the year for no functional reason.
+        given().when().get("/api/espace-animateur/" + jeton + "/collegues/FOIRE-B/postes")
+                .then()
+                .statusCode(400)
+                .body("message", containsString("fermée"));
+
         // The espace stays consultable and says the foire is closed.
         given().when().get("/api/espace-animateur/" + jeton)
                 .then()
@@ -125,8 +134,10 @@ class FoireEtExportsEspaceTest {
                 .body("foireOuverte", equalTo(false))
                 .body("postes.size()", equalTo(1));
 
-        // Reopening restores the whole flow, cancellation included.
+        // Reopening restores the whole flow, cancellation and picker included.
         configurer(true);
+        given().when().get("/api/espace-animateur/" + jeton + "/collegues/FOIRE-B/postes")
+                .then().statusCode(200);
         given().contentType(ContentType.JSON)
                 .when().post("/api/espace-animateur/" + jeton + "/demandes/" + demandeId + "/annulation")
                 .then().statusCode(204);

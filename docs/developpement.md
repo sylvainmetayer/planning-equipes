@@ -369,6 +369,7 @@ Dans `application.properties` :
 | `planning.solver.seconds-limit` | `180` (`3` en profil `%test`) | Durée maximale de résolution |
 | `planning.solver.unimproved-seconds-limit` | `300` (`2` en profil `%test`), `0` = désactivé | Arrêt anticipé sur plateau, **conditionné à la faisabilité** : voir ci-dessous |
 | `planning.constraint-weights.<nomDeLaContrainte>` | `1` pour chaque contrainte | Poids de la contrainte (multiplie le hard/medium/soft qu'elle produit) ; voir [`contraintes.md`](contraintes.md#pondérer-une-contrainte) |
+| `planning.jobs.reprise-au-demarrage` | `true` (`false` en profil `%test`) | Rejoue la file de résolution persistée au démarrage — voir [`api.md`](api.md#la-file-survit-au-redémarrage). En test, une tâche laissée en file par une exécution précédente déclencherait un vrai solve au démarrage de la suivante |
 
 ### `acceptedCountLimit` : mesuré, pas hérité
 
@@ -674,6 +675,42 @@ en début de mois se fait donc à la main, en éditant les `runs-on`.
   à la main (`workflow_dispatch`). Sans ce filet, un réglage du solveur pouvait
   partir en production sans qu'aucun test ne vérifie qu'un scénario connu
   converge encore.
+- `.github/workflows/securite.yml` — deux jobs sur chaque push `main`, chaque
+  pull request **et chaque lundi matin**. `dependances` est un Trivy en mode
+  système de fichiers qui lit `pom.xml` et
+  `src/main/webui/package-lock.json` d'une seule passe — pas de clé d'API à
+  gérer, contrairement à OWASP dependency-check que la limitation de débit du
+  NVD rend pénible en CI. Le job **est** la barrière : `exit-code: 1` le fait
+  échouer sur la moindre vulnérabilité corrigeable et son tableau part dans le
+  log, sans dépendre d'un onglet qu'il faudrait penser à consulter. Le
+  rendez-vous hebdomadaire compte autant que le déclenchement sur PR : une CVE
+  publiée demain touche un `pom.xml` qui n'a pas bougé. Trivy ignore les
+  vulnérabilités **sans correctif disponible** (`ignore-unfixed`) : elles
+  feraient échouer chaque PR sans que personne ne puisse rien y faire.
+  Le second job, `code`, est un **Semgrep OSS** sur quatre jeux de règles du
+  registre (`p/java`, `p/typescript`, `p/owasp-top-ten`, `p/dockerfile`),
+  limité à la sévérité `ERROR` : à l'introduction d'un SAST, tout ouvrir d'un
+  coup noie les vrais signaux sous les avertissements de style, et un garde-fou
+  qu'on prend l'habitude d'ignorer ne garde plus rien — monter à
+  `WARNING` est un cran à passer plus tard, une fois la base propre. Semgrep
+  saute de lui-même ce que `.gitignore` couvre. Il tourne dans son **image
+  Docker officielle**, le dépôt monté en lecture seule : `actions/setup-python`
+  ne trouve aucun binaire pour la distribution du runner (« not found for
+  debian 13 ») et un `pip install` dans le Python système se heurterait à
+  PEP 668 ; la lecture seule évite qu'un fichier appartenant à root ne fasse
+  échouer le `git clean` du job suivant. Sa version est **épinglée** : une
+  montée peut ajouter des règles, donc faire rougir une PR qui n'a rien changé ;
+  Renovate ne suivant pas une image citée dans un `run:`, c'est une mise à jour
+  à faire à la main, en lisant ce que la nouvelle version trouve.
+
+  **CodeQL a été écarté** : il ne sait publier que dans l'onglet **Security**,
+  ce qui suppose le *code scanning* — gratuit sur un dépôt public, payant sur
+  un dépôt privé, ce qu'est celui-ci. Un job qui ne peut structurellement pas
+  passer n'a pas sa place dans une CI ; le jour où le dépôt deviendrait public,
+  il redeviendrait une option, en plus de Semgrep et non à sa place (les deux
+  ne trouvent pas les mêmes choses). GitGuardian (secrets,
+  `.gitguardian.yaml`) et Renovate (versions) restent les deux autres pans du
+  dispositif.
 - `.github/workflows/docker-ghcr.yml` — publication de l'image sur GHCR, en
   multi-arch (`linux/amd64`, `linux/arm64` via QEMU) pour un déploiement natif
   sur Raspberry Pi. Ne se déclenche **que** sur un push `main` ou un tag de

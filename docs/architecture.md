@@ -22,7 +22,7 @@ PostgreSQL (+ migrations Flyway)
 | Persistance | PostgreSQL + Flyway | Migrations versionnées dans `src/main/resources/db/migration` |
 | Frontend | Angular 22 (standalone, signals, zoneless) dans `src/main/webui` | Construit et servi par l'extension Quarkus Quinoa |
 | Exports | OpenPDF (PDF), génération ICS maison | Toujours côté serveur |
-| Conteneurisation | Docker Compose (app, postgres, pgadmin) | Config par variables d'environnement |
+| Conteneurisation | Docker Compose (app, postgres, pgadmin) | Config par variables d'environnement ; l'image applicative tourne sous un utilisateur non privilégié (`uid 1001`) |
 | Outillage | `mise.toml` (`temurin-25`, Maven 3.9.9, Node 24) | Toolchain épinglée ; Quinoa télécharge Node au build si absent |
 | MCP | Quarkiverse `quarkus-mcp-server-http` (streamable HTTP) | Assistant IA en langage naturel, voir [`mcp.md`](mcp.md) |
 
@@ -76,7 +76,8 @@ dans [`domaine.md`](domaine.md).
 | Service | Rôle |
 | --- | --- |
 | `PlanningService` | Construit la `SolverFactory` depuis `solver/solverConfig.xml`, charge `scenario.yml`, expose `construireExemple()` / `resoudre()` / `analyser()`, et l'explicabilité par affectation (`expliquerAffectation()`, `simulerSwap()`) |
-| `SolverJobService` | Résolutions et analyses asynchrones ; porte le verrou « un seul solveur à la fois », partagé par tous les clients, et la **file d'attente** des tâches planifiées derrière celle qui tourne |
+| `SolverJobService` | Résolutions et analyses asynchrones ; porte le verrou « un seul solveur à la fois », partagé par tous les clients, et la **file d'attente** des tâches planifiées derrière celle qui tourne ; la rejoue au démarrage |
+| `SolverJobRepository` | Persistance de cette file et du journal des jobs (table `solver_job`) : l'**intention** d'un job, jamais un état de solveur ni le résultat — voir [`api.md`](api.md#la-file-survit-au-redémarrage) |
 | `ConstraintAnalysisStore` | Mémorise le résultat de la dernière analyse pour l'onglet « Constraints » |
 | `ReferenceDataService` / `ReferenceDataRepository` | CRUD référentiels (stands, créneaux, animateurs, typologies, contraintes ad hoc) ; point de passage unique du SQL référentiel, et donc du prédicat `edition_id` |
 | `EditionService` / `EditionRepository` | Gestion des éditions elles-mêmes : création, duplication, suppression — voir [`editions.md`](editions.md) |

@@ -33,6 +33,11 @@ docker compose --profile app up --build
 Puis ouvrir <http://localhost:8080>. La base PostgreSQL et une interface pgAdmin
 (<http://localhost:5050>) sont démarrées en même temps.
 
+⚠️ Cette pile est faite pour le poste de développement : elle publie PostgreSQL
+sur l'hôte, ajoute pgAdmin en `admin/admin` et des mots de passe par défaut.
+Pour un déploiement accessible depuis Internet, utiliser
+`docker-compose.prod.yml` et lire [`docs/securite.md`](docs/securite.md).
+
 ### Option B — mode développement (rechargement à chaud)
 
 ```bash
@@ -100,6 +105,14 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 | `LEGAL_BASE_LEGALE` | *(vide)* | Base légale du traitement des données personnelles |
 | `LEGAL_CONSERVATION` | *(vide)* | Durée de conservation des données personnelles |
 | `PUBLIC_URL` | `http://localhost:8080` | URL publique de l'application, imprimée comme lien « espace animateur » sur les PDF |
+| `CSP` | *(politique par défaut)* | Politique de sécurité du contenu envoyée à chaque réponse ; vide = en-tête désactivé — voir [`securite.md`](docs/securite.md) |
+| `HSTS` | `max-age=31536000; includeSubDomains` | En-tête HSTS, envoyé uniquement sur une visite HTTPS ; vide = désactivé |
+| `MAX_BODY_SIZE` | `10M` | Taille maximale d'un corps de requête — dimensionnée par l'import de dump SQL |
+| `MAX_CONNECTIONS` | `500` | Connexions HTTP simultanées acceptées |
+| `ESPACE_CODE_MAX_DEMANDES` | `3` | Codes d'accès non utilisés tolérés par animateur avant `429` — voir [`securite.md`](docs/securite.md) |
+| `ESPACE_CODE_FENETRE` | `PT10M` | Fenêtre sur laquelle ce plafond se compte |
+| `CONNEXION_MAX_ECHECS` | `5` | Échecs de connexion admin tolérés par adresse avant verrouillage |
+| `CONNEXION_DUREE_BLOCAGE` | `PT15M` | Durée du verrouillage, comptée depuis le dernier échec |
 
 Détails et mise en place : [`docs/observabilite.md`](docs/observabilite.md) (Sentry/Cloudflare),
 [`docs/mcp.md`](docs/mcp.md) (serveur MCP).
@@ -134,7 +147,7 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 | --- | --- |
 | Génération automatique du planning | Le moteur d'optimisation affecte les animateurs aux places à pourvoir, sous trois niveaux d'exigence : le cadre légal et les incompatibilités (jamais franchis), la couverture des postes, puis l'équité, les souhaits et le confort |
 | Découpage automatique en vacations | Transforme l'amplitude d'ouverture d'une journée en vacations réelles : durée cible, relais, pauses repas et stratégie de couverture pendant la pause |
-| File d'attente du solveur | Planifier une résolution derrière celle qui tourne : elle démarre d'elle-même, ce qui permet de préparer l'édition suivante sans attendre devant l'écran |
+| File d'attente du solveur | Planifier une résolution derrière celle qui tourne : elle démarre d'elle-même, ce qui permet de préparer l'édition suivante sans attendre devant l'écran. La file survit à un redémarrage du serveur ; la résolution qui était en cours, elle, est perdue et signalée comme interrompue |
 | Replanification incrémentale | Repart du planning enregistré, fige ce qui reste valable et ne recalcule que ce qu'un changement tardif a invalidé — quelques dizaines de secondes au lieu de plusieurs minutes |
 | Verrouillage partiel | Geler un animateur, un stand, une journée ou un créneau pour que la prochaine résolution n'y touche plus et optimise le reste |
 | Exceptions ponctuelles | Contraintes ad hoc tracées avec leur raison : indisponibilité forcée, incompatibilité entre deux personnes, affectation imposée, paire à privilégier |
@@ -220,6 +233,7 @@ Formats d'échange détaillés dans
 | Le modèle de domaine | [`docs/domaine.md`](docs/domaine.md) |
 | Le référentiel de contraintes | [`docs/contraintes.md`](docs/contraintes.md) |
 | L'API REST | [`docs/api.md`](docs/api.md) |
+| Le durcissement avant mise sur Internet | [`docs/securite.md`](docs/securite.md) |
 | Les imports / exports | [`docs/import-export.md`](docs/import-export.md) |
 | Contribuer (build, tests, CI, Renovate) | [`docs/developpement.md`](docs/developpement.md) |
 | L'audit de conformité RH (Code du travail) | [`docs/audit-conformite-rh.md`](docs/audit-conformite-rh.md) |
