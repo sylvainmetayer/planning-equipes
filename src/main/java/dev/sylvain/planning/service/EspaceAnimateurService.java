@@ -89,7 +89,7 @@ public class EspaceAnimateurService {
         Animateur animateur = animateurs.stream()
                 .filter(candidat -> candidat.getId().equals(animateurId))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Animateur inconnu : " + animateurId));
+                .orElseThrow(() -> new ErreurMetier.Invalide("Animateur inconnu : " + animateurId));
 
         PlanningFestival planning = persistenceService.loadPersistedPlanning();
         Map<String, List<String>> coequipiers = exportService.coequipiersParPoste(planning, animateurId);

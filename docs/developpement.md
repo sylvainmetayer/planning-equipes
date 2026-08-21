@@ -833,6 +833,15 @@ stricte des deux versions.
   renommer là aussi. `UriBuilder` y normalise le `/` final et encode les
   segments variables (le jeton de l'espace animateur voyage comme valeur de
   gabarit, jamais concaténé).
+- **Une requête refusée lève `ErreurMetier`, la ressource n'écrit pas de
+  `try/catch`.** La hiérarchie scellée (`Invalide` → 400, `Introuvable` → 404,
+  `Conflit` → 409) porte le statut, et `ErreurMetierMapper` la traite par
+  `switch` exhaustif. Elle étend `IllegalArgumentException` exprès : une
+  `IllegalArgumentException` nue — venue d'une bibliothèque, ou que personne
+  n'a voulu lever — garde son 500 et son alerte Sentry, et c'est justement
+  cette différence qui a de la valeur. Le choix de la variante suit la
+  provenance de l'identifiant : un segment d'URL qui ne désigne rien est
+  `Introuvable`, un champ de corps qui ne désigne rien est `Invalide`.
 - **Un `ObjectMapper` s'injecte, il ne se construit pas.** `new ObjectMapper()`
   n'a pas les modules enregistrés par Quarkus (JSR-310 en tête) et force à
   aplatir en `String` des champs qui sont des `LocalDate`/`Instant` — un

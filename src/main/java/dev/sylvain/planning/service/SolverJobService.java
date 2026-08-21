@@ -310,7 +310,7 @@ public class SolverJobService {
         return switch (type) {
             case SOLVE -> tacheSolveDepuisReferenceData(secondsLimit);
             case SOLVE_INCREMENTAL -> tacheSolveIncremental(secondsLimit, perimetre);
-            case ANALYZE -> throw new IllegalArgumentException("An analyze job is never replayable");
+            case ANALYZE -> throw new ErreurMetier.Invalide("An analyze job is never replayable");
         };
     }
 

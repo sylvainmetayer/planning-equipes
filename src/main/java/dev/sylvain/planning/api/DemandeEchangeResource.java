@@ -74,54 +74,26 @@ public class DemandeEchangeResource {
     @GET
     @Path("/{id}/impact")
     public Response impact(@PathParam("id") String id) {
-        try {
-            EchangeSimulation simulation = demandeEchangeService.impact(id);
-            return Response.ok(simulation).build();
-        } catch (IllegalArgumentException e) {
-            // Unknown id is a 404; a demande that exists but cannot be
-            // measured (another groupe de créneaux) is a business 400.
-            return e.getMessage() != null && e.getMessage().startsWith("Demande inconnue")
-                    ? notFound(e)
-                    : badRequest(e);
-        }
+        EchangeSimulation simulation = demandeEchangeService.impact(id);
+        return Response.ok(simulation).build();
     }
 
     @POST
     @Path("/{id}/acceptation")
     public Response accepter(@PathParam("id") String id, Decision decision) {
-        try {
-            return Response.ok(vue(demandeEchangeService.accepter(id,
-                    decision == null ? null : decision.commentaire()))).build();
-        } catch (IllegalArgumentException e) {
-            return badRequest(e);
-        }
+        return Response.ok(vue(demandeEchangeService.accepter(id,
+                decision == null ? null : decision.commentaire()))).build();
     }
 
     @POST
     @Path("/{id}/refus")
     public Response refuser(@PathParam("id") String id, Decision decision) {
-        try {
-            return Response.ok(vue(demandeEchangeService.refuser(id,
-                    decision == null ? null : decision.commentaire()))).build();
-        } catch (IllegalArgumentException e) {
-            return badRequest(e);
-        }
+        return Response.ok(vue(demandeEchangeService.refuser(id,
+                decision == null ? null : decision.commentaire()))).build();
     }
 
     private DemandeEchangeView vue(DemandeEchange demande) {
         return espaceAnimateurService.versVues(List.of(demande)).get(0);
-    }
-
-    private static Response notFound(IllegalArgumentException e) {
-        return Response.status(Response.Status.NOT_FOUND)
-                .entity(new ReferenceDataResource.ErreurValidation(e.getMessage()))
-                .build();
-    }
-
-    private static Response badRequest(IllegalArgumentException e) {
-        return Response.status(Response.Status.BAD_REQUEST)
-                .entity(new ReferenceDataResource.ErreurValidation(e.getMessage()))
-                .build();
     }
 
     /** Optional admin comment carried by a decision (the reason of a refusal, typically). */

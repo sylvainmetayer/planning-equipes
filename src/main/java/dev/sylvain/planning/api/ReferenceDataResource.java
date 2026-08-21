@@ -61,25 +61,13 @@ public class ReferenceDataResource {
     @POST
     @Path("/stands")
     public Response createStand(Stand stand) {
-        try {
-            return Response.ok(referenceDataService.createStand(stand)).build();
-        } catch (IllegalArgumentException e) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ErreurValidation(e.getMessage()))
-                    .build();
-        }
+        return Response.ok(referenceDataService.createStand(stand)).build();
     }
 
     @PUT
     @Path("/stands/{id}")
     public Response updateStand(@PathParam("id") String id, Stand stand) {
-        try {
-            return Response.ok(referenceDataService.updateStand(id, stand)).build();
-        } catch (IllegalArgumentException e) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ErreurValidation(e.getMessage()))
-                    .build();
-        }
+        return Response.ok(referenceDataService.updateStand(id, stand)).build();
     }
 
     @DELETE
@@ -185,25 +173,13 @@ public class ReferenceDataResource {
     @POST
     @Path("/animateurs")
     public Response createAnimateur(Animateur animateur) {
-        try {
-            return Response.ok(referenceDataService.createAnimateur(animateur)).build();
-        } catch (IllegalArgumentException e) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ErreurValidation(e.getMessage()))
-                    .build();
-        }
+        return Response.ok(referenceDataService.createAnimateur(animateur)).build();
     }
 
     @PUT
     @Path("/animateurs/{id}")
     public Response updateAnimateur(@PathParam("id") String id, Animateur animateur) {
-        try {
-            return Response.ok(referenceDataService.updateAnimateur(id, animateur)).build();
-        } catch (IllegalArgumentException e) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ErreurValidation(e.getMessage()))
-                    .build();
-        }
+        return Response.ok(referenceDataService.updateAnimateur(id, animateur)).build();
     }
 
     @DELETE
@@ -221,13 +197,7 @@ public class ReferenceDataResource {
     @POST
     @Path("/animateurs/{id}/jeton")
     public Response regenererJetonAnimateur(@PathParam("id") String id) {
-        try {
-            return Response.ok(new JetonAnimateur(referenceDataService.regenererJetonAnimateur(id))).build();
-        } catch (IllegalArgumentException e) {
-            return Response.status(Response.Status.NOT_FOUND)
-                    .entity(new ErreurValidation(e.getMessage()))
-                    .build();
-        }
+        return Response.ok(new JetonAnimateur(referenceDataService.regenererJetonAnimateur(id))).build();
     }
 
     /** Body of a token regeneration: the new token, nothing else. */
@@ -256,14 +226,8 @@ public class ReferenceDataResource {
     @DELETE
     @Path("/typologies/{id}")
     public Response deleteTypologie(@PathParam("id") String id) {
-        try {
-            referenceDataService.deleteTypologie(id);
-            return Response.noContent().build();
-        } catch (IllegalArgumentException e) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ErreurValidation(e.getMessage()))
-                    .build();
-        }
+        referenceDataService.deleteTypologie(id);
+        return Response.noContent().build();
     }
 
     @POST
@@ -343,13 +307,7 @@ public class ReferenceDataResource {
     @Path("/reference-data/cible-scenario-fichier")
     @Consumes(MediaType.WILDCARD)
     public Response cibleScenarioFichier(String yamlContent) {
-        try {
-            return Response.ok(versCibleView(planningService.chargerEditionTexteScenario(yamlContent))).build();
-        } catch (IllegalArgumentException e) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ErreurValidation(e.getMessage()))
-                    .build();
-        }
+        return Response.ok(versCibleView(planningService.chargerEditionTexteScenario(yamlContent))).build();
     }
 
     @POST
@@ -412,13 +370,7 @@ public class ReferenceDataResource {
     @Path("/reference-data/import-scenario-fichier")
     @Consumes(MediaType.WILDCARD)
     public Response importScenarioFichier(String yamlContent) {
-        try {
-            return importer(planningService.construireDepuisTexteScenario(yamlContent));
-        } catch (IllegalArgumentException e) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ErreurValidation(e.getMessage()))
-                    .build();
-        }
+        return importer(planningService.construireDepuisTexteScenario(yamlContent));
     }
 
     /**
@@ -498,13 +450,7 @@ public class ReferenceDataResource {
     @POST
     @Path("/contraintes-ad-hoc")
     public Response createContrainteAdHoc(ContrainteAdHoc contrainteAdHoc) {
-        try {
-            return Response.ok(referenceDataService.createContrainteAdHoc(contrainteAdHoc)).build();
-        } catch (IllegalArgumentException e) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ErreurValidation(e.getMessage()))
-                    .build();
-        }
+        return Response.ok(referenceDataService.createContrainteAdHoc(contrainteAdHoc)).build();
     }
 
     @DELETE
@@ -529,18 +475,9 @@ public class ReferenceDataResource {
     @PUT
     @Path("/parametres-legaux")
     public Response updateParametresLegaux(ParametresLegaux parametres) {
-        try {
-            return Response.ok(referenceDataService.updateParametresLegaux(parametres)).build();
-        } catch (IllegalArgumentException e) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ErreurValidation(e.getMessage()))
-                    .build();
-        }
+        return Response.ok(referenceDataService.updateParametresLegaux(parametres)).build();
     }
 
-    /** Body of a 400 on a reference-data mutation: a single, user-facing message. */
-    public record ErreurValidation(String message) {
-    }
 
     @GET
     @Path("/parametres-decoupage")
@@ -564,12 +501,6 @@ public class ReferenceDataResource {
     @PUT
     @Path("/parametres-solveur")
     public Response updateParametresSolveur(ParametresSolveur parametres) {
-        try {
-            return Response.ok(referenceDataService.updateParametresSolveur(parametres)).build();
-        } catch (IllegalArgumentException e) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ErreurValidation(e.getMessage()))
-                    .build();
-        }
+        return Response.ok(referenceDataService.updateParametresSolveur(parametres)).build();
     }
 }

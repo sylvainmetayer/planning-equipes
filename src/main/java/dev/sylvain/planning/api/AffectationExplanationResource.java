@@ -37,12 +37,8 @@ public class AffectationExplanationResource {
     @POST
     @Path("/{posteId}/explication")
     public Response expliquer(@PathParam("posteId") String posteId, PlanningFestival planning) {
-        try {
-            AffectationExplanation explication = planningService.expliquerAffectation(planning, posteId);
-            return Response.ok(explication).build();
-        } catch (IllegalArgumentException e) {
-            return notFound(e);
-        }
+        AffectationExplanation explication = planningService.expliquerAffectation(planning, posteId);
+        return Response.ok(explication).build();
     }
 
     /**
@@ -54,21 +50,8 @@ public class AffectationExplanationResource {
     @Path("/{posteId}/simulation-swap")
     public Response simulerSwap(@PathParam("posteId") String posteId,
             @QueryParam("animateurId") String animateurId, PlanningFestival planning) {
-        try {
-            SwapSimulation simulation = planningService.simulerSwap(planning, posteId, animateurId);
-            return Response.ok(simulation).build();
-        } catch (IllegalArgumentException e) {
-            return notFound(e);
-        }
+        SwapSimulation simulation = planningService.simulerSwap(planning, posteId, animateurId);
+        return Response.ok(simulation).build();
     }
 
-    private static Response notFound(IllegalArgumentException e) {
-        return Response.status(Response.Status.NOT_FOUND)
-                .entity(new ErreurValidation(e.getMessage()))
-                .build();
-    }
-
-    /** Body of a 404 on an unknown poste/animateur id: a single, user-facing message. */
-    public record ErreurValidation(String message) {
-    }
 }

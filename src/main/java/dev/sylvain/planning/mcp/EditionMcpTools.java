@@ -1,5 +1,6 @@
 package dev.sylvain.planning.mcp;
 
+import dev.sylvain.planning.service.ErreurMetier;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
@@ -126,7 +127,7 @@ public class EditionMcpTools {
      */
     private String exigerEdition(String edition, String champ) {
         if (edition == null || edition.isBlank()) {
-            throw new IllegalArgumentException(champ + " est requis : id ou nom de l'édition (voir lister_editions)");
+            throw new ErreurMetier.Invalide(champ + " est requis : id ou nom de l'édition (voir lister_editions)");
         }
         return editions.resoudre(edition);
     }

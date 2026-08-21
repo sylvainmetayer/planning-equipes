@@ -173,14 +173,14 @@ public class ReferenceDataService {
                 .filter(id -> !repository.typologieExists(id))
                 .collect(Collectors.toCollection(TreeSet::new));
         if (!inconnues.isEmpty()) {
-            throw new IllegalArgumentException(
+            throw new ErreurMetier.Invalide(
                     "Typologie(s) inconnue(s) : " + inconnues + " — créez-les d'abord via /api/typologies");
         }
     }
 
     private void validateEffectifs(Stand stand) {
         if (stand.getEffectifMin() > stand.getEffectifMax()) {
-            throw new IllegalArgumentException(
+            throw new ErreurMetier.Invalide(
                     "effectifMin (" + stand.getEffectifMin() + ") cannot be greater than effectifMax ("
                             + stand.getEffectifMax() + ")");
         }
@@ -197,11 +197,11 @@ public class ReferenceDataService {
         }
         for (IndisponibiliteStand indispo : stand.getIndisponibilites()) {
             if (indispo.getDate() == null || indispo.getHeureDebut() == null) {
-                throw new IllegalArgumentException("Une indisponibilité de stand requiert une date et une heure de "
+                throw new ErreurMetier.Invalide("Une indisponibilité de stand requiert une date et une heure de "
                         + "début (l'heure de fin peut être vide : jusqu'à la fermeture)");
             }
             if (indispo.getHeureFin() != null && !indispo.getHeureFin().isAfter(indispo.getHeureDebut())) {
-                throw new IllegalArgumentException(
+                throw new ErreurMetier.Invalide(
                         "heureFin (" + indispo.getHeureFin() + ") doit être après heureDebut (" + indispo.getHeureDebut()
                                 + ") — une indisponibilité ne peut pas chevaucher minuit, entrez-en deux");
             }
@@ -219,11 +219,11 @@ public class ReferenceDataService {
         }
         for (OuvertureStand ouverture : stand.getOuvertures()) {
             if (ouverture.getDate() == null || ouverture.getHeureDebut() == null) {
-                throw new IllegalArgumentException("Une ouverture de stand requiert une date et une heure de début "
+                throw new ErreurMetier.Invalide("Une ouverture de stand requiert une date et une heure de début "
                         + "(l'heure de fin peut être vide : jusqu'à la fermeture)");
             }
             if (ouverture.getHeureFin() != null && !ouverture.getHeureFin().isAfter(ouverture.getHeureDebut())) {
-                throw new IllegalArgumentException(
+                throw new ErreurMetier.Invalide(
                         "heureFin (" + ouverture.getHeureFin() + ") doit être après heureDebut ("
                                 + ouverture.getHeureDebut() + ") — une ouverture ne peut pas chevaucher minuit, "
                                 + "entrez-en deux");
@@ -258,7 +258,7 @@ public class ReferenceDataService {
                 HoraireStand a = horaires.get(i);
                 HoraireStand b = horaires.get(j);
                 if (a.getMode() != b.getMode() && a.joursSeChevauchentAvec(b)) {
-                    throw new IllegalArgumentException("Deux horaires de même portée (" + a.getJours()
+                    throw new ErreurMetier.Invalide("Deux horaires de même portée (" + a.getJours()
                             + ") portant sur les mêmes jours ne peuvent pas être l'un une ouverture et l'autre une "
                             + "fermeture pour le stand " + stand.getId()
                             + " — utilisez une portée plus précise pour celui qui doit primer");
@@ -269,15 +269,15 @@ public class ReferenceDataService {
 
     private void validateHoraire(HoraireStand horaire) {
         if (horaire.getFenetres().isEmpty()) {
-            throw new IllegalArgumentException("Un horaire de stand requiert au moins une fenêtre horaire");
+            throw new ErreurMetier.Invalide("Un horaire de stand requiert au moins une fenêtre horaire");
         }
         for (FenetreHoraire fenetre : horaire.getFenetres()) {
             if (fenetre.getHeureDebut() == null) {
-                throw new IllegalArgumentException("Une fenêtre horaire requiert une heure de début "
+                throw new ErreurMetier.Invalide("Une fenêtre horaire requiert une heure de début "
                         + "(l'heure de fin peut être vide : jusqu'à la fermeture)");
             }
             if (fenetre.getHeureFin() != null && !fenetre.getHeureFin().isAfter(fenetre.getHeureDebut())) {
-                throw new IllegalArgumentException("heureFin (" + fenetre.getHeureFin() + ") doit être après heureDebut ("
+                throw new ErreurMetier.Invalide("heureFin (" + fenetre.getHeureFin() + ") doit être après heureDebut ("
                         + fenetre.getHeureDebut() + ") — une fenêtre horaire ne peut pas chevaucher minuit, "
                         + "entrez-en deux");
             }
@@ -285,23 +285,23 @@ public class ReferenceDataService {
         switch (horaire.getJours()) {
             case JOURS_SEMAINE -> {
                 if (horaire.getJoursSemaine().isEmpty()) {
-                    throw new IllegalArgumentException(
+                    throw new ErreurMetier.Invalide(
                             "Un horaire de portée JOURS_SEMAINE requiert au moins un jour de la semaine");
                 }
             }
             case PLAGE -> {
                 if (horaire.getDateDebut() == null || horaire.getDateFin() == null) {
-                    throw new IllegalArgumentException(
+                    throw new ErreurMetier.Invalide(
                             "Un horaire de portée PLAGE requiert une dateDebut et une dateFin");
                 }
                 if (horaire.getDateFin().isBefore(horaire.getDateDebut())) {
-                    throw new IllegalArgumentException("dateFin (" + horaire.getDateFin() + ") doit être après ou égale "
+                    throw new ErreurMetier.Invalide("dateFin (" + horaire.getDateFin() + ") doit être après ou égale "
                             + "à dateDebut (" + horaire.getDateDebut() + ")");
                 }
             }
             case DATES -> {
                 if (horaire.getDates().isEmpty()) {
-                    throw new IllegalArgumentException("Un horaire de portée DATES requiert au moins une date");
+                    throw new ErreurMetier.Invalide("Un horaire de portée DATES requiert au moins une date");
                 }
             }
             case TOUS -> {
@@ -328,7 +328,7 @@ public class ReferenceDataService {
         Set<LocalDate> conflits = new TreeSet<>(joursFermeture);
         conflits.retainAll(joursOuverture);
         if (!conflits.isEmpty()) {
-            throw new IllegalArgumentException("Un jour ne peut pas avoir à la fois une fermeture et une ouverture "
+            throw new ErreurMetier.Invalide("Un jour ne peut pas avoir à la fois une fermeture et une ouverture "
                     + "pour le stand " + stand.getId() + " : " + conflits);
         }
     }
@@ -408,10 +408,10 @@ public class ReferenceDataService {
         Double latitude = emplacement.getLatitude();
         Double longitude = emplacement.getLongitude();
         if (latitude != null && (latitude < -90 || latitude > 90)) {
-            throw new IllegalArgumentException("latitude must be between -90 and 90");
+            throw new ErreurMetier.Invalide("latitude must be between -90 and 90");
         }
         if (longitude != null && (longitude < -180 || longitude > 180)) {
-            throw new IllegalArgumentException("longitude must be between -180 and 180");
+            throw new ErreurMetier.Invalide("longitude must be between -180 and 180");
         }
     }
 
@@ -495,7 +495,7 @@ public class ReferenceDataService {
     public List<Creneau> previsualiserDecoupage() {
         List<Creneau> amplitudes = repository.listCreneaux();
         if (amplitudes.isEmpty()) {
-            throw new IllegalArgumentException("Aucune amplitude à découper : l'édition n'a aucun créneau");
+            throw new ErreurMetier.Invalide("Aucune amplitude à découper : l'édition n'a aucun créneau");
         }
         return VacationGeneratorService.genererVacations(amplitudes, getParametresDecoupage());
     }
@@ -559,7 +559,7 @@ public class ReferenceDataService {
 
     public void deleteTypologie(String id) {
         if (repository.typologieEnUsage(id)) {
-            throw new IllegalArgumentException(
+            throw new ErreurMetier.Invalide(
                     "Typologie " + id + " utilisée par au moins un stand ou animateur — retirez-la d'abord");
         }
         repository.deleteTypologie(id);
@@ -609,7 +609,7 @@ public class ReferenceDataService {
                 .filter(existante -> paire.equals(paireAnimateurs(existante)))
                 .findFirst()
                 .ifPresent(existante -> {
-                    throw new IllegalArgumentException(
+                    throw new ErreurMetier.Invalide(
                             "La paire d'animateurs " + String.join(" / ", new TreeSet<>(paire))
                                     + " est déjà visée par la contrainte " + existante.getId()
                                     + " (" + existante.getType()
@@ -654,7 +654,7 @@ public class ReferenceDataService {
      */
     public VerrouillagePlanning createVerrouillage(VerrouillagePlanning verrouillage) {
         if (verrouillage.getType() == null) {
-            throw new IllegalArgumentException("Type de verrouillage manquant");
+            throw new ErreurMetier.Invalide("Type de verrouillage manquant");
         }
         normaliserCible(verrouillage);
         if (verrouillage.getId() == null || verrouillage.getId().isBlank()) {
@@ -678,7 +678,7 @@ public class ReferenceDataService {
             case ANIMATEUR -> {
                 String animateurId = requiredId(verrouillage.getAnimateurId(), "animateur id");
                 if (!repository.animateurExists(animateurId)) {
-                    throw new IllegalArgumentException("Animateur inconnu : " + animateurId);
+                    throw new ErreurMetier.Invalide("Animateur inconnu : " + animateurId);
                 }
                 verrouillage.setStandId(null);
                 verrouillage.setCreneauId(null);
@@ -687,7 +687,7 @@ public class ReferenceDataService {
             case STAND -> {
                 String standId = requiredId(verrouillage.getStandId(), "stand id");
                 if (!repository.standExists(standId)) {
-                    throw new IllegalArgumentException("Stand inconnu : " + standId);
+                    throw new ErreurMetier.Invalide("Stand inconnu : " + standId);
                 }
                 verrouillage.setAnimateurId(null);
                 verrouillage.setCreneauId(null);
@@ -696,10 +696,10 @@ public class ReferenceDataService {
             case CRENEAU -> {
                 Long creneauId = verrouillage.getCreneauId();
                 if (creneauId == null) {
-                    throw new IllegalArgumentException("Missing créneau id");
+                    throw new ErreurMetier.Invalide("Missing créneau id");
                 }
                 if (!repository.creneauExists(creneauId)) {
-                    throw new IllegalArgumentException("Créneau inconnu : " + creneauId);
+                    throw new ErreurMetier.Invalide("Créneau inconnu : " + creneauId);
                 }
                 verrouillage.setAnimateurId(null);
                 verrouillage.setStandId(null);
@@ -707,7 +707,7 @@ public class ReferenceDataService {
             }
             case JOUR -> {
                 if (verrouillage.getJour() == null) {
-                    throw new IllegalArgumentException("Missing jour");
+                    throw new ErreurMetier.Invalide("Missing jour");
                 }
                 verrouillage.setAnimateurId(null);
                 verrouillage.setStandId(null);
@@ -716,14 +716,14 @@ public class ReferenceDataService {
             case ANIMATEUR_CRENEAU -> {
                 String animateurId = requiredId(verrouillage.getAnimateurId(), "animateur id");
                 if (!repository.animateurExists(animateurId)) {
-                    throw new IllegalArgumentException("Animateur inconnu : " + animateurId);
+                    throw new ErreurMetier.Invalide("Animateur inconnu : " + animateurId);
                 }
                 Long creneauId = verrouillage.getCreneauId();
                 if (creneauId == null) {
-                    throw new IllegalArgumentException("Missing créneau id");
+                    throw new ErreurMetier.Invalide("Missing créneau id");
                 }
                 if (!repository.creneauExists(creneauId)) {
-                    throw new IllegalArgumentException("Créneau inconnu : " + creneauId);
+                    throw new ErreurMetier.Invalide("Créneau inconnu : " + creneauId);
                 }
                 verrouillage.setStandId(null);
                 verrouillage.setJour(null);
@@ -757,7 +757,7 @@ public class ReferenceDataService {
     public String regenererJetonAnimateur(String id) {
         String jeton = repository == null ? null : repository.regenererJetonAnimateur(id);
         if (jeton == null) {
-            throw new IllegalArgumentException("Animateur inconnu : " + id);
+            throw new ErreurMetier.Introuvable("Animateur inconnu : " + id);
         }
         return jeton;
     }
@@ -806,10 +806,10 @@ public class ReferenceDataService {
                 "la durée hebdomadaire maximale des mineurs ne peut pas dépasser 35 h "
                         + "(Code du travail art. L3162-1)");
         if (parametres.getPauseMinimaleEntreVacationsMinutes() < 0) {
-            throw new IllegalArgumentException("pauseMinimaleEntreVacationsMinutes must not be negative");
+            throw new ErreurMetier.Invalide("pauseMinimaleEntreVacationsMinutes must not be negative");
         }
         if (parametres.getReposQuotidienMinimalMinutes() < 0) {
-            throw new IllegalArgumentException("reposQuotidienMinimalMinutes must not be negative");
+            throw new ErreurMetier.Invalide("reposQuotidienMinimalMinutes must not be negative");
         }
         repository.saveParametresLegaux(parametres);
         markModified();
@@ -818,10 +818,10 @@ public class ReferenceDataService {
 
     private static void verifierPlafond(int valeurMinutes, int plafondMinutes, String champ, String message) {
         if (valeurMinutes <= 0) {
-            throw new IllegalArgumentException(champ + " must be positive");
+            throw new ErreurMetier.Invalide(champ + " must be positive");
         }
         if (valeurMinutes > plafondMinutes) {
-            throw new IllegalArgumentException(message);
+            throw new ErreurMetier.Invalide(message);
         }
     }
 
@@ -834,14 +834,14 @@ public class ReferenceDataService {
     public ParametresDecoupage updateParametresDecoupage(ParametresDecoupage parametres) {
         if (parametres.getDureeVacationMinMinutes() <= 0 || parametres.getDureeVacationMaxMinutes() <= 0
                 || parametres.getDureeVacationCibleMinutes() <= 0) {
-            throw new IllegalArgumentException("vacation durations must be positive");
+            throw new ErreurMetier.Invalide("vacation durations must be positive");
         }
         if (parametres.getDureeVacationMinMinutes() > parametres.getDureeVacationMaxMinutes()) {
-            throw new IllegalArgumentException(
+            throw new ErreurMetier.Invalide(
                     "dureeVacationMinMinutes cannot be greater than dureeVacationMaxMinutes");
         }
         if (parametres.getDureeChevauchementMinutes() < 0 || parametres.getDureePauseRepasMinutes() < 0) {
-            throw new IllegalArgumentException("overlap and meal-break durations must not be negative");
+            throw new ErreurMetier.Invalide("overlap and meal-break durations must not be negative");
         }
         repository.saveParametresDecoupage(parametres);
         markModified();
@@ -862,7 +862,7 @@ public class ReferenceDataService {
      */
     public ParametresSolveur updateParametresSolveur(ParametresSolveur parametres) {
         if (parametres.getDureeResolutionSecondes() <= 0) {
-            throw new IllegalArgumentException("dureeResolutionSecondes must be positive");
+            throw new ErreurMetier.Invalide("dureeResolutionSecondes must be positive");
         }
         repository.saveParametresSolveur(parametres);
         return parametres;
@@ -895,7 +895,7 @@ public class ReferenceDataService {
 
     private String requiredId(String id, String fieldName) {
         if (id == null || id.isBlank()) {
-            throw new IllegalArgumentException("Missing " + fieldName);
+            throw new ErreurMetier.Invalide("Missing " + fieldName);
         }
         return id;
     }

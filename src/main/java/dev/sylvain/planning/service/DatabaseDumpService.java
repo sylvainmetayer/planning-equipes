@@ -118,7 +118,7 @@ public class DatabaseDumpService {
     public int importDump(String script) {
         List<String> statements = splitStatements(script);
         if (statements.isEmpty()) {
-            throw new IllegalArgumentException("The SQL script does not contain any statement");
+            throw new ErreurMetier.Invalide("The SQL script does not contain any statement");
         }
         statements.forEach(DatabaseDumpService::checkStatementIsAllowed);
         try (Connection connection = dataSource.getConnection()) {
@@ -133,7 +133,7 @@ public class DatabaseDumpService {
                 return statements.size();
             } catch (SQLException e) {
                 connection.rollback();
-                throw new IllegalArgumentException("The SQL script could not be replayed: " + e.getMessage(), e);
+                throw new ErreurMetier.Invalide("The SQL script could not be replayed: " + e.getMessage(), e);
             } finally {
                 connection.setAutoCommit(previousAutoCommit);
             }
@@ -271,12 +271,12 @@ public class DatabaseDumpService {
         String normalized = statement.replaceAll("\\s+", " ").trim().toLowerCase(Locale.ROOT);
         var matcher = STATEMENT_PATTERN.matcher(normalized);
         if (!matcher.find()) {
-            throw new IllegalArgumentException(
+            throw new ErreurMetier.Invalide(
                     "Only INSERT, DELETE and TRUNCATE statements are allowed, found: " + preview(statement));
         }
         String table = matcher.group(2);
         if (!ALLOWED_TABLES.contains(table)) {
-            throw new IllegalArgumentException("Table not allowed in an imported dump: " + table);
+            throw new ErreurMetier.Invalide("Table not allowed in an imported dump: " + table);
         }
     }
 

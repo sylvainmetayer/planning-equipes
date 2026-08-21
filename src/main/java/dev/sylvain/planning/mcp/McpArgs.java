@@ -1,5 +1,6 @@
 package dev.sylvain.planning.mcp;
 
+import dev.sylvain.planning.service.ErreurMetier;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -36,7 +37,7 @@ final class McpArgs {
         try {
             return LocalDate.parse(value.trim());
         } catch (DateTimeParseException e) {
-            throw new IllegalArgumentException(champ + " : date invalide « " + value + " », format attendu AAAA-MM-JJ");
+            throw new ErreurMetier.Invalide(champ + " : date invalide « " + value + " », format attendu AAAA-MM-JJ");
         }
     }
 
@@ -54,7 +55,7 @@ final class McpArgs {
         try {
             return LocalTime.parse(value.trim());
         } catch (DateTimeParseException e) {
-            throw new IllegalArgumentException(champ + " : heure invalide « " + value + " », format attendu HH:MM");
+            throw new ErreurMetier.Invalide(champ + " : heure invalide « " + value + " », format attendu HH:MM");
         }
     }
 
@@ -83,7 +84,7 @@ final class McpArgs {
      */
     static List<FenetreHoraire> fenetres(String fenetres, boolean finRequise) {
         if (fenetres == null || fenetres.isBlank()) {
-            throw new IllegalArgumentException("fenetres est requis, ex. « 10:00-12:00,14:00-18:00 »");
+            throw new ErreurMetier.Invalide("fenetres est requis, ex. « 10:00-12:00,14:00-18:00 »");
         }
         List<FenetreHoraire> resultat = new ArrayList<>();
         for (String morceau : fenetres.split(",")) {
@@ -93,13 +94,13 @@ final class McpArgs {
             }
             int separateur = fenetre.indexOf('-');
             if (separateur < 0) {
-                throw new IllegalArgumentException("Fenêtre invalide « " + fenetre + " » : attendu "
+                throw new ErreurMetier.Invalide("Fenêtre invalide « " + fenetre + " » : attendu "
                         + (finRequise ? "« HH:MM-HH:MM »" : "« HH:MM-HH:MM » ou « HH:MM- »"));
             }
             String debut = fenetre.substring(0, separateur).trim();
             String fin = fenetre.substring(separateur + 1).trim();
             if (fin.isEmpty() && finRequise) {
-                throw new IllegalArgumentException("Fenêtre invalide « " + fenetre + " » : une heure de fin est "
+                throw new ErreurMetier.Invalide("Fenêtre invalide « " + fenetre + " » : une heure de fin est "
                         + "obligatoire ici. La forme ouverte « HH:MM- » n'existe que pour les horaires de stand, "
                         + "qui se lisent au regard d'un créneau ; un créneau est lui-même l'amplitude du jour.");
             }
@@ -107,7 +108,7 @@ final class McpArgs {
                     fin.isEmpty() ? null : heure(fin, "fenetres.heureFin")));
         }
         if (resultat.isEmpty()) {
-            throw new IllegalArgumentException("fenetres ne contient aucune fenêtre exploitable");
+            throw new ErreurMetier.Invalide("fenetres ne contient aucune fenêtre exploitable");
         }
         return resultat;
     }
@@ -119,7 +120,7 @@ final class McpArgs {
         return Arrays.stream(type.getEnumConstants())
                 .filter(constant -> constant.name().equalsIgnoreCase(value.trim()))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException(champ + " : valeur inconnue « " + value
+                .orElseThrow(() -> new ErreurMetier.Invalide(champ + " : valeur inconnue « " + value
                         + " », valeurs possibles : "
                         + Arrays.stream(type.getEnumConstants()).map(Enum::name).collect(Collectors.joining(", "))));
     }

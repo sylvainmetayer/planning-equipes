@@ -222,7 +222,7 @@ public class PlanningService {
     private static String cheminScenario(String scenarioName) {
         String name = (scenarioName == null || scenarioName.isBlank()) ? DEFAULT_SCENARIO : scenarioName;
         if (name.contains("/") || name.contains("\\") || name.contains("..")) {
-            throw new IllegalArgumentException("Nom de scénario invalide: " + name);
+            throw new ErreurMetier.Invalide("Nom de scénario invalide: " + name);
         }
         return SCENARIOS_DIR + "/" + name;
     }
@@ -1099,20 +1099,20 @@ public class PlanningService {
      */
     public ScenarioImporte construireDepuisTexteScenario(String yamlContent) {
         if (yamlContent == null || yamlContent.isBlank()) {
-            throw new IllegalArgumentException("Le fichier est vide.");
+            throw new ErreurMetier.Invalide("Le fichier est vide.");
         }
         Map<String, Object> scenarioData;
         try {
             scenarioData = parserYaml(
                     new java.io.ByteArrayInputStream(yamlContent.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
         } catch (RuntimeException | IOException e) {
-            throw new IllegalArgumentException("YAML invalide : " + messageOu(e), e);
+            throw new ErreurMetier.Invalide("YAML invalide : " + messageOu(e), e);
         }
         PlanningFestival planning;
         try {
             planning = construirePlanningDepuisDonnees(scenarioData);
         } catch (RuntimeException e) {
-            throw new IllegalArgumentException("Scénario invalide : " + messageOu(e), e);
+            throw new ErreurMetier.Invalide("Scénario invalide : " + messageOu(e), e);
         }
         return new ScenarioImporte(planning, sectionsDe(scenarioData));
     }
@@ -1424,13 +1424,13 @@ public class PlanningService {
     public Optional<dev.sylvain.planning.scenario.dto.EditionCibleDto> chargerEditionTexteScenario(
             String yamlContent) {
         if (yamlContent == null || yamlContent.isBlank()) {
-            throw new IllegalArgumentException("Le fichier est vide.");
+            throw new ErreurMetier.Invalide("Le fichier est vide.");
         }
         try {
             return parseEditionCible(parserYaml(new java.io.ByteArrayInputStream(
                     yamlContent.getBytes(java.nio.charset.StandardCharsets.UTF_8))));
         } catch (RuntimeException | IOException e) {
-            throw new IllegalArgumentException("YAML invalide : " + messageOu(e), e);
+            throw new ErreurMetier.Invalide("YAML invalide : " + messageOu(e), e);
         }
     }
 
@@ -1518,12 +1518,12 @@ public class PlanningService {
         // values as Object, which is all this section needs, so there is
         // nothing left to suppress.
         if (!(data instanceof Map<?, ?> editionData)) {
-            throw new IllegalArgumentException(
+            throw new ErreurMetier.Invalide(
                     "La section edition doit être un objet { id, nom? }, pas une valeur simple.");
         }
         String id = (String) editionData.get("id");
         if (id == null || id.isBlank()) {
-            throw new IllegalArgumentException("La section edition exige un champ id non vide.");
+            throw new ErreurMetier.Invalide("La section edition exige un champ id non vide.");
         }
         return Optional.of(new dev.sylvain.planning.scenario.dto.EditionCibleDto(
                 id, (String) editionData.get("nom")));
@@ -1727,10 +1727,19 @@ public class PlanningService {
                         && poste.getCreneau().getId() == creneauId
                         && poste.getAnimateur() != null && demandeurId.equals(poste.getAnimateur().getId()))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new ErreurMetier.Invalide(
                         "Aucun poste de l'animateur " + demandeurId + " sur ce créneau et ce stand"));
         Animateur demandeur = posteDemandeur.getAnimateur();
-        Animateur cible = trouverAnimateur(solved, cibleId);
+        // Invalide and not Introuvable, unlike the lookups of
+        // expliquerAffectation/simulerSwap: there the id is the path of the
+        // resource being asked for, so an unknown one means "no such thing
+        // here" (404). Here it is a field of a submitted demande, so an
+        // unknown one means "your form is wrong" (400) — the same answer as
+        // the sibling check just above.
+        Animateur cible = solved.getAnimateurs().stream()
+                .filter(animateur -> animateur.getId().equals(cibleId))
+                .findFirst()
+                .orElseThrow(() -> new ErreurMetier.Invalide("Animateur inconnu: " + cibleId));
         PosteAffectation posteCible = solved.getPostes().stream()
                 .filter(poste -> poste != posteDemandeur
                         && poste.getCreneau() != null && poste.getCreneau().getId() != null
@@ -1812,7 +1821,7 @@ public class PlanningService {
                         && poste.getCreneau().getId() == creneauId
                         && poste.getAnimateur() != null && animateurId.equals(poste.getAnimateur().getId()))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new ErreurMetier.Invalide(
                         "Aucun poste de l'animateur " + animateurId + " sur ce créneau et ce stand"));
     }
 
@@ -1883,14 +1892,14 @@ public class PlanningService {
         return solved.getPostes().stream()
                 .filter(poste -> poste.getId().equals(posteId))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Poste inconnu: " + posteId));
+                .orElseThrow(() -> new ErreurMetier.Introuvable("Poste inconnu: " + posteId));
     }
 
     private static Animateur trouverAnimateur(PlanningFestival solved, String animateurId) {
         return solved.getAnimateurs().stream()
                 .filter(animateur -> animateur.getId().equals(animateurId))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Animateur inconnu: " + animateurId));
+                .orElseThrow(() -> new ErreurMetier.Introuvable("Animateur inconnu: " + animateurId));
     }
 
     /**
@@ -2109,7 +2118,7 @@ public class PlanningService {
             HoraireStand horaire = new HoraireStand();
             String modeStr = (String) horaireData.get("mode");
             if (modeStr == null) {
-                throw new IllegalArgumentException("Champ manquant: stands.horaires.mode (OUVERTURE ou FERMETURE)");
+                throw new ErreurMetier.Invalide("Champ manquant: stands.horaires.mode (OUVERTURE ou FERMETURE)");
             }
             horaire.setMode(ModeHoraire.valueOf(modeStr));
             String joursStr = (String) horaireData.getOrDefault("jours", TypeJoursHoraire.TOUS.name());
@@ -2132,13 +2141,13 @@ public class PlanningService {
             }
             List<Map<String, Object>> fenetresData = YamlSections.objets(horaireData, "fenetres");
             if (fenetresData == null || fenetresData.isEmpty()) {
-                throw new IllegalArgumentException("Champ manquant: stands.horaires.fenetres (au moins une fenêtre)");
+                throw new ErreurMetier.Invalide("Champ manquant: stands.horaires.fenetres (au moins une fenêtre)");
             }
             List<FenetreHoraire> fenetres = new ArrayList<>();
             for (Map<String, Object> fenetreData : fenetresData) {
                 Object heureDebut = fenetreData.get("heureDebut");
                 if (heureDebut == null) {
-                    throw new IllegalArgumentException("Champ manquant: stands.horaires.fenetres.heureDebut");
+                    throw new ErreurMetier.Invalide("Champ manquant: stands.horaires.fenetres.heureDebut");
                 }
                 fenetres.add(new FenetreHoraire(LocalTime.parse(heureDebut.toString()),
                         parseHeureOuFinDeJournee(fenetreData.get("heureFin"))));
@@ -2152,7 +2161,7 @@ public class PlanningService {
 
     private LocalDate parseLocalDate(Object value, String fieldName) {
         if (value == null) {
-            throw new IllegalArgumentException("Champ date manquant: " + fieldName);
+            throw new ErreurMetier.Invalide("Champ date manquant: " + fieldName);
         }
         if (value instanceof LocalDate localDate) {
             return localDate;
@@ -2163,7 +2172,7 @@ public class PlanningService {
         if (value instanceof CharSequence charSequence) {
             return LocalDate.parse(charSequence.toString());
         }
-        throw new IllegalArgumentException(
+        throw new ErreurMetier.Invalide(
                 "Type de date non supporte pour " + fieldName + ": " + value.getClass().getName());
     }
 }

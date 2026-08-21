@@ -123,16 +123,16 @@ public class GrilleCreneauxService {
         /** The windows, rejecting the malformed ones with a message an assistant can act on. */
         List<FenetreHoraire> fenetresValidees() {
             if (fenetres.isEmpty()) {
-                throw new IllegalArgumentException("Aucune fenêtre horaire fournie, ex. « 09:00-12:00,14:00-18:00 »");
+                throw new ErreurMetier.Invalide("Aucune fenêtre horaire fournie, ex. « 09:00-12:00,14:00-18:00 »");
             }
             for (FenetreHoraire fenetre : fenetres) {
                 if (fenetre.getHeureDebut() == null || fenetre.getHeureFin() == null) {
-                    throw new IllegalArgumentException(
+                    throw new ErreurMetier.Invalide(
                             "Chaque fenêtre doit porter une heure de début ET une heure de fin : un créneau est "
                                     + "l'amplitude elle-même, il n'a pas de fermeture extérieure dont hériter.");
                 }
                 if (fenetre.getHeureDebut().equals(fenetre.getHeureFin())) {
-                    throw new IllegalArgumentException(
+                    throw new ErreurMetier.Invalide(
                             "Fenêtre de durée nulle : " + fenetre.getHeureDebut() + " → " + fenetre.getHeureFin());
                 }
             }
@@ -148,20 +148,20 @@ public class GrilleCreneauxService {
             Set<LocalDate> retenues = new TreeSet<>();
             if (jours == TypeJoursHoraire.DATES) {
                 if (dates.isEmpty()) {
-                    throw new IllegalArgumentException("La portée DATES exige la liste des dates.");
+                    throw new ErreurMetier.Invalide("La portée DATES exige la liste des dates.");
                 }
                 retenues.addAll(dates);
             } else {
                 if (dateDebut == null || dateFin == null) {
-                    throw new IllegalArgumentException("La portée " + jours
+                    throw new ErreurMetier.Invalide("La portée " + jours
                             + " exige dateDebut et dateFin (bornes incluses).");
                 }
                 if (dateFin.isBefore(dateDebut)) {
-                    throw new IllegalArgumentException(
+                    throw new ErreurMetier.Invalide(
                             "dateFin (" + dateFin + ") est antérieure à dateDebut (" + dateDebut + ").");
                 }
                 if (jours == TypeJoursHoraire.JOURS_SEMAINE && joursSemaine.isEmpty()) {
-                    throw new IllegalArgumentException(
+                    throw new ErreurMetier.Invalide(
                             "La portée JOURS_SEMAINE exige joursSemaine, ex. MONDAY,TUESDAY.");
                 }
                 for (LocalDate date = dateDebut; !date.isAfter(dateFin); date = date.plusDays(1)) {
@@ -172,7 +172,7 @@ public class GrilleCreneauxService {
             }
             retenues.removeAll(exclusions);
             if (retenues.isEmpty()) {
-                throw new IllegalArgumentException(
+                throw new ErreurMetier.Invalide(
                         "La règle ne couvre aucune date : sélecteur et exclusions s'annulent.");
             }
             return retenues;

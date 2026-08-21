@@ -42,23 +42,15 @@ public class SolverJobResource {
     @POST
     @Path("/solve/async")
     public Response solveAsync(PlanningFestival planningFestival, @QueryParam("seconds") Long secondsLimit) {
-        try {
-            SolverJob job = solverJobService.submitSolve(planningFestival, secondsLimit);
-            return Response.accepted(JobView.withoutResult(job)).build();
-        } catch (SolverBusyException e) {
-            return busy(e);
-        }
+        SolverJob job = solverJobService.submitSolve(planningFestival, secondsLimit);
+        return Response.accepted(JobView.withoutResult(job)).build();
     }
 
     @POST
     @Path("/solve/analyze/async")
     public Response analyzeAsync(PlanningFestival planningFestival, @QueryParam("seconds") Long secondsLimit) {
-        try {
-            SolverJob job = solverJobService.submitAnalyze(planningFestival, secondsLimit);
-            return Response.accepted(JobView.withoutResult(job)).build();
-        } catch (SolverBusyException e) {
-            return busy(e);
-        }
+        SolverJob job = solverJobService.submitAnalyze(planningFestival, secondsLimit);
+        return Response.accepted(JobView.withoutResult(job)).build();
     }
 
     /**
@@ -77,12 +69,8 @@ public class SolverJobResource {
     @Consumes(MediaType.WILDCARD)
     public Response solveFromReferenceData(@QueryParam("seconds") Long secondsLimit,
             @QueryParam("enFile") @DefaultValue("false") boolean enFile) {
-        try {
-            SolverJob job = solverJobService.submitSolveDepuisReferenceData(secondsLimit, enFile);
-            return Response.accepted(JobView.withoutResult(job)).build();
-        } catch (SolverBusyException e) {
-            return busy(e);
-        }
+        SolverJob job = solverJobService.submitSolveDepuisReferenceData(secondsLimit, enFile);
+        return Response.accepted(JobView.withoutResult(job)).build();
     }
 
     /**
@@ -101,12 +89,8 @@ public class SolverJobResource {
     @Path("/solve/incremental/async")
     public Response solveIncremental(PerimetreReplanification perimetre, @QueryParam("seconds") Long secondsLimit,
             @QueryParam("enFile") @DefaultValue("false") boolean enFile) {
-        try {
-            SolverJob job = solverJobService.submitSolveIncremental(secondsLimit, perimetre, enFile);
-            return Response.accepted(JobView.withoutResult(job)).build();
-        } catch (SolverBusyException e) {
-            return busy(e);
-        }
+        SolverJob job = solverJobService.submitSolveIncremental(secondsLimit, perimetre, enFile);
+        return Response.accepted(JobView.withoutResult(job)).build();
     }
 
     /** Server-side-built counterpart of {@link #analyzeAsync}. */
@@ -114,23 +98,9 @@ public class SolverJobResource {
     @Path("/solve/analyze/async/reference-data")
     @Consumes(MediaType.WILDCARD)
     public Response analyzeFromReferenceData(@QueryParam("seconds") Long secondsLimit) {
-        try {
-            SolverJob job = solverJobService.submitAnalyze(
-                    planningService.construireDepuisReferenceData(), secondsLimit);
-            return Response.accepted(JobView.withoutResult(job)).build();
-        } catch (SolverBusyException e) {
-            return busy(e);
-        }
-    }
-
-    /**
-     * The solver is a single shared resource: a second run is refused with the
-     * job that currently holds it, so any client can display who is running.
-     */
-    private Response busy(SolverBusyException e) {
-        return Response.status(Response.Status.CONFLICT)
-                .entity(JobView.withoutResult(e.getActiveJob()))
-                .build();
+        SolverJob job = solverJobService.submitAnalyze(
+                planningService.construireDepuisReferenceData(), secondsLimit);
+        return Response.accepted(JobView.withoutResult(job)).build();
     }
 
     @GET
@@ -179,13 +149,9 @@ public class SolverJobResource {
     @DELETE
     @Path("/jobs/{id}")
     public Response deleteJob(@PathParam("id") String id) {
-        try {
-            return solverJobService.forget(id)
-                    ? Response.noContent().build()
-                    : Response.status(Response.Status.NOT_FOUND).build();
-        } catch (SolverBusyException e) {
-            return busy(e);
-        }
+        return solverJobService.forget(id)
+                ? Response.noContent().build()
+                : Response.status(Response.Status.NOT_FOUND).build();
     }
 
     /**

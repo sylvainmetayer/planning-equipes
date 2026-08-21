@@ -35,7 +35,7 @@ public class FoireOuverteFilter implements ContainerRequestFilter {
         }
         contexte.abortWith(Response.status(Response.Status.BAD_REQUEST)
                 .type(MediaType.APPLICATION_JSON)
-                .entity(new ReferenceDataResource.ErreurValidation(DemandeEchangeService.FOIRE_FERMEE))
+                .entity(new ErreurValidation(DemandeEchangeService.FOIRE_FERMEE))
                 .build());
     }
 }

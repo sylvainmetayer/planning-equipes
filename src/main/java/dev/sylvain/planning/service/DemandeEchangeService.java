@@ -116,17 +116,17 @@ public class DemandeEchangeService {
     private DemandeEchange construireDemande(String demandeurId, NouvelleDemande nouvelle,
             PlanningFestival planning, PlanningPersistenceService.PlanningResolution resolution) {
         if (nouvelle.creneauId() == null || nouvelle.standId() == null || nouvelle.standId().isBlank()) {
-            throw new IllegalArgumentException("Créneau ou stand manquant sur une demande");
+            throw new ErreurMetier.Invalide("Créneau ou stand manquant sur une demande");
         }
         if (nouvelle.cibleId() == null || nouvelle.cibleId().isBlank()) {
-            throw new IllegalArgumentException("Animateur avec qui échanger manquant sur une demande");
+            throw new ErreurMetier.Invalide("Animateur avec qui échanger manquant sur une demande");
         }
         if (nouvelle.cibleId().equals(demandeurId)) {
-            throw new IllegalArgumentException("Impossible d'échanger un créneau avec soi-même");
+            throw new ErreurMetier.Invalide("Impossible d'échanger un créneau avec soi-même");
         }
         if (nouvelle.creneauCibleId() != null
                 && (nouvelle.standCibleId() == null || nouvelle.standCibleId().isBlank())) {
-            throw new IllegalArgumentException("Stand du créneau souhaité manquant sur une demande dirigée");
+            throw new ErreurMetier.Invalide("Stand du créneau souhaité manquant sur une demande dirigée");
         }
         // Throws on an unknown seat/cible — the UI only offers the animateur's
         // own seats (and the colleague's real ones for a directed exchange),
@@ -167,7 +167,7 @@ public class DemandeEchangeService {
             ps.setString(3, demandeId);
             ps.setString(4, demandeurId);
             if (ps.executeUpdate() == 0) {
-                throw new IllegalArgumentException("Demande introuvable ou déjà décidée");
+                throw new ErreurMetier.Invalide("Demande introuvable ou déjà décidée");
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to cancel demande " + demandeId, e);
@@ -220,7 +220,7 @@ public class DemandeEchangeService {
             ps.setString(4, demandeId);
             ps.setString(5, cibleId);
             if (ps.executeUpdate() == 0) {
-                throw new IllegalArgumentException(
+                throw new ErreurMetier.Invalide(
                         "Demande introuvable, déjà traitée, ou ne vous concernant pas");
             }
         } catch (SQLException e) {
@@ -274,7 +274,7 @@ public class DemandeEchangeService {
 
     private void verifierFoireOuverte() {
         if (!estFoireOuverte()) {
-            throw new IllegalArgumentException(FOIRE_FERMEE);
+            throw new ErreurMetier.Invalide(FOIRE_FERMEE);
         }
     }
 
@@ -347,11 +347,11 @@ public class DemandeEchangeService {
 
     private static void exigerEnAttente(DemandeEchange demande) {
         if (demande.getStatut() == StatutDemandeEchange.EN_ATTENTE_CIBLE) {
-            throw new IllegalArgumentException(
+            throw new ErreurMetier.Invalide(
                     "Le collègue concerné n'a pas encore donné son accord — l'acceptation attend le sien");
         }
         if (demande.getStatut() != StatutDemandeEchange.PROPOSEE) {
-            throw new IllegalArgumentException("La demande n'est plus en attente (statut "
+            throw new ErreurMetier.Invalide("La demande n'est plus en attente (statut "
                     + demande.getStatut() + ")");
         }
     }
@@ -360,7 +360,7 @@ public class DemandeEchangeService {
     private static void exigerRefusable(DemandeEchange demande) {
         if (demande.getStatut() != StatutDemandeEchange.PROPOSEE
                 && demande.getStatut() != StatutDemandeEchange.EN_ATTENTE_CIBLE) {
-            throw new IllegalArgumentException("La demande n'est plus en attente (statut "
+            throw new ErreurMetier.Invalide("La demande n'est plus en attente (statut "
                     + demande.getStatut() + ")");
         }
     }
@@ -403,7 +403,7 @@ public class DemandeEchangeService {
             ps.setString(4, editionContext.editionIdCourant());
             ps.setString(5, demande.getId());
             if (ps.executeUpdate() == 0) {
-                throw new IllegalArgumentException("La demande n'est plus en attente");
+                throw new ErreurMetier.Invalide("La demande n'est plus en attente");
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to decide demande " + demande.getId(), e);
@@ -478,7 +478,7 @@ public class DemandeEchangeService {
     private DemandeEchange demandeRequise(String demandeId) {
         List<DemandeEchange> demandes = lister(" AND id = ?", demandeId);
         if (demandes.isEmpty()) {
-            throw new IllegalArgumentException("Demande inconnue : " + demandeId);
+            throw new ErreurMetier.Introuvable("Demande inconnue : " + demandeId);
         }
         return demandes.get(0);
     }

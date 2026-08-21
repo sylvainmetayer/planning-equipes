@@ -1,11 +1,13 @@
 package dev.sylvain.planning.mcp;
 
+import dev.sylvain.planning.service.ErreurMetier;
 import java.io.IOException;
 import java.util.List;
 
-import dev.sylvain.planning.api.ReferenceDataResource;
 import dev.sylvain.planning.api.ReferenceDataResource.ImportScenarioResult;
 import dev.sylvain.planning.domain.Edition;
+import dev.sylvain.planning.api.ErreurValidation;
+import dev.sylvain.planning.api.ReferenceDataResource;
 import dev.sylvain.planning.scenario.ScenarioValidator;
 import dev.sylvain.planning.service.EditionService;
 import dev.sylvain.planning.service.PlanningPersistenceService;
@@ -72,7 +74,7 @@ public class ScenarioMcpTools {
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         Response response = referenceDataResource.importScenarioFichier(yaml);
         if (response.getStatus() >= 400) {
-            throw new IllegalArgumentException("Scénario invalide : " + messageErreur(response));
+            throw new ErreurMetier.Invalide("Scénario invalide : " + messageErreur(response));
         }
         return toImportResult(response);
     }
@@ -120,7 +122,7 @@ public class ScenarioMcpTools {
 
     private static String messageErreur(Response response) {
         Object entity = response.getEntity();
-        if (entity instanceof ReferenceDataResource.ErreurValidation erreur) {
+        if (entity instanceof ErreurValidation erreur) {
             return erreur.message();
         }
         return String.valueOf(entity);

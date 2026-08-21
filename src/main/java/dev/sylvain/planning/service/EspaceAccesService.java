@@ -91,7 +91,7 @@ public class EspaceAccesService {
     public CodeEnvoye demanderCode(String animateurId) {
         Animateur animateur = animateurRequis(animateurId);
         if (animateur.getEmail() == null || animateur.getEmail().isBlank()) {
-            throw new IllegalArgumentException(
+            throw new ErreurMetier.Invalide(
                     "Aucune adresse e-mail n'est enregistrée pour vous : contactez l'organisation "
                             + "pour la faire ajouter à votre fiche.");
         }
@@ -180,7 +180,7 @@ public class EspaceAccesService {
 
     private void verifierCode(String animateurId, String code, String jeton) {
         if (code == null || code.isBlank()) {
-            throw new IllegalArgumentException("Code manquant");
+            throw new ErreurMetier.Invalide("Code manquant");
         }
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = prepareScoped(connection,
@@ -190,13 +190,13 @@ public class EspaceAccesService {
             ps.setString(2, animateurId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) {
-                    throw new IllegalArgumentException(
+                    throw new ErreurMetier.Invalide(
                             "Code expiré ou trop d'essais : demandez un nouveau code.");
                 }
                 if (!MessageDigest.isEqual(
                         rs.getString("code_hash").getBytes(StandardCharsets.UTF_8),
                         hacher(code.trim() + jeton).getBytes(StandardCharsets.UTF_8))) {
-                    throw new IllegalArgumentException("Code incorrect.");
+                    throw new ErreurMetier.Invalide("Code incorrect.");
                 }
             }
         } catch (SQLException e) {
@@ -219,7 +219,7 @@ public class EspaceAccesService {
         return referenceDataService.listAnimateurs().stream()
                 .filter(candidat -> candidat.getId().equals(animateurId))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Animateur inconnu : " + animateurId));
+                .orElseThrow(() -> new ErreurMetier.Invalide("Animateur inconnu : " + animateurId));
     }
 
     /** {@code a•••@example.org} — enough to recognise one's address, nothing more. */

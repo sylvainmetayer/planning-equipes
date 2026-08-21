@@ -349,6 +349,14 @@ Timefold bumps must be validated with `./mvnw verify -DskipITs=false`.
   endpoint instead of the screen — and two of the three links have no resource
   to derive from. One method per link there; renaming an Angular route means
   renaming it there too.
+- **A refused request throws `ErreurMetier`; a resource never writes a
+  `try/catch` for it.** The sealed hierarchy (`Invalide` → 400, `Introuvable`
+  → 404, `Conflit` → 409) carries the status, and `ErreurMetierMapper`
+  switches over it exhaustively. It extends `IllegalArgumentException`, so a
+  plain one — thrown by a library, or by nobody on purpose — still falls
+  through to its 500 and its Sentry alert; that difference is the point.
+  Choose the variant by where the id came from: a path segment that names
+  nothing is `Introuvable`, a body field that names nothing is `Invalide`.
 - **Inject `ObjectMapper`, never `new ObjectMapper()`** — a bare one lacks the
   modules Quarkus registers (JSR-310), which forces records to flatten
   `LocalDate`/`Instant` fields to `String` and only fails at write time.

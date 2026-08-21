@@ -50,21 +50,13 @@ public class EditionResource {
 
     @POST
     public Response create(Edition edition) {
-        try {
-            return Response.ok(editionService.creer(edition)).build();
-        } catch (IllegalArgumentException e) {
-            return badRequest(e);
-        }
+        return Response.ok(editionService.creer(edition)).build();
     }
 
     @PUT
     @Path("/{id}")
     public Response rename(@PathParam("id") String id, Edition edition) {
-        try {
-            return Response.ok(editionService.renommer(id, edition)).build();
-        } catch (IllegalArgumentException e) {
-            return badRequest(e);
-        }
+        return Response.ok(editionService.renommer(id, edition)).build();
     }
 
     /**
@@ -77,11 +69,7 @@ public class EditionResource {
     @POST
     @Path("/{id}/dupliquer")
     public Response dupliquer(@PathParam("id") String id, Edition cible) {
-        try {
-            return Response.ok(editionService.dupliquer(id, cible)).build();
-        } catch (IllegalArgumentException e) {
-            return badRequest(e);
-        }
+        return Response.ok(editionService.dupliquer(id, cible)).build();
     }
 
     /** Designates the fallback edition for any caller sending no {@code X-Edition-Id}. */
@@ -101,17 +89,8 @@ public class EditionResource {
     @DELETE
     @Path("/{id}")
     public Response delete(@PathParam("id") String id) {
-        try {
-            editionService.supprimer(id);
-            return Response.noContent().build();
-        } catch (IllegalArgumentException e) {
-            return badRequest(e);
-        }
+        editionService.supprimer(id);
+        return Response.noContent().build();
     }
 
-    private static Response badRequest(IllegalArgumentException e) {
-        return Response.status(Response.Status.BAD_REQUEST)
-                .entity(new ReferenceDataResource.ErreurValidation(e.getMessage()))
-                .build();
-    }
 }

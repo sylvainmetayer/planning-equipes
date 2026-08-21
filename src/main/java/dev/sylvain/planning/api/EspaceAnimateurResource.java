@@ -113,12 +113,8 @@ public class EspaceAnimateurResource {
     @Path("/{jeton}/demandes-recues/{demandeId}/accord")
     @SessionEspaceRequise
     public Response accorderDemandeRecue(@PathParam("demandeId") String demandeId) {
-        try {
-            return Response.ok(espaceAnimateurService.versVues(
-                    List.of(demandeEchangeService.accepterParCible(animateurCourant(), demandeId))).get(0)).build();
-        } catch (IllegalArgumentException e) {
-            return badRequest(e);
-        }
+        return Response.ok(espaceAnimateurService.versVues(
+                List.of(demandeEchangeService.accepterParCible(animateurCourant(), demandeId))).get(0)).build();
     }
 
     /** I decline a demande targeting me: terminal, the demandeur is told, the admin never arbitrates. */
@@ -126,12 +122,8 @@ public class EspaceAnimateurResource {
     @Path("/{jeton}/demandes-recues/{demandeId}/refus")
     @SessionEspaceRequise
     public Response declinerDemandeRecue(@PathParam("demandeId") String demandeId) {
-        try {
-            return Response.ok(espaceAnimateurService.versVues(
-                    List.of(demandeEchangeService.declinerParCible(animateurCourant(), demandeId))).get(0)).build();
-        } catch (IllegalArgumentException e) {
-            return badRequest(e);
-        }
+        return Response.ok(espaceAnimateurService.versVues(
+                List.of(demandeEchangeService.declinerParCible(animateurCourant(), demandeId))).get(0)).build();
     }
 
     /**
@@ -144,12 +136,8 @@ public class EspaceAnimateurResource {
     @Path("/{jeton}/demandes")
     @SessionEspaceRequise
     public Response soumettre(List<NouvelleDemande> nouvelles) {
-        try {
-            return Response.ok(espaceAnimateurService.versVues(
-                    demandeEchangeService.soumettre(animateurCourant(), nouvelles))).build();
-        } catch (IllegalArgumentException e) {
-            return badRequest(e);
-        }
+        return Response.ok(espaceAnimateurService.versVues(
+                demandeEchangeService.soumettre(animateurCourant(), nouvelles))).build();
     }
 
     /**
@@ -190,12 +178,8 @@ public class EspaceAnimateurResource {
     @Path("/{jeton}/demandes/{demandeId}/annulation")
     @SessionEspaceRequise
     public Response annuler(@PathParam("demandeId") String demandeId) {
-        try {
-            demandeEchangeService.annuler(animateurCourant(), demandeId);
-            return Response.noContent().build();
-        } catch (IllegalArgumentException e) {
-            return badRequest(e);
-        }
+        demandeEchangeService.annuler(animateurCourant(), demandeId);
+        return Response.noContent().build();
     }
 
     /**
@@ -212,14 +196,14 @@ public class EspaceAnimateurResource {
         } catch (EspaceAccesService.TropDeDemandes e) {
             return Response.status(429)
                     .header(HttpHeaders.RETRY_AFTER, e.secondesAvantNouvelEssai())
-                    .entity(new ReferenceDataResource.ErreurValidation(e.getMessage()))
+                    .entity(new ErreurValidation(e.getMessage()))
                     .build();
         } catch (IllegalArgumentException e) {
             return badRequest(e);
         } catch (RuntimeException e) {
             Log.errorf(e, "Failed to mail an espace access code");
             return Response.serverError()
-                    .entity(new ReferenceDataResource.ErreurValidation(
+                    .entity(new ErreurValidation(
                             "L'envoi du code a échoué : réessayez dans quelques instants."))
                     .build();
         }
@@ -242,18 +226,14 @@ public class EspaceAnimateurResource {
     @Path("/{jeton}/session")
     @JetonRequis
     public Response ouvrirSession(CodeSession codeSession, @Context UriInfo uriInfo) {
-        try {
-            String session = espaceAccesService.ouvrirSession(animateurCourant(),
-                    codeSession == null ? null : codeSession.code());
-            return Response.noContent()
-                    .header("Set-Cookie", COOKIE_SESSION + "=" + session
-                            + "; Path=/api/espace-animateur; HttpOnly; SameSite=Strict"
-                            + (requeteChiffree(uriInfo) ? "; Secure" : "")
-                            + "; Max-Age=" + EspaceAccesService.VALIDITE_SESSION.toSeconds())
-                    .build();
-        } catch (IllegalArgumentException e) {
-            return badRequest(e);
-        }
+        String session = espaceAccesService.ouvrirSession(animateurCourant(),
+                codeSession == null ? null : codeSession.code());
+        return Response.noContent()
+                .header("Set-Cookie", COOKIE_SESSION + "=" + session
+                        + "; Path=/api/espace-animateur; HttpOnly; SameSite=Strict"
+                        + (requeteChiffree(uriInfo) ? "; Secure" : "")
+                        + "; Max-Age=" + EspaceAccesService.VALIDITE_SESSION.toSeconds())
+                .build();
     }
 
     /** True when the visitor's own request was HTTPS, proxy headers included. */
@@ -281,7 +261,7 @@ public class EspaceAnimateurResource {
 
     private static Response badRequest(IllegalArgumentException e) {
         return Response.status(Response.Status.BAD_REQUEST)
-                .entity(new ReferenceDataResource.ErreurValidation(e.getMessage()))
+                .entity(new ErreurValidation(e.getMessage()))
                 .build();
     }
 }

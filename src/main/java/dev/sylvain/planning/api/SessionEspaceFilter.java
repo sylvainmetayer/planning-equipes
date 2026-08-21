@@ -62,7 +62,7 @@ public class SessionEspaceFilter implements ContainerRequestFilter {
                 cookie == null ? null : cookie.getValue(), proprietaire.animateurId())) {
             contexte.abortWith(Response.status(Response.Status.UNAUTHORIZED)
                     .type(MediaType.APPLICATION_JSON)
-                    .entity(new ReferenceDataResource.ErreurValidation(
+                    .entity(new ErreurValidation(
                             "Authentification requise : demandez un code d'accès par e-mail."))
                     .build());
         }

@@ -1,5 +1,6 @@
 package dev.sylvain.planning.mcp;
 
+import dev.sylvain.planning.service.ErreurMetier;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -177,7 +178,7 @@ public class CreneauMcpTools {
         LocalTime heure = McpArgs.heure(heureDebut, "heureDebut");
         boolean toutSupprimer = Boolean.TRUE.equals(tous);
         if (!toutSupprimer && debut == null && fin == null && heure == null) {
-            throw new IllegalArgumentException("Aucun filtre fourni : préciser dateDebut, dateFin ou heureDebut, "
+            throw new ErreurMetier.Invalide("Aucun filtre fourni : préciser dateDebut, dateFin ou heureDebut, "
                     + "ou passer tous=true pour vider délibérément toute la grille.");
         }
         List<Creneau> cibles = referenceDataService.listCreneaux().stream()
@@ -231,7 +232,7 @@ public class CreneauMcpTools {
      */
     private static ModeGrilleCreneaux modeObligatoire(String mode) {
         if (mode == null || mode.isBlank()) {
-            throw new IllegalArgumentException("mode est requis : AMPLITUDES (journées à découper en vacations) "
+            throw new ErreurMetier.Invalide("mode est requis : AMPLITUDES (journées à découper en vacations) "
                     + "ou VACATIONS (vacations finales, solvables telles quelles). Demander à l'utilisateur "
                     + "laquelle des deux il veut ; diagnostiquer_grille_creneaux indique ce que contient déjà "
                     + "l'édition.");

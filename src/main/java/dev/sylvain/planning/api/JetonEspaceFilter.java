@@ -43,7 +43,7 @@ public class JetonEspaceFilter implements ContainerRequestFilter {
         if (proprietaire == null) {
             contexte.abortWith(Response.status(Response.Status.NOT_FOUND)
                     .type(MediaType.APPLICATION_JSON)
-                    .entity(new ReferenceDataResource.ErreurValidation("Lien inconnu ou expiré"))
+                    .entity(new ErreurValidation("Lien inconnu ou expiré"))
                     .build());
             return null;
         }

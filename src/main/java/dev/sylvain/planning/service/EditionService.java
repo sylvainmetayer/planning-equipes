@@ -72,7 +72,7 @@ public class EditionService {
         String id = requireNonBlank(edition.getId(), "id de l'édition");
         String nom = requireNonBlank(edition.getNom(), "nom de l'édition");
         if (repository.exists(id)) {
-            throw new IllegalArgumentException("Une édition portant l'identifiant " + id + " existe déjà");
+            throw new ErreurMetier.Invalide("Une édition portant l'identifiant " + id + " existe déjà");
         }
         Edition cree = new Edition(id, nom, false, null);
         repository.save(cree);
@@ -92,14 +92,14 @@ public class EditionService {
         exigerExistant(id);
         List<Edition> editions = listEditions();
         if (editions.size() <= 1) {
-            throw new IllegalArgumentException("Impossible de supprimer la dernière édition");
+            throw new ErreurMetier.Invalide("Impossible de supprimer la dernière édition");
         }
         if (editions.stream().anyMatch(edition -> edition.getId().equals(id) && edition.isDefaut())) {
-            throw new IllegalArgumentException(
+            throw new ErreurMetier.Invalide(
                     "Impossible de supprimer l'édition par défaut — désignez-en une autre d'abord");
         }
         if (id.equals(editionContext.editionIdCourant())) {
-            throw new IllegalArgumentException(
+            throw new ErreurMetier.Invalide(
                     "Impossible de supprimer l'édition courante — basculez ailleurs d'abord");
         }
         repository.delete(id);
@@ -132,7 +132,7 @@ public class EditionService {
                     // Existing editions (whatever the UI let through) are
                     // matched above without this check.
                     if (!idCible.matches("[\\p{L}0-9][\\p{L}0-9 ._-]{0,63}")) {
-                        throw new IllegalArgumentException(
+                        throw new ErreurMetier.Invalide(
                                 "Id d'édition invalide dans la section edition : lettres, chiffres, espaces,"
                                         + " points, tirets et tirets bas uniquement (64 caractères max).");
                     }
@@ -155,7 +155,7 @@ public class EditionService {
 
     private static String requireNonBlank(String valeur, String champ) {
         if (valeur == null || valeur.isBlank()) {
-            throw new IllegalArgumentException("Le " + champ + " est obligatoire");
+            throw new ErreurMetier.Invalide("Le " + champ + " est obligatoire");
         }
         return valeur;
     }

@@ -43,9 +43,6 @@ public class DebugResource {
     public record MailConfigView(String adminEmail) {
     }
 
-    /** Mirror of the other resources' error body: {@code {"message": "…"}}. */
-    public record ErreurValidation(String message) {
-    }
 
     @GET
     @Path("/mail-config")

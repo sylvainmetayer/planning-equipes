@@ -95,12 +95,12 @@ public class EnvoiPlanningResource {
                 .orElse(null);
         if (animateur == null) {
             return Response.status(Response.Status.NOT_FOUND)
-                    .entity(new ReferenceDataResource.ErreurValidation("Animateur inconnu : " + animateurId))
+                    .entity(new ErreurValidation("Animateur inconnu : " + animateurId))
                     .build();
         }
         if (animateur.getEmail() == null || animateur.getEmail().isBlank()) {
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ReferenceDataResource.ErreurValidation(
+                    .entity(new ErreurValidation(
                             nomComplet(animateur) + " n'a pas d'adresse e-mail sur sa fiche"))
                     .build();
         }
@@ -109,7 +109,7 @@ public class EnvoiPlanningResource {
         } catch (RuntimeException e) {
             Log.errorf(e, "Failed to mail the planning of animateur %s", animateur.getId());
             return Response.serverError()
-                    .entity(new ReferenceDataResource.ErreurValidation(
+                    .entity(new ErreurValidation(
                             "Échec de l'envoi à " + animateur.getEmail()))
                     .build();
         }

@@ -41,13 +41,7 @@ public class VerrouillageResource {
      */
     @POST
     public Response create(VerrouillagePlanning verrouillage) {
-        try {
-            return Response.ok(referenceDataService.createVerrouillage(verrouillage)).build();
-        } catch (IllegalArgumentException e) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ReferenceDataResource.ErreurValidation(e.getMessage()))
-                    .build();
-        }
+        return Response.ok(referenceDataService.createVerrouillage(verrouillage)).build();
     }
 
     @DELETE
