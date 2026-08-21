@@ -646,8 +646,9 @@ en début de mois se fait donc à la main, en éditant les `runs-on`.
 
 - `.github/workflows/tests.yml` — deux jobs sur chaque push `main` et chaque
   pull request : `test` (`./mvnw verify -DskipITs=false`, avec upload des
-  rapports surefire/failsafe) et `frontend` (`npm ci`, `npm test`,
-  `npm run i18n-check` puis `npm run build` sur `src/main/webui`, Node 24 — le
+  rapports surefire/failsafe) et `frontend` (`npm ci`, `npm run lint`,
+  `npm test`, `npm run i18n-check` puis `npm run build` sur `src/main/webui`,
+  Node 24 — le
   build de production n'était jusqu'ici exercé que par Quinoa dans le job
   `test`, si bien qu'une erreur de template échouait dans le job *backend* ;
   c'est aussi lui qui applique le budget de `bundle` d'`angular.json`). Le job `test` n'exécute **pas** les tests de

@@ -12,6 +12,7 @@
     "watch": "ng build --watch --configuration development",
     "pretest": "npm run generate-version",
     "test": "ng test",
+    "lint": "eslint .",
     "i18n-check": "node scripts/generate-version.js && node scripts/check-i18n.js",
     "e2e": "playwright test"
   },
@@ -36,11 +37,15 @@
     "@angular/build": "^22.0.8",
     "@angular/cli": "^22.0.8",
     "@angular/compiler-cli": "^22.0.0",
+    "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.62.1",
     "@types/leaflet": "^1.9.21",
+    "angular-eslint": "^22.1.0",
+    "eslint": "^10.9.0",
     "jsdom": "^26.1.0",
     "prettier": "^3.8.1",
     "typescript": "~6.0.2",
+    "typescript-eslint": "^8.67.0",
     "vitest": "^4.1.10"
   }
 }

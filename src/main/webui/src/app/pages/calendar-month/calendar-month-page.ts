@@ -368,7 +368,8 @@ export class CalendarMonthPage {
   protected naviguerJours(event: KeyboardEvent): void {
     const total = this.cells().length;
     const courant = this.indexJourCourant();
-    let cible: number | null = null;
+    // Every branch below assigns it, and the default returns.
+    let cible: number;
     switch (event.key) {
       case 'ArrowRight':
         cible = Math.min(courant + 1, total - 1);

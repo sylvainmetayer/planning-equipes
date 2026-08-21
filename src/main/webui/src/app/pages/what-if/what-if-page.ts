@@ -8,7 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { ApiService } from '../../core/api.service';
-import { MutationsWhatIf, PlanningDiagnostic, ResultatWhatIf } from '../../core/models';
+import { MutationsWhatIf, ResultatWhatIf } from '../../core/models';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';

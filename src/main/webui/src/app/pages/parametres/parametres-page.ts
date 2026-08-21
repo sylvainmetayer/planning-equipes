@@ -12,7 +12,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { EditionStore } from '../../core/edition.store';
-import { CibleImport, Edition, ImpactImport, ImportSummary, ImportScenarioResult, ParametresDecoupage } from '../../core/models';
+import { ImportSummary, ImportScenarioResult, ParametresDecoupage } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { PlanningStateService } from '../../core/planning-state.service';

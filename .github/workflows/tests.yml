@@ -91,6 +91,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # The conventions of this frontend (OnPush everywhere, function-based
+      # input()/output(), @for with a track, no `any`) held by discipline alone
+      # until now. This is what defends them when someone else contributes.
+      - name: Lint
+        run: npm run lint
+
       # Vitest runs in a Node/jsdom environment (no browser needed) and, when
       # not attached to a TTY, executes once and exits instead of watching.
       - name: Run unit tests

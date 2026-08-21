@@ -1,7 +1,7 @@
 // Plan snapshots (issue #138): the saved plans of the current edition.
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { ApiService, toError } from './api.service';
 import { PlanSnapshot, RestaurationSnapshot } from './models';
 

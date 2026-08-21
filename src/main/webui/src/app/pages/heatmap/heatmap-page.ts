@@ -132,7 +132,8 @@ export class HeatmapPage {
     const table = this.activeTable();
     const derniereLigne = table.rows.length - 1;
     const derniereColonne = (table.rows[ligne]?.cells.length ?? 1) - 1;
-    let cible: { ligne: number; colonne: number } | null = null;
+    // Every branch below assigns it, and the default returns.
+    let cible: { ligne: number; colonne: number };
     switch (event.key) {
       case 'ArrowRight':
         cible = { ligne, colonne: Math.min(colonne + 1, derniereColonne) };
