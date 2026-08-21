@@ -1,7 +1,19 @@
 # Observabilité
 
-Deux briques optionnelles, toutes deux **désactivées par défaut** en dev/test
-(et activées en production via la configuration Quarkus) :
+Deux briques optionnelles, **désactivées par défaut en dev/test**. En
+production, le suivi d'erreurs reste conditionné à `SENTRY_DSN`, mais la mesure
+d'audience Cloudflare est **active par défaut** : le profil `%prod` fournit un
+token de repli (`application.properties`). Un exploitant qui n'en veut pas doit
+donc positionner `CLOUDFLARE_WEB_ANALYTICS_TOKEN` à vide, et non simplement
+« ne rien configurer ».
+
+Deux garde-fous s'appliquent aux pages de l'espace animateur, dont l'URL porte
+le jeton d'accès — un identifiant unique de personne, souvent mineure : le
+beacon Cloudflare **n'y est pas chargé du tout**, et les rapports d'erreur
+remplacent le jeton par `<jeton>` avant de partir (`masquerJetonEspace`). Sans
+cela, l'identifiant partait chez un tiers à chaque page vue, et dormait dans
+la base de suivi d'erreurs à chaque incident. L'en-tête `Referrer-Policy:
+same-origin` ferme le troisième canal, celui des liens sortants.
 
 - **Suivi d'erreurs** — [Bugsink](https://www.bugsink.com/), auto-hébergé,
   compatible avec le protocole/SDK Sentry.

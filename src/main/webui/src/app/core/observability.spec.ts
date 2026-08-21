@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { initObservability, loadAppConfig, observabilityProviders } from './observability';
+import { initObservability, loadAppConfig, masquerJetonEspace, observabilityProviders } from './observability';
 import { AppConfig } from './models';
 
 const CONFIG: AppConfig = {
@@ -78,5 +78,31 @@ describe('initObservability', () => {
     initObservability(config);
 
     expect(document.head.querySelectorAll('script[data-cf-beacon]')).toHaveLength(1);
+  });
+});
+
+describe('masquerJetonEspace', () => {
+  it('remplace le jeton d’un lien d’espace, où qu’il apparaisse dans l’URL', () => {
+    expect(masquerJetonEspace('https://planning.example.org/animateur/a1b2c3d4/echanges')).toBe(
+      'https://planning.example.org/animateur/<jeton>/echanges'
+    );
+    // Les appels d'API portent le même jeton et atterrissent dans les fils
+    // d'Ariane du rapport d'erreur : les masquer aussi, sinon le premier
+    // masquage ne sert à rien.
+    expect(masquerJetonEspace('/api/espace-animateur/a1b2c3d4/postes')).toBe(
+      '/api/espace-animateur/<jeton>/postes'
+    );
+  });
+
+  it('laisse intacte une URL qui ne porte aucun jeton', () => {
+    expect(masquerJetonEspace('/mentions-legales')).toBe('/mentions-legales');
+  });
+
+  it('masque chaque occurrence d’un message qui en contient plusieurs', () => {
+    // Un fil d'Ariane peut concaténer plusieurs URL : en laisser passer une
+    // seule suffirait à identifier la personne.
+    expect(masquerJetonEspace('/animateur/aaa -> /animateur/bbb?x=1')).toBe(
+      '/animateur/<jeton> -> /animateur/<jeton>?x=1'
+    );
   });
 });
