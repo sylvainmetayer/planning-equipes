@@ -7,11 +7,11 @@ import java.util.List;
 
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.service.ConstraintAnalysisStore;
-import dev.sylvain.planning.service.PlanSnapshotService;
 import dev.sylvain.planning.service.PlanningPersistenceService;
 import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.PlanningService.PlanningDiagnostic;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
+import dev.sylvain.planning.service.ResolutionPipeline;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -29,6 +29,9 @@ import jakarta.ws.rs.core.Response;
 public class PlanningResource {
 
     @Inject
+    ResolutionPipeline pipeline;
+
+    @Inject
     PlanningService planningService;
 
     @Inject
@@ -39,9 +42,6 @@ public class PlanningResource {
 
     @Inject
     ReferenceDataChangeTracker changeTracker;
-
-    @Inject
-    PlanSnapshotService snapshotService;
 
     /**
      * Lists the scenario files available in the {@code scenarios} folder so the
@@ -104,12 +104,10 @@ public class PlanningResource {
     @Path("/solve")
     public PlanningFestival solve(PlanningFestival planningFestival,
             @QueryParam("seconds") Long secondsLimit) {
-        // Same safety net as the async path (issue #138): capture the plan this
-        // solve is about to overwrite.
-        snapshotService.capturerAvantSolve();
-        PlanningFestival solved = planningService.resoudre(planningFestival, secondsLimit);
-        persistenceService.persist(solved);
-        return solved;
+        // Exactement le même chemin que les solves asynchrones — capture du plan
+        // précédent, résolution, persistance, diagnostic, écran Contraintes,
+        // KPI, annonce. C'est ici que la copie incomplète vivait.
+        return pipeline.executer(planningFestival, secondsLimit).planning();
     }
 
     /**

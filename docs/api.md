@@ -111,7 +111,7 @@ avertissement au démarrage plutôt que découverte à l'usage.
 | --- | --- | --- |
 | `GET` | `/api/planning/sample` | Jeu d'exemple construit depuis `scenario.yml` (non résolu) |
 | `GET` | `/api/planning/volumetrie` | Volumétrie réelle du prochain solve : nombre d'animateurs (value count Timefold), de postes à pourvoir (entity count Timefold, un par siège requis et non par stand) et de contraintes ad hoc actives ; tout à 0 si aucune donnée de référence n'est chargée |
-| `POST` | `/api/solve` | Résout un `PlanningFestival` envoyé en JSON (synchrone) |
+| `POST` | `/api/solve` | Résout un `PlanningFestival` envoyé en JSON (synchrone). Suit exactement le même chemin qu'un solve asynchrone — capture du plan précédent, persistance, diagnostic, écran Contraintes, ligne de KPI, annonce de fin — voir *Le pipeline de résolution* |
 | `POST` | `/api/solve/analyze` | Analyse un planning : score et contraintes violées |
 | `POST` | `/api/planning/reset` | Vide l'**édition courante** (stands, créneaux, animateurs, affectations, contraintes) sans charger de scénario. Les autres éditions ne sont pas touchées (bouton « Vider la base de données » de l'onglet Débogage) |
 | `GET` | `/api/planning/persisted` | Planning persisté en base, lecture seule (utilisé par les vues calendrier, qui ne déclenchent jamais de résolution) |
@@ -215,6 +215,31 @@ La réponse porte :
 migration V49 n'a pas de KPI stockés, ils sont alors recalculés depuis son
 contenu, dans l'édition qui l'a produit. Couverture et volumétrie restent
 exactes ; les violations ne sont pas mesurées.
+
+## Le pipeline de résolution
+
+Les quatre façons de lancer un solve — synchrone (`POST /api/solve`), asynchrone
+depuis un problème envoyé, asynchrone depuis le référentiel, et incrémentale —
+passent toutes par `ResolutionPipeline`, et font donc **toujours** la même
+chose :
+
+1. capturer le plan sur le point d'être écrasé (issue #138) ;
+2. construire le problème — la seule étape qui varie vraiment ;
+3. résoudre, persister, diagnostiquer ;
+4. alimenter l'écran Contraintes (`ConstraintAnalysisStore`) ;
+5. écrire la ligne d'historique KPI, avec la durée réelle (issue #89) ;
+6. annoncer la fin, si l'édition l'a demandé (`mailFinResolution`).
+
+Ce n'était pas le cas : le pipeline était écrit quatre fois et la copie du solve
+synchrone s'arrêtait après « persister ». L'écran Contraintes restait alors sur
+l'analyse du solve **précédent** — il affichait des violations qui ne
+décrivaient plus le plan persisté — et aucun KPI n'était écrit. Rien ne levait
+d'erreur : le seul symptôme était un écran qui mentait.
+`SolveSynchronePipelineTest` verrouille les deux bouts.
+
+Une seule chose reste propre à chaque appelant : ce qui doit tenir le solveur
+pour pouvoir l'arrêter en cours de route. Un job de fond en a besoin
+(`Solver#terminateEarly`), un appel synchrone non — l'appelant attend déjà.
 
 ## Résolution asynchrone
 

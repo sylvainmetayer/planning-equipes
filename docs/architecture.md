@@ -76,6 +76,7 @@ dans [`domaine.md`](domaine.md).
 | Service | Rôle |
 | --- | --- |
 | `PlanningService` | Construit la `SolverFactory` depuis `solver/solverConfig.xml`, charge `scenario.yml`, expose `construireExemple()` / `resoudre()` / `analyser()`, et l'explicabilité par affectation (`expliquerAffectation()`, `simulerSwap()`) |
+| `ResolutionPipeline` | Ce qu'un solve fait **toujours** : capturer le plan qu'il va écraser, construire son problème, résoudre, persister, diagnostiquer, alimenter l'écran Contraintes, écrire la ligne de KPI, annoncer la fin. Deux coutures seulement — comment le problème est construit, et qui doit tenir le solveur pour pouvoir l'arrêter |
 | `SolverJobService` | Résolutions et analyses asynchrones ; porte le verrou « un seul solveur à la fois », partagé par tous les clients, et la **file d'attente** des tâches planifiées derrière celle qui tourne ; la rejoue au démarrage |
 | `SolverJobRepository` | Persistance de cette file et du journal des jobs (table `solver_job`) : l'**intention** d'un job, jamais un état de solveur ni le résultat — voir [`api.md`](api.md#la-file-survit-au-redémarrage) |
 | `ConstraintAnalysisStore` | Mémorise le résultat de la dernière analyse pour l'onglet « Constraints » |

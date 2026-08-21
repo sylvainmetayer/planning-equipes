@@ -16,6 +16,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 
 import ai.timefold.solver.core.api.solver.Solver;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -109,25 +110,13 @@ public class SolverJobService {
     }
 
     @Inject
+    ResolutionPipeline pipeline;
+
+    @Inject
     PlanningService planningService;
 
     @Inject
-    PlanningPersistenceService persistenceService;
-
-    @Inject
     ConstraintAnalysisStore analysisStore;
-
-    @Inject
-    PlanSnapshotService snapshotService;
-
-    @Inject
-    KpiHistoriqueService kpiHistoriqueService;
-
-    @Inject
-    ReferenceDataService referenceDataService;
-
-    @Inject
-    Event<Notification> notifications;
 
     @Inject
     EditionContext editionContext;
@@ -168,24 +157,9 @@ public class SolverJobService {
         // Not replayable: the problem came in the request body, which is not
         // stored. Never queued either, so a restart can only ever find it in a
         // terminal state or interrupted.
-        return submit(JobType.SOLVE, secondsLimit, false, null, false, job -> {
-            // The safety net of issue #138: the plan about to be overwritten
-            // is captured first, so a solve no longer destroys the previous
-            // result.
-            snapshotService.capturerAvantSolve();
-            Instant debutSolve = Instant.now();
-            PlanningFestival solved = planningService.resoudre(problem, secondsLimit, job::attachSolver);
-            long dureeSolveSecondes = Duration.between(debutSolve, Instant.now()).getSeconds();
-            persistenceService.persist(solved);
-            PlanningService.PlanningDiagnostic diagnostic = planningService.diagnostiquer(solved);
-            analysisStore.record(diagnostic);
-            // KPI history (issue #89): one row per completed solve, carrying the
-            // real duration. Deliberately after the analysis — the KPI read the
-            // score it just recorded — and never able to fail the job.
-            kpiHistoriqueService.enregistrerApresSolve(dureeSolveSecondes);
-            notifierFinResolution(job, diagnostic);
-            return diagnostic;
-        });
+        return submit(JobType.SOLVE, secondsLimit, false, null, false,
+                job -> pipeline.executer(job.getEditionNom(), problem, secondsLimit, job::attachSolver)
+                        .diagnostic());
     }
 
     /**
@@ -203,35 +177,9 @@ public class SolverJobService {
 
     /** The work of {@link #submitSolveDepuisReferenceData}, see {@link #tacheRejouable}. */
     private JobTask tacheSolveDepuisReferenceData(Long secondsLimit) {
-        return job -> {
-            snapshotService.capturerAvantSolve();
-            PlanningFestival problem = planningService.construireDepuisReferenceData();
-            Instant debutSolve = Instant.now();
-            PlanningFestival solved = planningService.resoudre(problem, secondsLimit, job::attachSolver);
-            long dureeSolveSecondes = Duration.between(debutSolve, Instant.now()).getSeconds();
-            persistenceService.persist(solved);
-            PlanningService.PlanningDiagnostic diagnostic = planningService.diagnostiquer(solved);
-            analysisStore.record(diagnostic);
-            kpiHistoriqueService.enregistrerApresSolve(dureeSolveSecondes);
-            notifierFinResolution(job, diagnostic);
-            return diagnostic;
-        };
-    }
-
-    /**
-     * Announces the outcome when the edition asks for it — the point of a long
-     * solve launched before walking away. Fires a fact rather than sending a
-     * mail: "never costs the user their result" is no longer a {@code
-     * try/catch} written here, it is the delivery policy
-     * {@code ExpediteurNotifications} applies to every notification.
-     */
-    private void notifierFinResolution(SolverJob job, PlanningService.PlanningDiagnostic diagnostic) {
-        if (!referenceDataService.getParametresSolveur().mailFinResolution()) {
-            return;
-        }
-        // Feasible in Timefold's own sense: no hard constraint left broken.
-        notifications.fire(new Notification.ResolutionTerminee(
-                job.getEditionNom(), diagnostic.score(), diagnostic.hardScore() >= 0));
+        return job -> pipeline.executer(job.getEditionNom(),
+                planningService::construireDepuisReferenceData, Function.identity(),
+                secondsLimit, job::attachSolver).diagnostic();
     }
 
     /**
@@ -267,20 +215,14 @@ public class SolverJobService {
     /** The work of {@link #submitSolveIncremental}, see {@link #tacheRejouable}. */
     private JobTask tacheSolveIncremental(Long secondsLimit, PerimetreReplanification perimetre) {
         return job -> {
-            snapshotService.capturerAvantSolve();
-            PlanningService.ProblemeIncremental probleme =
-                    planningService.construireIncrementalDepuisReferenceData(perimetre);
-            Instant debutSolve = Instant.now();
-            PlanningFestival solved =
-                    planningService.resoudre(probleme.planning(), secondsLimit, job::attachSolver);
-            long dureeSolveSecondes = Duration.between(debutSolve, Instant.now()).getSeconds();
-            persistenceService.persist(solved);
-            PlanningService.PlanningDiagnostic diagnostic = planningService.diagnostiquer(solved);
-            analysisStore.record(diagnostic);
-            kpiHistoriqueService.enregistrerApresSolve(dureeSolveSecondes);
-            notifierFinResolution(job, diagnostic);
-            return new ResultatSolveIncremental(diagnostic, probleme.statistiques(),
-                    ReplanificationDiff.calculer(probleme.affectationsPrecedentes(), solved));
+            ResolutionPipeline.Resolution<PlanningService.ProblemeIncremental> resolution =
+                    pipeline.executer(job.getEditionNom(),
+                            () -> planningService.construireIncrementalDepuisReferenceData(perimetre),
+                            PlanningService.ProblemeIncremental::planning,
+                            secondsLimit, job::attachSolver);
+            PlanningService.ProblemeIncremental probleme = resolution.probleme();
+            return new ResultatSolveIncremental(resolution.diagnostic(), probleme.statistiques(),
+                    ReplanificationDiff.calculer(probleme.affectationsPrecedentes(), resolution.planning()));
         };
     }
 
