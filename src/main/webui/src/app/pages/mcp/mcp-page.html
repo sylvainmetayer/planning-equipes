@@ -124,6 +124,18 @@
         inclut déjà. Un client incapable d'ajouter des en-têtes peut passer le jeton en query string :
         <code>?p_token=&lt;id&gt;.&lt;jeton&gt;</code>.
       </p>
+      @if (pangolinAccessTokenId() || pangolinAccessToken()) {
+        <p i18n="@@mcp.pangolin.jeton.revele">
+          Le jeton Pangolin configuré côté serveur est révélé : la configuration ci-dessus contient sa
+          vraie valeur plutôt qu'un espace réservé.
+        </p>
+      } @else {
+        <p i18n="@@mcp.pangolin.jeton.manuel">
+          Si le jeton Pangolin est configuré côté serveur (<code>PLANNING_MCP_PANGOLIN_ACCESS_TOKEN_ID</code>
+          / <code>PLANNING_MCP_PANGOLIN_ACCESS_TOKEN</code>), le bouton « Révéler la clé d'API » ci-dessus le
+          révèle en même temps qu'elle. Sinon, il faut coller sa valeur à la main dans la configuration.
+        </p>
+      }
       <p i18n="@@mcp.pangolin.authorization">
         Utilisez bien l'en-tête dédié <code>X-MCP-Api-Key</code> pour la clé API plutôt que
         <code>Authorization: Bearer</code> : un proxy d'accès consomme fréquemment

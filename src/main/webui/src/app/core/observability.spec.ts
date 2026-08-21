@@ -1,14 +1,15 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { initObservability, loadObservabilityConfig, observabilityProviders } from './observability';
-import { ObservabilityConfig } from './models';
+import { initObservability, loadAppConfig, observabilityProviders } from './observability';
+import { AppConfig } from './models';
 
-const CONFIG: ObservabilityConfig = {
+const CONFIG: AppConfig = {
   sentryDsn: 'https://key@bugsink.example.com/1',
   sentryEnvironment: 'production',
-  cloudflareWebAnalyticsToken: '987d563a0f264bbbb484df80ab2ab0f8'
+  cloudflareWebAnalyticsToken: '987d563a0f264bbbb484df80ab2ab0f8',
+  devMode: false
 };
 
-describe('loadObservabilityConfig', () => {
+describe('loadAppConfig', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });
@@ -18,24 +19,26 @@ describe('loadObservabilityConfig', () => {
       'fetch',
       vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(CONFIG) })
     );
-    await expect(loadObservabilityConfig()).resolves.toEqual(CONFIG);
+    await expect(loadAppConfig()).resolves.toEqual(CONFIG);
   });
 
   it('falls back to a disabled config on a non-OK response, instead of blocking bootstrap', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 500 }));
-    await expect(loadObservabilityConfig()).resolves.toEqual({
+    await expect(loadAppConfig()).resolves.toEqual({
       sentryDsn: '',
       sentryEnvironment: 'local',
-      cloudflareWebAnalyticsToken: ''
+      cloudflareWebAnalyticsToken: '',
+      devMode: false
     });
   });
 
   it('falls back to a disabled config when the fetch itself rejects (offline, bad deploy)', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')));
-    await expect(loadObservabilityConfig()).resolves.toEqual({
+    await expect(loadAppConfig()).resolves.toEqual({
       sentryDsn: '',
       sentryEnvironment: 'local',
-      cloudflareWebAnalyticsToken: ''
+      cloudflareWebAnalyticsToken: '',
+      devMode: false
     });
   });
 });

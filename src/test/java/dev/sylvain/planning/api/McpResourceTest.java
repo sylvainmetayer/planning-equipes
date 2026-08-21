@@ -51,7 +51,9 @@ class McpResourceTest {
                 .when().post("/api/mcp/cle")
                 .then()
                 .statusCode(200)
-                .body("cle", equalTo("test-mcp-key"));
+                .body("cle", equalTo("test-mcp-key"))
+                .body("pangolinAccessTokenId", org.hamcrest.Matchers.nullValue())
+                .body("pangolinAccessToken", org.hamcrest.Matchers.nullValue());
     }
 
     @Test

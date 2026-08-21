@@ -722,11 +722,17 @@ export interface ImportScenarioResult {
   editionCreee: boolean | null;
 }
 
-/** `/api/config`: observability keys, blank when the matching feature is disabled server-side. */
-export interface ObservabilityConfig {
+/**
+ * `/api/config`, fetched once before bootstrap: the observability keys — blank
+ * when the matching feature is disabled server-side — and how the server was
+ * launched.
+ */
+export interface AppConfig {
   sentryDsn: string;
   sentryEnvironment: string;
   cloudflareWebAnalyticsToken: string;
+  /** Server running under `quarkus:dev`: the Dev UI exists at `/q/dev-ui`. */
+  devMode: boolean;
 }
 
 /**
@@ -863,6 +869,10 @@ export interface StatutMcp {
 /** The MCP API key, returned only in exchange for the admin password. Never stored. */
 export interface CleMcp {
   cle: string;
+  /** Pangolin access-proxy token id, only when PLANNING_MCP_PANGOLIN_ACCESS_TOKEN_ID is set server-side. */
+  pangolinAccessTokenId: string | null;
+  /** Pangolin access-proxy token, only when PLANNING_MCP_PANGOLIN_ACCESS_TOKEN is set server-side. */
+  pangolinAccessToken: string | null;
 }
 
 /** One of the animateur's seats, as shown in their espace. */

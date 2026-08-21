@@ -45,6 +45,14 @@
           </button>
           <div [id]="'nav-group-' + group.id" [hidden]="isCollapsed(group)">
             @for (link of group.links; track link.path) {
+              @if (link.externe) {
+                <!-- Servi par le backend, pas par le routeur : une navigation
+                     Angular n'y mènerait qu'à un 404 côté client. -->
+                <a mat-list-item [href]="link.path" target="_blank" rel="noopener">
+                  <mat-icon matListItemIcon>{{ link.icon }}</mat-icon>
+                  <span matListItemTitle>{{ link.label }}</span>
+                </a>
+              } @else {
               <a mat-list-item [routerLink]="link.path" routerLinkActive="active-link"
                  #rla="routerLinkActive"
                  [attr.aria-current]="rla.isActive ? 'page' : null"
@@ -66,6 +74,7 @@
                 }
                 <span matListItemTitle>{{ link.label }}</span>
               </a>
+              }
             }
           </div>
         </mat-nav-list>

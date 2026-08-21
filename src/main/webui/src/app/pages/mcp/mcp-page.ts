@@ -24,12 +24,13 @@ import { StatusMessage } from '../../shared/status-message';
  * wasted effort, and that deserves a warning rather than a silent failure
  * later.
  *
- * Revealing the key costs a second admin-password check on top of the
- * session. It is held in a component signal and nowhere else — no store, no
- * session storage — so leaving the page destroys it and coming back asks
- * again. A two-minute timer clears it in place for the case the page is left
- * open on screen; copying restarts that timer, since copying is the one
- * interaction that proves somebody is still there.
+ * Revealing the key — and, if configured server-side, the Pangolin access
+ * token id/token alongside it — costs a second admin-password check on top
+ * of the session. All three live in component signals and nowhere else — no
+ * store, no session storage — so leaving the page destroys them and coming
+ * back asks again. A two-minute timer clears them in place for the case the
+ * page is left open on screen; copying restarts that timer, since copying is
+ * the one interaction that proves somebody is still there.
  */
 @Component({
   selector: 'app-mcp-page',
@@ -59,6 +60,8 @@ export class McpPage implements OnDestroy {
   protected readonly enCours = signal(false);
   protected readonly erreur = signal('');
   protected readonly cle = signal('');
+  protected readonly pangolinAccessTokenId = signal('');
+  protected readonly pangolinAccessToken = signal('');
 
   private effacement?: ReturnType<typeof setTimeout>;
 
@@ -100,8 +103,8 @@ export class McpPage implements OnDestroy {
       [this.enTeteCle()]: this.cle() || '<clé PLANNING_MCP_API_KEY>'
     };
     if (this.pangolin()) {
-      headers['P-Access-Token-Id'] = '<id du jeton Pangolin>';
-      headers['P-Access-Token'] = '<jeton Pangolin>';
+      headers['P-Access-Token-Id'] = this.pangolinAccessTokenId() || '<id du jeton Pangolin>';
+      headers['P-Access-Token'] = this.pangolinAccessToken() || '<jeton Pangolin>';
     }
     const config = {
       mcpServers: {
@@ -137,6 +140,8 @@ export class McpPage implements OnDestroy {
     try {
       const reponse = await this.api.post<CleMcp>('/api/mcp/cle', { motDePasse: this.motDePasse() });
       this.cle.set(reponse.cle);
+      this.pangolinAccessTokenId.set(reponse.pangolinAccessTokenId ?? '');
+      this.pangolinAccessToken.set(reponse.pangolinAccessToken ?? '');
       this.formulaireOuvert.set(false);
       this.armerEffacement();
     } catch {
@@ -154,6 +159,8 @@ export class McpPage implements OnDestroy {
     clearTimeout(this.effacement);
     this.effacement = undefined;
     this.cle.set('');
+    this.pangolinAccessTokenId.set('');
+    this.pangolinAccessToken.set('');
   }
 
   private armerEffacement(): void {

@@ -24,6 +24,10 @@ services:
       # Extra headers to require alongside the key, e.g. behind Pangolin:
       # "P-Access-Token-Id=<id>,P-Access-Token=<token>". See docs/mcp.md.
       PLANNING_MCP_REQUIRED_HEADERS: ${PLANNING_MCP_REQUIRED_HEADERS:-}
+      # Same Pangolin token, so the MCP page can reveal it (admin-password
+      # gated, like the API key) instead of pasting it in by hand. See docs/mcp.md.
+      PLANNING_MCP_PANGOLIN_ACCESS_TOKEN_ID: ${PLANNING_MCP_PANGOLIN_ACCESS_TOKEN_ID:-}
+      PLANNING_MCP_PANGOLIN_ACCESS_TOKEN: ${PLANNING_MCP_PANGOLIN_ACCESS_TOKEN:-}
       # Admin login (issue #165): username is "admin", change the password for
       # anything beyond local testing. Set SESSION_ENCRYPTION_KEY (>= 16 chars)
       # so admin sessions survive a restart.

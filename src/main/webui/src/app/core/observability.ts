@@ -6,12 +6,13 @@ import { ErrorHandler, Provider } from '@angular/core';
 import { createErrorHandler, init as initSentry } from '@sentry/angular';
 
 import { APP_VERSION } from '../version';
-import { ObservabilityConfig } from './models';
+import { AppConfig } from './models';
 
-const DISABLED_CONFIG: ObservabilityConfig = {
+const DISABLED_CONFIG: AppConfig = {
   sentryDsn: '',
   sentryEnvironment: 'local',
-  cloudflareWebAnalyticsToken: ''
+  cloudflareWebAnalyticsToken: '',
+  devMode: false
 };
 
 /**
@@ -19,13 +20,13 @@ const DISABLED_CONFIG: ObservabilityConfig = {
  * catalog in `main.ts`: a failed fetch must not block startup, it just leaves
  * observability disabled for that session.
  */
-export async function loadObservabilityConfig(): Promise<ObservabilityConfig> {
+export async function loadAppConfig(): Promise<AppConfig> {
   try {
     const response = await fetch('/api/config');
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
-    return (await response.json()) as ObservabilityConfig;
+    return (await response.json()) as AppConfig;
   } catch (error) {
     console.error('Could not load the observability config, error tracking and analytics stay disabled.', error);
     return DISABLED_CONFIG;
@@ -33,7 +34,7 @@ export async function loadObservabilityConfig(): Promise<ObservabilityConfig> {
 }
 
 /** No-ops on whichever half of `config` is blank (dsn / token unset server-side). */
-export function initObservability(config: ObservabilityConfig): void {
+export function initObservability(config: AppConfig): void {
   if (config.sentryDsn) {
     initSentry({
       dsn: config.sentryDsn,
@@ -51,6 +52,6 @@ export function initObservability(config: ObservabilityConfig): void {
 }
 
 /** Swaps in Sentry's `ErrorHandler` — only meaningful once `initObservability` actually called `Sentry.init`. */
-export function observabilityProviders(config: ObservabilityConfig): Provider[] {
+export function observabilityProviders(config: AppConfig): Provider[] {
   return config.sentryDsn ? [{ provide: ErrorHandler, useValue: createErrorHandler() }] : [];
 }

@@ -55,9 +55,16 @@ tout chemin quelle que soit l'extension qui l'a monté.
 La page **MCP** de l'interface (menu Outils) reprend ces instructions pour
 l'opérateur : elle affiche la configuration client prête à copier pour
 l'instance en cours, et détecte le proxy via l'en-tête de réponse
-`X-Pangolin: true` que le déploiement ajoute aux réponses de l'application —
-quand il est présent, la page rappelle qu'il faut créer un jeton d'accès et
-le présenter dans `P-Access-Token-Id`/`P-Access-Token`.
+`X-Pangolin: true` — quand il est présent, la page rappelle qu'il faut créer
+un jeton d'accès et le présenter dans `P-Access-Token-Id`/`P-Access-Token`.
+
+Cet en-tête n'est pas ajouté par Pangolin lui-même : son réglage « en-têtes
+personnalisés » (onglet *Paramètres HTTP* d'une ressource) ne modifie que la
+requête envoyée au backend, pas la réponse renvoyée au navigateur. C'est donc
+`PangolinHeaderFilter` (package `api`) qui fait le lien : il renvoie tel quel,
+sur la réponse, tout en-tête `X-Pangolin` reçu sur la requête. Il suffit donc
+de déclarer `X-Pangolin: true` dans les en-têtes personnalisés de la ressource
+Pangolin pour que la page MCP le détecte.
 
 ### La clé, vue depuis l'interface
 
@@ -83,6 +90,15 @@ place, relancé à chaque copie — copier est la seule interaction qui prouve q
 quelqu'un est encore devant l'écran. La configuration client affichée juste en
 dessous se met à jour avec la vraie clé tant qu'elle est visible, ce qui évite
 le copier-coller manuel dans le JSON.
+
+Le même bouton, la même demande de mot de passe et le même minuteur révèlent
+aussi le jeton d'accès Pangolin, quand `planning.mcp.pangolin.access-token-id`
+(`PLANNING_MCP_PANGOLIN_ACCESS_TOKEN_ID`) et `planning.mcp.pangolin.access-token`
+(`PLANNING_MCP_PANGOLIN_ACCESS_TOKEN`) sont positionnées côté serveur : la
+configuration client affichée contient alors la vraie valeur de
+`P-Access-Token-Id`/`P-Access-Token` plutôt qu'un espace réservé. Les deux
+propriétés sont facultatives et vides par défaut — sans elles la page continue
+de rappeler qu'il faut coller le jeton à la main, comme avant.
 
 Côté serveur, cinq échecs bloquent l'endpoint cinq minutes, et le bon mot de
 passe ne lève pas le blocage — sinon il suffirait de le deviner une fois pour

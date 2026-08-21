@@ -34,6 +34,7 @@ import {
 } from '../core/nav-collapse';
 import { NotificationService } from '../core/notification.service';
 import { PlanningResolutionStore } from '../core/planning-resolution.store';
+import { APP_CONFIG } from '../core/app-config';
 import { SolverJobService } from '../core/solver-job.service';
 import { DataStaleIndicator } from '../shared/data-stale-indicator';
 import { ScrollHint } from '../shared/scroll-hint';
@@ -47,6 +48,12 @@ interface NavLink {
   icon: string;
   /** Shows the unread notification count as a mat-badge on this link only. */
   badge?: 'notifications';
+  /**
+   * Served by the backend rather than by the Angular router (the Quarkus Dev
+   * UI): rendered as a plain anchor opening a new tab, since routing to it
+   * would only produce a client-side 404.
+   */
+  externe?: boolean;
 }
 
 interface NavGroup {
@@ -65,7 +72,7 @@ interface NavGroup {
  * the English catalog — before `bootstrapApplication()` runs, but after this
  * module has already been imported.
  */
-function buildNavGroups(): NavGroup[] {
+function buildNavGroups(devMode: boolean): NavGroup[] {
   return [
   {
     id: 'planning',
@@ -158,7 +165,19 @@ function buildNavGroups(): NavGroup[] {
         path: '/mentions-legales',
         label: $localize`:@@nav.link.mentionsLegales:Mentions légales`,
         icon: 'gavel'
-      }
+      },
+      // Dev mode only: in a packaged application the Dev UI does not exist,
+      // and the entry would lead nowhere.
+      ...(devMode
+        ? [
+            {
+              path: '/q/dev-ui',
+              label: $localize`:@@nav.link.devUi:Quarkus Dev UI`,
+              icon: 'developer_mode',
+              externe: true
+            }
+          ]
+        : [])
     ]
   },
   {
@@ -213,7 +232,11 @@ function buildNavGroups(): NavGroup[] {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AdminShell {
-  protected readonly navGroups = buildNavGroups();
+  /**
+   * Built once, from the server's own answer: what the backend says it is,
+   * not what this bundle was built as.
+   */
+  protected readonly navGroups = buildNavGroups(inject(APP_CONFIG, { optional: true })?.devMode ?? false);
   protected readonly jobs = inject(SolverJobService);
   protected readonly resolution = inject(PlanningResolutionStore);
   protected readonly editions = inject(EditionStore);

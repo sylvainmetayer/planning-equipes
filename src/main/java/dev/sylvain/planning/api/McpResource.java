@@ -65,6 +65,18 @@ public class McpResource {
     String headerName;
 
     /**
+     * The Pangolin access-proxy token, set server-side so the operator can
+     * reveal it from the MCP page instead of copying it in by hand each time
+     * a client needs configuring. Both empty by default: nothing to reveal
+     * unless the deployment actually sits behind Pangolin.
+     */
+    @ConfigProperty(name = "planning.mcp.pangolin.access-token-id")
+    Optional<String> pangolinAccessTokenId;
+
+    @ConfigProperty(name = "planning.mcp.pangolin.access-token")
+    Optional<String> pangolinAccessToken;
+
+    /**
      * The admin password, read from the very property the embedded security
      * realm authenticates against — so this can never drift out of step with
      * the real credential, which a second copy of {@code ADMIN_PASSWORD} would.
@@ -110,7 +122,9 @@ public class McpResource {
             // string, so the page can tell "clé absente" from "clé vide".
             return Response.status(Response.Status.NOT_FOUND).build();
         }
-        return Response.ok(new CleMcp(apiKey.get())).build();
+        return Response.ok(new CleMcp(apiKey.get(),
+                pangolinAccessTokenId.filter(v -> !v.isBlank()).orElse(null),
+                pangolinAccessToken.filter(v -> !v.isBlank()).orElse(null))).build();
     }
 
     /** Constant-time comparison: a wrong password must not leak its correct prefix through timing. */
@@ -125,6 +139,10 @@ public class McpResource {
     public record DemandeRevelation(String motDePasse) {
     }
 
-    public record CleMcp(String cle) {
+    /**
+     * @param pangolinAccessTokenId {@code null} unless {@code planning.mcp.pangolin.access-token-id} is set
+     * @param pangolinAccessToken   {@code null} unless {@code planning.mcp.pangolin.access-token} is set
+     */
+    public record CleMcp(String cle, String pangolinAccessTokenId, String pangolinAccessToken) {
     }
 }

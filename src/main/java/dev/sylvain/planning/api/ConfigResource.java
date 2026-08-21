@@ -2,6 +2,7 @@ package dev.sylvain.planning.api;
 
 import java.util.Optional;
 
+import io.quarkus.runtime.LaunchMode;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -18,6 +19,11 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  * (see docker-compose.yml) instead of being baked into the Angular bundle at
  * build time. Blank when unset, which the frontend treats as "disabled" —
  * see docs/observabilite.md.
+ *
+ * <p>It also answers whether the server runs in <b>dev mode</b>, which is what
+ * lets the UI offer the Quarkus Dev UI only where it exists. The frontend's own
+ * build mode would be a poor proxy: it says how the bundle was built, not how
+ * the server it talks to was launched.</p>
  */
 @Path("/config")
 @Produces(MediaType.APPLICATION_JSON)
@@ -41,17 +47,22 @@ public class ConfigResource {
         return new ConfigView(
                 sentryDsn.orElse(""),
                 sentryEnvironment,
-                cloudflareWebAnalyticsToken.orElse(""));
+                cloudflareWebAnalyticsToken.orElse(""),
+                LaunchMode.current() == LaunchMode.DEVELOPMENT);
     }
 
     /**
      * @param sentryDsn          empty disables Sentry/Bugsink error reporting
      * @param sentryEnvironment  tag attached to every reported error/transaction
      * @param cloudflareWebAnalyticsToken empty disables Cloudflare Web Analytics
+     * @param devMode            server launched with {@code quarkus:dev}: the
+     *                           Dev UI exists at {@code /q/dev-ui}, so the
+     *                           interface may link to it
      */
     public record ConfigView(
             String sentryDsn,
             String sentryEnvironment,
-            String cloudflareWebAnalyticsToken) {
+            String cloudflareWebAnalyticsToken,
+            boolean devMode) {
     }
 }

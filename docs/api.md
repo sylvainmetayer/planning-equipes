@@ -35,7 +35,7 @@ redirection HTML.
 | `GET` | `/api/auth/me` | Statut de session : `{ "authentifie": bool, "nom": "admin" \| null }` — accessible anonymement |
 | `POST` | `/api/auth/logout` | Supprime le cookie de session (`204`), idempotent |
 | `GET` | `/api/mcp/statut` | `{ configuree, header }` : si une clé MCP est configurée côté serveur, et l'en-tête qui la porte. **Jamais la clé** — c'est ce qui permet à la page MCP d'avertir « MCP inutilisable en l'état » au lieu de laisser paramétrer un client qui n'obtiendra que des 401 |
-| `POST` | `/api/mcp/cle` | Échange `{ motDePasse }` (celui de l'admin) contre `{ cle }`. `401` mot de passe faux ou absent, `404` mot de passe bon mais aucune clé configurée, `429` après cinq échecs (blocage de 5 min, que le bon mot de passe ne lève pas). La session admin ne suffit pas : la clé donne un accès complet en écriture et **survit à la session** d'où elle a été copiée, donc la révélation est liée à quelqu'un présent au clavier |
+| `POST` | `/api/mcp/cle` | Échange `{ motDePasse }` (celui de l'admin) contre `{ cle, pangolinAccessTokenId, pangolinAccessToken }` — les deux derniers `null` sauf si `PLANNING_MCP_PANGOLIN_ACCESS_TOKEN_ID`/`PLANNING_MCP_PANGOLIN_ACCESS_TOKEN` sont positionnées côté serveur. `401` mot de passe faux ou absent, `404` mot de passe bon mais aucune clé configurée, `429` après cinq échecs (blocage de 5 min, que le bon mot de passe ne lève pas). La session admin ne suffit pas : la clé donne un accès complet en écriture et **survit à la session** d'où elle a été copiée, donc la révélation est liée à quelqu'un présent au clavier |
 
 ### Derrière un reverse proxy qui termine le TLS
 
