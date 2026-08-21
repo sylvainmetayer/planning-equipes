@@ -217,6 +217,18 @@ Mise en œuvre :
   chaque requête, passer par un service le ferait dépendre du `HttpClient`
   qu'il intercepte.
 
+Le serveur MCP est le **troisième** canal de désignation, et il n'a pas
+d'en-tête à lire : une requête MCP n'est pas une requête JAX-RS, donc
+`EditionHeaderFilter` ne la voit jamais et `EditionRequestScope` reste vide.
+L'édition y voyage donc comme **argument d'outil** (`edition`, facultatif, id
+ou nom), qu'un intercepteur CDI lie autour de l'appel via le même
+`EditionContext.executeDans`. Une différence de comportement est assumée avec
+l'en-tête HTTP : une édition inconnue **échoue** côté MCP au lieu de retomber
+sur l'édition par défaut. Un onglet resté ouvert sur une édition supprimée doit
+continuer à afficher des écrans ; un assistant qui nomme une édition s'apprête
+à y écrire, et un repli silencieux enverrait cette écriture ailleurs sans que
+personne ne puisse le voir (issue #181, voir [`mcp.md`](mcp.md#éditions)).
+
 Le verrou du solveur (`SolverJobService`) reste **global** : une résolution à la
 fois pour toute l'instance, quelle que soit sa cible. Un verrou par édition ferait
 tourner deux solveurs Timefold simultanés sur la même JVM, ce que le

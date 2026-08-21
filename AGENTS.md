@@ -135,11 +135,20 @@ Single Quarkus service, no separate solver microservice. Package root:
   functional tests skip the session; `AuthentificationAdminTest` restores and
   covers the real policy.
 - `mcp/` — MCP tools (`@Tool`) exposing the same capabilities to an AI
-  assistant, delegating to the services above. One hard rule: animateur
-  nom/prénom/dateNaissance never leave over MCP (issue #107) — return
-  dedicated view records, never domain objects, and run violation messages
-  through `AnonymisationViolations`. `McpConfidentialiteStructurelleTest`
-  enforces it reflectively over every tool. See `docs/mcp.md`.
+  assistant, delegating to the services above. Two hard rules, both enforced
+  reflectively over every tool so a new one cannot opt out by omission:
+  1. animateur nom/prénom/dateNaissance never leave over MCP (issue #107) —
+     return dedicated view records, never domain objects, and run violation
+     messages through `AnonymisationViolations`
+     (`McpConfidentialiteStructurelleTest`);
+  2. a tool that works inside an edition takes an `edition` argument marked
+     `@EditionArg`, on a class annotated `@EditionCiblee` (issue #181) — an MCP
+     call carries no `X-Edition-Id`, so without it the tool silently reads and
+     writes the default edition (`McpEditionStructurelleTest`). Beware CDI
+     self-invocation: a tool calling another tool on `this` bypasses the
+     interceptor.
+
+  See `docs/mcp.md`.
 - Persistence: PostgreSQL + Flyway migrations in
   `src/main/resources/db/migration/`. Schema change = **new versioned file**;
   never edit an applied migration.

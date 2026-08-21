@@ -28,6 +28,7 @@ import jakarta.inject.Inject;
  * <p>Ad hoc constraints reference animateurs, so they are reported here by id
  * only, like everything else animateur-related in this package.
  */
+@EditionCiblee
 @ApplicationScoped
 public class ParametresMcpTools {
 
@@ -37,7 +38,8 @@ public class ParametresMcpTools {
     /* ---------------------------- Paramètres légaux ------------------------- */
 
     @Tool(description = "Consulte les paramètres légaux appliqués par le solveur (durées maximales, pauses, repos).")
-    ParametresLegauxView consulter_parametres_legaux() {
+    ParametresLegauxView consulter_parametres_legaux(
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return toView(referenceDataService.getParametresLegaux());
     }
 
@@ -47,7 +49,8 @@ public class ParametresMcpTools {
             @ToolArg(description = "Durée hebdomadaire maximale d'un majeur, en minutes", required = false) Integer dureeHebdomadaireMaxMinutes,
             @ToolArg(description = "Durée hebdomadaire maximale d'un mineur, en minutes", required = false) Integer dureeHebdomadaireMaxMineurMinutes,
             @ToolArg(description = "Pause minimale entre deux vacations, en minutes", required = false) Integer pauseMinimaleEntreVacationsMinutes,
-            @ToolArg(description = "Repos quotidien minimal, en minutes", required = false) Integer reposQuotidienMinimalMinutes) {
+            @ToolArg(description = "Repos quotidien minimal, en minutes", required = false) Integer reposQuotidienMinimalMinutes,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         ParametresLegaux parametres = referenceDataService.getParametresLegaux();
         if (dureeHebdomadaireMaxMinutes != null) {
             parametres.setDureeHebdomadaireMaxMinutes(dureeHebdomadaireMaxMinutes);
@@ -67,7 +70,8 @@ public class ParametresMcpTools {
     /* -------------------------- Paramètres découpage ------------------------ */
 
     @Tool(description = "Consulte les paramètres de découpage des amplitudes en vacations.")
-    ParametresDecoupageView consulter_parametres_decoupage() {
+    ParametresDecoupageView consulter_parametres_decoupage(
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return toView(referenceDataService.getParametresDecoupage());
     }
 
@@ -85,7 +89,8 @@ public class ParametresMcpTools {
             @ToolArg(description = "Fin de la fenêtre repas du midi (HH:MM)", required = false) String fenetreRepasMidiFin,
             @ToolArg(description = "Début de la fenêtre repas du soir (HH:MM)", required = false) String fenetreRepasSoirDebut,
             @ToolArg(description = "Fin de la fenêtre repas du soir (HH:MM)", required = false) String fenetreRepasSoirFin,
-            @ToolArg(description = "Couverture pendant la pause : FERMETURE ou RELEVE", required = false) String strategieCouverturePendantPause) {
+            @ToolArg(description = "Couverture pendant la pause : FERMETURE ou RELEVE", required = false) String strategieCouverturePendantPause,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         ParametresDecoupage parametres = referenceDataService.getParametresDecoupage();
         if (dureeVacationCibleMinutes != null) {
             parametres.setDureeVacationCibleMinutes(dureeVacationCibleMinutes);
@@ -131,13 +136,15 @@ public class ParametresMcpTools {
     /* --------------------------- Paramètres solveur ------------------------- */
 
     @Tool(description = "Consulte la durée de résolution par défaut du solveur, en secondes.")
-    ParametresSolveurView consulter_parametres_solveur() {
+    ParametresSolveurView consulter_parametres_solveur(
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return toView(referenceDataService.getParametresSolveur());
     }
 
     @Tool(description = "Modifie la durée de résolution par défaut du solveur, en secondes (valeur strictement positive).")
     ParametresSolveurView modifier_parametres_solveur(
-            @ToolArg(description = "Durée de résolution par défaut, en secondes") int dureeResolutionSecondes) {
+            @ToolArg(description = "Durée de résolution par défaut, en secondes") int dureeResolutionSecondes,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         ParametresSolveur parametres = referenceDataService.getParametresSolveur();
         parametres.setDureeResolutionSecondes(dureeResolutionSecondes);
         return toView(referenceDataService.updateParametresSolveur(parametres));
@@ -148,7 +155,8 @@ public class ParametresMcpTools {
     @Tool(description = "Liste les contraintes ad hoc saisies au cas par cas (indisponibilité forcée, "
             + "incompatibilité entre animateurs, affectation forcée, affinité entre animateurs). "
             + "Les animateurs y sont désignés par id seul.")
-    List<ContrainteAdHocView> lister_contraintes_ad_hoc() {
+    List<ContrainteAdHocView> lister_contraintes_ad_hoc(
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return referenceDataService.listContraintesAdHoc().stream().map(ParametresMcpTools::toView).toList();
     }
 
@@ -165,7 +173,8 @@ public class ParametresMcpTools {
             @ToolArg(description = "Ids des animateurs concernés") List<String> animateurIds,
             @ToolArg(description = "Id du créneau concerné", required = false) Long creneauId,
             @ToolArg(description = "Id du stand concerné", required = false) String standId,
-            @ToolArg(description = "Raison, purement informative", required = false) String raison) {
+            @ToolArg(description = "Raison, purement informative", required = false) String raison,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         ContrainteAdHoc contrainte = new ContrainteAdHoc(id,
                 McpArgs.enumeration(TypeContrainteAdHoc.class, type, "type"));
         contrainte.setAnimateursConcernes(animateurs(animateurIds));
@@ -187,7 +196,8 @@ public class ParametresMcpTools {
     }
 
     @Tool(description = "Supprime une contrainte ad hoc.")
-    SuppressionResult supprimer_contrainte_ad_hoc(@ToolArg(description = "Id de la contrainte") String id) {
+    SuppressionResult supprimer_contrainte_ad_hoc(@ToolArg(description = "Id de la contrainte") String id,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         referenceDataService.deleteContrainteAdHoc(id);
         return new SuppressionResult(id, true);
     }

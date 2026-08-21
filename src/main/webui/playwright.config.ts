@@ -13,7 +13,16 @@ import { defineConfig, devices } from '@playwright/test';
  * - E2E_ADMIN_PASSWORD  (default admin, must match the app's ADMIN_PASSWORD)
  * - E2E_CHROMIUM        optional Chromium executable, for sandboxes that ship
  *                       a browser without letting Playwright download its own
+ *
+ * Deux projets : `chromium` (bureau, toute la suite) et `mobile`, qui rejoue la
+ * seule suite de l'espace animateur sur un viewport de téléphone — c'est de là
+ * que la plupart des animateurs ouvrent leur lien.
  */
+/** Chromium déjà présent sur la machine, pour un environnement qui interdit son téléchargement. */
+const chromiumInstalle = process.env['E2E_CHROMIUM']
+  ? { launchOptions: { executablePath: process.env['E2E_CHROMIUM'] } }
+  : {};
+
 export default defineConfig({
   testDir: './e2e',
   // The specs share one database and one seeded dataset: keep them ordered.
@@ -35,9 +44,21 @@ export default defineConfig({
       name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
-        ...(process.env['E2E_CHROMIUM']
-          ? { launchOptions: { executablePath: process.env['E2E_CHROMIUM'] } }
-          : {})
+        ...chromiumInstalle
+      }
+    },
+    {
+      /*
+       * L'espace animateur sur un téléphone : c'est ainsi que la majorité des
+       * animateurs l'ouvrent, le lien leur arrivant par e-mail. Ce projet ne
+       * rejoue que cette suite-là — l'interface d'administration assume, elle,
+       * d'être une interface de bureau.
+       */
+      name: 'mobile',
+      testMatch: /espace-animateur\.spec\.ts/,
+      use: {
+        ...devices['Pixel 7'],
+        ...chromiumInstalle
       }
     }
   ]

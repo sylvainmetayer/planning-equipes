@@ -303,6 +303,15 @@ java -jar target/quarkus-app/quarkus-run.jar
 npm run e2e
 ```
 
+Deux projets Playwright : `chromium` (bureau, toute la suite) et **`mobile`**,
+qui rejoue la seule suite de l'espace animateur sur un viewport de téléphone —
+c'est de là que la plupart des animateurs ouvrent leur lien, l'interface
+d'administration assumant d'être une interface de bureau :
+
+```bash
+E2E_BASE_URL=http://localhost:8081 npx playwright test --project=mobile
+```
+
 Variables : `E2E_BASE_URL` (défaut `http://localhost:8080`),
 `E2E_ADMIN_PASSWORD` (défaut `admin`, doit refléter l'`ADMIN_PASSWORD` de
 l'application), `E2E_MAILPIT_URL` (défaut `http://localhost:8025`),

@@ -33,7 +33,7 @@ class SolveurMcpToolsTest {
         tools.analysisStore.record(new PlanningDiagnostic("-2hard/-5medium/0soft", 2,
                 List.of(hardViole, hardRespecte, mediumViole), null, -2));
 
-        List<ViolationHardView> violations = tools.expliquer_echec_contraintes_dures();
+        List<ViolationHardView> violations = tools.expliquer_echec_contraintes_dures(null);
 
         assertThat(violations).hasSize(1);
         assertThat(violations.get(0).contrainte()).isEqualTo("posteDoitEtrePourvu");
@@ -46,6 +46,6 @@ class SolveurMcpToolsTest {
         SolveurMcpTools tools = new SolveurMcpTools();
         tools.analysisStore = new ConstraintAnalysisStore();
 
-        assertThat(tools.expliquer_echec_contraintes_dures()).isEmpty();
+        assertThat(tools.expliquer_echec_contraintes_dures(null)).isEmpty();
     }
 }

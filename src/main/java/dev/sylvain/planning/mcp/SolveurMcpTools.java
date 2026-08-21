@@ -29,6 +29,7 @@ import jakarta.inject.Inject;
  * has no practical way to construct the full {@code PlanningFestival} JSON
  * body the raw REST endpoints expect.
  */
+@EditionCiblee
 @ApplicationScoped
 public class SolveurMcpTools {
 
@@ -46,7 +47,8 @@ public class SolveurMcpTools {
 
     @Tool(description = "Lance une résolution en tâche de fond à partir des données de référence persistées "
             + "(stands, créneaux, animateurs). Renvoie l'id du job à interroger via statut_solveur.")
-    JobView lancer_solveur(@ToolArg(description = "Durée max en secondes (défaut : configuration serveur)", required = false) Long secondes) {
+    JobView lancer_solveur(@ToolArg(description = "Durée max en secondes (défaut : configuration serveur)", required = false) Long secondes,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         try {
             return toView(solverJobService.submitSolve(planningService.construireDepuisReferenceData(), secondes));
         } catch (SolverBusyException e) {
@@ -56,7 +58,8 @@ public class SolveurMcpTools {
 
     @Tool(description = "Lance une analyse (score détaillé par contrainte, sans persister) en tâche de fond à "
             + "partir des données de référence persistées.")
-    JobView lancer_analyse(@ToolArg(description = "Durée max en secondes (défaut : configuration serveur)", required = false) Long secondes) {
+    JobView lancer_analyse(@ToolArg(description = "Durée max en secondes (défaut : configuration serveur)", required = false) Long secondes,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         try {
             return toView(solverJobService.submitAnalyze(planningService.construireDepuisReferenceData(), secondes));
         } catch (SolverBusyException e) {
@@ -89,7 +92,8 @@ public class SolveurMcpTools {
 
     @Tool(description = "Résultats de planification (postes affectés) pour un animateur donné, à partir du dernier "
             + "planning persisté en base. Ne renvoie que des ids de stand/créneau, jamais de données personnelles.")
-    List<AffectationView> resultats_animateur(@ToolArg(description = "Id de l'animateur") String animateurId) {
+    List<AffectationView> resultats_animateur(@ToolArg(description = "Id de l'animateur") String animateurId,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         PlanningFestival planning = persistenceService.loadPersistedPlanning();
         if (planning == null || planning.getPostes() == null) {
             return List.of();
@@ -111,7 +115,8 @@ public class SolveurMcpTools {
     @Tool(description = "Détaille les contraintes de niveau HARD encore violées lors de la dernière analyse "
             + "(solve ou analyze), avec le message de chaque violation. Liste vide si la dernière analyse est "
             + "entièrement faisable, ou s'il n'y a jamais eu d'analyse.")
-    List<ViolationHardView> expliquer_echec_contraintes_dures() {
+    List<ViolationHardView> expliquer_echec_contraintes_dures(
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         StoredAnalysis analysis = analysisStore.latest();
         if (analysis == null) {
             return List.of();
@@ -129,7 +134,8 @@ public class SolveurMcpTools {
 
     private static JobView toView(SolverJob job) {
         return new JobView(job.getId(), job.getType().name(), job.getStatus().name(), job.getSecondsLimit(),
-                job.getSubmittedAt(), job.getStartedAt(), job.getFinishedAt(), job.getElapsedSeconds(), job.getError());
+                job.getSubmittedAt(), job.getStartedAt(), job.getFinishedAt(), job.getElapsedSeconds(), job.getError(),
+                job.getEditionId(), job.getEditionNom());
     }
 
     private static AffectationView toView(PosteAffectation poste) {
@@ -141,9 +147,16 @@ public class SolveurMcpTools {
                 poste.getHeureDebutEffective(), poste.getHeureFinEffective());
     }
 
-    /** Statut/résultat d'un job, sans le corps volumineux du planning résolu (voir resultats_animateur pour ça). */
+    /**
+     * Statut/résultat d'un job, sans le corps volumineux du planning résolu (voir resultats_animateur pour ça).
+     *
+     * <p>The edition is part of the view because the job registry is global
+     * while jobs are not: without it, {@code lister_jobs} would show two
+     * editions' runs as one undifferentiated history (issue #181).</p>
+     */
     public record JobView(String id, String type, String status, Long secondsLimit, Instant submittedAt,
-            Instant startedAt, Instant finishedAt, long elapsedSeconds, String error) {
+            Instant startedAt, Instant finishedAt, long elapsedSeconds, String error, String editionId,
+            String editionNom) {
     }
 
     public record AffectationView(String posteId, String standId, String standNom, Long creneauId,

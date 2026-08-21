@@ -61,6 +61,20 @@
   width: auto;
 }
 
+/* Le bandeau est large : sans plafond, il mange la barre et ne laisse
+   qu'une initiale au nom de la personne connectée. */
+.espace-toolbar .app-logo {
+  max-width: 35vw;
+  object-fit: contain;
+  object-position: left center;
+}
+
+@media (min-width: 30rem) {
+  .espace-toolbar .app-logo {
+    max-width: none;
+  }
+}
+
 .espace-toolbar .app-title {
   font: var(--mat-sys-title-medium);
   /* Sur un téléphone, le logo suffit à dire où l'on est : le titre cède la
@@ -340,12 +354,23 @@
   gap: 0.75rem;
 }
 
+/*
+ * `flex-basis` porte sur l'axe principal : en colonne, un `1 1 14rem` écrit
+ * pour une rangée devient une hauteur de 14 rem — trois champs vides hauts
+ * comme des cartes. Les bases ne valent donc qu'une fois la rangée rétablie.
+ */
 .espace-form-champs mat-form-field {
-  flex: 1 1 14rem;
+  flex: 0 0 auto;
 }
 
-.espace-form-motif {
-  flex: 2 1 18rem;
+@media (min-width: 40rem) {
+  .espace-form-champs mat-form-field {
+    flex: 1 1 14rem;
+  }
+
+  .espace-form-motif {
+    flex: 2 1 18rem;
+  }
 }
 
 .espace-brouillons {

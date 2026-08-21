@@ -1,0 +1,172 @@
+package dev.sylvain.planning.mcp;
+
+import java.time.LocalDate;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Stream;
+
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.Edition;
+import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.EditionService;
+import dev.sylvain.planning.service.ReferenceDataService;
+import io.quarkiverse.mcp.server.Tool;
+import io.quarkiverse.mcp.server.ToolArg;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+
+/**
+ * MCP tools for the editions themselves — the partition every other tool of
+ * this package works inside (issue #181).
+ *
+ * <p>Before these existed, an assistant could not answer "how many editions do
+ * I have, and how many créneaux in each?": every tool worked in the default
+ * edition without naming it, so a reading looked like the whole truth and a
+ * write could land in the wrong edition unnoticed. {@code lister_editions}
+ * answers the question, {@code edition_courante} names the edition the other
+ * tools use when a call designates none, and the {@code edition} argument they
+ * all carry designates another one for the duration of a single call.</p>
+ *
+ * <p>The volumetry {@code lister_editions} returns costs one query per edition
+ * per counted référentiel. That is deliberate: an edition list without it
+ * ("2025", "2026", "2026 canicule") gives an assistant nothing to recognise
+ * the right one by, and editions are counted in units, not in thousands.</p>
+ */
+@ApplicationScoped
+public class EditionMcpTools {
+
+    @Inject
+    EditionService editionService;
+
+    @Inject
+    EditionContext editionContext;
+
+    @Inject
+    ReferenceDataService referenceDataService;
+
+    @Inject
+    McpEditions editions;
+
+    @Tool(description = "Liste les éditions (« Année 2025 », « Année 2026 », un plan canicule…) : "
+            + "l'édition est la partition dans laquelle vivent stands, animateurs, créneaux et paramètres, "
+            + "et deux éditions ne voient jamais les données l'une de l'autre. Chaque ligne indique laquelle "
+            + "est courante (celle utilisée par les autres outils quand aucune n'est précisée), laquelle est "
+            + "l'édition par défaut, et de quoi la reconnaître : nombre de créneaux, période couverte, "
+            + "nombre de stands et d'animateurs.")
+    List<EditionView> lister_editions() {
+        String courante = editionContext.editionIdCourant();
+        return editionService.listEditions().stream()
+                .map(edition -> vue(edition, courante))
+                .toList();
+    }
+
+    @Tool(description = "Nomme l'édition dans laquelle travaillent tous les autres outils quand leur argument "
+            + "« edition » n'est pas précisé. À appeler avant toute écriture si l'utilisateur a plusieurs "
+            + "éditions : rien d'autre n'indique laquelle est en train d'être modifiée.")
+    EditionView edition_courante() {
+        String courante = editionContext.editionIdCourant();
+        return vue(editionService.editionCourante(), courante);
+    }
+
+    @Tool(description = "Crée une édition vide. Pour repartir d'une édition existante (stands, animateurs, "
+            + "paramètres), utiliser dupliquer_edition à la place.")
+    EditionView creer_edition(
+            @ToolArg(description = "Id de la nouvelle édition, repris tel quel dans les URLs (ex. « 2027 »)") String id,
+            @ToolArg(description = "Nom affiché (ex. « Année 2027 »)") String nom) {
+        return vue(editionService.creer(new Edition(id, nom, false, null)), editionContext.editionIdCourant());
+    }
+
+    @Tool(description = "Duplique une édition dans une nouvelle : stands, animateurs, typologies, emplacements, "
+            + "créneaux, contraintes et paramètres sont recopiés, jamais le planning résolu. C'est la façon de "
+            + "préparer une variante (« plan canicule ») sans toucher à l'originale : depuis l'issue #172, une "
+            + "variante EST une édition dupliquée.")
+    EditionView dupliquer_edition(
+            @ToolArg(description = "Édition à copier : son id ou son nom (voir lister_editions)") String source,
+            @ToolArg(description = "Id de l'édition à créer") String id,
+            @ToolArg(description = "Nom affiché de l'édition à créer") String nom) {
+        String sourceId = exigerEdition(source, "source");
+        return vue(editionService.dupliquer(sourceId, new Edition(id, nom, false, null)),
+                editionContext.editionIdCourant());
+    }
+
+    @Tool(description = "Renomme une édition. Seul le nom affiché change : l'id, lui, est repris dans les URLs "
+            + "et les configurations, il n'est pas modifiable.")
+    EditionView renommer_edition(
+            @ToolArg(description = "Édition à renommer : son id ou son nom") String edition,
+            @ToolArg(description = "Nouveau nom affiché") String nom) {
+        String id = exigerEdition(edition, "edition");
+        return vue(editionService.renommer(id, new Edition(id, nom, false, null)),
+                editionContext.editionIdCourant());
+    }
+
+    @Tool(description = "Désigne l'édition par défaut : celle dans laquelle travaille tout appelant qui n'en "
+            + "précise aucune, y compris les outils MCP sans argument « edition ».")
+    EditionView definir_edition_par_defaut(
+            @ToolArg(description = "Édition à rendre par défaut : son id ou son nom") String edition) {
+        String id = exigerEdition(edition, "edition");
+        editionService.definirParDefaut(id);
+        return vue(trouver(id), editionContext.editionIdCourant());
+    }
+
+    @Tool(description = "Supprime une édition ET tout ce qu'elle contient : stands, animateurs, créneaux, "
+            + "contraintes, planning résolu. Destructif et irréversible, à ne lancer que sur demande explicite. "
+            + "L'édition par défaut, l'édition courante et la dernière édition restante sont refusées.")
+    SuppressionResult supprimer_edition(
+            @ToolArg(description = "Édition à supprimer : son id ou son nom") String edition) {
+        String id = exigerEdition(edition, "edition");
+        editionService.supprimer(id);
+        return new SuppressionResult(id, true);
+    }
+
+    /**
+     * Resolves a designation the caller had to provide. Unlike the optional
+     * {@code edition} argument of the other tools, a blank value here is a
+     * missing argument, not "the current edition".
+     */
+    private String exigerEdition(String edition, String champ) {
+        if (edition == null || edition.isBlank()) {
+            throw new IllegalArgumentException(champ + " est requis : id ou nom de l'édition (voir lister_editions)");
+        }
+        return editions.resoudre(edition);
+    }
+
+    private Edition trouver(String id) {
+        return editionService.listEditions().stream()
+                .filter(edition -> edition.getId().equals(id))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Édition introuvable après écriture : " + id));
+    }
+
+    /** Counted inside the edition, hence the {@code executeDans}: the tool itself runs in another one. */
+    private EditionView vue(Edition edition, String editionCouranteId) {
+        return editionContext.executeDans(edition.getId(), () -> {
+            List<Creneau> creneaux = referenceDataService.listCreneaux();
+            return new EditionView(edition.getId(), edition.getNom(), edition.isDefaut(),
+                    edition.getId().equals(editionCouranteId),
+                    creneaux.size(), premiereDate(creneaux), derniereDate(creneaux),
+                    referenceDataService.listStands().size(),
+                    referenceDataService.listAnimateurs().size());
+        });
+    }
+
+    private static LocalDate premiereDate(List<Creneau> creneaux) {
+        return dates(creneaux).min(Comparator.naturalOrder()).orElse(null);
+    }
+
+    private static LocalDate derniereDate(List<Creneau> creneaux) {
+        return dates(creneaux).max(Comparator.naturalOrder()).orElse(null);
+    }
+
+    private static Stream<LocalDate> dates(List<Creneau> creneaux) {
+        return creneaux.stream().map(Creneau::getDate).filter(Objects::nonNull);
+    }
+
+    /**
+     * @param courante l'édition dans laquelle travaillent les outils qui ne précisent pas d'{@code edition}
+     * @param defaut   l'édition sur laquelle retombe tout appelant qui n'en désigne aucune (en-tête HTTP absent)
+     */
+    public record EditionView(String id, String nom, boolean defaut, boolean courante, int nombreCreneaux,
+            LocalDate premiereDate, LocalDate derniereDate, int nombreStands, int nombreAnimateurs) {
+    }
+}

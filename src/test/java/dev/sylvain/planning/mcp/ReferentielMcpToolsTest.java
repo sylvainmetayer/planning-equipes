@@ -48,10 +48,10 @@ class ReferentielMcpToolsTest {
     void modifierUnAnimateurNeDetruitPasSesDonneesPersonnelles() {
         Animateur existant = new Animateur("A-MCP-1", "Ada", "Lovelace", LocalDate.of(2010, 6, 1), false);
         referenceDataService.createAnimateur(existant);
-        standTools.creer_typologie("TYPO-MCP-1", "Jeux de stratégie");
+        standTools.creer_typologie("TYPO-MCP-1", "Jeux de stratégie", null);
 
         AnimateurView modifie = animateurTools.modifier_animateur("A-MCP-1", true,
-                Map.of("TYPO-MCP-1", "REFERENT"), List.of("TYPO-MCP-1"), List.of("2026-07-18"));
+                Map.of("TYPO-MCP-1", "REFERENT"), List.of("TYPO-MCP-1"), List.of("2026-07-18"), null);
 
         assertThat(modifie.manager()).isTrue();
         assertThat(modifie.souhaits()).containsExactly("TYPO-MCP-1");
@@ -65,21 +65,21 @@ class ReferentielMcpToolsTest {
         assertThat(relu.getNom()).isEqualTo("Lovelace");
         assertThat(relu.getDateNaissance()).isEqualTo(LocalDate.of(2010, 6, 1));
 
-        animateurTools.supprimer_animateur("A-MCP-1");
-        standTools.supprimer_typologie("TYPO-MCP-1");
+        animateurTools.supprimer_animateur("A-MCP-1", null);
+        standTools.supprimer_typologie("TYPO-MCP-1", null);
     }
 
     @Test
     void creerPuisModifierPuisSupprimerUnStand() {
-        standTools.creer_typologie("TYPO-MCP-2", "Jeux d'adresse");
+        standTools.creer_typologie("TYPO-MCP-2", "Jeux d'adresse", null);
         StandView cree = standTools.creer_stand("STAND-MCP-1", "Tir à l'arc", List.of("TYPO-MCP-2"), 2, 4,
-                true, false, "EPUISANT", null);
+                true, false, "EPUISANT", null, null);
 
         assertThat(cree.effectifMin()).isEqualTo(2);
         assertThat(cree.niveauEffort().name()).isEqualTo("EPUISANT");
 
         StandView modifie = standTools.modifier_stand("STAND-MCP-1", "Tir à l'arc (grand)", null, null, 6,
-                null, null, null, null);
+                null, null, null, null, null);
 
         assertThat(modifie.nom()).isEqualTo("Tir à l'arc (grand)");
         assertThat(modifie.effectifMax()).isEqualTo(6);
@@ -89,24 +89,24 @@ class ReferentielMcpToolsTest {
         assertThat(modifie.typologiesProposees()).containsExactly("TYPO-MCP-2");
 
         StandView avecFermeture = standTools.ajouter_fermeture_stand("STAND-MCP-1", "2026-07-18", "12:00", "14:00",
-                "Pause repas");
+                "Pause repas", null);
         assertThat(avecFermeture.fermetures()).hasSize(1);
 
-        assertThat(standTools.effacer_plages_stand("STAND-MCP-1", "2026-07-18").fermetures()).isEmpty();
+        assertThat(standTools.effacer_plages_stand("STAND-MCP-1", "2026-07-18", null).fermetures()).isEmpty();
 
-        assertThat(standTools.supprimer_stand("STAND-MCP-1").supprime()).isTrue();
-        standTools.supprimer_typologie("TYPO-MCP-2");
+        assertThat(standTools.supprimer_stand("STAND-MCP-1", null).supprime()).isTrue();
+        standTools.supprimer_typologie("TYPO-MCP-2", null);
     }
 
     @Test
     void creerEtModifierUnCreneau() {
-        CreneauView creneau = creneauTools.creer_creneau("2026-07-18", "09:00", "13:00");
+        CreneauView creneau = creneauTools.creer_creneau("2026-07-18", "09:00", "13:00", null);
 
-        CreneauView modifie = creneauTools.modifier_creneau(creneau.id(), null, "10:00", null);
+        CreneauView modifie = creneauTools.modifier_creneau(creneau.id(), null, "10:00", null, null);
         assertThat(modifie.heureDebut()).hasToString("10:00");
         assertThat(modifie.heureFin()).hasToString("13:00");
 
-        creneauTools.supprimer_creneau(creneau.id());
+        creneauTools.supprimer_creneau(creneau.id(), null);
     }
 
     @Test
@@ -115,7 +115,7 @@ class ReferentielMcpToolsTest {
                 "STAND-COMPLET-1", "Stand complet", List.of("TYPO-COMPLET-1"), true,
                 2, 4, null, null, null,
                 "EMP-COMPLET-1", "Kiosque du test", 46.6, -0.2,
-                "10:00-12:00,14:00-", null, null, null, null, null);
+                "10:00-12:00,14:00-", null, null, null, null, null, null);
 
         assertThat(creation.typologiesCreees()).containsExactly("TYPO-COMPLET-1");
         assertThat(creation.emplacementCree()).isEqualTo("EMP-COMPLET-1");
@@ -123,9 +123,9 @@ class ReferentielMcpToolsTest {
         assertThat(creation.stand().effectifMin()).isEqualTo(2);
         assertThat(creation.stand().horaires()).hasSize(1);
 
-        standTools.supprimer_stand("STAND-COMPLET-1");
-        standTools.supprimer_emplacement("EMP-COMPLET-1");
-        standTools.supprimer_typologie("TYPO-COMPLET-1");
+        standTools.supprimer_stand("STAND-COMPLET-1", null);
+        standTools.supprimer_emplacement("EMP-COMPLET-1", null);
+        standTools.supprimer_typologie("TYPO-COMPLET-1", null);
     }
 
     @Test
@@ -133,7 +133,7 @@ class ReferentielMcpToolsTest {
         assertThatThrownBy(() -> standTools.creer_stand_complet(
                 "STAND-COMPLET-2", "Stand complet", List.of("TYPO-INEXISTANTE"), null,
                 null, null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null))
+                null, null, null, null, null, null, null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("TYPO-INEXISTANTE");
     }
@@ -142,18 +142,18 @@ class ReferentielMcpToolsTest {
     void creerDesCreneauxRecurrentsSauteLeWeekEndEtControleLaGrille() {
         // Repart d'une grille vide pour que les comptages soient déterministes ; la classe la
         // laisse vide en sortie, c'est-à-dire dans l'état d'une base de test fraîche.
-        creneauTools.supprimer_creneaux(null, null, null, true);
+        creneauTools.supprimer_creneaux(null, null, null, true, null);
 
         CreneauMcpTools.PrevisualisationRecurrence apercu = creneauTools.previsualiser_creneaux_recurrents(
                 "AMPLITUDES", "09:00-12:00,14:00-18:00", "JOURS_SEMAINE", "2026-07-06", "2026-07-12",
-                List.of("MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"), null, null);
+                List.of("MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"), null, null, null);
 
         assertThat(apercu.nombreGeneres()).isEqualTo(10);
         assertThat(referenceDataService.listCreneaux()).isEmpty(); // la prévisualisation n'écrit rien
 
         CreneauMcpTools.PrevisualisationRecurrence creation = creneauTools.creer_creneaux_recurrents(
                 "AMPLITUDES", "09:00-12:00,14:00-18:00", "JOURS_SEMAINE", "2026-07-06", "2026-07-12",
-                List.of("MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"), null, null);
+                List.of("MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"), null, null, null);
 
         assertThat(creation.nombreGeneres()).isEqualTo(10);
         assertThat(referenceDataService.listCreneaux()).hasSize(10);
@@ -165,27 +165,27 @@ class ReferentielMcpToolsTest {
         assertThat(creation.controle().anomalies()).extracting(anomalie -> anomalie.type().name())
                 .contains("TROU_DANS_LA_JOURNEE");
 
-        assertThat(creneauTools.supprimer_creneaux(null, null, "14:00", null).supprimes()).isEqualTo(5);
-        assertThat(creneauTools.supprimer_creneaux(null, null, null, true).restants()).isZero();
+        assertThat(creneauTools.supprimer_creneaux(null, null, "14:00", null, null).supprimes()).isEqualTo(5);
+        assertThat(creneauTools.supprimer_creneaux(null, null, null, true, null).restants()).isZero();
     }
 
     @Test
     void supprimerDesCreneauxSansFiltreEstRefuse() {
-        assertThatThrownBy(() -> creneauTools.supprimer_creneaux(null, null, null, null))
+        assertThatThrownBy(() -> creneauTools.supprimer_creneaux(null, null, null, null, null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("tous=true");
     }
 
     @Test
     void unModeDeGrilleManquantDemandeDeTrancherPlutotQueDeSupposer() {
-        assertThatThrownBy(() -> creneauTools.valider_creneaux(null))
+        assertThatThrownBy(() -> creneauTools.valider_creneaux(null, null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("AMPLITUDES");
     }
 
     @Test
     void uneDateMalFormeeRemonteUnMessageExploitable() {
-        assertThatThrownBy(() -> creneauTools.creer_creneau("18/07/2026", "09:00", "13:00"))
+        assertThatThrownBy(() -> creneauTools.creer_creneau("18/07/2026", "09:00", "13:00", null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("AAAA-MM-JJ");
     }
@@ -193,7 +193,7 @@ class ReferentielMcpToolsTest {
     @Test
     void unNiveauDEffortInconnuListeLesValeursPossibles() {
         assertThatThrownBy(() -> standTools.creer_stand("STAND-MCP-2", "Stand", null, 1, 1, null, null,
-                "TRANQUILLE", null))
+                "TRANQUILLE", null, null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("NORMAL");
     }

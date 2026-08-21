@@ -197,7 +197,91 @@ Corollaire côté écriture : `modifier_animateur` fusionne au lieu de remplacer
 nom/prénom/date de naissance ne peut pas les renvoyer non plus : un remplacement
 complet les effacerait à chaque modification.
 
+## Éditions
+
+Tout le référentiel est cloisonné par **édition** (« Année 2025 », « Année
+2026 », un plan canicule) : deux éditions ne voient jamais les données l'une de
+l'autre, et depuis l'issue #172 une variante *est* une édition dupliquée. Voir
+[`editions.md`](editions.md).
+
+Une requête MCP n'est pas une requête JAX-RS : `EditionHeaderFilter` ne la voit
+jamais, l'en-tête `X-Edition-Id` n'a donc aucun effet sur `/mcp`. L'édition se
+désigne à la place **argument par argument** (issue #181).
+
+| | Comment l'édition est désignée |
+| --- | --- |
+| API REST, interface web | en-tête `X-Edition-Id` de chaque requête |
+| Espace animateur | le jeton d'accès, qui porte son édition |
+| **MCP** | l'argument `edition` de chaque outil, facultatif |
+
+L'argument accepte l'**id** ou le **nom** de l'édition (`lister_editions`
+affiche les deux). Omis, l'outil travaille dans l'édition courante — celle que
+`edition_courante` nomme, c'est-à-dire l'édition par défaut du serveur.
+
+```
+lister_creneaux()                        → créneaux de l'édition courante
+lister_creneaux(edition: "2026-canicule") → créneaux du plan canicule
+```
+
+### Une édition inconnue échoue, au lieu de retomber sur la courante
+
+C'est la seule divergence volontaire avec l'en-tête HTTP, qui lui retombe en
+silence sur l'édition par défaut. Les deux appelants ne sont pas dans la même
+situation : un onglet resté ouvert sur une édition que quelqu'un a supprimée
+doit continuer à afficher ses écrans plutôt que de renvoyer 400 sur chacun,
+alors qu'un assistant qui nomme une édition s'apprête à y lire ou à y écrire —
+un repli silencieux enverrait l'écriture dans la mauvaise édition sans que rien
+ne le signale. Le message d'erreur énumère les éditions existantes.
+
+### Mise en œuvre
+
+Trois pièces, dans le package `mcp` :
+
+| Pièce | Rôle |
+| --- | --- |
+| `@EditionArg` | marque le `@ToolArg` qui porte l'édition ; c'est l'annotation, pas le nom de l'argument, qui fait le lien |
+| `@EditionCiblee` | posée sur la **classe** d'outils, elle y branche l'intercepteur — un outil ajouté plus tard en hérite au lieu d'écrire silencieusement dans l'édition par défaut |
+| `EditionCibleeInterceptor` | lie l'édition autour de l'appel via `EditionContext.executeDans`, le même mécanisme que les jobs solveur et l'import de scénario |
+
+Le corps des outils reste donc écrit comme s'il tournait dans une seule
+édition — ce qu'il fait. Corollaire à connaître : un outil qui en appelle un
+autre sur `this` **court-circuite** l'intercepteur (auto-invocation CDI) ; il
+doit passer par un helper privé, pas par l'outil voisin.
+
+`McpEditionStructurelleTest` parcourt par réflexion tous les `@Tool` et échoue
+si l'un d'eux travaille dans une édition sans laisser la désigner. Six outils
+sont exemptés parce qu'ils ne lisent ni n'écrivent dans aucune édition :
+`lister_scenarios` et `valider_scenario_yaml` (fichiers livrés, validation
+pure) et les quatre outils de pilotage des jobs (`arreter_solveur`,
+`statut_solveur`, `lister_jobs`, `supprimer_job`) — le registre des jobs est
+global, chaque job portant l'édition pour laquelle il a été lancé, et
+`lister_jobs` l'affiche (`editionId`, `editionNom`).
+
+Deux précisions sur les outils qui écrivent :
+
+- `lancer_solveur` / `lancer_analyse` capturent l'édition **à la soumission**,
+  donc le job reste attaché à l'édition nommée à l'appel même si l'édition par
+  défaut change ensuite ;
+- `importer_scenario` / `importer_scenario_yaml` : une section `edition:` dans
+  le YAML **prime** sur l'argument, puisque le fichier désigne explicitement sa
+  cible (et la crée au besoin). Sans cette section, l'import va dans l'édition
+  de l'argument.
+
 ## Outils exposés
+
+### Éditions
+
+| Outil | Description |
+| --- | --- |
+| `lister_editions` | Toutes les éditions : id, nom, laquelle est courante, laquelle est par défaut, et de quoi les reconnaître (créneaux, période couverte, stands, animateurs) |
+| `edition_courante` | L'édition dans laquelle travaillent les outils sans argument `edition` |
+| `creer_edition` / `dupliquer_edition` | Création vide, ou copie du référentiel d'une édition existante (jamais le planning résolu) |
+| `renommer_edition` / `definir_edition_par_defaut` | Nom affiché ; édition de repli pour tout appelant qui n'en désigne aucune |
+| `supprimer_edition` | Suppression de l'édition **et de tout son contenu** (destructif) |
+
+La volumétrie renvoyée par `lister_editions` coûte quelques requêtes par
+édition. C'est assumé : une liste réduite aux noms ne donne pas de quoi
+reconnaître la bonne, et les éditions se comptent en unités.
 
 ### Animateurs (filtrés confidentialité)
 
@@ -345,9 +429,9 @@ l'outil.
 | Outil | Description |
 | --- | --- |
 | `lister_scenarios` | Scénarios livrés avec l'application |
-| `importer_scenario` / `importer_scenario_yaml` | Import d'un scénario livré ou d'un contenu YAML (destructif) |
+| `importer_scenario` / `importer_scenario_yaml` | Import d'un scénario livré ou d'un contenu YAML (destructif) ; la réponse nomme l'édition où les données ont atterri |
 | `valider_scenario_yaml` | Validation structurelle d'un YAML sans rien importer |
-| `reinitialiser_donnees` | Vide entièrement la base (destructif) |
+| `reinitialiser_donnees` | Vide entièrement **une édition** (destructif) — les autres n'y touchent pas |
 
 ### Solveur et résultats
 

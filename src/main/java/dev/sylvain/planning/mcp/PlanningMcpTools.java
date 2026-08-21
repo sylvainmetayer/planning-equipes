@@ -40,6 +40,7 @@ import jakarta.inject.Inject;
  * {@link AnonymisationViolations} first — {@code ViolationFormatter} labels
  * animateurs as "Prénom Nom (id)" for the web UI, which must not leak here.
  */
+@EditionCiblee
 @ApplicationScoped
 public class PlanningMcpTools {
 
@@ -64,7 +65,8 @@ public class PlanningMcpTools {
     @Tool(description = "Volumétrie réelle du problème que construirait la prochaine résolution : nombre "
             + "d'animateurs, de postes à pourvoir et de contraintes ad hoc. Tout à zéro si les données de "
             + "référence ne sont pas chargées.")
-    VolumetrieView volumetrie() {
+    VolumetrieView volumetrie(
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         try {
             PlanningFestival festival = planningService.construireDepuisReferenceData();
             return new VolumetrieView(festival.getAnimateurs().size(), festival.getPostes().size(),
@@ -77,7 +79,8 @@ public class PlanningMcpTools {
     @Tool(description = "Diagnostic de faisabilité avant résolution : calcul de capacité en Java pur (aucune "
             + "résolution lancée) sur les données de référence courantes, listant les causes structurellement "
             + "bloquantes (stand sans animateur compétent, créneau en sous-effectif).")
-    FeasibilityReport analyser_faisabilite() {
+    FeasibilityReport analyser_faisabilite(
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return feasibilityAnalyzer.analyser(
                 referenceDataService.listAnimateurs(),
                 referenceDataService.listStandsResolus(),
@@ -87,7 +90,8 @@ public class PlanningMcpTools {
     @Tool(description = "État du planning persisté : pour quel groupe de créneaux la dernière résolution a "
             + "tourné, quand, combien d'affectations sont stockées, et quand les données de référence ont été "
             + "modifiées pour la dernière fois (si c'est après la résolution, le planning affiché est périmé).")
-    EtatPlanningView etat_planning() {
+    EtatPlanningView etat_planning(
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         PlanningPersistenceService.PlanningResolution resolution = persistenceService.loadResolution();
         int affectations = persistenceService.countPersistedAssignments();
         Instant derniereModificationDonnees = changeTracker.lastModifiedAt();
@@ -104,7 +108,8 @@ public class PlanningMcpTools {
             @ToolArg(description = "Id de stand pour filtrer", required = false) String standId,
             @ToolArg(description = "Id de créneau pour filtrer", required = false) Long creneauId,
             @ToolArg(description = "Id d'animateur pour filtrer", required = false) String animateurId,
-            @ToolArg(description = "Ne garder que les postes non pourvus", required = false) Boolean seulementNonPourvus) {
+            @ToolArg(description = "Ne garder que les postes non pourvus", required = false) Boolean seulementNonPourvus,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         PlanningFestival planning = persistenceService.loadPersistedPlanning();
         if (planning == null || planning.getPostes() == null) {
             return List.of();
@@ -123,7 +128,8 @@ public class PlanningMcpTools {
 
     @Tool(description = "Heures travaillées par animateur d'après le dernier planning persisté, par semaine ISO "
             + "et au total. Les animateurs sont désignés par id seul.")
-    HeuresView heures_travaillees() {
+    HeuresView heures_travaillees(
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         PlanningFestival planning = persistenceService.loadPersistedPlanning();
         if (planning == null || planning.getPostes() == null) {
             return new HeuresView(List.of(), List.of());
@@ -136,7 +142,8 @@ public class PlanningMcpTools {
 
     @Tool(description = "Explique le score d'un poste du dernier planning persisté : contraintes violées et "
             + "contraintes respectées le concernant. Ne relance aucune résolution.")
-    ExplicationView expliquer_affectation(@ToolArg(description = "Id du poste") String posteId) {
+    ExplicationView expliquer_affectation(@ToolArg(description = "Id du poste") String posteId,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         AffectationExplanation explication = planningService.expliquerAffectation(planningPersiste(), posteId);
         return new ExplicationView(explication.posteId(), explication.animateurId(),
                 String.valueOf(explication.score()),
@@ -147,7 +154,8 @@ public class PlanningMcpTools {
             + "et renvoie l'impact sur le score. Ne persiste rien et ne relance aucune résolution.")
     SwapView simuler_swap(
             @ToolArg(description = "Id du poste") String posteId,
-            @ToolArg(description = "Id de l'animateur candidat") String animateurId) {
+            @ToolArg(description = "Id de l'animateur candidat") String animateurId,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         SwapSimulation simulation = planningService.simulerSwap(planningPersiste(), posteId, animateurId);
         return new SwapView(simulation.posteId(), simulation.animateurActuelId(), simulation.animateurCandidatId(),
                 String.valueOf(simulation.scoreAvant()), String.valueOf(simulation.scoreApres()),

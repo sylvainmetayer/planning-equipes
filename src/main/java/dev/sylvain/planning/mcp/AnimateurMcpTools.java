@@ -34,6 +34,7 @@ import jakarta.inject.Inject;
  * back either, so a replacement would silently wipe them on every edit.
  * Omitted arguments therefore keep their persisted value.
  */
+@EditionCiblee
 @ApplicationScoped
 public class AnimateurMcpTools {
 
@@ -43,7 +44,8 @@ public class AnimateurMcpTools {
     @Tool(description = "Liste les animateurs. Ne renvoie aucune donnée personnelle identifiante (pas de nom, "
             + "prénom, ni date de naissance) : uniquement l'id, le statut majeur/mineur, et les attributs de "
             + "planification (compétences, souhaits, jours indisponibles).")
-    List<AnimateurView> lister_animateurs() {
+    List<AnimateurView> lister_animateurs(
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         LocalDate reference = dateReference();
         return referenceDataService.listAnimateurs().stream()
                 .map(animateur -> toView(animateur, reference))
@@ -51,7 +53,8 @@ public class AnimateurMcpTools {
     }
 
     @Tool(description = "Consulte un animateur par son id. Ne renvoie aucune donnée personnelle identifiante.")
-    AnimateurView consulter_animateur(@ToolArg(description = "Id de l'animateur") String id) {
+    AnimateurView consulter_animateur(@ToolArg(description = "Id de l'animateur") String id,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return toView(trouver(id), dateReference());
     }
 
@@ -67,7 +70,8 @@ public class AnimateurMcpTools {
             @ToolArg(description = "Statut manager", required = false) Boolean manager,
             @ToolArg(description = "Compétences : id de typologie -> DEBUTANT|AUTONOME|REFERENT", required = false) Map<String, String> competences,
             @ToolArg(description = "Ids de typologies souhaitées", required = false) List<String> souhaits,
-            @ToolArg(description = "Jours indisponibles (AAAA-MM-JJ)", required = false) List<String> joursIndisponibles) {
+            @ToolArg(description = "Jours indisponibles (AAAA-MM-JJ)", required = false) List<String> joursIndisponibles,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         Animateur animateur = new Animateur();
         animateur.setId(id);
         animateur.setPrenom(prenom);
@@ -87,7 +91,8 @@ public class AnimateurMcpTools {
             @ToolArg(description = "Statut manager", required = false) Boolean manager,
             @ToolArg(description = "Compétences : id de typologie -> DEBUTANT|AUTONOME|REFERENT (remplace la liste existante)", required = false) Map<String, String> competences,
             @ToolArg(description = "Ids de typologies souhaitées (remplace la liste existante)", required = false) List<String> souhaits,
-            @ToolArg(description = "Jours indisponibles AAAA-MM-JJ (remplace la liste existante)", required = false) List<String> joursIndisponibles) {
+            @ToolArg(description = "Jours indisponibles AAAA-MM-JJ (remplace la liste existante)", required = false) List<String> joursIndisponibles,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         Animateur animateur = trouver(id);
         if (manager != null) {
             animateur.setManager(manager);
@@ -105,7 +110,8 @@ public class AnimateurMcpTools {
     }
 
     @Tool(description = "Supprime un animateur et ses affectations.")
-    SuppressionResult supprimer_animateur(@ToolArg(description = "Id de l'animateur") String id) {
+    SuppressionResult supprimer_animateur(@ToolArg(description = "Id de l'animateur") String id,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         referenceDataService.deleteAnimateur(id);
         return new SuppressionResult(id, true);
     }

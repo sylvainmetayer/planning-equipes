@@ -23,6 +23,7 @@ import jakarta.ws.rs.NotFoundException;
  * constraints (what each one means, whether it is active, how it scored on
  * the last analysis) plus activation/désactivation.
  */
+@EditionCiblee
 @ApplicationScoped
 public class ContrainteMcpTools {
 
@@ -34,7 +35,8 @@ public class ContrainteMcpTools {
 
     @Tool(description = "Liste le catalogue métier des contraintes du solveur : niveau (HARD/MEDIUM/SOFT), "
             + "description, si elle est active, et son score/nombre de correspondances lors de la dernière analyse.")
-    List<ContrainteView> lister_contraintes() {
+    List<ContrainteView> lister_contraintes(
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         StoredAnalysis analysis = analysisStore.latest();
         Map<String, ConstraintDiagnostic> byName = analysis == null
                 ? Map.of()
@@ -49,12 +51,14 @@ public class ContrainteMcpTools {
     }
 
     @Tool(description = "Active une contrainte pour le prochain solve (annule une désactivation précédente).")
-    ToggleResult activer_contrainte(@ToolArg(description = "Nom technique de la contrainte (voir lister_contraintes)") String nom) {
+    ToggleResult activer_contrainte(@ToolArg(description = "Nom technique de la contrainte (voir lister_contraintes)") String nom,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return setActive(nom, true);
     }
 
     @Tool(description = "Désactive une contrainte pour le prochain solve. Le solveur l'ignorera jusqu'à réactivation.")
-    ToggleResult desactiver_contrainte(@ToolArg(description = "Nom technique de la contrainte (voir lister_contraintes)") String nom) {
+    ToggleResult desactiver_contrainte(@ToolArg(description = "Nom technique de la contrainte (voir lister_contraintes)") String nom,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return setActive(nom, false);
     }
 

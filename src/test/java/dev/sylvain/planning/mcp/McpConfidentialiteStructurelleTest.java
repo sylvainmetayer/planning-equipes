@@ -2,16 +2,11 @@ package dev.sylvain.planning.mcp;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.RecordComponent;
 import java.lang.reflect.Type;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
@@ -39,17 +34,14 @@ class McpConfidentialiteStructurelleTest {
 
     @Test
     void aucunOutilNeRenvoieDeDonneePersonnelleIdentifiante() throws Exception {
-        List<Method> outils = outils();
-        assertThat(outils).as("les outils MCP doivent être découverts").isNotEmpty();
-
-        for (Method outil : outils) {
+        for (Method outil : OutilsMcp.tous()) {
             verifierType(outil.getGenericReturnType(), outil.getName(), new HashSet<>());
         }
     }
 
     @Test
     void chaqueOutilPorteUneDescription() throws Exception {
-        for (Method outil : outils()) {
+        for (Method outil : OutilsMcp.tous()) {
             assertThat(outil.getAnnotation(Tool.class).description())
                     .as("description de l'outil %s", outil.getName())
                     .isNotBlank();
@@ -79,34 +71,5 @@ class McpConfidentialiteStructurelleTest {
                     .isNotIn(COMPOSANTS_INTERDITS);
             verifierType(composant.getGenericType(), outil, visites);
         }
-    }
-
-    /** Every {@code @Tool} method of every compiled class of this package. */
-    private static List<Method> outils() throws IOException, URISyntaxException {
-        File dossier = new File(McpConfidentialiteStructurelleTest.class.getProtectionDomain()
-                .getCodeSource().getLocation().toURI())
-                .getParentFile() // target/test-classes -> target
-                .toPath().resolve("classes")
-                .resolve(McpConfidentialiteStructurelleTest.class.getPackageName().replace('.', '/'))
-                .toFile();
-        assertThat(dossier).as("classes compilées du package mcp").isDirectory();
-
-        List<Method> outils = new ArrayList<>();
-        for (File fichier : dossier.listFiles((dir, name) -> name.endsWith(".class"))) {
-            String nomClasse = McpConfidentialiteStructurelleTest.class.getPackageName() + "."
-                    + fichier.getName().substring(0, fichier.getName().length() - ".class".length());
-            Class<?> classe;
-            try {
-                classe = Class.forName(nomClasse);
-            } catch (ClassNotFoundException | NoClassDefFoundError e) {
-                continue; // build-time generated companion class, not a tool holder
-            }
-            for (Method methode : classe.getDeclaredMethods()) {
-                if (methode.isAnnotationPresent(Tool.class)) {
-                    outils.add(methode);
-                }
-            }
-        }
-        return outils;
     }
 }

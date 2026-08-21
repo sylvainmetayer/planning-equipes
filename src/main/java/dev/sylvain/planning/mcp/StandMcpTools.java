@@ -39,6 +39,7 @@ import jakarta.inject.Inject;
  * the whole entity — and silently resetting the fields it omitted would be a
  * data-loss bug, not a feature.
  */
+@EditionCiblee
 @ApplicationScoped
 public class StandMcpTools {
 
@@ -50,12 +51,14 @@ public class StandMcpTools {
     @Tool(description = "Liste les stands, avec leurs typologies proposées, effectifs requis, "
             + "réserve majeurs/premium, niveau d'effort, emplacement, horaires récurrents et plages datées "
             + "(fermetures/ouvertures) qui les surchargent.")
-    List<StandView> lister_stands() {
+    List<StandView> lister_stands(
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return referenceDataService.listStands().stream().map(StandMcpTools::toView).toList();
     }
 
     @Tool(description = "Consulte un stand par son id.")
-    StandView consulter_stand(@ToolArg(description = "Id du stand") String id) {
+    StandView consulter_stand(@ToolArg(description = "Id du stand") String id,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return toView(trouverStand(id));
     }
 
@@ -69,7 +72,8 @@ public class StandMcpTools {
             @ToolArg(description = "Réservé aux animateurs majeurs", required = false) Boolean reserveMajeurs,
             @ToolArg(description = "Stand premium (nécessite un animateur référent)", required = false) Boolean premium,
             @ToolArg(description = "Niveau d'effort : NORMAL ou EPUISANT", required = false) String niveauEffort,
-            @ToolArg(description = "Id de l'emplacement géographique", required = false) String emplacementId) {
+            @ToolArg(description = "Id de l'emplacement géographique", required = false) String emplacementId,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         Stand stand = new Stand();
         stand.setId(id);
         stand.setNom(nom);
@@ -115,7 +119,8 @@ public class StandMcpTools {
             @ToolArg(description = "Jours de la semaine (MONDAY…SUNDAY) si portée JOURS_SEMAINE", required = false) List<String> horairesJoursSemaine,
             @ToolArg(description = "Début de la plage (AAAA-MM-JJ) si portée PLAGE", required = false) String horairesDateDebut,
             @ToolArg(description = "Fin de la plage (AAAA-MM-JJ) si portée PLAGE", required = false) String horairesDateFin,
-            @ToolArg(description = "Dates (AAAA-MM-JJ) si portée DATES", required = false) List<String> horairesDates) {
+            @ToolArg(description = "Dates (AAAA-MM-JJ) si portée DATES", required = false) List<String> horairesDates,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         List<String> typologiesCreees = creerTypologiesAbsentes(typologiesProposees,
                 Boolean.TRUE.equals(creerTypologiesManquantes));
         String emplacementCree = creerEmplacementAbsent(emplacementId, emplacementNom, latitude, longitude);
@@ -209,7 +214,8 @@ public class StandMcpTools {
             @ToolArg(description = "Réservé aux animateurs majeurs", required = false) Boolean reserveMajeurs,
             @ToolArg(description = "Stand premium", required = false) Boolean premium,
             @ToolArg(description = "Niveau d'effort : NORMAL ou EPUISANT", required = false) String niveauEffort,
-            @ToolArg(description = "Id de l'emplacement géographique", required = false) String emplacementId) {
+            @ToolArg(description = "Id de l'emplacement géographique", required = false) String emplacementId,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         Stand stand = trouverStand(id);
         if (nom != null) {
             stand.setNom(nom);
@@ -239,7 +245,8 @@ public class StandMcpTools {
     }
 
     @Tool(description = "Supprime un stand.")
-    SuppressionResult supprimer_stand(@ToolArg(description = "Id du stand") String id) {
+    SuppressionResult supprimer_stand(@ToolArg(description = "Id du stand") String id,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         referenceDataService.deleteStand(id);
         return new SuppressionResult(id, true);
     }
@@ -253,7 +260,8 @@ public class StandMcpTools {
             @ToolArg(description = "Date (AAAA-MM-JJ)") String date,
             @ToolArg(description = "Heure de début (HH:MM)") String heureDebut,
             @ToolArg(description = "Heure de fin (HH:MM) ; omise = jusqu'à la fermeture", required = false) String heureFin,
-            @ToolArg(description = "Motif, purement informatif", required = false) String motif) {
+            @ToolArg(description = "Motif, purement informatif", required = false) String motif,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         Stand stand = trouverStand(standId);
         stand.getIndisponibilites().add(new IndisponibiliteStand(null, McpArgs.date(date, "date"),
                 McpArgs.heure(heureDebut, "heureDebut"), heureFinOuFermeture(heureFin), motif));
@@ -268,7 +276,8 @@ public class StandMcpTools {
             @ToolArg(description = "Date (AAAA-MM-JJ)") String date,
             @ToolArg(description = "Heure de début (HH:MM)") String heureDebut,
             @ToolArg(description = "Heure de fin (HH:MM) ; omise = jusqu'à la fermeture", required = false) String heureFin,
-            @ToolArg(description = "Motif, purement informatif", required = false) String motif) {
+            @ToolArg(description = "Motif, purement informatif", required = false) String motif,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         Stand stand = trouverStand(standId);
         stand.getOuvertures().add(new OuvertureStand(null, McpArgs.date(date, "date"),
                 McpArgs.heure(heureDebut, "heureDebut"), heureFinOuFermeture(heureFin), motif));
@@ -284,7 +293,8 @@ public class StandMcpTools {
             + "récurrents ne sont pas touchés : la date redevient donc gouvernée par eux, s'il en existe.")
     StandView effacer_plages_stand(
             @ToolArg(description = "Id du stand") String standId,
-            @ToolArg(description = "Date (AAAA-MM-JJ)") String date) {
+            @ToolArg(description = "Date (AAAA-MM-JJ)") String date,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         Stand stand = trouverStand(standId);
         LocalDate jour = McpArgs.date(date, "date");
         stand.getIndisponibilites().removeIf(indispo -> jour.equals(indispo.getDate()));
@@ -308,7 +318,8 @@ public class StandMcpTools {
             @ToolArg(description = "Début de la plage (AAAA-MM-JJ) si portée PLAGE", required = false) String dateDebut,
             @ToolArg(description = "Fin de la plage (AAAA-MM-JJ) si portée PLAGE", required = false) String dateFin,
             @ToolArg(description = "Dates (AAAA-MM-JJ) si portée DATES", required = false) List<String> dates,
-            @ToolArg(description = "Motif, purement informatif", required = false) String motif) {
+            @ToolArg(description = "Motif, purement informatif", required = false) String motif,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         Stand stand = trouverStand(standId);
         HoraireStand horaire = new HoraireStand();
         horaire.setMode(McpArgs.enumeration(ModeHoraire.class, mode, "mode"));
@@ -336,7 +347,8 @@ public class StandMcpTools {
     }
 
     @Tool(description = "Retire tous les horaires récurrents d'un stand. Ses plages datées restent en place.")
-    StandView effacer_horaires_stand(@ToolArg(description = "Id du stand") String standId) {
+    StandView effacer_horaires_stand(@ToolArg(description = "Id du stand") String standId,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         Stand stand = trouverStand(standId);
         stand.getHoraires().clear();
         return toView(referenceDataService.updateStand(standId, stand));
@@ -345,7 +357,8 @@ public class StandMcpTools {
     /* ----------------------------- Emplacements ---------------------------- */
 
     @Tool(description = "Liste les emplacements géographiques (utilisés pour limiter les déplacements entre stands).")
-    List<EmplacementView> lister_emplacements() {
+    List<EmplacementView> lister_emplacements(
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return referenceDataService.listEmplacements().stream().map(StandMcpTools::toView).toList();
     }
 
@@ -354,7 +367,8 @@ public class StandMcpTools {
             @ToolArg(description = "Id de l'emplacement (unique)") String id,
             @ToolArg(description = "Nom affiché") String nom,
             @ToolArg(description = "Latitude (-90 à 90)", required = false) Double latitude,
-            @ToolArg(description = "Longitude (-180 à 180)", required = false) Double longitude) {
+            @ToolArg(description = "Longitude (-180 à 180)", required = false) Double longitude,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return toView(referenceDataService.createEmplacement(new Emplacement(id, nom, latitude, longitude)));
     }
 
@@ -363,7 +377,8 @@ public class StandMcpTools {
             @ToolArg(description = "Id de l'emplacement") String id,
             @ToolArg(description = "Nom affiché", required = false) String nom,
             @ToolArg(description = "Latitude", required = false) Double latitude,
-            @ToolArg(description = "Longitude", required = false) Double longitude) {
+            @ToolArg(description = "Longitude", required = false) Double longitude,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         Emplacement emplacement = trouverEmplacement(id);
         if (nom != null) {
             emplacement.setNom(nom);
@@ -378,7 +393,8 @@ public class StandMcpTools {
     }
 
     @Tool(description = "Supprime un emplacement.")
-    SuppressionResult supprimer_emplacement(@ToolArg(description = "Id de l'emplacement") String id) {
+    SuppressionResult supprimer_emplacement(@ToolArg(description = "Id de l'emplacement") String id,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         referenceDataService.deleteEmplacement(id);
         return new SuppressionResult(id, true);
     }
@@ -387,26 +403,30 @@ public class StandMcpTools {
 
     @Tool(description = "Liste les typologies de jeu (référentiel CRUD auquel se réfèrent les compétences des "
             + "animateurs et les typologies proposées par les stands).")
-    List<TypologieItem> lister_typologies() {
+    List<TypologieItem> lister_typologies(
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return referenceDataService.listTypologies();
     }
 
     @Tool(description = "Crée une typologie de jeu.")
     TypologieItem creer_typologie(
             @ToolArg(description = "Id de la typologie (unique)") String id,
-            @ToolArg(description = "Libellé affiché", required = false) String label) {
+            @ToolArg(description = "Libellé affiché", required = false) String label,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return referenceDataService.createTypologie(new TypologieItem(id, label));
     }
 
     @Tool(description = "Renomme une typologie de jeu.")
     TypologieItem modifier_typologie(
             @ToolArg(description = "Id de la typologie") String id,
-            @ToolArg(description = "Nouveau libellé") String label) {
+            @ToolArg(description = "Nouveau libellé") String label,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return referenceDataService.updateTypologie(id, new TypologieItem(id, label));
     }
 
     @Tool(description = "Supprime une typologie de jeu. Refusé tant qu'elle est référencée par un stand ou un animateur.")
-    SuppressionResult supprimer_typologie(@ToolArg(description = "Id de la typologie") String id) {
+    SuppressionResult supprimer_typologie(@ToolArg(description = "Id de la typologie") String id,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         referenceDataService.deleteTypologie(id);
         return new SuppressionResult(id, true);
     }
