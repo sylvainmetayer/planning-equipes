@@ -96,6 +96,7 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 | `LEGAL_DIRECTEUR_PUBLICATION` | *(vide)* | Directeur de la publication |
 | `LEGAL_HEBERGEUR` | *(vide)* | Hébergeur (nom et adresse) |
 | `LEGAL_CONTACT` | *(vide)* | Adresse de contact, y compris pour exercer ses droits sur ses données |
+| `LEGAL_RESPONSABLE_TRAITEMENT` | *(vide = l'éditeur)* | Responsable de traitement au sens du RGPD, quand il diffère de l'éditeur au sens de la LCEN |
 | `LEGAL_BASE_LEGALE` | *(vide)* | Base légale du traitement des données personnelles |
 | `LEGAL_CONSERVATION` | *(vide)* | Durée de conservation des données personnelles |
 | `PUBLIC_URL` | `http://localhost:8080` | URL publique de l'application, imprimée comme lien « espace animateur » sur les PDF |
@@ -199,7 +200,8 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 | Import / export de scénario | Un fichier YAML décrit une configuration complète de festival ; l'import valide le fichier et explique ce qui cloche |
 | Export / import d'un dump SQL | Dupliquer ou restaurer un jeu de données complet |
 | Assistant IA (MCP) | Un assistant IA consulte et pilote l'application en langage naturel, sans jamais voir les données personnelles des animateurs — voir [`docs/mcp.md`](docs/mcp.md) |
-| Mentions légales | Page publique, lisible sans être connecté et sans lien valide : éditeur, hébergeur, contact, et ce que l'application fait des données personnelles — dont la date de naissance, qui ne sert qu'à appliquer le cadre légal des mineurs |
+| Mentions légales | Page publique, lisible sans être connecté et sans lien valide : éditeur, hébergeur, contact, propriété intellectuelle |
+| Politique de confidentialité | Page publique elle aussi : quelles données, pourquoi, combien de temps, qui y accède — y compris les outils de mesure d'audience et de suivi d'erreurs — et comment exercer ses droits. S'adresse explicitement aux animateurs mineurs |
 | Aide intégrée | Le mode d'emploi complet, cherchable, consultable pendant qu'une résolution tourne ou sur une édition vide |
 | Accès | Connexion administrateur par mot de passe, ou attestation par en-tête derrière un proxy d'accès ; les espaces animateurs restent joignables par leur lien |
 

@@ -594,6 +594,8 @@ export interface MentionsLegales {
   directeurPublication: string;
   hebergeur: string;
   contact: string;
+  /** Data controller when it differs from the publisher; empty falls back to it. */
+  responsableTraitement: string;
   baseLegale: string;
   conservation: string;
 }

@@ -72,63 +72,16 @@
     <mat-card appearance="outlined" class="page-card">
       <mat-card-header>
         <h2 mat-card-title i18n="@@mentions.donnees.title">Données personnelles</h2>
-        <mat-card-subtitle i18n="@@mentions.donnees.subtitle">
-          Cette application sert à construire et à diffuser le planning d'un festival. Elle traite pour cela des
-          données concernant les animateurs qui y participent.
-        </mat-card-subtitle>
       </mat-card-header>
       <mat-card-content>
-        <h3 i18n="@@mentions.donnees.quoi.title">Quelles données</h3>
-        <ul>
-          <li i18n="@@mentions.donnees.quoi.identite">
-            Identité : nom, prénom, et adresse e-mail lorsqu'elle est fournie à l'organisation.
-          </li>
-          <li i18n="@@mentions.donnees.quoi.naissance">
-            Date de naissance. Elle sert uniquement à déterminer, à la date de chaque créneau, le cadre légal
-            applicable — le travail des mineurs est plus strictement encadré (horaires de nuit, amplitude
-            quotidienne, pauses, jours de repos). Elle n'est jamais affichée comme un âge ni utilisée à d'autres fins.
-          </li>
-          <li i18n="@@mentions.donnees.quoi.disponibilites">
-            Disponibilités et souhaits : jours d'indisponibilité déclarés, préférences de stands, compétences par
-            type de jeu.
-          </li>
-          <li i18n="@@mentions.donnees.quoi.affectations">
-            Affectations : les créneaux attribués, les demandes d'échange soumises et leur suite.
-          </li>
-        </ul>
-
-        <h3 i18n="@@mentions.donnees.pourquoi.title">Pourquoi</h3>
-        <p i18n="@@mentions.donnees.pourquoi.texte">
-          Établir un planning qui respecte le cadre légal, les compétences et les disponibilités de chacun, le
-          communiquer aux personnes concernées, et instruire les demandes d'échange de créneaux. Aucune donnée n'est
-          utilisée à des fins publicitaires, ni cédée à un tiers.
+        <p i18n="@@mentions.donnees.renvoi">
+          Quelles données l'application traite, pourquoi, pendant combien de temps, qui y a accès et ce que vous
+          pouvez exiger : tout cela est détaillé dans la politique de confidentialité.
         </p>
-        @if (infos.baseLegale) {
-          <p><strong i18n="@@mentions.donnees.base.label">Base légale :</strong> {{ infos.baseLegale }}</p>
-        }
-
-        <h3 i18n="@@mentions.donnees.duree.title">Combien de temps</h3>
-        @if (infos.conservation) {
-          <p>{{ infos.conservation }}</p>
-        } @else {
-          <p class="mentions-manquant" i18n="@@mentions.donnees.duree.manquante">
-            Durée de conservation non renseignée sur ce déploiement.
-          </p>
-        }
-
-        <h3 i18n="@@mentions.donnees.qui.title">Qui y a accès</h3>
-        <p i18n="@@mentions.donnees.qui.texte">
-          L'organisation du festival, pour construire et diffuser le planning. Chaque animateur accède à son propre
-          planning par un lien personnel, protégé par un code envoyé à son adresse e-mail. Les données sont
-          hébergées par le prestataire indiqué plus haut.
-        </p>
-
-        <h3 i18n="@@mentions.donnees.droits.title">Vos droits</h3>
-        <p i18n="@@mentions.donnees.droits.texte">
-          Vous pouvez demander l'accès à vos données, leur rectification ou leur effacement, ainsi que la limitation
-          ou l'opposition à leur traitement. Pour l'exercer, écrivez à l'adresse de contact indiquée plus haut. Vous
-          pouvez également introduire une réclamation auprès de la CNIL (www.cnil.fr).
-        </p>
+        <a matButton="filled" routerLink="/politique-confidentialite">
+          <mat-icon>privacy_tip</mat-icon>
+          <ng-container i18n="@@nav.link.confidentialite">Politique de confidentialité</ng-container>
+        </a>
       </mat-card-content>
     </mat-card>
 

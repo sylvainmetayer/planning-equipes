@@ -14,6 +14,12 @@
     <mat-icon>gavel</mat-icon>
     <span i18n="@@nav.link.mentionsLegales">Mentions légales</span>
   </a>
+  <a matButton href="/politique-confidentialite" target="_blank" rel="noopener noreferrer"
+     i18n-matTooltip="@@espace.confidentialite.tooltip"
+     matTooltip="Ce que l'application fait de vos données, et ce que vous pouvez exiger (nouvel onglet)">
+    <mat-icon>privacy_tip</mat-icon>
+    <span i18n="@@nav.link.confidentialite">Politique de confidentialité</span>
+  </a>
   <button matButton (click)="toggleLocale()" i18n-aria-label="@@shell.switchLanguage" aria-label="Changer de langue">
     {{ locale === 'fr' ? 'EN' : 'FR' }}
   </button>

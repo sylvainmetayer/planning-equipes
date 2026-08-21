@@ -9,48 +9,37 @@ import { MentionsLegales } from '../../core/models';
 import { StatusMessage } from '../../shared/status-message';
 
 /**
- * Legal notice, shared by both sides of the application and reachable without
- * any credential — an animateur whose access link has expired is precisely the
- * reader who needs to know whom to write to.
+ * Privacy policy: what the application does with personal data, who it reaches,
+ * and what a person can demand. Public and outside both shells, like the legal
+ * notice it complements — an animateur reading it is the data subject, and the
+ * reader with an expired access link is exactly the one who needs it.
  *
- * <p>Two kinds of content meet here. What the software actually does with
- * personal data is written in the page: it is verifiable from the domain model
- * and identical for every deployment. Who publishes and hosts the site, and
- * for how long the data is kept, come from the server's configuration —
- * facts only the operator knows, so the page states what is missing rather
- * than inventing a publisher.</p>
+ * <p>The split follows the usual one: the legal notice answers "who publishes
+ * and hosts this site", this page answers "what happens to my data". Both read
+ * the same `/api/mentions-legales` payload, since the controller and the
+ * contact address are deployment facts rather than page content.</p>
  */
 @Component({
-  selector: 'app-mentions-legales-page',
+  selector: 'app-politique-confidentialite-page',
   imports: [MatButtonModule, MatCardModule, MatIconModule, MatToolbarModule, RouterLink, StatusMessage],
-  templateUrl: './mentions-legales-page.html',
+  templateUrl: './politique-confidentialite-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class MentionsLegalesPage {
+export class PolitiqueConfidentialitePage {
   protected readonly mentions = signal<MentionsLegales | null>(null);
   protected readonly erreur = signal('');
 
-  /** True while nothing at all is configured: the page says so once, at the top. */
-  protected readonly rienDeRenseigne = computed(() => {
+  /**
+   * The data controller, falling back to the publisher. "Éditeur" belongs to
+   * the LCEN and "responsable de traitement" to the GDPR: usually the same
+   * body, not necessarily — so the deployment may name it separately.
+   */
+  protected readonly responsable = computed(() => {
     const mentions = this.mentions();
-    return (
-      mentions !== null &&
-      [
-        mentions.editeur,
-        mentions.directeurPublication,
-        mentions.hebergeur,
-        mentions.contact,
-        mentions.baseLegale,
-        mentions.conservation
-      ].every((valeur) => !valeur)
-    );
+    return mentions ? mentions.responsableTraitement || mentions.editeur : '';
   });
 
-  /**
-   * Only offered when there is somewhere to go back to: opened in a new tab
-   * from the espace animateur — so the token URL is not lost — there is no
-   * history behind this page.
-   */
+  /** Absent when the page was opened in a new tab from the espace animateur. */
   protected readonly peutRevenir = signal(typeof history !== 'undefined' && history.length > 1);
 
   private readonly api = inject(ApiService);

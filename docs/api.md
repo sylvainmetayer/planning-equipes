@@ -551,7 +551,7 @@ silencieusement inerte tant qu'aucune adresse n'est configurée
 
 | Méthode | Chemin | Description |
 | --- | --- | --- |
-| `GET` | `/api/mentions-legales` | Faits légaux propres au déploiement : éditeur, directeur de publication, hébergeur, contact, base légale et durée de conservation |
+| `GET` | `/api/mentions-legales` | Faits légaux propres au déploiement : éditeur, directeur de publication, hébergeur, contact, responsable de traitement, base légale et durée de conservation |
 
 **Public**, comme `/api/config` : une mention légale que seul un utilisateur
 connecté pourrait lire manquerait ses lecteurs — celui qui décide s'il fait
@@ -561,7 +561,8 @@ confiance au site, ou l'animateur dont le lien d'accès a expiré et qui cherche
 Chaque champ vaut la chaîne vide quand la variable d'environnement
 correspondante n'est pas renseignée (`LEGAL_EDITEUR`,
 `LEGAL_DIRECTEUR_PUBLICATION`, `LEGAL_HEBERGEUR`, `LEGAL_CONTACT`,
-`LEGAL_BASE_LEGALE`, `LEGAL_CONSERVATION`) : la page affiche alors ce qui
+`LEGAL_RESPONSABLE_TRAITEMENT`, `LEGAL_BASE_LEGALE`, `LEGAL_CONSERVATION`) :
+la page affiche alors ce qui
 manque, plutôt qu'un éditeur inventé. Ces informations vivent en configuration
 et non dans le code — le dépôt est public, et pour un éditeur personne physique
 l'adresse et le numéro d'immatriculation *sont* des données personnelles.

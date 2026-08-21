@@ -46,6 +46,14 @@ public class MentionsLegalesResource {
     @ConfigProperty(name = "planning.legal.contact")
     Optional<String> contact;
 
+    /**
+     * Data controller, when it is not the publisher. "Éditeur" belongs to the
+     * LCEN, "responsable de traitement" to the GDPR: usually the same body,
+     * not necessarily. Blank falls back to the publisher.
+     */
+    @ConfigProperty(name = "planning.legal.responsable-traitement")
+    Optional<String> responsableTraitement;
+
     @ConfigProperty(name = "planning.legal.donnees.base-legale")
     Optional<String> baseLegale;
 
@@ -59,6 +67,7 @@ public class MentionsLegalesResource {
                 texte(directeurPublication),
                 texte(hebergeur),
                 texte(contact),
+                texte(responsableTraitement),
                 texte(baseLegale),
                 texte(conservation));
     }
@@ -76,6 +85,7 @@ public class MentionsLegalesResource {
      * @param directeurPublication person responsible for publication
      * @param hebergeur            host: name and address
      * @param contact              address to reach the publisher, and to exercise one's rights
+     * @param responsableTraitement data controller when it differs from the publisher
      * @param baseLegale           legal basis of the processing, in the deployment's own terms
      * @param conservation         how long personal data is kept
      */
@@ -84,6 +94,7 @@ public class MentionsLegalesResource {
             String directeurPublication,
             String hebergeur,
             String contact,
+            String responsableTraitement,
             String baseLegale,
             String conservation) {
     }

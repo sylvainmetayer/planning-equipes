@@ -1,5 +1,6 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
 import { MentionsLegales } from '../../core/models';
@@ -10,6 +11,7 @@ const VIDE: MentionsLegales = {
   directeurPublication: '',
   hebergeur: '',
   contact: '',
+  responsableTraitement: '',
   baseLegale: '',
   conservation: ''
 };
@@ -18,6 +20,7 @@ function monter(mentions: MentionsLegales) {
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
+      provideRouter([]),
       { provide: ApiService, useValue: { get: vi.fn(async () => mentions) } }
     ]
   });
@@ -53,14 +56,14 @@ describe('MentionsLegalesPage', () => {
     expect(texte).not.toContain("Aucune information légale n'a été renseignée");
   });
 
-  it('rappelle toujours les droits et l’usage de la date de naissance, quelle que soit la configuration', async () => {
-    // Cette partie décrit ce que le logiciel fait vraiment : elle ne dépend
-    // d'aucun réglage et doit être lisible même sur un déploiement non configuré.
+  it('renvoie vers la politique de confidentialité pour tout ce qui touche aux données', async () => {
+    // Les deux pages ont chacune leur objet : qui édite le site ici, ce que
+    // deviennent les données là-bas. Le renvoi est ce qui empêche un lecteur
+    // de conclure que la question n'est pas traitée.
     const fixture = monter(VIDE);
     await fixture.whenStable();
 
-    const texte = fixture.nativeElement.textContent as string;
-    expect(texte).toContain('travail des mineurs');
-    expect(texte).toContain('CNIL');
+    const lien = fixture.nativeElement.querySelector('a[href="/politique-confidentialite"]');
+    expect(lien).not.toBeNull();
   });
 });

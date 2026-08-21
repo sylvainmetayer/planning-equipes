@@ -182,6 +182,17 @@ export const routes: Routes = [
       import('./pages/mentions-legales/mentions-legales-page').then((m) => m.MentionsLegalesPage)
   },
   {
+    // Publique pour les mêmes raisons que les mentions légales : la personne
+    // qui lit cette page est celle dont on traite les données, et elle n'a pas
+    // toujours de session ni de lien valide.
+    path: 'politique-confidentialite',
+    title: 'Politique de confidentialité — Planning Équipes',
+    loadComponent: () =>
+      import('./pages/mentions-legales/politique-confidentialite-page').then(
+        (m) => m.PolitiqueConfidentialitePage
+      )
+  },
+  {
     path: 'animateur/:jeton',
     loadComponent: () =>
       import('./pages/espace-animateur/espace-animateur-shell').then((m) => m.EspaceAnimateurShell),

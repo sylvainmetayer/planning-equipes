@@ -1,0 +1,229 @@
+<mat-toolbar class="app-toolbar">
+  <img src="logo.png" alt="Planning Équipes" class="app-logo" />
+  <span class="app-title" i18n="@@confidentialite.title">Politique de confidentialité</span>
+  <span class="app-toolbar-spacer"></span>
+  @if (peutRevenir()) {
+    <button matButton (click)="revenir()">
+      <mat-icon>arrow_back</mat-icon>
+      <ng-container i18n="@@common.retour">Retour</ng-container>
+    </button>
+  }
+</mat-toolbar>
+
+<main class="mentions-page">
+  <app-status-message [text]="erreur()" tone="error" />
+
+  @if (mentions(); as infos) {
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-header>
+        <h2 mat-card-title i18n="@@confidentialite.intro.title">Ce que devient ce que vous nous confiez</h2>
+        <mat-card-subtitle i18n="@@confidentialite.intro.subtitle">
+          Cette application sert à construire et à diffuser le planning d'un festival. Elle traite pour cela des
+          données concernant les animateurs qui y participent. Cette page dit lesquelles, pourquoi, pendant combien
+          de temps, et ce que vous pouvez exiger.
+        </mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <dl class="mentions-liste">
+          <dt i18n="@@confidentialite.responsable.label">Responsable du traitement</dt>
+          <dd>
+            @if (responsable(); as nom) {
+              {{ nom }}
+            } @else {
+              <span class="mentions-manquant" i18n="@@mentions.manquant">Non renseigné</span>
+            }
+          </dd>
+          <dt i18n="@@mentions.contact.label">Contact</dt>
+          <dd>
+            @if (infos.contact) {
+              {{ infos.contact }}
+            } @else {
+              <span class="mentions-manquant" i18n="@@mentions.manquant">Non renseigné</span>
+            }
+          </dd>
+        </dl>
+        <p>
+          <a routerLink="/mentions-legales" i18n="@@confidentialite.versMentions">
+            Éditeur, hébergeur et propriété intellectuelle : voir les mentions légales
+          </a>
+        </p>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-header>
+        <h2 mat-card-title i18n="@@mentions.donnees.quoi.title">Quelles données</h2>
+      </mat-card-header>
+      <mat-card-content>
+        <ul>
+          <li i18n="@@mentions.donnees.quoi.identite">
+            Identité : nom, prénom, et adresse e-mail lorsqu'elle est fournie à l'organisation.
+          </li>
+          <li i18n="@@mentions.donnees.quoi.naissance">
+            Date de naissance. Elle sert uniquement à déterminer, à la date de chaque créneau, le cadre légal
+            applicable — le travail des mineurs est plus strictement encadré (horaires de nuit, amplitude
+            quotidienne, pauses, jours de repos). Elle n'est jamais affichée comme un âge ni utilisée à d'autres fins.
+          </li>
+          <li i18n="@@mentions.donnees.quoi.disponibilites">
+            Disponibilités et souhaits : jours d'indisponibilité déclarés, préférences de stands, compétences par
+            type de jeu.
+          </li>
+          <li i18n="@@mentions.donnees.quoi.affectations">
+            Affectations : les créneaux attribués, les demandes d'échange soumises et leur suite.
+          </li>
+        </ul>
+        <p i18n="@@confidentialite.origine">
+          Ces informations sont, pour l'essentiel, transmises par l'organisation lors de votre inscription comme
+          animateur, et complétées ensuite par ce que vous déclarez vous-même.
+        </p>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-header>
+        <h2 mat-card-title i18n="@@confidentialite.mineurs.title">Si vous êtes mineur</h2>
+      </mat-card-header>
+      <mat-card-content>
+        <p i18n="@@confidentialite.mineurs.texte">
+          Une partie des animateurs du festival sont mineurs. Si c'est ton cas : ta date de naissance sert uniquement
+          à ce que ton planning respecte les règles qui protègent les moins de 18 ans — pas de travail de nuit, moins
+          d'heures d'affilée, plus de repos. Elle n'est visible que par l'organisation et n'apparaît pas sur le
+          planning affiché ou imprimé. Tu peux à tout moment demander à voir, corriger ou faire supprimer ce qui te
+          concerne, en écrivant à l'adresse de contact ci-dessus ; tes parents ou ton représentant légal peuvent le
+          faire à ta place ou avec toi.
+        </p>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-header>
+        <h2 mat-card-title i18n="@@mentions.donnees.pourquoi.title">Pourquoi</h2>
+      </mat-card-header>
+      <mat-card-content>
+        <p i18n="@@confidentialite.pourquoi.texte">
+          Établir un planning qui respecte le cadre légal, les compétences et les disponibilités de chacun, le
+          communiquer aux personnes concernées, et instruire les demandes d'échange de créneaux. Aucune donnée n'est
+          utilisée à des fins publicitaires. En dehors des prestataires techniques listés plus bas, aucune donnée
+          n'est communiquée à un tiers ni vendue.
+        </p>
+        @if (infos.baseLegale) {
+          <p><strong i18n="@@mentions.donnees.base.label">Base légale :</strong> {{ infos.baseLegale }}</p>
+        } @else {
+          <p class="mentions-manquant" i18n="@@confidentialite.base.manquante">
+            Base légale du traitement non renseignée sur ce déploiement.
+          </p>
+        }
+
+        <h3 i18n="@@confidentialite.solveur.title">Comment le planning est construit</h3>
+        <p i18n="@@confidentialite.solveur.texte">
+          Le planning est calculé par un algorithme d'optimisation, qui cherche la répartition respectant à la fois
+          le cadre légal, les compétences, les indisponibilités déclarées et les souhaits exprimés. Ce calcul est une
+          aide à la décision : aucun planning n'est diffusé sans avoir été examiné et validé par l'organisation, qui
+          peut le corriger, imposer ou interdire une affectation. De même, aucune demande d'échange n'est appliquée
+          sans décision explicite de sa part. Vous pouvez demander le réexamen d'une affectation qui vous concerne.
+        </p>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-header>
+        <h2 mat-card-title i18n="@@mentions.donnees.duree.title">Combien de temps</h2>
+      </mat-card-header>
+      <mat-card-content>
+        @if (infos.conservation) {
+          <p>{{ infos.conservation }}</p>
+        } @else {
+          <p class="mentions-manquant" i18n="@@mentions.donnees.duree.manquante">
+            Durée de conservation non renseignée sur ce déploiement.
+          </p>
+          <p i18n="@@confidentialite.duree.criteres">
+            À défaut de durée précisée, les données sont conservées le temps de l'édition du festival concernée, puis
+            pendant ce qui est nécessaire à la préparation de la suivante, et supprimées lorsqu'un animateur ne
+            participe plus.
+          </p>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-header>
+        <h2 mat-card-title i18n="@@mentions.donnees.qui.title">Qui y a accès</h2>
+      </mat-card-header>
+      <mat-card-content>
+        <p i18n="@@confidentialite.qui.organisation">
+          L'organisation du festival, pour construire et diffuser le planning. Chaque animateur accède à son propre
+          planning par un lien personnel, protégé par un code envoyé à son adresse e-mail ; il y voit également le nom
+          des collègues affectés aux mêmes créneaux que lui, ainsi que les créneaux de ceux à qui il peut proposer un
+          échange — les mêmes informations que sur le planning affiché sur place.
+        </p>
+        <p i18n="@@confidentialite.qui.soustraitants">
+          Interviennent également, pour notre seul compte et sans pouvoir utiliser ces données à d'autres fins :
+          l'hébergeur indiqué dans les mentions légales, le service d'envoi des e-mails, et les outils techniques
+          décrits ci-dessous.
+        </p>
+
+        <h3 i18n="@@confidentialite.outils.title">Mesure d'audience et suivi technique</h3>
+        <ul>
+          <li i18n="@@confidentialite.outils.cloudflare">
+            <strong>Mesure d'audience</strong> — Cloudflare Web Analytics compte les pages consultées (page, site de
+            provenance, pays, type d'appareil, navigateur, système d'exploitation). Cet outil ne dépose ni cookie ni
+            identifiant sur votre appareil et ne permet pas de vous suivre d'un site à l'autre. Il est fourni par
+            Cloudflare, Inc., société établie aux États-Unis, adhérente au cadre de protection des données
+            UE–États-Unis, sur le fondement de la décision d'adéquation de la Commission européenne du 10 juillet
+            2023. Les pages de l'espace personnel des animateurs sont exclues de cette mesure.
+          </li>
+          <li i18n="@@confidentialite.outils.bugsink">
+            <strong>Suivi des erreurs</strong> — lorsqu'une erreur technique survient, un rapport automatique est
+            envoyé à un outil de diagnostic hébergé par l'organisation. Ce rapport contient la page concernée, le
+            message d'erreur et des informations sur votre navigateur ; l'identifiant figurant dans le lien de votre
+            espace personnel en est retiré avant l'envoi. Il sert uniquement à corriger les dysfonctionnements.
+          </li>
+        </ul>
+        <p i18n="@@confidentialite.outils.opposition">
+          Ces deux traitements reposent sur l'intérêt légitime de l'organisation à maintenir l'application en bon état
+          de fonctionnement. Vous pouvez vous y opposer en écrivant à l'adresse de contact.
+        </p>
+
+        <h3 i18n="@@confidentialite.cookies.title">Cookies</h3>
+        <p i18n="@@confidentialite.cookies.texte">
+          Le site dépose un cookie de connexion, nécessaire pour vous garder identifié, et conserve dans votre
+          navigateur vos préférences d'affichage (langue, édition consultée). Ces éléments sont strictement
+          nécessaires au fonctionnement du service et ne requièrent pas votre consentement ; ils ne servent à aucun
+          suivi publicitaire.
+        </p>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-header>
+        <h2 mat-card-title i18n="@@confidentialite.securite.title">Sécurité</h2>
+      </mat-card-header>
+      <mat-card-content>
+        <p i18n="@@confidentialite.securite.texte">
+          L'accès à l'espace personnel d'un animateur suppose à la fois le lien qui lui a été transmis et un code à
+          usage unique envoyé à son adresse e-mail ; ce code et la session qui en découle ne sont jamais conservés en
+          clair. L'accès à l'interface d'administration est réservé à l'organisation et protégé par mot de passe.
+        </p>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-header>
+        <h2 mat-card-title i18n="@@mentions.donnees.droits.title">Vos droits</h2>
+      </mat-card-header>
+      <mat-card-content>
+        <p i18n="@@confidentialite.droits.texte">
+          Vous pouvez demander l'accès aux données vous concernant, leur rectification, leur effacement, la limitation
+          de leur traitement, ainsi que, le cas échéant, leur portabilité. Lorsque le traitement repose sur l'intérêt
+          légitime de l'organisation, vous pouvez également vous y opposer pour des raisons tenant à votre situation
+          particulière. Pour exercer ces droits, écrivez à l'adresse de contact indiquée plus haut : il vous sera
+          répondu dans un délai d'un mois, prolongeable de deux mois en cas de demande complexe.
+        </p>
+        <p i18n="@@confidentialite.droits.cnil">
+          Vous pouvez enfin introduire une réclamation auprès de la Commission nationale de l'informatique et des
+          libertés (CNIL), 3 place de Fontenoy, TSA 80715, 75334 Paris Cedex 07 — www.cnil.fr.
+        </p>
+      </mat-card-content>
+    </mat-card>
+  }
+</main>
