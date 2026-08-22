@@ -21,7 +21,7 @@ import jakarta.ws.rs.core.MediaType;
  * <p>The seats it reasons on are the ones an actual solve would have to fill:
  * the problem is built exactly like {@code POST /api/solve/async/reference-data}
  * builds it, so the count never drifts from the real one (résolution des
- * horaires récurrents, familles de relais, effectif réduit pendant les pauses).
+ * horaires récurrents, families de relais, effectif réduit pendant les pauses).
  * Computing it in the browser from stands × créneaux did drift, badly — see
  * {@link StaffingAnalyzer}.</p>
  */
@@ -44,16 +44,16 @@ public class StaffingResource {
      * precisely before entering anything.
      */
     @GET
-    public StaffingSummary analyser() {
+    public StaffingSummary analyze() {
         ParametresLegaux parametres = referenceDataService.getParametresLegaux();
         List<dev.sylvain.planning.domain.PosteAffectation> postes;
         try {
-            PlanningFestival festival = planningService.construireDepuisReferenceData();
+            PlanningFestival festival = planningService.buildFromReferenceData();
             postes = festival.getPostes();
         } catch (IllegalStateException e) {
             postes = List.of();
         }
-        return staffingAnalyzer.analyser(postes, parametres.getDureeHebdomadaireMaxMinutes(),
+        return staffingAnalyzer.analyze(postes, parametres.getDureeHebdomadaireMaxMinutes(),
                 parametres.getPauseMinimaleEntreVacationsMinutes());
     }
 }

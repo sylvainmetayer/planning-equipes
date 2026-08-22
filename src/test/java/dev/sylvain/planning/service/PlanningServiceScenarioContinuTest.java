@@ -49,33 +49,33 @@ class PlanningServiceScenarioContinuTest {
 
     @Test
     void scenarioContinuNeViolateAucuneContrainteHard() throws IOException {
-        assertScenarioContinuScindeSansHard("scenario-continu.yaml");
+        assertScenarioContinuSplitWithoutHard("scenario-continu.yaml");
     }
 
     @Test
     void scenarioContinuAvecCoupureNeViolateAucuneContrainteHard() throws IOException {
-        assertScenarioContinuScindeSansHard("scenario-continu-avec-coupure.yaml");
+        assertScenarioContinuSplitWithoutHard("scenario-continu-avec-coupure.yaml");
     }
 
-    private void assertScenarioContinuScindeSansHard(String scenarioName) throws IOException {
-        Referentiel referenceDataService = new ReferentielVide();
+    private void assertScenarioContinuSplitWithoutHard(String scenarioName) throws IOException {
+        ReferenceData referenceDataService = new EmptyReferenceData();
         PlanningService planningService = new PlanningService(420L, 0L, ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT, referenceDataService, new FeasibilityAnalyzer(),
                 ConfigProvider.getConfig());
 
-        // Mirrors construireDepuisReferenceData(): découpage on the raw
+        // Mirrors buildFromReferenceData(): découpage on the raw
         // créneaux, then postes built from stands x découpé créneaux — not
-        // construireExemple(), which would instead use the file's raw,
+        // buildExample(), which would instead use the file's raw,
         // undivided one-créneau-per-day amplitudes directly.
-        PlanningService.ReferenceScenario reference = planningService.chargerReferenceScenario(scenarioName);
-        ParametresDecoupage parametresDecoupage = planningService.chargerSectionsScenario(scenarioName).parametresDecoupage()
+        PlanningService.ReferenceScenario reference = planningService.loadReferenceScenario(scenarioName);
+        ParametresDecoupage parametresDecoupage = planningService.loadScenarioSections(scenarioName).parametresDecoupage()
                 .orElseGet(ParametresDecoupage::new);
-        List<Creneau> creneauxScindes = VacationGeneratorService.genererVacations(
+        List<Creneau> creneauxScindes = VacationGeneratorService.generateVacations(
                 List.copyOf(reference.creneauxParId().values()), parametresDecoupage);
-        List<Stand> stands = List.copyOf(reference.standsParId().values());
-        List<PosteAffectation> postes = PlanningService.construirePostes(stands, creneauxScindes);
+        List<Stand> stands = List.copyOf(reference.standsById().values());
+        List<PosteAffectation> postes = PlanningService.buildPostes(stands, creneauxScindes);
         PlanningFestival problem = new PlanningFestival(reference.dateDebut(), reference.animateurs(), postes);
 
-        PlanningFestival solved = planningService.resoudreJusquaFaisabilite(problem, SECONDS_LIMITE_SECURITE);
+        PlanningFestival solved = planningService.solveUntilFeasible(problem, SECONDS_LIMITE_SECURITE);
 
         assertThat(solved.getScore()).isNotNull();
         assertThat(solved.getScore().hardScore()).isZero();

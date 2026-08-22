@@ -1,6 +1,6 @@
 package dev.sylvain.planning.api;
 
-import dev.sylvain.planning.service.AdresseAdministrateur;
+import dev.sylvain.planning.service.AdminAddress;
 import dev.sylvain.planning.service.MailService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
@@ -31,7 +31,7 @@ public class DebugResource {
     MailService mailService;
 
     @Inject
-    AdresseAdministrateur adresseAdmin;
+    AdminAddress adminAddress;
 
     @POST
     @Path("/test-exception")
@@ -47,17 +47,17 @@ public class DebugResource {
     @GET
     @Path("/mail-config")
     public MailConfigView mailConfig() {
-        return new MailConfigView(adresseAdmin.resolue().orElse(null));
+        return new MailConfigView(adminAddress.resolue().orElse(null));
     }
 
     @POST
     @Path("/test-mail")
-    public Response envoyerMailTest() {
+    public Response sendTestMail() {
         try {
-            return Response.ok(new MailConfigView(mailService.envoyerMailTest())).build();
+            return Response.ok(new MailConfigView(mailService.sendTestMail())).build();
         } catch (IllegalStateException e) {
             return Response.status(Response.Status.CONFLICT)
-                    .entity(new ErreurValidation(e.getMessage()))
+                    .entity(new ValidationError(e.getMessage()))
                     .build();
         }
     }

@@ -113,12 +113,12 @@ class ReferenceDataServiceStandTest {
         assertThat(cree.getOuvertures()).hasSize(1);
     }
 
-    /* ------------------------ Horaires récurrents ------------------------ */
+    /* ----------------------- Recurring opening hours ---------------------- */
 
     @Test
     void horaireQuotidienAvecCoupureMeridienneEstAccepte() {
         Stand stand = stand("STAND-HOR-1");
-        stand.setHoraires(List.of(HoraireStand.tousLesJours(ModeHoraire.OUVERTURE,
+        stand.setHoraires(List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE,
                 new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(12, 0)),
                 new FenetreHoraire(LocalTime.of(14, 0), null))));
 
@@ -141,7 +141,7 @@ class ReferenceDataServiceStandTest {
     @Test
     void horaireAvecFenetreInverseeEstRejete() {
         Stand stand = stand("STAND-HOR-3");
-        stand.setHoraires(List.of(HoraireStand.tousLesJours(ModeHoraire.OUVERTURE,
+        stand.setHoraires(List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE,
                 new FenetreHoraire(LocalTime.of(18, 0), LocalTime.of(14, 0)))));
 
         assertThatThrownBy(() -> referenceDataService.createStand(stand))
@@ -179,8 +179,8 @@ class ReferenceDataServiceStandTest {
     void deuxHorairesDeMemePorteeEtDeModesOpposesSontRejetes() {
         Stand stand = stand("STAND-HOR-6");
         stand.setHoraires(List.of(
-                HoraireStand.tousLesJours(ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(10, 0), null)),
-                HoraireStand.tousLesJours(ModeHoraire.FERMETURE, new FenetreHoraire(LocalTime.of(14, 0), null))));
+                HoraireStand.everyDay(ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(10, 0), null)),
+                HoraireStand.everyDay(ModeHoraire.FERMETURE, new FenetreHoraire(LocalTime.of(14, 0), null))));
 
         assertThatThrownBy(() -> referenceDataService.createStand(stand))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -195,7 +195,7 @@ class ReferenceDataServiceStandTest {
                 List.of(new FenetreHoraire(LocalTime.of(0, 0), null)));
         ferieFerme.setDates(Set.of(JOUR));
         stand.setHoraires(List.of(
-                HoraireStand.tousLesJours(ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(14, 0), null)),
+                HoraireStand.everyDay(ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(14, 0), null)),
                 ferieFerme));
 
         Stand cree = referenceDataService.createStand(stand);
@@ -264,7 +264,7 @@ class ReferenceDataServiceStandTest {
     }
 
     /**
-     * {@code listStandsResolus} is what the solver builds from: the rules must
+     * {@code listSolvedStands} is what the solver builds from: the rules must
      * come back expanded there, and stay rules in {@code listStands} — the CRUD
      * view the UI edits — with nothing written to the dated lists either way.
      *
@@ -278,14 +278,14 @@ class ReferenceDataServiceStandTest {
     @Test
     void listStandsResolusEtendLesReglesSansLesPersister() {
         Stand stand = stand("STAND-HOR-11");
-        stand.setHoraires(List.of(HoraireStand.tousLesJours(ModeHoraire.OUVERTURE,
+        stand.setHoraires(List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE,
                 new FenetreHoraire(LocalTime.of(14, 0), null))));
         referenceDataService.createStand(stand);
         Creneau creneau = referenceDataService.createCreneau(
                 new Creneau(null, 1, JOUR, LocalTime.of(10, 0), LocalTime.of(20, 0)));
         try {
-            Stand brut = trouver(referenceDataService.listStands(), "STAND-HOR-11");
-            Stand resolu = trouver(referenceDataService.listStandsResolus(), "STAND-HOR-11");
+            Stand brut = find(referenceDataService.listStands(), "STAND-HOR-11");
+            Stand resolu = find(referenceDataService.listSolvedStands(), "STAND-HOR-11");
 
             assertThat(brut.getOuvertures()).isEmpty();
             assertThat(brut.getOuverturesEffectives()).isEmpty();
@@ -302,7 +302,7 @@ class ReferenceDataServiceStandTest {
         }
     }
 
-    private static Stand trouver(List<Stand> stands, String id) {
+    private static Stand find(List<Stand> stands, String id) {
         return stands.stream()
                 .filter(stand -> stand.getId().equals(id))
                 .findFirst()

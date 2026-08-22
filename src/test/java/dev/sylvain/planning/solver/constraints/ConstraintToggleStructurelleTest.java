@@ -44,9 +44,9 @@ class ConstraintToggleStructurelleTest {
     /** The last string literal of a call, that is, the name passed to {@code actif}. */
     private static final Pattern DERNIER_LITTERAL = Pattern.compile("\"([A-Za-z0-9_]+)\"\\s*$");
 
-    private static List<Path> familles() throws IOException {
-        try (Stream<Path> fichiers = Files.list(FAMILLES)) {
-            return fichiers.filter(f -> f.getFileName().toString().endsWith("Constraints.java")).sorted().toList();
+    private static List<Path> families() throws IOException {
+        try (Stream<Path> files = Files.list(FAMILLES)) {
+            return files.filter(f -> f.getFileName().toString().endsWith("Constraints.java")).sorted().toList();
         }
     }
 
@@ -83,7 +83,7 @@ class ConstraintToggleStructurelleTest {
      */
     @Test
     void chaqueContrainteDeclareeEstEteignableSousExactementLeMemeNom() throws IOException {
-        for (Path famille : familles()) {
+        for (Path famille : families()) {
             String source = Files.readString(famille);
 
             assertThat(nomsEnveloppes(source).stream().sorted().toList())
@@ -99,7 +99,7 @@ class ConstraintToggleStructurelleTest {
     @Test
     void lesContraintesEteignablesSontExactementCellesDuCatalogue() throws IOException {
         List<String> eteignables = new ArrayList<>();
-        for (Path famille : familles()) {
+        for (Path famille : families()) {
             eteignables.addAll(nomsEnveloppes(Files.readString(famille)));
         }
 

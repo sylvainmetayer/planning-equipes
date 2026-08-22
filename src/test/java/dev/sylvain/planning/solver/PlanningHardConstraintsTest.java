@@ -25,9 +25,9 @@ class PlanningHardConstraintsTest {
 
     @Test
     void generatedPlanningDoesNotViolateAnyHardConstraintOnNominalCase() {
-        PlanningFestival problem = planningService.construireExempleSimple();
+        PlanningFestival problem = planningService.buildSimpleExample();
 
-        PlanningFestival solved = planningService.resoudre(problem);
+        PlanningFestival solved = planningService.solve(problem);
 
         assertThat(solved.getScore()).isNotNull();
         assertThat(solved.getScore().hardScore()).isZero();
@@ -35,7 +35,7 @@ class PlanningHardConstraintsTest {
 
     @Test
     void planningViolatesHardScoreWhenForcedAssignmentCannotBeSatisfied() {
-        PlanningFestival problem = planningService.construireExempleSimple();
+        PlanningFestival problem = planningService.buildSimpleExample();
 
         ContrainteAdHoc contrainte = new ContrainteAdHoc("C1", TypeContrainteAdHoc.AFFECTATION_FORCEE);
         contrainte.setAnimateursConcernes(List.of(problem.getAnimateurs().get(0)));
@@ -45,7 +45,7 @@ class PlanningHardConstraintsTest {
         contrainte.setCreeLe(Instant.now());
         problem.setContraintesAdHoc(List.of(contrainte));
 
-        PlanningFestival solved = planningService.resoudre(problem);
+        PlanningFestival solved = planningService.solve(problem);
 
         assertThat(solved.getScore()).isNotNull();
         assertThat(solved.getScore().hardScore()).isLessThan(0);

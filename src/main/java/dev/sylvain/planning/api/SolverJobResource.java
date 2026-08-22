@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import dev.sylvain.planning.domain.PlanningFestival;
-import dev.sylvain.planning.service.PerimetreReplanification;
+import dev.sylvain.planning.service.ReplanificationScope;
 import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.SolverJobService;
 import dev.sylvain.planning.service.SolverJobService.SolverBusyException;
@@ -69,7 +69,7 @@ public class SolverJobResource {
     @Consumes(MediaType.WILDCARD)
     public Response solveFromReferenceData(@QueryParam("seconds") Long secondsLimit,
             @QueryParam("enFile") @DefaultValue("false") boolean enFile) {
-        SolverJob job = solverJobService.submitSolveDepuisReferenceData(secondsLimit, enFile);
+        SolverJob job = solverJobService.submitSolveFromReferenceData(secondsLimit, enFile);
         return Response.accepted(JobView.withoutResult(job)).build();
     }
 
@@ -87,9 +87,9 @@ public class SolverJobResource {
      */
     @POST
     @Path("/solve/incremental/async")
-    public Response solveIncremental(PerimetreReplanification perimetre, @QueryParam("seconds") Long secondsLimit,
+    public Response solveIncremental(ReplanificationScope scope, @QueryParam("seconds") Long secondsLimit,
             @QueryParam("enFile") @DefaultValue("false") boolean enFile) {
-        SolverJob job = solverJobService.submitSolveIncremental(secondsLimit, perimetre, enFile);
+        SolverJob job = solverJobService.submitSolveIncremental(secondsLimit, scope, enFile);
         return Response.accepted(JobView.withoutResult(job)).build();
     }
 
@@ -99,7 +99,7 @@ public class SolverJobResource {
     @Consumes(MediaType.WILDCARD)
     public Response analyzeFromReferenceData(@QueryParam("seconds") Long secondsLimit) {
         SolverJob job = solverJobService.submitAnalyze(
-                planningService.construireDepuisReferenceData(), secondsLimit);
+                planningService.buildFromReferenceData(), secondsLimit);
         return Response.accepted(JobView.withoutResult(job)).build();
     }
 

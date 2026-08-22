@@ -97,28 +97,28 @@ public class AnimateurRepository {
                 }
             }
             for (Animateur animateur : byId.values()) {
-                animateur.appliquerTypologieNinja(typologieNinja);
+                animateur.applyNinjaTypologie(typologieNinja);
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to list animators", e);
         }
         List<Animateur> animateurs = new ArrayList<>(byId.values());
-        animateurs.sort(Comparator.comparing(Animateur::getId, OrdreNaturel.DES_IDS));
+        animateurs.sort(Comparator.comparing(Animateur::getId, NaturalOrder.DES_IDS));
         return animateurs;
     }
 
     public boolean animateurExists(String id) {
-        return scope.existe("animateur", id);
+        return scope.exists("animateur", id);
     }
 
     public void saveAnimateur(Animateur animateur) {
-        scope.ecrire("Failed to save animator " + animateur.getId(), connection -> {
+        scope.write("Failed to save animator " + animateur.getId(), connection -> {
             upsertAnimateur(connection, animateur);
         });
     }
 
     public void deleteAnimateur(String id) {
-        scope.supprimer("DELETE FROM animateur WHERE edition_id = ? AND id = ?", id);
+        scope.delete("DELETE FROM animateur WHERE edition_id = ? AND id = ?", id);
     }
 
     /**
@@ -127,7 +127,7 @@ public class AnimateurRepository {
      *
      * @return the new token, or {@code null} when the animateur is unknown.
      */
-    public String regenererJetonAnimateur(String id) {
+    public String regenerateAnimateurToken(String id) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection,
                         """
@@ -146,7 +146,7 @@ public class AnimateurRepository {
 
     /**
      * Whether any animateur, in any edition, carries this address. Like
-     * {@link #resoudreJetonAnimateur}, deliberately not edition-scoped: the
+     * {@link #resolveAnimateurToken}, deliberately not edition-scoped: the
      * caller is the startup check of the remote-user mode, which has no
      * edition to speak of and wants to know whether the collision exists
      * anywhere at all.
@@ -175,19 +175,21 @@ public class AnimateurRepository {
      * token arrives on a public URL with no {@code X-Edition-Id} to trust, and
      * is globally unique precisely so it can designate the edition by itself
      * (the caller then runs everything else inside
-     * {@code EditionContext.executeDans}).
+     * {@code EditionContext.executeIn}).
      */
-    public ProprietaireJeton resoudreJetonAnimateur(String jeton) {
-        if (jeton == null || jeton.isBlank()) {
+    // The column is `jeton_acces` and stays so: renaming it means a Flyway
+    // migration over live data for a name nobody reads outside this SQL.
+    public TokenOwner resolveAnimateurToken(String token) {
+        if (token == null || token.isBlank()) {
             return null;
         }
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement(
                         "SELECT edition_id, id, email FROM animateur WHERE jeton_acces = ?")) {
-            ps.setString(1, jeton);
+            ps.setString(1, token);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next()
-                        ? new ProprietaireJeton(rs.getString("edition_id"), rs.getString("id"),
+                        ? new TokenOwner(rs.getString("edition_id"), rs.getString("id"),
                                 rs.getString("email"))
                         : null;
             }
@@ -211,7 +213,7 @@ public class AnimateurRepository {
             throws SQLException {
         // jeton_acces is deliberately absent: a fresh row gets the database
         // default, an existing row keeps its token. Rotation only happens
-        // through regenererJetonAnimateur.
+        // through regenerateAnimateurToken.
         String miseAJourEmail = conserverEmailSiAbsent
                 ? "email = COALESCE(EXCLUDED.email, animateur.email)"
                 : "email = EXCLUDED.email";

@@ -31,7 +31,7 @@ public class StandService {
      * Stands as entered: the recurring {@link HoraireStand} rules and the dated
      * exceptions, side by side, with no expansion. This is the CRUD view — what
      * the admin UI edits and what a save writes back. Anything that needs the
-     * <em>effective</em> windows of a given day wants {@link #listResolus()}
+     * <em>effective</em> windows of a given day wants {@link #listSolved()}
      * instead.
      */
     public List<Stand> list() {
@@ -48,15 +48,15 @@ public class StandService {
      * the persisted lists, so these instances stay safe to hand to a save path
      * (see {@link HoraireStandResolver}).</p>
      */
-    public List<Stand> listResolus() {
+    public List<Stand> listSolved() {
         List<Stand> stands = list();
-        HoraireStandResolver.appliquer(stands, creneaux.list());
+        HoraireStandResolver.apply(stands, creneaux.list());
         return stands;
     }
 
     public Stand create(Stand stand) {
-        stand.setId(Identifiants.requis(stand.getId(), "stand id"));
-        valider(stand);
+        stand.setId(Ids.required(stand.getId(), "stand id"));
+        validate(stand);
         repository.saveStand(stand);
         changeTracker.markModified();
         return stand;
@@ -67,7 +67,7 @@ public class StandService {
             throw new NotFoundException("Stand not found: " + id);
         }
         stand.setId(id);
-        valider(stand);
+        validate(stand);
         repository.saveStand(stand);
         changeTracker.markModified();
         return stand;
@@ -79,8 +79,8 @@ public class StandService {
     }
 
     /** Every proposed typologie must reference an id already present in the {@code typologie} referential. */
-    private void valider(Stand stand) {
-        ValidationStand.verifier(stand);
+    private void validate(Stand stand) {
+        StandValidator.check(stand);
         if (stand.getTypologiesProposees() != null) {
             typologies.validerIds(stand.getTypologiesProposees());
         }
@@ -89,25 +89,25 @@ public class StandService {
     /**
      * Rewrites every stand's hand-entered dated windows as the recurring
      * horaires they repeat, against the edition's days. With
-     * {@code appliquer} false nothing is written: the returned report describes
+     * {@code apply} false nothing is written: the returned report describes
      * what the operation <em>would</em> do, which is what makes it safe to show
      * before committing to it.
      *
      * <p>Only stands the compaction proved equivalent are saved
-     * ({@link CompactageHoraires#ecartMaximalMinutes}); the others come back in
+     * ({@link HoraireCompaction#maxGapMinutes}); the others come back in
      * the report with the reason they were left alone. Each one is saved
      * individually so a single problematic stand cannot roll back the rest.</p>
      */
-    public CompactageHoraires.RapportCompactage compacterHoraires(boolean appliquer) {
+    public HoraireCompaction.RapportCompactage compactHoraires(boolean apply) {
         List<Stand> stands = list();
-        CompactageHoraires.RapportCompactage rapport =
-                CompactageHoraires.compacter(stands, creneaux.list(), appliquer);
-        if (!appliquer) {
+        HoraireCompaction.RapportCompactage rapport =
+                HoraireCompaction.compact(stands, creneaux.list(), apply);
+        if (!apply) {
             return rapport;
         }
         Set<String> compactes = rapport.stands().stream()
-                .filter(CompactageHoraires.LigneCompactage::compacte)
-                .map(CompactageHoraires.LigneCompactage::standId)
+                .filter(HoraireCompaction.LigneCompactage::compacte)
+                .map(HoraireCompaction.LigneCompactage::standId)
                 .collect(Collectors.toSet());
         boolean modifie = false;
         for (Stand stand : stands) {

@@ -31,8 +31,8 @@ public class DecoupageResource {
     /** Preview of the vacations the edition's current créneaux (read as amplitudes) would generate — nothing is persisted. */
     @GET
     @Path("/preview")
-    public List<Creneau> previsualiserDecoupage() {
-        return referenceDataService.previsualiserDecoupage();
+    public List<Creneau> previewDecoupage() {
+        return referenceDataService.previewDecoupage();
     }
 
     /**
@@ -44,8 +44,8 @@ public class DecoupageResource {
     @POST
     @Path("/generer")
     @Consumes(MediaType.WILDCARD)
-    public Response genererDecoupage() {
-        referenceDataService.genererDecoupage();
+    public Response generateDecoupage() {
+        referenceDataService.generateDecoupage();
         return Response.noContent().build();
     }
 

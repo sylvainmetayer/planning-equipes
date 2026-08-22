@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
  *
  * <p>The privacy policy tells the reader that identifier is removed before a
  * report leaves. These tests are what makes that sentence true on the server
- * side: an exception raised while serving {@code /api/espace-animateur/{jeton}}
+ * side: an exception raised while serving {@code /api/espace-animateur/{token}}
  * carries the path in its message, and the tracker is a third-party processor
  * that keeps what it receives.</p>
  */
@@ -23,16 +23,16 @@ class SentryInitializerTest {
 
     @Test
     void masqueLeJetonDansLesDeuxFormesQuePrendLURL() {
-        assertThat(SentryInitializer.masquerJeton("GET /api/espace-animateur/a1b2c3/postes a échoué"))
+        assertThat(SentryInitializer.maskToken("GET /api/espace-animateur/a1b2c3/postes a échoué"))
                 .isEqualTo("GET /api/espace-animateur/<jeton>/postes a échoué");
-        assertThat(SentryInitializer.masquerJeton("https://planning.example.org/animateur/a1b2c3/echanges"))
+        assertThat(SentryInitializer.maskToken("https://planning.example.org/animateur/a1b2c3/echanges"))
                 .isEqualTo("https://planning.example.org/animateur/<jeton>/echanges");
     }
 
     @Test
     void laisseIntactCeQuiNePorteAucunJeton() {
-        assertThat(SentryInitializer.masquerJeton("Connexion à la base perdue")).isEqualTo("Connexion à la base perdue");
-        assertThat(SentryInitializer.masquerJeton((String) null)).isNull();
+        assertThat(SentryInitializer.maskToken("Connexion à la base perdue")).isEqualTo("Connexion à la base perdue");
+        assertThat(SentryInitializer.maskToken((String) null)).isNull();
     }
 
     @Test
@@ -45,7 +45,7 @@ class SentryInitializerTest {
         exception.setValue("NotFoundException: /api/espace-animateur/a1b2c3/postes");
         rapport.setExceptions(List.of(exception));
 
-        SentryInitializer.masquerJetonsDuRapport(rapport);
+        SentryInitializer.maskTokensInReport(rapport);
 
         assertThat(rapport.getMessage().getFormatted()).isEqualTo("Échec sur /animateur/<jeton>");
         assertThat(rapport.getExceptions().get(0).getValue())
@@ -56,6 +56,6 @@ class SentryInitializerTest {
     void unRapportSansMessageNiExceptionNeCassePas() {
         SentryEvent rapport = new SentryEvent();
 
-        assertThat(SentryInitializer.masquerJetonsDuRapport(rapport)).isSameAs(rapport);
+        assertThat(SentryInitializer.maskTokensInReport(rapport)).isSameAs(rapport);
     }
 }

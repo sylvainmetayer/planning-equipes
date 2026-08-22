@@ -59,7 +59,7 @@ public class StandMcpTools {
     @Tool(description = "Consulte un stand par son id.")
     StandView consulter_stand(@ToolArg(description = "Id du stand") String id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        return toView(trouverStand(id));
+        return toView(findStand(id));
     }
 
     @Tool(description = "Crée un stand. Les typologies proposées doivent exister dans le référentiel des typologies.")
@@ -84,7 +84,7 @@ public class StandMcpTools {
         stand.setPremium(Boolean.TRUE.equals(premium));
         stand.setNiveauEffort(niveauEffort == null ? NiveauEffort.NORMAL
                 : McpArgs.enumeration(NiveauEffort.class, niveauEffort, "niveauEffort"));
-        stand.setEmplacement(emplacementId == null ? null : trouverEmplacement(emplacementId));
+        stand.setEmplacement(emplacementId == null ? null : findEmplacement(emplacementId));
         return toView(referenceDataService.createStand(stand));
     }
 
@@ -121,9 +121,9 @@ public class StandMcpTools {
             @ToolArg(description = "Fin de la plage (AAAA-MM-JJ) si portée PLAGE", required = false) String horairesDateFin,
             @ToolArg(description = "Dates (AAAA-MM-JJ) si portée DATES", required = false) List<String> horairesDates,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        List<String> typologiesCreees = creerTypologiesAbsentes(typologiesProposees,
+        List<String> typologiesCreees = createMissingTypologies(typologiesProposees,
                 Boolean.TRUE.equals(creerTypologiesManquantes));
-        String emplacementCree = creerEmplacementAbsent(emplacementId, emplacementNom, latitude, longitude);
+        String emplacementCree = createMissingEmplacement(emplacementId, emplacementNom, latitude, longitude);
 
         Stand stand = new Stand();
         stand.setId(id);
@@ -135,7 +135,7 @@ public class StandMcpTools {
         stand.setPremium(Boolean.TRUE.equals(premium));
         stand.setNiveauEffort(niveauEffort == null ? NiveauEffort.NORMAL
                 : McpArgs.enumeration(NiveauEffort.class, niveauEffort, "niveauEffort"));
-        stand.setEmplacement(emplacementId == null ? null : trouverEmplacement(emplacementId));
+        stand.setEmplacement(emplacementId == null ? null : findEmplacement(emplacementId));
         if (horaires != null && !horaires.isBlank()) {
             stand.getHoraires().add(horaireOuverture(horaires, horairesJours, horairesJoursSemaine,
                     horairesDateDebut, horairesDateFin, horairesDates));
@@ -151,7 +151,7 @@ public class StandMcpTools {
      * of into a second, near-identical entry nobody notices until the solver
      * finds no competent animateur for it.
      */
-    private List<String> creerTypologiesAbsentes(List<String> typologies, boolean autorise) {
+    private List<String> createMissingTypologies(List<String> typologies, boolean autorise) {
         if (typologies == null || typologies.isEmpty() || !autorise) {
             return List.of();
         }
@@ -169,13 +169,13 @@ public class StandMcpTools {
     }
 
     /** @return the id of the emplacement created here, or {@code null} when none was. */
-    private String creerEmplacementAbsent(String emplacementId, String nom, Double latitude, Double longitude) {
+    private String createMissingEmplacement(String emplacementId, String nom, Double latitude, Double longitude) {
         if (emplacementId == null || emplacementId.isBlank() || nom == null || nom.isBlank()) {
             return null;
         }
-        boolean existe = referenceDataService.listEmplacements().stream()
+        boolean exists = referenceDataService.listEmplacements().stream()
                 .anyMatch(emplacement -> emplacementId.equals(emplacement.getId()));
-        if (existe) {
+        if (exists) {
             return null;
         }
         referenceDataService.createEmplacement(new Emplacement(emplacementId, nom, latitude, longitude));
@@ -216,7 +216,7 @@ public class StandMcpTools {
             @ToolArg(description = "Niveau d'effort : NORMAL ou EPUISANT", required = false) String niveauEffort,
             @ToolArg(description = "Id de l'emplacement géographique", required = false) String emplacementId,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        Stand stand = trouverStand(id);
+        Stand stand = findStand(id);
         if (nom != null) {
             stand.setNom(nom);
         }
@@ -239,7 +239,7 @@ public class StandMcpTools {
             stand.setNiveauEffort(McpArgs.enumeration(NiveauEffort.class, niveauEffort, "niveauEffort"));
         }
         if (emplacementId != null) {
-            stand.setEmplacement(trouverEmplacement(emplacementId));
+            stand.setEmplacement(findEmplacement(emplacementId));
         }
         return toView(referenceDataService.updateStand(id, stand));
     }
@@ -262,9 +262,9 @@ public class StandMcpTools {
             @ToolArg(description = "Heure de fin (HH:MM) ; omise = jusqu'à la fermeture", required = false) String heureFin,
             @ToolArg(description = "Motif, purement informatif", required = false) String motif,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        Stand stand = trouverStand(standId);
+        Stand stand = findStand(standId);
         stand.getIndisponibilites().add(new IndisponibiliteStand(null, McpArgs.date(date, "date"),
-                McpArgs.heure(heureDebut, "heureDebut"), heureFinOuFermeture(heureFin), motif));
+                McpArgs.heure(heureDebut, "heureDebut"), endTimeOrClosing(heureFin), motif));
         return toView(referenceDataService.updateStand(standId, stand));
     }
 
@@ -278,14 +278,14 @@ public class StandMcpTools {
             @ToolArg(description = "Heure de fin (HH:MM) ; omise = jusqu'à la fermeture", required = false) String heureFin,
             @ToolArg(description = "Motif, purement informatif", required = false) String motif,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        Stand stand = trouverStand(standId);
+        Stand stand = findStand(standId);
         stand.getOuvertures().add(new OuvertureStand(null, McpArgs.date(date, "date"),
-                McpArgs.heure(heureDebut, "heureDebut"), heureFinOuFermeture(heureFin), motif));
+                McpArgs.heure(heureDebut, "heureDebut"), endTimeOrClosing(heureFin), motif));
         return toView(referenceDataService.updateStand(standId, stand));
     }
 
     /** {@code null} — "until closing time" — for an omitted or empty end hour. */
-    private static LocalTime heureFinOuFermeture(String heureFin) {
+    private static LocalTime endTimeOrClosing(String heureFin) {
         return heureFin == null || heureFin.isBlank() ? null : McpArgs.heure(heureFin, "heureFin");
     }
 
@@ -295,7 +295,7 @@ public class StandMcpTools {
             @ToolArg(description = "Id du stand") String standId,
             @ToolArg(description = "Date (AAAA-MM-JJ)") String date,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        Stand stand = trouverStand(standId);
+        Stand stand = findStand(standId);
         LocalDate jour = McpArgs.date(date, "date");
         stand.getIndisponibilites().removeIf(indispo -> jour.equals(indispo.getDate()));
         stand.getOuvertures().removeIf(ouverture -> jour.equals(ouverture.getDate()));
@@ -320,7 +320,7 @@ public class StandMcpTools {
             @ToolArg(description = "Dates (AAAA-MM-JJ) si portée DATES", required = false) List<String> dates,
             @ToolArg(description = "Motif, purement informatif", required = false) String motif,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        Stand stand = trouverStand(standId);
+        Stand stand = findStand(standId);
         HoraireStand horaire = new HoraireStand();
         horaire.setMode(McpArgs.enumeration(ModeHoraire.class, mode, "mode"));
         horaire.setJours(jours == null ? TypeJoursHoraire.TOUS
@@ -349,7 +349,7 @@ public class StandMcpTools {
     @Tool(description = "Retire tous les horaires récurrents d'un stand. Ses plages datées restent en place.")
     StandView effacer_horaires_stand(@ToolArg(description = "Id du stand") String standId,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        Stand stand = trouverStand(standId);
+        Stand stand = findStand(standId);
         stand.getHoraires().clear();
         return toView(referenceDataService.updateStand(standId, stand));
     }
@@ -379,7 +379,7 @@ public class StandMcpTools {
             @ToolArg(description = "Latitude", required = false) Double latitude,
             @ToolArg(description = "Longitude", required = false) Double longitude,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        Emplacement emplacement = trouverEmplacement(id);
+        Emplacement emplacement = findEmplacement(id);
         if (nom != null) {
             emplacement.setNom(nom);
         }
@@ -433,14 +433,14 @@ public class StandMcpTools {
 
     /* -------------------------------- Views -------------------------------- */
 
-    private Stand trouverStand(String id) {
+    private Stand findStand(String id) {
         return referenceDataService.listStands().stream()
                 .filter(stand -> stand.getId().equals(id))
                 .findFirst()
                 .orElseThrow(() -> new NoSuchElementException("Stand introuvable : " + id));
     }
 
-    private Emplacement trouverEmplacement(String id) {
+    private Emplacement findEmplacement(String id) {
         return referenceDataService.listEmplacements().stream()
                 .filter(emplacement -> emplacement.getId().equals(id))
                 .findFirst()

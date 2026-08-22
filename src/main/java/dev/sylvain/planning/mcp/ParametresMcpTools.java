@@ -9,7 +9,7 @@ import java.util.NoSuchElementException;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.ParametresDecoupage;
-import dev.sylvain.planning.domain.ParametresDecoupage.StrategieCouverturePendantPause;
+import dev.sylvain.planning.domain.ParametresDecoupage.PauseCoverageStrategy;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
@@ -35,7 +35,7 @@ public class ParametresMcpTools {
     @Inject
     ReferenceDataService referenceDataService;
 
-    /* ---------------------------- Paramètres légaux ------------------------- */
+    /* ----------------------------- Legal parameters ------------------------- */
 
     @Tool(description = "Consulte les paramètres légaux appliqués par le solveur (durées maximales, pauses, repos).")
     ParametresLegauxView consulter_parametres_legaux(
@@ -67,7 +67,7 @@ public class ParametresMcpTools {
         return toView(referenceDataService.updateParametresLegaux(parametres));
     }
 
-    /* -------------------------- Paramètres découpage ------------------------ */
+    /* --------------------------- Slicing parameters ------------------------- */
 
     @Tool(description = "Consulte les paramètres de découpage des amplitudes en vacations.")
     ParametresDecoupageView consulter_parametres_decoupage(
@@ -127,13 +127,13 @@ public class ParametresMcpTools {
         }
         if (strategieCouverturePendantPause != null) {
             parametres.setStrategieCouverturePendantPause(
-                    McpArgs.enumeration(StrategieCouverturePendantPause.class, strategieCouverturePendantPause,
+                    McpArgs.enumeration(PauseCoverageStrategy.class, strategieCouverturePendantPause,
                             "strategieCouverturePendantPause"));
         }
         return toView(referenceDataService.updateParametresDecoupage(parametres));
     }
 
-    /* --------------------------- Paramètres solveur ------------------------- */
+    /* ---------------------------- Solver parameters ------------------------- */
 
     @Tool(description = "Consulte la durée de résolution par défaut du solveur, en secondes.")
     ParametresSolveurView consulter_parametres_solveur(
@@ -255,7 +255,7 @@ public class ParametresMcpTools {
             int dureeVacationMaxMinutes, int dureeChevauchementMinutes, int dureePauseRepasMinutes,
             int nombreFamillesDecalage, int dureeDecalageMaxMinutes, LocalTime fenetreRepasMidiDebut,
             LocalTime fenetreRepasMidiFin, LocalTime fenetreRepasSoirDebut, LocalTime fenetreRepasSoirFin,
-            StrategieCouverturePendantPause strategieCouverturePendantPause) {
+            PauseCoverageStrategy strategieCouverturePendantPause) {
     }
 
     public record ParametresSolveurView(int dureeResolutionSecondes) {

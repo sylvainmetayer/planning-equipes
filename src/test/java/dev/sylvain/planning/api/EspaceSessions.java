@@ -24,9 +24,9 @@ final class EspaceSessions {
     }
 
     /** Returns the {@code planning-espace} cookie value of a fresh session. */
-    static String ouvrir(MockMailbox mailbox, String jeton, String email) {
+    static String open(MockMailbox mailbox, String token, String email) {
         given().contentType(ContentType.JSON)
-                .when().post("/api/espace-animateur/" + jeton + "/code")
+                .when().post("/api/espace-animateur/" + token + "/code")
                 .then().statusCode(200);
         List<Mail> mails = mailbox.getMailsSentTo(email);
         assertThat(mails).as("the access code mail must reach " + email).isNotEmpty();
@@ -34,7 +34,7 @@ final class EspaceSessions {
         assertThat(matcher.find()).as("the mail must carry a 6-digit code").isTrue();
         String cookie = given().contentType(ContentType.JSON)
                 .body("{\"code\":\"" + matcher.group(1) + "\"}")
-                .when().post("/api/espace-animateur/" + jeton + "/session")
+                .when().post("/api/espace-animateur/" + token + "/session")
                 .then().statusCode(204)
                 .extract().cookie("planning-espace");
         assertThat(cookie).isNotBlank();

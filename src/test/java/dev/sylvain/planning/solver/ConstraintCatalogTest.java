@@ -30,12 +30,12 @@ class ConstraintCatalogTest {
      * the scoring session is built, so a throwaway verification is run to force
      * it.</p>
      */
-    private static List<String> nomsDesContraintesDefinies() {
-        ConstraintVerifier<PlanningConstraintProvider, PlanningFestival> verifier =
+    private static List<String> declaredConstraintNames() {
+        ConstraintVerifier<PlanningConstraintProvider, PlanningFestival> check =
                 ConstraintVerifier.build(new PlanningConstraintProvider(), PlanningFestival.class,
                         PosteAffectation.class);
         List<String> noms = new ArrayList<>();
-        verifier.verifyThat((provider, factory) -> {
+        check.verifyThat((provider, factory) -> {
             Constraint[] constraints = provider.defineConstraints(factory);
             for (Constraint constraint : constraints) {
                 noms.add(constraint.getConstraintName());
@@ -52,12 +52,12 @@ class ConstraintCatalogTest {
                 .map(ConstraintCatalog.ConstraintDefinition::name)
                 .toList();
 
-        assertThat(nomsDesContraintesDefinies()).isSubsetOf(catalogue);
+        assertThat(declaredConstraintNames()).isSubsetOf(catalogue);
     }
 
     @Test
     void leCatalogueNeDecritAucuneContrainteInexistante() {
-        List<String> definies = nomsDesContraintesDefinies();
+        List<String> definies = declaredConstraintNames();
 
         assertThat(ConstraintCatalog.definitions())
                 .allSatisfy(definition -> assertThat(definies).contains(definition.name()));

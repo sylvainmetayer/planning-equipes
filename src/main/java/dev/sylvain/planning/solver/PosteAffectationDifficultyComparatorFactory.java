@@ -31,26 +31,26 @@ public final class PosteAffectationDifficultyComparatorFactory
     public Comparator<PosteAffectation> createComparator(PlanningFestival solution) {
         // Confined to the comparator returned here, which Timefold uses from a
         // single thread while sorting the entities of that one solution.
-        Map<CleEligibilite, Long> cache = new HashMap<>();
+        Map<EligibilityKey, Long> cache = new HashMap<>();
         return Comparator.comparingLong(
-                (PosteAffectation poste) -> cache.computeIfAbsent(CleEligibilite.de(poste),
-                        cle -> eligibleAnimateurCount(solution, poste)))
+                (PosteAffectation poste) -> cache.computeIfAbsent(EligibilityKey.of(poste),
+                        key -> eligibleAnimateurCount(solution, poste)))
                 .reversed();
     }
 
     private static long eligibleAnimateurCount(PlanningFestival solution, PosteAffectation poste) {
         LocalDate date = poste.getCreneau() == null ? null : poste.getCreneau().getDate();
         return solution.getAnimateurs().stream()
-                .filter(animateur -> animateur.possedeCompetencePour(poste.getStand())
-                        && !animateur.estIndisponibleLe(date))
+                .filter(animateur -> animateur.hasCompetenceFor(poste.getStand())
+                        && !animateur.isIndisponibleOn(date))
                 .count();
     }
 
     /** Everything the eligible-animateur count actually depends on. */
-    private record CleEligibilite(String standId, LocalDate date) {
+    private record EligibilityKey(String standId, LocalDate date) {
 
-        static CleEligibilite de(PosteAffectation poste) {
-            return new CleEligibilite(poste.getStand() == null ? null : poste.getStand().getId(),
+        static EligibilityKey of(PosteAffectation poste) {
+            return new EligibilityKey(poste.getStand() == null ? null : poste.getStand().getId(),
                     poste.getCreneau() == null ? null : poste.getCreneau().getDate());
         }
     }

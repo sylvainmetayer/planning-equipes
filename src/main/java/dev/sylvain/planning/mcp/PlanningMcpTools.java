@@ -10,8 +10,8 @@ import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.service.FeasibilityAnalyzer;
 import dev.sylvain.planning.service.FeasibilityAnalyzer.FeasibilityReport;
-import dev.sylvain.planning.service.HeuresPlanningService;
-import dev.sylvain.planning.service.HeuresPlanningService.HeuresAnimateur;
+import dev.sylvain.planning.service.PlanningHoursService;
+import dev.sylvain.planning.service.PlanningHoursService.HeuresAnimateur;
 import dev.sylvain.planning.service.PlanningPersistenceService;
 import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.PlanningService.AffectationExplanation;
@@ -57,7 +57,7 @@ public class PlanningMcpTools {
     FeasibilityAnalyzer feasibilityAnalyzer;
 
     @Inject
-    HeuresPlanningService heuresPlanningService;
+    PlanningHoursService heuresPlanningService;
 
     @Inject
     ReferenceDataChangeTracker changeTracker;
@@ -65,14 +65,14 @@ public class PlanningMcpTools {
     @Tool(description = "Volumétrie réelle du problème que construirait la prochaine résolution : nombre "
             + "d'animateurs, de postes à pourvoir et de contraintes ad hoc. Tout à zéro si les données de "
             + "référence ne sont pas chargées.")
-    VolumetrieView volumetrie(
+    VolumeView volumes(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         try {
-            PlanningFestival festival = planningService.construireDepuisReferenceData();
-            return new VolumetrieView(festival.getAnimateurs().size(), festival.getPostes().size(),
+            PlanningFestival festival = planningService.buildFromReferenceData();
+            return new VolumeView(festival.getAnimateurs().size(), festival.getPostes().size(),
                     festival.getContraintesAdHoc().size());
         } catch (IllegalStateException e) {
-            return new VolumetrieView(0, 0, 0);
+            return new VolumeView(0, 0, 0);
         }
     }
 
@@ -81,9 +81,9 @@ public class PlanningMcpTools {
             + "bloquantes (stand sans animateur compétent, créneau en sous-effectif).")
     FeasibilityReport analyser_faisabilite(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        return feasibilityAnalyzer.analyser(
+        return feasibilityAnalyzer.analyze(
                 referenceDataService.listAnimateurs(),
-                referenceDataService.listStandsResolus(),
+                referenceDataService.listSolvedStands(),
                 referenceDataService.listCreneaux());
     }
 
@@ -134,7 +134,7 @@ public class PlanningMcpTools {
         if (planning == null || planning.getPostes() == null) {
             return new HeuresView(List.of(), List.of());
         }
-        HeuresPlanningService.HeuresRapport rapport = heuresPlanningService.calculer(planning);
+        PlanningHoursService.HeuresRapport rapport = heuresPlanningService.compute(planning);
         return new HeuresView(rapport.semaines(), rapport.animateurs().stream()
                 .map(PlanningMcpTools::toView)
                 .toList());
@@ -144,7 +144,7 @@ public class PlanningMcpTools {
             + "contraintes respectées le concernant. Ne relance aucune résolution.")
     ExplicationView expliquer_affectation(@ToolArg(description = "Id du poste") String posteId,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        AffectationExplanation explication = planningService.expliquerAffectation(planningPersiste(), posteId);
+        AffectationExplanation explication = planningService.explainAffectation(persistedPlanning(), posteId);
         return new ExplicationView(explication.posteId(), explication.animateurId(),
                 String.valueOf(explication.score()),
                 toViews(explication.contraintesViolees()), toViews(explication.contraintesRespectees()));
@@ -156,14 +156,14 @@ public class PlanningMcpTools {
             @ToolArg(description = "Id du poste") String posteId,
             @ToolArg(description = "Id de l'animateur candidat") String animateurId,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        SwapSimulation simulation = planningService.simulerSwap(planningPersiste(), posteId, animateurId);
+        SwapSimulation simulation = planningService.simulateSwap(persistedPlanning(), posteId, animateurId);
         return new SwapView(simulation.posteId(), simulation.animateurActuelId(), simulation.animateurCandidatId(),
                 String.valueOf(simulation.scoreAvant()), String.valueOf(simulation.scoreApres()),
                 String.valueOf(simulation.delta()),
                 toViews(simulation.contraintesVioleesAvant()), toViews(simulation.contraintesVioleesApres()));
     }
 
-    private PlanningFestival planningPersiste() {
+    private PlanningFestival persistedPlanning() {
         PlanningFestival planning = persistenceService.loadPersistedPlanning();
         if (planning == null || planning.getPostes() == null || planning.getPostes().isEmpty()) {
             throw new IllegalStateException("Aucun planning persisté : lancez d'abord une résolution.");
@@ -192,7 +192,7 @@ public class PlanningMcpTools {
         return new HeuresAnimateurView(ligne.animateurId(), ligne.heuresParSemaine(), ligne.total());
     }
 
-    public record VolumetrieView(int animateurCount, int posteCount, int contrainteAdHocCount) {
+    public record VolumeView(int animateurCount, int posteCount, int contrainteAdHocCount) {
     }
 
     /** @param resolu false when nothing has ever been solved */

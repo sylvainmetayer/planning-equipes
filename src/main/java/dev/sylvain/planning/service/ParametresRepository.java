@@ -79,7 +79,7 @@ public class ParametresRepository {
         }
     }
 
-    /* --------------------------- Découpage parameters ------------------------ */
+    /* ---------------------------- Slicing parameters ------------------------- */
 
     public ParametresDecoupage getParametresDecoupage() {
         try (Connection connection = dataSource.getConnection();
@@ -105,7 +105,7 @@ public class ParametresRepository {
                 parametres.setFenetreRepasSoirDebut(rs.getObject("fenetre_repas_soir_debut", LocalTime.class));
                 parametres.setFenetreRepasSoirFin(rs.getObject("fenetre_repas_soir_fin", LocalTime.class));
                 parametres.setStrategieCouverturePendantPause(
-                        ParametresDecoupage.StrategieCouverturePendantPause
+                        ParametresDecoupage.PauseCoverageStrategy
                                 .valueOf(rs.getString("strategie_couverture_pendant_pause")));
                 parametres.setNombreFamillesDecalage(rs.getInt("nombre_familles_decalage"));
                 parametres.setDureeDecalageMaxMinutes(rs.getInt("duree_decalage_max_minutes"));

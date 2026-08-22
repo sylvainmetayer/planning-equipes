@@ -131,7 +131,7 @@ La section `postes` (un poste par place à pourvoir, référençant un
 automatiquement à partir des stands et créneaux importés, avec les mêmes
 règles que « Lancer le solveur » depuis les données de référence — un poste
 par place (`stand.effectifMin`, pas `effectifMax`) sur chaque créneau ×
-segment réellement ouvert (voir `PlanningService.construirePostes`). Fournir
+segment réellement ouvert (voir `PlanningService.buildPostes`). Fournir
 la section reste possible pour un staffing qui s'écarte de cette règle
 (certains scénarios, ex. `scenario-complet.yaml`, l'énumèrent explicitement) ;
 dans ce cas elle est reprise telle quelle.
@@ -186,11 +186,11 @@ stand —,
 `parametresLegaux`, `parametresDecoupage`, `parametresSolveur`,
 `decoupageAuto`, `typologies`) : types de champs, sections/champs
 obligatoires, durées non négatives, valeurs d'enum (`NiveauCompetence`,
-`NiveauEffort`, `StrategieCouverturePendantPause`, `ModeHoraire`,
+`NiveauEffort`, `PauseCoverageStrategy`, `ModeHoraire`,
 `TypeJoursHoraire`). Il ne peut pas exprimer les règles conditionnelles d'un
 sélecteur d'`horaires` (`joursSemaine` requis pour `JOURS_SEMAINE`,
 `dateDebut`/`dateFin` pour `PLAGE`, `dates` pour `DATES`) : celles-là sont
-vérifiées à l'écriture par `ValidationStand`. Les ids de typologie
+vérifiées à l'écriture par `StandValidator`. Les ids de typologie
 eux-mêmes (`typologiesProposees`, `competences`, `souhaits`, et la section
 `typologies`) sont de simples chaînes, pas un enum : le référentiel
 `typologie` est CRUD-managé, pas figé dans le code.
@@ -214,7 +214,7 @@ Deux détails valent d'être connus avant de les régénérer :
 
 - **les coordonnées sont translatées en longitude, à latitude constante**, et
   non supprimées. Une contrainte de qualité pénalise deux emplacements distants
-  de plus d'un seuil (`QualiteConstraints`, `Emplacement.distanceMetresVers`) :
+  de plus d'un seuil (`QualiteConstraints`, `Emplacement.distanceMetresTo`) :
   les retirer changerait le score. À latitude et delta de longitude inchangés,
   la haversine rend exactement les mêmes distances — vérifié au mètre près ;
 - **les ids anonymes sont numérotés dans l'ordre d'apparition** et l'ordre des
@@ -270,11 +270,11 @@ d'un poste correspondant bien à un stand/créneau déclaré).
 
 > **Note pour qui touche au format.** Le fichier est lu **en une seule passe**,
 > par un unique point d'entrée qui rend le planning et toutes les sections
-> optionnelles ensemble (`PlanningService.chargerScenario` pour un scénario
-> livré, `construireDepuisTexteScenario` pour un fichier téléversé — les deux
+> optionnelles ensemble (`PlanningService.loadScenario` pour un scénario
+> livré, `buildFromScenarioText` pour un fichier téléversé — les deux
 > ne diffèrent que par la provenance des octets et l'import qui suit est le
 > même code). Ajouter une section optionnelle = ajouter un champ à
-> `SectionsScenario` et une ligne à `sectionsDe`, pas une méthode publique de
+> `ScenarioSections` et une ligne à `sectionsOf`, pas une méthode publique de
 > plus : il y en avait une par section, chacune relisant et reparsant le
 > fichier entier, ce qui faisait sept parses complets pour un seul clic sur
 > « importer ».

@@ -39,10 +39,10 @@ public class FeasibilityResource {
      * on a créneau, so it has to see what the recurring horaires expand to.
      */
     @GET
-    public FeasibilityReport analyser() {
-        return feasibilityAnalyzer.analyser(
+    public FeasibilityReport analyze() {
+        return feasibilityAnalyzer.analyze(
                 referenceDataService.listAnimateurs(),
-                referenceDataService.listStandsResolus(),
+                referenceDataService.listSolvedStands(),
                 referenceDataService.listCreneaux());
     }
 }

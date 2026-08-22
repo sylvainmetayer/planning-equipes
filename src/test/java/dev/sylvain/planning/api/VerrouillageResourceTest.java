@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 @QuarkusTest
 class VerrouillageResourceTest {
 
-    private static String creerJour(String jour) {
+    private static String createDay(String jour) {
         return given()
                 .contentType(ContentType.JSON)
                 .body("{\"type\":\"JOUR\",\"jour\":\"" + jour + "\",\"raison\":\"Journée validée\"}")
@@ -33,7 +33,7 @@ class VerrouillageResourceTest {
 
     @Test
     void unVerrouillageJourEstCreeListePuisSupprime() {
-        String id = creerJour("2026-07-12");
+        String id = createDay("2026-07-12");
         try {
             given().when().get("/api/verrouillages")
                     .then()
@@ -51,8 +51,8 @@ class VerrouillageResourceTest {
     /** Locking twice is not an error — it is already locked. */
     @Test
     void verrouillerDeuxFoisLaMemeCibleNeCreePasDeDoublon() {
-        String premier = creerJour("2026-07-13");
-        String second = creerJour("2026-07-13");
+        String premier = createDay("2026-07-13");
+        String second = createDay("2026-07-13");
         try {
             given().when().get("/api/verrouillages")
                     .then()

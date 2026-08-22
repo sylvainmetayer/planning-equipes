@@ -49,7 +49,7 @@ public class CreneauRepository {
      * créneaux it referenced.
      */
     public void replaceCreneaux(List<Creneau> creneaux) {
-        scope.ecrire("Failed to replace timeslots", connection -> {
+        scope.write("Failed to replace timeslots", connection -> {
             try (PreparedStatement ps = scope.prepareScoped(connection,
                     "DELETE FROM poste_affectation WHERE edition_id = ?")) {
                 ps.executeUpdate();
@@ -114,12 +114,12 @@ public class CreneauRepository {
     }
 
     public boolean creneauExists(Long id) {
-        return scope.existe("creneau", id);
+        return scope.exists("creneau", id);
     }
 
     /** Inserts a new timeslot; the database generates its id, which is set back onto {@code creneau}. */
     public Creneau insertCreneau(Creneau creneau) {
-        return scope.ecrireEtRendre("Failed to save timeslot", connection -> {
+        return scope.writeAndReturn("Failed to save timeslot", connection -> {
             insertCreneauTx(connection, creneau);
             return creneau;
         });
@@ -127,13 +127,13 @@ public class CreneauRepository {
 
     /** Updates an existing timeslot in place; its id is left untouched. */
     public void updateCreneau(Creneau creneau) {
-        scope.ecrire("Failed to save timeslot " + creneau.getId(), connection -> {
+        scope.write("Failed to save timeslot " + creneau.getId(), connection -> {
             updateCreneauTx(connection, creneau);
         });
     }
 
     public void deleteCreneau(Long id) {
-        scope.supprimer("DELETE FROM creneau WHERE edition_id = ? AND id = ?", id);
+        scope.delete("DELETE FROM creneau WHERE edition_id = ? AND id = ?", id);
     }
 
     /** Inserts a new timeslot row; the generated id is set back onto {@code creneau} and returned. */

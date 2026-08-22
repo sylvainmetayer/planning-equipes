@@ -33,7 +33,7 @@ public class PlanningIcs {
     public String exportAnimateurIcs(PlanningFestival planning, String animateurId) {
         List<PosteAffectation> postes = planning.getPostes().stream()
                 .filter(poste -> poste.getAnimateur() != null && animateurId.equals(poste.getAnimateur().getId()))
-                .sorted(PlanningExportService.parCreneauPuisStand())
+                .sorted(PlanningExportService.byCreneauThenStand())
                 .toList();
 
         StringBuilder builder = new StringBuilder();
@@ -41,7 +41,7 @@ public class PlanningIcs {
                 .append("VERSION:2.0\r\n")
                 .append("PRODID:-//planning-equipes//planning//EN\r\n")
                 .append("X-WR-CALDESC:Généré le ")
-                .append(ChartePdf.GENERATED_AT_FORMAT.format(Instant.now().atZone(ZoneOffset.systemDefault())))
+                .append(PdfTheme.GENERATED_AT_FORMAT.format(Instant.now().atZone(ZoneOffset.systemDefault())))
                 .append("\r\n")
                 .append("CALSCALE:GREGORIAN\r\n");
 
@@ -77,7 +77,7 @@ public class PlanningIcs {
         // without marking the animateur busy — a day silently absent from the
         // calendar reads as a missing shift, an explicit « Repos » as a
         // planned one.
-        for (PlanningExportService.JourRepos jourRepos : PlanningExportService.joursDeRepos(planning, animateurId)) {
+        for (PlanningExportService.JourRepos jourRepos : PlanningExportService.daysOff(planning, animateurId)) {
             builder.append("BEGIN:VEVENT\r\n")
                     .append("UID:repos-").append(jourRepos.date()).append("-").append(animateurId)
                     .append("@planning-equipes\r\n")

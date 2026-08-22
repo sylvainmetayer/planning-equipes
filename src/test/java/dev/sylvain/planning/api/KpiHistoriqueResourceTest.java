@@ -32,7 +32,7 @@ class KpiHistoriqueResourceTest {
         int avant = given().when().get("/api/kpi/historique")
                 .then().statusCode(200).extract().jsonPath().getList("$").size();
 
-        planPersiste();
+        persistedPlan();
 
         JsonPath historique = given().when().get("/api/kpi/historique")
                 .then().statusCode(200).extract().jsonPath();
@@ -46,7 +46,7 @@ class KpiHistoriqueResourceTest {
 
     @Test
     void uneLigneSupprimeeDisparaitEtUnIdInconnuRepond404() throws InterruptedException {
-        planPersiste();
+        persistedPlan();
         long id = given().when().get("/api/kpi/historique")
                 .then().statusCode(200).extract().jsonPath().getLong("[0].id");
 
@@ -54,7 +54,7 @@ class KpiHistoriqueResourceTest {
         given().when().delete("/api/kpi/historique/" + id).then().statusCode(404);
     }
 
-    private void planPersiste() throws InterruptedException {
+    private void persistedPlan() throws InterruptedException {
         given().when().post("/api/planning/reset").then().statusCode(200);
         given().when().post("/api/reference-data/import-scenario?name=scenario.yml").then().statusCode(200);
         attendreSolveurLibre();

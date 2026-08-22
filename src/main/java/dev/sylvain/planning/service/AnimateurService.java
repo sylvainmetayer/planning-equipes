@@ -25,8 +25,8 @@ public class AnimateurService {
     }
 
     public Animateur create(Animateur animateur) {
-        animateur.setId(Identifiants.requis(animateur.getId(), "animateur id"));
-        valider(animateur);
+        animateur.setId(Ids.required(animateur.getId(), "animateur id"));
+        validate(animateur);
         repository.saveAnimateur(animateur);
         changeTracker.markModified();
         return animateur;
@@ -37,7 +37,7 @@ public class AnimateurService {
             throw new NotFoundException("Animateur not found: " + id);
         }
         animateur.setId(id);
-        valider(animateur);
+        validate(animateur);
         repository.saveAnimateur(animateur);
         changeTracker.markModified();
         return animateur;
@@ -49,7 +49,7 @@ public class AnimateurService {
     }
 
     /** Competences and wishes are both typologie ids, checked against the same referential. */
-    private void valider(Animateur animateur) {
+    private void validate(Animateur animateur) {
         if (animateur.getCompetences() != null) {
             typologies.validerIds(animateur.getCompetences().keySet());
         }
@@ -58,20 +58,20 @@ public class AnimateurService {
         }
     }
 
-    /** See {@link AnimateurRepository#resoudreJetonAnimateur}. */
-    public ProprietaireJeton resoudreJeton(String jeton) {
-        return repository.resoudreJetonAnimateur(jeton);
+    /** See {@link AnimateurRepository#resolveAnimateurToken}. */
+    public TokenOwner resolveToken(String token) {
+        return repository.resolveAnimateurToken(token);
     }
 
     /**
      * Rotates an animateur's espace access token. Not a reference-data change:
      * the token changes nothing the solver reads.
      */
-    public String regenererJeton(String id) {
-        String jeton = repository.regenererJetonAnimateur(id);
-        if (jeton == null) {
-            throw new ErreurMetier.Introuvable("Animateur inconnu : " + id);
+    public String regenerateToken(String id) {
+        String token = repository.regenerateAnimateurToken(id);
+        if (token == null) {
+            throw new BusinessError.NotFound("Animateur inconnu : " + id);
         }
-        return jeton;
+        return token;
     }
 }

@@ -9,13 +9,13 @@ import dev.sylvain.planning.domain.DemandeEchange;
  * send a mail. Business services fire these; they do not know that a mail is
  * what comes out, nor whether anything comes out at all.
  *
- * <p>The type is {@code sealed} on purpose: {@link RedacteurNotifications}
+ * <p>The type is {@code sealed} on purpose: {@link NotificationWriter}
  * turns a notification into a message with an exhaustive {@code switch} and no
  * {@code default} branch, so adding a case here is a <b>compile error</b>
  * until someone writes what it says. A notification that silently produced no
  * mail is exactly the failure this shape removes.</p>
  *
- * @see ExpediteurNotifications for the delivery policy (best-effort, in one place)
+ * @see NotificationDispatcher for the delivery policy (best-effort, in one place)
  */
 public sealed interface Notification {
 
@@ -23,7 +23,7 @@ public sealed interface Notification {
      * The colleague a demande targets is waiting for THEIR agreement — the
      * step that spares the admin from asking both sides.
      */
-    record CibleSollicitee(String emailCible, String demandeurNomComplet, int nombre) implements Notification {
+    record TargetSolicited(String emailCible, String demandeurNomComplet, int nombre) implements Notification {
     }
 
     /** The targeted colleague declined; the admin never had to arbitrate. */

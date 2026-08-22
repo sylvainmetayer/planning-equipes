@@ -60,11 +60,11 @@ public class TypologieRepository {
     }
 
     public boolean typologieExists(String id) {
-        return scope.existe("typologie", id);
+        return scope.exists("typologie", id);
     }
 
     public void saveTypologie(TypologieItem typologie) {
-        scope.ecrire("Failed to save typology " + typologie.id(), connection -> {
+        scope.write("Failed to save typology " + typologie.id(), connection -> {
             // Only one typologie may be ninja *per edition*: demote the previous
             // holder in the same transaction, otherwise the partial unique index
             // (V31, scoped per edition by V33) rejects the insert and the user
@@ -86,10 +86,10 @@ public class TypologieRepository {
     }
 
     public void deleteTypologie(String id) {
-        scope.supprimer("DELETE FROM typologie WHERE edition_id = ? AND id = ?", id);
+        scope.delete("DELETE FROM typologie WHERE edition_id = ? AND id = ?", id);
     }
 
-    public boolean typologieEnUsage(String id) {
+    public boolean typologieInUse(String id) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection,
                         """

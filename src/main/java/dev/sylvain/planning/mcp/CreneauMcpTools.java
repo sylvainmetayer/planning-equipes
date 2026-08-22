@@ -1,6 +1,6 @@
 package dev.sylvain.planning.mcp;
 
-import dev.sylvain.planning.service.ErreurMetier;
+import dev.sylvain.planning.service.BusinessError;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -10,10 +10,10 @@ import java.util.NoSuchElementException;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.ModeGrilleCreneaux;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
-import dev.sylvain.planning.service.GrilleCreneauxService;
-import dev.sylvain.planning.service.GrilleCreneauxService.DiagnosticGrille;
-import dev.sylvain.planning.service.GrilleCreneauxService.RapportGrille;
-import dev.sylvain.planning.service.GrilleCreneauxService.RegleRecurrence;
+import dev.sylvain.planning.service.CreneauGridService;
+import dev.sylvain.planning.service.CreneauGridService.DiagnosticGrille;
+import dev.sylvain.planning.service.CreneauGridService.RapportGrille;
+import dev.sylvain.planning.service.CreneauGridService.RegleRecurrence;
 import dev.sylvain.planning.service.ReferenceDataService;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
@@ -26,11 +26,11 @@ import jakarta.inject.Inject;
  * vacations, in place (issue #172: the edition holds one grid).
  *
  * <p>Beyond the unit CRUD, this is where a grid gets built from a sentence:
- * "de 9h à 12h et de 14h à 18h, tous les jours sauf le week-end" is one
+ * "de 9h à 12h et de 14h à 18h, all les jours sauf le week-end" is one
  * {@link RegleRecurrence}, not forty {@code creer_creneau} calls. Two
  * safeguards come with that leverage — a preview that writes nothing, and a
  * validation that names the mistakes a bulk write makes cheap to introduce
- * and expensive to spot (see {@link GrilleCreneauxService}).</p>
+ * and expensive to spot (see {@link CreneauGridService}).</p>
  */
 @EditionCiblee
 @ApplicationScoped
@@ -40,7 +40,7 @@ public class CreneauMcpTools {
     ReferenceDataService referenceDataService;
 
     @Inject
-    GrilleCreneauxService grilleCreneauxService;
+    CreneauGridService grilleCreneauxService;
 
     @Tool(description = "Liste les créneaux de l'édition — ceux sur lesquels portera la prochaine résolution.")
     List<CreneauView> lister_creneaux(
@@ -67,7 +67,7 @@ public class CreneauMcpTools {
             @ToolArg(description = "Heure de début (HH:MM)", required = false) String heureDebut,
             @ToolArg(description = "Heure de fin (HH:MM)", required = false) String heureFin,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        Creneau creneau = trouverCreneau(id);
+        Creneau creneau = findCreneau(id);
         if (date != null) {
             creneau.setDate(McpArgs.date(date, "date"));
         }
@@ -87,7 +87,7 @@ public class CreneauMcpTools {
         return new SuppressionResult(String.valueOf(id), true);
     }
 
-    /* ------------------------ Grille : mode et contrôle ---------------------- */
+    /* ------------------------- Grid: mode and checks ------------------------- */
 
     @Tool(description = "Décrit la grille de créneaux en place : combien, sur quelles dates, et si ce sont des "
             + "AMPLITUDES journalières (à découper en vacations) ou des VACATIONS déjà solvables. Appeler cet "
@@ -96,7 +96,7 @@ public class CreneauMcpTools {
             + "il vaut false, demander confirmation à l'utilisateur plutôt que de supposer.")
     DiagnosticGrille diagnostiquer_grille_creneaux(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        return GrilleCreneauxService.diagnostiquer(referenceDataService.listCreneaux(),
+        return CreneauGridService.diagnose(referenceDataService.listCreneaux(),
                 referenceDataService.getParametresDecoupage());
     }
 
@@ -109,10 +109,10 @@ public class CreneauMcpTools {
     RapportGrille valider_creneaux(
             @ToolArg(description = "AMPLITUDES (journées à découper) ou VACATIONS (vacations finales)") String mode,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        return validerGrille(referenceDataService.listCreneaux(), modeObligatoire(mode));
+        return validateGrid(referenceDataService.listCreneaux(), modeObligatoire(mode));
     }
 
-    /* --------------------------- Grille : récurrence ------------------------- */
+    /* ----------------------------- Grid: recurrence -------------------------- */
 
     @Tool(description = "Prévisualise les créneaux qu'une règle récurrente produirait, et contrôle la grille qui "
             + "en résulterait — sans RIEN écrire. À utiliser systématiquement avant creer_creneaux_recurrents : "
@@ -134,12 +134,12 @@ public class CreneauMcpTools {
             @ToolArg(description = "Dates (AAAA-MM-JJ) à exclure quel que soit le sélecteur", required = false) List<String> exclusions,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         ModeGrilleCreneaux modeGrille = modeObligatoire(mode);
-        List<Creneau> generes = GrilleCreneauxService.genererRecurrence(
+        List<Creneau> generes = CreneauGridService.generateRecurrence(
                 regle(jours, dateDebut, dateFin, joursSemaine, dates, exclusions, fenetres));
         List<Creneau> resultante = new ArrayList<>(referenceDataService.listCreneaux());
         resultante.addAll(generes);
         return new PrevisualisationRecurrence(generes.size(), generes.stream().map(CreneauMcpTools::toView).toList(),
-                validerGrille(resultante, modeGrille));
+                validateGrid(resultante, modeGrille));
     }
 
     @Tool(description = "Crée les créneaux d'une règle récurrente et renvoie le contrôle de cohérence de la "
@@ -157,35 +157,35 @@ public class CreneauMcpTools {
             @ToolArg(description = "Dates (AAAA-MM-JJ) à exclure quel que soit le sélecteur", required = false) List<String> exclusions,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         ModeGrilleCreneaux modeGrille = modeObligatoire(mode);
-        List<Creneau> generes = GrilleCreneauxService.genererRecurrence(
+        List<Creneau> generes = CreneauGridService.generateRecurrence(
                 regle(jours, dateDebut, dateFin, joursSemaine, dates, exclusions, fenetres));
         List<Creneau> crees = referenceDataService.createCreneaux(generes);
         return new PrevisualisationRecurrence(crees.size(), crees.stream().map(CreneauMcpTools::toView).toList(),
-                validerGrille(referenceDataService.listCreneaux(), modeGrille));
+                validateGrid(referenceDataService.listCreneaux(), modeGrille));
     }
 
     @Tool(description = "Supprime en une fois les créneaux que les filtres désignent — l'inverse de "
             + "creer_creneaux_recurrents, pour reprendre une règle qui s'est trompée. DESTRUCTIF. Au moins un "
             + "filtre est exigé ; pour vider toute la grille, passer explicitement tous=true.")
-    SuppressionLotResult supprimer_creneaux(
+    BulkDeleteResult supprimer_creneaux(
             @ToolArg(description = "Ne supprimer qu'à partir de cette date (AAAA-MM-JJ)", required = false) String dateDebut,
             @ToolArg(description = "Ne supprimer que jusqu'à cette date (AAAA-MM-JJ)", required = false) String dateFin,
             @ToolArg(description = "Ne supprimer que les créneaux commençant à cette heure (HH:MM)", required = false) String heureDebut,
-            @ToolArg(description = "Supprimer TOUS les créneaux de l'édition ; à ne passer que sur demande explicite", required = false) Boolean tous,
+            @ToolArg(description = "Supprimer TOUS les créneaux de l'édition ; à ne passer que sur demande explicite", required = false) Boolean all,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         LocalDate debut = McpArgs.date(dateDebut, "dateDebut");
         LocalDate fin = McpArgs.date(dateFin, "dateFin");
         LocalTime heure = McpArgs.heure(heureDebut, "heureDebut");
-        boolean toutSupprimer = Boolean.TRUE.equals(tous);
+        boolean toutSupprimer = Boolean.TRUE.equals(all);
         if (!toutSupprimer && debut == null && fin == null && heure == null) {
-            throw new ErreurMetier.Invalide("Aucun filtre fourni : préciser dateDebut, dateFin ou heureDebut, "
+            throw new BusinessError.Invalid("Aucun filtre fourni : préciser dateDebut, dateFin ou heureDebut, "
                     + "ou passer tous=true pour vider délibérément toute la grille.");
         }
         List<Creneau> cibles = referenceDataService.listCreneaux().stream()
                 .filter(creneau -> toutSupprimer || correspond(creneau, debut, fin, heure))
                 .toList();
         int supprimes = referenceDataService.deleteCreneaux(cibles.stream().map(Creneau::getId).toList());
-        return new SuppressionLotResult(supprimes, referenceDataService.listCreneaux().size());
+        return new BulkDeleteResult(supprimes, referenceDataService.listCreneaux().size());
     }
 
     private static boolean correspond(Creneau creneau, LocalDate debut, LocalDate fin, LocalTime heure) {
@@ -198,14 +198,14 @@ public class CreneauMcpTools {
         return heure == null || heure.equals(creneau.getHeureDebut());
     }
 
-    /* ------------------------------- Découpage ------------------------------ */
+    /* -------------------------------- Slicing ------------------------------- */
 
     @Tool(description = "Prévisualise le découpage : les vacations que les créneaux actuels de l'édition "
             + "(lus comme des amplitudes) produiraient avec les paramètres de découpage courants. "
             + "Ne persiste rien.")
     List<CreneauView> previsualiser_decoupage(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        return referenceDataService.previsualiserDecoupage().stream()
+        return referenceDataService.previewDecoupage().stream()
                 .map(CreneauMcpTools::toView)
                 .toList();
     }
@@ -215,7 +215,7 @@ public class CreneauMcpTools {
             + "avec d'autres paramètres, ré-importer le scénario source.")
     List<CreneauView> generer_decoupage(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        referenceDataService.genererDecoupage();
+        referenceDataService.generateDecoupage();
         // Not lister_creneaux(edition): a self-invocation bypasses
         // EditionCibleeInterceptor, and this call already runs in the edition
         // it bound.
@@ -232,7 +232,7 @@ public class CreneauMcpTools {
      */
     private static ModeGrilleCreneaux modeObligatoire(String mode) {
         if (mode == null || mode.isBlank()) {
-            throw new ErreurMetier.Invalide("mode est requis : AMPLITUDES (journées à découper en vacations) "
+            throw new BusinessError.Invalid("mode est requis : AMPLITUDES (journées à découper en vacations) "
                     + "ou VACATIONS (vacations finales, solvables telles quelles). Demander à l'utilisateur "
                     + "laquelle des deux il veut ; diagnostiquer_grille_creneaux indique ce que contient déjà "
                     + "l'édition.");
@@ -252,8 +252,8 @@ public class CreneauMcpTools {
                 McpArgs.fenetres(fenetres, true));
     }
 
-    private RapportGrille validerGrille(List<Creneau> creneaux, ModeGrilleCreneaux mode) {
-        return grilleCreneauxService.valider(creneaux, referenceDataService.listStandsResolus(),
+    private RapportGrille validateGrid(List<Creneau> creneaux, ModeGrilleCreneaux mode) {
+        return grilleCreneauxService.validate(creneaux, referenceDataService.listSolvedStands(),
                 referenceDataService.listAnimateurs(), mode, referenceDataService.getParametresDecoupage(),
                 referenceDataService.getParametresLegaux());
     }
@@ -262,7 +262,7 @@ public class CreneauMcpTools {
         return referenceDataService.listCreneaux().stream().map(CreneauMcpTools::toView).toList();
     }
 
-    private Creneau trouverCreneau(long id) {
+    private Creneau findCreneau(long id) {
         return referenceDataService.listCreneaux().stream()
                 .filter(creneau -> creneau.getId() != null && creneau.getId() == id)
                 .findFirst()
@@ -281,6 +281,6 @@ public class CreneauMcpTools {
     public record PrevisualisationRecurrence(int nombreGeneres, List<CreneauView> creneaux, RapportGrille controle) {
     }
 
-    public record SuppressionLotResult(int supprimes, int restants) {
+    public record BulkDeleteResult(int supprimes, int restants) {
     }
 }

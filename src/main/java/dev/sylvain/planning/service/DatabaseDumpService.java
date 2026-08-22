@@ -121,10 +121,10 @@ public class DatabaseDumpService {
     public int importDump(String script) {
         List<String> statements = splitStatements(script);
         if (statements.isEmpty()) {
-            throw new ErreurMetier.Invalide("The SQL script does not contain any statement");
+            throw new BusinessError.Invalid("The SQL script does not contain any statement");
         }
         statements.forEach(DatabaseDumpService::checkStatementIsAllowed);
-        return scope.ecrireEtRendre("Failed to import the database", connection -> {
+        return scope.writeAndReturn("Failed to import the database", connection -> {
             try (Statement statement = connection.createStatement()) {
                 for (String sql : statements) {
                     statement.execute(sql);
@@ -134,7 +134,7 @@ public class DatabaseDumpService {
             } catch (SQLException e) {
                 // Rolled back by the caller, which lets this one through unwrapped:
                 // a rejected script is the operator's mistake (400), not a database failure.
-                throw new ErreurMetier.Invalide("The SQL script could not be replayed: " + e.getMessage(), e);
+                throw new BusinessError.Invalid("The SQL script could not be replayed: " + e.getMessage(), e);
             }
         });
     }
@@ -268,12 +268,12 @@ public class DatabaseDumpService {
         String normalized = statement.replaceAll("\\s+", " ").trim().toLowerCase(Locale.ROOT);
         var matcher = STATEMENT_PATTERN.matcher(normalized);
         if (!matcher.find()) {
-            throw new ErreurMetier.Invalide(
+            throw new BusinessError.Invalid(
                     "Only INSERT, DELETE and TRUNCATE statements are allowed, found: " + preview(statement));
         }
         String table = matcher.group(2);
         if (!ALLOWED_TABLES.contains(table)) {
-            throw new ErreurMetier.Invalide("Table not allowed in an imported dump: " + table);
+            throw new BusinessError.Invalid("Table not allowed in an imported dump: " + table);
         }
     }
 

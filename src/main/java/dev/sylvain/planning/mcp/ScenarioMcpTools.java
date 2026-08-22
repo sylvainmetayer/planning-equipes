@@ -1,12 +1,12 @@
 package dev.sylvain.planning.mcp;
 
-import dev.sylvain.planning.service.ErreurMetier;
+import dev.sylvain.planning.service.BusinessError;
 import java.io.IOException;
 import java.util.List;
 
 import dev.sylvain.planning.api.ReferenceDataResource.ImportScenarioResult;
 import dev.sylvain.planning.domain.Edition;
-import dev.sylvain.planning.api.ErreurValidation;
+import dev.sylvain.planning.api.ValidationError;
 import dev.sylvain.planning.api.ReferenceDataResource;
 import dev.sylvain.planning.scenario.ScenarioValidator;
 import dev.sylvain.planning.service.EditionService;
@@ -57,7 +57,7 @@ public class ScenarioMcpTools {
 
     @Tool(description = "Liste les scénarios livrés avec l'application, importables par leur nom.")
     List<String> lister_scenarios() {
-        return planningService.listerScenarios();
+        return planningService.listScenarios();
     }
 
     @Tool(description = "Importe un scénario livré dans les données de référence : remplace stands, créneaux, "
@@ -72,9 +72,9 @@ public class ScenarioMcpTools {
             + "Opération destructive : remplace les données de référence existantes.")
     ImportResult importer_scenario_yaml(@ToolArg(description = "Contenu YAML du scénario") String yaml,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        Response response = referenceDataResource.importScenarioFichier(yaml);
+        Response response = referenceDataResource.importScenarioFile(yaml);
         if (response.getStatus() >= 400) {
-            throw new ErreurMetier.Invalide("Scénario invalide : " + messageErreur(response));
+            throw new BusinessError.Invalid("Scénario invalide : " + messageErreur(response));
         }
         return toImportResult(response);
     }
@@ -86,7 +86,7 @@ public class ScenarioMcpTools {
             return new ValidationResult(false, List.of("Le fichier est vide."));
         }
         try {
-            List<String> erreurs = ScenarioValidator.valider(yaml);
+            List<String> erreurs = ScenarioValidator.validate(yaml);
             return new ValidationResult(erreurs.isEmpty(), erreurs);
         } catch (IOException e) {
             String message = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
@@ -106,23 +106,23 @@ public class ScenarioMcpTools {
     }
 
     private ImportResult toImportResult(Response response) {
-        if (response.getEntity() instanceof ImportScenarioResult resultat && resultat.editionId() != null) {
+        if (response.getEntity() instanceof ImportScenarioResult result && result.editionId() != null) {
             // The scenario's own `edition:` section wins over the call's
             // `edition` argument, and may even have created the edition it
             // names: an import that says nothing about where it landed is
             // exactly the silence issue #181 closes.
-            return new ImportResult(true, resultat.decoupageAuto(), resultat.editionId(), resultat.editionNom(),
-                    Boolean.TRUE.equals(resultat.editionCreee()));
+            return new ImportResult(true, result.decoupageAuto(), result.editionId(), result.editionNom(),
+                    Boolean.TRUE.equals(result.editionCreee()));
         }
-        boolean decoupageAuto = response.getEntity() instanceof ImportScenarioResult resultat
-                && resultat.decoupageAuto();
+        boolean decoupageAuto = response.getEntity() instanceof ImportScenarioResult result
+                && result.decoupageAuto();
         Edition courante = editionService.editionCourante();
         return new ImportResult(true, decoupageAuto, courante.getId(), courante.getNom(), false);
     }
 
     private static String messageErreur(Response response) {
         Object entity = response.getEntity();
-        if (entity instanceof ErreurValidation erreur) {
+        if (entity instanceof ValidationError erreur) {
             return erreur.message();
         }
         return String.valueOf(entity);

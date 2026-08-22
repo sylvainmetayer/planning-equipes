@@ -45,10 +45,10 @@ class ComparateurSnapshotsResourceTest {
 
     @Test
     void compareDeuxInstantanesSansJamaisDeclencherDeResolution() throws InterruptedException {
-        planPersiste(DEFAUT);
-        long base = capturer(DEFAUT, "Base");
+        persistedPlan(DEFAUT);
+        long base = capture(DEFAUT, "Base");
         solve(DEFAUT);
-        long variante = capturer(DEFAUT, "Variante");
+        long variante = capture(DEFAUT, "Variante");
 
         JsonPath comparaison = comparer(DEFAUT, String.valueOf(base), String.valueOf(variante));
 
@@ -70,8 +70,8 @@ class ComparateurSnapshotsResourceTest {
 
     @Test
     void compareUnInstantaneAuPlanCourant() throws InterruptedException {
-        planPersiste(DEFAUT);
-        long base = capturer(DEFAUT, "Avant retouche");
+        persistedPlan(DEFAUT);
+        long base = capture(DEFAUT, "Avant retouche");
 
         JsonPath comparaison = comparer(DEFAUT, String.valueOf(base), "courant");
 
@@ -86,12 +86,12 @@ class ComparateurSnapshotsResourceTest {
 
     @Test
     void compareDeuxEditionsEtSignaleQueLesReferentielsDifferent() throws InterruptedException {
-        planPersiste(DEFAUT);
-        long base = capturer(DEFAUT, "Édition par défaut");
+        persistedPlan(DEFAUT);
+        long base = capture(DEFAUT, "Édition par défaut");
 
-        creerEdition("VARIANTE-2026", "Variante 2026");
-        planPersiste("VARIANTE-2026");
-        long variante = capturer("VARIANTE-2026", "Édition variante");
+        createEdition("VARIANTE-2026", "Variante 2026");
+        persistedPlan("VARIANTE-2026");
+        long variante = capture("VARIANTE-2026", "Édition variante");
 
         // Asked from the default edition: the comparator reads across editions
         // on purpose, otherwise the variant would be invisible from here.
@@ -129,14 +129,14 @@ class ComparateurSnapshotsResourceTest {
                 .extract().jsonPath();
     }
 
-    private void creerEdition(String id, String nom) {
+    private void createEdition(String id, String nom) {
         given().contentType(ContentType.JSON)
                 .body("{\"id\":\"" + id + "\",\"nom\":\"" + nom + "\"}")
                 .when().post("/api/editions")
                 .then().statusCode(200);
     }
 
-    private long capturer(String editionId, String libelle) {
+    private long capture(String editionId, String libelle) {
         return given().header(HEADER, editionId)
                 .contentType(ContentType.JSON)
                 .body("{\"libelle\":\"" + libelle + "\"}")
@@ -146,7 +146,7 @@ class ComparateurSnapshotsResourceTest {
                 .extract().jsonPath().getLong("id");
     }
 
-    private void planPersiste(String editionId) throws InterruptedException {
+    private void persistedPlan(String editionId) throws InterruptedException {
         given().header(HEADER, editionId).when().post("/api/planning/reset").then().statusCode(200);
         given().header(HEADER, editionId)
                 .when().post("/api/reference-data/import-scenario?name=scenario.yml")

@@ -39,14 +39,14 @@ public class DemandeEchangeResource {
     /** Every demande of the current edition, most recent first, all statuts. */
     @GET
     public List<DemandeEchangeView> list() {
-        return espaceAnimateurService.versVues(demandeEchangeService.lister());
+        return espaceAnimateurService.toViews(demandeEchangeService.list());
     }
 
     /** Whether animateurs may currently submit demandes (open by default). */
     @GET
     @Path("/configuration")
     public ConfigurationFoire configuration() {
-        return new ConfigurationFoire(demandeEchangeService.estFoireOuverte());
+        return new ConfigurationFoire(demandeEchangeService.isFoireOpen());
     }
 
     /**
@@ -56,9 +56,9 @@ public class DemandeEchangeResource {
      */
     @PUT
     @Path("/configuration")
-    public ConfigurationFoire configurer(ConfigurationFoire configuration) {
-        demandeEchangeService.ouvrirFoire(configuration != null && configuration.foireOuverte());
-        return new ConfigurationFoire(demandeEchangeService.estFoireOuverte());
+    public ConfigurationFoire configure(ConfigurationFoire configuration) {
+        demandeEchangeService.openFoire(configuration != null && configuration.foireOuverte());
+        return new ConfigurationFoire(demandeEchangeService.isFoireOpen());
     }
 
     /** The single admin switch of the foire au planning. */
@@ -80,20 +80,20 @@ public class DemandeEchangeResource {
 
     @POST
     @Path("/{id}/acceptation")
-    public Response accepter(@PathParam("id") String id, Decision decision) {
-        return Response.ok(vue(demandeEchangeService.accepter(id,
+    public Response accept(@PathParam("id") String id, Decision decision) {
+        return Response.ok(view(demandeEchangeService.accept(id,
                 decision == null ? null : decision.commentaire()))).build();
     }
 
     @POST
     @Path("/{id}/refus")
-    public Response refuser(@PathParam("id") String id, Decision decision) {
-        return Response.ok(vue(demandeEchangeService.refuser(id,
+    public Response refuse(@PathParam("id") String id, Decision decision) {
+        return Response.ok(view(demandeEchangeService.refuse(id,
                 decision == null ? null : decision.commentaire()))).build();
     }
 
-    private DemandeEchangeView vue(DemandeEchange demande) {
-        return espaceAnimateurService.versVues(List.of(demande)).get(0);
+    private DemandeEchangeView view(DemandeEchange demande) {
+        return espaceAnimateurService.toViews(List.of(demande)).get(0);
     }
 
     /** Optional admin comment carried by a decision (the reason of a refusal, typically). */

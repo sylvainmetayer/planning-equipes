@@ -18,12 +18,12 @@ import dev.sylvain.planning.domain.ModeHoraire;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.HoraireStandResolver.SourceHoraire;
-import dev.sylvain.planning.service.OuvertureStandsAnalyzer.Anomalie;
+import dev.sylvain.planning.service.OuvertureStandsAnalyzer.Anomaly;
 import dev.sylvain.planning.service.OuvertureStandsAnalyzer.CelluleJour;
 import dev.sylvain.planning.service.OuvertureStandsAnalyzer.EtatOuverture;
 import dev.sylvain.planning.service.OuvertureStandsAnalyzer.LigneStand;
 import dev.sylvain.planning.service.OuvertureStandsAnalyzer.RapportOuvertures;
-import dev.sylvain.planning.service.OuvertureStandsAnalyzer.TypeAnomalie;
+import dev.sylvain.planning.service.OuvertureStandsAnalyzer.AnomalyType;
 
 /**
  * {@link OuvertureStandsAnalyzer}: the stand × jour grid the "Ouvertures des
@@ -50,16 +50,16 @@ class OuvertureStandsAnalyzerTest {
         return stand;
     }
 
-    private static RapportOuvertures analyser(List<Stand> stands, List<Creneau> creneaux) {
-        HoraireStandResolver.appliquer(stands, creneaux);
-        return OuvertureStandsAnalyzer.analyser(stands, creneaux);
+    private static RapportOuvertures analyze(List<Stand> stands, List<Creneau> creneaux) {
+        HoraireStandResolver.apply(stands, creneaux);
+        return OuvertureStandsAnalyzer.analyze(stands, creneaux);
     }
 
     @Test
     void unStandSansHoraireEstOuvertSurToutesLesAmplitudes() {
         Stand stand = stand("LIBRE");
 
-        RapportOuvertures rapport = analyser(List.of(stand), deuxJours());
+        RapportOuvertures rapport = analyze(List.of(stand), deuxJours());
 
         assertThat(rapport.jours()).hasSize(2);
         assertThat(rapport.jours().get(0).minutes()).isEqualTo(600);
@@ -82,10 +82,10 @@ class OuvertureStandsAnalyzerTest {
     @Test
     void uneRegleDonneUneCellulePartielleAttribueeALaRegle() {
         Stand stand = stand("APREM");
-        stand.setHoraires(List.of(HoraireStand.tousLesJours(ModeHoraire.OUVERTURE,
+        stand.setHoraires(List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE,
                 new FenetreHoraire(LocalTime.of(14, 0), null))));
 
-        RapportOuvertures rapport = analyser(List.of(stand), deuxJours());
+        RapportOuvertures rapport = analyze(List.of(stand), deuxJours());
 
         CelluleJour cellule = rapport.stands().get(0).jours().get(0);
         assertThat(cellule.etat()).isEqualTo(EtatOuverture.OUVERT_PARTIEL);
@@ -101,11 +101,11 @@ class OuvertureStandsAnalyzerTest {
     @Test
     void uneExceptionDateeEstAttribueeALException() {
         Stand stand = stand("EXCEPTION");
-        stand.setHoraires(List.of(HoraireStand.tousLesJours(ModeHoraire.OUVERTURE,
+        stand.setHoraires(List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE,
                 new FenetreHoraire(LocalTime.of(14, 0), null))));
         stand.getIndisponibilites().add(new IndisponibiliteStand(null, JOUR_1, LocalTime.of(10, 0), null, "Férié"));
 
-        RapportOuvertures rapport = analyser(List.of(stand), deuxJours());
+        RapportOuvertures rapport = analyze(List.of(stand), deuxJours());
 
         List<CelluleJour> jours = rapport.stands().get(0).jours();
         assertThat(jours.get(0).source()).isEqualTo(SourceHoraire.EXCEPTION);
@@ -118,16 +118,16 @@ class OuvertureStandsAnalyzerTest {
     @Test
     void uneCoupureMeridienneDonneDeuxFenetres() {
         Stand stand = stand("BOURSE");
-        stand.setHoraires(List.of(HoraireStand.tousLesJours(ModeHoraire.OUVERTURE,
+        stand.setHoraires(List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE,
                 new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(12, 0)),
                 new FenetreHoraire(LocalTime.of(14, 0), null))));
 
-        RapportOuvertures rapport = analyser(List.of(stand), deuxJours());
+        RapportOuvertures rapport = analyze(List.of(stand), deuxJours());
 
         CelluleJour cellule = rapport.stands().get(0).jours().get(0);
         assertThat(cellule.fenetres()).hasSize(2);
         assertThat(cellule.minutesOuvertes()).isEqualTo(120 + 360);
-        // One seat per open segment, like construirePostes.
+        // One seat per open segment, like buildPostes.
         assertThat(cellule.postes()).isEqualTo(2);
     }
 
@@ -142,7 +142,7 @@ class OuvertureStandsAnalyzerTest {
                 new Creneau(1L, 1, JOUR_1, LocalTime.of(10, 0), LocalTime.of(15, 0)),
                 new Creneau(2L, 1, JOUR_1, LocalTime.of(14, 30), LocalTime.of(20, 0))));
 
-        RapportOuvertures rapport = analyser(List.of(stand("CONTINU")), vacations);
+        RapportOuvertures rapport = analyze(List.of(stand("CONTINU")), vacations);
 
         assertThat(rapport.jours().get(0).minutes()).isEqualTo(600);
         CelluleJour cellule = rapport.stands().get(0).jours().get(0);
@@ -158,16 +158,16 @@ class OuvertureStandsAnalyzerTest {
     @Test
     void unStandFermePartoutEstSignale() {
         Stand stand = stand("ABSENT");
-        stand.setHoraires(List.of(HoraireStand.tousLesJours(ModeHoraire.FERMETURE,
+        stand.setHoraires(List.of(HoraireStand.everyDay(ModeHoraire.FERMETURE,
                 new FenetreHoraire(LocalTime.of(0, 0), null))));
 
-        RapportOuvertures rapport = analyser(List.of(stand), deuxJours());
+        RapportOuvertures rapport = analyze(List.of(stand), deuxJours());
 
         assertThat(rapport.standsJamaisOuverts()).isEqualTo(1);
         assertThat(rapport.postesTotal()).isZero();
         assertThat(rapport.anomalies())
-                .extracting(Anomalie::type)
-                .contains(TypeAnomalie.STAND_JAMAIS_OUVERT);
+                .extracting(Anomaly::type)
+                .contains(AnomalyType.STAND_JAMAIS_OUVERT);
     }
 
     /**
@@ -183,11 +183,11 @@ class OuvertureStandsAnalyzerTest {
         stand.getIndisponibilites()
                 .add(new IndisponibiliteStand(null, JOUR_1, LocalTime.of(10, 0), LocalTime.of(23, 59), null));
 
-        RapportOuvertures rapport = analyser(List.of(stand), jusquaMinuit);
+        RapportOuvertures rapport = analyze(List.of(stand), jusquaMinuit);
 
         assertThat(rapport.stands().get(0).jours().get(0).minutesOuvertes()).isEqualTo(1);
         assertThat(rapport.anomalies())
-                .filteredOn(anomalie -> anomalie.type() == TypeAnomalie.SEGMENT_TROP_COURT)
+                .filteredOn(anomalie -> anomalie.type() == AnomalyType.SEGMENT_TROP_COURT)
                 .singleElement()
                 .satisfies(anomalie -> {
                     assertThat(anomalie.standId()).isEqualTo("UNE-MINUTE");
@@ -204,14 +204,14 @@ class OuvertureStandsAnalyzerTest {
     @Test
     void uneOuvertureCourteMaisVoulueNEstPasSignalee() {
         Stand stand = stand("DEUX-HEURES");
-        stand.setHoraires(List.of(HoraireStand.tousLesJours(ModeHoraire.OUVERTURE,
+        stand.setHoraires(List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE,
                 new FenetreHoraire(LocalTime.of(14, 0), LocalTime.of(16, 0)))));
 
-        RapportOuvertures rapport = analyser(List.of(stand), deuxJours());
+        RapportOuvertures rapport = analyze(List.of(stand), deuxJours());
 
         assertThat(rapport.stands().get(0).jours().get(0).minutesOuvertes()).isEqualTo(120);
         assertThat(rapport.anomalies())
-                .filteredOn(anomalie -> anomalie.type() == TypeAnomalie.SEGMENT_TROP_COURT)
+                .filteredOn(anomalie -> anomalie.type() == AnomalyType.SEGMENT_TROP_COURT)
                 .isEmpty();
     }
 
@@ -222,10 +222,10 @@ class OuvertureStandsAnalyzerTest {
         stand.getOuvertures()
                 .add(new OuvertureStand(null, JOUR_1, LocalTime.of(21, 0), LocalTime.of(23, 0), null));
 
-        RapportOuvertures rapport = analyser(List.of(stand), deuxJours());
+        RapportOuvertures rapport = analyze(List.of(stand), deuxJours());
 
         assertThat(rapport.anomalies())
-                .filteredOn(anomalie -> anomalie.type() == TypeAnomalie.FENETRE_SANS_EFFET)
+                .filteredOn(anomalie -> anomalie.type() == AnomalyType.FENETRE_SANS_EFFET)
                 .singleElement()
                 .satisfies(anomalie -> assertThat(anomalie.date()).isEqualTo(JOUR_1));
         // And the consequence: that day the stand is closed, despite the opening entered.
@@ -238,14 +238,14 @@ class OuvertureStandsAnalyzerTest {
         stand.getOuvertures()
                 .add(new OuvertureStand(null, JOUR_1, LocalTime.of(14, 0), LocalTime.of(16, 0), null));
 
-        assertThat(analyser(List.of(stand), deuxJours()).anomalies())
-                .filteredOn(anomalie -> anomalie.type() == TypeAnomalie.FENETRE_SANS_EFFET)
+        assertThat(analyze(List.of(stand), deuxJours()).anomalies())
+                .filteredOn(anomalie -> anomalie.type() == AnomalyType.FENETRE_SANS_EFFET)
                 .isEmpty();
     }
 
     @Test
     void sansCreneauLeRapportEstVide() {
-        RapportOuvertures rapport = analyser(List.of(stand("SEUL")), new ArrayList<>());
+        RapportOuvertures rapport = analyze(List.of(stand("SEUL")), new ArrayList<>());
 
         assertThat(rapport.jours()).isEmpty();
         assertThat(rapport.postesTotal()).isZero();

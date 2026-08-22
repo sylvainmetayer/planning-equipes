@@ -21,7 +21,7 @@ import io.quarkus.mailer.Mail;
  * accompany an operation, it <i>is</i> the operation — without it the animateur
  * has no code and cannot get in, or the administrator believes they have
  * delivered a planning that never left. The best-effort policy is tested
- * separately, in {@code ExpediteurNotificationsTest}.</p>
+ * separately, in {@code NotificationDispatcherTest}.</p>
  */
 class MailServiceTest {
 
@@ -32,14 +32,14 @@ class MailServiceTest {
     void construireService() {
         service = new MailService();
         service.mailer = mails -> envoyes.addAll(List.of(mails));
-        service.adresseAdmin = new AdresseAdministrateur(Optional.of("admin@example.org"));
+        service.adminAddress = new AdminAddress(Optional.of("admin@example.org"));
     }
 
     @Test
     void lEnvoiDuPlanningJointLePdfEtLeLienEspace() {
         byte[] pdf = new byte[] { 1, 2, 3 };
 
-        service.envoyerPlanningIndividuel("alice@example.org", "Alice",
+        service.sendIndividualPlanning("alice@example.org", "Alice",
                 "https://planning.example.org/animateur/jeton-1", pdf, "planning-Alice-Martin.pdf");
 
         assertThat(envoyes).hasSize(1);
@@ -58,7 +58,7 @@ class MailServiceTest {
     /** With no public URL (no espace link), the mail leaves without the link. */
     @Test
     void lEnvoiDuPlanningSansLienEspaceResteComplet() {
-        service.envoyerPlanningIndividuel("alice@example.org", null, null,
+        service.sendIndividualPlanning("alice@example.org", null, null,
                 new byte[] { 1 }, "planning.pdf");
 
         assertThat(envoyes).hasSize(1);
@@ -70,7 +70,7 @@ class MailServiceTest {
     /** The access code leaves in clear in the body, with how long it is valid. */
     @Test
     void leCodeDAccesEstEnvoyeAvecSaDureeDeValidite() {
-        service.envoyerCodeAcces("alice@example.org", "Alice", "042137");
+        service.sendAccessCode("alice@example.org", "Alice", "042137");
 
         assertThat(envoyes).hasSize(1);
         assertThat(envoyes.get(0).getSubject()).contains("code d'accès");
@@ -87,7 +87,7 @@ class MailServiceTest {
             throw new IllegalStateException("SMTP down");
         };
 
-        assertThatThrownBy(() -> service.envoyerCodeAcces("alice@example.org", "Alice", "042137"))
+        assertThatThrownBy(() -> service.sendAccessCode("alice@example.org", "Alice", "042137"))
                 .isInstanceOf(IllegalStateException.class);
     }
 
@@ -102,7 +102,7 @@ class MailServiceTest {
         };
 
         assertThatThrownBy(() -> service
-                .envoyerPlanningIndividuel("alice@example.org", "Alice", null, new byte[] { 1 }, "planning.pdf"))
+                .sendIndividualPlanning("alice@example.org", "Alice", null, new byte[] { 1 }, "planning.pdf"))
                 .isInstanceOf(IllegalStateException.class);
     }
 
@@ -113,14 +113,14 @@ class MailServiceTest {
             throw new IllegalStateException("SMTP down");
         };
 
-        assertThatThrownBy(() -> service.envoyerMailTest()).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> service.sendTestMail()).isInstanceOf(IllegalStateException.class);
     }
 
     @Test
     void sansAdresseAdminLeMailDeTestLeDitAuLieuDePartir() {
-        service.adresseAdmin = new AdresseAdministrateur(Optional.empty());
+        service.adminAddress = new AdminAddress(Optional.empty());
 
-        assertThatThrownBy(() -> service.envoyerMailTest())
+        assertThatThrownBy(() -> service.sendTestMail())
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("MAIL_ADMIN");
         assertThat(envoyes).isEmpty();

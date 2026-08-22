@@ -22,8 +22,8 @@ public class EmplacementService {
     }
 
     public Emplacement create(Emplacement emplacement) {
-        emplacement.setId(Identifiants.requis(emplacement.getId(), "emplacement id"));
-        validerCoordonnees(emplacement);
+        emplacement.setId(Ids.required(emplacement.getId(), "emplacement id"));
+        validateCoordinates(emplacement);
         repository.saveEmplacement(emplacement);
         changeTracker.markModified();
         return emplacement;
@@ -34,7 +34,7 @@ public class EmplacementService {
             throw new NotFoundException("Emplacement not found: " + id);
         }
         emplacement.setId(id);
-        validerCoordonnees(emplacement);
+        validateCoordinates(emplacement);
         repository.saveEmplacement(emplacement);
         changeTracker.markModified();
         return emplacement;
@@ -45,14 +45,14 @@ public class EmplacementService {
         changeTracker.markModified();
     }
 
-    private void validerCoordonnees(Emplacement emplacement) {
+    private void validateCoordinates(Emplacement emplacement) {
         Double latitude = emplacement.getLatitude();
         Double longitude = emplacement.getLongitude();
         if (latitude != null && (latitude < -90 || latitude > 90)) {
-            throw new ErreurMetier.Invalide("latitude must be between -90 and 90");
+            throw new BusinessError.Invalid("latitude must be between -90 and 90");
         }
         if (longitude != null && (longitude < -180 || longitude > 180)) {
-            throw new ErreurMetier.Invalide("longitude must be between -180 and 180");
+            throw new BusinessError.Invalid("longitude must be between -180 and 180");
         }
     }
 }

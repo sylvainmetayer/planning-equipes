@@ -31,7 +31,7 @@ public class TypologieService {
 
     public TypologieItem create(TypologieItem typologie) {
         TypologieItem cree = new TypologieItem(
-                Identifiants.requis(typologie.id(), "typology id"), typologie.label(), typologie.ninja());
+                Ids.required(typologie.id(), "typology id"), typologie.label(), typologie.ninja());
         repository.saveTypologie(cree);
         changeTracker.markModified();
         return cree;
@@ -48,8 +48,8 @@ public class TypologieService {
     }
 
     public void delete(String id) {
-        if (repository.typologieEnUsage(id)) {
-            throw new ErreurMetier.Invalide(
+        if (repository.typologieInUse(id)) {
+            throw new BusinessError.Invalid(
                     "Typologie " + id + " utilisée par au moins un stand ou animateur — retirez-la d'abord");
         }
         repository.deleteTypologie(id);
@@ -77,7 +77,7 @@ public class TypologieService {
                 .filter(id -> !repository.typologieExists(id))
                 .collect(Collectors.toCollection(TreeSet::new));
         if (!inconnues.isEmpty()) {
-            throw new ErreurMetier.Invalide(
+            throw new BusinessError.Invalid(
                     "Typologie(s) inconnue(s) : " + inconnues + " — créez-les d'abord via /api/typologies");
         }
     }

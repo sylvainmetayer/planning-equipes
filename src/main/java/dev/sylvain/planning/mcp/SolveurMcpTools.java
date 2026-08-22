@@ -52,7 +52,7 @@ public class SolveurMcpTools {
     JobView lancer_solveur(@ToolArg(description = "Durée max en secondes (défaut : configuration serveur)", required = false) Long secondes,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         try {
-            return toView(solverJobService.submitSolve(planningService.construireDepuisReferenceData(), secondes));
+            return toView(solverJobService.submitSolve(planningService.buildFromReferenceData(), secondes));
         } catch (SolverBusyException e) {
             throw new IllegalStateException("Solveur déjà occupé par le job " + e.getActiveJob().getId());
         }
@@ -63,7 +63,7 @@ public class SolveurMcpTools {
     JobView lancer_analyse(@ToolArg(description = "Durée max en secondes (défaut : configuration serveur)", required = false) Long secondes,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         try {
-            return toView(solverJobService.submitAnalyze(planningService.construireDepuisReferenceData(), secondes));
+            return toView(solverJobService.submitAnalyze(planningService.buildFromReferenceData(), secondes));
         } catch (SolverBusyException e) {
             throw new IllegalStateException("Solveur déjà occupé par le job " + e.getActiveJob().getId());
         }

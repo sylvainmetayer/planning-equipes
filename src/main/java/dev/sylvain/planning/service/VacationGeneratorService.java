@@ -26,7 +26,7 @@ import dev.sylvain.planning.domain.ParametresDecoupage;
  * between two of their vacations the same day, exactly like any other day
  * off-shift. When a single vacation would otherwise entirely cover a meal
  * window (e.g. a 10:00-14:10 first-of-the-day slot spanning all of
- * 12:00-14:00), {@link #appliquerPauseLegaleSiNecessaire} splits it around a
+ * 12:00-14:00), {@link #applyLegalPauseIfNeeded} splits it around a
  * real internal break instead, so the animateur working it alone still gets
  * to eat. See {@code docs/domaine.md} for the full rationale.</p>
  */
@@ -53,7 +53,7 @@ public final class VacationGeneratorService {
      * <p>When {@link ParametresDecoupage#getNombreFamillesDecalage()} is
      * greater than 1, each amplitude is sliced once per "famille" instead of
      * once overall, each with its internal relay cuts offset by a different
-     * amount (see {@link #finDeVacation}) and tagged via
+     * amount (see {@link #vacationEnd}) and tagged via
      * {@link Creneau#setFamille(int)}. A shared grid otherwise snaps every
      * amplitude's handover to the same clock minute (a target vacation length
      * that overshoots a meal window's end always clamps to that same end,
@@ -62,12 +62,12 @@ public final class VacationGeneratorService {
      * see {@code docs/domaine.md}. Poste generation then assigns each stand to
      * exactly one famille, so it only ever sees that variant's créneaux.</p>
      */
-    public static List<Creneau> genererVacations(List<Creneau> amplitudes, ParametresDecoupage parametres) {
+    public static List<Creneau> generateVacations(List<Creneau> amplitudes, ParametresDecoupage parametres) {
         int nombreFamilles = Math.max(1, parametres.getNombreFamillesDecalage());
         List<Creneau> vacations = new ArrayList<>();
         for (Creneau amplitude : amplitudes) {
             for (int famille = 0; famille < nombreFamilles; famille++) {
-                List<Creneau> tranche = decouperAmplitude(amplitude, parametres, famille, nombreFamilles);
+                List<Creneau> tranche = sliceAmplitude(amplitude, parametres, famille, nombreFamilles);
                 for (Creneau vacation : tranche) {
                     vacation.setFamille(famille);
                 }
@@ -77,22 +77,22 @@ public final class VacationGeneratorService {
         return vacations;
     }
 
-    private static List<Creneau> decouperAmplitude(Creneau amplitude, ParametresDecoupage parametres, int famille,
+    private static List<Creneau> sliceAmplitude(Creneau amplitude, ParametresDecoupage parametres, int famille,
             int nombreFamilles) {
         int duree = amplitude.getDureeMinutes();
-        List<int[]> segmentsBruts = decouperEnMinutes(duree, parametres, fenetresRepasEnMinutes(amplitude, parametres),
+        List<int[]> segmentsBruts = sliceIntoMinutes(duree, parametres, mealFenetresInMinutes(amplitude, parametres),
                 famille, nombreFamilles);
         List<Segment> segments = new ArrayList<>();
         for (int[] segment : segmentsBruts) {
-            segments.addAll(appliquerPauseLegaleSiNecessaire(segment, amplitude, parametres));
+            segments.addAll(applyLegalPauseIfNeeded(segment, amplitude, parametres));
         }
-        List<Creneau> resultat = new ArrayList<>();
+        List<Creneau> result = new ArrayList<>();
         for (Segment segment : segments) {
-            Creneau vacation = creerVacation(amplitude, segment.debut(), segment.fin());
+            Creneau vacation = createVacation(amplitude, segment.debut(), segment.fin());
             vacation.setCouverturePause(segment.couverturePause());
-            resultat.add(vacation);
+            result.add(vacation);
         }
-        return resultat;
+        return result;
     }
 
     /**
@@ -100,8 +100,8 @@ public final class VacationGeneratorService {
      * plus whether it is the short slot covering an internal meal pause at
      * reduced headcount. Replaces the bare {@code int[]} the pause split used
      * to return: the flag has to survive all the way to
-     * {@link #creerVacation}, and only
-     * {@link #appliquerPauseLegaleSiNecessaire} knows which of the pieces it
+     * {@link #createVacation}, and only
+     * {@link #applyLegalPauseIfNeeded} knows which of the pieces it
      * produced is the covering one.
      */
     private record Segment(int debut, int fin, boolean couverturePause) {
@@ -117,17 +117,17 @@ public final class VacationGeneratorService {
      * ends, which is the whole coverage guarantee — see class javadoc.
      *
      * <p>With more than one famille, the cut is not placed at the target but
-     * <b>fanned out inside the retained range</b>: the familles are spread
+     * <b>fanned out inside the retained range</b>: the families are spread
      * evenly across {@code dureeDecalageMaxMinutes}, centred on the target and
-     * shrunk to fit. See {@link #finDeVacation} for why the fan has to live
+     * shrunk to fit. See {@link #vacationEnd} for why the fan has to live
      * inside the range rather than shift the target ahead of the clamp.</p>
      */
-    private static List<int[]> decouperEnMinutes(int duree, ParametresDecoupage parametres, List<int[]> fenetresRepas,
+    private static List<int[]> sliceIntoMinutes(int duree, ParametresDecoupage parametres, List<int[]> fenetresRepas,
             int famille, int nombreFamilles) {
         List<int[]> segments = new ArrayList<>();
         int max = parametres.getDureeVacationMaxMinutes();
         int min = parametres.getDureeVacationMinMinutes();
-        int cible = parametres.getDureeVacationCibleMinutes();
+        int target = parametres.getDureeVacationCibleMinutes();
         int chevauchement = parametres.getDureeChevauchementMinutes();
         int etalement = nombreFamilles > 1 ? parametres.getDureeDecalageMaxMinutes() : 0;
         int courant = 0;
@@ -137,7 +137,7 @@ public final class VacationGeneratorService {
                 segments.add(new int[] { courant, duree });
                 break;
             }
-            int cibleFin = courant + cible;
+            int cibleFin = courant + target;
             int borneBasse = courant + min;
             int borneHaute = courant + max;
             int plageBasse = borneBasse;
@@ -148,7 +148,7 @@ public final class VacationGeneratorService {
                 // The meal window is only kept as a cut range when it is wide
                 // enough to hold the whole spread: otherwise every family would
                 // collapse onto the same instant inside it and the
-                // desynchronisation would be lost (see finDeVacation).
+                // desynchronisation would be lost (see vacationEnd).
                 if (debutFenetre <= finFenetre && finFenetre - debutFenetre >= etalement) {
                     plageBasse = debutFenetre;
                     plageHaute = finFenetre;
@@ -160,20 +160,20 @@ public final class VacationGeneratorService {
                 // shrinking the range rather than fixing the cut afterwards: an
                 // after-the-fact correction would bring every family back onto
                 // the same point and cancel the spread.
-                int plafondReliquat = duree - min + chevauchement;
-                if (plafondReliquat >= plageBasse) {
-                    plageHaute = Math.min(plageHaute, plafondReliquat);
+                int remainderCap = duree - min + chevauchement;
+                if (remainderCap >= plageBasse) {
+                    plageHaute = Math.min(plageHaute, remainderCap);
                 }
             }
-            int fin = finDeVacation(cibleFin, plageBasse, plageHaute, famille, nombreFamilles, etalement);
+            int fin = vacationEnd(cibleFin, plageBasse, plageHaute, famille, nombreFamilles, etalement);
             fin = clamp(fin, borneBasse, borneHaute);
             // Never leave a remainder shorter than the minimum after this
             // handover: without that guard, a cut close to borneHaute (to fall
             // inside a meal window, say) can shrink the last shift of the opening
             // span to a few dozen minutes.
-            int resteApresRelais = duree - (fin - chevauchement);
-            if (resteApresRelais > 0 && resteApresRelais < min) {
-                fin = Math.max(fin - (min - resteApresRelais), borneBasse);
+            int remainderAfterHandover = duree - (fin - chevauchement);
+            if (remainderAfterHandover > 0 && remainderAfterHandover < min) {
+                fin = Math.max(fin - (min - remainderAfterHandover), borneBasse);
             }
             segments.add(new int[] { courant, fin });
             courant = fin - chevauchement;
@@ -183,7 +183,7 @@ public final class VacationGeneratorService {
 
     /**
      * Where this famille's relay cut lands inside {@code [plageBasse,
-     * plageHaute]}: the familles are fanned out evenly over {@code etalement}
+     * plageHaute]}: the families are fanned out evenly over {@code etalement}
      * minutes, centred on {@code cibleFin} and pushed inwards so the whole fan
      * fits in the range. A single famille (or a zero fan) lands exactly on
      * {@code clamp(cibleFin, plageBasse, plageHaute)} — bit-for-bit the
@@ -205,7 +205,7 @@ public final class VacationGeneratorService {
      * spreads the changeovers instead of stacking them, and the peak drops
      * back under the roster. See {@code docs/optimisation-solveur.md}.</p>
      */
-    private static int finDeVacation(int cibleFin, int plageBasse, int plageHaute, int famille, int nombreFamilles,
+    private static int vacationEnd(int cibleFin, int plageBasse, int plageHaute, int famille, int nombreFamilles,
             int etalement) {
         int largeur = Math.max(0, plageHaute - plageBasse);
         int fan = Math.min(etalement, largeur);
@@ -223,7 +223,7 @@ public final class VacationGeneratorService {
      * Triggers in two cases: an admin has configured {@code dureeVacationMaxMinutes}
      * above the legal threshold and a segment actually landed above it (with
      * the default configuration this arm never fires, since every segment
-     * produced by {@link #decouperEnMinutes} is already
+     * produced by {@link #sliceIntoMinutes} is already
      * {@code <= dureeVacationMaxMinutes <= SEUIL_PAUSE_LEGALE_MINUTES}); or a
      * segment — whatever its length — entirely swallows a meal window instead
      * of ending inside or before it, which happens whenever
@@ -237,20 +237,20 @@ public final class VacationGeneratorService {
      * <p>Splits the offending segment into two, separated by a pause (a meal
      * break if one overlaps the split point, otherwise the 20-min legal
      * minimum), snapped into any meal window that intersects the segment.
-     * Unless {@link ParametresDecoupage.StrategieCouverturePendantPause#FERMETURE}
+     * Unless {@link ParametresDecoupage.PauseCoverageStrategy#FERMETURE}
      * is configured, a third short vacation covering exactly the pause window
      * is added so the stand stays staffed instead of closing — at full
      * headcount under {@code RELEVE}, at half under {@code EFFECTIF_REDUIT},
      * which is the only case where the returned {@link Segment} carries
      * {@code couverturePause}.</p>
      */
-    private static List<Segment> appliquerPauseLegaleSiNecessaire(int[] segment, Creneau amplitude,
+    private static List<Segment> applyLegalPauseIfNeeded(int[] segment, Creneau amplitude,
             ParametresDecoupage parametres) {
         int longueur = segment[1] - segment[0];
-        List<int[]> fenetresRepas = fenetresRepasEnMinutes(amplitude, parametres);
+        List<int[]> fenetresRepas = mealFenetresInMinutes(amplitude, parametres);
         boolean depasseSeuilLegal = longueur > SEUIL_PAUSE_LEGALE_MINUTES;
         if (!depasseSeuilLegal
-                && !contientUneFenetreRepasEntiere(segment, fenetresRepasNonTronqueesEnMinutes(amplitude, parametres))) {
+                && !containsWholeMealFenetre(segment, untruncatedMealFenetresInMinutes(amplitude, parametres))) {
             return List.of(new Segment(segment[0], segment[1], false));
         }
         int milieu = segment[0] + longueur / 2;
@@ -266,9 +266,9 @@ public final class VacationGeneratorService {
             }
         }
         int pauseFin = Math.min(segment[1], pauseDebut + dureePause);
-        ParametresDecoupage.StrategieCouverturePendantPause strategie = parametres
+        ParametresDecoupage.PauseCoverageStrategy strategie = parametres
                 .getStrategieCouverturePendantPause();
-        List<Segment> resultat = new ArrayList<>();
+        List<Segment> result = new ArrayList<>();
         // The three pieces are only added when they are non-empty. A break
         // starting on the start of the segment, or ending on its end, otherwise
         // produces a zero-length shift — and a shift whose heureFin ==
@@ -278,18 +278,18 @@ public final class VacationGeneratorService {
         // closing at 21:00, for instance, used to generate a 21:00→21:00 shift
         // per family, each one claiming full staffing for a fictitious 24 h.
         if (pauseDebut > segment[0]) {
-            resultat.add(new Segment(segment[0], pauseDebut, false));
+            result.add(new Segment(segment[0], pauseDebut, false));
         }
-        if (strategie != ParametresDecoupage.StrategieCouverturePendantPause.FERMETURE && pauseFin > pauseDebut) {
+        if (strategie != ParametresDecoupage.PauseCoverageStrategy.FERMETURE && pauseFin > pauseDebut) {
             // RELEVE and EFFECTIF_REDUIT both cover the break; only the second
             // one reduces the staffing, hence the marker the shift carries.
-            boolean effectifReduit = strategie == ParametresDecoupage.StrategieCouverturePendantPause.EFFECTIF_REDUIT;
-            resultat.add(new Segment(pauseDebut, pauseFin, effectifReduit));
+            boolean effectifReduit = strategie == ParametresDecoupage.PauseCoverageStrategy.EFFECTIF_REDUIT;
+            result.add(new Segment(pauseDebut, pauseFin, effectifReduit));
         }
         if (segment[1] > pauseFin) {
-            resultat.add(new Segment(pauseFin, segment[1], false));
+            result.add(new Segment(pauseFin, segment[1], false));
         }
-        return resultat;
+        return result;
     }
 
     /**
@@ -300,7 +300,7 @@ public final class VacationGeneratorService {
      * being used as a handover point, not swallowed whole.
      *
      * <p>{@code fenetresRepas} must be the <b>un</b>truncated windows (see
-     * {@link #fenetresRepasNonTronqueesEnMinutes}): a window truncated by the
+     * {@link #untruncatedMealFenetresInMinutes}): a window truncated by the
      * amplitude's own closing time (e.g. the evening window on a day that
      * shuts at 20:00, well before its 21:00 nominal end) would otherwise
      * always look "fully contained" by the amplitude's last segment, forcing
@@ -309,7 +309,7 @@ public final class VacationGeneratorService {
      * window needs no internal break: whoever's on it goes off-shift for the
      * day at that point, same as the gap-between-vacations case.</p>
      */
-    private static boolean contientUneFenetreRepasEntiere(int[] segment, List<int[]> fenetresRepas) {
+    private static boolean containsWholeMealFenetre(int[] segment, List<int[]> fenetresRepas) {
         for (int[] fenetre : fenetresRepas) {
             if (fenetre[1] > fenetre[0] && segment[0] <= fenetre[0] && segment[1] >= fenetre[1]) {
                 return true;
@@ -318,37 +318,37 @@ public final class VacationGeneratorService {
         return false;
     }
 
-    private static List<int[]> fenetresRepasEnMinutes(Creneau amplitude, ParametresDecoupage parametres) {
+    private static List<int[]> mealFenetresInMinutes(Creneau amplitude, ParametresDecoupage parametres) {
         List<int[]> fenetres = new ArrayList<>();
         int duree = amplitude.getDureeMinutes();
-        ajouterFenetreSiDansAmplitude(fenetres, amplitude.getHeureDebut(), duree,
+        addFenetreIfWithinAmplitude(fenetres, amplitude.getHeureDebut(), duree,
                 parametres.getFenetreRepasMidiDebut(), parametres.getFenetreRepasMidiFin(), true);
-        ajouterFenetreSiDansAmplitude(fenetres, amplitude.getHeureDebut(), duree,
+        addFenetreIfWithinAmplitude(fenetres, amplitude.getHeureDebut(), duree,
                 parametres.getFenetreRepasSoirDebut(), parametres.getFenetreRepasSoirFin(), true);
         return fenetres;
     }
 
     /**
-     * Same windows as {@link #fenetresRepasEnMinutes}, but not clipped to the
+     * Same windows as {@link #mealFenetresInMinutes}, but not clipped to the
      * amplitude's own duration — used only by
-     * {@link #contientUneFenetreRepasEntiere} so a window truncated by
+     * {@link #containsWholeMealFenetre} so a window truncated by
      * closing time never registers as "fully contained". Still dropped
      * entirely when it doesn't start within the amplitude at all.
      */
-    private static List<int[]> fenetresRepasNonTronqueesEnMinutes(Creneau amplitude, ParametresDecoupage parametres) {
+    private static List<int[]> untruncatedMealFenetresInMinutes(Creneau amplitude, ParametresDecoupage parametres) {
         List<int[]> fenetres = new ArrayList<>();
         int duree = amplitude.getDureeMinutes();
-        ajouterFenetreSiDansAmplitude(fenetres, amplitude.getHeureDebut(), duree,
+        addFenetreIfWithinAmplitude(fenetres, amplitude.getHeureDebut(), duree,
                 parametres.getFenetreRepasMidiDebut(), parametres.getFenetreRepasMidiFin(), false);
-        ajouterFenetreSiDansAmplitude(fenetres, amplitude.getHeureDebut(), duree,
+        addFenetreIfWithinAmplitude(fenetres, amplitude.getHeureDebut(), duree,
                 parametres.getFenetreRepasSoirDebut(), parametres.getFenetreRepasSoirFin(), false);
         return fenetres;
     }
 
-    private static void ajouterFenetreSiDansAmplitude(List<int[]> fenetres, LocalTime heureDebutAmplitude,
+    private static void addFenetreIfWithinAmplitude(List<int[]> fenetres, LocalTime heureDebutAmplitude,
             int dureeAmplitude, LocalTime debutFenetre, LocalTime finFenetre, boolean tronquerAFinAmplitude) {
-        int offsetDebut = minutesDepuis(heureDebutAmplitude, debutFenetre);
-        int offsetFin = minutesDepuis(heureDebutAmplitude, finFenetre);
+        int offsetDebut = minutesSince(heureDebutAmplitude, debutFenetre);
+        int offsetFin = minutesSince(heureDebutAmplitude, finFenetre);
         if (offsetFin <= offsetDebut) {
             offsetFin += 24 * 60;
         }
@@ -357,9 +357,9 @@ public final class VacationGeneratorService {
         }
     }
 
-    /** Minutes from {@code reference} clock time to {@code cible} clock time, always non-negative. */
-    private static int minutesDepuis(LocalTime reference, LocalTime cible) {
-        int delta = cible.toSecondOfDay() - reference.toSecondOfDay();
+    /** Minutes from {@code reference} clock time to {@code target} clock time, always non-negative. */
+    private static int minutesSince(LocalTime reference, LocalTime target) {
+        int delta = target.toSecondOfDay() - reference.toSecondOfDay();
         if (delta < 0) {
             delta += 24 * 3600;
         }
@@ -370,7 +370,7 @@ public final class VacationGeneratorService {
         return Math.max(min, Math.min(max, valeur));
     }
 
-    private static Creneau creerVacation(Creneau amplitude, int debutMinutes, int finMinutes) {
+    private static Creneau createVacation(Creneau amplitude, int debutMinutes, int finMinutes) {
         long debutSecondes = amplitude.getHeureDebut().toSecondOfDay() + debutMinutes * 60L;
         long finSecondes = amplitude.getHeureDebut().toSecondOfDay() + finMinutes * 60L;
         boolean debutLendemain = debutSecondes >= 24 * 3600L;

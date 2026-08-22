@@ -66,7 +66,7 @@ public class CreneauService {
      * what keeps the numbering correct when a batch adds a date earlier than
      * every existing one.</p>
      */
-    public List<Creneau> createEnLot(List<Creneau> creneaux) {
+    public List<Creneau> createInBulk(List<Creneau> creneaux) {
         List<Creneau> crees = new ArrayList<>();
         for (Creneau creneau : creneaux) {
             creneau.setId(null); // ignore any client-supplied id — the database always generates it
@@ -78,8 +78,8 @@ public class CreneauService {
         return crees;
     }
 
-    /** Deletes a batch of créneaux, for the same "one intent, one edit" reason as {@link #createEnLot}. */
-    public int deleteEnLot(Collection<Long> ids) {
+    /** Deletes a batch of créneaux, for the same "one intent, one edit" reason as {@link #createInBulk}. */
+    public int deleteInBulk(Collection<Long> ids) {
         int supprimes = 0;
         for (Long id : ids) {
             repository.deleteCreneau(id);
@@ -96,12 +96,12 @@ public class CreneauService {
      * amplitudes — would produce, without persisting anything: the découpage
      * preview.
      */
-    public List<Creneau> previsualiserDecoupage() {
+    public List<Creneau> previewDecoupage() {
         List<Creneau> amplitudes = repository.listCreneaux();
         if (amplitudes.isEmpty()) {
-            throw new ErreurMetier.Invalide("Aucune amplitude à découper : l'édition n'a aucun créneau");
+            throw new BusinessError.Invalid("Aucune amplitude à découper : l'édition n'a aucun créneau");
         }
-        return VacationGeneratorService.genererVacations(amplitudes, parametres.getDecoupage());
+        return VacationGeneratorService.generateVacations(amplitudes, parametres.getDecoupage());
     }
 
     /**
@@ -111,8 +111,8 @@ public class CreneauService {
      * parameters means re-importing the scenario (or duplicating an
      * "amplitudes" edition first): the edition only ever holds one grid.
      */
-    public void genererDecoupage() {
-        List<Creneau> vacations = previsualiserDecoupage();
+    public void generateDecoupage() {
+        List<Creneau> vacations = previewDecoupage();
         repository.replaceCreneaux(vacations);
         changeTracker.markModified();
     }

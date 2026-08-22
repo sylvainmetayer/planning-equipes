@@ -24,7 +24,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  * <p>Whatever it reports has the espace animateur's access token stripped from
  * it first. That token is a unique, stable identifier of one named person,
  * often a minor, and it travels in the URL path — so an exception raised while
- * serving {@code /api/espace-animateur/{jeton}/…} would otherwise carry it
+ * serving {@code /api/espace-animateur/{token}/…} would otherwise carry it
  * into an error tracker, in clear, for as long as that tracker keeps it. The
  * frontend does the same on its side.</p>
  */
@@ -40,30 +40,30 @@ public class SentryInitializer {
         Sentry.init(options -> {
             options.setDsn(dsn.get());
             options.setEnvironment(environment);
-            options.setBeforeSend((rapport, hint) -> masquerJetonsDuRapport(rapport));
+            options.setBeforeSend((rapport, hint) -> maskTokensInReport(rapport));
         });
     }
 
     /**
      * Access token of an espace animateur URL, in the two shapes it takes.
-     * Mirrors {@code masquerJetonEspace} on the frontend — the same promise is
+     * Mirrors {@code maskEspaceToken} on the frontend — the same promise is
      * made to the reader of the privacy policy on both sides.
      */
-    private static final Pattern JETON_ESPACE =
+    private static final Pattern ESPACE_TOKEN =
             Pattern.compile("/(api/espace-animateur|animateur)/[^/?#\\s\"']+");
 
-    static String masquerJeton(String valeur) {
-        return valeur == null ? null : JETON_ESPACE.matcher(valeur).replaceAll("/$1/<jeton>");
+    static String maskToken(String valeur) {
+        return valeur == null ? null : ESPACE_TOKEN.matcher(valeur).replaceAll("/$1/<jeton>");
     }
 
     /** Masks the message of the event and of every exception it carries. */
-    static SentryEvent masquerJetonsDuRapport(SentryEvent event) {
+    static SentryEvent maskTokensInReport(SentryEvent event) {
         if (event.getMessage() != null) {
-            event.getMessage().setFormatted(masquerJeton(event.getMessage().getFormatted()));
+            event.getMessage().setFormatted(maskToken(event.getMessage().getFormatted()));
         }
         if (event.getExceptions() != null) {
             for (SentryException exception : event.getExceptions()) {
-                exception.setValue(masquerJeton(exception.getValue()));
+                exception.setValue(maskToken(exception.getValue()));
             }
         }
         return event;

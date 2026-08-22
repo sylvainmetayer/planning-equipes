@@ -2,7 +2,7 @@ package dev.sylvain.planning.api;
 
 import java.util.Set;
 
-import dev.sylvain.planning.service.RemoteUserAuthentification;
+import dev.sylvain.planning.service.RemoteUserAuthentication;
 import io.quarkus.security.identity.IdentityProviderManager;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.security.identity.request.AuthenticationRequest;
@@ -17,7 +17,7 @@ import jakarta.inject.Inject;
 /**
  * Grants the admin role to the single address configured as
  * {@code planning.auth.remote-user.admin-email}, when an access proxy asserts it
- * through the trusted headers (see {@link RemoteUserAuthentification}).
+ * through the trusted headers (see {@link RemoteUserAuthentication}).
  *
  * <p>Strictly additive: the mode is off by default, and even when on this
  * mechanism returns "no identity" for anything it does not recognise, so the
@@ -43,17 +43,17 @@ import jakarta.inject.Inject;
 public class RemoteUserAuthenticationMechanism implements HttpAuthenticationMechanism {
 
     @Inject
-    RemoteUserAuthentification remoteUser;
+    RemoteUserAuthentication remoteUser;
 
     @Override
     public Uni<SecurityIdentity> authenticate(RoutingContext context, IdentityProviderManager identityProviderManager) {
         if (!remoteUser.actif() || context.request().path().startsWith("/mcp")) {
             return Uni.createFrom().nullItem();
         }
-        return remoteUser.emailDeConfiance(nom -> context.request().getHeader(nom))
-                .filter(remoteUser::estAdmin)
+        return remoteUser.trustedEmail(nom -> context.request().getHeader(nom))
+                .filter(remoteUser::isAdmin)
                 .map(email -> identityProviderManager
-                        .authenticate(new TrustedAuthenticationRequest(RemoteUserAuthentification.PRINCIPAL_ADMIN)))
+                        .authenticate(new TrustedAuthenticationRequest(RemoteUserAuthentication.PRINCIPAL_ADMIN)))
                 .orElseGet(() -> Uni.createFrom().nullItem());
     }
 

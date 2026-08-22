@@ -11,7 +11,7 @@ import dev.sylvain.planning.service.PlanningPersistenceService;
 import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.PlanningService.PlanningDiagnostic;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
-import dev.sylvain.planning.service.ResolutionPipeline;
+import dev.sylvain.planning.service.SolvePipeline;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -29,7 +29,7 @@ import jakarta.ws.rs.core.Response;
 public class PlanningResource {
 
     @Inject
-    ResolutionPipeline pipeline;
+    SolvePipeline pipeline;
 
     @Inject
     PlanningService planningService;
@@ -51,13 +51,13 @@ public class PlanningResource {
     @GET
     @Path("/planning/scenarios")
     public List<String> scenarios() {
-        return planningService.listerScenarios();
+        return planningService.listScenarios();
     }
 
     @GET
     @Path("/planning/sample")
     public PlanningFestival sample(@QueryParam("name") String name) {
-        return planningService.construireExemple(name);
+        return planningService.buildExample(name);
     }
 
     /**
@@ -69,7 +69,7 @@ public class PlanningResource {
     @Path("/planning/export-scenario")
     @Produces("application/x-yaml")
     public Response exportScenario() {
-        String yaml = planningService.exporterScenarioYaml();
+        String yaml = planningService.exportScenarioYaml();
         String filename = "scenario-" + LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE) + ".yaml";
         return Response.ok(yaml)
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
@@ -78,7 +78,7 @@ public class PlanningResource {
 
     /**
      * Real scale of the problem the next solve will build, computed the exact
-     * same way {@code construireDepuisReferenceData} does for an actual solve
+     * same way {@code buildFromReferenceData} does for an actual solve
      * ({@code postes.size()} is Timefold's entity count, {@code animateurs.size()}
      * its value count) — so this never drifts from what the solver logs report,
      * unlike a naive stands × créneaux guess would. Returns all-zero rather than
@@ -87,17 +87,17 @@ public class PlanningResource {
      */
     @GET
     @Path("/planning/volumetrie")
-    public VolumetrieView volumetrie() {
+    public VolumeView volumes() {
         try {
-            PlanningFestival festival = planningService.construireDepuisReferenceData();
-            return new VolumetrieView(festival.getAnimateurs().size(), festival.getPostes().size(),
+            PlanningFestival festival = planningService.buildFromReferenceData();
+            return new VolumeView(festival.getAnimateurs().size(), festival.getPostes().size(),
                     festival.getContraintesAdHoc().size());
         } catch (IllegalStateException e) {
-            return new VolumetrieView(0, 0, 0);
+            return new VolumeView(0, 0, 0);
         }
     }
 
-    public record VolumetrieView(int animateurCount, int posteCount, int contrainteAdHocCount) {
+    public record VolumeView(int animateurCount, int posteCount, int contrainteAdHocCount) {
     }
 
     @POST
@@ -107,7 +107,7 @@ public class PlanningResource {
         // Exactly the same path as the asynchronous solves — snapshot of the
         // previous plan, solve, persistence, diagnosis, Contraintes screen,
         // KPIs, announcement. This is where the incomplete copy used to live.
-        return pipeline.executer(planningFestival, secondsLimit).planning();
+        return pipeline.execute(planningFestival, secondsLimit).planning();
     }
 
     /**
@@ -183,7 +183,7 @@ public class PlanningResource {
     @Path("/solve/analyze")
     public PlanningDiagnostic analyze(PlanningFestival planningFestival,
             @QueryParam("seconds") Long secondsLimit) {
-        PlanningDiagnostic diagnostic = planningService.analyser(planningFestival, secondsLimit);
+        PlanningDiagnostic diagnostic = planningService.analyze(planningFestival, secondsLimit);
         analysisStore.record(diagnostic);
         return diagnostic;
     }

@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * <li><b>No sectoral derogation.</b> Art. R3164-2 allows derogations in
  * sectors set by decree. Whether event management / animation is among them
  * <b>has not been established</b> — the audit flags it as
- * <i>[non vérifié — à faire valider ; à instruire spécifiquement pour
+ * <i>[non vérifié — à faire validate ; à instruire spécifiquement pour
  * l'événementiel et l'animation]</i>. Until a lawyer settles it, the most
  * protective default applies: a plain ban, with no derogation, and no way to
  * configure one. Coding a derogation on an unverified basis would be worse
@@ -30,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * nationwide. Adding them requires a region on the festival or the stand
  * first.</li>
  * <li><b>Abolition de l'esclavage</b> (overseas départements, art. L3422-2 and
- * décret 83-1003 <b>[non vérifié — à faire valider]</b>) is likewise out of
+ * décret 83-1003 <b>[non vérifié — à faire validate]</b>) is likewise out of
  * scope for the same reason.</li>
  * </ul>
  */
@@ -45,16 +45,16 @@ public final class JoursFeries {
      * True when the date is one of the eleven public holidays of art. L3133-1
      * applicable in metropolitan France outside Alsace-Moselle.
      */
-    public static boolean estFerieEnFrance(LocalDate date) {
+    public static boolean isFerieInFrance(LocalDate date) {
         return date != null && joursFeries(date.getYear()).contains(date);
     }
 
     /** The public holidays of a given year; computed once per year and cached. */
     public static Set<LocalDate> joursFeries(int annee) {
-        return CACHE.computeIfAbsent(annee, JoursFeries::calculer);
+        return CACHE.computeIfAbsent(annee, JoursFeries::compute);
     }
 
-    private static Set<LocalDate> calculer(int annee) {
+    private static Set<LocalDate> compute(int annee) {
         LocalDate paques = paques(annee);
         Set<LocalDate> feries = new HashSet<>();
         // Fixed dates (art. L3133-1).

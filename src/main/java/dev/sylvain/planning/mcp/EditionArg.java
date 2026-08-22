@@ -12,7 +12,7 @@ import java.lang.annotation.Target;
  * <p>The argument is read by {@link EditionCibleeInterceptor}, not by the tool
  * method itself: the body stays written as if it ran in one edition, which is
  * exactly what it does — the interceptor binds the edition around the call
- * through {@code EditionContext.executeDans}.</p>
+ * through {@code EditionContext.executeIn}.</p>
  *
  * <p>Marking the parameter rather than matching its name keeps the two ends
  * tied together: renaming the argument cannot silently detach it from the

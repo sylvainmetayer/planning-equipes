@@ -188,7 +188,7 @@ n'existe pas au tactile : ce qu'elle dit doit exister ailleurs.
 
 ## Tests
 
-On distingue quatre familles de tests :
+On distingue cinq familles de tests :
 
 - **Tests unitaires de contraintes** (`solver/constraints/*ConstraintsTest`) :
   chaque contrainte est vérifiée isolément avec le `ConstraintVerifier` de
@@ -209,8 +209,48 @@ On distingue quatre familles de tests :
   fonctions pures de dates/formatage) et le rendu des composants légers de
   `app/shared/`. Ils ne sont **pas** branchés sur la phase de test Maven (Quinoa
   reste désactivé sur `%test`) ; ils tournent dans un job CI dédié.
+- **Tests structurels** (`*StructurelleTest`, `*StructuralTest`) : ils ne
+  jouent aucun scénario, ils **relisent le code source** et échouent sur une
+  règle que rien d'autre ne vérifie. Cinq à ce jour :
+  `IsolationEditionStructurelleTest` (toute requête SQL sur une table métier
+  porte son prédicat `edition_id`), `ConstraintToggleStructurelleTest` (les
+  trois écritures du nom d'une contrainte restent alignées),
+  `McpConfidentialiteStructurelleTest` et `McpEditionStructurelleTest` (aucun
+  outil MCP ne fuit un nom d'animateur, aucun n'oublie de nommer son édition)
+  et `LanguagePolicyStructuralTest` (voir ci-dessous). Chacun porte une liste
+  d'exceptions justifiées **une par une**, et un test qui vérifie que le scan
+  trouve bien quelque chose — sans quoi il passerait au vert le jour où son
+  expression rationnelle cesserait de reconnaître le code.
 - **Tests de bout en bout** (`src/main/webui/e2e`, **Playwright**) : voir
   ci-dessous — exécutés à la main, jamais en CI.
+
+### La langue du code, vérifiée
+
+`LanguagePolicyStructuralTest` lit `src/main/java` et `src/test/java`, et
+échoue sur deux choses : un bloc de commentaire écrit en français, et un nom
+déclaré (type ou méthode) bâti sur un mot français absent du glossaire
+d'`AGENTS.md`. La règle qu'il applique est celle du glossaire : verbe anglais,
+nom commun anglais, ordre des mots anglais, vocabulaire métier en
+français.
+
+Il existe parce que la règle, elle, existait déjà — en toutes lettres dans
+`AGENTS.md` — et n'a pas tenu : une seule branche y avait ajouté vingt blocs
+de javadoc française. À sa première exécution il relevait 315 blocs de prose
+française et 522 noms ; c'est ce qu'il a fallu traduire et renommer pour le
+passer au vert.
+
+Ce qu'il ne regarde **pas**, et pourquoi : les composants de record et les
+accesseurs `getX`/`isX` (ce sont les clés JSON, pas des noms de méthode), les
+méthodes de test (elles n'ont pas de modificateur — la règle qui les concerne
+est « on renomme dès qu'on touche un test »), les méthodes qui portent le nom
+d'une contrainte déclarée dans le même fichier (ce nom est clé primaire de
+`constraint_toggle`), et les outils MCP (leur nom est celui que choisit un
+assistant francophone).
+
+Quand il échoue sur un nom que vous jugez légitime, deux issues seulement :
+le renommer, ou l'ajouter à `EXCEPTIONS_ASSUMEES` **avec sa raison**. Un
+troisième test vérifie que chaque exception correspond encore à du code réel,
+donc la liste ne peut pas pourrir.
 
 ### Tests de bout en bout (Playwright)
 
@@ -343,7 +383,7 @@ couverture, et sont d'ailleurs nés de bugs réels de ce dépôt :
   n'obligeait à lancer : deux champs ajoutés à `ParametresDecoupageDto` sont
   restés absents du schéma publié, et un éditeur validant un scénario contre
   lui signalait deux clés parfaitement valides comme inconnues.
-- `ReferenceDataResourceDecoupageAutoFamillesTest` verrouille l'ordre
+- `ReferenceDataResourceDecoupageAutoFamiliesTest` verrouille l'ordre
   d'application `parametresDecoupage` **puis** `decoupageAuto` à l'import.
   Inversé, un scénario qui épingle son propre découpage verrait ses vacations
   générées avec la configuration du serveur — sans erreur visible.
@@ -541,7 +581,7 @@ recherche locale, mêmes scores intermédiaires et final
 
 Mesures faites pendant l'implémentation des correctifs de
 [`audit-conformite-rh.md`](audit-conformite-rh.md), sur la même machine et le
-même `randomSeed=0`, avec `resoudreJusquaFaisabilite` :
+même `randomSeed=0`, avec `solveUntilFeasible` :
 
 | État | Vitesse d'évaluation | Temps jusqu'à `0hard` |
 | --- | --- | --- |
@@ -825,27 +865,27 @@ stricte des deux versions.
 ## Conventions de code
 
 - Code et commentaires en anglais ; noms de domaine en français métier.
-- **Un lien public se construit dans `LiensApplication`, jamais par
+- **Un lien public se construit dans `ApplicationLinks`, jamais par
   concaténation.** Les URL imprimées hors de l'application (mails de
   notification, PDF individuels) visent des **routes du SPA Angular**
   (`src/main/webui/src/app/app.routes.ts`), pas des chemins JAX-RS : l'API est
   montée sous `quarkus.rest.path=/api`, donc `UriBuilder.fromResource(…)`
   produirait `/api/echanges` — le JSON au lieu de l'écran — et deux des trois
-  liens n'ont aucune ressource dont partir. `LiensApplication` est le seul
+  liens n'ont aucune ressource dont partir. `ApplicationLinks` est le seul
   endroit qui connaît `planning.public-url` et le nom de ces routes ; ajouter un
   lien = ajouter une méthode nommée là, et renommer une route Angular = la
   renommer là aussi. `UriBuilder` y normalise le `/` final et encode les
   segments variables (le jeton de l'espace animateur voyage comme valeur de
   gabarit, jamais concaténé).
-- **Une requête refusée lève `ErreurMetier`, la ressource n'écrit pas de
-  `try/catch`.** La hiérarchie scellée (`Invalide` → 400, `Introuvable` → 404,
-  `Conflit` → 409) porte le statut, et `ErreurMetierMapper` la traite par
+- **Une requête refusée lève `BusinessError`, la ressource n'écrit pas de
+  `try/catch`.** La hiérarchie scellée (`Invalid` → 400, `NotFound` → 404,
+  `Conflict` → 409) porte le statut, et `BusinessErrorMapper` la traite par
   `switch` exhaustif. Elle étend `IllegalArgumentException` exprès : une
   `IllegalArgumentException` nue — venue d'une bibliothèque, ou que personne
   n'a voulu lever — garde son 500 et son alerte Sentry, et c'est justement
   cette différence qui a de la valeur. Le choix de la variante suit la
   provenance de l'identifiant : un segment d'URL qui ne désigne rien est
-  `Introuvable`, un champ de corps qui ne désigne rien est `Invalide`.
+  `NotFound`, un champ de corps qui ne désigne rien est `Invalid`.
 - **Un `ObjectMapper` s'injecte, il ne se construit pas.** `new ObjectMapper()`
   n'a pas les modules enregistrés par Quarkus (JSR-310 en tête) et force à
   aplatir en `String` des champs qui sont des `LocalDate`/`Instant` — un

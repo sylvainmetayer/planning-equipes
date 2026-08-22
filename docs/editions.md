@@ -41,7 +41,7 @@ Une notion de groupe existait déjà, mais **cloisonne uniquement les créneaux*
 - un index unique partiel (`WHERE actif`) garantit **un seul groupe actif** —
   désormais un seul *par édition* (`V33`) ;
 - le solveur ne construit son problème que sur les créneaux du groupe actif
-  (`PlanningService.construireDepuisReferenceData` →
+  (`PlanningService.buildFromReferenceData` →
   `ReferenceDataService.listCreneauxGroupeActif`) ;
 - `planning_resolution` mémorise pour quel groupe le dernier calcul a été fait,
   ce qui alimente le bandeau d'avertissement `app-groupe-mismatch-banner`.
@@ -190,14 +190,14 @@ Mise en œuvre :
   `EditionRequestScope` (`@RequestScoped`) ;
 - `EditionContext` (`@ApplicationScoped`) le résout : surcharge liée au thread →
   édition du **jeton d'espace animateur** de la requête (posée par les gardes
-  `@JetonRequis`/`@SessionEspaceRequise`, elle prime sur l'en-tête que l'espace
+  `@TokenRequired`/`@EspaceSessionRequired`, elle prime sur l'en-tête que l'espace
   ne croit jamais) → en-tête de la requête **si l'édition existe** → édition
   `defaut`. Jamais
   d'erreur 400 : une édition supprimée dans un onglet resté ouvert ne doit pas
   casser l'écran. Les ids connus et l'id par défaut sont mis en cache, invalidé
   à chaque écriture sur `/api/editions` ;
 - le contexte n'est pas lui-même `@RequestScoped` parce qu'il doit servir des
-  threads sans requête (worker du solveur) : `EditionContext.executeDans(id, …)`
+  threads sans requête (worker du solveur) : `EditionContext.executeIn(id, …)`
   lie explicitement une édition au thread courant ;
 - toutes les classes qui parlent à la base ajoutent `edition_id = ?` à leurs
   requêtes, et elles le font toutes par le **même** helper :
@@ -205,7 +205,7 @@ Mise en œuvre :
   de l'instruction (écrire donc le prédicat `edition_id = ?`, ou la colonne
   `edition_id` d'un `INSERT`, en premier et lier le reste à partir de
   l'indice 2). `JdbcEditionScope` porte aussi l'emprunt de connexion et la
-  transaction (`lire`, `ecrire`, `ecrireEtRendre`), pour que personne n'ait à
+  transaction (`read`, `write`, `writeAndReturn`), pour que personne n'ait à
   réécrire le trio `setAutoCommit`/`commit`/`rollback`. Ce n'était pas
   cosmétique : chaque classe en gardait sa copie, et c'est exactement par là
   que le bug ninja inter-éditions est entré — un `prepareStatement` direct,
@@ -215,7 +215,7 @@ Mise en œuvre :
   le SQL de tout le backend et échoue sur toute requête visant une table métier
   sans prédicat d'édition. Les deux exceptions assumées y sont listées et
   justifiées, et le test vérifie qu'elles correspondent encore à une requête
-  réelle. La première est `resoudreJetonAnimateur` (issue #165), qui résout un
+  réelle. La première est `resolveAnimateurToken` (issue #165), qui résout un
   jeton d'espace animateur **globalement** — le jeton arrive sur une URL
   publique sans en-tête d'édition à croire, et est justement unique toutes
   éditions confondues pour désigner la sienne ; les gardes de l'espace lient
@@ -234,7 +234,7 @@ d'en-tête à lire : une requête MCP n'est pas une requête JAX-RS, donc
 `EditionHeaderFilter` ne la voit jamais et `EditionRequestScope` reste vide.
 L'édition y voyage donc comme **argument d'outil** (`edition`, facultatif, id
 ou nom), qu'un intercepteur CDI lie autour de l'appel via le même
-`EditionContext.executeDans`. Une différence de comportement est assumée avec
+`EditionContext.executeIn`. Une différence de comportement est assumée avec
 l'en-tête HTTP : une édition inconnue **échoue** côté MCP au lieu de retomber
 sur l'édition par défaut. Un onglet resté ouvert sur une édition supprimée doit
 continuer à afficher des écrans ; un assistant qui nomme une édition s'apprête

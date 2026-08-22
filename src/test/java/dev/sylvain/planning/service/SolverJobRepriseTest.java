@@ -64,9 +64,9 @@ class SolverJobRepriseTest {
     @BeforeEach
     @AfterEach
     void solveurLibreEtTableVide() throws InterruptedException {
-        viderLaFile();
+        clearQueue();
         attendreSolveurLibre();
-        viderTable();
+        clearTable();
     }
 
     @Test
@@ -75,8 +75,8 @@ class SolverJobRepriseTest {
         // What a server stopped mid-queue leaves behind: two runs planned, in
         // order. Different types on purpose — the same type twice on the same
         // edition is what the double-click guard refuses at submit time.
-        String solveId = ecrireLigne(JobType.SOLVE, JobStatus.QUEUED, true, null);
-        String incrementalId = ecrireLigne(JobType.SOLVE_INCREMENTAL, JobStatus.QUEUED, true, null);
+        String solveId = writeRow(JobType.SOLVE, JobStatus.QUEUED, true, null);
+        String incrementalId = writeRow(JobType.SOLVE_INCREMENTAL, JobStatus.QUEUED, true, null);
 
         assertThat(jobService.restaurer()).isEqualTo(2);
 
@@ -94,7 +94,7 @@ class SolverJobRepriseTest {
 
     @Test
     void unSolveQuiTenaitLeSolveurRevientInterrompu() {
-        String id = ecrireLigne(JobType.SOLVE, JobStatus.RUNNING, true, null);
+        String id = writeRow(JobType.SOLVE, JobStatus.RUNNING, true, null);
 
         assertThat(jobService.restaurer()).isZero();
 
@@ -111,7 +111,7 @@ class SolverJobRepriseTest {
     void unJobQuiNeSaitPasReconstruireSonProblemeNeRedemarreJamais() {
         // A solve whose problem arrived in the request body: that body is not
         // stored, so replaying the row would solve something else entirely.
-        String id = ecrireLigne(JobType.SOLVE, JobStatus.QUEUED, false, null);
+        String id = writeRow(JobType.SOLVE, JobStatus.QUEUED, false, null);
 
         assertThat(jobService.restaurer()).isZero();
 
@@ -121,18 +121,18 @@ class SolverJobRepriseTest {
 
     @Test
     void lePerimetreDuneReplanificationSurvitAuRedemarrage() {
-        PerimetreReplanification perimetre = new PerimetreReplanification(
+        ReplanificationScope scope = new ReplanificationScope(
                 Set.of("ANIM-1"), Set.of(LocalDate.of(2026, 8, 21)), Set.of("STAND-1"));
-        String id = ecrireLigne(JobType.SOLVE_INCREMENTAL, JobStatus.QUEUED, true, perimetre);
+        String id = writeRow(JobType.SOLVE_INCREMENTAL, JobStatus.QUEUED, true, scope);
 
-        LigneJob relue = jobRepository.lister().stream()
+        LigneJob relue = jobRepository.list().stream()
                 .filter(ligne -> ligne.id().equals(id))
                 .findFirst()
                 .orElseThrow();
 
         // Rebuilt identically: a replanning replayed with an empty perimeter
         // would silently re-optimise less than the operator asked for.
-        assertThat(relue.perimetre()).isEqualTo(perimetre);
+        assertThat(relue.scope()).isEqualTo(scope);
     }
 
     @Test
@@ -141,7 +141,7 @@ class SolverJobRepriseTest {
         // by one test run would start a real solve as the next one boots. This
         // guard is what makes the whole suite deterministic, so it is worth an
         // assertion of its own.
-        String id = ecrireLigne(JobType.SOLVE, JobStatus.QUEUED, true, null);
+        String id = writeRow(JobType.SOLVE, JobStatus.QUEUED, true, null);
 
         jobService.reprendreAuDemarrage(new StartupEvent());
 
@@ -162,31 +162,31 @@ class SolverJobRepriseTest {
 
         given().when().delete("/api/jobs/" + id).then().statusCode(204);
 
-        assertThat(jobRepository.lister().stream().map(LigneJob::id)).doesNotContain(id);
+        assertThat(jobRepository.list().stream().map(LigneJob::id)).doesNotContain(id);
     }
 
     /* ------------------------------- Helpers ------------------------------- */
 
     /** Writes the row a server stopped in that state would have left behind. */
-    private String ecrireLigne(JobType type, JobStatus statut, boolean rejouable,
-            PerimetreReplanification perimetre) {
+    private String writeRow(JobType type, JobStatus statut, boolean rejouable,
+            ReplanificationScope scope) {
         String id = UUID.randomUUID().toString();
         Instant maintenant = Instant.now();
-        jobRepository.enregistrer(new LigneJob(id, editionContext.editionIdCourant(), "Édition de test",
-                type, statut, 1L, perimetre, rejouable, null, maintenant,
+        jobRepository.record(new LigneJob(id, editionContext.editionIdCourant(), "Édition de test",
+                type, statut, 1L, scope, rejouable, null, maintenant,
                 statut == JobStatus.RUNNING ? maintenant : null, null));
         return id;
     }
 
     private JobStatus statut(String id) {
-        return jobRepository.lister().stream()
+        return jobRepository.list().stream()
                 .filter(ligne -> ligne.id().equals(id))
                 .map(LigneJob::statut)
                 .findFirst()
                 .orElseThrow();
     }
 
-    private void viderTable() {
+    private void clearTable() {
         try (Connection connection = dataSource.getConnection();
                 Statement statement = connection.createStatement()) {
             statement.executeUpdate("DELETE FROM solver_job");
@@ -200,7 +200,7 @@ class SolverJobRepriseTest {
         given().when().post("/api/reference-data/import-scenario?name=scenario.yml").then().statusCode(200);
     }
 
-    private void viderLaFile() {
+    private void clearQueue() {
         List<String> ids = given().when().get("/api/jobs/file")
                 .then().statusCode(200)
                 .extract().jsonPath().getList("id");

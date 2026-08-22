@@ -45,7 +45,7 @@ public class ConstraintAnalysisStore {
      * honestly shows "no analysis yet" instead of the previous solve's
      * violations against a plan they no longer describe.
      */
-    public void effacer() {
+    public void clear() {
         latestByEdition.remove(editionId());
     }
 

@@ -66,7 +66,7 @@ public class HoraireStand {
     }
 
     /** A rule applying to every festival day — the shape of the overwhelming majority of them. */
-    public static HoraireStand tousLesJours(ModeHoraire mode, FenetreHoraire... fenetres) {
+    public static HoraireStand everyDay(ModeHoraire mode, FenetreHoraire... fenetres) {
         return new HoraireStand(null, mode, TypeJoursHoraire.TOUS, List.of(fenetres));
     }
 
@@ -170,7 +170,7 @@ public class HoraireStand {
      * specificity but opposite {@link ModeHoraire} — the one case the resolver
      * would otherwise have to arbitrate arbitrarily.
      */
-    public boolean joursSeChevauchentAvec(HoraireStand autre) {
+    public boolean daysOverlapWith(HoraireStand autre) {
         if (autre == null || jours != autre.jours) {
             return false;
         }
@@ -183,9 +183,9 @@ public class HoraireStand {
         };
     }
 
-    /** Windows worth honouring: {@link FenetreHoraire#estValide()} filters out half-entered ones defensively. */
-    public List<FenetreHoraire> fenetresValides() {
-        return fenetres.stream().filter(FenetreHoraire::estValide).toList();
+    /** Windows worth honouring: {@link FenetreHoraire#hasValidRange()} filters out half-entered ones defensively. */
+    public List<FenetreHoraire> validFenetres() {
+        return fenetres.stream().filter(FenetreHoraire::hasValidRange).toList();
     }
 
     // No equals/hashCode on purpose. Nothing compares or de-duplicates rules,

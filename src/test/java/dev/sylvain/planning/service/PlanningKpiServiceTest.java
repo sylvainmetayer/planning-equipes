@@ -30,7 +30,7 @@ class PlanningKpiServiceTest {
                 seat("S2", "1", "A2", 240),
                 seat("S2", "2", null, null));
 
-        PlanningKpi kpi = PlanningKpiService.calculer(affectations, "0hard/-3medium/-120soft",
+        PlanningKpi kpi = PlanningKpiService.compute(affectations, "0hard/-3medium/-120soft",
                 Map.of("posteDoitEtrePourvu", 1), 4, 60L);
 
         assertThat(kpi.postesTotal()).isEqualTo(4);
@@ -62,7 +62,7 @@ class PlanningKpiServiceTest {
                 seat("S1", "1", "A1", 120),
                 seat("S1", "99", "A2", null));
 
-        PlanningKpi kpi = PlanningKpiService.calculer(affectations, null, Map.of(), null, null);
+        PlanningKpi kpi = PlanningKpiService.compute(affectations, null, Map.of(), null, null);
 
         assertThat(kpi.heuresIncompletes()).isTrue();
         assertThat(kpi.postesPourvus()).isEqualTo(2);
@@ -74,7 +74,7 @@ class PlanningKpiServiceTest {
 
     @Test
     void unPlanVideResteCalculableSansDivisionParZero() {
-        PlanningKpi kpi = PlanningKpiService.calculer(List.of(), null, Map.of(), 2, null);
+        PlanningKpi kpi = PlanningKpiService.compute(List.of(), null, Map.of(), 2, null);
 
         assertThat(kpi.postesTotal()).isZero();
         assertThat(kpi.heuresMoyenne()).isNull();

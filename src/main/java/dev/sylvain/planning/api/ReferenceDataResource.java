@@ -10,7 +10,7 @@ import dev.sylvain.planning.scenario.ScenarioValidator;
 import dev.sylvain.planning.scenario.dto.EditionCibleDto;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.EditionService;
-import dev.sylvain.planning.service.ImpactImport;
+import dev.sylvain.planning.service.ImportImpact;
 import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.ReferenceDataService;
 import jakarta.inject.Inject;
@@ -64,8 +64,8 @@ public class ReferenceDataResource {
      */
     @GET
     @Path("/impact-import")
-    public ImpactImport impactImport() {
-        return referenceDataService.compterImpactImport();
+    public ImportImpact impactImport() {
+        return referenceDataService.countImportImpact();
     }
 
     /**
@@ -75,33 +75,33 @@ public class ReferenceDataResource {
      * editions. {@code editionId} null = no section, the import would write
      * to the caller's current edition.
      */
-    public record CibleImportView(String editionId, String editionNomFichier, boolean existe,
+    public record ImportTargetView(String editionId, String editionNomFichier, boolean existe,
             String editionNomExistant) {
     }
 
-    private CibleImportView versCibleView(Optional<EditionCibleDto> cible) {
-        if (cible.isEmpty()) {
-            return new CibleImportView(null, null, false, null);
+    private ImportTargetView toTargetView(Optional<EditionCibleDto> target) {
+        if (target.isEmpty()) {
+            return new ImportTargetView(null, null, false, null);
         }
-        EditionCibleDto dto = cible.get();
+        EditionCibleDto dto = target.get();
         return editionService.listEditions().stream()
                 .filter(edition -> edition.getId().equals(dto.id().trim()))
                 .findFirst()
-                .map(edition -> new CibleImportView(edition.getId(), dto.nom(), true, edition.getNom()))
-                .orElseGet(() -> new CibleImportView(dto.id().trim(), dto.nom(), false, null));
+                .map(edition -> new ImportTargetView(edition.getId(), dto.nom(), true, edition.getNom()))
+                .orElseGet(() -> new ImportTargetView(dto.id().trim(), dto.nom(), false, null));
     }
 
     @GET
     @Path("/cible-scenario")
-    public CibleImportView cibleScenario(@QueryParam("name") String name) {
-        return versCibleView(planningService.chargerSectionsScenario(name).edition());
+    public ImportTargetView scenarioTarget(@QueryParam("name") String name) {
+        return toTargetView(planningService.loadScenarioSections(name).edition());
     }
 
     @POST
     @Path("/cible-scenario-fichier")
     @Consumes(MediaType.WILDCARD)
-    public Response cibleScenarioFichier(String yamlContent) {
-        return Response.ok(versCibleView(planningService.chargerEditionTexteScenario(yamlContent))).build();
+    public Response fileScenarioTarget(String yamlContent) {
+        return Response.ok(toTargetView(planningService.loadEditionScenarioText(yamlContent))).build();
     }
 
     /**
@@ -132,13 +132,13 @@ public class ReferenceDataResource {
     @Path("/import-scenario")
     @Consumes(MediaType.WILDCARD)
     public Response importScenario(@QueryParam("name") String name) {
-        return importer(planningService.chargerScenario(name));
+        return importReferenceData(planningService.loadScenario(name));
     }
 
     /**
      * Same import as {@link #importScenario}, but for a scenario YAML file
      * uploaded from the user's own machine rather than one bundled under
-     * {@code src/main/resources/scenarios} — the "Importer un fichier" button
+     * {@code src/main/resources/scenarios} — the "Importer un file" button
      * on the Scénarios page, for a file produced by "Exporter les données
      * actuelles en scénario" (or hand-authored in the same shape). Returns
      * 400 with the parsing/validation error as-is when the file is invalid,
@@ -147,8 +147,8 @@ public class ReferenceDataResource {
     @POST
     @Path("/import-scenario-fichier")
     @Consumes(MediaType.WILDCARD)
-    public Response importScenarioFichier(String yamlContent) {
-        return importer(planningService.construireDepuisTexteScenario(yamlContent));
+    public Response importScenarioFile(String yamlContent) {
+        return importReferenceData(planningService.buildFromScenarioText(yamlContent));
     }
 
     /**
@@ -157,19 +157,19 @@ public class ReferenceDataResource {
      * read from. It used to be written out twice, and the two copies had
      * drifted: the bundled path re-read the file once per optional section.
      */
-    private Response importer(PlanningService.ScenarioImporte importe) {
-        PlanningService.SectionsScenario sections = importe.sections();
-        return importerDansCible(sections.edition(), () -> {
+    private Response importReferenceData(PlanningService.ScenarioImporte importe) {
+        PlanningService.ScenarioSections sections = importe.sections();
+        return importIntoTarget(sections.edition(), () -> {
             sections.parametresLegaux().ifPresent(referenceDataService::updateParametresLegaux);
             sections.parametresDecoupage().ifPresent(referenceDataService::updateParametresDecoupage);
             sections.parametresSolveur().ifPresent(referenceDataService::updateParametresSolveur);
             if (sections.decoupageAuto()) {
-                referenceDataService.appliquerDecoupageAutomatique(importe.planning());
-                appliquerTypologies(sections);
+                referenceDataService.applyAutomaticDecoupage(importe.planning());
+                applyTypologies(sections);
                 return true;
             }
             referenceDataService.importFromPlanning(importe.planning());
-            appliquerTypologies(sections);
+            applyTypologies(sections);
             return false;
         });
     }
@@ -183,16 +183,16 @@ public class ReferenceDataResource {
      * may be sitting on a different edition than the one that was written:
      * the UI shows that recap unconditionally.
      */
-    private Response importerDansCible(Optional<EditionCibleDto> cibleDto, Callable<Boolean> importAction) {
+    private Response importIntoTarget(Optional<EditionCibleDto> cibleDto, Callable<Boolean> importAction) {
         try {
             if (cibleDto.isEmpty()) {
                 return Response.ok(new ImportScenarioResult(importAction.call(), null, null, null)).build();
             }
-            EditionService.CibleImport cible =
-                    editionService.resoudrePourImport(cibleDto.get().id(), cibleDto.get().nom());
-            boolean decoupageAuto = editionContext.executeDans(cible.edition().getId(), importAction);
+            EditionService.ImportTarget target =
+                    editionService.resolveForImport(cibleDto.get().id(), cibleDto.get().nom());
+            boolean decoupageAuto = editionContext.executeIn(target.edition().getId(), importAction);
             return Response.ok(new ImportScenarioResult(decoupageAuto,
-                    cible.edition().getId(), cible.edition().getNom(), cible.creee())).build();
+                    target.edition().getId(), target.edition().getNom(), target.creee())).build();
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
@@ -203,18 +203,18 @@ public class ReferenceDataResource {
     /**
      * Applies the scenario's optional {@code typologies:} section, if any,
      * <b>after</b> the planning itself has been imported: {@code
-     * ImportReferentielRepository#importFromPlanning} auto-derives an id-as-its-
+     * ReferenceDataImportRepository#importFromPlanning} auto-derives an id-as-its-
      * own-label typologie entry for every id a stand/animateur references and
      * unconditionally overwrites any existing label when it does — so an
      * explicit {@code {id, label}} pair from the scenario must be applied
      * afterwards to actually stick, not before.
      */
-    private void appliquerTypologies(PlanningService.SectionsScenario sections) {
+    private void applyTypologies(PlanningService.ScenarioSections sections) {
         sections.typologies().forEach(referenceDataService::createTypologie);
     }
 
     /**
-     * Body returned by {@link #importScenario} and {@link #importScenarioFichier}
+     * Body returned by {@link #importScenario} and {@link #importScenarioFile}
      * when the scenario carried a {@code decoupageAuto:} section, so the
      * frontend can notify the operator that the imported amplitudes were
      * auto-sliced into the vacations the edition now holds.
@@ -232,23 +232,23 @@ public class ReferenceDataResource {
      * mutation. Delegates to the standalone {@link ScenarioValidator}, so it
      * only checks the same shape the JSON Schema describes: it does not
      * replicate the cross-reference checks (e.g. a poste's standId actually
-     * matching a declared stand) that {@link #importScenarioFichier} performs
+     * matching a declared stand) that {@link #importScenarioFile} performs
      * on a real import.
      */
     @POST
     @Path("/valider-scenario-fichier")
     @Consumes(MediaType.WILDCARD)
-    public ScenarioValidationResult validerScenarioFichier(String yamlContent) {
-        List<String> erreurs = validerScenario(yamlContent);
+    public ScenarioValidationResult validateScenarioFile(String yamlContent) {
+        List<String> erreurs = validateScenario(yamlContent);
         return new ScenarioValidationResult(erreurs.isEmpty(), erreurs);
     }
 
-    private static List<String> validerScenario(String yamlContent) {
+    private static List<String> validateScenario(String yamlContent) {
         if (yamlContent == null || yamlContent.isBlank()) {
             return List.of("Le fichier est vide.");
         }
         try {
-            return ScenarioValidator.valider(yamlContent);
+            return ScenarioValidator.validate(yamlContent);
         } catch (IOException e) {
             String message = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
             return List.of("YAML invalide : " + message);

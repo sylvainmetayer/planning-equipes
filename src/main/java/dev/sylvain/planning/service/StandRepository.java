@@ -129,12 +129,12 @@ public class StandRepository {
                     }
                 }
             }
-            chargerHoraires(connection, byId);
+            loadHoraires(connection, byId);
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to list stands", e);
         }
         List<Stand> stands = new ArrayList<>(byId.values());
-        stands.sort(Comparator.comparing(Stand::getId, OrdreNaturel.DES_IDS));
+        stands.sort(Comparator.comparing(Stand::getId, NaturalOrder.DES_IDS));
         return stands;
     }
 
@@ -144,8 +144,8 @@ public class StandRepository {
      * stand. Rules are keyed by their own id so the windows can be attached
      * without re-walking the stands.
      */
-    private void chargerHoraires(Connection connection, Map<String, Stand> standsById) throws SQLException {
-        Map<Long, HoraireStand> horairesParId = new LinkedHashMap<>();
+    private void loadHoraires(Connection connection, Map<String, Stand> standsById) throws SQLException {
+        Map<Long, HoraireStand> horairesById = new LinkedHashMap<>();
         try (PreparedStatement ps = scope.prepareScoped(connection,
                 """
                 SELECT id, stand_id, mode, type_jours, jours_semaine, date_debut, date_fin, dates, motif
@@ -162,16 +162,16 @@ public class StandRepository {
                 horaire.setId(rs.getLong("id"));
                 horaire.setMode(ModeHoraire.valueOf(rs.getString("mode")));
                 horaire.setJours(TypeJoursHoraire.valueOf(rs.getString("type_jours")));
-                horaire.setJoursSemaine(decouperCsv(rs.getString("jours_semaine"), DayOfWeek::valueOf));
+                horaire.setJoursSemaine(splitCsv(rs.getString("jours_semaine"), DayOfWeek::valueOf));
                 horaire.setDateDebut(rs.getObject("date_debut", LocalDate.class));
                 horaire.setDateFin(rs.getObject("date_fin", LocalDate.class));
-                horaire.setDates(decouperCsv(rs.getString("dates"), LocalDate::parse));
+                horaire.setDates(splitCsv(rs.getString("dates"), LocalDate::parse));
                 horaire.setMotif(rs.getString("motif"));
                 stand.getHoraires().add(horaire);
-                horairesParId.put(horaire.getId(), horaire);
+                horairesById.put(horaire.getId(), horaire);
             }
         }
-        if (horairesParId.isEmpty()) {
+        if (horairesById.isEmpty()) {
             return;
         }
         try (PreparedStatement ps = scope.prepareScoped(connection,
@@ -182,7 +182,7 @@ public class StandRepository {
                 ORDER BY horaire_id, position, id""");
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                HoraireStand horaire = horairesParId.get(rs.getLong("horaire_id"));
+                HoraireStand horaire = horairesById.get(rs.getLong("horaire_id"));
                 if (horaire != null) {
                     horaire.getFenetres().add(new FenetreHoraire(
                             rs.getObject("heure_debut", LocalTime.class),
@@ -193,7 +193,7 @@ public class StandRepository {
     }
 
     /** Reads back a comma-separated leaf column (see V37 on why these two aren't normalised). */
-    private static <T> Set<T> decouperCsv(String csv, Function<String, T> parse) {
+    private static <T> Set<T> splitCsv(String csv, Function<String, T> parse) {
         if (csv == null || csv.isBlank()) {
             return Set.of();
         }
@@ -207,7 +207,7 @@ public class StandRepository {
         return valeurs;
     }
 
-    /** Writes a set back as the comma-separated form {@link #decouperCsv} reads, or {@code null} when empty. */
+    /** Writes a set back as the comma-separated form {@link #splitCsv} reads, or {@code null} when empty. */
     private static String joindreCsv(Collection<?> valeurs) {
         if (valeurs == null || valeurs.isEmpty()) {
             return null;
@@ -216,17 +216,17 @@ public class StandRepository {
     }
 
     public boolean standExists(String id) {
-        return scope.existe("stand", id);
+        return scope.exists("stand", id);
     }
 
     public void saveStand(Stand stand) {
-        scope.ecrire("Failed to save stand " + stand.getId(), connection -> {
+        scope.write("Failed to save stand " + stand.getId(), connection -> {
             upsertStand(connection, stand);
         });
     }
 
     public void deleteStand(String id) {
-        scope.supprimer("DELETE FROM stand WHERE edition_id = ? AND id = ?", id);
+        scope.delete("DELETE FROM stand WHERE edition_id = ? AND id = ?", id);
     }
 
     void upsertStand(Connection connection, Stand stand) throws SQLException {

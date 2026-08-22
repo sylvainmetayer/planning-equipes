@@ -50,7 +50,7 @@ public class EditionResource {
 
     @POST
     public Response create(Edition edition) {
-        return Response.ok(editionService.creer(edition)).build();
+        return Response.ok(editionService.create(edition)).build();
     }
 
     @PUT
@@ -68,15 +68,15 @@ public class EditionResource {
      */
     @POST
     @Path("/{id}/dupliquer")
-    public Response dupliquer(@PathParam("id") String id, Edition cible) {
-        return Response.ok(editionService.dupliquer(id, cible)).build();
+    public Response duplicate(@PathParam("id") String id, Edition target) {
+        return Response.ok(editionService.duplicate(id, target)).build();
     }
 
     /** Designates the fallback edition for any caller sending no {@code X-Edition-Id}. */
     @PUT
     @Path("/{id}/defaut")
-    public Response definirParDefaut(@PathParam("id") String id) {
-        editionService.definirParDefaut(id);
+    public Response setAsDefault(@PathParam("id") String id) {
+        editionService.setAsDefault(id);
         return Response.noContent().build();
     }
 
@@ -89,7 +89,7 @@ public class EditionResource {
     @DELETE
     @Path("/{id}")
     public Response delete(@PathParam("id") String id) {
-        editionService.supprimer(id);
+        editionService.delete(id);
         return Response.noContent().build();
     }
 

@@ -43,12 +43,12 @@ class PlanningServiceScenarioCompletTest {
 
     @Test
     void scenarioCompletNeViolateAucuneContrainteHard() {
-        Referentiel referenceDataService = new ReferentielVide();
+        ReferenceData referenceDataService = new EmptyReferenceData();
         PlanningService planningService = new PlanningService(420L, 0L, ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT, referenceDataService, new FeasibilityAnalyzer(),
                 ConfigProvider.getConfig());
 
-        PlanningFestival problem = planningService.construireExemple();
-        PlanningFestival solved = planningService.resoudreJusquaFaisabilite(problem, SECONDS_LIMITE_SECURITE);
+        PlanningFestival problem = planningService.buildExample();
+        PlanningFestival solved = planningService.solveUntilFeasible(problem, SECONDS_LIMITE_SECURITE);
 
         assertThat(solved.getScore()).isNotNull();
         assertThat(solved.getScore().hardScore()).isZero();

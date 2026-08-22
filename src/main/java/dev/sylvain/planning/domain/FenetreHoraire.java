@@ -47,7 +47,7 @@ public class FenetreHoraire {
     }
 
     /** True when this is a genuine, non-empty, same-day window (an open end counts as valid). */
-    public boolean estValide() {
+    public boolean hasValidRange() {
         return heureDebut != null && (heureFin == null || heureFin.isAfter(heureDebut));
     }
 

@@ -48,8 +48,8 @@ public class WhatIfResource {
     SolverJobService solverJobService;
 
     @POST
-    public ResultatWhatIf simuler(Mutations mutations) {
-        return whatIfService.simuler(mutations == null ? new Mutations(0, null, null, null) : mutations);
+    public ResultatWhatIf simulate(Mutations mutations) {
+        return whatIfService.simulate(mutations == null ? new Mutations(0, null, null, null) : mutations);
     }
 
     /**
@@ -59,11 +59,11 @@ public class WhatIfResource {
      */
     @POST
     @Path("/analyze")
-    public Response analyser(Mutations mutations, @QueryParam("seconds") Long secondsLimit) {
+    public Response analyze(Mutations mutations, @QueryParam("seconds") Long secondsLimit) {
         Mutations sures = mutations == null ? new Mutations(0, null, null, null) : mutations;
         long secondes = secondsLimit == null || secondsLimit <= 0 ? SECONDES_PAR_DEFAUT : secondsLimit;
         try {
-            SolverJob job = solverJobService.submitAnalyze(whatIfService.construireProbleme(sures), secondes);
+            SolverJob job = solverJobService.submitAnalyze(whatIfService.buildProblem(sures), secondes);
             return Response.accepted(SolverJobResource.JobView.withoutResult(job)).build();
         } catch (SolverBusyException e) {
             return Response.status(Response.Status.CONFLICT)

@@ -17,7 +17,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 /**
- * CRUD of the animateurs, plus the rotation of their espace token.
+ * CRUD of the animateurs, plus the rotation of their espace jeton.
  */
 @Path("/animateurs")
 @Produces(MediaType.APPLICATION_JSON)
@@ -51,18 +51,27 @@ public class AnimateurResource {
     }
 
     /**
-     * Rotates the animateur's espace access token (issue #165): the link
+     * Rotates the animateur's espace access jeton (issue #165): the link
      * printed on an already-distributed PDF stops working, the fiche shows the
-     * new one. Regeneration is the only way a token ever changes.
+     * new one. Regeneration is the only way a jeton ever changes.
      */
     @POST
     @Path("/{id}/jeton")
-    public Response regenererJetonAnimateur(@PathParam("id") String id) {
-        return Response.ok(new JetonAnimateur(referenceDataService.regenererJetonAnimateur(id))).build();
+    public Response regenerateAnimateurToken(@PathParam("id") String id) {
+        return Response.ok(new AnimateurToken(referenceDataService.regenerateAnimateurToken(id))).build();
     }
 
-    /** Body of a token regeneration: the new token, nothing else. */
-    public record JetonAnimateur(String jeton) {
+    /**
+     * Body of a token regeneration: the new token, nothing else.
+     *
+     * <p>The component is still named {@code jeton} while the rest of the Java
+     * code says {@code token}, and that mismatch is deliberate: the component
+     * name <b>is</b> the JSON key, read by {@code core/api.service.ts} and by
+     * every MCP client. Renaming it here would rename it on the wire. Same
+     * reason on {@link dev.sylvain.planning.domain.Animateur#getJetonAcces()}
+     * and on the {@code jeton_acces} column.</p>
+     */
+    public record AnimateurToken(String jeton) {
     }
 
 }

@@ -28,7 +28,7 @@ class EditionResourceTest {
      */
     @AfterEach
     void supprimerLesEditionsCreees() {
-        for (Map<String, Object> edition : listerEditions()) {
+        for (Map<String, Object> edition : listEditions()) {
             String id = (String) edition.get("id");
             if (!DEFAUT.equals(id)) {
                 given().when().delete("/api/editions/" + id);
@@ -36,18 +36,18 @@ class EditionResourceTest {
         }
     }
 
-    private List<Map<String, Object>> listerEditions() {
+    private List<Map<String, Object>> listEditions() {
         return given().when().get("/api/editions").then().statusCode(200).extract().jsonPath().getList("$");
     }
 
-    private void creerEdition(String id, String nom) {
+    private void createEdition(String id, String nom) {
         given().contentType("application/json")
                 .body("{\"id\":\"" + id + "\",\"nom\":\"" + nom + "\"}")
                 .when().post("/api/editions")
                 .then().statusCode(200);
     }
 
-    private void creerStand(String editionId, String standId) {
+    private void createStand(String editionId, String standId) {
         given().header(HEADER, editionId)
                 .contentType("application/json")
                 .body("{\"id\":\"" + standId + "\",\"nom\":\"" + standId + "\",\"effectifMin\":1,\"effectifMax\":2}")
@@ -55,7 +55,7 @@ class EditionResourceTest {
                 .then().statusCode(200);
     }
 
-    private void creerTypologie(String editionId, String typologieId, boolean ninja) {
+    private void createTypologie(String editionId, String typologieId, boolean ninja) {
         given().header(HEADER, editionId)
                 .contentType("application/json")
                 .body("{\"id\":\"" + typologieId + "\",\"label\":\"" + typologieId + "\",\"ninja\":" + ninja + "}")
@@ -63,7 +63,7 @@ class EditionResourceTest {
                 .then().statusCode(200);
     }
 
-    private boolean estNinja(String editionId, String typologieId) {
+    private boolean isNinja(String editionId, String typologieId) {
         return given().header(HEADER, editionId)
                 .when().get("/api/typologies")
                 .then().statusCode(200)
@@ -72,7 +72,7 @@ class EditionResourceTest {
                 .getFirst();
     }
 
-    private List<String> listerStandIds(String editionId) {
+    private List<String> listStandIds(String editionId) {
         return given().header(HEADER, editionId)
                 .when().get("/api/stands")
                 .then().statusCode(200)
@@ -81,7 +81,7 @@ class EditionResourceTest {
 
     @Test
     void uneBaseNeuveTientUneSeuleEditionParDefaut() {
-        assertThat(listerEditions())
+        assertThat(listEditions())
                 .filteredOn(edition -> DEFAUT.equals(edition.get("id")))
                 .singleElement()
                 .satisfies(edition -> assertThat(edition.get("defaut")).isEqualTo(true));
@@ -89,36 +89,36 @@ class EditionResourceTest {
 
     @Test
     void lesDonneesDuneEditionSontInvisiblesDepuisUneAutre() {
-        creerEdition("ANNEE-2026", "Année 2026");
-        creerStand("ANNEE-2026", "STAND-2026");
+        createEdition("ANNEE-2026", "Année 2026");
+        createStand("ANNEE-2026", "STAND-2026");
 
-        assertThat(listerStandIds("ANNEE-2026")).contains("STAND-2026");
-        assertThat(listerStandIds(DEFAUT)).doesNotContain("STAND-2026");
+        assertThat(listStandIds("ANNEE-2026")).contains("STAND-2026");
+        assertThat(listStandIds(DEFAUT)).doesNotContain("STAND-2026");
     }
 
     @Test
     void deuxEditionsPeuventPorterLeMemeIdentifiantMetier() {
-        creerEdition("ANNEE-2026", "Année 2026");
-        creerStand(DEFAUT, "TIR-A-LA-CORDE");
+        createEdition("ANNEE-2026", "Année 2026");
+        createStand(DEFAUT, "TIR-A-LA-CORDE");
         // Same business id in another edition: this is exactly what the
         // composite (edition_id, id) primary keys of V32 make possible.
-        creerStand("ANNEE-2026", "TIR-A-LA-CORDE");
+        createStand("ANNEE-2026", "TIR-A-LA-CORDE");
 
-        assertThat(listerStandIds(DEFAUT)).contains("TIR-A-LA-CORDE");
-        assertThat(listerStandIds("ANNEE-2026")).contains("TIR-A-LA-CORDE");
+        assertThat(listStandIds(DEFAUT)).contains("TIR-A-LA-CORDE");
+        assertThat(listStandIds("ANNEE-2026")).contains("TIR-A-LA-CORDE");
 
         given().header(HEADER, "ANNEE-2026").when().delete("/api/stands/TIR-A-LA-CORDE").then().statusCode(204);
 
-        assertThat(listerStandIds("ANNEE-2026")).doesNotContain("TIR-A-LA-CORDE");
-        assertThat(listerStandIds(DEFAUT)).contains("TIR-A-LA-CORDE");
+        assertThat(listStandIds("ANNEE-2026")).doesNotContain("TIR-A-LA-CORDE");
+        assertThat(listStandIds(DEFAUT)).contains("TIR-A-LA-CORDE");
     }
 
     @Test
     void unEnteteInconnuRetombeSurLEditionParDefautSansEchouer() {
-        creerStand(DEFAUT, "STAND-REPLI");
+        createStand(DEFAUT, "STAND-REPLI");
 
         // A tab left open on a since-deleted edition must keep working.
-        assertThat(listerStandIds("EDITION-QUI-NEXISTE-PAS")).contains("STAND-REPLI");
+        assertThat(listStandIds("EDITION-QUI-NEXISTE-PAS")).contains("STAND-REPLI");
 
         given().header(HEADER, "EDITION-QUI-NEXISTE-PAS")
                 .when().get("/api/editions/courant")
@@ -128,14 +128,14 @@ class EditionResourceTest {
 
     @Test
     void dupliquerUneEditionRecopieSonReferentielMaisPasSesAffectations() {
-        creerStand(DEFAUT, "STAND-A-COPIER");
+        createStand(DEFAUT, "STAND-A-COPIER");
 
         given().contentType("application/json")
                 .body("{\"id\":\"COPIE-2026\",\"nom\":\"Copie 2026\"}")
                 .when().post("/api/editions/" + DEFAUT + "/dupliquer")
                 .then().statusCode(200);
 
-        assertThat(listerStandIds("COPIE-2026")).contains("STAND-A-COPIER");
+        assertThat(listStandIds("COPIE-2026")).contains("STAND-A-COPIER");
         given().header(HEADER, "COPIE-2026")
                 .when().get("/api/planning/persisted/count")
                 .then().statusCode(200)
@@ -145,7 +145,7 @@ class EditionResourceTest {
     /**
      * The V41 columns and the V37 recurring-hours tables postdated the
      * duplication column list: a duplicated edition silently lost every
-     * animateur email (muting « Envoyer à tous », step 5 of the issue #172
+     * animateur email (muting « Envoyer à all », step 5 of the issue #172
      * switch ritual) and every recurring opening rule (stands falling back to
      * « open on every slot »). The access token, on the other hand, must NOT
      * travel: each edition mints its own, so an espace link keeps designating
@@ -164,7 +164,7 @@ class EditionResourceTest {
                         + "\"fenetres\":[{\"heureDebut\":\"09:00:00\",\"heureFin\":\"10:00:00\"}]}]}")
                 .when().post("/api/stands")
                 .then().statusCode(200);
-        String jetonSource = given().header(HEADER, DEFAUT)
+        String sourceToken = given().header(HEADER, DEFAUT)
                 .when().get("/api/animateurs")
                 .then().statusCode(200)
                 .extract().jsonPath().getString("find { it.id == 'ANIM-COPIE' }.jetonAcces");
@@ -181,7 +181,7 @@ class EditionResourceTest {
                 .body("find { it.id == 'ANIM-COPIE' }.jetonAcces",
                         org.hamcrest.Matchers.allOf(
                                 org.hamcrest.Matchers.notNullValue(),
-                                org.hamcrest.Matchers.not(jetonSource)));
+                                org.hamcrest.Matchers.not(sourceToken)));
         given().header(HEADER, "COPIE-2026")
                 .when().get("/api/stands")
                 .then().statusCode(200)
@@ -192,7 +192,7 @@ class EditionResourceTest {
 
     @Test
     void uneEditionDupliqueeEstIndependanteDeSaSource() {
-        creerStand(DEFAUT, "STAND-PARTAGE");
+        createStand(DEFAUT, "STAND-PARTAGE");
         given().contentType("application/json")
                 .body("{\"id\":\"COPIE-2026\",\"nom\":\"Copie 2026\"}")
                 .when().post("/api/editions/" + DEFAUT + "/dupliquer")
@@ -200,13 +200,13 @@ class EditionResourceTest {
 
         given().header(HEADER, "COPIE-2026").when().delete("/api/stands/STAND-PARTAGE").then().statusCode(204);
 
-        assertThat(listerStandIds("COPIE-2026")).doesNotContain("STAND-PARTAGE");
-        assertThat(listerStandIds(DEFAUT)).contains("STAND-PARTAGE");
+        assertThat(listStandIds("COPIE-2026")).doesNotContain("STAND-PARTAGE");
+        assertThat(listStandIds(DEFAUT)).contains("STAND-PARTAGE");
     }
 
     @Test
     void supprimerLEditionParDefautEstRefuse() {
-        creerEdition("ANNEE-2026", "Année 2026");
+        createEdition("ANNEE-2026", "Année 2026");
 
         given().header(HEADER, "ANNEE-2026")
                 .when().delete("/api/editions/" + DEFAUT)
@@ -215,7 +215,7 @@ class EditionResourceTest {
 
     @Test
     void supprimerLEditionCouranteEstRefuse() {
-        creerEdition("ANNEE-2026", "Année 2026");
+        createEdition("ANNEE-2026", "Année 2026");
 
         given().header(HEADER, "ANNEE-2026")
                 .when().delete("/api/editions/ANNEE-2026")
@@ -224,7 +224,7 @@ class EditionResourceTest {
 
     @Test
     void creerDeuxFoisLeMemeIdentifiantEstRefuse() {
-        creerEdition("ANNEE-2026", "Année 2026");
+        createEdition("ANNEE-2026", "Année 2026");
 
         given().contentType("application/json")
                 .body("{\"id\":\"ANNEE-2026\",\"nom\":\"Doublon\"}")
@@ -238,20 +238,20 @@ class EditionResourceTest {
      * "one ninja typologie" rule is where it is easiest to break: the write
      * demotes the previous holder, and the unique index it protects has been
      * scoped per edition since {@code V33}, so the demotion must be scoped
-     * too. Ninja drives {@code Animateur#possedeCompetencePour}, hence the
+     * too. Ninja drives {@code Animateur#hasCompetenceFor}, hence the
      * construction-heuristic ordering and the polyvalent-buffer constraint:
      * losing it silently changes what the next solve of the other edition
      * explores.
      */
     @Test
     void marquerUneTypologieNinjaNeDeflaguePasCelleDuneAutreEdition() {
-        creerEdition("ANNEE-2025", "Année 2025");
-        creerEdition("ANNEE-2026", "Année 2026");
-        creerTypologie("ANNEE-2025", "NINJA_2025", true);
+        createEdition("ANNEE-2025", "Année 2025");
+        createEdition("ANNEE-2026", "Année 2026");
+        createTypologie("ANNEE-2025", "NINJA_2025", true);
 
-        creerTypologie("ANNEE-2026", "NINJA_2026", true);
+        createTypologie("ANNEE-2026", "NINJA_2026", true);
 
-        assertThat(estNinja("ANNEE-2026", "NINJA_2026")).isTrue();
-        assertThat(estNinja("ANNEE-2025", "NINJA_2025")).isTrue();
+        assertThat(isNinja("ANNEE-2026", "NINJA_2026")).isTrue();
+        assertThat(isNinja("ANNEE-2025", "NINJA_2025")).isTrue();
     }
 }

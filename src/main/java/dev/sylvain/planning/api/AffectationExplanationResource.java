@@ -36,8 +36,8 @@ public class AffectationExplanationResource {
      */
     @POST
     @Path("/{posteId}/explication")
-    public Response expliquer(@PathParam("posteId") String posteId, PlanningFestival planning) {
-        AffectationExplanation explication = planningService.expliquerAffectation(planning, posteId);
+    public Response explain(@PathParam("posteId") String posteId, PlanningFestival planning) {
+        AffectationExplanation explication = planningService.explainAffectation(planning, posteId);
         return Response.ok(explication).build();
     }
 
@@ -48,9 +48,9 @@ public class AffectationExplanationResource {
      */
     @POST
     @Path("/{posteId}/simulation-swap")
-    public Response simulerSwap(@PathParam("posteId") String posteId,
+    public Response simulateSwap(@PathParam("posteId") String posteId,
             @QueryParam("animateurId") String animateurId, PlanningFestival planning) {
-        SwapSimulation simulation = planningService.simulerSwap(planning, posteId, animateurId);
+        SwapSimulation simulation = planningService.simulateSwap(planning, posteId, animateurId);
         return Response.ok(simulation).build();
     }
 

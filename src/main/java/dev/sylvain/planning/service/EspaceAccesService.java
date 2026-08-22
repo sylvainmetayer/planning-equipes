@@ -22,19 +22,19 @@ import jakarta.inject.Inject;
 
 /**
  * Passwordless authentication of the espace animateur (issue #165 follow-up):
- * the link (jeton) identifies the animateur, but since the espace serves the
+ * the link (token) identifies the animateur, but since the espace serves the
  * planning for download, possessing the link alone is no longer enough. The
  * second factor is the animateur's mailbox — a 6-digit code sent to the
  * address on their fiche, exchanged for a durable session carried by an
  * HttpOnly cookie.
  *
  * <p>Nothing secret is stored in clear: the code and the session token are
- * both SHA-256 hashed (the code salted with the animateur's jeton). One code
+ * both SHA-256 hashed (the code salted with the animateur's token). One code
  * at a time per animateur — asking again replaces it; 5 attempts, 10 minutes.
  * An animateur without an email address cannot open the espace: their address
  * IS the second factor, the interface tells them to contact the organisation.
  * Session and code lookups are edition-scoped through the caller's
- * {@code EditionContext} (resolved from the jeton, as everywhere in the
+ * {@code EditionContext} (resolved from the token, as everywhere in the
  * espace).</p>
  */
 @ApplicationScoped
@@ -62,25 +62,25 @@ public class EspaceAccesService {
     MailService mailService;
 
     @Inject
-    LimiteurDemandesCode limiteurDemandesCode;
+    CodeRequestLimiter limiteurDemandesCode;
 
     /** What the "send me a code" call tells the interface. */
     public record CodeEnvoye(String emailMasque) {
     }
 
     /** Too many codes asked for without using any: carries the delay before the next try. */
-    public static class TropDeDemandes extends RuntimeException {
+    public static class TooManyRequests extends RuntimeException {
 
-        private final long secondesAvantNouvelEssai;
+        private final long secondsBeforeNextTry;
 
-        TropDeDemandes(long secondesAvantNouvelEssai) {
+        TooManyRequests(long secondsBeforeNextTry) {
             super("Trop de codes demandés sans en utiliser aucun : réessayez dans "
-                    + Math.max(1, (secondesAvantNouvelEssai + 59) / 60) + " minute(s).");
-            this.secondesAvantNouvelEssai = secondesAvantNouvelEssai;
+                    + Math.max(1, (secondsBeforeNextTry + 59) / 60) + " minute(s).");
+            this.secondsBeforeNextTry = secondsBeforeNextTry;
         }
 
-        public long secondesAvantNouvelEssai() {
-            return secondesAvantNouvelEssai;
+        public long secondsBeforeNextTry() {
+            return secondsBeforeNextTry;
         }
     }
 
@@ -88,21 +88,21 @@ public class EspaceAccesService {
      * Generates and mails a fresh code to the animateur. Replaces any pending
      * one. Throws {@link IllegalArgumentException} when the fiche carries no
      * email address — the business message is shown as-is, and
-     * {@link TropDeDemandes} when codes pile up unused (see
-     * {@link LimiteurDemandesCode}).
+     * {@link TooManyRequests} when codes pile up unused (see
+     * {@link CodeRequestLimiter}).
      */
-    public CodeEnvoye demanderCode(String animateurId) {
-        Animateur animateur = animateurRequis(animateurId);
+    public CodeEnvoye requestCode(String animateurId) {
+        Animateur animateur = requiredAnimateur(animateurId);
         if (animateur.getEmail() == null || animateur.getEmail().isBlank()) {
-            throw new ErreurMetier.Invalide(
+            throw new BusinessError.Invalid(
                     "Aucune adresse e-mail n'est enregistrée pour vous : contactez l'organisation "
                             + "pour la faire ajouter à votre fiche.");
         }
         // After the address check, before the send: a record without an address
         // consumes nothing, and every mail actually sent is counted.
-        LimiteurDemandesCode.Verdict verdict = limiteurDemandesCode.demander(cleDebit(animateurId));
+        CodeRequestLimiter.Verdict verdict = limiteurDemandesCode.request(rateKey(animateurId));
         if (!verdict.autorise()) {
-            throw new TropDeDemandes(verdict.secondesAvantNouvelEssai());
+            throw new TooManyRequests(verdict.secondsBeforeNextTry());
         }
         String code = String.format("%06d", random.nextInt(1_000_000));
         try (Connection connection = dataSource.getConnection();
@@ -125,8 +125,8 @@ public class EspaceAccesService {
         // valid code behind that the animateur never received? It does — but a
         // replaced code is strictly safer than the previous one, and the next
         // request will replace it again. The send failure itself propagates.
-        mailService.envoyerCodeAcces(animateur.getEmail(), animateur.getPrenom(), code);
-        return new CodeEnvoye(masquer(animateur.getEmail()));
+        mailService.sendAccessCode(animateur.getEmail(), animateur.getPrenom(), code);
+        return new CodeEnvoye(mask(animateur.getEmail()));
     }
 
     /**
@@ -134,9 +134,9 @@ public class EspaceAccesService {
      * token to put in the cookie. Throws {@link IllegalArgumentException} on a
      * wrong, expired or exhausted code.
      */
-    public String ouvrirSession(String animateurId, String code) {
-        Animateur animateur = animateurRequis(animateurId);
-        verifierCode(animateurId, code, animateur.getJetonAcces());
+    public String openSession(String animateurId, String code) {
+        Animateur animateur = requiredAnimateur(animateurId);
+        checkCode(animateurId, code, animateur.getJetonAcces());
         byte[] brut = new byte[32];
         random.nextBytes(brut);
         String session = Base64.getUrlEncoder().withoutPadding().encodeToString(brut);
@@ -152,20 +152,20 @@ public class EspaceAccesService {
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to open an espace session", e);
         }
-        supprimerCode(animateurId);
+        deleteCode(animateurId);
         // The code was used: the run of requests with no follow-up stops there.
-        limiteurDemandesCode.oublier(cleDebit(animateurId));
+        limiteurDemandesCode.oublier(rateKey(animateurId));
         return session;
     }
 
     /**
      * True when the cookie value carries a live session of {@code animateurId}
-     * in the current edition. Like the jeton, the cookie alone must identify
-     * the session — but it is only ever accepted for the animateur the jeton
+     * in the current edition. Like the token, the cookie alone must identify
+     * the session — but it is only ever accepted for the animateur the token
      * of the URL resolves to, so a stolen cookie without the link is useless
      * (and vice versa).
      */
-    public boolean sessionValide(String cookieValue, String animateurId) {
+    public boolean validSession(String cookieValue, String animateurId) {
         if (cookieValue == null || cookieValue.isBlank()) {
             return false;
         }
@@ -186,9 +186,9 @@ public class EspaceAccesService {
         }
     }
 
-    private void verifierCode(String animateurId, String code, String jeton) {
+    private void checkCode(String animateurId, String code, String token) {
         if (code == null || code.isBlank()) {
-            throw new ErreurMetier.Invalide("Code manquant");
+            throw new BusinessError.Invalid("Code manquant");
         }
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection,
@@ -200,13 +200,13 @@ public class EspaceAccesService {
             ps.setString(2, animateurId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) {
-                    throw new ErreurMetier.Invalide(
+                    throw new BusinessError.Invalid(
                             "Code expiré ou trop d'essais : demandez un nouveau code.");
                 }
                 if (!MessageDigest.isEqual(
                         rs.getString("code_hash").getBytes(StandardCharsets.UTF_8),
-                        hacher(code.trim() + jeton).getBytes(StandardCharsets.UTF_8))) {
-                    throw new ErreurMetier.Invalide("Code incorrect.");
+                        hacher(code.trim() + token).getBytes(StandardCharsets.UTF_8))) {
+                    throw new BusinessError.Invalid("Code incorrect.");
                 }
             }
         } catch (SQLException e) {
@@ -214,7 +214,7 @@ public class EspaceAccesService {
         }
     }
 
-    private void supprimerCode(String animateurId) {
+    private void deleteCode(String animateurId) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection,
                         "DELETE FROM espace_acces WHERE edition_id = ? AND animateur_id = ?")) {
@@ -225,15 +225,15 @@ public class EspaceAccesService {
         }
     }
 
-    private Animateur animateurRequis(String animateurId) {
+    private Animateur requiredAnimateur(String animateurId) {
         return referenceDataService.listAnimateurs().stream()
                 .filter(candidat -> candidat.getId().equals(animateurId))
                 .findFirst()
-                .orElseThrow(() -> new ErreurMetier.Invalide("Animateur inconnu : " + animateurId));
+                .orElseThrow(() -> new BusinessError.Invalid("Animateur inconnu : " + animateurId));
     }
 
     /** {@code a•••@example.org} — enough to recognise one's address, nothing more. */
-    static String masquer(String email) {
+    static String mask(String email) {
         int arobase = email.indexOf('@');
         if (arobase <= 0) {
             return "•••";
@@ -251,7 +251,7 @@ public class EspaceAccesService {
     }
 
     /** The rate is counted per animateur AND per edition, like the rest of the espace. */
-    private String cleDebit(String animateurId) {
+    private String rateKey(String animateurId) {
         return editionContext.editionIdCourant() + "/" + animateurId;
     }
 

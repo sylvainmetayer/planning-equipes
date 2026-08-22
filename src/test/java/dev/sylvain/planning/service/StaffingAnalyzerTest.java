@@ -24,7 +24,7 @@ class StaffingAnalyzerTest {
 
     @Test
     void emptyProblemNeedsNobody() {
-        StaffingSummary summary = analyzer.analyser(List.of(), 48 * 60, 30);
+        StaffingSummary summary = analyzer.analyze(List.of(), 48 * 60, 30);
 
         assertThat(summary.minimumTotal()).isZero();
         assertThat(summary.parJour()).isEmpty();
@@ -36,13 +36,13 @@ class StaffingAnalyzerTest {
         // Two stands of 2 seats open at the same time: 4 people at once. A
         // third stand opens only once they have closed, and needs nobody more.
         Creneau matin = creneau(1, LocalTime.of(10, 0), LocalTime.of(12, 0));
-        Creneau apresMidi = creneau(2, LocalTime.of(14, 0), LocalTime.of(16, 0));
+        Creneau afternoon = creneau(2, LocalTime.of(14, 0), LocalTime.of(16, 0));
         List<PosteAffectation> postes = new ArrayList<>();
         postes.addAll(postes(stand("A", 2), matin, 2));
         postes.addAll(postes(stand("B", 2), matin, 2));
-        postes.addAll(postes(stand("C", 3), apresMidi, 3));
+        postes.addAll(postes(stand("C", 3), afternoon, 3));
 
-        StaffingSummary summary = analyzer.analyser(postes, 48 * 60, 0);
+        StaffingSummary summary = analyzer.analyze(postes, 48 * 60, 0);
 
         assertThat(summary.picSimultane()).isEqualTo(4);
         assertThat(summary.parJour()).hasSize(1);
@@ -63,7 +63,7 @@ class StaffingAnalyzerTest {
         postes.addAll(postes(stand, creneau(1, LocalTime.of(10, 0), LocalTime.of(15, 15)), 1));
         postes.addAll(postes(stand, creneau(2, LocalTime.of(15, 0), LocalTime.of(20, 0)), 1));
 
-        StaffingSummary summary = analyzer.analyser(postes, 48 * 60, 0);
+        StaffingSummary summary = analyzer.analyze(postes, 48 * 60, 0);
 
         // 2 only during the 15 min handover the relay pattern is built on.
         assertThat(summary.picSimultane()).isEqualTo(2);
@@ -80,7 +80,7 @@ class StaffingAnalyzerTest {
         postes.addAll(postes(stand, creneau(1, LocalTime.of(10, 0), LocalTime.of(15, 0)), 1));
         postes.addAll(postes(stand, creneau(2, LocalTime.of(15, 0), LocalTime.of(20, 0)), 1));
 
-        StaffingSummary summary = analyzer.analyser(postes, 48 * 60, 30);
+        StaffingSummary summary = analyzer.analyze(postes, 48 * 60, 30);
 
         assertThat(summary.picSimultane()).isEqualTo(1);
         assertThat(summary.picAvecPause()).isEqualTo(2);
@@ -100,7 +100,7 @@ class StaffingAnalyzerTest {
             postes.addAll(postes(stand("A", 1), creneau, 1));
         }
 
-        StaffingSummary summary = analyzer.analyser(postes, 20 * 60, 30);
+        StaffingSummary summary = analyzer.analyze(postes, 20 * 60, 30);
 
         assertThat(summary.nombreSemaines()).isEqualTo(1);
         assertThat(summary.totalDemandeHeures()).isEqualTo(70.0);
@@ -112,7 +112,7 @@ class StaffingAnalyzerTest {
     @Test
     void aWindowCrossingMidnightStaysOnTheEveningItStartedOn() {
         Creneau soiree = creneau(1, LocalTime.of(22, 0), LocalTime.of(2, 0));
-        StaffingSummary summary = analyzer.analyser(postes(stand("A", 1), soiree, 1), 48 * 60, 30);
+        StaffingSummary summary = analyzer.analyze(postes(stand("A", 1), soiree, 1), 48 * 60, 30);
 
         assertThat(summary.parJour()).hasSize(1);
         assertThat(summary.parJour().get(0).date()).isEqualTo(JOUR);
@@ -127,7 +127,7 @@ class StaffingAnalyzerTest {
         List<PosteAffectation> postes = new ArrayList<>(postes(majeurs, matin, 2));
         postes.addAll(postes(stand("B", 2), matin, 2));
 
-        StaffingSummary summary = analyzer.analyser(postes, 48 * 60, 0);
+        StaffingSummary summary = analyzer.analyze(postes, 48 * 60, 0);
 
         // 2 adult-only seats + 1 of the 2 remaining ones = 3 of 4.
         assertThat(summary.minimumTotal()).isEqualTo(4);
@@ -143,7 +143,7 @@ class StaffingAnalyzerTest {
         return new Creneau(id, 1, JOUR, debut, fin);
     }
 
-    /** One poste per seat, exactly like {@code PlanningService#construirePostes} generates them. */
+    /** One poste per seat, exactly like {@code PlanningService#buildPostes} generates them. */
     private static List<PosteAffectation> postes(Stand stand, Creneau creneau, int seats) {
         List<PosteAffectation> postes = new ArrayList<>();
         for (int seat = 0; seat < seats; seat++) {

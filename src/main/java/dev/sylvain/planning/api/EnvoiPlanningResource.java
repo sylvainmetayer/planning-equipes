@@ -1,7 +1,7 @@
 package dev.sylvain.planning.api;
 
-import dev.sylvain.planning.service.EnvoiPlanningService;
-import dev.sylvain.planning.service.EnvoiPlanningService.CompteRenduEnvoi;
+import dev.sylvain.planning.service.PlanningDeliveryService;
+import dev.sylvain.planning.service.PlanningDeliveryService.DeliveryReport;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
@@ -15,9 +15,9 @@ import jakarta.ws.rs.core.Response;
  * The two buttons that send the individual plannings (follow-up to issue
  * #165).
  *
- * <p>Nothing but transport here: {@link EnvoiPlanningService} decides who is
+ * <p>Nothing but transport here: {@link PlanningDeliveryService} decides who is
  * concerned, builds the PDFs and returns the report; a business error carries
- * its own HTTP status (see {@code ErreurMetier}), so no {@code try/catch} has
+ * its own HTTP status (see {@code BusinessError}), so no {@code try/catch} has
  * any reason to exist at this level.</p>
  */
 @Path("/planning/envoi")
@@ -26,13 +26,13 @@ import jakarta.ws.rs.core.Response;
 public class EnvoiPlanningResource {
 
     @Inject
-    EnvoiPlanningService envoiPlanningService;
+    PlanningDeliveryService envoiPlanningService;
 
     /** Sends their planning to every animateur holding at least one poste. */
     @POST
     @Path("/tous")
-    public CompteRenduEnvoi envoyerATous() {
-        return envoiPlanningService.envoyerATous();
+    public DeliveryReport sendToAll() {
+        return envoiPlanningService.sendToAll();
     }
 
     /**
@@ -42,10 +42,10 @@ public class EnvoiPlanningResource {
      */
     @POST
     @Path("/animateur/{animateurId}")
-    public Response envoyerAUnAnimateur(@PathParam("animateurId") String animateurId) {
-        CompteRenduEnvoi compteRendu = envoiPlanningService.envoyerAUnAnimateur(animateurId);
+    public Response sendToOneAnimateur(@PathParam("animateurId") String animateurId) {
+        DeliveryReport compteRendu = envoiPlanningService.sendToOneAnimateur(animateurId);
         return compteRendu.echecs().isEmpty()
                 ? Response.ok(compteRendu).build()
-                : Response.serverError().entity(new ErreurValidation(compteRendu.echecs().get(0))).build();
+                : Response.serverError().entity(new ValidationError(compteRendu.echecs().get(0))).build();
     }
 }

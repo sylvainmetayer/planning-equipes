@@ -54,7 +54,7 @@ class IsolationEditionStructurelleTest {
      *   <li>The espace animateur token arrives on a public URL, with no
      *       {@code X-Edition-Id} to believe: it is globally unique precisely so
      *       it can name the edition on its own, the caller carrying on inside
-     *       {@code EditionContext.executeDans}.</li>
+     *       {@code EditionContext.executeIn}.</li>
      *   <li>The e-mail address collision is checked when the "trusted header"
      *       mode boots, which has no edition to consider and wants to know
      *       whether the collision exists anywhere at all.</li>
@@ -105,10 +105,10 @@ class IsolationEditionStructurelleTest {
 
     /**
      * The edition must be <b>filtered on</b>, not merely read: {@code SELECT
-     * edition_id … WHERE jeton = ?} brings the column back without partitioning
+     * edition_id … WHERE token = ?} brings the column back without partitioning
      * anything at all.
      */
-    private static boolean estScopee(String sql) {
+    private static boolean isScoped(String sql) {
         String bas = sql.toLowerCase(Locale.ROOT);
         if (bas.contains("edition_id = ?")) {
             return true;
@@ -117,7 +117,7 @@ class IsolationEditionStructurelleTest {
         return colonnes.find() && colonnes.group(1).contains("edition_id");
     }
 
-    private static boolean viseUneTableMetier(String sql) {
+    private static boolean targetsBusinessTable(String sql) {
         String bas = sql.toLowerCase(Locale.ROOT);
         return TABLES_METIER.stream().anyMatch(table -> bas.matches(".*\\b" + table + "\\b.*"));
     }
@@ -125,13 +125,13 @@ class IsolationEditionStructurelleTest {
     @Test
     void touteRequeteSurUneTableMetierPorteSonPredicatDEdition() throws IOException {
         List<String> manquants = new ArrayList<>();
-        try (Stream<Path> fichiers = Files.walk(SOURCES)) {
-            for (Path fichier : fichiers.filter(f -> f.toString().endsWith(".java")).toList()) {
-                for (String sql : enonces(Files.readString(fichier))) {
-                    if (estScopee(sql) || !viseUneTableMetier(sql) || EXCEPTIONS_ASSUMEES.contains(sql)) {
+        try (Stream<Path> files = Files.walk(SOURCES)) {
+            for (Path file : files.filter(f -> f.toString().endsWith(".java")).toList()) {
+                for (String sql : enonces(Files.readString(file))) {
+                    if (isScoped(sql) || !targetsBusinessTable(sql) || EXCEPTIONS_ASSUMEES.contains(sql)) {
                         continue;
                     }
-                    manquants.add(fichier.getFileName() + " : " + sql);
+                    manquants.add(file.getFileName() + " : " + sql);
                 }
             }
         }
@@ -150,9 +150,9 @@ class IsolationEditionStructurelleTest {
     @Test
     void leScanTrouveBienLeSqlDuBackend() throws IOException {
         int enonces = 0;
-        try (Stream<Path> fichiers = Files.walk(SOURCES)) {
-            for (Path fichier : fichiers.filter(f -> f.toString().endsWith(".java")).toList()) {
-                enonces += enonces(Files.readString(fichier)).size();
+        try (Stream<Path> files = Files.walk(SOURCES)) {
+            for (Path file : files.filter(f -> f.toString().endsWith(".java")).toList()) {
+                enonces += enonces(Files.readString(file)).size();
             }
         }
 
@@ -165,9 +165,9 @@ class IsolationEditionStructurelleTest {
     @Test
     void chaqueExceptionAssumeeCorrespondAUneRequeteReelle() throws IOException {
         List<String> toutes = new ArrayList<>();
-        try (Stream<Path> fichiers = Files.walk(SOURCES)) {
-            for (Path fichier : fichiers.filter(f -> f.toString().endsWith(".java")).toList()) {
-                toutes.addAll(enonces(Files.readString(fichier)));
+        try (Stream<Path> files = Files.walk(SOURCES)) {
+            for (Path file : files.filter(f -> f.toString().endsWith(".java")).toList()) {
+                toutes.addAll(enonces(Files.readString(file)));
             }
         }
 

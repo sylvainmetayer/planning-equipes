@@ -22,7 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * DTO to refresh it. That is exactly what happened with
  * {@code nombreFamillesDecalage} and {@code dureeDecalageMaxMinutes}: both were
  * added to {@link dev.sylvain.planning.scenario.dto.ParametresDecoupageDto}
- * and correctly parsed by the importer, but stayed absent from the published
+ * and correctly parsed by the importReferenceData, but stayed absent from the published
  * schema — an editor validating a scenario against it flagged two perfectly
  * valid keys as unknown, silently, for a whole release cycle.
  *

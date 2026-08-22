@@ -33,9 +33,9 @@ public class OuvertureStandsResource {
      * second interpretation of the same data.
      */
     @GET
-    public RapportOuvertures analyser() {
-        return OuvertureStandsAnalyzer.analyser(
-                referenceDataService.listStandsResolus(),
+    public RapportOuvertures analyze() {
+        return OuvertureStandsAnalyzer.analyze(
+                referenceDataService.listSolvedStands(),
                 referenceDataService.listCreneaux());
     }
 }

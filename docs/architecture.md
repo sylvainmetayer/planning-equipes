@@ -75,34 +75,34 @@ dans [`domaine.md`](domaine.md).
 
 | Service | Rôle |
 | --- | --- |
-| `PlanningService` | Construit la `SolverFactory` depuis `solver/solverConfig.xml`, charge `scenario.yml`, expose `construireExemple()` / `resoudre()` / `analyser()`, et l'explicabilité par affectation (`expliquerAffectation()`, `simulerSwap()`) |
-| `ResolutionPipeline` | Ce qu'un solve fait **toujours** : capturer le plan qu'il va écraser, construire son problème, résoudre, persister, diagnostiquer, alimenter l'écran Contraintes, écrire la ligne de KPI, annoncer la fin. Deux coutures seulement — comment le problème est construit, et qui doit tenir le solveur pour pouvoir l'arrêter |
+| `PlanningService` | Construit la `SolverFactory` depuis `solver/solverConfig.xml`, charge `scenario.yml`, expose `buildExample()` / `solve()` / `analyze()`, et l'explicabilité par affectation (`explainAffectation()`, `simulateSwap()`) |
+| `SolvePipeline` | Ce qu'un solve fait **toujours** : capturer le plan qu'il va écraser, construire son problème, résoudre, persister, diagnostiquer, alimenter l'écran Contraintes, écrire la ligne de KPI, annoncer la fin. Deux coutures seulement — comment le problème est construit, et qui doit tenir le solveur pour pouvoir l'arrêter |
 | `SolverJobService` | Résolutions et analyses asynchrones ; porte le verrou « un seul solveur à la fois », partagé par tous les clients, et la **file d'attente** des tâches planifiées derrière celle qui tourne ; la rejoue au démarrage |
 | `SolverJobRepository` | Persistance de cette file et du journal des jobs (table `solver_job`) : l'**intention** d'un job, jamais un état de solveur ni le résultat — voir [`api.md`](api.md#la-file-survit-au-redémarrage) |
 | `ConstraintAnalysisStore` | Mémorise le résultat de la dernière analyse pour l'onglet « Constraints » |
 | `ReferenceDataService` | Façade de lecture/écriture sur l'ensemble du référentiel, sans logique propre : une porte unique pour la vingtaine de classes qui lisent plusieurs familles à la fois (ressources JAX-RS, outils MCP, construction du problème) |
 | `StandService`, `AnimateurService`, `CreneauService`, `EmplacementService`, `TypologieService`, `ContrainteAdHocService`, `VerrouillageService`, `ParametresService` | Une famille de référentiel chacun : sa validation et ses écritures. Un appelant qui ne touche qu'une famille injecte ce service-là, pas la façade |
-| `Referentiel` | Ce que la construction d'un problème lit du référentiel, et rien d'autre. Implémenté par `ReferenceDataService` ; les tests hors CDI en fournissent une version vide, qui vit dans `src/test` |
+| `ReferenceData` | Ce que la construction d'un problème lit du référentiel, et rien d'autre. Implémenté par `ReferenceDataService` ; les tests hors CDI en fournissent une version vide, qui vit dans `src/test` |
 | `StandRepository`, `AnimateurRepository`, `CreneauRepository`, `EmplacementRepository`, `TypologieRepository`, `ContrainteAdHocRepository`, `VerrouillageRepository`, `ParametresRepository` | Le SQL d'une famille chacun. Le prédicat `edition_id` reste auditable d'un `grep` sur le paquet, et `IsolationEditionStructurelleTest` le vérifie mécaniquement |
-| `ImportReferentielRepository` | La seule écriture qui traverse toutes les familles : remplacer le référentiel entier par celui d'un scénario, en une transaction. Il emprunte une connexion et la passe à chaque dépôt de famille |
-| `JdbcEditionScope` | Le seul endroit qui emprunte une connexion, lie l'édition courante au **premier** paramètre d'une requête (`prepareScoped`) et porte la transaction (`lire` / `ecrire` / `ecrireEtRendre`). C'est ce qui rend le prédicat `edition_id` mécanique — voir [`editions.md`](editions.md) |
+| `ReferenceDataImportRepository` | La seule écriture qui traverse toutes les familles : remplacer le référentiel entier par celui d'un scénario, en une transaction. Il emprunte une connexion et la passe à chaque dépôt de famille |
+| `JdbcEditionScope` | Le seul endroit qui emprunte une connexion, lie l'édition courante au **premier** paramètre d'une requête (`prepareScoped`) et porte la transaction (`read` / `write` / `writeAndReturn`). C'est ce qui rend le prédicat `edition_id` mécanique — voir [`editions.md`](editions.md) |
 | `EditionService` / `EditionRepository` | Gestion des éditions elles-mêmes : création, duplication, suppression — voir [`editions.md`](editions.md) |
 | `EditionContext` / `EditionRequestScope` | Résout l'édition que la requête courante lit et écrit (en-tête `X-Edition-Id`, repli sur l'édition par défaut), et permet de lier une édition à un thread sans requête (worker du solveur) |
 | `PlanningPersistenceService` | Lecture / écriture du planning persisté, cloisonnée par édition |
 | `PlanningKpiService` | KPI agrégés et non nominatifs d'un plan (score par niveau, couverture, dispersion des heures, taux de modifications manuelles) — issue #89 |
 | `KpiHistoriqueService` | Une ligne de KPI par solve terminé, toutes éditions, sans clé étrangère (l'historique survit à la suppression d'une édition) — issue #89 |
-| `ReplanificationDiff` / `PerimetreReplanification` | Périmètre volatil d'une replanification incrémentale et diff des équipes qu'elle a fait bouger — issue #86 |
-| `SnapshotComparaisonService` | Comparateur A/B : confronte deux plans (instantanés ou plan courant), **toutes éditions confondues**, en lecture seule — aucune résolution, aucun score recalculé — issue #70 |
-| `EnvoiPlanningService` | Envoi des plannings individuels par mail : qui est concerné, le PDF, le compte rendu. Action d'administration explicite, donc un compte rendu nominatif — à l'opposé des notifications d'échange, best-effort par nature |
+| `ReplanificationDiff` / `ReplanificationScope` | Périmètre volatil d'une replanification incrémentale et diff des équipes qu'elle a fait bouger — issue #86 |
+| `SnapshotComparisonService` | Comparateur A/B : confronte deux plans (instantanés ou plan courant), **toutes éditions confondues**, en lecture seule — aucune résolution, aucun score recalculé — issue #70 |
+| `PlanningDeliveryService` | Envoi des plannings individuels par mail : qui est concerné, le PDF, le compte rendu. Action d'administration explicite, donc un compte rendu nominatif — à l'opposé des notifications d'échange, best-effort par nature |
 | `DatabaseDumpService` | Export / import de dump SQL |
 | `PlanningExportService` | Façade des exports d'un planning, **côté serveur uniquement** : qui est concerné, comment on le nomme, ses jours de repos, le lien de son espace, et les ZIP qui distribuent le tout |
-| `PlanningPdfAnimateur` / `PlanningPdfGlobal` / `PlanningIcs` | Un document chacun : le PDF en cartes qu'on lit sur un téléphone, le récapitulatif paysage de l'organisateur, le calendrier iCalendar |
-| `ChartePdf` | L'identité visuelle des PDF (palette, fontes, logo, icônes, coins arrondis). Séparée parce qu'elle change quand la charte change, jamais quand la façon de planifier change |
-| `StatistiquesPostes` | Ce qu'un ensemble de sièges représente — jours, stands, créneaux, heures — et la tuile qui l'affiche. Partagée par les deux PDF, pour que « 3 JOURS » veuille dire la même chose sur les deux |
-| `LiensApplication` | Toute URL publique imprimée hors de l'application (mail, PDF) : seul endroit qui connaît `planning.public-url` et les routes du SPA visées — voir [`developpement.md`](developpement.md#conventions-de-code) |
-| `AdresseAdministrateur` | Seul lecteur de `planning.mail.admin` ; vide = notifications administrateur désactivées |
+| `AnimateurPlanningPdf` / `GlobalPlanningPdf` / `PlanningIcs` | Un document chacun : le PDF en cartes qu'on lit sur un téléphone, le récapitulatif paysage de l'organisateur, le calendrier iCalendar |
+| `PdfTheme` | L'identité visuelle des PDF (palette, fontes, logo, icônes, coins arrondis). Séparée parce qu'elle change quand la charte change, jamais quand la façon de planifier change |
+| `PosteStatistics` | Ce qu'un ensemble de sièges représente — jours, stands, créneaux, heures — et la tuile qui l'affiche. Partagée par les deux PDF, pour que « 3 JOURS » veuille dire la même chose sur les deux |
+| `ApplicationLinks` | Toute URL publique imprimée hors de l'application (mail, PDF) : seul endroit qui connaît `planning.public-url` et les routes du SPA visées — voir [`developpement.md`](developpement.md#conventions-de-code) |
+| `AdminAddress` | Seul lecteur de `planning.mail.admin` ; vide = notifications administrateur désactivées |
 | `MailService` | Les mails qu'un administrateur **demande** (planning individuel, code d'accès, mail de test) — un échec **remonte** |
-| `service/notification/` | Les mails best-effort : le métier émet une `Notification` (interface scellée), `RedacteurNotifications` la rédige par `switch` exhaustif, `ExpediteurNotifications` l'observe et porte l'unique `catch` — voir ci-dessous |
+| `service/notification/` | Les mails best-effort : le métier émet une `Notification` (interface scellée), `NotificationWriter` la rédige par `switch` exhaustif, `NotificationDispatcher` l'observe et porte l'unique `catch` — voir ci-dessous |
 
 #### Deux politiques d'échec, séparées structurellement
 

@@ -30,13 +30,13 @@ public class KpiResource {
 
     @GET
     public List<KpiHistoriqueEntry> list() {
-        return kpiHistoriqueService.lister();
+        return kpiHistoriqueService.list();
     }
 
     @DELETE
     @Path("/{id}")
     public Response delete(@PathParam("id") long id) {
-        if (!kpiHistoriqueService.supprimer(id)) {
+        if (!kpiHistoriqueService.delete(id)) {
             throw new NotFoundException("Unknown KPI history row: " + id);
         }
         return Response.noContent().build();

@@ -22,7 +22,7 @@ import jakarta.inject.Inject;
  * <p>Resolution order:</p>
  * <ol>
  * <li>an explicit override bound to the current thread, for work that outlives
- * its request — see {@link #executeDans};</li>
+ * its request — see {@link #executeIn};</li>
  * <li>the {@code X-Edition-Id} of the request being served, <b>if that edition
  * exists</b>;</li>
  * <li>the edition flagged {@code defaut}.</li>
@@ -59,7 +59,7 @@ public class EditionContext {
      * enough.
      */
     private volatile Set<String> idsConnus;
-    private volatile String idParDefaut;
+    private volatile String defaultId;
 
     /** Edition the current call reads and writes. Never {@code null}. */
     public String editionIdCourant() {
@@ -67,12 +67,12 @@ public class EditionContext {
         if (override != null) {
             return override;
         }
-        String imposee = editionImposeeParJeton();
+        String imposee = editionForcedByToken();
         if (imposee != null) {
             return imposee;
         }
         String demande = editionIdDemande();
-        return demande != null && idsConnus().contains(demande) ? demande : idParDefaut();
+        return demande != null && idsConnus().contains(demande) ? demande : defaultId();
     }
 
     /**
@@ -80,7 +80,7 @@ public class EditionContext {
      * previous binding is restored afterwards, so nesting and thread reuse in a
      * pool are both safe.
      */
-    public <T> T executeDans(String editionId, Callable<T> work) {
+    public <T> T executeIn(String editionId, Callable<T> work) {
         String precedent = OVERRIDE.get();
         OVERRIDE.set(editionId);
         try {
@@ -98,9 +98,9 @@ public class EditionContext {
         }
     }
 
-    /** Same as {@link #executeDans(String, Callable)} for work returning nothing. */
-    public void executeDans(String editionId, Runnable work) {
-        executeDans(editionId, () -> {
+    /** Same as {@link #executeIn(String, Callable)} for work returning nothing. */
+    public void executeIn(String editionId, Runnable work) {
+        executeIn(editionId, () -> {
             work.run();
             return null;
         });
@@ -109,7 +109,7 @@ public class EditionContext {
     /** Must be called whenever an edition is created, deleted, or made the default. */
     public void invaliderCache() {
         idsConnus = null;
-        idParDefaut = null;
+        defaultId = null;
     }
 
     /**
@@ -132,13 +132,13 @@ public class EditionContext {
      * no validation against the known ids: it comes from the animateur row
      * itself. {@code null} off the espace routes or outside any request.
      */
-    private String editionImposeeParJeton() {
+    private String editionForcedByToken() {
         var container = Arc.container();
         if (container == null || !container.requestContext().isActive()) {
             return null;
         }
-        var proprietaire = requestScope.getProprietaireJeton();
-        return proprietaire == null ? null : proprietaire.editionId();
+        var owner = requestScope.getTokenOwner();
+        return owner == null ? null : owner.editionId();
     }
 
     private Set<String> idsConnus() {
@@ -151,11 +151,11 @@ public class EditionContext {
         return cache;
     }
 
-    private String idParDefaut() {
-        String cache = idParDefaut;
+    private String defaultId() {
+        String cache = defaultId;
         if (cache == null) {
-            cache = editionRepository.idEditionParDefaut();
-            idParDefaut = cache;
+            cache = editionRepository.defaultEditionId();
+            defaultId = cache;
         }
         return cache;
     }

@@ -241,7 +241,7 @@ Trois pièces, dans le package `mcp` :
 | --- | --- |
 | `@EditionArg` | marque le `@ToolArg` qui porte l'édition ; c'est l'annotation, pas le nom de l'argument, qui fait le lien |
 | `@EditionCiblee` | posée sur la **classe** d'outils, elle y branche l'intercepteur — un outil ajouté plus tard en hérite au lieu d'écrire silencieusement dans l'édition par défaut |
-| `EditionCibleeInterceptor` | lie l'édition autour de l'appel via `EditionContext.executeDans`, le même mécanisme que les jobs solveur et l'import de scénario |
+| `EditionCibleeInterceptor` | lie l'édition autour de l'appel via `EditionContext.executeIn`, le même mécanisme que les jobs solveur et l'import de scénario |
 
 Le corps des outils reste donc écrit comme s'il tournait dans une seule
 édition — ce qu'il fait. Corollaire à connaître : un outil qui en appelle un
@@ -385,7 +385,7 @@ L'outil **agrège** trois analyses plutôt que d'en réimplémenter une quatriè
 `OuvertureStandsAnalyzer` juge déjà la relation stand↔créneau (stand jamais
 ouvert, fenêtre sans effet, segment trop court) et `FeasibilityAnalyzer` juge
 l'effectif ; ce que ni l'un ni l'autre ne regarde, c'est la cohérence interne
-de la grille, et c'est ce que `GrilleCreneauxService` ajoute :
+de la grille, et c'est ce que `CreneauGridService` ajoute :
 
 | Anomalie | Sévérité | Déclenchement |
 | --- | --- | --- |
@@ -450,7 +450,7 @@ l'outil.
 
 Chaque outil délègue au service métier existant (`ReferenceDataService`,
 `SolverJobService`, `PlanningService`, `PlanningPersistenceService`,
-`HeuresPlanningService`, `FeasibilityAnalyzer`, `ConstraintAnalysisStore`) —
+`PlanningHoursService`, `FeasibilityAnalyzer`, `ConstraintAnalysisStore`) —
 aucune logique n'est dupliquée, voir le package
 `dev.sylvain.planning.mcp`. Les outils d'import de scénario
 délèguent à `ReferenceDataResource`, qui possède encore l'orchestration

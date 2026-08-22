@@ -26,8 +26,8 @@ public class ContrainteAdHocService {
     }
 
     public ContrainteAdHoc create(ContrainteAdHoc contrainte) {
-        contrainte.setId(Identifiants.requis(contrainte.getId(), "constraint id"));
-        validerPaireSansContradiction(contrainte);
+        contrainte.setId(Ids.required(contrainte.getId(), "constraint id"));
+        validatePairWithoutContradiction(contrainte);
         if (contrainte.getCreeLe() == null) {
             contrainte.setCreeLe(Instant.now());
         }
@@ -51,23 +51,23 @@ public class ContrainteAdHocService {
      * constraint under its own id is exempt: the saved version replaces the
      * conflicting one instead of coexisting with it.
      */
-    private void validerPaireSansContradiction(ContrainteAdHoc contrainte) {
+    private void validatePairWithoutContradiction(ContrainteAdHoc contrainte) {
         TypeContrainteAdHoc typeOppose = switch (contrainte.getType()) {
             case AFFINITE -> TypeContrainteAdHoc.INCOMPATIBILITE;
             case INCOMPATIBILITE -> TypeContrainteAdHoc.AFFINITE;
             default -> null;
         };
-        Set<String> paire = paireAnimateurs(contrainte);
+        Set<String> paire = animateurPair(contrainte);
         if (typeOppose == null || paire == null) {
             return;
         }
         list().stream()
                 .filter(existante -> existante.getType() == typeOppose)
                 .filter(existante -> !existante.getId().equals(contrainte.getId()))
-                .filter(existante -> paire.equals(paireAnimateurs(existante)))
+                .filter(existante -> paire.equals(animateurPair(existante)))
                 .findFirst()
                 .ifPresent(existante -> {
-                    throw new ErreurMetier.Invalide(
+                    throw new BusinessError.Invalid(
                             "La paire d'animateurs " + String.join(" / ", new TreeSet<>(paire))
                                     + " est déjà visée par la contrainte " + existante.getId()
                                     + " (" + existante.getType()
@@ -77,7 +77,7 @@ public class ContrainteAdHocService {
     }
 
     /** The unordered pair of the first two animateur ids, or null when the constraint doesn't name a genuine pair. */
-    private static Set<String> paireAnimateurs(ContrainteAdHoc contrainte) {
+    private static Set<String> animateurPair(ContrainteAdHoc contrainte) {
         List<Animateur> animateurs = contrainte.getAnimateursConcernes();
         if (animateurs == null || animateurs.size() < 2
                 || animateurs.get(0) == null || animateurs.get(1) == null) {

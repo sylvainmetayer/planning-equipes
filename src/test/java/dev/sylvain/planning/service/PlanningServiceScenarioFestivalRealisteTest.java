@@ -52,7 +52,7 @@ import dev.sylvain.planning.domain.Stand;
 class PlanningServiceScenarioFestivalRealisteTest {
 
     /**
-     * Safety ceiling, not a target: {@code resoudreJusquaFaisabilite} returns
+     * Safety ceiling, not a target: {@code solveUntilFeasible} returns
      * as soon as the hard score reaches zero, so this only bounds a run that
      * is <em>not</em> converging.
      *
@@ -72,18 +72,18 @@ class PlanningServiceScenarioFestivalRealisteTest {
 
     @Test
     void festivalRealisteNeViolateAucuneContrainteHard() throws IOException {
-        assertDecoupeEtResoluSansHard("festival-realiste.yaml");
+        assertSlicedAndSolvedWithoutHard("festival-realiste.yaml");
     }
 
     @Test
     void festivalRealisteEnCaniculeNeViolateAucuneContrainteHard() throws IOException {
-        assertDecoupeEtResoluSansHard("festival-realiste-canicule.yaml");
+        assertSlicedAndSolvedWithoutHard("festival-realiste-canicule.yaml");
     }
 
     /**
      * Mirrors what {@code decoupageAuto: {}} does at import: the file's
      * créneaux are daily amplitudes, sliced into vacations before any poste
-     * exists. Going through {@code construireExemple()} instead would solve
+     * exists. Going through {@code buildExample()} instead would solve
      * the raw amplitudes and test a pipeline nobody runs.
      *
      * <p>The {@link HoraireStandResolver} call is not optional decoration, and
@@ -94,26 +94,26 @@ class PlanningServiceScenarioFestivalRealisteTest {
      * around the clock — 16 924 seats instead of 3 499, a problem five times
      * too large that no roster of 153 animateurs could ever fill. The
      * production path never has this problem because it goes through
-     * {@code ReferenceDataService.listStandsResolus()}; a plain-Java test has
+     * {@code ReferenceDataService.listSolvedStands()}; a plain-Java test has
      * to do it by hand.</p>
      */
-    private void assertDecoupeEtResoluSansHard(String scenario) throws IOException {
-        Referentiel referenceDataService = new ReferentielVide();
+    private void assertSlicedAndSolvedWithoutHard(String scenario) throws IOException {
+        ReferenceData referenceDataService = new EmptyReferenceData();
         PlanningService planningService = new PlanningService(420L, 0L,
                 ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT, referenceDataService,
                 new FeasibilityAnalyzer(), ConfigProvider.getConfig());
 
-        PlanningService.ReferenceScenario reference = planningService.chargerReferenceScenario(scenario);
-        ParametresDecoupage parametresDecoupage = planningService.chargerSectionsScenario(scenario).parametresDecoupage()
+        PlanningService.ReferenceScenario reference = planningService.loadReferenceScenario(scenario);
+        ParametresDecoupage parametresDecoupage = planningService.loadScenarioSections(scenario).parametresDecoupage()
                 .orElseGet(ParametresDecoupage::new);
-        List<Creneau> vacations = VacationGeneratorService.genererVacations(
+        List<Creneau> vacations = VacationGeneratorService.generateVacations(
                 List.copyOf(reference.creneauxParId().values()), parametresDecoupage);
-        List<Stand> stands = List.copyOf(reference.standsParId().values());
-        HoraireStandResolver.appliquer(stands, vacations);
-        List<PosteAffectation> postes = PlanningService.construirePostes(stands, vacations);
+        List<Stand> stands = List.copyOf(reference.standsById().values());
+        HoraireStandResolver.apply(stands, vacations);
+        List<PosteAffectation> postes = PlanningService.buildPostes(stands, vacations);
         PlanningFestival problem = new PlanningFestival(reference.dateDebut(), reference.animateurs(), postes);
 
-        PlanningFestival solved = planningService.resoudreJusquaFaisabilite(problem, SECONDS_LIMITE_SECURITE);
+        PlanningFestival solved = planningService.solveUntilFeasible(problem, SECONDS_LIMITE_SECURITE);
 
         assertThat(solved.getScore()).isNotNull();
         assertThat(solved.getScore().hardScore()).isZero();

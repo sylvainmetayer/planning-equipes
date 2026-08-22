@@ -31,52 +31,52 @@ public class EditionRepository {
     public static final String EDITION_DEFAUT_ID = "DEFAUT";
 
     /**
-     * Reference tables copied by {@link #dupliquer}, ordered so a sequential
+     * Reference tables copied by {@link #duplicate}, ordered so a sequential
      * insert never breaks a foreign key. {@code creneau} and its children are
      * absent: their ids are DB-generated and need the remapping handled
      * separately below. Solver <i>results</i> ({@code poste_affectation},
      * {@code planning_resolution}) are absent too — duplicating an edition
      * means "2026 = 2025 minus the assignments".
      */
-    private static final List<TableACopier> TABLES_A_COPIER = List.of(
-            new TableACopier("typologie", "id, label"),
-            new TableACopier("emplacement", "id, nom, latitude, longitude"),
+    private static final List<TableToCopy> TABLES_A_COPIER = List.of(
+            new TableToCopy("typologie", "id, label"),
+            new TableToCopy("emplacement", "id, nom, latitude, longitude"),
             // email travels with the copy (the canicule-edition ritual of issue
-            // #172 ends with « Envoyer à tous », mute without it); jeton_acces
+            // #172 ends with « Envoyer à all », mute without it); jeton_acces
             // deliberately does NOT: the column default mints a fresh token per
             // edition, so an espace link keeps designating exactly one edition.
-            new TableACopier("animateur", "id, prenom, nom, date_naissance, manager, email"),
-            new TableACopier("stand",
+            new TableToCopy("animateur", "id, prenom, nom, date_naissance, manager, email"),
+            new TableToCopy("stand",
                     "id, nom, effectif_min, effectif_max, reserve_majeurs, premium, emplacement_id, niveau_effort"),
-            new TableACopier("animateur_competence", "animateur_id, typologie, niveau"),
-            new TableACopier("animateur_jour_indispo", "animateur_id, jour"),
-            new TableACopier("animateur_souhait", "animateur_id, typologie"),
-            new TableACopier("stand_typologie", "stand_id, typologie"),
-            new TableACopier("stand_indisponibilite",
+            new TableToCopy("animateur_competence", "animateur_id, typologie, niveau"),
+            new TableToCopy("animateur_jour_indispo", "animateur_id, jour"),
+            new TableToCopy("animateur_souhait", "animateur_id, typologie"),
+            new TableToCopy("stand_typologie", "stand_id, typologie"),
+            new TableToCopy("stand_indisponibilite",
                     "stand_id, date_indisponibilite, heure_debut, heure_fin, motif"),
-            new TableACopier("stand_ouverture", "stand_id, date_ouverture, heure_debut, heure_fin, motif"),
+            new TableToCopy("stand_ouverture", "stand_id, date_ouverture, heure_debut, heure_fin, motif"),
             // The recurring opening rules (V37) predated by this list: without
             // them a duplicated edition silently fell back to « open on every
             // slot ». Their BIGSERIAL ids are kept as-is — the PKs are
             // composite (edition_id, id), the child FK follows the new
             // edition_id, and the shared sequence has already consumed those
             // values, so future inserts cannot collide.
-            new TableACopier("stand_horaire",
+            new TableToCopy("stand_horaire",
                     "id, stand_id, mode, type_jours, jours_semaine, date_debut, date_fin, dates, motif"),
-            new TableACopier("stand_horaire_fenetre", "id, horaire_id, position, heure_debut, heure_fin"),
-            new TableACopier("constraint_toggle", "nom"),
-            new TableACopier("parametres_legaux",
+            new TableToCopy("stand_horaire_fenetre", "id, horaire_id, position, heure_debut, heure_fin"),
+            new TableToCopy("constraint_toggle", "nom"),
+            new TableToCopy("parametres_legaux",
                     "duree_hebdomadaire_max_minutes, duree_hebdomadaire_max_mineur_minutes, "
                             + "pause_minimale_entre_vacations_minutes, repos_quotidien_minimal_minutes"),
-            new TableACopier("parametres_decoupage",
+            new TableToCopy("parametres_decoupage",
                     "duree_vacation_cible_minutes, duree_vacation_min_minutes, duree_vacation_max_minutes, "
                             + "duree_chevauchement_minutes, duree_pause_repas_minutes, fenetre_repas_midi_debut, "
                             + "fenetre_repas_midi_fin, fenetre_repas_soir_debut, fenetre_repas_soir_fin, "
                             + "strategie_couverture_pendant_pause, nombre_familles_decalage, "
                             + "duree_decalage_max_minutes"),
-            new TableACopier("parametres_solveur", "duree_resolution_secondes"));
+            new TableToCopy("parametres_solveur", "duree_resolution_secondes"));
 
-    private record TableACopier(String nom, String colonnes) {
+    private record TableToCopy(String nom, String colonnes) {
     }
 
     @Inject
@@ -119,7 +119,7 @@ public class EditionRepository {
      * none is — a database always has one (V30 seeds it, and the service
      * refuses to delete it), so the fallback only covers a hand-edited base.
      */
-    public String idEditionParDefaut() {
+    public String defaultEditionId() {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement("SELECT id FROM edition WHERE defaut");
                 ResultSet rs = ps.executeQuery()) {
@@ -152,8 +152,8 @@ public class EditionRepository {
      * {@code defaut} is never violated in between — same pattern as
      * the former {@code groupe_creneau.actif}).
      */
-    public void definirParDefaut(String id) {
-        scope.ecrire("Failed to set edition " + id + " as default", connection -> {
+    public void setAsDefault(String id) {
+        scope.write("Failed to set edition " + id + " as default", connection -> {
             try (PreparedStatement ps = connection.prepareStatement("UPDATE edition SET defaut = FALSE")) {
                 ps.executeUpdate();
             }
@@ -189,17 +189,17 @@ public class EditionRepository {
      * temporary mapping table and the rows referencing them are rewritten
      * through it.</p>
      */
-    public void dupliquer(String sourceId, String cibleId) {
-        scope.ecrire("Failed to duplicate edition " + sourceId + " into " + cibleId, connection -> {
-            for (TableACopier table : TABLES_A_COPIER) {
-                copierTable(connection, table, sourceId, cibleId);
+    public void duplicate(String sourceId, String cibleId) {
+        scope.write("Failed to duplicate edition " + sourceId + " into " + cibleId, connection -> {
+            for (TableToCopy table : TABLES_A_COPIER) {
+                copyTable(connection, table, sourceId, cibleId);
             }
-            copierCreneaux(connection, sourceId, cibleId);
-            copierContraintesAdHoc(connection, sourceId, cibleId);
+            copyCreneaux(connection, sourceId, cibleId);
+            copyContraintesAdHoc(connection, sourceId, cibleId);
         });
     }
 
-    private void copierTable(Connection connection, TableACopier table, String sourceId, String cibleId)
+    private void copyTable(Connection connection, TableToCopy table, String sourceId, String cibleId)
             throws SQLException {
         // Column lists come from the constant above, never from user input.
         try (PreparedStatement ps = connection.prepareStatement(
@@ -218,7 +218,7 @@ public class EditionRepository {
      * {@code contrainte_ad_hoc.creneau_id} be rewritten set-wise; relying on
      * the order of an {@code INSERT … RETURNING} would not be guaranteed.
      */
-    private void copierCreneaux(Connection connection, String sourceId, String cibleId) throws SQLException {
+    private void copyCreneaux(Connection connection, String sourceId, String cibleId) throws SQLException {
         try (Statement statement = connection.createStatement()) {
             statement.execute("CREATE TEMPORARY TABLE creneau_remap ("
                     + "ancien_id BIGINT PRIMARY KEY, nouvel_id BIGINT NOT NULL) ON COMMIT DROP");
@@ -257,7 +257,7 @@ public class EditionRepository {
     }
 
     /** Ad hoc constraints last: they reference both a stand and a (remapped) créneau. */
-    private void copierContraintesAdHoc(Connection connection, String sourceId, String cibleId) throws SQLException {
+    private void copyContraintesAdHoc(Connection connection, String sourceId, String cibleId) throws SQLException {
         try (PreparedStatement ps = connection.prepareStatement(
                 """
                 INSERT INTO contrainte_ad_hoc (edition_id, id, type, creneau_id, stand_id, raison, cree_par, cree_le)

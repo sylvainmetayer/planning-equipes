@@ -20,7 +20,7 @@ import jakarta.inject.Inject;
  * the persisted plan — and no KPI row was written. Nothing threw, nothing
  * showed in the logs: the only symptom was a screen that lied.</p>
  *
- * <p>This test holds the two ends {@code ResolutionPipeline} now guarantees for
+ * <p>This test holds the two ends {@code SolvePipeline} now guarantees for
  * its four callers.</p>
  */
 @QuarkusTest
@@ -36,8 +36,8 @@ class SolveSynchronePipelineTest {
     void unSolveSynchroneAlimenteLEcranContraintesEtLHistoriqueKpi() {
         // An analysis of another plan is in place: that is the one that stayed
         // on screen after a synchronous solve.
-        analysisStore.effacer();
-        int kpiAvant = kpiHistorique.lister().size();
+        analysisStore.clear();
+        int kpiBefore = kpiHistorique.list().size();
 
         String probleme = given()
                 .when().get("/api/planning/sample?name=scenario.yml")
@@ -59,8 +59,8 @@ class SolveSynchronePipelineTest {
         assertThat(analyse.diagnostic()).isNotNull();
         assertThat(analyse.diagnostic().score()).isNotBlank();
 
-        assertThat(kpiHistorique.lister())
+        assertThat(kpiHistorique.list())
                 .as("un solve terminé écrit sa ligne de KPI, quel que soit le chemin qui l'a lancé")
-                .hasSizeGreaterThan(kpiAvant);
+                .hasSizeGreaterThan(kpiBefore);
     }
 }

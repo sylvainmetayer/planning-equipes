@@ -32,11 +32,11 @@ import jakarta.ws.rs.core.UriInfo;
  * reachable without the admin session: every route carries the animateur's
  * access token, printed as a link on their individual PDF planning.
  *
- * <p>The guards do all the plumbing, declaratively. {@link JetonRequis}
+ * <p>The guards do all the plumbing, declaratively. {@link TokenRequired}
  * (bootstrap routes: code request, session opening) resolves the token — 404
  * unknown, nothing must help guessing one — and binds the owner's edition to
  * the request, so no {@code X-Edition-Id} header is ever trusted here.
- * {@link SessionEspaceRequise} (every other route) adds the session check on
+ * {@link EspaceSessionRequired} (every other route) adds the session check on
  * top: since the espace serves the planning for download, the link alone is
  * not enough — a session opened by e-mail code (see {@link EspaceAccesService})
  * rides in the {@code planning-espace} HttpOnly cookie, and a valid token without
@@ -71,9 +71,9 @@ public class EspaceAnimateurResource {
     /** Who I am, my persisted planning (with teammates) and the colleagues I can swap with. */
     @GET
     @Path("/{jeton}")
-    @SessionEspaceRequise
+    @EspaceSessionRequired
     public EspaceAnimateurView espace() {
-        return espaceAnimateurService.construireVue(animateurCourant());
+        return espaceAnimateurService.buildView(animateurCourant());
     }
 
     /**
@@ -83,19 +83,19 @@ public class EspaceAnimateurResource {
      */
     @GET
     @Path("/{jeton}/collegues/{collegueId}/postes")
-    @SessionEspaceRequise
-    @FoireOuverteRequise
-    public List<EspaceAnimateurService.PosteAnimateurView> postesCollegue(
+    @EspaceSessionRequired
+    @FoireOpenRequired
+    public List<EspaceAnimateurService.PosteAnimateurView> colleaguePostes(
             @PathParam("collegueId") String collegueId) {
-        return espaceAnimateurService.postesCollegue(collegueId);
+        return espaceAnimateurService.colleaguePostes(collegueId);
     }
 
     /** My demandes d'échange, most recent first, whatever their statut. */
     @GET
     @Path("/{jeton}/demandes")
-    @SessionEspaceRequise
+    @EspaceSessionRequired
     public List<DemandeEchangeView> demandes() {
-        return espaceAnimateurService.versVues(demandeEchangeService.listerPourDemandeur(animateurCourant()));
+        return espaceAnimateurService.toViews(demandeEchangeService.listForRequester(animateurCourant()));
     }
 
     /**
@@ -104,27 +104,27 @@ public class EspaceAnimateurResource {
      */
     @GET
     @Path("/{jeton}/demandes-recues")
-    @SessionEspaceRequise
-    public List<DemandeEchangeView> demandesRecues() {
-        return espaceAnimateurService.versVues(demandeEchangeService.listerPourCible(animateurCourant()));
+    @EspaceSessionRequired
+    public List<DemandeEchangeView> receivedDemandes() {
+        return espaceAnimateurService.toViews(demandeEchangeService.listForTarget(animateurCourant()));
     }
 
     /** I agree with a demande targeting me: it enters the admin queue, both sides now OK. */
     @POST
     @Path("/{jeton}/demandes-recues/{demandeId}/accord")
-    @SessionEspaceRequise
-    public Response accorderDemandeRecue(@PathParam("demandeId") String demandeId) {
-        return Response.ok(espaceAnimateurService.versVues(
-                List.of(demandeEchangeService.accepterParCible(animateurCourant(), demandeId))).get(0)).build();
+    @EspaceSessionRequired
+    public Response grantReceivedDemande(@PathParam("demandeId") String demandeId) {
+        return Response.ok(espaceAnimateurService.toViews(
+                List.of(demandeEchangeService.acceptByTarget(animateurCourant(), demandeId))).get(0)).build();
     }
 
     /** I decline a demande targeting me: terminal, the demandeur is told, the admin never arbitrates. */
     @POST
     @Path("/{jeton}/demandes-recues/{demandeId}/refus")
-    @SessionEspaceRequise
-    public Response declinerDemandeRecue(@PathParam("demandeId") String demandeId) {
-        return Response.ok(espaceAnimateurService.versVues(
-                List.of(demandeEchangeService.declinerParCible(animateurCourant(), demandeId))).get(0)).build();
+    @EspaceSessionRequired
+    public Response declineReceivedDemande(@PathParam("demandeId") String demandeId) {
+        return Response.ok(espaceAnimateurService.toViews(
+                List.of(demandeEchangeService.declineByTarget(animateurCourant(), demandeId))).get(0)).build();
     }
 
     /**
@@ -135,10 +135,10 @@ public class EspaceAnimateurResource {
      */
     @POST
     @Path("/{jeton}/demandes")
-    @SessionEspaceRequise
-    public Response soumettre(List<NouvelleDemande> nouvelles) {
-        return Response.ok(espaceAnimateurService.versVues(
-                demandeEchangeService.soumettre(animateurCourant(), nouvelles))).build();
+    @EspaceSessionRequired
+    public Response submit(List<NouvelleDemande> nouvelles) {
+        return Response.ok(espaceAnimateurService.toViews(
+                demandeEchangeService.submit(animateurCourant(), nouvelles))).build();
     }
 
     /**
@@ -148,21 +148,21 @@ public class EspaceAnimateurResource {
      */
     @GET
     @Path("/{jeton}/planning.pdf")
-    @SessionEspaceRequise
+    @EspaceSessionRequired
     @Produces("application/pdf")
     public Response planningPdf() {
         PlanningFestival planning = persistenceService.loadPersistedPlanning();
         byte[] contenu = planningExportService.exportAnimateurPdf(planning, animateurCourant());
         return Response.ok(contenu)
                 .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" + nomFichier(planning, "pdf") + "\"")
+                        "attachment; filename=\"" + fileName(planning, "pdf") + "\"")
                 .build();
     }
 
     /** My planning as an ICS calendar, importable in any agenda app. */
     @GET
     @Path("/{jeton}/planning.ics")
-    @SessionEspaceRequise
+    @EspaceSessionRequired
     @Produces("text/calendar")
     public Response planningIcs() {
         PlanningFestival planning = persistenceService.loadPersistedPlanning();
@@ -170,16 +170,16 @@ public class EspaceAnimateurResource {
         return Response.ok(contenu)
                 .type("text/calendar; charset=utf-8")
                 .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" + nomFichier(planning, "ics") + "\"")
+                        "attachment; filename=\"" + fileName(planning, "ics") + "\"")
                 .build();
     }
 
     /** Withdraws one of my own, still-pending demandes. */
     @POST
     @Path("/{jeton}/demandes/{demandeId}/annulation")
-    @SessionEspaceRequise
-    public Response annuler(@PathParam("demandeId") String demandeId) {
-        demandeEchangeService.annuler(animateurCourant(), demandeId);
+    @EspaceSessionRequired
+    public Response cancel(@PathParam("demandeId") String demandeId) {
+        demandeEchangeService.cancel(animateurCourant(), demandeId);
         return Response.noContent().build();
     }
 
@@ -190,21 +190,21 @@ public class EspaceAnimateurResource {
      */
     @POST
     @Path("/{jeton}/code")
-    @JetonRequis
-    public Response demanderCode() {
+    @TokenRequired
+    public Response requestCode() {
         try {
-            return Response.ok(espaceAccesService.demanderCode(animateurCourant())).build();
-        } catch (EspaceAccesService.TropDeDemandes e) {
+            return Response.ok(espaceAccesService.requestCode(animateurCourant())).build();
+        } catch (EspaceAccesService.TooManyRequests e) {
             return Response.status(429)
-                    .header(HttpHeaders.RETRY_AFTER, e.secondesAvantNouvelEssai())
-                    .entity(new ErreurValidation(e.getMessage()))
+                    .header(HttpHeaders.RETRY_AFTER, e.secondsBeforeNextTry())
+                    .entity(new ValidationError(e.getMessage()))
                     .build();
         } catch (IllegalArgumentException e) {
             return badRequest(e);
         } catch (RuntimeException e) {
             Log.errorf(e, "Failed to mail an espace access code");
             return Response.serverError()
-                    .entity(new ErreurValidation(
+                    .entity(new ValidationError(
                             "L'envoi du code a échoué : réessayez dans quelques instants."))
                     .build();
         }
@@ -225,23 +225,23 @@ public class EspaceAnimateurResource {
      */
     @POST
     @Path("/{jeton}/session")
-    @JetonRequis
-    public Response ouvrirSession(CodeSession codeSession, @Context UriInfo uriInfo) {
-        String session = espaceAccesService.ouvrirSession(animateurCourant(),
+    @TokenRequired
+    public Response openSession(CodeSession codeSession, @Context UriInfo uriInfo) {
+        String session = espaceAccesService.openSession(animateurCourant(),
                 codeSession == null ? null : codeSession.code());
         NewCookie cookie = new NewCookie.Builder(COOKIE_SESSION)
                 .value(session)
                 .path("/api/espace-animateur")
                 .httpOnly(true)
                 .sameSite(NewCookie.SameSite.STRICT)
-                .secure(requeteChiffree(uriInfo))
+                .secure(encryptedRequest(uriInfo))
                 .maxAge((int) EspaceAccesService.VALIDITE_SESSION.toSeconds())
                 .build();
         return Response.noContent().cookie(cookie).build();
     }
 
     /** True when the visitor's own request was HTTPS, proxy headers included. */
-    private static boolean requeteChiffree(UriInfo uriInfo) {
+    private static boolean encryptedRequest(UriInfo uriInfo) {
         return "https".equalsIgnoreCase(uriInfo.getRequestUri().getScheme());
     }
 
@@ -251,18 +251,18 @@ public class EspaceAnimateurResource {
 
     /** The animateur the guard resolved from the URL token — never {@code null} once a guard ran. */
     private String animateurCourant() {
-        return editionRequestScope.getProprietaireJeton().animateurId();
+        return editionRequestScope.getTokenOwner().animateurId();
     }
 
     /** Same readable convention as the admin exports — the very same code, in fact. */
-    private String nomFichier(PlanningFestival planning, String extension) {
-        return PlanningExportService.nomFichierPlanning(
+    private String fileName(PlanningFestival planning, String extension) {
+        return PlanningExportService.planningFileName(
                 planningExportService.resolveAnimateurName(planning, animateurCourant()), extension);
     }
 
     private static Response badRequest(IllegalArgumentException e) {
         return Response.status(Response.Status.BAD_REQUEST)
-                .entity(new ErreurValidation(e.getMessage()))
+                .entity(new ValidationError(e.getMessage()))
                 .build();
     }
 }

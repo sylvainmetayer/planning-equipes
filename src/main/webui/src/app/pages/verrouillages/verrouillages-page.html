@@ -19,7 +19,7 @@
     <form class="form-grid" (ngSubmit)="verrouiller()">
       <mat-form-field appearance="outline">
         <mat-label i18n="@@verrouillages.field.type">Type</mat-label>
-        <mat-select [ngModel]="type()" (ngModelChange)="type.set($event)" [disabled]="editingLocked()">
+        <mat-select name="type" [ngModel]="type()" (ngModelChange)="type.set($event)" [disabled]="editingLocked()">
           @for (option of types; track option.value) {
             <mat-option [value]="option.value">{{ option.label }}</mat-option>
           }
@@ -30,7 +30,7 @@
         @case ('ANIMATEUR') {
           <mat-form-field appearance="outline">
             <mat-label i18n="@@verrouillages.field.animateur">Animateur</mat-label>
-            <mat-select [ngModel]="animateurId()" (ngModelChange)="animateurId.set($event)" [disabled]="editingLocked()">
+            <mat-select name="animateurId" [ngModel]="animateurId()" (ngModelChange)="animateurId.set($event)" [disabled]="editingLocked()">
               @for (animateur of store.animateurs(); track animateur.id) {
                 <mat-option [value]="animateur.id">{{ animateur.prenom }} {{ animateur.nom }}</mat-option>
               }
@@ -40,7 +40,7 @@
         @case ('STAND') {
           <mat-form-field appearance="outline">
             <mat-label i18n="@@verrouillages.field.stand">Stand</mat-label>
-            <mat-select [ngModel]="standId()" (ngModelChange)="standId.set($event)" [disabled]="editingLocked()">
+            <mat-select name="standId" [ngModel]="standId()" (ngModelChange)="standId.set($event)" [disabled]="editingLocked()">
               @for (stand of store.stands(); track stand.id) {
                 <mat-option [value]="stand.id">{{ stand.nom || stand.id }}</mat-option>
               }
@@ -50,7 +50,7 @@
         @case ('JOUR') {
           <mat-form-field appearance="outline">
             <mat-label i18n="@@verrouillages.field.jour">Journée</mat-label>
-            <mat-select [ngModel]="jour()" (ngModelChange)="jour.set($event)" [disabled]="editingLocked()">
+            <mat-select name="jour" [ngModel]="jour()" (ngModelChange)="jour.set($event)" [disabled]="editingLocked()">
               @for (date of jours(); track date) {
                 <mat-option [value]="date">{{ date }}</mat-option>
               }
@@ -60,7 +60,7 @@
         @case ('CRENEAU') {
           <mat-form-field appearance="outline">
             <mat-label i18n="@@verrouillages.field.creneau">Créneau</mat-label>
-            <mat-select [ngModel]="creneauId()" (ngModelChange)="creneauId.set($event)" [disabled]="editingLocked()">
+            <mat-select name="creneauId" [ngModel]="creneauId()" (ngModelChange)="creneauId.set($event)" [disabled]="editingLocked()">
               @for (creneau of store.creneaux(); track creneau.id) {
                 <mat-option [value]="creneau.id">
                   {{ creneau.date }} {{ creneau.heureDebut }}–{{ creneau.heureFin }}
@@ -73,7 +73,7 @@
 
       <mat-form-field appearance="outline">
         <mat-label i18n="@@verrouillages.field.raison">Raison (optionnel)</mat-label>
-        <input matInput [ngModel]="raison()" (ngModelChange)="raison.set($event)" [disabled]="editingLocked()" />
+        <input matInput name="raison" [ngModel]="raison()" (ngModelChange)="raison.set($event)" [disabled]="editingLocked()" />
       </mat-form-field>
     </form>
     <app-status-message [text]="impactMessage()" tone="info" />

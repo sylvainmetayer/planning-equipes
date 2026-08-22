@@ -83,7 +83,7 @@ public abstract class FenetreDateeStand {
     }
 
     /** True when {@code heureDebut}/{@code heureFin} form a non-empty, same-day window (an open end counts as valid). */
-    public boolean estValide() {
+    public boolean hasValidRange() {
         return date != null && heureDebut != null && (heureFin == null || heureFin.isAfter(heureDebut));
     }
 

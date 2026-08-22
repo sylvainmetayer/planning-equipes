@@ -37,8 +37,8 @@ class PlanningPersistenceServiceTest {
 
     @Test
     void solvedPlanningIsPersistedToDatabase() {
-        PlanningFestival problem = planningService.construireExempleSimple();
-        PlanningFestival solved = planningService.resoudre(problem);
+        PlanningFestival problem = planningService.buildSimpleExample();
+        PlanningFestival solved = planningService.solve(problem);
 
         int stored = persistenceService.persist(solved);
 
@@ -81,7 +81,7 @@ class PlanningPersistenceServiceTest {
     }
 
     /**
-     * Regression test: {@code chargerAnimateursParStandCreneau()} queried
+     * Regression test: {@code loadAnimateursByStandCreneau()} queried
      * {@code poste_affectation} without an {@code edition_id} filter
      * ({@code prepareStatement} instead of {@code prepareScoped}), so the
      * verrouillages of one edition were re-seeded from every edition's rows at
@@ -89,9 +89,9 @@ class PlanningPersistenceServiceTest {
      */
     @Test
     void chargerAnimateursParStandCreneauNeVoitQueSonEdition() {
-        editionService.creer(new Edition("EDITION-SCOPE", "Édition scope", false, null));
+        editionService.create(new Edition("EDITION-SCOPE", "Édition scope", false, null));
         try {
-            editionContext.executeDans("EDITION-SCOPE", () -> {
+            editionContext.executeIn("EDITION-SCOPE", () -> {
                 Stand stand = referenceDataService.createStand(
                         new Stand("STAND-SCOPE", "Stand scope", Set.of(), 1, 1, false));
                 Creneau creneau = referenceDataService.createCreneau(
@@ -104,15 +104,15 @@ class PlanningPersistenceServiceTest {
                 persistenceService.persist(
                         new PlanningFestival(creneau.getDate(), List.of(animateur), List.of(poste)));
 
-                assertThat(persistenceService.chargerAnimateursParStandCreneau().values())
+                assertThat(persistenceService.loadAnimateursByStandCreneau().values())
                         .anySatisfy(animateurs -> assertThat(animateurs).contains("A-SCOPE"));
             });
 
             // Back in the default edition: the other edition's rows must be invisible.
-            assertThat(persistenceService.chargerAnimateursParStandCreneau().values())
+            assertThat(persistenceService.loadAnimateursByStandCreneau().values())
                     .allSatisfy(animateurs -> assertThat(animateurs).doesNotContain("A-SCOPE"));
         } finally {
-            editionService.supprimer("EDITION-SCOPE");
+            editionService.delete("EDITION-SCOPE");
         }
     }
 }

@@ -26,9 +26,9 @@ import jakarta.enterprise.context.ApplicationScoped;
  * créneau exceeds the number of animateurs available to serve it.
  *
  * <p>The demand of a créneau is counted exactly as
- * {@link PlanningService#construirePostes(List, List)} generates seats:
+ * {@link PlanningService#buildPostes(List, List)} generates seats:
  * {@code max(1, effectifMin)} per stand actually open on that créneau (see
- * {@link Creneau#estStandOuvert(String)}). {@code effectifMax} is the upper
+ * {@link Creneau#isStandOpen(String)}). {@code effectifMax} is the upper
  * capacity a stand <em>could</em> accept, not the number of seats that must be
  * staffed, and closed stands generate no seat at all — counting either of them
  * as demand overstates it and reports a shortfall on plannings the solver fills
@@ -67,7 +67,7 @@ public class FeasibilityAnalyzer {
             .thenComparing(CauseInfaisabilite::manque, Comparator.reverseOrder())
             .thenComparingLong(cause -> cause.creneauId() == null ? Long.MIN_VALUE : cause.creneauId());
 
-    public FeasibilityReport analyser(List<Animateur> animateurs, List<Stand> stands, List<Creneau> creneaux) {
+    public FeasibilityReport analyze(List<Animateur> animateurs, List<Stand> stands, List<Creneau> creneaux) {
         List<Animateur> animateursSurs = animateurs == null ? List.of() : animateurs;
         List<Stand> standsSurs = stands == null ? List.of() : stands;
         List<Creneau> creneauxSurs = creneaux == null ? List.of() : creneaux;
@@ -85,7 +85,7 @@ public class FeasibilityAnalyzer {
         List<CauseInfaisabilite> topCauses = List.copyOf(causes.subList(0, Math.min(MAX_CAUSES, totalCauses)));
 
         return new FeasibilityReport(feasible, manqueAnimateurs, topCauses, totalCauses,
-                construireMessage(feasible, manqueAnimateurs, totalCauses, topCauses));
+                buildMessage(feasible, manqueAnimateurs, totalCauses, topCauses));
     }
 
     private List<CauseInfaisabilite> creneauxSousEffectif(List<Animateur> animateurs, List<Stand> stands,
@@ -93,13 +93,13 @@ public class FeasibilityAnalyzer {
         List<CauseInfaisabilite> causes = new ArrayList<>();
         for (Creneau creneau : creneaux) {
             List<Stand> standsOuverts = stands.stream()
-                    .filter(stand -> creneau.estStandOuvert(stand))
+                    .filter(stand -> creneau.isStandOpen(stand))
                     .toList();
             int demande = standsOuverts.stream()
                     .mapToInt(stand -> Math.max(1, stand.getEffectifMin()))
                     .sum();
             long capacite = animateurs.stream()
-                    .filter(animateur -> !animateur.estIndisponibleLe(creneau.getDate()))
+                    .filter(animateur -> !animateur.isIndisponibleOn(creneau.getDate()))
                     .count();
             int manque = (int) Math.max(0, demande - capacite);
             if (manque <= 0) {
@@ -108,8 +108,8 @@ public class FeasibilityAnalyzer {
             causes.add(new CauseInfaisabilite(
                     TypeCauseInfaisabilite.CRENEAU_SOUS_EFFECTIF,
                     manque >= demande ? SeveriteInfaisabilite.CRITIQUE : SeveriteInfaisabilite.ELEVE,
-                    "Le " + decrireCreneau(creneau) + ", il manque " + manque + " " + motAnimateur(manque)
-                            + " pour couvrir " + decrireStands(standsOuverts) + ".",
+                    "Le " + describeCreneau(creneau) + ", il manque " + manque + " " + motAnimateur(manque)
+                            + " pour couvrir " + describeStands(standsOuverts) + ".",
                     creneau.getId(), creneau.getDate(), creneau.getHeureDebut(), creneau.getHeureFin(),
                     standsOuverts.stream().map(Stand::getId).toList(),
                     demande, (int) capacite, manque));
@@ -117,7 +117,7 @@ public class FeasibilityAnalyzer {
         return causes;
     }
 
-    private String construireMessage(boolean feasible, int manque, int totalCauses,
+    private String buildMessage(boolean feasible, int manque, int totalCauses,
             List<CauseInfaisabilite> topCauses) {
         if (feasible) {
             return "Le planning est réalisable : il y a assez d'animateurs disponibles pour couvrir chaque créneau.";
@@ -137,7 +137,7 @@ public class FeasibilityAnalyzer {
         return manque > 1 ? "animateurs" : "animateur";
     }
 
-    private static String decrireCreneau(Creneau creneau) {
+    private static String describeCreneau(Creneau creneau) {
         if (creneau.getDate() == null) {
             return "créneau " + creneau.getId();
         }
@@ -151,7 +151,7 @@ public class FeasibilityAnalyzer {
      * Spells out at most {@value #MAX_STANDS_NOMMES} stand names so the
      * sentence stays readable on a festival with dozens of open stands.
      */
-    private static String decrireStands(List<Stand> stands) {
+    private static String describeStands(List<Stand> stands) {
         if (stands.isEmpty()) {
             return "les stands ouverts";
         }

@@ -40,7 +40,7 @@ public class EmplacementRepository {
     }
 
     public boolean emplacementExists(String id) {
-        return scope.existe("emplacement", id);
+        return scope.exists("emplacement", id);
     }
 
     public void saveEmplacement(Emplacement emplacement) {
@@ -52,7 +52,7 @@ public class EmplacementRepository {
     }
 
     public void deleteEmplacement(String id) {
-        scope.supprimer("DELETE FROM emplacement WHERE edition_id = ? AND id = ?", id);
+        scope.delete("DELETE FROM emplacement WHERE edition_id = ? AND id = ?", id);
     }
 
     void upsertEmplacementTx(Connection connection, Emplacement emplacement) throws SQLException {

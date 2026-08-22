@@ -34,25 +34,25 @@ class McpConfidentialiteStructurelleTest {
 
     @Test
     void aucunOutilNeRenvoieDeDonneePersonnelleIdentifiante() throws Exception {
-        for (Method outil : OutilsMcp.tous()) {
-            verifierType(outil.getGenericReturnType(), outil.getName(), new HashSet<>());
+        for (Method outil : OutilsMcp.all()) {
+            checkType(outil.getGenericReturnType(), outil.getName(), new HashSet<>());
         }
     }
 
     @Test
     void chaqueOutilPorteUneDescription() throws Exception {
-        for (Method outil : OutilsMcp.tous()) {
+        for (Method outil : OutilsMcp.all()) {
             assertThat(outil.getAnnotation(Tool.class).description())
                     .as("description de l'outil %s", outil.getName())
                     .isNotBlank();
         }
     }
 
-    private static void verifierType(Type type, String outil, Set<Class<?>> visites) {
+    private static void checkType(Type type, String outil, Set<Class<?>> visites) {
         if (type instanceof ParameterizedType parameterized) {
-            verifierType(parameterized.getRawType(), outil, visites);
+            checkType(parameterized.getRawType(), outil, visites);
             for (Type argument : parameterized.getActualTypeArguments()) {
-                verifierType(argument, outil, visites);
+                checkType(argument, outil, visites);
             }
             return;
         }
@@ -69,7 +69,7 @@ class McpConfidentialiteStructurelleTest {
             assertThat(composant.getName().toLowerCase(Locale.ROOT))
                     .as("champ exposé par l'outil %s (record %s)", outil, classe.getSimpleName())
                     .isNotIn(COMPOSANTS_INTERDITS);
-            verifierType(composant.getGenericType(), outil, visites);
+            checkType(composant.getGenericType(), outil, visites);
         }
     }
 }

@@ -35,8 +35,8 @@ import dev.sylvain.planning.domain.Stand;
  */
 class PlanningExportServiceTest {
 
-    private final PlanningExportService service = new PlanningExportService(new LiensApplication(Optional.empty()),
-            new PlanningPdfAnimateur(), new PlanningPdfGlobal(), new PlanningIcs());
+    private final PlanningExportService service = new PlanningExportService(new ApplicationLinks(Optional.empty()),
+            new AnimateurPlanningPdf(), new GlobalPlanningPdf(), new PlanningIcs());
     private final AtomicInteger posteSequence = new AtomicInteger();
 
     @Test
@@ -72,10 +72,10 @@ class PlanningExportServiceTest {
         planning.setAnimateurs(List.of(ada));
         planning.setPostes(List.of(posteJour1, posteJour2, posteJour3));
 
-        assertThat(service.joursDeRepos(planning, "A1"))
+        assertThat(service.daysOff(planning, "A1"))
                 .containsExactly(new PlanningExportService.JourRepos(2, LocalDate.of(2026, 8, 15)));
         // No seat at all: no repos days either — the exports keep their empty state.
-        assertThat(service.joursDeRepos(planning, "ABSENT")).isEmpty();
+        assertThat(service.daysOff(planning, "ABSENT")).isEmpty();
     }
 
     /** Rest days land in the ICS as all-day, transparent events. */
@@ -118,7 +118,7 @@ class PlanningExportServiceTest {
         planning.setAnimateurs(List.of(ada, alan, grace));
         planning.setPostes(List.of(p1, p2, p3, p4));
 
-        assertThat(service.coequipiersParPoste(planning, "A1")).containsExactly(entry("p1", List.of("Alan Turing")));
+        assertThat(service.teammatesByPoste(planning, "A1")).containsExactly(entry("p1", List.of("Alan Turing")));
     }
 
     @Test
@@ -132,14 +132,14 @@ class PlanningExportServiceTest {
         matin.setAnimateur(ada);
         matin.setHeureDebutEffective(LocalTime.of(9, 0));
         matin.setHeureFinEffective(LocalTime.of(12, 0));
-        PosteAffectation apresMidi = new PosteAffectation("p2", stand, creneau);
-        apresMidi.setAnimateur(alan);
-        apresMidi.setHeureDebutEffective(LocalTime.of(14, 0));
-        apresMidi.setHeureFinEffective(LocalTime.of(18, 0));
+        PosteAffectation afternoon = new PosteAffectation("p2", stand, creneau);
+        afternoon.setAnimateur(alan);
+        afternoon.setHeureDebutEffective(LocalTime.of(14, 0));
+        afternoon.setHeureFinEffective(LocalTime.of(18, 0));
         planning.setAnimateurs(List.of(ada, alan));
-        planning.setPostes(List.of(matin, apresMidi));
+        planning.setPostes(List.of(matin, afternoon));
 
-        assertThat(service.coequipiersParPoste(planning, "A1")).containsExactly(entry("p1", List.of()));
+        assertThat(service.teammatesByPoste(planning, "A1")).containsExactly(entry("p1", List.of()));
     }
 
     @Test
@@ -212,7 +212,7 @@ class PlanningExportServiceTest {
 
         String ics = service.exportAnimateurIcs(planning, animateurId);
 
-        // Referent's postes span standStrategie/standAdultes (no emplacement)
+        // Referent's postes span standWithStrategy/standAdultes (no emplacement)
         // and standPremium (geocoded, see fakePlanning): exactly one VEVENT
         // should carry the LOCATION/GEO pair, proving the other two postes'
         // null-emplacement path stays untouched.
@@ -282,7 +282,7 @@ class PlanningExportServiceTest {
      * couple of unassigned postes to exercise the "UNASSIGNED"/empty-state paths.
      */
     private PlanningFestival fakePlanning() {
-        Stand standStrategie = new Stand("STAND-1", "Stratèges Associés", typologies("STRATEGIE"), 1, 2, false);
+        Stand standWithStrategy = new Stand("STAND-1", "Stratèges Associés", typologies("STRATEGIE"), 1, 2, false);
         Stand standPremium = new Stand("STAND-2", "Éditeur Vedette", typologies("AMBIANCE"), 1, 2, false, true);
         standPremium.setEmplacement(new Emplacement("EMP-1", "Kiosque Central", 48.8566, 2.3522));
         Stand standAdultes = new Stand("STAND-3", "Loup-Garou Nocturne", typologies("ROLE"), 1, 1, true);
@@ -296,11 +296,11 @@ class PlanningExportServiceTest {
         Animateur debutant = animateur("A-ALAN", "Alan", "Turing", NiveauCompetence.DEBUTANT);
 
         List<PosteAffectation> postes = new ArrayList<>();
-        postes.add(assignedPoste(standStrategie, matinJ1, referent));
+        postes.add(assignedPoste(standWithStrategy, matinJ1, referent));
         postes.add(assignedPoste(standPremium, matinJ1, referent));
         postes.add(assignedPoste(standAdultes, apremJ1, referent));
         postes.add(assignedPoste(standEnfant, apremJ1, debutant));
-        postes.add(assignedPoste(standStrategie, matinJ2, debutant));
+        postes.add(assignedPoste(standWithStrategy, matinJ2, debutant));
         postes.add(assignedPoste(standPremium, matinJ2, debutant));
         postes.add(unassignedPoste(standEnfant, matinJ1));
         postes.add(unassignedPoste(standAdultes, matinJ2));
@@ -330,9 +330,9 @@ class PlanningExportServiceTest {
     }
 
     /** The same service, but with a public URL configured: the espace links become printable. */
-    private static PlanningExportService exportsAvecLiens(String baseUrl) {
-        return new PlanningExportService(new LiensApplication(Optional.of(baseUrl)),
-                new PlanningPdfAnimateur(), new PlanningPdfGlobal(), new PlanningIcs());
+    private static PlanningExportService exportsWithLinks(String baseUrl) {
+        return new PlanningExportService(new ApplicationLinks(Optional.of(baseUrl)),
+                new AnimateurPlanningPdf(), new GlobalPlanningPdf(), new PlanningIcs());
     }
 
     private Set<String> typologies(String... typologies) {
@@ -348,12 +348,12 @@ class PlanningExportServiceTest {
      */
     @Test
     void unAnimateurSansJetonNaPasDeLienEspaceMaisNeFaitPasEchouerLExport() {
-        PlanningExportService service = exportsAvecLiens("https://planning.example.org");
+        PlanningExportService service = exportsWithLinks("https://planning.example.org");
         PlanningFestival planning = new PlanningFestival();
-        Animateur sansJeton = new Animateur("SANS", "Sans", "Jeton", LocalDate.of(2000, 1, 1), false);
-        Animateur avecJeton = new Animateur("AVEC", "Avec", "Jeton", LocalDate.of(2000, 1, 1), false);
-        avecJeton.setJetonAcces("jeton-1");
-        planning.setAnimateurs(List.of(sansJeton, avecJeton));
+        Animateur withoutToken = new Animateur("SANS", "Sans", "Jeton", LocalDate.of(2000, 1, 1), false);
+        Animateur withToken = new Animateur("AVEC", "Avec", "Jeton", LocalDate.of(2000, 1, 1), false);
+        withToken.setJetonAcces("jeton-1");
+        planning.setAnimateurs(List.of(withoutToken, withToken));
 
         assertThat(service.lienEspaceAnimateur(planning, "SANS")).isNull();
         assertThat(service.lienEspaceAnimateur(planning, "AVEC"))

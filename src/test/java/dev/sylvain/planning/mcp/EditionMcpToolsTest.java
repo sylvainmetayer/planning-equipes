@@ -53,7 +53,7 @@ class EditionMcpToolsTest {
     void nettoyer() {
         for (String id : List.of(EDITION_COPIE, EDITION_TEST)) {
             if (editionService.listEditions().stream().anyMatch(edition -> edition.getId().equals(id))) {
-                editionService.supprimer(id);
+                editionService.delete(id);
             }
         }
     }
@@ -156,7 +156,7 @@ class EditionMcpToolsTest {
             assertThat(edition.description()).isEqualTo(EditionArg.DESCRIPTION);
             verifies++;
         }
-        long attendus = OutilsMcp.tous().stream()
+        long attendus = OutilsMcp.all().stream()
                 .filter(outil -> Arrays.stream(outil.getParameters())
                         .anyMatch(parametre -> parametre.isAnnotationPresent(EditionArg.class)))
                 .count();

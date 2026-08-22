@@ -39,7 +39,7 @@ class McpEditionStructurelleTest {
 
     @Test
     void chaqueOutilQuiTravailleDansUneEditionLaisseLaDesigner() throws Exception {
-        for (Method outil : OutilsMcp.tous()) {
+        for (Method outil : OutilsMcp.all()) {
             if (HORS_EDITION.contains(outil.getName())
                     || outil.getDeclaringClass().getName().equals(OUTILS_DEDITION)) {
                 continue;
@@ -52,7 +52,7 @@ class McpEditionStructurelleTest {
 
     @Test
     void largumentEditionEstFacultatifEtDecritDeLaMemeFaconPartout() throws Exception {
-        for (Method outil : OutilsMcp.tous()) {
+        for (Method outil : OutilsMcp.all()) {
             Parameter edition = argumentEdition(outil);
             if (edition == null) {
                 continue;
@@ -73,7 +73,7 @@ class McpEditionStructurelleTest {
 
     @Test
     void chaqueClasseDOutilsEstBrancheeSurLinterceptorDEdition() throws Exception {
-        for (Method outil : OutilsMcp.tous()) {
+        for (Method outil : OutilsMcp.all()) {
             if (argumentEdition(outil) == null) {
                 continue;
             }

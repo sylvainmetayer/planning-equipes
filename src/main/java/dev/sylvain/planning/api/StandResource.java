@@ -3,7 +3,7 @@ package dev.sylvain.planning.api;
 import java.util.List;
 
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.service.CompactageHoraires;
+import dev.sylvain.planning.service.HoraireCompaction;
 import dev.sylvain.planning.service.ReferenceDataService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -57,16 +57,16 @@ public class StandResource {
      * Rewrites hand-entered dated windows as the recurring horaires they repeat
      * — the way a dataset captured before rules existed catches up with them.
      *
-     * <p>{@code appliquer} defaults to {@code false}: the call is then a dry run
+     * <p>{@code apply} defaults to {@code false}: the call is then a dry run
      * that returns exactly what it <em>would</em> do, per stand, so the report
-     * can be shown before anything is written. Only {@code appliquer=true}
+     * can be shown before anything is written. Only {@code apply=true}
      * persists.</p>
      */
     @POST
     @Path("/compactage-horaires")
-    public CompactageHoraires.RapportCompactage compacterHoraires(
-            @QueryParam("appliquer") @DefaultValue("false") boolean appliquer) {
-        return referenceDataService.compacterHoraires(appliquer);
+    public HoraireCompaction.RapportCompactage compactHoraires(
+            @QueryParam("appliquer") @DefaultValue("false") boolean apply) {
+        return referenceDataService.compactHoraires(apply);
     }
 
 }

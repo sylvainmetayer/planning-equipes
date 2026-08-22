@@ -18,7 +18,7 @@ import jakarta.interceptor.InvocationContext;
  * resolve to the default edition — silently, which is the actual defect. The
  * edition therefore travels as a tool argument, and this interceptor is the
  * single place that gives it effect, through the same
- * {@code EditionContext.executeDans} that solver jobs and scenario imports
+ * {@code EditionContext.executeIn} that solver jobs and scenario imports
  * already use.</p>
  *
  * <p>Binding the edition around the whole call also covers the work that
@@ -40,11 +40,11 @@ public class EditionCibleeInterceptor {
 
     @AroundInvoke
     Object dansEditionCiblee(InvocationContext context) throws Exception {
-        String editionId = editions.resoudre(argumentEdition(context));
+        String editionId = editions.solve(argumentEdition(context));
         if (editionId == null) {
             return context.proceed();
         }
-        return editionContext.executeDans(editionId, context::proceed);
+        return editionContext.executeIn(editionId, context::proceed);
     }
 
     /** {@code null} for a tool that declares no {@link EditionArg} — most of this package's helpers. */

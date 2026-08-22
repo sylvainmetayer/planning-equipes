@@ -1,6 +1,6 @@
 package dev.sylvain.planning.mcp;
 
-import dev.sylvain.planning.service.ErreurMetier;
+import dev.sylvain.planning.service.BusinessError;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -36,7 +36,7 @@ class McpEditions {
      *         edition — in which case nothing is overridden and the tool keeps
      *         working in the default edition, as it did before #181
      */
-    String resoudre(String edition) {
+    String solve(String edition) {
         if (edition == null || edition.isBlank()) {
             return null;
         }
@@ -58,10 +58,10 @@ class McpEditions {
             return parNom.get(0).getId();
         }
         if (parNom.size() > 1) {
-            throw new ErreurMetier.Invalide("Plusieurs éditions portent le nom « " + demande
+            throw new BusinessError.Invalid("Plusieurs éditions portent le nom « " + demande
                     + " » : désigner celle voulue par son id (" + ids(parNom) + ").");
         }
-        throw new ErreurMetier.Invalide("Édition inconnue « " + demande + " ». Éditions disponibles : "
+        throw new BusinessError.Invalid("Édition inconnue « " + demande + " ». Éditions disponibles : "
                 + descriptions(editions) + ". Voir lister_editions.");
     }
 

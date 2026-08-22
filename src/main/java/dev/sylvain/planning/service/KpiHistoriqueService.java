@@ -71,15 +71,15 @@ public class KpiHistoriqueService {
      * solve: a KPI row that could not be written must not cost the user their
      * run — same contract as the automatic snapshot capture.
      */
-    public void enregistrerApresSolve(Long dureeSolveSecondes) {
+    public void recordAfterSolve(Long dureeSolveSecondes) {
         try {
-            enregistrer(kpiService.calculerCourant(dureeSolveSecondes));
+            record(kpiService.computeCurrent(dureeSolveSecondes));
         } catch (RuntimeException e) {
             LOG.warn("KPI history row could not be written; the solve result is unaffected", e);
         }
     }
 
-    void enregistrer(PlanningKpi kpi) {
+    void record(PlanningKpi kpi) {
         String editionId = editionContext.editionIdCourant();
         String editionNom = editionRepository.listEditions().stream()
                 .filter(edition -> editionId.equals(edition.getId()))
@@ -102,7 +102,7 @@ public class KpiHistoriqueService {
     }
 
     /** Every edition's history, newest first — see the class javadoc for why it is unscoped. */
-    public List<KpiHistoriqueEntry> lister() {
+    public List<KpiHistoriqueEntry> list() {
         String sql = """
  SELECT id, edition_id, edition_nom, kpi, cree_le
  FROM kpi_historique
@@ -117,7 +117,7 @@ public class KpiHistoriqueService {
                         rs.getLong("id"),
                         rs.getString("edition_id"),
                         rs.getString("edition_nom"),
-                        lireKpi(rs.getString("kpi")),
+                        readKpi(rs.getString("kpi")),
                         creeLe == null ? null : creeLe.toInstant()));
             }
         } catch (SQLException e) {
@@ -127,7 +127,7 @@ public class KpiHistoriqueService {
     }
 
     /** @return true when a row was actually deleted. */
-    public boolean supprimer(long id) {
+    public boolean delete(long id) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement("DELETE FROM kpi_historique WHERE id = ?")) {
             ps.setLong(1, id);
@@ -137,7 +137,7 @@ public class KpiHistoriqueService {
         }
     }
 
-    private PlanningKpi lireKpi(String json) {
+    private PlanningKpi readKpi(String json) {
         try {
             return objectMapper.readValue(json, PlanningKpi.class);
         } catch (Exception e) {

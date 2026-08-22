@@ -38,20 +38,20 @@ class JoursFeriesTest {
 
     @Test
     void leQuatorzeJuilletEstFerie() {
-        assertThat(JoursFeries.estFerieEnFrance(LocalDate.of(2026, 7, 14))).isTrue();
+        assertThat(JoursFeries.isFerieInFrance(LocalDate.of(2026, 7, 14))).isTrue();
     }
 
     @Test
     void unJourOrdinaireNEstPasFerie() {
-        assertThat(JoursFeries.estFerieEnFrance(LocalDate.of(2026, 7, 15))).isFalse();
-        assertThat(JoursFeries.estFerieEnFrance(null)).isFalse();
+        assertThat(JoursFeries.isFerieInFrance(LocalDate.of(2026, 7, 15))).isFalse();
+        assertThat(JoursFeries.isFerieInFrance(null)).isFalse();
     }
 
     @Test
     void lesJoursFeriesDAlsaceMoselleNeSontPasRetenus() {
         // Good Friday and 26 December: public holidays in Alsace-Moselle only,
         // outside the model as long as there is no notion of region.
-        assertThat(JoursFeries.estFerieEnFrance(LocalDate.of(2026, 4, 3))).isFalse();
-        assertThat(JoursFeries.estFerieEnFrance(LocalDate.of(2026, 12, 26))).isFalse();
+        assertThat(JoursFeries.isFerieInFrance(LocalDate.of(2026, 4, 3))).isFalse();
+        assertThat(JoursFeries.isFerieInFrance(LocalDate.of(2026, 12, 26))).isFalse();
     }
 }

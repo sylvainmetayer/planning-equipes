@@ -26,7 +26,7 @@ qui la possède dans ses `competences` est **polyvalent** : le solveur le
 considère compétent pour n'importe quel stand et garde ce vivier partiellement
 libre en réserve — voir [`contraintes.md`](contraintes.md#typologie-ninja-et-buffer-de-polyvalents).
 Le drapeau n'est pas stocké sur l'animateur : il est dérivé au chargement du
-problème (`Animateur.appliquerTypologieNinja`).
+problème (`Animateur.applyNinjaTypologie`).
 
 ```java
 public enum NiveauCompetence {
@@ -135,7 +135,7 @@ seule notion de pénibilité plutôt que d'en poser deux en parallèle. Voir
 
 Un `Emplacement` est un référentiel éditable indépendamment (page « Emplacements »),
 géré comme `Stand`/`Creneau`/`Animateur` (CRUD, pas de logique métier propre hormis
-`distanceMetresVers(...)`, la distance à vol d'oiseau — formule de haversine — vers
+`distanceMetresTo(...)`, la distance à vol d'oiseau — formule de haversine — vers
 un autre emplacement). Un stand non géolocalisé (`emplacement == null`) est
 simplement ignoré par la contrainte de distance.
 
@@ -249,7 +249,7 @@ en trois couches :
 2. **sinon les règles qui couvrent ce jour** → on ne garde que celles de
    spécificité maximale et on prend l'union de leurs fenêtres. Deux règles de
    même spécificité et de modes opposés sur des jours qui se croisent sont
-   refusées à l'écriture (`ValidationStand`) ; le résolveur
+   refusées à l'écriture (`StandValidator`) ; le résolveur
    garde malgré tout un arbitrage déterministe pour une donnée arrivée
    autrement (un fichier de scénario écrit à la main) : `OUVERTURE` l'emporte,
    parce que c'est la lecture la plus restrictive des deux ;
@@ -268,7 +268,7 @@ tourné. Un stand résolu peut donc repasser par une sauvegarde (ce que fait tou
 stand atteint via un `PlanningFestival`) sans figer son expansion en quelques
 centaines de lignes datées. Côté service, la distinction est explicite :
 `listStands()` rend la vue CRUD (règles + exceptions, brutes), et
-`listStandsResolus()` la vue effective, résolue sur les jours des créneaux de
+`listSolvedStands()` la vue effective, résolue sur les jours des créneaux de
 l'édition — c'est elle que prennent le solveur, la génération de postes et
 l'analyse de faisabilité.
 
@@ -281,10 +281,10 @@ que cet invariant existe pour écarter.
 
 Une base saisie avant les règles n'a rien à migrer : ses lignes datées gardent
 exactement leur sens (ce sont les exceptions). L'action **« Compacter les
-horaires »** (`CompactageHoraires`, `POST /api/stands/compactage-horaires`) en
+horaires »** (`HoraireCompaction`, `POST /api/stands/compactage-horaires`) en
 dérive à la demande les règles équivalentes, et ne réécrit un stand que si les
 règles proposées reproduisent ses propres segments ouverts — vérifié en les
-rejouant contre les vrais créneaux (`ecartMaximalMinutes`).
+rejouant contre les vrais créneaux (`maxGapMinutes`).
 
 L'écart est mesuré en **minutes d'ouverture** en désaccord, pas en appariant les
 segments un à un, et une minute est tolérée : celle que récupère un ancien
@@ -297,9 +297,9 @@ n'aurait jamais dû être à pourvoir. Compter les segments ferait refuser
 exactement les stands que la réécriture aide le plus. L'écart constaté est
 rapporté stand par stand plutôt que corrigé en silence.
 
-`PlanningService.construirePostes` génère un poste par place à pourvoir et par
+`PlanningService.buildPostes` génère un poste par place à pourvoir et par
 segment ouvert (voir plus bas) — un stand fermé sur tout un créneau n'y génère
-simplement aucun poste, sans pénalité associée. En amont, `construirePostes`
+simplement aucun poste, sans pénalité associée. En amont, `buildPostes`
 reçoit les créneaux de l'édition (`referenceDataService.listCreneaux()`).
 
 ```java
@@ -342,7 +342,7 @@ l'impact sur les contraintes.
 figée** : aucun move, ni en construction heuristique ni en recherche locale, ne
 peut changer son animateur. Le champ n'est jamais positionné par le solveur ni
 persisté sur `poste_affectation` : il est recalculé à chaque construction du
-problème (`PlanningService.construireDepuisReferenceData`) à partir des
+problème (`PlanningService.buildFromReferenceData`) à partir des
 verrous enregistrés dans la table `verrouillage_planning`
 (`VerrouillagePlanning`, voir [`api.md`](api.md#verrouillages-du-planning)).
 
@@ -357,8 +357,8 @@ plate : cinq colonnes cibles nullables et un discriminant `type`. Ce que la
 contrainte `CHECK` de `V30`/`V41` interdit, le code le garantissait en écrivant
 cinq fois « je pose ma colonne et j'annule les quatre autres » — en oublier une
 laissait un verrou visant deux choses à la fois. Dans le code, la cible est
-désormais une hiérarchie scellée `CibleVerrouillage` (`SurAnimateur`,
-`SurStand`, `SurCreneau`, `SurJour`, `SurAnimateurEtCreneau`) : une variante ne
+désormais une hiérarchie scellée `VerrouillageTarget` (`OnAnimateur`,
+`OnStand`, `OnCreneau`, `OnJour`, `OnAnimateurAndCreneau`) : une variante ne
 porte que ses propres champs, elle ne *peut* pas en désigner deux. Le passage
 aux colonnes est écrit une seule fois, dans `VerrouillagePlanning.appliquer`,
 et son `switch` est exhaustif sans `default` — ajouter une façon de verrouiller
@@ -408,7 +408,7 @@ changement de référentiel. Place par place :
 | --- | --- |
 | Désignée par le périmètre demandé (animateur, journée ou stand) | Libérée, quoi qu'il arrive : c'est l'utilisateur qui dit « refais ça » |
 | Titulaire encore valable (il existe, il n'est pas indisponible ce jour-là) | **Épinglée** — le solveur n'y touche pas |
-| Titulaire invalidé par un changement tardif : animateur supprimé, jour d'indisponibilité fraîchement saisi, ou contrainte ad hoc d'indisponibilité forcée le couvrant | Libérée : c'est précisément ce que la replanification doit refaire. Épingler une telle place figerait une violation dure que plus personne ne pourrait corriger — le test de validité réutilise d'ailleurs le prédicat du solveur (`AdHocConstraints.violeIndisponibiliteForcee`), pour que les deux ne puissent pas diverger |
+| Titulaire invalidé par un changement tardif : animateur supprimé, jour d'indisponibilité fraîchement saisi, ou contrainte ad hoc d'indisponibilité forcée le couvrant | Libérée : c'est précisément ce que la replanification doit refaire. Épingler une telle place figerait une violation dure que plus personne ne pourrait corriger — le test de validité réutilise d'ailleurs le prédicat du solveur (`AdHocConstraints.violatesForcedIndisponibilite`), pour que les deux ne puissent pas diverger |
 | Jamais pourvue, ou nouvelle (stand ou créneau ajouté) | Laissée libre, comme dans une résolution complète |
 
 Deux choix méritent d'être explicités, parce qu'ils tranchent les questions
@@ -461,12 +461,12 @@ Trois briques l'entourent :
   demander) ou la décline (`REFUSEE_CIBLE`, terminal, le demandeur est
   prévenu). L'admin peut refuser une demande encore `EN_ATTENTE_CIBLE`, mais
   ne peut l'accepter qu'après l'accord du collègue ;
-- **la simulation** : `PlanningService.simulerEchange` généralise
-  `simulerSwap` au cas à deux places — échange croisé si la cible tient aussi
+- **la simulation** : `PlanningService.simulateEchange` généralise
+  `simulateSwap` au cas à deux places — échange croisé si la cible tient aussi
   un poste sur le créneau, reprise simple sinon — et juge la faisabilité sur
   le **score dur global** (un échange peut casser une contrainte sur un poste
   qu'il ne touche pas : heures hebdomadaires, repos…). L'**échange dirigé**
-  (`simulerEchangeDirige`) troque deux créneaux distincts : le demandeur
+  (`simulateDirectedEchange`) troque deux créneaux distincts : le demandeur
   désigne, en plus de son propre créneau, le créneau du collègue qu'il veut
   récupérer (« je te laisse mon lundi, je prends ton mardi ») — champs
   `creneauCibleId`/`standCibleId` de la demande, NULL = sémantique
@@ -513,7 +513,7 @@ Un scénario « continu » (voir `scenarios/scenario-continu.yaml`) ne définit 
 un animateur à un `PosteAffectation` dont le `Creneau` couvre l'amplitude entière
 lui imposerait d'être nominalement en poste 10 à 14 h d'affilée, sans pause.
 
-`VacationGeneratorService.genererVacations(List<Creneau> amplitudes, ParametresDecoupage parametres)`
+`VacationGeneratorService.generateVacations(List<Creneau> amplitudes, ParametresDecoupage parametres)`
 résout ce problème **à la génération**, pas au solve : il découpe chaque
 amplitude en plusieurs `Creneau` « vacation » plus courts et chevauchants (un
 relais), plutôt que de faire porter la pause au solveur. Tant que chaque
@@ -530,7 +530,7 @@ que la fenêtre déjeuner commence à midi) : la seule coupe qui reste possible
 tombe alors *après* la fin de la fenêtre, ce qui fait travailler l'animateur
 seul sur cette vacation sans interruption pendant tout le repas. `dureeVacationMaxMinutes`
 seul ne détecte rien de tel puisque la vacation reste sous le plafond (ex.
-10:00-14:00, 4h). `VacationGeneratorService#appliquerPauseLegaleSiNecessaire`
+10:00-14:00, 4h). `VacationGeneratorService#applyLegalPauseIfNeeded`
 détecte donc aussi ce cas — une vacation qui engloutit une fenêtre repas
 entière de son début à sa fin — et y insère une vraie coupure, quelle que soit
 sa durée totale, la coupant en deux avec un trou de `dureePauseRepasMinutes`
@@ -598,7 +598,7 @@ est justement le genre de pic de demande simultanée qui fait caler le solveur.
 `EFFECTIF_REDUIT` reproduit ce que fait réellement le classeur source du
 festival, qui divise l'effectif par deux sur les créneaux de repas plutôt que
 d'y ajouter une équipe ou de fermer. C'est la seule des trois valeurs dont
-l'effectif dépend du stand : `PlanningService#construirePostes` lit
+l'effectif dépend du stand : `PlanningService#buildPostes` lit
 `Creneau.couverturePause` et ne crée que `ceil(effectifMin / 2)` sièges sur ces
 vacations. L'arrondi est volontairement au supérieur, pour qu'un stand tenu par
 une seule personne la garde au lieu de fermer — fermer reste une décision
@@ -619,7 +619,7 @@ permet en particulier à un gros scénario (ex. `scenario-complet.yaml`, ~8 min
 pour atteindre un bon score) d'auto-configurer la durée de résolution
 (page Solveur) plutôt que de dépendre d'une valeur laissée par un scénario
 précédent, plus rapide. Absentes du fichier (cas de tous les autres
-scénarios), ces trois sections sont sans effet : `construireExemple` retombe
+scénarios), ces trois sections sont sans effet : `buildExample` retombe
 sur les `ParametresLegaux` actuellement en base, et l'import laisse
 `ParametresDecoupage`/`ParametresSolveur` tels quels.
 
@@ -644,7 +644,7 @@ label, ninja? }`) pour donner un libellé humain aux ids de typologie qu'il réf
 voir [`import-export.md`](import-export.md#chargement-de-scénario) pour le
 détail de l'ordre d'application (après l'import du référentiel lui-même, pour
 ne pas être écrasée par le libellé-egal-à-l'id que dérive automatiquement
-`ImportReferentielRepository#importFromPlanning` pour tout id non déclaré ici).
+`ReferenceDataImportRepository#importFromPlanning` pour tout id non déclaré ici).
 Absente, chaque id non déjà présent dans le référentiel `typologie` se voit
 créé avec ce libellé-egal-à-l'id par défaut.
 
@@ -790,15 +790,15 @@ au démarrage. Détails et exemple dans [`contraintes.md`](contraintes.md#pondé
 | Appréciation (réelle, medium) | `poste.animateur.competences` (= « Appréciation » côté frontend) devrait contenir une typologie présente dans `poste.stand.typologiesProposees` — `appreciationIncompatible`, poids fort |
 | Souhaits (medium) | `poste.animateur.souhaits` devrait contenir une typologie présente dans `poste.stand.typologiesProposees` — `souhaitsIncompatibles`, poids faible (privilégie le réel sur le souhaité) |
 | Polyvalence (« ninja ») | `animateur.competences` contient la typologie marquée `ninja` → `Animateur.isNinja()` : compétent partout, exclu de `limiterTypologiesDistinctesParAnimateur`, et gardé partiellement libre par `preserverBufferPolyvalents` (soft) |
-| Disponibilité (opt-out) | `poste.creneau.date` ne doit pas figurer dans `animateur.joursIndisponibles` — cf. `Animateur.estIndisponibleLe(LocalDate)` |
+| Disponibilité (opt-out) | `poste.creneau.date` ne doit pas figurer dans `animateur.joursIndisponibles` — cf. `Animateur.isIndisponibleOn(LocalDate)` |
 | Effectif min/max | Comptage des `poste.animateur != null` groupés par `stand` + `creneau` (pas de classe de contrainte dédiée) |
-| Mineur / majeur | Toujours dérivé de `dateNaissance` à la date du créneau via `estMineurLe(LocalDate)` / `estMajeurLe(LocalDate)` — **jamais un booléen stocké**, pour éviter toute désynchronisation |
-| Moins de 16 ans / 16-18 ans | Même principe, via `estMoinsDe16AnsLe(LocalDate)` : trois régimes légaux distincts (nuit, durée quotidienne, repos quotidien) — voir [`contraintes.md`](contraintes.md) |
+| Mineur / majeur | Toujours dérivé de `dateNaissance` à la date du créneau via `isMineurOn(LocalDate)` / `isMajeurOn(LocalDate)` — **jamais un booléen stocké**, pour éviter toute désynchronisation |
+| Moins de 16 ans / 16-18 ans | Même principe, via `isUnder16On(LocalDate)` : trois régimes légaux distincts (nuit, durée quotidienne, repos quotidien) — voir [`contraintes.md`](contraintes.md) |
 | Repos quotidien | Jointure des `PosteAffectation` d'un même animateur sur `creneau.jour` adjacents (`reposQuotidienMinimal`, 11 h / 12 h / 14 h selon l'âge) |
 | Travail continu et pauses | Regroupement des `PosteAffectation` d'un même animateur **par date**, fusion des créneaux séparés par moins que la pause légale (`travailContinuMaxMajeur` / `travailContinuMaxMineur`) |
 | Encadrement d'un mineur | `ifNotExists` d'un majeur sur le même `stand` + `creneau` |
 | Stand réservé aux majeurs | `poste.stand.reserveMajeurs` vs âge de `poste.animateur` à la date du créneau |
-| Éloignement entre créneaux consécutifs | `Emplacement.distanceMetresVers(...)` (haversine) entre les emplacements des deux stands d'un même animateur sur deux créneaux consécutifs (même jour, l'un se terminant quand l'autre commence) |
+| Éloignement entre créneaux consécutifs | `Emplacement.distanceMetresTo(...)` (haversine) entre les emplacements des deux stands d'un même animateur sur deux créneaux consécutifs (même jour, l'un se terminant quand l'autre commence) |
 
 ## Invariants à ne pas casser
 

@@ -18,7 +18,7 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.PlanningService.ConstraintDiagnostic;
 
 /**
- * {@code diagnostiquer()} must turn a hard-constraint match into a
+ * {@code diagnose()} must turn a hard-constraint match into a
  * human-readable line (so the Contraintes page can show "who/what/when" to a
  * non-technical user), but must not bother doing that for medium/soft
  * constraints, whose match counts can run into the thousands.
@@ -27,7 +27,7 @@ class PlanningServiceDiagnosticViolationsTest {
 
     @Test
     void posteNonPourvuProduitUneLigneLisibleDeViolation() {
-        Referentiel referenceDataService = new ReferentielVide();
+        ReferenceData referenceDataService = new EmptyReferenceData();
         PlanningService planningService = new PlanningService(3L, 2L, ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT, referenceDataService, new FeasibilityAnalyzer(),
                 ConfigProvider.getConfig());
 
@@ -37,7 +37,7 @@ class PlanningServiceDiagnosticViolationsTest {
 
         PlanningFestival festival = new PlanningFestival(creneau.getDate(), List.of(), List.of(posteNonPourvu));
 
-        PlanningService.PlanningDiagnostic diagnostic = planningService.diagnostiquer(festival);
+        PlanningService.PlanningDiagnostic diagnostic = planningService.diagnose(festival);
 
         ConstraintDiagnostic posteDoitEtrePourvu = diagnostic.contraintes().stream()
                 .filter(c -> c.name().equals("posteDoitEtrePourvu"))

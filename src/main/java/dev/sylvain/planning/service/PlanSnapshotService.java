@@ -44,7 +44,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 public class PlanSnapshotService {
 
     /**
-     * How many <b>automatic</b> snapshots (the one taken before each solve) are
+     * How many <b>automatique</b> snapshots (the one taken before each solve) are
      * kept per edition. Hand-made ones are never purged: the user asked for
      * them. Five covers an afternoon of trial and error without letting the
      * JSONB column grow without bound — a 3 500-seat plan is roughly 1 MB.
@@ -52,7 +52,7 @@ public class PlanSnapshotService {
     @ConfigProperty(name = "planning.snapshots.automatiques-conservees", defaultValue = "5")
     int automatiquesConservees;
 
-    /** Label of an automatic snapshot, in the server's zone — it names a moment for a human. */
+    /** Label of an automatique snapshot, in the server's zone — it names a moment for a human. */
     private static final DateTimeFormatter LIBELLE_AUTO_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     @Inject
@@ -143,11 +143,11 @@ public class PlanSnapshotService {
 
     /**
      * Captures the currently persisted plan. Returns {@code null} when there is
-     * nothing to capture (no seat stored yet), so the automatic capture before
+     * nothing to capture (no seat stored yet), so the automatique capture before
      * the very first solve is a no-op rather than an empty snapshot.
      */
-    public SnapshotMeta capturer(String libelle, boolean automatique) {
-        List<AffectationSnapshot> affectations = lireAffectationsPersistees();
+    public SnapshotMeta capture(String libelle, boolean automatique) {
+        List<AffectationSnapshot> affectations = readPersistedAffectations();
         if (affectations.isEmpty()) {
             return null;
         }
@@ -158,7 +158,7 @@ public class PlanSnapshotService {
 
     private SnapshotMeta inserer(String libelle, boolean automatique, String score,
             List<AffectationSnapshot> affectations) {
-        String contenu = ecrireContenu(affectations);
+        String contenu = writeContent(affectations);
         PlanningKpiService.PlanningKpi kpi = kpiCourant();
         String sql = """
  INSERT INTO plan_snapshot (edition_id, libelle, automatique, score, nombre_affectations, cree_le, contenu, kpi)
@@ -172,14 +172,14 @@ public class PlanSnapshotService {
             ps.setInt(5, affectations.size());
             ps.setTimestamp(6, Timestamp.from(Instant.now()));
             ps.setString(7, contenu);
-            ps.setString(8, kpi == null ? null : ecrireKpi(kpi));
+            ps.setString(8, kpi == null ? null : writeKpi(kpi));
             try (ResultSet rs = ps.executeQuery()) {
                 rs.next();
                 SnapshotMeta meta = new SnapshotMeta(rs.getLong("id"), libelle, automatique,
                         score, affectations.size(), rs.getTimestamp("cree_le").toInstant(),
                         editionId(), nomEdition(connection, editionId()), kpi);
                 if (automatique) {
-                    purgerAutomatiques(connection);
+                    purgeAutomatic(connection);
                 }
                 return meta;
             }
@@ -193,27 +193,27 @@ public class PlanSnapshotService {
      * labelled with the moment it was taken. Never fails the solve — a snapshot
      * that could not be written must not cost the user their run.
      */
-    public void capturerAvantSolve() {
+    public void captureBeforeSolve() {
         try {
-            capturer("Avant solve du " + LIBELLE_AUTO_FORMAT.format(ZonedDateTime.now()), true);
+            capture("Avant solve du " + LIBELLE_AUTO_FORMAT.format(ZonedDateTime.now()), true);
         } catch (RuntimeException e) {
             // Deliberately swallowed: see javadoc.
         }
     }
 
-    /** Columns every read below projects, so {@link #lireMeta} always finds them. */
+    /** Columns every read below projects, so {@link #readMeta} always finds them. */
     private static final String COLONNES_META = "s.id, s.libelle, s.automatique, s.score, "
             + "s.nombre_affectations, s.cree_le, s.edition_id, e.nom AS edition_nom";
 
     private static final String DEPUIS_SNAPSHOT = " FROM plan_snapshot s "
             + "LEFT JOIN edition e ON e.id = s.edition_id";
 
-    public List<SnapshotMeta> lister() {
+    public List<SnapshotMeta> list() {
         String sql = "SELECT " + COLONNES_META + ", s.kpi" + DEPUIS_SNAPSHOT
                 + " WHERE s.edition_id = ? ORDER BY s.cree_le DESC, s.id DESC";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, sql)) {
-            return lireMetas(ps);
+            return readMetas(ps);
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to list plan snapshots", e);
         }
@@ -227,69 +227,69 @@ public class PlanSnapshotService {
      * user wants to compare. Nothing can be restored through it: restoring
      * stays edition-scoped ({@link #restaurer}).
      */
-    public List<SnapshotMeta> listerToutesEditions() {
+    public List<SnapshotMeta> listAllEditions() {
         String sql = "SELECT " + COLONNES_META + ", s.kpi" + DEPUIS_SNAPSHOT
                 + " ORDER BY s.cree_le DESC, s.id DESC";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement(sql)) {
-            return lireMetas(ps);
+            return readMetas(ps);
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to list plan snapshots of every edition", e);
         }
     }
 
     /** {@code null} when no snapshot of this edition carries that id. */
-    public SnapshotDetail charger(long id) {
+    public SnapshotDetail load(long id) {
         String sql = "SELECT " + COLONNES_META + ", s.contenu, s.kpi" + DEPUIS_SNAPSHOT
                 + " WHERE s.edition_id = ? AND s.id = ?";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, sql)) {
             ps.setLong(2, id);
-            return lireDetail(ps);
+            return readDetail(ps);
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to load plan snapshot " + id, e);
         }
     }
 
     /**
-     * Same as {@link #charger(long)} but across editions, for the comparator —
-     * see {@link #listerToutesEditions()} for why. Snapshot ids are unique
+     * Same as {@link #load(long)} but across editions, for the comparator —
+     * see {@link #listAllEditions()} for why. Snapshot ids are unique
      * server-wide (a single {@code BIGSERIAL}), so an id identifies one
      * snapshot without its edition having to be named.
      */
-    public SnapshotDetail chargerToutesEditions(long id) {
+    public SnapshotDetail loadAllEditions(long id) {
         String sql = "SELECT " + COLONNES_META + ", s.contenu, s.kpi" + DEPUIS_SNAPSHOT
                 + " WHERE s.id = ?";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setLong(1, id);
-            return lireDetail(ps);
+            return readDetail(ps);
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to load plan snapshot " + id, e);
         }
     }
 
-    private List<SnapshotMeta> lireMetas(PreparedStatement ps) throws SQLException {
+    private List<SnapshotMeta> readMetas(PreparedStatement ps) throws SQLException {
         List<SnapshotMeta> snapshots = new ArrayList<>();
         try (ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                snapshots.add(lireMeta(rs));
+                snapshots.add(readMeta(rs));
             }
         }
         return snapshots;
     }
 
-    private SnapshotDetail lireDetail(PreparedStatement ps) throws SQLException {
+    private SnapshotDetail readDetail(PreparedStatement ps) throws SQLException {
         try (ResultSet rs = ps.executeQuery()) {
             if (!rs.next()) {
                 return null;
             }
-            return new SnapshotDetail(lireMeta(rs), lireContenu(rs.getString("contenu")));
+            return new SnapshotDetail(readMeta(rs), readContent(rs.getString("contenu")));
         }
     }
 
     /** @return true when a row was actually deleted. */
-    public boolean supprimer(long id) {
+    public boolean delete(long id) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection,
                         "DELETE FROM plan_snapshot WHERE edition_id = ? AND id = ?")) {
@@ -307,7 +307,7 @@ public class PlanSnapshotService {
      * restore would silently produce a plan nobody ever computed.
      */
     public RestaurationResult restaurer(long id) {
-        SnapshotDetail detail = charger(id);
+        SnapshotDetail detail = load(id);
         if (detail == null) {
             return null;
         }
@@ -315,7 +315,7 @@ public class PlanSnapshotService {
         if (!manquantes.isEmpty()) {
             return RestaurationResult.referencesPerdues(manquantes);
         }
-        scope.ecrire("Failed to restore plan snapshot " + id, connection -> {
+        scope.write("Failed to restore plan snapshot " + id, connection -> {
             try (PreparedStatement ps = scope.prepareScoped(connection,
                     "DELETE FROM poste_affectation WHERE edition_id = ?")) {
                 ps.executeUpdate();
@@ -350,10 +350,10 @@ public class PlanSnapshotService {
         // stored constraint analysis now describes a plan that is gone.
         // Cleared first, then re-derived from the restored plan: a failed
         // re-analysis leaves "no analysis yet", never a stale lie.
-        // Best-effort like capturerAvantSolve — it must not undo the restore.
-        analysisStore.effacer();
+        // Best-effort like captureBeforeSolve — it must not undo the restore.
+        analysisStore.clear();
         try {
-            analysisStore.record(planningService.diagnostiquerPlanPersiste());
+            analysisStore.record(planningService.diagnosePersistedPlan());
         } catch (RuntimeException e) {
             // Deliberately swallowed: see comment above.
         }
@@ -362,7 +362,7 @@ public class PlanSnapshotService {
 
     /* -------------------------------- Helpers ------------------------------ */
 
-    private List<AffectationSnapshot> lireAffectationsPersistees() {
+    private List<AffectationSnapshot> readPersistedAffectations() {
         String sql = """
  SELECT id, stand_id, creneau_id, animateur_id, heure_debut_effective, heure_fin_effective
  FROM poste_affectation
@@ -378,8 +378,8 @@ public class PlanSnapshotService {
                         rs.getString("stand_id"),
                         String.valueOf(rs.getLong("creneau_id")),
                         rs.getString("animateur_id"),
-                        texte(rs.getObject("heure_debut_effective", LocalTime.class)),
-                        texte(rs.getObject("heure_fin_effective", LocalTime.class))));
+                        text(rs.getObject("heure_debut_effective", LocalTime.class)),
+                        text(rs.getObject("heure_fin_effective", LocalTime.class))));
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to read the persisted plan", e);
@@ -400,9 +400,9 @@ public class PlanSnapshotService {
             }
         }
         List<String> manquantes = new ArrayList<>();
-        manquantes.addAll(absents("stand", "stand", "id", stands, false));
-        manquantes.addAll(absents("creneau", "creneau", "id", creneaux, true));
-        manquantes.addAll(absents("animateur", "animateur", "id", animateurs, false));
+        manquantes.addAll(missing("stand", "stand", "id", stands, false));
+        manquantes.addAll(missing("creneau", "creneau", "id", creneaux, true));
+        manquantes.addAll(missing("animateur", "animateur", "id", animateurs, false));
         return manquantes;
     }
 
@@ -411,7 +411,7 @@ public class PlanSnapshotService {
      * {@code kind}. Table and column names come from this class's own call
      * sites, never from user input.
      */
-    private List<String> absents(String kind, String table, String colonne, Set<String> ids, boolean numerique) {
+    private List<String> missing(String kind, String table, String colonne, Set<String> ids, boolean numerique) {
         if (ids.isEmpty()) {
             return List.of();
         }
@@ -438,8 +438,8 @@ public class PlanSnapshotService {
         return manquants;
     }
 
-    /** Drops the oldest automatic snapshots beyond the configured retention. */
-    private void purgerAutomatiques(Connection connection) throws SQLException {
+    /** Drops the oldest automatique snapshots beyond the configured retention. */
+    private void purgeAutomatic(Connection connection) throws SQLException {
         String sql = """
  DELETE FROM plan_snapshot
  WHERE edition_id = ?
@@ -453,7 +453,7 @@ public class PlanSnapshotService {
         }
     }
 
-    private SnapshotMeta lireMeta(ResultSet rs) throws SQLException {
+    private SnapshotMeta readMeta(ResultSet rs) throws SQLException {
         Timestamp creeLe = rs.getTimestamp("cree_le");
         return new SnapshotMeta(
                 rs.getLong("id"),
@@ -464,7 +464,7 @@ public class PlanSnapshotService {
                 creeLe == null ? null : creeLe.toInstant(),
                 rs.getString("edition_id"),
                 rs.getString("edition_nom"),
-                lireKpi(rs.getString("kpi")));
+                readKpi(rs.getString("kpi")));
     }
 
     /** Display name of an edition, read on the connection already open. */
@@ -485,13 +485,13 @@ public class PlanSnapshotService {
      */
     private PlanningKpiService.PlanningKpi kpiCourant() {
         try {
-            return kpiService.calculerCourant(null);
+            return kpiService.computeCurrent(null);
         } catch (RuntimeException e) {
             return null;
         }
     }
 
-    private String ecrireKpi(PlanningKpiService.PlanningKpi kpi) {
+    private String writeKpi(PlanningKpiService.PlanningKpi kpi) {
         try {
             return objectMapper.writeValueAsString(kpi);
         } catch (Exception e) {
@@ -500,7 +500,7 @@ public class PlanSnapshotService {
     }
 
     /** A KPI payload written by an older format is treated as absent, never as an error. */
-    private PlanningKpiService.PlanningKpi lireKpi(String json) {
+    private PlanningKpiService.PlanningKpi readKpi(String json) {
         if (json == null) {
             return null;
         }
@@ -511,7 +511,7 @@ public class PlanSnapshotService {
         }
     }
 
-    private String ecrireContenu(List<AffectationSnapshot> affectations) {
+    private String writeContent(List<AffectationSnapshot> affectations) {
         try {
             return objectMapper.writeValueAsString(affectations);
         } catch (Exception e) {
@@ -519,7 +519,7 @@ public class PlanSnapshotService {
         }
     }
 
-    private List<AffectationSnapshot> lireContenu(String contenu) {
+    private List<AffectationSnapshot> readContent(String contenu) {
         try {
             return objectMapper.readValue(contenu, new TypeReference<List<AffectationSnapshot>>() {
             });
@@ -528,12 +528,12 @@ public class PlanSnapshotService {
         }
     }
 
-    private static String texte(LocalTime heure) {
+    private static String text(LocalTime heure) {
         return heure == null ? null : heure.toString();
     }
 
-    private static LocalTime heure(String texte) {
-        return texte == null ? null : LocalTime.parse(texte);
+    private static LocalTime heure(String text) {
+        return text == null ? null : LocalTime.parse(text);
     }
 
     private String editionId() {

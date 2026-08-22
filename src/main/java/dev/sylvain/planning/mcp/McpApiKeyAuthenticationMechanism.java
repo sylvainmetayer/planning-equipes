@@ -58,10 +58,10 @@ public class McpApiKeyAuthenticationMechanism implements HttpAuthenticationMecha
             return Uni.createFrom().nullItem();
         }
         if (config.apiKey().isEmpty() || config.apiKey().get().isBlank()
-                || !clesEgales(config.apiKey().get(), clePresentee(context))) {
+                || !keysEqual(config.apiKey().get(), presentedKey(context))) {
             return Uni.createFrom().nullItem();
         }
-        if (!enTetesRequisPresents(context)) {
+        if (!requiredHeadersPresent(context)) {
             return Uni.createFrom().nullItem();
         }
         return identityProviderManager.authenticate(new TrustedAuthenticationRequest(PRINCIPAL));
@@ -81,7 +81,7 @@ public class McpApiKeyAuthenticationMechanism implements HttpAuthenticationMecha
      * a blank expected value, can never be matched, rather than degrading to
      * "header optional".
      */
-    private boolean enTetesRequisPresents(RoutingContext context) {
+    private boolean requiredHeadersPresent(RoutingContext context) {
         if (config.requiredHeaders().isEmpty()) {
             return true;
         }
@@ -89,7 +89,7 @@ public class McpApiKeyAuthenticationMechanism implements HttpAuthenticationMecha
             int separateur = paire.indexOf('=');
             String nom = separateur < 0 ? paire.trim() : paire.substring(0, separateur).trim();
             String valeurAttendue = separateur < 0 ? "" : paire.substring(separateur + 1);
-            return clesEgales(valeurAttendue, context.request().getHeader(nom));
+            return keysEqual(valeurAttendue, context.request().getHeader(nom));
         });
     }
 
@@ -119,14 +119,14 @@ public class McpApiKeyAuthenticationMechanism implements HttpAuthenticationMecha
     }
 
     /** Constant-time comparison so a mistyped key can't be brute-forced via response-time measurement. */
-    private static boolean clesEgales(String attendue, String presentee) {
+    private static boolean keysEqual(String attendue, String presentee) {
         if (presentee == null) {
             return false;
         }
         return MessageDigest.isEqual(attendue.getBytes(StandardCharsets.UTF_8), presentee.getBytes(StandardCharsets.UTF_8));
     }
 
-    private String clePresentee(RoutingContext context) {
+    private String presentedKey(RoutingContext context) {
         String header = context.request().getHeader(config.apiKeyHeader());
         if (header != null) {
             return header;

@@ -13,7 +13,7 @@ import java.util.Optional;
  * and belongs to its edition like the rest of the referential.</p>
  *
  * <p>Two mechanisms enforce it, both wired from
- * {@code PlanningService.construireDepuisReferenceData}:</p>
+ * {@code PlanningService.buildFromReferenceData}:</p>
  * <ul>
  *   <li>every covered seat that already holds an animateur is re-seeded with
  *       that animateur and pinned ({@link PosteAffectation#isVerrouille()}), so
@@ -54,7 +54,7 @@ public class VerrouillagePlanning {
         if (poste == null) {
             return false;
         }
-        return cible().map(cible -> cible.couvre(poste)).orElse(false);
+        return target().map(target -> target.couvre(poste)).orElse(false);
     }
 
     /**
@@ -68,26 +68,26 @@ public class VerrouillagePlanning {
      * throwing keeps the previous behaviour: an incomplete lock freezes
      * nothing.</p>
      */
-    public Optional<CibleVerrouillage> cible() {
+    public Optional<VerrouillageTarget> target() {
         if (type == null) {
             return Optional.empty();
         }
         return switch (type) {
             case ANIMATEUR -> animateurId == null
                     ? Optional.empty()
-                    : Optional.of(new CibleVerrouillage.SurAnimateur(animateurId));
+                    : Optional.of(new VerrouillageTarget.OnAnimateur(animateurId));
             case STAND -> standId == null
                     ? Optional.empty()
-                    : Optional.of(new CibleVerrouillage.SurStand(standId));
+                    : Optional.of(new VerrouillageTarget.OnStand(standId));
             case CRENEAU -> creneauId == null
                     ? Optional.empty()
-                    : Optional.of(new CibleVerrouillage.SurCreneau(creneauId));
+                    : Optional.of(new VerrouillageTarget.OnCreneau(creneauId));
             case JOUR -> jour == null
                     ? Optional.empty()
-                    : Optional.of(new CibleVerrouillage.SurJour(jour));
+                    : Optional.of(new VerrouillageTarget.OnJour(jour));
             case ANIMATEUR_CRENEAU -> animateurId == null || creneauId == null
                     ? Optional.empty()
-                    : Optional.of(new CibleVerrouillage.SurAnimateurEtCreneau(animateurId, creneauId));
+                    : Optional.of(new VerrouillageTarget.OnAnimateurAndCreneau(animateurId, creneauId));
         };
     }
 
@@ -103,18 +103,18 @@ public class VerrouillagePlanning {
      * {@code default}: a new way to lock will not compile until somebody has
      * said which column it lands in.</p>
      */
-    public void appliquer(CibleVerrouillage cible) {
-        this.type = cible.type();
+    public void apply(VerrouillageTarget target) {
+        this.type = target.type();
         this.animateurId = null;
         this.standId = null;
         this.creneauId = null;
         this.jour = null;
-        switch (cible) {
-            case CibleVerrouillage.SurAnimateur sur -> this.animateurId = sur.animateurId();
-            case CibleVerrouillage.SurStand sur -> this.standId = sur.standId();
-            case CibleVerrouillage.SurCreneau sur -> this.creneauId = sur.creneauId();
-            case CibleVerrouillage.SurJour sur -> this.jour = sur.jour();
-            case CibleVerrouillage.SurAnimateurEtCreneau sur -> {
+        switch (target) {
+            case VerrouillageTarget.OnAnimateur sur -> this.animateurId = sur.animateurId();
+            case VerrouillageTarget.OnStand sur -> this.standId = sur.standId();
+            case VerrouillageTarget.OnCreneau sur -> this.creneauId = sur.creneauId();
+            case VerrouillageTarget.OnJour sur -> this.jour = sur.jour();
+            case VerrouillageTarget.OnAnimateurAndCreneau sur -> {
                 this.animateurId = sur.animateurId();
                 this.creneauId = sur.creneauId();
             }

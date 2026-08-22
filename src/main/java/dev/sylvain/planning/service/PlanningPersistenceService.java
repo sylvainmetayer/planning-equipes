@@ -68,7 +68,7 @@ public class PlanningPersistenceService {
         if (planning == null || planning.getPostes() == null) {
             return 0;
         }
-        return scope.ecrireEtRendre("Failed to persist planning solution", connection -> {
+        return scope.writeAndReturn("Failed to persist planning solution", connection -> {
             upsertReferenceData(connection, planning);
             int count = rewriteAssignments(connection, planning.getPostes());
             recordResolution(connection);
@@ -86,7 +86,7 @@ public class PlanningPersistenceService {
      * {@code TRUNCATE} it used to be.
      */
     public void clearDatabase() {
-        scope.ecrire("Failed to clear the database", this::clearPlanningTables);
+        scope.write("Failed to clear the database", this::clearPlanningTables);
     }
 
     /** Child-first order, so no {@code ON DELETE} cascade has to be relied on. */
@@ -326,19 +326,19 @@ public class PlanningPersistenceService {
 
     /**
      * Applies an accepted demande d'échange (issue #165) to the persisted
-     * planning: the demandeur's seat on (créneau, stand) goes to the cible,
-     * and — échange croisé — the cible's own seat on the same créneau goes to
+     * planning: the demandeur's seat on (créneau, stand) goes to the target,
+     * and — échange croisé — the target's own seat on the same créneau goes to
      * the demandeur. Surgical {@code UPDATE}s in one transaction, so the rest
      * of the plan (and the seat ids) stay exactly as persisted. An animateur
      * holds at most one seat per stand × créneau (hard overlap constraint), so
      * matching on {@code animateur_id} designates a single row.
      *
-     * @param standCibleId {@code null} for a simple takeover (the cible was
+     * @param standCibleId {@code null} for a simple takeover (the target was
      *                     free on the créneau)
      */
-    public void appliquerEchange(long creneauId, String standDemandeurId, String demandeurId,
+    public void applyEchange(long creneauId, String standDemandeurId, String demandeurId,
             String cibleId, String standCibleId) {
-        scope.ecrireEtRendre("Failed to apply the échange to the persisted planning", connection -> {
+        scope.writeAndReturn("Failed to apply the échange to the persisted planning", connection -> {
             int updated = reaffecterSiege(connection, creneauId, standDemandeurId, demandeurId, cibleId);
             if (updated == 0) {
                 throw new SQLException("Aucun poste de " + demandeurId + " sur ce créneau et ce stand");
@@ -354,13 +354,13 @@ public class PlanningPersistenceService {
     }
 
     /**
-     * Directed variant of {@link #appliquerEchange}: the two reassigned seats
-     * sit on two different créneaux — the demandeur's goes to the cible, the
-     * cible's goes to the demandeur. Same one-transaction surgical updates.
+     * Directed variant of {@link #applyEchange}: the two reassigned seats
+     * sit on two different créneaux — the demandeur's goes to the target, the
+     * target's goes to the demandeur. Same one-transaction surgical updates.
      */
-    public void appliquerEchangeDirige(long creneauId, String standDemandeurId, String demandeurId,
+    public void applyDirectedEchange(long creneauId, String standDemandeurId, String demandeurId,
             String cibleId, long creneauCibleId, String standCibleId) {
-        scope.ecrireEtRendre("Failed to apply the échange dirigé to the persisted planning", connection -> {
+        scope.writeAndReturn("Failed to apply the échange dirigé to the persisted planning", connection -> {
             int updated = reaffecterSiege(connection, creneauId, standDemandeurId, demandeurId, cibleId);
             if (updated == 0) {
                 throw new SQLException("Aucun poste de " + demandeurId + " sur ce créneau et ce stand");
@@ -442,17 +442,17 @@ public class PlanningPersistenceService {
 
     /**
      * The animateurs of the last persisted solve, grouped by stand × créneau
-     * (see {@link #cleStandCreneau}) and ordered by poste id. Empty seats are
+     * (see {@link #standCreneauKey}) and ordered by poste id. Empty seats are
      * skipped: a lock never freezes a hole.
      *
      * <p>Deliberately keyed on stand × créneau rather than on the poste id:
-     * {@code PlanningService.construirePostes} renumbers its seats
+     * {@code PlanningService.buildPostes} renumbers its seats
      * ({@code poste-0}, {@code poste-1}, …) on every build, so adding a single
      * stand shifts every subsequent id. Seats of the same stand and créneau are
      * interchangeable anyway, so re-seeding them positionally restores the same
      * plan without depending on ids surviving a reference-data change.</p>
      */
-    public Map<String, List<String>> chargerAnimateursParStandCreneau() {
+    public Map<String, List<String>> loadAnimateursByStandCreneau() {
         Map<String, List<String>> parStandCreneau = new LinkedHashMap<>();
         String sql = """
  SELECT stand_id, creneau_id, animateur_id
@@ -464,7 +464,7 @@ public class PlanningPersistenceService {
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 parStandCreneau
-                        .computeIfAbsent(cleStandCreneau(rs.getString("stand_id"), rs.getLong("creneau_id")),
+                        .computeIfAbsent(standCreneauKey(rs.getString("stand_id"), rs.getLong("creneau_id")),
                                 key -> new ArrayList<>())
                         .add(rs.getString("animateur_id"));
             }
@@ -474,8 +474,8 @@ public class PlanningPersistenceService {
         return parStandCreneau;
     }
 
-    /** Grouping key of {@link #chargerAnimateursParStandCreneau()}. */
-    public static String cleStandCreneau(String standId, long creneauId) {
+    /** Grouping key of {@link #loadAnimateursByStandCreneau()}. */
+    public static String standCreneauKey(String standId, long creneauId) {
         return standId + "#" + creneauId;
     }
 
@@ -493,7 +493,7 @@ public class PlanningPersistenceService {
         // Every group's créneaux, not just the active one's: this view shows what
         // is persisted, so the horaires have to be resolved against the same
         // days it displays.
-        HoraireStandResolver.appliquer(stands, creneaux);
+        HoraireStandResolver.apply(stands, creneaux);
         Map<String, Stand> standsById = indexById(stands, Stand::getId);
         Map<Long, Creneau> creneauxById = indexById(creneaux, Creneau::getId);
 

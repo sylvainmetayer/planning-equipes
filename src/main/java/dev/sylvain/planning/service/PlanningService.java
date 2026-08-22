@@ -87,7 +87,7 @@ public class PlanningService {
 
     private final SolverFactory<PlanningFestival> solverFactory;
     private final SolutionManager<PlanningFestival, ?> solutionManager;
-    private final Referentiel referenceDataService;
+    private final ReferenceData referenceDataService;
     private final FeasibilityAnalyzer feasibilityAnalyzer;
     private final long defaultSecondsLimit;
     private final ConstraintWeightOverrides<HardMediumSoftScore> constraintWeightOverrides;
@@ -97,7 +97,7 @@ public class PlanningService {
     /**
      * Field-injected rather than a constructor parameter: the plain (non-CDI)
      * tests build this service with {@code new} and never exercise the locks,
-     * so it stays null there — {@link #appliquerVerrouillages} guards on it.
+     * so it stays null there — {@link #applyVerrouillages} guards on it.
      */
     @Inject
     PlanningPersistenceService planningPersistenceService;
@@ -107,7 +107,7 @@ public class PlanningService {
             @ConfigProperty(name = "planning.solver.unimproved-seconds-limit", defaultValue = "30") Long unimprovedSecondsLimit,
             @ConfigProperty(name = "planning.contraintes.max-emplacements-par-jour",
                     defaultValue = "" + ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT) Integer maxEmplacementsParJour,
-            Referentiel referenceDataService,
+            ReferenceData referenceDataService,
             FeasibilityAnalyzer feasibilityAnalyzer,
             Config config) {
         SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
@@ -191,7 +191,7 @@ public class PlanningService {
 
     /**
      * Names of every constraint enforced at {@link ConstraintCatalog.Niveau#HARD}.
-     * {@link #diagnostiquer} only builds per-match {@code violations} for these:
+     * {@link #diagnose} only builds per-match {@code violations} for these:
      * a soft or medium constraint like {@code souhaitsIncompatibles} can have
      * thousands of matches, which would bloat the diagnostic payload for a
      * detail nobody blocking on a failed solve needs to see.
@@ -204,8 +204,8 @@ public class PlanningService {
     /** Caps the per-constraint violation list: a UI detail view, not a full dump. */
     private static final int MAX_VIOLATIONS_PAR_CONTRAINTE = 100;
 
-    public PlanningFestival construireExemple() {
-        return construireExemple(DEFAULT_SCENARIO);
+    public PlanningFestival buildExample() {
+        return buildExample(DEFAULT_SCENARIO);
     }
 
     /**
@@ -213,9 +213,9 @@ public class PlanningService {
      * a bare file name (e.g. {@code scenario-complet.yaml}); any path component
      * is rejected so callers cannot escape the scenarios folder.
      */
-    public PlanningFestival construireExemple(String scenarioName) {
+    public PlanningFestival buildExample(String scenarioName) {
         try {
-            return construirePlanningDepuisDonnees(lireDonneesScenario(cheminScenario(scenarioName)));
+            return buildPlanningFromData(readScenarioData(cheminScenario(scenarioName)));
         } catch (IOException e) {
             throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
         }
@@ -233,7 +233,7 @@ public class PlanningService {
     private static String cheminScenario(String scenarioName) {
         String name = (scenarioName == null || scenarioName.isBlank()) ? DEFAULT_SCENARIO : scenarioName;
         if (name.contains("/") || name.contains("\\") || name.contains("..")) {
-            throw new ErreurMetier.Invalide("Nom de scénario invalide: " + name);
+            throw new BusinessError.Invalid("Nom de scénario invalide: " + name);
         }
         return SCENARIOS_DIR + "/" + name;
     }
@@ -242,12 +242,12 @@ public class PlanningService {
      * Small, self-contained scenario used as a fast nominal case (a handful of
      * postes) so the hard-constraint invariant can be checked in seconds. The
      * large {@code scenario-complet.yaml} is the complex performance target
-     * solved by {@link #construireExemple()}.
+     * solved by {@link #buildExample()}.
      */
-    public PlanningFestival construireExempleSimple() {
+    public PlanningFestival buildSimpleExample() {
         try {
-            return construirePlanningDepuisDonnees(
-                    lireDonneesScenario(SCENARIOS_DIR + "/scenario.yml"));
+            return buildPlanningFromData(
+                    readScenarioData(SCENARIOS_DIR + "/scenario.yml"));
         } catch (IOException e) {
             throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
         }
@@ -262,13 +262,13 @@ public class PlanningService {
      * to the browser and back, which is what makes very large scenarios
      * solvable at all (the JSON of such a planning exceeds the HTTP body limit).
      */
-    public PlanningFestival construireDepuisReferenceData() {
-        // Resolved stands: construirePostes asks each créneau which parts of it
+    public PlanningFestival buildFromReferenceData() {
+        // Resolved stands: buildPostes asks each créneau which parts of it
         // a stand is open for, so the recurring horaires have to be expanded
         // first.
-        return construireDepuisReferenceData(
+        return buildFromReferenceData(
                 referenceDataService.listAnimateurs(),
-                referenceDataService.listStandsResolus(),
+                referenceDataService.listSolvedStands(),
                 referenceDataService.listCreneaux());
     }
 
@@ -279,16 +279,16 @@ public class PlanningService {
      * Everything else still comes from the referential: locks, ad hoc
      * constraints and legal parameters are not what a simulation varies.
      */
-    public PlanningFestival construireDepuisReferenceData(List<Animateur> animateurs, List<Stand> stands,
+    public PlanningFestival buildFromReferenceData(List<Animateur> animateurs, List<Stand> stands,
             List<Creneau> creneaux) {
         if (animateurs.isEmpty() || stands.isEmpty() || creneaux.isEmpty()) {
             throw new IllegalStateException(
                     "Aucune donnée de référence. Chargez un scénario ou créez des stands, "
                             + "des animateurs et des créneaux d'abord.");
         }
-        List<PosteAffectation> postes = construirePostes(stands, creneaux);
+        List<PosteAffectation> postes = buildPostes(stands, creneaux);
         List<VerrouillagePlanning> verrouillages = referenceDataService.listVerrouillages();
-        appliquerVerrouillages(postes, animateurs, verrouillages);
+        applyVerrouillages(postes, animateurs, verrouillages);
         LocalDate dateDebut = creneaux.stream()
                 .map(Creneau::getDate)
                 .filter(Objects::nonNull)
@@ -321,27 +321,27 @@ public class PlanningService {
 
     /**
      * Builds an incremental re-solve problem (issue #86): the same seats as
-     * {@link #construireDepuisReferenceData()}, but seeded from the persisted
+     * {@link #buildFromReferenceData()}, but seeded from the persisted
      * plan and <b>pinned wherever that plan is still valid</b>, so a short
      * solve only has to fill what a late change actually opened — a fresh
      * unavailability, a new stand, seats the previous solve left empty, plus
-     * whatever {@code perimetre} re-opens on purpose.
+     * whatever {@code scope} re-opens on purpose.
      *
      * <p>Seats are matched positionally on stand × créneau, the same convention
      * as the locks of issue #87 (see
-     * {@link PlanningPersistenceService#chargerAnimateursParStandCreneau()}):
+     * {@link PlanningPersistenceService#loadAnimateursByStandCreneau()}):
      * the seats of one stand and créneau are interchangeable, so no seat id has
      * to survive a reference-data change for the reconciliation to hold.</p>
      *
      * <p>Everything still valid and outside the perimeter is pinned, including
      * seats covered by no explicit lock: an incremental re-solve exists to keep
      * the standing plan stable, not to re-optimise it. Re-opening a validated
-     * area is therefore an explicit act — name it in {@code perimetre}, or run
+     * area is therefore an explicit act — name it in {@code scope}, or run
      * a full solve with locks protecting what must survive it.</p>
      */
-    public ProblemeIncremental construireIncrementalDepuisReferenceData(PerimetreReplanification perimetre) {
+    public ProblemeIncremental buildIncrementalFromReferenceData(ReplanificationScope scope) {
         List<Animateur> animateurs = referenceDataService.listAnimateurs();
-        List<Stand> stands = referenceDataService.listStandsResolus();
+        List<Stand> stands = referenceDataService.listSolvedStands();
         List<Creneau> creneaux = referenceDataService.listCreneaux();
         if (animateurs.isEmpty() || stands.isEmpty() || creneaux.isEmpty()) {
             throw new IllegalStateException(
@@ -349,16 +349,16 @@ public class PlanningService {
                             + "des animateurs et des créneaux d'abord.");
         }
         Map<String, List<String>> affectationsPrecedentes =
-                planningPersistenceService.chargerAnimateursParStandCreneau();
+                planningPersistenceService.loadAnimateursByStandCreneau();
         if (affectationsPrecedentes.isEmpty()) {
             throw new IllegalStateException(
                     "Aucun plan persisté : lancez d'abord une résolution complète, "
                             + "la replanification incrémentale repart de son résultat.");
         }
-        List<PosteAffectation> postes = construirePostes(stands, creneaux);
+        List<PosteAffectation> postes = buildPostes(stands, creneaux);
         List<ContrainteAdHoc> contraintesAdHoc = referenceDataService.snapshotContraintes();
         StatistiquesIncremental statistiques = figerPostesIncremental(postes, animateurs, affectationsPrecedentes,
-                perimetre == null ? PerimetreReplanification.automatique() : perimetre, contraintesAdHoc);
+                scope == null ? ReplanificationScope.automatic() : scope, contraintesAdHoc);
         LocalDate dateDebut = creneaux.stream()
                 .map(Creneau::getDate)
                 .filter(Objects::nonNull)
@@ -372,10 +372,10 @@ public class PlanningService {
 
     /**
      * The incremental reconciliation itself (issue #86), positional like
-     * {@link #appliquerVerrouillages}: every seat is re-seeded with the
+     * {@link #applyVerrouillages}: every seat is re-seeded with the
      * animateur the persisted plan gave it, then
      * <ul>
-     * <li>named by {@code perimetre} → cleared and left free, whatever its
+     * <li>named by {@code scope} → cleared and left free, whatever its
      * state: this is the operator saying "redo that";</li>
      * <li>still valid (the animateur exists and is not unavailable on the
      * seat's day) → pinned, the solver may not touch it;</li>
@@ -390,11 +390,11 @@ public class PlanningService {
      * Package-private and static so it can be unit-tested without a database.
      */
     static StatistiquesIncremental figerPostesIncremental(List<PosteAffectation> postes, List<Animateur> animateurs,
-            Map<String, List<String>> animateursPersistes, PerimetreReplanification perimetre,
+            Map<String, List<String>> animateursPersistes, ReplanificationScope scope,
             List<ContrainteAdHoc> contraintesAdHoc) {
-        Map<String, Animateur> animateursParId = new HashMap<>();
+        Map<String, Animateur> animateursById = new HashMap<>();
         for (Animateur animateur : animateurs) {
-            animateursParId.put(animateur.getId(), animateur);
+            animateursById.put(animateur.getId(), animateur);
         }
         // Filtered once: the loop below runs on thousands of seats, and this
         // list is normally empty.
@@ -412,25 +412,25 @@ public class PlanningService {
             if (poste.getStand() == null || poste.getCreneau() == null) {
                 continue;
             }
-            String cle = PlanningPersistenceService.cleStandCreneau(
+            String key = PlanningPersistenceService.standCreneauKey(
                     poste.getStand().getId(), poste.getCreneau().getId());
-            List<String> tenants = animateursPersistes.getOrDefault(cle, List.of());
-            int place = prochainePlace.merge(cle, 1, Integer::sum) - 1;
+            List<String> tenants = animateursPersistes.getOrDefault(key, List.of());
+            int place = prochainePlace.merge(key, 1, Integer::sum) - 1;
             String tenantId = place < tenants.size() ? tenants.get(place) : null;
             if (tenantId == null) {
                 nouveaux++;
                 continue;
             }
-            if (perimetre.liberer(poste, tenantId)) {
+            if (scope.release(poste, tenantId)) {
                 liberesManuellement++;
                 continue;
             }
-            Animateur tenant = animateursParId.get(tenantId);
+            Animateur tenant = animateursById.get(tenantId);
             // Seeded first: the ad hoc check below reads the seat as staffed,
             // exactly like the constraint it shares its implementation with.
             poste.setAnimateur(tenant);
             if (tenant == null || indisponible(tenant, poste)
-                    || interditParContrainteAdHoc(indisponibilitesForcees, poste)) {
+                    || forbiddenByContrainteAdHoc(indisponibilitesForcees, poste)) {
                 poste.setAnimateur(null);
                 liberes++;
                 continue;
@@ -450,13 +450,13 @@ public class PlanningService {
      * Whether a forced-unavailability ad hoc constraint forbids this seat as
      * staffed — the other way a late change lands, alongside a day off. The
      * predicate is the solver's own
-     * ({@link AdHocConstraints#violeIndisponibiliteForcee}), so the two can
+     * ({@link AdHocConstraints#violatesForcedIndisponibilite}), so the two can
      * never disagree about what is allowed.
      */
-    private static boolean interditParContrainteAdHoc(List<ContrainteAdHoc> indisponibilitesForcees,
+    private static boolean forbiddenByContrainteAdHoc(List<ContrainteAdHoc> indisponibilitesForcees,
             PosteAffectation poste) {
         for (ContrainteAdHoc contrainte : indisponibilitesForcees) {
-            if (AdHocConstraints.violeIndisponibiliteForcee(contrainte, poste)) {
+            if (AdHocConstraints.violatesForcedIndisponibilite(contrainte, poste)) {
                 return true;
             }
         }
@@ -480,32 +480,32 @@ public class PlanningService {
      * again, leaving the unlocked part of the problem exactly as it was
      * before.</p>
      */
-    private void appliquerVerrouillages(List<PosteAffectation> postes, List<Animateur> animateurs,
+    private void applyVerrouillages(List<PosteAffectation> postes, List<Animateur> animateurs,
             List<VerrouillagePlanning> verrouillages) {
         if (verrouillages.isEmpty() || planningPersistenceService == null) {
             return;
         }
-        appliquerVerrouillages(postes, animateurs, verrouillages,
-                planningPersistenceService.chargerAnimateursParStandCreneau());
+        applyVerrouillages(postes, animateurs, verrouillages,
+                planningPersistenceService.loadAnimateursByStandCreneau());
     }
 
     /**
      * The pinning itself, taking the persisted assignments as a parameter:
      * package-private and static so it can be unit-tested without a database,
-     * like {@link #construirePostes}.
+     * like {@link #buildPostes}.
      */
-    static void appliquerVerrouillages(List<PosteAffectation> postes, List<Animateur> animateurs,
+    static void applyVerrouillages(List<PosteAffectation> postes, List<Animateur> animateurs,
             List<VerrouillagePlanning> verrouillages, Map<String, List<String>> animateursPersistes) {
         if (verrouillages.isEmpty()) {
             return;
         }
-        seedDepuisAffectations(postes, animateurs, verrouillages, animateursPersistes);
+        seedFromAffectations(postes, animateurs, verrouillages, animateursPersistes);
     }
 
     /**
      * Re-seeds the seats positionally from {@code seed} (animateur ids per
      * stand × créneau key, seat order — ids are interchangeable within one
-     * key, see {@link PlanningPersistenceService#chargerAnimateursParStandCreneau()}),
+     * key, see {@link PlanningPersistenceService#loadAnimateursByStandCreneau()}),
      * pins the seats covered by a lock, and clears the others again so the
      * solver restarts from scratch everywhere it is free to. An animateur id
      * the referential no longer knows simply leaves its seat empty — a stale
@@ -516,26 +516,26 @@ public class PlanningService {
      * {@link #figerPostesIncremental}: it has its own notion of what stays
      * valid, and pins rather than merely seeds.</p>
      */
-    static void seedDepuisAffectations(List<PosteAffectation> postes, List<Animateur> animateurs,
+    static void seedFromAffectations(List<PosteAffectation> postes, List<Animateur> animateurs,
             List<VerrouillagePlanning> verrouillages, Map<String, List<String>> seed) {
         if (seed.isEmpty()) {
             return;
         }
-        Map<String, Animateur> animateursParId = new HashMap<>();
+        Map<String, Animateur> animateursById = new HashMap<>();
         for (Animateur animateur : animateurs) {
-            animateursParId.put(animateur.getId(), animateur);
+            animateursById.put(animateur.getId(), animateur);
         }
         Map<String, Integer> prochaineePlace = new HashMap<>();
         for (PosteAffectation poste : postes) {
             if (poste.getStand() == null || poste.getCreneau() == null) {
                 continue;
             }
-            String cle = PlanningPersistenceService.cleStandCreneau(
+            String key = PlanningPersistenceService.standCreneauKey(
                     poste.getStand().getId(), poste.getCreneau().getId());
-            List<String> tenants = seed.getOrDefault(cle, List.of());
-            int place = prochaineePlace.merge(cle, 1, Integer::sum) - 1;
+            List<String> tenants = seed.getOrDefault(key, List.of());
+            int place = prochaineePlace.merge(key, 1, Integer::sum) - 1;
             if (place < tenants.size()) {
-                poste.setAnimateur(animateursParId.get(tenants.get(place)));
+                poste.setAnimateur(animateursById.get(tenants.get(place)));
             }
             if (poste.getAnimateur() == null) {
                 continue;
@@ -576,9 +576,9 @@ public class PlanningService {
      * key), so it cannot be split into a synthetic sub-créneau instead.</p>
      *
      * <p>When {@code creneaux} contains more than one relay-grid "famille"
-     * (see {@link VacationGeneratorService#genererVacations}), each stand is
+     * (see {@link VacationGeneratorService#generateVacations}), each stand is
      * deterministically assigned to exactly one (see
-     * {@link #repartirStandsParFamille}) and only ever paired against that
+     * {@link #spreadStandsByFamily}) and only ever paired against that
      * famille's créneaux, instead of the full cross product. Whichever family a
      * stand lands on is stable across regenerations (it depends only on the set
      * of stand ids), so re-running découpage doesn't reshuffle which stands
@@ -586,9 +586,9 @@ public class PlanningService {
      * With a single famille (the default, {@code famille} always 0) this is
      * exactly the historical unfiltered cross product.</p>
      */
-    static List<PosteAffectation> construirePostes(List<Stand> stands, List<Creneau> creneaux) {
+    static List<PosteAffectation> buildPostes(List<Stand> stands, List<Creneau> creneaux) {
         int nombreFamilles = creneaux.stream().mapToInt(Creneau::getFamille).max().orElse(0) + 1;
-        Map<String, Integer> familleParStand = repartirStandsParFamille(stands, nombreFamilles);
+        Map<String, Integer> familleParStand = spreadStandsByFamily(stands, nombreFamilles);
         List<PosteAffectation> postes = new ArrayList<>();
         int counter = 0;
         for (Stand stand : stands) {
@@ -636,13 +636,13 @@ public class PlanningService {
      * Round-robin over sorted ids gives buckets that differ by at most one
      * stand.</p>
      */
-    private static Map<String, Integer> repartirStandsParFamille(List<Stand> stands, int nombreFamilles) {
+    private static Map<String, Integer> spreadStandsByFamily(List<Stand> stands, int nombreFamilles) {
         List<String> ids = stands.stream().map(Stand::getId).sorted().toList();
-        Map<String, Integer> familles = new HashMap<>();
+        Map<String, Integer> families = new HashMap<>();
         for (int i = 0; i < ids.size(); i++) {
-            familles.put(ids.get(i), i % nombreFamilles);
+            families.put(ids.get(i), i % nombreFamilles);
         }
-        return familles;
+        return families;
     }
 
     /** {@code heureDebut} shifted forward by {@code minutes}, wrapping past midnight. */
@@ -652,7 +652,7 @@ public class PlanningService {
 
     /**
      * Serializes the current reference data into the same YAML shape read by
-     * {@link #construirePlanningDepuisDonnees}, so the result can be dropped into the
+     * {@link #buildPlanningFromData}, so the result can be dropped into the
      * {@link #SCENARIOS_DIR} folder and reloaded as-is.
      *
      * <p>Everything that shapes a solve is written, not only the entities:
@@ -662,7 +662,7 @@ public class PlanningService {
      * — re-importing the file therefore reproduces the very same problem, which
      * is the whole point of exporting it. A file missing those sections silently
      * fell back to the importing instance's own settings (its solve duration,
-     * its vacation lengths, its relay familles), so the "same" scenario replayed
+     * its vacation lengths, its relay families), so the "same" scenario replayed
      * elsewhere solved a different problem.</p>
      *
      * <p>Two mutually exclusive shapes come out of that, depending on the active
@@ -677,7 +677,7 @@ public class PlanningService {
      * créneaux get fresh database ids on the way in).</li>
      * </ul>
      */
-    public String exporterScenarioYaml() {
+    public String exportScenarioYaml() {
         List<Animateur> animateurs = referenceDataService.listAnimateurs();
         // Raw stands, so the file gets the recurring horaires as rules rather
         // than the few hundred dated windows they expand to — the resolution
@@ -688,15 +688,15 @@ public class PlanningService {
             throw new IllegalStateException(
                     "Aucune donnée de référence à exporter. Créez des stands, des animateurs et des créneaux d'abord.");
         }
-        HoraireStandResolver.appliquer(stands, creneaux);
+        HoraireStandResolver.apply(stands, creneaux);
 
         // The edition's créneaux are exported as-is (issue #172): once the
         // découpage ran, the amplitudes it consumed are gone, so a découpé
         // edition exports its vacations plainly — the hand-maintained
         // "amplitudes + decoupageAuto:" scenario file stays the source of
         // truth for re-slicing, never this export.
-        List<PosteAffectation> postes = construirePostes(stands, creneaux);
-        return construireScenarioYaml(new ScenarioExport(
+        List<PosteAffectation> postes = buildPostes(stands, creneaux);
+        return buildScenarioYaml(new ScenarioExport(
                 animateurs,
                 stands,
                 creneaux,
@@ -710,11 +710,11 @@ public class PlanningService {
 
     /**
      * Everything one exported scenario file holds. A record rather than ten
-     * positional parameters, since {@link #construireScenarioYaml} is called
+     * positional parameters, since {@link #buildScenarioYaml} is called
      * both from the export above and from its unit tests.
      *
      * @param postes the seat list, or {@code null} to leave the section out
-     *               (see {@link #exporterScenarioYaml()})
+     *               (see {@link #exportScenarioYaml()})
      */
     record ScenarioExport(
             List<Animateur> animateurs,
@@ -730,17 +730,17 @@ public class PlanningService {
 
     /**
      * Builds the YAML text from already-fetched data. Package-private and
-     * static, like {@link #construirePostes}, so it can be unit-tested without
+     * static, like {@link #buildPostes}, so it can be unit-tested without
      * a database.
      */
-    static String construireScenarioYaml(List<Animateur> animateurs, List<Stand> stands, List<Creneau> creneaux,
+    static String buildScenarioYaml(List<Animateur> animateurs, List<Stand> stands, List<Creneau> creneaux,
             List<PosteAffectation> postes) {
-        return construireScenarioYaml(new ScenarioExport(animateurs, stands, creneaux, postes, List.of(), List.of(),
+        return buildScenarioYaml(new ScenarioExport(animateurs, stands, creneaux, postes, List.of(), List.of(),
                 null, null, null));
     }
 
     /** Full-fidelity variant: writes every optional section {@link ScenarioExport} carries. */
-    static String construireScenarioYaml(ScenarioExport export) {
+    static String buildScenarioYaml(ScenarioExport export) {
         List<Animateur> animateurs = export.animateurs();
         List<Stand> stands = export.stands();
         List<Creneau> creneaux = export.creneaux();
@@ -865,7 +865,7 @@ public class PlanningService {
         return value == null ? null : value.toString();
     }
 
-    /** Only the three fields a scenario file is read back with (see {@link SectionsScenario}). */
+    /** Only the three fields a scenario file is read back with (see {@link ScenarioSections}). */
     private static Map<String, Object> parametresLegauxYaml(ParametresLegaux parametres) {
         Map<String, Object> item = new LinkedHashMap<>();
         item.put("dureeHebdomadaireMaxMinutes", parametres.getDureeHebdomadaireMaxMinutes());
@@ -916,7 +916,7 @@ public class PlanningService {
         return result;
     }
 
-    /** Serializes a stand's {@link IndisponibiliteStand} closures to the shape {@link #chargerReferenceScenario} reads back. */
+    /** Serializes a stand's {@link IndisponibiliteStand} closures to the shape {@link #loadReferenceScenario} reads back. */
     private static List<Map<String, Object>> indisponibilitesYaml(List<IndisponibiliteStand> indisponibilites) {
         List<Map<String, Object>> result = new ArrayList<>();
         for (IndisponibiliteStand indispo : indisponibilites) {
@@ -930,7 +930,7 @@ public class PlanningService {
         return result;
     }
 
-    /** Serializes a stand's {@link OuvertureStand} openings to the shape {@link #chargerReferenceScenario} reads back. */
+    /** Serializes a stand's {@link OuvertureStand} openings to the shape {@link #loadReferenceScenario} reads back. */
     private static List<Map<String, Object>> ouverturesYaml(List<OuvertureStand> ouvertures) {
         List<Map<String, Object>> result = new ArrayList<>();
         for (OuvertureStand ouverture : ouvertures) {
@@ -946,7 +946,7 @@ public class PlanningService {
 
     /**
      * Serializes a stand's recurring {@link HoraireStand} rules to the shape
-     * {@link #chargerReferenceScenario} reads back — the day selector flattened
+     * {@link #loadReferenceScenario} reads back — the day selector flattened
      * onto the rule itself, so the common "every day" case stays a two-line
      * entry and the reader needs no polymorphism.
      *
@@ -998,7 +998,7 @@ public class PlanningService {
      * file in that folder and it shows up here (and in the UI dropdown) with no
      * code change. Works both in dev (folder on disk) and from a packaged jar.
      */
-    public List<String> listerScenarios() {
+    public List<String> listScenarios() {
         try {
             java.net.URL dirUrl = getClass().getClassLoader().getResource(SCENARIOS_DIR);
             if (dirUrl == null) {
@@ -1010,7 +1010,7 @@ public class PlanningService {
                 try (Stream<Path> files = Files.list(dir)) {
                     files.filter(Files::isRegularFile)
                             .map(p -> p.getFileName().toString())
-                            .filter(PlanningService::estFichierScenario)
+                            .filter(PlanningService::isScenarioFile)
                             .forEach(names::add);
                 }
             } else if ("jar".equals(dirUrl.getProtocol())) {
@@ -1022,7 +1022,7 @@ public class PlanningService {
                         String entry = entries.nextElement().getName();
                         if (entry.startsWith(prefix) && !entry.endsWith("/")) {
                             String fileName = entry.substring(prefix.length());
-                            if (!fileName.contains("/") && estFichierScenario(fileName)) {
+                            if (!fileName.contains("/") && isScenarioFile(fileName)) {
                                 names.add(fileName);
                             }
                         }
@@ -1035,28 +1035,28 @@ public class PlanningService {
         }
     }
 
-    private static boolean estFichierScenario(String fileName) {
+    private static boolean isScenarioFile(String fileName) {
         String lower = fileName.toLowerCase(Locale.ROOT);
         return lower.endsWith(".yaml") || lower.endsWith(".yml");
     }
 
-    private PlanningFestival construirePlanningDepuisDonnees(Map<String, Object> scenarioData) {
-        ReferenceScenario reference = chargerReferenceScenario(scenarioData);
+    private PlanningFestival buildPlanningFromData(Map<String, Object> scenarioData) {
+        ReferenceScenario reference = loadReferenceScenario(scenarioData);
 
         // Expand the recurring opening hours before deciding anything about
         // openings: a file may describe the opening hours of a stand as rules
         // rather than as dated windows, and they must be resolved on the days of
         // its own timeslots. With no rule, the call changes nothing.
-        HoraireStandResolver.appliquer(reference.standsParId().values(), reference.creneauxParId().values());
+        HoraireStandResolver.apply(reference.standsById().values(), reference.creneauxParId().values());
 
         // Load the seats: taken as they are from the file when the section is
         // there, otherwise generated from the stands/timeslots (same rules as
-        // construireDepuisReferenceData) — a file no longer has to enumerate its
+        // buildFromReferenceData) — a file no longer has to enumerate its
         // seats by hand to be imported.
         List<Map<String, Object>> postesList = YamlSections.objets(scenarioData, "postes");
         List<PosteAffectation> postes;
         if (postesList == null) {
-            postes = construirePostes(new ArrayList<>(reference.standsParId().values()),
+            postes = buildPostes(new ArrayList<>(reference.standsById().values()),
                     new ArrayList<>(reference.creneauxParId().values()));
         } else {
             postes = new ArrayList<>();
@@ -1065,11 +1065,11 @@ public class PlanningService {
                 String standId = (String) posteData.get("standId");
                 String creneauId = (String) posteData.get("creneauId");
 
-                Stand stand = reference.standsParId().get(standId);
+                Stand stand = reference.standsById().get(standId);
                 Creneau creneau = reference.creneauxParId().get(creneauId);
 
                 PosteAffectation poste = new PosteAffectation(id, stand, creneau);
-                // Mirrors construirePostes(): a hand-authored poste can still name a
+                // Mirrors buildPostes(): a hand-authored poste can still name a
                 // créneau the stand is only partially open for (IndisponibiliteStand /
                 // OuvertureStand), so narrow its effective window the same way instead
                 // of silently using the créneau's full amplitude.
@@ -1098,7 +1098,7 @@ public class PlanningService {
      * under {@link #SCENARIOS_DIR}, typically produced by "Exporter les
      * données actuelles en scénario") into the same result the
      * {@code import-scenario} endpoint applies for a built-in scenario name —
-     * without ever touching the classpath. Used by the "Importer un fichier"
+     * without ever touching the classpath. Used by the "Importer un file"
      * button on the Scénarios page.
      *
      * <p>Every failure (malformed YAML, a missing/mistyped section) is
@@ -1106,59 +1106,59 @@ public class PlanningService {
      * meant to be shown to the user as-is, rather than surfacing the raw
      * {@link org.yaml.snakeyaml.error.YAMLException}/{@link ClassCastException}/
      * {@link NullPointerException} a malformed file triggers deep inside
-     * {@link #construirePlanningDepuisDonnees}.</p>
+     * {@link #buildPlanningFromData}.</p>
      */
-    public ScenarioImporte construireDepuisTexteScenario(String yamlContent) {
+    public ScenarioImporte buildFromScenarioText(String yamlContent) {
         if (yamlContent == null || yamlContent.isBlank()) {
-            throw new ErreurMetier.Invalide("Le fichier est vide.");
+            throw new BusinessError.Invalid("Le fichier est vide.");
         }
         Map<String, Object> scenarioData;
         try {
             scenarioData = parserYaml(
                     new java.io.ByteArrayInputStream(yamlContent.getBytes(StandardCharsets.UTF_8)));
         } catch (RuntimeException | IOException e) {
-            throw new ErreurMetier.Invalide("YAML invalide : " + messageOu(e), e);
+            throw new BusinessError.Invalid("YAML invalide : " + messageOr(e), e);
         }
         PlanningFestival planning;
         try {
-            planning = construirePlanningDepuisDonnees(scenarioData);
+            planning = buildPlanningFromData(scenarioData);
         } catch (RuntimeException e) {
-            throw new ErreurMetier.Invalide("Scénario invalide : " + messageOu(e), e);
+            throw new BusinessError.Invalid("Scénario invalide : " + messageOr(e), e);
         }
-        return new ScenarioImporte(planning, sectionsDe(scenarioData));
+        return new ScenarioImporte(planning, sectionsOf(scenarioData));
     }
 
-    private static String messageOu(Exception e) {
+    private static String messageOr(Exception e) {
         return e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
     }
 
     /**
-     * Result of {@link #construireDepuisTexteScenario}: the built planning plus
+     * Result of {@link #buildFromScenarioText}: the built planning plus
      * whichever optional parameter sections the file pinned, mirroring what
      * {@code POST /reference-data/import-scenario} applies for a named
      * built-in scenario.
      */
-    public record ScenarioImporte(PlanningFestival planning, SectionsScenario sections) {
+    public record ScenarioImporte(PlanningFestival planning, ScenarioSections sections) {
     }
 
     /**
      * Loads a scenario's raw stands/animateurs/creneaux, ignoring any
-     * hand-authored {@code postes:} list — unlike {@link #construireExemple},
+     * hand-authored {@code postes:} list — unlike {@link #buildExample},
      * which uses that list as-is. For tests that need to run découpage (see
      * {@link VacationGeneratorService}) on the raw créneaux themselves before
-     * building postes via {@link #construirePostes}, the way
-     * {@link #construireDepuisReferenceData} does against the database.
+     * building postes via {@link #buildPostes}, the way
+     * {@link #buildFromReferenceData} does against the database.
      */
-    ReferenceScenario chargerReferenceScenario(String scenarioName) throws IOException {
-        return chargerReferenceScenario(lireDonneesScenario(cheminScenario(scenarioName)));
+    ReferenceScenario loadReferenceScenario(String scenarioName) throws IOException {
+        return loadReferenceScenario(readScenarioData(cheminScenario(scenarioName)));
     }
 
     /** {@code creneaux}/{@code stands}/{@code animateurs} sections of a scenario file, parsed and cross-linked. */
-    record ReferenceScenario(LocalDate dateDebut, Map<String, Creneau> creneauxParId, Map<String, Stand> standsParId,
+    record ReferenceScenario(LocalDate dateDebut, Map<String, Creneau> creneauxParId, Map<String, Stand> standsById,
             List<Animateur> animateurs) {
     }
 
-    private ReferenceScenario chargerReferenceScenario(Map<String, Object> scenarioData) {
+    private ReferenceScenario loadReferenceScenario(Map<String, Object> scenarioData) {
         // Load the creneaux: the YAML file carries a historical text id (used
         // only to tie postes and creneaux together), replaced here by a synthetic
         // numeric id; jour is recomputed (see Creneau.assignerJours), the value
@@ -1223,7 +1223,7 @@ public class PlanningService {
                 for (Map<String, Object> indispoData : indisponibilitesData) {
                     LocalDate date = parseLocalDate(indispoData.get("date"), "stands.indisponibilites.date");
                     LocalTime heureDebut = LocalTime.parse((String) indispoData.get("heureDebut"));
-                    LocalTime heureFin = parseHeureOuFinDeJournee(indispoData.get("heureFin"));
+                    LocalTime heureFin = parseTimeOrEndOfDay(indispoData.get("heureFin"));
                     String motif = (String) indispoData.get("motif");
                     indisponibilites.add(new IndisponibiliteStand(null, date, heureDebut, heureFin, motif));
                 }
@@ -1235,7 +1235,7 @@ public class PlanningService {
                 for (Map<String, Object> ouvertureData : ouverturesData) {
                     LocalDate date = parseLocalDate(ouvertureData.get("date"), "stands.ouvertures.date");
                     LocalTime heureDebut = LocalTime.parse((String) ouvertureData.get("heureDebut"));
-                    LocalTime heureFin = parseHeureOuFinDeJournee(ouvertureData.get("heureFin"));
+                    LocalTime heureFin = parseTimeOrEndOfDay(ouvertureData.get("heureFin"));
                     String motif = (String) ouvertureData.get("motif");
                     ouvertures.add(new OuvertureStand(null, date, heureDebut, heureFin, motif));
                 }
@@ -1243,7 +1243,7 @@ public class PlanningService {
             }
             List<Map<String, Object>> horairesData = YamlSections.objets(standData, "horaires");
             if (horairesData != null) {
-                stand.setHoraires(lireHoraires(horairesData));
+                stand.setHoraires(readHoraires(horairesData));
             }
             standsMap.put(id, stand);
         }
@@ -1269,7 +1269,7 @@ public class PlanningService {
             }
             animateur.setCompetences(competences);
 
-            // Charger les jours d'indisponibilité (opt-out: available by default)
+            // Load the days off (opt-out: available unless listed)
             List<Object> joursOffData = YamlSections.valeurs(animateurData, "joursIndisponibles");
             Set<LocalDate> joursIndisponibles = joursOffData == null
                     ? new HashSet<>()
@@ -1298,7 +1298,7 @@ public class PlanningService {
                 .map(TypologieItem::id)
                 .findFirst()
                 .orElse(null);
-        animateurs.forEach(animateur -> animateur.appliquerTypologieNinja(typologieNinja));
+        animateurs.forEach(animateur -> animateur.applyNinjaTypologie(typologieNinja));
 
         LocalDate dateDebut = parseLocalDate(
             YamlSections.objet(scenarioData, "festival").get("dateDebut"),
@@ -1307,8 +1307,8 @@ public class PlanningService {
         return new ReferenceScenario(dateDebut, creneauxMap, standsMap, animateurs);
     }
 
-    /** Shared YAML loading for {@link #construirePlanningDepuisDonnees} and the optional-section accessors below. */
-    private Map<String, Object> lireDonneesScenario(String scenarioPath) throws IOException {
+    /** Shared YAML loading for {@link #buildPlanningFromData} and the optional-section accessors below. */
+    private Map<String, Object> readScenarioData(String scenarioPath) throws IOException {
         InputStream inputStream = getClass().getClassLoader().getResourceAsStream(scenarioPath);
         if (inputStream == null) {
             throw new IOException("Fichier de scénario non trouvé: " + scenarioPath);
@@ -1317,8 +1317,8 @@ public class PlanningService {
     }
 
     /**
-     * Parses a scenario's raw YAML bytes, from the classpath ({@link #lireDonneesScenario})
-     * or from a user-uploaded file ({@link #construireDepuisTexteScenario}).
+     * Parses a scenario's raw YAML bytes, from the classpath ({@link #readScenarioData})
+     * or from a user-uploaded file ({@link #buildFromScenarioText}).
      */
     // The one unchecked cast left in this class, and the only one that has no
     // alternative: this IS the entry point that turns SnakeYAML's untyped
@@ -1373,13 +1373,13 @@ public class PlanningService {
      * @param typologies          {@code {id, label}} pairs defining the scenario's own
      *                            typologie referential entries up front, instead of
      *                            leaving every referenced id to the id-as-its-own-label
-     *                            default {@code ImportReferentielRepository#importFromPlanning}
+     *                            default {@code ReferenceDataImportRepository#importFromPlanning}
      *                            derives on the fly. Empty, not absent, when the section
      *                            is missing: a list has no "absent" distinct from "empty"
      * @param edition             the edition the import must write into; absent means
      *                            the caller's current one
      */
-    public record SectionsScenario(
+    public record ScenarioSections(
             Optional<ParametresLegaux> parametresLegaux,
             Optional<ParametresDecoupage> parametresDecoupage,
             Optional<ParametresSolveur> parametresSolveur,
@@ -1388,15 +1388,15 @@ public class PlanningService {
             Optional<dev.sylvain.planning.scenario.dto.EditionCibleDto> edition) {
     }
 
-    /** Reads {@link SectionsScenario} out of an already-parsed scenario document. */
-    private static SectionsScenario sectionsDe(Map<String, Object> scenarioData) {
-        return new SectionsScenario(
+    /** Reads {@link ScenarioSections} out of an already-parsed scenario document. */
+    private static ScenarioSections sectionsOf(Map<String, Object> scenarioData) {
+        return new ScenarioSections(
                 parseParametresLegaux(scenarioData),
                 parseParametresDecoupage(scenarioData),
                 parseParametresSolveur(scenarioData),
                 parseDecoupageAuto(scenarioData),
                 parseTypologies(scenarioData),
-                parseEditionCible(scenarioData));
+                parseTargetEdition(scenarioData));
     }
 
     /**
@@ -1404,9 +1404,9 @@ public class PlanningService {
      * planning: the pre-import step that names the target edition, and the
      * cheap read the tests use to assert what a file pins.
      */
-    public SectionsScenario chargerSectionsScenario(String scenarioName) {
+    public ScenarioSections loadScenarioSections(String scenarioName) {
         try {
-            return sectionsDe(lireDonneesScenario(cheminScenario(scenarioName)));
+            return sectionsOf(readScenarioData(cheminScenario(scenarioName)));
         } catch (IOException e) {
             throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
         }
@@ -1415,13 +1415,13 @@ public class PlanningService {
     /**
      * A bundled scenario, whole: its planning and its optional sections, from
      * a single parse. The named-file counterpart of
-     * {@link #construireDepuisTexteScenario}, so the two import paths differ
+     * {@link #buildFromScenarioText}, so the two import paths differ
      * only in where the bytes come from.
      */
-    public ScenarioImporte chargerScenario(String scenarioName) {
+    public ScenarioImporte loadScenario(String scenarioName) {
         try {
-            Map<String, Object> scenarioData = lireDonneesScenario(cheminScenario(scenarioName));
-            return new ScenarioImporte(construirePlanningDepuisDonnees(scenarioData), sectionsDe(scenarioData));
+            Map<String, Object> scenarioData = readScenarioData(cheminScenario(scenarioName));
+            return new ScenarioImporte(buildPlanningFromData(scenarioData), sectionsOf(scenarioData));
         } catch (IOException e) {
             throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
         }
@@ -1432,16 +1432,16 @@ public class PlanningService {
      * alone — the pre-import step the UI uses to NAME the target edition in
      * its confirmation dialog, before anything is written.
      */
-    public Optional<dev.sylvain.planning.scenario.dto.EditionCibleDto> chargerEditionTexteScenario(
+    public Optional<dev.sylvain.planning.scenario.dto.EditionCibleDto> loadEditionScenarioText(
             String yamlContent) {
         if (yamlContent == null || yamlContent.isBlank()) {
-            throw new ErreurMetier.Invalide("Le fichier est vide.");
+            throw new BusinessError.Invalid("Le fichier est vide.");
         }
         try {
-            return parseEditionCible(parserYaml(new java.io.ByteArrayInputStream(
+            return parseTargetEdition(parserYaml(new java.io.ByteArrayInputStream(
                     yamlContent.getBytes(StandardCharsets.UTF_8))));
         } catch (RuntimeException | IOException e) {
-            throw new ErreurMetier.Invalide("YAML invalide : " + messageOu(e), e);
+            throw new BusinessError.Invalid("YAML invalide : " + messageOr(e), e);
         }
     }
 
@@ -1451,23 +1451,23 @@ public class PlanningService {
             return Optional.empty();
         }
         ParametresLegaux parametres = new ParametresLegaux();
-        lireEntier(data, "dureeHebdomadaireMaxMinutes", parametres::setDureeHebdomadaireMaxMinutes);
-        lireEntier(data, "pauseMinimaleEntreVacationsMinutes", parametres::setPauseMinimaleEntreVacationsMinutes);
-        lireEntier(data, "reposQuotidienMinimalMinutes", parametres::setReposQuotidienMinimalMinutes);
+        readInt(data, "dureeHebdomadaireMaxMinutes", parametres::setDureeHebdomadaireMaxMinutes);
+        readInt(data, "pauseMinimaleEntreVacationsMinutes", parametres::setPauseMinimaleEntreVacationsMinutes);
+        readInt(data, "reposQuotidienMinimalMinutes", parametres::setReposQuotidienMinimalMinutes);
         return Optional.of(parametres);
     }
 
     /** Applies the section's integer field to the setter, leaving the target's own default when absent. */
-    private static void lireEntier(Map<String, Object> data, String cle, IntConsumer setter) {
-        Object valeur = data.get(cle);
+    private static void readInt(Map<String, Object> data, String key, IntConsumer setter) {
+        Object valeur = data.get(key);
         if (valeur != null) {
             setter.accept(((Number) valeur).intValue());
         }
     }
 
-    /** Same as {@link #lireEntier} for an {@code HH:MM:SS} field — see {@link #parseLocalTime(Object)}. */
-    private static void lireHeure(Map<String, Object> data, String cle, Consumer<LocalTime> setter) {
-        Object valeur = data.get(cle);
+    /** Same as {@link #readInt} for an {@code HH:MM:SS} field — see {@link #parseLocalTime(Object)}. */
+    private static void readTime(Map<String, Object> data, String key, Consumer<LocalTime> setter) {
+        Object valeur = data.get(key);
         if (valeur != null) {
             setter.accept(parseLocalTime(valeur));
         }
@@ -1479,21 +1479,21 @@ public class PlanningService {
             return Optional.empty();
         }
         ParametresDecoupage parametres = new ParametresDecoupage();
-        lireEntier(data, "dureeVacationCibleMinutes", parametres::setDureeVacationCibleMinutes);
-        lireEntier(data, "dureeVacationMinMinutes", parametres::setDureeVacationMinMinutes);
-        lireEntier(data, "dureeVacationMaxMinutes", parametres::setDureeVacationMaxMinutes);
-        lireEntier(data, "dureeChevauchementMinutes", parametres::setDureeChevauchementMinutes);
-        lireEntier(data, "dureePauseRepasMinutes", parametres::setDureePauseRepasMinutes);
-        lireHeure(data, "fenetreRepasMidiDebut", parametres::setFenetreRepasMidiDebut);
-        lireHeure(data, "fenetreRepasMidiFin", parametres::setFenetreRepasMidiFin);
-        lireHeure(data, "fenetreRepasSoirDebut", parametres::setFenetreRepasSoirDebut);
-        lireHeure(data, "fenetreRepasSoirFin", parametres::setFenetreRepasSoirFin);
+        readInt(data, "dureeVacationCibleMinutes", parametres::setDureeVacationCibleMinutes);
+        readInt(data, "dureeVacationMinMinutes", parametres::setDureeVacationMinMinutes);
+        readInt(data, "dureeVacationMaxMinutes", parametres::setDureeVacationMaxMinutes);
+        readInt(data, "dureeChevauchementMinutes", parametres::setDureeChevauchementMinutes);
+        readInt(data, "dureePauseRepasMinutes", parametres::setDureePauseRepasMinutes);
+        readTime(data, "fenetreRepasMidiDebut", parametres::setFenetreRepasMidiDebut);
+        readTime(data, "fenetreRepasMidiFin", parametres::setFenetreRepasMidiFin);
+        readTime(data, "fenetreRepasSoirDebut", parametres::setFenetreRepasSoirDebut);
+        readTime(data, "fenetreRepasSoirFin", parametres::setFenetreRepasSoirFin);
         if (data.get("strategieCouverturePendantPause") != null) {
-            parametres.setStrategieCouverturePendantPause(ParametresDecoupage.StrategieCouverturePendantPause
+            parametres.setStrategieCouverturePendantPause(ParametresDecoupage.PauseCoverageStrategy
                     .valueOf((String) data.get("strategieCouverturePendantPause")));
         }
-        lireEntier(data, "nombreFamillesDecalage", parametres::setNombreFamillesDecalage);
-        lireEntier(data, "dureeDecalageMaxMinutes", parametres::setDureeDecalageMaxMinutes);
+        readInt(data, "nombreFamillesDecalage", parametres::setNombreFamillesDecalage);
+        readInt(data, "dureeDecalageMaxMinutes", parametres::setDureeDecalageMaxMinutes);
         return Optional.of(parametres);
     }
 
@@ -1519,7 +1519,7 @@ public class PlanningService {
                 && !Boolean.FALSE.equals(scenarioData.get("decoupageAuto"));
     }
 
-    private static Optional<dev.sylvain.planning.scenario.dto.EditionCibleDto> parseEditionCible(
+    private static Optional<dev.sylvain.planning.scenario.dto.EditionCibleDto> parseTargetEdition(
             Map<String, Object> scenarioData) {
         Object data = scenarioData.get("edition");
         if (data == null) {
@@ -1529,12 +1529,12 @@ public class PlanningService {
         // values as Object, which is all this section needs, so there is
         // nothing left to suppress.
         if (!(data instanceof Map<?, ?> editionData)) {
-            throw new ErreurMetier.Invalide(
+            throw new BusinessError.Invalid(
                     "La section edition doit être un objet { id, nom? }, pas une valeur simple.");
         }
         String id = (String) editionData.get("id");
         if (id == null || id.isBlank()) {
-            throw new ErreurMetier.Invalide("La section edition exige un champ id non vide.");
+            throw new BusinessError.Invalid("La section edition exige un champ id non vide.");
         }
         return Optional.of(new dev.sylvain.planning.scenario.dto.EditionCibleDto(
                 id, (String) editionData.get("nom")));
@@ -1570,22 +1570,22 @@ public class PlanningService {
         return LocalTime.parse(value.toString());
     }
 
-    public PlanningFestival resoudre(PlanningFestival problem) {
-        return resoudre(problem, null);
+    public PlanningFestival solve(PlanningFestival problem) {
+        return solve(problem, null);
     }
 
-    public PlanningFestival resoudre(PlanningFestival problem, Long secondsLimitOverride) {
-        return resoudre(problem, secondsLimitOverride, null);
+    public PlanningFestival solve(PlanningFestival problem, Long secondsLimitOverride) {
+        return solve(problem, secondsLimitOverride, null);
     }
 
     /**
-     * Same as {@link #resoudre(PlanningFestival, Long)}, but hands the freshly
+     * Same as {@link #solve(PlanningFestival, Long)}, but hands the freshly
      * built {@link Solver} to {@code onSolverReady} before blocking on
      * {@code solve()} — the only way a caller running this on a background
      * thread (see {@code SolverJobService}) can later call
      * {@link Solver#terminateEarly()} to stop a solve started by mistake.
      */
-    public PlanningFestival resoudre(PlanningFestival problem, Long secondsLimitOverride,
+    public PlanningFestival solve(PlanningFestival problem, Long secondsLimitOverride,
             Consumer<Solver<PlanningFestival>> onSolverReady) {
         prepareProblem(problem);
         Solver<PlanningFestival> solver = resolveSolverFactory(secondsLimitOverride).buildSolver();
@@ -1604,7 +1604,7 @@ public class PlanningService {
      * that only cares about the hard score (e.g. a regression test) would
      * otherwise wait out that whole budget for nothing.
      */
-    public PlanningFestival resoudreJusquaFaisabilite(PlanningFestival problem, long secondsLimitSecurite) {
+    public PlanningFestival solveUntilFeasible(PlanningFestival problem, long secondsLimitSecurite) {
         prepareProblem(problem);
         SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
         solverConfig.setScoreDirectorFactoryConfig(new ScoreDirectorFactoryConfig()
@@ -1643,23 +1643,23 @@ public class PlanningService {
      * remain in the best solution found. Useful for diagnosing why the solver
      * did not converge to zero hard.
      */
-    public PlanningDiagnostic analyser(PlanningFestival problem, Long secondsLimitOverride) {
-        return analyser(problem, secondsLimitOverride, null);
+    public PlanningDiagnostic analyze(PlanningFestival problem, Long secondsLimitOverride) {
+        return analyze(problem, secondsLimitOverride, null);
     }
 
     /**
-     * Same as {@link #analyser(PlanningFestival, Long)}, but exposes the
+     * Same as {@link #analyze(PlanningFestival, Long)}, but exposes the
      * {@link Solver} it builds so a background caller can stop it early.
      */
-    public PlanningDiagnostic analyser(PlanningFestival problem, Long secondsLimitOverride,
+    public PlanningDiagnostic analyze(PlanningFestival problem, Long secondsLimitOverride,
             Consumer<Solver<PlanningFestival>> onSolverReady) {
-        PlanningFestival solved = resoudre(problem, secondsLimitOverride, onSolverReady);
-        return diagnostiquer(solved);
+        PlanningFestival solved = solve(problem, secondsLimitOverride, onSolverReady);
+        return diagnose(solved);
     }
 
     /**
-     * Every constraint definition indexed by name, for {@link #expliquerAffectation}
-     * and {@link #simulerSwap} to attach the business-facing niveau/catégorie/
+     * Every constraint definition indexed by name, for {@link #explainAffectation}
+     * and {@link #simulateSwap} to attach the business-facing niveau/catégorie/
      * description to a raw {@code ConstraintAnalysis} without a linear scan.
      */
     private static final Map<String, ConstraintCatalog.ConstraintDefinition> DEFINITIONS_PAR_NOM =
@@ -1675,12 +1675,12 @@ public class PlanningService {
      * that the constraint is even applicable to it — the UI must present it as
      * such rather than as a positive endorsement.
      */
-    public AffectationExplanation expliquerAffectation(PlanningFestival solved, String posteId) {
-        PosteAffectation poste = trouverPoste(solved, posteId);
+    public AffectationExplanation explainAffectation(PlanningFestival solved, String posteId) {
+        PosteAffectation poste = findPoste(solved, posteId);
         ScoreAnalysis<?> analysis = solutionManager.analyze(solved);
         String animateurId = poste.getAnimateur() == null ? null : poste.getAnimateur().getId();
         return new AffectationExplanation(posteId, animateurId, (HardMediumSoftScore) analysis.score(),
-                impactsPour(analysis, poste, true), impactsPour(analysis, poste, false));
+                impactsFor(analysis, poste, true), impactsFor(analysis, poste, false));
     }
 
     /**
@@ -1693,13 +1693,13 @@ public class PlanningService {
      * temporary in-place mutation is safe and avoids a full deep copy of a
      * planning that can hold thousands of postes).
      */
-    public SwapSimulation simulerSwap(PlanningFestival solved, String posteId, String animateurCandidatId) {
-        PosteAffectation poste = trouverPoste(solved, posteId);
-        Animateur candidat = trouverAnimateur(solved, animateurCandidatId);
+    public SwapSimulation simulateSwap(PlanningFestival solved, String posteId, String animateurCandidatId) {
+        PosteAffectation poste = findPoste(solved, posteId);
+        Animateur candidat = findAnimateur(solved, animateurCandidatId);
         Animateur actuel = poste.getAnimateur();
 
         ScoreAnalysis<?> avant = solutionManager.analyze(solved);
-        List<ContrainteImpact> violeesAvant = impactsPour(avant, poste, true);
+        List<ContrainteImpact> violeesAvant = impactsFor(avant, poste, true);
 
         ScoreAnalysis<?> apres;
         poste.setAnimateur(candidat);
@@ -1708,7 +1708,7 @@ public class PlanningService {
         } finally {
             poste.setAnimateur(actuel);
         }
-        List<ContrainteImpact> violeesApres = impactsPour(apres, poste, true);
+        List<ContrainteImpact> violeesApres = impactsFor(apres, poste, true);
 
         HardMediumSoftScore scoreAvant = (HardMediumSoftScore) avant.score();
         HardMediumSoftScore scoreApres = (HardMediumSoftScore) apres.score();
@@ -1719,18 +1719,18 @@ public class PlanningService {
     /**
      * Simulates a demande d'échange (issue #165) on an already-solved planning:
      * the demandeur's seat on ({@code creneauId}, {@code standId}) goes to
-     * {@code cibleId}, and — when the cible also works that créneau — their own
+     * {@code cibleId}, and — when the target also works that créneau — their own
      * seat goes to the demandeur (échange croisé). Nothing is persisted; the
      * substitution lives only for the second {@code analyze} call, exactly like
-     * {@link #simulerSwap}.
+     * {@link #simulateSwap}.
      *
-     * <p>Unlike {@code simulerSwap}'s per-poste view, the verdict here is
+     * <p>Unlike {@code simulateSwap}'s per-poste view, the verdict here is
      * planning-wide: a swap can break a hard constraint on a poste it does not
      * touch (weekly hours, rest periods…), so feasibility is judged on the
      * global hard score and the extra hard matches, not on the two seats
      * alone.</p>
      */
-    public EchangeSimulation simulerEchange(PlanningFestival solved, String demandeurId, String cibleId,
+    public EchangeSimulation simulateEchange(PlanningFestival solved, String demandeurId, String cibleId,
             long creneauId, String standId) {
         PosteAffectation posteDemandeur = solved.getPostes().stream()
                 .filter(poste -> poste.getStand() != null && standId.equals(poste.getStand().getId())
@@ -1738,19 +1738,19 @@ public class PlanningService {
                         && poste.getCreneau().getId() == creneauId
                         && poste.getAnimateur() != null && demandeurId.equals(poste.getAnimateur().getId()))
                 .findFirst()
-                .orElseThrow(() -> new ErreurMetier.Invalide(
+                .orElseThrow(() -> new BusinessError.Invalid(
                         "Aucun poste de l'animateur " + demandeurId + " sur ce créneau et ce stand"));
         Animateur demandeur = posteDemandeur.getAnimateur();
-        // Invalide and not Introuvable, unlike the lookups of
-        // expliquerAffectation/simulerSwap: there the id is the path of the
+        // Invalid and not NotFound, unlike the lookups of
+        // explainAffectation/simulateSwap: there the id is the path of the
         // resource being asked for, so an unknown one means "no such thing
         // here" (404). Here it is a field of a submitted demande, so an
         // unknown one means "your form is wrong" (400) — the same answer as
         // the sibling check just above.
-        Animateur cible = solved.getAnimateurs().stream()
+        Animateur target = solved.getAnimateurs().stream()
                 .filter(animateur -> animateur.getId().equals(cibleId))
                 .findFirst()
-                .orElseThrow(() -> new ErreurMetier.Invalide("Animateur inconnu: " + cibleId));
+                .orElseThrow(() -> new BusinessError.Invalid("Animateur inconnu: " + cibleId));
         PosteAffectation posteCible = solved.getPostes().stream()
                 .filter(poste -> poste != posteDemandeur
                         && poste.getCreneau() != null && poste.getCreneau().getId() != null
@@ -1761,7 +1761,7 @@ public class PlanningService {
 
         ScoreAnalysis<?> avant = solutionManager.analyze(solved);
         ScoreAnalysis<?> apres;
-        posteDemandeur.setAnimateur(cible);
+        posteDemandeur.setAnimateur(target);
         if (posteCible != null) {
             posteCible.setAnimateur(demandeur);
         }
@@ -1770,7 +1770,7 @@ public class PlanningService {
         } finally {
             posteDemandeur.setAnimateur(demandeur);
             if (posteCible != null) {
-                posteCible.setAnimateur(cible);
+                posteCible.setAnimateur(target);
             }
         }
 
@@ -1783,32 +1783,32 @@ public class PlanningService {
                 posteCible == null ? null : posteCible.getStand().getId(),
                 scoreAvant, scoreApres, scoreApres.subtract(scoreAvant),
                 scoreApres.hardScore() < scoreAvant.hardScore(),
-                violationsDuresSupplementaires(avant, apres));
+                extraHardViolations(avant, apres));
     }
 
     /**
-     * Directed variant of {@link #simulerEchange}: the demandeur's seat on
-     * (créneau, stand) goes to the cible, and the CIBLE'S seat on
-     * (créneau cible, stand cible) goes to the demandeur — two different
+     * Directed variant of {@link #simulateEchange}: the demandeur's seat on
+     * (créneau, stand) goes to the target, and the CIBLE'S seat on
+     * (créneau target, stand target) goes to the demandeur — two different
      * créneaux, "I give you my Monday, I take your Tuesday". Both seats must
      * exist; feasibility is judged planning-wide like the plain variant.
      */
-    public EchangeSimulation simulerEchangeDirige(PlanningFestival solved, String demandeurId, String cibleId,
+    public EchangeSimulation simulateDirectedEchange(PlanningFestival solved, String demandeurId, String cibleId,
             long creneauId, String standId, long creneauCibleId, String standCibleId) {
-        PosteAffectation posteDemandeur = posteDe(solved, demandeurId, creneauId, standId);
-        PosteAffectation posteCible = posteDe(solved, cibleId, creneauCibleId, standCibleId);
+        PosteAffectation posteDemandeur = posteOf(solved, demandeurId, creneauId, standId);
+        PosteAffectation posteCible = posteOf(solved, cibleId, creneauCibleId, standCibleId);
         Animateur demandeur = posteDemandeur.getAnimateur();
-        Animateur cible = posteCible.getAnimateur();
+        Animateur target = posteCible.getAnimateur();
 
         ScoreAnalysis<?> avant = solutionManager.analyze(solved);
         ScoreAnalysis<?> apres;
-        posteDemandeur.setAnimateur(cible);
+        posteDemandeur.setAnimateur(target);
         posteCible.setAnimateur(demandeur);
         try {
             apres = solutionManager.analyze(solved);
         } finally {
             posteDemandeur.setAnimateur(demandeur);
-            posteCible.setAnimateur(cible);
+            posteCible.setAnimateur(target);
         }
 
         HardMediumSoftScore scoreAvant = (HardMediumSoftScore) avant.score();
@@ -1820,11 +1820,11 @@ public class PlanningService {
                 posteCible.getStand().getId(),
                 scoreAvant, scoreApres, scoreApres.subtract(scoreAvant),
                 scoreApres.hardScore() < scoreAvant.hardScore(),
-                violationsDuresSupplementaires(avant, apres));
+                extraHardViolations(avant, apres));
     }
 
     /** The seat {@code animateurId} holds on (créneau, stand), or throws in business words. */
-    private static PosteAffectation posteDe(PlanningFestival solved, String animateurId, long creneauId,
+    private static PosteAffectation posteOf(PlanningFestival solved, String animateurId, long creneauId,
             String standId) {
         return solved.getPostes().stream()
                 .filter(poste -> poste.getStand() != null && standId.equals(poste.getStand().getId())
@@ -1832,7 +1832,7 @@ public class PlanningService {
                         && poste.getCreneau().getId() == creneauId
                         && poste.getAnimateur() != null && animateurId.equals(poste.getAnimateur().getId()))
                 .findFirst()
-                .orElseThrow(() -> new ErreurMetier.Invalide(
+                .orElseThrow(() -> new BusinessError.Invalid(
                         "Aucun poste de l'animateur " + animateurId + " sur ce créneau et ce stand"));
     }
 
@@ -1842,13 +1842,13 @@ public class PlanningService {
      * {@link ConstraintCatalog} — what the animateur (and the admin) reads,
      * rather than a technical constraint dump.
      */
-    private static List<ViolationDure> violationsDuresSupplementaires(ScoreAnalysis<?> avant,
+    private static List<HardViolation> extraHardViolations(ScoreAnalysis<?> avant,
             ScoreAnalysis<?> apres) {
         Map<String, Integer> matchesAvant = new HashMap<>();
         for (ConstraintAnalysis<?> ca : avant.constraintAnalyses()) {
             matchesAvant.put(ca.constraintRef().constraintName(), ca.matchCount());
         }
-        List<ViolationDure> violations = new ArrayList<>();
+        List<HardViolation> violations = new ArrayList<>();
         for (ConstraintAnalysis<?> ca : apres.constraintAnalyses()) {
             String name = ca.constraintRef().constraintName();
             if (!HARD_CONSTRAINT_NAMES.contains(name)) {
@@ -1859,18 +1859,18 @@ public class PlanningService {
                 continue;
             }
             ConstraintCatalog.ConstraintDefinition definition = DEFINITIONS_PAR_NOM.get(name);
-            violations.add(new ViolationDure(name,
+            violations.add(new HardViolation(name,
                     definition == null ? name : definition.description(), supplement));
         }
         return violations;
     }
 
     /** @return one {@link ContrainteImpact} per constraint that matches (violées) or does not (respectées) for {@code poste}. */
-    private static List<ContrainteImpact> impactsPour(ScoreAnalysis<?> analysis, PosteAffectation poste, boolean violees) {
+    private static List<ContrainteImpact> impactsFor(ScoreAnalysis<?> analysis, PosteAffectation poste, boolean violees) {
         List<ContrainteImpact> impacts = new ArrayList<>();
         for (ConstraintAnalysis<?> ca : analysis.constraintAnalyses()) {
             List<? extends MatchAnalysis<?>> matches = ca.matches().stream()
-                    .filter(match -> concerne(match, poste))
+                    .filter(match -> concerns(match, poste))
                     .toList();
             if (matches.isEmpty() == violees) {
                 continue;
@@ -1888,34 +1888,34 @@ public class PlanningService {
     }
 
     /** True when {@code poste} itself appears among a match's justification facts, flattening any collection fact. */
-    private static boolean concerne(MatchAnalysis<?> match, PosteAffectation poste) {
-        return factsOf(match).stream().anyMatch(fact -> concerneFait(fact, poste));
+    private static boolean concerns(MatchAnalysis<?> match, PosteAffectation poste) {
+        return factsOf(match).stream().anyMatch(fact -> concernsFact(fact, poste));
     }
 
-    private static boolean concerneFait(Object fact, PosteAffectation poste) {
+    private static boolean concernsFact(Object fact, PosteAffectation poste) {
         if (fact instanceof Collection<?> collection) {
-            return collection.stream().anyMatch(element -> concerneFait(element, poste));
+            return collection.stream().anyMatch(element -> concernsFact(element, poste));
         }
         return fact == poste;
     }
 
-    private static PosteAffectation trouverPoste(PlanningFestival solved, String posteId) {
+    private static PosteAffectation findPoste(PlanningFestival solved, String posteId) {
         return solved.getPostes().stream()
                 .filter(poste -> poste.getId().equals(posteId))
                 .findFirst()
-                .orElseThrow(() -> new ErreurMetier.Introuvable("Poste inconnu: " + posteId));
+                .orElseThrow(() -> new BusinessError.NotFound("Poste inconnu: " + posteId));
     }
 
-    private static Animateur trouverAnimateur(PlanningFestival solved, String animateurId) {
+    private static Animateur findAnimateur(PlanningFestival solved, String animateurId) {
         return solved.getAnimateurs().stream()
                 .filter(animateur -> animateur.getId().equals(animateurId))
                 .findFirst()
-                .orElseThrow(() -> new ErreurMetier.Introuvable("Animateur inconnu: " + animateurId));
+                .orElseThrow(() -> new BusinessError.NotFound("Animateur inconnu: " + animateurId));
     }
 
     /**
      * One constraint's impact on a single poste: either one of the violations
-     * it is party to (see {@link #expliquerAffectation}), or an entry meaning
+     * it is party to (see {@link #explainAffectation}), or an entry meaning
      * this constraint had no match involving that poste.
      *
      * @param details one human-readable line per match (see {@link ViolationFormatter}), empty when not violated
@@ -1940,11 +1940,11 @@ public class PlanningService {
     }
 
     /**
-     * Result of {@link #simulerEchange}: what a demande d'échange would do to
+     * Result of {@link #simulateEchange}: what a demande d'échange would do to
      * the persisted planning, without persisting anything.
      *
-     * @param posteCibleId  the cible's own seat on the same créneau, {@code null}
-     *                      when the cible is free there (simple takeover)
+     * @param posteCibleId  the target's own seat on the same créneau, {@code null}
+     *                      when the target is free there (simple takeover)
      * @param echangeCroise true when both seats swap occupants
      * @param standCibleId  stand of {@code posteCibleId}, {@code null} on takeover
      * @param casseContrainteDure true when the swap makes the global hard score
@@ -1953,16 +1953,16 @@ public class PlanningService {
     public record EchangeSimulation(String posteDemandeurId, String posteCibleId, boolean echangeCroise,
             String standCibleId, HardMediumSoftScore scoreAvant, HardMediumSoftScore scoreApres,
             HardMediumSoftScore delta, boolean casseContrainteDure,
-            List<ViolationDure> nouvellesViolationsDures) {
+            List<HardViolation> nouvellesViolationsDures) {
     }
 
     /** One hard constraint the simulated échange would newly violate, in business words. */
-    public record ViolationDure(String name, String description, int matchesSupplementaires) {
+    public record HardViolation(String name, String description, int matchesSupplementaires) {
     }
 
     /**
      * Builds the diagnostic of an already-solved planning, without solving it
-     * again. Used right after {@link #resoudre} so a solve is never run twice
+     * again. Used right after {@link #solve} so a solve is never run twice
      * just to produce its own analysis.
      */
     /**
@@ -1976,19 +1976,19 @@ public class PlanningService {
      * weights) so the diagnostic is comparable to a post-solve one. Returns
      * {@code null} when nothing is persisted.
      */
-    public PlanningDiagnostic diagnostiquerPlanPersiste() {
+    public PlanningDiagnostic diagnosePersistedPlan() {
         PlanningFestival persisted = planningPersistenceService.loadPersistedPlanning();
         if (persisted.getPostes().isEmpty()) {
             return null;
         }
         prepareProblem(persisted);
-        // diagnostiquer() reads the solution's own score (hardScore, medium
+        // diagnose() reads the solution's own score (hardScore, medium
         // breakdown): a freshly reloaded plan has none until update() sets it.
         solutionManager.update(persisted);
-        return diagnostiquer(persisted);
+        return diagnose(persisted);
     }
 
-    public PlanningDiagnostic diagnostiquer(PlanningFestival solved) {
+    public PlanningDiagnostic diagnose(PlanningFestival solved) {
         ScoreAnalysis<?> analysis = solutionManager.analyze(solved);
         List<ConstraintDiagnostic> constraintDiagnostics = new ArrayList<>();
         for (ConstraintAnalysis<?> ca : analysis.constraintAnalyses()) {
@@ -2006,7 +2006,7 @@ public class PlanningService {
         int unassigned = (int) solved.getPostes().stream()
                 .filter(p -> p.getAnimateur() == null)
                 .count();
-        FeasibilityAnalyzer.FeasibilityReport faisabilite = feasibilityAnalyzer.analyser(
+        FeasibilityAnalyzer.FeasibilityReport faisabilite = feasibilityAnalyzer.analyze(
                 solved.getAnimateurs(), distinctStands(solved), distinctCreneaux(solved));
         int hardScore = solved.getScore() == null ? 0 : solved.getScore().hardScore();
         return new PlanningDiagnostic(String.valueOf(solved.getScore()), unassigned, constraintDiagnostics,
@@ -2109,12 +2109,12 @@ public class PlanningService {
      * day closes at", which is what lets one rule cover days closing at 20:00
      * and days closing at midnight alike.
      */
-    private static LocalTime parseHeureOuFinDeJournee(Object value) {
+    private static LocalTime parseTimeOrEndOfDay(Object value) {
         if (value == null) {
             return null;
         }
-        String texte = value.toString().trim();
-        return texte.isEmpty() ? null : LocalTime.parse(texte);
+        String text = value.toString().trim();
+        return text.isEmpty() ? null : LocalTime.parse(text);
     }
 
     /**
@@ -2123,13 +2123,13 @@ public class PlanningService {
      * {@code jours} reads as {@link TypeJoursHoraire#TOUS}, which is what makes
      * the common case a two-line entry.
      */
-    private List<HoraireStand> lireHoraires(List<Map<String, Object>> horairesData) {
+    private List<HoraireStand> readHoraires(List<Map<String, Object>> horairesData) {
         List<HoraireStand> horaires = new ArrayList<>();
         for (Map<String, Object> horaireData : horairesData) {
             HoraireStand horaire = new HoraireStand();
             String modeStr = (String) horaireData.get("mode");
             if (modeStr == null) {
-                throw new ErreurMetier.Invalide("Champ manquant: stands.horaires.mode (OUVERTURE ou FERMETURE)");
+                throw new BusinessError.Invalid("Champ manquant: stands.horaires.mode (OUVERTURE ou FERMETURE)");
             }
             horaire.setMode(ModeHoraire.valueOf(modeStr));
             String joursStr = (String) horaireData.getOrDefault("jours", TypeJoursHoraire.TOUS.name());
@@ -2152,16 +2152,16 @@ public class PlanningService {
             }
             List<Map<String, Object>> fenetresData = YamlSections.objets(horaireData, "fenetres");
             if (fenetresData == null || fenetresData.isEmpty()) {
-                throw new ErreurMetier.Invalide("Champ manquant: stands.horaires.fenetres (au moins une fenêtre)");
+                throw new BusinessError.Invalid("Champ manquant: stands.horaires.fenetres (au moins une fenêtre)");
             }
             List<FenetreHoraire> fenetres = new ArrayList<>();
             for (Map<String, Object> fenetreData : fenetresData) {
                 Object heureDebut = fenetreData.get("heureDebut");
                 if (heureDebut == null) {
-                    throw new ErreurMetier.Invalide("Champ manquant: stands.horaires.fenetres.heureDebut");
+                    throw new BusinessError.Invalid("Champ manquant: stands.horaires.fenetres.heureDebut");
                 }
                 fenetres.add(new FenetreHoraire(LocalTime.parse(heureDebut.toString()),
-                        parseHeureOuFinDeJournee(fenetreData.get("heureFin"))));
+                        parseTimeOrEndOfDay(fenetreData.get("heureFin"))));
             }
             horaire.setFenetres(fenetres);
             horaire.setMotif((String) horaireData.get("motif"));
@@ -2172,7 +2172,7 @@ public class PlanningService {
 
     private LocalDate parseLocalDate(Object value, String fieldName) {
         if (value == null) {
-            throw new ErreurMetier.Invalide("Champ date manquant: " + fieldName);
+            throw new BusinessError.Invalid("Champ date manquant: " + fieldName);
         }
         if (value instanceof LocalDate localDate) {
             return localDate;
@@ -2183,7 +2183,7 @@ public class PlanningService {
         if (value instanceof CharSequence charSequence) {
             return LocalDate.parse(charSequence.toString());
         }
-        throw new ErreurMetier.Invalide(
+        throw new BusinessError.Invalid(
                 "Type de date non supporte pour " + fieldName + ": " + value.getClass().getName());
     }
 }

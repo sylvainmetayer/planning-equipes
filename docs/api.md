@@ -220,7 +220,7 @@ exactes ; les violations ne sont pas mesurées.
 
 Les quatre façons de lancer un solve — synchrone (`POST /api/solve`), asynchrone
 depuis un problème envoyé, asynchrone depuis le référentiel, et incrémentale —
-passent toutes par `ResolutionPipeline`, et font donc **toujours** la même
+passent toutes par `SolvePipeline`, et font donc **toujours** la même
 chose :
 
 1. capturer le plan sur le point d'être écrasé (issue #138) ;
@@ -384,8 +384,8 @@ ici). Un jeton inconnu répond `404 { "message": "…" }`, jamais `401`.
 | `GET` | `/api/espace-animateur/{jeton}/demandes-recues` | Les demandes qui ME ciblent — celles qui attendent mon accord avant d'atteindre l'admin, plus leur historique |
 | `POST` | `/api/espace-animateur/{jeton}/demandes-recues/{id}/accord` | J'accepte une demande qui me cible : elle passe `EN_ATTENTE_CIBLE` → `PROPOSEE` (file admin) et l'admin est notifié |
 | `POST` | `/api/espace-animateur/{jeton}/demandes-recues/{id}/refus` | Je décline : terminal (`REFUSEE_CIBLE`), le demandeur est prévenu, l'admin n'arbitre jamais |
-| `GET` | `/api/espace-animateur/{jeton}/collegues/{collegueId}/postes` | Les postes d'un collègue (créneaux et stands, sans coéquipiers) — la source du sélecteur « son créneau que je veux en échange » d'un échange dirigé. `400` **foire fermée** (`@FoireOuverteRequise` ; le sélecteur n'existe alors pas côté interface), `404` collègue inconnu de l'édition — voir [`securite.md`](securite.md#lecture-des-cr%C3%A9neaux-dun-coll%C3%A8gue) |
-| `POST` | `/api/espace-animateur/{jeton}/demandes` | Soumet une **liste** de demandes `[{ creneauId, standId, cibleId, motif?, creneauCibleId?, standCibleId? }]`. `creneauCibleId`/`standCibleId` renseignés = échange **dirigé** : le demandeur cède son créneau ET récupère le créneau désigné du collègue (« je te laisse mon lundi, je prends ton mardi »). Chacune est prévalidée contre les contraintes dures (`simulerEchange`/`simulerEchangeDirige`) mais enregistrée quel que soit le verdict ; la réponse porte `prevalidationOk` et `contraintesViolees` (descriptions métier du catalogue). Un mail est envoyé à l'admin (si `planning.mail.admin` est configurée) |
+| `GET` | `/api/espace-animateur/{jeton}/collegues/{collegueId}/postes` | Les postes d'un collègue (créneaux et stands, sans coéquipiers) — la source du sélecteur « son créneau que je veux en échange » d'un échange dirigé. `400` **foire fermée** (`@FoireOpenRequired` ; le sélecteur n'existe alors pas côté interface), `404` collègue inconnu de l'édition — voir [`securite.md`](securite.md#lecture-des-cr%C3%A9neaux-dun-coll%C3%A8gue) |
+| `POST` | `/api/espace-animateur/{jeton}/demandes` | Soumet une **liste** de demandes `[{ creneauId, standId, cibleId, motif?, creneauCibleId?, standCibleId? }]`. `creneauCibleId`/`standCibleId` renseignés = échange **dirigé** : le demandeur cède son créneau ET récupère le créneau désigné du collègue (« je te laisse mon lundi, je prends ton mardi »). Chacune est prévalidée contre les contraintes dures (`simulateEchange`/`simulateDirectedEchange`) mais enregistrée quel que soit le verdict ; la réponse porte `prevalidationOk` et `contraintesViolees` (descriptions métier du catalogue). Un mail est envoyé à l'admin (si `planning.mail.admin` est configurée) |
 | `POST` | `/api/espace-animateur/{jeton}/demandes/{id}/annulation` | Annule une de **ses** demandes encore en attente (`204` ; `400` si déjà décidée) |
 | `GET` | `/api/espace-animateur/{jeton}/planning.pdf` | Son planning individuel en PDF (même document que l'export admin), toujours disponible — foire fermée comprise |
 | `GET` | `/api/espace-animateur/{jeton}/planning.ics` | Son planning au format calendrier ICS |
@@ -712,7 +712,7 @@ exceptionsApres, ecartMinutes, compacte, raison }`. Un stand n'est réécrit que
 les règles proposées reproduisent ses propres segments ouverts ; sinon `compacte`
 est `false` et `raison` dit pourquoi.
 
-`ecartMinutes` compte les minutes d'ouverture en désaccord (au pire sur un
+`gapMinutes` compte les minutes d'ouverture en désaccord (au pire sur un
 créneau) : `0` dans le cas général, `1` quand un ancien `23:59` est devenu la
 fermeture réelle du jour. Ce cas a une conséquence visible : un stand absent
 toute la journée ne génère plus le poste d'une minute que ce `23:59` laissait

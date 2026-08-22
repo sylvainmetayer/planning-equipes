@@ -11,7 +11,7 @@ répète pas ici.
 
 ## En-têtes de sécurité navigateur
 
-`EnTetesSecuriteFilter` ajoute à **toute** réponse — fichiers statiques du SPA
+`SecurityHeadersFilter` ajoute à **toute** réponse — fichiers statiques du SPA
 compris — les en-têtes suivants :
 
 | En-tête | Valeur | Pourquoi ici |
@@ -161,8 +161,8 @@ autant de requêtes qu'il y a d'animateurs. Deux resserrements :
 
 - **la foire doit être ouverte.** Cette lecture n'existe que pour alimenter le
   sélecteur, que l'interface masque quand la foire est fermée. La règle est
-  déclarée **sur la route** par `@FoireOuverteRequise`, dans la forme des deux
-  gardes voisines (`@JetonRequis`, `@SessionEspaceRequise`) : on lit les trois
+  déclarée **sur la route** par `@FoireOpenRequired`, dans la forme des deux
+  gardes voisines (`@TokenRequired`, `@EspaceSessionRequired`) : on lit les trois
   exigences d'une route d'un coup d'œil, au lieu de chercher un contrôle au
   fond d'un corps de méthode. Le filtre tourne en priorité `AUTHORIZATION`,
   donc **après** l'authentification — un appelant anonyme reçoit son `401` sans
@@ -204,7 +204,7 @@ entrée utilisateur ; l'import de dump vérifie même la sienne contre
 | `DatabaseDumpService` | `appendTable` (nom de table issu de `TABLES`) |
 | `DemandeEchangeService` | `lister` (liste de colonnes et prédicat, littéraux des appelants) |
 | `PlanSnapshotService` | `absents` (table et colonne, littéraux des appelants) |
-| `ImportReferentielRepository` | `compter`, `supprimerAbsentsTx` (noms de tables issus de listes littérales) |
+| `ReferenceDataImportRepository` | `compter`, `deleteMissingTx` (noms de tables issus de listes littérales) |
 | `JdbcEditionScope` | `existe` (nom de table issu des sites d'appel des dépôts) |
 
 **Avant d'ajouter un `nosemgrep`**, vérifier les appelants : si un identifiant

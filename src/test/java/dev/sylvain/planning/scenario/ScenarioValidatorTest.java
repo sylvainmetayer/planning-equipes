@@ -14,7 +14,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 /**
- * Exercises {@link ScenarioValidator#valider(String)}, the structural gate the
+ * Exercises {@link ScenarioValidator#validate(String)}, the structural gate the
  * "Valider un scénario" screen and the {@code -Dexec.mainClass=…ScenarioValidator}
  * CLI both run before anything is imported.
  *
@@ -50,14 +50,14 @@ class ScenarioValidatorTest {
 
     @Test
     void unScenarioMinimalBienFormeNeRemonteAucuneErreur() throws IOException {
-        assertThat(ScenarioValidator.valider(MINIMAL)).isEmpty();
+        assertThat(ScenarioValidator.validate(MINIMAL)).isEmpty();
     }
 
     @Test
     void uneSectionObligatoireAbsenteEstSignalee() throws IOException {
-        String sansStands = MINIMAL.replaceAll("(?s)stands:.*?animateurs:", "animateurs:");
+        String withoutStands = MINIMAL.replaceAll("(?s)stands:.*?animateurs:", "animateurs:");
 
-        List<String> erreurs = ScenarioValidator.valider(sansStands);
+        List<String> erreurs = ScenarioValidator.validate(withoutStands);
 
         assertThat(erreurs).isNotEmpty();
         assertThat(erreurs).anySatisfy(erreur -> assertThat(erreur).startsWith("stands:"));
@@ -65,7 +65,7 @@ class ScenarioValidatorTest {
 
     @Test
     void unIdentifiantVideEstSignale() throws IOException {
-        List<String> erreurs = ScenarioValidator.valider(MINIMAL.replace("id: S1", "id: \"\""));
+        List<String> erreurs = ScenarioValidator.validate(MINIMAL.replace("id: S1", "id: \"\""));
 
         assertThat(erreurs).anySatisfy(erreur -> assertThat(erreur).contains("stands[0].id"));
     }
@@ -76,9 +76,9 @@ class ScenarioValidatorTest {
      */
     @Test
     void unEffectifNegatifEstSignaleMaisPasUnEffectifNul() throws IOException {
-        assertThat(ScenarioValidator.valider(MINIMAL.replace("effectifMin: 1", "effectifMin: 0"))).isEmpty();
+        assertThat(ScenarioValidator.validate(MINIMAL.replace("effectifMin: 1", "effectifMin: 0"))).isEmpty();
 
-        assertThat(ScenarioValidator.valider(MINIMAL.replace("effectifMin: 1", "effectifMin: -1")))
+        assertThat(ScenarioValidator.validate(MINIMAL.replace("effectifMin: 1", "effectifMin: -1")))
                 .anySatisfy(erreur -> assertThat(erreur).contains("stands[0].effectifMin"));
     }
 
@@ -88,13 +88,13 @@ class ScenarioValidatorTest {
      */
     @Test
     void unParametreDeDecoupageNegatifEstSignale() throws IOException {
-        String avecDecoupage = MINIMAL + """
+        String withDecoupage = MINIMAL + """
                 parametresDecoupage:
                   nombreFamillesDecalage: 0
                   dureeDecalageMaxMinutes: -5
                 """;
 
-        List<String> erreurs = ScenarioValidator.valider(avecDecoupage);
+        List<String> erreurs = ScenarioValidator.validate(withDecoupage);
 
         assertThat(erreurs)
                 .anySatisfy(erreur -> assertThat(erreur).contains("parametresDecoupage.nombreFamillesDecalage"))
@@ -104,22 +104,22 @@ class ScenarioValidatorTest {
     /** Malformed YAML fails loudly at parsing, it is not reported as a violation. */
     @Test
     void unYamlSyntaxiquementInvalideLeveUneErreurDeLecture() {
-        assertThatThrownBy(() -> ScenarioValidator.valider("festival: [unclosed"))
+        assertThatThrownBy(() -> ScenarioValidator.validate("festival: [unclosed"))
                 .isInstanceOf(IOException.class);
     }
 
     @ParameterizedTest
     @MethodSource("scenariosLivres")
     void lesScenariosLivresRestentValides(Path scenario) throws IOException {
-        assertThat(ScenarioValidator.valider(Files.readString(scenario)))
+        assertThat(ScenarioValidator.validate(Files.readString(scenario)))
                 .as("%s", scenario.getFileName())
                 .isEmpty();
     }
 
     private static Stream<Path> scenariosLivres() throws IOException {
         Path dossier = Path.of("src", "main", "resources", "scenarios");
-        try (Stream<Path> fichiers = Files.list(dossier)) {
-            return fichiers
+        try (Stream<Path> files = Files.list(dossier)) {
+            return files
                     .filter(Files::isRegularFile)
                     .filter(f -> f.getFileName().toString().endsWith(".yaml")
                             || f.getFileName().toString().endsWith(".yml"))

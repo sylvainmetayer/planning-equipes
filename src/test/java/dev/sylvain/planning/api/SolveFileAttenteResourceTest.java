@@ -34,14 +34,14 @@ class SolveFileAttenteResourceTest {
     @BeforeEach
     @AfterEach
     void solveurLibre() throws InterruptedException {
-        viderLaFile();
+        clearQueue();
         attendreSolveurLibre();
     }
 
     @Test
     void uneResolutionPlanifieeDemarreSeuleEtVoitCeQueLaPrecedenteAEcrit() throws InterruptedException {
         planImporte();
-        String enCours = lancerSolve(6);
+        String inProgress = lancerSolve(6);
 
         // Planned while the first one runs: same edition, different kind, so the
         // incremental re-solve is legitimately chained after the full one.
@@ -54,18 +54,18 @@ class SolveFileAttenteResourceTest {
 
         // It is in the queue, and it holds nothing: the running job is still the
         // active one, so the edition it targets stays editable meanwhile.
-        assertThat(idsEnFile()).containsExactly(planifieId);
-        assertThat(jobActif().getString("id")).isEqualTo(enCours);
+        assertThat(queuedIds()).containsExactly(planifieId);
+        assertThat(jobActif().getString("id")).isEqualTo(inProgress);
 
-        assertThat(pollUntilFinished(enCours).getString("status")).isEqualTo("COMPLETED");
+        assertThat(pollUntilFinished(inProgress).getString("status")).isEqualTo("COMPLETED");
         // Nobody clicked anything: the queued job takes the solver by itself.
-        JsonPath resultat = pollUntilFinished(planifieId);
-        assertThat(resultat.getString("status")).isEqualTo("COMPLETED");
-        assertThat(resultat.getString("type")).isEqualTo("SOLVE_INCREMENTAL");
+        JsonPath result = pollUntilFinished(planifieId);
+        assertThat(result.getString("status")).isEqualTo("COMPLETED");
+        assertThat(result.getString("type")).isEqualTo("SOLVE_INCREMENTAL");
         // Only possible if the problem was built at start time: an incremental
         // re-solve fails outright when no plan is persisted yet.
-        assertThat(resultat.getInt("result.statistiques.postesFiges")).isPositive();
-        assertThat(idsEnFile()).isEmpty();
+        assertThat(result.getInt("result.statistiques.postesFiges")).isPositive();
+        assertThat(queuedIds()).isEmpty();
     }
 
     @Test
@@ -84,13 +84,13 @@ class SolveFileAttenteResourceTest {
                 .then().statusCode(409)
                 .body("id", equalTo(planifieId))
                 .body("status", equalTo("QUEUED"));
-        assertThat(idsEnFile()).containsExactly(planifieId);
+        assertThat(queuedIds()).containsExactly(planifieId);
     }
 
     @Test
     void replanifierLEditionEnCoursDeResolutionResteAutorise() throws InterruptedException {
         planImporte();
-        String enCours = lancerSolve(6);
+        String inProgress = lancerSolve(6);
 
         // Same edition, same kind as the running job: legitimate, and the whole
         // point of the queue. The run under way started before the last
@@ -101,25 +101,25 @@ class SolveFileAttenteResourceTest {
                 .then().statusCode(202)
                 .body("status", equalTo("QUEUED"))
                 .extract().path("id");
-        assertThat(idsEnFile()).containsExactly(planifieId);
+        assertThat(queuedIds()).containsExactly(planifieId);
 
-        assertThat(pollUntilFinished(enCours).getString("status")).isEqualTo("COMPLETED");
+        assertThat(pollUntilFinished(inProgress).getString("status")).isEqualTo("COMPLETED");
         assertThat(pollUntilFinished(planifieId).getString("status")).isEqualTo("COMPLETED");
     }
 
     @Test
     void uneResolutionRetireeDeLaFileNeDemarreJamais() throws InterruptedException {
         planImporte();
-        String enCours = lancerSolve(4);
+        String inProgress = lancerSolve(4);
         String planifieId = given().contentType(ContentType.JSON)
                 .when().post("/api/solve/incremental/async?enFile=true&seconds=1")
                 .then().statusCode(202)
                 .extract().path("id");
 
         given().when().delete("/api/jobs/" + planifieId).then().statusCode(204);
-        assertThat(idsEnFile()).isEmpty();
+        assertThat(queuedIds()).isEmpty();
 
-        assertThat(pollUntilFinished(enCours).getString("status")).isEqualTo("COMPLETED");
+        assertThat(pollUntilFinished(inProgress).getString("status")).isEqualTo("COMPLETED");
         attendreSolveurLibre();
         // Forgotten, not run: the server no longer knows this job at all.
         given().when().get("/api/jobs/" + planifieId).then().statusCode(404);
@@ -128,13 +128,13 @@ class SolveFileAttenteResourceTest {
     @Test
     void sansEnFileUneSecondeResolutionResteRefusee() throws InterruptedException {
         planImporte();
-        String enCours = lancerSolve(4);
+        String inProgress = lancerSolve(4);
 
         // Unchanged default: queueing is something the caller asks for.
         given().when().post("/api/solve/async/reference-data?seconds=1")
                 .then().statusCode(409)
-                .body("id", equalTo(enCours));
-        assertThat(idsEnFile()).isEmpty();
+                .body("id", equalTo(inProgress));
+        assertThat(queuedIds()).isEmpty();
     }
 
     /* ------------------------------- Helpers ------------------------------- */
@@ -172,14 +172,14 @@ class SolveFileAttenteResourceTest {
         return response.statusCode() == 204 ? null : response.jsonPath();
     }
 
-    private List<String> idsEnFile() {
+    private List<String> queuedIds() {
         return given().when().get("/api/jobs/file")
                 .then().statusCode(200)
                 .extract().jsonPath().getList("id");
     }
 
-    private void viderLaFile() {
-        for (String id : idsEnFile()) {
+    private void clearQueue() {
+        for (String id : queuedIds()) {
             given().when().delete("/api/jobs/" + id);
         }
     }

@@ -16,10 +16,10 @@ import dev.sylvain.planning.domain.Stand;
 
 class QualiteConstraintsTest extends ConstraintTestBase {
 
-    private final Stand standStrat = standStrategie("STAND-STRAT");
+    private final Stand standStrat = standWithStrategy("STAND-STRAT");
     private final Stand standPremium = standPremium("STAND-PREMIUM");
     private final Creneau creneauMatin = matin("J1-MATIN", 1, D1);
-    private final Creneau creneauAprem = apresMidi("J1-AM", 1, D1);
+    private final Creneau creneauAprem = afternoon("J1-AM", 1, D1);
 
     // Real coordinates in a fictional town centre: Place du Drapeau and la
     // Mairie are ~490 m apart (far), two nearby points on the same square are a
@@ -38,7 +38,7 @@ class QualiteConstraintsTest extends ConstraintTestBase {
     @Test
     void standAvecReferentNEstPasPenalise() {
         verify("standComplexeAvecReferent")
-                .given(poste(standStrat, creneauMatin, majeurReferent("A1")))
+                .given(poste(standStrat, creneauMatin, referentMajeur("A1")))
                 .penalizesBy(0);
     }
 
@@ -46,21 +46,21 @@ class QualiteConstraintsTest extends ConstraintTestBase {
     void chargeEquilibreeNEstPasPenalisee() {
         // Two animateurs with one seat each: a perfect spread.
         verify("equilibrerCharge")
-                .given(poste(standStrat, creneauMatin, majeurReferent("A1")),
+                .given(poste(standStrat, creneauMatin, referentMajeur("A1")),
                         poste(standStrat, creneauAprem, majeurAutonome("A2")))
                 .penalizesBy(0);
     }
 
     @Test
     void chargeDesequilibreeEstPenalisee() {
-        Animateur a1 = majeurReferent("A1");
+        Animateur a1 = referentMajeur("A1");
         // A1 carries four seats against a single one for A2: a marked imbalance.
         verify("equilibrerCharge")
                 .given(poste(standStrat, creneauMatin, a1),
                         poste(standStrat, creneauAprem, a1),
                         poste(standStrat, matin("J2-MATIN", 2, D2), a1),
-                        poste(standStrat, apresMidi("J2-AM", 2, D2), a1),
-                        poste(standStrategie("STAND-2"), creneauMatin, majeurAutonome("A2")))
+                        poste(standStrat, afternoon("J2-AM", 2, D2), a1),
+                        poste(standWithStrategy("STAND-2"), creneauMatin, majeurAutonome("A2")))
                 .penalizesByMoreThan(0);
     }
 
@@ -71,17 +71,17 @@ class QualiteConstraintsTest extends ConstraintTestBase {
         // truncated to exactly 0 through intValue() and the solver had no gradient
         // to fix a moderate imbalance. That is precisely the score trap the
         // scaling removes.
-        Animateur a1 = majeurReferent("A1");
+        Animateur a1 = referentMajeur("A1");
         verify("equilibrerCharge")
                 .given(poste(standStrat, creneauMatin, a1),
                         poste(standStrat, creneauAprem, a1),
-                        poste(standStrategie("STAND-2"), creneauMatin, majeurAutonome("A2")))
+                        poste(standWithStrategy("STAND-2"), creneauMatin, majeurAutonome("A2")))
                 .penalizesByMoreThan(0);
     }
 
     @Test
     void majoriteDeMineursSurUnCreneauEstPenalisee() {
-        // Deux mineurs, aucun majeur : pénalité = mineurs - majeurs = 2.
+        // Two mineurs, no majeur: penalty = mineurs - majeurs = 2.
         verify("repartitionMineursParCreneau")
                 .given(poste(standStrat, creneauMatin, mineurDebutant("M1")),
                         poste(standStrat, creneauMatin, mineurDebutant("M2")))
@@ -92,7 +92,7 @@ class QualiteConstraintsTest extends ConstraintTestBase {
     void autantDeMineursQueDeMajeursNEstPasPenalise() {
         verify("repartitionMineursParCreneau")
                 .given(poste(standStrat, creneauMatin, mineurDebutant("M1")),
-                        poste(standStrat, creneauMatin, majeurReferent("A1")))
+                        poste(standStrat, creneauMatin, referentMajeur("A1")))
                 .penalizesBy(0);
     }
 
@@ -106,21 +106,21 @@ class QualiteConstraintsTest extends ConstraintTestBase {
     @Test
     void referentSurStandPremiumNEstPasPenalise() {
         verify("experienceRequisePourStandsPremium")
-                .given(poste(standPremium, creneauMatin, majeurReferent("A1")))
+                .given(poste(standPremium, creneauMatin, referentMajeur("A1")))
                 .penalizesBy(0);
     }
 
     @Test
     void deuxAnimateursDifferentsSurStandPremiumADesCreneauxDifferentsEstPenalise() {
         verify("eviterRoulementStandsPremium")
-                .given(poste(standPremium, creneauMatin, majeurReferent("A1")),
-                        poste(standPremium, creneauAprem, majeurReferent("A2")))
+                .given(poste(standPremium, creneauMatin, referentMajeur("A1")),
+                        poste(standPremium, creneauAprem, referentMajeur("A2")))
                 .penalizesBy(1);
     }
 
     @Test
     void memeAnimateurSurStandPremiumADesCreneauxDifferentsNEstPasPenalise() {
-        Animateur a1 = majeurReferent("A1");
+        Animateur a1 = referentMajeur("A1");
         verify("eviterRoulementStandsPremium")
                 .given(poste(standPremium, creneauMatin, a1),
                         poste(standPremium, creneauAprem, a1))
@@ -133,12 +133,12 @@ class QualiteConstraintsTest extends ConstraintTestBase {
         // The former pair-counting formulation scored 6 for the same planning,
         // and grew quadratically from there.
         verify("eviterRoulementStandsPremium")
-                .given(poste(standPremium, creneauMatin, majeurReferent("A1")),
-                        poste(standPremium, creneauAprem, majeurReferent("A2")),
+                .given(poste(standPremium, creneauMatin, referentMajeur("A1")),
+                        poste(standPremium, creneauAprem, referentMajeur("A2")),
                         poste(standPremium, creneau("J2-MATIN", 2, D2, LocalTime.of(9, 0), LocalTime.of(13, 0)),
-                                majeurReferent("A3")),
+                                referentMajeur("A3")),
                         poste(standPremium, creneau("J2-APREM", 2, D2, LocalTime.of(14, 0), LocalTime.of(18, 0)),
-                                majeurReferent("A4")))
+                                referentMajeur("A4")))
                 .penalizesBy(3);
     }
 
@@ -148,8 +148,8 @@ class QualiteConstraintsTest extends ConstraintTestBase {
         // continuity, not a rotation — whatever the number of créneaux.
         Stand standDeuxPlaces = standPremium("STAND-PREMIUM-2");
         standDeuxPlaces.setEffectifMin(2);
-        Animateur a1 = majeurReferent("A1");
-        Animateur a2 = majeurReferent("A2");
+        Animateur a1 = referentMajeur("A1");
+        Animateur a2 = referentMajeur("A2");
         verify("eviterRoulementStandsPremium")
                 .given(poste(standDeuxPlaces, creneauMatin, a1),
                         poste(standDeuxPlaces, creneauMatin, a2),
@@ -165,26 +165,26 @@ class QualiteConstraintsTest extends ConstraintTestBase {
         Stand standDeuxPlaces = standPremium("STAND-PREMIUM-SIMULTANE");
         standDeuxPlaces.setEffectifMin(2);
         verify("eviterRoulementStandsPremium")
-                .given(poste(standDeuxPlaces, creneauMatin, majeurReferent("A1")),
-                        poste(standDeuxPlaces, creneauMatin, majeurReferent("A2")))
+                .given(poste(standDeuxPlaces, creneauMatin, referentMajeur("A1")),
+                        poste(standDeuxPlaces, creneauMatin, referentMajeur("A2")))
                 .penalizesBy(0);
     }
 
     @Test
     void unStandNonPremiumNEstJamaisPenalisePourSonRoulement() {
         verify("eviterRoulementStandsPremium")
-                .given(poste(standStrategie("STAND-ORDINAIRE"), creneauMatin, majeurReferent("A1")),
-                        poste(standStrategie("STAND-ORDINAIRE"), creneauAprem, majeurReferent("A2")))
+                .given(poste(standWithStrategy("STAND-ORDINAIRE"), creneauMatin, referentMajeur("A1")),
+                        poste(standWithStrategy("STAND-ORDINAIRE"), creneauAprem, referentMajeur("A2")))
                 .penalizesBy(0);
     }
 
     @Test
     void changerDeStandEloigneEntreDeuxCreneauxConsecutifsEstPenalise() {
-        Stand standDrapeau = standAvecEmplacement("STAND-DRAPEAU", placeDrapeau);
-        Stand standMairie = standAvecEmplacement("STAND-MAIRIE", mairie);
+        Stand standDrapeau = standWithEmplacement("STAND-DRAPEAU", placeDrapeau);
+        Stand standMairie = standWithEmplacement("STAND-MAIRIE", mairie);
         Creneau matin = creneau("J1-MATIN2", 1, D1, LocalTime.of(9, 0), LocalTime.of(13, 0));
         Creneau suite = creneau("J1-SUITE", 1, D1, LocalTime.of(13, 0), LocalTime.of(17, 0));
-        Animateur a1 = majeurReferent("A1");
+        Animateur a1 = referentMajeur("A1");
         verify("eviterChangementEmplacementEloigne")
                 .given(poste(standDrapeau, matin, a1),
                         poste(standMairie, suite, a1))
@@ -193,11 +193,11 @@ class QualiteConstraintsTest extends ConstraintTestBase {
 
     @Test
     void changerDeStandProcheEntreDeuxCreneauxConsecutifsNEstPasPenalise() {
-        Stand standDrapeau = standAvecEmplacement("STAND-DRAPEAU", placeDrapeau);
-        Stand standVoisin = standAvecEmplacement("STAND-VOISIN", pointVoisin);
+        Stand standDrapeau = standWithEmplacement("STAND-DRAPEAU", placeDrapeau);
+        Stand standVoisin = standWithEmplacement("STAND-VOISIN", pointVoisin);
         Creneau matin = creneau("J1-MATIN3", 1, D1, LocalTime.of(9, 0), LocalTime.of(13, 0));
         Creneau suite = creneau("J1-SUITE3", 1, D1, LocalTime.of(13, 0), LocalTime.of(17, 0));
-        Animateur a1 = majeurReferent("A1");
+        Animateur a1 = referentMajeur("A1");
         verify("eviterChangementEmplacementEloigne")
                 .given(poste(standDrapeau, matin, a1),
                         poste(standVoisin, suite, a1))
@@ -207,9 +207,9 @@ class QualiteConstraintsTest extends ConstraintTestBase {
     @Test
     void changerDeStandEloigneSansCreneauxConsecutifsNEstPasPenalise() {
         // creneauMatin (9h-13h) and creneauAprem (14h-18h) are not back-to-back.
-        Stand standDrapeau = standAvecEmplacement("STAND-DRAPEAU", placeDrapeau);
-        Stand standMairie = standAvecEmplacement("STAND-MAIRIE", mairie);
-        Animateur a1 = majeurReferent("A1");
+        Stand standDrapeau = standWithEmplacement("STAND-DRAPEAU", placeDrapeau);
+        Stand standMairie = standWithEmplacement("STAND-MAIRIE", mairie);
+        Animateur a1 = referentMajeur("A1");
         verify("eviterChangementEmplacementEloigne")
                 .given(poste(standDrapeau, creneauMatin, a1),
                         poste(standMairie, creneauAprem, a1))
@@ -220,10 +220,10 @@ class QualiteConstraintsTest extends ConstraintTestBase {
     void changerDeStandSansEmplacementNEstPasPenalise() {
         Creneau matin = creneau("J1-MATIN4", 1, D1, LocalTime.of(9, 0), LocalTime.of(13, 0));
         Creneau suite = creneau("J1-SUITE4", 1, D1, LocalTime.of(13, 0), LocalTime.of(17, 0));
-        Animateur a1 = majeurReferent("A1");
+        Animateur a1 = referentMajeur("A1");
         verify("eviterChangementEmplacementEloigne")
-                .given(poste(standStrategie("STAND-A"), matin, a1),
-                        poste(standStrategie("STAND-B"), suite, a1))
+                .given(poste(standWithStrategy("STAND-A"), matin, a1),
+                        poste(standWithStrategy("STAND-B"), suite, a1))
                 .penalizesBy(0);
     }
 
@@ -238,12 +238,12 @@ class QualiteConstraintsTest extends ConstraintTestBase {
     private final Emplacement chateau = emplacement("CHATEAU", 46.6535, 2.2440);
 
     /** Four postes on four emplacements, all on the same day, for one animateur. */
-    private PosteAffectation[] journeeSur(Animateur animateur, Emplacement... emplacements) {
+    private PosteAffectation[] dayOver(Animateur animateur, Emplacement... emplacements) {
         PosteAffectation[] postes = new PosteAffectation[emplacements.length];
         for (int i = 0; i < emplacements.length; i++) {
             Creneau creneau = creneau("J1-C" + i, 1, D1,
                     LocalTime.of(8 + 2 * i, 0), LocalTime.of(9 + 2 * i, 0));
-            postes[i] = poste(standAvecEmplacement("STAND-" + i, emplacements[i]), creneau, animateur);
+            postes[i] = poste(standWithEmplacement("STAND-" + i, emplacements[i]), creneau, animateur);
         }
         return postes;
     }
@@ -251,21 +251,21 @@ class QualiteConstraintsTest extends ConstraintTestBase {
     @Test
     void journeeSousLePlafondDEmplacementsNEstPasPenalisee() {
         verify("limiterEmplacementsParJour")
-                .given(concat(PLAFOND_3, journeeSur(majeurReferent("A1"), placeDrapeau, mairie)))
+                .given(concat(PLAFOND_3, dayOver(referentMajeur("A1"), placeDrapeau, mairie)))
                 .penalizesBy(0);
     }
 
     @Test
     void journeeExactementAuPlafondDEmplacementsNEstPasPenalisee() {
         verify("limiterEmplacementsParJour")
-                .given(concat(PLAFOND_3, journeeSur(majeurReferent("A1"), placeDrapeau, mairie, halle)))
+                .given(concat(PLAFOND_3, dayOver(referentMajeur("A1"), placeDrapeau, mairie, halle)))
                 .penalizesBy(0);
     }
 
     @Test
     void journeeAuDessusDuPlafondDEmplacementsEstPenalisee() {
         verify("limiterEmplacementsParJour")
-                .given(concat(PLAFOND_3, journeeSur(majeurReferent("A1"), placeDrapeau, mairie, halle, chateau)))
+                .given(concat(PLAFOND_3, dayOver(referentMajeur("A1"), placeDrapeau, mairie, halle, chateau)))
                 .penalizesBy(1);
     }
 
@@ -275,31 +275,31 @@ class QualiteConstraintsTest extends ConstraintTestBase {
         // distinct zones rather than transitions.
         verify("limiterEmplacementsParJour")
                 .given(concat(PLAFOND_3,
-                        journeeSur(majeurReferent("A1"), placeDrapeau, mairie, placeDrapeau, mairie)))
+                        dayOver(referentMajeur("A1"), placeDrapeau, mairie, placeDrapeau, mairie)))
                 .penalizesBy(0);
     }
 
     @Test
     void journeesDifferentesNeSAdditionnentPas() {
-        Animateur a1 = majeurReferent("A1");
+        Animateur a1 = referentMajeur("A1");
         verify("limiterEmplacementsParJour")
                 .given(PLAFOND_3,
-                        poste(standAvecEmplacement("S1", placeDrapeau), matin("J1-M", 1, D1), a1),
-                        poste(standAvecEmplacement("S2", mairie), apresMidi("J1-A", 1, D1), a1),
-                        poste(standAvecEmplacement("S3", halle), matin("J2-M", 2, D2), a1),
-                        poste(standAvecEmplacement("S4", chateau), apresMidi("J2-A", 2, D2), a1))
+                        poste(standWithEmplacement("S1", placeDrapeau), matin("J1-M", 1, D1), a1),
+                        poste(standWithEmplacement("S2", mairie), afternoon("J1-A", 1, D1), a1),
+                        poste(standWithEmplacement("S3", halle), matin("J2-M", 2, D2), a1),
+                        poste(standWithEmplacement("S4", chateau), afternoon("J2-A", 2, D2), a1))
                 .penalizesBy(0);
     }
 
     @Test
     void emplacementsNonRenseignesRendentLaRegleInerte() {
-        Animateur a1 = majeurReferent("A1");
+        Animateur a1 = referentMajeur("A1");
         verify("limiterEmplacementsParJour")
                 .given(PLAFOND_3,
-                        poste(standStrategie("S1"), creneau("J1-A", 1, D1, LocalTime.of(8, 0), LocalTime.of(9, 0)), a1),
-                        poste(standStrategie("S2"), creneau("J1-B", 1, D1, LocalTime.of(9, 0), LocalTime.of(10, 0)), a1),
-                        poste(standStrategie("S3"), creneau("J1-C", 1, D1, LocalTime.of(10, 0), LocalTime.of(11, 0)), a1),
-                        poste(standStrategie("S4"), creneau("J1-D", 1, D1, LocalTime.of(11, 0), LocalTime.of(12, 0)), a1))
+                        poste(standWithStrategy("S1"), creneau("J1-A", 1, D1, LocalTime.of(8, 0), LocalTime.of(9, 0)), a1),
+                        poste(standWithStrategy("S2"), creneau("J1-B", 1, D1, LocalTime.of(9, 0), LocalTime.of(10, 0)), a1),
+                        poste(standWithStrategy("S3"), creneau("J1-C", 1, D1, LocalTime.of(10, 0), LocalTime.of(11, 0)), a1),
+                        poste(standWithStrategy("S4"), creneau("J1-D", 1, D1, LocalTime.of(11, 0), LocalTime.of(12, 0)), a1))
                 .penalizesBy(0);
     }
 
@@ -307,11 +307,11 @@ class QualiteConstraintsTest extends ConstraintTestBase {
     void unSeulDeplacementEloigneNEstPasPenaliseDeuxFois() {
         // The very fact eviterChangementEmplacementEloigne charges 1 for: under
         // the cap, this rule adds nothing, so the two never stack on it.
-        Stand standDrapeau = standAvecEmplacement("STAND-DRAPEAU", placeDrapeau);
-        Stand standMairie = standAvecEmplacement("STAND-MAIRIE", mairie);
+        Stand standDrapeau = standWithEmplacement("STAND-DRAPEAU", placeDrapeau);
+        Stand standMairie = standWithEmplacement("STAND-MAIRIE", mairie);
         Creneau matin = creneau("J1-MATIN-DUP", 1, D1, LocalTime.of(9, 0), LocalTime.of(13, 0));
         Creneau suite = creneau("J1-SUITE-DUP", 1, D1, LocalTime.of(13, 0), LocalTime.of(17, 0));
-        Animateur a1 = majeurReferent("A1");
+        Animateur a1 = referentMajeur("A1");
         verify("eviterChangementEmplacementEloigne")
                 .given(poste(standDrapeau, matin, a1), poste(standMairie, suite, a1))
                 .penalizesBy(1);
@@ -334,7 +334,7 @@ class QualiteConstraintsTest extends ConstraintTestBase {
         Stand standEpuisant2 = standEpuisant("STAND-EPUISANT-2");
         Creneau matin = creneau("J1-MATIN5", 1, D1, LocalTime.of(9, 0), LocalTime.of(13, 0));
         Creneau suite = creneau("J1-SUITE5", 1, D1, LocalTime.of(13, 0), LocalTime.of(17, 0));
-        Animateur a1 = majeurReferent("A1");
+        Animateur a1 = referentMajeur("A1");
         verify("eviterEnchainementStandsEpuisants")
                 .given(poste(standEpuisant1, matin, a1),
                         poste(standEpuisant2, suite, a1))
@@ -346,7 +346,7 @@ class QualiteConstraintsTest extends ConstraintTestBase {
         Stand standEpuisant = standEpuisant("STAND-EPUISANT-3");
         Creneau matin = creneau("J1-MATIN6", 1, D1, LocalTime.of(9, 0), LocalTime.of(13, 0));
         Creneau suite = creneau("J1-SUITE6", 1, D1, LocalTime.of(13, 0), LocalTime.of(17, 0));
-        Animateur a1 = majeurReferent("A1");
+        Animateur a1 = referentMajeur("A1");
         verify("eviterEnchainementStandsEpuisants")
                 .given(poste(standEpuisant, matin, a1),
                         poste(standStrat, suite, a1))
@@ -357,7 +357,7 @@ class QualiteConstraintsTest extends ConstraintTestBase {
     void deuxStandsEpuisantsSansCreneauxConsecutifsNEstPasPenalise() {
         Stand standEpuisant1 = standEpuisant("STAND-EPUISANT-4");
         Stand standEpuisant2 = standEpuisant("STAND-EPUISANT-5");
-        Animateur a1 = majeurReferent("A1");
+        Animateur a1 = referentMajeur("A1");
         verify("eviterEnchainementStandsEpuisants")
                 .given(poste(standEpuisant1, creneauMatin, a1),
                         poste(standEpuisant2, creneauAprem, a1))
@@ -376,13 +376,13 @@ class QualiteConstraintsTest extends ConstraintTestBase {
     @Test
     void appreciationPresenteNEstPasPenalisee() {
         verify("appreciationIncompatible")
-                .given(poste(standStrat, creneauMatin, majeurReferent("A1")))
+                .given(poste(standStrat, creneauMatin, referentMajeur("A1")))
                 .penalizesBy(0);
     }
 
     @Test
     void souhaitAbsentEstPenalise() {
-        Animateur sansSouhaitStrategie = animateurAvecSouhaits("A1", D1.minusYears(30),
+        Animateur sansSouhaitStrategie = animateurWithSouhaits("A1", D1.minusYears(30),
                 Map.of("STRATEGIE", NiveauCompetence.AUTONOME), "AMBIANCE");
         verify("souhaitsIncompatibles")
                 .given(poste(standStrat, creneauMatin, sansSouhaitStrategie))
@@ -391,7 +391,7 @@ class QualiteConstraintsTest extends ConstraintTestBase {
 
     @Test
     void souhaitPresentNEstPasPenalise() {
-        Animateur souhaiteStrategie = animateurAvecSouhaits("A1", D1.minusYears(30),
+        Animateur souhaiteStrategie = animateurWithSouhaits("A1", D1.minusYears(30),
                 Map.of("STRATEGIE", NiveauCompetence.AUTONOME), "STRATEGIE");
         verify("souhaitsIncompatibles")
                 .given(poste(standStrat, creneauMatin, souhaiteStrategie))
@@ -404,7 +404,7 @@ class QualiteConstraintsTest extends ConstraintTestBase {
                 "STRATEGIE", NiveauCompetence.AUTONOME,
                 "AMBIANCE", NiveauCompetence.AUTONOME));
         verify("limiterTypologiesDistinctesParAnimateur")
-                .given(poste(standStrategie("STAND-STRAT-2"), creneauMatin, a1),
+                .given(poste(standWithStrategy("STAND-STRAT-2"), creneauMatin, a1),
                         poste(stand("STAND-AMBIANCE", false, "AMBIANCE"), creneauAprem, a1))
                 .penalizesBy(0);
     }
@@ -416,7 +416,7 @@ class QualiteConstraintsTest extends ConstraintTestBase {
                 "AMBIANCE", NiveauCompetence.AUTONOME,
                 "ENIGME", NiveauCompetence.AUTONOME));
         verify("limiterTypologiesDistinctesParAnimateur")
-                .given(poste(standStrategie("STAND-STRAT-3"), creneauMatin, a1),
+                .given(poste(standWithStrategy("STAND-STRAT-3"), creneauMatin, a1),
                         poste(stand("STAND-AMBIANCE-3", false, "AMBIANCE"), creneauAprem, a1),
                         poste(stand("STAND-ENIGME-3", false, "ENIGME"), matin("J2-MATIN3", 2, D2), a1))
                 .penalizesBy(1);
@@ -433,10 +433,10 @@ class QualiteConstraintsTest extends ConstraintTestBase {
                 "ADRESSE", NiveauCompetence.AUTONOME,
                 "ROLE", NiveauCompetence.AUTONOME));
         verify("limiterTypologiesDistinctesParAnimateur")
-                .given(poste(standStrategie("STAND-STRAT-5"), creneauMatin, a1),
+                .given(poste(standWithStrategy("STAND-STRAT-5"), creneauMatin, a1),
                         poste(stand("STAND-AMBIANCE-5", false, "AMBIANCE"), creneauAprem, a1),
                         poste(stand("STAND-ENIGME-5", false, "ENIGME"), matin("J2-MATIN5", 2, D2), a1),
-                        poste(stand("STAND-ADRESSE-5", false, "ADRESSE"), apresMidi("J2-AM5", 2, D2), a1),
+                        poste(stand("STAND-ADRESSE-5", false, "ADRESSE"), afternoon("J2-AM5", 2, D2), a1),
                         poste(stand("STAND-ROLE-5", false, "ROLE"), matin("J3-MATIN5", 3, D3), a1))
                 .penalizesBy(3);
     }
@@ -450,7 +450,7 @@ class QualiteConstraintsTest extends ConstraintTestBase {
         polyvalent.getCompetences().put("AMBIANCE", NiveauCompetence.AUTONOME);
         polyvalent.getCompetences().put("ENIGME", NiveauCompetence.AUTONOME);
         verify("limiterTypologiesDistinctesParAnimateur")
-                .given(poste(standStrategie("STAND-STRAT-N"), creneauMatin, polyvalent),
+                .given(poste(standWithStrategy("STAND-STRAT-N"), creneauMatin, polyvalent),
                         poste(stand("STAND-AMBIANCE-N", false, "AMBIANCE"), creneauAprem, polyvalent),
                         poste(stand("STAND-ENIGME-N", false, "ENIGME"), matin("J2-MATIN-N", 2, D2), polyvalent))
                 .penalizesBy(0);
@@ -467,14 +467,14 @@ class QualiteConstraintsTest extends ConstraintTestBase {
 
     // --- maxJoursConsecutifsTravailles --------------------------------------
 
-    /** Créneau court (9 h - 13 h) du jour {@code offset + 1}, offset calendar days after D1. */
+    /** A short timeslot (9:00 - 13:00) on day {@code offset + 1}, offset calendar days after D1. */
     private Creneau jourConsecutif(int offset) {
         return creneau("JC-" + offset, offset + 1, D1.plusDays(offset), LocalTime.of(9, 0), LocalTime.of(13, 0));
     }
 
     @Test
     void septJoursConsecutifsTravaillesEstPenalise() {
-        Animateur a1 = majeurReferent("A1");
+        Animateur a1 = referentMajeur("A1");
         Object[] postes = new Object[7];
         for (int i = 0; i < 7; i++) {
             postes[i] = poste(standStrat, jourConsecutif(i), a1);
@@ -484,7 +484,7 @@ class QualiteConstraintsTest extends ConstraintTestBase {
 
     @Test
     void sixJoursConsecutifsTravaillesNEstPasPenalise() {
-        Animateur a1 = majeurReferent("A1");
+        Animateur a1 = referentMajeur("A1");
         Object[] postes = new Object[6];
         for (int i = 0; i < 6; i++) {
             postes[i] = poste(standStrat, jourConsecutif(i), a1);
@@ -496,7 +496,7 @@ class QualiteConstraintsTest extends ConstraintTestBase {
     void sixJoursTravaillesUnJourDeReposPuisSixJoursNEstPasPenalise() {
         // A rest day resets the run: 6 + 6 with a gap between must not be
         // confused with 12 (or even 7) days in a row.
-        Animateur a1 = majeurReferent("A1");
+        Animateur a1 = referentMajeur("A1");
         Object[] postes = new Object[12];
         int index = 0;
         for (int i = 0; i < 6; i++) {

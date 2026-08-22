@@ -55,7 +55,7 @@ public class AnimateurMcpTools {
     @Tool(description = "Consulte un animateur par son id. Ne renvoie aucune donnée personnelle identifiante.")
     AnimateurView consulter_animateur(@ToolArg(description = "Id de l'animateur") String id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        return toView(trouver(id), dateReference());
+        return toView(find(id), dateReference());
     }
 
     @Tool(description = "Crée un animateur. Les données personnelles (nom, prénom, date de naissance) sont "
@@ -93,7 +93,7 @@ public class AnimateurMcpTools {
             @ToolArg(description = "Ids de typologies souhaitées (remplace la liste existante)", required = false) List<String> souhaits,
             @ToolArg(description = "Jours indisponibles AAAA-MM-JJ (remplace la liste existante)", required = false) List<String> joursIndisponibles,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        Animateur animateur = trouver(id);
+        Animateur animateur = find(id);
         if (manager != null) {
             animateur.setManager(manager);
         }
@@ -116,7 +116,7 @@ public class AnimateurMcpTools {
         return new SuppressionResult(id, true);
     }
 
-    private Animateur trouver(String id) {
+    private Animateur find(String id) {
         return referenceDataService.listAnimateurs().stream()
                 .filter(animateur -> animateur.getId().equals(id))
                 .findFirst()
@@ -130,7 +130,7 @@ public class AnimateurMcpTools {
         return parsed;
     }
 
-    /** Same derivation as {@code PlanningService.construireDepuisReferenceData}: the earliest date of the active groupe de créneaux. */
+    /** Same derivation as {@code PlanningService.buildFromReferenceData}: the earliest date of the active groupe de créneaux. */
     private LocalDate dateReference() {
         return referenceDataService.listCreneaux().stream()
                 .map(Creneau::getDate)
@@ -140,8 +140,8 @@ public class AnimateurMcpTools {
     }
 
     static AnimateurView toView(Animateur animateur, LocalDate reference) {
-        String statut = animateur.estMineurLe(reference) ? "mineur" : "majeur";
-        return new AnimateurView(animateur.getId(), statut, animateur.estMoinsDe16AnsLe(reference),
+        String statut = animateur.isMineurOn(reference) ? "mineur" : "majeur";
+        return new AnimateurView(animateur.getId(), statut, animateur.isUnder16On(reference),
                 animateur.isManager(),
                 animateur.getCompetences(), animateur.getSouhaits(), animateur.getJoursIndisponibles());
     }

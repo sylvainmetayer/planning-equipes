@@ -46,13 +46,13 @@ public final class HoraireStandResolver {
      * dataset that never uses rules keeps the exact object graph — and the exact
      * behaviour — it had before.
      */
-    public static void appliquer(Collection<Stand> stands, Collection<Creneau> creneaux) {
+    public static void apply(Collection<Stand> stands, Collection<Creneau> creneaux) {
         Set<LocalDate> dates = datesConcernees(creneaux);
         if (dates.isEmpty()) {
             return;
         }
         for (Stand stand : stands) {
-            appliquer(stand, dates);
+            apply(stand, dates);
         }
     }
 
@@ -84,7 +84,7 @@ public final class HoraireStandResolver {
      * are rebuilt from scratch, so calling this twice on the same stand yields
      * the same result (the dated exceptions it reads are never modified).
      */
-    public static void appliquer(Stand stand, Collection<LocalDate> dates) {
+    public static void apply(Stand stand, Collection<LocalDate> dates) {
         if (stand == null || stand.getHoraires().isEmpty()) {
             return;
         }
@@ -101,7 +101,7 @@ public final class HoraireStandResolver {
                 // Layer 1: the day is stated by hand, rules stay out of it.
                 continue;
             }
-            JourResolu resolu = resoudreJour(stand.getHoraires(), date);
+            JourResolu resolu = resolveDay(stand.getHoraires(), date);
             if (resolu == null) {
                 continue;
             }
@@ -134,7 +134,7 @@ public final class HoraireStandResolver {
      * a resolution has already run — otherwise every day would look like an
      * exception once expanded.
      */
-    public static SourceHoraire sourceDuJour(Stand stand, LocalDate date) {
+    public static SourceHoraire sourceOfDay(Stand stand, LocalDate date) {
         if (stand == null || date == null) {
             return SourceHoraire.DEFAUT;
         }
@@ -143,7 +143,7 @@ public final class HoraireStandResolver {
         if (datee) {
             return SourceHoraire.EXCEPTION;
         }
-        return resoudreJour(stand.getHoraires(), date) != null ? SourceHoraire.REGLE : SourceHoraire.DEFAUT;
+        return resolveDay(stand.getHoraires(), date) != null ? SourceHoraire.REGLE : SourceHoraire.DEFAUT;
     }
 
     /** What the rules say about one day: one mode, and the windows to apply. */
@@ -165,10 +165,10 @@ public final class HoraireStandResolver {
      * closed-by-default outside the listed windows never staffs a stand somebody
      * declared shut, whereas the other choice would.</p>
      */
-    static JourResolu resoudreJour(List<HoraireStand> horaires, LocalDate date) {
+    static JourResolu resolveDay(List<HoraireStand> horaires, LocalDate date) {
         List<HoraireStand> couvrantes = horaires.stream()
                 .filter(horaire -> horaire.couvre(date))
-                .filter(horaire -> !horaire.fenetresValides().isEmpty())
+                .filter(horaire -> !horaire.validFenetres().isEmpty())
                 .toList();
         if (couvrantes.isEmpty()) {
             return null;
@@ -182,7 +182,7 @@ public final class HoraireStandResolver {
                 : ModeHoraire.FERMETURE;
         List<FenetreHoraire> fenetres = gagnantes.stream()
                 .filter(horaire -> horaire.getMode() == mode)
-                .flatMap(horaire -> horaire.fenetresValides().stream())
+                .flatMap(horaire -> horaire.validFenetres().stream())
                 .distinct()
                 .sorted(Comparator.comparing(FenetreHoraire::getHeureDebut))
                 .toList();

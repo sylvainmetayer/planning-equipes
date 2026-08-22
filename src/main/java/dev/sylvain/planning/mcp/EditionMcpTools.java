@@ -1,6 +1,6 @@
 package dev.sylvain.planning.mcp;
 
-import dev.sylvain.planning.service.ErreurMetier;
+import dev.sylvain.planning.service.BusinessError;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
@@ -58,7 +58,7 @@ public class EditionMcpTools {
     List<EditionView> lister_editions() {
         String courante = editionContext.editionIdCourant();
         return editionService.listEditions().stream()
-                .map(edition -> vue(edition, courante))
+                .map(edition -> view(edition, courante))
                 .toList();
     }
 
@@ -67,7 +67,7 @@ public class EditionMcpTools {
             + "éditions : rien d'autre n'indique laquelle est en train d'être modifiée.")
     EditionView edition_courante() {
         String courante = editionContext.editionIdCourant();
-        return vue(editionService.editionCourante(), courante);
+        return view(editionService.editionCourante(), courante);
     }
 
     @Tool(description = "Crée une édition vide. Pour repartir d'une édition existante (stands, animateurs, "
@@ -75,7 +75,7 @@ public class EditionMcpTools {
     EditionView creer_edition(
             @ToolArg(description = "Id de la nouvelle édition, repris tel quel dans les URLs (ex. « 2027 »)") String id,
             @ToolArg(description = "Nom affiché (ex. « Année 2027 »)") String nom) {
-        return vue(editionService.creer(new Edition(id, nom, false, null)), editionContext.editionIdCourant());
+        return view(editionService.create(new Edition(id, nom, false, null)), editionContext.editionIdCourant());
     }
 
     @Tool(description = "Duplique une édition dans une nouvelle : stands, animateurs, typologies, emplacements, "
@@ -86,8 +86,8 @@ public class EditionMcpTools {
             @ToolArg(description = "Édition à copier : son id ou son nom (voir lister_editions)") String source,
             @ToolArg(description = "Id de l'édition à créer") String id,
             @ToolArg(description = "Nom affiché de l'édition à créer") String nom) {
-        String sourceId = exigerEdition(source, "source");
-        return vue(editionService.dupliquer(sourceId, new Edition(id, nom, false, null)),
+        String sourceId = requireEdition(source, "source");
+        return view(editionService.duplicate(sourceId, new Edition(id, nom, false, null)),
                 editionContext.editionIdCourant());
     }
 
@@ -96,8 +96,8 @@ public class EditionMcpTools {
     EditionView renommer_edition(
             @ToolArg(description = "Édition à renommer : son id ou son nom") String edition,
             @ToolArg(description = "Nouveau nom affiché") String nom) {
-        String id = exigerEdition(edition, "edition");
-        return vue(editionService.renommer(id, new Edition(id, nom, false, null)),
+        String id = requireEdition(edition, "edition");
+        return view(editionService.renommer(id, new Edition(id, nom, false, null)),
                 editionContext.editionIdCourant());
     }
 
@@ -105,9 +105,9 @@ public class EditionMcpTools {
             + "précise aucune, y compris les outils MCP sans argument « edition ».")
     EditionView definir_edition_par_defaut(
             @ToolArg(description = "Édition à rendre par défaut : son id ou son nom") String edition) {
-        String id = exigerEdition(edition, "edition");
-        editionService.definirParDefaut(id);
-        return vue(trouver(id), editionContext.editionIdCourant());
+        String id = requireEdition(edition, "edition");
+        editionService.setAsDefault(id);
+        return view(find(id), editionContext.editionIdCourant());
     }
 
     @Tool(description = "Supprime une édition ET tout ce qu'elle contient : stands, animateurs, créneaux, "
@@ -115,8 +115,8 @@ public class EditionMcpTools {
             + "L'édition par défaut, l'édition courante et la dernière édition restante sont refusées.")
     SuppressionResult supprimer_edition(
             @ToolArg(description = "Édition à supprimer : son id ou son nom") String edition) {
-        String id = exigerEdition(edition, "edition");
-        editionService.supprimer(id);
+        String id = requireEdition(edition, "edition");
+        editionService.delete(id);
         return new SuppressionResult(id, true);
     }
 
@@ -125,37 +125,37 @@ public class EditionMcpTools {
      * {@code edition} argument of the other tools, a blank value here is a
      * missing argument, not "the current edition".
      */
-    private String exigerEdition(String edition, String champ) {
+    private String requireEdition(String edition, String champ) {
         if (edition == null || edition.isBlank()) {
-            throw new ErreurMetier.Invalide(champ + " est requis : id ou nom de l'édition (voir lister_editions)");
+            throw new BusinessError.Invalid(champ + " est requis : id ou nom de l'édition (voir lister_editions)");
         }
-        return editions.resoudre(edition);
+        return editions.solve(edition);
     }
 
-    private Edition trouver(String id) {
+    private Edition find(String id) {
         return editionService.listEditions().stream()
                 .filter(edition -> edition.getId().equals(id))
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("Édition introuvable après écriture : " + id));
     }
 
-    /** Counted inside the edition, hence the {@code executeDans}: the tool itself runs in another one. */
-    private EditionView vue(Edition edition, String editionCouranteId) {
-        return editionContext.executeDans(edition.getId(), () -> {
+    /** Counted inside the edition, hence the {@code executeIn}: the tool itself runs in another one. */
+    private EditionView view(Edition edition, String editionCouranteId) {
+        return editionContext.executeIn(edition.getId(), () -> {
             List<Creneau> creneaux = referenceDataService.listCreneaux();
             return new EditionView(edition.getId(), edition.getNom(), edition.isDefaut(),
                     edition.getId().equals(editionCouranteId),
-                    creneaux.size(), premiereDate(creneaux), derniereDate(creneaux),
+                    creneaux.size(), firstDate(creneaux), lastDate(creneaux),
                     referenceDataService.listStands().size(),
                     referenceDataService.listAnimateurs().size());
         });
     }
 
-    private static LocalDate premiereDate(List<Creneau> creneaux) {
+    private static LocalDate firstDate(List<Creneau> creneaux) {
         return dates(creneaux).min(Comparator.naturalOrder()).orElse(null);
     }
 
-    private static LocalDate derniereDate(List<Creneau> creneaux) {
+    private static LocalDate lastDate(List<Creneau> creneaux) {
         return dates(creneaux).max(Comparator.naturalOrder()).orElse(null);
     }
 

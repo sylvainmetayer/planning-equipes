@@ -20,7 +20,7 @@ import jakarta.enterprise.context.ApplicationScoped;
  * How many animateurs the current stands/créneaux need at a minimum, computed
  * from the very seats a solve would have to fill — the
  * {@link PosteAffectation} list of
- * {@code PlanningService#construireDepuisReferenceData()} — and not from a
+ * {@code PlanningService#buildFromReferenceData()} — and not from a
  * stands × créneaux product.
  *
  * <p>That distinction is the whole point of this class. The estimate used to
@@ -34,10 +34,10 @@ import jakarta.enterprise.context.ApplicationScoped;
  * schedule as rules (the normal case since the horaires feature) counted as
  * open on every single créneau, around the clock.</li>
  * <li><b>Auto-découpage.</b> When the active group holds generated vacations,
- * its créneaux <em>overlap</em> — several relay familles cover the same hours,
+ * its créneaux <em>overlap</em> — several relay families cover the same hours,
  * and consecutive vacations overlap during handovers. Summing a stand's
  * effectif over every such créneau counts the same hour of the same stand once
- * per famille. On edition-1708 (5 familles, 354 vacations) the workload bound came
+ * per famille. On edition-1708 (5 families, 354 vacations) the workload bound came
  * out above 1500 animateurs for a festival staffed by 153.</li>
  * </ul>
  *
@@ -111,17 +111,17 @@ public class StaffingAnalyzer {
     private record Siege(LocalDate date, int debut, int fin, Stand stand) {
     }
 
-    public StaffingSummary analyser(List<PosteAffectation> postes, int dureeHebdomadaireMaxMinutes,
+    public StaffingSummary analyze(List<PosteAffectation> postes, int dureeHebdomadaireMaxMinutes,
             int pauseMinimaleMinutes) {
         List<Siege> sieges = sieges(postes);
-        Map<LocalDate, List<Siege>> parDate = new TreeMap<>();
+        Map<LocalDate, List<Siege>> byDate = new TreeMap<>();
         for (Siege siege : sieges) {
-            parDate.computeIfAbsent(siege.date(), date -> new ArrayList<>()).add(siege);
+            byDate.computeIfAbsent(siege.date(), date -> new ArrayList<>()).add(siege);
         }
 
-        Map<LocalDate, Integer> jourParDate = jourParDate(postes);
+        Map<LocalDate, Integer> dayByDate = dayByDate(postes);
         List<JourStaffing> parJour = new ArrayList<>();
-        for (Map.Entry<LocalDate, List<Siege>> entree : parDate.entrySet()) {
+        for (Map.Entry<LocalDate, List<Siege>> entree : byDate.entrySet()) {
             List<Siege> duJour = entree.getValue();
             Set<String> standsOuverts = new HashSet<>();
             double heures = 0;
@@ -133,7 +133,7 @@ public class StaffingAnalyzer {
             }
             parJour.add(new JourStaffing(
                     entree.getKey(),
-                    jourParDate.getOrDefault(entree.getKey(), 0),
+                    dayByDate.getOrDefault(entree.getKey(), 0),
                     standsOuverts.size(),
                     duJour.size(),
                     heures,
@@ -200,17 +200,17 @@ public class StaffingAnalyzer {
         // Group by stand and window, so "half the seats, rounded up" is
         // applied to a real group of simultaneous seats and not to the
         // festival's grand total.
-        Map<String, int[]> parGroupe = new LinkedHashMap<>();
+        Map<String, int[]> byGroup = new LinkedHashMap<>();
         for (Siege siege : sieges) {
-            String cle = (siege.stand() == null ? "?" : siege.stand().getId())
+            String key = (siege.stand() == null ? "?" : siege.stand().getId())
                     + "@" + siege.date() + "#" + siege.debut() + "-" + siege.fin();
-            int[] compteur = parGroupe.computeIfAbsent(cle, ignored -> new int[] { 0, 0 });
+            int[] compteur = byGroup.computeIfAbsent(key, ignored -> new int[] { 0, 0 });
             compteur[0]++;
             compteur[1] = siege.stand() != null && siege.stand().isReserveMajeurs() ? 1 : 0;
         }
         int total = 0;
         int majeurs = 0;
-        for (int[] compteur : parGroupe.values()) {
+        for (int[] compteur : byGroup.values()) {
             total += compteur[0];
             majeurs += compteur[1] == 1 ? compteur[0] : (compteur[0] + 1) / 2;
         }
@@ -266,7 +266,7 @@ public class StaffingAnalyzer {
         return sieges;
     }
 
-    private static Map<LocalDate, Integer> jourParDate(List<PosteAffectation> postes) {
+    private static Map<LocalDate, Integer> dayByDate(List<PosteAffectation> postes) {
         Map<LocalDate, Integer> jours = new LinkedHashMap<>();
         for (PosteAffectation poste : postes) {
             Creneau creneau = poste.getCreneau();

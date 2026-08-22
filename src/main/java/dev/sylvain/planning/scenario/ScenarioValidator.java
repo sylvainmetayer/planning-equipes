@@ -31,7 +31,7 @@ public final class ScenarioValidator {
     }
 
     /** Returns the Bean Validation violations for the given YAML content; empty if valid. */
-    public static List<String> valider(String yamlContent) throws IOException {
+    public static List<String> validate(String yamlContent) throws IOException {
         ObjectMapper mapper = ScenarioYamlMapper.create();
         ScenarioDto scenario = mapper.readValue(yamlContent, ScenarioDto.class);
         try (ValidatorFactory factory = Validation.buildDefaultValidatorFactory()) {
@@ -50,12 +50,12 @@ public final class ScenarioValidator {
             System.exit(2);
             return;
         }
-        Path fichier = Path.of(args[0]);
-        String yamlContent = Files.readString(fichier);
+        Path file = Path.of(args[0]);
+        String yamlContent = Files.readString(file);
 
         List<String> erreurs;
         try {
-            erreurs = valider(yamlContent);
+            erreurs = validate(yamlContent);
         } catch (Exception e) {
             System.err.println("YAML invalide : " + e.getMessage());
             System.exit(1);
@@ -63,9 +63,9 @@ public final class ScenarioValidator {
         }
 
         if (erreurs.isEmpty()) {
-            System.out.println(fichier + " : valide.");
+            System.out.println(file + " : valide.");
         } else {
-            System.out.println(fichier + " : " + erreurs.size() + " erreur(s)");
+            System.out.println(file + " : " + erreurs.size() + " erreur(s)");
             erreurs.forEach(erreur -> System.out.println("  - " + erreur));
             System.exit(1);
         }

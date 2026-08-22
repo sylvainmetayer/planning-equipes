@@ -33,10 +33,10 @@ import jakarta.inject.Inject;
  * injections would trade one large class for twenty smaller annoyances.</p>
  */
 @ApplicationScoped
-public class ReferenceDataService implements Referentiel {
+public class ReferenceDataService implements ReferenceData {
 
     @Inject
-    ImportReferentielRepository imports;
+    ReferenceDataImportRepository imports;
 
     @Inject
     AnimateurService animateurs;
@@ -92,8 +92,8 @@ public class ReferenceDataService implements Referentiel {
     }
 
     @Override
-    public List<Stand> listStandsResolus() {
-        return stands.listResolus();
+    public List<Stand> listSolvedStands() {
+        return stands.listSolved();
     }
 
     public Stand createStand(Stand stand) {
@@ -108,8 +108,8 @@ public class ReferenceDataService implements Referentiel {
         stands.delete(id);
     }
 
-    public CompactageHoraires.RapportCompactage compacterHoraires(boolean appliquer) {
-        return stands.compacterHoraires(appliquer);
+    public HoraireCompaction.RapportCompactage compactHoraires(boolean apply) {
+        return stands.compactHoraires(apply);
     }
 
     /* ----------------------------- Emplacements ----------------------------- */
@@ -151,21 +151,21 @@ public class ReferenceDataService implements Referentiel {
     }
 
     public List<Creneau> createCreneaux(List<Creneau> lot) {
-        return creneaux.createEnLot(lot);
+        return creneaux.createInBulk(lot);
     }
 
     public int deleteCreneaux(Collection<Long> ids) {
-        return creneaux.deleteEnLot(ids);
+        return creneaux.deleteInBulk(ids);
     }
 
-    /* ------------------------------ Découpage ------------------------------- */
+    /* ------------------------------- Slicing -------------------------------- */
 
-    public List<Creneau> previsualiserDecoupage() {
-        return creneaux.previsualiserDecoupage();
+    public List<Creneau> previewDecoupage() {
+        return creneaux.previewDecoupage();
     }
 
-    public void genererDecoupage() {
-        creneaux.genererDecoupage();
+    public void generateDecoupage() {
+        creneaux.generateDecoupage();
     }
 
     /**
@@ -176,9 +176,9 @@ public class ReferenceDataService implements Referentiel {
      * every import of that scenario. The one operation that genuinely spans
      * two referentials, hence its place here.
      */
-    public void appliquerDecoupageAutomatique(PlanningFestival planning) {
+    public void applyAutomaticDecoupage(PlanningFestival planning) {
         importFromPlanning(planning);
-        genererDecoupage();
+        generateDecoupage();
     }
 
     /* ------------------------------ Typologies ----------------------------- */
@@ -238,20 +238,20 @@ public class ReferenceDataService implements Referentiel {
         verrouillages.delete(id);
     }
 
-    /* ----------------------- Espace animateur (jeton) ----------------------- */
+    /* ----------------------- Espace animateur (token) ----------------------- */
 
-    /** See {@link ImportReferentielRepository#compterImpactImport}. */
-    public ImpactImport compterImpactImport() {
-        return imports.compterImpactImport();
+    /** See {@link ReferenceDataImportRepository#countImportImpact}. */
+    public ImportImpact countImportImpact() {
+        return imports.countImportImpact();
     }
 
-    /** See {@link AnimateurRepository#resoudreJetonAnimateur}. */
-    public ProprietaireJeton resoudreJetonAnimateur(String jeton) {
-        return animateurs.resoudreJeton(jeton);
+    /** See {@link AnimateurRepository#resolveAnimateurToken}. */
+    public TokenOwner resolveAnimateurToken(String token) {
+        return animateurs.resolveToken(token);
     }
 
-    public String regenererJetonAnimateur(String id) {
-        return animateurs.regenererJeton(id);
+    public String regenerateAnimateurToken(String id) {
+        return animateurs.regenerateToken(id);
     }
 
     /**
@@ -296,7 +296,7 @@ public class ReferenceDataService implements Referentiel {
 
     @Override
     public Set<String> getContraintesDesactivees() {
-        return parametres.contraintesDesactivees();
+        return parametres.disabledContraintes();
     }
 
     public void setContrainteActive(String nom, boolean actif) {

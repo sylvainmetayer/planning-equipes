@@ -117,49 +117,49 @@ class AuthentificationRemoteUserTest {
 
     @Test
     void lAnimateurAttesteParLeProxyEntreDansSonEspaceSansCode() {
-        String jeton = creerAnimateur("A-REMOTE-1", EMAIL_ANIMATEUR);
+        String token = createAnimateur("A-REMOTE-1", EMAIL_ANIMATEUR);
 
         // With no assertion, the token alone is not enough: the e-mail is the second factor.
-        given().when().get("/api/espace-animateur/" + jeton).then().statusCode(401);
+        given().when().get("/api/espace-animateur/" + token).then().statusCode(401);
 
         given()
                 .header("Remote-Auth-Secret", SECRET)
                 .header("Remote-Email", EMAIL_ANIMATEUR)
-                .when().get("/api/espace-animateur/" + jeton)
+                .when().get("/api/espace-animateur/" + token)
                 .then()
                 .statusCode(200);
     }
 
     @Test
     void uneAttestationNOuvrePasLEspaceDUnAutreQueSoi() {
-        String jetonDuCollegue = creerAnimateur("A-REMOTE-2", "collegue@exemple.fr");
+        String colleagueToken = createAnimateur("A-REMOTE-2", "collegue@exemple.fr");
 
         // A colleague's link, picked up from a PDF, plus one's own assertion:
         // the address does not match the record the token names.
         given()
                 .header("Remote-Auth-Secret", SECRET)
                 .header("Remote-Email", EMAIL_ANIMATEUR)
-                .when().get("/api/espace-animateur/" + jetonDuCollegue)
+                .when().get("/api/espace-animateur/" + colleagueToken)
                 .then()
                 .statusCode(401);
     }
 
     @Test
     void lAdresseAdminNOuvrePasLEspaceDUnAnimateur() {
-        String jeton = creerAnimateur("A-REMOTE-3", "encore@exemple.fr");
+        String token = createAnimateur("A-REMOTE-3", "encore@exemple.fr");
 
         given()
                 .header("Remote-Auth-Secret", SECRET)
                 .header("Remote-Email", EMAIL_ADMIN)
-                .when().get("/api/espace-animateur/" + jeton)
+                .when().get("/api/espace-animateur/" + token)
                 .then()
                 .statusCode(401);
     }
 
-    private String creerAnimateur(String id, String email) {
+    private String createAnimateur(String id, String email) {
         Animateur animateur = new Animateur(id, "Prénom", "Nom", java.time.LocalDate.of(1990, 1, 1), false);
         animateur.setEmail(email);
         referenceDataService.createAnimateur(animateur);
-        return referenceDataService.regenererJetonAnimateur(id);
+        return referenceDataService.regenerateAnimateurToken(id);
     }
 }

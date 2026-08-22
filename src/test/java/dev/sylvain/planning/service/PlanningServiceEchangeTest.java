@@ -23,7 +23,7 @@ import dev.sylvain.planning.service.PlanningService.EchangeSimulation;
 
 /**
  * Simulation of a swap request (issue #165) straight on
- * {@code PlanningService.simulerEchange}: no database, no Quarkus context — a
+ * {@code PlanningService.simulateEchange}: no database, no Quarkus context — a
  * solved planning built by hand, and the real {@code SolutionManager} for the
  * score analysis.
  */
@@ -33,7 +33,7 @@ class PlanningServiceEchangeTest {
 
     private static final PlanningService planningService;
     static {
-        Referentiel referenceDataService = new ReferentielVide();
+        ReferenceData referenceDataService = new EmptyReferenceData();
         planningService = new PlanningService(3L, 2L,
                 ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT,
                 referenceDataService, new FeasibilityAnalyzer(), ConfigProvider.getConfig());
@@ -69,7 +69,7 @@ class PlanningServiceEchangeTest {
         PosteAffectation posteBruno = poste("P2", standS2, creneau, bruno);
         PlanningFestival solved = planning(List.of(alice, bruno), List.of(posteAlice, posteBruno));
 
-        EchangeSimulation simulation = planningService.simulerEchange(solved, "A1", "A2", 1L, "S1");
+        EchangeSimulation simulation = planningService.simulateEchange(solved, "A1", "A2", 1L, "S1");
 
         assertThat(simulation.echangeCroise()).isTrue();
         assertThat(simulation.posteDemandeurId()).isEqualTo("P1");
@@ -85,7 +85,7 @@ class PlanningServiceEchangeTest {
         PosteAffectation posteAlice = poste("P1", standS1, creneau, alice);
         PlanningFestival solved = planning(List.of(alice, bruno), List.of(posteAlice));
 
-        EchangeSimulation simulation = planningService.simulerEchange(solved, "A1", "A2", 1L, "S1");
+        EchangeSimulation simulation = planningService.simulateEchange(solved, "A1", "A2", 1L, "S1");
 
         assertThat(simulation.echangeCroise()).isFalse();
         assertThat(simulation.posteCibleId()).isNull();
@@ -105,7 +105,7 @@ class PlanningServiceEchangeTest {
         PosteAffectation posteAlice = poste("P1", standS1, creneau, alice);
         PlanningFestival solved = planning(List.of(alice, bruno), List.of(posteAlice));
 
-        EchangeSimulation simulation = planningService.simulerEchange(solved, "A1", "A2", 1L, "S1");
+        EchangeSimulation simulation = planningService.simulateEchange(solved, "A1", "A2", 1L, "S1");
 
         assertThat(simulation.casseContrainteDure()).isTrue();
         assertThat(simulation.scoreApres().hardScore()).isLessThan(simulation.scoreAvant().hardScore());
@@ -128,7 +128,7 @@ class PlanningServiceEchangeTest {
         PosteAffectation posteBruno = poste("P2", standS2, creneau, bruno);
         PlanningFestival solved = planning(List.of(alice, bruno), List.of(posteAlice, posteBruno));
 
-        planningService.simulerEchange(solved, "A1", "A2", 1L, "S1");
+        planningService.simulateEchange(solved, "A1", "A2", 1L, "S1");
 
         assertThat(posteAlice.getAnimateur()).isSameAs(alice);
         assertThat(posteBruno.getAnimateur()).isSameAs(bruno);
@@ -140,10 +140,10 @@ class PlanningServiceEchangeTest {
         PosteAffectation posteAlice = poste("P1", standS1, creneau, alice);
         PlanningFestival solved = planning(List.of(alice, bruno), List.of(posteAlice));
 
-        assertThatThrownBy(() -> planningService.simulerEchange(solved, "A1", "A2", 1L, "S2"))
+        assertThatThrownBy(() -> planningService.simulateEchange(solved, "A1", "A2", 1L, "S2"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Aucun poste");
-        assertThatThrownBy(() -> planningService.simulerEchange(solved, "A2", "A1", 1L, "S1"))
+        assertThatThrownBy(() -> planningService.simulateEchange(solved, "A2", "A1", 1L, "S1"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Aucun poste");
     }
@@ -153,7 +153,7 @@ class PlanningServiceEchangeTest {
         PosteAffectation posteAlice = poste("P1", standS1, creneau, alice);
         PlanningFestival solved = planning(List.of(alice, bruno), List.of(posteAlice));
 
-        assertThatThrownBy(() -> planningService.simulerEchange(solved, "A1", "FANTOME", 1L, "S1"))
+        assertThatThrownBy(() -> planningService.simulateEchange(solved, "A1", "FANTOME", 1L, "S1"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Animateur inconnu");
     }

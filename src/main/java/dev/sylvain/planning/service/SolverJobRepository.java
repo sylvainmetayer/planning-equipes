@@ -59,7 +59,7 @@ public class SolverJobRepository {
             JobType type,
             JobStatus statut,
             Long secondsLimit,
-            PerimetreReplanification perimetre,
+            ReplanificationScope scope,
             boolean rejouable,
             String erreur,
             Instant soumisLe,
@@ -74,7 +74,7 @@ public class SolverJobRepository {
      * <p>{@code ordre} is left to the sequence on insert and never touched on
      * update: a job keeps the queue position it was given when submitted.</p>
      */
-    public void enregistrer(LigneJob ligne) {
+    public void record(LigneJob ligne) {
         String sql = """
  INSERT INTO solver_job (id, edition_id, edition_nom, type, statut, seconds_limit,
  perimetre, rejouable, erreur, soumis_le, demarre_le, termine_le)
@@ -90,7 +90,7 @@ public class SolverJobRepository {
             ps.setString(4, ligne.type().name());
             ps.setString(5, ligne.statut().name());
             setLong(ps, 6, ligne.secondsLimit());
-            ps.setString(7, ecrirePerimetre(ligne.perimetre()));
+            ps.setString(7, writeScope(ligne.scope()));
             ps.setBoolean(8, ligne.rejouable());
             ps.setString(9, ligne.erreur());
             ps.setTimestamp(10, horodatage(ligne.soumisLe()));
@@ -106,7 +106,7 @@ public class SolverJobRepository {
      * Every known job, <b>in submission order</b> — which is the order the
      * queue must be replayed in.
      */
-    public List<LigneJob> lister() {
+    public List<LigneJob> list() {
         String sql = """
  SELECT id, edition_id, edition_nom, type, statut, seconds_limit, perimetre::text AS perimetre,
  rejouable, erreur, soumis_le, demarre_le, termine_le
@@ -117,7 +117,7 @@ public class SolverJobRepository {
                 PreparedStatement ps = connection.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                lignes.add(lire(rs));
+                lignes.add(read(rs));
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to list solver jobs", e);
@@ -125,18 +125,18 @@ public class SolverJobRepository {
         return lignes;
     }
 
-    public void supprimer(String id) {
-        executer("DELETE FROM solver_job WHERE id = ?", ps -> ps.setString(1, id),
+    public void delete(String id) {
+        execute("DELETE FROM solver_job WHERE id = ?", ps -> ps.setString(1, id),
                 "Failed to delete solver job " + id);
     }
 
     /** Drops the finished jobs older than {@code cutoff}, mirroring the in-memory retention. */
-    public void purgerTerminesAvant(Instant cutoff) {
-        executer("DELETE FROM solver_job WHERE termine_le IS NOT NULL AND termine_le < ?",
+    public void purgeFinishedBefore(Instant cutoff) {
+        execute("DELETE FROM solver_job WHERE termine_le IS NOT NULL AND termine_le < ?",
                 ps -> ps.setTimestamp(1, horodatage(cutoff)), "Failed to purge solver jobs");
     }
 
-    private LigneJob lire(ResultSet rs) throws SQLException {
+    private LigneJob read(ResultSet rs) throws SQLException {
         // Read (and null-checked) before anything else: wasNull() reports on
         // the last column read, so any getString() in between would break it.
         long valeurSecondsLimit = rs.getLong("seconds_limit");
@@ -148,7 +148,7 @@ public class SolverJobRepository {
                 JobType.valueOf(rs.getString("type")),
                 JobStatus.valueOf(rs.getString("statut")),
                 secondsLimit,
-                lirePerimetre(rs.getString("perimetre")),
+                readScope(rs.getString("perimetre")),
                 rs.getBoolean("rejouable"),
                 rs.getString("erreur"),
                 instant(rs.getTimestamp("soumis_le")),
@@ -156,12 +156,12 @@ public class SolverJobRepository {
                 instant(rs.getTimestamp("termine_le")));
     }
 
-    private String ecrirePerimetre(PerimetreReplanification perimetre) {
-        if (perimetre == null || perimetre.estVide()) {
+    private String writeScope(ReplanificationScope scope) {
+        if (scope == null || scope.hasNoTarget()) {
             return null;
         }
         try {
-            return objectMapper.writeValueAsString(perimetre);
+            return objectMapper.writeValueAsString(scope);
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Failed to serialize the replanning perimeter", e);
         }
@@ -172,25 +172,25 @@ public class SolverJobRepository {
      * failing the whole restore: the automatic perimeter is a valid fallback,
      * and losing the whole queue over one unreadable column would be worse.
      */
-    private PerimetreReplanification lirePerimetre(String json) {
+    private ReplanificationScope readScope(String json) {
         if (json == null || json.isBlank()) {
             return null;
         }
         try {
-            return objectMapper.readValue(json, PerimetreReplanification.class);
+            return objectMapper.readValue(json, ReplanificationScope.class);
         } catch (JsonProcessingException e) {
             return null;
         }
     }
 
     private interface Parametrage {
-        void appliquer(PreparedStatement ps) throws SQLException;
+        void apply(PreparedStatement ps) throws SQLException;
     }
 
-    private void executer(String sql, Parametrage parametrage, String message) {
+    private void execute(String sql, Parametrage parametrage, String message) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement(sql)) {
-            parametrage.appliquer(ps);
+            parametrage.apply(ps);
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException(message, e);

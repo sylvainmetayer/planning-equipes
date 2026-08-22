@@ -33,7 +33,7 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
 
 /**
- * Exercises {@link PlanningService#construireScenarioYaml} directly
+ * Exercises {@link PlanningService#buildScenarioYaml} directly
  * (package-private, no database needed), the reverse of what
  * {@code chargerScenarioYaml} parses. Checks the produced text is valid YAML
  * carrying the same shape as the hand-authored scenario files, in particular
@@ -58,12 +58,12 @@ class PlanningServiceScenarioExportTest {
         // after (2026-08-15, which Creneau#segmentsOuvertsMinutes also treats as
         // relevant for a créneau crossing into it) — an ouverture on either would
         // switch the stand to closed-by-default for this créneau's day and starve
-        // construirePostes of a poste to build below.
+        // buildPostes of a poste to build below.
         stand.setOuvertures(List.of(
                 new OuvertureStand(2L, LocalDate.of(2026, 8, 20), LocalTime.of(20, 0), LocalTime.of(23, 0), null)));
-        List<PosteAffectation> postes = PlanningService.construirePostes(List.of(stand), List.of(creneau));
+        List<PosteAffectation> postes = PlanningService.buildPostes(List.of(stand), List.of(creneau));
 
-        String yaml = PlanningService.construireScenarioYaml(List.of(animateur), List.of(stand), List.of(creneau), postes);
+        String yaml = PlanningService.buildScenarioYaml(List.of(animateur), List.of(stand), List.of(creneau), postes);
         Map<String, Object> parsed = new Yaml().load(yaml);
 
         assertThat(parsed.get("festival")).isInstanceOfSatisfying(Map.class,
@@ -122,7 +122,7 @@ class PlanningServiceScenarioExportTest {
     @Test
     @SuppressWarnings("unchecked")
     void horairesRecurrentsSontExportesCommeRegles() {
-        HoraireStand quotidien = HoraireStand.tousLesJours(ModeHoraire.OUVERTURE,
+        HoraireStand quotidien = HoraireStand.everyDay(ModeHoraire.OUVERTURE,
                 new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(12, 0)),
                 new FenetreHoraire(LocalTime.of(14, 0), null));
         HoraireStand weekend = new HoraireStand(null, ModeHoraire.FERMETURE, TypeJoursHoraire.JOURS_SEMAINE,
@@ -130,7 +130,7 @@ class PlanningServiceScenarioExportTest {
         weekend.setJoursSemaine(Set.of(DayOfWeek.SUNDAY));
         stand.setHoraires(List.of(quotidien, weekend));
 
-        String yaml = PlanningService.construireScenarioYaml(List.of(animateur), List.of(stand), List.of(creneau),
+        String yaml = PlanningService.buildScenarioYaml(List.of(animateur), List.of(stand), List.of(creneau),
                 List.of());
         Map<String, Object> parsed = new Yaml().load(yaml);
 
@@ -158,7 +158,7 @@ class PlanningServiceScenarioExportTest {
         stand.setOuvertures(List.of(
                 new OuvertureStand(1L, LocalDate.of(2026, 8, 20), LocalTime.of(20, 0), null, null)));
 
-        String yaml = PlanningService.construireScenarioYaml(List.of(animateur), List.of(stand), List.of(creneau),
+        String yaml = PlanningService.buildScenarioYaml(List.of(animateur), List.of(stand), List.of(creneau),
                 List.of());
         Map<String, Object> parsed = new Yaml().load(yaml);
 
@@ -183,9 +183,9 @@ class PlanningServiceScenarioExportTest {
         decoupage.setNombreFamillesDecalage(5);
         decoupage.setDureeDecalageMaxMinutes(120);
         decoupage.setStrategieCouverturePendantPause(
-                ParametresDecoupage.StrategieCouverturePendantPause.EFFECTIF_REDUIT);
+                ParametresDecoupage.PauseCoverageStrategy.EFFECTIF_REDUIT);
 
-        String yaml = PlanningService.construireScenarioYaml(new PlanningService.ScenarioExport(
+        String yaml = PlanningService.buildScenarioYaml(new PlanningService.ScenarioExport(
                 List.of(animateur), List.of(stand), List.of(creneau), List.of(),
                 List.of(new TypologieItem("STRATEGIE", "Stratégie", true)),
                 List.of(new Emplacement("PLACE", "Place du Drapeau", 46.6487, 2.2503)),
@@ -220,7 +220,7 @@ class PlanningServiceScenarioExportTest {
     void aStandExportsItsEmplacementId() {
         stand.setEmplacement(new Emplacement("PLACE", "Place du Drapeau", 46.6487, 2.2503));
 
-        String yaml = PlanningService.construireScenarioYaml(List.of(animateur), List.of(stand), List.of(creneau),
+        String yaml = PlanningService.buildScenarioYaml(List.of(animateur), List.of(stand), List.of(creneau),
                 List.of());
         Map<String, Object> parsed = new Yaml().load(yaml);
 
@@ -230,7 +230,7 @@ class PlanningServiceScenarioExportTest {
     /** A null seat list leaves the {@code postes:} section out entirely. */
     @Test
     void aNullSeatListPinsNoPostesSection() {
-        String yaml = PlanningService.construireScenarioYaml(new PlanningService.ScenarioExport(
+        String yaml = PlanningService.buildScenarioYaml(new PlanningService.ScenarioExport(
                 List.of(animateur), List.of(stand), List.of(creneau), null, List.of(), List.of(), null, null, null));
         Map<String, Object> parsed = new Yaml().load(yaml);
 
@@ -240,10 +240,10 @@ class PlanningServiceScenarioExportTest {
 
     @Test
     void exportingWithoutReferenceDataFails() {
-        Referentiel referenceDataService = new ReferentielVide();
+        ReferenceData referenceDataService = new EmptyReferenceData();
         PlanningService planningService = new PlanningService(3L, 2L, ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT, referenceDataService, new FeasibilityAnalyzer(),
                 ConfigProvider.getConfig());
 
-        assertThatThrownBy(planningService::exporterScenarioYaml).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(planningService::exportScenarioYaml).isInstanceOf(IllegalStateException.class);
     }
 }

@@ -50,7 +50,7 @@ public class EspaceAnimateurService {
     }
 
     /** A colleague an échange can target. First name + name: what a PDF already prints. */
-    public record CollegueView(String id, String nomComplet) {
+    public record ColleagueView(String id, String nomComplet) {
     }
 
     /**
@@ -66,7 +66,7 @@ public class EspaceAnimateurService {
      */
     public record EspaceAnimateurView(String animateurId, String prenom, String nom, Instant planningResoluLe,
             boolean foireOuverte, List<PosteAnimateurView> postes,
-            List<LocalDate> joursRepos, List<CollegueView> collegues) {
+            List<LocalDate> joursRepos, List<ColleagueView> collegues) {
     }
 
     /**
@@ -84,34 +84,34 @@ public class EspaceAnimateurService {
             Instant cibleDecideLe, Instant decideLe) {
     }
 
-    public EspaceAnimateurView construireVue(String animateurId) {
+    public EspaceAnimateurView buildView(String animateurId) {
         List<Animateur> animateurs = referenceDataService.listAnimateurs();
         Animateur animateur = animateurs.stream()
                 .filter(candidat -> candidat.getId().equals(animateurId))
                 .findFirst()
-                .orElseThrow(() -> new ErreurMetier.Invalide("Animateur inconnu : " + animateurId));
+                .orElseThrow(() -> new BusinessError.Invalid("Animateur inconnu : " + animateurId));
 
         PlanningFestival planning = persistenceService.loadPersistedPlanning();
-        Map<String, List<String>> coequipiers = exportService.coequipiersParPoste(planning, animateurId);
-        List<PosteAnimateurView> postes = postesDe(planning, animateurId, coequipiers);
+        Map<String, List<String>> coequipiers = exportService.teammatesByPoste(planning, animateurId);
+        List<PosteAnimateurView> postes = postesOf(planning, animateurId, coequipiers);
 
-        List<CollegueView> collegues = animateurs.stream()
+        List<ColleagueView> collegues = animateurs.stream()
                 .filter(candidat -> !candidat.getId().equals(animateurId))
-                .map(candidat -> new CollegueView(candidat.getId(), candidat.nomAffiche()))
-                .sorted(Comparator.comparing(CollegueView::nomComplet, String.CASE_INSENSITIVE_ORDER))
+                .map(candidat -> new ColleagueView(candidat.getId(), candidat.nomAffiche()))
+                .sorted(Comparator.comparing(ColleagueView::nomComplet, String.CASE_INSENSITIVE_ORDER))
                 .toList();
 
-        List<LocalDate> joursRepos = exportService.joursDeRepos(planning, animateurId).stream()
+        List<LocalDate> joursRepos = exportService.daysOff(planning, animateurId).stream()
                 .map(PlanningExportService.JourRepos::date)
                 .toList();
 
         PlanningPersistenceService.PlanningResolution resolution = persistenceService.loadResolution();
         return new EspaceAnimateurView(animateur.getId(), animateur.getPrenom(), animateur.getNom(),
                 resolution == null ? null : resolution.resoluLe(),
-                demandeEchangeService.estFoireOuverte(), postes, joursRepos, collegues);
+                demandeEchangeService.isFoireOpen(), postes, joursRepos, collegues);
     }
 
-    private static List<PosteAnimateurView> postesDe(PlanningFestival planning, String animateurId,
+    private static List<PosteAnimateurView> postesOf(PlanningFestival planning, String animateurId,
             Map<String, List<String>> coequipiers) {
         return planning.getPostes().stream()
                 .filter(poste -> poste.getAnimateur() != null && animateurId.equals(poste.getAnimateur().getId())
@@ -138,30 +138,30 @@ public class EspaceAnimateurService {
      * the printed global planning already shows — without teammates.
      *
      * <p>Two guards narrow an access that is broad <b>by design</b>: the roster
-     * is already handed out in full by {@link #construireVue}, and a colleague's
+     * is already handed out in full by {@link #buildView}, and a colleague's
      * slots and stands are what the printed global planning circulates anyway.
      * What they take away is the ability to harvest the lot — one session would
      * otherwise reconstruct the whole festival's nominative planning, minors
      * included, in as many requests as there are animateurs.</p>
      *
      * <p>An id nobody bears answers 404 — like every other unknown entity of
-     * this codebase, and like an unknown jeton. It used to answer {@code 200 []},
+     * this codebase, and like an unknown token. It used to answer {@code 200 []},
      * which let anyone probe which ids exist.</p>
      *
      * <p>The other half of the narrowing — the foire must be open — is declared
-     * on the route itself, {@code @FoireOuverteRequise}.</p>
+     * on the route itself, {@code @FoireOpenRequired}.</p>
      */
-    public List<PosteAnimateurView> postesCollegue(String collegueId) {
+    public List<PosteAnimateurView> colleaguePostes(String collegueId) {
         boolean connu = referenceDataService.listAnimateurs().stream()
                 .anyMatch(candidat -> candidat.getId().equals(collegueId));
         if (!connu) {
             throw new NotFoundException("Animateur not found: " + collegueId);
         }
-        return postesDe(persistenceService.loadPersistedPlanning(), collegueId, Map.of());
+        return postesOf(persistenceService.loadPersistedPlanning(), collegueId, Map.of());
     }
 
     /** Resolves labels for a batch of demandes, in their given order. */
-    public List<DemandeEchangeView> versVues(List<DemandeEchange> demandes) {
+    public List<DemandeEchangeView> toViews(List<DemandeEchange> demandes) {
         Map<String, Animateur> animateurs = referenceDataService.listAnimateurs().stream()
                 .collect(Collectors.toMap(Animateur::getId, Function.identity()));
         Map<Long, Creneau> creneaux = referenceDataService.listCreneaux().stream()
@@ -170,11 +170,11 @@ public class EspaceAnimateurService {
         Map<String, Stand> stands = referenceDataService.listStands().stream()
                 .collect(Collectors.toMap(Stand::getId, Function.identity()));
         return demandes.stream()
-                .map(demande -> versVue(demande, animateurs, creneaux, stands))
+                .map(demande -> toView(demande, animateurs, creneaux, stands))
                 .toList();
     }
 
-    private static DemandeEchangeView versVue(DemandeEchange demande, Map<String, Animateur> animateurs,
+    private static DemandeEchangeView toView(DemandeEchange demande, Map<String, Animateur> animateurs,
             Map<Long, Creneau> creneaux, Map<String, Stand> stands) {
         Creneau creneau = creneaux.get(demande.getCreneauId());
         Stand stand = stands.get(demande.getStandId());

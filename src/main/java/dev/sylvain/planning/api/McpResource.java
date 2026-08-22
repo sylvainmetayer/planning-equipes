@@ -21,8 +21,8 @@ import jakarta.ws.rs.core.Response;
 
 /**
  * What the MCP page of the interface needs and the MCP transport itself
- * cannot tell it: whether this deployment has an API key at all, and — behind
- * a re-typed admin password — what that key is.
+ * cannot tell it: whether this deployment has an API cle at all, and — behind
+ * a re-typed admin password — what that cle is.
  *
  * <p>Served under {@code /api/mcp} (see {@code quarkus.rest.path}), which is a
  * different path from the {@code /mcp} transport and therefore falls under the
@@ -33,7 +33,7 @@ import jakarta.ws.rs.core.Response;
  * <p>The session alone already proves "an admin". Revealing a long-lived
  * shared secret that grants full write access to the referentials and the
  * solver deserves more than that: it is the one action where an unattended
- * open tab is materially worse than the rest of the interface, since the key
+ * open tab is materially worse than the rest of the interface, since the cle
  * outlives the session it was copied from. Re-typing the password binds the
  * reveal to a person present at the keyboard, which is exactly the threat
  * model — not an anonymous attacker, who never gets this far.</p>
@@ -83,8 +83,8 @@ public class McpResource {
     private Instant blocageJusqua;
 
     /**
-     * Whether a key is configured, and under which header it travels. Never
-     * the key itself: this is what lets the page warn "MCP inutilisable en
+     * Whether a cle is configured, and under which header it travels. Never
+     * the cle itself: this is what lets the page warn "MCP inutilisable en
      * l'état" instead of letting an operator configure a client that will
      * only ever get 401s.
      */
@@ -94,16 +94,16 @@ public class McpResource {
         return new StatutMcp(mcp.apiKey().isPresent() && !mcp.apiKey().get().isBlank(), mcp.apiKeyHeader());
     }
 
-    /** Exchanges the admin password for the API key. {@code 401} on a wrong password, {@code 429} once locked out. */
+    /** Exchanges the admin password for the API cle. {@code 401} on a wrong password, {@code 429} once locked out. */
     @POST
     @Path("/cle")
-    public synchronized Response reveler(DemandeRevelation demande) {
+    public synchronized Response reveal(DemandeRevelation demande) {
         if (blocageJusqua != null && Instant.now().isBefore(blocageJusqua)) {
             return Response.status(429).build();
         }
         String attendu = motDePasseAdmin.orElse("");
         String presente = demande == null || demande.motDePasse() == null ? "" : demande.motDePasse();
-        if (attendu.isBlank() || !egales(attendu, presente)) {
+        if (attendu.isBlank() || !equal(attendu, presente)) {
             if (++essaisRates >= MAX_ESSAIS) {
                 blocageJusqua = Instant.now().plus(DUREE_BLOCAGE);
                 essaisRates = 0;
@@ -114,16 +114,16 @@ public class McpResource {
         blocageJusqua = null;
         if (mcp.apiKey().isEmpty() || mcp.apiKey().get().isBlank()) {
             // Right password, nothing to reveal: 404 rather than an empty
-            // string, so the page can tell "clé absente" from "clé vide".
+            // string, so the page can tell "clé absente" from "clé hasNoChange".
             return Response.status(Response.Status.NOT_FOUND).build();
         }
-        return Response.ok(new CleMcp(mcp.apiKey().get(),
+        return Response.ok(new McpKey(mcp.apiKey().get(),
                 mcp.pangolin().accessTokenId().filter(v -> !v.isBlank()).orElse(null),
                 mcp.pangolin().accessToken().filter(v -> !v.isBlank()).orElse(null))).build();
     }
 
     /** Constant-time comparison: a wrong password must not leak its correct prefix through timing. */
-    private static boolean egales(String attendu, String presente) {
+    private static boolean equal(String attendu, String presente) {
         return MessageDigest.isEqual(attendu.getBytes(StandardCharsets.UTF_8),
                 presente.getBytes(StandardCharsets.UTF_8));
     }
@@ -138,6 +138,6 @@ public class McpResource {
      * @param pangolinAccessTokenId {@code null} unless {@code planning.mcp.pangolin.access-token-id} is set
      * @param pangolinAccessToken   {@code null} unless {@code planning.mcp.pangolin.access-token} is set
      */
-    public record CleMcp(String cle, String pangolinAccessTokenId, String pangolinAccessToken) {
+    public record McpKey(String cle, String pangolinAccessTokenId, String pangolinAccessToken) {
     }
 }

@@ -35,14 +35,14 @@ public class MailService {
     Mailer mailer;
 
     @Inject
-    AdresseAdministrateur adresseAdmin;
+    AdminAddress adminAddress;
 
     /**
      * Sends one animateur their individual planning: the PDF attached, the
      * espace link in the body.
      */
-    public void envoyerPlanningIndividuel(String emailAnimateur, String prenom, String lienEspace,
-            byte[] pdf, String nomFichier) {
+    public void sendIndividualPlanning(String emailAnimateur, String prenom, String lienEspace,
+            byte[] pdf, String fileName) {
         StringBuilder corps = new StringBuilder()
                 .append("Bonjour").append(prenom == null || prenom.isBlank() ? "" : " " + prenom).append(",\n\n")
                 .append("Vous trouverez en pièce jointe votre planning individuel pour le festival.\n");
@@ -52,11 +52,11 @@ public class MailService {
         }
         corps.append("\nÀ bientôt,\nL'équipe d'organisation\n");
         mailer.send(Mail.withText(emailAnimateur, "Planning Équipes — votre planning individuel", corps.toString())
-                .addAttachment(nomFichier, pdf, "application/pdf"));
+                .addAttachment(fileName, pdf, "application/pdf"));
     }
 
     /** Sends the espace access code — the second factor of the espace animateur. */
-    public void envoyerCodeAcces(String emailAnimateur, String prenom, String code) {
+    public void sendAccessCode(String emailAnimateur, String prenom, String code) {
         String corps = "Bonjour" + (prenom == null || prenom.isBlank() ? "" : " " + prenom) + ",\n\n"
                 + "Voici votre code d'accès à votre espace animateur : " + code + "\n\n"
                 + "Il est valable 10 minutes. Si vous n'êtes pas à l'origine de cette demande, "
@@ -69,8 +69,8 @@ public class MailService {
      * button is to surface a broken SMTP setup, so this propagates like the
      * two above.
      */
-    public String envoyerMailTest() {
-        String destinataire = adresseAdmin.resolue()
+    public String sendTestMail() {
+        String destinataire = adminAddress.resolue()
                 .orElseThrow(() -> new IllegalStateException(
                         "Aucune adresse e-mail administrateur configurée (MAIL_ADMIN)."));
         mailer.send(Mail.withText(destinataire,

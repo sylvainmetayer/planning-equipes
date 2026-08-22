@@ -23,24 +23,24 @@ class McpEditionsTest {
 
     @Test
     void aucuneEditionDemandeeLaisseLappelDansLeditionCourante() {
-        assertThat(editions.resoudre(null)).isNull();
-        assertThat(editions.resoudre("   ")).isNull();
+        assertThat(editions.solve(null)).isNull();
+        assertThat(editions.solve("   ")).isNull();
     }
 
     @Test
     void unIdEstReconnuQuelleQueSoitLaCasseEtLesEspaces() {
-        assertThat(editions.resoudre("2026-canicule")).isEqualTo("2026-canicule");
-        assertThat(editions.resoudre("  2026-CANICULE ")).isEqualTo("2026-canicule");
+        assertThat(editions.solve("2026-canicule")).isEqualTo("2026-canicule");
+        assertThat(editions.solve("  2026-CANICULE ")).isEqualTo("2026-canicule");
     }
 
     @Test
     void unNomEstAccepteAussi() {
-        assertThat(editions.resoudre("Plan canicule")).isEqualTo("2026-canicule");
+        assertThat(editions.solve("Plan canicule")).isEqualTo("2026-canicule");
     }
 
     @Test
     void uneEditionInconnueEchoueEtEnumereCeQuiExiste() {
-        assertThatThrownBy(() -> editions.resoudre("Année 2042"))
+        assertThatThrownBy(() -> editions.solve("Année 2042"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Édition inconnue")
                 .hasMessageContaining("2026 (Année 2026)")
@@ -53,7 +53,7 @@ class McpEditionsTest {
                 new Edition("a", "Année 2026", true, null),
                 new Edition("b", "Année 2026", false, null));
 
-        assertThatThrownBy(() -> homonymes.resoudre("Année 2026"))
+        assertThatThrownBy(() -> homonymes.solve("Année 2026"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Plusieurs éditions")
                 .hasMessageContaining("a, b");
@@ -65,7 +65,7 @@ class McpEditionsTest {
                 new Edition("2026", "Plan canicule", false, null),
                 new Edition("canicule", "2026", true, null));
 
-        assertThat(ambigu.resoudre("2026")).isEqualTo("2026");
+        assertThat(ambigu.solve("2026")).isEqualTo("2026");
     }
 
     private static McpEditions editions(Edition... connues) {

@@ -74,15 +74,15 @@ class EspaceAccesTest {
     /** The whole espace — downloads included — answers 401 without a session. */
     @Test
     void sansSessionToutLEspaceRepond401() {
-        String jeton = jetonDe("ACCES-A");
-        given().when().get("/api/espace-animateur/" + jeton)
+        String token = tokenOf("ACCES-A");
+        given().when().get("/api/espace-animateur/" + token)
                 .then().statusCode(401)
                 .body("message", containsString("code d'accès"));
-        given().when().get("/api/espace-animateur/" + jeton + "/demandes")
+        given().when().get("/api/espace-animateur/" + token + "/demandes")
                 .then().statusCode(401);
-        given().when().get("/api/espace-animateur/" + jeton + "/planning.pdf")
+        given().when().get("/api/espace-animateur/" + token + "/planning.pdf")
                 .then().statusCode(401);
-        given().when().get("/api/espace-animateur/" + jeton + "/planning.ics")
+        given().when().get("/api/espace-animateur/" + token + "/planning.ics")
                 .then().statusCode(401);
         // An unknown token stays a plain 404: nothing must help guessing one.
         given().when().get("/api/espace-animateur/jeton-invente")
@@ -91,24 +91,24 @@ class EspaceAccesTest {
 
     @Test
     void leCodeRecuParEmailOuvreUneSessionDurable() {
-        String jeton = jetonDe("ACCES-A");
-        String session = EspaceSessions.ouvrir(mailbox, jeton, EMAIL_ALICE);
+        String token = tokenOf("ACCES-A");
+        String session = EspaceSessions.open(mailbox, token, EMAIL_ALICE);
 
         given().cookie("planning-espace", session)
-                .when().get("/api/espace-animateur/" + jeton)
+                .when().get("/api/espace-animateur/" + token)
                 .then().statusCode(200)
                 .body("animateurId", equalTo("ACCES-A"));
         given().cookie("planning-espace", session)
-                .when().get("/api/espace-animateur/" + jeton + "/planning.pdf")
+                .when().get("/api/espace-animateur/" + token + "/planning.pdf")
                 .then().statusCode(200);
     }
 
     /** The session is bound to ONE animateur: it does not open a colleague's espace. */
     @Test
     void laSessionDUnAnimateurNOuvrePasLEspaceDUnAutre() {
-        String session = EspaceSessions.ouvrir(mailbox, jetonDe("ACCES-A"), EMAIL_ALICE);
+        String session = EspaceSessions.open(mailbox, tokenOf("ACCES-A"), EMAIL_ALICE);
         given().cookie("planning-espace", session)
-                .when().get("/api/espace-animateur/" + jetonDe("ACCES-B"))
+                .when().get("/api/espace-animateur/" + tokenOf("ACCES-B"))
                 .then().statusCode(401);
     }
 
@@ -121,11 +121,11 @@ class EspaceAccesTest {
      */
     @Test
     void leCookieDeSessionPorteSecureQuandLaVisiteEstEnHttps() {
-        String jeton = jetonDe("ACCES-A");
+        String token = tokenOf("ACCES-A");
         String setCookie = given().contentType(ContentType.JSON)
                 .header("X-Forwarded-Proto", "https")
-                .body("{\"code\":\"" + codeEnvoye(jeton) + "\"}")
-                .when().post("/api/espace-animateur/" + jeton + "/session")
+                .body("{\"code\":\"" + codeEnvoye(token) + "\"}")
+                .when().post("/api/espace-animateur/" + token + "/session")
                 .then().statusCode(204)
                 .extract().header("Set-Cookie");
         assertThat(setCookie)
@@ -137,10 +137,10 @@ class EspaceAccesTest {
     /** On the local http stack the flag is absent — otherwise the browser would drop the cookie. */
     @Test
     void leCookieDeSessionResteUtilisableSurUneVisiteEnClair() {
-        String jeton = jetonDe("ACCES-A");
+        String token = tokenOf("ACCES-A");
         String setCookie = given().contentType(ContentType.JSON)
-                .body("{\"code\":\"" + codeEnvoye(jeton) + "\"}")
-                .when().post("/api/espace-animateur/" + jeton + "/session")
+                .body("{\"code\":\"" + codeEnvoye(token) + "\"}")
+                .when().post("/api/espace-animateur/" + token + "/session")
                 .then().statusCode(204)
                 .extract().header("Set-Cookie");
         assertThat(setCookie).doesNotContain("Secure");
@@ -149,36 +149,36 @@ class EspaceAccesTest {
     @Test
     void sansAdresseEmailAucunCodeNEstPossible() {
         given().contentType(ContentType.JSON)
-                .when().post("/api/espace-animateur/" + jetonDe("ACCES-B") + "/code")
+                .when().post("/api/espace-animateur/" + tokenOf("ACCES-B") + "/code")
                 .then().statusCode(400)
                 .body("message", containsString("Aucune adresse e-mail"));
     }
 
     @Test
     void unMauvaisCodeEpuiseSesTentativesPuisExigeUnNouveauCode() {
-        String jeton = jetonDe("ACCES-A");
+        String token = tokenOf("ACCES-A");
         given().contentType(ContentType.JSON)
-                .when().post("/api/espace-animateur/" + jeton + "/code")
+                .when().post("/api/espace-animateur/" + token + "/code")
                 .then().statusCode(200)
                 .body("emailMasque", equalTo("a•••@example.org"));
 
         for (int tentative = 0; tentative < 5; tentative++) {
             given().contentType(ContentType.JSON).body("{\"code\":\"000000\"}")
-                    .when().post("/api/espace-animateur/" + jeton + "/session")
+                    .when().post("/api/espace-animateur/" + token + "/session")
                     .then().statusCode(400)
                     .body("message", containsString("Code incorrect"));
         }
         given().contentType(ContentType.JSON).body("{\"code\":\"000000\"}")
-                .when().post("/api/espace-animateur/" + jeton + "/session")
+                .when().post("/api/espace-animateur/" + token + "/session")
                 .then().statusCode(400)
                 .body("message", containsString("nouveau code"));
     }
 
     @Test
     void unCodeExpireEstRefuse() throws Exception {
-        String jeton = jetonDe("ACCES-A");
+        String token = tokenOf("ACCES-A");
         given().contentType(ContentType.JSON)
-                .when().post("/api/espace-animateur/" + jeton + "/code")
+                .when().post("/api/espace-animateur/" + token + "/code")
                 .then().statusCode(200);
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement(
@@ -188,15 +188,15 @@ class EspaceAccesTest {
         }
         // Whatever the code was, an expired one must be refused unread.
         given().contentType(ContentType.JSON).body("{\"code\":\"123456\"}")
-                .when().post("/api/espace-animateur/" + jeton + "/session")
+                .when().post("/api/espace-animateur/" + token + "/session")
                 .then().statusCode(400)
                 .body("message", containsString("nouveau code"));
     }
 
     /** Asks for a code and reads it back from the mock mailbox, as the animateur would. */
-    private String codeEnvoye(String jeton) {
+    private String codeEnvoye(String token) {
         given().contentType(ContentType.JSON)
-                .when().post("/api/espace-animateur/" + jeton + "/code")
+                .when().post("/api/espace-animateur/" + token + "/code")
                 .then().statusCode(200);
         List<Mail> mails = mailbox.getMailsSentTo(EMAIL_ALICE);
         assertThat(mails).isNotEmpty();
@@ -214,7 +214,7 @@ class EspaceAccesTest {
         referenceData.updateAnimateur(animateurId, animateur);
     }
 
-    private String jetonDe(String animateurId) {
+    private String tokenOf(String animateurId) {
         return referenceData.listAnimateurs().stream()
                 .filter(candidat -> candidat.getId().equals(animateurId))
                 .findFirst()

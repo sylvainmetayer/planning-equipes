@@ -1,6 +1,6 @@
 package dev.sylvain.planning.mcp;
 
-import dev.sylvain.planning.service.RemoteUserAuthentification;
+import dev.sylvain.planning.service.RemoteUserAuthentication;
 import io.quarkus.security.identity.AuthenticationRequestContext;
 import io.quarkus.security.identity.IdentityProvider;
 import io.quarkus.security.identity.SecurityIdentity;
@@ -45,7 +45,7 @@ public class McpApiKeyIdentityProvider implements IdentityProvider<TrustedAuthen
     public Uni<SecurityIdentity> authenticate(TrustedAuthenticationRequest request, AuthenticationRequestContext context) {
         QuarkusSecurityIdentity.Builder identite = QuarkusSecurityIdentity.builder()
                 .setPrincipal(new QuarkusPrincipal(request.getPrincipal()));
-        if (RemoteUserAuthentification.PRINCIPAL_ADMIN.equals(request.getPrincipal())) {
+        if (RemoteUserAuthentication.PRINCIPAL_ADMIN.equals(request.getPrincipal())) {
             identite.addRole(ROLE_ADMIN);
         }
         return Uni.createFrom().item(identite.build());

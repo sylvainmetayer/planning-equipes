@@ -63,7 +63,7 @@ public class Emplacement {
      * no coordinates, so callers can tell "unknown distance" apart from "zero
      * distance" instead of silently treating a missing GPS fix as co-located.
      */
-    public Double distanceMetresVers(Emplacement autre) {
+    public Double distanceMetresTo(Emplacement autre) {
         if (autre == null || latitude == null || longitude == null
                 || autre.latitude == null || autre.longitude == null) {
             return null;

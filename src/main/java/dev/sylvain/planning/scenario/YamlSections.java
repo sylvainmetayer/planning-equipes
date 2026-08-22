@@ -28,34 +28,34 @@ public final class YamlSections {
 
     /** A nested mapping, e.g. {@code parametresLegaux:}. */
     @SuppressWarnings("unchecked") // SnakeYAML returns Object; see the class javadoc
-    public static Map<String, Object> objet(Map<String, Object> parent, String cle) {
-        Object valeur = parent.get(cle);
+    public static Map<String, Object> objet(Map<String, Object> parent, String key) {
+        Object valeur = parent.get(key);
         if (valeur == null) {
             return null;
         }
-        exigerType(valeur, Map.class, cle, "un bloc de champs");
+        requireType(valeur, Map.class, key, "un bloc de champs");
         return (Map<String, Object>) valeur;
     }
 
     /** A list of mappings, e.g. {@code stands:} or {@code horaires:}. */
     @SuppressWarnings("unchecked") // SnakeYAML returns Object; see the class javadoc
-    public static List<Map<String, Object>> objets(Map<String, Object> parent, String cle) {
-        Object valeur = parent.get(cle);
+    public static List<Map<String, Object>> objets(Map<String, Object> parent, String key) {
+        Object valeur = parent.get(key);
         if (valeur == null) {
             return null;
         }
-        exigerType(valeur, List.class, cle, "une liste");
+        requireType(valeur, List.class, key, "une liste");
         return (List<Map<String, Object>>) valeur;
     }
 
     /** A list of text scalars, e.g. {@code typologiesProposees:}. */
     @SuppressWarnings("unchecked") // SnakeYAML returns Object; see the class javadoc
-    public static List<String> chaines(Map<String, Object> parent, String cle) {
-        Object valeur = parent.get(cle);
+    public static List<String> chaines(Map<String, Object> parent, String key) {
+        Object valeur = parent.get(key);
         if (valeur == null) {
             return null;
         }
-        exigerType(valeur, List.class, cle, "une liste");
+        requireType(valeur, List.class, key, "une liste");
         return (List<String>) valeur;
     }
 
@@ -65,12 +65,12 @@ public final class YamlSections {
      * {@code java.util.Date}, typologie ids, … The caller narrows each element.
      */
     @SuppressWarnings("unchecked") // SnakeYAML returns Object; see the class javadoc
-    public static List<Object> valeurs(Map<String, Object> parent, String cle) {
-        Object valeur = parent.get(cle);
+    public static List<Object> valeurs(Map<String, Object> parent, String key) {
+        Object valeur = parent.get(key);
         if (valeur == null) {
             return null;
         }
-        exigerType(valeur, List.class, cle, "une liste");
+        requireType(valeur, List.class, key, "une liste");
         return (List<Object>) valeur;
     }
 
@@ -80,10 +80,10 @@ public final class YamlSections {
      * somewhere down the parsing, whose message names two Java classes and not
      * the line the author has to fix.
      */
-    private static void exigerType(Object valeur, Class<?> attendu, String cle, String forme) {
+    private static void requireType(Object valeur, Class<?> attendu, String key, String forme) {
         if (!attendu.isInstance(valeur)) {
             throw new IllegalArgumentException(
-                    "La section « " + cle + " » doit être " + forme + " dans le fichier de scénario.");
+                    "La section « " + key + " » doit être " + forme + " dans le fichier de scénario.");
         }
     }
 }

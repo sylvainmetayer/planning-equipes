@@ -25,7 +25,7 @@ final class OutilsMcp {
     private OutilsMcp() {
     }
 
-    static List<Method> tous() throws IOException, URISyntaxException {
+    static List<Method> all() throws IOException, URISyntaxException {
         File dossier = new File(OutilsMcp.class.getProtectionDomain()
                 .getCodeSource().getLocation().toURI())
                 .getParentFile() // target/test-classes -> target
@@ -35,9 +35,9 @@ final class OutilsMcp {
         assertThat(dossier).as("classes compilées du package mcp").isDirectory();
 
         List<Method> outils = new ArrayList<>();
-        for (File fichier : dossier.listFiles((dir, name) -> name.endsWith(".class"))) {
+        for (File file : dossier.listFiles((dir, name) -> name.endsWith(".class"))) {
             String nomClasse = OutilsMcp.class.getPackageName() + "."
-                    + fichier.getName().substring(0, fichier.getName().length() - ".class".length());
+                    + file.getName().substring(0, file.getName().length() - ".class".length());
             Class<?> classe;
             try {
                 classe = Class.forName(nomClasse);

@@ -29,17 +29,17 @@ import jakarta.inject.Inject;
  * global summary, the calendar — and the ZIPs that hand them out.
  *
  * <p>It assembles no document itself. Every format has its own class
- * ({@link PlanningPdfAnimateur}, {@link PlanningPdfGlobal},
+ * ({@link AnimateurPlanningPdf}, {@link GlobalPlanningPdf},
  * {@link PlanningIcs}) and their shared visual identity lives in
- * {@link ChartePdf}. What is left here is what holds for all three: who is
+ * {@link PdfTheme}. What is left here is what holds for all three: who is
  * concerned, how they are named, their days off, the link to their espace.</p>
  */
 @ApplicationScoped
 public class PlanningExportService {
 
-    private final LiensApplication liens;
-    private final PlanningPdfAnimateur pdfAnimateur;
-    private final PlanningPdfGlobal pdfGlobal;
+    private final ApplicationLinks liens;
+    private final AnimateurPlanningPdf pdfAnimateur;
+    private final GlobalPlanningPdf pdfGlobal;
     private final PlanningIcs ics;
 
     /**
@@ -48,8 +48,8 @@ public class PlanningExportService {
      * {@code liens == null} is written for it in production code any more.
      */
     @Inject
-    public PlanningExportService(LiensApplication liens, PlanningPdfAnimateur pdfAnimateur,
-            PlanningPdfGlobal pdfGlobal, PlanningIcs ics) {
+    public PlanningExportService(ApplicationLinks liens, AnimateurPlanningPdf pdfAnimateur,
+            GlobalPlanningPdf pdfGlobal, PlanningIcs ics) {
         this.liens = liens;
         this.pdfAnimateur = pdfAnimateur;
         this.pdfGlobal = pdfGlobal;
@@ -59,10 +59,10 @@ public class PlanningExportService {
     public byte[] exportAnimateurPdf(PlanningFestival planning, String animateurId) {
         List<PosteAffectation> animateurPostes = planning.getPostes().stream()
                 .filter(poste -> poste.getAnimateur() != null && animateurId.equals(poste.getAnimateur().getId()))
-                .sorted(parCreneauPuisStand())
+                .sorted(byCreneauThenStand())
                 .toList();
         return pdfAnimateur.construire(resolveAnimateurName(planning, animateurId), animateurPostes,
-                coequipiersParPoste(planning, animateurId), joursDeRepos(planning, animateurId),
+                teammatesByPoste(planning, animateurId), daysOff(planning, animateurId),
                 lienEspaceAnimateur(planning, animateurId));
     }
 
@@ -80,7 +80,7 @@ public class PlanningExportService {
      * no seat at all: someone absent from the plan is not "resting every
      * day", and their exports keep the plain empty state.
      */
-    public static List<JourRepos> joursDeRepos(PlanningFestival planning, String animateurId) {
+    public static List<JourRepos> daysOff(PlanningFestival planning, String animateurId) {
         Map<LocalDate, Integer> joursFestival = new TreeMap<>();
         Set<LocalDate> joursTravailles = new HashSet<>();
         for (PosteAffectation poste : planning.getPostes()) {
@@ -119,7 +119,7 @@ public class PlanningExportService {
                 // Before findFirst, not after: Stream.findFirst throws on a null
                 // element, and an animateur who never opened their espace has no
                 // token — the common case on a freshly imported plan.
-                .filter(jeton -> jeton != null && !jeton.isBlank())
+                .filter(token -> token != null && !token.isBlank())
                 .findFirst()
                 .flatMap(liens::espaceAnimateur)
                 .orElse(null);
@@ -139,7 +139,7 @@ public class PlanningExportService {
      * <p>Package-private so the rule is unit-tested on plain objects rather
      * than through the bytes of a generated PDF.</p>
      */
-    static Map<String, List<String>> coequipiersParPoste(PlanningFestival planning, String animateurId) {
+    static Map<String, List<String>> teammatesByPoste(PlanningFestival planning, String animateurId) {
         Map<String, List<String>> equipeParLigne = new LinkedHashMap<>();
         for (PosteAffectation poste : planning.getPostes()) {
             if (poste.getAnimateur() == null || poste.getCreneau() == null || poste.getStand() == null) {
@@ -167,7 +167,7 @@ public class PlanningExportService {
                 + poste.heureFinEffectif();
     }
 
-    /** The whole planning in one landscape PDF, for the organiser — see {@link PlanningPdfGlobal}. */
+    /** The whole planning in one landscape PDF, for the organiser — see {@link GlobalPlanningPdf}. */
     public byte[] exportGlobalPdf(PlanningFestival planning) {
         return pdfGlobal.construire(planning);
     }
@@ -241,7 +241,7 @@ public class PlanningExportService {
      * mail and the animateur who downloads it from their espace must read the
      * same name.
      */
-    public static String nomFichierPlanning(String nomAffiche, String extension) {
+    public static String planningFileName(String nomAffiche, String extension) {
         String sansAccroc = nomAffiche.replaceAll("[^\\p{L}\\p{N}]+", "-").replaceAll("^-+|-+$", "");
         return "planning-" + (sansAccroc.isEmpty() ? "animateur" : sansAccroc) + "." + extension;
     }
@@ -255,7 +255,7 @@ public class PlanningExportService {
     }
 
     /** Chronological, then by stand — the order an animateur reads their day in. */
-    static Comparator<PosteAffectation> parCreneauPuisStand() {
+    static Comparator<PosteAffectation> byCreneauThenStand() {
         return Comparator
                 .comparing((PosteAffectation poste) -> poste.getCreneau().getDate())
                 .thenComparing(poste -> poste.getCreneau().getHeureDebut())

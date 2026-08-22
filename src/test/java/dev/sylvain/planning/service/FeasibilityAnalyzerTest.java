@@ -31,7 +31,7 @@ class FeasibilityAnalyzerTest {
         Animateur a2 = animateur("a2", "STRATEGIE");
         Animateur a3 = animateur("a3", "STRATEGIE");
 
-        FeasibilityReport report = analyzer.analyser(List.of(a1, a2, a3), List.of(stand), List.of(creneau));
+        FeasibilityReport report = analyzer.analyze(List.of(a1, a2, a3), List.of(stand), List.of(creneau));
 
         assertThat(report.feasible()).isTrue();
         assertThat(report.manqueAnimateurs()).isZero();
@@ -46,7 +46,7 @@ class FeasibilityAnalyzerTest {
         Animateur a1 = animateur("a1", "STRATEGIE");
         Animateur a2 = animateur("a2", "STRATEGIE");
 
-        FeasibilityReport report = analyzer.analyser(List.of(a1, a2), List.of(stand), List.of(creneau));
+        FeasibilityReport report = analyzer.analyze(List.of(a1, a2), List.of(stand), List.of(creneau));
 
         assertThat(report.feasible()).isFalse();
         assertThat(report.manqueAnimateurs()).isEqualTo(3);
@@ -82,7 +82,7 @@ class FeasibilityAnalyzerTest {
         // for 3 seats (1 missing). Both timeslots must show up, the most
         // critical one first.
 
-        FeasibilityReport report = analyzer.analyser(List.of(a1, a2), List.of(stand),
+        FeasibilityReport report = analyzer.analyze(List.of(a1, a2), List.of(stand),
                 List.of(creneauDimanche, creneauSamedi));
 
         assertThat(report.feasible()).isFalse();
@@ -104,7 +104,7 @@ class FeasibilityAnalyzerTest {
         Animateur a1 = animateur("a1", "STRATEGIE");
         a1.setJoursIndisponibles(Set.of(samedi));
 
-        FeasibilityReport report = analyzer.analyser(List.of(a1), List.of(stand),
+        FeasibilityReport report = analyzer.analyze(List.of(a1), List.of(stand),
                 List.of(creneauSamedi, creneauDimanche));
 
         // Saturday: nobody, so missing (2) >= demand (2) -> CRITIQUE, and at the
@@ -127,7 +127,7 @@ class FeasibilityAnalyzerTest {
         Animateur a1 = animateur("a1", "STRATEGIE");
         Animateur a2 = animateur("a2", "STRATEGIE");
 
-        FeasibilityReport report = analyzer.analyser(List.of(a1, a2), List.of(couvert, orphelin), List.of(creneau));
+        FeasibilityReport report = analyzer.analyze(List.of(a1, a2), List.of(couvert, orphelin), List.of(creneau));
 
         assertThat(report.feasible()).isTrue();
         assertThat(report.totalCauses()).isZero();
@@ -147,7 +147,7 @@ class FeasibilityAnalyzerTest {
         Animateur absent = animateur("a1", "STRATEGIE");
         absent.setJoursIndisponibles(jours);
 
-        FeasibilityReport report = analyzer.analyser(List.of(absent), List.of(stand), creneaux);
+        FeasibilityReport report = analyzer.analyze(List.of(absent), List.of(stand), creneaux);
 
         assertThat(report.totalCauses()).isEqualTo(14);
         assertThat(report.causes()).hasSize(10);
@@ -163,7 +163,7 @@ class FeasibilityAnalyzerTest {
         Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
         Animateur incompetent = animateur("a2", "ADRESSE");
 
-        FeasibilityReport report = analyzer.analyser(List.of(incompetent), List.of(stand), List.of(creneau));
+        FeasibilityReport report = analyzer.analyze(List.of(incompetent), List.of(stand), List.of(creneau));
 
         assertThat(report.feasible()).isTrue();
         assertThat(report.manqueAnimateurs()).isZero();
@@ -173,13 +173,13 @@ class FeasibilityAnalyzerTest {
     void standFermeSurUnCreneauNeComptePasDansLaDemande() {
         // The stand requires 3 seats but is closed (an indisponibilite covering
         // the whole timeslot): no seat is generated, hence no demand (see
-        // PlanningService.construirePostes).
+        // PlanningService.buildPostes).
         Stand stand = stand("stand-1", 3, "STRATEGIE");
         Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
         stand.setIndisponibilites(List.of(
                 new IndisponibiliteStand(null, creneau.getDate(), creneau.getHeureDebut(), creneau.getHeureFin(), null)));
 
-        FeasibilityReport report = analyzer.analyser(List.of(animateur("a1", "STRATEGIE")),
+        FeasibilityReport report = analyzer.analyze(List.of(animateur("a1", "STRATEGIE")),
                 List.of(stand), List.of(creneau));
 
         assertThat(report.feasible()).isTrue();
@@ -194,7 +194,7 @@ class FeasibilityAnalyzerTest {
         Stand stand = new Stand("stand-1", "stand-1", Set.of("STRATEGIE"), 2, 4, false);
         Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
 
-        FeasibilityReport report = analyzer.analyser(
+        FeasibilityReport report = analyzer.analyze(
                 List.of(animateur("a1", "STRATEGIE"), animateur("a2", "STRATEGIE")),
                 List.of(stand), List.of(creneau));
 
@@ -204,7 +204,7 @@ class FeasibilityAnalyzerTest {
 
     @Test
     void emptyInputsAreFeasibleByDefault() {
-        FeasibilityReport report = analyzer.analyser(List.of(), List.of(), List.of());
+        FeasibilityReport report = analyzer.analyze(List.of(), List.of(), List.of());
 
         assertThat(report.feasible()).isTrue();
         assertThat(report.manqueAnimateurs()).isZero();
@@ -214,7 +214,7 @@ class FeasibilityAnalyzerTest {
 
     /**
      * {@code effectifMin} drives the demand: it is the number of seats
-     * {@code PlanningService.construirePostes} actually generates. {@code
+     * {@code PlanningService.buildPostes} actually generates. {@code
      * effectifMax} is deliberately set higher so a regression back to counting
      * it would change the expected shortfalls.
      */

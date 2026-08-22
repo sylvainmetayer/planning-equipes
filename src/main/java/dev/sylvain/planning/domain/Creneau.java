@@ -31,9 +31,9 @@ public class Creneau {
     /**
      * True when this slot is the short vacation covering a stand's internal
      * meal pause, generated under
-     * {@link ParametresDecoupage.StrategieCouverturePendantPause#EFFECTIF_REDUIT}.
+     * {@link ParametresDecoupage.PauseCoverageStrategy#EFFECTIF_REDUIT}.
      * Poste generation then staffs it at half the stand's usual headcount
-     * (see {@code PlanningService#construirePostes}).
+     * (see {@code PlanningService#buildPostes}).
      *
      * <p>Always {@code false} under the two other strategies — {@code RELEVE}
      * covers the pause at full headcount and {@code FERMETURE} generates no
@@ -161,7 +161,7 @@ public class Creneau {
      * midnight inside such a slot (e.g. a 20:00-02:00 slot closed 00:30-01:30
      * on the next day), mirroring how {@link #getDureeMinutes()} itself treats
      * a slot ending at or before its start as crossing into the next day. A
-     * window that isn't {@code estValide()} (own {@code heureFin} before or
+     * window that isn't {@code hasValidRange()} (own {@code heureFin} before or
      * equal to its {@code heureDebut}) is ignored defensively — a window may
      * not itself cross midnight. A window with a {@code null}
      * {@code heureFin} runs to the end of this slot: that is what "open from
@@ -179,15 +179,15 @@ public class Creneau {
             return List.of();
         }
         int dureeSecondes = dureeMinutes * 60;
-        if (jourEnModeOuverture(stand)) {
+        if (dayInOuvertureMode(stand)) {
             // The day has at least one OuvertureStand: closed-by-default. This
             // slot's open segments are exactly whichever of that day's opening
             // windows overlap it — possibly none at all, i.e. this slot is
             // fully closed even though the stand does open elsewhere that day.
-            List<int[]> ouverturesSecondes = ouverturesEnSecondes(stand, dureeSecondes);
-            return ouverturesSecondes.isEmpty() ? List.of() : fusionnerSegments(ouverturesSecondes);
+            List<int[]> ouverturesSecondes = ouverturesInSeconds(stand, dureeSecondes);
+            return ouverturesSecondes.isEmpty() ? List.of() : mergeSegments(ouverturesSecondes);
         }
-        List<int[]> fermeturesSecondes = fermeturesEnSecondes(stand, dureeSecondes);
+        List<int[]> fermeturesSecondes = closingsInSeconds(stand, dureeSecondes);
         if (fermeturesSecondes.isEmpty()) {
             return List.of(new int[] {0, dureeMinutes});
         }
@@ -208,14 +208,14 @@ public class Creneau {
     }
 
     /** Closure windows of {@code stand} overlapping this slot, clamped to {@code [0, dureeSecondes]} and expressed in seconds since this slot's start. */
-    private List<int[]> fermeturesEnSecondes(Stand stand, int dureeSecondes) {
+    private List<int[]> closingsInSeconds(Stand stand, int dureeSecondes) {
         if (stand == null || stand.getIndisponibilitesEffectives().isEmpty() || heureDebut == null || date == null) {
             return List.of();
         }
         int debutSlotSecondes = heureDebut.toSecondOfDay();
         List<int[]> fermetures = new ArrayList<>();
         for (IndisponibiliteStand indispo : stand.getIndisponibilitesEffectives()) {
-            if (!indispo.estValide()) {
+            if (!indispo.hasValidRange()) {
                 continue;
             }
             int decalageJour = decalageJourFenetre(indispo.getDate());
@@ -224,7 +224,7 @@ public class Creneau {
             }
             int indispoDebut = decalageJour + indispo.getHeureDebut().toSecondOfDay() - debutSlotSecondes;
             int debut = Math.max(0, indispoDebut);
-            int fin = finFenetreEnSecondes(indispo.getHeureFin(), decalageJour, debutSlotSecondes, dureeSecondes);
+            int fin = fenetreEndInSeconds(indispo.getHeureFin(), decalageJour, debutSlotSecondes, dureeSecondes);
             if (fin > debut) {
                 fermetures.add(new int[] {debut, fin});
             }
@@ -254,7 +254,7 @@ public class Creneau {
      * {@code null} {@code heureFin} means "until closing time" and therefore
      * lands exactly on this slot's end, whatever hour that is.
      */
-    private static int finFenetreEnSecondes(LocalTime heureFin, int decalageJour, int debutSlotSecondes,
+    private static int fenetreEndInSeconds(LocalTime heureFin, int decalageJour, int debutSlotSecondes,
             int dureeSecondes) {
         if (heureFin == null) {
             return dureeSecondes;
@@ -271,7 +271,7 @@ public class Creneau {
      * True when {@code stand} has at least one valid {@link OuvertureStand}
      * bearing on this slot's day — regardless of whether its time window
      * actually overlaps this slot. Deciding "closed-by-default" mode on this
-     * alone (rather than on whether {@link #ouverturesEnSecondes} came back
+     * alone (rather than on whether {@link #ouverturesInSeconds} came back
      * non-empty) is what makes a slot that happens to fall entirely outside
      * every opening window that day come out fully closed, instead of wrongly
      * falling back to open-by-default.
@@ -285,12 +285,12 @@ public class Creneau {
      * for two hours only. Harmless while openings were rare and hand-dated; not
      * once a rule expands one onto every festival day.</p>
      */
-    private boolean jourEnModeOuverture(Stand stand) {
+    private boolean dayInOuvertureMode(Stand stand) {
         if (stand == null || stand.getOuverturesEffectives().isEmpty() || date == null) {
             return false;
         }
         for (OuvertureStand ouverture : stand.getOuverturesEffectives()) {
-            if (ouverture.estValide() && decalageJourFenetre(ouverture.getDate()) >= 0) {
+            if (ouverture.hasValidRange() && decalageJourFenetre(ouverture.getDate()) >= 0) {
                 return true;
             }
         }
@@ -298,14 +298,14 @@ public class Creneau {
     }
 
     /** Opening windows of {@code stand} overlapping this slot, clamped to {@code [0, dureeSecondes]} and expressed in seconds since this slot's start. */
-    private List<int[]> ouverturesEnSecondes(Stand stand, int dureeSecondes) {
+    private List<int[]> ouverturesInSeconds(Stand stand, int dureeSecondes) {
         if (stand == null || stand.getOuverturesEffectives().isEmpty() || heureDebut == null || date == null) {
             return List.of();
         }
         int debutSlotSecondes = heureDebut.toSecondOfDay();
         List<int[]> ouvertures = new ArrayList<>();
         for (OuvertureStand ouverture : stand.getOuverturesEffectives()) {
-            if (!ouverture.estValide()) {
+            if (!ouverture.hasValidRange()) {
                 continue;
             }
             int decalageJour = decalageJourFenetre(ouverture.getDate());
@@ -314,7 +314,7 @@ public class Creneau {
             }
             int ouvertureDebut = decalageJour + ouverture.getHeureDebut().toSecondOfDay() - debutSlotSecondes;
             int debut = Math.max(0, ouvertureDebut);
-            int fin = finFenetreEnSecondes(ouverture.getHeureFin(), decalageJour, debutSlotSecondes, dureeSecondes);
+            int fin = fenetreEndInSeconds(ouverture.getHeureFin(), decalageJour, debutSlotSecondes, dureeSecondes);
             if (fin > debut) {
                 ouvertures.add(new int[] {debut, fin});
             }
@@ -323,7 +323,7 @@ public class Creneau {
     }
 
     /** Merges overlapping/touching second-granularity windows and converts their boundaries to minutes. */
-    private static List<int[]> fusionnerSegments(List<int[]> segmentsSecondes) {
+    private static List<int[]> mergeSegments(List<int[]> segmentsSecondes) {
         segmentsSecondes.sort(Comparator.comparingInt(s -> s[0]));
         List<int[]> fusionnes = new ArrayList<>();
         for (int[] segment : segmentsSecondes) {
@@ -342,12 +342,12 @@ public class Creneau {
     }
 
     /** True when at least part of this slot is open for {@code stand} (open-by-default). */
-    public boolean estStandOuvert(Stand stand) {
+    public boolean isStandOpen(Stand stand) {
         return !segmentsOuvertsMinutes(stand).isEmpty();
     }
 
     /** True when {@code stand} is closed for this slot's entire duration. */
-    public boolean estStandFermeIntegralement(Stand stand) {
+    public boolean isStandFullyClosed(Stand stand) {
         return getDureeMinutes() > 0 && segmentsOuvertsMinutes(stand).isEmpty();
     }
 
@@ -368,7 +368,7 @@ public class Creneau {
     /**
      * ISO calendar week (e.g. {@code "2026-W28"}) the slot's {@link #date}
      * falls in. Used to group worked minutes per animateur and week, both for
-     * reporting ({@code HeuresPlanningService}) and for the weekly max
+     * reporting ({@code PlanningHoursService}) and for the weekly max
      * working-time hard constraints (art. L3121-20 for adults, L3162-1 for
      * minors).
      *

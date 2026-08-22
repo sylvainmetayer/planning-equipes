@@ -48,7 +48,7 @@ public final class AffectationConstraints {
                     return animateur != null
                             && poste.getCreneau() != null
                             && poste.getCreneau().getDate() != null
-                            && animateur.estIndisponibleLe(poste.getCreneau().getDate());
+                            && animateur.isIndisponibleOn(poste.getCreneau().getDate());
                 })
                 .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint("animateurDisponible");
@@ -65,7 +65,7 @@ public final class AffectationConstraints {
      * exist) could both be assigned to the same person. The daily and weekly
      * caps summed their minutes correctly, but the plan was physically
      * unworkable and every rest rule added afterwards would have inherited the
-     * same blind spot. With découpage automatique this is no longer
+     * same blind spot. With découpage automatic this is no longer
      * hypothetical: one animateur legitimately holds several postes the same
      * day on different, non-overlapping vacations (even on different stands),
      * so only a genuine time clash may be rejected.</p>

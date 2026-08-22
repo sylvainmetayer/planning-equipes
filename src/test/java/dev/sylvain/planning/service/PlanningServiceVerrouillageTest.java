@@ -18,7 +18,7 @@ import dev.sylvain.planning.domain.VerrouillagePlanning;
 
 /**
  * Pinning of the seats covered by a planning lock (issue #87), exercised on
- * {@code PlanningService.appliquerVerrouillages} directly: no database, no
+ * {@code PlanningService.applyVerrouillages} directly: no database, no
  * Quarkus context, no solve.
  */
 class PlanningServiceVerrouillageTest {
@@ -51,9 +51,9 @@ class PlanningServiceVerrouillageTest {
         VerrouillagePlanning verrouillage = verrou(TypeVerrouillage.JOUR);
         verrouillage.setJour(J1);
 
-        PlanningService.appliquerVerrouillages(postes, animateurs, List.of(verrouillage), Map.of(
-                PlanningPersistenceService.cleStandCreneau("STAND-A", 1L), List.of("A1"),
-                PlanningPersistenceService.cleStandCreneau("STAND-A", 2L), List.of("A2")));
+        PlanningService.applyVerrouillages(postes, animateurs, List.of(verrouillage), Map.of(
+                PlanningPersistenceService.standCreneauKey("STAND-A", 1L), List.of("A1"),
+                PlanningPersistenceService.standCreneauKey("STAND-A", 2L), List.of("A2")));
 
         assertThat(postes.get(0).isVerrouille()).isTrue();
         assertThat(postes.get(0).getAnimateur()).isEqualTo(alice);
@@ -70,10 +70,10 @@ class PlanningServiceVerrouillageTest {
         VerrouillagePlanning verrouillage = verrou(TypeVerrouillage.STAND);
         verrouillage.setStandId("STAND-A");
 
-        PlanningService.appliquerVerrouillages(postes, animateurs, List.of(verrouillage), Map.of(
-                PlanningPersistenceService.cleStandCreneau("STAND-A", 1L), List.of("A1"),
-                PlanningPersistenceService.cleStandCreneau("STAND-A", 2L), List.of("A2"),
-                PlanningPersistenceService.cleStandCreneau("STAND-B", 1L), List.of("A2")));
+        PlanningService.applyVerrouillages(postes, animateurs, List.of(verrouillage), Map.of(
+                PlanningPersistenceService.standCreneauKey("STAND-A", 1L), List.of("A1"),
+                PlanningPersistenceService.standCreneauKey("STAND-A", 2L), List.of("A2"),
+                PlanningPersistenceService.standCreneauKey("STAND-B", 1L), List.of("A2")));
 
         assertThat(postes.get(0).isVerrouille()).isTrue();
         assertThat(postes.get(1).isVerrouille()).isTrue();
@@ -89,9 +89,9 @@ class PlanningServiceVerrouillageTest {
         VerrouillagePlanning verrouillage = verrou(TypeVerrouillage.CRENEAU);
         verrouillage.setCreneauId(2L);
 
-        PlanningService.appliquerVerrouillages(postes, animateurs, List.of(verrouillage), Map.of(
-                PlanningPersistenceService.cleStandCreneau("STAND-A", 1L), List.of("A1"),
-                PlanningPersistenceService.cleStandCreneau("STAND-A", 2L), List.of("A2")));
+        PlanningService.applyVerrouillages(postes, animateurs, List.of(verrouillage), Map.of(
+                PlanningPersistenceService.standCreneauKey("STAND-A", 1L), List.of("A1"),
+                PlanningPersistenceService.standCreneauKey("STAND-A", 2L), List.of("A2")));
 
         assertThat(postes.get(0).isVerrouille()).isFalse();
         assertThat(postes.get(1).isVerrouille()).isTrue();
@@ -111,8 +111,8 @@ class PlanningServiceVerrouillageTest {
         VerrouillagePlanning verrouillage = verrou(TypeVerrouillage.ANIMATEUR);
         verrouillage.setAnimateurId("A2");
 
-        PlanningService.appliquerVerrouillages(postes, animateurs, List.of(verrouillage), Map.of(
-                PlanningPersistenceService.cleStandCreneau("STAND-A", 1L), List.of("A1", "A2")));
+        PlanningService.applyVerrouillages(postes, animateurs, List.of(verrouillage), Map.of(
+                PlanningPersistenceService.standCreneauKey("STAND-A", 1L), List.of("A1", "A2")));
 
         assertThat(postes.get(0).isVerrouille()).isFalse();
         assertThat(postes.get(0).getAnimateur()).isNull();
@@ -134,9 +134,9 @@ class PlanningServiceVerrouillageTest {
         verrouillage.setAnimateurId("A1");
         verrouillage.setCreneauId(1L);
 
-        PlanningService.appliquerVerrouillages(postes, animateurs, List.of(verrouillage), Map.of(
-                PlanningPersistenceService.cleStandCreneau("STAND-A", 1L), List.of("A1"),
-                PlanningPersistenceService.cleStandCreneau("STAND-A", 2L), List.of("A1")));
+        PlanningService.applyVerrouillages(postes, animateurs, List.of(verrouillage), Map.of(
+                PlanningPersistenceService.standCreneauKey("STAND-A", 1L), List.of("A1"),
+                PlanningPersistenceService.standCreneauKey("STAND-A", 2L), List.of("A1")));
 
         assertThat(postes.get(0).isVerrouille()).isTrue();
         assertThat(postes.get(0).getAnimateur()).isEqualTo(alice);
@@ -154,8 +154,8 @@ class PlanningServiceVerrouillageTest {
         verrouillage.setAnimateurId("A2");
         verrouillage.setCreneauId(1L);
 
-        PlanningService.appliquerVerrouillages(postes, animateurs, List.of(verrouillage), Map.of(
-                PlanningPersistenceService.cleStandCreneau("STAND-A", 1L), List.of("A1", "A2")));
+        PlanningService.applyVerrouillages(postes, animateurs, List.of(verrouillage), Map.of(
+                PlanningPersistenceService.standCreneauKey("STAND-A", 1L), List.of("A1", "A2")));
 
         assertThat(postes.get(0).isVerrouille()).isFalse();
         assertThat(postes.get(0).getAnimateur()).isNull();
@@ -173,8 +173,8 @@ class PlanningServiceVerrouillageTest {
         verrouillage.setJour(J1);
 
         // Only one of the two seats was staffed by the last persisted solve.
-        PlanningService.appliquerVerrouillages(postes, animateurs, List.of(verrouillage),
-                Map.of(PlanningPersistenceService.cleStandCreneau("STAND-A", 1L), List.of("A1")));
+        PlanningService.applyVerrouillages(postes, animateurs, List.of(verrouillage),
+                Map.of(PlanningPersistenceService.standCreneauKey("STAND-A", 1L), List.of("A1")));
 
         assertThat(postes.get(0).isVerrouille()).isTrue();
         assertThat(postes.get(1).isVerrouille()).isFalse();
@@ -185,8 +185,8 @@ class PlanningServiceVerrouillageTest {
     void sansVerrouillageAucunPosteNEstPreAffecte() {
         List<PosteAffectation> postes = List.of(poste("poste-0", standA, matinJ1));
 
-        PlanningService.appliquerVerrouillages(postes, animateurs, List.of(),
-                Map.of(PlanningPersistenceService.cleStandCreneau("STAND-A", 1L), List.of("A1")));
+        PlanningService.applyVerrouillages(postes, animateurs, List.of(),
+                Map.of(PlanningPersistenceService.standCreneauKey("STAND-A", 1L), List.of("A1")));
 
         assertThat(postes.get(0).isVerrouille()).isFalse();
         assertThat(postes.get(0).getAnimateur()).isNull();
@@ -199,7 +199,7 @@ class PlanningServiceVerrouillageTest {
         VerrouillagePlanning verrouillage = verrou(TypeVerrouillage.JOUR);
         verrouillage.setJour(J1);
 
-        PlanningService.appliquerVerrouillages(postes, animateurs, List.of(verrouillage), Map.of());
+        PlanningService.applyVerrouillages(postes, animateurs, List.of(verrouillage), Map.of());
 
         assertThat(postes.get(0).isVerrouille()).isFalse();
         assertThat(postes.get(0).getAnimateur()).isNull();
@@ -214,8 +214,8 @@ class PlanningServiceVerrouillageTest {
     void unSeedDontLAnimateurADisparuLaisseLePosteVide() {
         List<PosteAffectation> postes = List.of(poste("poste-0", standA, matinJ1));
 
-        PlanningService.seedDepuisAffectations(postes, animateurs, List.of(),
-                Map.of(PlanningPersistenceService.cleStandCreneau("STAND-A", 1L), List.of("DISPARU")));
+        PlanningService.seedFromAffectations(postes, animateurs, List.of(),
+                Map.of(PlanningPersistenceService.standCreneauKey("STAND-A", 1L), List.of("DISPARU")));
 
         assertThat(postes.get(0).getAnimateur()).isNull();
         assertThat(postes.get(0).isVerrouille()).isFalse();

@@ -94,6 +94,6 @@ public class VerrouillageRepository {
     }
 
     public void deleteVerrouillage(String id) {
-        scope.supprimer("DELETE FROM verrouillage_planning WHERE edition_id = ? AND id = ?", id);
+        scope.delete("DELETE FROM verrouillage_planning WHERE edition_id = ? AND id = ?", id);
     }
 }

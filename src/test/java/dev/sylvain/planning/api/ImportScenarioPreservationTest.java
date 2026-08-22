@@ -109,7 +109,7 @@ class ImportScenarioPreservationTest {
 
     @Test
     void lImportConserveJetonEtEmailDesAnimateursDuFichierEtSupprimeLesAbsents() {
-        String jetonAvant = jetonDe("IMP-A");
+        String tokenBefore = tokenOf("IMP-A");
 
         // Bytes, not String: RestAssured has no encoder for x-yaml text.
         given().contentType("application/x-yaml")
@@ -122,7 +122,7 @@ class ImportScenarioPreservationTest {
         // (the file carries no email — it must not wipe the stored one).
         Animateur alice = animateur("IMP-A");
         assertThat(alice.getPrenom()).isEqualTo("Alicia");
-        assertThat(alice.getJetonAcces()).isEqualTo(jetonAvant);
+        assertThat(alice.getJetonAcces()).isEqualTo(tokenBefore);
         assertThat(alice.getEmail()).isEqualTo(EMAIL_ALICE);
 
         // IMP-C is new and gets a fresh token; IMP-B was absent: gone.
@@ -148,7 +148,7 @@ class ImportScenarioPreservationTest {
         referenceData.updateAnimateur(animateurId, animateur);
     }
 
-    private String jetonDe(String animateurId) {
+    private String tokenOf(String animateurId) {
         return animateur(animateurId).getJetonAcces();
     }
 }

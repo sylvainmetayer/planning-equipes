@@ -8,7 +8,7 @@ import jakarta.validation.constraints.NotBlank;
  * referential (see {@code TypologieItem}), letting a
  * scenario pin a human-readable label (e.g. {@code "ENF"} -&gt; {@code "Enfance"})
  * instead of falling back to the id-as-its-own-label default that
- * {@code ImportReferentielRepository#importFromPlanning} derives for any
+ * {@code ReferenceDataImportRepository#importFromPlanning} derives for any
  * typologie id referenced by a stand/animateur but never declared here.
  *
  * <p>{@code ninja} (optional, {@code false} by default) marks the single

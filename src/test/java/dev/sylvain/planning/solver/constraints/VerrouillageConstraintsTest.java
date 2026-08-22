@@ -11,9 +11,9 @@ import dev.sylvain.planning.domain.VerrouillagePlanning;
 
 class VerrouillageConstraintsTest extends ConstraintTestBase {
 
-    private final Stand standStrat = standStrategie("STAND-STRAT");
+    private final Stand standStrat = standWithStrategy("STAND-STRAT");
     private final Creneau creneauMatin = matin("J1-MATIN", 1, D1);
-    private final Creneau creneauAprem = apresMidi("J1-AM", 1, D1);
+    private final Creneau creneauAprem = afternoon("J1-AM", 1, D1);
 
     private static VerrouillagePlanning verrouAnimateur(String id, Animateur animateur) {
         VerrouillagePlanning verrouillage = new VerrouillagePlanning(id, TypeVerrouillage.ANIMATEUR);
@@ -29,7 +29,7 @@ class VerrouillageConstraintsTest extends ConstraintTestBase {
 
     @Test
     void nouveauPosteDonneAUnAnimateurVerrouilleEstPenalise() {
-        Animateur a1 = majeurReferent("A1");
+        Animateur a1 = referentMajeur("A1");
         verify("animateurVerrouilleFige")
                 .given(a1,
                         posteVerrouille(standStrat, creneauMatin, a1),
@@ -40,7 +40,7 @@ class VerrouillageConstraintsTest extends ConstraintTestBase {
 
     @Test
     void postesFigesDUnAnimateurVerrouilleNeSontPasPenalises() {
-        Animateur a1 = majeurReferent("A1");
+        Animateur a1 = referentMajeur("A1");
         verify("animateurVerrouilleFige")
                 .given(a1,
                         posteVerrouille(standStrat, creneauMatin, a1),
@@ -51,7 +51,7 @@ class VerrouillageConstraintsTest extends ConstraintTestBase {
 
     @Test
     void unAutreAnimateurResteLibreDEtreAffecte() {
-        Animateur a1 = majeurReferent("A1");
+        Animateur a1 = referentMajeur("A1");
         Animateur a2 = majeurAutonome("A2");
         verify("animateurVerrouilleFige")
                 .given(a1, a2,
@@ -70,7 +70,7 @@ class VerrouillageConstraintsTest extends ConstraintTestBase {
 
     @Test
     void nouveauPosteSurLeCreneauVerrouilleEstPenalise() {
-        Animateur a1 = majeurReferent("A1");
+        Animateur a1 = referentMajeur("A1");
         verify("animateurVerrouilleCreneauFige")
                 .given(a1,
                         poste(standStrat, creneauMatin, a1),
@@ -80,7 +80,7 @@ class VerrouillageConstraintsTest extends ConstraintTestBase {
 
     @Test
     void posteFigeParLEchangeValideNEstPasPenalise() {
-        Animateur a1 = majeurReferent("A1");
+        Animateur a1 = referentMajeur("A1");
         verify("animateurVerrouilleCreneauFige")
                 .given(a1,
                         posteVerrouille(standStrat, creneauMatin, a1),
@@ -90,7 +90,7 @@ class VerrouillageConstraintsTest extends ConstraintTestBase {
 
     @Test
     void lesAutresCreneauxDeLAnimateurRestentLibres() {
-        Animateur a1 = majeurReferent("A1");
+        Animateur a1 = referentMajeur("A1");
         verify("animateurVerrouilleCreneauFige")
                 .given(a1,
                         posteVerrouille(standStrat, creneauMatin, a1),
@@ -102,7 +102,7 @@ class VerrouillageConstraintsTest extends ConstraintTestBase {
     /** The (animateur, timeslot) lock restrains that animateur only. */
     @Test
     void unAutreAnimateurResteLibreSurLeCreneauVerrouille() {
-        Animateur a1 = majeurReferent("A1");
+        Animateur a1 = referentMajeur("A1");
         Animateur a2 = majeurAutonome("A2");
         verify("animateurVerrouilleCreneauFige")
                 .given(a1, a2,
@@ -114,7 +114,7 @@ class VerrouillageConstraintsTest extends ConstraintTestBase {
 
     @Test
     void unVerrouillageJourNeContraintPersonneParLuiMeme() {
-        Animateur a1 = majeurReferent("A1");
+        Animateur a1 = referentMajeur("A1");
         VerrouillagePlanning verrouillage = new VerrouillagePlanning("V1", TypeVerrouillage.JOUR);
         verrouillage.setJour(D1);
         verify("animateurVerrouilleFige")

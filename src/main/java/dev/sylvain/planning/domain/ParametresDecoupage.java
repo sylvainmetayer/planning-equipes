@@ -11,7 +11,7 @@ import java.time.LocalTime;
  */
 public class ParametresDecoupage {
 
-    public enum StrategieCouverturePendantPause {
+    public enum PauseCoverageStrategy {
         /** The stand closes (no poste generated) during an unavoidable internal pause. */
         FERMETURE,
         /** A temporary extra poste is generated to cover the stand during the pause. */
@@ -63,7 +63,7 @@ public class ParametresDecoupage {
     private LocalTime fenetreRepasMidiFin = FENETRE_REPAS_MIDI_FIN_PAR_DEFAUT;
     private LocalTime fenetreRepasSoirDebut = FENETRE_REPAS_SOIR_DEBUT_PAR_DEFAUT;
     private LocalTime fenetreRepasSoirFin = FENETRE_REPAS_SOIR_FIN_PAR_DEFAUT;
-    private StrategieCouverturePendantPause strategieCouverturePendantPause = StrategieCouverturePendantPause.FERMETURE;
+    private PauseCoverageStrategy strategieCouverturePendantPause = PauseCoverageStrategy.FERMETURE;
 
     public ParametresDecoupage() {
     }
@@ -140,11 +140,11 @@ public class ParametresDecoupage {
         this.fenetreRepasSoirFin = fenetreRepasSoirFin;
     }
 
-    public StrategieCouverturePendantPause getStrategieCouverturePendantPause() {
+    public PauseCoverageStrategy getStrategieCouverturePendantPause() {
         return strategieCouverturePendantPause;
     }
 
-    public void setStrategieCouverturePendantPause(StrategieCouverturePendantPause strategieCouverturePendantPause) {
+    public void setStrategieCouverturePendantPause(PauseCoverageStrategy strategieCouverturePendantPause) {
         this.strategieCouverturePendantPause = strategieCouverturePendantPause;
     }
 

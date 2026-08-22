@@ -86,13 +86,13 @@ public class ContrainteAdHocRepository {
     }
 
     public void saveContrainte(ContrainteAdHoc contrainte) {
-        scope.ecrire("Failed to save constraint " + contrainte.getId(), connection -> {
+        scope.write("Failed to save constraint " + contrainte.getId(), connection -> {
             upsertContrainte(connection, contrainte);
         });
     }
 
     public void deleteContrainte(String id) {
-        scope.supprimer("DELETE FROM contrainte_ad_hoc WHERE edition_id = ? AND id = ?", id);
+        scope.delete("DELETE FROM contrainte_ad_hoc WHERE edition_id = ? AND id = ?", id);
     }
 
     void upsertContrainte(Connection connection, ContrainteAdHoc contrainte) throws SQLException {

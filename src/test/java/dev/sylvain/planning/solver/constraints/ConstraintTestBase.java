@@ -37,7 +37,7 @@ import dev.sylvain.planning.solver.PlanningConstraintProvider;
  */
 abstract class ConstraintTestBase {
 
-    protected static final ConstraintVerifier<PlanningConstraintProvider, PlanningFestival> verifier =
+    protected static final ConstraintVerifier<PlanningConstraintProvider, PlanningFestival> check =
             ConstraintVerifier.build(new PlanningConstraintProvider(), PlanningFestival.class, PosteAffectation.class);
 
     // Fixed reference dates so minor/adult status and day arithmetic stay deterministic.
@@ -72,10 +72,10 @@ abstract class ConstraintTestBase {
     }
 
     protected SingleConstraintVerification<PlanningFestival> verify(String constraintName) {
-        return verifier.verifyThat((provider, factory) -> constraint(factory, constraintName));
+        return check.verifyThat((provider, factory) -> constraint(factory, constraintName));
     }
 
-    // --- Créneau factories -------------------------------------------------
+    // --- Timeslot factories ------------------------------------------------
 
     // Creneau.id is a numeric surrogate in production; tests keep their
     // readable String labels ("J1-MATIN"...) and map each distinct label to a
@@ -96,7 +96,7 @@ abstract class ConstraintTestBase {
         return creneau(id, jour, date, LocalTime.of(9, 0), LocalTime.of(13, 0)); // 240 min, day
     }
 
-    protected static Creneau apresMidi(String id, int jour, LocalDate date) {
+    protected static Creneau afternoon(String id, int jour, LocalDate date) {
         return creneau(id, jour, date, LocalTime.of(14, 0), LocalTime.of(18, 0)); // 240 min, day
     }
 
@@ -104,7 +104,7 @@ abstract class ConstraintTestBase {
         return creneau(id, jour, date, LocalTime.of(20, 0), LocalTime.of(0, 0)); // crosses midnight
     }
 
-    protected static Creneau journeeLongue(String id, int jour, LocalDate date) {
+    protected static Creneau longDay(String id, int jour, LocalDate date) {
         return creneau(id, jour, date, LocalTime.of(9, 0), LocalTime.of(18, 0)); // 540 min > 8h
     }
 
@@ -115,7 +115,7 @@ abstract class ConstraintTestBase {
                 1, 3, reserveMajeurs);
     }
 
-    protected static Stand standStrategie(String id) {
+    protected static Stand standWithStrategy(String id) {
         return stand(id, false, "STRATEGIE");
     }
 
@@ -125,8 +125,8 @@ abstract class ConstraintTestBase {
         return stand;
     }
 
-    protected static Stand standAvecEmplacement(String id, Emplacement emplacement) {
-        Stand stand = standStrategie(id);
+    protected static Stand standWithEmplacement(String id, Emplacement emplacement) {
+        Stand stand = standWithStrategy(id);
         stand.setEmplacement(emplacement);
         return stand;
     }
@@ -149,14 +149,14 @@ abstract class ConstraintTestBase {
         return a;
     }
 
-    protected static Animateur animateurAvecSouhaits(String id, LocalDate naissance,
+    protected static Animateur animateurWithSouhaits(String id, LocalDate naissance,
             Map<String, NiveauCompetence> comp, String... souhaits) {
         Animateur a = animateur(id, naissance, comp);
         a.setSouhaits(new java.util.HashSet<>(java.util.List.of(souhaits)));
         return a;
     }
 
-    protected static Animateur majeurReferent(String id) {
+    protected static Animateur referentMajeur(String id) {
         return animateur(id, NAISSANCE_MAJEUR, Map.of("STRATEGIE", NiveauCompetence.REFERENT));
     }
 
@@ -171,11 +171,11 @@ abstract class ConstraintTestBase {
      * Polyvalent animateur: holds the referential's ninja typologie, so the
      * solver may dispatch them on any stand and the "buffer de polyvalents"
      * constraint counts them. Mirrors what
-     * {@link Animateur#appliquerTypologieNinja(String)} derives at load time.
+     * {@link Animateur#applyNinjaTypologie(String)} derives at load time.
      */
     protected static Animateur ninja(String id) {
         Animateur a = animateur(id, NAISSANCE_MAJEUR, Map.of(TYPOLOGIE_NINJA, NiveauCompetence.AUTONOME));
-        a.appliquerTypologieNinja(TYPOLOGIE_NINJA);
+        a.applyNinjaTypologie(TYPOLOGIE_NINJA);
         return a;
     }
 
@@ -185,7 +185,7 @@ abstract class ConstraintTestBase {
     }
 
     /** Minor under 16 (7 h/day, night from 20:00, 14 h daily rest). */
-    protected static Animateur mineurMoinsDe16Debutant(String id) {
+    protected static Animateur under16DebutantMineur(String id) {
         return animateur(id, NAISSANCE_MOINS_DE_16_ANS, Map.of("STRATEGIE", NiveauCompetence.DEBUTANT));
     }
 
@@ -203,7 +203,7 @@ abstract class ConstraintTestBase {
      * persisted créneau, but {@link PosteAffectation#getHeureDebutEffective()}
      * narrows the time this specific poste actually spans.
      */
-    protected PosteAffectation posteAvecFenetreEffective(Stand stand, Creneau creneau, Animateur animateur,
+    protected PosteAffectation posteWithEffectiveFenetre(Stand stand, Creneau creneau, Animateur animateur,
             LocalTime debutEffectif, LocalTime finEffective) {
         PosteAffectation p = poste(stand, creneau, animateur);
         p.setHeureDebutEffective(debutEffectif);

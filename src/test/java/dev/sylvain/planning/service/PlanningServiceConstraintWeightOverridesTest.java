@@ -32,7 +32,7 @@ class PlanningServiceConstraintWeightOverridesTest {
 
     @Test
     void overriddenConstraintWeightChangesTheScore() {
-        Referentiel referenceDataService = new ReferentielVide();
+        ReferenceData referenceDataService = new EmptyReferenceData();
 
         Config config = ConfigProviderResolver.instance().getBuilder()
                 .withSources(mapConfigSource(Map.of(
@@ -58,7 +58,7 @@ class PlanningServiceConstraintWeightOverridesTest {
         // is guaranteed to survive into the final solution.
         PlanningFestival festival = new PlanningFestival(creneau.getDate(), List.of(debutant), List.of(poste));
 
-        PlanningFestival solved = planningService.resoudre(festival);
+        PlanningFestival solved = planningService.solve(festival);
 
         assertThat(solved.getScore().mediumScore()).isEqualTo(-5);
     }

@@ -70,7 +70,7 @@ public class WhatIfService {
             animateursAjoutes = Math.max(0, animateursAjoutes);
         }
 
-        public boolean vide() {
+        public boolean hasNoChange() {
             return animateursAjoutes == 0 && animateursRetires.isEmpty() && standsFermes.isEmpty()
                     && effectifsMin.isEmpty();
         }
@@ -94,13 +94,13 @@ public class WhatIfService {
     }
 
     /** Instant answer: the capacity check, no solve involved. */
-    public ResultatWhatIf simuler(Mutations mutations) {
+    public ResultatWhatIf simulate(Mutations mutations) {
         List<Animateur> animateursReference = referenceDataService.listAnimateurs();
-        List<Stand> standsReference = referenceDataService.listStandsResolus();
+        List<Stand> standsReference = referenceDataService.listSolvedStands();
         List<Creneau> creneaux = referenceDataService.listCreneaux();
 
-        List<Animateur> animateurs = appliquerAuxAnimateurs(animateursReference, mutations);
-        List<Stand> stands = appliquerAuxStands(standsReference, mutations);
+        List<Animateur> animateurs = applyToAnimateurs(animateursReference, mutations);
+        List<Stand> stands = applyToStands(standsReference, mutations);
 
         return new ResultatWhatIf(
                 animateurs.size(),
@@ -108,8 +108,8 @@ public class WhatIfService {
                 stands.size(),
                 standsReference.size(),
                 creneaux.size(),
-                feasibilityAnalyzer.analyser(animateursReference, standsReference, creneaux),
-                feasibilityAnalyzer.analyser(animateurs, stands, creneaux));
+                feasibilityAnalyzer.analyze(animateursReference, standsReference, creneaux),
+                feasibilityAnalyzer.analyze(animateurs, stands, creneaux));
     }
 
     /**
@@ -118,15 +118,15 @@ public class WhatIfService {
      * — so its score is comparable to the reference one, but it is never
      * persisted: the caller analyses it and drops it.
      */
-    public PlanningFestival construireProbleme(Mutations mutations) {
-        PlanningFestival probleme = planningService.construireDepuisReferenceData(
-                appliquerAuxAnimateurs(referenceDataService.listAnimateurs(), mutations),
-                appliquerAuxStands(referenceDataService.listStandsResolus(), mutations),
+    public PlanningFestival buildProblem(Mutations mutations) {
+        PlanningFestival probleme = planningService.buildFromReferenceData(
+                applyToAnimateurs(referenceDataService.listAnimateurs(), mutations),
+                applyToStands(referenceDataService.listSolvedStands(), mutations),
                 referenceDataService.listCreneaux());
         return probleme;
     }
 
-    private List<Animateur> appliquerAuxAnimateurs(List<Animateur> reference, Mutations mutations) {
+    private List<Animateur> applyToAnimateurs(List<Animateur> reference, Mutations mutations) {
         Set<String> retires = new LinkedHashSet<>(mutations.animateursRetires());
         List<Animateur> animateurs = new ArrayList<>(reference.stream()
                 .filter(animateur -> !retires.contains(animateur.getId()))
@@ -152,7 +152,7 @@ public class WhatIfService {
         return animateur;
     }
 
-    private List<Stand> appliquerAuxStands(List<Stand> reference, Mutations mutations) {
+    private List<Stand> applyToStands(List<Stand> reference, Mutations mutations) {
         Set<String> fermes = new LinkedHashSet<>(mutations.standsFermes());
         List<Stand> stands = new ArrayList<>();
         for (Stand stand : reference) {
@@ -161,7 +161,7 @@ public class WhatIfService {
             }
             Integer effectif = mutations.effectifsMin().get(stand.getId());
             if (effectif != null && effectif > 0) {
-                // Mutated in place, and that is safe: `listStandsResolus()`
+                // Mutated in place, and that is safe: `listSolvedStands()`
                 // rebuilds its stands from the database on every call (with the
                 // horaires expanded onto transient fields), so these objects
                 // belong to this request alone and are never written back.

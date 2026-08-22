@@ -11,7 +11,7 @@ import jakarta.inject.Inject;
 /**
  * The three admin-configurable parameter sets and the constraint toggles —
  * everything the Données and Débogage tabs write that is not a referential
- * row. Validation lives in {@link ValidationParametres}.
+ * row. Validation lives in {@link ParametresValidator}.
  */
 @ApplicationScoped
 public class ParametresService {
@@ -27,7 +27,7 @@ public class ParametresService {
     }
 
     public ParametresLegaux updateLegaux(ParametresLegaux parametres) {
-        ValidationParametres.verifierLegaux(parametres);
+        ParametresValidator.checkParametresLegaux(parametres);
         repository.saveParametresLegaux(parametres);
         changeTracker.markModified();
         return parametres;
@@ -38,7 +38,7 @@ public class ParametresService {
     }
 
     public ParametresDecoupage updateDecoupage(ParametresDecoupage parametres) {
-        ValidationParametres.verifierDecoupage(parametres);
+        ParametresValidator.checkDecoupage(parametres);
         repository.saveParametresDecoupage(parametres);
         changeTracker.markModified();
         return parametres;
@@ -55,12 +55,12 @@ public class ParametresService {
      * solve/analyze runs, not the reference data fed to it.
      */
     public ParametresSolveur updateSolveur(ParametresSolveur parametres) {
-        ValidationParametres.verifierSolveur(parametres);
+        ParametresValidator.checkParametresSolveur(parametres);
         repository.saveParametresSolveur(parametres);
         return parametres;
     }
 
-    public Set<String> contraintesDesactivees() {
+    public Set<String> disabledContraintes() {
         return repository.getContraintesDesactivees();
     }
 

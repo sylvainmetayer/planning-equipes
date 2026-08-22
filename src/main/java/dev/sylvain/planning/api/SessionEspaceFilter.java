@@ -3,8 +3,8 @@ package dev.sylvain.planning.api;
 import java.util.Locale;
 
 import dev.sylvain.planning.service.EspaceAccesService;
-import dev.sylvain.planning.service.ProprietaireJeton;
-import dev.sylvain.planning.service.RemoteUserAuthentification;
+import dev.sylvain.planning.service.TokenOwner;
+import dev.sylvain.planning.service.RemoteUserAuthentication;
 import jakarta.annotation.Priority;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Priorities;
@@ -17,8 +17,8 @@ import jakarta.ws.rs.ext.Provider;
 
 /**
  * The authentication guard of the espace animateur, bound declaratively to
- * every {@link SessionEspaceRequise} route: resolves the URL token (via
- * {@link JetonEspaceFilter}, which also binds the owner's edition to the
+ * every {@link EspaceSessionRequired} route: resolves the URL token (via
+ * {@link EspaceTokenFilter}, which also binds the owner's edition to the
  * request), then requires a live {@code planning-espace} session of that
  * animateur. Aborts with 404 (unknown token) or 401 (no session — the
  * interface then offers the code screen) before the resource method runs.
@@ -33,36 +33,36 @@ import jakarta.ws.rs.ext.Provider;
  * open a colleague's espace by picking up their link.</p>
  */
 @Provider
-@SessionEspaceRequise
+@EspaceSessionRequired
 @Priority(Priorities.AUTHENTICATION)
 public class SessionEspaceFilter implements ContainerRequestFilter {
 
     @Inject
-    JetonEspaceFilter jetonFilter;
+    EspaceTokenFilter tokenFilter;
 
     @Inject
     EspaceAccesService espaceAccesService;
 
     @Inject
-    RemoteUserAuthentification remoteUser;
+    RemoteUserAuthentication remoteUser;
 
     @Override
     public void filter(ContainerRequestContext contexte) {
-        ProprietaireJeton proprietaire = jetonFilter.resoudreOuAborter(contexte);
-        if (proprietaire == null) {
+        TokenOwner owner = tokenFilter.resoudreOuAborter(contexte);
+        if (owner == null) {
             return;
         }
         // The owner's edition is bound to the request by now, so the session
         // lookup — like every call below — is already correctly scoped.
-        if (proxyAtteste(contexte, proprietaire)) {
+        if (proxyAtteste(contexte, owner)) {
             return;
         }
         Cookie cookie = contexte.getCookies().get(EspaceAnimateurResource.COOKIE_SESSION);
-        if (!espaceAccesService.sessionValide(
-                cookie == null ? null : cookie.getValue(), proprietaire.animateurId())) {
+        if (!espaceAccesService.validSession(
+                cookie == null ? null : cookie.getValue(), owner.animateurId())) {
             contexte.abortWith(Response.status(Response.Status.UNAUTHORIZED)
                     .type(MediaType.APPLICATION_JSON)
-                    .entity(new ErreurValidation(
+                    .entity(new ValidationError(
                             "Authentification requise : demandez un code d'accès par e-mail."))
                     .build());
         }
@@ -75,12 +75,12 @@ public class SessionEspaceFilter implements ContainerRequestFilter {
      * address is the second factor.
      */
     private boolean proxyAtteste(ContainerRequestContext contexte,
-            ProprietaireJeton proprietaire) {
-        if (proprietaire.email() == null || proprietaire.email().isBlank()) {
+            TokenOwner owner) {
+        if (owner.email() == null || owner.email().isBlank()) {
             return false;
         }
-        return remoteUser.emailDeConfiance(nom -> contexte.getHeaderString(nom))
-                .filter(email -> email.equals(proprietaire.email().trim().toLowerCase(Locale.ROOT)))
+        return remoteUser.trustedEmail(nom -> contexte.getHeaderString(nom))
+                .filter(email -> email.equals(owner.email().trim().toLowerCase(Locale.ROOT)))
                 .isPresent();
     }
 }

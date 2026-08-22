@@ -18,7 +18,7 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 
 /**
- * Exercises {@link PlanningService#construirePostes} directly (package-private,
+ * Exercises {@link PlanningService#buildPostes} directly (package-private,
  * no database needed) to check the stand-availability rule: a stand with no
  * closure stays open on every timeslot, a stand closed for a whole créneau
  * generates no poste on it, and a stand closed for only part of a créneau
@@ -33,7 +33,7 @@ class PlanningServicePosteGenerationTest {
 
     @Test
     void creneauSansRestrictionResteOuvertATousLesStands() {
-        List<PosteAffectation> postes = PlanningService.construirePostes(List.of(standA, standB), List.of(creneauOuvert));
+        List<PosteAffectation> postes = PlanningService.buildPostes(List.of(standA, standB), List.of(creneauOuvert));
 
         assertThat(postes).hasSize(2);
         assertThat(postes).extracting(poste -> poste.getStand().getId())
@@ -47,7 +47,7 @@ class PlanningServicePosteGenerationTest {
         standFerme.setIndisponibilites(List.of(
                 new IndisponibiliteStand(null, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0), null)));
 
-        List<PosteAffectation> postes = PlanningService.construirePostes(List.of(standA, standFerme), List.of(creneauOuvert));
+        List<PosteAffectation> postes = PlanningService.buildPostes(List.of(standA, standFerme), List.of(creneauOuvert));
 
         assertThat(postes).hasSize(1);
         assertThat(postes.get(0).getStand().getId()).isEqualTo("STAND-A");
@@ -61,7 +61,7 @@ class PlanningServicePosteGenerationTest {
         standPartiel.setIndisponibilites(List.of(
                 new IndisponibiliteStand(null, LocalDate.of(2026, 8, 14), LocalTime.of(11, 0), LocalTime.of(13, 0), "Pause")));
 
-        List<PosteAffectation> postes = PlanningService.construirePostes(List.of(standPartiel), List.of(creneau));
+        List<PosteAffectation> postes = PlanningService.buildPostes(List.of(standPartiel), List.of(creneau));
 
         assertThat(postes).hasSize(2);
         assertThat(postes).extracting(PosteAffectation::getHeureDebutEffective, PosteAffectation::getHeureFinEffective)
@@ -81,7 +81,7 @@ class PlanningServicePosteGenerationTest {
         // number of seats that must be staffed).
         Stand standMinMax = new Stand("STAND-C", "C", Set.of(), 2, 5, false);
 
-        List<PosteAffectation> postes = PlanningService.construirePostes(List.of(standMinMax), List.of(creneauOuvert));
+        List<PosteAffectation> postes = PlanningService.buildPostes(List.of(standMinMax), List.of(creneauOuvert));
 
         assertThat(postes).hasSize(2);
     }
@@ -99,7 +99,7 @@ class PlanningServicePosteGenerationTest {
         Creneau creneauFamille1 = new Creneau(11L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
         creneauFamille1.setFamille(1);
 
-        List<PosteAffectation> postes = PlanningService.construirePostes(
+        List<PosteAffectation> postes = PlanningService.buildPostes(
                 List.of(standA, standB), List.of(creneauFamille0, creneauFamille1));
 
         // Every stand shows up on ONE of the two families only, never on both
@@ -115,7 +115,7 @@ class PlanningServicePosteGenerationTest {
      * staggering only breaks the simultaneity peak if each grid variant
      * carries a comparable share of the demand. The hash this replaces put
      * 36 of 91 seats on one famille out of four on the reference scenario —
-     * see {@code PlanningService#repartirStandsParFamille}.
+     * see {@code PlanningService#spreadStandsByFamily}.
      */
     @Test
     void lesStandsSontRepartisEquitablementEntreLesFamilles() {
@@ -131,7 +131,7 @@ class PlanningServicePosteGenerationTest {
             creneaux.add(creneau);
         }
 
-        Map<Integer, Long> parFamille = PlanningService.construirePostes(stands, creneaux).stream()
+        Map<Integer, Long> parFamille = PlanningService.buildPostes(stands, creneaux).stream()
                 .collect(Collectors.groupingBy(p -> p.getCreneau().getFamille(), Collectors.counting()));
 
         assertThat(parFamille).hasSize(4);
@@ -140,7 +140,7 @@ class PlanningServicePosteGenerationTest {
         assertThat(max - min).as("écart entre la plus grosse et la plus petite famille").isLessThanOrEqualTo(1);
     }
 
-    /** Same stands in a different order must land on the same familles. */
+    /** Same stands in a different order must land on the same families. */
     @Test
     void laRepartitionParFamilleEstStableQuelQueSoitLOrdreDesStands() {
         Creneau famille0 = new Creneau(10L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
@@ -148,9 +148,9 @@ class PlanningServicePosteGenerationTest {
         famille1.setFamille(1);
         List<Creneau> creneaux = List.of(famille0, famille1);
 
-        Map<String, Integer> ordreDirect = PlanningService.construirePostes(List.of(standA, standB), creneaux).stream()
+        Map<String, Integer> ordreDirect = PlanningService.buildPostes(List.of(standA, standB), creneaux).stream()
                 .collect(Collectors.toMap(p -> p.getStand().getId(), p -> p.getCreneau().getFamille()));
-        Map<String, Integer> ordreInverse = PlanningService.construirePostes(List.of(standB, standA), creneaux).stream()
+        Map<String, Integer> ordreInverse = PlanningService.buildPostes(List.of(standB, standA), creneaux).stream()
                 .collect(Collectors.toMap(p -> p.getStand().getId(), p -> p.getCreneau().getFamille()));
 
         assertThat(ordreInverse).isEqualTo(ordreDirect);
@@ -167,7 +167,7 @@ class PlanningServicePosteGenerationTest {
         Creneau pause = new Creneau(20L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(12, 0), LocalTime.of(13, 0));
         pause.setCouverturePause(true);
 
-        Map<String, Long> parStand = PlanningService.construirePostes(List.of(quatre, trois), List.of(pause)).stream()
+        Map<String, Long> parStand = PlanningService.buildPostes(List.of(quatre, trois), List.of(pause)).stream()
                 .collect(Collectors.groupingBy(p -> p.getStand().getId(), Collectors.counting()));
 
         assertThat(parStand).containsEntry("STAND-4", 2L);   // 4 / 2
@@ -184,7 +184,7 @@ class PlanningServicePosteGenerationTest {
         Creneau pause = new Creneau(21L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(12, 0), LocalTime.of(13, 0));
         pause.setCouverturePause(true);
 
-        List<PosteAffectation> postes = PlanningService.construirePostes(List.of(standA), List.of(pause));
+        List<PosteAffectation> postes = PlanningService.buildPostes(List.of(standA), List.of(pause));
 
         assertThat(postes).hasSize(1);
     }
@@ -194,7 +194,7 @@ class PlanningServicePosteGenerationTest {
     void creneauOrdinaireGardeLEffectifPlein() {
         Stand quatre = new Stand("STAND-4", "Quatre", Set.of(), 4, 4, false);
 
-        List<PosteAffectation> postes = PlanningService.construirePostes(List.of(quatre), List.of(creneauOuvert));
+        List<PosteAffectation> postes = PlanningService.buildPostes(List.of(quatre), List.of(creneauOuvert));
 
         assertThat(postes).hasSize(4);
     }

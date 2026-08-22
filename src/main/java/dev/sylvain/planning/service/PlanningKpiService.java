@@ -90,7 +90,7 @@ public class PlanningKpiService {
      * @param dureeSolveSecondes real duration of the solve that produced the
      *                           plan, when the caller (the solve job) knows it
      */
-    public PlanningKpi calculerCourant(Long dureeSolveSecondes) {
+    public PlanningKpi computeCurrent(Long dureeSolveSecondes) {
         PlanningFestival planning = persistenceService.loadPersistedPlanning();
         List<AffectationKpi> affectations = new ArrayList<>();
         for (PosteAffectation poste : planning.getPostes()) {
@@ -104,9 +104,9 @@ public class PlanningKpiService {
         PlanningDiagnostic diagnostic = analysis == null ? null : analysis.diagnostic();
         int modifications = referenceDataService.listContraintesAdHoc().size()
                 + referenceDataService.listVerrouillages().size();
-        return calculer(affectations,
+        return compute(affectations,
                 diagnostic == null ? null : diagnostic.score(),
-                violationsParContrainte(diagnostic),
+                violationsByContrainte(diagnostic),
                 modifications,
                 dureeSolveSecondes);
     }
@@ -116,12 +116,12 @@ public class PlanningKpiService {
      * (issue #70): coverage and volumetry stay exact, the hours are resolved
      * against the referential of the snapshot's own edition — so the caller
      * must already be running in that edition (see
-     * {@code SnapshotComparaisonService}) — and score details are limited to
+     * {@code SnapshotComparisonService}) — and score details are limited to
      * what the snapshot's meta carries. Violations are left empty rather than
      * zeroed: nothing measured them, and an unmeasured constraint is not a
      * respected one.
      */
-    public PlanningKpi calculerDepuisSnapshot(List<AffectationSnapshot> affectations, String score) {
+    public PlanningKpi computeFromSnapshot(List<AffectationSnapshot> affectations, String score) {
         Map<String, Creneau> creneauxParId = new HashMap<>();
         for (Creneau creneau : referenceDataService.listCreneaux()) {
             creneauxParId.put(String.valueOf(creneau.getId()), creneau);
@@ -134,7 +134,7 @@ public class PlanningKpiService {
                     affectation.animateurId(),
                     dureeMinutes(affectation, creneauxParId.get(affectation.creneauId()))));
         }
-        return calculer(reduites, score, Map.of(), null, null);
+        return compute(reduites, score, Map.of(), null, null);
     }
 
     /**
@@ -154,7 +154,7 @@ public class PlanningKpiService {
     }
 
     /** Match counts per constraint, in the diagnostic's order. Never nominative. */
-    public static Map<String, Integer> violationsParContrainte(PlanningDiagnostic diagnostic) {
+    public static Map<String, Integer> violationsByContrainte(PlanningDiagnostic diagnostic) {
         if (diagnostic == null) {
             return Map.of();
         }
@@ -169,7 +169,7 @@ public class PlanningKpiService {
      * The aggregation itself, static and free of any I/O so it can be
      * unit-tested without a database.
      */
-    static PlanningKpi calculer(List<AffectationKpi> affectations, String score,
+    static PlanningKpi compute(List<AffectationKpi> affectations, String score,
             Map<String, Integer> violationsParContrainte, Integer modificationsManuelles,
             Long dureeSolveSecondes) {
         Set<String> stands = new LinkedHashSet<>();

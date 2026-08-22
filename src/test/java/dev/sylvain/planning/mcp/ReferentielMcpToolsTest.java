@@ -19,7 +19,7 @@ import jakarta.inject.Inject;
 
 /**
  * End-to-end coverage of the referential mutations opened up by the follow-up
- * comment of issue #107 ("tous les endpoints peuvent être implémentés via
+ * comment of issue #107 ("all les endpoints peuvent être implémentés via
  * MCP"), against the real database.
  *
  * <p>The privacy-critical assertion here is
@@ -88,9 +88,9 @@ class ReferentielMcpToolsTest {
         assertThat(modifie.reserveMajeurs()).isTrue();
         assertThat(modifie.typologiesProposees()).containsExactly("TYPO-MCP-2");
 
-        StandView avecFermeture = standTools.ajouter_fermeture_stand("STAND-MCP-1", "2026-07-18", "12:00", "14:00",
+        StandView withClosing = standTools.ajouter_fermeture_stand("STAND-MCP-1", "2026-07-18", "12:00", "14:00",
                 "Pause repas", null);
-        assertThat(avecFermeture.fermetures()).hasSize(1);
+        assertThat(withClosing.fermetures()).hasSize(1);
 
         assertThat(standTools.effacer_plages_stand("STAND-MCP-1", "2026-07-18", null).fermetures()).isEmpty();
 
@@ -161,7 +161,7 @@ class ReferentielMcpToolsTest {
         assertThat(referenceDataService.listCreneaux()).extracting(dev.sylvain.planning.domain.Creneau::getJour)
                 .containsOnly(1, 2, 3, 4, 5);
         // The midday break leaves 12:00-14:00 uncovered: reported as a warning, without blocking.
-        assertThat(creation.controle().valide()).isTrue();
+        assertThat(creation.controle().hasNoBlockingAnomaly()).isTrue();
         assertThat(creation.controle().anomalies()).extracting(anomalie -> anomalie.type().name())
                 .contains("TROU_DANS_LA_JOURNEE");
 

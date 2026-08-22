@@ -86,7 +86,7 @@ class EnvoiPlanningResourceTest {
         assertThat(mail.getSubject()).contains("votre planning individuel");
         assertThat(mail.getText())
                 .contains("Bonjour Alice")
-                .contains("/animateur/" + jetonDe("MAIL-A"));
+                .contains("/animateur/" + tokenOf("MAIL-A"));
         assertThat(mail.getAttachments()).hasSize(1);
         assertThat(mail.getAttachments().get(0).getName()).isEqualTo("planning-Alice-Martin.pdf");
         assertThat(mail.getAttachments().get(0).getContentType()).isEqualTo("application/pdf");
@@ -138,7 +138,7 @@ class EnvoiPlanningResourceTest {
         referenceData.updateAnimateur(animateurId, animateur);
     }
 
-    private String jetonDe(String animateurId) {
+    private String tokenOf(String animateurId) {
         return referenceData.listAnimateurs().stream()
                 .filter(candidat -> candidat.getId().equals(animateurId))
                 .findFirst()

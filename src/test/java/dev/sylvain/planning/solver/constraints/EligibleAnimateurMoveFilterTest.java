@@ -57,27 +57,27 @@ class EligibleAnimateurMoveFilterTest extends ConstraintTestBase {
         }
     }
 
-    private boolean auMoinsUneContraintePenalise(PosteAffectation poste) {
+    private boolean atLeastOneConstraintPenalizes(PosteAffectation poste) {
         return CONTRAINTES_REFLETEES.stream().anyMatch(contrainte -> penalise(contrainte, poste));
     }
 
     /** Every (animateur × stand × timeslot) combination the filter tells apart. */
-    private List<PosteAffectation> casDeFigure() {
-        Animateur majeur = majeurReferent("MAJ");
+    private List<PosteAffectation> situation() {
+        Animateur majeur = referentMajeur("MAJ");
         Animateur mineur = mineurDebutant("MIN");
-        Animateur mineurJeune = mineurMoinsDe16Debutant("MIN14");
-        Animateur indisponible = majeurReferent("INDISPO");
+        Animateur mineurJeune = under16DebutantMineur("MIN14");
+        Animateur indisponible = referentMajeur("INDISPO");
         indisponible.setJoursIndisponibles(java.util.Set.of(D1));
 
-        List<Stand> stands = List.of(standStrategie("STAND-OUVERT"), stand("STAND-MAJ", true, "STRATEGIE"));
+        List<Stand> stands = List.of(standWithStrategy("STAND-OUVERT"), stand("STAND-MAJ", true, "STRATEGIE"));
         List<Creneau> creneaux = List.of(
                 matin("F-MATIN", 1, D1),
-                apresMidi("F-AM", 1, D1),
+                afternoon("F-AM", 1, D1),
                 nuit("F-NUIT", 1, D1),
-                journeeLongue("F-LONGUE", 1, D1),
+                longDay("F-LONGUE", 1, D1),
                 creneau("F-7H30", 1, D1, java.time.LocalTime.of(9, 0), java.time.LocalTime.of(16, 30)),
                 matin("F-FERIE", 7, FERIE),
-                journeeLongue("F-FERIE-LONGUE", 7, FERIE));
+                longDay("F-FERIE-LONGUE", 7, FERIE));
 
         List<PosteAffectation> cas = new ArrayList<>();
         for (Animateur animateur : List.of(majeur, mineur, mineurJeune, indisponible)) {
@@ -94,11 +94,11 @@ class EligibleAnimateurMoveFilterTest extends ConstraintTestBase {
     @Test
     void leFiltreNeRejetteJamaisUneAffectationQueLesContraintesAcceptent() {
         List<String> rejetsInjustifies = new ArrayList<>();
-        for (PosteAffectation cas : casDeFigure()) {
-            if (EligibleAnimateurMoveFilter.estEligible(cas, cas.getAnimateur())) {
+        for (PosteAffectation cas : situation()) {
+            if (EligibleAnimateurMoveFilter.isEligible(cas, cas.getAnimateur())) {
                 continue;
             }
-            if (!auMoinsUneContraintePenalise(cas)) {
+            if (!atLeastOneConstraintPenalizes(cas)) {
                 rejetsInjustifies.add(cas.getAnimateur().getId() + " sur " + cas.getStand().getId()
                         + " au créneau " + cas.getCreneau().getHeureDebut() + "–" + cas.getCreneau().getHeureFin()
                         + " le " + cas.getCreneau().getDate());
@@ -114,8 +114,8 @@ class EligibleAnimateurMoveFilterTest extends ConstraintTestBase {
     /** A null animateur is an unassignment, not an assignment to filter. */
     @Test
     void unPosteNonPourvuResteToujoursProposable() {
-        assertThat(EligibleAnimateurMoveFilter.estEligible(
-                poste(standStrategie("S"), matin("C", 1, D1), null), null)).isTrue();
+        assertThat(EligibleAnimateurMoveFilter.isEligible(
+                poste(standWithStrategy("S"), matin("C", 1, D1), null), null)).isTrue();
     }
 
     /**
@@ -127,18 +127,18 @@ class EligibleAnimateurMoveFilterTest extends ConstraintTestBase {
     @Test
     void leFiltreEcarteBienLesAffectationsIllegales() {
         Animateur mineur = mineurDebutant("MIN");
-        Animateur indisponible = majeurReferent("INDISPO");
+        Animateur indisponible = referentMajeur("INDISPO");
         indisponible.setJoursIndisponibles(java.util.Set.of(D1));
 
-        assertThat(EligibleAnimateurMoveFilter.estEligible(
-                poste(standStrategie("S"), matin("C1", 1, D1), indisponible), indisponible)).isFalse();
-        assertThat(EligibleAnimateurMoveFilter.estEligible(
+        assertThat(EligibleAnimateurMoveFilter.isEligible(
+                poste(standWithStrategy("S"), matin("C1", 1, D1), indisponible), indisponible)).isFalse();
+        assertThat(EligibleAnimateurMoveFilter.isEligible(
                 poste(stand("S-MAJ", true, "STRATEGIE"), matin("C2", 1, D1), mineur), mineur)).isFalse();
-        assertThat(EligibleAnimateurMoveFilter.estEligible(
-                poste(standStrategie("S"), nuit("C3", 1, D1), mineur), mineur)).isFalse();
-        assertThat(EligibleAnimateurMoveFilter.estEligible(
-                poste(standStrategie("S"), journeeLongue("C4", 1, D1), mineur), mineur)).isFalse();
-        assertThat(EligibleAnimateurMoveFilter.estEligible(
-                poste(standStrategie("S"), matin("C5", 7, FERIE), mineur), mineur)).isFalse();
+        assertThat(EligibleAnimateurMoveFilter.isEligible(
+                poste(standWithStrategy("S"), nuit("C3", 1, D1), mineur), mineur)).isFalse();
+        assertThat(EligibleAnimateurMoveFilter.isEligible(
+                poste(standWithStrategy("S"), longDay("C4", 1, D1), mineur), mineur)).isFalse();
+        assertThat(EligibleAnimateurMoveFilter.isEligible(
+                poste(standWithStrategy("S"), matin("C5", 7, FERIE), mineur), mineur)).isFalse();
     }
 }

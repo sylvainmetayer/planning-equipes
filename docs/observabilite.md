@@ -17,7 +17,7 @@ d'accès — un identifiant unique de personne, souvent mineure :
   `request.url` et `data.url` laissait passer les cas les plus probables, un
   changement de page interne (`data.from` / `data.to`) et un échec HTTP
   (`exception.values[].value`, « Http failure response for /api/espace-animateur/… »).
-  Côté serveur, `SentryInitializer.masquerJetonsDuRapport` fait de même sur le
+  Côté serveur, `SentryInitializer.maskTokensInReport` fait de même sur le
   message et les exceptions ;
 - l'en-tête `Referrer-Policy: same-origin` ferme le canal des liens sortants.
 

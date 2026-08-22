@@ -25,11 +25,11 @@ class PlanSnapshotResourceTest {
     private static final long POLL_INTERVAL_MS = 250;
 
     /** Loads the sample scenario and solves it once, so a plan is persisted. */
-    private void planPersiste() throws InterruptedException {
+    private void persistedPlan() throws InterruptedException {
         given().when().post("/api/planning/reset").then().statusCode(200);
         given().when().post("/api/reference-data/import-scenario?name=scenario.yml").then().statusCode(200);
         solve();
-        assertThat(nombreAffectations()).isPositive();
+        assertThat(affectationCount()).isPositive();
     }
 
     private void solve() throws InterruptedException {
@@ -43,7 +43,7 @@ class PlanSnapshotResourceTest {
         assertThat(job.getString("status")).isEqualTo("COMPLETED");
     }
 
-    private int nombreAffectations() {
+    private int affectationCount() {
         return given()
                 .when().get("/api/planning/persisted/count")
                 .then()
@@ -51,7 +51,7 @@ class PlanSnapshotResourceTest {
                 .extract().jsonPath().getInt("assignments");
     }
 
-    private long capturer(String libelle) {
+    private long capture(String libelle) {
         return given()
                 .contentType(ContentType.JSON)
                 .body("{\"libelle\":\"" + libelle + "\"}")
@@ -65,9 +65,9 @@ class PlanSnapshotResourceTest {
 
     @Test
     void restaureLePlanApresUnAutreSolve() throws InterruptedException {
-        planPersiste();
-        long id = capturer("Plan de référence");
-        int attendu = nombreAffectations();
+        persistedPlan();
+        long id = capture("Plan de référence");
+        int attendu = affectationCount();
 
         solve();
 
@@ -77,12 +77,12 @@ class PlanSnapshotResourceTest {
                 .statusCode(200)
                 .body("restaure", equalTo(true))
                 .body("affectations", equalTo(attendu));
-        assertThat(nombreAffectations()).isEqualTo(attendu);
+        assertThat(affectationCount()).isEqualTo(attendu);
     }
 
     @Test
     void chaqueSolveCaptureAutomatiquementLePlanPrecedent() throws InterruptedException {
-        planPersiste();
+        persistedPlan();
         int avant = given()
                 .when().get("/api/planning/snapshots")
                 .then()
@@ -101,8 +101,8 @@ class PlanSnapshotResourceTest {
 
     @Test
     void restaurationRefuseeQuandLesReferencesOntDisparu() throws InterruptedException {
-        planPersiste();
-        long id = capturer("Avant remise à zéro");
+        persistedPlan();
+        long id = capture("Avant remise à zéro");
 
         // Wipes stands, créneaux and animateurs: every id the snapshot names is
         // gone, so restoring would produce a plan nobody ever computed.
@@ -113,20 +113,20 @@ class PlanSnapshotResourceTest {
                 .then()
                 .statusCode(409)
                 .body("referencesManquantes.size()", greaterThan(0));
-        assertThat(nombreAffectations()).isZero();
+        assertThat(affectationCount()).isZero();
     }
 
     @Test
     void unInstantaneSurvitALaDisparitionDeSesCreneaux() throws InterruptedException {
-        planPersiste();
-        long id = capturer("Grille bientôt abandonnée");
+        persistedPlan();
+        long id = capture("Grille bientôt abandonnée");
 
         // Wipes the créneaux (and with them every poste_affectation row) the
         // snapshot was computed on. A snapshot made of copied rows would be gone
         // with them; a denormalised one is still fully readable — including the
         // group name, kept as text for that very reason.
         given().when().post("/api/planning/reset").then().statusCode(200);
-        assertThat(nombreAffectations()).isZero();
+        assertThat(affectationCount()).isZero();
 
         given()
                 .when().get("/api/planning/snapshots/" + id)
@@ -146,8 +146,8 @@ class PlanSnapshotResourceTest {
      */
     @Test
     void restaurerMetAJourLAnalyseDeContraintes() throws InterruptedException {
-        planPersiste();
-        long id = capturer("Plan à analyser");
+        persistedPlan();
+        long id = capture("Plan à analyser");
         solve();
         String avant = given()
                 .when().get("/api/constraints")

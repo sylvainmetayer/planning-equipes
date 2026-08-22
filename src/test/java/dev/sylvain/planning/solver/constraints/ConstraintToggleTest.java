@@ -24,15 +24,15 @@ import dev.sylvain.planning.domain.TypeContrainteAdHoc;
  */
 class ConstraintToggleTest extends ConstraintTestBase {
 
-    private final Stand standStrat = standStrategie("STAND-STRAT");
+    private final Stand standStrat = standWithStrategy("STAND-STRAT");
     private final Stand standAdresse = stand("STAND-ADRESSE", false, "ADRESSE");
     private final Stand standMajeurs = stand("STAND-MAJ", true, "STRATEGIE");
     private final Creneau creneauMatin = matin("J1-MATIN", 1, D1);
-    private final Creneau creneauAprem = apresMidi("J1-AM", 1, D1);
+    private final Creneau creneauAprem = afternoon("J1-AM", 1, D1);
 
     @Test
     void animateurDisponiblePeutEtreDesactivee() {
-        Animateur indisponible = majeurReferent("A1");
+        Animateur indisponible = referentMajeur("A1");
         indisponible.setJoursIndisponibles(java.util.Set.of(D1));
 
         verify("animateurDisponible")
@@ -72,7 +72,7 @@ class ConstraintToggleTest extends ConstraintTestBase {
 
     @Test
     void indisponibiliteForceePeutEtreDesactivee() {
-        Animateur a1 = majeurReferent("A1");
+        Animateur a1 = referentMajeur("A1");
         ContrainteAdHoc contrainte = new ContrainteAdHoc("C1", TypeContrainteAdHoc.INDISPONIBILITE_FORCEE);
         contrainte.setAnimateursConcernes(List.of(a1));
         contrainte.setCreneau(creneauMatin);
@@ -89,11 +89,11 @@ class ConstraintToggleTest extends ConstraintTestBase {
 
     @Test
     void eviterChangementEmplacementEloignePeutEtreDesactivee() {
-        Stand standDrapeau = standAvecEmplacement("STAND-DRAPEAU", emplacement("PLACE-DRAPEAU", 46.6513, 2.2492));
-        Stand standMairie = standAvecEmplacement("STAND-MAIRIE", emplacement("MAIRIE", 46.6490, 2.2547));
+        Stand standDrapeau = standWithEmplacement("STAND-DRAPEAU", emplacement("PLACE-DRAPEAU", 46.6513, 2.2492));
+        Stand standMairie = standWithEmplacement("STAND-MAIRIE", emplacement("MAIRIE", 46.6490, 2.2547));
         Creneau matin = creneau("J1-MATIN-T", 1, D1, LocalTime.of(9, 0), LocalTime.of(13, 0));
         Creneau suite = creneau("J1-SUITE-T", 1, D1, LocalTime.of(13, 0), LocalTime.of(17, 0));
-        Animateur a1 = majeurReferent("A1");
+        Animateur a1 = referentMajeur("A1");
 
         verify("eviterChangementEmplacementEloigne")
                 .given(poste(standDrapeau, matin, a1), poste(standMairie, suite, a1))
@@ -109,11 +109,11 @@ class ConstraintToggleTest extends ConstraintTestBase {
     @Test
     void favoriserMixiteDesNiveauxPeutEtreDesactivee() {
         verify("favoriserMixiteDesNiveaux")
-                .given(poste(standStrat, creneauMatin, majeurReferent("A1")))
+                .given(poste(standStrat, creneauMatin, referentMajeur("A1")))
                 .penalizesBy(1);
 
         verify("favoriserMixiteDesNiveaux")
-                .given(poste(standStrat, creneauMatin, majeurReferent("A1")),
+                .given(poste(standStrat, creneauMatin, referentMajeur("A1")),
                         new ConstraintToggle("favoriserMixiteDesNiveaux"))
                 .penalizesBy(0);
     }

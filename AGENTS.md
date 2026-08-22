@@ -118,21 +118,21 @@ Single Quarkus service, no separate solver microservice. Package root:
   per referential family — `StandService`, `AnimateurService`,
   `CreneauService`, …) over one repository per family
   (`StandRepository`, `AnimateurRepository`, …, plus
-  `ImportReferentielRepository` for the one write that spans all of them),
+  `ReferenceDataImportRepository` for the one write that spans all of them),
   `PlanningPersistenceService`, `DatabaseDumpService`,
-  `PlanningExportService` (facade over `PlanningPdfAnimateur`,
-  `PlanningPdfGlobal` and `PlanningIcs`, sharing `ChartePdf` — server-side only),
+  `PlanningExportService` (facade over `AnimateurPlanningPdf`,
+  `GlobalPlanningPdf` and `PlanningIcs`, sharing `PdfTheme` — server-side only),
   `DemandeEchangeService` / `EspaceAnimateurService` (foire au planning, issue
-  #165), `LiensApplication` (every public URL printed in a mail or a PDF).
+  #165), `ApplicationLinks` (every public URL printed in a mail or a PDF).
 - **Mails follow two opposite failure policies, and the split is structural.**
   `MailService` holds only what an admin explicitly asks for (an animateur's
   planning, an espace access code, the Débogage test mail): the mail *is* the
   operation, so a failure **propagates** and the caller reports who could not
   be reached. Everything best-effort — échange notifications, end-of-solve —
   goes through `service/notification/`: business code fires a `Notification`
-  (a sealed interface; `RedacteurNotifications` switches over it exhaustively,
+  (a sealed interface; `NotificationWriter` switches over it exhaustively,
   so a new case does not compile until its wording exists), and
-  `ExpediteurNotifications` observes it and owns the single `catch`. Do not add
+  `NotificationDispatcher` observes it and owns the single `catch`. Do not add
   a `notifierXxx` to `MailService`: that would put two opposite policies behind
   identically-shaped methods again, which is what this split removed.
 - `api/` — JAX-RS resources: `PlanningResource`, `SolverJobResource`,
@@ -153,9 +153,9 @@ Single Quarkus service, no separate solver microservice. Package root:
   an animateur whose espace opens without the e-mail code. It refuses to boot
   without a shared secret — a header is a claim, not a proof. Hardening for an
   Internet-facing deployment — browser security headers
-  (`EnTetesSecuriteFilter`), HTTP limits, the two rate limiters
-  (`LimiteurConnexionsAdmin` on `/j_security_check`,
-  `LimiteurDemandesCode` on the espace access codes), the production compose
+  (`SecurityHeadersFilter`), HTTP limits, the two rate limiters
+  (`AdminLoginLimiter` on `/j_security_check`,
+  `CodeRequestLimiter` on the espace access codes), the production compose
   stack and what is left to the reverse proxy — lives in `docs/securite.md`;
   a change to any of them belongs there. The `%test`
   profile opens the API (`permit`) so
@@ -304,11 +304,11 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `Stand.effectifMin/Max`) at scenario/seed time; effectif min/max is enforced by
   counting non-null `animateur` assignments grouped by stand+créneau, not by a
   dedicated constraint class.
-- Minor/adult status (`estMineurLe(LocalDate)` / `estMajeurLe(LocalDate)`) is
+- Minor/adult status (`isMineurOn(LocalDate)` / `isMajeurOn(LocalDate)`) is
   always derived from `dateNaissance` at the créneau's date — never stored as a
   boolean flag.
 - Availability is opt-out: an animateur is available unless the date is listed in
-  `joursIndisponibles` (`estIndisponibleLe(LocalDate)`).
+  `joursIndisponibles` (`isIndisponibleOn(LocalDate)`).
 - `ContrainteAdHoc`'s prescriptive types (`INDISPONIBILITE_FORCEE`,
   `INCOMPATIBILITE`, `AFFECTATION_FORCEE`) are evaluated as `HardScore`, at the
   same priority as legal/minor hard constraints — never demote these to
@@ -367,8 +367,10 @@ Timefold bumps must be validated with `./mvnw verify -DskipITs=false`.
 
 ## Working conventions
 
-- Code and comments in English, domain names in French business vocabulary.
-- **Public links go through `LiensApplication`, never through concatenation.**
+- Code and comments in English, domain names in French business vocabulary —
+  the glossary and the test that enforces it are in *Language of the code*
+  below.
+- **Public links go through `ApplicationLinks`, never through concatenation.**
   URLs printed outside the app (notification mails, individual PDFs) target
   **Angular SPA routes** (`src/main/webui/src/app/app.routes.ts`), not JAX-RS
   paths: the API is mounted under `quarkus.rest.path=/api`, so
@@ -376,14 +378,14 @@ Timefold bumps must be validated with `./mvnw verify -DskipITs=false`.
   endpoint instead of the screen — and two of the three links have no resource
   to derive from. One method per link there; renaming an Angular route means
   renaming it there too.
-- **A refused request throws `ErreurMetier`; a resource never writes a
-  `try/catch` for it.** The sealed hierarchy (`Invalide` → 400, `Introuvable`
-  → 404, `Conflit` → 409) carries the status, and `ErreurMetierMapper`
+- **A refused request throws `BusinessError`; a resource never writes a
+  `try/catch` for it.** The sealed hierarchy (`Invalid` → 400, `NotFound`
+  → 404, `Conflict` → 409) carries the status, and `BusinessErrorMapper`
   switches over it exhaustively. It extends `IllegalArgumentException`, so a
   plain one — thrown by a library, or by nobody on purpose — still falls
   through to its 500 and its Sentry alert; that difference is the point.
   Choose the variant by where the id came from: a path segment that names
-  nothing is `Introuvable`, a body field that names nothing is `Invalide`.
+  nothing is `NotFound`, a body field that names nothing is `Invalid`.
 - **Inject `ObjectMapper`, never `new ObjectMapper()`** — a bare one lacks the
   modules Quarkus registers (JSR-310), which forces records to flatten
   `LocalDate`/`Instant` fields to `String` and only fails at write time.
@@ -393,3 +395,57 @@ Timefold bumps must be validated with `./mvnw verify -DskipITs=false`.
   library) without explicit sign-off — plain Angular served by Quinoa is a
   deliberate choice. The dependencies that *are* present, and the reason for
   each, are listed in the Frontend section above.
+
+## Language of the code
+
+Three rules, and a glossary that settles what "domain vocabulary" means. The
+first is checked by `LanguagePolicyStructuralTest`, which reads the backend
+sources and fails on a French comment block or a French declared name. The
+other two are conventions this file owns — and the test only catches the most
+visible half of the third, a French word that carries an accent.
+
+1. **Prose is English, business names are French.** A verb is always English
+   (`construire` → `build`, `verifier` → `check`), a common noun is always
+   English (`cible` → `target`, `charte` → `theme`), word order is always
+   English (`PlanningPdfGlobal` → `GlobalPlanningPdf`). Only the words of the
+   glossary below stay French, because they name a row of the staffing workbook or
+   a legal notion. `listCreneaux()`, `getAnimateur()` and `animateurId` are
+   therefore already correct and must not be "fixed".
+2. **Touch a test, rename its method to English.** The 600-odd French test
+   method names are deliberately left alone — they are read in a surefire
+   report and nowhere else — but a test whose body you change leaves with an
+   English name. The debt shrinks where the work happens instead of being
+   paid in one indigestible commit.
+3. **The glossary below is the vocabulary of the English prose.** Writing
+   "créneau" in a javadoc is as wrong as writing `verifierHoraire`: the prose
+   says *timeslot* while the code says `Creneau`, and that pairing is what
+   makes the two readable together.
+
+| Java / SQL | English prose | Note |
+| --- | --- | --- |
+| `Animateur` | *animateur* | **not translated** — "volunteer", "staff" and "instructor" each drop something the French word carries, and the minor/adult regime hangs on it |
+| `Stand` | *stand* | same word in both languages |
+| `Creneau` | *timeslot* | |
+| `PosteAffectation` | *seat* | one instance per seat to fill, never "assignment slot" |
+| `Emplacement` | *location* | the physical place a stand sits on |
+| `VerrouillagePlanning` | *lock* | |
+| `DemandeEchange` | *swap request* | |
+| `Typologie` | *game category* | a CRUD referential, not an enum |
+| `Horaire` | *opening hours* | |
+| `Decoupage` | *slicing* | |
+| `Vacation` | ***shift*** | false friend: English *vacation* means holidays |
+| `Amplitude` | ***opening span*** | false friend: English *amplitude* is about oscillations |
+
+The last two matter more than they look. `Vacation` and `Amplitude` are the
+words of the staffing workbook and stay in the code, but an English sentence that
+uses them bare says something else entirely — "the animateur works two
+vacations" reads as two holidays. Write *shift* and *opening span* in the
+prose, keep `Vacation` and `Amplitude` in the identifiers.
+
+**One deliberate mismatch, and it is documented where it shows.** The Java code
+says `token`; the SQL column is still `jeton_acces` and the JSON key still
+`jetonAcces`, because both are read outside this repository (the Angular
+`models.ts`, every MCP client, the espace links already printed on PDFs).
+The gap is flagged in the JDBC mapping and on the DTO that carry it; aligning
+the whole chain needs a Flyway migration and a frontend release, which is its
+own issue.

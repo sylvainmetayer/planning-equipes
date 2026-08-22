@@ -1,6 +1,6 @@
 package dev.sylvain.planning.scenario.dto;
 
-import dev.sylvain.planning.domain.ParametresDecoupage.StrategieCouverturePendantPause;
+import dev.sylvain.planning.domain.ParametresDecoupage.PauseCoverageStrategy;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import java.time.LocalTime;
@@ -15,7 +15,7 @@ public record ParametresDecoupageDto(
         LocalTime fenetreRepasMidiFin,
         LocalTime fenetreRepasSoirDebut,
         LocalTime fenetreRepasSoirFin,
-        StrategieCouverturePendantPause strategieCouverturePendantPause,
+        PauseCoverageStrategy strategieCouverturePendantPause,
         @Positive Integer nombreFamillesDecalage,
         @PositiveOrZero Integer dureeDecalageMaxMinutes) {
 }

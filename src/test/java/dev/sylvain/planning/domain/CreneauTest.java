@@ -25,8 +25,8 @@ class CreneauTest {
         Stand stand = new Stand("S", "S", java.util.Set.of(), 1, 1, false);
 
         assertThat(creneau.segmentsOuvertsMinutes(stand)).containsExactly(new int[] {0, 300});
-        assertThat(creneau.estStandOuvert(stand)).isTrue();
-        assertThat(creneau.estStandFermeIntegralement(stand)).isFalse();
+        assertThat(creneau.isStandOpen(stand)).isTrue();
+        assertThat(creneau.isStandFullyClosed(stand)).isFalse();
     }
 
     @Test
@@ -35,8 +35,8 @@ class CreneauTest {
         Stand stand = fermer(LocalTime.of(9, 0), LocalTime.of(14, 0));
 
         assertThat(creneau.segmentsOuvertsMinutes(stand)).isEmpty();
-        assertThat(creneau.estStandOuvert(stand)).isFalse();
-        assertThat(creneau.estStandFermeIntegralement(stand)).isTrue();
+        assertThat(creneau.isStandOpen(stand)).isFalse();
+        assertThat(creneau.isStandFullyClosed(stand)).isTrue();
     }
 
     @Test
@@ -46,8 +46,8 @@ class CreneauTest {
 
         assertThat(creneau.segmentsOuvertsMinutes(stand))
                 .containsExactly(new int[] {0, 120}, new int[] {240, 300});
-        assertThat(creneau.estStandOuvert(stand)).isTrue();
-        assertThat(creneau.estStandFermeIntegralement(stand)).isFalse();
+        assertThat(creneau.isStandOpen(stand)).isTrue();
+        assertThat(creneau.isStandFullyClosed(stand)).isFalse();
     }
 
     @Test
@@ -111,11 +111,11 @@ class CreneauTest {
     @Test
     void ouvertureCouvrantToutLeCreneauLeLaisseEntierementOuvert() {
         Creneau creneau = new Creneau(1L, 1, JOUR, LocalTime.of(9, 0), LocalTime.of(14, 0));
-        Stand stand = ouvrir(LocalTime.of(9, 0), LocalTime.of(14, 0));
+        Stand stand = open(LocalTime.of(9, 0), LocalTime.of(14, 0));
 
         assertThat(creneau.segmentsOuvertsMinutes(stand)).containsExactly(new int[] {0, 300});
-        assertThat(creneau.estStandOuvert(stand)).isTrue();
-        assertThat(creneau.estStandFermeIntegralement(stand)).isFalse();
+        assertThat(creneau.isStandOpen(stand)).isTrue();
+        assertThat(creneau.isStandFullyClosed(stand)).isFalse();
     }
 
     @Test
@@ -123,22 +123,22 @@ class CreneauTest {
         // The mirror of fermetureAuMilieuLaisseDeuxSegmentsOuverts: an opening
         // covering only part of the timeslot closes all the rest by default.
         Creneau creneau = new Creneau(1L, 1, JOUR, LocalTime.of(9, 0), LocalTime.of(14, 0));
-        Stand stand = ouvrir(LocalTime.of(11, 0), LocalTime.of(13, 0));
+        Stand stand = open(LocalTime.of(11, 0), LocalTime.of(13, 0));
 
         assertThat(creneau.segmentsOuvertsMinutes(stand)).containsExactly(new int[] {120, 240});
-        assertThat(creneau.estStandOuvert(stand)).isTrue();
-        assertThat(creneau.estStandFermeIntegralement(stand)).isFalse();
+        assertThat(creneau.isStandOpen(stand)).isTrue();
+        assertThat(creneau.isStandFullyClosed(stand)).isFalse();
     }
 
     @Test
     void ouvertureSansChevauchementFermeLeCreneauIntegralement() {
         Creneau creneau = new Creneau(1L, 1, JOUR, LocalTime.of(9, 0), LocalTime.of(14, 0));
         // The stand only opens in the evening: no overlap with this timeslot.
-        Stand stand = ouvrir(LocalTime.of(20, 0), LocalTime.of(23, 0));
+        Stand stand = open(LocalTime.of(20, 0), LocalTime.of(23, 0));
 
         assertThat(creneau.segmentsOuvertsMinutes(stand)).isEmpty();
-        assertThat(creneau.estStandOuvert(stand)).isFalse();
-        assertThat(creneau.estStandFermeIntegralement(stand)).isTrue();
+        assertThat(creneau.isStandOpen(stand)).isFalse();
+        assertThat(creneau.isStandFullyClosed(stand)).isTrue();
     }
 
     @Test
@@ -155,7 +155,7 @@ class CreneauTest {
     @Test
     void ouvertureDebordantLeCreneauEstClampee() {
         Creneau creneau = new Creneau(1L, 1, JOUR, LocalTime.of(9, 0), LocalTime.of(14, 0));
-        Stand stand = ouvrir(LocalTime.of(8, 0), LocalTime.of(15, 0));
+        Stand stand = open(LocalTime.of(8, 0), LocalTime.of(15, 0));
 
         assertThat(creneau.segmentsOuvertsMinutes(stand)).containsExactly(new int[] {0, 300});
     }
@@ -217,7 +217,7 @@ class CreneauTest {
     void ouvertureSansHeureFinCourtJusquALaFinDuCreneau() {
         Creneau creneau = new Creneau(1L, 1, JOUR, LocalTime.of(10, 0), LocalTime.of(20, 0));
 
-        assertThat(creneau.segmentsOuvertsMinutes(ouvrir(LocalTime.of(14, 0), null)))
+        assertThat(creneau.segmentsOuvertsMinutes(open(LocalTime.of(14, 0), null)))
                 .containsExactly(new int[] {240, 600});
     }
 
@@ -237,7 +237,7 @@ class CreneauTest {
      */
     @Test
     void uneMemeOuvertureSansFinSAdapteALAmplitudeDuJour() {
-        Stand stand = ouvrir(LocalTime.of(14, 0), null);
+        Stand stand = open(LocalTime.of(14, 0), null);
 
         Creneau jourCourt = new Creneau(1L, 1, JOUR, LocalTime.of(10, 0), LocalTime.of(20, 0));
         Creneau jourJusquaMinuit = new Creneau(2L, 1, JOUR, LocalTime.of(10, 0), LocalTime.MIDNIGHT);
@@ -250,7 +250,7 @@ class CreneauTest {
     void ouvertureSansHeureFinCommencantApresLeCreneauNeLOuvrePas() {
         Creneau matin = new Creneau(1L, 1, JOUR, LocalTime.of(10, 0), LocalTime.of(12, 0));
 
-        assertThat(matin.segmentsOuvertsMinutes(ouvrir(LocalTime.of(14, 0), null))).isEmpty();
+        assertThat(matin.segmentsOuvertsMinutes(open(LocalTime.of(14, 0), null))).isEmpty();
     }
 
     /* ------------------- Dated window of the next day ------------------- */
@@ -277,7 +277,7 @@ class CreneauTest {
                 .containsExactly(new int[] {0, 240}, new int[] {360, 600});
     }
 
-    /* --------------------- Fenêtres effectives --------------------- */
+    /* --------------------- Effective windows ----------------------- */
 
     /**
      * With no resolution having run, the effective windows are the dated lists
@@ -311,7 +311,7 @@ class CreneauTest {
         return stand;
     }
 
-    private static Stand ouvrir(LocalTime debut, LocalTime fin) {
+    private static Stand open(LocalTime debut, LocalTime fin) {
         Stand stand = new Stand("S", "S", java.util.Set.of(), 1, 1, false);
         stand.setOuvertures(List.of(new OuvertureStand(null, JOUR, debut, fin, null)));
         return stand;

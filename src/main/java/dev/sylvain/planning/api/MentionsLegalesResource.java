@@ -39,17 +39,17 @@ public class MentionsLegalesResource {
     @GET
     public MentionsLegalesView get() {
         return new MentionsLegalesView(
-                texte(mentions.editeur()),
-                texte(mentions.directeurPublication()),
-                texte(mentions.hebergeur()),
-                texte(mentions.contact()),
-                texte(mentions.responsableTraitement()),
-                texte(mentions.donnees().baseLegale()),
-                texte(mentions.donnees().conservation()));
+                text(mentions.editeur()),
+                text(mentions.directeurPublication()),
+                text(mentions.hebergeur()),
+                text(mentions.contact()),
+                text(mentions.responsableTraitement()),
+                text(mentions.donnees().baseLegale()),
+                text(mentions.donnees().conservation()));
     }
 
     /** Trimmed, and empty rather than blank: the UI has one single "not filled in" case to handle. */
-    private static String texte(Optional<String> valeur) {
+    private static String text(Optional<String> valeur) {
         return valeur.map(String::trim).filter(v -> !v.isEmpty()).orElse("");
     }
 

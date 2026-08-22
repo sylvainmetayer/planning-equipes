@@ -52,8 +52,8 @@ public final class PreferenceConstraints {
                 .filter(poste -> poste.getAnimateur() != null)
                 .groupBy(PosteAffectation::getStand,
                         PosteAffectation::getCreneau,
-                        ConstraintCollectors.sum(poste -> poste.getAnimateur().estReferentPour(poste.getStand()) ? 1 : 0),
-                        ConstraintCollectors.sum(poste -> poste.getAnimateur().estDebutantPour(poste.getStand()) ? 1 : 0))
+                        ConstraintCollectors.sum(poste -> poste.getAnimateur().isReferentFor(poste.getStand()) ? 1 : 0),
+                        ConstraintCollectors.sum(poste -> poste.getAnimateur().isDebutantFor(poste.getStand()) ? 1 : 0))
                 .filter((stand, creneau, referents, debutants) -> referents > 0 && debutants == 0)
                 .penalize(HardMediumSoftScore.ONE_SOFT)
                 .asConstraint("favoriserMixiteDesNiveaux");
@@ -68,7 +68,7 @@ public final class PreferenceConstraints {
     private Constraint equilibrerCreneauxPenibles(ConstraintFactory constraintFactory) {
         return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
                 "equilibrerCreneauxPenibles")
-                .filter(poste -> poste.getAnimateur() != null && estPenible(poste.getStand()))
+                .filter(poste -> poste.getAnimateur() != null && isDemanding(poste.getStand()))
                 .groupBy(ConstraintCollectors.loadBalance(PosteAffectation::getAnimateur))
                 .penalize(HardMediumSoftScore.ONE_SOFT,
                         loadBalance -> loadBalance.unfairness()
@@ -112,7 +112,7 @@ public final class PreferenceConstraints {
                 .asConstraint("preserverBufferPolyvalents");
     }
 
-    private boolean estPenible(Stand stand) {
+    private boolean isDemanding(Stand stand) {
         return stand != null && (stand.getNiveauEffort() == NiveauEffort.EPUISANT || stand.isPremium());
     }
 }

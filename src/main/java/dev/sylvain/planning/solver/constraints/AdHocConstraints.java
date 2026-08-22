@@ -38,7 +38,7 @@ public final class AdHocConstraints {
     private Constraint indisponibiliteForcee(ConstraintFactory constraintFactory) {
         return ConstraintToggleSupport.actif(constraintFactory.forEach(ContrainteAdHoc.class), "indisponibiliteForcee")
                 .filter(contrainte -> contrainte.getType() == TypeContrainteAdHoc.INDISPONIBILITE_FORCEE)
-                .join(PosteAffectation.class, Joiners.filtering(AdHocConstraints::violeIndisponibiliteForcee))
+                .join(PosteAffectation.class, Joiners.filtering(AdHocConstraints::violatesForcedIndisponibilite))
                 .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint("indisponibiliteForcee");
     }
@@ -64,17 +64,17 @@ public final class AdHocConstraints {
      */
     private Constraint incompatibiliteAdHoc(ConstraintFactory constraintFactory) {
         return ConstraintToggleSupport.actif(constraintFactory.forEach(ContrainteAdHoc.class), "incompatibiliteAdHoc")
-                .filter(AdHocConstraints::porteSurDeuxAnimateursIncompatibles)
+                .filter(AdHocConstraints::coversTwoIncompatibleAnimateurs)
                 .join(PosteAffectation.class,
-                        Joiners.equal(contrainte -> idAnimateurConcerne(contrainte, 0),
+                        Joiners.equal(contrainte -> concernedAnimateurId(contrainte, 0),
                                 poste -> poste.getAnimateur().getId()))
                 .join(PosteAffectation.class,
-                        Joiners.equal((contrainte, postePremier) -> idAnimateurConcerne(contrainte, 1),
+                        Joiners.equal((contrainte, postePremier) -> concernedAnimateurId(contrainte, 1),
                                 poste -> poste.getAnimateur().getId()),
                         Joiners.equal((contrainte, postePremier) -> postePremier.getCreneau(),
                                 PosteAffectation::getCreneau))
-                .filter((contrainte, postePremier, posteSecond) -> correspondAuPerimetre(contrainte, postePremier)
-                        && correspondAuPerimetre(contrainte, posteSecond))
+                .filter((contrainte, postePremier, posteSecond) -> matchesScope(contrainte, postePremier)
+                        && matchesScope(contrainte, posteSecond))
                 .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint("incompatibiliteAdHoc");
     }
@@ -92,18 +92,18 @@ public final class AdHocConstraints {
      */
     private Constraint affiniteAdHoc(ConstraintFactory constraintFactory) {
         return ConstraintToggleSupport.actif(constraintFactory.forEach(ContrainteAdHoc.class), "affiniteAdHoc")
-                .filter(AdHocConstraints::porteSurPaireAffinite)
+                .filter(AdHocConstraints::coversAffinityPair)
                 .join(PosteAffectation.class,
-                        Joiners.equal(contrainte -> idAnimateurConcerne(contrainte, 0),
+                        Joiners.equal(contrainte -> concernedAnimateurId(contrainte, 0),
                                 poste -> poste.getAnimateur().getId()))
                 .join(PosteAffectation.class,
-                        Joiners.equal((contrainte, postePremier) -> idAnimateurConcerne(contrainte, 1),
+                        Joiners.equal((contrainte, postePremier) -> concernedAnimateurId(contrainte, 1),
                                 poste -> poste.getAnimateur().getId()),
                         Joiners.equal((contrainte, postePremier) -> postePremier.getCreneau(),
                                 PosteAffectation::getCreneau))
                 .filter((contrainte, postePremier, posteSecond) -> surMemeStand(postePremier, posteSecond)
-                        && correspondAuPerimetre(contrainte, postePremier)
-                        && correspondAuPerimetre(contrainte, posteSecond))
+                        && matchesScope(contrainte, postePremier)
+                        && matchesScope(contrainte, posteSecond))
                 .reward(HardMediumSoftScore.ONE_SOFT)
                 .asConstraint("affiniteAdHoc");
     }
@@ -114,23 +114,23 @@ public final class AdHocConstraints {
      * fact (fewer than two animateurs, a null id, or the same animateur twice)
      * is ignored rather than penalising an animateur against themselves.
      */
-    private static boolean porteSurDeuxAnimateursIncompatibles(ContrainteAdHoc contrainte) {
-        return porteSurPaireIdentifiable(contrainte, TypeContrainteAdHoc.INCOMPATIBILITE);
+    private static boolean coversTwoIncompatibleAnimateurs(ContrainteAdHoc contrainte) {
+        return coversIdentifiablePair(contrainte, TypeContrainteAdHoc.INCOMPATIBILITE);
     }
 
     /** Same well-formedness gate as the incompatibilité, for AFFINITE facts. */
-    private static boolean porteSurPaireAffinite(ContrainteAdHoc contrainte) {
-        return porteSurPaireIdentifiable(contrainte, TypeContrainteAdHoc.AFFINITE);
+    private static boolean coversAffinityPair(ContrainteAdHoc contrainte) {
+        return coversIdentifiablePair(contrainte, TypeContrainteAdHoc.AFFINITE);
     }
 
-    private static boolean porteSurPaireIdentifiable(ContrainteAdHoc contrainte, TypeContrainteAdHoc type) {
+    private static boolean coversIdentifiablePair(ContrainteAdHoc contrainte, TypeContrainteAdHoc type) {
         if (contrainte.getType() != type
                 || contrainte.getAnimateursConcernes() == null
                 || contrainte.getAnimateursConcernes().size() < 2) {
             return false;
         }
-        String premier = idAnimateurConcerne(contrainte, 0);
-        String second = idAnimateurConcerne(contrainte, 1);
+        String premier = concernedAnimateurId(contrainte, 0);
+        String second = concernedAnimateurId(contrainte, 1);
         return premier != null && second != null && !premier.equals(second);
     }
 
@@ -140,7 +140,7 @@ public final class AdHocConstraints {
                 && postePremier.getStand().getId().equals(posteSecond.getStand().getId());
     }
 
-    private static String idAnimateurConcerne(ContrainteAdHoc contrainte, int index) {
+    private static String concernedAnimateurId(ContrainteAdHoc contrainte, int index) {
         Animateur animateur = contrainte.getAnimateursConcernes().get(index);
         return animateur == null ? null : animateur.getId();
     }
@@ -148,7 +148,7 @@ public final class AdHocConstraints {
     private Constraint affectationForcee(ConstraintFactory constraintFactory) {
         return ConstraintToggleSupport.actif(constraintFactory.forEach(ContrainteAdHoc.class), "affectationForcee")
                 .filter(contrainte -> contrainte.getType() == TypeContrainteAdHoc.AFFECTATION_FORCEE)
-                .ifNotExists(PosteAffectation.class, Joiners.filtering(this::satisfaitAffectationForcee))
+                .ifNotExists(PosteAffectation.class, Joiners.filtering(this::satisfiesForcedAffectation))
                 .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint("affectationForcee");
     }
@@ -160,20 +160,20 @@ public final class AdHocConstraints {
      * pin must not carry a violation nobody can then fix — and the two must
      * never drift apart, hence one implementation.
      */
-    public static boolean violeIndisponibiliteForcee(ContrainteAdHoc contrainte, PosteAffectation poste) {
-        return concerneAnimateur(contrainte, poste.getAnimateur())
-                && correspondAuPerimetre(contrainte, poste);
+    public static boolean violatesForcedIndisponibilite(ContrainteAdHoc contrainte, PosteAffectation poste) {
+        return concernsAnimateur(contrainte, poste.getAnimateur())
+                && matchesScope(contrainte, poste);
     }
 
-    private boolean satisfaitAffectationForcee(ContrainteAdHoc contrainte, PosteAffectation poste) {
+    private boolean satisfiesForcedAffectation(ContrainteAdHoc contrainte, PosteAffectation poste) {
         return poste.getAnimateur() != null
-                && concerneAnimateur(contrainte, poste.getAnimateur())
-                && correspondAuPerimetre(contrainte, poste);
+                && concernsAnimateur(contrainte, poste.getAnimateur())
+                && matchesScope(contrainte, poste);
     }
 
-    private static boolean concerneAnimateur(ContrainteAdHoc contrainte, Animateur animateur) {
+    private static boolean concernsAnimateur(ContrainteAdHoc contrainte, Animateur animateur) {
         return contrainte.getAnimateursConcernes() != null
-                && contrainte.getAnimateursConcernes().stream().anyMatch(cible -> correspondAnimateur(cible, animateur));
+                && contrainte.getAnimateursConcernes().stream().anyMatch(target -> correspondAnimateur(target, animateur));
     }
 
     private static boolean correspondAnimateur(Animateur expected, Animateur actual) {
@@ -183,7 +183,7 @@ public final class AdHocConstraints {
                 && expected.getId().equals(actual.getId());
     }
 
-    private static boolean correspondAuPerimetre(ContrainteAdHoc contrainte, PosteAffectation poste) {
+    private static boolean matchesScope(ContrainteAdHoc contrainte, PosteAffectation poste) {
         boolean creneauOk = contrainte.getCreneau() == null
                 || (poste.getCreneau() != null && contrainte.getCreneau().getId().equals(poste.getCreneau().getId()));
         boolean standOk = contrainte.getStand() == null

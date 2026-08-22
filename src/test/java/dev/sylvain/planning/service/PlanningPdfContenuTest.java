@@ -39,16 +39,16 @@ import dev.sylvain.planning.domain.Stand;
  */
 class PlanningPdfContenuTest {
 
-    private final PlanningExportService service = new PlanningExportService(new LiensApplication(Optional.empty()),
-            new PlanningPdfAnimateur(), new PlanningPdfGlobal(), new PlanningIcs());
+    private final PlanningExportService service = new PlanningExportService(new ApplicationLinks(Optional.empty()),
+            new AnimateurPlanningPdf(), new GlobalPlanningPdf(), new PlanningIcs());
 
     @Test
     void lePdfIndividuelNommeLAnimateurSesStandsEtSesRepos() throws IOException {
         PlanningFestival planning = planning();
 
-        String texte = texteDe(service.exportAnimateurPdf(planning, "A-ADA"));
+        String text = textOf(service.exportAnimateurPdf(planning, "A-ADA"));
 
-        assertThat(texte)
+        assertThat(text)
                 .contains("PLANNING")
                 .contains("Ada Lovelace")
                 .contains("Stratèges Associés")
@@ -56,8 +56,8 @@ class PlanningPdfContenuTest {
                 .contains("Kiosque Central")
                 .contains("09:00")
                 .contains("Repos");
-        assertThat(texte).doesNotContain("null");
-        ecrire("contenu-animateur.txt", texte);
+        assertThat(text).doesNotContain("null");
+        write("contenu-animateur.txt", text);
     }
 
     /** The team-mates on the same row are named, the animateur themselves is not. */
@@ -65,9 +65,9 @@ class PlanningPdfContenuTest {
     void lePdfIndividuelNommeLesCoequipiersDeLaMemeLigne() throws IOException {
         PlanningFestival planning = planning();
 
-        String texte = texteDe(service.exportAnimateurPdf(planning, "A-ADA"));
+        String text = textOf(service.exportAnimateurPdf(planning, "A-ADA"));
 
-        assertThat(texte).contains("Alan Turing");
+        assertThat(text).contains("Alan Turing");
     }
 
     /**
@@ -78,17 +78,17 @@ class PlanningPdfContenuTest {
     void lePdfGlobalPresenteLesAffectationsParJourneePuisParStand() throws IOException {
         PlanningFestival planning = planning();
 
-        String texte = texteDe(service.exportGlobalPdf(planning));
+        String text = textOf(service.exportGlobalPdf(planning));
 
-        assertThat(texte)
+        assertThat(text)
                 .contains("PLANNING GLOBAL")
                 .contains("Toutes les affectations")
                 .contains("Vendredi 14 août")
                 .contains("Stratèges Associés")
                 .contains("Ada Lovelace")
                 .contains("Alan Turing");
-        assertThat(texte).doesNotContain("null");
-        ecrire("contenu-global.txt", texte);
+        assertThat(text).doesNotContain("null");
+        write("contenu-global.txt", text);
     }
 
     /** An animateur with neither prenom nor nom shows by id, never as "null null" nor blank. */
@@ -102,27 +102,27 @@ class PlanningPdfContenuTest {
         poste.setAnimateur(anonyme);
         planning.getPostes().add(poste);
 
-        assertThat(texteDe(service.exportGlobalPdf(planning))).contains("A-VIDE");
+        assertThat(textOf(service.exportGlobalPdf(planning))).contains("A-VIDE");
     }
 
-    private static String texteDe(byte[] pdf) throws IOException {
+    private static String textOf(byte[] pdf) throws IOException {
         PdfReader reader = new PdfReader(pdf);
         try {
             PdfTextExtractor extracteur = new PdfTextExtractor(reader);
-            StringBuilder texte = new StringBuilder();
+            StringBuilder text = new StringBuilder();
             for (int page = 1; page <= reader.getNumberOfPages(); page++) {
-                texte.append(extracteur.getTextFromPage(page)).append('\n');
+                text.append(extracteur.getTextFromPage(page)).append('\n');
             }
-            return texte.toString();
+            return text.toString();
         } finally {
             reader.close();
         }
     }
 
-    private static void ecrire(String nom, String texte) throws IOException {
+    private static void write(String nom, String text) throws IOException {
         Path dossier = Path.of("target", "sample-exports");
         Files.createDirectories(dossier);
-        Files.writeString(dossier.resolve(nom), texte, StandardCharsets.UTF_8);
+        Files.writeString(dossier.resolve(nom), text, StandardCharsets.UTF_8);
     }
 
     /** Two animateurs on one stand, a geocoded stand, and a day with no seat for Ada. */

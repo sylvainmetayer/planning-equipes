@@ -31,48 +31,48 @@ class SolveIncrementalResourceTest {
 
     @Test
     void repartDuPlanPersisteEtNeBougeQueLePerimetreRouvert() throws InterruptedException {
-        planPersiste();
+        persistedPlan();
         List<Map<String, Object>> avant = affectationsPersistees();
-        int hardAvant = hardScorePersiste();
-        String cible = premierAnimateurAffecte(avant);
+        int hardBefore = persistedHardScore();
+        String target = premierAnimateurAffecte(avant);
 
-        JsonPath resultat = solveIncremental("{\"animateurIds\":[\"" + cible + "\"]}");
+        JsonPath result = solveIncremental("{\"animateurIds\":[\"" + target + "\"]}");
 
         // Most of the plan is frozen, and the perimeter did re-open seats.
-        assertThat(resultat.getInt("result.statistiques.postesFiges")).isPositive();
-        assertThat(resultat.getInt("result.statistiques.postesLiberesManuellement")).isPositive();
-        assertThat(resultat.getInt("result.statistiques.postesFiges"))
-                .isGreaterThan(resultat.getInt("result.statistiques.postesLiberesManuellement"));
+        assertThat(result.getInt("result.statistiques.postesFiges")).isPositive();
+        assertThat(result.getInt("result.statistiques.postesLiberesManuellement")).isPositive();
+        assertThat(result.getInt("result.statistiques.postesFiges"))
+                .isGreaterThan(result.getInt("result.statistiques.postesLiberesManuellement"));
 
         // Every seat held by someone else is exactly where it was.
         Set<String> apres = triplets(affectationsPersistees());
         for (Map<String, Object> affectation : avant) {
             String animateurId = animateurId(affectation);
-            if (animateurId == null || animateurId.equals(cible)) {
+            if (animateurId == null || animateurId.equals(target)) {
                 continue;
             }
             assertThat(apres).contains(triplet(affectation));
         }
 
         // And no hard violation was introduced along the way.
-        assertThat(hardScorePersiste()).isGreaterThanOrEqualTo(hardAvant);
+        assertThat(persistedHardScore()).isGreaterThanOrEqualTo(hardBefore);
     }
 
     @Test
     void sansPerimetreLeDiffNommeExactementLesEquipesQuiOntChange() throws InterruptedException {
-        planPersiste();
+        persistedPlan();
         List<Map<String, Object>> avant = affectationsPersistees();
-        String cible = premierAnimateurAffecte(avant);
+        String target = premierAnimateurAffecte(avant);
 
         // A late unavailability: the change the automatic perimeter is meant to
         // pick up on its own, with no body at all on the request.
-        rendreIndisponible(cible, premierJourDe(avant, cible));
-        JsonPath resultat = solveIncremental(null);
+        rendreIndisponible(target, firstDayOf(avant, target));
+        JsonPath result = solveIncremental(null);
 
-        assertThat(resultat.getInt("result.statistiques.postesLiberes")).isPositive();
-        assertThat(resultat.getInt("result.statistiques.postesLiberesManuellement")).isZero();
+        assertThat(result.getInt("result.statistiques.postesLiberes")).isPositive();
+        assertThat(result.getInt("result.statistiques.postesLiberesManuellement")).isZero();
         // Each reported change spells out both crews, by name.
-        List<Map<String, Object>> changements = resultat.getList("result.changements");
+        List<Map<String, Object>> changements = result.getList("result.changements");
         assertThat(changements).isNotEmpty();
         for (Map<String, Object> changement : changements) {
             assertThat(changement.get("standNom")).isNotNull();
@@ -101,11 +101,11 @@ class SolveIncrementalResourceTest {
     /** Runs an incremental solve to completion and returns its result. */
     private JsonPath solveIncremental(String corps) throws InterruptedException {
         attendreSolveurLibre();
-        var requete = given().contentType(ContentType.JSON);
+        var statement = given().contentType(ContentType.JSON);
         if (corps != null) {
-            requete = requete.body(corps);
+            statement = statement.body(corps);
         }
-        String jobId = requete
+        String jobId = statement
                 .when().post("/api/solve/incremental/async?seconds=5")
                 .then().statusCode(202)
                 .extract().path("id");
@@ -154,7 +154,7 @@ class SolveIncrementalResourceTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static String premierJourDe(List<Map<String, Object>> affectations, String animateurId) {
+    private static String firstDayOf(List<Map<String, Object>> affectations, String animateurId) {
         for (Map<String, Object> affectation : affectations) {
             if (animateurId.equals(animateurId(affectation))) {
                 return (String) ((Map<String, Object>) affectation.get("creneau")).get("date");
@@ -182,7 +182,7 @@ class SolveIncrementalResourceTest {
     }
 
     /** Hard level of the analysis stored by the last solve — 0 means feasible. */
-    private int hardScorePersiste() {
+    private int persistedHardScore() {
         Integer hardScore = given().when().get("/api/constraints")
                 .then().statusCode(200)
                 .extract().jsonPath().getObject("hardScore", Integer.class);
@@ -190,7 +190,7 @@ class SolveIncrementalResourceTest {
         return hardScore;
     }
 
-    private void planPersiste() throws InterruptedException {
+    private void persistedPlan() throws InterruptedException {
         given().when().post("/api/planning/reset").then().statusCode(200);
         given().when().post("/api/reference-data/import-scenario?name=scenario.yml").then().statusCode(200);
         attendreSolveurLibre();

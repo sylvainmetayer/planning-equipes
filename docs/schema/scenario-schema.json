@@ -291,7 +291,7 @@
           "exclusiveMinimum" : 0
         },
         "strategieCouverturePendantPause" : {
-          "$ref" : "#/$defs/StrategieCouverturePendantPause"
+          "$ref" : "#/$defs/PauseCoverageStrategy"
         }
       }
     },
@@ -324,6 +324,10 @@
           "exclusiveMinimum" : 0
         }
       }
+    },
+    "PauseCoverageStrategy" : {
+      "type" : "string",
+      "enum" : [ "FERMETURE", "RELEVE", "EFFECTIF_REDUIT" ]
     },
     "PosteDto" : {
       "type" : "object",
@@ -405,10 +409,6 @@
         }
       },
       "required" : [ "id", "nom", "typologiesProposees" ]
-    },
-    "StrategieCouverturePendantPause" : {
-      "type" : "string",
-      "enum" : [ "FERMETURE", "RELEVE", "EFFECTIF_REDUIT" ]
     },
     "TypeJoursHoraire" : {
       "type" : "string",

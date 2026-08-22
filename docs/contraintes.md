@@ -62,7 +62,7 @@ calées sur le créneau entier :
 
 Ce mécanisme ne crée jamais de créneau supplémentaire : `poste_affectation.creneau_id`
 reste une clé étrangère vers le créneau réel, la fenêtre effective vit sur le
-poste. Voir `PlanningService.construirePostes` et `Creneau.segmentsOuvertsMinutes`.
+poste. Voir `PlanningService.buildPostes` et `Creneau.segmentsOuvertsMinutes`.
 
 ### Dures — cadre légal mineurs (`LegalConstraints`)
 
@@ -83,7 +83,7 @@ jamais d'un booléen stocké.
 
 Le droit distingue **moins de 16 ans**, **16 à 18 ans** et **majeur**. Les deux
 premiers sont dérivés de `dateNaissance` à la date du créneau
-(`Animateur.estMoinsDe16AnsLe(LocalDate)` / `estMineurLe(LocalDate)`), **jamais
+(`Animateur.isUnder16On(LocalDate)` / `isMineurOn(LocalDate)`), **jamais
 stockés**.
 
 | Sujet | Moins de 16 ans | 16 à 18 ans | Majeur |
@@ -395,7 +395,7 @@ unicité garantie par un index unique partiel — migration V30). Un animateur q
 possède cette typologie dans ses compétences est dit **polyvalent** : il sait
 s'adapter, donc
 
-- `Animateur.possedeCompetencePour(stand)` renvoie vrai pour **n'importe quel**
+- `Animateur.hasCompetenceFor(stand)` renvoie vrai pour **n'importe quel**
   stand — il n'est jamais pénalisé par `appreciationIncompatible` ;
 - il est exclu de `limiterTypologiesDistinctesParAnimateur` : le disperser sur
   plusieurs typologies est précisément sa raison d'être ;
@@ -526,7 +526,7 @@ calculer cette moyenne** : il ne connaît ni les 9 semaines précédentes ni les
 suivantes. C'est une limite structurelle du périmètre, pas un manque
 d'implémentation. Le contrôle relève du service RH, à partir du cumul par
 animateur et par semaine déjà exposé par la page « Heures »
-(`HeuresPlanningService`) et les exports.
+(`PlanningHoursService`) et les exports.
 
 ### Travail de nuit des majeurs (art. L3122-1 et suivants)
 

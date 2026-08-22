@@ -19,12 +19,12 @@ import org.junit.jupiter.api.Test;
 class WhatIfResourceTest {
 
     @BeforeEach
-    void chargerScenario() {
+    void loadScenario() {
         given().when().post("/api/planning/reset").then().statusCode(200);
         given().when().post("/api/reference-data/import-scenario?name=scenario.yml").then().statusCode(200);
     }
 
-    private io.restassured.path.json.JsonPath simuler(String mutations) {
+    private io.restassured.path.json.JsonPath simulate(String mutations) {
         return given()
                 .contentType(ContentType.JSON)
                 .body(mutations)
@@ -36,16 +36,16 @@ class WhatIfResourceTest {
 
     @Test
     void unePlaceVideEstUneSimulationNeutre() {
-        var resultat = simuler("{}");
-        assertThat(resultat.getInt("animateurs")).isEqualTo(resultat.getInt("animateursReference"));
-        assertThat(resultat.getInt("standsOuverts")).isEqualTo(resultat.getInt("standsOuvertsReference"));
-        assertThat(resultat.getBoolean("simulation.feasible")).isEqualTo(resultat.getBoolean("reference.feasible"));
+        var result = simulate("{}");
+        assertThat(result.getInt("animateurs")).isEqualTo(result.getInt("animateursReference"));
+        assertThat(result.getInt("standsOuverts")).isEqualTo(result.getInt("standsOuvertsReference"));
+        assertThat(result.getBoolean("simulation.feasible")).isEqualTo(result.getBoolean("reference.feasible"));
     }
 
     @Test
     void ajouterDesAnimateursAugmenteLaCapacite() {
-        var resultat = simuler("{\"animateursAjoutes\":5}");
-        assertThat(resultat.getInt("animateurs")).isEqualTo(resultat.getInt("animateursReference") + 5);
+        var result = simulate("{\"animateursAjoutes\":5}");
+        assertThat(result.getInt("animateurs")).isEqualTo(result.getInt("animateursReference") + 5);
     }
 
     @Test
@@ -58,10 +58,10 @@ class WhatIfResourceTest {
         assertThat(ids).isNotEmpty();
 
         String retires = ids.stream().map(id -> "\"" + id + "\"").reduce((a, b) -> a + "," + b).orElse("");
-        var resultat = simuler("{\"animateursRetires\":[" + retires + "]}");
+        var result = simulate("{\"animateursRetires\":[" + retires + "]}");
 
-        assertThat(resultat.getInt("animateurs")).isZero();
-        assertThat(resultat.getBoolean("simulation.feasible")).isFalse();
+        assertThat(result.getInt("animateurs")).isZero();
+        assertThat(result.getBoolean("simulation.feasible")).isFalse();
         // And nothing was written: the referential still holds every animateur.
         given()
                 .when().get("/api/animateurs")
@@ -79,8 +79,8 @@ class WhatIfResourceTest {
                 .extract().jsonPath().getList("id", String.class);
         assertThat(stands).isNotEmpty();
 
-        var resultat = simuler("{\"standsFermes\":[\"" + stands.getFirst() + "\"]}");
-        assertThat(resultat.getInt("standsOuverts")).isEqualTo(resultat.getInt("standsOuvertsReference") - 1);
+        var result = simulate("{\"standsFermes\":[\"" + stands.getFirst() + "\"]}");
+        assertThat(result.getInt("standsOuverts")).isEqualTo(result.getInt("standsOuvertsReference") - 1);
 
         given()
                 .when().get("/api/stands")
@@ -99,7 +99,7 @@ class WhatIfResourceTest {
         String id = stand.getString("[0].id");
         int effectifMin = stand.getInt("[0].effectifMin");
 
-        simuler("{\"effectifsMin\":{\"" + id + "\":" + (effectifMin + 10) + "}}");
+        simulate("{\"effectifsMin\":{\"" + id + "\":" + (effectifMin + 10) + "}}");
 
         given()
                 .when().get("/api/stands")

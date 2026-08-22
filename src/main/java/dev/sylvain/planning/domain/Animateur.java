@@ -33,7 +33,7 @@ public class Animateur {
      * Derived, never stored on the animateur: true when {@link #competences}
      * contains the typologie flagged "ninja" in the referential. A ninja knows
      * how to adapt, so the solver may dispatch them on any stand — see
-     * {@link #possedeCompetencePour(Stand)} — and keeps some of them in reserve
+     * {@link #hasCompetenceFor(Stand)} — and keeps some of them in reserve
      * (contrainte {@code preserverBufferPolyvalents}). Set when the problem is
      * built, from the referential's single ninja typologie.
      */
@@ -55,7 +55,7 @@ public class Animateur {
      * Availability is opt-out: an animateur is available on every festival date
      * except the ones listed in {@link #joursIndisponibles}.
      */
-    public boolean estIndisponibleLe(LocalDate dateReference) {
+    public boolean isIndisponibleOn(LocalDate dateReference) {
         return dateReference != null
                 && joursIndisponibles != null
                 && joursIndisponibles.contains(dateReference);
@@ -66,7 +66,7 @@ public class Animateur {
      * travailleur" in the Code du travail). Always derived from
      * {@link #dateNaissance}, never stored.
      */
-    public boolean estMineurLe(LocalDate dateReference) {
+    public boolean isMineurOn(LocalDate dateReference) {
         return dateReference != null
                 && dateNaissance != null
                 && Period.between(dateNaissance, dateReference).getYears() < 18;
@@ -88,41 +88,41 @@ public class Animateur {
      * holidays (art. L4153-3, D4153-2) and the "continuous rest of at least
      * half the total holiday period" condition of art. D4153-2.</p>
      *
-     * <p>Like {@link #estMineurLe}, always derived from
+     * <p>Like {@link #isMineurOn}, always derived from
      * {@link #dateNaissance}, never stored.</p>
      */
-    public boolean estMoinsDe16AnsLe(LocalDate dateReference) {
+    public boolean isUnder16On(LocalDate dateReference) {
         return dateReference != null
                 && dateNaissance != null
                 && Period.between(dateNaissance, dateReference).getYears() < 16;
     }
 
-    public boolean estMajeurLe(LocalDate dateReference) {
+    public boolean isMajeurOn(LocalDate dateReference) {
         return dateReference != null
                 && dateNaissance != null
-                && !estMineurLe(dateReference);
+                && !isMineurOn(dateReference);
     }
 
     /**
      * A ninja adapts to any stand, so they are competent everywhere; anyone else
      * needs at least one competence among the stand's typologies.
      */
-    public boolean possedeCompetencePour(Stand stand) {
+    public boolean hasCompetenceFor(Stand stand) {
         return ninja || stand.getTypologiesProposees().stream().anyMatch(competences::containsKey);
     }
 
-    public boolean estReferentPour(Stand stand) {
+    public boolean isReferentFor(Stand stand) {
         return stand.getTypologiesProposees().stream()
                 .anyMatch(typologie -> competences.get(typologie) == NiveauCompetence.REFERENT);
     }
 
-    public boolean estDebutantPour(Stand stand) {
+    public boolean isDebutantFor(Stand stand) {
         return stand.getTypologiesProposees().stream()
                 .anyMatch(typologie -> competences.get(typologie) == NiveauCompetence.DEBUTANT);
     }
 
     /** True when at least one typologie proposée by the stand is among the animateur's declared wishes. */
-    public boolean aSouhaitePour(Stand stand) {
+    public boolean hasSouhaitFor(Stand stand) {
         return stand.getTypologiesProposees().stream().anyMatch(souhaits::contains);
     }
 
@@ -142,7 +142,7 @@ public class Animateur {
     }
 
     /** Same, followed by the id — for diagnostics, where the id is what the reader acts on. */
-    public String nomAvecId() {
+    public String nomWithId() {
         return nomAffiche() + " (" + id + ")";
     }
 
@@ -195,10 +195,20 @@ public class Animateur {
         this.email = email;
     }
 
+    /**
+     * The espace-animateur access token.
+     *
+     * <p>Named {@code jetonAcces} rather than {@code accessToken} on purpose:
+     * this accessor name is the JSON key the frontend reads
+     * ({@code models.ts}), and the column behind it is {@code jeton_acces}.
+     * The Java code says {@code token} everywhere it can; here it cannot,
+     * because the name is a contract rather than an identifier.</p>
+     */
     public String getJetonAcces() {
         return jetonAcces;
     }
 
+    /** @see #getJetonAcces() for why this one keeps the French name. */
     public void setJetonAcces(String jetonAcces) {
         this.jetonAcces = jetonAcces;
     }
@@ -216,7 +226,7 @@ public class Animateur {
      * Recomputes {@link #ninja} from the referential's ninja typologie id
      * ({@code null} when no typologie carries the flag).
      */
-    public void appliquerTypologieNinja(String typologieNinja) {
+    public void applyNinjaTypologie(String typologieNinja) {
         this.ninja = typologieNinja != null && competences != null && competences.containsKey(typologieNinja);
     }
 

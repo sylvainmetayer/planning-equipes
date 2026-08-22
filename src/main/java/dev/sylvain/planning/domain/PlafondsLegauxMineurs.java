@@ -21,8 +21,8 @@ package dev.sylvain.planning.domain;
  * that plateaus above zero hard. One declaration makes the drift impossible.</p>
  *
  * <p>Age brackets are always derived from {@code dateNaissance} at the
- * créneau's date, never stored — see {@link Animateur#estMineurLe} /
- * {@link Animateur#estMoinsDe16AnsLe}.</p>
+ * créneau's date, never stored — see {@link Animateur#isMineurOn} /
+ * {@link Animateur#isUnder16On}.</p>
  */
 public final class PlafondsLegauxMineurs {
 

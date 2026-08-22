@@ -27,10 +27,10 @@ public interface ConfigMentionsLegales {
      */
     Optional<String> responsableTraitement();
 
-    Donnees donnees();
+    Data donnees();
 
     /** What the privacy notice says about the personal data held here. */
-    interface Donnees {
+    interface Data {
 
         Optional<String> baseLegale();
 

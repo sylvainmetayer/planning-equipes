@@ -6,8 +6,8 @@ import dev.sylvain.planning.service.PlanSnapshotService;
 import dev.sylvain.planning.service.PlanSnapshotService.RestaurationResult;
 import dev.sylvain.planning.service.PlanSnapshotService.SnapshotDetail;
 import dev.sylvain.planning.service.PlanSnapshotService.SnapshotMeta;
-import dev.sylvain.planning.service.SnapshotComparaisonService;
-import dev.sylvain.planning.service.SnapshotComparaisonService.ComparaisonSnapshots;
+import dev.sylvain.planning.service.SnapshotComparisonService;
+import dev.sylvain.planning.service.SnapshotComparisonService.ComparaisonSnapshots;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -34,11 +34,11 @@ public class PlanSnapshotResource {
     PlanSnapshotService snapshotService;
 
     @Inject
-    SnapshotComparaisonService comparaisonService;
+    SnapshotComparisonService comparaisonService;
 
     @GET
     public List<SnapshotMeta> list() {
-        return snapshotService.lister();
+        return snapshotService.list();
     }
 
     /**
@@ -51,7 +51,7 @@ public class PlanSnapshotResource {
     @GET
     @Path("/comparables")
     public List<SnapshotMeta> comparables() {
-        return snapshotService.listerToutesEditions();
+        return snapshotService.listAllEditions();
     }
 
     /**
@@ -73,7 +73,7 @@ public class PlanSnapshotResource {
     @GET
     @Path("/{id}")
     public SnapshotDetail get(@PathParam("id") long id) {
-        SnapshotDetail detail = snapshotService.charger(id);
+        SnapshotDetail detail = snapshotService.load(id);
         if (detail == null) {
             throw new NotFoundException("Unknown snapshot: " + id);
         }
@@ -90,7 +90,7 @@ public class PlanSnapshotResource {
         String libelle = request == null || request.libelle() == null || request.libelle().isBlank()
                 ? "Instantané"
                 : request.libelle().trim();
-        SnapshotMeta meta = snapshotService.capturer(libelle, false);
+        SnapshotMeta meta = snapshotService.capture(libelle, false);
         if (meta == null) {
             return Response.status(Response.Status.CONFLICT)
                     .entity(new ErreurRestauration("Aucun plan persisté à enregistrer.", List.of()))
@@ -125,7 +125,7 @@ public class PlanSnapshotResource {
     @DELETE
     @Path("/{id}")
     public Response delete(@PathParam("id") long id) {
-        if (!snapshotService.supprimer(id)) {
+        if (!snapshotService.delete(id)) {
             throw new NotFoundException("Unknown snapshot: " + id);
         }
         return Response.noContent().build();

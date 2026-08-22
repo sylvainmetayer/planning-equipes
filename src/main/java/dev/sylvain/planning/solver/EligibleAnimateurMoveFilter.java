@@ -57,26 +57,26 @@ public final class EligibleAnimateurMoveFilter {
      * animateur without a matching appreciation is a valid — just penalised —
      * assignment, one this filter must let through.</p>
      */
-    public static boolean estEligible(PosteAffectation poste, Animateur animateur) {
+    public static boolean isEligible(PosteAffectation poste, Animateur animateur) {
         if (animateur == null) {
             return true;
         }
         Creneau creneau = poste.getCreneau();
-        if (animateur.estIndisponibleLe(creneau.getDate())) {
+        if (animateur.isIndisponibleOn(creneau.getDate())) {
             return false;
         }
-        if (!animateur.estMineurLe(creneau.getDate())) {
+        if (!animateur.isMineurOn(creneau.getDate())) {
             return true;
         }
-        boolean moinsDe16Ans = animateur.estMoinsDe16AnsLe(creneau.getDate());
+        boolean moinsDe16Ans = animateur.isUnder16On(creneau.getDate());
         LocalTime debutNuit = moinsDe16Ans
                 ? Creneau.DEBUT_NUIT_MOINS_DE_16_ANS
                 : Creneau.DEBUT_NUIT_16_A_18_ANS;
-        int plafondQuotidien = PlafondsLegauxMineurs.dureeQuotidienneMaxMinutes(moinsDe16Ans);
+        int dailyCap = PlafondsLegauxMineurs.dureeQuotidienneMaxMinutes(moinsDe16Ans);
         return !poste.getStand().isReserveMajeurs()
-                && !JoursFeries.estFerieEnFrance(creneau.getDate())
+                && !JoursFeries.isFerieInFrance(creneau.getDate())
                 && !creneau.chevaucheNuit(debutNuit)
-                && creneau.getDureeMinutes() <= plafondQuotidien
+                && creneau.getDureeMinutes() <= dailyCap
                 && creneau.getDureeMinutes() <= PlafondsLegauxMineurs.TRAVAIL_CONTINU_MAX_MINUTES;
     }
 
@@ -85,7 +85,7 @@ public final class EligibleAnimateurMoveFilter {
         public boolean accept(ScoreDirector<PlanningFestival> scoreDirector, ChangeMove<PlanningFestival> move) {
             PosteAffectation poste = (PosteAffectation) move.getEntity();
             Animateur animateur = (Animateur) move.getToPlanningValue();
-            return estEligible(poste, animateur);
+            return isEligible(poste, animateur);
         }
     }
 
@@ -94,7 +94,7 @@ public final class EligibleAnimateurMoveFilter {
         public boolean accept(ScoreDirector<PlanningFestival> scoreDirector, SwapMove<PlanningFestival> move) {
             PosteAffectation left = (PosteAffectation) move.getLeftEntity();
             PosteAffectation right = (PosteAffectation) move.getRightEntity();
-            return estEligible(left, right.getAnimateur()) && estEligible(right, left.getAnimateur());
+            return isEligible(left, right.getAnimateur()) && isEligible(right, left.getAnimateur());
         }
     }
 }

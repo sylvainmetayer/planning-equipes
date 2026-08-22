@@ -41,28 +41,28 @@ public class JdbcEditionScope {
 
     /** Work on a borrowed connection that yields a result. */
     @FunctionalInterface
-    public interface Requete<T> {
-        T executer(Connection connection) throws SQLException;
+    public interface Query<T> {
+        T execute(Connection connection) throws SQLException;
     }
 
     /** Work on a borrowed connection that yields nothing. */
     @FunctionalInterface
-    public interface Commande {
-        void executer(Connection connection) throws SQLException;
+    public interface Command {
+        void execute(Connection connection) throws SQLException;
     }
 
     /**
      * Runs {@code lecture} on a borrowed connection.
      *
-     * @param echec what to say when the database refuses — a sentence naming
+     * @param failure what to say when the database refuses — a sentence naming
      *              the business operation, not the SQL, since it ends up in a
      *              log an operator reads
      */
-    public <T> T lire(String echec, Requete<T> requete) {
+    public <T> T read(String failure, Query<T> statement) {
         try (Connection connection = dataSource.getConnection()) {
-            return requete.executer(connection);
+            return statement.execute(connection);
         } catch (SQLException e) {
-            throw new IllegalStateException(echec, e);
+            throw new IllegalStateException(failure, e);
         }
     }
 
@@ -71,9 +71,9 @@ public class JdbcEditionScope {
      * back on any failure. Written once so no caller has to remember the order
      * of the three calls, nor that the rollback belongs in the inner catch.
      */
-    public void ecrire(String echec, Commande commande) {
-        ecrireEtRendre(echec, connection -> {
-            commande.executer(connection);
+    public void write(String failure, Command command) {
+        writeAndReturn(failure, connection -> {
+            command.execute(connection);
             return null;
         });
     }
@@ -86,14 +86,14 @@ public class JdbcEditionScope {
      * goes back to the pool, and the next borrower must not inherit a
      * transaction mode it did not ask for.</p>
      */
-    public <T> T ecrireEtRendre(String echec, Requete<T> requete) {
+    public <T> T writeAndReturn(String failure, Query<T> statement) {
         try (Connection connection = dataSource.getConnection()) {
             boolean autoCommitPrecedent = connection.getAutoCommit();
             connection.setAutoCommit(false);
             try {
-                T resultat = requete.executer(connection);
+                T result = statement.execute(connection);
                 connection.commit();
-                return resultat;
+                return result;
             } catch (SQLException | RuntimeException e) {
                 connection.rollback();
                 throw e;
@@ -101,7 +101,7 @@ public class JdbcEditionScope {
                 connection.setAutoCommit(autoCommitPrecedent);
             }
         } catch (SQLException e) {
-            throw new IllegalStateException(echec, e);
+            throw new IllegalStateException(failure, e);
         }
     }
 
@@ -141,36 +141,36 @@ public class JdbcEditionScope {
      * concatenated, while the id that varies travels bound. Same reasoning for
      * every {@code nosemgrep} below (see {@code docs/securite.md}).</p>
      */
-    public boolean existe(String table, String id) {
-        return existe(table, ps -> ps.setString(2, id), table + " " + id);
+    public boolean exists(String table, String id) {
+        return exists(table, ps -> ps.setString(2, id), table + " " + id);
     }
 
     /** Same probe for a table whose id is database-generated ({@code creneau}). */
-    public boolean existe(String table, long id) {
-        return existe(table, ps -> ps.setLong(2, id), table + " " + id);
+    public boolean exists(String table, long id) {
+        return exists(table, ps -> ps.setLong(2, id), table + " " + id);
     }
 
     /** Deletes by id, {@code sql} naming the table and putting {@code edition_id = ?} first. */
-    public void supprimer(String sql, String id) {
-        supprimer(sql, ps -> ps.setString(2, id), id);
+    public void delete(String sql, String id) {
+        delete(sql, ps -> ps.setString(2, id), id);
     }
 
     /** Same, for a database-generated id. */
-    public void supprimer(String sql, long id) {
-        supprimer(sql, ps -> ps.setLong(2, id), String.valueOf(id));
+    public void delete(String sql, long id) {
+        delete(sql, ps -> ps.setLong(2, id), String.valueOf(id));
     }
 
     /** Binds whatever the probe or the delete needs beyond the edition. */
     @FunctionalInterface
-    private interface Liaison {
+    private interface Binding {
         void lier(PreparedStatement ps) throws SQLException;
     }
 
-    private boolean existe(String table, Liaison liaison, String quoi) {
-        return lire("Failed to probe " + quoi, connection -> {
+    private boolean exists(String table, Binding binding, String what) {
+        return read("Failed to probe " + what, connection -> {
             try (PreparedStatement ps = prepareScoped(connection,
                     "SELECT 1 FROM " + table + " WHERE edition_id = ? AND id = ?")) {
-                liaison.lier(ps);
+                binding.lier(ps);
                 // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string
                 try (ResultSet rs = ps.executeQuery()) {
                     return rs.next();
@@ -179,10 +179,10 @@ public class JdbcEditionScope {
         });
     }
 
-    private void supprimer(String sql, Liaison liaison, String quoi) {
-        ecrireEtRendre("Failed to delete " + quoi, connection -> {
+    private void delete(String sql, Binding binding, String what) {
+        writeAndReturn("Failed to delete " + what, connection -> {
             try (PreparedStatement ps = prepareScoped(connection, sql)) {
-                liaison.lier(ps);
+                binding.lier(ps);
                 return ps.executeUpdate();
             }
         });

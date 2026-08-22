@@ -19,8 +19,8 @@ public record ScenarioDto(
         List<@Valid TypologieDto> typologies,
         @NotNull List<@Valid StandDto> stands,
         @NotNull List<@Valid AnimateurDto> animateurs,
-        // Absent: PlanningService.construirePlanningDepuisDonnees generates the
-        // postes itself from stands x creneaux (mirroring construireDepuisReferenceData).
+        // Absent: PlanningService.buildPlanningFromData generates the
+        // postes itself from stands x creneaux (mirroring buildFromReferenceData).
         List<@Valid PosteDto> postes,
         @Valid ParametresLegauxDto parametresLegaux,
         @Valid ParametresDecoupageDto parametresDecoupage,

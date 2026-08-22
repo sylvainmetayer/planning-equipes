@@ -56,7 +56,7 @@ public final class QualiteConstraints {
                 .groupBy(PosteAffectation::getStand,
                         PosteAffectation::getCreneau,
                         ConstraintCollectors.sum(poste -> poste.getAnimateur() != null
-                                && poste.getAnimateur().estReferentPour(poste.getStand()) ? 1 : 0))
+                                && poste.getAnimateur().isReferentFor(poste.getStand()) ? 1 : 0))
                 .filter((stand, creneau, nombreReferents) -> nombreReferents == 0)
                 .penalize(HardMediumSoftScore.ONE_MEDIUM)
                 .asConstraint("standComplexeAvecReferent");
@@ -96,9 +96,9 @@ public final class QualiteConstraints {
                 .groupBy(PosteAffectation::getStand,
                         PosteAffectation::getCreneau,
                         ConstraintCollectors.sum(poste -> poste.getAnimateur()
-                                .estMineurLe(poste.getCreneau().getDate()) ? 1 : 0),
+                                .isMineurOn(poste.getCreneau().getDate()) ? 1 : 0),
                         ConstraintCollectors.sum(poste -> poste.getAnimateur()
-                                .estMajeurLe(poste.getCreneau().getDate()) ? 1 : 0))
+                                .isMajeurOn(poste.getCreneau().getDate()) ? 1 : 0))
                 .filter((stand, creneau, mineurs, majeurs) -> mineurs > majeurs)
                 .penalize(HardMediumSoftScore.ONE_MEDIUM,
                         (stand, creneau, mineurs, majeurs) -> mineurs - majeurs)
@@ -110,7 +110,7 @@ public final class QualiteConstraints {
                 "experienceRequisePourStandsPremium")
                 .filter(poste -> poste.getStand().isPremium()
                         && poste.getAnimateur() != null
-                        && poste.getAnimateur().estDebutantPour(poste.getStand()))
+                        && poste.getAnimateur().isDebutantFor(poste.getStand()))
                 .penalize(HardMediumSoftScore.ONE_MEDIUM)
                 .asConstraint("experienceRequisePourStandsPremium");
     }
@@ -269,7 +269,7 @@ public final class QualiteConstraints {
         return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
                 "appreciationIncompatible")
                 .filter(poste -> poste.getAnimateur() != null
-                        && !poste.getAnimateur().possedeCompetencePour(poste.getStand()))
+                        && !poste.getAnimateur().hasCompetenceFor(poste.getStand()))
                 .penalize(HardMediumSoftScore.ONE_MEDIUM)
                 .asConstraint("appreciationIncompatible");
     }
@@ -284,13 +284,13 @@ public final class QualiteConstraints {
         return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class),
                 "souhaitsIncompatibles")
                 .filter(poste -> poste.getAnimateur() != null
-                        && !poste.getAnimateur().aSouhaitePour(poste.getStand()))
+                        && !poste.getAnimateur().hasSouhaitFor(poste.getStand()))
                 .penalize(HardMediumSoftScore.ONE_MEDIUM)
                 .asConstraint("souhaitsIncompatibles");
     }
 
     /** Typologies the animateur is appreciated for that this poste's stand actually offers. */
-    private static Set<String> typologiesApprecieesDuPoste(PosteAffectation poste) {
+    private static Set<String> likedTypologiesOfPoste(PosteAffectation poste) {
         Animateur animateur = poste.getAnimateur();
         Stand stand = poste.getStand();
         Set<String> intersection = new HashSet<>(stand.getTypologiesProposees());
@@ -317,7 +317,7 @@ public final class QualiteConstraints {
                 // typologies is what they are there for, so the cap doesn't apply.
                 .filter(poste -> poste.getAnimateur() != null && poste.getStand() != null
                         && !poste.getAnimateur().isNinja())
-                .flatten(QualiteConstraints::typologiesApprecieesDuPoste)
+                .flatten(QualiteConstraints::likedTypologiesOfPoste)
                 .groupBy((poste, typologie) -> poste.getAnimateur(),
                         ConstraintCollectors.toSet((poste, typologie) -> typologie))
                 .filter((animateur, typologies) -> typologies.size() > TYPOLOGIES_DISTINCTES_SANS_PENALITE)
@@ -355,26 +355,26 @@ public final class QualiteConstraints {
                 .filter(poste -> poste.getAnimateur() != null && poste.getCreneau() != null)
                 .groupBy(PosteAffectation::getAnimateur,
                         ConstraintCollectors.toSet(poste -> poste.getCreneau().getJour()))
-                .filter((animateur, jours) -> plusLongueSequenceConsecutive(jours)
+                .filter((animateur, jours) -> longestConsecutiveSequence(jours)
                         > JOURS_CONSECUTIFS_TRAVAILLES_MAX)
                 .penalize(HardMediumSoftScore.ONE_MEDIUM,
-                        (animateur, jours) -> plusLongueSequenceConsecutive(jours)
+                        (animateur, jours) -> longestConsecutiveSequence(jours)
                                 - JOURS_CONSECUTIFS_TRAVAILLES_MAX)
                 .asConstraint("maxJoursConsecutifsTravailles");
     }
 
     /** Longest run of consecutive integers inside the set. */
-    private static int plusLongueSequenceConsecutive(Set<Integer> jours) {
+    private static int longestConsecutiveSequence(Set<Integer> jours) {
         List<Integer> tries = jours.stream().sorted().toList();
-        int plusLongue = 0;
+        int longest = 0;
         int courante = 0;
         int precedent = Integer.MIN_VALUE;
         for (int jour : tries) {
             courante = jour == precedent + 1 ? courante + 1 : 1;
-            plusLongue = Math.max(plusLongue, courante);
+            longest = Math.max(longest, courante);
             precedent = jour;
         }
-        return plusLongue;
+        return longest;
     }
 
     private boolean emplacementsEloignes(Stand standA, Stand standB) {
@@ -383,7 +383,7 @@ public final class QualiteConstraints {
         if (emplacementA == null || emplacementB == null) {
             return false;
         }
-        Double distanceMetres = emplacementA.distanceMetresVers(emplacementB);
+        Double distanceMetres = emplacementA.distanceMetresTo(emplacementB);
         return distanceMetres != null && distanceMetres > DISTANCE_ELOIGNEE_METRES;
     }
 }
