@@ -1,0 +1,156 @@
+# Playwright, une fois par nuit — et délibérément pas sur les PR.
+#
+# Ces 46 tests demandent la pile complète (application + PostgreSQL + serveur
+# de mail) et réamorcent la base à chaque exécution : les accrocher à chaque
+# PR coûterait plusieurs minutes par poussée pour un signal que la suite
+# unitaire donne déjà en six secondes.
+#
+# Mais « hors CI » avait un prix, et il a été payé : le défaut corrigé par
+# `8edef84` (les six champs du formulaire de verrouillage sans attribut `name`,
+# donc sans libellé accessible) a survécu six jours à un test e2e écrit
+# exprès pour lui. Le test existait, il échouait, personne ne le regardait.
+# Une exécution nocturne ne bloque aucune PR, mais elle rend cet oubli
+# impossible à répéter.
+name: Tests E2E (nocturne)
+
+on:
+  schedule:
+    # 01:00 UTC — 03:00 à Paris l'été, 02:00 l'hiver. GitHub ne planifie qu'en
+    # UTC : l'heure locale dérive donc d'une heure au changement d'heure, ce
+    # qui est sans conséquence pour une exécution nocturne.
+    - cron: '0 1 * * *'
+  # Pour valider une modification de ce fichier sans attendre la nuit.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-nocturne
+  cancel-in-progress: false
+
+jobs:
+  e2e:
+    runs-on: self-hosted
+    timeout-minutes: 45
+
+    # Pile jetable, montée pour cette exécution seule. La suite écrase la base
+    # via `/api/database/import` : elle ne doit jamais viser autre chose que
+    # ces conteneurs-là.
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: festival
+          POSTGRES_USER: festival
+          POSTGRES_PASSWORD: festival
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U festival"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      mailpit:
+        image: axllent/mailpit:latest
+        ports:
+          - 1025:1025
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: src/main/webui/package-lock.json
+
+      # Quinoa construit le frontend pendant le package : l'application servie
+      # est donc exactement celle qu'un déploiement sert, pas un `ng serve`.
+      - name: Build the application
+        run: ./mvnw -B --no-transfer-progress package -DskipTests
+
+      - name: Install frontend dependencies
+        working-directory: src/main/webui
+        run: npm ci
+
+      # Sans `--with-deps` : le runner est auto-hébergé, on n'y installe pas de
+      # paquets système. `E2E_CHROMIUM` reste la porte de sortie si le runner
+      # fournit déjà son propre Chromium (voir playwright.config.ts).
+      - name: Install Chromium for Playwright
+        working-directory: src/main/webui
+        run: npx playwright install chromium
+
+      - name: Start the application
+        env:
+          DB_URL: jdbc:postgresql://localhost:5432/festival
+          DB_USER: festival
+          DB_PASSWORD: festival
+          HTTP_PORT: 8080
+          ADMIN_PASSWORD: admin
+          MAIL_MOCK: 'false'
+          MAIL_HOST: localhost
+          MAIL_PORT: 1025
+          MAIL_FROM: planning-equipes@localhost
+          PUBLIC_URL: http://localhost:8080
+        run: |
+          java -jar target/quarkus-app/quarkus-run.jar > app.log 2>&1 &
+          echo $! > app.pid
+          # `/api/config` est la seule route publique sans session : c'est donc
+          # elle qui dit que l'application répond vraiment, et pas seulement
+          # que le port est ouvert.
+          for _ in $(seq 1 60); do
+            if curl -fsS http://localhost:8080/api/config > /dev/null; then
+              echo "Application prête."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "L'application n'a pas répondu en 120 s :"
+          cat app.log
+          exit 1
+
+      - name: Run the Playwright suite
+        working-directory: src/main/webui
+        env:
+          E2E_BASE_URL: http://localhost:8080
+          E2E_ADMIN_PASSWORD: admin
+        run: npm run e2e
+
+      # Les traces ne sont conservées qu'en cas d'échec (`trace:
+      # 'retain-on-failure'`), donc cet artefact est vide quand tout va bien.
+      - name: Upload the Playwright traces
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-traces
+          path: src/main/webui/test-results/**
+          if-no-files-found: ignore
+          retention-days: 7
+
+      # Un échec nocturne se lit le matin, sans la pile : le journal de
+      # l'application est la moitié de l'histoire que les traces ne disent pas.
+      - name: Upload the application log
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: application-log
+          path: app.log
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Stop the application
+        if: always()
+        run: |
+          if [ -f app.pid ]; then
+            kill "$(cat app.pid)" 2>/dev/null || true
+          fi

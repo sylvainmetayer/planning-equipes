@@ -222,7 +222,8 @@ On distingue cinq familles de tests :
   trouve bien quelque chose — sans quoi il passerait au vert le jour où son
   expression rationnelle cesserait de reconnaître le code.
 - **Tests de bout en bout** (`src/main/webui/e2e`, **Playwright**) : voir
-  ci-dessous — exécutés à la main, jamais en CI.
+  ci-dessous — jamais attachés à une PR, mais rejoués **chaque nuit** par le
+  workflow `e2e-nocturne.yml`.
 
 ### La langue du code, vérifiée
 
@@ -253,6 +254,29 @@ troisième test vérifie que chaque exception correspond encore à du code réel
 donc la liste ne peut pas pourrir.
 
 ### Tests de bout en bout (Playwright)
+
+**Une fois par nuit, pas à chaque PR.** Le workflow `e2e-nocturne.yml` monte la
+pile complète (application packagée, PostgreSQL et Mailpit jetables) à 01:00
+UTC — 3 h à Paris l'été, 2 h l'hiver, GitHub ne planifiant qu'en UTC — et
+rejoue toute la suite. `workflow_dispatch` permet de la déclencher à la main.
+
+Ce compromis a une histoire. Ces 46 tests demandent plusieurs minutes et
+réamorcent la base : les accrocher à chaque PR coûterait cher pour un signal
+que la suite unitaire donne en six secondes. Mais « hors CI » a un prix, et il
+a été payé — les six champs du formulaire de verrouillage sont restés sans
+libellé accessible pendant six jours alors qu'un test e2e écrit exprès pour ça
+échouait dans le vide. Une exécution nocturne ne bloque aucune PR et rend cet
+oubli impossible à répéter.
+
+Un échec nocturne se lit le matin sans la pile : le workflow conserve les
+traces Playwright **et** le journal de l'application, sept jours.
+
+⚠️ La suite écrase la base qu'elle vise via `/api/database/import`. En local,
+elle ne doit **jamais** pointer sur une instance dont la base contient des
+données réelles — et isoler le port HTTP ne suffit pas : le profil `%dev`
+pointe sur `localhost:5432/festival` quel que soit le port de l'application.
+Il faut isoler la base elle-même.
+
 
 `src/main/webui/e2e` exerce le frontend dans un vrai navigateur :
 
