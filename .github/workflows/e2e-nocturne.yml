@@ -34,6 +34,21 @@ jobs:
     runs-on: self-hosted
     timeout-minutes: 45
 
+    # Le job tourne dans l'image officielle Playwright, qui porte les
+    # bibliothèques système dont Chromium a besoin. La première tentative les
+    # installait sur l'hôte (`playwright install --with-deps`) : écarté parce
+    # qu'un runner auto-hébergé n'est pas un jetable qu'on modifie — et sans
+    # elles, le binaire se télécharge très bien puis refuse de démarrer
+    # (`libglib-2.0.so.0: cannot open shared object file`).
+    #
+    # La balise doit suivre la version de `@playwright/test` dans
+    # `src/main/webui/package.json` : une dérive redonne un navigateur que
+    # l'image n'outille pas.
+    container:
+      image: mcr.microsoft.com/playwright:v1.62.1-noble
+      # Chromium plante sur le /dev/shm par défaut d'un conteneur (64 Mo).
+      options: --ipc=host
+
     # Pile jetable, montée pour cette exécution seule. La suite écrase la base
     # via `/api/database/import` : elle ne doit jamais viser autre chose que
     # ces conteneurs-là.
@@ -54,7 +69,11 @@ jobs:
       mailpit:
         image: axllent/mailpit:latest
         ports:
+          # 1025 = SMTP, par où l'application dépose. 8025 = l'API REST, par où
+          # les specs relisent le code d'accès reçu par l'animateur. N'exposer
+          # que le premier laisse la suite muette sur tout le parcours espace.
           - 1025:1025
+          - 8025:8025
 
     steps:
       - name: Checkout repository
@@ -83,22 +102,19 @@ jobs:
         working-directory: src/main/webui
         run: npm ci
 
-      # Sans `--with-deps` : le runner est auto-hébergé, on n'y installe pas de
-      # paquets système. `E2E_CHROMIUM` reste la porte de sortie si le runner
-      # fournit déjà son propre Chromium (voir playwright.config.ts).
-      - name: Install Chromium for Playwright
-        working-directory: src/main/webui
-        run: npx playwright install chromium
+      # Pas d'installation de navigateur : l'image en embarque un, outillé.
+      # `npx playwright install` en téléchargerait un autre, à côté des
+      # bibliothèques prévues pour celui-là.
 
       - name: Start the application
         env:
-          DB_URL: jdbc:postgresql://localhost:5432/festival
+          DB_URL: jdbc:postgresql://postgres:5432/festival
           DB_USER: festival
           DB_PASSWORD: festival
           HTTP_PORT: 8080
           ADMIN_PASSWORD: admin
           MAIL_MOCK: 'false'
-          MAIL_HOST: localhost
+          MAIL_HOST: mailpit
           MAIL_PORT: 1025
           MAIL_FROM: planning-equipes@localhost
           PUBLIC_URL: http://localhost:8080
@@ -108,6 +124,8 @@ jobs:
           # `/api/config` est la seule route publique sans session : c'est donc
           # elle qui dit que l'application répond vraiment, et pas seulement
           # que le port est ouvert.
+          # `curl` est présent dans l'image Playwright ; s'il venait à
+          # disparaître, l'attente échouerait avant l'application.
           for _ in $(seq 1 60); do
             if curl -fsS http://localhost:8080/api/config > /dev/null; then
               echo "Application prête."
@@ -122,7 +140,12 @@ jobs:
       - name: Run the Playwright suite
         working-directory: src/main/webui
         env:
+          # L'application tourne dans ce conteneur-ci, donc localhost ; Mailpit
+          # est un service voisin, donc son nom. Dans un job conteneurisé les
+          # services ne sont pas sur localhost — c'est la différence qui casse
+          # une recette recopiée d'un job classique.
           E2E_BASE_URL: http://localhost:8080
+          E2E_MAILPIT_URL: http://mailpit:8025
           E2E_ADMIN_PASSWORD: admin
         run: npm run e2e
 
