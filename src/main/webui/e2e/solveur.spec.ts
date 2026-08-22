@@ -202,7 +202,8 @@ test("un échange accepté survit à la régénération du planning", async ({ b
   expect(initial.result?.hardScore).toBe(0);
 
   // Whoever holds the two seats of créneau C1 swaps stands, via the real flow:
-  // demande from the occupant's espace, acceptation by the admin.
+  // demande from the occupant's espace, accord of the colleague it targets,
+  // then acceptation by the admin.
   const planning = await planningPersiste(admin);
   const surS1 = occupantDe(planning, 'SOLV-S1', C1) as string;
   const surS2 = occupantDe(planning, 'SOLV-S2', C1) as string;
@@ -216,6 +217,16 @@ test("un échange accepté survit à la régénération du planning", async ({ b
   });
   expect(soumission.ok(), await soumission.text()).toBe(true);
   const demandeId = ((await soumission.json()) as { id: string }[])[0].id;
+
+  // A demande is born EN_ATTENTE_CIBLE: the admin may only arbitrate once the
+  // targeted colleague has agreed, so the accord comes from THEIR espace.
+  const jetonCible = await jetonDe(admin, surS2);
+  await ouvrirSessionEspace(admin, jetonCible, `${surS2}@example.org`);
+  const accord = await admin.post(
+    `/api/espace-animateur/${jetonCible}/demandes-recues/${demandeId}/accord`
+  );
+  expect(accord.ok(), await accord.text()).toBe(true);
+
   const acceptation = await admin.post(`/api/echanges/${demandeId}/acceptation`, { data: {} });
   expect(acceptation.ok(), await acceptation.text()).toBe(true);
 
