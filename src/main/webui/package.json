@@ -13,6 +13,7 @@
     "watch": "ng build --watch --configuration development",
     "pretest": "npm run generate-version",
     "test": "ng test",
+    "pretest:coverage": "npm run generate-version",
     "test:coverage": "ng test --coverage --coverage-reporters lcovonly --coverage-reporters html --coverage-reporters text-summary",
     "lint": "eslint .",
     "i18n-check": "node scripts/generate-version.js && node scripts/check-i18n.js",
