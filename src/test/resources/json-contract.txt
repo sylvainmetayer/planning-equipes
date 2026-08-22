@@ -1,0 +1,95 @@
+# The JSON keys this API puts on the wire, one line per exposed type.
+#
+# Frozen on purpose, and read by JsonContractTest. A key here is read by
+# `models.ts`, by the Angular pages and by anything else talking to this API:
+# renaming a record component or an accessor renames the key with it, and the
+# compiler says nothing at all.
+#
+# If the test fails, DO NOT regenerate this file. Each moved line is a break
+# for every client already reading the old key. Move it once, deliberately,
+# together with the clients that read it.
+#
+# Generated shape: <package>.<Type> = key, key, key (keys sorted).
+
+api.AdminLoginLimiter$Echecs = dernier, nombre
+api.AnimateurResource$AnimateurToken = jeton
+api.AuthResource$StatutSession = authentifie, nom
+api.ConfigResource$ConfigView = cloudflareWebAnalyticsToken, devMode, sentryDsn, sentryEnvironment
+api.ConstraintResource$ConstraintToggleUpdate = actif
+api.ConstraintResource$ConstraintView = actif, categorie, description, matchCount, name, niveau, score, violations
+api.ConstraintResource$ConstraintsView = analysedAt, contraintes, faisabilite, hardScore, postesNonPourvus, scoreGlobal
+api.DatabaseResource$ImportSummary = message, statements
+api.DebugResource$MailConfigView = adminEmail
+api.DemandeEchangeResource$ConfigurationFoire = foireOuverte
+api.DemandeEchangeResource$Decision = commentaire
+api.EspaceAnimateurResource$CodeSession = code
+api.McpResource$DemandeRevelation = motDePasse
+api.McpResource$McpKey = cle, pangolinAccessToken, pangolinAccessTokenId
+api.McpResource$StatutMcp = configuree, header
+api.MentionsLegalesResource$MentionsLegalesView = baseLegale, conservation, contact, directeurPublication, editeur, hebergeur, responsableTraitement
+api.PlanSnapshotResource$CaptureRequest = libelle
+api.PlanSnapshotResource$ErreurRestauration = message, referencesManquantes
+api.PlanningResource$PersistenceStatus = assignments
+api.PlanningResource$PlanningResolutionView = derniereModificationDonnees, resoluLe, solved
+api.PlanningResource$ResetSummary = animateurs, creneaux, postes, stands
+api.PlanningResource$VolumeView = animateurCount, contrainteAdHocCount, posteCount
+api.ReferenceDataResource$ImportScenarioResult = decoupageAuto, editionCreee, editionId, editionNom
+api.ReferenceDataResource$ImportTargetView = editionId, editionNomExistant, editionNomFichier, existe
+api.ReferenceDataResource$ScenarioValidationResult = erreurs, valide
+api.SolverJobResource$Heartbeat = at
+api.SolverJobResource$JobView = editionId, editionNom, elapsedSeconds, error, finishedAt, id, result, secondsLimit, startedAt, status, submittedAt, type
+api.SolverJobResource$JobsState = active, file
+api.ValidationError = message
+domain.Animateur = competences, dateNaissance, email, id, jetonAcces, joursIndisponibles, manager, ninja, nom, prenom, souhaits
+domain.ConstraintToggle = nom
+domain.ContrainteAdHoc = animateursConcernes, creeLe, creeParUtilisateurId, creneau, id, raison, stand, type
+domain.Creneau = couverturePause, date, dureeMinutes, famille, heureDebut, heureFin, id, jour
+domain.Edition = creeLe, defaut, id, nom
+domain.Emplacement = id, latitude, longitude, nom
+domain.FenetreHoraire = heureDebut, heureFin
+domain.HoraireStand = dateDebut, dateFin, dates, fenetres, id, jours, joursSemaine, mode, motif
+domain.IndisponibiliteStand = date, heureDebut, heureFin, id, motif
+domain.OuvertureStand = date, heureDebut, heureFin, id, motif
+domain.ParametresDecoupage = dureeChevauchementMinutes, dureeDecalageMaxMinutes, dureePauseRepasMinutes, dureeVacationCibleMinutes, dureeVacationMaxMinutes, dureeVacationMinMinutes, fenetreRepasMidiDebut, fenetreRepasMidiFin, fenetreRepasSoirDebut, fenetreRepasSoirFin, nombreFamillesDecalage, strategieCouverturePendantPause
+domain.ParametresLegaux = dureeHebdomadaireMaxMineurMinutes, dureeHebdomadaireMaxMinutes, pauseMinimaleEntreVacationsMinutes, reposQuotidienMinimalMinutes
+domain.ParametresQualite = maxEmplacementsDistinctsParJour
+domain.ParametresSolveur = dureeResolutionSecondes, mailFinResolution
+domain.PlanningFestival = animateurs, constraintsDesactivees, contraintesAdHoc, dateDebutFestival, parametresLegaux, parametresQualite, postes, score, verrouillages
+domain.PosteAffectation = animateur, creneau, dureeEffectiveMinutes, heureDebutEffective, heureFinEffective, id, stand, verrouille
+domain.Stand = effectifMax, effectifMin, emplacement, horaires, id, indisponibilites, niveauEffort, nom, ouvertures, premium, reserveMajeurs, typologiesProposees
+domain.VerrouillagePlanning = animateurId, creeLe, creneauId, id, jour, raison, standId, type
+service.DemandeEchangeService$NouvelleDemande = cibleId, creneauCibleId, creneauId, motif, standCibleId, standId
+service.EspaceAnimateurService$ColleagueView = id, nomComplet
+service.EspaceAnimateurService$DemandeEchangeView = cibleDecideLe, cibleId, cibleNom, commentaireAdmin, contraintesViolees, creeLe, creneauCibleId, creneauId, date, dateCible, decideLe, demandeurId, demandeurNom, heureDebut, heureDebutCible, heureFin, heureFinCible, id, motif, prevalidationOk, standCibleId, standCibleNom, standId, standNom, statut
+service.EspaceAnimateurService$EspaceAnimateurView = animateurId, collegues, foireOuverte, joursRepos, nom, planningResoluLe, postes, prenom
+service.EspaceAnimateurService$PosteAnimateurView = coequipiers, creneauId, date, heureDebut, heureFin, standId, standNom
+service.FeasibilityAnalyzer$CauseInfaisabilite = capacite, creneauId, date, demande, heureDebut, heureFin, manque, message, severite, standIds, type
+service.FeasibilityAnalyzer$FeasibilityReport = causes, feasible, manqueAnimateurs, message, totalCauses
+service.HoraireCompaction$LigneCompactage = compacte, ecartMinutes, exceptionsApres, fenetresAvant, raison, reglesApres, standId
+service.HoraireCompaction$RapportCompactage = applique, fenetresApres, fenetresAvant, stands, standsCompactes
+service.ImportImpact = animateurs, demandesEchange, demandesEnAttente, planningResolu, postes, stands, verrous
+service.KpiHistoriqueService$KpiHistoriqueEntry = creeLe, editionId, editionNom, id, kpi
+service.OuvertureStandsAnalyzer$Anomaly = date, message, standId, standNom, type
+service.OuvertureStandsAnalyzer$CelluleJour = date, etat, fenetres, minutesAmplitude, minutesOuvertes, postes, source
+service.OuvertureStandsAnalyzer$FenetreEffective = heureDebut, heureFin
+service.OuvertureStandsAnalyzer$JourAmplitude = date, heureDebut, heureFin, jour, minutes, nombreCreneaux
+service.OuvertureStandsAnalyzer$LigneStand = effectifMin, jours, minutesOuvertes, nom, postes, standId
+service.OuvertureStandsAnalyzer$RapportOuvertures = anomalies, jours, postesTotal, stands, standsJamaisOuverts
+service.PlanSnapshotService$AffectationSnapshot = animateurId, creneauId, heureDebutEffective, heureFinEffective, posteId, standId
+service.PlanSnapshotService$SnapshotDetail = affectations, meta
+service.PlanSnapshotService$SnapshotMeta = automatique, creeLe, editionId, editionNom, id, kpi, libelle, nombreAffectations, score
+service.PlanningDeliveryService$DeliveryReport = echecs, envoyes, sansEmail
+service.PlanningHoursService$HeuresAnimateur = animateurId, heuresParSemaine, nom, total
+service.PlanningHoursService$HeuresRapport = animateurs, semaines
+service.PlanningKpiService$PlanningKpi = animateursAffectes, creneauxDistincts, dureeSolveSecondes, heuresEcartType, heuresIncompletes, heuresMax, heuresMin, heuresMoyenne, heuresTotal, modificationsManuelles, postesPourvus, postesTotal, score, scoreHard, scoreMedium, scoreSoft, standsDistincts, tauxModificationsManuelles, violationsParContrainte
+service.PlanningService$ConstraintDiagnostic = matchCount, name, score, violations
+service.PlanningService$PlanningDiagnostic = contraintes, faisabilite, hardScore, postesNonPourvus, score
+service.ReplanificationScope = animateurIds, jours, standIds
+service.SnapshotComparisonService$ComparaisonSnapshots = base, diffViolations, editionsDifferentes, variante, volumetriesDifferentes
+service.SnapshotComparisonService$CoteComparaison = creeLe, editionId, editionNom, kpi, kpiRecalcule, libelle, snapshotId
+service.SnapshotComparisonService$DiffContrainte = base, contrainte, variante
+service.StaffingAnalyzer$JourStaffing = date, heures, jour, picAvecPause, picSimultane, sieges, standsOuverts
+service.StaffingAnalyzer$StaffingSummary = borneRetenue, capaciteHeuresParAnimateur, chargeTotal, dureeHebdomadaireMaxMinutes, jourCritique, minimumMajeurs, minimumMineurs, minimumTotal, nombreSemaines, parJour, pauseMinimaleMinutes, picAvecPause, picSimultane, totalDemandeHeures
+service.TypologieItem = id, label, ninja
+service.WhatIfService$Mutations = animateursAjoutes, animateursRetires, effectifsMin, standsFermes
+service.WhatIfService$ResultatWhatIf = animateurs, animateursReference, creneaux, reference, simulation, standsOuverts, standsOuvertsReference
