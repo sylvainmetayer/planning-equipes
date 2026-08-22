@@ -279,7 +279,10 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `@sentry/angular` (error reporting, loaded by a dynamic `import()` only when a
   DSN is configured — see `core/observability.ts`); `leaflet` + `@types/leaflet`
   (the emplacement map picker, reached only by the lazy `/emplacements` route).
-  Dev-only: `@playwright/test`, `vitest`, `jsdom`, `prettier`, `typescript`,
+  Dev-only: `@playwright/test`, `vitest`, `@vitest/coverage-v8`
+  (`npm run test:coverage`, run in CI — the report is published as an artifact
+  and nothing consumes it: no threshold, no external service), `jsdom`,
+  `prettier`, `typescript`,
   `angular-eslint` + `eslint` + `typescript-eslint` (`npm run lint`, run in CI —
   it is what mechanically defends the conventions of this section: OnPush,
   function-based `input()`/`output()`, `@for` with a `track`, no `any`).

@@ -387,12 +387,19 @@ données ensemencé.
 ### Mesurer la couverture
 
 ```bash
-./mvnw test -Pcoverage     # puis ouvrir target/site/jacoco/index.html
+./mvnw test -Pcoverage                    # puis target/site/jacoco/index.html
+cd src/main/webui && npm run test:coverage # puis coverage/planning-equipes-ui/
 ```
 
-Profil **opt-in**, comme `scenario-tests` et `generate-schema` : ni le build par
-défaut ni la CI ne l'activent, l'instrumentation JaCoCo n'ayant d'intérêt que
-lorsqu'on cherche activement des trous. Référence actuelle : **82,8 %**
+**La CI publie les deux rapports en artefacts** (`coverage-backend` et
+`coverage-frontend`, sept jours de rétention) : le job `test` active
+`-Pcoverage`, le job `frontend` exécute `test:coverage`. Rien ne les consomme —
+ni seuil qui casse un build, ni service externe. Le rapport est simplement là
+quand quelqu'un cherche vraiment un trou, sans avoir à reproduire la CI sur sa
+machine.
+
+Référence actuelle côté frontend : **57,3 %** de lignes (831 tests). Côté
+backend : **82,8 %**
 d'instructions, avec `solver/constraints` à 99,3 % et `solver` à 98,6 %, contre
 68 % pour `api` et 80 % pour `service` — ce dernier dominé par
 les dépôts du référentiel, du code d'accès aux données dont le test coûte cher

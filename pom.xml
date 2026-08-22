@@ -329,10 +329,10 @@
                 </plugins>
             </build>
         </profile>
-        <!-- Opt-in: measures test coverage with JaCoCo. Not run by the default
-             build or CI (the agent instrumentation costs a few seconds and the
-             report is only useful when actively hunting for gaps) — use
-             ./mvnw test -Pcoverage, then open
+        <!-- Measures test coverage with JaCoCo. CI activates it and publishes
+             target/site/jacoco as an artifact (7 days), so the report is there
+             when someone wants it; nothing consumes it — no threshold, no
+             external service. Locally: ./mvnw test -Pcoverage, then open
              target/site/jacoco/index.html. -->
         <profile>
             <id>coverage</id>
