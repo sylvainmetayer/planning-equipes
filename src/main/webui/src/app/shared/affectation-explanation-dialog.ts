@@ -22,10 +22,15 @@ import {
   HardMediumSoftScore,
   PlanningFestival,
   PosteAffectation,
-  Stand,
   SwapSimulation
 } from '../core/models';
 import { errorPrefix } from '../core/error-message';
+import {
+  candidatsPour,
+  nouvellesViolations,
+  sensDuDelta,
+  violationsResolues
+} from './affectation-explanation-rules';
 
 export interface AffectationExplanationDialogData {
   poste: PosteAffectation;
@@ -191,28 +196,15 @@ export class AffectationExplanationDialog {
   protected readonly simulationError = signal('');
   protected readonly simulation = signal<SwapSimulation | null>(null);
 
-  protected readonly deltaSens = computed<'better' | 'worse' | 'same'>(() => {
-    const delta = this.simulation()?.delta;
-    return delta ? compareDelta(delta) : 'same';
-  });
+  protected readonly deltaSens = computed<'better' | 'worse' | 'same'>(() => sensDuDelta(this.simulation()));
 
-  protected readonly violationsResolues = computed<ContrainteImpact[]>(() => {
-    const simulation = this.simulation();
-    if (!simulation) {
-      return [];
-    }
-    const nomsApres = new Set(simulation.contraintesVioleesApres.map((impact) => impact.name));
-    return simulation.contraintesVioleesAvant.filter((impact) => !nomsApres.has(impact.name));
-  });
+  protected readonly violationsResolues = computed<ContrainteImpact[]>(() =>
+    violationsResolues(this.simulation())
+  );
 
-  protected readonly nouvellesViolations = computed<ContrainteImpact[]>(() => {
-    const simulation = this.simulation();
-    if (!simulation) {
-      return [];
-    }
-    const nomsAvant = new Set(simulation.contraintesVioleesAvant.map((impact) => impact.name));
-    return simulation.contraintesVioleesApres.filter((impact) => !nomsAvant.has(impact.name));
-  });
+  protected readonly nouvellesViolations = computed<ContrainteImpact[]>(() =>
+    nouvellesViolations(this.simulation())
+  );
 
   constructor() {
     void this.charger();
@@ -253,25 +245,9 @@ export class AffectationExplanationDialog {
   }
 }
 
-/** Lexicographic hard > medium > soft comparison, matching how Timefold itself compares scores. */
-function compareDelta(delta: HardMediumSoftScore): 'better' | 'worse' | 'same' {
-  if (delta.hardScore !== 0) {
-    return delta.hardScore > 0 ? 'better' : 'worse';
-  }
-  if (delta.mediumScore !== 0) {
-    return delta.mediumScore > 0 ? 'better' : 'worse';
-  }
-  if (delta.softScore !== 0) {
-    return delta.softScore > 0 ? 'better' : 'worse';
-  }
-  return 'same';
-}
-
-
-/** True when the animateur holds an appreciation on at least one typologie this stand offers. */
-export function aUneAppreciationPour(animateur: Animateur, stand: Stand): boolean {
-  return stand.typologiesProposees.some((typologie) => typologie in (animateur.competences ?? {}));
-}
+// Re-exported so the two calendars keep importing it from here, next to the
+// dialog it feeds; the rule itself lives in `affectation-explanation-rules.ts`.
+export { aUneAppreciationPour } from './affectation-explanation-rules';
 
 /**
  * Opens the "Pourquoi lui ?" dialog for one filled seat, offering every other
@@ -279,12 +255,8 @@ export function aUneAppreciationPour(animateur: Animateur, stand: Stand): boolea
  * the shared entry point of the day and month calendars.
  */
 export function ouvrirExplication(dialog: MatDialog, planning: PlanningFestival, poste: PosteAffectation): void {
-  const candidats = (planning.animateurs ?? []).filter(
-    (animateur) =>
-      animateur.id !== poste.animateur?.id && poste.stand && aUneAppreciationPour(animateur, poste.stand)
-  );
   dialog.open(AffectationExplanationDialog, {
-    data: { poste, planning, candidats },
+    data: { poste, planning, candidats: candidatsPour(planning, poste) },
     width: '32rem'
   });
 }
