@@ -30,7 +30,11 @@ import { errorPrefix } from '../../core/error-message';
 export class StaffingPage {
   protected readonly columns = ['jour', 'standsOuverts', 'sieges', 'heures', 'picSimultane', 'picAvecPause'];
   protected readonly summary = signal<StaffingSummary | null>(null);
-  protected readonly loading = signal(true);
+  // `false`, not `true`: the constructor calls `load()`, which flips it to
+  // `true` synchronously before its first `await`. The initial value was
+  // never observable, so `true` only claimed a loading state that no render
+  // ever saw.
+  protected readonly loading = signal(false);
   protected readonly error = signal('');
 
   protected readonly heuresParSemaine = computed(() => {

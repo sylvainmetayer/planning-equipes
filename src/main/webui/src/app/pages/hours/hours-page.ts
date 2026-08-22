@@ -119,6 +119,11 @@ export class HoursPage {
       const planning = await this.planningState.require();
       this.rapport.set(await this.api.post<HeuresRapport>('/api/planning/hours', planning));
     } catch (error) {
+      // The report is dropped, unlike the lists of /kpi and /comparateur which
+      // survive a failed refresh. It is not an inconsistency: those pages
+      // reload a list the server already holds, this one asks the server to
+      // *recompute* hours against legal ceilings. A stale total left on screen
+      // under a fresh timestamp is exactly the number nobody should act on.
       this.rapport.set(null);
       this.output.set(errorPrefix(error));
     } finally {

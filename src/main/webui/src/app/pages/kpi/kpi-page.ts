@@ -61,6 +61,10 @@ export class KpiPage {
     try {
       this.entries.set(await this.api.get<KpiHistoriqueEntry[]>('/api/kpi/historique'));
     } catch (error) {
+      // The list is kept, unlike the report of /heures which is dropped: this
+      // is history the server already holds, and losing the screen to a
+      // network blip helps nobody. The error sits next to it, and the operator
+      // just pressed « Actualiser », so nothing here passes for fresh.
       this.error.set(errorMessage(error));
     } finally {
       this.chargement.set(false);

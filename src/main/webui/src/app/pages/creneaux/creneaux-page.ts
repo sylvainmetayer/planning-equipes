@@ -109,7 +109,13 @@ export class CreneauxPage {
     return a.jour - b.jour || (a.heureDebut ?? '').localeCompare(b.heureDebut ?? '');
   }
 
-  /** Keyed on the displayed slots, so the group filter also narrows "tout sélectionner". */
+  /**
+   * Keyed on the displayed slots, so "select all" only ever reaches what the
+   * page is showing. It used to be justified by the groupe-de-créneaux
+   * filter, which #172 removed along with the groups themselves; the keying
+   * outlives it because any future narrowing of the list must behave the
+   * same way.
+   */
   protected readonly selection = new TableSelection<number>(
     computed(() => this.creneauxAffiches().map((creneau) => creneau.id))
   );
