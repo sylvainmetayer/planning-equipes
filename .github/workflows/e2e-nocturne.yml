@@ -177,3 +177,19 @@ jobs:
           if [ -f app.pid ]; then
             kill "$(cat app.pid)" 2>/dev/null || true
           fi
+
+      # Ce job tourne en root dans son conteneur, et écrit dans l'espace de
+      # travail que le runner partage avec tous les autres jobs. Sans cette
+      # étape, il y laisse des fichiers root : le `checkout` du job suivant
+      # échoue alors sur `Permission denied` en tentant de nettoyer, et
+      # l'ensemble de la CI reste bloqué jusqu'à une intervention manuelle sur
+      # la machine. C'est arrivé.
+      #
+      # L'uid n'est pas codé en dur : `RUNNER_TEMP` est créé hors conteneur par
+      # l'utilisateur du runner, il porte donc la bonne identité numérique.
+      - name: Give the workspace back to the runner
+        if: always()
+        run: |
+          proprietaire=$(stat -c '%u:%g' "$RUNNER_TEMP")
+          echo "Restitution de $GITHUB_WORKSPACE à $proprietaire"
+          chown -R "$proprietaire" "$GITHUB_WORKSPACE" || true

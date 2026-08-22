@@ -303,7 +303,15 @@ export class AdminShell {
     // Same reasoning for the "Édition actuelle" strip: it sits in the shell, so
     // the list of editions is loaded here rather than by any single page.
     void this.editions.reload();
-    destroyRef.onDestroy(this.jobs.onResult('SOLVE', () => void this.resolution.reload()));
+    // Both kinds of solve, not just the full one: an incremental replan rewrites
+    // `planning_resolution` exactly the same way, so it clears the "reference
+    // data changed since the last solve" banner just the same. Listening for
+    // `SOLVE` alone left that banner up after a targeted replan until the next
+    // referential write or a page reload — telling the operator their fresh
+    // plan was stale. `ANALYZE` is deliberately absent: it persists nothing.
+    for (const type of ['SOLVE', 'SOLVE_INCREMENTAL'] as const) {
+      destroyRef.onDestroy(this.jobs.onResult(type, () => void this.resolution.reload()));
+    }
     // Router `title` is applied on NavigationEnd too; subscribing after it in
     // the same microtask order means `Title.getTitle()` already holds the new
     // page's title when the announcement is built.

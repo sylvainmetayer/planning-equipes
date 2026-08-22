@@ -57,8 +57,13 @@ describe('AdminShell', () => {
   const announcer = { announce: vi.fn() };
   const dialog = { open: vi.fn() };
   const api = { post: vi.fn(), get: vi.fn() };
-  /** Handler the shell registers to refresh the resolution after a solve. */
-  let onSolveResult: (() => void) | undefined;
+  /**
+   * Handlers the shell registers, by job type. Keyed rather than collapsed into
+   * one: the shell used to subscribe to `SOLVE` alone, and a type-blind double
+   * could not see it — the banner then stayed up for good after an incremental
+   * solve, which is what shipped.
+   */
+  const onResultByType = new Map<string, () => void>();
   const unregisterResult = vi.fn();
 
   let fixture: ComponentFixture<AdminShell>;
@@ -98,9 +103,9 @@ describe('AdminShell', () => {
     ]) {
       stub.mockClear();
     }
-    onSolveResult = undefined;
-    jobs.onResult.mockImplementation((_type: string, handler: () => void) => {
-      onSolveResult = handler;
+    onResultByType.clear();
+    jobs.onResult.mockImplementation((type: string, handler: () => void) => {
+      onResultByType.set(type, handler);
       return unregisterResult;
     });
     api.post.mockResolvedValue(undefined);
@@ -166,21 +171,37 @@ describe('AdminShell', () => {
       expect(editionsReload).toHaveBeenCalledOnce();
     });
 
-    it('re-reads the resolution state after a solve, wherever it was started', () => {
+    it('re-reads the resolution state after a full solve, wherever it was started', () => {
       createShell();
       resolutionReload.mockClear();
 
-      onSolveResult?.();
+      onResultByType.get('SOLVE')?.();
 
       expect(resolutionReload).toHaveBeenCalledOnce();
     });
 
-    it('unregisters its solve handler with the shell', () => {
+    /**
+     * An incremental replan writes `planning_resolution` exactly like a full
+     * solve, so it clears the "reference data changed since the last solve"
+     * banner just the same. The shell only listened for `SOLVE`, so a targeted
+     * replan left that banner up until the next referential write or a page
+     * reload — telling the operator their fresh plan was stale.
+     */
+    it('re-reads it after an incremental replan too, which also rewrites the resolution', () => {
+      createShell();
+      resolutionReload.mockClear();
+
+      onResultByType.get('SOLVE_INCREMENTAL')?.();
+
+      expect(resolutionReload).toHaveBeenCalledOnce();
+    });
+
+    it('unregisters both solve handlers with the shell', () => {
       createShell();
 
       fixture.destroy();
 
-      expect(unregisterResult).toHaveBeenCalledOnce();
+      expect(unregisterResult).toHaveBeenCalledTimes(2);
     });
   });
 
