@@ -94,9 +94,15 @@ test("l'import d'un fichier à section edition annonce la cible, importe ailleur
   ).json()) as { id: string }[];
   expect(standsCible.map((stand) => stand.id)).toContain('E2EIMP-S1');
 
-  // Switching reloads the page onto the freshly written edition.
+  // Switching reloads the page onto the freshly written edition. The waiter is
+  // armed BEFORE the click on purpose: `waitForLoadState('load')` resolves
+  // straight away on the document that is already loaded, so it never waited
+  // for the reload at all. The assertions below then raced it, and the
+  // localStorage cleanup landed in a context the reload had destroyed —
+  // "Execution context was destroyed", one night out of two.
+  const rechargement = page.waitForEvent('load');
   await recap.getByRole('button', { name: `Basculer sur « ${EDITION_IMPORT.nom} »` }).click();
-  await page.waitForLoadState('load');
+  await rechargement;
   await expect(page.locator('body')).toContainText(EDITION_IMPORT.nom);
 
   // Housekeeping: the switch persisted in localStorage; forget it so the
