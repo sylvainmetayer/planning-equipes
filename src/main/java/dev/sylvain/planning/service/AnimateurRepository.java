@@ -37,7 +37,7 @@ public class AnimateurRepository {
         try (Connection connection = dataSource.getConnection()) {
             try (PreparedStatement ps = scope.prepareScoped(connection,
                     """
-                    SELECT id, prenom, nom, date_naissance, manager, email, jeton_acces
+                    SELECT id, prenom, nom, date_naissance, manager, email, access_token
                     FROM animateur
                     WHERE edition_id = ?
                     ORDER BY id""");
@@ -50,7 +50,7 @@ public class AnimateurRepository {
                             rs.getObject("date_naissance", LocalDate.class),
                             rs.getBoolean("manager"));
                     animateur.setEmail(rs.getString("email"));
-                    animateur.setJetonAcces(rs.getString("jeton_acces"));
+                    animateur.setJetonAcces(rs.getString("access_token"));
                     byId.put(animateur.getId(), animateur);
                 }
             }
@@ -132,9 +132,9 @@ public class AnimateurRepository {
                 PreparedStatement ps = scope.prepareScoped(connection,
                         """
                         UPDATE animateur
-                        SET jeton_acces = gen_random_uuid()::text
+                        SET access_token = gen_random_uuid()::text
                         WHERE edition_id = ? AND id = ?
-                        RETURNING jeton_acces""")) {
+                        RETURNING access_token""")) {
             ps.setString(2, id);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? rs.getString(1) : null;
@@ -177,15 +177,13 @@ public class AnimateurRepository {
      * (the caller then runs everything else inside
      * {@code EditionContext.executeIn}).
      */
-    // The column is `jeton_acces` and stays so: renaming it means a Flyway
-    // migration over live data for a name nobody reads outside this SQL.
     public TokenOwner resolveAnimateurToken(String token) {
         if (token == null || token.isBlank()) {
             return null;
         }
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement(
-                        "SELECT edition_id, id, email FROM animateur WHERE jeton_acces = ?")) {
+                        "SELECT edition_id, id, email FROM animateur WHERE access_token = ?")) {
             ps.setString(1, token);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next()
@@ -211,7 +209,7 @@ public class AnimateurRepository {
      */
     void upsertAnimateur(Connection connection, Animateur animateur, boolean conserverEmailSiAbsent)
             throws SQLException {
-        // jeton_acces is deliberately absent: a fresh row gets the database
+        // access_token is deliberately absent: a fresh row gets the database
         // default, an existing row keeps its token. Rotation only happens
         // through regenerateAnimateurToken.
         String miseAJourEmail = conserverEmailSiAbsent

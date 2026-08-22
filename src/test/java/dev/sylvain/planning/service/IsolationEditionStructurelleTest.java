@@ -61,7 +61,7 @@ class IsolationEditionStructurelleTest {
      * </ul>
      */
     private static final List<String> EXCEPTIONS_ASSUMEES = List.of(
-            "SELECT edition_id, id, email FROM animateur WHERE jeton_acces = ?",
+            "SELECT edition_id, id, email FROM animateur WHERE access_token = ?",
             "SELECT 1 FROM animateur WHERE lower(email) = lower(?) LIMIT 1");
 
     private static final Pattern APPEL = Pattern.compile("prepare(?:Statement|Scoped)\\(");

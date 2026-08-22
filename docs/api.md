@@ -831,7 +831,7 @@ Import global du référentiel depuis un `PlanningFestival` :
 **Sémantique d'un import de scénario** (les deux endpoints ci-dessous) :
 c'est un **diff**, pas un remplacement aveugle. Les stands et animateurs du
 fichier sont mis à jour **en place** — un animateur conservé garde son
-`jeton_acces` (les liens d'espace imprimés survivent), ses sessions, ses
+`access_token` (les liens d'espace imprimés survivent), ses sessions, ses
 demandes d'échange hors créneaux remplacés, et son e-mail si le fichier n'en
 porte pas ; seuls les stands/animateurs **absents du fichier** sont supprimés
 (leurs demandes, sessions et codes d'accès partent en cascade). Le planning
@@ -903,6 +903,16 @@ génération depuis la page Créneaux (voir [`domaine.md`](domaine.md#découpage
 | `POST` | `/api/database/import` | Rejoue un dump SQL dans une transaction unique |
 
 Détail des formats : [`import-export.md`](import-export.md).
+
+**Un dump pris avant la migration `V52` ne se réimporte plus.** Le dump nomme
+ses colonnes une à une, et `V52` a renommé `animateur.jeton_acces` en
+`animateur.access_token` : un vieux fichier contient donc `INSERT INTO animateur
+(…, jeton_acces) VALUES (…)`, que `POST /api/database/import` refuse avec
+`column "jeton_acces" of relation "animateur" does not exist`. C'est assumé —
+aucun code de compatibilité ne rattrape les deux noms, parce que les faire
+vivre en parallèle rendrait permanent le décalage que `V52` supprime. Pour
+récupérer un tel dump, y remplacer `jeton_acces` par `access_token` avant de le
+charger : c'est la seule occurrence à toucher.
 
 ## Exports planning
 

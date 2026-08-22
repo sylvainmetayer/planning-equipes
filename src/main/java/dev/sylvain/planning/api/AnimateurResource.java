@@ -69,7 +69,7 @@ public class AnimateurResource {
      * name <b>is</b> the JSON key, read by {@code core/api.service.ts} and by
      * every MCP client. Renaming it here would rename it on the wire. Same
      * reason on {@link dev.sylvain.planning.domain.Animateur#getJetonAcces()}
-     * and on the {@code jeton_acces} column.</p>
+     * and on the {@code access_token} column.</p>
      */
     public record AnimateurToken(String jeton) {
     }

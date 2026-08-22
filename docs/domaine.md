@@ -445,7 +445,7 @@ verdict de prévalidation des contraintes dures au moment de la soumission
 
 Trois briques l'entourent :
 
-- **l'identité** : chaque animateur porte un `jeton_acces` opaque, généré par
+- **l'identité** : chaque animateur porte un `access_token` opaque, généré par
   la base (`DEFAULT gen_random_uuid()`), unique **globalement** pour résoudre
   à lui seul le couple (édition, animateur). C'est le lien imprimé sur le
   planning PDF individuel ; seule l'action « régénérer » le change. Depuis que

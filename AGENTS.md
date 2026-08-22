@@ -454,9 +454,7 @@ vacations" reads as two holidays. Write *shift* and *opening span* in the
 prose, keep `Vacation` and `Amplitude` in the identifiers.
 
 **One deliberate mismatch, and it is documented where it shows.** The Java code
-says `token`; the SQL column is still `jeton_acces` and the JSON key still
-`jetonAcces`, because both are read outside this repository (the Angular
-`models.ts`, every MCP client, the espace links already printed on PDFs).
-The gap is flagged in the JDBC mapping and on the DTO that carry it; aligning
-the whole chain needs a Flyway migration and a frontend release, which is its
-own issue.
+says `token`, and so does the SQL column since `V52` (`animateur.access_token`);
+the JSON key is still `jetonAcces`, because it is read outside this repository
+(the Angular `models.ts`). The gap is flagged on the DTO that carry it;
+closing it means moving a key on the wire, which is its own issue.

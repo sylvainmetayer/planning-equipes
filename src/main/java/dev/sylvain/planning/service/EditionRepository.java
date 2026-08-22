@@ -42,7 +42,7 @@ public class EditionRepository {
             new TableToCopy("typologie", "id, label"),
             new TableToCopy("emplacement", "id, nom, latitude, longitude"),
             // email travels with the copy (the canicule-edition ritual of issue
-            // #172 ends with « Envoyer à all », mute without it); jeton_acces
+            // #172 ends with « Envoyer à all », mute without it); access_token
             // deliberately does NOT: the column default mints a fresh token per
             // edition, so an espace link keeps designating exactly one edition.
             new TableToCopy("animateur", "id, prenom, nom, date_naissance, manager, email"),

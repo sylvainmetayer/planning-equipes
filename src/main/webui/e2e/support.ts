@@ -68,7 +68,7 @@ export async function seedPlanning(
     `delete from creneau where id = ${SEED.creneauId};`,
     `delete from animateur where id like 'E2E-%';`,
     `delete from stand where id like 'E2E-%';`,
-    // The dataset itself. jeton_acces is deliberately omitted: the database
+    // The dataset itself. access_token is deliberately omitted: the database
     // generates it, and the suite reads it back through the admin API.
     `insert into stand (edition_id, id, nom, effectif_min, effectif_max, reserve_majeurs) values ('DEFAUT', '${SEED.standDemandeur}', 'Stand E2E un', 1, 1, false);`,
     `insert into stand (edition_id, id, nom, effectif_min, effectif_max, reserve_majeurs) values ('DEFAUT', '${SEED.standCible}', 'Stand E2E deux', 1, 1, false);`,

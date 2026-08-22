@@ -200,9 +200,9 @@ public class Animateur {
      *
      * <p>Named {@code jetonAcces} rather than {@code accessToken} on purpose:
      * this accessor name is the JSON key the frontend reads
-     * ({@code models.ts}), and the column behind it is {@code jeton_acces}.
-     * The Java code says {@code token} everywhere it can; here it cannot,
-     * because the name is a contract rather than an identifier.</p>
+     * ({@code models.ts}). The column behind it is {@code access_token} since
+     * {@code V52}; the Java code says {@code token} everywhere it can. Here it
+     * cannot, because the name is a contract rather than an identifier.</p>
      */
     public String getJetonAcces() {
         return jetonAcces;
