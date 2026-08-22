@@ -143,7 +143,7 @@ export class AnimateursPage {
       return;
     }
     try {
-      await this.api.post(`/api/animateurs/${animateur.id}/jeton`, null);
+      await this.api.post(`/api/animateurs/${animateur.id}/token`, null);
       await this.store.reload();
       this.notifications.notify({
         title: $localize`:@@animateurs.jetonRegenere:Nouveau lien généré.`,

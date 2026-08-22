@@ -33,7 +33,7 @@ export interface Animateur {
   joursIndisponibles: string[];
   /** Contact address for the échange notifications (issue #165); null when not collected. */
   email?: string | null;
-  /** Access token of the espace animateur — the link printed on their PDF planning. Read-only: rotated via `/api/animateurs/{id}/jeton`. */
+  /** Access token of the espace animateur — the link printed on their PDF planning. Read-only: rotated via `/api/animateurs/{id}/token`. */
   accessToken?: string | null;
 }
 

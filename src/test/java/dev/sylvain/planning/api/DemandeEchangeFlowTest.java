@@ -460,7 +460,7 @@ class DemandeEchangeFlowTest {
 
         String newToken = given()
                 .contentType(ContentType.JSON)
-                .when().post("/api/animateurs/ECH-A/jeton")
+                .when().post("/api/animateurs/ECH-A/token")
                 .then()
                 .statusCode(200)
                 .extract().path("token");
@@ -476,7 +476,7 @@ class DemandeEchangeFlowTest {
 
         // An unknown animateur cannot get a token.
         given().contentType(ContentType.JSON)
-                .when().post("/api/animateurs/ECH-FANTOME/jeton")
+                .when().post("/api/animateurs/ECH-FANTOME/token")
                 .then()
                 .statusCode(404);
     }

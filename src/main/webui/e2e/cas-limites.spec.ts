@@ -29,11 +29,11 @@ test.describe('cas limites', () => {
     await expect(page.getByText('Alice E2E')).toBeVisible();
 
     // …until the admin rotates the token.
-    const rotation = await admin.post(`/api/animateurs/${SEED.demandeur}/jeton`, {
+    const rotation = await admin.post(`/api/animateurs/${SEED.demandeur}/token`, {
       headers: { 'Content-Type': 'application/json' }
     });
     expect(rotation.ok(), await rotation.text()).toBe(true);
-    const { jeton: nouveauJeton } = (await rotation.json()) as { jeton: string };
+    const { token: nouveauJeton } = (await rotation.json()) as { token: string };
     expect(nouveauJeton).not.toBe(ancienJeton);
 
     // The already-open page dies on reload: clean dead end, no leak.

@@ -705,6 +705,21 @@ côté serveur : `stands.typologiesProposees` et
 `DELETE /api/typologies/{id}` répond **400** si la typologie est encore
 utilisée par au moins un stand ou animateur.
 
+Un animateur porte en plus un jeton d'accès en lecture seule, exposé sous la
+clé `accessToken` : c'est le lien de son espace, imprimé sur son planning PDF.
+Il est frappé par la base à la création et ne change **que** par rotation
+explicite :
+
+| Méthode | Chemin | Description |
+| --- | --- | --- |
+| `POST` | `/api/animateurs/{id}/token` | Régénère le jeton d'accès de l'espace animateur. Répond `{ "token": "…" }`. Le lien déjà distribué (PDF, mail) cesse aussitôt de fonctionner — c'est le geste à faire quand un planning individuel a fuité |
+
+Ce chemin s'appelait `/jeton` et cette clé `jeton` jusqu'à l'issue #186, qui a
+aligné la chaîne entière (colonne SQL, clé JSON, chemin). À ne pas confondre
+avec `{jeton}` dans `/api/espace-animateur/{jeton}` : celui-là nomme un
+**paramètre**, pas un segment publié — l'URL réellement imprimée est
+`/animateur/<valeur-du-jeton>`, et aucun lien déjà distribué n'a bougé.
+
 Un item de `/api/typologies` porte `{ id, label, ninja }`. `ninja` désigne la
 typologie des profils polyvalents : `POST`/`PUT` avec `ninja: true` retire
 automatiquement le drapeau de la typologie qui le portait (au plus une à la
