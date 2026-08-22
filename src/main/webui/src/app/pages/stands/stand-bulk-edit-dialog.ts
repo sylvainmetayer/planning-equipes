@@ -10,7 +10,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ModeBooleen, ModeListe } from '../../core/bulk-edit';
 import { labelStandsPluriel } from '../../core/entity-labels';
-import { conflitDeMode, erreurHoraire, horaireVide } from '../../core/horaire-stand';
+import { horaireVide } from '../../core/horaire-stand';
+import { effectifDepuisSaisie, libelleJourSemaine, premiereErreurHoraire } from './stand-horaires';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
@@ -124,22 +125,7 @@ export class StandBulkEditDialog {
     if (patch.mode === 'INCHANGE' || patch.mode === 'EFFACER') {
       return null;
     }
-    for (const horaire of patch.horaires) {
-      const erreur = erreurHoraire(horaire, {
-        fenetreRequise: $localize`:@@stands.horaires.error.fenetreRequise:Chaque horaire doit porter au moins une fenêtre.`,
-        heureDebutRequise: $localize`:@@stands.horaires.error.heureDebutRequise:Chaque fenêtre doit avoir une heure de début.`,
-        fenetreInversee: $localize`:@@stands.horaires.error.fenetreInversee:L'heure de fin doit être après l'heure de début (laissez-la vide pour aller jusqu'à la fermeture).`,
-        joursSemaineRequis: $localize`:@@stands.horaires.error.joursSemaineRequis:Choisissez au moins un jour de la semaine.`,
-        plageRequise: $localize`:@@stands.horaires.error.plageRequise:Renseignez une date de début et une date de fin cohérentes.`,
-        datesRequises: $localize`:@@stands.horaires.error.datesRequises:Choisissez au moins une date.`
-      });
-      if (erreur) {
-        return erreur;
-      }
-    }
-    return conflitDeMode(patch.horaires)
-      ? $localize`:@@stands.horaires.error.conflitMode:Deux horaires de même portée portant sur les mêmes jours ne peuvent pas être l'un une ouverture et l'autre une fermeture. Utilisez une portée plus précise pour celui qui doit primer.`
-      : null;
+    return premiereErreurHoraire(patch.horaires);
   });
 
   protected updateModeHoraires(mode: ModeHoraires): void {
@@ -199,22 +185,7 @@ export class StandBulkEditDialog {
   }
 
   protected libelleJourSemaine(jour: JourSemaine): string {
-    switch (jour) {
-      case 'MONDAY':
-        return $localize`:@@common.weekday.monday:Lundi`;
-      case 'TUESDAY':
-        return $localize`:@@common.weekday.tuesday:Mardi`;
-      case 'WEDNESDAY':
-        return $localize`:@@common.weekday.wednesday:Mercredi`;
-      case 'THURSDAY':
-        return $localize`:@@common.weekday.thursday:Jeudi`;
-      case 'FRIDAY':
-        return $localize`:@@common.weekday.friday:Vendredi`;
-      case 'SATURDAY':
-        return $localize`:@@common.weekday.saturday:Samedi`;
-      case 'SUNDAY':
-        return $localize`:@@common.weekday.sunday:Dimanche`;
-    }
+    return libelleJourSemaine(jour);
   }
 
   private majHoraires(transformer: (horaires: HoraireStand[]) => HoraireStand[]): void {
@@ -238,8 +209,7 @@ export class StandBulkEditDialog {
 
   /** An emptied number field means "ne pas modifier", not zero. */
   protected updateEffectif(champ: 'effectifMin' | 'effectifMax', valeur: unknown): void {
-    const nombre = valeur === '' || valeur === null || valeur === undefined ? null : Number(valeur);
-    this.update({ [champ]: nombre === null || Number.isNaN(nombre) ? null : nombre } as Partial<StandBulkPatch>);
+    this.update({ [champ]: effectifDepuisSaisie(valeur) } as Partial<StandBulkPatch>);
   }
 
   protected async save(): Promise<void> {

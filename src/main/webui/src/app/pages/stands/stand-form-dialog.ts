@@ -12,14 +12,14 @@ import { focusApresSuppression } from '../../core/focus-apres-suppression';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
+import { horaireVide, JourResolu, resoudreHoraires } from '../../core/horaire-stand';
 import {
-  conflitDeMode,
-  decrireFenetre,
-  erreurHoraire,
-  horaireVide,
-  JourResolu,
-  resoudreHoraires
-} from '../../core/horaire-stand';
+  datesFestival,
+  decrireJour,
+  libelleJour,
+  libelleJourSemaine,
+  premiereErreurHoraire
+} from './stand-horaires';
 import { FenetreHoraire, HoraireStand, IndisponibiliteStand, JourSemaine, OuvertureStand, Stand } from '../../core/models';
 import {
   StandDraft,
@@ -116,29 +116,10 @@ export class StandFormDialog {
   protected readonly conflitOuvertureFermeture = computed(() => conflitOuvertureFermeture(this.draft()));
 
   /** First problem among the recurring rules, or `null` — mirrors the backend's own check. */
-  protected readonly erreurHoraires = computed(() => {
-    for (const horaire of this.draft().horaires) {
-      const erreur = erreurHoraire(horaire, {
-        fenetreRequise: $localize`:@@stands.horaires.error.fenetreRequise:Chaque horaire doit porter au moins une fenêtre.`,
-        heureDebutRequise: $localize`:@@stands.horaires.error.heureDebutRequise:Chaque fenêtre doit avoir une heure de début.`,
-        fenetreInversee: $localize`:@@stands.horaires.error.fenetreInversee:L'heure de fin doit être après l'heure de début (laissez-la vide pour aller jusqu'à la fermeture).`,
-        joursSemaineRequis: $localize`:@@stands.horaires.error.joursSemaineRequis:Choisissez au moins un jour de la semaine.`,
-        plageRequise: $localize`:@@stands.horaires.error.plageRequise:Renseignez une date de début et une date de fin cohérentes.`,
-        datesRequises: $localize`:@@stands.horaires.error.datesRequises:Choisissez au moins une date.`
-      });
-      if (erreur) {
-        return erreur;
-      }
-    }
-    return conflitDeMode(this.draft().horaires)
-      ? $localize`:@@stands.horaires.error.conflitMode:Deux horaires de même portée portant sur les mêmes jours ne peuvent pas être l'un une ouverture et l'autre une fermeture. Utilisez une portée plus précise pour celui qui doit primer.`
-      : null;
-  });
+  protected readonly erreurHoraires = computed(() => premiereErreurHoraire(this.draft().horaires));
 
   /** Days the preview covers: the edition's créneaux — what the solver builds from. */
-  protected readonly datesFestival = computed(() => {
-    return [...new Set(this.store.creneaux().map((creneau) => creneau.date))].sort();
-  });
+  protected readonly datesFestival = computed(() => datesFestival(this.store.creneaux()));
 
   /** The schedule as the solver will read it, day by day — the point of the whole editor. */
   protected readonly apercu = computed<JourResolu[]>(() => {
@@ -154,45 +135,16 @@ export class StandFormDialog {
   });
 
   protected decrireJour(jour: JourResolu): string {
-    if (jour.mode === null) {
-      return $localize`:@@stands.apercu.ouvertToutLeJour:Ouvert toute la journée`;
-    }
-    const fenetres = jour.fenetres
-      .map((fenetre) => decrireFenetre(fenetre, $localize`:@@stands.apercu.fermeture:fermeture`))
-      .join(', ');
-    return jour.mode === 'OUVERTURE'
-      ? $localize`:@@stands.apercu.ouvertSur:Ouvert ${fenetres}:fenetres:`
-      : $localize`:@@stands.apercu.fermeSur:Fermé ${fenetres}:fenetres:`;
+    return decrireJour(jour);
   }
 
   /** Day label of the preview strip: `08/07`, short enough for a dozen cells in a row. */
   protected libelleJour(date: string): string {
-    const [, mois, jour] = date.split('-');
-    return `${jour}/${mois}`;
+    return libelleJour(date);
   }
 
-  /**
-   * Weekday label of the `JOURS_SEMAINE` checkboxes. Written out rather than
-   * derived from `Intl`, because the locale here is the app's own (translated at
-   * runtime, see AGENTS.md) and not the browser's.
-   */
   protected libelleJourSemaine(jour: JourSemaine): string {
-    switch (jour) {
-      case 'MONDAY':
-        return $localize`:@@common.weekday.monday:Lundi`;
-      case 'TUESDAY':
-        return $localize`:@@common.weekday.tuesday:Mardi`;
-      case 'WEDNESDAY':
-        return $localize`:@@common.weekday.wednesday:Mercredi`;
-      case 'THURSDAY':
-        return $localize`:@@common.weekday.thursday:Jeudi`;
-      case 'FRIDAY':
-        return $localize`:@@common.weekday.friday:Vendredi`;
-      case 'SATURDAY':
-        return $localize`:@@common.weekday.saturday:Samedi`;
-      case 'SUNDAY':
-        return $localize`:@@common.weekday.sunday:Dimanche`;
-    }
+    return libelleJourSemaine(jour);
   }
 
   protected patch(patch: Partial<StandDraft>): void {
