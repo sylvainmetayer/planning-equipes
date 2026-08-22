@@ -138,7 +138,7 @@ class CodeRequestLimiterTest {
     }
 
     private String tokenOf(String animateurId) {
-        return recordOf(animateurId).getJetonAcces();
+        return recordOf(animateurId).getAccessToken();
     }
 
     private Animateur recordOf(String animateurId) {

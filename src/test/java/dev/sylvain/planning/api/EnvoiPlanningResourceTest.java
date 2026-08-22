@@ -143,6 +143,6 @@ class EnvoiPlanningResourceTest {
                 .filter(candidat -> candidat.getId().equals(animateurId))
                 .findFirst()
                 .orElseThrow()
-                .getJetonAcces();
+                .getAccessToken();
     }
 }

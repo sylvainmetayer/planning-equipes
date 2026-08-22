@@ -188,6 +188,6 @@ class FoireAndEspaceExportsTest {
                 .filter(animateur -> animateur.getId().equals(animateurId))
                 .findFirst()
                 .orElseThrow()
-                .getJetonAcces();
+                .getAccessToken();
     }
 }

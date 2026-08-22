@@ -186,7 +186,7 @@ Trois mécanismes la garantissent :
 3. **Un test structurel de non-régression.**
    `McpConfidentialiteStructurelleTest` parcourt par réflexion *tous* les
    `@Tool` du package et échoue si l'un d'eux expose la classe `Animateur` ou
-   un champ `prenom`/`dateNaissance` — ainsi que `email` et `jetonAcces`
+   un champ `prenom`/`dateNaissance` — ainsi que `email` et `accessToken`
    (issue #165 : l'adresse de contact est une donnée personnelle, et le jeton
    est la clé d'accès de l'espace animateur), y compris à travers les
    génériques — un nouvel outil mal filtré casse le build sans avoir à y

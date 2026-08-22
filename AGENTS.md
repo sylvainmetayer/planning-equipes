@@ -453,8 +453,16 @@ uses them bare says something else entirely — "the animateur works two
 vacations" reads as two holidays. Write *shift* and *opening span* in the
 prose, keep `Vacation` and `Amplitude` in the identifiers.
 
-**One deliberate mismatch, and it is documented where it shows.** The Java code
-says `token`, and so does the SQL column since `V52` (`animateur.access_token`);
-the JSON key is still `jetonAcces`, because it is read outside this repository
-(the Angular `models.ts`). The gap is flagged on the DTO that carry it;
-closing it means moving a key on the wire, which is its own issue.
+**The espace access token says `token` all the way down.** Java, the SQL column
+(`animateur.access_token`, since `V52`), the JSON key (`accessToken`) and the
+HTTP path (`POST /api/animateurs/{id}/token`) were aligned together in issue
+#186 — before that, one thing carried three names and each one had to be
+explained where it showed. What stays French is the **path parameter** of the
+espace itself (`@Path("/{jeton}")`, route `animateur/:jeton`): it names a
+variable, never a published segment, so the links already printed on the PDFs
+are unaffected.
+
+A JSON key is a contract, not an identifier: `JsonContractTest` freezes the
+keys of every exposed type in `src/test/resources/json-contract.txt`. Renaming
+an accessor or a record component moves a key on the wire, and that test is
+what makes it loud instead of silent.

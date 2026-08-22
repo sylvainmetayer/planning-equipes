@@ -352,7 +352,7 @@ class PlanningExportServiceTest {
         PlanningFestival planning = new PlanningFestival();
         Animateur withoutToken = new Animateur("SANS", "Sans", "Jeton", LocalDate.of(2000, 1, 1), false);
         Animateur withToken = new Animateur("AVEC", "Avec", "Jeton", LocalDate.of(2000, 1, 1), false);
-        withToken.setJetonAcces("jeton-1");
+        withToken.setAccessToken("jeton-1");
         planning.setAnimateurs(List.of(withoutToken, withToken));
 
         assertThat(service.lienEspaceAnimateur(planning, "SANS")).isNull();

@@ -463,7 +463,7 @@ class DemandeEchangeFlowTest {
                 .when().post("/api/animateurs/ECH-A/jeton")
                 .then()
                 .statusCode(200)
-                .extract().path("jeton");
+                .extract().path("token");
         assertThat(newToken).isNotBlank().isNotEqualTo(oldToken);
 
         given().when().get("/api/espace-animateur/" + oldToken)
@@ -562,6 +562,6 @@ class DemandeEchangeFlowTest {
                 .filter(animateur -> animateur.getId().equals(animateurId))
                 .findFirst()
                 .orElseThrow()
-                .getJetonAcces();
+                .getAccessToken();
     }
 }

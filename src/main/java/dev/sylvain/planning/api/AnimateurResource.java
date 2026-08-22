@@ -62,16 +62,16 @@ public class AnimateurResource {
     }
 
     /**
-     * Body of a token regeneration: the new token, nothing else.
+     * Body of a token regeneration: the new token, nothing else —
+     * {@code {"token": "…"}}.
      *
-     * <p>The component is still named {@code jeton} while the rest of the Java
-     * code says {@code token}, and that mismatch is deliberate: the component
-     * name <b>is</b> the JSON key, read by {@code core/api.service.ts} and by
-     * every MCP client. Renaming it here would rename it on the wire. Same
-     * reason on {@link dev.sylvain.planning.domain.Animateur#getJetonAcces()}
-     * and on the {@code access_token} column.</p>
+     * <p>The component name <b>is</b> the JSON key, which is why it is frozen
+     * by {@code JsonContractTest}. It read {@code jeton} until the chain was
+     * aligned end to end (column, key and path). The frontend does not read
+     * this body at all — it reloads the fiche after rotating — so the only
+     * reader to keep in mind is a direct API caller.</p>
      */
-    public record AnimateurToken(String jeton) {
+    public record AnimateurToken(String token) {
     }
 
 }

@@ -45,10 +45,10 @@ export function buildAnimateurDetail(
         },
         {
           label: $localize`:@@animateurs.field.lienEspace:Lien espace animateur`,
-          value: animateur.jetonAcces
-            ? `/animateur/${animateur.jetonAcces}`
+          value: animateur.accessToken
+            ? `/animateur/${animateur.accessToken}`
             : aucun,
-          muted: !animateur.jetonAcces
+          muted: !animateur.accessToken
         }
       ]
     },

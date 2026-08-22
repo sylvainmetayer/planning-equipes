@@ -12,7 +12,7 @@
 # Generated shape: <package>.<Type> = key, key, key (keys sorted).
 
 api.AdminLoginLimiter$Echecs = dernier, nombre
-api.AnimateurResource$AnimateurToken = jeton
+api.AnimateurResource$AnimateurToken = token
 api.AuthResource$StatutSession = authentifie, nom
 api.ConfigResource$ConfigView = cloudflareWebAnalyticsToken, devMode, sentryDsn, sentryEnvironment
 api.ConstraintResource$ConstraintToggleUpdate = actif
@@ -40,7 +40,7 @@ api.SolverJobResource$Heartbeat = at
 api.SolverJobResource$JobView = editionId, editionNom, elapsedSeconds, error, finishedAt, id, result, secondsLimit, startedAt, status, submittedAt, type
 api.SolverJobResource$JobsState = active, file
 api.ValidationError = message
-domain.Animateur = competences, dateNaissance, email, id, jetonAcces, joursIndisponibles, manager, ninja, nom, prenom, souhaits
+domain.Animateur = accessToken, competences, dateNaissance, email, id, joursIndisponibles, manager, ninja, nom, prenom, souhaits
 domain.ConstraintToggle = nom
 domain.ContrainteAdHoc = animateursConcernes, creeLe, creeParUtilisateurId, creneau, id, raison, stand, type
 domain.Creneau = couverturePause, date, dureeMinutes, famille, heureDebut, heureFin, id, jour

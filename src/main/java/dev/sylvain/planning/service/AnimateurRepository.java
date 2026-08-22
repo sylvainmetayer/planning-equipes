@@ -50,7 +50,7 @@ public class AnimateurRepository {
                             rs.getObject("date_naissance", LocalDate.class),
                             rs.getBoolean("manager"));
                     animateur.setEmail(rs.getString("email"));
-                    animateur.setJetonAcces(rs.getString("access_token"));
+                    animateur.setAccessToken(rs.getString("access_token"));
                     byId.put(animateur.getId(), animateur);
                 }
             }

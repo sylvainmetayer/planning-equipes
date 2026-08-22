@@ -66,7 +66,7 @@ describe('buildAnimateurDetail', () => {
 
   it("montre l'e-mail et le lien espace quand la fiche les porte (issue #165)", () => {
     const sections = buildAnimateurDetail(
-      animateur({ email: 'ada@example.org', jetonAcces: 'jeton-opaque' }),
+      animateur({ email: 'ada@example.org', accessToken: 'jeton-opaque' }),
       [],
       new Date(2026, 6, 8)
     );

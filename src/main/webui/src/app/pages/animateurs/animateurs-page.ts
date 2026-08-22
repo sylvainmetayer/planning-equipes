@@ -111,10 +111,10 @@ export class AnimateursPage {
 
   /** Copies the animateur's personal espace link (issue #165) — what the PDF prints. */
   protected async copierLienEspace(animateur: Animateur): Promise<void> {
-    if (!animateur.jetonAcces) {
+    if (!animateur.accessToken) {
       return;
     }
-    const lien = `${window.location.origin}/animateur/${animateur.jetonAcces}`;
+    const lien = `${window.location.origin}/animateur/${animateur.accessToken}`;
     try {
       await navigator.clipboard.writeText(lien);
       this.notifications.notify({

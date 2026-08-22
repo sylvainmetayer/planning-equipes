@@ -348,8 +348,8 @@ async function lireCodeMailpit(
 export async function jetonDe(admin: APIRequestContext, animateurId: string): Promise<string> {
   const reponse = await admin.get('/api/animateurs');
   expect(reponse.ok()).toBe(true);
-  const animateurs = (await reponse.json()) as { id: string; jetonAcces?: string }[];
-  const jeton = animateurs.find((animateur) => animateur.id === animateurId)?.jetonAcces;
+  const animateurs = (await reponse.json()) as { id: string; accessToken?: string }[];
+  const jeton = animateurs.find((animateur) => animateur.id === animateurId)?.accessToken;
   expect(jeton, `animateur ${animateurId} must exist with a token`).toBeTruthy();
   return jeton as string;
 }

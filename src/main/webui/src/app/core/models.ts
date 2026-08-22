@@ -34,7 +34,7 @@ export interface Animateur {
   /** Contact address for the échange notifications (issue #165); null when not collected. */
   email?: string | null;
   /** Access token of the espace animateur — the link printed on their PDF planning. Read-only: rotated via `/api/animateurs/{id}/jeton`. */
-  jetonAcces?: string | null;
+  accessToken?: string | null;
 }
 
 export interface Stand {

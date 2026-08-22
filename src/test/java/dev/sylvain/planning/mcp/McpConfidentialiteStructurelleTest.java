@@ -30,7 +30,7 @@ import io.quarkiverse.mcp.server.Tool;
 class McpConfidentialiteStructurelleTest {
 
     private static final Set<String> COMPOSANTS_INTERDITS = Set.of("prenom", "datenaissance", "nomdefamille",
-            "email", "jetonacces");
+            "email", "accesstoken");
 
     @Test
     void aucunOutilNeRenvoieDeDonneePersonnelleIdentifiante() throws Exception {

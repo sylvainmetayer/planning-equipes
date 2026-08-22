@@ -23,7 +23,7 @@ public class Animateur {
      * globally unique, only ever changed by the explicit "régénérer" action.
      * Like {@code prenom}/{@code dateNaissance}, it must never leave over MCP.
      */
-    private String jetonAcces;
+    private String accessToken;
     /** Keys reference the {@code typologie} referential table (CRUD-managed), not a fixed enum. */
     private Map<String, NiveauCompetence> competences = new HashMap<>();
     /** Ids referencing the {@code typologie} referential table — stand typologies the animateur wishes to be assigned to. */
@@ -198,19 +198,18 @@ public class Animateur {
     /**
      * The espace-animateur access token.
      *
-     * <p>Named {@code jetonAcces} rather than {@code accessToken} on purpose:
-     * this accessor name is the JSON key the frontend reads
-     * ({@code models.ts}). The column behind it is {@code access_token} since
-     * {@code V52}; the Java code says {@code token} everywhere it can. Here it
-     * cannot, because the name is a contract rather than an identifier.</p>
+     * <p>This accessor name <b>is</b> the JSON key: {@code accessToken}, read
+     * by {@code models.ts} and by the animateurs page. It used to be
+     * {@code jetonAcces}, out of step with a Java code that says {@code token}
+     * everywhere else; the whole chain — column, key, HTTP path — was aligned
+     * at once, so that nothing here has to be explained any more.</p>
      */
-    public String getJetonAcces() {
-        return jetonAcces;
+    public String getAccessToken() {
+        return accessToken;
     }
 
-    /** @see #getJetonAcces() for why this one keeps the French name. */
-    public void setJetonAcces(String jetonAcces) {
-        this.jetonAcces = jetonAcces;
+    public void setAccessToken(String accessToken) {
+        this.accessToken = accessToken;
     }
 
     /** True when the animateur holds the referential's ninja typologie — see {@link #ninja}. */

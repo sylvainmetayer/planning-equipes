@@ -167,7 +167,7 @@ class EditionResourceTest {
         String sourceToken = given().header(HEADER, DEFAUT)
                 .when().get("/api/animateurs")
                 .then().statusCode(200)
-                .extract().jsonPath().getString("find { it.id == 'ANIM-COPIE' }.jetonAcces");
+                .extract().jsonPath().getString("find { it.id == 'ANIM-COPIE' }.accessToken");
 
         given().contentType("application/json")
                 .body("{\"id\":\"COPIE-2026\",\"nom\":\"Copie 2026\"}")
@@ -178,7 +178,7 @@ class EditionResourceTest {
                 .when().get("/api/animateurs")
                 .then().statusCode(200)
                 .body("find { it.id == 'ANIM-COPIE' }.email", org.hamcrest.Matchers.equalTo("ada@example.org"))
-                .body("find { it.id == 'ANIM-COPIE' }.jetonAcces",
+                .body("find { it.id == 'ANIM-COPIE' }.accessToken",
                         org.hamcrest.Matchers.allOf(
                                 org.hamcrest.Matchers.notNullValue(),
                                 org.hamcrest.Matchers.not(sourceToken)));

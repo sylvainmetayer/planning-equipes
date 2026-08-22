@@ -71,7 +71,7 @@
             <mat-icon>edit</mat-icon>
           </button>
           <button matIconButton i18n-matTooltip="@@animateurs.copierLien" matTooltip="Copier le lien de son espace animateur" i18n-aria-label="@@animateurs.copierLien" aria-label="Copier le lien de son espace animateur"
-                  [disabled]="!animateur.jetonAcces" (click)="copierLienEspace(animateur)">
+                  [disabled]="!animateur.accessToken" (click)="copierLienEspace(animateur)">
             <mat-icon>link</mat-icon>
           </button>
           <button matIconButton i18n-matTooltip="@@animateurs.regenererJeton" matTooltip="Régénérer le lien de son espace" i18n-aria-label="@@animateurs.regenererJeton" aria-label="Régénérer le lien de son espace"

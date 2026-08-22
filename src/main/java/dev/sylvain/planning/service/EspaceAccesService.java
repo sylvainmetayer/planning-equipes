@@ -114,7 +114,7 @@ public class EspaceAccesService {
                         DO UPDATE SET code_hash = EXCLUDED.code_hash, expire_le = EXCLUDED.expire_le,
                         tentatives_restantes = EXCLUDED.tentatives_restantes""")) {
             ps.setString(2, animateurId);
-            ps.setString(3, hacher(code + animateur.getJetonAcces()));
+            ps.setString(3, hacher(code + animateur.getAccessToken()));
             ps.setTimestamp(4, Timestamp.from(Instant.now().plus(VALIDITE_CODE)));
             ps.setInt(5, TENTATIVES_MAX);
             ps.executeUpdate();
@@ -136,7 +136,7 @@ public class EspaceAccesService {
      */
     public String openSession(String animateurId, String code) {
         Animateur animateur = requiredAnimateur(animateurId);
-        checkCode(animateurId, code, animateur.getJetonAcces());
+        checkCode(animateurId, code, animateur.getAccessToken());
         byte[] brut = new byte[32];
         random.nextBytes(brut);
         String session = Base64.getUrlEncoder().withoutPadding().encodeToString(brut);

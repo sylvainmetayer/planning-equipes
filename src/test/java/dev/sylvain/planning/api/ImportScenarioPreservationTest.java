@@ -122,11 +122,11 @@ class ImportScenarioPreservationTest {
         // (the file carries no email — it must not wipe the stored one).
         Animateur alice = animateur("IMP-A");
         assertThat(alice.getPrenom()).isEqualTo("Alicia");
-        assertThat(alice.getJetonAcces()).isEqualTo(tokenBefore);
+        assertThat(alice.getAccessToken()).isEqualTo(tokenBefore);
         assertThat(alice.getEmail()).isEqualTo(EMAIL_ALICE);
 
         // IMP-C is new and gets a fresh token; IMP-B was absent: gone.
-        assertThat(animateur("IMP-C").getJetonAcces()).isNotBlank();
+        assertThat(animateur("IMP-C").getAccessToken()).isNotBlank();
         assertThat(referenceData.listAnimateurs()).noneMatch(a -> a.getId().equals("IMP-B"));
 
         // The resolved planning is erased coherently: no seat left, and no
@@ -149,6 +149,6 @@ class ImportScenarioPreservationTest {
     }
 
     private String tokenOf(String animateurId) {
-        return animateur(animateurId).getJetonAcces();
+        return animateur(animateurId).getAccessToken();
     }
 }
