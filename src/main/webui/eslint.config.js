@@ -14,7 +14,12 @@ const angular = require('angular-eslint');
 
 module.exports = tseslint.config(
   {
-    ignores: ['dist/**', 'node_modules/**', '.angular/**', 'src/version.ts']
+    // `coverage/**` is generated: the v8 reporter writes an HTML report whose
+    // pages are neither Angular templates nor sources. Linting them yields
+    // 150-odd errors about a report nobody wrote. CI never saw it because
+    // lint runs before the tests that produce it — locally, the order is
+    // whatever you happen to type.
+    ignores: ['dist/**', 'node_modules/**', '.angular/**', 'coverage/**', 'src/version.ts']
   },
   {
     files: ['**/*.ts'],
