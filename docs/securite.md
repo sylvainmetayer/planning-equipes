@@ -24,6 +24,28 @@ compris — les en-têtes suivants :
 | `Permissions-Policy` | `geolocation=(), camera=(), microphone=(), payment=()` | Aucune de ces API n'est utilisée — le sélecteur de carte place un point à la souris |
 | `Strict-Transport-Security` | `planning.securite.hsts`, **seulement sur une visite HTTPS** | Un an, sous-domaines compris. Absent sur la pile locale, qui est en clair |
 
+### Ce que `script-src` interdit, et ce que ça oblige à désactiver au build
+
+`script-src` ne porte ni `'unsafe-inline'` ni `'unsafe-hashes'` : le navigateur
+refuse donc **tout attribut `on*=""`**. C'est la posture voulue, mais elle rend
+une optimisation d'Angular silencieusement destructrice.
+
+L'*inlining du CSS critique* (`optimization.styles.inlineCritical`, actif par
+défaut en production) sert la vraie feuille de style en
+`media="print" onload="this.media='all'"`. Quand la CSP bloque ce gestionnaire,
+la feuille **reste en `print`** : rien ne lève d'erreur, la page s'affiche avec
+le seul CSS critique inliné, et tout ce que l'extraction n'a pas retenu
+disparaît. C'est ainsi que la police d'icônes Material a cessé de s'afficher en
+production alors que le build, les tests et la CI étaient verts — le
+`@font-face` et la règle `.material-icons` vivaient dans la feuille différée.
+
+`inlineCritical` est donc **désactivé** dans `angular.json`, et
+`scripts/check-csp-index.js` échoue le build si l'`index.html` produit contient
+le moindre gestionnaire inline. Le build ne peut pas voir le problème (le HTML
+est valide), les tests non plus (ils ne chargent jamais `index.html`) : une
+violation de CSP n'apparaît que dans la console d'un vrai navigateur. Elle est
+donc vérifiée sur l'artefact.
+
 Trois exceptions volontaires :
 
 - la CSP s'arrête au seuil de `/q/*` : Swagger UI y sert des scripts *inline*

@@ -43,7 +43,9 @@
           "options": {
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
-            "polyfills": ["@angular/localize/init"],
+            "polyfills": [
+              "@angular/localize/init"
+            ],
             "assets": [
               {
                 "glob": "**/*",
@@ -55,8 +57,14 @@
                 "output": "leaflet-images"
               }
             ],
-            "styles": ["src/material-theme.scss", "node_modules/leaflet/dist/leaflet.css", "src/styles.css"],
-            "allowedCommonJsDependencies": ["leaflet"]
+            "styles": [
+              "src/material-theme.scss",
+              "node_modules/leaflet/dist/leaflet.css",
+              "src/styles.css"
+            ],
+            "allowedCommonJsDependencies": [
+              "leaflet"
+            ]
           },
           "configurations": {
             "production": {
@@ -72,7 +80,15 @@
                   "maximumError": "8kB"
                 }
               ],
-              "outputHashing": "all"
+              "outputHashing": "all",
+              "optimization": {
+                "scripts": true,
+                "styles": {
+                  "minify": true,
+                  "inlineCritical": false
+                },
+                "fonts": true
+              }
             },
             "development": {
               "optimization": false,

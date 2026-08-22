@@ -8,6 +8,7 @@
     "start": "ng serve",
     "prebuild": "npm run generate-version",
     "build": "ng build",
+    "postbuild": "node scripts/check-csp-index.js",
     "prewatch": "npm run generate-version",
     "watch": "ng build --watch --configuration development",
     "pretest": "npm run generate-version",
