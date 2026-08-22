@@ -1,7 +1,7 @@
 import { Component, viewChild } from '@angular/core';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ScrollHint, resteDuContenuPlusBas } from './scroll-hint';
 
 describe('resteDuContenuPlusBas', () => {
@@ -40,10 +40,21 @@ describe('ScrollHint', () => {
       'ResizeObserver',
       class {
         observe = vi.fn();
+        // `unobserve` too: Angular Material calls it when a `mat-form-field`
+        // is destroyed. A stub missing it does not fail here — it fails in
+        // whichever spec runs next in the same worker, because `stubGlobal`
+        // outlives the file that called it.
+        unobserve = vi.fn();
         disconnect = vi.fn();
       }
     );
     TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+  });
+
+  // The global stub outlives this file otherwise, and the next spec in the
+  // same worker inherits a ResizeObserver that is not one.
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it('affiche l’indicateur quand la zone défilante cache du contenu, et le retire au bas', async () => {

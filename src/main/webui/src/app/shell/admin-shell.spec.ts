@@ -76,6 +76,11 @@ describe('AdminShell', () => {
       'ResizeObserver',
       class {
         observe = vi.fn();
+        // `unobserve` too: Angular Material calls it when a `mat-form-field`
+        // is destroyed. A stub missing it does not fail here — it fails in
+        // whichever spec runs next in the same worker, because `stubGlobal`
+        // outlives the file that called it.
+        unobserve = vi.fn();
         disconnect = vi.fn();
       }
     );
@@ -114,6 +119,12 @@ describe('AdminShell', () => {
     // Spied before the shell is built: it preloads them in its constructor.
     resolutionReload = vi.spyOn(TestBed.inject(PlanningResolutionStore), 'reload').mockResolvedValue(undefined);
     editionsReload = vi.spyOn(TestBed.inject(EditionStore), 'reload').mockResolvedValue(undefined);
+  });
+
+  // The global stub outlives this file otherwise, and the next spec in the
+  // same worker inherits a ResizeObserver that is not one.
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   afterEach(() => {
