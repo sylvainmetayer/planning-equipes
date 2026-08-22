@@ -128,6 +128,15 @@ public class SolverJobService {
     SolverJobRepository jobRepository;
 
     /**
+     * Announces every transition below to the open {@code /api/jobs/stream}
+     * connections. Called at the <em>end</em> of a state change, never inside
+     * one: a subscriber reads this service back to build its snapshot, and a
+     * hand-over must look atomic from outside — see {@link #finishAndChain}.
+     */
+    @Inject
+    JobStreamBroadcaster jobStream;
+
+    /**
      * Whether the queue is replayed at startup. On by default — that is the
      * whole point — but switched off under {@code %test}, where a job left
      * queued by a previous run would start a real solve as the next test boots.
@@ -301,6 +310,7 @@ public class SolverJobService {
             store(job);
             executor.submit(() -> run(job, task));
         }
+        jobStream.publish();
         return job;
     }
 
@@ -355,6 +365,7 @@ public class SolverJobService {
         }
         job.markRunning();
         store(job);
+        jobStream.publish();
         Object result = null;
         Exception failure = null;
         try {
@@ -386,10 +397,16 @@ public class SolverJobService {
         }
         store(job);
         startNext();
+        // After startNext, not before: between "finished" and "the next one
+        // holds the solver" there is an instant where the solver looks idle,
+        // and publishing it would make every screen blink through a state that
+        // never really existed.
+        jobStream.publish();
     }
 
     private synchronized void chain() {
         startNext();
+        jobStream.publish();
     }
 
     /**
@@ -458,6 +475,7 @@ public class SolverJobService {
         }
         jobs.remove(jobId);
         oublier(jobId);
+        jobStream.publish();
         return true;
     }
 
@@ -486,6 +504,7 @@ public class SolverJobService {
         // A running job is only flagged here; its terminal state is written by
         // finishAndChain once the solver actually stops.
         store(job);
+        jobStream.publish();
         return Optional.of(job);
     }
 

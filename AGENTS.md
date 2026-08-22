@@ -252,12 +252,20 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `PlanningStateService`, calendars read it back read-only and never start a
   solve. Components don't call `fetch` directly.
 - The "a solver is running" state is never stored in the browser
-  (`localStorage` / `sessionStorage`): `SolverJobService` polls
-  `/api/jobs/active` so a solve started from another browser or a private
-  window also locks the buttons here, shows the server-computed elapsed time
-  and delivers its result. The loop paces itself: every 2 s while a job runs or
-  one is queued, every 30 s otherwise, and it is stopped with the shell that
-  started it (the service is `providedIn: 'root'` and would outlive it).
+  (`localStorage` / `sessionStorage`): `SolverJobService` reads it from the
+  server, so a solve started from another browser or a private window also
+  locks the buttons here, shows the server-computed elapsed time and delivers
+  its result. It reads it **two ways, on purpose**: a server-sent events stream
+  (`/api/jobs/stream`, one event carrying the active job *and* the queue) for
+  latency, and a polling loop underneath as the safety net. **Do not remove the
+  poll** — SSE fails silently (a buffering proxy, a cut that never reconnects)
+  and the screen would freeze on a stale state without a word, which is worse
+  than polling. The poll keeps the lead until the stream has proved it is alive
+  (a `state` or a `heartbeat`), drops to 30 s while it is, and takes the lead
+  back — fast pace, immediate refresh — after 45 s of silence. Without the
+  stream the loop paces itself as before: every 2 s while a job runs or one is
+  queued, every 30 s otherwise. Both are stopped with the shell that started
+  them (the service is `providedIn: 'root'` and would outlive it).
 - CSS stays **global** and limited to what Material does not cover:
   `src/styles.css` is a thin aggregator of `@import` rules only and the partials
   live in `src/styles/` (`pages.css` for the shared card/form/table scaffolding,

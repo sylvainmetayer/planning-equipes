@@ -248,7 +248,7 @@ standalone) :
 | `app/core/bulk-edit.ts` | Briques des modifications en masse : modes « ne pas modifier / ajouter / retirer / remplacer » appliqués à une ligne |
 | `app/core/entity-labels.ts` | Libellés au pluriel des référentiels, utilisés par les actions de masse |
 | `app/core/typologie-colors.ts` | Couleur stable d'une typologie de jeu (dérivée de son id, pas d'un rang) et libellés associés, partagés par la heatmap et la timeline |
-| `app/core/solver-job.service.ts` | Suivi des jobs asynchrones : lit `/api/jobs/active` toutes les 2 s en activité, toutes les 30 s au repos, aucun stockage navigateur |
+| `app/core/solver-job.service.ts` | Suivi des jobs asynchrones : flux SSE `/api/jobs/stream` **doublé** d'un poll de `/api/jobs/active` (30 s tant que le flux vit, 2 s en activité sinon), aucun stockage navigateur |
 | `app/core/notification.service.ts` | Notifications via `MatSnackBar` (+ notifications système) |
 | `app/core/affectation-explanation.service.ts` | Appelle `/api/postes/{id}/explication` et `/api/postes/{id}/simulation-swap` (« Pourquoi lui ? ») |
 | `app/shared/job-monitor.ts` | Indicateur « une résolution est en cours » dans la barre d'outils, temps écoulé calculé par le serveur |
@@ -276,13 +276,30 @@ Conventions :
   résolu dans `PlanningStateService`, les calendriers le relisent en lecture
   seule (ils ne lancent jamais de résolution) ;
 - l'état « un solveur tourne » n'est jamais stocké dans le navigateur
-  (`localStorage` / `sessionStorage`) : `SolverJobService` interroge
-  `/api/jobs/active`, de sorte qu'une résolution lancée depuis un autre
-  navigateur ou une fenêtre privée verrouille aussi les boutons ici, affiche le
-  temps écoulé calculé par le serveur, et pousse son résultat à la fin. La
-  boucle adapte son rythme : toutes les 2 secondes tant qu'un job tourne ou
-  qu'un job est en file, toutes les 30 secondes au repos ; elle s'arrête avec
-  le shell qui l'a démarrée.
+  (`localStorage` / `sessionStorage`) : `SolverJobService` le lit sur le
+  serveur, de sorte qu'une résolution lancée depuis un autre navigateur ou une
+  fenêtre privée verrouille aussi les boutons ici, affiche le temps écoulé
+  calculé par le serveur, et pousse son résultat à la fin. Il le lit **de deux
+  façons, à dessein** : un flux *server-sent events* `/api/jobs/stream` — un
+  seul événement portant le job actif **et** la file — pour la latence, et la
+  boucle de *polling* en dessous comme filet.
+
+  **Le poll n'est pas un vestige : ne le supprimez pas.** SSE échoue en
+  silence — un proxy qui bufferise, une coupure qui ne se reconnecte pas — et
+  l'interface resterait figée sur un état périmé sans rien signaler, ce qui est
+  strictement pire que le polling, lequel se répare tout seul au tick suivant.
+  Le poll garde donc la main tant que le flux n'a pas prouvé qu'il vit (un
+  `state` ou un `heartbeat`), redescend à 30 secondes tant qu'il vit, et
+  **reprend la main** — rythme rapide et rafraîchissement immédiat — après
+  45 secondes de silence. Sans flux (navigateur sans `EventSource`), la boucle
+  adapte son rythme comme avant : toutes les 2 secondes tant qu'un job tourne
+  ou qu'un job est en file, toutes les 30 secondes au repos. Les deux s'arrêtent
+  avec le shell qui les a démarrés.
+
+  Conséquence sur la latence : une résolution lancée **depuis un autre
+  navigateur** verrouille les boutons ici en une seconde au lieu des 30 du
+  repli — c'était la contrepartie assumée du backoff, et c'est ce que ce flux
+  rachète.
 
 Le CSS global se limite à ce que Material ne couvre pas : `src/styles.css` n'est
 qu'un agrégateur de règles `@import` et chaque partial vit sous `src/styles/`

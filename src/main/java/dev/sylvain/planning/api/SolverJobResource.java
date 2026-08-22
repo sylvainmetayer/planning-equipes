@@ -4,12 +4,16 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
+import dev.sylvain.planning.config.ConfigJobStream;
 import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.service.JobStreamBroadcaster;
 import dev.sylvain.planning.service.ReplanificationScope;
 import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.SolverJobService;
 import dev.sylvain.planning.service.SolverJobService.SolverBusyException;
 import dev.sylvain.planning.service.SolverJobService.SolverJob;
+import io.smallrye.mutiny.Multi;
+import io.smallrye.mutiny.infrastructure.Infrastructure;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
@@ -20,8 +24,11 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.sse.OutboundSseEvent;
+import jakarta.ws.rs.sse.Sse;
 
 /**
  * Non-blocking counterpart of {@link PlanningResource}: submits a solve or an
@@ -33,11 +40,26 @@ import jakarta.ws.rs.core.Response;
 @Consumes(MediaType.APPLICATION_JSON)
 public class SolverJobResource {
 
+    /** Event name carrying a full {@link JobsState}. */
+    static final String EVENT_STATE = "state";
+
+    /** Event name of the keep-alive beat; carries no state. */
+    static final String EVENT_HEARTBEAT = "heartbeat";
+
     @Inject
     SolverJobService solverJobService;
 
     @Inject
     PlanningService planningService;
+
+    @Inject
+    JobStreamBroadcaster jobStream;
+
+    @Inject
+    ConfigJobStream configJobStream;
+
+    @Context
+    Sse sse;
 
     @POST
     @Path("/solve/async")
@@ -135,6 +157,83 @@ public class SolverJobResource {
     }
 
     /**
+     * Everything {@code /jobs/active} and {@code /jobs/file} say, pushed
+     * instead of asked for, as server-sent events. One event carries both, so
+     * following the solver costs one open connection rather than two requests
+     * every couple of seconds — and a hand-over reaches the screen in the
+     * second it happens rather than at the next tick.
+     *
+     * <p>Three things this stream must do, none of them optional:</p>
+     * <ul>
+     *   <li><b>Send the current state on connect</b>, not on the next
+     *       transition. An idle solver produces no transition for hours, and a
+     *       client that waited for one would show nothing at all.</li>
+     *   <li><b>Beat regularly.</b> Silence on an idle solver looks exactly like
+     *       a dead connection to a reverse proxy — Pangolin sits in front of
+     *       this deployment — and to the browser. The heartbeat is a real named
+     *       event, not only the {@code :keep-alive} comment it also carries: a
+     *       comment keeps the bytes flowing but is invisible to
+     *       {@code EventSource}, so it could not double as the liveness proof
+     *       the client's fallback watches for.</li>
+     *   <li><b>Never be the only source.</b> The browser keeps polling slowly
+     *       and takes over when the stream goes quiet; a stream that dies
+     *       silently must degrade into staleness of seconds, not of forever.
+     *       See {@code SolverJobService} on the frontend.</li>
+     * </ul>
+     *
+     * <p>Authentication needs nothing here: {@code /api/*} is
+     * {@code authenticated} in {@code application.properties}, which the HTTP
+     * layer applies before this method is reached, and {@code EventSource}
+     * sends the session cookie on a same-origin stream like any other request.
+     * An expired session therefore fails the stream open, which is exactly the
+     * signal the client's fallback needs.</p>
+     */
+    @GET
+    @Path("/jobs/stream")
+    @Produces(MediaType.SERVER_SENT_EVENTS)
+    public Multi<OutboundSseEvent> streamJobs() {
+        // merging, not concatenating: both upstreams are subscribed to at once,
+        // so no transition can slip through between the initial state and the
+        // subscription to the broadcaster. The item(0) is what makes the first
+        // event the current state.
+        Multi<OutboundSseEvent> states = Multi.createBy().merging()
+                .streams(Multi.createFrom().item(0L), jobStream.changes())
+                // The state is read and serialised off the publishing thread,
+                // which holds the solver service monitor while it announces a
+                // transition, and off the event loop.
+                .emitOn(Infrastructure.getDefaultWorkerPool())
+                // A client too slow to keep up gets the latest state, never a
+                // backlog of stale ones: each event is a full snapshot.
+                .onOverflow().dropPreviousItems()
+                .map(version -> stateEvent());
+        Multi<OutboundSseEvent> heartbeats = Multi.createFrom()
+                .ticks().every(configJobStream.heartbeat())
+                .onOverflow().drop()
+                .map(tick -> heartbeatEvent());
+        return Multi.createBy().merging().streams(states, heartbeats);
+    }
+
+    private OutboundSseEvent stateEvent() {
+        JobsState state = new JobsState(
+                solverJobService.findActive().map(JobView::withoutResult).orElse(null),
+                solverJobService.fileAttente().stream().map(JobView::withoutResult).toList());
+        return sse.newEventBuilder()
+                .name(EVENT_STATE)
+                .mediaType(MediaType.APPLICATION_JSON_TYPE)
+                .data(JobsState.class, state)
+                .build();
+    }
+
+    private OutboundSseEvent heartbeatEvent() {
+        return sse.newEventBuilder()
+                .name(EVENT_HEARTBEAT)
+                .comment("keep-alive")
+                .mediaType(MediaType.APPLICATION_JSON_TYPE)
+                .data(Heartbeat.class, new Heartbeat(Instant.now()))
+                .build();
+    }
+
+    /**
      * Returns the job status, plus its payload once it is finished. The result
      * is only included for a completed job to keep polling responses small.
      */
@@ -166,6 +265,18 @@ public class SolverJobResource {
         return solverJobService.cancel(id)
                 .map(job -> Response.ok(JobView.withoutResult(job)).build())
                 .orElseGet(() -> Response.status(Response.Status.NOT_FOUND).build());
+    }
+
+    /**
+     * One server-sent event's worth of solver state: what holds the solver, and
+     * what waits behind it. The two used to be two requests; joining them is
+     * what removes the second one.
+     */
+    public record JobsState(JobView active, List<JobView> file) {
+    }
+
+    /** Payload of a heartbeat: a timestamp, so the event is never empty. */
+    public record Heartbeat(Instant at) {
     }
 
     public record JobView(

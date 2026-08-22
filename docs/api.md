@@ -260,8 +260,39 @@ autre onglet) voit le même job actif et le même temps écoulé via
 | `GET` | `/api/jobs` | Liste des jobs |
 | `GET` | `/api/jobs/active` | Job en cours (`200`) ou solveur libre (`204`) |
 | `GET` | `/api/jobs/file` | Les tâches en attente, dans l'ordre où elles démarreront |
+| `GET` | `/api/jobs/stream` | Flux `text/event-stream` : job actif **et** file, poussés à chaque transition |
 | `GET` | `/api/jobs/{id}` | État et résultat d'un job |
 | `DELETE` | `/api/jobs/{id}` | Retire une tâche de la file, ou supprime un job terminé (`409` si le job tourne encore) |
+
+### Suivi poussé : `GET /api/jobs/stream`
+
+Le même état que `/api/jobs/active` **plus** la file, en un seul événement, en
+*server-sent events*. C'est ce que suit l'IHM ; les deux requêtes précédentes
+restent servies et restent le **repli**, pas un vestige.
+
+Deux noms d'événement :
+
+- `state` — un agrégat complet `{ "active": JobView | null, "file": [JobView] }`.
+  Le **premier arrive à la connexion**, sans attendre une transition : un
+  solveur au repos n'en produit aucune, et un client qui attendrait resterait
+  sur « état inconnu ». Chaque événement est un instantané entier, jamais un
+  delta : un client trop lent reçoit le dernier, jamais un retard accumulé.
+- `heartbeat` — toutes les 20 s (`planning.jobs.stream.heartbeat`). Il porte aussi
+  la ligne de commentaire `:keep-alive`, sans laquelle un proxy inverse
+  (Pangolin dans ce déploiement) ferme une connexion silencieuse depuis
+  plusieurs minutes. Le commentaire seul n'aurait pas suffi : `EventSource` ne
+  l'expose jamais au JavaScript, donc il ne peut pas servir de preuve de vie au
+  client — d'où l'événement nommé en plus.
+
+Le flux ne remplace pas le *polling*, il le double : SSE échoue en silence (un
+proxy qui bufferise, une coupure qui ne se reconnecte pas) et l'IHM resterait
+figée sur un état périmé sans rien signaler. Le navigateur garde donc un poll
+lent (30 s) et **reprend la main** après ~45 s sans `state` ni `heartbeat`.
+
+L'authentification est celle de toutes les routes `/api/*` (`authenticated`,
+cookie de session) : elle est vérifiée à l'ouverture du flux, et `EventSource`
+envoie le cookie de lui-même en *same-origin*. Une session expirée fait donc
+échouer l'ouverture — exactement le signal dont le repli a besoin.
 
 ### File d'attente
 
