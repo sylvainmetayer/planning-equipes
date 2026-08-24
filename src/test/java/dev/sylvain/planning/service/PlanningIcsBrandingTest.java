@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 
@@ -31,7 +31,7 @@ import dev.sylvain.planning.domain.Stand;
  */
 class PlanningIcsBrandingTest {
 
-    private static PlanningFestival planningWithOnePoste() {
+    private static PlanningEvenement planningWithOnePoste() {
         Creneau creneau = new Creneau();
         creneau.setId(1L);
         creneau.setJour(1);
@@ -54,7 +54,7 @@ class PlanningIcsBrandingTest {
         poste.setStand(stand);
         poste.setAnimateur(animateur);
 
-        PlanningFestival planning = new PlanningFestival();
+        PlanningEvenement planning = new PlanningEvenement();
         planning.setPostes(List.of(poste));
         planning.setAnimateurs(List.of(animateur));
         return planning;

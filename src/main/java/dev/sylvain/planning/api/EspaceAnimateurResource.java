@@ -2,7 +2,7 @@ package dev.sylvain.planning.api;
 
 import java.util.List;
 
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.DemandeEchangeService;
 import dev.sylvain.planning.service.DemandeEchangeService.NouvelleDemande;
 import dev.sylvain.planning.service.EditionRequestScope;
@@ -151,7 +151,7 @@ public class EspaceAnimateurResource {
     @EspaceSessionRequired
     @Produces("application/pdf")
     public Response planningPdf() {
-        PlanningFestival planning = persistenceService.loadPersistedPlanning();
+        PlanningEvenement planning = persistenceService.loadPersistedPlanning();
         byte[] contenu = planningExportService.exportAnimateurPdf(planning, animateurCourant());
         return Response.ok(contenu)
                 .header(HttpHeaders.CONTENT_DISPOSITION,
@@ -165,7 +165,7 @@ public class EspaceAnimateurResource {
     @EspaceSessionRequired
     @Produces("text/calendar")
     public Response planningIcs() {
-        PlanningFestival planning = persistenceService.loadPersistedPlanning();
+        PlanningEvenement planning = persistenceService.loadPersistedPlanning();
         String contenu = planningExportService.exportAnimateurIcs(planning, animateurCourant());
         return Response.ok(contenu)
                 .type("text/calendar; charset=utf-8")
@@ -255,7 +255,7 @@ public class EspaceAnimateurResource {
     }
 
     /** Same readable convention as the admin exports — the very same code, in fact. */
-    private String fileName(PlanningFestival planning, String extension) {
+    private String fileName(PlanningEvenement planning, String extension) {
         return PlanningExportService.planningFileName(
                 planningExportService.resolveAnimateurName(planning, animateurCourant()), extension);
     }

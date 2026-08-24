@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Locale;
 
 import dev.sylvain.planning.domain.Emplacement;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 
@@ -73,7 +73,7 @@ public class PlanningIcs {
         return slug.isEmpty() ? DEFAULT_SLUG : slug;
     }
 
-    public String exportAnimateurIcs(PlanningFestival planning, String animateurId) {
+    public String exportAnimateurIcs(PlanningEvenement planning, String animateurId) {
         List<PosteAffectation> postes = planning.getPostes().stream()
                 .filter(poste -> poste.getAnimateur() != null && animateurId.equals(poste.getAnimateur().getId()))
                 .sorted(PlanningExportService.byCreneauThenStand())

@@ -254,7 +254,7 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 
 | Fonctionnalité | En une phrase |
 | --- | --- |
-| Import / export de scénario | Un fichier YAML décrit une configuration complète de festival ; l'import valide le fichier et explique ce qui cloche |
+| Import / export de scénario | Un fichier YAML décrit une configuration complète d'événement ; l'import valide le fichier et explique ce qui cloche |
 | Export / import d'un dump SQL | Dupliquer ou restaurer un jeu de données complet |
 | Assistant IA (MCP) | Un assistant IA consulte et pilote l'application en langage naturel, sans jamais voir les données personnelles des animateurs — voir [`docs/mcp.md`](docs/mcp.md) |
 | Mentions légales | Page publique, lisible sans être connecté et sans lien valide : éditeur, hébergeur, contact, propriété intellectuelle |

@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresQualite;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 
@@ -20,7 +20,7 @@ import dev.sylvain.planning.domain.Stand;
  * Full-scale regression test on the two <b>anonymised real-world</b> fixtures:
  * {@code festival-realiste.yaml} (153 animateurs, 65 stands, 23 emplacements,
  * 20 daily amplitudes) and its {@code -canicule} variant, whose extra evening
- * windows make the same festival a materially harder problem.
+ * windows make the same event a materially harder problem.
  *
  * <h2>What these add over the other scenario-lent tests</h2>
  * <p>{@code scenario-complet} and {@code scenario-continu} are hand-built
@@ -111,9 +111,9 @@ class PlanningServiceScenarioFestivalRealisteTest {
         List<Stand> stands = List.copyOf(reference.standsById().values());
         HoraireStandResolver.apply(stands, vacations);
         List<PosteAffectation> postes = PlanningService.buildPostes(stands, vacations);
-        PlanningFestival problem = new PlanningFestival(reference.dateDebut(), reference.animateurs(), postes);
+        PlanningEvenement problem = new PlanningEvenement(reference.dateDebut(), reference.animateurs(), postes);
 
-        PlanningFestival solved = planningService.solveUntilFeasible(problem, SECONDS_LIMITE_SECURITE);
+        PlanningEvenement solved = planningService.solveUntilFeasible(problem, SECONDS_LIMITE_SECURITE);
 
         assertThat(solved.getScore()).isNotNull();
         assertThat(solved.getScore().hardScore()).isZero();

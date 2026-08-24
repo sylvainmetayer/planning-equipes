@@ -14,7 +14,7 @@ import javax.sql.DataSource;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.DemandeEchange;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.StatutDemandeEchange;
 import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
@@ -99,7 +99,7 @@ public class DemandeEchangeService {
         if (nouvelles == null || nouvelles.isEmpty()) {
             return List.of();
         }
-        PlanningFestival planning = persistenceService.loadPersistedPlanning();
+        PlanningEvenement planning = persistenceService.loadPersistedPlanning();
         PlanningPersistenceService.PlanningResolution resolution = persistenceService.loadResolution();
         List<DemandeEchange> demandes = new ArrayList<>();
         for (NouvelleDemande nouvelle : nouvelles) {
@@ -117,7 +117,7 @@ public class DemandeEchangeService {
     }
 
     private DemandeEchange buildDemande(String demandeurId, NouvelleDemande nouvelle,
-            PlanningFestival planning, PlanningPersistenceService.PlanningResolution resolution) {
+            PlanningEvenement planning, PlanningPersistenceService.PlanningResolution resolution) {
         if (nouvelle.creneauId() == null || nouvelle.standId() == null || nouvelle.standId().isBlank()) {
             throw new BusinessError.Invalid("Créneau ou stand manquant sur une demande");
         }
@@ -303,14 +303,14 @@ public class DemandeEchangeService {
      */
     public EchangeSimulation impact(String demandeId) {
         DemandeEchange demande = requiredDemande(demandeId);
-        PlanningFestival planning = persistenceService.loadPersistedPlanning();
+        PlanningEvenement planning = persistenceService.loadPersistedPlanning();
         return simulate(planning, demande.getDemandeurId(), demande.getCibleId(),
                 demande.getCreneauId(), demande.getStandId(),
                 demande.getCreneauCibleId(), demande.getStandCibleId());
     }
 
     /** Dispatches to the plain or the directed simulation, depending on the demande's shape. */
-    private EchangeSimulation simulate(PlanningFestival planning, String demandeurId, String cibleId,
+    private EchangeSimulation simulate(PlanningEvenement planning, String demandeurId, String cibleId,
             Long creneauId, String standId, Long creneauCibleId, String standCibleId) {
         if (creneauCibleId == null) {
             return planningService.simulateEchange(planning, demandeurId, cibleId, creneauId, standId);
@@ -330,7 +330,7 @@ public class DemandeEchangeService {
     public DemandeEchange accept(String demandeId, String commentaire) {
         DemandeEchange demande = requiredDemande(demandeId);
         requirePending(demande);
-        PlanningFestival planning = persistenceService.loadPersistedPlanning();
+        PlanningEvenement planning = persistenceService.loadPersistedPlanning();
         EchangeSimulation simulation = simulate(planning, demande.getDemandeurId(), demande.getCibleId(),
                 demande.getCreneauId(), demande.getStandId(),
                 demande.getCreneauCibleId(), demande.getStandCibleId());

@@ -56,7 +56,7 @@ import jakarta.inject.Inject;
 @ApplicationScoped
 public class PdfTheme {
 
-    static final String FESTIVAL_TIMEZONE = "Europe/Paris";
+    static final String EVENT_TIMEZONE = "Europe/Paris";
     static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ISO_LOCAL_DATE;
     static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
     static final DateTimeFormatter FRENCH_DAY_DATE_FORMAT = DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.FRENCH);
@@ -160,7 +160,7 @@ public class PdfTheme {
     /**
      * Who this document belongs to, as printed at the foot of every page: the
      * customer when the deployment named one, the product otherwise — never a
-     * festival nobody here has heard of.
+     * event nobody here has heard of.
      */
     String footerOwner() {
         return organisation.isEmpty() ? productName : organisation;
@@ -313,7 +313,7 @@ public class PdfTheme {
     }
 
     Paragraph emptyState() {
-        Paragraph paragraph = new Paragraph("Aucune affectation pour ce festival.", emptyStateFont);
+        Paragraph paragraph = new Paragraph("Aucune affectation pour cet événement.", emptyStateFont);
         paragraph.setAlignment(Element.ALIGN_CENTER);
         paragraph.setSpacingBefore(24f);
         return paragraph;

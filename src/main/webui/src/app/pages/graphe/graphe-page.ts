@@ -3,7 +3,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { Animateur, Creneau, Emplacement, PlanningFestival, Stand } from '../../core/models';
+import { Animateur, Creneau, Emplacement, PlanningEvenement, Stand } from '../../core/models';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { MapPicker } from '../../shared/map-picker';
@@ -56,7 +56,7 @@ export class GraphePage {
   private readonly planningState = inject(PlanningStateService);
 
   protected readonly chargement = signal(true);
-  protected readonly planning = signal<PlanningFestival | null>(null);
+  protected readonly planning = signal<PlanningEvenement | null>(null);
 
   protected readonly emplacementSelectionne = signal<string | null>(null);
   protected readonly standSelectionne = signal<string | null>(null);

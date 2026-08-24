@@ -12,7 +12,7 @@ import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresSolveur;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 
 /**
  * Exercises the optional {@code parametresLegaux:} / {@code parametresDecoupage:}
@@ -66,7 +66,7 @@ class PlanningServiceParametresScenarioTest {
         // (String) cast throws ClassCastException instead of parsing it.
         assertThat(decoupage.getFenetreRepasMidiDebut()).isEqualTo(LocalTime.of(12, 30));
         // Slicing into offset families: the setting that makes a dense scenario
-        // feasible (see the coverage-deficit investigation (kept out of the public repository: it is based on a real festival dataset)) must be pinnable in the
+        // feasible (see the coverage-deficit investigation (kept out of the public repository: it is based on a real event dataset)) must be pinnable in the
         // scenario itself, not only tuned by hand after the import.
         assertThat(decoupage.getNombreFamillesDecalage()).isEqualTo(3);
         assertThat(decoupage.getDureeDecalageMaxMinutes()).isEqualTo(75);
@@ -80,10 +80,10 @@ class PlanningServiceParametresScenarioTest {
     void construireExempleAppliqueLesParametresLegauxDuScenarioQuandPresents() {
         PlanningService service = service();
 
-        PlanningFestival festival = service.buildExample("scenario-parametres-optionnels.yaml");
+        PlanningEvenement evenement = service.buildExample("scenario-parametres-optionnels.yaml");
 
-        assertThat(festival.getParametresLegaux()).hasSize(1);
-        assertThat(festival.getParametresLegaux().get(0).getReposQuotidienMinimalMinutes()).isEqualTo(500);
+        assertThat(evenement.getParametresLegaux()).hasSize(1);
+        assertThat(evenement.getParametresLegaux().get(0).getReposQuotidienMinimalMinutes()).isEqualTo(500);
     }
 
     @Test

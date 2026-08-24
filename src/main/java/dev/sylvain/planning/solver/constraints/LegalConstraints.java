@@ -164,7 +164,7 @@ public final class LegalConstraints {
      * <p>Until this fix the 20:00 window was applied to every minor, which is
      * more protective than the law but excluded 16-to-18-year-olds from the
      * 20:00-22:00 band the law allows them, needlessly shrinking the pool on a
-     * festival evening.</p>
+     * event evening.</p>
      *
      * <p>Deliberately checked against the créneau's <i>full</i> window, not
      * {@link PosteAffectation#getHeureDebutEffective()}: unlike the duration
@@ -406,7 +406,7 @@ public final class LegalConstraints {
      * <p>Code du travail art. <b>L3132-1</b>: <i>« Il est interdit de faire
      * travailler un même salarié plus de six jours par semaine. »</i></p>
      *
-     * <p>The festival runs 15 days, i.e. more than two calendar weeks: without
+     * <p>The event runs 15 days, i.e. more than two calendar weeks: without
      * this rule an animateur could be scheduled every single day. The weekly
      * hours cap does not stand in the way — 7 days × 6 h 45 = 47 h 15 satisfies
      * a 48 h ceiling on seven worked days.</p>
@@ -437,7 +437,7 @@ public final class LegalConstraints {
      * which is also the window used by {@code Creneau.semaineIso()} and by the
      * weekly hour caps. Gaps considered include the one before the first
      * assignment and the one after the last, both clamped to the window — so a
-     * week the festival only partially covers is satisfied by construction,
+     * week the event only partially covers is satisfied by construction,
      * which is correct: the animateur really is free on those days.</p>
      *
      * <p><b>Known approximation</b>: rest is evaluated week by week, so a rest
@@ -475,7 +475,7 @@ public final class LegalConstraints {
      * coded.</p>
      *
      * <p>Counted in <b>calendar days</b> inside the ISO week: days of that week
-     * the festival does not cover are free days like any other, so a week only
+     * the event does not cover are free days like any other, so a week only
      * partially covered is satisfied by construction.</p>
      */
     private Constraint reposHebdomadaireMineur(ConstraintFactory constraintFactory) {

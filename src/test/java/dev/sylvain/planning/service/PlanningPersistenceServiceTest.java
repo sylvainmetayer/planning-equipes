@@ -10,7 +10,7 @@ import java.util.Set;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Edition;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import io.quarkus.test.junit.QuarkusTest;
@@ -37,8 +37,8 @@ class PlanningPersistenceServiceTest {
 
     @Test
     void solvedPlanningIsPersistedToDatabase() {
-        PlanningFestival problem = planningService.buildSimpleExample();
-        PlanningFestival solved = planningService.solve(problem);
+        PlanningEvenement problem = planningService.buildSimpleExample();
+        PlanningEvenement solved = planningService.solve(problem);
 
         int stored = persistenceService.persist(solved);
 
@@ -69,10 +69,10 @@ class PlanningPersistenceServiceTest {
         poste.setHeureFinEffective(LocalTime.of(17, 50));
         poste.setAnimateur(animateur);
 
-        PlanningFestival planning = new PlanningFestival(creneau.getDate(), List.of(animateur), List.of(poste));
+        PlanningEvenement planning = new PlanningEvenement(creneau.getDate(), List.of(animateur), List.of(poste));
         persistenceService.persist(planning);
 
-        PlanningFestival reloaded = persistenceService.loadPersistedPlanning();
+        PlanningEvenement reloaded = persistenceService.loadPersistedPlanning();
 
         assertThat(reloaded.getPostes()).hasSize(1);
         PosteAffectation reloadedPoste = reloaded.getPostes().get(0);
@@ -102,7 +102,7 @@ class PlanningPersistenceServiceTest {
                 PosteAffectation poste = new PosteAffectation("poste-scope", stand, creneau);
                 poste.setAnimateur(animateur);
                 persistenceService.persist(
-                        new PlanningFestival(creneau.getDate(), List.of(animateur), List.of(poste)));
+                        new PlanningEvenement(creneau.getDate(), List.of(animateur), List.of(poste)));
 
                 assertThat(persistenceService.loadAnimateursByStandCreneau().values())
                         .anySatisfy(animateurs -> assertThat(animateurs).contains("A-SCOPE"));

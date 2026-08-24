@@ -455,7 +455,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
 
     @Test
     void septJoursTravaillesDansLaSemaineEstPenalise() {
-        // B4: the festival lasts 15 days; nothing stopped an animateur from being
+        // B4: the event lasts 15 days; nothing stopped an animateur from being
         // assigned seven days in a row (art. L3132-1).
         Animateur majeur = referentMajeur("A1");
         Object[] postes = new Object[7];

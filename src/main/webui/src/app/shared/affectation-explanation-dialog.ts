@@ -20,7 +20,7 @@ import {
   Animateur,
   ContrainteImpact,
   HardMediumSoftScore,
-  PlanningFestival,
+  PlanningEvenement,
   PosteAffectation,
   SwapSimulation
 } from '../core/models';
@@ -34,7 +34,7 @@ import {
 
 export interface AffectationExplanationDialogData {
   poste: PosteAffectation;
-  planning: PlanningFestival;
+  planning: PlanningEvenement;
   /** Other animateurs offered as swap candidates (typically: competent for this poste's stand). */
   candidats: Animateur[];
 }
@@ -254,7 +254,7 @@ export { aUneAppreciationPour } from './affectation-explanation-rules';
  * animateur with an appreciation for the poste's stand as a swap candidate —
  * the shared entry point of the day and month calendars.
  */
-export function ouvrirExplication(dialog: MatDialog, planning: PlanningFestival, poste: PosteAffectation): void {
+export function ouvrirExplication(dialog: MatDialog, planning: PlanningEvenement, poste: PosteAffectation): void {
   dialog.open(AffectationExplanationDialog, {
     data: { poste, planning, candidats: candidatsPour(planning, poste) },
     width: '32rem'

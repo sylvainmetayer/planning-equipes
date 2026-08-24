@@ -29,7 +29,7 @@ import {
   MutationsWhatIf,
   PerimetreReplanification,
   PlanningDiagnostic,
-  PlanningFestival,
+  PlanningEvenement,
   ResultatSolveIncremental
 } from './models';
 
@@ -326,7 +326,7 @@ export class SolverJobService {
    * planning itself is not part of the payload; it is persisted server-side
    * and fetched from `/api/planning/persisted` by the dedicated screens.
    */
-  submitSolve(planning: PlanningFestival, seconds?: number): Promise<JobView> {
+  submitSolve(planning: PlanningEvenement, seconds?: number): Promise<JobView> {
     return this.submit('/api/solve/async', planning, 'SOLVE', seconds);
   }
 
@@ -371,7 +371,7 @@ export class SolverJobService {
     await this.rafraichirFile();
   }
 
-  submitAnalyze(planning: PlanningFestival, seconds?: number): Promise<JobView> {
+  submitAnalyze(planning: PlanningEvenement, seconds?: number): Promise<JobView> {
     return this.submit('/api/solve/analyze/async', planning, 'ANALYZE', seconds);
   }
 

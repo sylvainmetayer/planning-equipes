@@ -122,13 +122,13 @@ public final class QualiteConstraints {
      *
      * <p>"Beyond one crew" is {@code max(1, effectifMin)}, which is exactly the
      * number of seats poste generation creates per créneau: a stand needing two
-     * people at once, held by the same two all festival, is perfect continuity
+     * people at once, held by the same two all event, is perfect continuity
      * and scores zero. Simultaneous multi-staffing was never rotation, and
      * still isn't.</p>
      *
      * <p>This used to count <em>pairs</em> of postes on the same stand held by
      * different animateurs on different créneaux, which made it quadratic in
-     * the number of postes per stand — and unusable as soon as a festival flags
+     * the number of postes per stand — and unusable as soon as an event flags
      * more than a handful of premium stands. Measured on the real 2026 data
      * (45 premium stands of 65, 3 502 postes): 48 567 possible pairs, a
      * penalty of 38 591 out of a 46 284 total medium score — 84 % of it — of

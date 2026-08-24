@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.service.PlanningService;
 import io.quarkus.test.junit.QuarkusTest;
@@ -25,9 +25,9 @@ class PlanningHardConstraintsTest {
 
     @Test
     void generatedPlanningDoesNotViolateAnyHardConstraintOnNominalCase() {
-        PlanningFestival problem = planningService.buildSimpleExample();
+        PlanningEvenement problem = planningService.buildSimpleExample();
 
-        PlanningFestival solved = planningService.solve(problem);
+        PlanningEvenement solved = planningService.solve(problem);
 
         assertThat(solved.getScore()).isNotNull();
         assertThat(solved.getScore().hardScore()).isZero();
@@ -35,7 +35,7 @@ class PlanningHardConstraintsTest {
 
     @Test
     void planningViolatesHardScoreWhenForcedAssignmentCannotBeSatisfied() {
-        PlanningFestival problem = planningService.buildSimpleExample();
+        PlanningEvenement problem = planningService.buildSimpleExample();
 
         ContrainteAdHoc contrainte = new ContrainteAdHoc("C1", TypeContrainteAdHoc.AFFECTATION_FORCEE);
         contrainte.setAnimateursConcernes(List.of(problem.getAnimateurs().get(0)));
@@ -45,7 +45,7 @@ class PlanningHardConstraintsTest {
         contrainte.setCreeLe(Instant.now());
         problem.setContraintesAdHoc(List.of(contrainte));
 
-        PlanningFestival solved = planningService.solve(problem);
+        PlanningEvenement solved = planningService.solve(problem);
 
         assertThat(solved.getScore()).isNotNull();
         assertThat(solved.getScore().hardScore()).isLessThan(0);

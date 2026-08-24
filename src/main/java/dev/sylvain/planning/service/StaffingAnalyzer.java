@@ -38,7 +38,7 @@ import jakarta.enterprise.context.ApplicationScoped;
  * and consecutive vacations overlap during handovers. Summing a stand's
  * effectif over every such créneau counts the same hour of the same stand once
  * per famille. On edition-1708 (5 families, 354 vacations) the workload bound came
- * out above 1500 animateurs for a festival staffed by 153.</li>
+ * out above 1500 animateurs for an event staffed by 153.</li>
  * </ul>
  *
  * <p>Working from the generated postes removes both errors by construction:
@@ -58,7 +58,7 @@ import jakarta.enterprise.context.ApplicationScoped;
  * of distinct animateurs a day requires — the chromatic number of an interval
  * graph is its maximum clique.</li>
  * <li><b>Charge horaire</b> — total person-hours divided by what one animateur
- * may legally work over the festival's ISO weeks.</li>
+ * may legally work over the event's ISO weeks.</li>
  * </ol>
  *
  * <p>All three stay optimistic: none of them accounts for compétences, for
@@ -77,7 +77,7 @@ public class StaffingAnalyzer {
     }
 
     /**
-     * One festival day. {@code heures} are person-hours (seats × duration),
+     * One event day. {@code heures} are person-hours (seats × duration),
      * {@code sieges} the number of postes generated that day.
      */
     public record JourStaffing(
@@ -199,7 +199,7 @@ public class StaffingAnalyzer {
         }
         // Group by stand and window, so "half the seats, rounded up" is
         // applied to a real group of simultaneous seats and not to the
-        // festival's grand total.
+        // event's grand total.
         Map<String, int[]> byGroup = new LinkedHashMap<>();
         for (Siege siege : sieges) {
             String key = (siege.stand() == null ? "?" : siege.stand().getId())

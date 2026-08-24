@@ -22,7 +22,7 @@ import ai.timefold.solver.core.api.solver.Solver;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 import dev.sylvain.planning.domain.Edition;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.notification.Notification;
 import dev.sylvain.planning.service.SolverJobRepository.LigneJob;
 import io.quarkus.runtime.StartupEvent;
@@ -162,7 +162,7 @@ public class SolverJobService {
      * dedicated screen needs it, so the (possibly huge) job-polling payload
      * stays limited to the diagnostic.
      */
-    public SolverJob submitSolve(PlanningFestival problem, Long secondsLimit) {
+    public SolverJob submitSolve(PlanningEvenement problem, Long secondsLimit) {
         // Not replayable: the problem came in the request body, which is not
         // stored. Never queued either, so a restart can only ever find it in a
         // terminal state or interrupted.
@@ -265,7 +265,7 @@ public class SolverJobService {
         };
     }
 
-    public SolverJob submitAnalyze(PlanningFestival problem, Long secondsLimit) {
+    public SolverJob submitAnalyze(PlanningEvenement problem, Long secondsLimit) {
         return submit(JobType.ANALYZE, secondsLimit, false, null, false, job -> {
             PlanningService.PlanningDiagnostic diagnostic =
                     planningService.analyze(problem, secondsLimit, job::attachSolver);
@@ -689,7 +689,7 @@ public class SolverJobService {
         private volatile Object result;
         private volatile String error;
         private volatile boolean cancelRequested;
-        private volatile Solver<PlanningFestival> solver;
+        private volatile Solver<PlanningEvenement> solver;
 
         private SolverJob(String id, JobType type, Long secondsLimit, String editionId, String editionNom,
                 ReplanificationScope scope, boolean rejouable) {
@@ -780,7 +780,7 @@ public class SolverJobService {
          * immediately if a cancel was already requested (the narrow race window
          * between {@link #requestCancel()} and this call).
          */
-        private void attachSolver(Solver<PlanningFestival> solver) {
+        private void attachSolver(Solver<PlanningEvenement> solver) {
             this.solver = solver;
             if (cancelRequested) {
                 solver.terminateEarly();
@@ -790,7 +790,7 @@ public class SolverJobService {
         /** Stops the solver as soon as it exists, and flags the job as cancelled. */
         private void requestCancel() {
             cancelRequested = true;
-            Solver<PlanningFestival> currentSolver = solver;
+            Solver<PlanningEvenement> currentSolver = solver;
             if (currentSolver != null) {
                 currentSolver.terminateEarly();
             }

@@ -3,7 +3,7 @@
 // Six templates used to hard-code the same image, so "deploy for another
 // customer" meant editing six files and hoping none was missed. The interesting
 // case is not the configured one — it is the *unconfigured* one: an instance
-// with no mark of its own must render nothing, never the mark of the festival
+// with no mark of its own must render nothing, never the mark of the event
 // this code happened to be written for.
 
 import { provideZonelessChangeDetection } from '@angular/core';

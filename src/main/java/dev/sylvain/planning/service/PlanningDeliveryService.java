@@ -6,7 +6,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -44,7 +44,7 @@ public class PlanningDeliveryService {
 
     /** Sends their planning to every animateur holding at least one poste. */
     public DeliveryReport sendToAll() {
-        PlanningFestival planning = persistenceService.loadPersistedPlanning();
+        PlanningEvenement planning = persistenceService.loadPersistedPlanning();
         Set<String> animateursAvecPoste = planning.getPostes().stream()
                 .filter(poste -> poste.getAnimateur() != null)
                 .map(poste -> poste.getAnimateur().getId())
@@ -82,7 +82,7 @@ public class PlanningDeliveryService {
      * @throws BusinessError.Invalid    when their fiche carries no address
      */
     public DeliveryReport sendToOneAnimateur(String animateurId) {
-        PlanningFestival planning = persistenceService.loadPersistedPlanning();
+        PlanningEvenement planning = persistenceService.loadPersistedPlanning();
         Animateur animateur = planning.getAnimateurs().stream()
                 .filter(candidat -> candidat.getId().equals(animateurId))
                 .findFirst()
@@ -103,7 +103,7 @@ public class PlanningDeliveryService {
         return animateur.getEmail() != null && !animateur.getEmail().isBlank();
     }
 
-    private void send(PlanningFestival planning, Animateur animateur) {
+    private void send(PlanningEvenement planning, Animateur animateur) {
         byte[] pdf = planningExportService.exportAnimateurPdf(planning, animateur.getId());
         mailService.sendIndividualPlanning(
                 animateur.getEmail(),

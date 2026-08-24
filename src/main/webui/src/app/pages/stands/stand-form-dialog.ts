@@ -14,7 +14,7 @@ import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { horaireVide, JourResolu, resoudreHoraires } from '../../core/horaire-stand';
 import {
-  datesFestival,
+  datesEvenement,
   decrireJour,
   libelleJour,
   libelleJourSemaine,
@@ -119,7 +119,7 @@ export class StandFormDialog {
   protected readonly erreurHoraires = computed(() => premiereErreurHoraire(this.draft().horaires));
 
   /** Days the preview covers: the edition's créneaux — what the solver builds from. */
-  protected readonly datesFestival = computed(() => datesFestival(this.store.creneaux()));
+  protected readonly datesEvenement = computed(() => datesEvenement(this.store.creneaux()));
 
   /** The schedule as the solver will read it, day by day — the point of the whole editor. */
   protected readonly apercu = computed<JourResolu[]>(() => {
@@ -130,7 +130,7 @@ export class StandFormDialog {
         ouvertures: draft.ouvertures,
         horaires: draft.horaires
       } as Stand,
-      this.datesFestival()
+      this.datesEvenement()
     );
   });
 

@@ -72,7 +72,7 @@ public final class OuvertureStandsAnalyzer {
      */
     static final int DUREE_MINIMALE_EXPLOITABLE_MINUTES = 15;
 
-    /** One festival day, and the amplitude the cells of that column are measured against. */
+    /** One event day, and the amplitude the cells of that column are measured against. */
     public record JourAmplitude(LocalDate date, int jour, LocalTime heureDebut, LocalTime heureFin, int minutes,
             int nombreCreneaux) {
     }

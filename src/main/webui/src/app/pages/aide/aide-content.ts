@@ -92,7 +92,7 @@ export function buildHelpSections(): HelpSection[] {
           items: [
             {
               term: $localize`:@@aide.editions.term.edition:Édition`,
-              text: $localize`:@@aide.editions.def.edition:Une année de festival — ou une variante de plan — avec ses propres stands, animateurs, créneaux, paramètres et planning résolu. Rien ne circule d'une édition à l'autre : « Année 2025 » reste consultable pendant qu'on prépare « Année 2026 », et « 2026 canicule » vit à côté de « 2026 » sans la toucher. L'édition consultée est propre à chaque onglet du navigateur, et rappelée par le bandeau en haut de l'écran.`
+              text: $localize`:@@aide.editions.def.edition:Une édition de l'événement — ou une variante de plan — avec ses propres stands, animateurs, créneaux, paramètres et planning résolu. Rien ne circule d'une édition à l'autre : « Année 2025 » reste consultable pendant qu'on prépare « Année 2026 », et « 2026 canicule » vit à côté de « 2026 » sans la toucher. L'édition consultée est propre à chaque onglet du navigateur, et rappelée par le bandeau en haut de l'écran.`
             }
           ]
         },
@@ -138,11 +138,11 @@ export function buildHelpSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.data.term.creneaux:Créneaux`,
-              text: $localize`:@@aide.data.def.creneaux:Jour du festival, date, heures de début et de fin. C'est le découpage temporel que le solveur remplit ; l'effectif minimum d'un stand y est multiplié par le nombre de créneaux où il est ouvert.`
+              text: $localize`:@@aide.data.def.creneaux:Jour de l'événement, date, heures de début et de fin. C'est le découpage temporel que le solveur remplit ; l'effectif minimum d'un stand y est multiplié par le nombre de créneaux où il est ouvert.`
             },
             {
               term: $localize`:@@aide.data.term.familles:Familles de créneaux`,
-              text: $localize`:@@aide.data.def.familles:Quand le découpage est généré avec plusieurs grilles de relais décalées, chaque vacation existe en plusieurs variantes aux coupures légèrement décalées : les « familles » (colonne Famille de la page Créneaux). Chaque stand est rattaché à une seule famille, si bien que tous les stands ne changent pas d'équipe au même instant — sans décalage, chaque relais viderait simultanément l'ensemble du festival. Des créneaux identiques appartenant à des familles différentes ne sont donc pas des doublons. Côté besoins, un stand ne génère des postes que sur les créneaux de sa propre famille : le besoin total en animateurs ne se multiplie pas avec le nombre de familles, il se répartit — la page Besoin en animateurs en tient compte.`
+              text: $localize`:@@aide.data.def.familles:Quand le découpage est généré avec plusieurs grilles de relais décalées, chaque vacation existe en plusieurs variantes aux coupures légèrement décalées : les « familles » (colonne Famille de la page Créneaux). Chaque stand est rattaché à une seule famille, si bien que tous les stands ne changent pas d'équipe au même instant — sans décalage, chaque relais viderait simultanément l'ensemble de l'événement. Des créneaux identiques appartenant à des familles différentes ne sont donc pas des doublons. Côté besoins, un stand ne génère des postes que sur les créneaux de sa propre famille : le besoin total en animateurs ne se multiplie pas avec le nombre de familles, il se répartit — la page Besoin en animateurs en tient compte.`
             },
             {
               term: $localize`:@@aide.data.term.autres:Emplacements et typologies`,
@@ -181,7 +181,7 @@ export function buildHelpSections(): HelpSection[] {
           items: [
             {
               term: $localize`:@@aide.config.term.duree:Durée de résolution`,
-              text: $localize`:@@aide.config.def.duree:Temps maximal accordé à une résolution, réglé sur la page Solveur (3 min par défaut) et partagé par tous les navigateurs. C'est le réglage qui compte le plus : sur un festival complet, quelques minutes suffisent rarement à atteindre un score dur nul. Commencez court (1 à 3 min) pour révéler les blocages structurels, puis passez à 15-30 min, voire davantage, pour la résolution finale.`
+              text: $localize`:@@aide.config.def.duree:Temps maximal accordé à une résolution, réglé sur la page Solveur (3 min par défaut) et partagé par tous les navigateurs. C'est le réglage qui compte le plus : sur un événement complet, quelques minutes suffisent rarement à atteindre un score dur nul. Commencez court (1 à 3 min) pour révéler les blocages structurels, puis passez à 15-30 min, voire davantage, pour la résolution finale.`
             },
             {
               term: $localize`:@@aide.config.term.mailFin:Prévenir à la fin d'une résolution`,
@@ -355,7 +355,7 @@ export function buildHelpSections(): HelpSection[] {
           items: [
             {
               term: $localize`:@@aide.views.term.calendar:Calendrier des affectations`,
-              text: $localize`:@@aide.views.def.calendar:Vue mensuelle avec filtres par animateur et par stand, et détail des affectations au clic sur une journée. Pour se repérer dans l'ensemble du festival.`
+              text: $localize`:@@aide.views.def.calendar:Vue mensuelle avec filtres par animateur et par stand, et détail des affectations au clic sur une journée. Pour se repérer dans l'ensemble de l'événement.`
             },
             {
               term: $localize`:@@aide.views.term.day:Calendrier journalier`,

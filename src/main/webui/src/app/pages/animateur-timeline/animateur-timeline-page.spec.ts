@@ -116,7 +116,7 @@ describe('buildAnimateurTimeline', () => {
     expect(days[0].gaps).toHaveLength(0);
   });
 
-  it('treats a "00:00" end of a vacation as midnight (end of this festival day), not the start of the next', () => {
+  it('treats a "00:00" end of a vacation as midnight (end of this event day), not the start of the next', () => {
     const days = buildAnimateurTimeline(
       [poste({ id: 'p1', creneau: creneau({ id: 1, jour: 1, heureDebut: '22:00', heureFin: '00:00' }), stand: stand('S1'), animateur: animateur('A') })],
       'A'
@@ -144,7 +144,7 @@ describe('buildAnimateurTimeline', () => {
     expect(days[0].blocks[0]).toMatchObject({ heureDebut: '14:00', heureFin: '16:00' });
   });
 
-  it('groups vacations by festival day and orders days chronologically', () => {
+  it('groups vacations by event day and orders days chronologically', () => {
     const days = buildAnimateurTimeline(
       [
         poste({ id: 'p1', creneau: creneau({ id: 1, jour: 2 }), stand: stand('S1'), animateur: animateur('A') }),

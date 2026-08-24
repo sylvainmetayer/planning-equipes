@@ -7,7 +7,7 @@ package dev.sylvain.planning.domain;
  */
 public enum TypeVerrouillage {
 
-    /** Every seat held by one animateur, over the whole festival. */
+    /** Every seat held by one animateur, over the whole event. */
     ANIMATEUR,
 
     /** Every seat of one stand, on all of its créneaux. */
@@ -23,7 +23,7 @@ public enum TypeVerrouillage {
      * What one animateur holds on one single créneau — nothing else of their
      * planning. Posed when an admin validates a demande d'échange (issue #165):
      * it freezes each swapped seat and forbids handing that animateur another
-     * seat on that créneau, while leaving the rest of their festival movable.
+     * seat on that créneau, while leaving the rest of their event movable.
      */
     ANIMATEUR_CRENEAU
 }

@@ -65,7 +65,7 @@ export interface Stand {
   ouvertures: OuvertureStand[];
   /**
    * Recurring opening/closing rules — how a stable pattern is entered, instead
-   * of one dated window per festival day. A dated entry above always wins over
+   * of one dated window per event day. A dated entry above always wins over
    * these for the day it names; see `core/horaire-stand.ts` for the resolution.
    */
   horaires: HoraireStand[];
@@ -115,7 +115,7 @@ export type JourSemaine =
 
 /**
  * A recurring opening/closing rule of a stand: windows plus the days they apply
- * to. One rule replaces as many dated windows as there are festival days it
+ * to. One rule replaces as many dated windows as there are event days it
  * covers — "open 10:00-12:00 then 14:00 to closing, every day" is one rule with
  * two windows instead of twenty-four dated entries.
  *
@@ -187,7 +187,7 @@ export type TypeAnomalieOuverture =
   | 'FENETRE_SANS_EFFET'
   | 'SEGMENT_TROP_COURT';
 
-/** One festival day, and the amplitude its column's cells are measured against. */
+/** One event day, and the amplitude its column's cells are measured against. */
 export interface JourAmplitude {
   date: string;
   jour: number;
@@ -275,7 +275,7 @@ export interface Creneau {
 }
 
 /**
- * A whole edition of the festival — "Année 2025", "Année 2026" — and the scope
+ * A whole edition of the event — "Année 2025", "Année 2026" — and the scope
  * every piece of reference data belongs to (`/api/editions`). Not to be confused
  * with the former timeslot groups (removed by issue #172: the edition is
  * the only variant carrier). `defaut` is not "the current one": that is this browser's own
@@ -367,7 +367,7 @@ export interface HardMediumSoftScore {
   softScore: number;
 }
 
-export interface PlanningFestival {
+export interface PlanningEvenement {
   dateDebutFestival?: string;
   animateurs: Animateur[];
   postes: PosteAffectation[];
@@ -675,7 +675,7 @@ export interface JobView {
 
 
 /**
- * One festival day of `GET /api/staffing`: what its generated seats demand.
+ * One event day of `GET /api/staffing`: what its generated seats demand.
  * `heures` are person-hours, `sieges` the number of postes that day.
  */
 export interface JourStaffing {
@@ -942,7 +942,7 @@ export interface CollegueView {
 
 /** `/api/espace-animateur/{jeton}`: the espace's home payload. */
 export interface EspaceAnimateurView {
-  /** ISO dates of the festival days without any seat for this animateur — their « Repos » days. */
+  /** ISO dates of the event days without any seat for this animateur — their « Repos » days. */
   joursRepos: string[];
   animateurId: string;
   prenom: string;

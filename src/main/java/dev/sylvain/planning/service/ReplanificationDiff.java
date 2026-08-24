@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 
 /**
@@ -47,7 +47,7 @@ public final class ReplanificationDiff {
      * the new problem no longer holds (deleted stand or créneau) is not
      * reported: its seats no longer exist to have a crew.
      */
-    public static List<ChangementAffectation> compute(Map<String, List<String>> avant, PlanningFestival solved) {
+    public static List<ChangementAffectation> compute(Map<String, List<String>> avant, PlanningEvenement solved) {
         Map<String, Animateur> animateursById = new LinkedHashMap<>();
         if (solved.getAnimateurs() != null) {
             for (Animateur animateur : solved.getAnimateurs()) {

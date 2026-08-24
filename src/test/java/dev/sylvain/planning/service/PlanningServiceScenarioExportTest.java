@@ -69,7 +69,7 @@ class PlanningServiceScenarioExportTest {
         Map<String, Object> parsed = new Yaml().load(yaml);
 
         assertThat(parsed.get("festival")).isInstanceOfSatisfying(Map.class,
-                festival -> assertThat(festival.get("dateDebut")).isEqualTo("2026-08-14"));
+                evenement -> assertThat(evenement.get("dateDebut")).isEqualTo("2026-08-14"));
 
         List<Map<String, Object>> creneaux = (List<Map<String, Object>>) parsed.get("creneaux");
         assertThat(creneaux).hasSize(1);

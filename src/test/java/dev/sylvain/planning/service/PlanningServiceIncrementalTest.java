@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
@@ -166,7 +166,7 @@ class PlanningServiceIncrementalTest {
     void unePermutationDeSiegesInterchangeablesNEstPasUnChangement() {
         // Same crew on the same stand × créneau, seats swapped: nobody's
         // planning changed, so nobody must be told it did.
-        PlanningFestival solved = planningWith(
+        PlanningEvenement solved = planningWith(
                 affecte(poste("p0", standA, matinJ1), bob),
                 affecte(poste("p1", standA, matinJ1), alice));
 
@@ -178,7 +178,7 @@ class PlanningServiceIncrementalTest {
 
     @Test
     void unRemplacementEstRapporteAvecLesDeuxEquipesEnClair() {
-        PlanningFestival solved = planningWith(
+        PlanningEvenement solved = planningWith(
                 affecte(poste("p0", standA, matinJ1), bob),
                 affecte(poste("p1", standA, matinJ2), alice));
 
@@ -195,7 +195,7 @@ class PlanningServiceIncrementalTest {
 
     @Test
     void unSiegeVideApresCoupEstRapporteCommeUneEquipeVide() {
-        PlanningFestival solved = planningWith(poste("p0", standA, matinJ1));
+        PlanningEvenement solved = planningWith(poste("p0", standA, matinJ1));
 
         List<ChangementAffectation> changements = ReplanificationDiff.compute(
                 Map.of(key("STAND-A", 1L), List.of("A1")), solved);
@@ -211,7 +211,7 @@ class PlanningServiceIncrementalTest {
         return poste;
     }
 
-    private PlanningFestival planningWith(PosteAffectation... postes) {
-        return new PlanningFestival(J1, animateurs, new ArrayList<>(List.of(postes)), List.of());
+    private PlanningEvenement planningWith(PosteAffectation... postes) {
+        return new PlanningEvenement(J1, animateurs, new ArrayList<>(List.of(postes)), List.of());
     }
 }

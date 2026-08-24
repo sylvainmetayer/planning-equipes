@@ -262,7 +262,7 @@ class CreneauTest {
      * an opening dated the following day flip a 10:00-20:00 slot to
      * closed-by-default, silently shutting a stand whose only statement that day
      * was a two-hour closure. Harmless while openings were hand-dated and rare;
-     * not once a rule expands one onto every festival day.
+     * not once a rule expands one onto every event day.
      */
     @Test
     void ouvertureDuLendemainNAffectePasUnCreneauQuiNeTraversePasMinuit() {

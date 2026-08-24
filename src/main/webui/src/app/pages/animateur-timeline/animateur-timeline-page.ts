@@ -11,7 +11,7 @@ import { ApiService } from '../../core/api.service';
 import { uniqueById } from '../../core/date-utils';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningStateService } from '../../core/planning-state.service';
-import { Animateur, CompteRenduEnvoi, PlanningFestival, PosteAffectation, TypologieItem } from '../../core/models';
+import { Animateur, CompteRenduEnvoi, PlanningEvenement, PosteAffectation, TypologieItem } from '../../core/models';
 import { standTypologies, typologieColorClass, typologieLabel, typologieLabels, typologiePrincipale } from '../../core/typologie-colors';
 import { SelectionRecherche } from '../../shared/selection-recherche';
 import { errorMessage, errorPrefix } from '../../core/error-message';
@@ -61,7 +61,7 @@ export interface TimelineTypologieLegendItem {
   colorClass: string;
 }
 
-/** Distinct stands the animateur works on over the whole festival, for the header recap. */
+/** Distinct stands the animateur works on over the whole event, for the header recap. */
 export interface TimelineStandsSummary {
   count: number;
   /** Distinct game typologies across those stands — a stand may propose several. */
@@ -109,7 +109,7 @@ export class AnimateurTimelinePage {
   protected readonly exportBusy = signal(false);
   protected readonly envoiBusy = signal(false);
   protected readonly error = signal('');
-  protected readonly planning = signal<PlanningFestival | null>(null);
+  protected readonly planning = signal<PlanningEvenement | null>(null);
   protected readonly selectedAnimateurId = signal<string | null>(null);
   /** Typologie referential, only used to turn ids into display labels. */
   protected readonly typologies = signal<TypologieItem[]>([]);
@@ -349,7 +349,7 @@ export function buildStandsSummary(days: TimelineDay[], labels: Map<string, stri
   return { count: stands.length, typologieCount: allTypologies.size, stands, legend };
 }
 
-/** One entry per festival day the animateur works, sorted chronologically. */
+/** One entry per event day the animateur works, sorted chronologically. */
 export function buildAnimateurTimeline(postes: PosteAffectation[], animateurId: string): TimelineDay[] {
   // Built over every poste, not only this animateur's: who else holds a seat
   // on the same line is exactly what the teammate list needs.
@@ -472,7 +472,7 @@ function buildTimelineDay(
   };
 }
 
-/** `'00:00'` means midnight, i.e. the end of this festival day — never the start of the next one (this app's `jour` never spans two calendar dates). */
+/** `'00:00'` means midnight, i.e. the end of this event day — never the start of the next one (this app's `jour` never spans two calendar dates). */
 function endMinutesOfDay(heureFin: string): number {
   const minutes = minutesOfDay(heureFin);
   return minutes === 0 ? 1440 : minutes;

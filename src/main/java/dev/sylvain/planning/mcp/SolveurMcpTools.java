@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.service.ConstraintAnalysisStore;
 import dev.sylvain.planning.service.ConstraintAnalysisStore.StoredAnalysis;
@@ -28,7 +28,7 @@ import jakarta.inject.Inject;
  * constraints are still broken after a run. Every solve/analyze here is
  * built server-side from the persisted reference data (like
  * {@code SolverJobResource#solveFromReferenceData}), since an AI assistant
- * has no practical way to construct the full {@code PlanningFestival} JSON
+ * has no practical way to construct the full {@code PlanningEvenement} JSON
  * body the raw REST endpoints expect.
  */
 @EditionCiblee
@@ -96,7 +96,7 @@ public class SolveurMcpTools {
             + "planning persisté en base. Ne renvoie que des ids de stand/créneau, jamais de données personnelles.")
     List<AffectationView> resultats_animateur(@ToolArg(description = "Id de l'animateur") String animateurId,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        PlanningFestival planning = persistenceService.loadPersistedPlanning();
+        PlanningEvenement planning = persistenceService.loadPersistedPlanning();
         if (planning == null || planning.getPostes() == null) {
             return List.of();
         }

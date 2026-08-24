@@ -283,7 +283,7 @@ public class Creneau {
      * <i>after</i> a 10:00-20:00 slot flip that slot to closed-by-default, and
      * so silently close a stand that a same-day closure exception meant to shut
      * for two hours only. Harmless while openings were rare and hand-dated; not
-     * once a rule expands one onto every festival day.</p>
+     * once a rule expands one onto every event day.</p>
      */
     private boolean dayInOuvertureMode(Stand stand) {
         if (stand == null || stand.getOuverturesEffectives().isEmpty() || date == null) {
@@ -421,7 +421,7 @@ public class Creneau {
      * 16-to-18 bracket and <i>« tout travail entre 20 heures et 6 heures »</i>
      * for those under 16 — hence the parameter rather than a hard-coded 20:00.
      * Applying the 20:00 window to 16-to-18-year-olds is more protective than
-     * the law but needlessly shrinks the pool on a festival evening.</p>
+     * the law but needlessly shrinks the pool on an event evening.</p>
      *
      * <p>Computed as a genuine interval overlap, in seconds-since-the-slot's-
      * start-of-day: a slot ending at 00:00 is normalised to 24:00, and the

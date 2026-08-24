@@ -4,7 +4,7 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * A whole edition of the festival — "Année 2025", "Année 2026" — and the scope
+ * A whole edition of the event — "Année 2025", "Année 2026" — and the scope
  * every piece of reference data belongs to: stands, animateurs, typologies,
  * emplacements, timeslot groups, ad hoc constraints, parameters and the
  * persisted solve. Two editions never see each other's rows, so a past edition

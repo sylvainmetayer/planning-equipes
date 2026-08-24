@@ -11,7 +11,7 @@ import {
   Animateur,
   ContrainteImpact,
   HardMediumSoftScore,
-  PlanningFestival,
+  PlanningEvenement,
   PosteAffectation,
   Stand,
   SwapSimulation
@@ -69,7 +69,7 @@ export function aUneAppreciationPour(animateur: Animateur, stand: Stand): boolea
  * the poste's current occupant, keeping only those holding an appreciation for
  * the poste's stand.
  */
-export function candidatsPour(planning: PlanningFestival, poste: PosteAffectation): Animateur[] {
+export function candidatsPour(planning: PlanningEvenement, poste: PosteAffectation): Animateur[] {
   return (planning.animateurs ?? []).filter(
     (animateur) =>
       animateur.id !== poste.animateur?.id && poste.stand && aUneAppreciationPour(animateur, poste.stand)

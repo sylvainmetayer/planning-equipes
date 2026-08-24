@@ -5,7 +5,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.ConstraintAnalysisStore;
 import dev.sylvain.planning.service.PlanningPersistenceService;
 import dev.sylvain.planning.service.PlanningService;
@@ -56,7 +56,7 @@ public class PlanningResource {
 
     @GET
     @Path("/planning/sample")
-    public PlanningFestival sample(@QueryParam("name") String name) {
+    public PlanningEvenement sample(@QueryParam("name") String name) {
         return planningService.buildExample(name);
     }
 
@@ -89,9 +89,9 @@ public class PlanningResource {
     @Path("/planning/volumetrie")
     public VolumeView volumes() {
         try {
-            PlanningFestival festival = planningService.buildFromReferenceData();
-            return new VolumeView(festival.getAnimateurs().size(), festival.getPostes().size(),
-                    festival.getContraintesAdHoc().size());
+            PlanningEvenement evenement = planningService.buildFromReferenceData();
+            return new VolumeView(evenement.getAnimateurs().size(), evenement.getPostes().size(),
+                    evenement.getContraintesAdHoc().size());
         } catch (IllegalStateException e) {
             return new VolumeView(0, 0, 0);
         }
@@ -102,12 +102,12 @@ public class PlanningResource {
 
     @POST
     @Path("/solve")
-    public PlanningFestival solve(PlanningFestival planningFestival,
+    public PlanningEvenement solve(PlanningEvenement planningEvenement,
             @QueryParam("seconds") Long secondsLimit) {
         // Exactly the same path as the asynchronous solves — snapshot of the
         // previous plan, solve, persistence, diagnosis, Contraintes screen,
         // KPIs, announcement. This is where the incomplete copy used to live.
-        return pipeline.execute(planningFestival, secondsLimit).planning();
+        return pipeline.execute(planningEvenement, secondsLimit).planning();
     }
 
     /**
@@ -134,7 +134,7 @@ public class PlanningResource {
      */
     @GET
     @Path("/planning/persisted")
-    public PlanningFestival persistedPlanning() {
+    public PlanningEvenement persistedPlanning() {
         return persistenceService.loadPersistedPlanning();
     }
 
@@ -181,9 +181,9 @@ public class PlanningResource {
      */
     @POST
     @Path("/solve/analyze")
-    public PlanningDiagnostic analyze(PlanningFestival planningFestival,
+    public PlanningDiagnostic analyze(PlanningEvenement planningEvenement,
             @QueryParam("seconds") Long secondsLimit) {
-        PlanningDiagnostic diagnostic = planningService.analyze(planningFestival, secondsLimit);
+        PlanningDiagnostic diagnostic = planningService.analyze(planningEvenement, secondsLimit);
         analysisStore.record(diagnostic);
         return diagnostic;
     }

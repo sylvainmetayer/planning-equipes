@@ -65,7 +65,7 @@ public class AnimateurPlanningPdf {
         } else {
             document.add(buildStandsAffectesCard(postes));
             // Rest days are interleaved at their chronological place, so the
-            // document reads as one continuous festival rather than a list of
+            // document reads as one continuous event rather than a list of
             // shifts with silently missing days.
             Iterator<PlanningExportService.JourRepos> repos = joursRepos.iterator();
             PlanningExportService.JourRepos prochainRepos = repos.hasNext() ? repos.next() : null;

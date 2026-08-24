@@ -149,7 +149,7 @@ les créneaux d'un collègue sont ce que le planning imprimé fait circuler. Les
 requête — le motif le plus sûr.
 
 Ce qui reste inconfortable est l'**agrégat** : une seule session pourrait
-reconstituer tout le planning nominatif du festival, mineurs compris. Deux
+reconstituer tout le planning nominatif de l'événement, mineurs compris. Deux
 resserrements :
 
 - **la foire doit être ouverte.** La règle est déclarée **sur la route**

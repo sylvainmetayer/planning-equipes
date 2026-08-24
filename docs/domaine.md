@@ -83,7 +83,7 @@ Le résultat est toujours **un seul mode par jour** : c'est ce qui préserve
 l'invariant des trois états, et ce qui fait que ni le calcul de segments, ni les
 contraintes, ni les exports n'ont à connaître les règles.
 
-**Si un seul jour du festival reste non énoncé, aucune règle ne peut prendre
+**Si un seul jour de l'événement reste non énoncé, aucune règle ne peut prendre
 `TOUS`** — elle gouvernerait un jour laissé volontairement ouvert par défaut.
 
 > **Limite assumée** : une exception *remplace* la journée au lieu de se
@@ -311,7 +311,7 @@ affinité.
 ## Paramètres légaux
 
 `ParametresLegaux` est un fait de problème (`@ProblemFactCollectionProperty` sur
-`PlanningFestival`, même mécanisme que `ContrainteAdHoc`) qui porte les **deux
+`PlanningEvenement`, même mécanisme que `ContrainteAdHoc`) qui porte les **deux
 durées hebdomadaires de travail maximales**, paramétrables depuis la page
 « Constraints » et persistées en base (`ReferenceDataService.getParametresLegaux()` /
 `updateParametresLegaux(...)`).

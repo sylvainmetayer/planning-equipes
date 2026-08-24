@@ -27,7 +27,7 @@ renamed between source and translation. Never call `$localize` at module scope
 ## Project overview
 
 Quarkus + Timefold Solver application that schedules ~150 `Animateur`s (staff)
-onto game festival `Stand`s over 15 days, under hard/medium/soft constraints.
+onto `Stand`s over the days of an event, under hard/medium/soft constraints.
 
 Read before working on constraints or the domain model:
 
@@ -101,7 +101,7 @@ Single Quarkus service, no separate solver microservice. Package root:
 - `domain/` — Timefold model: `Animateur`, `Stand`, `Creneau`, `PosteAffectation`
   (planning entity, **one instance per seat to fill**, not one per stand×slot),
   `ContrainteAdHoc`, `VerrouillagePlanning`, `DemandeEchange` (self-service
-  swap proposals, issue #165), `PlanningFestival` (`@PlanningSolution`,
+  swap proposals, issue #165), `PlanningEvenement` (`@PlanningSolution`,
   `HardMediumSoftScore`).
 - `solver/PlanningConstraintProvider.java` — aggregates constraints; the actual
   rules live in `solver/constraints/` split by family (`AffectationConstraints`,
@@ -456,6 +456,7 @@ visible half of the third, a French word that carries an accent.
 
 | Java / SQL | English prose | Note |
 | --- | --- | --- |
+| `PlanningEvenement` | *the planning solution* | `Evenement` because the product schedules any event, not one festival ; the YAML section and `dateDebutFestival` keep their name, they are on the wire |
 | `Animateur` | *animateur* | **not translated** — "volunteer", "staff" and "instructor" each drop something the French word carries, and the minor/adult regime hangs on it |
 | `Stand` | *stand* | same word in both languages |
 | `Creneau` | *timeslot* | |

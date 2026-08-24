@@ -58,7 +58,7 @@ public class CreneauGridService {
     /**
      * A date this far from every other dated créneau is treated as a typo
      * rather than as a deliberate gap. Sized to clear a legitimate pause — a
-     * festival running over two weekends may genuinely skip five or six days —
+     * event running over two weekends may genuinely skip five or six days —
      * while still catching the mistakes that actually happen, which are
      * month-or-year slips landing a créneau weeks or months away.
      */

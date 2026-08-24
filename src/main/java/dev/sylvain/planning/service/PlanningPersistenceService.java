@@ -26,14 +26,14 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.OuvertureStand;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 /**
- * Persists a solved {@link PlanningFestival} into PostgreSQL using plain JDBC
+ * Persists a solved {@link PlanningEvenement} into PostgreSQL using plain JDBC
  * (the project only ships {@code quarkus-jdbc-postgresql}, no ORM). Reference
  * rows (stands, timeslots, animators) are up-serted first so the
  * {@code poste_affectation} foreign keys are satisfied, then the assignment
@@ -64,7 +64,7 @@ public class PlanningPersistenceService {
      * Writes the whole solution to the database in a single transaction and
      * returns how many assignment rows were stored.
      */
-    public int persist(PlanningFestival planning) {
+    public int persist(PlanningEvenement planning) {
         if (planning == null || planning.getPostes() == null) {
             return 0;
         }
@@ -106,7 +106,7 @@ public class PlanningPersistenceService {
         }
     }
 
-    private void upsertReferenceData(Connection connection, PlanningFestival planning) throws SQLException {
+    private void upsertReferenceData(Connection connection, PlanningEvenement planning) throws SQLException {
         List<Stand> stands = new ArrayList<>();
         List<Creneau> creneaux = new ArrayList<>();
         for (PosteAffectation poste : planning.getPostes()) {
@@ -485,7 +485,7 @@ public class PlanningPersistenceService {
      * simply browsing the app cannot start a solver run. Returns an empty
      * planning (no postes) when nothing has been solved yet.
      */
-    public PlanningFestival loadPersistedPlanning() {
+    public PlanningEvenement loadPersistedPlanning() {
         List<Animateur> animateurs = referenceDataService.listAnimateurs();
         Map<String, Animateur> animateursById = indexById(animateurs, Animateur::getId);
         List<Creneau> creneaux = referenceDataService.listCreneaux();
@@ -530,7 +530,7 @@ public class PlanningPersistenceService {
                 .filter(Objects::nonNull)
                 .min(LocalDate::compareTo)
                 .orElse(null);
-        return new PlanningFestival(dateDebut, animateurs, postes,
+        return new PlanningEvenement(dateDebut, animateurs, postes,
                 referenceDataService.snapshotContraintes());
     }
 

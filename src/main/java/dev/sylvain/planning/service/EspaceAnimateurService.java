@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.DemandeEchange;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -60,7 +60,7 @@ public class EspaceAnimateurService {
      * only lets the interface say so instead of failing on submit).
      */
     /**
-     * @param joursRepos festival days the animateur holds no seat on — shown
+     * @param joursRepos event days the animateur holds no seat on — shown
      *                    as explicit « Repos » days rather than silently
      *                    missing cards; empty when they hold no seat at all
      */
@@ -91,7 +91,7 @@ public class EspaceAnimateurService {
                 .findFirst()
                 .orElseThrow(() -> new BusinessError.Invalid("Animateur inconnu : " + animateurId));
 
-        PlanningFestival planning = persistenceService.loadPersistedPlanning();
+        PlanningEvenement planning = persistenceService.loadPersistedPlanning();
         Map<String, List<String>> coequipiers = exportService.teammatesByPoste(planning, animateurId);
         List<PosteAnimateurView> postes = postesOf(planning, animateurId, coequipiers);
 
@@ -111,7 +111,7 @@ public class EspaceAnimateurService {
                 demandeEchangeService.isFoireOpen(), postes, joursRepos, collegues);
     }
 
-    private static List<PosteAnimateurView> postesOf(PlanningFestival planning, String animateurId,
+    private static List<PosteAnimateurView> postesOf(PlanningEvenement planning, String animateurId,
             Map<String, List<String>> coequipiers) {
         return planning.getPostes().stream()
                 .filter(poste -> poste.getAnimateur() != null && animateurId.equals(poste.getAnimateur().getId())
@@ -141,7 +141,7 @@ public class EspaceAnimateurService {
      * is already handed out in full by {@link #buildView}, and a colleague's
      * slots and stands are what the printed global planning circulates anyway.
      * What they take away is the ability to harvest the lot — one session would
-     * otherwise reconstruct the whole festival's nominative planning, minors
+     * otherwise reconstruct the whole event's nominative planning, minors
      * included, in as many requests as there are animateurs.</p>
      *
      * <p>An id nobody bears answers 404 — like every other unknown entity of

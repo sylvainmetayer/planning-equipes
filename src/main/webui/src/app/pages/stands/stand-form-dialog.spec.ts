@@ -224,7 +224,7 @@ describe('StandFormDialog', () => {
     return root(fixture).querySelector('button[type="submit"]') as HTMLButtonElement;
   }
 
-  it('previews one cell per festival day, deduplicated across créneaux', async () => {
+  it('previews one cell per event day, deduplicated across créneaux', async () => {
     const { fixture } = mount(stand());
     await fixture.whenStable();
 

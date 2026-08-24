@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { JourResolu } from '../../core/horaire-stand';
 import { Creneau, HoraireStand, JourSemaine } from '../../core/models';
 import {
-  datesFestival,
+  datesEvenement,
   decrireJour,
   effectifDepuisSaisie,
   libelleJour,
@@ -115,14 +115,14 @@ describe('libelleJourSemaine', () => {
   });
 });
 
-describe('datesFestival', () => {
+describe('datesEvenement', () => {
   it('lists each day once, in chronological order, whatever the créneau order', () => {
     const creneaux = [creneau(1, '2026-07-15'), creneau(2, '2026-07-14'), creneau(3, '2026-07-15')];
-    expect(datesFestival(creneaux)).toEqual(['2026-07-14', '2026-07-15']);
+    expect(datesEvenement(creneaux)).toEqual(['2026-07-14', '2026-07-15']);
   });
 
   it('is empty when the edition has no créneau yet', () => {
-    expect(datesFestival([])).toEqual([]);
+    expect(datesEvenement([])).toEqual([]);
   });
 });
 

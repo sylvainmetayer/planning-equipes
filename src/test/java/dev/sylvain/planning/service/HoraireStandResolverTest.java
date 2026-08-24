@@ -24,7 +24,7 @@ import dev.sylvain.planning.domain.TypeJoursHoraire;
  * rules, and the fact that the expansion lands on the effective lists only —
  * never on the persisted ones.
  *
- * <p>Dates follow the reference festival: 2026-07-08 is a Wednesday,
+ * <p>Dates follow the reference event: 2026-07-08 is a Wednesday,
  * 2026-07-11 a Saturday.</p>
  */
 class HoraireStandResolverTest {
@@ -40,7 +40,7 @@ class HoraireStandResolverTest {
      * days) become a single rule carrying two windows.
      */
     @Test
-    void uneRegleQuotidienneCouvreChaqueJourDuFestival() {
+    void uneRegleQuotidienneCouvreChaqueJourDeLEvenement() {
         Stand bourse = stand("AUTRES-BOURSE");
         bourse.setHoraires(List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE,
                 new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(12, 0)),

@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeVerrouillage;
@@ -106,7 +106,7 @@ class DemandeEchangeFlowTest {
                 .body("statut", equalTo("ACCEPTEE"));
 
         // The swap was applied exactly as simulated: seats traded, nothing else.
-        PlanningFestival apres = persistence.loadPersistedPlanning();
+        PlanningEvenement apres = persistence.loadPersistedPlanning();
         assertThat(occupant(apres, "ECH-S1")).isEqualTo("ECH-B");
         assertThat(occupant(apres, "ECH-S2")).isEqualTo("ECH-A");
 
@@ -141,7 +141,7 @@ class DemandeEchangeFlowTest {
         posteAlice.setAnimateur(alice);
         PosteAffectation posteBruno = new PosteAffectation("ECH-P2", standDeux, creneauB);
         posteBruno.setAnimateur(bruno);
-        persistence.persist(new PlanningFestival(JOUR, List.of(alice, bruno), List.of(posteAlice, posteBruno)));
+        persistence.persist(new PlanningEvenement(JOUR, List.of(alice, bruno), List.of(posteAlice, posteBruno)));
         String token = tokenOf("ECH-A");
 
         // The picker's data source: Bruno's seats, slots and stands only.
@@ -181,7 +181,7 @@ class DemandeEchangeFlowTest {
                 .body("statut", equalTo("ACCEPTEE"));
 
         // The seats really crossed the two créneaux.
-        PlanningFestival apres = persistence.loadPersistedPlanning();
+        PlanningEvenement apres = persistence.loadPersistedPlanning();
         assertThat(occupantSur(apres, "ECH-S1", CRENEAU_ID)).isEqualTo("ECH-B");
         assertThat(occupantSur(apres, "ECH-S2", creneauCibleId)).isEqualTo("ECH-A");
 
@@ -402,7 +402,7 @@ class DemandeEchangeFlowTest {
                         equalTo("Le repos de Bruno serait cassé"));
 
         // The planning was not touched by the refusal.
-        PlanningFestival apres = persistence.loadPersistedPlanning();
+        PlanningEvenement apres = persistence.loadPersistedPlanning();
         assertThat(occupant(apres, "ECH-S1")).isEqualTo("ECH-A");
         assertThat(occupant(apres, "ECH-S2")).isEqualTo("ECH-B");
     }
@@ -503,7 +503,7 @@ class DemandeEchangeFlowTest {
         posteUn.setAnimateur(alice);
         PosteAffectation posteDeux = new PosteAffectation("ECH-P2", standDeux, creneau);
         posteDeux.setAnimateur(bruno);
-        persistence.persist(new PlanningFestival(JOUR, List.of(alice, bruno, chloe), List.of(posteUn, posteDeux)));
+        persistence.persist(new PlanningEvenement(JOUR, List.of(alice, bruno, chloe), List.of(posteUn, posteDeux)));
 
         // The espace requires an e-mail-code session since the auth follow-up:
         // both actors get an address, a session, and Alice's cookie rides on
@@ -536,7 +536,7 @@ class DemandeEchangeFlowTest {
                 .orElseThrow();
     }
 
-    private static String occupantSur(PlanningFestival planning, String standId, long creneauId) {
+    private static String occupantSur(PlanningEvenement planning, String standId, long creneauId) {
         return planning.getPostes().stream()
                 .filter(poste -> poste.getStand() != null && standId.equals(poste.getStand().getId())
                         && poste.getCreneau() != null && poste.getCreneau().getId() != null
@@ -546,7 +546,7 @@ class DemandeEchangeFlowTest {
                 .orElse(null);
     }
 
-    private static String occupant(PlanningFestival planning, String standId) {
+    private static String occupant(PlanningEvenement planning, String standId) {
         return planning.getPostes().stream()
                 .filter(poste -> poste.getStand() != null && standId.equals(poste.getStand().getId())
                         && poste.getCreneau() != null && poste.getCreneau().getId() != null

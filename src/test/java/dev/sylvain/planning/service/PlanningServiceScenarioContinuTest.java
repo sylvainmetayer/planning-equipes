@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.ParametresDecoupage;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 
@@ -73,9 +73,9 @@ class PlanningServiceScenarioContinuTest {
                 List.copyOf(reference.creneauxParId().values()), parametresDecoupage);
         List<Stand> stands = List.copyOf(reference.standsById().values());
         List<PosteAffectation> postes = PlanningService.buildPostes(stands, creneauxScindes);
-        PlanningFestival problem = new PlanningFestival(reference.dateDebut(), reference.animateurs(), postes);
+        PlanningEvenement problem = new PlanningEvenement(reference.dateDebut(), reference.animateurs(), postes);
 
-        PlanningFestival solved = planningService.solveUntilFeasible(problem, SECONDS_LIMITE_SECURITE);
+        PlanningEvenement solved = planningService.solveUntilFeasible(problem, SECONDS_LIMITE_SECURITE);
 
         assertThat(solved.getScore()).isNotNull();
         assertThat(solved.getScore().hardScore()).isZero();

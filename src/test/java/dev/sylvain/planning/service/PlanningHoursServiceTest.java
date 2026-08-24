@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.PlanningHoursService.HeuresAnimateur;
@@ -40,7 +40,7 @@ class PlanningHoursServiceTest {
         poste3.setAnimateur(ada);
         PosteAffectation posteNonAssigne = new PosteAffectation("P4", stand, creneauJ1);
 
-        PlanningFestival planning = new PlanningFestival(creneauJ1.getDate(), List.of(ada),
+        PlanningEvenement planning = new PlanningEvenement(creneauJ1.getDate(), List.of(ada),
                 List.of(poste1, poste2, poste3, posteNonAssigne));
 
         HeuresRapport rapport = service.compute(planning);
@@ -71,7 +71,7 @@ class PlanningHoursServiceTest {
         poste.setHeureDebutEffective(LocalTime.of(16, 0));
         poste.setHeureFinEffective(LocalTime.of(19, 0));
 
-        PlanningFestival planning = new PlanningFestival(creneau.getDate(), List.of(oscar), List.of(poste));
+        PlanningEvenement planning = new PlanningEvenement(creneau.getDate(), List.of(oscar), List.of(poste));
 
         HeuresRapport rapport = service.compute(planning);
 
@@ -85,7 +85,7 @@ class PlanningHoursServiceTest {
         Animateur ada = new Animateur("A-ADA", "Ada", "Lovelace", LocalDate.of(1990, 1, 1), false);
         PosteAffectation poste = new PosteAffectation("P1", stand, creneau);
         poste.setAnimateur(ada);
-        PlanningFestival planning = new PlanningFestival(creneau.getDate(), List.of(ada), List.of(poste));
+        PlanningEvenement planning = new PlanningEvenement(creneau.getDate(), List.of(ada), List.of(poste));
 
         String csv = service.generateCsv(service.compute(planning));
 

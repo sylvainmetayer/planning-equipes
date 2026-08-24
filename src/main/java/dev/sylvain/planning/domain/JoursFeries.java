@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * <li><b>Métropole only.</b> Good Friday and 26 December are public holidays
  * only in Alsace-Moselle (Haut-Rhin, Bas-Rhin, Moselle). The model carries no
  * notion of region, so they are deliberately left out rather than applied
- * nationwide. Adding them requires a region on the festival or the stand
+ * nationwide. Adding them requires a region on the event or the stand
  * first.</li>
  * <li><b>Abolition de l'esclavage</b> (overseas départements, art. L3422-2 and
  * décret 83-1003 <b>[non vérifié — à faire validate]</b>) is likewise out of

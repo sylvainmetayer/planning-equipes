@@ -23,7 +23,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.NiveauCompetence;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 
@@ -41,7 +41,7 @@ class PlanningExportServiceTest {
 
     @Test
     void exportAnimateurPdfProducesAWellFormedNonEmptyPdf() throws IOException {
-        PlanningFestival planning = fakePlanning();
+        PlanningEvenement planning = fakePlanning();
         String animateurId = planning.getAnimateurs().get(0).getId();
 
         byte[] pdf = service.exportAnimateurPdf(planning, animateurId);
@@ -52,13 +52,13 @@ class PlanningExportServiceTest {
     }
 
     /**
-     * A festival day without any seat for the animateur is an explicit
+     * An event day without any seat for the animateur is an explicit
      * « Repos » day — but only for animateurs who hold at least one seat:
      * someone absent from the plan is not "resting every day".
      */
     @Test
-    void joursDeReposListsTheFestivalDaysWithoutAnyAssignment() {
-        PlanningFestival planning = new PlanningFestival();
+    void joursDeReposListsTheEventDaysWithoutAnyAssignment() {
+        PlanningEvenement planning = new PlanningEvenement();
         Stand stand = new Stand("STAND-A", "Stand A", Set.of("STRATEGIE"), 1, 1, false);
         Creneau jour1 = new Creneau(1L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
         Creneau jour2 = new Creneau(2L, 2, LocalDate.of(2026, 8, 15), LocalTime.of(9, 0), LocalTime.of(13, 0));
@@ -81,7 +81,7 @@ class PlanningExportServiceTest {
     /** Rest days land in the ICS as all-day, transparent events. */
     @Test
     void exportAnimateurIcsMarksRestDaysAsTransparentAllDayEvents() {
-        PlanningFestival planning = new PlanningFestival();
+        PlanningEvenement planning = new PlanningEvenement();
         Stand stand = new Stand("STAND-A", "Stand A", Set.of("STRATEGIE"), 1, 1, false);
         Creneau jour1 = new Creneau(1L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
         Creneau jour2 = new Creneau(2L, 2, LocalDate.of(2026, 8, 15), LocalTime.of(9, 0), LocalTime.of(13, 0));
@@ -101,7 +101,7 @@ class PlanningExportServiceTest {
 
     @Test
     void coequipiersNamesTheOthersOnTheSameStandLineOnly() {
-        PlanningFestival planning = new PlanningFestival();
+        PlanningEvenement planning = new PlanningEvenement();
         Stand stand = new Stand("STAND-A", "Stand A", Set.of("STRATEGIE"), 2, 2, false);
         Stand autre = new Stand("STAND-B", "Stand B", Set.of("STRATEGIE"), 1, 1, false);
         Creneau creneau = new Creneau(1L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
@@ -123,7 +123,7 @@ class PlanningExportServiceTest {
 
     @Test
     void coequipiersIgnoresTheOtherSegmentOfAStandSplitByAClosure() {
-        PlanningFestival planning = new PlanningFestival();
+        PlanningEvenement planning = new PlanningEvenement();
         Stand stand = new Stand("STAND-A", "Stand A", Set.of("STRATEGIE"), 1, 1, false);
         Creneau creneau = new Creneau(1L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(18, 0));
         Animateur ada = new Animateur("A1", "Ada", "Lovelace", LocalDate.of(2000, 1, 1), false);
@@ -144,7 +144,7 @@ class PlanningExportServiceTest {
 
     @Test
     void exportGlobalPdfProducesAWellFormedPdfCoveringEveryAssignment() throws IOException {
-        PlanningFestival planning = fakePlanning();
+        PlanningEvenement planning = fakePlanning();
 
         byte[] pdf = service.exportGlobalPdf(planning);
 
@@ -156,7 +156,7 @@ class PlanningExportServiceTest {
     /** An empty planning must still produce a readable document, not an exception. */
     @Test
     void exportGlobalPdfHandlesAnEmptyPlanning() {
-        PlanningFestival planning = new PlanningFestival();
+        PlanningEvenement planning = new PlanningEvenement();
         planning.setAnimateurs(List.of());
         planning.setPostes(List.of());
 
@@ -168,7 +168,7 @@ class PlanningExportServiceTest {
 
     @Test
     void exportAllPdfZipBundlesOnePdfPerAnimateur() throws IOException {
-        PlanningFestival planning = fakePlanning();
+        PlanningEvenement planning = fakePlanning();
 
         byte[] zip = service.exportAllPdfZip(planning);
 
@@ -178,7 +178,7 @@ class PlanningExportServiceTest {
 
     @Test
     void exportAllBundleZipContainsBothPdfAndIcsPerAnimateur() throws IOException {
-        PlanningFestival planning = fakePlanning();
+        PlanningEvenement planning = fakePlanning();
 
         byte[] zip = service.exportAllBundleZip(planning);
 
@@ -197,7 +197,7 @@ class PlanningExportServiceTest {
 
     @Test
     void exportAnimateurIcsProducesAValidCalendar() {
-        PlanningFestival planning = fakePlanning();
+        PlanningEvenement planning = fakePlanning();
         String animateurId = planning.getAnimateurs().get(0).getId();
 
         String ics = service.exportAnimateurIcs(planning, animateurId);
@@ -207,7 +207,7 @@ class PlanningExportServiceTest {
 
     @Test
     void exportAnimateurIcsIncludesLocationAndGeoForAGeocodedStandOnly() {
-        PlanningFestival planning = fakePlanning();
+        PlanningEvenement planning = fakePlanning();
         String animateurId = planning.getAnimateurs().get(0).getId();
 
         String ics = service.exportAnimateurIcs(planning, animateurId);
@@ -240,7 +240,7 @@ class PlanningExportServiceTest {
         poste.setAnimateur(oscar);
         poste.setHeureDebutEffective(LocalTime.of(16, 0));
         poste.setHeureFinEffective(LocalTime.of(19, 0));
-        PlanningFestival planning = new PlanningFestival(creneau.getDate(), List.of(oscar), List.of(poste));
+        PlanningEvenement planning = new PlanningEvenement(creneau.getDate(), List.of(oscar), List.of(poste));
 
         String ics = service.exportAnimateurIcs(planning, "A-OSCAR");
 
@@ -251,7 +251,7 @@ class PlanningExportServiceTest {
 
     @Test
     void exportAnimateurPdfRendersAGeocodedStandWithoutError() throws IOException {
-        PlanningFestival planning = fakePlanning();
+        PlanningEvenement planning = fakePlanning();
         String animateurId = planning.getAnimateurs().get(0).getId();
 
         byte[] pdf = service.exportAnimateurPdf(planning, animateurId);
@@ -281,7 +281,7 @@ class PlanningExportServiceTest {
      * 2 animateurs (a beginner and a referent) and 2 days of timeslots, with a
      * couple of unassigned postes to exercise the "UNASSIGNED"/empty-state paths.
      */
-    private PlanningFestival fakePlanning() {
+    private PlanningEvenement fakePlanning() {
         Stand standWithStrategy = new Stand("STAND-1", "Stratèges Associés", typologies("STRATEGIE"), 1, 2, false);
         Stand standPremium = new Stand("STAND-2", "Éditeur Vedette", typologies("AMBIANCE"), 1, 2, false, true);
         standPremium.setEmplacement(new Emplacement("EMP-1", "Kiosque Central", 48.8566, 2.3522));
@@ -305,7 +305,7 @@ class PlanningExportServiceTest {
         postes.add(unassignedPoste(standEnfant, matinJ1));
         postes.add(unassignedPoste(standAdultes, matinJ2));
 
-        return new PlanningFestival(matinJ1.getDate(), List.of(referent, debutant), postes);
+        return new PlanningEvenement(matinJ1.getDate(), List.of(referent, debutant), postes);
     }
 
     private PosteAffectation assignedPoste(Stand stand, Creneau creneau, Animateur animateur) {
@@ -349,7 +349,7 @@ class PlanningExportServiceTest {
     @Test
     void unAnimateurSansJetonNaPasDeLienEspaceMaisNeFaitPasEchouerLExport() {
         PlanningExportService service = exportsWithLinks("https://planning.example.org");
-        PlanningFestival planning = new PlanningFestival();
+        PlanningEvenement planning = new PlanningEvenement();
         Animateur withoutToken = new Animateur("SANS", "Sans", "Jeton", LocalDate.of(2000, 1, 1), false);
         Animateur withToken = new Animateur("AVEC", "Avec", "Jeton", LocalDate.of(2000, 1, 1), false);
         withToken.setAccessToken("jeton-1");

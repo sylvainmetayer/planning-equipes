@@ -29,7 +29,7 @@ import dev.sylvain.planning.service.OuvertureStandsAnalyzer.AnomalyType;
  * {@link OuvertureStandsAnalyzer}: the stand × jour grid the "Ouvertures des
  * stands" screen shows, and the three anomalies it flags.
  *
- * <p>2026-07-08 is a Wednesday, as in the reference festival.</p>
+ * <p>2026-07-08 is a Wednesday, as in the reference event.</p>
  */
 class OuvertureStandsAnalyzerTest {
 

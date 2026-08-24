@@ -11,7 +11,7 @@ import java.util.TreeSet;
  * A <b>recurring opening (or closing) rule</b> of a {@link Stand}: a set of
  * {@link FenetreHoraire}s plus the days they apply to. One rule replaces as many
  * dated {@link OuvertureStand} / {@link IndisponibiliteStand} rows as there are
- * festival days it covers — the stand open "10:00-12:00 then 14:00 to closing,
+ * event days it covers — the stand open "10:00-12:00 then 14:00 to closing,
  * every day" is a single rule with two windows instead of twenty-four rows,
  * which is the whole reason this type exists.
  *
@@ -65,7 +65,7 @@ public class HoraireStand {
         setFenetres(fenetres);
     }
 
-    /** A rule applying to every festival day — the shape of the overwhelming majority of them. */
+    /** A rule applying to every event day — the shape of the overwhelming majority of them. */
     public static HoraireStand everyDay(ModeHoraire mode, FenetreHoraire... fenetres) {
         return new HoraireStand(null, mode, TypeJoursHoraire.TOUS, List.of(fenetres));
     }
@@ -164,7 +164,7 @@ public class HoraireStand {
 
     /**
      * True when this rule and {@code autre} can apply to a same day, judged
-     * from the selectors alone (no festival calendar needed). Only meaningful
+     * from the selectors alone (no event calendar needed). Only meaningful
      * between two rules of the same {@link #getJours()} type, which is how
      * {@code ReferenceDataService} uses it to reject two rules of equal
      * specificity but opposite {@link ModeHoraire} — the one case the resolver

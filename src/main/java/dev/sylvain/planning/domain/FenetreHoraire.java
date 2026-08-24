@@ -6,12 +6,12 @@ import java.util.Objects;
 /**
  * One time window of a {@link HoraireStand}, without a date: the date comes
  * from the rule's day selector, which is exactly what lets a single rule cover
- * twelve festival days.
+ * twelve event days.
  *
  * <p>{@code heureFin} may be {@code null}, meaning <b>"until closing time"</b>:
  * the window then runs to the end of whatever créneau it is evaluated against
  * (see {@link Creneau#segmentsOuvertsMinutes(Stand)}). That is what a stand
- * open "from 14:00 to closing" actually means, and it is why a festival day
+ * open "from 14:00 to closing" actually means, and it is why an event day
  * ending at 20:00, at 21:00 or at midnight no longer needs three different
  * rules — nor the {@code 23:59} stand-in a concrete end time forces whenever
  * the real end is midnight (a window may not cross midnight).</p>

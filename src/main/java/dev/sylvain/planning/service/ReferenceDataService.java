@@ -13,7 +13,7 @@ import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresSolveur;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -177,7 +177,7 @@ public class ReferenceDataService implements ReferenceData {
      * every import of that scenario. The one operation that genuinely spans
      * two referentials, hence its place here.
      */
-    public void applyAutomaticDecoupage(PlanningFestival planning) {
+    public void applyAutomaticDecoupage(PlanningEvenement planning) {
         importFromPlanning(planning);
         generateDecoupage();
     }
@@ -261,7 +261,7 @@ public class ReferenceDataService implements ReferenceData {
      * endpoints. Every referential at once, in a single transaction — which is
      * why it belongs to the facade rather than to any one of them.
      */
-    public void importFromPlanning(PlanningFestival planning) {
+    public void importFromPlanning(PlanningEvenement planning) {
         imports.importFromPlanning(planning);
         changeTracker.markModified();
     }

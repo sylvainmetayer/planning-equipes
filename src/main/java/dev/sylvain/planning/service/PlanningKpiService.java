@@ -13,7 +13,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.service.PlanSnapshotService.AffectationSnapshot;
 import dev.sylvain.planning.service.PlanningService.PlanningDiagnostic;
@@ -91,7 +91,7 @@ public class PlanningKpiService {
      *                           plan, when the caller (the solve job) knows it
      */
     public PlanningKpi computeCurrent(Long dureeSolveSecondes) {
-        PlanningFestival planning = persistenceService.loadPersistedPlanning();
+        PlanningEvenement planning = persistenceService.loadPersistedPlanning();
         List<AffectationKpi> affectations = new ArrayList<>();
         for (PosteAffectation poste : planning.getPostes()) {
             affectations.add(new AffectationKpi(

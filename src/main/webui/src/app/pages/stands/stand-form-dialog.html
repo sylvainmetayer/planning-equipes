@@ -67,7 +67,7 @@
   <p class="empty-hint" i18n="@@stands.horaires.hint">
     Le stand est ouvert sur chaque créneau par défaut. Une règle décrit un motif qui se répète — « ouvert de 10h à 12h
     puis de 14h à la fermeture, tous les jours » tient en une règle à deux fenêtres, au lieu d'une plage datée par jour
-    de festival. Laissez l'heure de fin vide pour courir jusqu'à la fermeture du jour.
+    d'événement. Laissez l'heure de fin vide pour courir jusqu'à la fermeture du jour.
   </p>
   <p class="empty-hint" i18n="@@stands.horaires.hintMasse">
     Mêmes horaires sur plusieurs stands ? Inutile de les ressaisir ici stand par stand : cochez les stands concernés
@@ -267,7 +267,7 @@
     <ng-container i18n="@@stands.ouvertures.add">Ajouter une ouverture</ng-container>
   </button>
 </fieldset>
-@if (datesFestival().length > 0) {
+@if (datesEvenement().length > 0) {
   <div class="span-2 horaires-apercu">
     <h3 i18n="@@stands.apercu.title">Aperçu jour par jour</h3>
     <p class="empty-hint" i18n="@@stands.apercu.hint">

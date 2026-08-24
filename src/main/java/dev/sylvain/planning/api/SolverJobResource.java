@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import dev.sylvain.planning.config.ConfigJobStream;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.JobStreamBroadcaster;
 import dev.sylvain.planning.service.ReplanificationScope;
 import dev.sylvain.planning.service.PlanningService;
@@ -63,15 +63,15 @@ public class SolverJobResource {
 
     @POST
     @Path("/solve/async")
-    public Response solveAsync(PlanningFestival planningFestival, @QueryParam("seconds") Long secondsLimit) {
-        SolverJob job = solverJobService.submitSolve(planningFestival, secondsLimit);
+    public Response solveAsync(PlanningEvenement planningEvenement, @QueryParam("seconds") Long secondsLimit) {
+        SolverJob job = solverJobService.submitSolve(planningEvenement, secondsLimit);
         return Response.accepted(JobView.withoutResult(job)).build();
     }
 
     @POST
     @Path("/solve/analyze/async")
-    public Response analyzeAsync(PlanningFestival planningFestival, @QueryParam("seconds") Long secondsLimit) {
-        SolverJob job = solverJobService.submitAnalyze(planningFestival, secondsLimit);
+    public Response analyzeAsync(PlanningEvenement planningEvenement, @QueryParam("seconds") Long secondsLimit) {
+        SolverJob job = solverJobService.submitAnalyze(planningEvenement, secondsLimit);
         return Response.accepted(JobView.withoutResult(job)).build();
     }
 

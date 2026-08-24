@@ -2,7 +2,7 @@ package dev.sylvain.planning.domain;
 
 /**
  * Global, admin-configurable legal parameters, loaded as a problem fact into
- * every {@link PlanningFestival} (single instance, same pattern as
+ * every {@link PlanningEvenement} (single instance, same pattern as
  * {@link ContrainteAdHoc}) so {@code LegalConstraints} can read them without
  * any static/global state.
  */

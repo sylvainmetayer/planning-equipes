@@ -4,33 +4,33 @@
 
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from './api.service';
-import { AffectationExplanation, PlanningFestival, SwapSimulation } from './models';
+import { AffectationExplanation, PlanningEvenement, SwapSimulation } from './models';
 
 @Injectable({ providedIn: 'root' })
 export class AffectationExplanationService {
   private readonly api = inject(ApiService);
 
-  explique(planning: PlanningFestival, posteId: string): Promise<AffectationExplanation> {
+  explique(planning: PlanningEvenement, posteId: string): Promise<AffectationExplanation> {
     return this.api.post<AffectationExplanation>(
       `/api/postes/${encodeURIComponent(posteId)}/explication`,
       withoutScore(planning)
     );
   }
 
-  simulerSwap(planning: PlanningFestival, posteId: string, animateurCandidatId: string): Promise<SwapSimulation> {
+  simulerSwap(planning: PlanningEvenement, posteId: string, animateurCandidatId: string): Promise<SwapSimulation> {
     const url = `/api/postes/${encodeURIComponent(posteId)}/simulation-swap?animateurId=${encodeURIComponent(animateurCandidatId)}`;
     return this.api.post<SwapSimulation>(url, withoutScore(planning));
   }
 }
 
 /**
- * The server crashes deserializing a `PlanningFestival` whose `score` is
+ * The server crashes deserializing a `PlanningEvenement` whose `score` is
  * populated (Quarkus's build-time Jackson codegen for Timefold's
  * `HardMediumSoftScore` calls its private no-arg constructor) — see
  * `AffectationExplanationResourceTest`. `score` is solver-computed output the
  * server never needs back, so it is simply omitted from the request body.
  */
-function withoutScore(planning: PlanningFestival): Omit<PlanningFestival, 'score'> {
+function withoutScore(planning: PlanningEvenement): Omit<PlanningEvenement, 'score'> {
   const { score, ...rest } = planning;
   return rest;
 }

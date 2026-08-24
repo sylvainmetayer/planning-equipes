@@ -7,7 +7,7 @@ import java.util.Map;
 
 /**
  * Optional top-level {@code contraintes:} scenario section: how the catalogue
- * of solver rules is tuned for this festival — which ones are switched off,
+ * of solver rules is tuned for this event — which ones are switched off,
  * and what weight the others carry.
  *
  * <p>Both were the last settings a scenario could not carry. A file exported

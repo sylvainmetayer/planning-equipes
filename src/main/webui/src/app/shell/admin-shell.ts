@@ -327,7 +327,7 @@ export class AdminShell {
   }
 
   /**
-   * ↑↑↓↓←→←→BA summons the festival mascot. Pure easter egg: the
+   * ↑↑↓↓←→←→BA summons the event mascot. Pure easter egg: the
    * listener only tracks the sequence position (no buffering of anything
    * typed) and ignores keystrokes aimed at form fields.
    */

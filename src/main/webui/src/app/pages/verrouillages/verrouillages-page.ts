@@ -13,7 +13,7 @@ import { PlanningStateService } from '../../core/planning-state.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { VerrouillageStore } from '../../core/verrouillage.store';
-import { PlanningFestival, TypeVerrouillage, VerrouillagePlanning } from '../../core/models';
+import { PlanningEvenement, TypeVerrouillage, VerrouillagePlanning } from '../../core/models';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { StatusMessage } from '../../shared/status-message';
 import { WorkInProgressBanner } from '../../shared/work-in-progress-banner';
@@ -85,7 +85,7 @@ export class VerrouillagesPage {
   protected readonly jour = signal('');
   protected readonly raison = signal('');
 
-  /** Distinct festival days, from the créneaux of the reference data. */
+  /** Distinct event days, from the créneaux of the reference data. */
   protected readonly jours = computed(() =>
     Array.from(new Set(this.store.creneaux().map((creneau) => creneau.date))).sort()
   );
@@ -110,7 +110,7 @@ export class VerrouillagesPage {
   }
 
   /** Persisted plan, loaded once so the impact preview has something to count. */
-  protected readonly planning = signal<PlanningFestival | null>(null);
+  protected readonly planning = signal<PlanningEvenement | null>(null);
 
   private async chargerPlanning(): Promise<void> {
     try {

@@ -6,7 +6,7 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.service.FeasibilityAnalyzer;
 import dev.sylvain.planning.service.FeasibilityAnalyzer.FeasibilityReport;
@@ -31,7 +31,7 @@ import jakarta.inject.Inject;
  * explanation/swap simulation of {@code AffectationExplanationResource}.
  *
  * <p>The explanation/swap/hours REST endpoints take a whole
- * {@code PlanningFestival} in their body; here they always run against the
+ * {@code PlanningEvenement} in their body; here they always run against the
  * planning persisted by the last solve, since an assistant has no practical
  * way to send back a payload that can weigh dozens of MB.
  *
@@ -68,9 +68,9 @@ public class PlanningMcpTools {
     VolumeView volumes(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         try {
-            PlanningFestival festival = planningService.buildFromReferenceData();
-            return new VolumeView(festival.getAnimateurs().size(), festival.getPostes().size(),
-                    festival.getContraintesAdHoc().size());
+            PlanningEvenement evenement = planningService.buildFromReferenceData();
+            return new VolumeView(evenement.getAnimateurs().size(), evenement.getPostes().size(),
+                    evenement.getContraintesAdHoc().size());
         } catch (IllegalStateException e) {
             return new VolumeView(0, 0, 0);
         }
@@ -110,7 +110,7 @@ public class PlanningMcpTools {
             @ToolArg(description = "Id d'animateur pour filtrer", required = false) String animateurId,
             @ToolArg(description = "Ne garder que les postes non pourvus", required = false) Boolean seulementNonPourvus,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        PlanningFestival planning = persistenceService.loadPersistedPlanning();
+        PlanningEvenement planning = persistenceService.loadPersistedPlanning();
         if (planning == null || planning.getPostes() == null) {
             return List.of();
         }
@@ -130,7 +130,7 @@ public class PlanningMcpTools {
             + "et au total. Les animateurs sont désignés par id seul.")
     HeuresView heures_travaillees(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        PlanningFestival planning = persistenceService.loadPersistedPlanning();
+        PlanningEvenement planning = persistenceService.loadPersistedPlanning();
         if (planning == null || planning.getPostes() == null) {
             return new HeuresView(List.of(), List.of());
         }
@@ -163,8 +163,8 @@ public class PlanningMcpTools {
                 toViews(simulation.contraintesVioleesAvant()), toViews(simulation.contraintesVioleesApres()));
     }
 
-    private PlanningFestival persistedPlanning() {
-        PlanningFestival planning = persistenceService.loadPersistedPlanning();
+    private PlanningEvenement persistedPlanning() {
+        PlanningEvenement planning = persistenceService.loadPersistedPlanning();
         if (planning == null || planning.getPostes() == null || planning.getPostes().isEmpty()) {
             throw new IllegalStateException("Aucun planning persisté : lancez d'abord une résolution.");
         }

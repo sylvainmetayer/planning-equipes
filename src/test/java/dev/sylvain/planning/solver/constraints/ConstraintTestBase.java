@@ -19,7 +19,7 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.NiveauEffort;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.solver.PlanningConstraintProvider;
@@ -37,8 +37,8 @@ import dev.sylvain.planning.solver.PlanningConstraintProvider;
  */
 abstract class ConstraintTestBase {
 
-    protected static final ConstraintVerifier<PlanningConstraintProvider, PlanningFestival> check =
-            ConstraintVerifier.build(new PlanningConstraintProvider(), PlanningFestival.class, PosteAffectation.class);
+    protected static final ConstraintVerifier<PlanningConstraintProvider, PlanningEvenement> check =
+            ConstraintVerifier.build(new PlanningConstraintProvider(), PlanningEvenement.class, PosteAffectation.class);
 
     // Fixed reference dates so minor/adult status and day arithmetic stay deterministic.
     // D1..D5 are consecutive days inside the same ISO week (2026-W28), so weekly
@@ -71,7 +71,7 @@ abstract class ConstraintTestBase {
                 .orElseThrow(() -> new IllegalArgumentException("Unknown constraint: " + name));
     }
 
-    protected SingleConstraintVerification<PlanningFestival> verify(String constraintName) {
+    protected SingleConstraintVerification<PlanningEvenement> verify(String constraintName) {
         return check.verifyThat((provider, factory) -> constraint(factory, constraintName));
     }
 

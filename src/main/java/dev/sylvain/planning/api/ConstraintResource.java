@@ -87,7 +87,7 @@ public class ConstraintResource {
      * drops that override when {@code poids} is null. The weights configured
      * in {@code application.properties} stay the default for every edition
      * that never touched them; this is what makes the dosage of the « Qualité
-     * d'organisation » rules a per-festival decision rather than a
+     * d'organisation » rules a per-event decision rather than a
      * per-deployment one.
      */
     @PUT

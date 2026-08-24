@@ -15,7 +15,7 @@ import ai.timefold.solver.core.api.score.buildin.hardmediumsoft.HardMediumSoftSc
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @PlanningSolution
-public class PlanningFestival {
+public class PlanningEvenement {
 
     private LocalDate dateDebutFestival;
 
@@ -68,16 +68,16 @@ public class PlanningFestival {
     @PlanningScore
     private HardMediumSoftScore score;
 
-    public PlanningFestival() {
+    public PlanningEvenement() {
     }
 
-    public PlanningFestival(LocalDate dateDebutFestival, List<Animateur> animateurs, List<PosteAffectation> postes) {
+    public PlanningEvenement(LocalDate dateDebutFestival, List<Animateur> animateurs, List<PosteAffectation> postes) {
         this.dateDebutFestival = dateDebutFestival;
         this.animateurs = animateurs;
         this.postes = postes;
     }
 
-    public PlanningFestival(LocalDate dateDebutFestival, List<Animateur> animateurs, List<PosteAffectation> postes,
+    public PlanningEvenement(LocalDate dateDebutFestival, List<Animateur> animateurs, List<PosteAffectation> postes,
             List<ContrainteAdHoc> contraintesAdHoc) {
         this.dateDebutFestival = dateDebutFestival;
         this.animateurs = animateurs;

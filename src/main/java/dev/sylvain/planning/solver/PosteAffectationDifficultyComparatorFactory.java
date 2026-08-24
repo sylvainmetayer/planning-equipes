@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import ai.timefold.solver.core.api.domain.common.ComparatorFactory;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 
 /**
@@ -25,10 +25,10 @@ import dev.sylvain.planning.domain.PosteAffectation;
  * at most 20 stands × 15 dates of distinct work.</p>
  */
 public final class PosteAffectationDifficultyComparatorFactory
-        implements ComparatorFactory<PlanningFestival, PosteAffectation> {
+        implements ComparatorFactory<PlanningEvenement, PosteAffectation> {
 
     @Override
-    public Comparator<PosteAffectation> createComparator(PlanningFestival solution) {
+    public Comparator<PosteAffectation> createComparator(PlanningEvenement solution) {
         // Confined to the comparator returned here, which Timefold uses from a
         // single thread while sorting the entities of that one solution.
         Map<EligibilityKey, Long> cache = new HashMap<>();
@@ -38,7 +38,7 @@ public final class PosteAffectationDifficultyComparatorFactory
                 .reversed();
     }
 
-    private static long eligibleAnimateurCount(PlanningFestival solution, PosteAffectation poste) {
+    private static long eligibleAnimateurCount(PlanningEvenement solution, PosteAffectation poste) {
         LocalDate date = poste.getCreneau() == null ? null : poste.getCreneau().getDate();
         return solution.getAnimateurs().stream()
                 .filter(animateur -> animateur.hasCompetenceFor(poste.getStand())

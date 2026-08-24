@@ -84,7 +84,7 @@ export class HoursPage {
   });
 
   /**
-   * Festival-wide totals, summed over every animateur: the hours the event
+   * Event-wide totals, summed over every animateur: the hours the event
    * actually costs, week by week and overall, plus the average per animateur.
    * Rendered as the table's footer row — a per-animateur table answers "is
    * this person overloaded", never "what does the whole roster amount to".

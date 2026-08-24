@@ -10,7 +10,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ApiService } from '../../core/api.service';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { VerrouillageStore } from '../../core/verrouillage.store';
-import { Creneau, PersistenceStatus, PlanningFestival, PosteAffectation, Stand } from '../../core/models';
+import { Creneau, PersistenceStatus, PlanningEvenement, PosteAffectation, Stand } from '../../core/models';
 import { aUneAppreciationPour, ouvrirExplication } from '../../shared/affectation-explanation-dialog';
 import { errorPrefix } from '../../core/error-message';
 
@@ -70,7 +70,7 @@ interface DayCard {
 }
 
 /**
- * Read-only calendar grouped by festival day. Also displays how many
+ * Read-only calendar grouped by event day. Also displays how many
  * assignments are currently persisted in database.
  */
 @Component({
@@ -91,7 +91,7 @@ export class CalendarDayPage {
   protected readonly loading = signal(false);
   protected readonly error = signal('');
   protected readonly persistedCount = signal<string>('?');
-  protected readonly planning = signal<PlanningFestival | null>(null);
+  protected readonly planning = signal<PlanningEvenement | null>(null);
   protected readonly unassignedLabel = $localize`:@@calendarMonth.unassigned:(non assigné)`;
   protected readonly pourquoiLuiLabel = $localize`:@@affectationExplanation.tooltip:Pourquoi lui ?`;
 
@@ -102,7 +102,7 @@ export class CalendarDayPage {
   private readonly dialog = inject(MatDialog);
 
   /**
-   * Narrows the day cards to the stand lines that need attention. A festival
+   * Narrows the day cards to the stand lines that need attention. An event
    * day holds dozens of lines of which two are wrong; scrolling all of them to
    * find those two is the actual daily task this screen exists for.
    */

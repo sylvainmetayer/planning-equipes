@@ -10,7 +10,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ApiService } from '../../core/api.service';
 import { PlanningStateService } from '../../core/planning-state.service';
-import { PlanningFestival, PosteAffectation, TypologieItem } from '../../core/models';
+import { PlanningEvenement, PosteAffectation, TypologieItem } from '../../core/models';
 import { standTypologies, typologieColorClass, typologieLabel, typologieLabels } from '../../core/typologie-colors';
 import { errorPrefix } from '../../core/error-message';
 
@@ -65,7 +65,7 @@ export interface HeatmapTable {
  * Read-only heatmap for issue #68: at-a-glance load per day, crossed with
  * either stand (coverage gaps: filled vs. required seats) or animateur
  * (overload: how many postes land on the same day). Aggregated client-side
- * from `PlanningFestival.postes`, the same read-only data source and pattern
+ * from `PlanningEvenement.postes`, the same read-only data source and pattern
  * (`planningState.loadForDisplay()` + a pure builder function) as
  * `calendar-day-page.ts`'s `buildDays()` — no dedicated backend endpoint exists.
  */
@@ -88,7 +88,7 @@ export interface HeatmapTable {
 export class HeatmapPage {
   protected readonly loading = signal(false);
   protected readonly error = signal('');
-  protected readonly planning = signal<PlanningFestival | null>(null);
+  protected readonly planning = signal<PlanningEvenement | null>(null);
   protected readonly view = signal<HeatmapView>('stand');
   protected readonly animateurFilter = signal('');
   protected readonly standColumnLabel = $localize`:@@heatmap.column.stand:Stand`;
@@ -322,7 +322,7 @@ function buildTypologieBadges(typologies: Set<string> | undefined, labels: Map<s
 /**
  * Row-header tooltip listing the distinct stands the animateur works on and the
  * game typologies they span — the daily cells only count postes, which says
- * nothing about how many different stands they have to cover over the festival,
+ * nothing about how many different stands they have to cover over the event,
  * nor how many different games they have to learn.
  */
 function animateurStandsTooltip(stands: Set<string> | undefined, typologies: HeatmapTypologieBadge[]): string {

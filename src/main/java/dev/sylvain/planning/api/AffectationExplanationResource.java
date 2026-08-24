@@ -1,6 +1,6 @@
 package dev.sylvain.planning.api;
 
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.PlanningService.AffectationExplanation;
 import dev.sylvain.planning.service.PlanningService.SwapSimulation;
@@ -16,7 +16,7 @@ import jakarta.ws.rs.core.Response;
 
 /**
  * Per-assignment explainability ("Pourquoi lui ?"): given an already-solved
- * {@link PlanningFestival} (as posted by the client — never re-solved here),
+ * {@link PlanningEvenement} (as posted by the client — never re-solved here),
  * explains why a specific {@code PosteAffectation} is scored the way it is,
  * and lets the caller simulate handing that same poste to a different
  * animateur to see the score impact before actually changing anything.
@@ -36,7 +36,7 @@ public class AffectationExplanationResource {
      */
     @POST
     @Path("/{posteId}/explication")
-    public Response explain(@PathParam("posteId") String posteId, PlanningFestival planning) {
+    public Response explain(@PathParam("posteId") String posteId, PlanningEvenement planning) {
         AffectationExplanation explication = planningService.explainAffectation(planning, posteId);
         return Response.ok(explication).build();
     }
@@ -49,7 +49,7 @@ public class AffectationExplanationResource {
     @POST
     @Path("/{posteId}/simulation-swap")
     public Response simulateSwap(@PathParam("posteId") String posteId,
-            @QueryParam("animateurId") String animateurId, PlanningFestival planning) {
+            @QueryParam("animateurId") String animateurId, PlanningEvenement planning) {
         SwapSimulation simulation = planningService.simulateSwap(planning, posteId, animateurId);
         return Response.ok(simulation).build();
     }

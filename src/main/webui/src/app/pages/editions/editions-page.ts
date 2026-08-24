@@ -104,7 +104,7 @@ export class EditionsPage {
   }
 
   /**
-   * Deleting an edition takes a whole festival with it — referential, settings
+   * Deleting an edition takes a whole event with it — referential, settings
    * and solved plan — and nothing restores it. So this is the one action in
    * the application that asks the user to type the name rather than to click
    * once: the friction is the point, exactly as when deleting a repository.

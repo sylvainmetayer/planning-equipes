@@ -3,7 +3,7 @@ package dev.sylvain.planning.api;
 import java.util.List;
 
 import dev.sylvain.planning.domain.ParametresLegaux;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.ReferenceDataService;
 import dev.sylvain.planning.service.StaffingAnalyzer;
@@ -48,8 +48,8 @@ public class StaffingResource {
         ParametresLegaux parametres = referenceDataService.getParametresLegaux();
         List<dev.sylvain.planning.domain.PosteAffectation> postes;
         try {
-            PlanningFestival festival = planningService.buildFromReferenceData();
-            postes = festival.getPostes();
+            PlanningEvenement evenement = planningService.buildFromReferenceData();
+            postes = evenement.getPostes();
         } catch (IllegalStateException e) {
             postes = List.of();
         }

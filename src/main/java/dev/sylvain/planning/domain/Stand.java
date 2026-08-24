@@ -41,20 +41,20 @@ public class Stand {
     private List<OuvertureStand> ouvertures = new ArrayList<>();
     /**
      * Recurring opening/closing rules — what a stable opening pattern is
-     * entered as, instead of one dated row per festival day. A dated entry
+     * entered as, instead of one dated row per event day. A dated entry
      * above always wins over these for the day it names; see
      * {@link HoraireStand} for the full layering.
      */
     private List<HoraireStand> horaires = new ArrayList<>();
     /**
-     * The dated windows {@link #horaires} expands to for the festival's days,
+     * The dated windows {@link #horaires} expands to for the event's days,
      * merged with the dated exceptions above — {@code null} until
      * {@code HoraireStandResolver} has run against a known set of dates.
      *
      * <p>Kept <b>beside</b> the persisted lists rather than substituted into
      * them on purpose: {@code upsertStand} writes {@link #indisponibilites} /
      * {@link #ouvertures}, so a resolved stand travelling back through a save
-     * (which a stand reached through a {@code PlanningFestival} does) can never
+     * (which a stand reached through a {@code PlanningEvenement} does) can never
      * silently freeze the expansion into the database as a few hundred dated
      * rows.</p>
      */
@@ -179,7 +179,7 @@ public class Stand {
 
     /**
      * Records what {@code HoraireStandResolver} resolved this stand's rules and
-     * exceptions to, for the festival's days. Both lists replace each other
+     * exceptions to, for the event's days. Both lists replace each other
      * wholesale; passing {@code null} for either reverts to the dated lists.
      */
     public void setFenetresEffectives(List<IndisponibiliteStand> fermetures, List<OuvertureStand> ouvertures) {

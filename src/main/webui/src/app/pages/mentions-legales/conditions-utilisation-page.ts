@@ -18,7 +18,7 @@ import { StatusMessage } from '../../shared/status-message';
  * is not decoration — it is what keeps the schedule a human decision (and
  * article 22 GDPR out of play), and what states that the duties of an
  * employer, of a data controller and of whoever answers for labour law stay
- * where they are, on the organisation running the festival.</p>
+ * where they are, on the organisation running the event.</p>
  */
 @Component({
   selector: 'app-conditions-utilisation-page',

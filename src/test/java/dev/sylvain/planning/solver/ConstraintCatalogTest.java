@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import ai.timefold.solver.core.api.score.stream.Constraint;
 import ai.timefold.solver.test.api.score.stream.ConstraintVerifier;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 
 /**
@@ -31,8 +31,8 @@ class ConstraintCatalogTest {
      * it.</p>
      */
     private static List<String> declaredConstraintNames() {
-        ConstraintVerifier<PlanningConstraintProvider, PlanningFestival> check =
-                ConstraintVerifier.build(new PlanningConstraintProvider(), PlanningFestival.class,
+        ConstraintVerifier<PlanningConstraintProvider, PlanningEvenement> check =
+                ConstraintVerifier.build(new PlanningConstraintProvider(), PlanningEvenement.class,
                         PosteAffectation.class);
         List<String> noms = new ArrayList<>();
         check.verifyThat((provider, factory) -> {

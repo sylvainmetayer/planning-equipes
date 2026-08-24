@@ -9,7 +9,7 @@ export type ModeEmplacement = 'INCHANGE' | 'DEFINIR' | 'EFFACER';
 
 /**
  * How the recurring horaires of the selection are edited. This is the reason a
- * bulk edit is worth having for them at all: on the reference festival, thirty
+ * bulk edit is worth having for them at all: on the reference event, thirty
  * stands share the single rule "open from 14:00 to closing, every day", and
  * `REMPLACER` sets all thirty in one operation.
  *

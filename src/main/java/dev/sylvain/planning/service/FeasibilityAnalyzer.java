@@ -149,7 +149,7 @@ public class FeasibilityAnalyzer {
 
     /**
      * Spells out at most {@value #MAX_STANDS_NOMMES} stand names so the
-     * sentence stays readable on a festival with dozens of open stands.
+     * sentence stays readable on an event with dozens of open stands.
      */
     private static String describeStands(List<Stand> stands) {
         if (stands.isEmpty()) {

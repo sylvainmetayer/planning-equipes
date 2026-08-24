@@ -151,7 +151,7 @@ class CreneauGridServiceTest {
         assertThat(rapport.hasNoBlockingAnomaly()).isFalse();
         assertThat(rapport.anomalies()).extracting(GridAnomaly::type)
                 .contains(GridAnomalyType.REPOS_QUOTIDIEN_IMPOSSIBLE);
-        // The very same grid read as amplitudes is a perfectly ordinary festival day.
+        // The very same grid read as amplitudes is a perfectly ordinary event day.
         assertThat(service.validate(trop, List.of(), List.of(), ModeGrilleCreneaux.AMPLITUDES, DECOUPAGE, LEGAUX)
                 .hasNoBlockingAnomaly()).isTrue();
     }

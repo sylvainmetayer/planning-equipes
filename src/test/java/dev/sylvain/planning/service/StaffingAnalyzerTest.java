@@ -89,7 +89,7 @@ class StaffingAnalyzerTest {
     }
 
     @Test
-    void workloadBoundWinsWhenTheFestivalIsLongEnough() {
+    void workloadBoundWinsWhenTheEventIsLongEnough() {
         // One seat open 10 hours a day for the 7 days of one ISO week = 70
         // person-hours, against a 20 h weekly cap: 4 people, way above the
         // peak of 1.

@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.scenario.ScenarioValidator;
 import dev.sylvain.planning.scenario.dto.EditionCibleDto;
 import dev.sylvain.planning.service.EditionContext;
@@ -53,7 +53,7 @@ public class ReferenceDataResource {
 
     @POST
     @Path("/import")
-    public Response importReferenceData(PlanningFestival planning) {
+    public Response importReferenceData(PlanningEvenement planning) {
         referenceDataService.importFromPlanning(planning);
         return Response.noContent().build();
     }

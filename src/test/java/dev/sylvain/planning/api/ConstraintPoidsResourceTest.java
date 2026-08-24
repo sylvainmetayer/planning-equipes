@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Weighting a constraint, end to end: the HTTP surface, the SQL behind it, and
- * the edition boundary that separates two festivals sharing one deployment.
+ * the edition boundary that separates two events sharing one deployment.
  *
  * <p>What is being pinned down is <b>not</b> that a number can be stored. It is
  * that the number belongs to an edition rather than to the deployment — the
@@ -159,7 +159,7 @@ class ConstraintPoidsResourceTest {
         setPoids(DEFAUT, DOSABLE, 9, 200);
 
         // This is the assertion that justifies migration V53: the setting
-        // follows the festival, not the deployment.
+        // follows the event, not the deployment.
         assertThat(readPoids(DEFAUT, DOSABLE)).isEqualTo(9);
         assertThat(readPoids("ANNEE-2026", DOSABLE)).isEqualTo(1);
 
@@ -192,7 +192,7 @@ class ConstraintPoidsResourceTest {
                 .when().post("/api/editions/" + DEFAUT + "/dupliquer")
                 .then().statusCode(200);
 
-        // Duplicating is how a festival starts from last year's setup: a
+        // Duplicating is how an event starts from last year's setup: a
         // patiently tuned dosage that failed to follow would be a silent
         // regression — the copy would solve a different problem than its model.
         assertThat(readPoids("COPIE-2026", DOSABLE)).isEqualTo(8);

@@ -16,7 +16,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.ParametresQualite;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.PlanningService.EchangeSimulation;
@@ -52,8 +52,8 @@ class PlanningServiceEchangeTest {
     private final Animateur alice = competent("A1");
     private final Animateur bruno = competent("A2");
 
-    private static PlanningFestival planning(List<Animateur> animateurs, List<PosteAffectation> postes) {
-        return new PlanningFestival(J1, animateurs, postes);
+    private static PlanningEvenement planning(List<Animateur> animateurs, List<PosteAffectation> postes) {
+        return new PlanningEvenement(J1, animateurs, postes);
     }
 
     private static PosteAffectation poste(String id, Stand stand, Creneau creneau, Animateur animateur) {
@@ -67,7 +67,7 @@ class PlanningServiceEchangeTest {
     void uneCibleDejaEnPosteSurLeCreneauDonneUnEchangeCroise() {
         PosteAffectation posteAlice = poste("P1", standS1, creneau, alice);
         PosteAffectation posteBruno = poste("P2", standS2, creneau, bruno);
-        PlanningFestival solved = planning(List.of(alice, bruno), List.of(posteAlice, posteBruno));
+        PlanningEvenement solved = planning(List.of(alice, bruno), List.of(posteAlice, posteBruno));
 
         EchangeSimulation simulation = planningService.simulateEchange(solved, "A1", "A2", 1L, "S1");
 
@@ -83,7 +83,7 @@ class PlanningServiceEchangeTest {
     @Test
     void uneCibleLibreSurLeCreneauDonneUneRepriseSimple() {
         PosteAffectation posteAlice = poste("P1", standS1, creneau, alice);
-        PlanningFestival solved = planning(List.of(alice, bruno), List.of(posteAlice));
+        PlanningEvenement solved = planning(List.of(alice, bruno), List.of(posteAlice));
 
         EchangeSimulation simulation = planningService.simulateEchange(solved, "A1", "A2", 1L, "S1");
 
@@ -103,7 +103,7 @@ class PlanningServiceEchangeTest {
     void uneCibleIndisponibleCeJourLaCasseUneContrainteDure() {
         bruno.setJoursIndisponibles(Set.of(J1));
         PosteAffectation posteAlice = poste("P1", standS1, creneau, alice);
-        PlanningFestival solved = planning(List.of(alice, bruno), List.of(posteAlice));
+        PlanningEvenement solved = planning(List.of(alice, bruno), List.of(posteAlice));
 
         EchangeSimulation simulation = planningService.simulateEchange(solved, "A1", "A2", 1L, "S1");
 
@@ -126,7 +126,7 @@ class PlanningServiceEchangeTest {
         bruno.setJoursIndisponibles(Set.of(J1));
         PosteAffectation posteAlice = poste("P1", standS1, creneau, alice);
         PosteAffectation posteBruno = poste("P2", standS2, creneau, bruno);
-        PlanningFestival solved = planning(List.of(alice, bruno), List.of(posteAlice, posteBruno));
+        PlanningEvenement solved = planning(List.of(alice, bruno), List.of(posteAlice, posteBruno));
 
         planningService.simulateEchange(solved, "A1", "A2", 1L, "S1");
 
@@ -138,7 +138,7 @@ class PlanningServiceEchangeTest {
     @Test
     void unPosteQuiNAppartientPasAuDemandeurEstRejete() {
         PosteAffectation posteAlice = poste("P1", standS1, creneau, alice);
-        PlanningFestival solved = planning(List.of(alice, bruno), List.of(posteAlice));
+        PlanningEvenement solved = planning(List.of(alice, bruno), List.of(posteAlice));
 
         assertThatThrownBy(() -> planningService.simulateEchange(solved, "A1", "A2", 1L, "S2"))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -151,7 +151,7 @@ class PlanningServiceEchangeTest {
     @Test
     void uneCibleInconnueEstRejetee() {
         PosteAffectation posteAlice = poste("P1", standS1, creneau, alice);
-        PlanningFestival solved = planning(List.of(alice, bruno), List.of(posteAlice));
+        PlanningEvenement solved = planning(List.of(alice, bruno), List.of(posteAlice));
 
         assertThatThrownBy(() -> planningService.simulateEchange(solved, "A1", "FANTOME", 1L, "S1"))
                 .isInstanceOf(IllegalArgumentException.class)

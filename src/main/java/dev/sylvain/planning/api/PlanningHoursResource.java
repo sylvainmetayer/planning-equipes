@@ -1,6 +1,6 @@
 package dev.sylvain.planning.api;
 
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.PlanningHoursService;
 import dev.sylvain.planning.service.PlanningHoursService.HeuresRapport;
 import jakarta.inject.Inject;
@@ -21,15 +21,15 @@ public class PlanningHoursResource {
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
-    public HeuresRapport compute(PlanningFestival planningFestival) {
-        return heuresPlanningService.compute(planningFestival);
+    public HeuresRapport compute(PlanningEvenement planningEvenement) {
+        return heuresPlanningService.compute(planningEvenement);
     }
 
     @POST
     @Path("/export")
     @Produces("text/csv")
-    public Response exportCsv(PlanningFestival planningFestival) {
-        HeuresRapport rapport = heuresPlanningService.compute(planningFestival);
+    public Response exportCsv(PlanningEvenement planningEvenement) {
+        HeuresRapport rapport = heuresPlanningService.compute(planningEvenement);
         String csv = heuresPlanningService.generateCsv(rapport);
         return Response.ok(csv)
                 .type("text/csv; charset=utf-8")

@@ -11,7 +11,7 @@ import { Sort } from '@angular/material/sort';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
 import { PlanningStateService } from '../../core/planning-state.service';
-import { HeuresAnimateur, HeuresRapport, PlanningFestival } from '../../core/models';
+import { HeuresAnimateur, HeuresRapport, PlanningEvenement } from '../../core/models';
 import { HoursPage } from './hours-page';
 
 /** A promise whose settlement the test drives, to observe the in-flight state. */
@@ -32,7 +32,7 @@ function row(nom: string, heuresParSemaine: Record<string, number>): HeuresAnima
   };
 }
 
-const PLANNING = { postes: [] } as unknown as PlanningFestival;
+const PLANNING = { postes: [] } as unknown as PlanningEvenement;
 
 /** Reaches the protected members the template binds to. */
 type PageInternals = {
@@ -221,7 +221,7 @@ describe('HoursPage', () => {
       expect(page.rapport()!.animateurs.map((animateur) => animateur.nom)).toEqual(['Zoé', 'Alice']);
     });
 
-    it('sums the festival-wide totals week by week and averages them per animateur', async () => {
+    it('sums the event-wide totals week by week and averages them per animateur', async () => {
       const page = createPage();
       await vi.waitFor(() => expect(page.rapport()).not.toBeNull());
 

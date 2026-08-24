@@ -20,7 +20,7 @@ import org.openpdf.text.pdf.parser.PdfTextExtractor;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 
@@ -44,7 +44,7 @@ class PlanningPdfContenuTest {
 
     @Test
     void lePdfIndividuelNommeLAnimateurSesStandsEtSesRepos() throws IOException {
-        PlanningFestival planning = planning();
+        PlanningEvenement planning = planning();
 
         String text = textOf(service.exportAnimateurPdf(planning, "A-ADA"));
 
@@ -63,7 +63,7 @@ class PlanningPdfContenuTest {
     /** The team-mates on the same row are named, the animateur themselves is not. */
     @Test
     void lePdfIndividuelNommeLesCoequipiersDeLaMemeLigne() throws IOException {
-        PlanningFestival planning = planning();
+        PlanningEvenement planning = planning();
 
         String text = textOf(service.exportAnimateurPdf(planning, "A-ADA"));
 
@@ -76,7 +76,7 @@ class PlanningPdfContenuTest {
      */
     @Test
     void lePdfGlobalPresenteLesAffectationsParJourneePuisParStand() throws IOException {
-        PlanningFestival planning = planning();
+        PlanningEvenement planning = planning();
 
         String text = textOf(service.exportGlobalPdf(planning));
 
@@ -94,7 +94,7 @@ class PlanningPdfContenuTest {
     /** An animateur with neither prenom nor nom shows by id, never as "null null" nor blank. */
     @Test
     void unAnimateurSansNomSAfficheParSonId() throws IOException {
-        PlanningFestival planning = planning();
+        PlanningEvenement planning = planning();
         Animateur anonyme = new Animateur("A-VIDE", null, null, LocalDate.of(1990, 1, 1), false);
         planning.getAnimateurs().add(anonyme);
         PosteAffectation poste = new PosteAffectation("p-vide",
@@ -126,7 +126,7 @@ class PlanningPdfContenuTest {
     }
 
     /** Two animateurs on one stand, a geocoded stand, and a day with no seat for Ada. */
-    private static PlanningFestival planning() {
+    private static PlanningEvenement planning() {
         Stand strategie = new Stand("STAND-1", "Stratèges Associés", Set.of("STRATEGIE"), 1, 2, false);
         Stand vedette = new Stand("STAND-2", "Éditeur Vedette", Set.of("AMBIANCE"), 1, 2, false);
         vedette.setEmplacement(new Emplacement("EMP-1", "Kiosque Central", 48.8566, 2.3522));
@@ -144,7 +144,7 @@ class PlanningPdfContenuTest {
         postes.add(poste("p4", strategie, matinJ2, alan));
         postes.add(poste("p5", vedette, matinJ2, null));
 
-        return new PlanningFestival(LocalDate.of(2026, 8, 14),
+        return new PlanningEvenement(LocalDate.of(2026, 8, 14),
                 new ArrayList<>(List.of(ada, alan)), new ArrayList<>(postes));
     }
 

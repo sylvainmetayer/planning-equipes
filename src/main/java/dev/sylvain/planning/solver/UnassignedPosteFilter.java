@@ -2,7 +2,7 @@ package dev.sylvain.planning.solver;
 
 import ai.timefold.solver.core.api.score.director.ScoreDirector;
 import ai.timefold.solver.core.impl.heuristic.selector.common.decorator.SelectionFilter;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 
 /**
@@ -13,10 +13,10 @@ import dev.sylvain.planning.domain.PosteAffectation;
  * clear the last few {@code posteDoitEtrePourvu} violations within the
  * solving time budget.
  */
-public final class UnassignedPosteFilter implements SelectionFilter<PlanningFestival, PosteAffectation> {
+public final class UnassignedPosteFilter implements SelectionFilter<PlanningEvenement, PosteAffectation> {
 
     @Override
-    public boolean accept(ScoreDirector<PlanningFestival> scoreDirector, PosteAffectation poste) {
+    public boolean accept(ScoreDirector<PlanningEvenement> scoreDirector, PosteAffectation poste) {
         return poste.getAnimateur() == null;
     }
 }

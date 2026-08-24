@@ -35,7 +35,7 @@ const JOURS_SEMAINE: JourSemaine[] = [
   'SATURDAY'
 ];
 
-/** What one day of the festival resolves to, and which layer decided it. */
+/** What one day of the event resolves to, and which layer decided it. */
 export interface JourResolu {
   date: string;
   /** `null` = nothing states anything about this day: open all day, the default. */

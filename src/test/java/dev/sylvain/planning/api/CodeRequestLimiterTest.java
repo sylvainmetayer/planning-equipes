@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.PlanningPersistenceService;
@@ -79,7 +79,7 @@ class CodeRequestLimiterTest {
         premier.setAnimateur(plafond);
         PosteAffectation second = new PosteAffectation("DEBIT-P2", stand, creneau);
         second.setAnimateur(credit);
-        persistence.persist(new PlanningFestival(JOUR, List.of(plafond, credit), List.of(premier, second)));
+        persistence.persist(new PlanningEvenement(JOUR, List.of(plafond, credit), List.of(premier, second)));
         donnerEmail(PLAFOND, EMAIL_PLAFOND);
         donnerEmail(CREDIT, EMAIL_CREDIT);
     }

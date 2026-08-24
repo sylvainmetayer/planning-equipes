@@ -61,7 +61,7 @@ export function libelleJourSemaine(jour: JourSemaine): string {
 }
 
 /** Days the preview covers: the edition's créneaux — what the solver builds from. */
-export function datesFestival(creneaux: readonly Creneau[]): string[] {
+export function datesEvenement(creneaux: readonly Creneau[]): string[] {
   return [...new Set(creneaux.map((creneau) => creneau.date))].sort();
 }
 

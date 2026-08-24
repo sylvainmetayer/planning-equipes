@@ -38,7 +38,7 @@ export interface StandBulkEditData {
  *
  * Recurring horaires are in scope — they are exactly the kind of thing a whole
  * set of stands shares ("open from 14:00 to closing, every day" covers thirty of
- * them on the reference festival). Dated exceptions stay out: those are
+ * them on the reference event). Dated exceptions stay out: those are
  * per-stand, per-day data by nature.
  */
 @Component({

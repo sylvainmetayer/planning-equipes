@@ -15,7 +15,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.ParametresQualite;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 
@@ -89,7 +89,7 @@ class PlanningServiceScenarioAllerRetourTest {
         String yaml = PlanningService.buildScenarioYaml(
                 List.of(animateur), List.of(stand), List.of(creneau), List.of(poste));
 
-        PlanningFestival relu = service().buildFromScenarioText(yaml).planning();
+        PlanningEvenement relu = service().buildFromScenarioText(yaml).planning();
 
         assertThat(relu.getAnimateurs()).extracting(Animateur::getId).containsExactly("A1");
         assertThat(relu.getPostes()).hasSize(1);
@@ -107,7 +107,7 @@ class PlanningServiceScenarioAllerRetourTest {
                 List.of(animateur("A1")), List.of(stand("STAND-A")),
                 List.of(creneau(1L, LocalTime.of(9, 0), LocalTime.of(13, 0))), List.of());
 
-        PlanningFestival relu = service().buildFromScenarioText(yaml).planning();
+        PlanningEvenement relu = service().buildFromScenarioText(yaml).planning();
 
         assertThat(relu.getPostes()).isEmpty();
         assertThat(relu.getAnimateurs()).extracting(Animateur::getId).containsExactly("A1");
@@ -127,7 +127,7 @@ class PlanningServiceScenarioAllerRetourTest {
                 List.of(animateur("A1")), List.of(stand), List.of(creneau),
                 List.of(poste("P1", stand, creneau)));
 
-        PlanningFestival relu = service().buildFromScenarioText(yaml).planning();
+        PlanningEvenement relu = service().buildFromScenarioText(yaml).planning();
 
         assertThat(relu.getPostes()).allSatisfy(p -> {
             assertThat(p.getCreneau()).as("le créneau du poste").isNotNull();
@@ -172,7 +172,7 @@ class PlanningServiceScenarioAllerRetourTest {
                 List.of(animateur("A1")), List.of(stand), List.of(matin),
                 List.of(poste("P1", stand, matin)));
 
-        PlanningFestival relu = service().buildFromScenarioText(yaml).planning();
+        PlanningEvenement relu = service().buildFromScenarioText(yaml).planning();
 
         assertThat(relu.getPostes())
                 .extracting(p -> p.getCreneau().getHeureDebut(), p -> p.getCreneau().getHeureFin())
@@ -219,7 +219,7 @@ class PlanningServiceScenarioAllerRetourTest {
                   animateurId: null
                 """;
 
-        PlanningFestival relu = service().buildFromScenarioText(yaml).planning();
+        PlanningEvenement relu = service().buildFromScenarioText(yaml).planning();
 
         assertThat(relu.getPostes()).hasSize(1);
         assertThat(relu.getPostes().getFirst().getCreneau()).isNotNull();

@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.PlanningService.ConstraintDiagnostic;
@@ -35,9 +35,9 @@ class PlanningServiceDiagnosticViolationsTest {
         Creneau creneau = new Creneau(1L, 1, LocalDate.of(2026, 7, 16), LocalTime.of(12, 30), LocalTime.of(15, 30));
         PosteAffectation posteNonPourvu = new PosteAffectation("P1", stand, creneau);
 
-        PlanningFestival festival = new PlanningFestival(creneau.getDate(), List.of(), List.of(posteNonPourvu));
+        PlanningEvenement evenement = new PlanningEvenement(creneau.getDate(), List.of(), List.of(posteNonPourvu));
 
-        PlanningService.PlanningDiagnostic diagnostic = planningService.diagnose(festival);
+        PlanningService.PlanningDiagnostic diagnostic = planningService.diagnose(evenement);
 
         ConstraintDiagnostic posteDoitEtrePourvu = diagnostic.contraintes().stream()
                 .filter(c -> c.name().equals("posteDoitEtrePourvu"))

@@ -376,7 +376,7 @@ références croisées qu'effectue un import réel.
 ## Exports
 
 Génération côté serveur. Le planning est envoyé dans le corps, **sauf l'export
-global** : un planning de la taille du festival pèse plusieurs mégaoctets en
+global** : un planning de la taille de l'événement pèse plusieurs mégaoctets en
 JSON, que l'appelant n'a pas à téléverser pour récupérer un document. Il lit
 donc la même source que les calendriers.
 

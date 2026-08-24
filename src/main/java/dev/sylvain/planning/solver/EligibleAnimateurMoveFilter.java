@@ -10,7 +10,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.JoursFeries;
 import dev.sylvain.planning.domain.PlafondsLegauxMineurs;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 
 /**
@@ -80,18 +80,18 @@ public final class EligibleAnimateurMoveFilter {
                 && creneau.getDureeMinutes() <= PlafondsLegauxMineurs.TRAVAIL_CONTINU_MAX_MINUTES;
     }
 
-    public static final class ChangeMoveFilter implements SelectionFilter<PlanningFestival, ChangeMove<PlanningFestival>> {
+    public static final class ChangeMoveFilter implements SelectionFilter<PlanningEvenement, ChangeMove<PlanningEvenement>> {
         @Override
-        public boolean accept(ScoreDirector<PlanningFestival> scoreDirector, ChangeMove<PlanningFestival> move) {
+        public boolean accept(ScoreDirector<PlanningEvenement> scoreDirector, ChangeMove<PlanningEvenement> move) {
             PosteAffectation poste = (PosteAffectation) move.getEntity();
             Animateur animateur = (Animateur) move.getToPlanningValue();
             return isEligible(poste, animateur);
         }
     }
 
-    public static final class SwapMoveFilter implements SelectionFilter<PlanningFestival, SwapMove<PlanningFestival>> {
+    public static final class SwapMoveFilter implements SelectionFilter<PlanningEvenement, SwapMove<PlanningEvenement>> {
         @Override
-        public boolean accept(ScoreDirector<PlanningFestival> scoreDirector, SwapMove<PlanningFestival> move) {
+        public boolean accept(ScoreDirector<PlanningEvenement> scoreDirector, SwapMove<PlanningEvenement> move) {
             PosteAffectation left = (PosteAffectation) move.getLeftEntity();
             PosteAffectation right = (PosteAffectation) move.getRightEntity();
             return isEligible(left, right.getAnimateur()) && isEligible(right, left.getAnimateur());

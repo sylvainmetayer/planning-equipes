@@ -52,7 +52,7 @@ public class Animateur {
 
     /**
      * True when the animateur has declared the given date as an off day.
-     * Availability is opt-out: an animateur is available on every festival date
+     * Availability is opt-out: an animateur is available on every event date
      * except the ones listed in {@link #joursIndisponibles}.
      */
     public boolean isIndisponibleOn(LocalDate dateReference) {

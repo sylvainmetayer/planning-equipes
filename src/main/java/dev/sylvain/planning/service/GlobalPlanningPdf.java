@@ -25,7 +25,7 @@ import org.openpdf.text.pdf.PdfWriter;
 
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 
@@ -39,7 +39,7 @@ import jakarta.inject.Inject;
  * <p>The same assignments are laid out twice, because the two questions asked
  * in the field are not the same one: <b>by day</b> answers "who is where right
  * now", <b>by stand</b> answers "who keeps this stand running over the whole
- * festival". The seats nobody holds are written in red on their row rather than
+ * event". The seats nobody holds are written in red on their row rather than
  * silently absent: an unstaffed stand is exactly what the organiser opens this
  * document to find.</p>
  */
@@ -53,7 +53,7 @@ public class GlobalPlanningPdf {
         this.theme = theme;
     }
 
-    byte[] construire(PlanningFestival planning) {
+    byte[] construire(PlanningEvenement planning) {
         List<LigneAffectation> lignes = lignesAffectation(planning);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         Document document = new Document(PageSize.A4.rotate(), 34, 34, 34, 50);
@@ -78,9 +78,9 @@ public class GlobalPlanningPdf {
      * One line per stand × vacation × open segment: the seats of a same stand
      * on a same window are one line holding every name, not one line each.
      * Mirrors how the calendars group them, and is what makes the document
-     * readable at festival scale (3 500 seats becoming ~2 000 lines).
+     * readable at event scale (3 500 seats becoming ~2 000 lines).
      */
-    private List<LigneAffectation> lignesAffectation(PlanningFestival planning) {
+    private List<LigneAffectation> lignesAffectation(PlanningEvenement planning) {
         Map<String, LigneAffectation> parCle = new LinkedHashMap<>();
         for (PosteAffectation poste : planning.getPostes()) {
             Creneau creneau = poste.getCreneau();
@@ -121,7 +121,7 @@ public class GlobalPlanningPdf {
         }
     }
 
-    private void addGlobalHeader(Document document, PlanningFestival planning, List<LigneAffectation> lignes) {
+    private void addGlobalHeader(Document document, PlanningEvenement planning, List<LigneAffectation> lignes) {
         document.add(theme.brandHeader(document, 420f, "PLANNING GLOBAL", "Toutes les affectations", 18f));
 
         PdfPTable stats = new PdfPTable(new float[] { 10f, 0.6f, 10f, 0.6f, 10f, 0.6f, 10f });
@@ -140,7 +140,7 @@ public class GlobalPlanningPdf {
         document.add(stats);
     }
 
-    /** Section 1: chronological reading — one page per festival day. */
+    /** Section 1: chronological reading — one page per event day. */
     private void addSectionByDay(Document document, List<LigneAffectation> lignes) {
         document.add(sectionTitle("Planning par journée"));
         List<LocalDate> dates = lignes.stream()

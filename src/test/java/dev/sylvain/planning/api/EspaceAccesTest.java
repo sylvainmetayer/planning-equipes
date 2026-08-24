@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.PlanningPersistenceService;
@@ -66,7 +66,7 @@ class EspaceAccesTest {
         Creneau creneau = new Creneau(CRENEAU_ID, 1, JOUR, LocalTime.of(10, 0), LocalTime.of(12, 0));
         PosteAffectation poste = new PosteAffectation("ACCES-P1", stand, creneau);
         poste.setAnimateur(alice);
-        persistence.persist(new PlanningFestival(JOUR, List.of(alice, bruno), List.of(poste)));
+        persistence.persist(new PlanningEvenement(JOUR, List.of(alice, bruno), List.of(poste)));
         donnerEmail("ACCES-A", EMAIL_ALICE);
         donnerEmail("ACCES-B", null);
     }

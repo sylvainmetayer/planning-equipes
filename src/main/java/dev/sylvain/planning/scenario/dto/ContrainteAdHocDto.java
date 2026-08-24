@@ -7,7 +7,7 @@ import java.util.List;
 
 /**
  * One entry of the optional top-level {@code contraintesAdHoc:} scenario
- * section: a constraint entered by hand against this festival's own data
+ * section: a constraint entered by hand against this event's own data
  * (a forced unavailability, an incompatible pair, a forced assignment, an
  * affinity).
  *
@@ -20,7 +20,7 @@ import java.util.List;
  *                   the rule reads them (a pair for an incompatibility or an
  *                   affinity)
  * @param creneauId  id of the créneau the constraint is limited to, absent for
- *                   a constraint that covers the whole festival
+ *                   a constraint that covers the whole event
  * @param standId    id of the stand the constraint is limited to, absent for a
  *                   constraint that covers every stand
  * @param raison     free text the administrator wrote, kept as-is

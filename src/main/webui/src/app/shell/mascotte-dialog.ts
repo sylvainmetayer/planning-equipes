@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { MatDialogModule } from '@angular/material/dialog';
 
 /**
- * Easter egg: the festival mascot, summoned by the Konami code
+ * Easter egg: the event mascot, summoned by the Konami code
  * (see AdminShell). Nothing but the picture, centered — closing is the
  * dialog's usual Escape/backdrop click.
  */
@@ -15,7 +15,7 @@ import { MatDialogModule } from '@angular/material/dialog';
       src="/mascotte.png"
       width="320"
       i18n-alt="@@mascotte.alt"
-      alt="la mascotte du festival"
+      alt="la mascotte"
     />
   `,
   styles: `

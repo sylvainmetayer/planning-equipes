@@ -30,7 +30,7 @@ import { CreneauBulkEditData, CreneauBulkEditDialog } from './creneau-bulk-edit-
 import { CreneauFormData, CreneauFormDialog } from './creneau-form-dialog';
 
 /**
- * Timeslots CRUD: festival day, date and hours of every schedulable slot,
+ * Timeslots CRUD: event day, date and hours of every schedulable slot,
  *
  * Slots are multi-selectable, for a bulk delete or to move a whole batch to
  * another group / realign its hours.

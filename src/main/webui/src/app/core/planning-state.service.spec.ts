@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from './api.service';
 import { PlanningStateService } from './planning-state.service';
-import type { Animateur, Creneau, PlanningFestival, Stand } from './models';
+import type { Animateur, Creneau, PlanningEvenement, Stand } from './models';
 
 function stand(id: string, effectifMax: number): Stand {
   return {
@@ -62,7 +62,7 @@ describe('PlanningStateService', () => {
   });
 
   describe('loadForDisplay / require', () => {
-    const solved: PlanningFestival = {
+    const solved: PlanningEvenement = {
       animateurs: [animateur('A1')],
       postes: [{ id: 'p1', stand: stand('S1', 1), creneau: creneau(1), animateur: animateur('A1') }],
       score: { hardScore: 0, mediumScore: 0, softScore: 0 }
@@ -86,7 +86,7 @@ describe('PlanningStateService', () => {
 
     it('require() throws when the loaded planning has no postes', async () => {
       api.responses = {
-        '/api/planning/persisted': { animateurs: [], postes: [], score: null } satisfies PlanningFestival
+        '/api/planning/persisted': { animateurs: [], postes: [], score: null } satisfies PlanningEvenement
       };
 
       await expect(service.require()).rejects.toThrow(/Aucun planning disponible/);

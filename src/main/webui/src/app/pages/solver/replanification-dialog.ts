@@ -41,7 +41,7 @@ export class ReplanificationDialog {
   protected readonly jours = signal<string[]>([]);
   protected readonly standIds = signal<string[]>([]);
 
-  /** The festival days, deduplicated from the créneaux and in chronological order. */
+  /** The event days, deduplicated from the créneaux and in chronological order. */
   protected readonly joursDisponibles = computed(() =>
     [...new Set(this.store.creneaux().map((creneau) => creneau.date))].sort()
   );

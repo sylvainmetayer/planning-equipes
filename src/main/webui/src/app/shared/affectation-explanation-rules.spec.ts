@@ -4,7 +4,7 @@ import {
   ContrainteImpact,
   HardMediumSoftScore,
   NiveauCompetence,
-  PlanningFestival,
+  PlanningEvenement,
   PosteAffectation,
   Stand,
   SwapSimulation
@@ -162,7 +162,7 @@ describe('aUneAppreciationPour', () => {
 describe('candidatsPour', () => {
   const ambiance = stand(['ambiance']);
 
-  function planning(animateurs: Animateur[]): PlanningFestival {
+  function planning(animateurs: Animateur[]): PlanningEvenement {
     return { animateurs, postes: [], score: null };
   }
 

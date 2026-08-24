@@ -43,7 +43,7 @@ function stand(patch: Partial<Stand>): Stand {
   };
 }
 
-/** 2026-07-08 is a Wednesday, 2026-07-11 a Saturday — the fixture festival's own calendar. */
+/** 2026-07-08 is a Wednesday, 2026-07-11 a Saturday — the fixture event's own calendar. */
 const DATES = ['2026-07-08', '2026-07-09', '2026-07-10', '2026-07-11', '2026-07-12'];
 
 describe('jourSemaineDe', () => {

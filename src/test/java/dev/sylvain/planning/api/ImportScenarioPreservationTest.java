@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.PlanningPersistenceService;
@@ -92,7 +92,7 @@ class ImportScenarioPreservationTest {
         posteUn.setAnimateur(alice);
         PosteAffectation posteDeux = new PosteAffectation("IMP-P2", standDeux, creneau);
         posteDeux.setAnimateur(bruno);
-        persistence.persist(new PlanningFestival(JOUR, List.of(alice, bruno), List.of(posteUn, posteDeux)));
+        persistence.persist(new PlanningEvenement(JOUR, List.of(alice, bruno), List.of(posteUn, posteDeux)));
         donnerEmail("IMP-A", EMAIL_ALICE);
     }
 

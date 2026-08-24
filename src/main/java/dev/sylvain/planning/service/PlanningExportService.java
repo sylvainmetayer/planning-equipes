@@ -18,7 +18,7 @@ import java.util.zip.ZipOutputStream;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -56,7 +56,7 @@ public class PlanningExportService {
         this.ics = ics;
     }
 
-    public byte[] exportAnimateurPdf(PlanningFestival planning, String animateurId) {
+    public byte[] exportAnimateurPdf(PlanningEvenement planning, String animateurId) {
         List<PosteAffectation> animateurPostes = planning.getPostes().stream()
                 .filter(poste -> poste.getAnimateur() != null && animateurId.equals(poste.getAnimateur().getId()))
                 .sorted(byCreneauThenStand())
@@ -66,29 +66,29 @@ public class PlanningExportService {
                 lienEspaceAnimateur(planning, animateurId));
     }
 
-    /** A festival day the animateur is off: its day number and its date. */
+    /** An event day the animateur is off: its day number and its date. */
     public record JourRepos(int jour, LocalDate date) {
     }
 
     /**
-     * The festival days {@code animateurId} holds no seat on — their rest
+     * The event days {@code animateurId} holds no seat on — their rest
      * days, worth saying out loud: a day silently missing from a planning
      * reads as an oversight, an explicit « Repos » reads as a decision (the
      * staffing workbook dedicates a whole sheet to that rotation). Days come from
-     * the planning's own créneaux, so the notion of "festival day" follows
+     * the planning's own créneaux, so the notion of "event day" follows
      * whatever group the plan was solved for. Empty when the animateur holds
      * no seat at all: someone absent from the plan is not "resting every
      * day", and their exports keep the plain empty state.
      */
-    public static List<JourRepos> daysOff(PlanningFestival planning, String animateurId) {
-        Map<LocalDate, Integer> joursFestival = new TreeMap<>();
+    public static List<JourRepos> daysOff(PlanningEvenement planning, String animateurId) {
+        Map<LocalDate, Integer> joursEvenement = new TreeMap<>();
         Set<LocalDate> joursTravailles = new HashSet<>();
         for (PosteAffectation poste : planning.getPostes()) {
             Creneau creneau = poste.getCreneau();
             if (creneau == null || creneau.getDate() == null) {
                 continue;
             }
-            joursFestival.putIfAbsent(creneau.getDate(), creneau.getJour());
+            joursEvenement.putIfAbsent(creneau.getDate(), creneau.getJour());
             if (poste.getAnimateur() != null && animateurId.equals(poste.getAnimateur().getId())) {
                 joursTravailles.add(creneau.getDate());
             }
@@ -96,7 +96,7 @@ public class PlanningExportService {
         if (joursTravailles.isEmpty()) {
             return List.of();
         }
-        return joursFestival.entrySet().stream()
+        return joursEvenement.entrySet().stream()
                 .filter(jour -> !joursTravailles.contains(jour.getKey()))
                 .map(jour -> new JourRepos(jour.getValue(), jour.getKey()))
                 .toList();
@@ -109,7 +109,7 @@ public class PlanningExportService {
      * animateur's own PDF, or in the mail sending them that PDF
      * ({@code EnvoiPlanningResource}).
      */
-    public String lienEspaceAnimateur(PlanningFestival planning, String animateurId) {
+    public String lienEspaceAnimateur(PlanningEvenement planning, String animateurId) {
         if (planning.getAnimateurs() == null) {
             return null;
         }
@@ -139,7 +139,7 @@ public class PlanningExportService {
      * <p>Package-private so the rule is unit-tested on plain objects rather
      * than through the bytes of a generated PDF.</p>
      */
-    static Map<String, List<String>> teammatesByPoste(PlanningFestival planning, String animateurId) {
+    static Map<String, List<String>> teammatesByPoste(PlanningEvenement planning, String animateurId) {
         Map<String, List<String>> equipeParLigne = new LinkedHashMap<>();
         for (PosteAffectation poste : planning.getPostes()) {
             if (poste.getAnimateur() == null || poste.getCreneau() == null || poste.getStand() == null) {
@@ -168,12 +168,12 @@ public class PlanningExportService {
     }
 
     /** The whole planning in one landscape PDF, for the organiser — see {@link GlobalPlanningPdf}. */
-    public byte[] exportGlobalPdf(PlanningFestival planning) {
+    public byte[] exportGlobalPdf(PlanningEvenement planning) {
         return pdfGlobal.construire(planning);
     }
 
     /** The animateur's planning as an iCalendar feed — see {@link PlanningIcs}. */
-    public String exportAnimateurIcs(PlanningFestival planning, String animateurId) {
+    public String exportAnimateurIcs(PlanningEvenement planning, String animateurId) {
         return ics.exportAnimateurIcs(planning, animateurId);
     }
 
@@ -181,11 +181,11 @@ public class PlanningExportService {
      * One PDF per animateur, bundled in a single ZIP. Replaces the former
      * global PDF: the planning is always handed out person by person.
      */
-    public byte[] exportAllPdfZip(PlanningFestival planning) {
+    public byte[] exportAllPdfZip(PlanningEvenement planning) {
         return buildZip(planning, List.of(new NamedFileBuilder(".pdf", id -> exportAnimateurPdf(planning, id))));
     }
 
-    public byte[] exportAllIcsZip(PlanningFestival planning) {
+    public byte[] exportAllIcsZip(PlanningEvenement planning) {
         return buildZip(planning, List.of(new NamedFileBuilder(".ics",
                 id -> ics.exportAnimateurIcs(planning, id).getBytes(StandardCharsets.UTF_8))));
     }
@@ -194,7 +194,7 @@ public class PlanningExportService {
      * Both the PDF and the ICS of every animateur, bundled in a single ZIP so
      * the whole planning can be handed out through one download.
      */
-    public byte[] exportAllBundleZip(PlanningFestival planning) {
+    public byte[] exportAllBundleZip(PlanningEvenement planning) {
         return buildZip(planning, List.of(
                 new NamedFileBuilder(".pdf", id -> exportAnimateurPdf(planning, id)),
                 new NamedFileBuilder(".ics",
@@ -202,7 +202,7 @@ public class PlanningExportService {
     }
 
     /** Bundles one or more files per animateur, named after the animateur, into a ZIP. */
-    private byte[] buildZip(PlanningFestival planning, List<NamedFileBuilder> fileBuilders) {
+    private byte[] buildZip(PlanningEvenement planning, List<NamedFileBuilder> fileBuilders) {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         try (ZipOutputStream zip = new ZipOutputStream(output)) {
             Set<String> usedFilenames = new LinkedHashSet<>();
@@ -246,7 +246,7 @@ public class PlanningExportService {
         return "planning-" + (sansAccroc.isEmpty() ? "animateur" : sansAccroc) + "." + extension;
     }
 
-    public static String resolveAnimateurName(PlanningFestival planning, String animateurId) {
+    public static String resolveAnimateurName(PlanningEvenement planning, String animateurId) {
         return planning.getAnimateurs().stream()
                 .filter(animateur -> animateurId.equals(animateur.getId()))
                 .findFirst()

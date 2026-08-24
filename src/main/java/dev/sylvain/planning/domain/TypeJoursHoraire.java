@@ -9,7 +9,7 @@ package dev.sylvain.planning.domain;
  */
 public enum TypeJoursHoraire {
 
-    /** Every day of the festival — the common case for a stable opening pattern. */
+    /** Every day of the event — the common case for a stable opening pattern. */
     TOUS,
 
     /** Only the listed days of the week, e.g. "the weekend opens at 10:00". */

@@ -25,7 +25,7 @@ import dev.sylvain.planning.domain.TypeJoursHoraire;
  * they repeat, and refusing to do so whenever the result would not reproduce the
  * stand's own open segments.
  *
- * <p>Calendar of the reference festival: 2026-07-08 is a Wednesday, so
+ * <p>Calendar of the reference event: 2026-07-08 is a Wednesday, so
  * 2026-07-11 and 2026-07-12 are the weekend.</p>
  */
 class HoraireCompactionTest {
@@ -73,7 +73,7 @@ class HoraireCompactionTest {
     }
 
     /**
-     * The {@code 23:59} workaround, on a festival closing at midnight: it is
+     * The {@code 23:59} workaround, on an event closing at midnight: it is
      * recognised as the closing time and rewritten as such, and the one minute
      * that recovers is reported rather than hidden.
      */
@@ -98,11 +98,11 @@ class HoraireCompactionTest {
     }
 
     /**
-     * Two patterns covering the whole festival come out as "every day, and this
+     * Two patterns covering the whole event come out as "every day, and this
      * on the weekend" rather than as two date-or-weekday lists: the largest one
      * becomes a plain {@code TOUS} rule and the other, being more specific, wins
      * on its own days. That is the layering doing the work — and it is only sound
-     * because every festival day is stated (see {@code baseGroup}).
+     * because every event day is stated (see {@code baseGroup}).
      */
     @Test
     void leMotifMajoritaireDevientUneRegleTousLesJoursEtLAutreLaSurcharge() {
@@ -126,7 +126,7 @@ class HoraireCompactionTest {
     }
 
     /**
-     * The mirror case: the patterns leave some festival days unstated, so no rule
+     * The mirror case: the patterns leave some event days unstated, so no rule
      * may claim "every day" — a base rule would start governing a day that was
      * deliberately left open-by-default.
      */

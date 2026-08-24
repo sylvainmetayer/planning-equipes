@@ -18,7 +18,7 @@ import { errorPrefix } from '../../core/error-message';
  * `effectifMin` × open stands × créneaux, which ignored recurring horaires
  * (every stand counted open around the clock) and counted overlapping relay
  * vacations several times over — on edition-1708 it announced more than 1500
- * animateurs for a festival staffed by 153. See `StaffingAnalyzer` on the
+ * animateurs for an event staffed by 153. See `StaffingAnalyzer` on the
  * backend for the methodology and its limits.
  */
 @Component({

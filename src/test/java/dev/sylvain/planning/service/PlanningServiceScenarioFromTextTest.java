@@ -19,7 +19,7 @@ import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.NiveauEffort;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 
@@ -55,8 +55,8 @@ class PlanningServiceScenarioFromTextTest {
         PlanningService service = service();
         String yaml = scenarioYamlText("scenario.yml");
 
-        PlanningFestival depuisTexte = service.buildFromScenarioText(yaml).planning();
-        PlanningFestival depuisNom = service.buildExample("scenario.yml");
+        PlanningEvenement depuisTexte = service.buildFromScenarioText(yaml).planning();
+        PlanningEvenement depuisNom = service.buildExample("scenario.yml");
 
         assertThat(depuisTexte.getAnimateurs()).hasSameSizeAs(depuisNom.getAnimateurs());
         assertThat(depuisTexte.getPostes()).hasSameSizeAs(depuisNom.getPostes());
@@ -126,7 +126,7 @@ class PlanningServiceScenarioFromTextTest {
         PlanningService service = service();
         String yaml = scenarioYamlText("scenario-contraintes.yaml");
 
-        PlanningFestival planning = service.buildFromScenarioText(yaml).planning();
+        PlanningEvenement planning = service.buildFromScenarioText(yaml).planning();
 
         assertThat(planning.getContraintesAdHoc()).hasSize(2);
         ContrainteAdHoc incompatibilite = planning.getContraintesAdHoc().get(0);
@@ -216,7 +216,7 @@ class PlanningServiceScenarioFromTextTest {
                     animateurId: null
                 """;
 
-        PlanningFestival planning = service.buildFromScenarioText(yaml).planning();
+        PlanningEvenement planning = service.buildFromScenarioText(yaml).planning();
         Stand stand = planning.getPostes().get(0).getStand();
 
         assertThat(stand.getNiveauEffort()).isEqualTo(NiveauEffort.EPUISANT);
@@ -236,7 +236,7 @@ class PlanningServiceScenarioFromTextTest {
         PlanningService service = service();
         String yaml = scenarioYamlText("scenario.yml");
 
-        PlanningFestival planning = service.buildFromScenarioText(yaml).planning();
+        PlanningEvenement planning = service.buildFromScenarioText(yaml).planning();
 
         assertThat(planning.getPostes()).isNotEmpty();
         assertThat(planning.getPostes().get(0).getStand().getNiveauEffort()).isEqualTo(NiveauEffort.NORMAL);
@@ -247,7 +247,7 @@ class PlanningServiceScenarioFromTextTest {
         PlanningService service = service();
         String yaml = scenarioYamlText("scenario-sans-postes.yaml");
 
-        PlanningFestival planning = service.buildFromScenarioText(yaml).planning();
+        PlanningEvenement planning = service.buildFromScenarioText(yaml).planning();
 
         // 2 timeslots x (STAND-A effectifMin 2 + STAND-B effectifMin 1) = 6.
         assertThat(planning.getPostes()).hasSize(6);
@@ -285,7 +285,7 @@ class PlanningServiceScenarioFromTextTest {
     }
     /**
      * A scenario stating its schedule as recurring {@code horaires:} rules rather
-     * than as one dated window per festival day. Everything downstream — which
+     * than as one dated window per event day. Everything downstream — which
      * segments of a créneau a stand is open for, hence which postes exist —
      * has to come out exactly as if the windows had been written out by hand.
      */
@@ -294,7 +294,7 @@ class PlanningServiceScenarioFromTextTest {
         PlanningService service = service();
         String yaml = scenarioYamlText("scenario-horaires-recurrents.yaml");
 
-        PlanningFestival planning = service.buildFromScenarioText(yaml).planning();
+        PlanningEvenement planning = service.buildFromScenarioText(yaml).planning();
 
         // BOURSE: "10:00-12:00 then 14:00 until closing time, every day" opens
         // each of the five timeslots entirely — the open-ended window adapts to
@@ -319,13 +319,13 @@ class PlanningServiceScenarioFromTextTest {
         assertThat(postesOf(planning, "MEDIATHEQUE")).hasSize(4);
     }
 
-    private static java.util.List<PosteAffectation> postesOf(PlanningFestival planning, String standId) {
+    private static java.util.List<PosteAffectation> postesOf(PlanningEvenement planning, String standId) {
         return planning.getPostes().stream()
                 .filter(poste -> poste.getStand().getId().equals(standId))
                 .toList();
     }
 
-    private static java.util.List<String> creneauxOf(PlanningFestival planning, String standId) {
+    private static java.util.List<String> creneauxOf(PlanningEvenement planning, String standId) {
         return postesOf(planning, standId).stream()
                 .map(poste -> entree(poste.getCreneau().getDate(), poste.getCreneau().getHeureDebut()))
                 .toList();

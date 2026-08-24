@@ -3,9 +3,9 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from './api.service';
 import { AffectationExplanationService } from './affectation-explanation.service';
-import type { PlanningFestival } from './models';
+import type { PlanningEvenement } from './models';
 
-function planning(): PlanningFestival {
+function planning(): PlanningEvenement {
   return {
     animateurs: [],
     postes: [],

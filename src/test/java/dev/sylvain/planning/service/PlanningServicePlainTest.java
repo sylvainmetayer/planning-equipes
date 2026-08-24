@@ -6,7 +6,7 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.domain.ParametresQualite;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 
 class PlanningServicePlainTest {
 
@@ -16,9 +16,9 @@ class PlanningServicePlainTest {
 
         PlanningService planningService = new PlanningService(3L, 2L, ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT, referenceDataService, new FeasibilityAnalyzer(),
                 ConfigProvider.getConfig());
-        PlanningFestival problem = planningService.buildSimpleExample();
+        PlanningEvenement problem = planningService.buildSimpleExample();
 
-        PlanningFestival solved = planningService.solve(problem);
+        PlanningEvenement solved = planningService.solve(problem);
 
         assertThat(solved.getPostes())
                 .anySatisfy(poste -> assertThat(poste.getAnimateur()).isNotNull());

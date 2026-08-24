@@ -29,7 +29,7 @@ import dev.sylvain.planning.domain.TypeJoursHoraire;
  * {@link HoraireStand} rules they repeat — the migration path for data captured
  * before rules existed, and the reason V37 needs no data migration of its own.
  *
- * <p>On the reference 63-stand festival fixture this takes 714 dated windows
+ * <p>On the reference 63-stand event fixture this takes 714 dated windows
  * down to 120 rules plus 19 remaining exceptions: nearly every stand states one
  * or two patterns and repeats them across twelve days.</p>
  *
@@ -84,13 +84,13 @@ public final class HoraireCompaction {
      * caller's business; a dry run simply throws the mutated copies away.
      */
     public static RapportCompactage compact(List<Stand> stands, List<Creneau> creneaux, boolean applique) {
-        Set<LocalDate> datesFestival = new TreeSet<>();
+        Set<LocalDate> datesEvenement = new TreeSet<>();
         Map<LocalDate, Integer> endOfDay = new HashMap<>();
         for (Creneau creneau : creneaux) {
             if (creneau.getDate() == null || creneau.getHeureDebut() == null || creneau.getHeureFin() == null) {
                 continue;
             }
-            datesFestival.add(creneau.getDate());
+            datesEvenement.add(creneau.getDate());
             int fin = endInSeconds(creneau);
             endOfDay.merge(creneau.getDate(), fin, Math::max);
         }
@@ -101,7 +101,7 @@ public final class HoraireCompaction {
         int fenetresApresTotal = 0;
         for (Stand stand : stands) {
             int fenetresAvant = stand.getIndisponibilites().size() + stand.getOuvertures().size();
-            LigneCompactage ligne = compactStand(stand, creneaux, datesFestival, endOfDay, fenetresAvant);
+            LigneCompactage ligne = compactStand(stand, creneaux, datesEvenement, endOfDay, fenetresAvant);
             lignes.add(ligne);
             fenetresAvantTotal += fenetresAvant;
             fenetresApresTotal += ligne.reglesApres() + ligne.exceptionsApres();
@@ -112,7 +112,7 @@ public final class HoraireCompaction {
         return new RapportCompactage(applique, compactes, fenetresAvantTotal, fenetresApresTotal, lignes);
     }
 
-    private static LigneCompactage compactStand(Stand stand, List<Creneau> creneaux, Set<LocalDate> datesFestival,
+    private static LigneCompactage compactStand(Stand stand, List<Creneau> creneaux, Set<LocalDate> datesEvenement,
             Map<LocalDate, Integer> endOfDay, int fenetresAvant) {
         if (!stand.getHoraires().isEmpty()) {
             return new LigneCompactage(stand.getId(), fenetresAvant, stand.getHoraires().size(), fenetresAvant, 0,
@@ -121,7 +121,7 @@ public final class HoraireCompaction {
         if (fenetresAvant == 0) {
             return new LigneCompactage(stand.getId(), 0, 0, 0, 0, false, "Aucune fenêtre datée à compacter");
         }
-        if (datesFestival.isEmpty()) {
+        if (datesEvenement.isEmpty()) {
             return new LigneCompactage(stand.getId(), fenetresAvant, 0, fenetresAvant, 0, false,
                     "Aucun créneau : impossible de savoir quels jours une règle couvrirait");
         }
@@ -131,14 +131,14 @@ public final class HoraireCompaction {
         // midnight-crossing slot) stay dated exactly as they are.
         Map<LocalDate, JourSaisi> compactables = new LinkedHashMap<>();
         Map<LocalDate, JourSaisi> horsPerimetre = new LinkedHashMap<>();
-        parJour.forEach((date, jour) -> (datesFestival.contains(date) ? compactables : horsPerimetre).put(date, jour));
+        parJour.forEach((date, jour) -> (datesEvenement.contains(date) ? compactables : horsPerimetre).put(date, jour));
 
         // A pattern repeated on a single day is not a pattern: leaving it dated
         // keeps the result readable instead of turning every oddity into a rule.
         Map<JourSaisi, Set<LocalDate>> groupes = new LinkedHashMap<>();
         compactables.forEach((date, jour) -> groupes.computeIfAbsent(jour, key -> new TreeSet<>()).add(date));
 
-        Set<LocalDate> baseGroup = baseGroup(groupes, compactables.keySet(), datesFestival);
+        Set<LocalDate> baseGroup = baseGroup(groupes, compactables.keySet(), datesEvenement);
 
         List<HoraireStand> regles = new ArrayList<>();
         Map<LocalDate, JourSaisi> restentDates = new LinkedHashMap<>(horsPerimetre);
@@ -147,7 +147,7 @@ public final class HoraireCompaction {
                 dates.forEach(date -> restentDates.put(date, patron));
                 return;
             }
-            regles.add(buildRule(patron, dates, datesFestival, dates == baseGroup));
+            regles.add(buildRule(patron, dates, datesEvenement, dates == baseGroup));
         });
         if (regles.isEmpty()) {
             return new LigneCompactage(stand.getId(), fenetresAvant, 0, fenetresAvant, 0, false,
@@ -274,13 +274,13 @@ public final class HoraireCompaction {
      *
      * <p>This is what turns "these ten dates, then those two dates" into "every
      * day, except those two" — the layering doing the work instead of two date
-     * lists. It is only sound when <b>every</b> festival day is stated somewhere:
+     * lists. It is only sound when <b>every</b> event day is stated somewhere:
      * the days the base rule over-reaches are then all covered either by a more
      * specific rule or by a dated exception, both of which win over it. Leave one
      * day unstated and a base rule would start governing a day that was
      * deliberately left open-by-default.</p>
      *
-     * <p>A {@code TOUS} rule also reaches dates <em>outside</em> the festival —
+     * <p>A {@code TOUS} rule also reaches dates <em>outside</em> the event —
      * in practice only the day after a midnight-crossing amplitude, the one date
      * {@code HoraireStandResolver} expands beyond the créneau days. That over-reach
      * can only change anything if a créneau actually reads that date, and if it
@@ -294,8 +294,8 @@ public final class HoraireCompaction {
      * result doesn't depend on map iteration order.</p>
      */
     private static Set<LocalDate> baseGroup(Map<JourSaisi, Set<LocalDate>> groupes, Set<LocalDate> joursStates,
-            Set<LocalDate> datesFestival) {
-        if (!joursStates.containsAll(datesFestival)) {
+            Set<LocalDate> datesEvenement) {
+        if (!joursStates.containsAll(datesEvenement)) {
             return null;
         }
         return groupes.values().stream()
@@ -314,19 +314,19 @@ public final class HoraireCompaction {
      * selector that also caught a day belonging to another pattern would silently
      * restate that day, and at equal specificity nothing would arbitrate.</p>
      */
-    private static HoraireStand buildRule(JourSaisi patron, Set<LocalDate> dates, Set<LocalDate> datesFestival,
+    private static HoraireStand buildRule(JourSaisi patron, Set<LocalDate> dates, Set<LocalDate> datesEvenement,
             boolean base) {
         HoraireStand regle = new HoraireStand();
         regle.setMode(patron.mode());
         regle.setFenetres(patron.fenetres());
         regle.setMotif(patron.motif());
-        if (base || dates.equals(datesFestival)) {
+        if (base || dates.equals(datesEvenement)) {
             regle.setJours(TypeJoursHoraire.TOUS);
             return regle;
         }
         Set<DayOfWeek> joursSemaine = EnumSet.noneOf(DayOfWeek.class);
         dates.forEach(date -> joursSemaine.add(date.getDayOfWeek()));
-        Set<LocalDate> memesJoursSemaine = new TreeSet<>(datesFestival);
+        Set<LocalDate> memesJoursSemaine = new TreeSet<>(datesEvenement);
         memesJoursSemaine.removeIf(date -> !joursSemaine.contains(date.getDayOfWeek()));
         if (memesJoursSemaine.equals(dates)) {
             regle.setJours(TypeJoursHoraire.JOURS_SEMAINE);
@@ -335,7 +335,7 @@ public final class HoraireCompaction {
         }
         LocalDate first = dates.iterator().next();
         LocalDate last = dates.stream().max(LocalDate::compareTo).orElse(first);
-        Set<LocalDate> memePlage = new TreeSet<>(datesFestival);
+        Set<LocalDate> memePlage = new TreeSet<>(datesEvenement);
         memePlage.removeIf(date -> date.isBefore(first) || date.isAfter(last));
         if (memePlage.equals(dates)) {
             regle.setJours(TypeJoursHoraire.PLAGE);

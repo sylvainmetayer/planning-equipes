@@ -9,7 +9,7 @@ import java.util.Set;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.FeasibilityAnalyzer.FeasibilityReport;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -24,7 +24,7 @@ import jakarta.inject.Inject;
  * data. Nothing here writes: no repository call, no persistence, and the
  * objects built are thrown away with the request. Building the variant on the
  * server rather than in the browser is also what keeps it usable at real scale
- * — a full {@code PlanningFestival} of the 2026 festival does not fit in an
+ * — a full {@code PlanningEvenement} of the 2026 event does not fit in an
  * HTTP body.</p>
  */
 @ApplicationScoped
@@ -53,7 +53,7 @@ public class WhatIfService {
      *                             "we recruit three more" question
      * @param animateursRetires    ids of animateurs to take out — the
      *                             "three people cancel" question
-     * @param standsFermes         ids of stands to close for the whole festival
+     * @param standsFermes         ids of stands to close for the whole event
      * @param effectifsMin         stand id → required headcount to use instead
      *                             of the stand's own {@code effectifMin}
      */
@@ -118,8 +118,8 @@ public class WhatIfService {
      * — so its score is comparable to the reference one, but it is never
      * persisted: the caller analyses it and drops it.
      */
-    public PlanningFestival buildProblem(Mutations mutations) {
-        PlanningFestival probleme = planningService.buildFromReferenceData(
+    public PlanningEvenement buildProblem(Mutations mutations) {
+        PlanningEvenement probleme = planningService.buildFromReferenceData(
                 applyToAnimateurs(referenceDataService.listAnimateurs(), mutations),
                 applyToStands(referenceDataService.listSolvedStands(), mutations),
                 referenceDataService.listCreneaux());

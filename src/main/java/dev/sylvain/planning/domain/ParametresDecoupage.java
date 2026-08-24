@@ -23,7 +23,7 @@ public class ParametresDecoupage {
          * generation only creates {@code ceil(effectifMin / 2)} seats on it
          * instead of the full complement.
          *
-         * <p>This is what the source festival actually does — see the
+         * <p>This is what the source event actually does — see the
          * {@code Recap. Espaces - VOLUMES ANIM.} formula
          * {@code ARRONDI.SUP(effectif * .../2)} documented in
          * the reduced-headcount analysis (kept out of the public repository). {@link #FERMETURE}

@@ -19,7 +19,7 @@ import {
   ContrainteImpact,
   HardMediumSoftScore,
   NiveauContrainte,
-  PlanningFestival,
+  PlanningEvenement,
   PosteAffectation,
   Stand,
   SwapSimulation
@@ -78,7 +78,7 @@ const CANDIDAT = animateur('a2', 'Alex', 'Martin');
 
 const POSTE: PosteAffectation = { id: 'p1', stand: STAND, creneau: null, animateur: TITULAIRE };
 
-const PLANNING: PlanningFestival = { animateurs: [TITULAIRE, CANDIDAT], postes: [POSTE], score: null };
+const PLANNING: PlanningEvenement = { animateurs: [TITULAIRE, CANDIDAT], postes: [POSTE], score: null };
 
 function explication(overrides: Partial<AffectationExplanation> = {}): AffectationExplanation {
   return {

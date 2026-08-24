@@ -36,11 +36,11 @@ class AffectationExplanationResourceTest {
      * Small, fast-solving scenario shared by every test below, with the
      * server-computed {@code score} stripped out before it is reposted.
      *
-     * <p>Reposting a {@code PlanningFestival} whose {@code score} is
+     * <p>Reposting a {@code PlanningEvenement} whose {@code score} is
      * populated crashes Quarkus's build-time-generated Jackson deserializer
      * for {@code HardMediumSoftScore} (it calls a private no-arg
      * constructor and throws {@code IllegalAccessError}) — a pre-existing
-     * issue that every other endpoint accepting a {@code PlanningFestival}
+     * issue that every other endpoint accepting a {@code PlanningEvenement}
      * body has so far avoided simply because no caller ever reposted an
      * already-scored planning. These are the first endpoints designed to be
      * handed one (the client's just-solved or persisted planning), so the

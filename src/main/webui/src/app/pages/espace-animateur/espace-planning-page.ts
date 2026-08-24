@@ -10,7 +10,7 @@ interface JourPlanning {
   /** ISO date, `''` for postes without one. */
   date: string;
   postes: PosteAnimateurView[];
-  /** True for a festival day without any seat: the card says « Repos » instead of listing shifts. */
+  /** True for an event day without any seat: the card says « Repos » instead of listing shifts. */
   repos: boolean;
 }
 

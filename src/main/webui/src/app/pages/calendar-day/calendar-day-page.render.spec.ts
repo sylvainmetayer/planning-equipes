@@ -14,7 +14,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { VerrouillageStore } from '../../core/verrouillage.store';
-import { Animateur, Creneau, PlanningFestival, PosteAffectation, Stand } from '../../core/models';
+import { Animateur, Creneau, PlanningEvenement, PosteAffectation, Stand } from '../../core/models';
 import { CalendarDayPage } from './calendar-day-page';
 
 function stand(id: string, typologiesProposees: string[] = ['ambiance']): Stand {
@@ -61,12 +61,12 @@ function poste(
   return { id, stand: sur, creneau: sur2, animateur: occupant, ...overrides };
 }
 
-function planning(postes: PosteAffectation[]): PlanningFestival {
+function planning(postes: PosteAffectation[]): PlanningEvenement {
   return { animateurs: [], postes, score: null };
 }
 
 interface Options {
-  planning?: PlanningFestival | null;
+  planning?: PlanningEvenement | null;
   loadRejects?: Error;
   countRejects?: boolean;
   verrous?: Partial<{
@@ -143,7 +143,7 @@ describe('CalendarDayPage rendering', () => {
     expect(root(fixture).querySelectorAll('.day-card')).toHaveLength(0);
   });
 
-  it('renders one card per festival day, titled and dated', async () => {
+  it('renders one card per event day, titled and dated', async () => {
     const { fixture } = mount({
       planning: planning([
         poste('p1', AMBIANCE, creneau({ id: 1, jour: 1, date: '2026-07-14' }), animateur('a1', 'Camille')),
@@ -352,7 +352,7 @@ describe('CalendarDayPage rendering', () => {
     await fixture.whenStable();
 
     expect(open).toHaveBeenCalledOnce();
-    const config = open.mock.calls[0][1] as { data: { poste: PosteAffectation; planning: PlanningFestival } };
+    const config = open.mock.calls[0][1] as { data: { poste: PosteAffectation; planning: PlanningEvenement } };
     expect(config.data.poste.id).toBe('p1');
     expect(config.data.planning).toBe(planningAffiche);
   });

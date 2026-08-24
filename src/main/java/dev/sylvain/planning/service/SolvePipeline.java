@@ -8,7 +8,7 @@ import java.util.function.Supplier;
 
 import ai.timefold.solver.core.api.solver.Solver;
 
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.notification.Notification;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
@@ -69,7 +69,7 @@ public class SolvePipeline {
      * @param planning    the solved plan, already persisted
      * @param diagnostic  its score and its violations, already recorded
      */
-    public record Resolution<P>(P probleme, PlanningFestival planning,
+    public record Resolution<P>(P probleme, PlanningEvenement planning,
             PlanningService.PlanningDiagnostic diagnostic) {
     }
 
@@ -78,14 +78,14 @@ public class SolvePipeline {
      * of the current thread. This is the form {@code POST /api/planning/solve}
      * calls.
      */
-    public Resolution<PlanningFestival> execute(PlanningFestival probleme, Long secondsLimit) {
+    public Resolution<PlanningEvenement> execute(PlanningEvenement probleme, Long secondsLimit) {
         return execute(editionService.editionCourante().getNom(), () -> probleme,
                 Function.identity(), secondsLimit, null);
     }
 
     /** The same, for a background job that must be able to stop its solver. */
-    public Resolution<PlanningFestival> execute(String editionNom, PlanningFestival probleme,
-            Long secondsLimit, Consumer<Solver<PlanningFestival>> attacheSolveur) {
+    public Resolution<PlanningEvenement> execute(String editionNom, PlanningEvenement probleme,
+            Long secondsLimit, Consumer<Solver<PlanningEvenement>> attacheSolveur) {
         return execute(editionNom, () -> probleme, Function.identity(), secondsLimit, attacheSolveur);
     }
 
@@ -101,14 +101,14 @@ public class SolvePipeline {
      * @param attacheSolveur     {@code null} when the caller has nothing to stop
      */
     public <P> Resolution<P> execute(String editionNom, Supplier<P> buildProblem,
-            Function<P, PlanningFestival> planningOf, Long secondsLimit,
-            Consumer<Solver<PlanningFestival>> attacheSolveur) {
+            Function<P, PlanningEvenement> planningOf, Long secondsLimit,
+            Consumer<Solver<PlanningEvenement>> attacheSolveur) {
         // The net of issue #138: the plan about to be overwritten is
         // snapshotted first, so a solve no longer destroys the previous result.
         snapshotService.captureBeforeSolve();
         P probleme = buildProblem.get();
         Instant debutSolve = Instant.now();
-        PlanningFestival resolu = planningService.solve(planningOf.apply(probleme), secondsLimit, attacheSolveur);
+        PlanningEvenement resolu = planningService.solve(planningOf.apply(probleme), secondsLimit, attacheSolveur);
         long dureeSolveSecondes = Duration.between(debutSolve, Instant.now()).getSeconds();
         persistenceService.persist(resolu);
         PlanningService.PlanningDiagnostic diagnostic = planningService.diagnose(resolu);

@@ -72,7 +72,7 @@ import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
@@ -87,8 +87,8 @@ import dev.sylvain.planning.solver.PlanningConstraintProvider;
 @ApplicationScoped
 public class PlanningService {
 
-    private final SolverFactory<PlanningFestival> solverFactory;
-    private final SolutionManager<PlanningFestival, ?> solutionManager;
+    private final SolverFactory<PlanningEvenement> solverFactory;
+    private final SolutionManager<PlanningEvenement, ?> solutionManager;
     private final ReferenceData referenceDataService;
     private final FeasibilityAnalyzer feasibilityAnalyzer;
     private final long defaultSecondsLimit;
@@ -260,7 +260,7 @@ public class PlanningService {
     /** Caps the per-constraint violation list: a UI detail view, not a full dump. */
     private static final int MAX_VIOLATIONS_PAR_CONTRAINTE = 100;
 
-    public PlanningFestival buildExample() {
+    public PlanningEvenement buildExample() {
         return buildExample(DEFAULT_SCENARIO);
     }
 
@@ -269,7 +269,7 @@ public class PlanningService {
      * a bare file name (e.g. {@code scenario-complet.yaml}); any path component
      * is rejected so callers cannot escape the scenarios folder.
      */
-    public PlanningFestival buildExample(String scenarioName) {
+    public PlanningEvenement buildExample(String scenarioName) {
         try {
             return buildPlanningFromData(readScenarioData(cheminScenario(scenarioName)));
         } catch (IOException e) {
@@ -300,7 +300,7 @@ public class PlanningService {
      * large {@code scenario-complet.yaml} is the complex performance target
      * solved by {@link #buildExample()}.
      */
-    public PlanningFestival buildSimpleExample() {
+    public PlanningEvenement buildSimpleExample() {
         try {
             return buildPlanningFromData(
                     readScenarioData(SCENARIOS_DIR + "/scenario.yml"));
@@ -318,7 +318,7 @@ public class PlanningService {
      * to the browser and back, which is what makes very large scenarios
      * solvable at all (the JSON of such a planning exceeds the HTTP body limit).
      */
-    public PlanningFestival buildFromReferenceData() {
+    public PlanningEvenement buildFromReferenceData() {
         // Resolved stands: buildPostes asks each créneau which parts of it
         // a stand is open for, so the recurring horaires have to be expanded
         // first.
@@ -335,7 +335,7 @@ public class PlanningService {
      * Everything else still comes from the referential: locks, ad hoc
      * constraints and legal parameters are not what a simulation varies.
      */
-    public PlanningFestival buildFromReferenceData(List<Animateur> animateurs, List<Stand> stands,
+    public PlanningEvenement buildFromReferenceData(List<Animateur> animateurs, List<Stand> stands,
             List<Creneau> creneaux) {
         if (animateurs.isEmpty() || stands.isEmpty() || creneaux.isEmpty()) {
             throw new IllegalStateException(
@@ -350,11 +350,11 @@ public class PlanningService {
                 .filter(Objects::nonNull)
                 .min(LocalDate::compareTo)
                 .orElse(null);
-        PlanningFestival festival = new PlanningFestival(dateDebut, animateurs, postes,
+        PlanningEvenement evenement = new PlanningEvenement(dateDebut, animateurs, postes,
                 referenceDataService.snapshotContraintes());
-        festival.setParametresLegaux(List.of(referenceDataService.getParametresLegaux()));
-        festival.setVerrouillages(verrouillages);
-        return festival;
+        evenement.setParametresLegaux(List.of(referenceDataService.getParametresLegaux()));
+        evenement.setVerrouillages(verrouillages);
+        return evenement;
     }
 
     /** How much of an incremental problem is frozen versus re-opened (issue #86). */
@@ -371,7 +371,7 @@ public class PlanningService {
      * much of it is frozen, and the persisted assignments it was seeded from —
      * kept so the caller can diff the result against them.
      */
-    public record ProblemeIncremental(PlanningFestival planning, StatistiquesIncremental statistiques,
+    public record ProblemeIncremental(PlanningEvenement planning, StatistiquesIncremental statistiques,
             Map<String, List<String>> affectationsPrecedentes) {
     }
 
@@ -420,10 +420,10 @@ public class PlanningService {
                 .filter(Objects::nonNull)
                 .min(LocalDate::compareTo)
                 .orElse(null);
-        PlanningFestival festival = new PlanningFestival(dateDebut, animateurs, postes, contraintesAdHoc);
-        festival.setParametresLegaux(List.of(referenceDataService.getParametresLegaux()));
-        festival.setVerrouillages(referenceDataService.listVerrouillages());
-        return new ProblemeIncremental(festival, statistiques, affectationsPrecedentes);
+        PlanningEvenement evenement = new PlanningEvenement(dateDebut, animateurs, postes, contraintesAdHoc);
+        evenement.setParametresLegaux(List.of(referenceDataService.getParametresLegaux()));
+        evenement.setVerrouillages(referenceDataService.listVerrouillages());
+        return new ProblemeIncremental(evenement, statistiques, affectationsPrecedentes);
     }
 
     /**
@@ -687,7 +687,7 @@ public class PlanningService {
      * a roster this small that is visibly lumpy: on the reference scenario it
      * put 36 of the 91 seats on a single famille out of four (19/21/36/15).
      * That famille alone then changed crew at one instant with 40% of the whole
-     * festival's demand behind it, which is exactly the simultaneity peak the
+     * event's demand behind it, which is exactly the simultaneity peak the
      * staggering exists to break — the mechanism was working against itself.
      * Round-robin over sorted ids gives buckets that differ by at most one
      * stand.</p>
@@ -813,8 +813,8 @@ public class PlanningService {
                 .min(LocalDate::compareTo)
                 .orElse(null);
 
-        Map<String, Object> festival = new LinkedHashMap<>();
-        festival.put("dateDebut", asString(dateDebut));
+        Map<String, Object> evenement = new LinkedHashMap<>();
+        evenement.put("dateDebut", asString(dateDebut));
 
         List<Map<String, Object>> creneauxYaml = new ArrayList<>();
         for (Creneau creneau : creneaux) {
@@ -899,7 +899,7 @@ public class PlanningService {
         }
 
         Map<String, Object> root = new LinkedHashMap<>();
-        root.put("festival", festival);
+        root.put("festival", evenement);
         if (export.parametresSolveur() != null) {
             root.put("parametresSolveur",
                     Map.of("dureeResolutionSecondes", export.parametresSolveur().dureeResolutionSecondes()));
@@ -980,7 +980,7 @@ public class PlanningService {
                     .toList());
             // A constraint aiming at a créneau the export does not carry would
             // be refused on import: drop the scope rather than the constraint,
-            // it then covers the whole festival, which is the safe side for
+            // it then covers the whole event, which is the safe side for
             // every prescriptive type.
             if (contrainte.getCreneau() != null && creneauxConnus.contains(contrainte.getCreneau().getId())) {
                 item.put("creneauId", asString(contrainte.getCreneau().getId()));
@@ -1171,7 +1171,7 @@ public class PlanningService {
         return lower.endsWith(".yaml") || lower.endsWith(".yml");
     }
 
-    private PlanningFestival buildPlanningFromData(Map<String, Object> scenarioData) {
+    private PlanningEvenement buildPlanningFromData(Map<String, Object> scenarioData) {
         ReferenceScenario reference = loadReferenceScenario(scenarioData);
 
         // Expand the recurring opening hours before deciding anything about
@@ -1221,17 +1221,17 @@ public class PlanningService {
         // database's otherwise: a scenario that pins them describes the whole
         // problem, and re-importing it must not merge somebody else's.
         List<ContrainteAdHoc> contraintesAdHoc = parseContraintesAdHoc(scenarioData, reference);
-        PlanningFestival festival = new PlanningFestival(reference.dateDebut(), reference.animateurs(), postes,
+        PlanningEvenement evenement = new PlanningEvenement(reference.dateDebut(), reference.animateurs(), postes,
                 contraintesAdHoc != null ? contraintesAdHoc : referenceDataService.snapshotContraintes());
-        festival.setParametresLegaux(List.of(
+        evenement.setParametresLegaux(List.of(
                 parseParametresLegaux(scenarioData).orElseGet(referenceDataService::getParametresLegaux)));
         // Same reasoning as the ad hoc constraints above, for the dosage: a file
         // that pins its weights describes the problem it was verified against,
         // and solving it must apply them whether or not it was ever imported.
-        festival.setPonderationsScenario(parseContraintes(scenarioData)
+        evenement.setPonderationsScenario(parseContraintes(scenarioData)
                 .map(ContraintesScenario::poids)
                 .orElse(null));
-        return festival;
+        return evenement;
     }
 
     /**
@@ -1260,7 +1260,7 @@ public class PlanningService {
         } catch (RuntimeException | IOException e) {
             throw new BusinessError.Invalid("YAML invalide : " + messageOr(e), e);
         }
-        PlanningFestival planning;
+        PlanningEvenement planning;
         try {
             planning = buildPlanningFromData(scenarioData);
         } catch (RuntimeException e) {
@@ -1279,7 +1279,7 @@ public class PlanningService {
      * {@code POST /reference-data/import-scenario} applies for a named
      * built-in scenario.
      */
-    public record ScenarioImporte(PlanningFestival planning, ScenarioSections sections) {
+    public record ScenarioImporte(PlanningEvenement planning, ScenarioSections sections) {
     }
 
     /**
@@ -1431,7 +1431,7 @@ public class PlanningService {
 
         // A scenario carries its own typologie referential, so the ninja typologie
         // comes from the file itself — the database one may not be loaded yet (or
-        // may describe a different festival entirely).
+        // may describe a different event entirely).
         String typologieNinja = parseTypologies(scenarioData).stream()
                 .filter(TypologieItem::ninja)
                 .map(TypologieItem::id)
@@ -1498,7 +1498,7 @@ public class PlanningService {
      * @param parametresDecoupage generation-time only (never a solver problem fact,
      *                            see its javadoc), hence read separately and applied
      *                            by the scenario-import endpoint alone — it has no
-     *                            place on {@link PlanningFestival}
+     *                            place on {@link PlanningEvenement}
      * @param parametresSolveur   lets a large scenario pin the termination duration
      *                            it actually needs ({@code scenario-complet.yaml}
      *                            takes ~8 min to reach a good score) rather than
@@ -1848,25 +1848,25 @@ public class PlanningService {
         return LocalTime.parse(value.toString());
     }
 
-    public PlanningFestival solve(PlanningFestival problem) {
+    public PlanningEvenement solve(PlanningEvenement problem) {
         return solve(problem, null);
     }
 
-    public PlanningFestival solve(PlanningFestival problem, Long secondsLimitOverride) {
+    public PlanningEvenement solve(PlanningEvenement problem, Long secondsLimitOverride) {
         return solve(problem, secondsLimitOverride, null);
     }
 
     /**
-     * Same as {@link #solve(PlanningFestival, Long)}, but hands the freshly
+     * Same as {@link #solve(PlanningEvenement, Long)}, but hands the freshly
      * built {@link Solver} to {@code onSolverReady} before blocking on
      * {@code solve()} — the only way a caller running this on a background
      * thread (see {@code SolverJobService}) can later call
      * {@link Solver#terminateEarly()} to stop a solve started by mistake.
      */
-    public PlanningFestival solve(PlanningFestival problem, Long secondsLimitOverride,
-            Consumer<Solver<PlanningFestival>> onSolverReady) {
+    public PlanningEvenement solve(PlanningEvenement problem, Long secondsLimitOverride,
+            Consumer<Solver<PlanningEvenement>> onSolverReady) {
         prepareProblem(problem);
-        Solver<PlanningFestival> solver = resolveSolverFactory(secondsLimitOverride).buildSolver();
+        Solver<PlanningEvenement> solver = resolveSolverFactory(secondsLimitOverride).buildSolver();
         if (onSolverReady != null) {
             onSolverReady.accept(solver);
         }
@@ -1882,7 +1882,7 @@ public class PlanningService {
      * that only cares about the hard score (e.g. a regression test) would
      * otherwise wait out that whole budget for nothing.
      */
-    public PlanningFestival solveUntilFeasible(PlanningFestival problem, long secondsLimitSecurite) {
+    public PlanningEvenement solveUntilFeasible(PlanningEvenement problem, long secondsLimitSecurite) {
         prepareProblem(problem);
         SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
         solverConfig.setScoreDirectorFactoryConfig(new ScoreDirectorFactoryConfig()
@@ -1891,11 +1891,11 @@ public class PlanningService {
         termination.setSecondsSpentLimit(secondsLimitSecurite);
         termination.setBestScoreFeasible(true);
         solverConfig.setTerminationConfig(termination);
-        Solver<PlanningFestival> solver = SolverFactory.<PlanningFestival>create(solverConfig).buildSolver();
+        Solver<PlanningEvenement> solver = SolverFactory.<PlanningEvenement>create(solverConfig).buildSolver();
         return solver.solve(problem);
     }
 
-    private void prepareProblem(PlanningFestival problem) {
+    private void prepareProblem(PlanningEvenement problem) {
         if (problem.getContraintesAdHoc() == null || problem.getContraintesAdHoc().isEmpty()) {
             problem.setContraintesAdHoc(referenceDataService.snapshotContraintes());
         }
@@ -1910,7 +1910,7 @@ public class PlanningService {
         // Server-side configuration, like the weights below: always overwritten
         // so a caller cannot loosen a quality threshold by sending its own.
         problem.setParametresQualite(List.of(new ParametresQualite(maxEmplacementsParJour)));
-        // Never sent by a caller (the field is @JsonIgnore-d on PlanningFestival),
+        // Never sent by a caller (the field is @JsonIgnore-d on PlanningEvenement),
         // so this always overwrites the ConstraintWeightOverrides.none() default.
         problem.setPonderationsContraintes(constraintWeightOverrides(problem.getPonderationsScenario()));
     }
@@ -1921,17 +1921,17 @@ public class PlanningService {
      * remain in the best solution found. Useful for diagnosing why the solver
      * did not converge to zero hard.
      */
-    public PlanningDiagnostic analyze(PlanningFestival problem, Long secondsLimitOverride) {
+    public PlanningDiagnostic analyze(PlanningEvenement problem, Long secondsLimitOverride) {
         return analyze(problem, secondsLimitOverride, null);
     }
 
     /**
-     * Same as {@link #analyze(PlanningFestival, Long)}, but exposes the
+     * Same as {@link #analyze(PlanningEvenement, Long)}, but exposes the
      * {@link Solver} it builds so a background caller can stop it early.
      */
-    public PlanningDiagnostic analyze(PlanningFestival problem, Long secondsLimitOverride,
-            Consumer<Solver<PlanningFestival>> onSolverReady) {
-        PlanningFestival solved = solve(problem, secondsLimitOverride, onSolverReady);
+    public PlanningDiagnostic analyze(PlanningEvenement problem, Long secondsLimitOverride,
+            Consumer<Solver<PlanningEvenement>> onSolverReady) {
+        PlanningEvenement solved = solve(problem, secondsLimitOverride, onSolverReady);
         return diagnose(solved);
     }
 
@@ -1953,7 +1953,7 @@ public class PlanningService {
      * that the constraint is even applicable to it — the UI must present it as
      * such rather than as a positive endorsement.
      */
-    public AffectationExplanation explainAffectation(PlanningFestival solved, String posteId) {
+    public AffectationExplanation explainAffectation(PlanningEvenement solved, String posteId) {
         PosteAffectation poste = findPoste(solved, posteId);
         ScoreAnalysis<?> analysis = solutionManager.analyze(solved);
         String animateurId = poste.getAnimateur() == null ? null : poste.getAnimateur().getId();
@@ -1971,7 +1971,7 @@ public class PlanningService {
      * temporary in-place mutation is safe and avoids a full deep copy of a
      * planning that can hold thousands of postes).
      */
-    public SwapSimulation simulateSwap(PlanningFestival solved, String posteId, String animateurCandidatId) {
+    public SwapSimulation simulateSwap(PlanningEvenement solved, String posteId, String animateurCandidatId) {
         PosteAffectation poste = findPoste(solved, posteId);
         Animateur candidat = findAnimateur(solved, animateurCandidatId);
         Animateur actuel = poste.getAnimateur();
@@ -2008,7 +2008,7 @@ public class PlanningService {
      * global hard score and the extra hard matches, not on the two seats
      * alone.</p>
      */
-    public EchangeSimulation simulateEchange(PlanningFestival solved, String demandeurId, String cibleId,
+    public EchangeSimulation simulateEchange(PlanningEvenement solved, String demandeurId, String cibleId,
             long creneauId, String standId) {
         PosteAffectation posteDemandeur = solved.getPostes().stream()
                 .filter(poste -> poste.getStand() != null && standId.equals(poste.getStand().getId())
@@ -2071,7 +2071,7 @@ public class PlanningService {
      * créneaux, "I give you my Monday, I take your Tuesday". Both seats must
      * exist; feasibility is judged planning-wide like the plain variant.
      */
-    public EchangeSimulation simulateDirectedEchange(PlanningFestival solved, String demandeurId, String cibleId,
+    public EchangeSimulation simulateDirectedEchange(PlanningEvenement solved, String demandeurId, String cibleId,
             long creneauId, String standId, long creneauCibleId, String standCibleId) {
         PosteAffectation posteDemandeur = posteOf(solved, demandeurId, creneauId, standId);
         PosteAffectation posteCible = posteOf(solved, cibleId, creneauCibleId, standCibleId);
@@ -2102,7 +2102,7 @@ public class PlanningService {
     }
 
     /** The seat {@code animateurId} holds on (créneau, stand), or throws in business words. */
-    private static PosteAffectation posteOf(PlanningFestival solved, String animateurId, long creneauId,
+    private static PosteAffectation posteOf(PlanningEvenement solved, String animateurId, long creneauId,
             String standId) {
         return solved.getPostes().stream()
                 .filter(poste -> poste.getStand() != null && standId.equals(poste.getStand().getId())
@@ -2177,14 +2177,14 @@ public class PlanningService {
         return fact == poste;
     }
 
-    private static PosteAffectation findPoste(PlanningFestival solved, String posteId) {
+    private static PosteAffectation findPoste(PlanningEvenement solved, String posteId) {
         return solved.getPostes().stream()
                 .filter(poste -> poste.getId().equals(posteId))
                 .findFirst()
                 .orElseThrow(() -> new BusinessError.NotFound("Poste inconnu: " + posteId));
     }
 
-    private static Animateur findAnimateur(PlanningFestival solved, String animateurId) {
+    private static Animateur findAnimateur(PlanningEvenement solved, String animateurId) {
         return solved.getAnimateurs().stream()
                 .filter(animateur -> animateur.getId().equals(animateurId))
                 .findFirst()
@@ -2255,7 +2255,7 @@ public class PlanningService {
      * {@code null} when nothing is persisted.
      */
     public PlanningDiagnostic diagnosePersistedPlan() {
-        PlanningFestival persisted = planningPersistenceService.loadPersistedPlanning();
+        PlanningEvenement persisted = planningPersistenceService.loadPersistedPlanning();
         if (persisted.getPostes().isEmpty()) {
             return null;
         }
@@ -2266,7 +2266,7 @@ public class PlanningService {
         return diagnose(persisted);
     }
 
-    public PlanningDiagnostic diagnose(PlanningFestival solved) {
+    public PlanningDiagnostic diagnose(PlanningEvenement solved) {
         ScoreAnalysis<?> analysis = solutionManager.analyze(solved);
         List<ConstraintDiagnostic> constraintDiagnostics = new ArrayList<>();
         for (ConstraintAnalysis<?> ca : analysis.constraintAnalyses()) {
@@ -2313,7 +2313,7 @@ public class PlanningService {
         return List.of(justification);
     }
 
-    private static List<Stand> distinctStands(PlanningFestival solved) {
+    private static List<Stand> distinctStands(PlanningEvenement solved) {
         Map<String, Stand> byId = new LinkedHashMap<>();
         for (PosteAffectation poste : solved.getPostes()) {
             byId.putIfAbsent(poste.getStand().getId(), poste.getStand());
@@ -2321,7 +2321,7 @@ public class PlanningService {
         return new ArrayList<>(byId.values());
     }
 
-    private static List<Creneau> distinctCreneaux(PlanningFestival solved) {
+    private static List<Creneau> distinctCreneaux(PlanningEvenement solved) {
         Map<Long, Creneau> byId = new LinkedHashMap<>();
         for (PosteAffectation poste : solved.getPostes()) {
             byId.putIfAbsent(poste.getCreneau().getId(), poste.getCreneau());
@@ -2329,7 +2329,7 @@ public class PlanningService {
         return new ArrayList<>(byId.values());
     }
 
-    private SolverFactory<PlanningFestival> resolveSolverFactory(Long secondsLimitOverride) {
+    private SolverFactory<PlanningEvenement> resolveSolverFactory(Long secondsLimitOverride) {
         if (secondsLimitOverride == null || secondsLimitOverride.equals(defaultSecondsLimit)) {
             return solverFactory;
         }
@@ -2357,7 +2357,7 @@ public class PlanningService {
 
     /**
      * Business-facing result of a solve/analyze: score, unfilled seats and
-     * per-constraint breakdown. Deliberately excludes the {@link PlanningFestival}
+     * per-constraint breakdown. Deliberately excludes the {@link PlanningEvenement}
      * itself (animateurs/stands/créneaux/postes) — that payload can reach several
      * dozens of MB and is consulted through the dedicated screens instead, which
      * load it from {@code /api/planning/persisted}.

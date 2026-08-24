@@ -53,7 +53,7 @@ public class MailService {
             byte[] pdf, String fileName) {
         StringBuilder corps = new StringBuilder()
                 .append("Bonjour").append(prenom == null || prenom.isBlank() ? "" : " " + prenom).append(",\n\n")
-                .append("Vous trouverez en pièce jointe votre planning individuel pour le festival.\n");
+                .append("Vous trouverez en pièce jointe votre planning individuel pour l'événement.\n");
         if (lienEspace != null && !lienEspace.isBlank()) {
             corps.append("\nVotre espace en ligne (planning à jour, demandes d'échange) : ")
                     .append(lienEspace).append('\n');

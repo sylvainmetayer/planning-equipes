@@ -3,7 +3,7 @@ package dev.sylvain.planning.domain;
 /**
  * Problem fact marking one constraint (identified by the name passed to
  * {@code asConstraint(...)}) as disabled for the current solve. Presence in
- * {@link PlanningFestival}'s list means disabled; absence means active — the
+ * {@link PlanningEvenement}'s list means disabled; absence means active — the
  * default for every constraint, same convention as the
  * {@code constraint_toggle} table.
  */

@@ -28,7 +28,7 @@ import java.time.LocalTime;
  * midnight/open-end rules are shared with {@link IndisponibiliteStand} —
  * see {@link FenetreDateeStand}.</p>
  *
- * <p>Entering one window <i>per festival day</i> is what {@link HoraireStand}
+ * <p>Entering one window <i>per event day</i> is what {@link HoraireStand}
  * exists to avoid: a recurring rule expands to these rows, and a row entered
  * here is the per-date exception that overrides them.</p>
  */

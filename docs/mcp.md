@@ -120,4 +120,4 @@ l'argument, puisque le fichier désigne explicitement sa cible.
 | Dump SQL (export et import) | Toutes les données personnelles, et un fichier volumineux destiné à une sauvegarde, pas à une conversation |
 | Exports PDF / ICS / CSV | Binaires ou nominatifs, destinés au téléchargement depuis l'interface |
 | `/api/config` | Clés publiques destinées au navigateur : aucun intérêt pour un assistant |
-| `/api/planning/sample`, `/persisted` | Un `PlanningFestival` entier, plusieurs dizaines de Mo avec les données personnelles. `lister_affectations` couvre le besoin en restant filtré |
+| `/api/planning/sample`, `/persisted` | Un `PlanningEvenement` entier, plusieurs dizaines de Mo avec les données personnelles. `lister_affectations` couvre le besoin en restant filtré |

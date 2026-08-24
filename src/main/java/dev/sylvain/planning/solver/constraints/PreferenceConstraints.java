@@ -14,7 +14,7 @@ import dev.sylvain.planning.domain.Stand;
 
 /**
  * Soft preferences: tie-breakers that shape an otherwise valid plan — spread
- * stands across the festival for each animateur, pair beginners with a
+ * stands across the event for each animateur, pair beginners with a
  * referent for on-the-job training, and balance who takes the "pénible"
  * slots (physically exhausting or premium stands, issue #79).
  */

@@ -22,7 +22,7 @@ export interface CreneauFormData {
   creneau: Creneau | null;
 }
 
-/** Add/edit dialog for a timeslot: festival day, date, hours and planning group. Stand availability is edited from the stand itself (see stands page). */
+/** Add/edit dialog for a timeslot: event day, date, hours and planning group. Stand availability is edited from the stand itself (see stands page). */
 @Component({
   selector: 'app-creneau-form-dialog',
   imports: [

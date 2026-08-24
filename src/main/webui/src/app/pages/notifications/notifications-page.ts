@@ -28,7 +28,7 @@ export class NotificationsPage {
   protected readonly notifications = inject(NotificationService);
 
   /**
-   * Notifications grouped by day, newest day first. A festival week piles up
+   * Notifications grouped by day, newest day first. An event week piles up
    * dozens of them; a flat list of timestamps forces the reader to compare
    * dates line by line to find "what happened today".
    */

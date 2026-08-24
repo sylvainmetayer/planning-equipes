@@ -143,7 +143,7 @@ class FeasibilityAnalyzerTest {
             creneaux.add(creneau(jour, date));
             jours.add(date);
         }
-        // Away for the whole festival: no day counts towards the capacity.
+        // Away for the whole event: no day counts towards the capacity.
         Animateur absent = animateur("a1", "STRATEGIE");
         absent.setJoursIndisponibles(jours);
 

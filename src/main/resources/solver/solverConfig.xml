@@ -31,7 +31,7 @@
     -->
 
 
-    <solutionClass>dev.sylvain.planning.domain.PlanningFestival</solutionClass>
+    <solutionClass>dev.sylvain.planning.domain.PlanningEvenement</solutionClass>
     <entityClass>dev.sylvain.planning.domain.PosteAffectation</entityClass>
 
     <scoreDirectorFactory>

@@ -17,7 +17,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -61,7 +61,7 @@ public class ReferenceDataImportRepository {
     @Inject
     ContrainteAdHocRepository contrainteRepository;
 
-    public void importFromPlanning(PlanningFestival planning) {
+    public void importFromPlanning(PlanningEvenement planning) {
         if (planning == null) {
             return;
         }

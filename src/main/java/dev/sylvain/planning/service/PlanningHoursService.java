@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.TreeSet;
 
 import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.PlanningFestival;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import jakarta.enterprise.context.ApplicationScoped;
 
@@ -24,7 +24,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class PlanningHoursService {
 
-    public HeuresRapport compute(PlanningFestival planning) {
+    public HeuresRapport compute(PlanningEvenement planning) {
         Map<String, Map<String, Double>> heuresParAnimateurEtSemaine = new LinkedHashMap<>();
         Map<String, Double> totalParAnimateur = new LinkedHashMap<>();
         TreeSet<String> semaines = new TreeSet<>();

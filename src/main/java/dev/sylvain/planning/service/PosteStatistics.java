@@ -20,7 +20,7 @@ import dev.sylvain.planning.domain.Stand;
  *
  * <p>The individual PDF and the global PDF lay the same row of tiles in their
  * header, over different sets: one the assignments of a single person, the
- * other those of the whole festival. Counting and displaying in the same place
+ * other those of the whole event. Counting and displaying in the same place
  * is what guarantees that "3 JOURS" means the same thing on both documents.</p>
  */
 final class PosteStatistics {

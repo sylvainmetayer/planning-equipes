@@ -6,7 +6,7 @@ import { SolverJobService } from '../core/solver-job.service';
 
 /**
  * Toolbar indicator, visible on every screen while a solver job runs:
- * The mascot — the festival mascot, cut out with a transparent background —
+ * The mascot — the event mascot, cut out with a transparent background —
  * spinning while linking to the Solver page, its tooltip carrying the shared
  * job description (type, edition, elapsed time). Complements the per-page
  * lock messages — those only exist on the pages that show them, whereas a

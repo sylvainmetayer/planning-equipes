@@ -13,7 +13,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { intlLocale } from '../../core/locale';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { VerrouillageStore } from '../../core/verrouillage.store';
-import { PlanningFestival, PosteAffectation } from '../../core/models';
+import { PlanningEvenement, PosteAffectation } from '../../core/models';
 import { aUneAppreciationPour, ouvrirExplication } from '../../shared/affectation-explanation-dialog';
 import {
   buildMonthCells,
@@ -122,7 +122,7 @@ const ALL = 'ALL';
 export class CalendarMonthPage {
   protected readonly error = signal('');
   protected readonly loading = signal(false);
-  protected readonly planning = signal<PlanningFestival | null>(null);
+  protected readonly planning = signal<PlanningEvenement | null>(null);
   protected readonly postes = computed<PosteAffectation[]>(() => this.planning()?.postes ?? []);
   protected readonly loaded = signal(false);
 
