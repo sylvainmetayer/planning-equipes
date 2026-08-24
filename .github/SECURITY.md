@@ -10,9 +10,8 @@ Merci d'inclure ce qui permet de reproduire : version affichée en bas de la pag
 *Débogage*, étapes, effet obtenu, et l'effet attendu.
 
 Le projet est maintenu par une seule personne, sur son temps libre : comptez
-quelques jours pour une première réponse, davantage en période de festival
-(juillet-août). Vous serez tenu informé du traitement, et crédité si vous le
-souhaitez.
+quelques jours pour une première réponse. Vous serez tenu informé du
+traitement, et crédité si vous le souhaitez.
 
 ## Ce qui nous intéresse particulièrement
 
