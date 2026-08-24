@@ -284,6 +284,7 @@ Formats d'échange détaillés dans
 | Les conventions suivies par les agents IA | [`AGENTS.md`](AGENTS.md) |
 | Contribuer (checklist de PR) | [`.github/CONTRIBUTING.md`](.github/CONTRIBUTING.md) |
 | Signaler une faille | [`.github/SECURITY.md`](.github/SECURITY.md) |
+| Code de conduite | [`.github/CODE_OF_CONDUCT.md`](.github/CODE_OF_CONDUCT.md) |
 
 ---
 

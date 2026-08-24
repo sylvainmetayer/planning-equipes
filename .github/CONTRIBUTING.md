@@ -34,3 +34,10 @@ npm run lint && npm run i18n-check   # lint et cohérence des traductions
 ## Signaler une faille
 
 Ne l'ouvrez pas en issue publique : voir [`SECURITY.md`](SECURITY.md).
+
+## Code de conduite
+
+Court, et lisible en deux minutes :
+[`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md). Le point qui vous concerne le plus
+vite : **aucune donnée nominative dans une issue, une capture ou un scénario** —
+ce dépôt est public, et ces données concernent souvent des mineurs.
