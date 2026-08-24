@@ -44,7 +44,9 @@ public class BrandingResource {
                 productName.value(),
                 text(branding.organisation()),
                 text(branding.logoUrl()),
-                text(branding.accentColor()));
+                text(branding.accentColor()),
+                text(branding.mascotUrl()),
+                text(branding.mascotIconUrl()));
     }
 
     /** Trimmed, and empty rather than blank: the UI has one single "not configured" case to handle. */
@@ -59,11 +61,15 @@ public class BrandingResource {
      *                     the deployment did not say
      * @param logoUrl      empty means "show no logo", not "show the default one"
      * @param accentColor  empty leaves the compiled Material accent in place
+     * @param mascotUrl    empty disables the mascot easter egg
+     * @param mascotIconUrl empty falls back to a Material icon while a solve runs
      */
     public record BrandingView(
             String productName,
             String organisation,
             String logoUrl,
-            String accentColor) {
+            String accentColor,
+            String mascotUrl,
+            String mascotIconUrl) {
     }
 }

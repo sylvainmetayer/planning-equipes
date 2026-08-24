@@ -3,6 +3,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
+import { BRANDING } from '../core/branding';
+
 /**
  * How many pixels of hidden content are worth pointing at. Below that, the
  * page is essentially fully visible and the hint would be noise — a couple of
@@ -37,7 +39,7 @@ export function resteDuContenuPlusBas(metriques: MetriquesDefilement): boolean {
  * <p>Several screens end with something that matters and looks like nothing
  * from above — the feasibility banner under the solver actions, the constraint
  * breakdown under a score, the queue under the buttons. On a laptop, the page
- * looks finished. the mascot hopping in the corner says otherwise, and clicking
+ * looks finished. The hint hopping in the corner says otherwise, and clicking
  * takes the reader there rather than asking them to find the scrollbar of an
  * inner container.</p>
  *
@@ -60,7 +62,9 @@ export function resteDuContenuPlusBas(metriques: MetriquesDefilement): boolean {
         (click)="descendre()"
       >
         <span class="scroll-hint-pile">
-          <img src="/mascotte-icone.png" alt="" class="scroll-hint-mascotte" />
+          @if (branding.mascotIconUrl) {
+            <img [src]="branding.mascotIconUrl" alt="" class="scroll-hint-mascot" />
+          }
           <mat-icon class="scroll-hint-arrow">keyboard_double_arrow_down</mat-icon>
         </span>
       </button>
@@ -85,7 +89,7 @@ export function resteDuContenuPlusBas(metriques: MetriquesDefilement): boolean {
       line-height: 1;
       animation: scroll-hint-saut 1.6s ease-in-out infinite;
     }
-    .scroll-hint-mascotte {
+    .scroll-hint-mascot {
       width: 20px;
       height: 20px;
       object-fit: contain;
@@ -115,6 +119,8 @@ export function resteDuContenuPlusBas(metriques: MetriquesDefilement): boolean {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ScrollHint {
+  protected readonly branding = inject(BRANDING);
+
   /** The element that scrolls — not necessarily the window (see the class doc). */
   readonly conteneur = input.required<HTMLElement>();
 

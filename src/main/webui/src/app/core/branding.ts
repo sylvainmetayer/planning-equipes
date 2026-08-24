@@ -18,7 +18,9 @@ export const BRANDING_NEUTRE: Branding = {
   productName: 'Planning Équipes',
   organisation: '',
   logoUrl: '',
-  accentColor: ''
+  accentColor: '',
+  mascotUrl: '',
+  mascotIconUrl: ''
 };
 
 /**
@@ -51,7 +53,9 @@ export async function loadBranding(): Promise<Branding> {
       productName: branding.productName?.trim() || BRANDING_NEUTRE.productName,
       organisation: branding.organisation?.trim() ?? '',
       logoUrl: branding.logoUrl?.trim() ?? '',
-      accentColor: branding.accentColor?.trim() ?? ''
+      accentColor: branding.accentColor?.trim() ?? '',
+      mascotUrl: branding.mascotUrl?.trim() ?? '',
+      mascotIconUrl: branding.mascotIconUrl?.trim() ?? ''
     };
   } catch (error) {
     console.error('Could not load the branding, falling back to a neutral identity.', error);

@@ -101,6 +101,8 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 | `BRANDING_ORGANISATION` | *(vide)* | Client pour lequel cette instance est déployée, imprimé au pied des PDF ; vide = seule la date de génération y figure |
 | `BRANDING_LOGO_URL` | *(vide = aucun logo)* | URL du logo affiché dans les barres d'outils et sur la carte de connexion (`logo.png` pour un fichier servi à la racine, ou une URL absolue) |
 | `BRANDING_ACCENT_COLOR` | *(vide = accent Material compilé)* | Couleur d'accent de l'IHM, toute couleur CSS ; alimente `--app-accent` |
+| `BRANDING_MASCOT_URL` | *(vide = pas d'easter egg)* | Mascotte du déploiement en grand, montrée par le code Konami ; même syntaxe que `BRANDING_LOGO_URL` |
+| `BRANDING_MASCOT_ICON_URL` | *(vide = icône Material)* | La même mascotte découpée en petit : elle tourne dans la barre pendant une résolution et saute sur l'invite de défilement |
 | `BRANDING_PDF_LOGO` | *(vide = aucun logo)* | Logo de l'en-tête des PDF : `classpath:/branding/xxx.png` pour une image embarquée, sinon un chemin de fichier monté |
 | `BRANDING_PDF_STRIP` | *(vide = aucun bandeau)* | Bandeau décoratif de la première page du planning individuel, même syntaxe |
 | `BRANDING_PDF_HEADLINE` | `#1f2933` | Encre principale des PDF (titres, noms, corps des tableaux) |
@@ -155,7 +157,9 @@ Deux limites à connaître :
   (`classpath:/branding/…`). Les visuels du festival restent livrés
   sous ce préfixe : `BRANDING_PDF_LOGO=classpath:/branding/logo.png`,
   `BRANDING_PDF_STRIP=classpath:/branding/bandeau.png`, et
-  `BRANDING_LOGO_URL=logo.png` côté web.
+  `BRANDING_LOGO_URL=logo.png` côté web, et la mascotte par
+  `BRANDING_MASCOT_URL=mascotte.png` /
+  `BRANDING_MASCOT_ICON_URL=mascotte-icone.png`.
 
 Détails et mise en place : [`docs/observabilite.md`](docs/observabilite.md) (Sentry/Cloudflare),
 [`docs/mcp.md`](docs/mcp.md) (serveur MCP).

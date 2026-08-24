@@ -41,7 +41,8 @@ import { DataStaleIndicator } from '../shared/data-stale-indicator';
 import { ScrollHint } from '../shared/scroll-hint';
 import { SolverRunningIndicator } from '../shared/solver-running-indicator';
 import { EditionActuelleBar } from '../shared/edition-actuelle-bar';
-import { MascotteDialog } from './mascotte-dialog';
+import { BRANDING } from '../core/branding';
+import { MascotDialog } from './mascot-dialog';
 
 interface NavLink {
   path: string;
@@ -250,6 +251,7 @@ export class AdminShell {
    */
   protected readonly navGroups = buildNavGroups(inject(APP_CONFIG, { optional: true })?.devMode ?? false);
   protected readonly jobs = inject(SolverJobService);
+  private readonly branding = inject(BRANDING);
   protected readonly resolution = inject(PlanningResolutionStore);
   protected readonly editions = inject(EditionStore);
   protected readonly notifications = inject(NotificationService);
@@ -327,11 +329,17 @@ export class AdminShell {
   }
 
   /**
-   * ↑↑↓↓←→←→BA summons the event mascot. Pure easter egg: the
+   * ↑↑↓↓←→←→BA summons the deployment's mascot. Pure easter egg: the
    * listener only tracks the sequence position (no buffering of anything
    * typed) and ignores keystrokes aimed at form fields.
+   *
+   * <p>An instance that configured no mascot registers no listener at all:
+   * there is nothing to show, and an empty dialog is worse than none.</p>
    */
   private ecouterKonami(): void {
+    if (!this.branding.mascotUrl) {
+      return;
+    }
     const sequence = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown',
       'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
     let position = 0;
@@ -344,7 +352,7 @@ export class AdminShell {
       position = touche === sequence[position] ? position + 1 : touche === sequence[0] ? 1 : 0;
       if (position === sequence.length) {
         position = 0;
-        this.dialog.open(MascotteDialog, { autoFocus: false });
+        this.dialog.open(MascotDialog, { autoFocus: false });
       }
     };
     document.addEventListener('keydown', onKey);

@@ -14,7 +14,7 @@
 api.AdminLoginLimiter$Echecs = dernier, nombre
 api.AnimateurResource$AnimateurToken = token
 api.AuthResource$StatutSession = authentifie, nom
-api.BrandingResource$BrandingView = accentColor, logoUrl, organisation, productName
+api.BrandingResource$BrandingView = accentColor, logoUrl, mascotIconUrl, mascotUrl, organisation, productName
 api.ConfigResource$ConfigView = cloudflareWebAnalyticsToken, devMode, sentryDsn, sentryEnvironment
 api.ConstraintResource$ConstraintPoidsUpdate = poids
 api.ConstraintResource$ConstraintToggleUpdate = actif

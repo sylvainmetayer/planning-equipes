@@ -1109,7 +1109,7 @@
   "debug.mailTest.envoye": "Test mail sent to {$adresse}.",
   "debug.mailTest.echec": "Test mail could not be sent",
   "mcp.confidentialite": "Staff privacy: the MCP server never returns their personal data — no name, first name, birth date or e-mail. Only the id and the planning attributes circulate (adult/minor status, manager, competences and their level, wishes, unavailabilities). That personal data cannot be updated over MCP either: a staff member is only ever modified there on competences, wishes, unavailabilities and manager status. An assistant that never reads a name cannot leak one.",
-  "mascotte.alt": "the mascot",
+  "mascot.alt": "The deployment's mascot",
   "espace.echanges.creneauSouhaite": "Their timeslot I want in exchange (optional)",
   "espace.echanges.creneauSouhaiteAucun": "No preference — swap on my timeslot",
   "espace.echanges.creneauSouhaiteHint": "I leave them my timeslot above and take this one.",

@@ -54,6 +54,23 @@ public interface ConfigBranding {
      */
     Optional<String> accentColor();
 
+    /**
+     * URL of the deployment's mascot, shown full size by the Konami-code easter
+     * egg. Same syntax as {@link #logoUrl()}. Blank disables the easter egg
+     * outright: an empty frame is worse than no frame, and a mascot belongs to
+     * a customer the way a logo does.
+     */
+    Optional<String> mascotUrl();
+
+    /**
+     * URL of the same mascot cut out small, spun in the toolbar while a solve
+     * runs and stacked over the scroll hint. A separate image because it is
+     * drawn at 20 to 24 pixels: the full-size illustration turns to mud there.
+     * Blank falls back to a Material icon, which says the same thing without
+     * borrowing anyone's mark.
+     */
+    Optional<String> mascotIconUrl();
+
     Pdf pdf();
 
     /** What the exported documents are drawn with. */

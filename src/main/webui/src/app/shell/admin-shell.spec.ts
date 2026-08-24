@@ -10,6 +10,7 @@
 import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { provideZonelessChangeDetection, Signal, WritableSignal } from '@angular/core';
+import { BRANDING, BRANDING_NEUTRE } from '../core/branding';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { Title } from '@angular/platform-browser';
@@ -118,7 +119,11 @@ describe('AdminShell', () => {
         { provide: SolverJobService, useValue: jobs },
         { provide: LiveAnnouncer, useValue: announcer },
         { provide: MatDialog, useValue: dialog },
-        { provide: ApiService, useValue: api }
+        { provide: ApiService, useValue: api },
+        // A mascot is configured by default here: the Konami easter egg only
+        // exists on a deployment that has one, and most of these tests are
+        // about the sequence, not about the brand.
+        { provide: BRANDING, useValue: { ...BRANDING_NEUTRE, mascotUrl: 'mascotte.png' } }
       ]
     });
     // Spied before the shell is built: it preloads them in its constructor.
@@ -440,6 +445,31 @@ describe('AdminShell', () => {
       SEQUENCE.forEach((key) => press(key));
 
       expect(dialog.open).toHaveBeenCalledOnce();
+    });
+
+    // A deployment with no mascot has nothing to show, and an empty dialog is
+    // worse than none: the listener is never even registered.
+    it('summons nothing when the deployment configured no mascot', () => {
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [
+          provideZonelessChangeDetection(),
+          provideRouter([]),
+          { provide: BreakpointObserver, useValue: breakpoints },
+          { provide: SolverJobService, useValue: jobs },
+          { provide: LiveAnnouncer, useValue: announcer },
+          { provide: MatDialog, useValue: dialog },
+          { provide: ApiService, useValue: api },
+          { provide: BRANDING, useValue: BRANDING_NEUTRE }
+        ]
+      });
+      vi.spyOn(TestBed.inject(PlanningResolutionStore), 'reload').mockResolvedValue(undefined);
+      vi.spyOn(TestBed.inject(EditionStore), 'reload').mockResolvedValue(undefined);
+      createShell();
+
+      SEQUENCE.forEach((key) => press(key));
+
+      expect(dialog.open).not.toHaveBeenCalled();
     });
 
     it('summons nothing on a partial sequence', () => {

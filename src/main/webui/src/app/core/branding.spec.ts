@@ -39,7 +39,9 @@ describe('branding', () => {
         productName: 'Planning Bénévoles',
         organisation: 'Ville hôte',
         logoUrl: 'logo.png',
-        accentColor: '#8b1e3f'
+        accentColor: '#8b1e3f',
+        mascotUrl: '',
+        mascotIconUrl: ''
       });
     });
 

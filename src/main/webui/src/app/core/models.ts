@@ -616,6 +616,10 @@ export interface Branding {
   logoUrl: string;
   /** Any CSS colour; empty leaves the compiled Material accent in place. */
   accentColor: string;
+  /** Full-size mascot; empty disables the easter egg that shows it. */
+  mascotUrl: string;
+  /** Same mascot cut out small; empty falls back to a Material icon. */
+  mascotIconUrl: string;
 }
 
 /**

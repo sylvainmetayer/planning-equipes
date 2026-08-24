@@ -58,6 +58,10 @@ services:
       BRANDING_ACCENT_COLOR: ${BRANDING_ACCENT_COLOR:-}
       BRANDING_PDF_LOGO: ${BRANDING_PDF_LOGO:-}
       BRANDING_PDF_STRIP: ${BRANDING_PDF_STRIP:-}
+      # Mascotte : la grande pour l'easter egg, la petite pour l'indicateur de
+      # résolution. Vides = pas d'easter egg et une icône Material.
+      BRANDING_MASCOT_URL: ${BRANDING_MASCOT_URL:-}
+      BRANDING_MASCOT_ICON_URL: ${BRANDING_MASCOT_ICON_URL:-}
       # Mentions légales, servies publiquement sur /mentions-legales : vides,
       # la page existe mais n'annonce rien — ce qui est précisément ce qu'un
       # site accessible au public ne peut pas se permettre.

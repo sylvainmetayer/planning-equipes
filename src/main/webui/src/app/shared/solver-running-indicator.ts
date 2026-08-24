@@ -1,13 +1,15 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
+import { BRANDING } from '../core/branding';
 import { SolverJobService } from '../core/solver-job.service';
 
 /**
- * Toolbar indicator, visible on every screen while a solver job runs:
- * The mascot — the event mascot, cut out with a transparent background —
- * spinning while linking to the Solver page, its tooltip carrying the shared
+ * Toolbar indicator, visible on every screen while a solver job runs: the
+ * deployment's mascot — cut out with a transparent background — spinning while
+ * linking to the Solver page, its tooltip carrying the shared
  * job description (type, edition, elapsed time). Complements the per-page
  * lock messages — those only exist on the pages that show them, whereas a
  * multi-minute solve is mostly watched from somewhere else. Self-injects its
@@ -20,7 +22,7 @@ import { SolverJobService } from '../core/solver-job.service';
  */
 @Component({
   selector: 'app-solver-running-indicator',
-  imports: [MatButtonModule, MatTooltipModule, RouterLink],
+  imports: [MatButtonModule, MatIconModule, MatTooltipModule, RouterLink],
   template: `
     @if (jobs.activeJob()) {
       <a
@@ -31,7 +33,11 @@ import { SolverJobService } from '../core/solver-job.service';
         matTooltipPosition="below"
         [attr.aria-label]="description()"
       >
-        <img src="/mascotte-icone.png" alt="" class="solver-running-icon" />
+        @if (branding.mascotIconUrl) {
+          <img [src]="branding.mascotIconUrl" alt="" class="solver-running-icon" />
+        } @else {
+          <mat-icon class="solver-running-icon solver-running-fallback">autorenew</mat-icon>
+        }
         @if (jobs.file().length > 0) {
           <span class="solver-file-badge">{{ jobs.file().length }}</span>
         }
@@ -64,6 +70,12 @@ import { SolverJobService } from '../core/solver-job.service';
       object-fit: contain;
       animation: solver-running-spin 3s linear infinite;
     }
+    /* An instance with no mascot still needs something that turns: the icon
+       says "a solve is running" without borrowing anyone's mark. */
+    .solver-running-fallback {
+      font-size: 24px;
+      line-height: 24px;
+    }
     @keyframes solver-running-spin {
       to {
         transform: rotate(360deg);
@@ -79,6 +91,7 @@ import { SolverJobService } from '../core/solver-job.service';
 })
 export class SolverRunningIndicator {
   protected readonly jobs = inject(SolverJobService);
+  protected readonly branding = inject(BRANDING);
 
   /** The running job, plus how many are planned behind it. */
   protected readonly description = computed(() => {
