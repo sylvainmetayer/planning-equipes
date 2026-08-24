@@ -6,6 +6,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { MentionsLegales } from '../../core/models';
+import { REPO_URL } from '../../version';
 import { StatusMessage } from '../../shared/status-message';
 
 /**
@@ -27,6 +28,14 @@ import { StatusMessage } from '../../shared/status-message';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MentionsLegalesPage {
+  /**
+   * Article 13 of the AGPL requires that anyone interacting with the program
+   * over a network can obtain its source — so the link belongs on this page,
+   * which is public and reachable from the animateur space, and not on the
+   * admin-only Debug screen.
+   */
+  protected readonly repoUrl = REPO_URL;
+
   protected readonly mentions = signal<MentionsLegales | null>(null);
   protected readonly erreur = signal('');
 

@@ -96,7 +96,7 @@ public class DatabaseDumpService {
      */
     public String exportDump() {
         StringBuilder sql = new StringBuilder();
-        sql.append("-- Festival planning database dump\n");
+        sql.append("-- Planning Équipes database dump\n");
         sql.append("-- Generated at ").append(Instant.now()).append('\n');
         sql.append("-- Replay with the \"Import SQL\" admin action.\n\n");
         try (Connection connection = dataSource.getConnection()) {

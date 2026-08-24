@@ -50,9 +50,9 @@ final class PdfTheme {
     static final DateTimeFormatter GENERATED_AT_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy 'à' HH:mm");
 
     static final String LOGO_RESOURCE = "/branding/logo.png";
-    static final String STRIP_RESOURCE = "/branding/bandeau.png";
+    static final String STRIP_RESOURCE = "/branding/strip.png";
 
-    // --- Palette, sampled from the festival brand mark: crimson red, golden yellow, warm dark ink ---
+    // --- Palette, sampled from the brand mark: crimson red, golden yellow, warm dark ink ---
     static final Color HEADLINE = new Color(43, 33, 24);
     static final Color MUTED = new Color(146, 121, 87);
     static final Color RED = new Color(200, 29, 37);

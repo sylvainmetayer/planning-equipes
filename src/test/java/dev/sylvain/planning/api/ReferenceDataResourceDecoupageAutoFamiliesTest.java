@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
  * both the parameters and the timeslot group would look correct on screen.
  *
  * <p>This matters beyond tidiness: a dense scenario is only feasible with a
- * staggered relay grid (see {@code docs/optimisation-solveur.md}), so importing
+ * staggered relay grid (see the coverage-deficit investigation (kept out of the public repository: it is based on a real festival dataset)), so importing
  * one and immediately solving it would fail for a reason invisible in the
  * data. The check here is that the generated vacations actually carry several
  * {@code famille} values, which can only happen if

@@ -1,0 +1,23 @@
+Planning Équipes
+Copyright (C) 2026 Sylvain METAYER (sylvain.dev)
+
+Ce programme est un logiciel libre : vous pouvez le redistribuer et/ou le
+modifier selon les termes de la GNU Affero General Public License telle que
+publiée par la Free Software Foundation, dans sa version 3.
+
+Ce programme est distribué dans l'espoir qu'il sera utile, mais SANS AUCUNE
+GARANTIE, sans même la garantie implicite de QUALITÉ MARCHANDE ou
+d'ADÉQUATION À UN USAGE PARTICULIER. Voir la GNU Affero General Public
+License pour plus de détails.
+
+Vous devriez avoir reçu une copie de la GNU Affero General Public License
+avec ce programme. Le texte complet est dans le fichier LICENSE ; à défaut,
+voir <https://www.gnu.org/licenses/>.
+
+---
+
+Historique de licence : ce projet a été distribué sous Apache License 2.0
+jusqu'au 22 août 2026. Il n'avait alors jamais été publié — le dépôt était
+privé et le code n'avait été distribué à personne, aucun droit n'ayant donc
+été concédé sous cette licence. La bascule en AGPL-3.0 est le premier régime
+sous lequel le code est effectivement diffusé.

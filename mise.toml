@@ -4,6 +4,7 @@ java = "temurin-25"
 node = "24"
 maven = "3.9.9"
 quarkus = "3.38.2"
+ggshield = "latest"
 
 [tasks.clean_dev]
 run = "podman compose down -v && podman volume prune && podman compose up -d"

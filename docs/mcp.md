@@ -33,6 +33,9 @@ l'application n'a pas).
 | `planning.mcp.api-key-header` (`PLANNING_MCP_API_KEY_HEADER`) | `X-MCP-Api-Key` | Nom de l'en-tête HTTP porteur de la clé. |
 | `planning.mcp.required-headers` (`PLANNING_MCP_REQUIRED_HEADERS`) | vide | En-têtes supplémentaires exigés **en plus** de la clé (voir « Derrière un proxy »). |
 
+> Les variables `PLANNING_MCP_*` remplacent les anciennes `PLANNING_MCP_*`, encore
+> acceptées en repli le temps de la transition.
+
 La clé peut aussi être présentée via `Authorization: Bearer <clé>`.
 
 **Sécurisé par défaut** : tant que `planning.mcp.api-key` n'est pas positionnée,

@@ -26,7 +26,7 @@ public class ParametresDecoupage {
          * <p>This is what the source festival actually does — see the
          * {@code Recap. Espaces - VOLUMES ANIM.} formula
          * {@code ARRONDI.SUP(effectif * .../2)} documented in
-         * {@code docs/solver-pause-effectif-reduit.md}. {@link #FERMETURE}
+         * the reduced-headcount analysis (kept out of the public repository). {@link #FERMETURE}
          * (nobody) and {@link #RELEVE} (a whole extra crew) bracket that rule
          * without expressing it.</p>
          *

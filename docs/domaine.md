@@ -559,7 +559,7 @@ pause, sur *chaque* stand concerné, concentrée sur la même fenêtre horaire).
 Le chevauchement de relais est lui-même une source de pic, et la principale :
 pendant sa durée, *chaque* stand qui relève compte double. Si tous les stands
 relèvent au même instant — ce qui arrive dès que la grille de vacations est
-synchronisée, voir `docs/optimisation-solveur.md` — le nombre de sièges à pourvoir
+synchronisée, voir l'analyse de découpage sur données réelles (conservée hors dépôt public) — le nombre de sièges à pourvoir
 double à cet instant précis. Sur le scénario de référence, 86 sièges réellement
 ouverts devenaient 172 à pourvoir à 18:30, pour 153 animateurs : infaisable par
 construction, sans la moindre pénurie d'animateurs. Deux leviers désamorcent ce
@@ -604,7 +604,7 @@ vacations. L'arrondi est volontairement au supérieur, pour qu'un stand tenu par
 une seule personne la garde au lieu de fermer — fermer reste une décision
 explicite (`FERMETURE`, ou une indisponibilité datée) et non l'effet de bord
 d'une division entière. Voir
-[`solver-pause-effectif-reduit.md`](solver-pause-effectif-reduit.md) pour le
+l'analyse de la couverture de pause sur données réelles (hors dépôt public) pour le
 chiffrage et les limites de ce réglage.
 
 Un fichier scénario (`scenarios/*.yaml`) peut fixer ses propres

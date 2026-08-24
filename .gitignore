@@ -51,6 +51,10 @@ node_modules/
 dist/
 .angular/
 
+# Python (scripts utilitaires de src/main/resources)
+__pycache__/
+*.py[cod]
+
 # Contains sensitive data, do not commit
 src/main/resources/scenarios/reel-*.yaml
 docs/reel-*.yaml

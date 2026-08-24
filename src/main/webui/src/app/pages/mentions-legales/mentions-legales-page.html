@@ -109,10 +109,16 @@
       </mat-card-header>
       <mat-card-content>
         <p i18n="@@mentions.proprieteIntellectuelle.texte">
-          Le code de l'application est publié sous licence libre ; son dépôt et sa licence sont accessibles
-          publiquement. Les contenus saisis dans l'application (données du festival, plannings) restent la propriété
-          de l'organisation qui l'exploite.
+          Le code de l'application est publié sous licence libre GNU Affero General Public License version 3
+          (AGPL-3.0). Cette licence donne à toute personne qui utilise l'application le droit d'en obtenir le code
+          source, y compris les modifications apportées par l'exploitant : le lien ci-dessous y mène. Les contenus
+          saisis dans l'application (données du festival, plannings) restent la propriété de l'organisation qui
+          l'exploite.
         </p>
+        <a matButton="filled" [href]="repoUrl" target="_blank" rel="noopener noreferrer">
+          <mat-icon>code</mat-icon>
+          <ng-container i18n="@@mentions.codeSource.lien">Code source et licence</ng-container>
+        </a>
       </mat-card-content>
     </mat-card>
   }

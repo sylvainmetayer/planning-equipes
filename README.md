@@ -114,6 +114,10 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 | `CONNEXION_MAX_ECHECS` | `5` | Échecs de connexion admin tolérés par adresse avant verrouillage |
 | `CONNEXION_DUREE_BLOCAGE` | `PT15M` | Durée du verrouillage, comptée depuis le dernier échec |
 
+> **Renommage** : les variables `PLANNING_MCP_*` remplacent les anciennes
+> `PLANNING_MCP_*`, encore acceptées en repli pour ne pas casser un déploiement
+> existant. Elles seront retirées dans une version ultérieure.
+
 Détails et mise en place : [`docs/observabilite.md`](docs/observabilite.md) (Sentry/Cloudflare),
 [`docs/mcp.md`](docs/mcp.md) (serveur MCP).
 
@@ -238,3 +242,28 @@ Formats d'échange détaillés dans
 | Contribuer (build, tests, CI, Renovate) | [`docs/developpement.md`](docs/developpement.md) |
 | L'audit de conformité RH (Code du travail) | [`docs/audit-conformite-rh.md`](docs/audit-conformite-rh.md) |
 | Les conventions suivies par les agents IA | [`AGENTS.md`](AGENTS.md) |
+| Contribuer (DCO, checklist de PR) | [`.github/CONTRIBUTING.md`](.github/CONTRIBUTING.md) |
+| Signaler une faille | [`.github/SECURITY.md`](.github/SECURITY.md) |
+
+---
+
+## Licence
+
+**AGPL-3.0-only** — voir [`LICENSE`](LICENSE) et [`NOTICE`](NOTICE).
+
+Copyright (C) 2026 Sylvain METAYER (sylvain.dev).
+
+Concrètement : le code est libre d'usage, y compris commercial, à condition que
+toute version modifiée **mise à disposition sur un réseau** publie ses sources
+sous la même licence (article 13 de l'AGPL). Héberger l'application pour ses
+propres besoins n'impose rien de plus que de rendre disponible le code que l'on
+fait tourner.
+
+Les contributions sont acceptées sous cette licence, avec signature DCO — voir
+[`.github/CONTRIBUTING.md`](.github/CONTRIBUTING.md).
+
+## Assistance IA
+
+Ce projet est développé avec l'assistance d'outils d'IA, sous revue humaine
+systématique. Les choix d'architecture, le modèle de domaine et
+l'interprétation du cadre légal sont assumés par l'auteur.

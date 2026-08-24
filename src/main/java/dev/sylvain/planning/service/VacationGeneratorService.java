@@ -203,7 +203,7 @@ public final class VacationGeneratorService {
      * shortage of people, was what made the scenario unsolvable: no search
      * budget can fill 172 seats with 153 bodies. Fanning inside the range
      * spreads the changeovers instead of stacking them, and the peak drops
-     * back under the roster. See {@code docs/optimisation-solveur.md}.</p>
+     * back under the roster. See the coverage-deficit investigation (kept out of the public repository: it is based on a real festival dataset).</p>
      */
     private static int vacationEnd(int cibleFin, int plageBasse, int plageHaute, int famille, int nombreFamilles,
             int etalement) {

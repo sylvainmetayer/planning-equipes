@@ -10,7 +10,7 @@ festival:
 # vacations are generated with whatever was configured beforehand and the
 # scenario's own settings only take effect on the next manual regeneration.
 # A dense scenario that only solves with a staggered grid (see
-# docs/optimisation-solveur.md) depends entirely on that ordering.
+# the coverage-deficit investigation (kept out of the public repository: it is based on a real festival dataset)) depends entirely on that ordering.
 parametresDecoupage:
   nombreFamillesDecalage: 3
   dureeDecalageMaxMinutes: 60

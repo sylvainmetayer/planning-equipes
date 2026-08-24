@@ -66,7 +66,7 @@ class PlanningServiceParametresScenarioTest {
         // (String) cast throws ClassCastException instead of parsing it.
         assertThat(decoupage.getFenetreRepasMidiDebut()).isEqualTo(LocalTime.of(12, 30));
         // Slicing into offset families: the setting that makes a dense scenario
-        // feasible (see docs/optimisation-solveur.md) must be pinnable in the
+        // feasible (see the coverage-deficit investigation (kept out of the public repository: it is based on a real festival dataset)) must be pinnable in the
         // scenario itself, not only tuned by hand after the import.
         assertThat(decoupage.getNombreFamillesDecalage()).isEqualTo(3);
         assertThat(decoupage.getDureeDecalageMaxMinutes()).isEqualTo(75);

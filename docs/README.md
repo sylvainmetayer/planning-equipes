@@ -18,8 +18,6 @@ fonctionnalités métier) : **tout ajout de documentation technique se fait ici*
 | [`observabilite.md`](observabilite.md) | Suivi d'erreurs (Bugsink) et analytics d'usage (Cloudflare Web Analytics) en production : choix, intégration, variables d'environnement |
 | [`audit-conformite-rh.md`](audit-conformite-rh.md) | Audit de conformité RH du référentiel de contraintes (Code du travail, CCN ÉCLAT) — constats, articles et suites données |
 | [`product_owner_report.md`](product_owner_report.md) | Rapport de toilettage du backlog GitHub Issues — issues fermées, priorisation, points d'attention |
-| [`optimisation-solveur.md`](optimisation-solveur.md) | Investigation du déficit de couverture sur un scénario dense : cause racine (pic de simultanéité fabriqué par le découpage), bornes de faisabilité calculables sans solveur, réglage retenu |
-| [`solver-pause-effectif-reduit.md`](solver-pause-effectif-reduit.md) | Plan d'une troisième stratégie de couverture de pause (`EFFECTIF_REDUIT`, moitié d'effectif) : chiffrage, impact sur les contraintes, étapes d'implémentation |
 | [`revue-contraintes.md`](revue-contraintes.md) | Revue des 35 contraintes : performance (pistes mesurées, appliquées ou écartées) et conception (mutualisation, contraintes à ajouter, à supprimer) |
 | [`qa-navigateur-2026-08-18.md`](qa-navigateur-2026-08-18.md) | Compte-rendu de QA en navigateur réel (issues #58 MapPicker et #59 CRUD OnPush) : protocole Playwright/Chromium, 10 vérifications, résultats |
 

@@ -2,7 +2,7 @@
 -- reste ouvert pendant la pause repas mais à la moitié de son effectif (arrondi
 -- au supérieur), au lieu de fermer (FERMETURE) ou de mobiliser une équipe de
 -- relève complète (RELEVE). C'est la règle réellement appliquée par le classeur
--- source du festival — voir docs/solver-pause-effectif-reduit.md.
+-- source du festival — voir l'analyse de la couverture de pause sur données réelles (hors dépôt public).
 --
 -- Deux changements indissociables :
 --   1. la contrainte CHECK posée en V17 énumère les valeurs autorisées, donc
