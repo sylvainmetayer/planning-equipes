@@ -87,11 +87,15 @@ jobs:
       # Renovate ne suit pas une image citée dans un `run:` — c'est une mise à
       # jour à faire à la main, en lisant ce que la nouvelle version trouve.
       #
-      # Cinq jeux de règles du registre, choisis sur ce que le dépôt contient
+      # Six jeux de règles du registre, choisis sur ce que le dépôt contient
       # réellement : les deux langages, le classement OWASP qui les traverse, le
       # Dockerfile — dont l'utilisateur non privilégié fait précisément partie de
-      # ce que ces règles vérifient — et les workflows, où se joue le risque de
-      # chaîne d'approvisionnement (action repointée sous un tag mutable).
+      # ce que ces règles vérifient —, les workflows, où se joue le risque de
+      # chaîne d'approvisionnement (action repointée sous un tag mutable), et la
+      # configuration d'agent que `.claude/` publie : hooks, skills, settings.
+      # Trois familles de ce dernier jeu peuvent trouver ici (`hooks-*`,
+      # `claude-settings-*`, `skill-md-*`) ; les règles MCP ne visent que Python
+      # et TypeScript, donc pas notre serveur MCP en Java.
       #
       # `--severity INFO` : tous les niveaux remontent. Le cran avait été laissé
       # à ERROR le temps d'assainir la base ; elle l'est, et un avertissement
@@ -114,6 +118,7 @@ jobs:
               --config p/owasp-top-ten \
               --config p/dockerfile \
               --config p/github-actions \
+              --config r/ai.ai-best-practices \
               --severity INFO \
               --metrics off \
               --error
