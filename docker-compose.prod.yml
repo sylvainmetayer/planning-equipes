@@ -61,6 +61,7 @@ services:
       LEGAL_DIRECTEUR_PUBLICATION: ${LEGAL_DIRECTEUR_PUBLICATION:-}
       LEGAL_HEBERGEUR: ${LEGAL_HEBERGEUR:-}
       LEGAL_CONTACT: ${LEGAL_CONTACT:-}
+      LEGAL_RESPONSABLE_TRAITEMENT: ${LEGAL_RESPONSABLE_TRAITEMENT:-}
       LEGAL_BASE_LEGALE: ${LEGAL_BASE_LEGALE:-}
       LEGAL_CONSERVATION: ${LEGAL_CONSERVATION:-}
       # SMTP réel : c'est par là que partent les codes d'accès de l'espace
@@ -70,6 +71,13 @@ services:
       MAIL_PORT: ${MAIL_PORT:-587}
       MAIL_FROM: ${MAIL_FROM:?MAIL_FROM est obligatoire}
       MAIL_ADMIN: ${MAIL_ADMIN:-}
+      # Relais authentifié : un serveur de production n'accepte pas un envoi
+      # anonyme. Vides = pas d'authentification, ce qu'attend un Mailpit local.
+      # SPF, DKIM et DMARC restent à régler sur le domaine — voir
+      # docs/exploitation.md § Faire arriver les e-mails.
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_START_TLS: ${MAIL_START_TLS:-REQUIRED}
     depends_on:
       postgres:
         condition: service_healthy

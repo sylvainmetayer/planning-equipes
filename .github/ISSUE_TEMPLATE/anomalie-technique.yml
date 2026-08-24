@@ -1,0 +1,65 @@
+name: Anomalie technique
+description: Une erreur, un écran cassé, un export qui échoue — ce qui ne relève pas d'un calcul métier faux.
+title: "[Anomalie] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        > **⚠️ Ce dépôt est public : aucune information nominative ici.**
+        > Ni nom, ni prénom, ni e-mail, ni date de naissance d'un animateur.
+        > Désignez les personnes par leur **identifiant** et anonymisez vos
+        > captures. Les données nominatives passent par e-mail : planning@sylvain.dev.
+        >
+        > Un résultat de planification *faux* (score, contrainte violée, effectif)
+        > relève plutôt du gabarit **Erreur métier**.
+        >
+        > Une **faille de sécurité** ne se signale pas ici : voir `SECURITY.md`.
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Affichée en bas de la page *Débogage*. Sans elle, une anomalie corrigée depuis est indiscernable d'une anomalie réelle.
+      placeholder: "ex. 84506c9"
+    validations:
+      required: true
+
+  - type: input
+    id: ecran
+    attributes:
+      label: Écran concerné
+      placeholder: "ex. page Contraintes, export PDF, espace animateur"
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Étapes de reproduction
+      description: Ce que vous avez fait, dans l'ordre, en partant d'un écran connu.
+      placeholder: |
+        1. Ouvrir /contraintes
+        2. Régler le poids de « equilibrerCharge » à 5
+        3. Recharger la page
+    validations:
+      required: true
+
+  - type: textarea
+    id: attendu
+    attributes:
+      label: Attendu / observé
+      description: Ce qui aurait dû se passer, puis ce qui s'est passé. Message d'erreur exact si vous en avez un.
+    validations:
+      required: true
+
+  - type: textarea
+    id: contexte
+    attributes:
+      label: Contexte
+      description: >-
+        Navigateur et version, taille de l'écran si l'affichage est en cause,
+        et — si vous exploitez l'instance — ce que disent les journaux du
+        conteneur au même moment.
+    validations:
+      required: false

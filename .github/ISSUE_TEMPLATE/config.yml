@@ -1,0 +1,17 @@
+# Sans ce fichier, « Open a blank issue » reste proposé et la première
+# vulnérabilité sera signalée dans une issue publique — c'est-à-dire divulguée.
+blank_issues_enabled: false
+
+contact_links:
+  - name: Signaler une faille de sécurité
+    url: https://github.com/sylvainmetayer/planning-equipes/security/advisories/new
+    about: >-
+      N'ouvrez pas d'issue publique. Le signalement privé de GitHub, ou
+      planning@sylvain.dev. L'application manipule des données de mineurs :
+      voir SECURITY.md.
+
+  - name: Question d'utilisation
+    url: https://github.com/sylvainmetayer/planning-equipes/blob/main/docs/README.md
+    about: >-
+      La documentation technique répond peut-être déjà — modèle de données,
+      contraintes, formats d'import/export, exploitation.

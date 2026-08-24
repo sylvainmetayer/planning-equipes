@@ -1,0 +1,57 @@
+name: Demande de fonctionnalité
+description: Un manque qui vous coûte du temps, ou une règle que votre organisation applique et que l'outil ignore.
+title: "[Fonctionnalité] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        > **⚠️ Ce dépôt est public : aucune information nominative ici**, et rien
+        > qui identifie l'organisation d'un tiers (marques partenaires, effectifs
+        > réels, volumes horaires). Décrivez le besoin, pas le dossier.
+
+  - type: textarea
+    id: probleme
+    attributes:
+      label: Le problème, avant la solution
+      description: >-
+        Qu'est-ce qui vous coûte du temps aujourd'hui, ou qu'est-ce qui vous
+        oblige à corriger le planning à la main ? Décrire la situation vaut
+        mieux que décrire l'écran que vous imaginez : la bonne réponse est
+        souvent ailleurs.
+    validations:
+      required: true
+
+  - type: textarea
+    id: frequence
+    attributes:
+      label: À quelle fréquence, et pour combien de personnes ?
+      description: >-
+        Une gêne à chaque planification ne se traite pas comme une gêne
+        annuelle. Des ordres de grandeur suffisent.
+    validations:
+      required: true
+
+  - type: textarea
+    id: contournement
+    attributes:
+      label: Comment faites-vous en attendant ?
+      description: >-
+        Un contournement qui marche est une information utile — parfois il
+        devient la fonctionnalité.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: nature
+    attributes:
+      label: Est-ce une obligation légale ?
+      description: >-
+        Le catalogue distingue les règles d'ordre public des politiques
+        d'organisateur : les premières se protègent, les secondes se dosent.
+      options:
+        - "Non — une préférence ou un confort d'organisation"
+        - "Oui — Code du travail ou convention collective (préciser l'article ci-dessus)"
+        - "Je ne sais pas"
+    validations:
+      required: true

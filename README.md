@@ -278,6 +278,7 @@ Formats d'échange détaillés dans
 | Le référentiel de contraintes | [`docs/contraintes.md`](docs/contraintes.md) |
 | L'API REST | [`docs/api.md`](docs/api.md) |
 | Le durcissement avant mise sur Internet | [`docs/securite.md`](docs/securite.md) |
+| **Exploiter une instance** (installation, e-mails, sauvegarde, conservation) | [`docs/exploitation.md`](docs/exploitation.md) |
 | Les imports / exports | [`docs/import-export.md`](docs/import-export.md) |
 | Contribuer (build, tests, CI, Renovate) | [`docs/developpement.md`](docs/developpement.md) |
 | L'audit de conformité RH (Code du travail) | [`docs/audit-conformite-rh.md`](docs/audit-conformite-rh.md) |
