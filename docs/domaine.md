@@ -226,7 +226,7 @@ poste 10 à 14 h d'affilée.
 
 Le découpage résout ça **à la génération, pas au solve** : chaque amplitude
 devient plusieurs vacations plus courtes et chevauchantes. Tant qu'une vacation
-reste sous `dureeVacationMaxMinutes` (6 h par défaut, seuil de l'art. L3121-16)
+reste sous `dureeVacationMaxMinutes` (6 h par défaut, seuil de l'art. [L3121-16])
 **et** ne recouvre pas entièrement une fenêtre repas, elle n'a besoin d'aucune
 pause interne : **la pause est le trou entre deux vacations**, pas un attribut
 de créneau.
@@ -318,8 +318,8 @@ durées hebdomadaires de travail maximales**, paramétrables depuis la page
 
 | Champ | Défaut | Base légale | Contrainte qui le consomme |
 | --- | --- | --- | --- |
-| `dureeHebdomadaireMaxMinutes` | 48 h (2880 min) | Code du travail art. L3121-20 (ordre public) ; CCN Animation ÉCLAT IDCC 1518 art. 5.2 *[non vérifié]* | `dureeHebdomadaireMax` (**majeurs uniquement**) |
-| `dureeHebdomadaireMaxMineurMinutes` | 35 h (2100 min) | Code du travail art. L3162-1 ; art. D4153-3 pour les 14 à moins de 16 ans | `dureeHebdomadaireMaxMineur` |
+| `dureeHebdomadaireMaxMinutes` | 48 h (2880 min) | Code du travail art. [L3121-20] (ordre public) ; CCN Animation ÉCLAT [IDCC 1518] art. 5.2 *[non vérifié]* | `dureeHebdomadaireMax` (**majeurs uniquement**) |
+| `dureeHebdomadaireMaxMineurMinutes` | 35 h (2100 min) | Code du travail art. [L3162-1] ; art. [D4153-3] pour les 14 à moins de 16 ans | `dureeHebdomadaireMaxMineur` |
 
 Les deux contraintes regroupent les `PosteAffectation` par animateur et semaine
 ISO (`Creneau.semaineIso()`) et pénalisent le dépassement au prorata des minutes
@@ -376,3 +376,12 @@ peut donc pas desserrer un seuil de qualité en l'envoyant dans son payload.
 - Un créneau reste toujours l'unité de travail réellement assignable — jamais
   une amplitude d'ouverture brute.
 - Les noms de domaine restent en français métier.
+
+<!-- Liens vers Légifrance. Chaque référence pointe vers la recherche par
+     numéro d'article, qui résout toujours la version en vigueur : un
+     identifiant LEGIARTI désigne une version datée, et vieillit en silence. -->
+[D4153-3]: https://www.legifrance.gouv.fr/search/code?tab_selection=code&searchField=NUM_ARTICLE&query=D4153-3
+[IDCC 1518]: https://www.legifrance.gouv.fr/conv_coll/id/KALICONT000005635177
+[L3121-16]: https://www.legifrance.gouv.fr/search/code?tab_selection=code&searchField=NUM_ARTICLE&query=L3121-16
+[L3121-20]: https://www.legifrance.gouv.fr/search/code?tab_selection=code&searchField=NUM_ARTICLE&query=L3121-20
+[L3162-1]: https://www.legifrance.gouv.fr/search/code?tab_selection=code&searchField=NUM_ARTICLE&query=L3162-1

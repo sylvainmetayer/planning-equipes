@@ -22,6 +22,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ConstraintView } from '../../core/models';
+import { LegalText } from '../../shared/legal-text';
 
 export interface LegalDisableData {
   /** Technical name of the rule, as shown on its card. */
@@ -33,7 +34,7 @@ export interface LegalDisableData {
 
 @Component({
   selector: 'app-legal-disable-dialog',
-  imports: [MatDialogModule, MatButtonModule, MatIconModule, RouterLink],
+  imports: [MatDialogModule, MatButtonModule, MatIconModule, RouterLink, LegalText],
   templateUrl: './legal-disable-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })

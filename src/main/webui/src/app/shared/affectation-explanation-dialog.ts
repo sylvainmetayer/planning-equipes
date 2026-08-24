@@ -15,6 +15,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { AffectationExplanationService } from '../core/affectation-explanation.service';
 import { formatDeltaScore } from '../core/score-format';
+import { LegalText } from './legal-text';
 import {
   AffectationExplanation,
   Animateur,
@@ -48,7 +49,8 @@ export interface AffectationExplanationDialogData {
     MatFormFieldModule,
     MatSelectModule,
     MatProgressSpinnerModule,
-    FormsModule
+    FormsModule,
+    LegalText
   ],
   template: `
     <h2 mat-dialog-title>
@@ -74,7 +76,7 @@ export interface AffectationExplanationDialogData {
             @for (impact of explication.contraintesViolees; track impact.name) {
               <li>
                 <span class="affectation-explanation-badge" [class]="'niveau-' + (impact.niveau ?? 'inconnu')">{{ impact.niveau }}</span>
-                <strong>{{ impact.description ?? impact.name }}</strong>
+                <strong><app-legal-text [text]="impact.description ?? impact.name" /></strong>
                 @if (impact.details.length > 0) {
                   <ul>
                     @for (detail of impact.details; track detail) {
@@ -117,7 +119,7 @@ export interface AffectationExplanationDialogData {
               <p i18n="@@affectationExplanation.resolved">Violations résolues par ce remplacement :</p>
               <ul class="affectation-explanation-list">
                 @for (impact of violationsResolues(); track impact.name) {
-                  <li>{{ impact.description ?? impact.name }}</li>
+                  <li><app-legal-text [text]="impact.description ?? impact.name" /></li>
                 }
               </ul>
             }
@@ -125,7 +127,7 @@ export interface AffectationExplanationDialogData {
               <p i18n="@@affectationExplanation.newViolations">Nouvelles violations introduites par ce remplacement :</p>
               <ul class="affectation-explanation-list">
                 @for (impact of nouvellesViolations(); track impact.name) {
-                  <li>{{ impact.description ?? impact.name }}</li>
+                  <li><app-legal-text [text]="impact.description ?? impact.name" /></li>
                 }
               </ul>
             }

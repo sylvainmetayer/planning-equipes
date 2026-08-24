@@ -38,8 +38,8 @@
   <p class="form-warning" i18n="@@animateurs.warning.moinsDe16Ans">
     Cet animateur a moins de 16 ans. Le planning appliquera automatiquement les règles renforcées (7 h par jour,
     35 h par semaine, nuit dès 20 h, 14 h de repos quotidien), mais deux obligations restent à vérifier hors de
-    l'application : l'autorisation de l'inspection du travail (art. L4153-3 et D4153-2) et le repos continu au moins
-    égal à la moitié de la durée des vacances scolaires (art. D4153-2).
+    l'application : l'autorisation de l'inspection du travail (art. <a class="legal-article-link" [href]="articleAutorisationInspection" target="_blank" rel="noopener">L4153-3</a> et <a class="legal-article-link" [href]="articleReposVacancesScolaires" target="_blank" rel="noopener">D4153-2</a>) et le repos continu au moins
+    égal à la moitié de la durée des vacances scolaires (art. <a class="legal-article-link" [href]="articleReposVacancesScolaires" target="_blank" rel="noopener">D4153-2</a>).
   </p>
 }
 <mat-checkbox name="manager" [disabled]="editingLocked()"

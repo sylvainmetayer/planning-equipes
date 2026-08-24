@@ -12,6 +12,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
+import { urlLegifrance } from '../../core/legifrance';
 import { Animateur, NiveauCompetence } from '../../core/models';
 
 const NIVEAUX: NiveauCompetence[] = ['DEBUTANT', 'AUTONOME', 'REFERENT'];
@@ -62,6 +63,11 @@ export interface AnimateurFormData {
 })
 export class AnimateurFormDialog {
   protected readonly niveaux = NIVEAUX;
+
+  // The two obligations the under-16 warning says stay outside the application:
+  // whoever has to satisfy them should be able to read them.
+  protected readonly articleAutorisationInspection = urlLegifrance('L4153-3');
+  protected readonly articleReposVacancesScolaires = urlLegifrance('D4153-2');
   protected readonly store = inject(ReferenceDataStore);
   protected readonly jobs = inject(SolverJobService);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */

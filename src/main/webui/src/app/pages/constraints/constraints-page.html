@@ -11,7 +11,7 @@
       Plafonds hebdomadaires de temps de travail appliqués par les contraintes fortes
       <code>dureeHebdomadaireMax</code> (majeurs) et <code>dureeHebdomadaireMaxMineur</code>. Tous les animateurs sont
       rémunérés. Ces deux plafonds sont d'ordre public : une valeur supérieure au maximum légal est refusée
-      (48 h, Code du travail art. L3121-20 ; 35 h pour les mineurs, art. L3162-1). Une valeur inférieure, plus
+      (48 h, Code du travail art. <a class="legal-article-link" [href]="articlePlafondMajeur" target="_blank" rel="noopener">L3121-20</a> ; 35 h pour les mineurs, art. <a class="legal-article-link" [href]="articlePlafondMineur" target="_blank" rel="noopener">L3162-1</a>). Une valeur inférieure, plus
       protectrice, reste libre.
     </mat-card-subtitle>
   </mat-card-header>
@@ -21,13 +21,13 @@
         <mat-label i18n="@@constraints.legal.field.dureeMax">Durée hebdomadaire maximale, majeurs (heures)</mat-label>
         <input matInput type="number" min="1" [max]="plafondMajeurHeures" step="0.5" name="dureeHebdomadaireMaxHeures"
                [ngModel]="dureeHebdomadaireMaxHeures()" (ngModelChange)="dureeHebdomadaireMaxHeures.set($event)" />
-        <mat-hint i18n="@@constraints.legal.hint.dureeMax">Maximum légal : 48 h (art. L3121-20)</mat-hint>
+        <mat-hint i18n="@@constraints.legal.hint.dureeMax">Maximum légal : 48 h (art. <a class="legal-article-link" [href]="articlePlafondMajeur" target="_blank" rel="noopener">L3121-20</a>)</mat-hint>
       </mat-form-field>
       <mat-form-field appearance="outline">
         <mat-label i18n="@@constraints.legal.field.dureeMaxMineur">Durée hebdomadaire maximale, mineurs (heures)</mat-label>
         <input matInput type="number" min="1" [max]="plafondMineurHeures" step="0.5" name="dureeHebdomadaireMaxMineurHeures"
                [ngModel]="dureeHebdomadaireMaxMineurHeures()" (ngModelChange)="dureeHebdomadaireMaxMineurHeures.set($event)" />
-        <mat-hint i18n="@@constraints.legal.hint.dureeMaxMineur">Maximum légal : 35 h (art. L3162-1)</mat-hint>
+        <mat-hint i18n="@@constraints.legal.hint.dureeMaxMineur">Maximum légal : 35 h (art. <a class="legal-article-link" [href]="articlePlafondMineur" target="_blank" rel="noopener">L3162-1</a>)</mat-hint>
       </mat-form-field>
       <div class="form-actions">
         <button matButton="filled" type="submit" [disabled]="parametresLoading()">
@@ -109,7 +109,7 @@
                   </mat-chip>
                 </mat-chip-set>
               </div>
-              <p class="constraint-description">{{ constraint.description }}</p>
+              <p class="constraint-description"><app-legal-text [text]="constraint.description" /></p>
               <div class="constraint-controls">
                 <div class="constraint-toggle-row">
                   <mat-slide-toggle

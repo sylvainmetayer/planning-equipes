@@ -552,3 +552,22 @@ table td.hours-verifier {
   color: var(--mat-sys-error);
   font-style: italic;
 }
+
+/* Citations of the Code du travail, wherever a legal rule is stated: the
+   constraint descriptions rendered by `app-legal-text`, and the handful of
+   hints that name an article in their own translated sentence. Deliberately
+   discreet — the article number is a reference to check, not the point of the
+   sentence — but underlined, because a link that only shows on hover is no
+   link at all for whoever does not hover. */
+.legal-article-link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 0.2em;
+}
+
+.legal-article-link:hover,
+.legal-article-link:focus-visible {
+  color: var(--mat-sys-primary);
+  text-decoration-style: solid;
+}

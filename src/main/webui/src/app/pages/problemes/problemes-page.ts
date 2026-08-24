@@ -9,6 +9,7 @@ import { intlLocale } from '../../core/locale';
 import { NiveauProbleme, niveauProblemeLabel } from '../../core/problemes';
 import { ProblemesStore } from '../../core/problemes.store';
 import { SolverJobService } from '../../core/solver-job.service';
+import { LegalText } from '../../shared/legal-text';
 
 /**
  * Every known problem of the current dataset, most blocking first: the
@@ -21,7 +22,7 @@ import { SolverJobService } from '../../core/solver-job.service';
 @Component({
   selector: 'app-problemes-page',
   imports: [
-    RouterLink,MatCardModule, MatButtonModule, MatIconModule, MatChipsModule, MatProgressBarModule],
+    RouterLink,MatCardModule, MatButtonModule, MatIconModule, MatChipsModule, MatProgressBarModule, LegalText],
   templateUrl: './problemes-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })

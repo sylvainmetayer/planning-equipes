@@ -172,7 +172,7 @@
               </p>
               <ul>
                 @for (contrainte of demande.contraintesViolees; track contrainte) {
-                  <li>{{ contrainte }}</li>
+                  <li><app-legal-text [text]="contrainte" /></li>
                 }
               </ul>
               <p i18n="@@espace.echanges.infaisableSuite">

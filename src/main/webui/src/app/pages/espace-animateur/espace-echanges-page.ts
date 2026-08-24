@@ -11,6 +11,7 @@ import { statutDemandeClasse, statutDemandeLabel } from '../../core/demande-echa
 import { EspaceAnimateurService } from '../../core/espace-animateur.service';
 import { DemandeEchangeView, PosteAnimateurView } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
+import { LegalText } from '../../shared/legal-text';
 import {
   BrouillonDemande,
   ajouterBrouillon,
@@ -43,7 +44,8 @@ interface DemandeRow extends DemandeEchangeView {
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
-    MatSelectModule
+    MatSelectModule,
+    LegalText
   ],
   templateUrl: './espace-echanges-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush

@@ -12,6 +12,13 @@ métier et l'article de loi qui les fonde vivent dans `ConstraintCatalog`** — 
 sont servies par `GET /api/constraints`, affichées sur la page Contraintes. Ce
 document ne les recopie pas : il porte les mécanismes et les arbitrages.
 
+Les descriptions restent du **texte brut** côté serveur : la même chaîne part
+vers les outils MCP et se range dans une demande d'échange. C'est le frontend
+qui, au moment d'afficher, reconnaît les numéros d'article qu'elles citent et
+les lie vers Légifrance (`webui/src/app/core/legifrance.ts`, rendu par
+`app-legal-text`). Écrire `art. L3162-1` dans une description suffit donc à
+obtenir le lien : rien d'autre n'est à déclarer.
+
 ## Fenêtre effective : ce qui la lit, et ce qui ne la lit pas délibérément
 
 Un stand fermé pour **une partie** d'un créneau — ou normalement fermé et
@@ -157,13 +164,13 @@ sous-ensemble des postes épuisants ou premium.
 Ces obligations sont réelles et **volontairement non implémentées**. Elles sont
 listées pour que leur absence soit un choix écrit, pas un oubli.
 
-**Durée hebdomadaire moyenne de 44 h sur 12 semaines (L3121-22).** Un événement
+**Durée hebdomadaire moyenne de 44 h sur 12 semaines ([L3121-22]).** Un événement
 couvre quelques semaines ISO au plus : **le solveur ne peut pas calculer cette
 moyenne**, il ne connaît ni les semaines précédentes ni les suivantes. Limite
 structurelle du périmètre, pas manque d'implémentation. Le contrôle relève du
 service RH, à partir du cumul par semaine que la page Heures expose déjà.
 
-**Travail de nuit des majeurs (L3122-1 et suivants).** `chevaucheNuit()` n'est
+**Travail de nuit des majeurs ([L3122-1] et suivants).** `chevaucheNuit()` n'est
 consulté que par les contraintes mineurs, alors que les scénarios livrés
 comportent un créneau nocturne quotidien. La qualification de « travailleur de
 nuit » dépend d'un seuil et d'une régularité, mais aussi du contrat, d'un accord
@@ -173,10 +180,10 @@ instruire avec un juriste ; d'ici là, contrôle manuel.
 
 | Autre sujet | Pourquoi hors périmètre |
 | --- | --- |
-| Heures supplémentaires, contingent annuel (L3121-30) | Le planning produit est l'assiette du décompte, pas le décompte |
+| Heures supplémentaires, contingent annuel ([L3121-30]) | Le planning produit est l'assiette du décompte, pas le décompte |
 | Nature des indisponibilités | `joursIndisponibles` est un `Set<LocalDate>` non typé : impossible de distinguer un repos légal, un congé payé et une convenance |
-| Autorisation d'inspection pour les moins de 16 ans (L4153-3, D4153-2) | Donnée administrative absente du modèle, à vérifier manuellement |
-| Dérogation sectorielle aux jours fériés (R3164-2) | Non instruite ; le défaut le plus protecteur s'applique |
+| Autorisation d'inspection pour les moins de 16 ans ([L4153-3], [D4153-2]) | Donnée administrative absente du modèle, à vérifier manuellement |
+| Dérogation sectorielle aux jours fériés ([R3164-2]) | Non instruite ; le défaut le plus protecteur s'applique |
 
 ## Ajouter une contrainte
 
@@ -207,3 +214,13 @@ chaque mouvement, pas à la longueur du code.
 
 Chiffres mesurés et protocole dans
 [`developpement.md`](developpement.md#réglage-du-solveur).
+
+<!-- Liens vers Légifrance. Chaque référence pointe vers la recherche par
+     numéro d'article, qui résout toujours la version en vigueur : un
+     identifiant LEGIARTI désigne une version datée, et vieillit en silence. -->
+[D4153-2]: https://www.legifrance.gouv.fr/search/code?tab_selection=code&searchField=NUM_ARTICLE&query=D4153-2
+[L3121-22]: https://www.legifrance.gouv.fr/search/code?tab_selection=code&searchField=NUM_ARTICLE&query=L3121-22
+[L3121-30]: https://www.legifrance.gouv.fr/search/code?tab_selection=code&searchField=NUM_ARTICLE&query=L3121-30
+[L3122-1]: https://www.legifrance.gouv.fr/search/code?tab_selection=code&searchField=NUM_ARTICLE&query=L3122-1
+[L4153-3]: https://www.legifrance.gouv.fr/search/code?tab_selection=code&searchField=NUM_ARTICLE&query=L4153-3
+[R3164-2]: https://www.legifrance.gouv.fr/search/code?tab_selection=code&searchField=NUM_ARTICLE&query=R3164-2

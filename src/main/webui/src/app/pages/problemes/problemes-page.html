@@ -58,7 +58,7 @@
         </mat-chip-set>
         <strong>{{ probleme.titre }}</strong>
       </div>
-      <p class="probleme-message">{{ probleme.message }}</p>
+      <p class="probleme-message"><app-legal-text [text]="probleme.message" /></p>
       @if (probleme.liens.length > 0) {
         <p class="probleme-liens">
           @for (lien of probleme.liens; track lien.route) {

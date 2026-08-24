@@ -8,7 +8,7 @@
     <strong>{{ data.name }}</strong>
     <span class="legal-disable-categorie">{{ data.categorie }}</span>
   </p>
-  <p class="legal-disable-description">{{ data.description }}</p>
+  <p class="legal-disable-description"><app-legal-text [text]="data.description" /></p>
 
   <p i18n="@@constraints.legalDisable.effet">
     Désactivée, cette règle n'est plus évaluée : le solveur peut produire un planning

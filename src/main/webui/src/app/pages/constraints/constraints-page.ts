@@ -11,6 +11,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ApiService } from '../../core/api.service';
+import { urlLegifrance } from '../../core/legifrance';
 import { intlLocale } from '../../core/locale';
 import {
   DUREE_HEBDOMADAIRE_MAX_HEURES,
@@ -24,6 +25,7 @@ import { ProblemesStore } from '../../core/problemes.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';
 import { FeasibilityBanner } from '../../shared/feasibility-banner';
+import { LegalText } from '../../shared/legal-text';
 import { StatusMessage } from '../../shared/status-message';
 import { ViolationDetailsDialog } from '../../shared/violation-details-dialog';
 import { errorPrefix } from '../../core/error-message';
@@ -78,6 +80,7 @@ const POIDS_MAX = 100;
     MatSlideToggleModule,
     MatTooltipModule,
     FeasibilityBanner,
+    LegalText,
     StatusMessage
   ],
   templateUrl: './constraints-page.html',
@@ -101,6 +104,11 @@ export class ConstraintsPage {
   /** Ordre public ceilings, mirrored from the server-side validation. */
   protected readonly plafondMajeurHeures = DUREE_HEBDOMADAIRE_MAX_HEURES;
   protected readonly plafondMineurHeures = DUREE_HEBDOMADAIRE_MAX_MINEUR_HEURES;
+
+  // The two ceilings are ordre public: the page states which article says so,
+  // and links it, rather than asking the reader to take our word for it.
+  protected readonly articlePlafondMajeur = urlLegifrance('L3121-20');
+  protected readonly articlePlafondMineur = urlLegifrance('L3162-1');
 
   protected readonly feasibility = computed(() => this.view()?.faisabilite ?? null);
   protected readonly hardScore = computed(() => this.view()?.hardScore ?? null);
