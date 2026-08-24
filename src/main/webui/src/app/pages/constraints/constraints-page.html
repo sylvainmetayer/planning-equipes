@@ -115,7 +115,7 @@
                   <mat-slide-toggle
                     [checked]="constraint.actif"
                     [disabled]="togglingConstraint() === constraint.name || jobs.editingLocked()"
-                    (change)="toggleConstraint(constraint, $event.checked)">
+                    (change)="toggleConstraint(constraint, $event)">
                     {{ actifLabel(constraint.actif) }}
                   </mat-slide-toggle>
                   @if (constraint.protegee) {

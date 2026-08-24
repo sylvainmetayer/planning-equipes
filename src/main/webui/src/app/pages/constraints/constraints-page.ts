@@ -8,7 +8,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ApiService } from '../../core/api.service';
 import { intlLocale } from '../../core/locale';
@@ -264,12 +264,17 @@ export class ConstraintsPage {
    * return a plan scoring zero hard that still breaks the Code du travail, and
    * nothing else would say so. Re-enabling never asks — putting a legal rule
    * back needs no ceremony.
+   *
+   * The switch is given back its previous state by hand on every path that
+   * does not end on `actif`: it flipped itself on click, while `[checked]`
+   * still evaluates to the value it already had, so Angular sees no change and
+   * writes nothing back to it. Left alone it would show « désactivée » for a
+   * rule that stayed active.
    */
-  protected async toggleConstraint(constraint: ConstraintView, actif: boolean): Promise<void> {
+  protected async toggleConstraint(constraint: ConstraintView, event: MatSlideToggleChange): Promise<void> {
+    const actif = event.checked;
     if (!actif && !(await this.legalDisable.allowsDisabling(constraint))) {
-      // Nothing was applied optimistically yet, but the Material switch has
-      // already flipped itself: put the view back so it matches the state.
-      this.setConstraintActif(constraint.name, true);
+      event.source.checked = !actif;
       return;
     }
     this.setConstraintActif(constraint.name, actif);
@@ -279,6 +284,7 @@ export class ConstraintsPage {
       await this.api.put<{ actif: boolean }>(`/api/constraints/${encodeURIComponent(constraint.name)}`, { actif });
     } catch (error) {
       this.setConstraintActif(constraint.name, !actif);
+      event.source.checked = !actif;
       this.error.set(errorPrefix(error));
     } finally {
       this.togglingConstraint.set(null);

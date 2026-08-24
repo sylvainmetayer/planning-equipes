@@ -10,6 +10,7 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
+import { MatSlideToggle, MatSlideToggleChange } from '@angular/material/slide-toggle';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
@@ -46,6 +47,15 @@ const REGLE_LEGALE = contrainte({
   dosable: false
 });
 
+/**
+ * The event a `mat-slide-toggle` emits, with the switch that emitted it: it has
+ * already flipped itself to `checked` when the page gets the call, so its own
+ * state is what a refusal has to restore.
+ */
+function bascule(checked: boolean): MatSlideToggleChange {
+  return new MatSlideToggleChange({ checked } as unknown as MatSlideToggle, checked);
+}
+
 function view(contraintes: ConstraintView[]): ConstraintsView {
   return {
     analysedAt: null,
@@ -61,7 +71,7 @@ function view(contraintes: ConstraintView[]): ConstraintsView {
 type PageInternals = {
   view: { (): ConstraintsView | null; set: (value: ConstraintsView) => void };
   error: () => string;
-  toggleConstraint: (constraint: ConstraintView, actif: boolean) => Promise<void>;
+  toggleConstraint: (constraint: ConstraintView, event: MatSlideToggleChange) => Promise<void>;
   setPoids: (constraint: ConstraintView, poids: number) => Promise<void>;
   onPoidsChange: (constraint: ConstraintView, field: HTMLInputElement) => Promise<void>;
 };
@@ -118,7 +128,7 @@ describe('ConstraintsPage', () => {
     it('asks nothing for an ordinary rule and saves it', async () => {
       const page = await createPage([contrainte()]);
 
-      await page.toggleConstraint(contrainte(), false);
+      await page.toggleConstraint(contrainte(), bascule(false));
 
       expect(api.put).toHaveBeenCalledWith('/api/constraints/equilibrerCharge', { actif: false });
       expect(page.view()?.contraintes[0].actif).toBe(false);
@@ -132,27 +142,47 @@ describe('ConstraintsPage', () => {
       legalDisable.allowsDisabling.mockResolvedValue(false);
       const page = await createPage([REGLE_LEGALE]);
 
-      await page.toggleConstraint(REGLE_LEGALE, false);
+      const evenement = bascule(false);
+      await page.toggleConstraint(REGLE_LEGALE, evenement);
 
       expect(legalDisable.allowsDisabling).toHaveBeenCalledOnce();
       expect(api.put).not.toHaveBeenCalled();
       expect(page.view()?.contraintes[0].actif).toBe(true);
+      // The switch itself, not only the model: `[checked]` never changed value,
+      // so nothing puts it back except the page.
+      expect(evenement.source.checked).toBe(true);
     });
 
     it('saves the disabling once the confirmation is given', async () => {
       const page = await createPage([REGLE_LEGALE]);
 
-      await page.toggleConstraint(REGLE_LEGALE, false);
+      const evenement = bascule(false);
+      await page.toggleConstraint(REGLE_LEGALE, evenement);
 
       expect(api.put).toHaveBeenCalledWith('/api/constraints/travailDeNuitInterditPourMineur', { actif: false });
       expect(page.view()?.contraintes[0].actif).toBe(false);
+      expect(evenement.source.checked).toBe(false);
+    });
+
+    // Same lie, other cause: a refused save leaves the rule active, so the
+    // switch has to come back too.
+    it('puts the switch back when the save fails', async () => {
+      api.put.mockRejectedValue(new Error('refusé'));
+      const page = await createPage([contrainte()]);
+      const evenement = bascule(false);
+
+      await page.toggleConstraint(contrainte(), evenement);
+
+      expect(page.view()?.contraintes[0].actif).toBe(true);
+      expect(evenement.source.checked).toBe(true);
+      expect(page.error()).toContain('refusé');
     });
 
     /** Putting a legal rule back needs no ceremony. */
     it('never asks when a rule is switched back on', async () => {
       const page = await createPage([{ ...REGLE_LEGALE, actif: false }]);
 
-      await page.toggleConstraint(REGLE_LEGALE, true);
+      await page.toggleConstraint(REGLE_LEGALE, bascule(true));
 
       expect(legalDisable.allowsDisabling).not.toHaveBeenCalled();
       expect(page.view()?.contraintes[0].actif).toBe(true);

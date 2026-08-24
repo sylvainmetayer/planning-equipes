@@ -84,7 +84,10 @@ test('désactiver une règle légale demande une confirmation, et annuler ne cha
   await dialogue.getByRole('button', { name: 'Annuler' }).click();
   await expect(dialogue).toBeHidden();
 
-  // Cancelling must really cancel, server side included.
+  // Cancelling must really cancel, on screen as well as server side: a switch
+  // showing « désactivée » over a rule that is still active is the same lie,
+  // and only the reload used to reveal it.
+  await expect(carte(page, PROTEGEE).getByRole('switch')).toBeChecked();
   const apres = await (await admin.get('/api/constraints')).json();
   expect(apres.contraintes.find((c: { name: string }) => c.name === PROTEGEE).actif).toBe(true);
 
