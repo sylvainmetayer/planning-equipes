@@ -393,6 +393,16 @@ Timefold bumps must be validated with `./mvnw verify -DskipITs=false`.
 - Code and comments in English, domain names in French business vocabulary —
   the glossary and the test that enforces it are in *Language of the code*
   below.
+- **Commit messages are short.** Subject under 72 characters, conventional
+  prefix, no trailing period. A body only when it carries what the diff
+  cannot — the why, an option rejected on the way, a consequence at
+  deployment — and then three to five lines, not thirty. No body at all is a
+  perfectly good outcome. Never restate the diff, never narrate the work that
+  produced it, never list the files touched: the reader has `git show`. Two
+  trailers and no others: `Signed-off-by` (`git commit -s`, checked by the DCO
+  workflow) and `Co-Authored-By: Claude <noreply@anthropic.com>` where an
+  assistant helped — without a model version, which ages badly and teaches
+  nobody anything.
 - **Public links go through `ApplicationLinks`, never through concatenation.**
   URLs printed outside the app (notification mails, individual PDFs) target
   **Angular SPA routes** (`src/main/webui/src/app/app.routes.ts`), not JAX-RS
