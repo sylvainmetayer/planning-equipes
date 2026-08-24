@@ -2,26 +2,15 @@
 
 Merci de l'intérêt porté au projet. Quelques règles, courtes.
 
-## Licence et certificat d'origine (DCO)
+## Licence
 
 Le projet est distribué sous **AGPL-3.0-only** (voir [`LICENSE`](../LICENSE)).
 Toute contribution est acceptée sous cette même licence.
 
-Chaque commit doit porter une ligne `Signed-off-by`, obtenue avec `git commit -s` :
-
-```
-Signed-off-by: Prénom Nom <adresse@example.org>
-```
-
-Cette signature vaut adhésion au [Developer Certificate of Origin](https://developercertificate.org/)
-1.1 : vous certifiez avoir le droit de soumettre ce code sous la licence du
-projet. Elle n'exige aucune cession de droits — vous restez titulaire des vôtres.
-
-> **Pourquoi un DCO plutôt qu'un CLA ?** Le DCO est plus léger pour le
-> contributeur et suffit à établir la traçabilité des contributions. Notez que
-> le titulaire du copyright se réserve la possibilité de proposer le logiciel
+> Le titulaire du copyright se réserve la possibilité de proposer le logiciel
 > sous une licence commerciale distincte ; les contributions reçues restent,
-> elles, disponibles sous AGPL-3.0.
+> elles, disponibles sous AGPL-3.0. Un certificat d'origine (DCO) sera demandé
+> le jour où des contributions extérieures arriveront — pas avant.
 
 ## Avant d'ouvrir une pull request
 

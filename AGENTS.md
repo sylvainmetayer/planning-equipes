@@ -399,8 +399,8 @@ Timefold bumps must be validated with `./mvnw verify -DskipITs=false`.
   deployment — and then three to five lines, not thirty. No body at all is a
   perfectly good outcome. Never restate the diff, never narrate the work that
   produced it, never list the files touched: the reader has `git show`. Two
-  trailers and no others: `Signed-off-by` (`git commit -s`, checked by the DCO
-  workflow) and `Co-Authored-By: Claude <noreply@anthropic.com>` where an
+  trailers and no others: `Signed-off-by` (`git commit -s`) and
+  `Co-Authored-By: Claude <noreply@anthropic.com>` where an
   assistant helped — without a model version, which ages badly and teaches
   nobody anything.
 - **Public links go through `ApplicationLinks`, never through concatenation.**

@@ -283,7 +283,7 @@ Formats d'échange détaillés dans
 | Contribuer (build, tests, CI, Renovate) | [`docs/developpement.md`](docs/developpement.md) |
 | L'audit de conformité RH (Code du travail) | [`docs/audit-conformite-rh.md`](docs/audit-conformite-rh.md) |
 | Les conventions suivies par les agents IA | [`AGENTS.md`](AGENTS.md) |
-| Contribuer (DCO, checklist de PR) | [`.github/CONTRIBUTING.md`](.github/CONTRIBUTING.md) |
+| Contribuer (checklist de PR) | [`.github/CONTRIBUTING.md`](.github/CONTRIBUTING.md) |
 | Signaler une faille | [`.github/SECURITY.md`](.github/SECURITY.md) |
 
 ---
@@ -300,7 +300,7 @@ sous la même licence (article 13 de l'AGPL). Héberger l'application pour ses
 propres besoins n'impose rien de plus que de rendre disponible le code que l'on
 fait tourner.
 
-Les contributions sont acceptées sous cette licence, avec signature DCO — voir
+Les contributions sont acceptées sous cette licence — voir
 [`.github/CONTRIBUTING.md`](.github/CONTRIBUTING.md).
 
 ## Assistance IA

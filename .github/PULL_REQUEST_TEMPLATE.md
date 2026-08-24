@@ -25,9 +25,6 @@ cd src/main/webui && npm test && npm run lint && npm run i18n-check
 
 ## Avant de demander une relecture
 
-- [ ] **Chaque commit porte `Signed-off-by`** (`git commit -s`) — le workflow
-      *Certificat d'origine (DCO)* le vérifie, et se rattrape en une passe :
-      `git rebase --signoff origin/main`
 - [ ] Toute chaîne visible par l'utilisateur a sa version française **et** son
       entrée dans `public/i18n/messages.en.json` (`npm run i18n-check`)
 - [ ] La prose du dépôt est en anglais — commentaires et noms déclarés —
