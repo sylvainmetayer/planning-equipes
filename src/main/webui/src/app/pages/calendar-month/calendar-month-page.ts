@@ -349,11 +349,30 @@ export class CalendarMonthPage {
   protected selectAnimateur(value: string): void {
     this.animateurFilter.set(value);
     this.selectedDateKey.set(null);
+    this.followSelection();
   }
 
   protected selectStand(value: string): void {
     this.standFilter.set(value);
     this.selectedDateKey.set(null);
+    this.followSelection();
+  }
+
+  /**
+   * Moves the grid to the first month the current selection has affectations
+   * in, when the displayed one has none. Reading a planning solved for July
+   * in August otherwise shows an empty grid above a non-empty day list, which
+   * reads as a broken filter. Deliberately a no-op as soon as the displayed
+   * month holds one affectation of the selection: browsing must not move
+   * under the user's feet.
+   */
+  private followSelection(): void {
+    const dateKeys = Array.from(this.assignmentsByDate().keys()).sort();
+    const monthKey = toMonthKey(this.month());
+    if (dateKeys.length === 0 || dateKeys.some((dateKey) => dateKey.startsWith(monthKey))) {
+      return;
+    }
+    this.month.set(getMonthStart(parseDateKey(dateKeys[0])));
   }
 
   /**
