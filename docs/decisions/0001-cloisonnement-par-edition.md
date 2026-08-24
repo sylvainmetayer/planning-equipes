@@ -246,7 +246,7 @@ l'en-tête HTTP : une édition inconnue **échoue** côté MCP au lieu de retomb
 sur l'édition par défaut. Un onglet resté ouvert sur une édition supprimée doit
 continuer à afficher des écrans ; un assistant qui nomme une édition s'apprête
 à y écrire, et un repli silencieux enverrait cette écriture ailleurs sans que
-personne ne puisse le voir (voir [`mcp.md`](../mcp.md#éditions)).
+personne ne puisse le voir (voir [`mcp.md`](../mcp.md#lédition-se-désigne-argument-par-argument)).
 
 Le verrou du solveur (`SolverJobService`) reste **global** : une résolution à la
 fois pour toute l'instance, quelle que soit sa cible. Un verrou par édition ferait

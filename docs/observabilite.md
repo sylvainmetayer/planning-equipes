@@ -1,140 +1,72 @@
 # Observabilité
 
-Deux briques optionnelles, **désactivées par défaut en dev/test**. En
-production, le suivi d'erreurs reste conditionné à `SENTRY_DSN`, mais la mesure
-d'audience Cloudflare est **active par défaut** : le profil `%prod` fournit un
-token de repli (`application.properties`). Un exploitant qui n'en veut pas doit
-donc positionner `CLOUDFLARE_WEB_ANALYTICS_TOKEN` à vide, et non simplement
-« ne rien configurer ».
+Deux briques, **désactivées en dev/test** : suivi d'erreurs
+[Bugsink](https://www.bugsink.com/) (protocole et SDK Sentry) et
+[Cloudflare Web Analytics](https://www.cloudflare.com/web-analytics/).
 
-Trois garde-fous s'appliquent à l'espace animateur, dont l'URL porte le jeton
-d'accès — un identifiant unique de personne, souvent mineure :
+Le câblage se lit dans `SentryInitializer`, `GlobalExceptionMapper` et
+`app/core/observability.ts` — ce document porte ce qui ne s'y voit pas.
+
+## Le point qui n'est pas négociable : le jeton de l'espace animateur
+
+L'URL de l'espace porte le jeton d'accès, **un identifiant unique de personne,
+souvent mineure**. Trois garde-fous :
 
 - le beacon Cloudflare **n'est pas chargé du tout** sur `/animateur/*` ;
-- **les rapports d'erreur sont expurgés des deux côtés** : côté navigateur,
-  `masquerJetonPartout` parcourt l'intégralité du rapport (`beforeSend`,
-  `beforeBreadcrumb`) plutôt qu'une liste de champs — ne masquer que
-  `request.url` et `data.url` laissait passer les cas les plus probables, un
-  changement de page interne (`data.from` / `data.to`) et un échec HTTP
-  (`exception.values[].value`, « Http failure response for /api/espace-animateur/… »).
-  Côté serveur, `SentryInitializer.maskTokensInReport` fait de même sur le
-  message et les exceptions ;
-- l'en-tête `Referrer-Policy: same-origin` ferme le canal des liens sortants.
+- les rapports d'erreur sont expurgés **des deux côtés**. Côté navigateur,
+  `masquerJetonPartout` parcourt le rapport **entier** (`beforeSend`,
+  `beforeBreadcrumb`) plutôt qu'une liste de champs : ne masquer que
+  `request.url` et `data.url` laissait passer les deux cas les plus probables —
+  un changement de page interne (`data.from` / `data.to`) et un échec HTTP dont
+  le message contient l'URL. Côté serveur, `maskTokensInReport` fait de même ;
+- `Referrer-Policy: same-origin` ferme le canal des liens sortants.
 
 C'est ce qui rend vraie la phrase que la politique de confidentialité adresse
-aux animateurs : l'identifiant de leur lien personnel est retiré du rapport
-avant son envoi. Toute nouvelle voie d'envoi doit préserver cette propriété.
+aux animateurs. **Toute nouvelle voie d'envoi doit préserver cette propriété.**
 
-- **Suivi d'erreurs** — [Bugsink](https://www.bugsink.com/), compatible avec le
-  protocole/SDK Sentry. Ce déploiement utilise **l'offre hébergée** de Bugsink
-  (espace dédié), et non une instance auto-hébergée : c'est donc un
-  **sous-traitant** au sens du RGPD, ce que la politique de confidentialité doit
-  dire. L'éditeur annonce un hébergement dans l'Union européenne
-  (« Data location: EU (managed) »), il n'y a donc pas de transfert hors UE à
-  déclarer — contrairement à Cloudflare.
-- **Analytics d'usage** — [Cloudflare Web Analytics](https://www.cloudflare.com/web-analytics/)
-  (mesure légère des pages vues/navigation).
+## Deux pièges de configuration
 
-## Pourquoi ces choix
+**La mesure d'audience est active par défaut en production** : le profil
+`%prod` fournit un token de repli. Ne rien configurer ne la désactive pas — il
+faut positionner `CLOUDFLARE_WEB_ANALYTICS_TOKEN` **à vide**.
 
-| Besoin | Outil | Pourquoi |
-| --- | --- | --- |
-| Erreurs backend + frontend | Bugsink | **Compatible avec les SDK Sentry** — n'importe quel SDK officiel (Java, JavaScript, …) fonctionne en pointant simplement son DSN vers l'instance. Bien plus léger qu'un Sentry auto-hébergé (Docker, SQLite par défaut, pas de dépendance Redis/Celery), et s'auto-héberge si on le souhaite — mais ce déploiement-ci utilise l'offre hébergée, hébergement UE annoncé par l'éditeur. |
-| Audience / pages vues légères | Cloudflare Web Analytics | Script minimal, sans cookie, facile à activer uniquement en production ; capte les pages vues même en navigation SPA (History API) via le beacon officiel Cloudflare. |
+**Le SDK Sentry n'est chargé que si un DSN est configuré**, par un `import()`
+dynamique à l'intérieur de la condition. Il pèse 462 ko (130 ko transférés) :
+l'inclure au bundle initial le faisait payer à tous les visiteurs, y compris
+sur `/animateur/:jeton`, page publique souvent consultée depuis un téléphone,
+et y compris sur un déploiement sans DSN.
 
-**Analytics produit retirée.** Le projet a un temps embarqué PostHog pour
-mesurer l'usage des écrans. La brique a été déposée : personne ne consultait
-les tableaux de bord, et elle coûtait une dépendance JavaScript, deux variables
-d'environnement et un traitement de données personnelles à justifier — trois
-prix payés pour rien. Cloudflare Web Analytics couvre le besoin restant
-(combien de pages vues, lesquelles) sans cookie ni SDK.
-
-Si le besoin d'événements produit revient, les candidats regardés à l'époque
-étaient PostHog (palier gratuit le plus généreux, hébergement EU),
-**Umami** (~100k événements/mois) et **Plausible** (pas de palier gratuit
-hébergé). `app/core/observability.ts` reste le seul point d'entrée à
-reprendre : rien d'autre dans le code ne connaissait PostHog.
-
-## Suivi d'erreurs (Bugsink / Sentry)
-
-### Mise en place de Bugsink
-
-Bugsink se consomme en offre hébergée (le cas de ce déploiement) ou
-s'auto-héberge (image Docker officielle, voir sa documentation). Dans les deux
-cas, créer une organisation puis un projet y donne un DSN
-(`https://<clé>@<host>/<projet>`) à copier dans `SENTRY_DSN`. N'importe quel
-autre service compatible avec le protocole d'ingestion Sentry (y compris
-Sentry SaaS lui-même) fonctionne de la même façon : seule la valeur du DSN
-change.
-
-### Intégration dans l'application
-
-- **Backend** : SDK Java `io.sentry:sentry` (pas d'extension Quarkus dédiée
-  pour Sentry, donc SDK simple, initialisé manuellement) — voir
-  `SentryInitializer` (`@Observes StartupEvent`, no-op si `SENTRY_DSN` est
-  vide) et `GlobalExceptionMapper`, qui remonte à Bugsink toute exception REST
-  non gérée (`ExceptionMapper<Throwable>`), à l'exclusion des
-  `WebApplicationException` volontaires (404, 409, …) déjà gérées par les
-  ressources.
-- **Frontend** : `@sentry/angular`, initialisé dans `src/main.ts` via
-  `app/core/observability.ts`, avant `bootstrapApplication()`. Remplace
-  l'`ErrorHandler` Angular par celui de Sentry uniquement quand un DSN est
-  configuré. Le SDK est chargé par un `import()` dynamique **à l'intérieur de
-  cette condition** : sans DSN, il n'est jamais téléchargé. Il pèse 462 ko
-  (130 ko transférés) et vit dans son propre *chunk* ; l'inclure au *bundle*
-  initial le faisait payer à tous les visiteurs, y compris sur
-  `/animateur/:jeton` — page publique, souvent consultée depuis un téléphone —
-  et y compris sur un déploiement sans DSN.
-
-### Variables d'environnement
+## Variables
 
 | Variable | Défaut | Usage |
 | --- | --- | --- |
-| `SENTRY_DSN` | *(vide)* | DSN du projet Bugsink (ou tout endpoint compatible Sentry). Vide = désactivé, backend et frontend. |
-| `SENTRY_ENVIRONMENT` | `local` | Étiquette d'environnement (`production`, `staging`, …) jointe à chaque erreur remontée. |
+| `SENTRY_DSN` | vide | DSN Bugsink, ou tout endpoint compatible Sentry. Vide = désactivé des deux côtés |
+| `SENTRY_ENVIRONMENT` | `local` | Étiquette jointe à chaque erreur |
+| `CLOUDFLARE_WEB_ANALYTICS_TOKEN` | un token en profil `%prod` | Vider pour désactiver |
 
-### Vérifier le câblage
+Le frontend est construit **une seule fois** et servi tel quel : il ne peut pas
+recevoir ces clés au build sans dupliquer le bundle par environnement. Le
+backend les expose donc via `/api/config`, lu avant `bootstrapApplication()`. Un
+DSN et un token de beacon sont par construction des identifiants publics, prévus
+pour vivre dans du code navigateur — les exposer ainsi ne crée pas de fuite.
 
-L'onglet Débogage propose deux boutons, « Exception front » et « Exception
-back », qui génèrent chacun une exception de test — respectivement une
-exception JS non rattrapée côté navigateur (`ErrorHandler` Angular) et un
-appel à `POST /api/debug/test-exception`, qui lève systématiquement côté
-serveur pour passer par `GlobalExceptionMapper`. Utile pour confirmer qu'un
-DSN fraîchement configuré remonte bien jusqu'à Bugsink/Sentry, sans attendre
-un vrai bug.
+L'onglet Débogage lève une exception de test de chaque côté, pour vérifier un
+DSN fraîchement configuré sans attendre un vrai bug.
 
-## Analytics d'usage (Cloudflare Web Analytics)
+## RGPD
 
-### Mise en place
+Bugsink est consommé en **offre hébergée**, pas auto-hébergé : c'est donc un
+**sous-traitant**, ce que la politique de confidentialité doit dire.
+Hébergement UE annoncé par l'éditeur, donc pas de transfert hors UE à déclarer —
+contrairement à Cloudflare.
 
-Activer Web Analytics sur le site dans le tableau de bord Cloudflare : le
-token fourni va dans `CLOUDFLARE_WEB_ANALYTICS_TOKEN`.
+## Analytics produit : retirée
 
-### Intégration dans l'application
+PostHog a été déposé. Personne ne consultait les tableaux de bord, et la brique
+coûtait une dépendance JavaScript, deux variables et un traitement de données
+personnelles à justifier — trois prix payés pour rien.
 
-Uniquement côté frontend, initialisé dans `src/main.ts` via
-`app/core/observability.ts` : no-op si le token est vide, sinon injection du
-script beacon officiel (`beacon.min.js`) avec le token fourni par
-`/api/config`. Le beacon capte les pages vues même en navigation SPA
-(History API), ce qui est précisément ce qu'un compteur de pages naïf raterait
-sur cette application.
-
-### Variables d'environnement
-
-| Variable | Défaut | Usage |
-| --- | --- | --- |
-| `CLOUDFLARE_WEB_ANALYTICS_TOKEN` | `987d563a0f264bbbb484df80ab2ab0f8` (profil `%prod`) | Token Cloudflare Web Analytics. Le profil production active ce token par défaut, la variable permet de le surcharger (ou de le vider pour désactiver). |
-
-## Comment le frontend récupère ces clés
-
-Le frontend est construit **une seule fois** par Quinoa et servi tel quel par
-Quarkus (voir [`architecture.md`](architecture.md)) : il ne peut donc pas
-recevoir ces clés au moment du build sans dupliquer le bundle par
-environnement. Le backend les expose à la place via
-[`GET /api/config`](api.md#configuration), lu par `src/main.ts` avant
-`bootstrapApplication()` (même endroit et même filet de sécurité — un échec
-réseau désactive juste l'observabilité pour cette session — que le
-chargement du catalogue de traductions anglais). Un DSN Sentry et un token
-Cloudflare sont par construction des identifiants publics, prévus pour être
-embarqués dans du code navigateur (contrairement à un secret) : les exposer
-par cette route ne crée pas de fuite.
+Si le besoin revient, les candidats regardés étaient PostHog (palier gratuit le
+plus généreux, hébergement EU), Umami et Plausible.
+`app/core/observability.ts` est le seul point d'entrée à reprendre : rien
+d'autre dans le code ne connaissait PostHog.

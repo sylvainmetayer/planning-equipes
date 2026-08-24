@@ -24,44 +24,35 @@ compris — les en-têtes suivants :
 | `Permissions-Policy` | `geolocation=(), camera=(), microphone=(), payment=()` | Aucune de ces API n'est utilisée — le sélecteur de carte place un point à la souris |
 | `Strict-Transport-Security` | `planning.securite.hsts`, **seulement sur une visite HTTPS** | Un an, sous-domaines compris. Absent sur la pile locale, qui est en clair |
 
-### Ce que `script-src` interdit, et ce que ça oblige à désactiver au build
+### `script-src` interdit tout `on*=""`, et ce que ça oblige à désactiver
 
-`script-src` ne porte ni `'unsafe-inline'` ni `'unsafe-hashes'` : le navigateur
-refuse donc **tout attribut `on*=""`**. C'est la posture voulue, mais elle rend
-une optimisation d'Angular silencieusement destructrice.
+Pas d'`'unsafe-inline'`, pas d'`'unsafe-hashes'` : le navigateur refuse **tout
+attribut `on*=""`**. C'est la posture voulue, mais elle rend une optimisation
+d'Angular silencieusement destructrice.
 
-L'*inlining du CSS critique* (`optimization.styles.inlineCritical`, actif par
-défaut en production) sert la vraie feuille de style en
+L'*inlining du CSS critique* sert la vraie feuille de style en
 `media="print" onload="this.media='all'"`. Quand la CSP bloque ce gestionnaire,
-la feuille **reste en `print`** : rien ne lève d'erreur, la page s'affiche avec
-le seul CSS critique inliné, et tout ce que l'extraction n'a pas retenu
-disparaît. C'est ainsi que la police d'icônes Material a cessé de s'afficher en
-production alors que le build, les tests et la CI étaient verts — le
-`@font-face` et la règle `.material-icons` vivaient dans la feuille différée.
+**la feuille reste en `print`** : rien ne lève d'erreur, et tout ce que
+l'extraction n'a pas retenu disparaît — une police d'icônes, par exemple.
 
-`inlineCritical` est donc **désactivé** dans `angular.json`, et
-`scripts/check-csp-index.js` échoue le build si l'`index.html` produit contient
-le moindre gestionnaire inline. Le build ne peut pas voir le problème (le HTML
-est valide), les tests non plus (ils ne chargent jamais `index.html`) : une
-violation de CSP n'apparaît que dans la console d'un vrai navigateur. Elle est
-donc vérifiée sur l'artefact.
+`inlineCritical` est donc **désactivé**, et `scripts/check-csp-index.js` échoue
+le build si l'`index.html` produit contient le moindre gestionnaire inline. Ni
+le build (le HTML est valide) ni les tests (ils ne chargent jamais
+`index.html`) ne peuvent voir le problème : une violation de CSP n'apparaît que
+dans un vrai navigateur. Elle est donc vérifiée sur l'artefact.
 
 Trois exceptions volontaires :
 
-- la CSP s'arrête au seuil de `/q/*` : Swagger UI y sert des scripts *inline*
-  que le projet ne contrôle pas. Les autres en-têtes, eux, s'y appliquent ;
-- HSTS n'est envoyé que si la visite est en HTTPS (`X-Forwarded-Proto`
-  compris, comme pour la redirection de connexion et le cookie de l'espace) :
-  un navigateur l'ignorerait de toute façon en clair, et le poser en local
-  épinglerait `localhost` en https ;
-- les tuiles de la carte échappent au `no-referrer`. `tile.openstreetmap.org`
-  [bloque le trafic sans `Referer`](https://osm.wiki/blocked) : la carte
-  resterait grise. `MapPicker` pose donc
-  `referrerPolicy: 'strict-origin-when-cross-origin'` sur sa couche de tuiles
-  ([option Leaflet](https://leafletjs.com/reference.html#tilelayer-referrerpolicy)),
-  qui l'emporte sur la politique du document pour ces images seules. Le jeton
-  ne fuit pas pour autant : cette politique n'envoie que l'origine, jamais le
-  chemin ni la requête — et rien du tout si la tuile était servie en clair.
+- **la CSP s'arrête au seuil de `/q/*`** : Swagger UI y sert des scripts inline
+  que le projet ne contrôle pas. Les autres en-têtes s'y appliquent ;
+- **HSTS n'est envoyé que sur une visite HTTPS** — un navigateur l'ignorerait
+  en clair, et le poser en local épinglerait `localhost` en https ;
+- **les tuiles de la carte échappent au `no-referrer`** :
+  `tile.openstreetmap.org` [bloque le trafic sans `Referer`](https://osm.wiki/blocked),
+  la carte resterait grise. `MapPicker` pose donc
+  `referrerPolicy: 'strict-origin-when-cross-origin'` sur sa seule couche de
+  tuiles. Le jeton ne fuit pas : cette politique n'envoie que l'origine, jamais
+  le chemin ni la requête.
 
 ### Réglage
 
@@ -70,17 +61,10 @@ Trois exceptions volontaires :
 | `CSP` | politique ci-dessus | Politique de sécurité du contenu complète. **Vide = en-tête désactivé** |
 | `HSTS` | `max-age=31536000; includeSubDomains` | **Vide = en-tête désactivé**. N'ajoutez `preload` qu'après avoir décidé que le domaine ne resservira jamais en clair : c'est irréversible à l'échelle du navigateur |
 
-La CSP par défaut laisse volontairement `connect-src https:` et `img-src
-https:` ouverts : l'endpoint Sentry/Bugsink (`SENTRY_DSN`) et le serveur de
-tuiles cartographiques sont propres à chaque déploiement. Un déploiement qui
-connaît les siens gagne à les nommer :
-
-```bash
-CSP="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; \
-form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; \
-img-src 'self' data: https://*.tile.openstreetmap.org; \
-connect-src 'self' https://bugsink.example.org"
-```
+La CSP par défaut laisse volontairement `connect-src https:` et `img-src https:`
+ouverts : l'endpoint Bugsink et le serveur de tuiles sont propres à chaque
+déploiement. Un déploiement qui connaît les siens gagne à les nommer dans `CSP`
+plutôt qu'à garder `https:`.
 
 `style-src` garde `'unsafe-inline'` dans tous les cas : Angular Material écrit
 ses styles dans la page.
@@ -92,12 +76,9 @@ ses styles dans la page.
 | `MAX_BODY_SIZE` | `10M` | Taille maximale d'un corps de requête. C'est l'**import de dump SQL** (`POST /api/database/import`, un script rejoué en entier) qui la dimensionne : un déploiement qui n'utilise pas l'import gagne à la descendre franchement |
 | `MAX_CONNECTIONS` | `500` | Connexions simultanées acceptées |
 
-La taille de corps était déjà bornée par le défaut de Quarkus ; elle est
-désormais explicite et réglable, pour que le bouton soit visible. Le plafond
-de connexions, lui, n'existait pas : sans lui, ouvrir des connexions sans
-jamais rien envoyer suffit à épuiser le serveur. `500` est large au regard de
-l'usage réel — une poignée d'administrateurs et ~150 animateurs qui consultent
-leur planning — donc sans effet sur le trafic légitime.
+Le plafond de connexions est ce qui empêche d'épuiser le serveur en ouvrant des
+connexions sans jamais rien envoyer. `500` est large au regard de l'usage réel,
+donc sans effet sur le trafic légitime.
 
 Ces plafonds ne remplacent pas ceux du reverse proxy, qui doit rester la
 première ligne (limitation de débit par IP, plafond de connexions par client,
@@ -142,66 +123,50 @@ efface le compteur, et la fenêtre court depuis le dernier échec réel.
 | `CONNEXION_MAX_ECHECS` | `5` | Échecs consécutifs tolérés par adresse |
 | `CONNEXION_DUREE_BLOCAGE` | `PT15M` | Durée du verrouillage, comptée depuis le dernier échec |
 
-Succès et échec du form login répondent tous deux une redirection vers la
-**même page** (`landing-page` et `error-page` pointent au même endroit), donc
-ni le statut ni `Location` ne les distinguent. Les deux côtés se lisent
-ailleurs, et pas au même endroit :
-
-- **l'échec** est l'`AuthenticationFailureEvent` de Quarkus
-  (`quarkus.security.events.enabled`), qui porte le contexte HTTP de la
-  tentative — donc son adresse ;
-- **le succès** se lit sur la requête elle-même. Quarkus a bien un événement
-  de connexion réussie (`FormAuthenticationEvent`), mais il ne transporte que
-  son propre type : aucun contexte HTTP, donc aucune adresse à qui rendre son
-  crédit. Une connexion réussie se reconnaît alors à ce qu'elle produit — une
-  identité établie sur la requête, un cookie de session dans la réponse.
+Succès et échec répondent tous deux une redirection vers la **même page**, donc
+ni le statut ni `Location` ne les distinguent. Les deux se lisent ailleurs :
+l'échec par l'`AuthenticationFailureEvent` de Quarkus, qui porte le contexte
+HTTP donc l'adresse ; le succès sur la requête elle-même — l'événement Quarkus
+correspondant ne transporte aucun contexte, donc aucune adresse à qui rendre
+son crédit.
 
 **L'adresse retenue est celle annoncée par `X-Forwarded-For`**, la connexion
-réelle ne servant que faute de mieux : derrière un reverse proxy, toutes les
-requêtes arrivent de la même adresse, et compter là-dessus laisserait le
-premier attaquant venu verrouiller la connexion de tout le monde. Cet en-tête
-n'est digne de confiance qu'à une condition, la même que pour
-`PROXY_ADDRESS_FORWARDING` : **l'origine ne doit pas être joignable sans
-passer par le proxy** (voir la section suivante).
+réelle ne servant que faute de mieux : derrière un proxy, toutes les requêtes
+arrivent de la même adresse, et compter là-dessus laisserait le premier
+attaquant venu verrouiller la connexion de tout le monde. Cet en-tête n'est
+digne de confiance qu'à une condition : **l'origine ne doit pas être joignable
+sans passer par le proxy**.
 
-Ce verrou ne remplace pas la limitation de débit par IP du reverse proxy, qui
-vaut pour tout le reste : les exports, la résolution, l'API entière.
+Ce verrou ne remplace pas la limitation de débit par IP du proxy, qui vaut pour
+tout le reste — exports, résolution, API entière.
 
 ### Lecture des créneaux d'un collègue
 
-`GET /api/espace-animateur/{jeton}/collegues/{collegueId}/postes` sert le
-sélecteur « son créneau que je veux en échange ». Cet accès est **large par
-conception** : la vue de l'espace distribue déjà le trombinoscope complet, et
-les créneaux d'un collègue sont l'information que le planning imprimé fait
-circuler. Il n'y a donc pas là d'accès non autorisé à corriger — les écritures
-de la foire, elles, portent leur autorisation dans le `WHERE` de leur requête
-(`AND cible_id = ?`, `AND demandeur_id = ?`), ce qui est le motif le plus sûr.
+La route qui sert le sélecteur « son créneau que je veux en échange » est
+**large par conception** : l'espace distribue déjà le trombinoscope complet, et
+les créneaux d'un collègue sont ce que le planning imprimé fait circuler. Les
+écritures de la foire, elles, portent leur autorisation dans le `WHERE` de leur
+requête — le motif le plus sûr.
 
-Ce qui restait inconfortable, c'est l'**agrégat** : une seule session d'espace
-reconstituait tout le planning nominatif du festival, mineurs compris, en
-autant de requêtes qu'il y a d'animateurs. Deux resserrements :
+Ce qui reste inconfortable est l'**agrégat** : une seule session pourrait
+reconstituer tout le planning nominatif du festival, mineurs compris. Deux
+resserrements :
 
-- **la foire doit être ouverte.** Cette lecture n'existe que pour alimenter le
-  sélecteur, que l'interface masque quand la foire est fermée. La règle est
-  déclarée **sur la route** par `@FoireOpenRequired`, dans la forme des deux
-  gardes voisines (`@TokenRequired`, `@EspaceSessionRequired`) : on lit les trois
-  exigences d'une route d'un coup d'œil, au lieu de chercher un contrôle au
-  fond d'un corps de méthode. Le filtre tourne en priorité `AUTHORIZATION`,
-  donc **après** l'authentification — un appelant anonyme reçoit son `401` sans
-  jamais apprendre si la foire est ouverte. Les écritures, elles, gardent leur
-  contrôle dans le service : c'est là qu'est l'application réelle de la règle,
-  elle vaut quel que soit l'appelant et ne doit pas dépendre d'une route
-  annotée. Une constante partagée fait que les deux disent la même phrase ;
-- **le collègue doit exister dans l'édition.** Un identifiant inconnu répondait
-  `200 []`, ce qui laissait sonder les identifiants existants. Il répond `404`
-  nu — `NotFoundException`, comme toute entité inconnue de ce dépôt : un corps
-  d'erreur ne donnerait à lire qu'à celui qui sonde.
+- **la foire doit être ouverte.** La règle est déclarée **sur la route**
+  (`@FoireOpenRequired`), dans la forme des deux gardes voisines : on lit les
+  trois exigences d'un coup d'œil au lieu de chercher un contrôle au fond d'une
+  méthode. Le filtre tourne **après** l'authentification, donc un appelant
+  anonyme reçoit son `401` sans apprendre si la foire est ouverte. Les
+  écritures gardent leur contrôle dans le service — c'est là qu'est
+  l'application réelle de la règle, et elle ne doit pas dépendre d'une route
+  annotée ;
+- **le collègue doit exister dans l'édition**, sinon `404` nu. Un `200 []`
+  laisserait sonder les identifiants existants, et un corps d'erreur ne
+  donnerait à lire qu'à celui qui sonde.
 
-Ce qui **n'est pas** traité ici et reste ouvert : plafonner le nombre de
-collègues distincts consultés par fenêtre (sur le modèle du plafond des codes
-d'accès), qui est le seul contrôle visant réellement le balayage ; et, plus en
-profondeur, cesser de distribuer le trombinoscope entier au profit d'une
-recherche à la frappe.
+**Reste ouvert** : plafonner le nombre de collègues distincts consultés par
+fenêtre — le seul contrôle visant réellement le balayage — et, plus en
+profondeur, remplacer le trombinoscope entier par une recherche à la frappe.
 
 ## Analyse statique : les suppressions et leur justification
 
@@ -220,14 +185,6 @@ appelant ou de listes constantes (`DatabaseDumpService.TABLES`), jamais d'une
 entrée utilisateur ; l'import de dump vérifie même la sienne contre
 `ALLOWED_TABLES`. Les **valeurs**, elles, voyagent toutes en paramètres liés
 (`ps.setString`, `ps.setLong`, `ps.setObject`).
-
-| Fichier | Méthodes concernées |
-| --- | --- |
-| `DatabaseDumpService` | `appendTable` (nom de table issu de `TABLES`) |
-| `DemandeEchangeService` | `lister` (liste de colonnes et prédicat, littéraux des appelants) |
-| `PlanSnapshotService` | `absents` (table et colonne, littéraux des appelants) |
-| `ReferenceDataImportRepository` | `compter`, `deleteMissingTx` (noms de tables issus de listes littérales) |
-| `JdbcEditionScope` | `existe` (nom de table issu des sites d'appel des dépôts) |
 
 **Avant d'ajouter un `nosemgrep`**, vérifier les appelants : si un identifiant
 peut venir d'une requête HTTP, c'est une injection SQL et non un faux positif.

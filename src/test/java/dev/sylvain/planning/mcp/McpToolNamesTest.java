@@ -57,7 +57,7 @@ class McpToolNamesTest {
      *
      * <ul>
      *   <li>{@code p_token} is Pangolin's query-string parameter, quoted in the
-     *       reverse-proxy section of {@code docs/mcp.md}.</li>
+     *       English message catalogue.</li>
      * </ul>
      */
     private static final Set<String> NOT_TOOL_NAMES = Set.of("p_token");
@@ -132,6 +132,10 @@ class McpToolNamesTest {
      * The test above is only worth anything if it reads real tools and real
      * citations. A reflection lookup that found nothing, or a document that
      * moved, would turn it green for the worst of reasons.
+     *
+     * <p>{@code docs/mcp.md} is only required to quote <em>some</em> tool name,
+     * not the whole catalogue: the server announces its own tools, and the
+     * documentation deliberately stops at what the server cannot say.</p>
      */
     @Test
     void theScanReadsRealToolsAndRealCitations() throws IOException {
@@ -146,8 +150,8 @@ class McpToolNamesTest {
                 .as("the MCP page quotes tool names in its ready-to-copy prompt")
                 .isNotEmpty();
         assertThat(citedNames(DOCUMENTS.get(2)))
-                .as("docs/mcp.md documents the tool catalogue")
-                .hasSizeGreaterThan(50);
+                .as("docs/mcp.md still quotes tool names, so the check above has something to bite on")
+                .isNotEmpty();
     }
 
     /** A name on the exceptions list that no document quotes any more must leave it. */

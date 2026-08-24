@@ -1,356 +1,159 @@
 # Import / export de données
 
-Tout se pilote depuis la page « Data transfer » de l'IHM, ou directement via
-l'[API](api.md).
+La structure d'un fichier de scénario est décrite par
+[`schema/scenario-schema.json`](schema/scenario-schema.json), **généré** depuis
+les DTO de `dev.sylvain.planning.scenario.dto` — il ne peut donc pas diverger de
+ce que le code accepte. Ce document porte les règles que le schéma ne peut pas
+exprimer.
 
-Sauf mention contraire, tout ce qui suit est lu et écrit dans l'**édition**
-désignée par l'en-tête `X-Edition-Id` de la requête — voir
-[`decisions/0001-cloisonnement-par-edition.md`](decisions/0001-cloisonnement-par-edition.md).
+Sauf mention contraire, tout est lu et écrit dans l'édition désignée par
+`X-Edition-Id`.
 
-## Export / import SQL
+## Dump SQL
 
-`GET /api/database/export` produit un script SQL autonome (DELETE puis INSERT de
-toutes les tables métier), téléchargeable depuis l'IHM.
+C'est la seule opération **globale à l'instance** : une sauvegarde de la base,
+toutes éditions comprises. L'import rejoue le script en une transaction et
+n'accepte que `INSERT` / `DELETE` / `TRUNCATE` sur les tables métier.
 
-C'est la seule opération qui reste **globale à l'instance** : c'est une
-sauvegarde de la base, toutes éditions comprises (la table `edition` en tête du
-script). L'export cloisonné par édition existe sous une autre forme — l'export
-de scénario YAML ci-dessous, qui suit l'édition courante.
+L'export cloisonné par édition existe sous une autre forme : l'export de
+scénario YAML.
 
-`POST /api/database/import` rejoue un tel script dans une seule transaction :
-seules les instructions `INSERT` / `DELETE` / `TRUNCATE` sur les tables métier
-sont acceptées, tout le reste est rejeté (400).
+## Ce que l'import d'un scénario remplace
 
-## Chargement de scénario
+- **rien ne sort de l'édition courante** ;
+- animateurs et stands sont remplacés en totalité ;
+- les créneaux reçoivent de **nouveaux ids en base** — les contraintes ad hoc
+  qui les référençaient par leur id de fichier sont réassociées ;
+- affectations et contraintes ad hoc de l'édition sont supprimées.
 
-`POST /api/reference-data/import-scenario?name=...` (bouton « Charger le
-planning d'exemple » de la page Data setup) et `POST /api/reference-data/import`
-(import générique d'un `PlanningFestival`) partagent la même logique de
-remplacement :
+Une section `edition: { id, nom? }` route l'import vers une autre édition, créée
+vide au besoin. La réponse dit toujours où les données ont atterri : l'opérateur
+peut consulter une édition différente de celle qui vient d'être écrite.
 
-- **rien ne sort de l'édition courante** : un import dans « Année 2026 » ne
-  touche aucune donnée de « Année 2025 ». C'est le chemin nominal pour peupler
-  une édition vierge ;
-- à l'intérieur de cette édition, animateurs et stands sont **toujours
-  remplacés en totalité** ;
-- les créneaux, eux, sont scopés à la grille de créneaux active : seuls ceux de
-  la grille active sont supprimés puis rechargés avec les créneaux du scénario ;
-  les créneaux des autres grilles ne sont pas touchés. Chaque créneau importé
-  reçoit un nouvel id généré par la base ; les contraintes ad hoc qui
-  référençaient un créneau du scénario par son id d'origine sont réassociées
-  au nouvel id. Cela permet de charger plusieurs scénarios dans différentes
-  grilles (par exemple un planning normal et un planning de repli) sans que
-  l'un écrase les créneaux de l'autre. Voir [`domaine.md`](domaine.md) pour la
-  notion de grille de créneaux.
-- les affectations (`poste_affectation`) et les contraintes ad hoc de
-  l'édition restent supprimées en totalité à chaque import, quelle que soit la
-  grille, puisqu'elles n'ont pas de notion de grille propre.
-
-Le bouton « Importer un fichier » de la page Data setup fait la même chose
-(`POST /api/reference-data/import-scenario-fichier`) à partir d'un fichier
-YAML choisi sur le poste de l'utilisateur, plutôt qu'un scénario nommé du
-dossier `scenarios/` — typiquement celui produit par « Exporter les données
-actuelles en scénario », ou un fichier écrit à la main dans le même format.
-Un fichier invalide (YAML mal formé, section obligatoire manquante) n'importe
-rien et affiche une notification avec le détail de l'erreur.
-
-Le format YAML d'un stand couvre `typologiesProposees`, `effectifMin/Max`,
-`reserveMajeurs`, `premium`, `niveauEffort` (`NORMAL` par défaut si absent —
-voir [`domaine.md`](domaine.md)) ainsi que son planning d'ouverture : les règles
-récurrentes `horaires` et les fenêtres datées `indisponibilites` (fermetures) /
-`ouvertures` qui les surchargent. Tout cela va dans les deux sens : « Exporter
-les données actuelles en scénario » l'écrit, l'import (nommé ou fichier) le relit
-à l'identique, `emplacementId` et la section `emplacements` comprises.
-
-### Ce que l'export garantit
+## Ce que l'export garantit
 
 « Exporter les données actuelles en scénario » écrit **toutes** les sections que
-l'import sait relire, pas seulement les entités : `typologies`, `emplacements`,
-`parametresLegaux`, `parametresDecoupage`, `parametresSolveur`, `contraintes`,
-`contraintesAdHoc` et, quand la
-grille active a été produite par un découpage automatique, `decoupageAuto`.
-Réimporter le fichier reproduit donc exactement le même problème — c'est la
-raison d'être de l'export. Un fichier sans ces sections retombait silencieusement
-sur les réglages de l'instance qui l'importe (sa durée de résolution, ses durées
-de vacation, ses plafonds légaux) : le « même » scénario rejoué ailleurs
-résolvait un autre problème.
+l'import sait relire — pas seulement les entités, mais aussi `typologies`,
+`emplacements`, `parametresLegaux`, `parametresDecoupage`, `parametresSolveur`,
+`contraintes`, `contraintesAdHoc`, et `decoupageAuto` le cas échéant.
 
-Deux formes en sortent, selon la grille active :
+C'est la raison d'être de l'export : **réimporter le fichier reproduit
+exactement le même problème**. Un fichier sans ces sections retombait
+silencieusement sur les réglages de l'instance qui l'importe — sa durée de
+résolution, ses durées de vacation, ses plafonds légaux — et le « même »
+scénario rejoué ailleurs résolvait un autre problème.
 
-- une grille saisie à la main exporte ses propres `creneaux` **et** la liste de
-  sièges qu'ils impliquent (`postes`) ;
+Deux formes en sortent :
+
+- une grille saisie à la main exporte ses `creneaux` **et** les `postes` qu'ils
+  impliquent ;
 - une grille issue d'un découpage exporte les **amplitudes sources** et
-  `decoupageAuto`, **sans** section `postes` : l'import rejoue le découpage et
-  régénère les sièges à partir des vacations qu'il recrée, seule façon de garder
-  des ids cohérents (les créneaux générés reçoivent de nouveaux ids en base).
+  `decoupageAuto`, **sans** `postes` : l'import rejoue le découpage et régénère
+  les sièges, seule façon de garder des ids cohérents.
 
-### Horaires d'un stand
+## Horaires d'un stand
 
-Une entrée d'`horaires` porte son sélecteur de jours **à plat** : `jours` nomme
-lequel des champs voisins s'applique, et seul celui-là est lu. Absent, il vaut
-`TOUS`, ce qui ramène le cas courant à deux lignes. `heureFin` **omise** signifie
-« jusqu'à la fermeture » : la fenêtre court jusqu'à la fin du créneau évalué, ce
-qui permet à une même règle de couvrir un jour fermant à 20 h et un jour fermant
-à minuit — et remplace le contournement `23:59` qu'imposait une heure de fin
-concrète (une fenêtre ne peut pas chevaucher minuit).
+Le sélecteur de jours est **à plat** : `jours` nomme lequel des champs voisins
+s'applique (`TOUS` par défaut, `JOURS_SEMAINE`, `PLAGE`, `DATES`), et seul
+celui-là est lu.
 
-```yaml
-stands:
-  - id: "AUTRES-BOURSE"
-    nom: "Autres - Bourse"
-    typologiesProposees: [ANIMATION]
-    effectifMin: 2
-    effectifMax: 2
-    horaires:
-      # Ouvert 10h-12h puis 14h jusqu'à la fermeture, tous les jours du festival :
-      # une règle à deux fenêtres, là où la forme datée demandait 24 lignes.
-      - mode: OUVERTURE
-        fenetres:
-          - { heureDebut: "10:00", heureFin: "12:00" }
-          - { heureDebut: "14:00" }
-      # Le week-end, ouverture dès 10h sans coupure : portée plus précise, donc
-      # elle prime sur la précédente ces jours-là.
-      - mode: OUVERTURE
-        jours: JOURS_SEMAINE
-        joursSemaine: [SATURDAY, SUNDAY]
-        fenetres:
-          - { heureDebut: "10:00" }
-    # Une exception datée prime sur toutes les règles, pour ce seul jour.
-    indisponibilites:
-      - date: 2026-07-14
-        heureDebut: "10:00"
-        motif: Férié
-```
+**`heureFin` omise signifie « jusqu'à la fermeture »** : la fenêtre court
+jusqu'à la fin du créneau évalué. C'est ce qui permet à une même règle de
+couvrir un jour fermant à 20 h et un jour fermant à minuit, et ce qui remplace
+le contournement `23:59` qu'imposait une heure de fin concrète — une fenêtre ne
+peut pas chevaucher minuit.
 
-Les autres portées sont `PLAGE` (avec `dateDebut`/`dateFin`, bornes incluses) et
-`DATES` (avec `dates`). Un fichier peut continuer à tout écrire en fenêtres
-datées : les deux formes coexistent, et [`domaine.md`](domaine.md#horaires-récurrents)
-décrit l'arbitrage entre elles.
+Une portée plus précise prime sur une portée plus large ; une exception datée
+prime sur toutes les règles, pour le seul jour qu'elle nomme. Arbitrage complet
+dans [`domaine.md`](domaine.md#horaires-récurrents--trois-couches-un-seul-mode-par-jour).
 
-La section `postes` (un poste par place à pourvoir, référençant un
-`standId`/`creneauId`) est optionnelle : absente du fichier, elle est générée
-automatiquement à partir des stands et créneaux importés, avec les mêmes
-règles que « Lancer le solveur » depuis les données de référence — un poste
-par place (`stand.effectifMin`, pas `effectifMax`) sur chaque créneau ×
-segment réellement ouvert (voir `PlanningService.buildPostes`). Fournir
-la section reste possible pour un staffing qui s'écarte de cette règle
-(certains scénarios, ex. `scenario-complet.yaml`, l'énumèrent explicitement) ;
-dans ce cas elle est reprise telle quelle.
+## `postes` : absente ≠ vide
 
-Une section optionnelle `edition: { id, nom? }` en tête de fichier désigne
-l'édition dans laquelle l'import doit écrire, au lieu de l'édition courante de
-l'appelant : si elle n'existe pas, elle est créée vide (avec `nom` comme
-libellé, `id` à défaut) puis reçoit l'import ; si elle existe, elle est
-réutilisée telle quelle (son libellé en base prime sur celui du fichier). La
-réponse de l'import indique toujours où les données ont atterri et si
-l'édition a été créée (`editionId`, `editionNom`, `editionCreee`), et
-l'interface affiche systématiquement ce récapitulatif — l'opérateur peut être
-en train de consulter une autre édition que celle qui vient d'être écrite.
-Sans cette section, l'import écrit dans l'édition courante, comme avant.
+**Absente**, la section est générée à partir des stands et créneaux importés —
+un poste par place (`effectifMin`, pas `effectifMax`) sur chaque créneau ×
+segment réellement ouvert, exactement comme « Lancer le solveur » depuis le
+référentiel.
 
-### Réglage des contraintes : `contraintes` et `contraintesAdHoc`
+**Présente**, elle est reprise telle quelle, y compris vide. C'est ce qui permet
+un staffing s'écartant de la règle.
 
-Deux sections optionnelles portent le réglage du catalogue de contraintes pour
-ce festival — voir [`contraintes.md`](contraintes.md).
+## `contraintes` : en bloc, pas en fusion
 
-```yaml
-contraintes:
-  # Contraintes désactivées pour le prochain solve (table constraint_toggle) :
-  # tout ce qui n'est pas cité ici est actif.
-  desactivees:
-    - eviterRoulementStandsPremium
-  # Poids par contrainte, appliqué à l'édition cible (table
-  # ponderation_contrainte). Ce qui n'est pas cité garde la valeur par défaut
-  # du déploiement (application.properties). Valeurs admises : 1 à 100.
-  poids:
-    equilibrerCharge: 7
-    maxJoursConsecutifsTravailles: 3
+Une règle que la section ne cite pas **redevient active, à son poids par
+défaut**. Un scénario qui épingle son réglage décrit le problème contre lequel
+il a été vérifié : une fusion laisserait en place les restes de l'édition qui
+importe, et le « même » scénario continuerait de résoudre un problème différent
+selon l'endroit où il atterrit. Absente, elle ne touche à rien.
 
-contraintesAdHoc:
-  - id: INCOMPAT-1
-    type: INCOMPATIBILITE       # ou INDISPONIBILITE_FORCEE, AFFECTATION_FORCEE, AFFINITE
-    animateurs: [A1, A2]
-    raison: Ne travaillent pas ensemble
-  - id: INDISPO-1
-    type: INDISPONIBILITE_FORCEE
-    animateurs: [A2]
-    creneauId: J1-MATIN         # id du créneau **dans ce fichier**
-    standId: STAND-STRAT
-    raison: Formation
-```
+Un nom de contrainte absent du catalogue est **refusé (400)**, pas ignoré :
+c'est une faute de frappe ou un fichier écrit contre une autre version du
+catalogue, et l'ignorer laisserait l'opérateur convaincu qu'une règle est
+éteinte alors qu'elle ne l'est pas.
 
-Trois règles valent d'être connues :
+Les scénarios livrés portent tous cette section, avec les deux seuls poids non
+neutres du produit — `appreciationIncompatible: 3` et
+`maxJoursConsecutifsTravailles: 5`. Le défaut du déploiement est 1 partout : le
+dosage voyage avec le scénario.
 
-- la section `contraintes` s'applique **en bloc**, pas en fusion : une règle
-  qu'elle ne cite pas redevient active, à son poids par défaut. Un scénario qui
-  épingle son réglage décrit le problème contre lequel il a été vérifié — une
-  fusion laisserait en place les restes de l'édition qui importe, et le
-  « même » scénario continuerait de résoudre un problème différent selon
-  l'endroit où il atterrit. Absente, elle ne touche à rien ;
-- un nom de contrainte absent du catalogue est **refusé** (400), pas ignoré :
-  c'est soit une faute de frappe, soit un fichier écrit contre une autre
-  version du catalogue, et l'ignorer laisserait l'opérateur convaincu qu'une
-  règle est désactivée alors qu'elle ne l'est pas ;
-- les scénarios livrés sous `src/main/resources/scenarios/` portent tous cette
-  section, avec les deux seuls poids non neutres du produit
-  (`appreciationIncompatible: 3`, `maxJoursConsecutifsTravailles: 5`) : le
-  défaut du déploiement est 1 partout, et le dosage voyage avec le scénario ;
-- `contraintesAdHoc` désigne animateurs, stands et créneaux par les ids **du
-  fichier**. Les créneaux recevant de nouveaux ids en base, la référence est
-  réassociée à l'import (voir plus haut) ; un id qui ne désigne rien dans le
-  fichier est refusé. Quand le fichier porte cette section, elle **remplace**
-  les contraintes ad hoc de l'édition — elle ne s'y ajoute pas ; absente, les
-  contraintes ad hoc en base sont conservées telles quelles.
+`contraintesAdHoc` **remplace** les contraintes ad hoc de l'édition quand elle
+est présente ; absente, elles sont conservées. Elle désigne animateurs, stands
+et créneaux par les ids **du fichier**.
 
-Un scénario écrit directement en amplitudes (ex. `scenario-continu.yaml`) peut
-fixer une section `decoupageAuto: {}` en tête de fichier pour que ces deux
-imports (nom ou fichier) déclenchent eux-mêmes le découpage en vacations
-plutôt que de laisser l'opérateur repasser par la page Créneaux : les
-créneaux importés sont découpés **en place** (issue #172 — l'édition ne porte
-qu'une grille) et une notification prévient l'opérateur. Les anciens champs
-`groupeSourceNom`/`groupeCibleNom` de la section sont acceptés mais ignorés ;
-`decoupageAuto: false` désactive explicitement. Absente, l'import se comporte
-comme ci-dessus. Voir
-[`domaine.md`](domaine.md#découpage-automatique-en-vacations).
+## Typologies
 
-Les typologies (`typologiesProposees` d'un stand, `competences`/`souhaits`
-d'un animateur) référencent le référentiel `typologie` (id + libellé,
-CRUD-managé via `/api/typologies` — plus un enum figé). Tout id de typologie
-que le fichier référence sans le déclarer explicitement se voit créé à
-l'import avec un libellé identique à son id (ex. id `ENF` -> libellé `ENF`).
-Une section `typologies: [{ id, label }, ...]` optionnelle en tête de fichier
-permet de fixer un vrai libellé pour ces ids (ex. `ENF` -> `Enfance`) : elle
-est appliquée après l'import de la planification elle-même, pour ne pas être
-écrasée par la création automatique ci-dessus. Une typologie déjà présente en
-base (créée par un import précédent ou via l'écran de gestion) voit son
-libellé mis à jour si le scénario la redéclare.
+Un id référencé sans être déclaré est créé avec un libellé identique à son id.
+La section `typologies` permet de fixer un vrai libellé — elle est appliquée
+**après** l'import, pour ne pas être écrasée par cette création automatique. Au
+plus une typologie porte `ninja: true` ; la déclarer retire le drapeau de la
+précédente. L'export réécrit la section entière, drapeau compris.
 
-Chaque entrée de cette section accepte un champ optionnel `ninja: true` pour
-désigner la typologie « ninja » du référentiel (au plus une : la déclarer
-retire le drapeau de la précédente). L'**export** réécrit la section
-`typologies:` en entier, libellés et drapeau ninja compris : un aller-retour
-export/import les conserve.
+## Fixtures réalistes anonymisées
 
-## Schéma de validation d'un fichier de scénario
+`festival-realiste.yaml` et `festival-realiste-canicule.yaml` sont **dérivés
+d'une édition réelle**. Ils servent à une démo grandeur nature et à la
+régression de convergence de `PlanningServiceScenarioFestivalRealisteTest`.
 
-[`docs/schema/scenario-schema.json`](schema/scenario-schema.json) décrit la
-structure attendue d'un fichier de scénario (sections obligatoires `festival`,
-`creneaux`, `stands` — dont `niveauEffort`, `horaires` et `ouvertures` par
-stand —,
-`animateurs`, et les sections optionnelles `postes` (voir plus haut),
-`parametresLegaux`, `parametresDecoupage`, `parametresSolveur`,
-`decoupageAuto`, `typologies`, `contraintes`, `contraintesAdHoc`) : types de
-champs, sections/champs
-obligatoires, durées non négatives, valeurs d'enum (`NiveauCompetence`,
-`NiveauEffort`, `PauseCoverageStrategy`, `ModeHoraire`,
-`TypeJoursHoraire`, `TypeContrainteAdHoc`), bornes des poids (1 à 100). Il ne peut pas exprimer les règles conditionnelles d'un
-sélecteur d'`horaires` (`joursSemaine` requis pour `JOURS_SEMAINE`,
-`dateDebut`/`dateFin` pour `PLAGE`, `dates` pour `DATES`) : celles-là sont
-vérifiées à l'écriture par `StandValidator`. Les ids de typologie
-eux-mêmes (`typologiesProposees`, `competences`, `souhaits`, et la section
-`typologies`) sont de simples chaînes, pas un enum : le référentiel
-`typologie` est CRUD-managé, pas figé dans le code.
+Réécrits : prénoms, noms, ids et noms d'emplacements et de stands, nom de
+l'édition. **Pas** réécrits : dates, heures, effectifs, compétences, horaires,
+typologies, paramètres — une fixture qui ne converge pas comme sa source ne
+teste pas ce qu'elle prétend tester.
 
-### Fixtures réalistes anonymisées
+Deux détails avant de les régénérer :
 
-Deux scénarios livrés ne sont pas écrits à la main : `festival-realiste.yaml`
-et `festival-realiste-canicule.yaml` sont **dérivés d'une édition réelle**
-(153 animateurs, 65 stands dont 45 premium, 23 emplacements, horaires
-récurrents avec coupure méridienne). Ils servent à deux choses — une démo
-grandeur nature depuis l'IHM, et la régression de convergence de
-`PlanningServiceScenarioFestivalRealisteTest`, qui les résout jusqu'à 0 hard.
+- **les coordonnées sont translatées en longitude, à latitude constante**, pas
+  supprimées. Une contrainte de qualité pénalise deux emplacements distants :
+  les retirer changerait le score. À latitude et delta inchangés, la haversine
+  rend les mêmes distances — vérifié au mètre près ;
+- **les ids anonymes sont numérotés dans l'ordre d'apparition**, et l'ordre des
+  sections préservé. Timefold épingle `randomSeed=0`, mais un tri ou un hachage
+  s'appuyant sur les ids ferait diverger la trajectoire de recherche.
 
-Ce qui a été réécrit : prénoms et noms des animateurs, ids et noms des
-emplacements et des stands, nom de l'édition. Ce qui ne l'a pas été : dates,
-heures, effectifs, compétences, horaires, typologies, paramètres — parce qu'une
-fixture qui ne converge pas comme sa source ne teste pas ce qu'elle prétend
-tester.
+Les sources restent hors dépôt : `docs/reel-*.yaml` et
+`scenarios/reel-*.yaml` sont dans `.gitignore`, elles portent des données
+personnelles réelles. **Le préfixe `reel-` est précisément ce qui les rend
+invisibles à git** — d'où le nom `festival-realiste`, sans quoi la fixture ne
+serait pas versionnée et le test casserait en CI.
 
-Deux détails valent d'être connus avant de les régénérer :
+Régénération : `src/main/resources/anonymiser-scenario.py`.
 
-- **les coordonnées sont translatées en longitude, à latitude constante**, et
-  non supprimées. Une contrainte de qualité pénalise deux emplacements distants
-  de plus d'un seuil (`QualiteConstraints`, `Emplacement.distanceMetresTo`) :
-  les retirer changerait le score. À latitude et delta de longitude inchangés,
-  la haversine rend exactement les mêmes distances — vérifié au mètre près ;
-- **les ids anonymes sont numérotés dans l'ordre d'apparition** et l'ordre des
-  sections est préservé. Timefold épingle `randomSeed=0`, mais un tri ou un
-  hachage s'appuyant sur les ids ferait diverger la trajectoire de recherche ;
-  à cardinalité et ordre identiques, il n'y a rien à faire diverger.
+## Deux notes pour qui touche au format
 
-Régénération, après une évolution du scénario source :
+**Régénérer le schéma** après avoir modifié un DTO :
+`./mvnw process-classes -Pgenerate-schema`. Le schéma ne peut pas exprimer les
+règles conditionnelles d'un sélecteur d'horaires — celles-là sont vérifiées par
+`StandValidator` — ni les références croisées, vérifiées à l'import réel.
 
-```bash
-python3 src/main/resources/anonymiser-scenario.py \
-  docs/reel-1708.yaml src/main/resources/scenarios/festival-realiste.yaml \
-  --edition-id festival-realiste --edition-nom "Festival réaliste"
-```
+**Le fichier est lu en une seule passe**, par un point d'entrée qui rend le
+planning et toutes les sections optionnelles ensemble. Ajouter une section
+optionnelle = un champ dans `ScenarioSections` et une ligne dans `sectionsOf`,
+**pas une méthode publique de plus** : une méthode par section reparserait le
+fichier entier à chaque appel, soit sept parses complets pour un seul clic.
 
-Les sources restent hors dépôt (`docs/reel-*.yaml` et
-`src/main/resources/scenarios/reel-*.yaml` sont dans `.gitignore` : elles
-portent des données personnelles réelles). Le préfixe `reel-` est précisément
-ce qui les rend invisibles à git — d'où le nom `festival-realiste`, sans quoi
-la fixture ne serait pas versionnée et le test casserait en CI.
+## Exports PDF / ICS
 
-Le schéma n'est pas écrit à la main : il est **généré** à partir des DTOs
-Jackson + Bean Validation de `dev.sylvain.planning.scenario.dto`
-(`ScenarioDto` et les classes qu'il référence), pour qu'il ne puisse pas
-diverger de ce que ces DTOs acceptent. Les fichiers de scénario livrés dans
-`src/main/resources/scenarios/` pointent vers lui via un commentaire
-`# yaml-language-server: $schema=...` en tête de fichier, ce qui active
-l'auto-complétion et la validation à l'édition dans les éditeurs équipés de
-l'extension YAML (ex. redhat.vscode-yaml).
-
-Après avoir modifié un DTO de scénario, régénérer le schéma et committer le
-fichier obtenu :
-
-```bash
-./mvnw process-classes -Pgenerate-schema
-```
-
-Un fichier peut aussi être validé en ligne de commande, indépendamment de
-l'IHM, via `ScenarioValidator` :
-
-```bash
-./mvnw compile exec:java \
-  -Dexec.mainClass=dev.sylvain.planning.scenario.ScenarioValidator \
-  -Dexec.args=src/main/resources/scenarios/scenario.yml
-```
-
-Ce validateur et ce schéma ne couvrent que la forme du fichier (types, champs
-requis, plages de valeurs) : ils ne remplacent pas le chargement réel par
-`PlanningService`, qui reste plus permissif sur certains points (ex.
-`creneaux[].jour` et `postes[].animateurId` sont acceptés mais ignorés à
-l'import) et seul à vérifier les références croisées (`standId`/`creneauId`
-d'un poste correspondant bien à un stand/créneau déclaré).
-
-> **Note pour qui touche au format.** Le fichier est lu **en une seule passe**,
-> par un unique point d'entrée qui rend le planning et toutes les sections
-> optionnelles ensemble (`PlanningService.loadScenario` pour un scénario
-> livré, `buildFromScenarioText` pour un fichier téléversé — les deux
-> ne diffèrent que par la provenance des octets et l'import qui suit est le
-> même code). Ajouter une section optionnelle = ajouter un champ à
-> `ScenarioSections` et une ligne à `sectionsOf`, pas une méthode publique de
-> plus : il y en avait une par section, chacune relisant et reparsant le
-> fichier entier, ce qui faisait sept parses complets pour un seul clic sur
-> « importer ».
-
-## Exports de planning (PDF / ICS)
-
-Générés **côté serveur** — pas de génération dans le navigateur :
-
-- **PDF** (OpenPDF) : planning individuel par animateur, ou ZIP de tous les
-  plannings individuels. Quand un stand est rattaché à un emplacement géocodé,
-  la liste détaillée affiche un lien OpenStreetMap cliquable sous le nom du
-  stand ;
-- **ICS** : planning individuel importable directement dans Google Calendar,
-  Apple Calendar ou Outlook, ou ZIP de tous les plannings. Les événements dont
-  le stand a un emplacement portent aussi les champs `LOCATION` (nom du lieu)
-  et `GEO` (latitude/longitude) quand ils sont disponibles.
-
-Les deux affichent l'horaire *effectif* du poste (`PosteAffectation.heureDebutEffective`/
-`heureFinEffective`), pas celui, plus large, de son créneau : un poste réduit
-par une fermeture partielle de stand (issue #60, voir [`domaine.md`](domaine.md))
+Générés côté serveur. Les deux affichent l'horaire **effectif** du poste, pas
+celui, plus large, de son créneau : un poste réduit par une fermeture partielle
 montre à l'animateur les heures qu'il couvre réellement, pas la plage fermée.
 
-Endpoints correspondants dans [`api.md`](api.md).
+Quand le stand a un emplacement géocodé, le PDF porte un lien OpenStreetMap et
+l'ICS les champs `LOCATION` et `GEO`.
