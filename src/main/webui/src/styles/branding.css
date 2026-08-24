@@ -20,3 +20,17 @@
 app-brand-logo {
   display: contents;
 }
+
+/* Un logo de déploiement est une image quelconque : un bandeau de festival
+   fait 1000 px de large sur 250 de haut. Sans plafond ici, il déborde de la
+   barre qui l'accueille — chaque barre devait donc penser à le brider, et la
+   barre d'administration l'avait oublié. Le plafond vaut pour tous les hôtes ;
+   ceux qui veulent autre chose le redéfinissent, leur sélecteur est plus
+   spécifique. */
+.app-logo {
+  max-height: 2.5rem;
+  max-width: min(35vw, 16rem);
+  width: auto;
+  object-fit: contain;
+  object-position: left center;
+}
