@@ -339,17 +339,19 @@ jours dans chacune des deux semaines ISO concernées, mais sept d'affilée)
 sans déclencher la contrainte dure. `maxJoursConsecutifsTravailles` capture
 directement cette série glissante, indépendamment du découpage en semaines,
 mais reste classée qualité d'organisation (medium) tant que sa base légale
-n'est pas établie. Son poids est surchargé à 5 dans `application.properties`
-(contre 1 pour la plupart des autres contraintes medium), pour que le solveur
-l'élimine en priorité sur le reste de la famille « Qualité d'organisation ».
+n'est pas établie. Le défaut du déploiement est neutre (1, comme toutes les
+autres) ; les scénarios livrés sous `src/main/resources/scenarios/` la pèsent
+à 5 dans leur section `contraintes:`, pour que le solveur l'élimine en
+priorité sur le reste de la famille « Qualité d'organisation ».
 
 `appreciationIncompatible` et `souhaitsIncompatibles` sont volontairement deux
 contraintes medium séparées, pas une seule agrégée : ça permet de les
-activer/pondérer indépendamment. Le poids par défaut de
-`appreciationIncompatible` est surchargé à 3 dans `application.properties`
-(contre 1 pour `souhaitsIncompatibles`), pour que le solveur élimine toujours
-en priorité un écart d'appréciation avant d'optimiser la satisfaction des
-souhaits — voir « Pondérer une contrainte » plus bas.
+activer/pondérer indépendamment. Les scénarios livrés sous
+`src/main/resources/scenarios/` pèsent `appreciationIncompatible` à 3 (contre
+1 pour `souhaitsIncompatibles`), pour que le solveur élimine toujours en
+priorité un écart d'appréciation avant d'optimiser la satisfaction des
+souhaits ; le défaut du déploiement, lui, reste neutre — voir « Pondérer une
+contrainte » plus bas.
 
 ### Soft — préférences (`PreferenceConstraints`)
 
@@ -501,10 +503,12 @@ chaque solve).
 Deux niveaux, dans cet ordre :
 
 1. **Le déploiement** — une propriété par contrainte,
-   `planning.constraint-weights.<nomDeLaContrainte>=<entier>`, listées (à 1,
-   c'est-à-dire le poids littéral du code) dans `application.properties`.
-   C'est la valeur de référence, celle avec laquelle le solveur a été réglé,
-   et elle s'applique à **toutes** les éditions.
+   `planning.constraint-weights.<nomDeLaContrainte>=<entier>`, toutes listées
+   à 1 (c'est-à-dire le poids littéral du code) dans `application.properties`.
+   Ce défaut est volontairement **neutre** et s'applique à **toutes** les
+   éditions : le dosage d'un festival donné voyage avec son scénario (section
+   `contraintes:`) ou s'édite par édition, pas dans la configuration du
+   déploiement.
 2. **L'édition** — table `ponderation_contrainte` (migration V53), une ligne
    par `(edition_id, nom)`. Même convention que `constraint_toggle` : pas de
    ligne, pas de surcharge. Ce que l'édition enregistre l'emporte, sans rien
@@ -540,7 +544,11 @@ descend à 1 et se fait battre, celle qui compte monte.
 Les autres familles ne se dosent pas dans le même sens : une contrainte dure
 est respectée ou le planning est invalide, son poids ne change que la vitesse
 de convergence. Repondérer une règle légale ne la rend ni plus ni moins
-obligatoire — l'IHM ne la présente donc pas comme un curseur.
+obligatoire — c'est l'en-tête de la famille « Qualité d'organisation », et lui
+seul, qui explique ce dosage. Le contrôle, lui, est le **même pour les 39
+règles** : un champ de saisie « Poids » de 1 à 100 dans l'encart de chaque
+règle. Deux contrôles différents selon la famille laissaient croire à deux
+mécanismes ; il n'y en a qu'un, seul le sens de la valeur change.
 
 `equilibrerCharge` (voir tableau ci-dessus) est un cas particulier : son
 `matchWeigher` met `loadBalance().unfairness()` (un `BigDecimal` typiquement

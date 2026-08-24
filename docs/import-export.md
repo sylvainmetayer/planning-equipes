@@ -191,6 +191,10 @@ Trois règles valent d'être connues :
   c'est soit une faute de frappe, soit un fichier écrit contre une autre
   version du catalogue, et l'ignorer laisserait l'opérateur convaincu qu'une
   règle est désactivée alors qu'elle ne l'est pas ;
+- les scénarios livrés sous `src/main/resources/scenarios/` portent tous cette
+  section, avec les deux seuls poids non neutres du produit
+  (`appreciationIncompatible: 3`, `maxJoursConsecutifsTravailles: 5`) : le
+  défaut du déploiement est 1 partout, et le dosage voyage avec le scénario ;
 - `contraintesAdHoc` désigne animateurs, stands et créneaux par les ids **du
   fichier**. Les créneaux recevant de nouveaux ids en base, la référence est
   réassociée à l'import (voir plus haut) ; un id qui ne désigne rien dans le

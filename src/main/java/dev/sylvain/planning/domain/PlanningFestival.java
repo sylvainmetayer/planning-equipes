@@ -3,6 +3,7 @@ package dev.sylvain.planning.domain;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import ai.timefold.solver.core.api.domain.solution.ConstraintWeightOverrides;
 import ai.timefold.solver.core.api.domain.solution.PlanningEntityCollectionProperty;
@@ -53,6 +54,16 @@ public class PlanningFestival {
     // null when a solve runs, hence the non-null default.
     @JsonIgnore
     private ConstraintWeightOverrides<HardMediumSoftScore> ponderationsContraintes = ConstraintWeightOverrides.none();
+
+    // The per-constraint weights the scenario file pinned, raw, or null when it
+    // pinned none. Carried here rather than passed alongside because a planning
+    // built from a scenario travels through several callers before it is
+    // solved, and every one of them used to drop the section on the floor: the
+    // weights only reached the solver once the scenario had been *imported*
+    // into an edition. @JsonIgnore for the same reason as the overrides above —
+    // a caller must not be able to weaken a constraint by sending its own.
+    @JsonIgnore
+    private Map<String, Integer> ponderationsScenario;
 
     @PlanningScore
     private HardMediumSoftScore score;
@@ -140,6 +151,14 @@ public class PlanningFestival {
 
     public ConstraintWeightOverrides<HardMediumSoftScore> getPonderationsContraintes() {
         return ponderationsContraintes;
+    }
+
+    public Map<String, Integer> getPonderationsScenario() {
+        return ponderationsScenario;
+    }
+
+    public void setPonderationsScenario(Map<String, Integer> ponderationsScenario) {
+        this.ponderationsScenario = ponderationsScenario;
     }
 
     public void setPonderationsContraintes(ConstraintWeightOverrides<HardMediumSoftScore> ponderationsContraintes) {

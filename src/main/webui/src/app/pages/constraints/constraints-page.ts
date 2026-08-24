@@ -8,7 +8,6 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatSliderModule } from '@angular/material/slider';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ApiService } from '../../core/api.service';
@@ -50,17 +49,13 @@ interface ConstraintGroup {
   /**
    * The group holds rules meant to be dosed rather than switched off — today
    * the MEDIUM ones of « Qualité d'organisation ». Its header then says what
-   * the dial in each card means, once, instead of thirteen times.
+   * weighting them against one another means, once, instead of thirteen times.
    */
   dosable: boolean;
 }
 
-/**
- * Highest value the dial offers. Not a limit of the API (the server accepts up
- * to 100): past ten, one rule of a level drowns out every other rule of that
- * same level, which is no longer dosing.
- */
-const POIDS_DOSAGE_MAX = 10;
+/** Lowest weight the server accepts: zero is refused, switching off goes through the toggle. */
+const POIDS_MIN = 1;
 
 /** Highest weight the server accepts — mirrors `ParametresValidator.CONSTRAINT_WEIGHT_MAX`. */
 const POIDS_MAX = 100;
@@ -80,7 +75,6 @@ const POIDS_MAX = 100;
     MatFormFieldModule,
     MatInputModule,
     MatProgressBarModule,
-    MatSliderModule,
     MatSlideToggleModule,
     MatTooltipModule,
     FeasibilityBanner,
@@ -94,9 +88,8 @@ export class ConstraintsPage {
   protected readonly error = signal('');
   protected readonly view = signal<ConstraintsView | null>(null);
   protected readonly togglingConstraint = signal<string | null>(null);
-  protected readonly savingPoids = signal<string | null>(null);
 
-  protected readonly poidsDosageMax = POIDS_DOSAGE_MAX;
+  protected readonly poidsMin = POIDS_MIN;
   protected readonly poidsMax = POIDS_MAX;
 
   protected readonly parametresLoading = signal(false);
@@ -297,18 +290,33 @@ export class ConstraintsPage {
   }
 
   /**
+   * Reads what was typed, brings it back into the range the server accepts and
+   * saves it. The field itself is rewritten with the value actually sent, so it
+   * never keeps showing a number nobody stored — an empty field, a stray letter
+   * or a 0 all fall back to the current weight or to the nearest bound.
+   */
+  protected async onPoidsChange(constraint: ConstraintView, field: HTMLInputElement): Promise<void> {
+    const saisi = Number(field.value);
+    const borne =
+      field.value.trim() === '' || Number.isNaN(saisi)
+        ? constraint.poids
+        : Math.min(Math.max(Math.round(saisi), POIDS_MIN), POIDS_MAX);
+    field.value = String(borne);
+    await this.setPoids(constraint, borne);
+  }
+
+  /**
    * Saves the weight of one rule for the current edition. Same optimistic
-   * shape as the toggle: the dial stays where the user left it, and rolls back
+   * shape as the toggle: the value stays where the user left it, and rolls back
    * with an error message if the save fails.
    */
   protected async setPoids(constraint: ConstraintView, poids: number): Promise<void> {
-    const borne = Math.min(Math.max(Math.round(poids), 1), POIDS_MAX);
+    const borne = Math.min(Math.max(Math.round(poids), POIDS_MIN), POIDS_MAX);
     const precedent = constraint.poids;
     if (borne === precedent) {
       return;
     }
     this.patchConstraint(constraint.name, { poids: borne });
-    this.savingPoids.set(constraint.name);
     this.error.set('');
     try {
       const enregistre = await this.api.put<{ poids: number }>(
@@ -319,14 +327,7 @@ export class ConstraintsPage {
     } catch (error) {
       this.patchConstraint(constraint.name, { poids: precedent });
       this.error.set(errorPrefix(error));
-    } finally {
-      this.savingPoids.set(null);
     }
-  }
-
-  /** The dial's upper bound: ten, or the current value when a scenario pinned a higher one. */
-  protected dosageMax(constraint: ConstraintView): number {
-    return Math.max(POIDS_DOSAGE_MAX, constraint.poids);
   }
 
   private setConstraintActif(name: string, actif: boolean): void {

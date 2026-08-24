@@ -162,11 +162,12 @@ class ImportScenarioContraintesTest {
 
         importer(AVEC_AUTRES_CONTRAINTES);
 
-        // Back to the *deployment* default, not to a hard-coded 1:
-        // `equilibrerCharge` is 1 in application.properties, while
-        // `maxJoursConsecutifsTravailles` is 5.
+        // Back to the *deployment* default: the edition's own row is deleted,
+        // not overwritten with a literal, so the weight is whatever
+        // application.properties says — a uniformly neutral 1 since the two
+        // business ratios moved to the scenarios that need them.
         assertThat(contrainte("equilibrerCharge").get("poids")).isEqualTo(1);
-        assertThat(contrainte("maxJoursConsecutifsTravailles").get("poids")).isEqualTo(5);
+        assertThat(contrainte("maxJoursConsecutifsTravailles").get("poids")).isEqualTo(1);
     }
 
     @Test

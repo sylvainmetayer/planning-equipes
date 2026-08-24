@@ -96,7 +96,7 @@ public class PlanningService {
      * The deployment-wide weight of every constraint, read once from
      * {@code application.properties}. An edition may override any of them
      * (table {@code ponderation_contrainte}); see
-     * {@link #constraintWeightOverrides()}.
+     * {@link #constraintWeightOverrides(Map)}.
      */
     private final Map<String, Integer> configuredWeights;
     /** Cap fed to {@code limiterEmplacementsParJour} through {@link ParametresQualite}. */
@@ -161,8 +161,27 @@ public class PlanningService {
      * by the same process must not share one another's dosage.</p>
      */
     public Map<String, Integer> effectiveConstraintWeights() {
+        return effectiveConstraintWeights(null);
+    }
+
+    /**
+     * Same, for a planning built from a scenario that pinned its own dosage.
+     *
+     * <p>The scenario layer <b>replaces</b> the edition's rather than merging
+     * with it, exactly as importing the file would: a rule the file does not
+     * name goes back to the deployment default. Merging would let the ambient
+     * edition's leftovers decide, and the same scenario would solve a different
+     * problem depending on where it was run — the hole the {@code contraintes:}
+     * section exists to close.</p>
+     *
+     * @param scenario the weights the file pinned, or {@code null} when it
+     *                 pinned none — in which case the edition's own tuning
+     *                 applies, unchanged
+     */
+    public Map<String, Integer> effectiveConstraintWeights(Map<String, Integer> scenario) {
         Map<String, Integer> poids = new HashMap<>(configuredWeights);
-        referenceDataService.getConstraintWeights().forEach((nom, valeur) -> {
+        Map<String, Integer> surcharges = scenario != null ? scenario : referenceDataService.getConstraintWeights();
+        surcharges.forEach((nom, valeur) -> {
             if (valeur != null && configuredWeights.containsKey(nom)) {
                 poids.put(nom, valeur);
             }
@@ -171,9 +190,9 @@ public class PlanningService {
     }
 
     /** {@link #effectiveConstraintWeights()} turned into what Timefold applies at solve time. */
-    private ConstraintWeightOverrides<HardMediumSoftScore> constraintWeightOverrides() {
+    private ConstraintWeightOverrides<HardMediumSoftScore> constraintWeightOverrides(Map<String, Integer> scenario) {
         Map<String, HardMediumSoftScore> overrides = new HashMap<>();
-        Map<String, Integer> poids = effectiveConstraintWeights();
+        Map<String, Integer> poids = effectiveConstraintWeights(scenario);
         for (ConstraintCatalog.ConstraintDefinition definition : ConstraintCatalog.definitions()) {
             int weight = poids.getOrDefault(definition.name(), 1);
             if (weight == 1) {
@@ -1206,6 +1225,12 @@ public class PlanningService {
                 contraintesAdHoc != null ? contraintesAdHoc : referenceDataService.snapshotContraintes());
         festival.setParametresLegaux(List.of(
                 parseParametresLegaux(scenarioData).orElseGet(referenceDataService::getParametresLegaux)));
+        // Same reasoning as the ad hoc constraints above, for the dosage: a file
+        // that pins its weights describes the problem it was verified against,
+        // and solving it must apply them whether or not it was ever imported.
+        festival.setPonderationsScenario(parseContraintes(scenarioData)
+                .map(ContraintesScenario::poids)
+                .orElse(null));
         return festival;
     }
 
@@ -1887,7 +1912,7 @@ public class PlanningService {
         problem.setParametresQualite(List.of(new ParametresQualite(maxEmplacementsParJour)));
         // Never sent by a caller (the field is @JsonIgnore-d on PlanningFestival),
         // so this always overwrites the ConstraintWeightOverrides.none() default.
-        problem.setPonderationsContraintes(constraintWeightOverrides());
+        problem.setPonderationsContraintes(constraintWeightOverrides(problem.getPonderationsScenario()));
     }
 
     /**

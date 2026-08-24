@@ -5,19 +5,23 @@
 // The confirmation asked before switching off a legal rule is one: the guard
 // lives in a dialog service, and a unit test on that service proves the
 // service, not that the screen calls it. The dosage is the other: the value
-// travels slider → HTTP → database → reload, and every link of that chain is
+// travels field → HTTP → database → reload, and every link of that chain is
 // somewhere the number could quietly fail to stick.
+//
+// Every rule carries the same control — one number field, protected rules
+// included — so these tests also stand guard over that uniformity: a second
+// shape of control coming back is what they fail on.
 
 import { APIRequestContext, Page, expect, test } from '@playwright/test';
 import { contexteAdmin, pageAdmin, seedPlanning } from './support';
 
-/** MEDIUM, « Qualité d'organisation » — dosed with a slider. */
+/** MEDIUM, « Qualité d'organisation » — the family meant to be dosed. */
 const DOSABLE = 'equilibrerCharge';
 
 /** HARD, « Légal (mineurs) » — switching it off needs the confirmation. */
 const PROTEGEE = 'travailDeNuitInterditPourMineur';
 
-/** SOFT, « Préférences » — neither protected nor dosed: a plain weight field. */
+/** SOFT, « Préférences » — neither protected nor part of that family. */
 const NON_DOSABLE = 'preserverBufferPolyvalents';
 
 let admin: APIRequestContext;
@@ -49,6 +53,11 @@ test.afterAll(async () => {
 /** The card of one constraint, located by the technical name it displays. */
 function carte(page: Page, nom: string) {
   return page.locator('.constraint-card').filter({ has: page.getByText(nom, { exact: true }) });
+}
+
+/** The one weight control of a rule: the same number field for all of them. */
+function champPoids(page: Page, nom: string) {
+  return carte(page, nom).locator('input[type="number"]');
 }
 
 async function ouvrirContraintes(page: Page): Promise<void> {
@@ -132,19 +141,17 @@ test("une règle de confort s'éteint sans confirmation", async ({ browser }) =>
   await page.close();
 });
 
-test('le poids réglé au curseur survit à un rechargement', async ({ browser }) => {
+test("le poids d'une règle dosable survit à un rechargement", async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
   await ouvrirContraintes(page);
 
-  const dose = carte(page, DOSABLE).locator('input[type="range"]');
-  await expect(dose).toHaveValue('1');
+  const champ = champPoids(page, DOSABLE);
+  await expect(champ).toHaveValue('1');
 
-  // One press on purpose: the dial is disabled while the save is in flight,
-  // so a burst of arrows would lose most of them. What is checked here is the
-  // whole path — dial, HTTP, database, back after a reload — not the input
-  // rate.
-  await dose.focus();
-  await page.keyboard.press('ArrowRight');
+  // What is checked here is the whole path — field, HTTP, database, back after
+  // a reload — every link being somewhere the number could fail to stick.
+  await champ.fill('2');
+  await champ.blur();
 
   await expect
     .poll(async () => {
@@ -154,18 +161,18 @@ test('le poids réglé au curseur survit à un rechargement', async ({ browser }
     .toBe(2);
 
   await page.reload();
-  await expect(carte(page, DOSABLE).locator('input[type="range"]')).toHaveValue('2');
+  await expect(champPoids(page, DOSABLE)).toHaveValue('2');
 
   await page.close();
 });
 
-test('le poids saisi au champ numérique survit à un rechargement', async ({ browser }) => {
+test("le poids d'une règle non dosable survit à un rechargement", async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
   await ouvrirContraintes(page);
 
-  // The twenty-seven non-dosable rules carry a field rather than a dial: they
-  // are not arbitrated by feel, but they stay weightable.
-  const champ = carte(page, NON_DOSABLE).locator('input[type="number"]');
+  // Same control, same path: the rules outside « Qualité d'organisation » are
+  // not arbitrated by feel, but they stay weightable exactly the same way.
+  const champ = champPoids(page, NON_DOSABLE);
   await champ.fill('12');
   await champ.blur();
 
@@ -177,20 +184,59 @@ test('le poids saisi au champ numérique survit à un rechargement', async ({ br
     .toBe(12);
 
   await page.reload();
-  await expect(carte(page, NON_DOSABLE).locator('input[type="number"]')).toHaveValue('12');
+  await expect(champPoids(page, NON_DOSABLE)).toHaveValue('12');
 
   await page.close();
 });
 
-test('une règle protégée porte son pictogramme et aucun curseur de dosage', async ({ browser }) => {
+test('une règle protégée porte son pictogramme et le même champ de poids que les autres', async ({
+  browser
+}) => {
   const page = await pageAdmin(browser, admin);
   await ouvrirContraintes(page);
 
-  // The pictogram warns before the click; the dialog only comes after.
+  // The pictogram warns before the click; the dialog only comes after. It is
+  // what singles a rule of public order out — not a different way of weighting
+  // it.
   await expect(carte(page, PROTEGEE).locator('.constraint-protegee-icon')).toBeVisible();
-  // A rule of public order is not dosed: it applies, or it is switched off.
-  await expect(carte(page, PROTEGEE).locator('input[type="range"]')).toHaveCount(0);
   await expect(carte(page, DOSABLE).locator('.constraint-protegee-icon')).toHaveCount(0);
+
+  // One control for every rule: a number field, and no slider left anywhere.
+  await expect(champPoids(page, PROTEGEE)).toBeVisible();
+  await expect(champPoids(page, DOSABLE)).toBeVisible();
+  await expect(champPoids(page, NON_DOSABLE)).toBeVisible();
+  await expect(page.locator('.constraint-card input[type="range"]')).toHaveCount(0);
+
+  await page.close();
+});
+
+test('le poids hors bornes est ramené dans la plage acceptée', async ({ browser }) => {
+  const page = await pageAdmin(browser, admin);
+  await ouvrirContraintes(page);
+
+  // Zero is refused server-side: switching a rule off goes through the switch,
+  // and for a legal rule through the confirmation. The field must never send
+  // it, and must never keep showing it either.
+  const champ = champPoids(page, DOSABLE);
+  await champ.fill('5');
+  await champ.blur();
+  await expect
+    .poll(async () => {
+      const etat = await (await admin.get('/api/constraints')).json();
+      return etat.contraintes.find((c: { name: string }) => c.name === DOSABLE).poids;
+    })
+    .toBe(5);
+
+  await champ.fill('0');
+  await champ.blur();
+
+  await expect(champ).toHaveValue('1');
+  await expect
+    .poll(async () => {
+      const etat = await (await admin.get('/api/constraints')).json();
+      return etat.contraintes.find((c: { name: string }) => c.name === DOSABLE).poids;
+    })
+    .toBe(1);
 
   await page.close();
 });

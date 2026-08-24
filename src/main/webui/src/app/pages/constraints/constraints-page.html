@@ -110,40 +110,29 @@
                 </mat-chip-set>
               </div>
               <p class="constraint-description">{{ constraint.description }}</p>
-              <div class="constraint-toggle-row">
-                <mat-slide-toggle
-                  [checked]="constraint.actif"
-                  [disabled]="togglingConstraint() === constraint.name || jobs.editingLocked()"
-                  (change)="toggleConstraint(constraint, $event.checked)">
-                  {{ actifLabel(constraint.actif) }}
-                </mat-slide-toggle>
-                @if (constraint.protegee) {
-                  <mat-icon class="constraint-protegee-icon"
-                            matTooltip="Règle légale ou de sécurité : la désactiver demande une confirmation."
-                            i18n-matTooltip="@@constraints.protegee.tooltip">gavel</mat-icon>
-                }
+              <div class="constraint-controls">
+                <div class="constraint-toggle-row">
+                  <mat-slide-toggle
+                    [checked]="constraint.actif"
+                    [disabled]="togglingConstraint() === constraint.name || jobs.editingLocked()"
+                    (change)="toggleConstraint(constraint, $event.checked)">
+                    {{ actifLabel(constraint.actif) }}
+                  </mat-slide-toggle>
+                  @if (constraint.protegee) {
+                    <mat-icon class="constraint-protegee-icon"
+                              matTooltip="Règle légale ou de sécurité : la désactiver demande une confirmation."
+                              i18n-matTooltip="@@constraints.protegee.tooltip">gavel</mat-icon>
+                  }
+                </div>
+                <mat-form-field appearance="outline" subscriptSizing="dynamic" class="constraint-poids-field">
+                  <mat-label i18n="@@constraints.poids.label">Poids</mat-label>
+                  <input matInput type="number" #poids [min]="poidsMin" [max]="poidsMax" step="1"
+                         [value]="constraint.poids" [disabled]="jobs.editingLocked()"
+                         matTooltip="Poids de cette règle pour l'édition en cours, de 1 à 100 : plus il est élevé, plus le solveur la privilégie face aux autres règles du même niveau."
+                         i18n-matTooltip="@@constraints.poids.tooltip"
+                         (change)="onPoidsChange(constraint, poids)" />
+                </mat-form-field>
               </div>
-              @if (constraint.dosable) {
-                <div class="constraint-dose">
-                  <label class="constraint-dose-label" [for]="'dose-' + constraint.name"
-                         i18n="@@constraints.dosage.label">Importance</label>
-                  <mat-slider [min]="1" [max]="dosageMax(constraint)" [step]="1" discrete
-                              [disabled]="savingPoids() === constraint.name || jobs.editingLocked()">
-                    <input matSliderThumb [id]="'dose-' + constraint.name" [value]="constraint.poids"
-                           (valueChange)="setPoids(constraint, $event)" />
-                  </mat-slider>
-                  <span class="constraint-dose-value">{{ constraint.poids }}</span>
-                </div>
-              } @else {
-                <div class="constraint-poids">
-                  <mat-form-field appearance="outline" subscriptSizing="dynamic" class="constraint-poids-field">
-                    <mat-label i18n="@@constraints.poids.label">Poids</mat-label>
-                    <input matInput type="number" min="1" [max]="poidsMax" step="1" [value]="constraint.poids"
-                           [disabled]="savingPoids() === constraint.name || jobs.editingLocked()"
-                           (change)="setPoids(constraint, +$any($event.target).value)" />
-                  </mat-form-field>
-                </div>
-              }
               <p [class]="resultClass(constraint)">{{ resultLabel(constraint) }}</p>
               @if (constraint.violations.length > 0) {
                 <button matButton (click)="showViolations(constraint)" i18n="@@constraints.showViolations">

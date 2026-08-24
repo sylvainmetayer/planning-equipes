@@ -4,7 +4,7 @@
 //
 // The component is created but never rendered — the project favours logic
 // tests — so what is pinned here is the sequence of calls: no PUT when the
-// confirmation is refused, one PUT with the weight when the dial moves, and
+// confirmation is refused, one PUT with the weight when the field changes, and
 // the optimistic value rolled back when the server refuses.
 
 import { provideZonelessChangeDetection } from '@angular/core';
@@ -63,7 +63,7 @@ type PageInternals = {
   error: () => string;
   toggleConstraint: (constraint: ConstraintView, actif: boolean) => Promise<void>;
   setPoids: (constraint: ConstraintView, poids: number) => Promise<void>;
-  dosageMax: (constraint: ConstraintView) => number;
+  onPoidsChange: (constraint: ConstraintView, field: HTMLInputElement) => Promise<void>;
 };
 
 describe('ConstraintsPage', () => {
@@ -180,7 +180,7 @@ describe('ConstraintsPage', () => {
 
     // Zero is refused server-side on purpose (switching a rule off goes
     // through the toggle, and for a legal rule through the confirmation), so
-    // the dial must never send it.
+    // the field must never send it.
     it('never sends a weight below one or above the server ceiling', async () => {
       const page = await createPage([contrainte({ poids: 4 })]);
 
@@ -202,12 +202,49 @@ describe('ConstraintsPage', () => {
       expect(page.error()).toContain('refusé');
     });
 
-    /** The dial stops at ten, unless a scenario pinned something higher. */
-    it('opens the dial up to the current value when it exceeds the usual range', async () => {
-      const page = await createPage([contrainte()]);
+  });
 
-      expect(page.dosageMax(contrainte({ poids: 3 }))).toBe(10);
-      expect(page.dosageMax(contrainte({ poids: 42 }))).toBe(42);
+  // One control for the thirty-nine rules, protected ones included: a number
+  // field. What it must never do is leave the user looking at a figure that
+  // was not saved, so what is typed is normalised back into the element.
+  describe('the weight field', () => {
+    function champ(value: string): HTMLInputElement {
+      const field = document.createElement('input');
+      field.type = 'number';
+      field.value = value;
+      return field;
+    }
+
+    it('saves what was typed once brought back into the accepted range', async () => {
+      const page = await createPage([contrainte({ poids: 4 })]);
+      const field = champ('12');
+
+      await page.onPoidsChange(contrainte({ poids: 4 }), field);
+
+      expect(api.put).toHaveBeenCalledWith('/api/constraints/equilibrerCharge/poids', { poids: 12 });
+      expect(field.value).toBe('12');
+    });
+
+    it('clamps an out-of-range figure and shows the value actually sent', async () => {
+      const page = await createPage([contrainte({ poids: 4 })]);
+      const field = champ('0');
+
+      await page.onPoidsChange(contrainte({ poids: 4 }), field);
+
+      expect(api.put).toHaveBeenCalledWith('/api/constraints/equilibrerCharge/poids', { poids: 1 });
+      expect(field.value).toBe('1');
+    });
+
+    // Emptying the field is not asking for a weight of zero, which the server
+    // refuses: it is asking for nothing, so nothing is saved.
+    it('saves nothing and restores the stored weight when the field is emptied', async () => {
+      const page = await createPage([contrainte({ poids: 4 })]);
+      const field = champ('');
+
+      await page.onPoidsChange(contrainte({ poids: 4 }), field);
+
+      expect(api.put).not.toHaveBeenCalled();
+      expect(field.value).toBe('4');
     });
   });
 });

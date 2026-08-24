@@ -24,13 +24,26 @@
   margin: 0 0 0.5rem;
 }
 
+/* The two settings of a rule share one line at the foot of the card, separated
+   from the description by a rule: the switch on the left, the weight field on
+   the right, aligned from one card to the next whatever the description says. */
+.constraint-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 0.75rem;
+  margin: 0.75rem 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+}
+
 /* The switch, plus the badge marking a rule that founds the plan in law — the
    confirmation its disabling goes through is the reason it is signalled. */
 .constraint-toggle-row {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 0.5rem;
 }
 
 .constraint-protegee-icon {
@@ -40,36 +53,15 @@
   height: 1.125rem;
 }
 
-/* Weight, in two shapes on purpose: a dial for the rules meant to be dosed
-   against one another (the MEDIUM ones of « Qualité d'organisation »), a plain
-   number for the rest — where the weight tunes convergence rather than an
-   arbitration between comforts. */
-.constraint-dose {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.constraint-dose-label {
-  font: var(--mat-sys-label-large);
-  color: var(--mat-sys-on-surface-variant);
-}
-
-.constraint-dose-value {
-  font: var(--mat-sys-title-medium);
-  color: var(--mat-sys-primary);
-  min-width: 1.5rem;
-  text-align: right;
-}
-
-.constraint-poids {
-  margin-bottom: 0.5rem;
-}
-
+/* One shape of weight for every rule, protected ones included: a compact
+   number field, kept narrow enough to sit next to the switch. */
 .constraint-poids-field {
-  width: 7rem;
+  width: 6.5rem;
+  flex: 0 0 auto;
+}
+
+.constraint-poids-field input {
+  text-align: right;
 }
 
 .legal-disable-title {

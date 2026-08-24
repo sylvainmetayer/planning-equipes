@@ -98,6 +98,73 @@ class PlanningServiceConstraintWeightOverridesTest {
     }
 
     /**
+     * The weight a scenario file pinned beats the edition's, without the file
+     * ever having been imported. Same problem as above, same edition storing
+     * 7 — only the scenario layer can move the medium score to -9.
+     *
+     * <p>This is the chain that used to stop short: {@code contraintes.poids}
+     * was parsed, and applied only by the import endpoint writing it into
+     * {@code ponderation_contrainte}. A planning built from the file and solved
+     * as it stands ignored it, so the same scenario solved a different problem
+     * depending on the ambient edition.</p>
+     */
+    @Test
+    void scenarioWeightOverridesTheEditionOne() {
+        ReferenceData referenceDataService = new EmptyReferenceData() {
+            @Override
+            public Map<String, Integer> getConstraintWeights() {
+                return Map.of("standComplexeAvecReferent", 7);
+            }
+        };
+
+        Config config = ConfigProviderResolver.instance().getBuilder()
+                .withSources(mapConfigSource(Map.of(
+                        "planning.constraint-weights.standComplexeAvecReferent", "5")))
+                .build();
+        PlanningService planningService = new PlanningService(2L, 1L,
+                ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT, referenceDataService,
+                new FeasibilityAnalyzer(), config);
+
+        PlanningFestival festival = problemWithoutReferent();
+        festival.setPonderationsScenario(Map.of("standComplexeAvecReferent", 9));
+
+        assertThat(planningService.effectiveConstraintWeights(Map.of("standComplexeAvecReferent", 9)))
+                .containsEntry("standComplexeAvecReferent", 9);
+
+        assertThat(planningService.solve(festival).getScore().mediumScore()).isEqualTo(-9);
+    }
+
+    /**
+     * The scenario layer <b>replaces</b> the edition's rather than merging with
+     * it: a rule the file does not name goes back to the deployment default,
+     * not to whatever the ambient edition stored. Here the edition raised
+     * {@code standComplexeAvecReferent} to 7 and the file pins another rule
+     * only — the score must fall back to the configured 5, not stay at 7.
+     */
+    @Test
+    void aScenarioThatPinsWeightsDropsTheEditionsOwn() {
+        ReferenceData referenceDataService = new EmptyReferenceData() {
+            @Override
+            public Map<String, Integer> getConstraintWeights() {
+                return Map.of("standComplexeAvecReferent", 7);
+            }
+        };
+
+        Config config = ConfigProviderResolver.instance().getBuilder()
+                .withSources(mapConfigSource(Map.of(
+                        "planning.constraint-weights.standComplexeAvecReferent", "5")))
+                .build();
+        PlanningService planningService = new PlanningService(2L, 1L,
+                ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT, referenceDataService,
+                new FeasibilityAnalyzer(), config);
+
+        PlanningFestival festival = problemWithoutReferent();
+        festival.setPonderationsScenario(Map.of("equilibrerCharge", 3));
+
+        assertThat(planningService.solve(festival).getScore().mediumScore()).isEqualTo(-5);
+    }
+
+    /**
      * A single animateur, débutant, alone on a stand: he is also the only
      * value in the planning variable's range, so the solver has no alternative
      * assignment to try and the "no referent on this stand/créneau" match
