@@ -24,8 +24,75 @@
   margin: 0 0 0.5rem;
 }
 
+/* The switch, plus the badge marking a rule that founds the plan in law — the
+   confirmation its disabling goes through is the reason it is signalled. */
 .constraint-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   margin-bottom: 0.5rem;
+}
+
+.constraint-protegee-icon {
+  color: var(--mat-sys-error);
+  font-size: 1.125rem;
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+/* Weight, in two shapes on purpose: a dial for the rules meant to be dosed
+   against one another (the MEDIUM ones of « Qualité d'organisation »), a plain
+   number for the rest — where the weight tunes convergence rather than an
+   arbitration between comforts. */
+.constraint-dose {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.constraint-dose-label {
+  font: var(--mat-sys-label-large);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.constraint-dose-value {
+  font: var(--mat-sys-title-medium);
+  color: var(--mat-sys-primary);
+  min-width: 1.5rem;
+  text-align: right;
+}
+
+.constraint-poids {
+  margin-bottom: 0.5rem;
+}
+
+.constraint-poids-field {
+  width: 7rem;
+}
+
+.legal-disable-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.legal-disable-rule {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0 0 0.25rem;
+}
+
+.legal-disable-categorie,
+.legal-disable-description {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.legal-disable-trace {
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
 }
 
 .constraint-card-inactive {

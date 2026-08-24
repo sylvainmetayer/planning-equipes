@@ -13,6 +13,7 @@ import dev.sylvain.planning.service.EditionService;
 import dev.sylvain.planning.service.ImportImpact;
 import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.ReferenceDataService;
+import dev.sylvain.planning.solver.ConstraintCatalog;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -166,10 +167,12 @@ public class ReferenceDataResource {
             if (sections.decoupageAuto()) {
                 referenceDataService.applyAutomaticDecoupage(importe.planning());
                 applyTypologies(sections);
+                applyContraintes(sections);
                 return true;
             }
             referenceDataService.importFromPlanning(importe.planning());
             applyTypologies(sections);
+            applyContraintes(sections);
             return false;
         });
     }
@@ -211,6 +214,29 @@ public class ReferenceDataResource {
      */
     private void applyTypologies(PlanningService.ScenarioSections sections) {
         sections.typologies().forEach(referenceDataService::createTypologie);
+    }
+
+    /**
+     * Applies the scenario's {@code contraintes:} section to the target
+     * edition: which rules are switched off, and what weight the others carry.
+     *
+     * <p>The section is applied <b>wholesale</b> over the whole catalogue, not
+     * merged: a scenario that pins its tuning describes the problem it was
+     * verified against, so a rule it does not name goes back to active, at its
+     * configured weight. Merging would leave the importing edition's own
+     * leftovers in place, and the "same" scenario would keep solving a
+     * different problem depending on where it landed — the very hole this
+     * section closes.</p>
+     */
+    private void applyContraintes(PlanningService.ScenarioSections sections) {
+        sections.contraintes().ifPresent(contraintes -> {
+            for (ConstraintCatalog.ConstraintDefinition definition : ConstraintCatalog.definitions()) {
+                referenceDataService.setContrainteActive(definition.name(),
+                        !contraintes.desactivees().contains(definition.name()));
+                referenceDataService.setConstraintWeight(definition.name(),
+                        contraintes.poids().get(definition.name()));
+            }
+        });
     }
 
     /**

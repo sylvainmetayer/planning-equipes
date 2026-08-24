@@ -70,4 +70,33 @@ class ParametresValidatorTest {
         assertThatCode(() -> ParametresValidator.checkParametresSolveur(new ParametresSolveur(120)))
                 .doesNotThrowAnyException();
     }
+
+    /**
+     * A weight of zero would switch the rule off in fact while the Contraintes
+     * screen kept showing it as active — and, for a legal rule, without the
+     * confirmation that protects it. Disabling goes through the toggle.
+     */
+    @Test
+    void aConstraintWeightBelowOneIsRefused() {
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> ParametresValidator.checkConstraintWeight(0))
+                .withMessageContaining("désactivez-la");
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> ParametresValidator.checkConstraintWeight(-3));
+    }
+
+    @Test
+    void aConstraintWeightAboveTheCeilingIsRefused() {
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> ParametresValidator.checkConstraintWeight(
+                        ParametresValidator.CONSTRAINT_WEIGHT_MAX + 1));
+    }
+
+    @Test
+    void aConstraintWeightInsideTheRangeIsAccepted() {
+        assertThatCode(() -> ParametresValidator.checkConstraintWeight(1)).doesNotThrowAnyException();
+        assertThatCode(() -> ParametresValidator.checkConstraintWeight(5)).doesNotThrowAnyException();
+        assertThatCode(() -> ParametresValidator.checkConstraintWeight(ParametresValidator.CONSTRAINT_WEIGHT_MAX))
+                .doesNotThrowAnyException();
+    }
 }

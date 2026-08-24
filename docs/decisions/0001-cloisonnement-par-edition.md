@@ -119,6 +119,10 @@ Reçoivent en `V33` une colonne
 `parametres_legaux`, `parametres_solveur`, `parametres_decoupage`,
 `planning_resolution`.
 
+Les tables créées depuis suivent la même convention : `ponderation_contrainte`
+(`V53`, le poids de chaque contrainte pour l'édition) naît directement avec sa
+colonne `edition_id` et sa clé primaire `(edition_id, nom)`.
+
 Les tables filles héritaient du périmètre par leur seule clé étrangère —
 `animateur_competence`, `stand_typologie`, `creneau`, `poste_affectation`, … —
 mais le passage des clés primaires en composite (§4.3) fait entrer `edition_id`

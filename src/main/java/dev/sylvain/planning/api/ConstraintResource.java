@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import dev.sylvain.planning.service.ConstraintAnalysisStore;
 import dev.sylvain.planning.service.ConstraintAnalysisStore.StoredAnalysis;
 import dev.sylvain.planning.service.FeasibilityAnalyzer.FeasibilityReport;
+import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.PlanningService.ConstraintDiagnostic;
 import dev.sylvain.planning.service.ReferenceDataService;
 import dev.sylvain.planning.solver.ConstraintCatalog;
@@ -39,6 +40,9 @@ public class ConstraintResource {
     @Inject
     ReferenceDataService referenceDataService;
 
+    @Inject
+    PlanningService planningService;
+
     @GET
     public ConstraintsView list() {
         StoredAnalysis analysis = analysisStore.latest();
@@ -48,9 +52,10 @@ public class ConstraintResource {
                         .collect(Collectors.toMap(ConstraintDiagnostic::name, Function.identity(),
                                 (first, second) -> first));
         Set<String> desactivees = referenceDataService.getContraintesDesactivees();
+        Map<String, Integer> poids = planningService.effectiveConstraintWeights();
 
         List<ConstraintView> constraints = ConstraintCatalog.definitions().stream()
-                .map(definition -> toView(definition, byName.get(definition.name()), desactivees))
+                .map(definition -> toView(definition, byName.get(definition.name()), desactivees, poids))
                 .toList();
 
         return new ConstraintsView(
@@ -72,23 +77,48 @@ public class ConstraintResource {
     @Path("/{name}")
     @Consumes(MediaType.APPLICATION_JSON)
     public ConstraintToggleUpdate setActif(@PathParam("name") String name, ConstraintToggleUpdate update) {
+        requireKnown(name);
+        referenceDataService.setContrainteActive(name, update.actif());
+        return update;
+    }
+
+    /**
+     * Sets the weight of one constraint <b>for the current edition</b>, or
+     * drops that override when {@code poids} is null. The weights configured
+     * in {@code application.properties} stay the default for every edition
+     * that never touched them; this is what makes the dosage of the « Qualité
+     * d'organisation » rules a per-festival decision rather than a
+     * per-deployment one.
+     */
+    @PUT
+    @Path("/{name}/poids")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public ConstraintPoidsUpdate setPoids(@PathParam("name") String name, ConstraintPoidsUpdate update) {
+        requireKnown(name);
+        referenceDataService.setConstraintWeight(name, update.poids());
+        return new ConstraintPoidsUpdate(planningService.effectiveConstraintWeights().getOrDefault(name, 1));
+    }
+
+    /** 404 rather than a silently stored row when the name matches no constraint of the catalogue. */
+    private static void requireKnown(String name) {
         boolean known = ConstraintCatalog.definitions().stream()
                 .anyMatch(definition -> definition.name().equals(name));
         if (!known) {
             throw new NotFoundException("Unknown constraint: " + name);
         }
-        referenceDataService.setContrainteActive(name, update.actif());
-        return update;
     }
 
     private ConstraintView toView(ConstraintDefinition definition, ConstraintDiagnostic diagnostic,
-            Set<String> desactivees) {
+            Set<String> desactivees, Map<String, Integer> poids) {
         return new ConstraintView(
                 definition.name(),
                 definition.niveau().name(),
                 definition.categorie(),
                 definition.description(),
                 !desactivees.contains(definition.name()),
+                definition.protegee(),
+                definition.dosable(),
+                poids.getOrDefault(definition.name(), 1),
                 diagnostic == null ? null : diagnostic.score(),
                 diagnostic == null ? null : diagnostic.matchCount(),
                 diagnostic == null ? List.of() : diagnostic.violations());
@@ -96,6 +126,16 @@ public class ConstraintResource {
 
     /**
      * @param actif       whether the constraint is applied on the next solve
+     * @param protegee    whether this rule founds the plan in law or in the
+     *                    minors' safety policy — the UI confirms before
+     *                    switching one off (see
+     *                    {@code ConstraintCatalog.CATEGORIES_PROTEGEES})
+     * @param dosable     whether this rule is one of those meant to be dosed
+     *                    rather than switched off (the MEDIUM rules of
+     *                    « Qualité d'organisation »)
+     * @param poids       weight applied to a single match of this constraint
+     *                    on the next solve: the deployment default, overridden
+     *                    by what this edition stored
      * @param score       score contributed by this constraint on the last
      *                    analysis, {@code null} when never analysed
      * @param matchCount  number of times the rule matched (i.e. was violated
@@ -111,6 +151,9 @@ public class ConstraintResource {
             String categorie,
             String description,
             boolean actif,
+            boolean protegee,
+            boolean dosable,
+            int poids,
             String score,
             Integer matchCount,
             List<String> violations) {
@@ -120,6 +163,14 @@ public class ConstraintResource {
      * @param actif whether the constraint is applied on the next solve
      */
     public record ConstraintToggleUpdate(boolean actif) {
+    }
+
+    /**
+     * @param poids the weight one match of the constraint is worth on the next
+     *              solve, or {@code null} to drop this edition's override and
+     *              fall back to the configured default
+     */
+    public record ConstraintPoidsUpdate(Integer poids) {
     }
 
     /**

@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service;
 
+import java.util.Map;
 import java.util.Set;
 
 import dev.sylvain.planning.domain.ParametresDecoupage;
@@ -9,9 +10,10 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 /**
- * The three admin-configurable parameter sets and the constraint toggles —
- * everything the Données and Débogage tabs write that is not a referential
- * row. Validation lives in {@link ParametresValidator}.
+ * The three admin-configurable parameter sets, the constraint toggles and the
+ * per-edition constraint weights — everything the Données, Débogage and
+ * Contraintes screens write that is not a referential row. Validation lives
+ * in {@link ParametresValidator}.
  */
 @ApplicationScoped
 public class ParametresService {
@@ -65,19 +67,42 @@ public class ParametresService {
     }
 
     /**
-     * Enables or disables a constraint for the next solve, recording the
-     * reason and the author when it is being <b>disabled</b>.
+     * Enables or disables a constraint for the next solve. Nothing else is
+     * recorded: {@code constraint_toggle} is a state table, not a journal
+     * (migration V39).
      *
-     * <p>Disabling a hard legal constraint lets the solver return a plan with a
+     * <p>Disabling a legal constraint lets the solver return a plan with a
      * hard score of zero that nonetheless breaks the Code du travail, so the
-     * decision must leave a trace (constat C2 of the RH compliance audit).
-     * <b>Known limit</b>: the application has no authentication, so
-     * {@code utilisateurId} is whatever the client claims — exactly like
-     * {@code ContrainteAdHoc.creeParUtilisateurId}. The reason and the
-     * timestamp are real; the author is not proof of accountability.</p>
+     * UI confirms first (see {@code ConstraintCatalog.CATEGORIES_PROTEGEES}
+     * and {@code LegalDisableDialog}). That confirmation is deliberately all
+     * there is: with no authenticated user, an author column could only ever
+     * hold the constant "ui" — which is what had V39 drop the traceability
+     * columns of V16. What stands in for it is the state staying visible, on
+     * the Contraintes screen and on the Solveur one.</p>
      */
     public void setContrainteActive(String nom, boolean actif) {
         repository.setContrainteActive(nom, actif);
+        changeTracker.markModified();
+    }
+
+    /**
+     * The weights this edition overrides, by constraint name. What is absent
+     * keeps the deployment default read from {@code application.properties}
+     * — see {@code PlanningService.readConfiguredWeights}.
+     */
+    public Map<String, Integer> constraintWeights() {
+        return repository.getConstraintWeights();
+    }
+
+    /**
+     * Sets one constraint's weight for this edition, or drops the override
+     * when {@code poids} is {@code null} (back to the configured default).
+     */
+    public void setConstraintWeight(String nom, Integer poids) {
+        if (poids != null) {
+            ParametresValidator.checkConstraintWeight(poids);
+        }
+        repository.setConstraintWeight(nom, poids);
         changeTracker.markModified();
     }
 }

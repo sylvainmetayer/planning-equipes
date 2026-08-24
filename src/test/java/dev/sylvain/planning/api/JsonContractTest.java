@@ -179,7 +179,7 @@ class JsonContractTest {
                 queue.add(property.getPrimaryType());
             }
             if (!keys.isEmpty()) {
-                contract.put(type.getRawClass().getName().replace(OWN_PACKAGE + ".solver.", ""), keys);
+                contract.put(type.getRawClass().getName().replace(OWN_PACKAGE + ".", ""), keys);
             }
         }
         return contract;

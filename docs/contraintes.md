@@ -431,26 +431,48 @@ contraintes sont actives par défaut.
 - Persistance : table `constraint_toggle` (présence d'une ligne = désactivée,
   absence = active) via `ParametresRepository`/`ParametresService`.
 - API : `GET /api/constraints` renvoie `actif` pour chaque contrainte,
-  `PUT /api/constraints/{name}` bascule l'état.
+  `PUT /api/constraints/{name}` bascule l'état. Pour les règles légales et de
+  sécurité, l'IHM confirme d'abord (voir ci-dessous) ; l'API, elle, ne demande
+  rien — un client MCP ou un `curl` désactive sans passer par la modale.
 - Solveur : l'état désactivé est injecté comme fait de planification
   `ConstraintToggle` sur `PlanningFestival` (voir `PlanningService.prepareProblem`),
   et chaque contrainte le consulte via `ConstraintToggleSupport.actif(stream, "nom")`,
   appelé juste après le `forEach` initial (sur le flux le plus étroit possible :
   une contrainte pilotée par `ContrainteAdHoc` y branche le toggle sur les
   quelques faits ad hoc, pas sur les milliers de postes).
-### Désactiver une contrainte légale : aucune trace conservée
+### Désactiver une règle légale : confirmation, et rien d'autre
 
-Désactiver une contrainte de catégorie « Légal » n'est pas un réglage comme un
-autre : le solveur peut alors produire un planning **contraire au Code du
-travail tout en affichant un score dur à zéro**. Rien n'empêche pourtant
-techniquement de le faire, et **rien n'en garde trace**.
+Désactiver une règle qui fonde le planning en droit n'est pas un réglage comme
+un autre : le solveur peut alors produire un planning **contraire au Code du
+travail tout en affichant un score dur à zéro**, et rien dans le score ne le
+signale.
 
-La confirmation à motif obligatoire qui existait pour ces contraintes (V16 :
-colonnes `motif`, `modifie_par_utilisateur_id`, `modifie_le`) a été retirée en
-V39 : personne ne saisissait de motif, et sans authentification
-`modifie_par_utilisateur_id` ne pouvait valoir que la constante `ui` ou `mcp` —
-donc ni imputable, ni exploitable. `constraint_toggle` est revenue à sa forme
-d'origine : la seule liste des contraintes désactivées.
+Trois catégories sont concernées, listées dans
+`ConstraintCatalog.CATEGORIES_PROTEGEES` et exposées par le champ `protegee` de
+`GET /api/constraints` : **« Légal (mineurs) »**, **« Légal (temps de
+travail) »** et **« Sécurité (mineurs) »** — cette dernière n'est pas une
+obligation du Code du travail mais une règle de sécurité posée par
+l'organisateur, et la lever engage tout autant. Les 24 autres règles se
+décochent sans friction : elles arbitrent du confort, et un planning qui en
+ignore une est seulement moins bon.
+
+Pour ces trois catégories, l'IHM demande une **confirmation** (modale de
+danger, `LegalDisableDialog`) qui nomme la règle, rappelle l'article qui la
+fonde — les descriptions du catalogue le citent — et reprend la formule de la
+page `/conditions-utilisation` : **l'organisateur reste l'employeur et le
+responsable** du planning produit et diffusé ; l'application est une aide à la
+décision, jamais une validation juridique. Réactiver une règle ne demande
+rien : remettre une règle légale ne mérite aucune cérémonie.
+
+**Confirmation seule, décision assumée** : pas de motif saisi, pas de
+journalisation, pas de colonne pour tracer l'auteur. La traçabilité de V16
+(`motif`, `modifie_par_utilisateur_id`, `modifie_le`) a été retirée par V39
+précisément parce qu'elle n'était pas imputable — sans notion d'utilisateur,
+l'auteur ne pouvait valoir que la constante `ui` ou `mcp` — et elle n'est pas
+réintroduite ici. Ce qui reste visible, c'est **l'état** : l'écran Contraintes
+montre en permanence ce qui est désactivé, et le bandeau partagé
+(`ProblemesStore.reglesLegalesDesactivees`, lu par les pages Contraintes et
+Solveur) le répète partout où un solve se lance ou se juge.
 
 Une vraie piste d'audit reste donc à faire, et suppose d'abord une notion
 d'utilisateur : un journal (une ligne par changement, jamais supprimée) plutôt
@@ -474,20 +496,51 @@ Ce défaut est surchageable sans toucher au code Java, via le mécanisme natif
 Timefold `ConstraintWeightOverrides` : `PlanningFestival` porte un champ
 `ponderationsContraintes` (jamais exposé par l'API — `@JsonIgnore` — car
 `PlanningService.prepareProblem` le renseigne systématiquement juste avant
-chaque solve, à partir de `application.properties`).
+chaque solve).
 
-- Configuration : une propriété par contrainte,
-  `planning.constraint-weights.<nomDeLaContrainte>=<entier>`, listées (à 1,
-  c'est-à-dire le comportement actuel) dans `application.properties`. Changer
-  une valeur et redémarrer suffit à repondérer une contrainte.
-- Câblage : `PlanningService` lit ces propriétés au démarrage
-  (`buildConstraintWeightOverrides`), construit un `ConstraintWeightOverrides`
-  à partir de `ConstraintCatalog` (qui fournit le niveau — dur/medium/soft —
-  de chaque nom de contrainte) et l'affecte à chaque `PlanningFestival` résolu.
-- Portée de cette itération : configuration fichier uniquement, pas d'IHM ni de
-  table dédiée (contrairement à `constraint_toggle` ci-dessus) — à étendre le
-  jour où la repondération doit être pilotable par un administrateur sans
-  redéploiement.
+Deux niveaux, dans cet ordre :
+
+1. **Le déploiement** — une propriété par contrainte,
+   `planning.constraint-weights.<nomDeLaContrainte>=<entier>`, listées (à 1,
+   c'est-à-dire le poids littéral du code) dans `application.properties`.
+   C'est la valeur de référence, celle avec laquelle le solveur a été réglé,
+   et elle s'applique à **toutes** les éditions.
+2. **L'édition** — table `ponderation_contrainte` (migration V53), une ligne
+   par `(edition_id, nom)`. Même convention que `constraint_toggle` : pas de
+   ligne, pas de surcharge. Ce que l'édition enregistre l'emporte, sans rien
+   changer pour les autres éditions ni pour la valeur par défaut du
+   déploiement.
+
+- Câblage : `PlanningService` lit les propriétés au démarrage
+  (`readConfiguredWeights`) et les surcharges de l'édition **à chaque solve**
+  (`effectiveConstraintWeights`, via `ReferenceData.getConstraintWeights`) —
+  jamais en cache, puisque deux éditions résolues par le même processus ne
+  doivent pas hériter du dosage l'une de l'autre. Le
+  `ConstraintWeightOverrides` est construit à partir de `ConstraintCatalog`,
+  qui fournit le niveau (dur/medium/soft) de chaque nom de contrainte.
+- IHM : la page « Contraintes » affiche le poids de chaque règle et permet de
+  le modifier (`PUT /api/constraints/{name}/poids`, voir
+  [`api.md`](api.md#contraintes)). Les valeurs admises vont de 1 à 100 ; `0`
+  est refusé, parce qu'une règle pesée zéro serait éteinte en fait tout en
+  s'affichant active — éteindre une règle passe par son interrupteur.
+- Transport : un scénario YAML peut épingler ses poids comme il épingle ses
+  toggles (section `contraintes:`, voir
+  [`import-export.md`](import-export.md)).
+
+### Ce qui se dose et ce qui ne se dose pas
+
+Sur les 39 contraintes, celles qui varient réellement d'un organisateur à
+l'autre sont les **MEDIUM de « Qualité d'organisation »**
+(`ConstraintDefinition.dosable()`) : elles arbitrent du confort contre du
+confort — la continuité sur un stand premium contre l'équilibre des charges,
+les souhaits contre l'expérience — et chaque organisateur les classe
+différemment. Ce sont celles-là qui se **dosent** : la règle dont on se moque
+descend à 1 et se fait battre, celle qui compte monte.
+
+Les autres familles ne se dosent pas dans le même sens : une contrainte dure
+est respectée ou le planning est invalide, son poids ne change que la vitesse
+de convergence. Repondérer une règle légale ne la rend ni plus ni moins
+obligatoire — l'IHM ne la présente donc pas comme un curseur.
 
 `equilibrerCharge` (voir tableau ci-dessus) est un cas particulier : son
 `matchWeigher` met `loadBalance().unfairness()` (un `BigDecimal` typiquement

@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import dev.sylvain.planning.domain.Animateur;
@@ -73,6 +74,11 @@ public class EmptyReferenceData implements ReferenceData {
     @Override
     public Set<String> getContraintesDesactivees() {
         return Set.of();
+    }
+
+    @Override
+    public Map<String, Integer> getConstraintWeights() {
+        return Map.of();
     }
 
     @Override

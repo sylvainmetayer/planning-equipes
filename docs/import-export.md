@@ -66,7 +66,8 @@ les données actuelles en scénario » l'écrit, l'import (nommé ou fichier) le
 
 « Exporter les données actuelles en scénario » écrit **toutes** les sections que
 l'import sait relire, pas seulement les entités : `typologies`, `emplacements`,
-`parametresLegaux`, `parametresDecoupage`, `parametresSolveur` et, quand la
+`parametresLegaux`, `parametresDecoupage`, `parametresSolveur`, `contraintes`,
+`contraintesAdHoc` et, quand la
 grille active a été produite par un découpage automatique, `decoupageAuto`.
 Réimporter le fichier reproduit donc exactement le même problème — c'est la
 raison d'être de l'export. Un fichier sans ces sections retombait silencieusement
@@ -147,6 +148,56 @@ l'interface affiche systématiquement ce récapitulatif — l'opérateur peut ê
 en train de consulter une autre édition que celle qui vient d'être écrite.
 Sans cette section, l'import écrit dans l'édition courante, comme avant.
 
+### Réglage des contraintes : `contraintes` et `contraintesAdHoc`
+
+Deux sections optionnelles portent le réglage du catalogue de contraintes pour
+ce festival — voir [`contraintes.md`](contraintes.md).
+
+```yaml
+contraintes:
+  # Contraintes désactivées pour le prochain solve (table constraint_toggle) :
+  # tout ce qui n'est pas cité ici est actif.
+  desactivees:
+    - eviterRoulementStandsPremium
+  # Poids par contrainte, appliqué à l'édition cible (table
+  # ponderation_contrainte). Ce qui n'est pas cité garde la valeur par défaut
+  # du déploiement (application.properties). Valeurs admises : 1 à 100.
+  poids:
+    equilibrerCharge: 7
+    maxJoursConsecutifsTravailles: 3
+
+contraintesAdHoc:
+  - id: INCOMPAT-1
+    type: INCOMPATIBILITE       # ou INDISPONIBILITE_FORCEE, AFFECTATION_FORCEE, AFFINITE
+    animateurs: [A1, A2]
+    raison: Ne travaillent pas ensemble
+  - id: INDISPO-1
+    type: INDISPONIBILITE_FORCEE
+    animateurs: [A2]
+    creneauId: J1-MATIN         # id du créneau **dans ce fichier**
+    standId: STAND-STRAT
+    raison: Formation
+```
+
+Trois règles valent d'être connues :
+
+- la section `contraintes` s'applique **en bloc**, pas en fusion : une règle
+  qu'elle ne cite pas redevient active, à son poids par défaut. Un scénario qui
+  épingle son réglage décrit le problème contre lequel il a été vérifié — une
+  fusion laisserait en place les restes de l'édition qui importe, et le
+  « même » scénario continuerait de résoudre un problème différent selon
+  l'endroit où il atterrit. Absente, elle ne touche à rien ;
+- un nom de contrainte absent du catalogue est **refusé** (400), pas ignoré :
+  c'est soit une faute de frappe, soit un fichier écrit contre une autre
+  version du catalogue, et l'ignorer laisserait l'opérateur convaincu qu'une
+  règle est désactivée alors qu'elle ne l'est pas ;
+- `contraintesAdHoc` désigne animateurs, stands et créneaux par les ids **du
+  fichier**. Les créneaux recevant de nouveaux ids en base, la référence est
+  réassociée à l'import (voir plus haut) ; un id qui ne désigne rien dans le
+  fichier est refusé. Quand le fichier porte cette section, elle **remplace**
+  les contraintes ad hoc de l'édition — elle ne s'y ajoute pas ; absente, les
+  contraintes ad hoc en base sont conservées telles quelles.
+
 Un scénario écrit directement en amplitudes (ex. `scenario-continu.yaml`) peut
 fixer une section `decoupageAuto: {}` en tête de fichier pour que ces deux
 imports (nom ou fichier) déclenchent eux-mêmes le découpage en vacations
@@ -184,10 +235,11 @@ structure attendue d'un fichier de scénario (sections obligatoires `festival`,
 stand —,
 `animateurs`, et les sections optionnelles `postes` (voir plus haut),
 `parametresLegaux`, `parametresDecoupage`, `parametresSolveur`,
-`decoupageAuto`, `typologies`) : types de champs, sections/champs
+`decoupageAuto`, `typologies`, `contraintes`, `contraintesAdHoc`) : types de
+champs, sections/champs
 obligatoires, durées non négatives, valeurs d'enum (`NiveauCompetence`,
 `NiveauEffort`, `PauseCoverageStrategy`, `ModeHoraire`,
-`TypeJoursHoraire`). Il ne peut pas exprimer les règles conditionnelles d'un
+`TypeJoursHoraire`, `TypeContrainteAdHoc`), bornes des poids (1 à 100). Il ne peut pas exprimer les règles conditionnelles d'un
 sélecteur d'`horaires` (`joursSemaine` requis pour `JOURS_SEMAINE`,
 `dateDebut`/`dateFin` pour `PLAGE`, `dates` pour `DATES`) : celles-là sont
 vérifiées à l'écriture par `StandValidator`. Les ids de typologie

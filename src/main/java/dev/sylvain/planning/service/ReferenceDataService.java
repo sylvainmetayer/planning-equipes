@@ -2,6 +2,7 @@ package dev.sylvain.planning.service;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -301,5 +302,14 @@ public class ReferenceDataService implements ReferenceData {
 
     public void setContrainteActive(String nom, boolean actif) {
         parametres.setContrainteActive(nom, actif);
+    }
+
+    @Override
+    public Map<String, Integer> getConstraintWeights() {
+        return parametres.constraintWeights();
+    }
+
+    public void setConstraintWeight(String nom, Integer poids) {
+        parametres.setConstraintWeight(nom, poids);
     }
 }

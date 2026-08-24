@@ -33,18 +33,22 @@ export class ProblemesStore {
   readonly comptage = computed(() => compterProblemes(this.problemes()));
 
   /**
-   * Legal rules currently switched off, and the sentence that says so.
+   * Protected rules currently switched off, and the sentence that says so.
    *
    * Disabling one lets the solver return a plan with a hard score of zero that
-   * still breaks the Code du travail, and nothing records the decision since
-   * the confirmation dialog was removed. The state is therefore kept visible
-   * wherever a solve is launched or judged — the Solveur and Contraintes
-   * screens both read this.
+   * still breaks the Code du travail, and nothing records the decision beyond
+   * the confirmation asked at the time (`LegalDisableDialog`): no reason typed,
+   * nothing journalled. The state itself is therefore kept visible wherever a
+   * solve is launched or judged — the Solveur and Contraintes screens both
+   * read this.
+   *
+   * `protegee` rather than a match on the category label: the server decides
+   * which rules found the plan in law or in the minors' safety policy
+   * (`ConstraintCatalog.CATEGORIES_PROTEGEES`), and this banner must cover
+   * exactly the set the confirmation covers — the dialog promises as much.
    */
   readonly reglesLegalesDesactivees = computed(() =>
-    (this.constraints()?.contraintes ?? []).filter(
-      (contrainte) => contrainte.categorie.startsWith('Légal') && !contrainte.actif
-    )
+    (this.constraints()?.contraintes ?? []).filter((contrainte) => contrainte.protegee && !contrainte.actif)
   );
 
   readonly alerteReglesLegales = computed(() => {
@@ -53,7 +57,7 @@ export class ProblemesStore {
       return '';
     }
     const noms = desactivees.map((contrainte) => contrainte.name).join(', ');
-    return $localize`:@@constraints.legalDisabled:${desactivees.length}:count: règle(s) légale(s) désactivée(s) : ${noms}:noms:. Le solveur peut produire un planning contraire au Code du travail tout en affichant un score dur à zéro.`;
+    return $localize`:@@constraints.legalDisabled:${desactivees.length}:count: règle(s) légale(s) ou de sécurité désactivée(s) : ${noms}:noms:. Le solveur peut produire un planning contraire au Code du travail tout en affichant un score dur à zéro.`;
   });
 
   /**

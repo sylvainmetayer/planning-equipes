@@ -163,7 +163,8 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 | Problèmes | Vue unique des blocages, triés par gravité : causes d'infaisabilité détectées sans résolution, et règles encore en défaut après la dernière analyse |
 | Ouvertures des stands | Grille stand × jour de ce que le planning retiendra réellement, et les trois erreurs de saisie d'horaires habituelles — à vérifier avant de lancer un calcul |
 | Besoin en animateurs | Effectif minimum estimé à partir des seuls stands et créneaux : dit si le problème est un manque de monde plutôt qu'un manque de temps de calcul |
-| Catalogue des contraintes | Toutes les règles, leur niveau, et le résultat de la dernière analyse — activables ou désactivables une par une pour diagnostiquer |
+| Catalogue des contraintes | Toutes les règles, leur niveau, et le résultat de la dernière analyse — activables ou désactivables une par une pour diagnostiquer, et **dosables** : l'importance des règles de qualité d'organisation se règle par édition, selon ce qui compte pour l'organisateur |
+| Garde-fou sur les règles légales | Désactiver une règle qui fonde le planning en droit (mineurs, temps de travail) ou la sécurité des mineurs demande une confirmation, qui rappelle que l'organisateur reste l'employeur et le responsable du planning diffusé ; l'écran montre en permanence ce qui est désactivé |
 | Simulation « et si ? » | Impact d'un désistement, d'un recrutement ou de la fermeture d'un stand, sans rien écrire |
 | Comparateur A/B | Deux plannings côte à côte — deux instantanés, ou un instantané et le plan actuel — sur le score, la couverture, l'équité et les violations, toutes éditions confondues |
 | Notification de fin de résolution | Un e-mail à l'administrateur dès qu'une résolution se termine — édition, score, faisabilité — pour ne pas rester devant l'écran ; s'active par édition sur la page Paramètres |

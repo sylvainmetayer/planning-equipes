@@ -65,6 +65,7 @@ public class EditionRepository {
                     "id, stand_id, mode, type_jours, jours_semaine, date_debut, date_fin, dates, motif"),
             new TableToCopy("stand_horaire_fenetre", "id, horaire_id, position, heure_debut, heure_fin"),
             new TableToCopy("constraint_toggle", "nom"),
+            new TableToCopy("ponderation_contrainte", "nom, poids"),
             new TableToCopy("parametres_legaux",
                     "duree_hebdomadaire_max_minutes, duree_hebdomadaire_max_mineur_minutes, "
                             + "pause_minimale_entre_vacations_minutes, repos_quotidien_minimal_minutes"),

@@ -6,6 +6,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalTime;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 
 import javax.sql.DataSource;
@@ -17,12 +19,12 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 /**
- * The three single-row parameter tables (legal, découpage, solver) and the
- * constraint toggles.
+ * The three single-row parameter tables (legal, découpage, solver), the
+ * constraint toggles and the per-edition constraint weights.
  *
- * <p>Each parameter table holds one row per edition, so every read has to cope
- * with the row not being there yet: an edition that has never been configured
- * returns the defaults rather than nothing.</p>
+ * <p>Each single-row parameter table holds one row per edition, so every read
+ * has to cope with the row not being there yet: an edition that has never been
+ * configured returns the defaults rather than nothing.</p>
  */
 @ApplicationScoped
 public class ParametresRepository {
@@ -209,6 +211,59 @@ public class ParametresRepository {
             return desactivees;
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to load constraint toggles", e);
+        }
+    }
+
+    /* ---------------------------- Constraint weights ------------------------- */
+
+    /**
+     * The weights this edition overrides, by constraint name. Absent means
+     * "keep the deployment default" ({@code planning.constraint-weights.<nom>}
+     * in {@code application.properties}), same convention as
+     * {@code constraint_toggle}: no row, no override.
+     */
+    public Map<String, Integer> getConstraintWeights() {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = scope.prepareScoped(connection,
+                        "SELECT nom, poids FROM ponderation_contrainte WHERE edition_id = ?");
+                ResultSet rs = ps.executeQuery()) {
+            Map<String, Integer> ponderations = new LinkedHashMap<>();
+            while (rs.next()) {
+                ponderations.put(rs.getString("nom"), rs.getInt("poids"));
+            }
+            return ponderations;
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to load constraint weights", e);
+        }
+    }
+
+    /**
+     * Overrides one constraint's weight for this edition, or drops the
+     * override when {@code poids} is {@code null} — the constraint then falls
+     * back to the configured default.
+     */
+    public void setConstraintWeight(String nom, Integer poids) {
+        try (Connection connection = dataSource.getConnection()) {
+            if (poids == null) {
+                try (PreparedStatement ps = scope.prepareScoped(connection,
+                        "DELETE FROM ponderation_contrainte WHERE edition_id = ? AND nom = ?")) {
+                    ps.setString(2, nom);
+                    ps.executeUpdate();
+                }
+            } else {
+                try (PreparedStatement ps = scope.prepareScoped(connection,
+                        """
+                        INSERT INTO ponderation_contrainte (edition_id, nom, poids)
+                        VALUES (?, ?, ?)
+                        ON CONFLICT (edition_id, nom)
+                        DO UPDATE SET poids = EXCLUDED.poids""")) {
+                    ps.setString(2, nom);
+                    ps.setInt(3, poids);
+                    ps.executeUpdate();
+                }
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to save constraint weight", e);
         }
     }
 

@@ -63,6 +63,45 @@ class ConstraintCatalogTest {
                 .allSatisfy(definition -> assertThat(definies).contains(definition.name()));
     }
 
+    /**
+     * The rules a disabling confirmation must protect. Named one by one rather
+     * than derived from the category, so moving a legal rule to another
+     * category — or adding one and forgetting its category — fails here
+     * instead of silently dropping the confirmation that stands between an
+     * organiser and a plan contrary to the Code du travail.
+     */
+    @Test
+    void lesReglesLegalesEtDeSecuriteSontProtegees() {
+        List<String> protegees = ConstraintCatalog.definitions().stream()
+                .filter(ConstraintCatalog.ConstraintDefinition::protegee)
+                .map(ConstraintCatalog.ConstraintDefinition::name)
+                .toList();
+
+        assertThat(protegees).containsExactlyInAnyOrder(
+                "standReserveAuxMajeurs", "travailDeNuitInterditPourMineur", "dureeQuotidienneMaxMineur",
+                "travailInterditJourFerieMineur", "reposHebdomadaireMineur", "travailContinuMaxMineur",
+                "dureeHebdomadaireMaxMineur", "mineurNecessiteEncadrementMajeur",
+                "dureeHebdomadaireMax", "dureeQuotidienneMaxMajeur", "reposQuotidienMinimal",
+                "maxJoursTravaillesParSemaine", "reposHebdomadaireMinimal", "travailContinuMaxMajeur",
+                "pauseMinimaleEntreVacations");
+    }
+
+    /** What is dosed rather than switched off: the MEDIUM rules of « Qualité d'organisation ». */
+    @Test
+    void lesReglesDeQualiteSontDosables() {
+        assertThat(ConstraintCatalog.definitions())
+                .filteredOn(ConstraintCatalog.ConstraintDefinition::dosable)
+                .allSatisfy(definition -> {
+                    assertThat(definition.niveau()).isEqualTo(ConstraintCatalog.Niveau.MEDIUM);
+                    assertThat(definition.categorie()).isEqualTo(ConstraintCatalog.CATEGORIE_QUALITE);
+                })
+                .hasSize(12);
+
+        // Nothing protected is presented as a dial.
+        assertThat(ConstraintCatalog.definitions())
+                .noneMatch(definition -> definition.dosable() && definition.protegee());
+    }
+
     @Test
     void lesNomsDuCatalogueSontUniques() {
         List<String> noms = ConstraintCatalog.definitions().stream()

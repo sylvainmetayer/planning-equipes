@@ -45,6 +45,9 @@ function constraintsView(): ConstraintsView {
         categorie: 'Légal',
         description: 'Durée hebdomadaire maximale.',
         actif: true,
+        protegee: true,
+        dosable: false,
+        poids: 1,
         score: '-2hard/0medium/0soft',
         matchCount: 2,
         violations: ['Alice : 52 h']

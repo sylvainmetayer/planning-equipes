@@ -20,6 +20,7 @@ import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresSolveur;
+import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreHoraire;
 import dev.sylvain.planning.domain.HoraireStand;
@@ -30,6 +31,7 @@ import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
 
 /**
@@ -189,7 +191,8 @@ class PlanningServiceScenarioExportTest {
                 List.of(animateur), List.of(stand), List.of(creneau), List.of(),
                 List.of(new TypologieItem("STRATEGIE", "Stratégie", true)),
                 List.of(new Emplacement("PLACE", "Place du Drapeau", 46.6487, 2.2503)),
-                legaux, decoupage, new ParametresSolveur(1800)));
+                legaux, decoupage, new ParametresSolveur(1800),
+                Set.of("equilibrerCharge"), Map.of("maxJoursConsecutifsTravailles", 5), List.of()));
         Map<String, Object> parsed = new Yaml().load(yaml);
 
         assertThat((Map<String, Object>) parsed.get("parametresSolveur"))
@@ -212,6 +215,49 @@ class PlanningServiceScenarioExportTest {
                 .singleElement()
                 .satisfies(emplacement -> assertThat(emplacement).containsEntry("id", "PLACE")
                         .containsEntry("latitude", 46.6487));
+        Map<String, Object> contraintes = (Map<String, Object>) parsed.get("contraintes");
+        assertThat((List<String>) contraintes.get("desactivees")).containsExactly("equilibrerCharge");
+        assertThat((Map<String, Object>) contraintes.get("poids"))
+                .containsEntry("maxJoursConsecutifsTravailles", 5);
+    }
+
+    /**
+     * Nothing switched off and nothing reweighted is what a file without the
+     * section already means: writing an empty {@code contraintes:} block would
+     * be noise in a file meant to be read and diffed by hand.
+     */
+    @Test
+    void anUntunedEditionWritesNoContraintesSection() {
+        String yaml = PlanningService.buildScenarioYaml(List.of(animateur), List.of(stand), List.of(creneau),
+                List.of());
+
+        assertThat(new Yaml().<Map<String, Object>>load(yaml)).doesNotContainKey("contraintes");
+    }
+
+    /** The hand-entered constraints travel with the scenario, animateurs and scope included. */
+    @Test
+    @SuppressWarnings("unchecked")
+    void exportedYamlCarriesTheAdHocConstraints() {
+        ContrainteAdHoc incompatibilite = new ContrainteAdHoc("INCOMPAT-1", TypeContrainteAdHoc.INCOMPATIBILITE);
+        incompatibilite.getAnimateursConcernes().add(animateur);
+        incompatibilite.setCreneau(creneau);
+        incompatibilite.setStand(stand);
+        incompatibilite.setRaison("Ne travaillent pas ensemble");
+
+        String yaml = PlanningService.buildScenarioYaml(new PlanningService.ScenarioExport(
+                List.of(animateur), List.of(stand), List.of(creneau), List.of(), List.of(), List.of(),
+                null, null, null, Set.of(), Map.of(), List.of(incompatibilite)));
+        Map<String, Object> parsed = new Yaml().load(yaml);
+
+        assertThat((List<Map<String, Object>>) parsed.get("contraintesAdHoc"))
+                .singleElement()
+                .satisfies(contrainte -> {
+                    assertThat(contrainte).containsEntry("id", "INCOMPAT-1")
+                            .containsEntry("type", "INCOMPATIBILITE")
+                            .containsEntry("standId", "STAND-A")
+                            .containsEntry("raison", "Ne travaillent pas ensemble");
+                    assertThat((List<String>) contrainte.get("animateurs")).containsExactly("A1");
+                });
     }
 
     /** A stand tied to an emplacement exports the link, or the emplacements section is decorative. */
@@ -231,7 +277,8 @@ class PlanningServiceScenarioExportTest {
     @Test
     void aNullSeatListPinsNoPostesSection() {
         String yaml = PlanningService.buildScenarioYaml(new PlanningService.ScenarioExport(
-                List.of(animateur), List.of(stand), List.of(creneau), null, List.of(), List.of(), null, null, null));
+                List.of(animateur), List.of(stand), List.of(creneau), null, List.of(), List.of(), null, null, null,
+                Set.of(), Map.of(), List.of()));
         Map<String, Object> parsed = new Yaml().load(yaml);
 
         assertThat(parsed).doesNotContainKey("postes");

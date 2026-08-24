@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import dev.sylvain.planning.domain.Animateur;
@@ -45,6 +46,13 @@ public interface ReferenceData {
     List<ContrainteAdHoc> snapshotContraintes();
 
     Set<String> getContraintesDesactivees();
+
+    /**
+     * Per-constraint weights this edition overrides, by constraint name. What
+     * is absent keeps the deployment default configured in
+     * {@code application.properties}.
+     */
+    Map<String, Integer> getConstraintWeights();
 
     ParametresLegaux getParametresLegaux();
 

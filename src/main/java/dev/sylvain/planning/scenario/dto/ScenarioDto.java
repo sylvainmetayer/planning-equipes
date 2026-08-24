@@ -25,5 +25,7 @@ public record ScenarioDto(
         @Valid ParametresLegauxDto parametresLegaux,
         @Valid ParametresDecoupageDto parametresDecoupage,
         @Valid ParametresSolveurDto parametresSolveur,
+        @Valid ContraintesDto contraintes,
+        List<@Valid ContrainteAdHocDto> contraintesAdHoc,
         @Valid DecoupageAutoDto decoupageAuto) {
 }

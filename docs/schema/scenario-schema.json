@@ -44,6 +44,54 @@
       },
       "required" : [ "competences", "dateNaissance", "id", "nom", "prenom" ]
     },
+    "ContrainteAdHocDto" : {
+      "type" : "object",
+      "properties" : {
+        "animateurs" : {
+          "type" : "array",
+          "items" : {
+            "type" : "string"
+          }
+        },
+        "creneauId" : {
+          "type" : "string"
+        },
+        "id" : {
+          "type" : "string",
+          "minLength" : 1
+        },
+        "raison" : {
+          "type" : "string"
+        },
+        "standId" : {
+          "type" : "string"
+        },
+        "type" : {
+          "$ref" : "#/$defs/TypeContrainteAdHoc"
+        }
+      },
+      "required" : [ "id", "type" ]
+    },
+    "ContraintesDto" : {
+      "type" : "object",
+      "properties" : {
+        "desactivees" : {
+          "type" : "array",
+          "items" : {
+            "type" : "string"
+          }
+        },
+        "poids" : {
+          "$ref" : "#/$defs/Map(String,Integer)",
+          "additionalProperties" : {
+            "type" : "integer",
+            "format" : "int32",
+            "minimum" : 1,
+            "maximum" : 100
+          }
+        }
+      }
+    },
     "CreneauDto" : {
       "type" : "object",
       "properties" : {
@@ -203,6 +251,13 @@
     "LocalTime" : {
       "type" : "string",
       "pattern" : "^([01]\\d|2[0-3]):[0-5]\\d(:[0-5]\\d)?$"
+    },
+    "Map(String,Integer)" : {
+      "type" : "object",
+      "additionalProperties" : {
+        "type" : "integer",
+        "format" : "int32"
+      }
     },
     "Map(String,NiveauCompetence)" : {
       "type" : "object",
@@ -410,6 +465,10 @@
       },
       "required" : [ "id", "nom", "typologiesProposees" ]
     },
+    "TypeContrainteAdHoc" : {
+      "type" : "string",
+      "enum" : [ "INDISPONIBILITE_FORCEE", "INCOMPATIBILITE", "AFFECTATION_FORCEE", "AFFINITE" ]
+    },
     "TypeJoursHoraire" : {
       "type" : "string",
       "enum" : [ "TOUS", "JOURS_SEMAINE", "PLAGE", "DATES" ]
@@ -438,6 +497,15 @@
       "type" : "array",
       "items" : {
         "$ref" : "#/$defs/AnimateurDto"
+      }
+    },
+    "contraintes" : {
+      "$ref" : "#/$defs/ContraintesDto"
+    },
+    "contraintesAdHoc" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/$defs/ContrainteAdHocDto"
       }
     },
     "creneaux" : {

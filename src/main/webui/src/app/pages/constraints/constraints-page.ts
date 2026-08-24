@@ -8,7 +8,9 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatSliderModule } from '@angular/material/slider';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ApiService } from '../../core/api.service';
 import { intlLocale } from '../../core/locale';
 import {
@@ -26,6 +28,7 @@ import { FeasibilityBanner } from '../../shared/feasibility-banner';
 import { StatusMessage } from '../../shared/status-message';
 import { ViolationDetailsDialog } from '../../shared/violation-details-dialog';
 import { errorPrefix } from '../../core/error-message';
+import { LegalDisableConfirmService } from './legal-disable-dialog';
 
 /** Called lazily (never at module scope, see `app.ts`'s `buildNavGroups`). */
 function niveauLabel(niveau: NiveauContrainte): string {
@@ -44,7 +47,23 @@ function niveauLabel(niveau: NiveauContrainte): string {
 interface ConstraintGroup {
   categorie: string;
   items: ConstraintView[];
+  /**
+   * The group holds rules meant to be dosed rather than switched off — today
+   * the MEDIUM ones of « Qualité d'organisation ». Its header then says what
+   * the dial in each card means, once, instead of thirteen times.
+   */
+  dosable: boolean;
 }
+
+/**
+ * Highest value the dial offers. Not a limit of the API (the server accepts up
+ * to 100): past ten, one rule of a level drowns out every other rule of that
+ * same level, which is no longer dosing.
+ */
+const POIDS_DOSAGE_MAX = 10;
+
+/** Highest weight the server accepts — mirrors `ParametresValidator.CONSTRAINT_WEIGHT_MAX`. */
+const POIDS_MAX = 100;
 
 /**
  * Business catalogue of the solver rules (`GET /api/constraints`), enriched
@@ -61,7 +80,9 @@ interface ConstraintGroup {
     MatFormFieldModule,
     MatInputModule,
     MatProgressBarModule,
+    MatSliderModule,
     MatSlideToggleModule,
+    MatTooltipModule,
     FeasibilityBanner,
     StatusMessage
   ],
@@ -73,6 +94,10 @@ export class ConstraintsPage {
   protected readonly error = signal('');
   protected readonly view = signal<ConstraintsView | null>(null);
   protected readonly togglingConstraint = signal<string | null>(null);
+  protected readonly savingPoids = signal<string | null>(null);
+
+  protected readonly poidsDosageMax = POIDS_DOSAGE_MAX;
+  protected readonly poidsMax = POIDS_MAX;
 
   protected readonly parametresLoading = signal(false);
   protected readonly parametresError = signal('');
@@ -101,6 +126,7 @@ export class ConstraintsPage {
 
   private readonly api = inject(ApiService);
   private readonly dialog = inject(MatDialog);
+  private readonly legalDisable = inject(LegalDisableConfirmService);
   private readonly solverSettings = inject(SolverSettingsService);
 
   protected readonly summary = computed(() => {
@@ -135,7 +161,8 @@ export class ConstraintsPage {
     const parScore = this.triParScore();
     return Array.from(groups.entries()).map(([categorie, items]) => ({
       categorie,
-      items: parScore ? [...items].sort((a, b) => (b.matchCount ?? 0) - (a.matchCount ?? 0)) : items
+      items: parScore ? [...items].sort((a, b) => (b.matchCount ?? 0) - (a.matchCount ?? 0)) : items,
+      dosable: items.some((constraint) => constraint.dosable)
     }));
   });
 
@@ -238,8 +265,20 @@ export class ConstraintsPage {
   /**
    * Toggles a constraint on/off for the next solve. Applied optimistically so
    * the switch reacts instantly; rolled back if the save fails.
+   *
+   * Switching off a rule that founds the plan in law goes through a
+   * confirmation first (`LegalDisableConfirmService`): the solver would then
+   * return a plan scoring zero hard that still breaks the Code du travail, and
+   * nothing else would say so. Re-enabling never asks — putting a legal rule
+   * back needs no ceremony.
    */
   protected async toggleConstraint(constraint: ConstraintView, actif: boolean): Promise<void> {
+    if (!actif && !(await this.legalDisable.allowsDisabling(constraint))) {
+      // Nothing was applied optimistically yet, but the Material switch has
+      // already flipped itself: put the view back so it matches the state.
+      this.setConstraintActif(constraint.name, true);
+      return;
+    }
     this.setConstraintActif(constraint.name, actif);
     this.togglingConstraint.set(constraint.name);
     this.error.set('');
@@ -257,14 +296,53 @@ export class ConstraintsPage {
     return actif ? $localize`:@@constraints.active:Active` : $localize`:@@constraints.disabled:Désactivée`;
   }
 
+  /**
+   * Saves the weight of one rule for the current edition. Same optimistic
+   * shape as the toggle: the dial stays where the user left it, and rolls back
+   * with an error message if the save fails.
+   */
+  protected async setPoids(constraint: ConstraintView, poids: number): Promise<void> {
+    const borne = Math.min(Math.max(Math.round(poids), 1), POIDS_MAX);
+    const precedent = constraint.poids;
+    if (borne === precedent) {
+      return;
+    }
+    this.patchConstraint(constraint.name, { poids: borne });
+    this.savingPoids.set(constraint.name);
+    this.error.set('');
+    try {
+      const enregistre = await this.api.put<{ poids: number }>(
+        `/api/constraints/${encodeURIComponent(constraint.name)}/poids`,
+        { poids: borne }
+      );
+      this.patchConstraint(constraint.name, { poids: enregistre.poids });
+    } catch (error) {
+      this.patchConstraint(constraint.name, { poids: precedent });
+      this.error.set(errorPrefix(error));
+    } finally {
+      this.savingPoids.set(null);
+    }
+  }
+
+  /** The dial's upper bound: ten, or the current value when a scenario pinned a higher one. */
+  protected dosageMax(constraint: ConstraintView): number {
+    return Math.max(POIDS_DOSAGE_MAX, constraint.poids);
+  }
+
   private setConstraintActif(name: string, actif: boolean): void {
+    this.patchConstraint(name, { actif });
+  }
+
+  private patchConstraint(name: string, patch: Partial<ConstraintView>): void {
     const view = this.view();
     if (!view) {
       return;
     }
     this.view.set({
       ...view,
-      contraintes: view.contraintes.map((constraint) => (constraint.name === name ? { ...constraint, actif } : constraint))
+      contraintes: view.contraintes.map((constraint) =>
+        constraint.name === name ? { ...constraint, ...patch } : constraint
+      )
     });
   }
 

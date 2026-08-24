@@ -364,6 +364,7 @@ connexion.
 | --- | --- | --- |
 | `GET` | `/api/constraints` | Catalogue métier des contraintes + résultat de la dernière analyse |
 | `PUT` | `/api/constraints/{name}` | Active/désactive une contrainte pour le prochain solve |
+| `PUT` | `/api/constraints/{name}/poids` | Fixe le poids de la contrainte **pour l'édition courante** |
 
 Corps du `PUT /api/constraints/{name}` :
 
@@ -374,6 +375,30 @@ Corps du `PUT /api/constraints/{name}` :
 Une désactivation insère une ligne dans `constraint_toggle`, une réactivation
 la supprime : c'est tout ce que la table porte (voir
 [`contraintes.md`](contraintes.md)).
+
+Chaque entrée de `contraintes` porte, en plus de `name`, `niveau`,
+`categorie`, `description` et `actif` :
+
+| Champ | Sens |
+| --- | --- |
+| `poids` | Ce que vaut une correspondance de la règle au prochain solve : la valeur de `application.properties`, écrasée par ce que l'édition a enregistré |
+| `protegee` | La règle fonde le planning en droit (« Légal (mineurs) », « Légal (temps de travail) ») ou dans la politique de sécurité des mineurs (« Sécurité (mineurs) ») : l'IHM demande une confirmation avant de la désactiver |
+| `dosable` | La règle se **dose** plutôt qu'elle ne s'éteint : les MEDIUM de « Qualité d'organisation », les seules dont l'importance relative varie réellement d'un organisateur à l'autre |
+
+Corps du `PUT /api/constraints/{name}/poids` :
+
+```json
+{ "poids": 5 }
+```
+
+Le poids est enregistré dans `ponderation_contrainte`, une ligne par
+`(edition_id, nom)` ; `{ "poids": null }` supprime la surcharge et rend la
+règle à la valeur configurée pour le déploiement. Les valeurs acceptées vont
+de **1 à 100** : `0` est refusé (`400`), parce qu'une règle pesée zéro serait
+éteinte en fait tout en s'affichant active — désactiver passe par
+`PUT /api/constraints/{name}`, et pour une règle légale par la confirmation
+qui la protège. Un `{name}` absent du catalogue renvoie `404`. La réponse
+renvoie le poids effectif après écriture.
 
 ## Explicabilité par affectation
 

@@ -15,6 +15,9 @@ import dev.sylvain.planning.domain.ParametresSolveur;
  */
 final class ParametresValidator {
 
+    /** Highest weight an edition may give one constraint — see {@link #checkConstraintWeight}. */
+    static final int CONSTRAINT_WEIGHT_MAX = 100;
+
     private ParametresValidator() {
     }
 
@@ -68,6 +71,30 @@ final class ParametresValidator {
     static void checkParametresSolveur(ParametresSolveur parametres) {
         if (parametres.dureeResolutionSecondes() <= 0) {
             throw new BusinessError.Invalid("dureeResolutionSecondes must be positive");
+        }
+    }
+
+    /**
+     * Refuses a weight outside {@code [1, CONSTRAINT_WEIGHT_MAX]}.
+     *
+     * <p>Zero is refused on purpose: a rule weighted zero scores nothing, so
+     * it would be disabled in fact while the Contraintes screen kept showing
+     * it as active — and, for a legal rule, without the confirmation that
+     * protects it. Switching a rule off is the toggle's job.</p>
+     *
+     * <p>The upper bound is not a law, only a guard against a typo: the score
+     * levels are ordered lexicographically, so a weight in the thousands
+     * cannot promote a medium constraint above a hard one, but it does flatten
+     * every other rule of its own level into noise.</p>
+     */
+    static void checkConstraintWeight(int poids) {
+        if (poids < 1) {
+            throw new BusinessError.Invalid(
+                    "Le poids d'une contrainte doit valoir au moins 1 : pour ne plus l'appliquer, désactivez-la.");
+        }
+        if (poids > CONSTRAINT_WEIGHT_MAX) {
+            throw new BusinessError.Invalid(
+                    "Le poids d'une contrainte ne peut pas dépasser " + CONSTRAINT_WEIGHT_MAX + ".");
         }
     }
 

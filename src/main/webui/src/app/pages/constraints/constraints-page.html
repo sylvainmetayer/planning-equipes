@@ -86,6 +86,13 @@
   <mat-card appearance="outlined" class="page-card">
     <mat-card-header>
       <h2 mat-card-title>{{ group.categorie }}</h2>
+      @if (group.dosable) {
+        <mat-card-subtitle i18n="@@constraints.dosage.description">
+          Ces règles-là ne s'éteignent pas, elles se <strong>dosent</strong> : elles arbitrent du confort contre du
+          confort, et chaque organisateur les classe différemment. Celle dont vous vous moquez descend à 1 et se fait
+          battre par les autres ; celle qui compte monte. Le réglage vaut pour cette édition seulement.
+        </mat-card-subtitle>
+      }
     </mat-card-header>
     <mat-card-content>
       <fieldset class="constraint-fieldset">
@@ -110,7 +117,33 @@
                   (change)="toggleConstraint(constraint, $event.checked)">
                   {{ actifLabel(constraint.actif) }}
                 </mat-slide-toggle>
+                @if (constraint.protegee) {
+                  <mat-icon class="constraint-protegee-icon"
+                            matTooltip="Règle légale ou de sécurité : la désactiver demande une confirmation."
+                            i18n-matTooltip="@@constraints.protegee.tooltip">gavel</mat-icon>
+                }
               </div>
+              @if (constraint.dosable) {
+                <div class="constraint-dose">
+                  <label class="constraint-dose-label" [for]="'dose-' + constraint.name"
+                         i18n="@@constraints.dosage.label">Importance</label>
+                  <mat-slider [min]="1" [max]="dosageMax(constraint)" [step]="1" discrete
+                              [disabled]="savingPoids() === constraint.name || jobs.editingLocked()">
+                    <input matSliderThumb [id]="'dose-' + constraint.name" [value]="constraint.poids"
+                           (valueChange)="setPoids(constraint, $event)" />
+                  </mat-slider>
+                  <span class="constraint-dose-value">{{ constraint.poids }}</span>
+                </div>
+              } @else {
+                <div class="constraint-poids">
+                  <mat-form-field appearance="outline" subscriptSizing="dynamic" class="constraint-poids-field">
+                    <mat-label i18n="@@constraints.poids.label">Poids</mat-label>
+                    <input matInput type="number" min="1" [max]="poidsMax" step="1" [value]="constraint.poids"
+                           [disabled]="savingPoids() === constraint.name || jobs.editingLocked()"
+                           (change)="setPoids(constraint, +$any($event.target).value)" />
+                  </mat-form-field>
+                </div>
+              }
               <p [class]="resultClass(constraint)">{{ resultLabel(constraint) }}</p>
               @if (constraint.violations.length > 0) {
                 <button matButton (click)="showViolations(constraint)" i18n="@@constraints.showViolations">

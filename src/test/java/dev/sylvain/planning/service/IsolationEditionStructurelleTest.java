@@ -40,7 +40,8 @@ class IsolationEditionStructurelleTest {
     /** Every table carrying an {@code edition_id} column (migrations V33/V36). */
     private static final List<String> TABLES_METIER = List.of(
             "stand", "animateur", "creneau", "emplacement", "typologie",
-            "contrainte_ad_hoc", "contrainte_animateur", "constraint_toggle", "verrouillage_planning",
+            "contrainte_ad_hoc", "contrainte_animateur", "constraint_toggle", "ponderation_contrainte",
+            "verrouillage_planning",
             "parametres_legaux", "parametres_decoupage", "parametres_solveur",
             "poste_affectation", "planning_resolution", "stand_typologie",
             "animateur_competence", "animateur_souhait", "animateur_indisponibilite",

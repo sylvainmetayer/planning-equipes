@@ -511,6 +511,21 @@ export interface ConstraintView {
   categorie: string;
   description: string;
   actif: boolean;
+  /**
+   * The rule founds the plan in law (« Légal (…) ») or in the minors' safety
+   * policy (« Sécurité (mineurs) »). Switching one off lets the solver return
+   * a plan scoring zero hard that still breaks the Code du travail, so the UI
+   * confirms first — see `LegalDisableDialog`.
+   */
+  protegee: boolean;
+  /**
+   * The rule is one of those meant to be **dosed** rather than switched off:
+   * the MEDIUM rules of « Qualité d'organisation », the only ones whose
+   * relative importance genuinely varies from one organiser to the next.
+   */
+  dosable: boolean;
+  /** What one match of the rule is worth on the next solve (1 to 100). */
+  poids: number;
   score: string | null;
   matchCount: number | null;
   /** One human-readable line per match, only populated for HARD constraints. */

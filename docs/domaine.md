@@ -776,12 +776,18 @@ désactivée) et pilotable depuis la page « Constraints » via
 ## Pondération des contraintes
 
 `ponderationsContraintes` (`ConstraintWeightOverrides<HardMediumSoftScore>`,
-type natif Timefold) porte, pour les contraintes dont le poids a été surchargé
-via `application.properties`, le score à appliquer à la place du littéral
+type natif Timefold) porte, pour les contraintes dont le poids a été surchargé,
+le score à appliquer à la place du littéral
 `ONE_HARD`/`ONE_MEDIUM`/`ONE_SOFT` écrit dans le code de la contrainte. Jamais
 sérialisé côté API (`@JsonIgnore`) : `PlanningService.prepareProblem` le
-renseigne systématiquement avant chaque solve à partir de la configuration lue
-au démarrage. Détails et exemple dans [`contraintes.md`](contraintes.md#pondérer-une-contrainte).
+renseigne systématiquement avant chaque solve.
+
+Deux sources, la seconde l'emportant : `application.properties`
+(`planning.constraint-weights.<nom>`, lu au démarrage, valeur du déploiement)
+puis la table `ponderation_contrainte` de l'**édition** courante, relue à
+chaque solve — contrairement aux seuils de qualité ci-dessus, le dosage des
+règles de « Qualité d'organisation » est une décision d'organisateur, donc
+d'édition. Détails et exemple dans [`contraintes.md`](contraintes.md#pondérer-une-contrainte).
 
 ## Mapping contraintes → modèle
 

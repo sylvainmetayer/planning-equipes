@@ -67,7 +67,8 @@ public class DatabaseDumpService {
             "parametres_legaux",
             "parametres_decoupage",
             "parametres_solveur",
-            "constraint_toggle");
+            "constraint_toggle",
+            "ponderation_contrainte");
 
     private static final Set<String> ALLOWED_TABLES = Set.copyOf(TABLES);
 

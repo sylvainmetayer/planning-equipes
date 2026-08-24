@@ -17,12 +17,14 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -90,7 +92,13 @@ public class PlanningService {
     private final ReferenceData referenceDataService;
     private final FeasibilityAnalyzer feasibilityAnalyzer;
     private final long defaultSecondsLimit;
-    private final ConstraintWeightOverrides<HardMediumSoftScore> constraintWeightOverrides;
+    /**
+     * The deployment-wide weight of every constraint, read once from
+     * {@code application.properties}. An edition may override any of them
+     * (table {@code ponderation_contrainte}); see
+     * {@link #constraintWeightOverrides()}.
+     */
+    private final Map<String, Integer> configuredWeights;
     /** Cap fed to {@code limiterEmplacementsParJour} through {@link ParametresQualite}. */
     private final int maxEmplacementsParJour;
 
@@ -120,33 +128,62 @@ public class PlanningService {
         this.feasibilityAnalyzer = feasibilityAnalyzer;
         this.defaultSecondsLimit = secondsLimit;
         this.maxEmplacementsParJour = maxEmplacementsParJour;
-        this.constraintWeightOverrides = buildConstraintWeightOverrides(config);
+        this.configuredWeights = readConfiguredWeights(config);
     }
 
     /**
      * Reads {@code planning.constraint-weights.<constraintName>} for every
-     * constraint in {@link ConstraintCatalog} and turns whichever ones deviate
-     * from 1 (the {@code ONE_HARD}/{@code ONE_MEDIUM}/{@code ONE_SOFT} literal
-     * already baked into each constraint) into a {@link ConstraintWeightOverrides}
-     * that Timefold applies at solve time — retuning a constraint's importance
-     * is then a config change, not a code change. Computed once at startup since
-     * {@code application.properties} does not change at runtime.
+     * constraint in {@link ConstraintCatalog}, defaulting to 1 — the
+     * {@code ONE_HARD}/{@code ONE_MEDIUM}/{@code ONE_SOFT} literal already
+     * baked into each constraint. Computed once at startup since
+     * {@code application.properties} does not change at runtime; the edition's
+     * own overrides are read at solve time instead (see
+     * {@link #effectiveConstraintWeights()}).
      */
-    private static ConstraintWeightOverrides<HardMediumSoftScore> buildConstraintWeightOverrides(Config config) {
-        Map<String, HardMediumSoftScore> overrides = new HashMap<>();
+    private static Map<String, Integer> readConfiguredWeights(Config config) {
+        Map<String, Integer> poids = new HashMap<>();
         for (ConstraintCatalog.ConstraintDefinition definition : ConstraintCatalog.definitions()) {
-            int weight = config
+            poids.put(definition.name(), config
                     .getOptionalValue("planning.constraint-weights." + definition.name(), Integer.class)
-                    .orElse(1);
+                    .orElse(1));
+        }
+        return Map.copyOf(poids);
+    }
+
+    /**
+     * The weight actually applied to each constraint on the next solve: the
+     * configured default, overridden by whatever the current edition stored.
+     *
+     * <p>The configuration stays the value shipped with the deployment — the
+     * ratios the solver was tuned with — and an organiser retunes their own
+     * edition without changing it for the others. Read on every solve rather
+     * than cached: the Contraintes screen writes it, and two editions solved
+     * by the same process must not share one another's dosage.</p>
+     */
+    public Map<String, Integer> effectiveConstraintWeights() {
+        Map<String, Integer> poids = new HashMap<>(configuredWeights);
+        referenceDataService.getConstraintWeights().forEach((nom, valeur) -> {
+            if (valeur != null && configuredWeights.containsKey(nom)) {
+                poids.put(nom, valeur);
+            }
+        });
+        return poids;
+    }
+
+    /** {@link #effectiveConstraintWeights()} turned into what Timefold applies at solve time. */
+    private ConstraintWeightOverrides<HardMediumSoftScore> constraintWeightOverrides() {
+        Map<String, HardMediumSoftScore> overrides = new HashMap<>();
+        Map<String, Integer> poids = effectiveConstraintWeights();
+        for (ConstraintCatalog.ConstraintDefinition definition : ConstraintCatalog.definitions()) {
+            int weight = poids.getOrDefault(definition.name(), 1);
             if (weight == 1) {
                 continue;
             }
-            HardMediumSoftScore score = switch (definition.niveau()) {
+            overrides.put(definition.name(), switch (definition.niveau()) {
                 case HARD -> HardMediumSoftScore.ofHard(weight);
                 case MEDIUM -> HardMediumSoftScore.ofMedium(weight);
                 case SOFT -> HardMediumSoftScore.ofSoft(weight);
-            };
-            overrides.put(definition.name(), score);
+            });
         }
         return overrides.isEmpty() ? ConstraintWeightOverrides.none() : ConstraintWeightOverrides.of(overrides);
     }
@@ -705,7 +742,10 @@ public class PlanningService {
                 referenceDataService.listEmplacements(),
                 referenceDataService.getParametresLegaux(),
                 referenceDataService.getParametresDecoupage(),
-                referenceDataService.getParametresSolveur()));
+                referenceDataService.getParametresSolveur(),
+                referenceDataService.getContraintesDesactivees(),
+                referenceDataService.getConstraintWeights(),
+                referenceDataService.snapshotContraintes()));
     }
 
     /**
@@ -725,7 +765,10 @@ public class PlanningService {
             List<Emplacement> emplacements,
             ParametresLegaux parametresLegaux,
             ParametresDecoupage parametresDecoupage,
-            ParametresSolveur parametresSolveur) {
+            ParametresSolveur parametresSolveur,
+            Set<String> contraintesDesactivees,
+            Map<String, Integer> poidsContraintes,
+            List<ContrainteAdHoc> contraintesAdHoc) {
     }
 
     /**
@@ -736,7 +779,7 @@ public class PlanningService {
     static String buildScenarioYaml(List<Animateur> animateurs, List<Stand> stands, List<Creneau> creneaux,
             List<PosteAffectation> postes) {
         return buildScenarioYaml(new ScenarioExport(animateurs, stands, creneaux, postes, List.of(), List.of(),
-                null, null, null));
+                null, null, null, Set.of(), Map.of(), List.of()));
     }
 
     /** Full-fidelity variant: writes every optional section {@link ScenarioExport} carries. */
@@ -843,6 +886,10 @@ public class PlanningService {
         if (export.parametresDecoupage() != null) {
             root.put("parametresDecoupage", parametresDecoupageYaml(export.parametresDecoupage()));
         }
+        Map<String, Object> contraintes = contraintesYaml(export);
+        if (contraintes != null) {
+            root.put("contraintes", contraintes);
+        }
         if (!export.typologies().isEmpty()) {
             root.put("typologies", typologiesYaml(export.typologies()));
         }
@@ -855,6 +902,9 @@ public class PlanningService {
         if (postesYaml != null) {
             root.put("postes", postesYaml);
         }
+        if (export.contraintesAdHoc() != null && !export.contraintesAdHoc().isEmpty()) {
+            root.put("contraintesAdHoc", contraintesAdHocYaml(export.contraintesAdHoc(), creneaux));
+        }
 
         DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
@@ -863,6 +913,63 @@ public class PlanningService {
 
     private static String asString(Object value) {
         return value == null ? null : value.toString();
+    }
+
+    /**
+     * The {@code contraintes:} section, or {@code null} when the edition tunes
+     * nothing — every rule active at its default weight is what a file without
+     * the section already means, and writing it out would be noise.
+     */
+    private static Map<String, Object> contraintesYaml(ScenarioExport export) {
+        Set<String> desactivees = export.contraintesDesactivees() == null ? Set.of() : export.contraintesDesactivees();
+        Map<String, Integer> poids = export.poidsContraintes() == null ? Map.of() : export.poidsContraintes();
+        if (desactivees.isEmpty() && poids.isEmpty()) {
+            return null;
+        }
+        Map<String, Object> item = new LinkedHashMap<>();
+        if (!desactivees.isEmpty()) {
+            item.put("desactivees", new TreeSet<>(desactivees).stream().toList());
+        }
+        if (!poids.isEmpty()) {
+            item.put("poids", new TreeMap<>(poids));
+        }
+        return item;
+    }
+
+    /**
+     * Serializes the hand-entered constraints, translating the créneau's
+     * database id back into the text id the {@code creneaux:} section of the
+     * very same file uses — the export writes {@code creneau.getId()} there,
+     * so the two halves stay tied together whatever the ids become on import.
+     */
+    private static List<Map<String, Object>> contraintesAdHocYaml(List<ContrainteAdHoc> contraintes,
+            List<Creneau> creneaux) {
+        Set<Long> creneauxConnus = creneaux.stream().map(Creneau::getId).collect(Collectors.toSet());
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (ContrainteAdHoc contrainte : contraintes) {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("id", contrainte.getId());
+            item.put("type", contrainte.getType().name());
+            item.put("animateurs", contrainte.getAnimateursConcernes().stream()
+                    .filter(Objects::nonNull)
+                    .map(Animateur::getId)
+                    .toList());
+            // A constraint aiming at a créneau the export does not carry would
+            // be refused on import: drop the scope rather than the constraint,
+            // it then covers the whole festival, which is the safe side for
+            // every prescriptive type.
+            if (contrainte.getCreneau() != null && creneauxConnus.contains(contrainte.getCreneau().getId())) {
+                item.put("creneauId", asString(contrainte.getCreneau().getId()));
+            }
+            if (contrainte.getStand() != null) {
+                item.put("standId", contrainte.getStand().getId());
+            }
+            if (contrainte.getRaison() != null) {
+                item.put("raison", contrainte.getRaison());
+            }
+            result.add(item);
+        }
+        return result;
     }
 
     /** Only the three fields a scenario file is read back with (see {@link ScenarioSections}). */
@@ -1086,8 +1193,12 @@ public class PlanningService {
             }
         }
 
+        // The file's own ad hoc constraints when it carries the section, the
+        // database's otherwise: a scenario that pins them describes the whole
+        // problem, and re-importing it must not merge somebody else's.
+        List<ContrainteAdHoc> contraintesAdHoc = parseContraintesAdHoc(scenarioData, reference);
         PlanningFestival festival = new PlanningFestival(reference.dateDebut(), reference.animateurs(), postes,
-                referenceDataService.snapshotContraintes());
+                contraintesAdHoc != null ? contraintesAdHoc : referenceDataService.snapshotContraintes());
         festival.setParametresLegaux(List.of(
                 parseParametresLegaux(scenarioData).orElseGet(referenceDataService::getParametresLegaux)));
         return festival;
@@ -1378,6 +1489,12 @@ public class PlanningService {
      *                            is missing: a list has no "absent" distinct from "empty"
      * @param edition             the edition the import must write into; absent means
      *                            the caller's current one
+     * @param contraintes         which constraints the scenario switches off and how
+     *                            it weights the others. Absent leaves the target
+     *                            edition's own tuning alone; present, it replaces it
+     *                            wholesale — a file that pins nothing but the section
+     *                            itself re-enables everything, which is what "this is
+     *                            the tuning this scenario was verified with" means
      */
     public record ScenarioSections(
             Optional<ParametresLegaux> parametresLegaux,
@@ -1385,7 +1502,18 @@ public class PlanningService {
             Optional<ParametresSolveur> parametresSolveur,
             boolean decoupageAuto,
             List<TypologieItem> typologies,
-            Optional<dev.sylvain.planning.scenario.dto.EditionCibleDto> edition) {
+            Optional<dev.sylvain.planning.scenario.dto.EditionCibleDto> edition,
+            Optional<ContraintesScenario> contraintes) {
+    }
+
+    /**
+     * The {@code contraintes:} section of a scenario, parsed.
+     *
+     * @param desactivees names of the constraints to switch off
+     * @param poids       weight per constraint name; what is absent keeps the
+     *                    deployment default
+     */
+    public record ContraintesScenario(Set<String> desactivees, Map<String, Integer> poids) {
     }
 
     /** Reads {@link ScenarioSections} out of an already-parsed scenario document. */
@@ -1396,7 +1524,8 @@ public class PlanningService {
                 parseParametresSolveur(scenarioData),
                 parseDecoupageAuto(scenarioData),
                 parseTypologies(scenarioData),
-                parseTargetEdition(scenarioData));
+                parseTargetEdition(scenarioData),
+                parseContraintes(scenarioData));
     }
 
     /**
@@ -1540,6 +1669,110 @@ public class PlanningService {
                 id, (String) editionData.get("nom")));
     }
 
+    /**
+     * Reads {@code contraintes:} — {@code desactivees:} (a list of constraint
+     * names) and {@code poids:} (name → weight).
+     *
+     * <p>An unknown name is refused rather than ignored: it means either a
+     * typo or a file written against another version of the catalogue, and
+     * silently dropping it would leave the operator convinced a rule was
+     * switched off — or dosed — when it never was.</p>
+     */
+    private static Optional<ContraintesScenario> parseContraintes(Map<String, Object> scenarioData) {
+        Map<String, Object> data = YamlSections.objet(scenarioData, "contraintes");
+        if (data == null) {
+            return Optional.empty();
+        }
+        Set<String> desactivees = new LinkedHashSet<>();
+        List<Object> nomsData = YamlSections.valeurs(data, "desactivees");
+        if (nomsData != null) {
+            for (Object nom : nomsData) {
+                desactivees.add(requireKnownConstraint(String.valueOf(nom)));
+            }
+        }
+        Map<String, Integer> poids = new LinkedHashMap<>();
+        Map<String, Object> poidsData = YamlSections.objet(data, "poids");
+        if (poidsData != null) {
+            for (Map.Entry<String, Object> entry : poidsData.entrySet()) {
+                if (entry.getValue() == null) {
+                    continue;
+                }
+                poids.put(requireKnownConstraint(entry.getKey()), ((Number) entry.getValue()).intValue());
+            }
+        }
+        return Optional.of(new ContraintesScenario(desactivees, poids));
+    }
+
+    private static String requireKnownConstraint(String nom) {
+        if (!DEFINITIONS_PAR_NOM.containsKey(nom)) {
+            throw new BusinessError.Invalid(
+                    "La section contraintes cite « " + nom + " », qui n'est pas une contrainte du catalogue.");
+        }
+        return nom;
+    }
+
+    /**
+     * Reads {@code contraintesAdHoc:}, resolving the file's own animateur,
+     * stand and créneau ids against the sections already parsed.
+     *
+     * <p>The créneau reference goes through {@code creneauxParId}: a
+     * scenario's créneaux carry a text id in the file and get a synthetic
+     * numeric one here (then a fresh database one on import, remapped by
+     * {@code ReferenceDataImportRepository}). Resolving it any later would
+     * leave the constraint pointing at nothing.</p>
+     */
+    private static List<ContrainteAdHoc> parseContraintesAdHoc(Map<String, Object> scenarioData,
+            ReferenceScenario reference) {
+        List<Map<String, Object>> data = YamlSections.objets(scenarioData, "contraintesAdHoc");
+        if (data == null) {
+            return null;
+        }
+        List<ContrainteAdHoc> contraintes = new ArrayList<>();
+        for (Map<String, Object> item : data) {
+            String id = (String) item.get("id");
+            if (id == null || id.isBlank()) {
+                throw new BusinessError.Invalid("Chaque contrainte ad hoc doit porter un id non vide.");
+            }
+            ContrainteAdHoc contrainte = new ContrainteAdHoc(id,
+                    TypeContrainteAdHoc.valueOf((String) item.get("type")));
+            List<Object> animateurs = YamlSections.valeurs(item, "animateurs");
+            if (animateurs != null) {
+                for (Object animateurId : animateurs) {
+                    contrainte.getAnimateursConcernes().add(reference.animateurs().stream()
+                            .filter(animateur -> animateur.getId().equals(animateurId))
+                            .findFirst()
+                            .orElseThrow(() -> new BusinessError.Invalid("La contrainte ad hoc " + id
+                                    + " vise l'animateur " + animateurId + ", absent du scénario.")));
+                }
+            }
+            // String.valueOf, not a cast: the créneau ids of a hand-authored
+            // file are text ("J1-MATIN"), those of an exported one are the
+            // numbers SnakeYAML hands back as Integer.
+            Object creneauRef = item.get("creneauId");
+            if (creneauRef != null) {
+                String creneauId = String.valueOf(creneauRef);
+                Creneau creneau = reference.creneauxParId().get(creneauId);
+                if (creneau == null) {
+                    throw new BusinessError.Invalid("La contrainte ad hoc " + id + " vise le créneau "
+                            + creneauId + ", absent du scénario.");
+                }
+                contrainte.setCreneau(creneau);
+            }
+            String standId = (String) item.get("standId");
+            if (standId != null) {
+                Stand stand = reference.standsById().get(standId);
+                if (stand == null) {
+                    throw new BusinessError.Invalid("La contrainte ad hoc " + id + " vise le stand "
+                            + standId + ", absent du scénario.");
+                }
+                contrainte.setStand(stand);
+            }
+            contrainte.setRaison((String) item.get("raison"));
+            contraintes.add(contrainte);
+        }
+        return contraintes;
+    }
+
     private static List<TypologieItem> parseTypologies(Map<String, Object> scenarioData) {
         List<Map<String, Object>> data = YamlSections.objets(scenarioData, "typologies");
         if (data == null) {
@@ -1634,7 +1867,7 @@ public class PlanningService {
         problem.setParametresQualite(List.of(new ParametresQualite(maxEmplacementsParJour)));
         // Never sent by a caller (the field is @JsonIgnore-d on PlanningFestival),
         // so this always overwrites the ConstraintWeightOverrides.none() default.
-        problem.setPonderationsContraintes(constraintWeightOverrides);
+        problem.setPonderationsContraintes(constraintWeightOverrides());
     }
 
     /**

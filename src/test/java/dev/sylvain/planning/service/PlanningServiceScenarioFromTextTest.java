@@ -14,7 +14,10 @@ import java.time.LocalTime;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.Test;
 
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.ParametresQualite;
+import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.PlanningFestival;
 import dev.sylvain.planning.domain.PosteAffectation;
@@ -73,6 +76,82 @@ class PlanningServiceScenarioFromTextTest {
         assertThat(importe.sections().parametresSolveur()).isPresent();
         assertThat(importe.sections().parametresSolveur().orElseThrow().dureeResolutionSecondes()).isEqualTo(400);
         assertThat(importe.sections().decoupageAuto()).isFalse();
+    }
+
+    /**
+     * The tuning of the catalogue travels with the scenario: which rules are
+     * off, and what the others weigh. Without it, a file exported from an
+     * edition that had disabled a rule re-imported elsewhere as if nothing had
+     * happened, and the "same" scenario solved a different problem.
+     */
+    @Test
+    void appliqueLaSectionContraintesDuFichierQuandPresente() {
+        PlanningService service = service();
+        String yaml = scenarioYamlText("scenario-contraintes.yaml");
+
+        PlanningService.ScenarioSections sections = service.buildFromScenarioText(yaml).sections();
+
+        assertThat(sections.contraintes()).isPresent();
+        assertThat(sections.contraintes().orElseThrow().desactivees())
+                .containsExactly("eviterRoulementStandsPremium");
+        assertThat(sections.contraintes().orElseThrow().poids())
+                .containsEntry("equilibrerCharge", 7)
+                .containsEntry("maxJoursConsecutifsTravailles", 3);
+    }
+
+    /**
+     * A name absent from the catalogue is refused rather than ignored: it is
+     * either a typo or a file written against another version of the
+     * catalogue, and dropping it silently would leave the operator convinced a
+     * rule was switched off when it never was.
+     */
+    @Test
+    void refuseUneContrainteInconnueDansLaSectionContraintes() {
+        PlanningService service = service();
+        String yaml = scenarioYamlText("scenario-contraintes.yaml")
+                .replace("eviterRoulementStandsPremium", "reglePasDansLeCatalogue");
+
+        assertThatThrownBy(() -> service.buildFromScenarioText(yaml))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("reglePasDansLeCatalogue");
+    }
+
+    /**
+     * The hand-entered constraints come from the file when it carries them —
+     * not from the database — so re-importing a scenario reproduces exactly
+     * the problem it describes instead of merging somebody else's.
+     */
+    @Test
+    void chargeLesContraintesAdHocDuFichier() {
+        PlanningService service = service();
+        String yaml = scenarioYamlText("scenario-contraintes.yaml");
+
+        PlanningFestival planning = service.buildFromScenarioText(yaml).planning();
+
+        assertThat(planning.getContraintesAdHoc()).hasSize(2);
+        ContrainteAdHoc incompatibilite = planning.getContraintesAdHoc().get(0);
+        assertThat(incompatibilite.getId()).isEqualTo("INCOMPAT-1");
+        assertThat(incompatibilite.getType()).isEqualTo(TypeContrainteAdHoc.INCOMPATIBILITE);
+        assertThat(incompatibilite.getAnimateursConcernes()).extracting(Animateur::getId)
+                .containsExactly("A1", "A2");
+        assertThat(incompatibilite.getCreneau()).isNull();
+
+        ContrainteAdHoc indisponibilite = planning.getContraintesAdHoc().get(1);
+        assertThat(indisponibilite.getStand().getId()).isEqualTo("STAND-STRAT");
+        // Resolved against the file's own créneau id, so the import can remap
+        // it to the database id the créneau gets on the way in.
+        assertThat(indisponibilite.getCreneau()).isNotNull();
+        assertThat(indisponibilite.getRaison()).isEqualTo("Formation");
+    }
+
+    @Test
+    void refuseUneContrainteAdHocVisantUnAnimateurAbsent() {
+        PlanningService service = service();
+        String yaml = scenarioYamlText("scenario-contraintes.yaml").replace("      - A2\n    raison: Ne", "      - A9\n    raison: Ne");
+
+        assertThatThrownBy(() -> service.buildFromScenarioText(yaml))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("A9");
     }
 
     @Test

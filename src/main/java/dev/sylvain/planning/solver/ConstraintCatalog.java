@@ -1,6 +1,7 @@
 package dev.sylvain.planning.solver;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Business-facing catalogue of every constraint enforced by
@@ -16,7 +17,39 @@ public final class ConstraintCatalog {
         SOFT
     }
 
+    /**
+     * Categories whose rules found the plan in law (or in the organiser's own
+     * safety policy for young workers). Switching one off lets the solver
+     * return a plan scoring zero hard that nonetheless breaks the Code du
+     * travail, so the UI asks for a confirmation naming the rule and the
+     * article behind it — and the Contraintes screen keeps showing what is
+     * off. See {@code docs/contraintes.md}.
+     */
+    public static final Set<String> CATEGORIES_PROTEGEES = Set.of(
+            "Légal (mineurs)", "Légal (temps de travail)", "Sécurité (mineurs)");
+
+    /** The one category whose rules are dosed rather than switched off — see {@link ConstraintDefinition#dosable()}. */
+    public static final String CATEGORIE_QUALITE = "Qualité d'organisation";
+
     public record ConstraintDefinition(String name, Niveau niveau, String categorie, String description) {
+
+        /** True when disabling this rule needs the confirmation described on {@link #CATEGORIES_PROTEGEES}. */
+        public boolean protegee() {
+            return CATEGORIES_PROTEGEES.contains(categorie);
+        }
+
+        /**
+         * True for the rules that genuinely vary from one organiser to the
+         * next: the MEDIUM ones of « Qualité d'organisation ». They arbitrate
+         * comfort against comfort — continuity on a premium stand against a
+         * balanced workload, wishes against experience — and every organiser
+         * ranks those differently. They are meant to be <b>dosed</b>: a rule
+         * nobody cares about goes to 1 and gets outvoted, the one that matters
+         * goes up. Switching them off is possible and rarely what is wanted.
+         */
+        public boolean dosable() {
+            return niveau == Niveau.MEDIUM && CATEGORIE_QUALITE.equals(categorie);
+        }
     }
 
     private static final List<ConstraintDefinition> DEFINITIONS = List.of(
