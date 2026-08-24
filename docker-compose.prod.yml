@@ -26,6 +26,10 @@ services:
       DB_URL: jdbc:postgresql://postgres:5432/festival
       DB_USER: festival
       DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD est obligatoire}
+      # Réparation de l'historique Flyway au démarrage : `true` le temps de
+      # débloquer une migration interrompue, puis retour à `false`. Voir
+      # docs/exploitation.md.
+      FLYWAY_REPAIR_AT_START: ${FLYWAY_REPAIR_AT_START:-false}
       # Compte admin unique : un mot de passe long et propre à ce déploiement.
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD est obligatoire}
       # Sans clé fixe, les sessions admin sont invalidées à chaque redémarrage.

@@ -129,6 +129,11 @@ que son pendant Java.**
 `quarkus.flyway.migrate-at-start=true`. **Un changement de schéma = un nouveau
 fichier versionné** ; ne jamais modifier une migration déjà appliquée.
 
+`FLYWAY_REPAIR_AT_START` active la réparation de la table d'historique au
+démarrage. Elle vaut `false` et n'a de sens qu'en exploitation, le temps de
+débloquer une migration interrompue — voir
+[`exploitation.md`](exploitation.md).
+
 ## Conteneurisation
 
 `docker-compose.yml` : l'application (build multi-stage, JRE en image finale,
