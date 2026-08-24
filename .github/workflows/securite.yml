@@ -39,7 +39,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # Lit `pom.xml` et `src/main/webui/package-lock.json` : les deux
       # écosystèmes du projet en une passe, sans clé d'API (contrairement à
@@ -51,7 +51,7 @@ jobs:
       # indisponible ici (voir l'en-tête) — et une analyse dont le résultat
       # n'atteint personne ne sert à rien.
       - name: Scan des dépendances (Trivy)
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: fs
           scanners: vuln
@@ -70,7 +70,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # Semgrep tourne dans son image officielle plutôt qu'installé par pip :
       # `actions/setup-python` ne trouve aucun binaire pour la distribution du
@@ -87,16 +87,15 @@ jobs:
       # Renovate ne suit pas une image citée dans un `run:` — c'est une mise à
       # jour à faire à la main, en lisant ce que la nouvelle version trouve.
       #
-      # Quatre jeux de règles du registre, choisis sur ce que le dépôt contient
-      # réellement : les deux langages, le classement OWASP qui les traverse, et
-      # le Dockerfile — dont l'utilisateur non privilégié fait précisément
-      # partie de ce que ces règles vérifient.
+      # Cinq jeux de règles du registre, choisis sur ce que le dépôt contient
+      # réellement : les deux langages, le classement OWASP qui les traverse, le
+      # Dockerfile — dont l'utilisateur non privilégié fait précisément partie de
+      # ce que ces règles vérifient — et les workflows, où se joue le risque de
+      # chaîne d'approvisionnement (action repointée sous un tag mutable).
       #
-      # `--severity ERROR` seulement : à l'introduction d'un SAST, tout ouvrir
-      # d'un coup noie les vrais signaux sous les avertissements de style, et un
-      # garde-fou qu'on prend l'habitude d'ignorer ne garde plus rien. Les
-      # niveaux WARNING/INFO sont un cran à monter plus tard, une fois la base
-      # propre.
+      # `--severity INFO` : tous les niveaux remontent. Le cran avait été laissé
+      # à ERROR le temps d'assainir la base ; elle l'est, et un avertissement
+      # qu'on ne voit pas ne protège de rien.
       #
       # Semgrep saute de lui-même ce que `.gitignore` couvre (`target/`,
       # `node_modules/`, `dist/`), donc rien à exclure à la main. `--metrics off`
@@ -114,6 +113,7 @@ jobs:
               --config p/typescript \
               --config p/owasp-top-ten \
               --config p/dockerfile \
-              --severity ERROR \
+              --config p/github-actions \
+              --severity INFO \
               --metrics off \
               --error

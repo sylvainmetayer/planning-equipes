@@ -3,7 +3,8 @@
   "extends": [
     "config:recommended",
     ":dependencyDashboard",
-    ":maintainLockFilesDisabled"
+    ":maintainLockFilesDisabled",
+    "helpers:pinGitHubActionDigests"
   ],
   "timezone": "Europe/Paris",
   "schedule": ["before 6am on monday"],
@@ -20,6 +21,11 @@
     "npm"
   ],
   "packageRules": [
+    {
+      "description": "Wait a week before proposing a newly published version: a compromised release is usually pulled within days",
+      "matchPackageNames": ["*"],
+      "minimumReleaseAge": "7 days"
+    },
     {
       "description": "Quarkus platform and extensions move together",
       "matchManagers": ["maven"],
@@ -102,7 +108,8 @@
   ],
   "vulnerabilityAlerts": {
     "labels": ["security"],
-    "schedule": ["at any time"]
+    "schedule": ["at any time"],
+    "minimumReleaseAge": null
   },
   "osvVulnerabilityAlerts": true
 }

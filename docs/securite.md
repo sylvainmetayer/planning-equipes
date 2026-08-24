@@ -171,10 +171,10 @@ profondeur, remplacer le trombinoscope entier par une recherche à la frappe.
 ## Analyse statique : les suppressions et leur justification
 
 Le job `code` de `securite.yml` (Semgrep OSS) fait échouer la CI sur toute
-règle de sévérité `ERROR`. Une règle atteint aujourd'hui neuf endroits du
-code, tous pour la même raison, et tous annotés `nosemgrep` **site par site**
-plutôt que désactivés en bloc : une nouvelle concaténation SQL non annotée
-continue donc de faire rougir la CI.
+règle qui trouve, quelle que soit sa sévérité. Une règle atteint aujourd'hui
+neuf endroits du code, tous pour la même raison, et tous annotés `nosemgrep`
+**site par site** plutôt que désactivés en bloc : une nouvelle concaténation
+SQL non annotée continue donc de faire rougir la CI.
 
 `java.lang.security.audit.formatted-sql-string` signale toute requête
 construite par concaténation. Dans ce dépôt, ce qui est concaténé est
