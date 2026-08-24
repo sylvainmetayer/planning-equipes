@@ -148,9 +148,19 @@ form.form-grid {
   width: 100%;
 }
 
+/*
+ * Material tronque en « … » le contenu d'une cellule trop étroite. Sur une
+ * colonne d'actions chargée (cinq boutons sur /animateurs) les derniers
+ * disparaissaient : la colonne se réserve donc la largeur de ses boutons, et
+ * c'est le tableau qui défile si l'ensemble dépasse.
+ */
 .row-actions {
   white-space: nowrap;
   text-align: right;
+  width: 1%;
+  min-width: max-content;
+  overflow: visible;
+  text-overflow: clip;
 }
 
 .danger-action {
