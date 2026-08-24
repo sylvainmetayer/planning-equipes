@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.entry;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -35,8 +36,12 @@ import dev.sylvain.planning.domain.Stand;
  */
 class PlanningExportServiceTest {
 
+    /** A fixed provenance: these tests read the documents, not the database. */
+    private static final ExportProvenance PROVENANCE = () -> new ExportProvenance.Provenance(
+            "Édition de test", Instant.parse("2026-07-01T08:30:00Z"));
+
     private final PlanningExportService service = new PlanningExportService(new ApplicationLinks(Optional.empty()),
-            new AnimateurPlanningPdf(new PdfTheme()), new GlobalPlanningPdf(new PdfTheme()), new PlanningIcs());
+            new AnimateurPlanningPdf(new PdfTheme()), new GlobalPlanningPdf(new PdfTheme()), new PlanningIcs(), PROVENANCE);
     private final AtomicInteger posteSequence = new AtomicInteger();
 
     @Test
@@ -332,7 +337,7 @@ class PlanningExportServiceTest {
     /** The same service, but with a public URL configured: the espace links become printable. */
     private static PlanningExportService exportsWithLinks(String baseUrl) {
         return new PlanningExportService(new ApplicationLinks(Optional.of(baseUrl)),
-                new AnimateurPlanningPdf(new PdfTheme()), new GlobalPlanningPdf(new PdfTheme()), new PlanningIcs());
+                new AnimateurPlanningPdf(new PdfTheme()), new GlobalPlanningPdf(new PdfTheme()), new PlanningIcs(), PROVENANCE);
     }
 
     private Set<String> typologies(String... typologies) {

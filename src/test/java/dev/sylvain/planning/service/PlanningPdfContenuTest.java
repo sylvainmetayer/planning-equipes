@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -39,8 +40,12 @@ import dev.sylvain.planning.domain.Stand;
  */
 class PlanningPdfContenuTest {
 
+    /** A fixed provenance: these tests read the documents, not the database. */
+    private static final ExportProvenance PROVENANCE = () -> new ExportProvenance.Provenance(
+            "Édition de test", Instant.parse("2026-07-01T08:30:00Z"));
+
     private final PlanningExportService service = new PlanningExportService(new ApplicationLinks(Optional.empty()),
-            new AnimateurPlanningPdf(new PdfTheme()), new GlobalPlanningPdf(new PdfTheme()), new PlanningIcs());
+            new AnimateurPlanningPdf(new PdfTheme()), new GlobalPlanningPdf(new PdfTheme()), new PlanningIcs(), PROVENANCE);
 
     @Test
     void lePdfIndividuelNommeLAnimateurSesStandsEtSesRepos() throws IOException {
@@ -103,6 +108,35 @@ class PlanningPdfContenuTest {
         planning.getPostes().add(poste);
 
         assertThat(textOf(service.exportGlobalPdf(planning))).contains("A-VIDE");
+    }
+
+    /**
+     * The footer is what tells two downloads of the same planning apart. The
+     * generation date only dates the click; a printed copy is stale or current
+     * according to the solve date, so both PDFs must carry it.
+     */
+    @Test
+    void lesDeuxPdfDatentLEditionEtSaResolution() throws IOException {
+        PlanningEvenement planning = planning();
+
+        for (byte[] pdf : List.of(service.exportAnimateurPdf(planning, "A-ADA"),
+                service.exportGlobalPdf(planning))) {
+            assertThat(textOf(pdf))
+                    .contains("généré le")
+                    .contains("à partir des données de l'édition « Édition de test »")
+                    .contains("résolue le 01/07/2026");
+        }
+    }
+
+    /** An édition never solved says so rather than leaving the reader to guess. */
+    @Test
+    void uneEditionJamaisResolueLeDitDansLePied() throws IOException {
+        PlanningExportService jamaisResolue = new PlanningExportService(new ApplicationLinks(Optional.empty()),
+                new AnimateurPlanningPdf(new PdfTheme()), new GlobalPlanningPdf(new PdfTheme()), new PlanningIcs(),
+                () -> new ExportProvenance.Provenance("Édition de test", null));
+
+        assertThat(textOf(jamaisResolue.exportAnimateurPdf(planning(), "A-ADA")))
+                .contains("« Édition de test », jamais résolue");
     }
 
     private static String textOf(byte[] pdf) throws IOException {

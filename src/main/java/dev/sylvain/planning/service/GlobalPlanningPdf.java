@@ -53,12 +53,12 @@ public class GlobalPlanningPdf {
         this.theme = theme;
     }
 
-    byte[] construire(PlanningEvenement planning) {
+    byte[] construire(PlanningEvenement planning, ExportProvenance.Provenance provenance) {
         List<LigneAffectation> lignes = lignesAffectation(planning);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         Document document = new Document(PageSize.A4.rotate(), 34, 34, 34, 50);
         PdfWriter writer = PdfWriter.getInstance(document, output);
-        writer.setPageEvent(theme.footerEvent("planning global", Instant.now()));
+        writer.setPageEvent(theme.footerEvent("planning global", Instant.now(), provenance));
         document.open();
 
         addGlobalHeader(document, planning, lignes);

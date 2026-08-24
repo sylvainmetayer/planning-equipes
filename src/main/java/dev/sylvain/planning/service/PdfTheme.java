@@ -258,11 +258,34 @@ public class PdfTheme {
         return tableAlertFont;
     }
 
-    /** The footer of every page: who the document belongs to, then when it was produced. */
-    FooterEvent footerEvent(String what, Instant generatedAt) {
+    /**
+     * The footer of every page: who the document belongs to and when the file
+     * was produced, then a second line saying which édition the data came from
+     * and when that édition was solved.
+     *
+     * <p>The generation date alone dates the click, not the schedule. Someone
+     * holding a printed copy needs the solve date to know whether the planning
+     * has moved since — and an animateur comparing two downloads has nothing
+     * else to go on.</p>
+     */
+    FooterEvent footerEvent(String what, Instant generatedAt, ExportProvenance.Provenance provenance) {
         String text = footerOwner() + " · " + what + " généré le "
                 + GENERATED_AT_FORMAT.format(generatedAt.atZone(ZoneId.systemDefault()));
-        return new FooterEvent(text, footerFont, muted);
+        return new FooterEvent(text, provenanceText(provenance), footerFont, muted);
+    }
+
+    private static String provenanceText(ExportProvenance.Provenance provenance) {
+        if (provenance == null) {
+            return null;
+        }
+        String edition = provenance.editionNom() == null || provenance.editionNom().isBlank()
+                ? "à partir des données de l'édition courante"
+                : "à partir des données de l'édition « " + provenance.editionNom() + " »";
+        String resolution = provenance.resoluLe() == null
+                ? ", jamais résolue"
+                : ", résolue le " + GENERATED_AT_FORMAT.format(
+                        provenance.resoluLe().atZone(ZoneId.systemDefault()));
+        return edition + resolution;
     }
 
     /**
@@ -576,12 +599,14 @@ public class PdfTheme {
     /** Draws the "généré le ..." footer and a "Page x/y" counter, back-filled once the total page count is known. */
     static final class FooterEvent extends PdfPageEventHelper {
         private final String generatedAtText;
+        private final String provenanceText;
         private final Font font;
         private final Color color;
         private final List<PdfTemplate> pageCounterTemplates = new ArrayList<>();
 
-        FooterEvent(String generatedAtText, Font font, Color color) {
+        FooterEvent(String generatedAtText, String provenanceText, Font font, Color color) {
             this.generatedAtText = generatedAtText;
+            this.provenanceText = provenanceText;
             this.font = font;
             this.color = color;
         }
@@ -594,6 +619,15 @@ public class PdfTheme {
             PdfContentByte canvas = writer.getDirectContent();
             Phrase generated = new Phrase(generatedAtText, font);
             ColumnText.showTextAligned(canvas, Element.ALIGN_LEFT, generated, document.leftMargin(), y, 0);
+
+            // Second line rather than a longer first one: the page counter sits
+            // on the right of that first line, and a provenance naming a long
+            // édition would run into it.
+            if (provenanceText != null) {
+                Phrase provenance = new Phrase(provenanceText, font);
+                ColumnText.showTextAligned(canvas, Element.ALIGN_LEFT, provenance,
+                        document.leftMargin(), y - font.getSize() - 2f, 0);
+            }
 
             float templateWidth = 70f;
             PdfTemplate template = canvas.createTemplate(templateWidth, 12f);

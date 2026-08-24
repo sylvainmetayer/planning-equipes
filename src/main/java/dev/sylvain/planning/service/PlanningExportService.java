@@ -41,19 +41,21 @@ public class PlanningExportService {
     private final AnimateurPlanningPdf pdfAnimateur;
     private final GlobalPlanningPdf pdfGlobal;
     private final PlanningIcs ics;
+    private final ExportProvenance provenance;
 
     /**
-     * Constructor injection rather than field injection: the four collaborators
+     * Constructor injection rather than field injection: the collaborators
      * are immutable, and a test outside CDI provides them explicitly — no
      * {@code liens == null} is written for it in production code any more.
      */
     @Inject
     public PlanningExportService(ApplicationLinks liens, AnimateurPlanningPdf pdfAnimateur,
-            GlobalPlanningPdf pdfGlobal, PlanningIcs ics) {
+            GlobalPlanningPdf pdfGlobal, PlanningIcs ics, ExportProvenance provenance) {
         this.liens = liens;
         this.pdfAnimateur = pdfAnimateur;
         this.pdfGlobal = pdfGlobal;
         this.ics = ics;
+        this.provenance = provenance;
     }
 
     public byte[] exportAnimateurPdf(PlanningEvenement planning, String animateurId) {
@@ -63,7 +65,7 @@ public class PlanningExportService {
                 .toList();
         return pdfAnimateur.construire(resolveAnimateurName(planning, animateurId), animateurPostes,
                 teammatesByPoste(planning, animateurId), daysOff(planning, animateurId),
-                lienEspaceAnimateur(planning, animateurId));
+                lienEspaceAnimateur(planning, animateurId), provenance.courante());
     }
 
     /** An event day the animateur is off: its day number and its date. */
@@ -169,7 +171,7 @@ public class PlanningExportService {
 
     /** The whole planning in one landscape PDF, for the organiser — see {@link GlobalPlanningPdf}. */
     public byte[] exportGlobalPdf(PlanningEvenement planning) {
-        return pdfGlobal.construire(planning);
+        return pdfGlobal.construire(planning, provenance.courante());
     }
 
     /** The animateur's planning as an iCalendar feed — see {@link PlanningIcs}. */

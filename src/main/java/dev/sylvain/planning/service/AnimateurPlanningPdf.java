@@ -51,11 +51,11 @@ public class AnimateurPlanningPdf {
 
     byte[] construire(String animateurName, List<PosteAffectation> postes,
             Map<String, List<String>> teammatesByPoste, List<PlanningExportService.JourRepos> joursRepos,
-            String lienEspaceAnimateur) {
+            String lienEspaceAnimateur, ExportProvenance.Provenance provenance) {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         Document document = new Document(PageSize.A4, 40, 40, 40, 54);
         PdfWriter writer = PdfWriter.getInstance(document, output);
-        writer.setPageEvent(theme.footerEvent("planning individuel", Instant.now()));
+        writer.setPageEvent(theme.footerEvent("planning individuel", Instant.now(), provenance));
         document.open();
 
         addHeader(document, animateurName, postes);
