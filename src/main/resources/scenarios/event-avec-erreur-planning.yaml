@@ -1,0 +1,286 @@
+# yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+#
+# Deliberately unsolvable teaching fixture — see docs/import-export.md.
+#
+# Every other shipped scenario is meant to converge; this one is not. Its job
+# is to make the six mistakes an organiser really makes on stand openings show
+# up, each on its own stand, so the Problèmes / Besoin en animateurs /
+# Ouvertures screens and the feasibility analysis can be read side by side.
+#
+#   Stand 1 — a closure window that lands outside every créneau of its day
+#             (FENETRE_SANS_EFFET: entered, valid, changes nothing).
+#   Stand 2 — effectif minimum above the whole roster on the one créneau it is
+#             open for (feasibility: CRENEAU_SOUS_EFFECTIF).
+#   Stand 3 — recurring opening rule outside the event's own amplitude
+#             (STAND_JAMAIS_OUVERT: not one seat will ever be generated).
+#   Stand 4 — a dated exception that silently REPLACES the recurring rule of
+#             that day instead of adding to it.
+#   Stand 5 — closing time mis-entered, leaving a ten-minute open stretch
+#             (SEGMENT_TROP_COURT).
+#   Stand 6 — a typologie no animateur masters (medium, not hard: see
+#             FeasibilityAnalyzer's javadoc on why competence is never a
+#             blocking cause).
+#
+# On top of those, the roster is structurally too small: the simultaneity peak
+# is 10 seats for 5 animateurs, two of whom are minors barred from the evening
+# créneaux. No amount of solver time reaches a hard score of zero, and that is
+# the point — PlanningServiceUnsolvableScenarioTest documents the intent.
+#
+# All names are fictional and all addresses use the reserved .invalid TLD.
+
+edition:
+  id: event-avec-erreur-planning
+  nom: event-avec-erreur-planning
+
+festival:
+  dateDebut: 2026-07-08
+
+# Same dosage as the other shipped scenarios: the two non-neutral weights of
+# the product, so the demo reads the same wherever the file lands.
+contraintes:
+  poids:
+    appreciationIncompatible: 3
+    maxJoursConsecutifsTravailles: 5
+
+typologies:
+  - id: AMBIANCE
+    label: Ambiance
+  - id: FAMILLE
+    label: Jeux famille
+  - id: ESCAPE_GAME
+    label: Escape game
+
+emplacements:
+  - id: HALL
+    nom: Hall principal
+
+# Ten créneaux over three days. Days 1 and 2 run 09:00-23:00 in three slices,
+# day 3 splits its evening in two.
+creneaux:
+  - id: J1-MATIN
+    jour: 1
+    date: 2026-07-08
+    heureDebut: "09:00"
+    heureFin: "13:00"
+  - id: J1-AM
+    jour: 1
+    date: 2026-07-08
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J1-SOIR
+    jour: 1
+    date: 2026-07-08
+    heureDebut: "18:00"
+    heureFin: "23:00"
+  - id: J2-MATIN
+    jour: 2
+    date: 2026-07-09
+    heureDebut: "09:00"
+    heureFin: "13:00"
+  - id: J2-AM
+    jour: 2
+    date: 2026-07-09
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J2-SOIR
+    jour: 2
+    date: 2026-07-09
+    heureDebut: "18:00"
+    heureFin: "23:00"
+  - id: J3-MATIN
+    jour: 3
+    date: 2026-07-10
+    heureDebut: "09:00"
+    heureFin: "13:00"
+  - id: J3-AM
+    jour: 3
+    date: 2026-07-10
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J3-SOIR
+    jour: 3
+    date: 2026-07-10
+    heureDebut: "18:00"
+    heureFin: "20:30"
+  - id: J3-FIN
+    jour: 3
+    date: 2026-07-10
+    heureDebut: "20:30"
+    heureFin: "23:00"
+
+stands:
+  # Defect 1 — the window entered overlaps no créneau of its own day, so the
+  # stand stays open all day and the 05:00-08:00 closure changes nothing.
+  # Ouvertures screen: FENETRE_SANS_EFFET on 2026-07-08.
+  - id: STAND-1
+    nom: Stand 1
+    emplacementId: HALL
+    typologiesProposees:
+      - AMBIANCE
+    effectifMin: 1
+    effectifMax: 2
+    reserveMajeurs: false
+    indisponibilites:
+      - date: 2026-07-08
+        heureDebut: "05:00"
+        heureFin: "08:00"
+        motif: Livraison du matériel
+
+  # Defect 2 — effectif minimum above the whole roster. The stand is open on
+  # 2026-07-09 from 14:00 to 18:00 only (a "closed every day" rule plus a dated
+  # exception) and asks for 6 animateurs there, out of 5 — one of whom is away
+  # that day.
+  # Feasibility analysis: CRENEAU_SOUS_EFFECTIF on J2-AM.
+  - id: STAND-2
+    nom: Stand 2
+    emplacementId: HALL
+    typologiesProposees:
+      - FAMILLE
+    effectifMin: 6
+    effectifMax: 6
+    reserveMajeurs: false
+    horaires:
+      - mode: FERMETURE
+        jours: TOUS
+        fenetres:
+          - heureDebut: "00:00"
+        motif: Fermé sauf exception datée
+    ouvertures:
+      - date: 2026-07-09
+        heureDebut: "14:00"
+        heureFin: "18:00"
+        motif: Grand tournoi
+
+  # Defect 3 — the recurring opening rule falls outside the event's own opening
+  # span (06:00-08:30, while the day opens at 09:00), so not one seat is
+  # generated.
+  # Ouvertures screen: STAND_JAMAIS_OUVERT, plus one FENETRE_SANS_EFFET a
+  # day.
+  - id: STAND-3
+    nom: Stand 3
+    emplacementId: HALL
+    typologiesProposees:
+      - AMBIANCE
+    effectifMin: 1
+    effectifMax: 2
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        jours: TOUS
+        fenetres:
+          - heureDebut: "06:00"
+            heureFin: "08:30"
+        motif: Ouverture matinale (hors amplitude)
+
+  # Defect 4 — the dated exception replaces that day's rule instead of adding
+  # to it. The rule opens 09:00-18:00 Wednesday to Friday; the late-night
+  # window entered for 2026-07-10 therefore closes that day's morning and
+  # afternoon.
+  # Ouvertures screen: a row that contradicts itself from one day to the next.
+  - id: STAND-4
+    nom: Stand 4
+    emplacementId: HALL
+    typologiesProposees:
+      - FAMILLE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        jours: JOURS_SEMAINE
+        joursSemaine:
+          - WEDNESDAY
+          - THURSDAY
+          - FRIDAY
+        fenetres:
+          - heureDebut: "09:00"
+            heureFin: "18:00"
+        motif: Ouvert en journée
+    ouvertures:
+      - date: 2026-07-10
+        heureDebut: "18:00"
+        heureFin: "23:00"
+        motif: Nocturne de clôture
+
+  # Defect 5 — closing time misunderstood. 2026-07-10 closes at 23:00, but the
+  # closure entered stops at 22:50, leaving ten open minutes behind instead of
+  # closing the day.
+  # Ouvertures screen: SEGMENT_TROP_COURT.
+  - id: STAND-5
+    nom: Stand 5
+    emplacementId: HALL
+    typologiesProposees:
+      - AMBIANCE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    indisponibilites:
+      - date: 2026-07-10
+        heureDebut: "09:00"
+        heureFin: "22:50"
+        motif: Fermé toute la journée (heure de fin mal saisie)
+
+  # Defect 6 — a typologie no animateur masters. Deliberately not a blocking
+  # cause: appreciation is a medium constraint, so the stand is staffed anyway
+  # and the defect is read off the score analysis (appreciationIncompatible)
+  # and the Problèmes page.
+  - id: STAND-6
+    nom: Stand 6
+    emplacementId: HALL
+    typologiesProposees:
+      - ESCAPE_GAME
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+
+# Five animateurs for a ten-seat simultaneity peak, two of them under 16 and
+# therefore barred from the evening créneaux by the night-work rule.
+animateurs:
+  - id: ANIM-A
+    email: animateur-a@example.invalid
+    prenom: Animateur
+    nom: A
+    dateNaissance: 1990-03-12
+    manager: true
+    competences:
+      AMBIANCE: REFERENT
+      FAMILLE: AUTONOME
+    joursIndisponibles: []
+  - id: ANIM-B
+    email: animateur-b@example.invalid
+    prenom: Animateur
+    nom: B
+    dateNaissance: 1998-06-05
+    manager: false
+    competences:
+      AMBIANCE: AUTONOME
+      FAMILLE: AUTONOME
+    joursIndisponibles: []
+  - id: ANIM-C
+    email: animateur-c@example.invalid
+    prenom: Animateur
+    nom: C
+    dateNaissance: 2005-11-20
+    manager: false
+    competences:
+      FAMILLE: DEBUTANT
+    joursIndisponibles: []
+  - id: ANIM-D
+    email: animateur-d@example.invalid
+    prenom: Animateur
+    nom: D
+    dateNaissance: 2010-09-14
+    manager: false
+    competences:
+      AMBIANCE: DEBUTANT
+    joursIndisponibles: []
+  - id: ANIM-E
+    email: animateur-e@example.invalid
+    prenom: Animateur
+    nom: E
+    dateNaissance: 2011-02-03
+    manager: false
+    competences:
+      AMBIANCE: DEBUTANT
+    joursIndisponibles:
+      - 2026-07-09

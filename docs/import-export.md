@@ -136,6 +136,19 @@ serait pas versionnée et le test casserait en CI.
 
 Régénération : `src/main/resources/anonymiser-scenario.py`.
 
+## Fixture volontairement insoluble
+
+`event-avec-erreur-planning.yaml` est la seule fixture livrée qui **ne doit pas
+converger** : six stands, cinq animateurs, dix créneaux sur trois jours, et un
+défaut d'ouverture par stand (fenêtre hors créneau, effectif minimum au-dessus
+de l'effectif total, règle récurrente hors amplitude, exception datée qui
+remplace la règle du jour, heure de fin mal saisie, typologie que personne ne
+maîtrise). Elle sert à montrer ce que disent les pages Problèmes, Besoin en
+animateurs, Ouvertures et l'analyse de faisabilité quand la saisie est fausse.
+`PlanningServiceUnsolvableScenarioTest` fige l'intention — le fichier est
+accepté à l'import et le solveur ne peut pas atteindre un score dur nul — mais
+aucun score.
+
 ## Deux notes pour qui touche au format
 
 **Régénérer le schéma** après avoir modifié un DTO :
