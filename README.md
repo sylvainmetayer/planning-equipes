@@ -1,9 +1,9 @@
 # Planning Équipes
 
-Application de gestion de planning pour un festival de jeux de société de
-15 jours : elle affecte automatiquement ~150 animateurs aux stands, en respectant
-le cadre légal (notamment celui des mineurs), les compétences, les disponibilités
-et l'équité de charge.
+Application de gestion de planning pour un événement : elle affecte
+automatiquement les animateurs aux stands, en respectant le cadre légal
+(notamment celui des mineurs), les compétences, les disponibilités et l'équité
+de charge.
 
 Ce README couvre deux choses : **démarrer l'application en local** et
 **l'inventaire de ce qu'elle sait faire**. Le mode d'emploi, lui, est dans

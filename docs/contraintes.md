@@ -157,9 +157,9 @@ sous-ensemble des postes épuisants ou premium.
 Ces obligations sont réelles et **volontairement non implémentées**. Elles sont
 listées pour que leur absence soit un choix écrit, pas un oubli.
 
-**Durée hebdomadaire moyenne de 44 h sur 12 semaines (L3121-22).** Le festival
-dure 15 jours, soit 2 à 3 semaines ISO : **le solveur ne peut pas calculer cette
-moyenne**, il ne connaît ni les 9 semaines précédentes ni les suivantes. Limite
+**Durée hebdomadaire moyenne de 44 h sur 12 semaines (L3121-22).** Un événement
+couvre quelques semaines ISO au plus : **le solveur ne peut pas calculer cette
+moyenne**, il ne connaît ni les semaines précédentes ni les suivantes. Limite
 structurelle du périmètre, pas manque d'implémentation. Le contrôle relève du
 service RH, à partir du cumul par semaine que la page Heures expose déjà.
 
