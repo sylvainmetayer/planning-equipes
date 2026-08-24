@@ -211,6 +211,33 @@ jamais re-résolu** — contrairement à `/api/solve/analyze`.
 poste précis, **pas que la contrainte s'applique à lui** : l'IHM ne doit pas la
 présenter comme un satisfecit. La simulation de remplacement ne persiste rien.
 
+### Assistant de réparation
+
+| Endpoint | Effet |
+| --- | --- |
+| `POST /api/postes/{id}/suggestions-reparation?plafond=N` | Cherche les remplaçants viables. Ne persiste rien. |
+| `POST /api/postes/{id}/affectation?animateurId=X` | Applique un remplacement au plan enregistré. Écrit. |
+
+Là où `simulation-swap` note le candidat qu'on lui donne, l'assistant
+**énumère** les candidats lui-même : il ne garde que ceux que le filtre
+d'éligibilité du solveur accepte, simule chacun d'eux, écarte ceux qui
+dégraderaient le score dur **du plan entier** — et non du seul poste, car
+déplacer un siège peut casser une règle ailleurs (heures hebdomadaires, repos)
+— puis classe le reste par impact décroissant.
+
+**Le coût est borné et annoncé.** Chaque candidat coûte une analyse complète du
+planning, donc seuls les `plafond` premiers candidats éligibles sont simulés
+(20 par défaut, 100 au maximum ; une valeur nulle ou négative retombe sur le
+défaut). La réponse porte `candidatsEligibles` et `candidatsEvalues` : quand les
+deux diffèrent, la liste est la meilleure de ce qui a été vu, **pas une réponse
+exhaustive**, et l'IHM doit le dire. Les candidats libres au moment du poste
+sont évalués en premier, pour que la troncature garde les plus prometteurs.
+
+Appliquer une suggestion réaffecte **ce seul siège** dans `poste_affectation`,
+sans relancer de solveur ni réécrire le reste du plan : le résultat est
+exactement le plan simulé. Un poste couvert par un verrouillage est refusé
+(400) — déverrouillez-le d'abord.
+
 ## Faisabilité et besoin en animateurs
 
 Deux calculs de capacité **sans lancer le solveur**, donc affichables avant une

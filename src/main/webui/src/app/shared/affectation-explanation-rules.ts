@@ -14,6 +14,8 @@ import {
   PlanningEvenement,
   PosteAffectation,
   Stand,
+  SuggestionReparation,
+  SuggestionsReparation,
   SwapSimulation
 } from '../core/models';
 
@@ -57,6 +59,40 @@ export function nouvellesViolations(simulation: SwapSimulation | null): Contrain
   }
   const nomsAvant = new Set(simulation.contraintesVioleesAvant.map((impact) => impact.name));
   return simulation.contraintesVioleesApres.filter((impact) => !nomsAvant.has(impact.name));
+}
+
+/**
+ * True when the assistant stopped at its plafond instead of exhausting the
+ * eligible pool — the list is then the best of what it saw, and the UI must
+ * not present it as the complete answer.
+ */
+export function suggestionsTronquees(suggestions: SuggestionsReparation | null): boolean {
+  return suggestions !== null && suggestions.candidatsEvalues < suggestions.candidatsEligibles;
+}
+
+/**
+ * The N best suggestions, in the order the server ranked them — it already
+ * sorted by impact, so this only trims. Kept as a function rather than a
+ * template slice so the cap has one name and one test.
+ */
+export function meilleuresSuggestions(
+  suggestions: SuggestionsReparation | null,
+  max = MAX_SUGGESTIONS_AFFICHEES
+): SuggestionReparation[] {
+  return (suggestions?.suggestions ?? []).slice(0, max);
+}
+
+/** How many suggestions the dialog lists: past a handful, the operator scrolls instead of choosing. */
+export const MAX_SUGGESTIONS_AFFICHEES = 5;
+
+/**
+ * Display name of an animateur the server only names by id — the suggestions
+ * carry ids, the planning carries the people. Falls back to the raw id rather
+ * than to an empty cell when the referential changed under us.
+ */
+export function nomAnimateur(planning: PlanningEvenement, animateurId: string): string {
+  const animateur = (planning.animateurs ?? []).find((candidat) => candidat.id === animateurId);
+  return animateur ? `${animateur.prenom} ${animateur.nom}` : animateurId;
 }
 
 /** True when the animateur holds an appreciation on at least one typologie this stand offers. */

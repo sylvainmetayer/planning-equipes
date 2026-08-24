@@ -3,6 +3,7 @@ package dev.sylvain.planning.api;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.PlanningService.AffectationExplanation;
+import dev.sylvain.planning.service.PlanningService.SuggestionsReparation;
 import dev.sylvain.planning.service.PlanningService.SwapSimulation;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -20,6 +21,11 @@ import jakarta.ws.rs.core.Response;
  * explains why a specific {@code PosteAffectation} is scored the way it is,
  * and lets the caller simulate handing that same poste to a different
  * animateur to see the score impact before actually changing anything.
+ *
+ * <p>Also hosts the repair assistant of issue #71 — the search for viable
+ * candidates, and the one write that applies the chosen one to the persisted
+ * plan. Same {@code /postes} path, so the two live in the same resource
+ * rather than in two classes JAX-RS would refuse to map.</p>
  */
 @Path("/postes")
 @Produces(MediaType.APPLICATION_JSON)
@@ -52,6 +58,37 @@ public class AffectationExplanationResource {
             @QueryParam("animateurId") String animateurId, PlanningEvenement planning) {
         SwapSimulation simulation = planningService.simulateSwap(planning, posteId, animateurId);
         return Response.ok(simulation).build();
+    }
+
+    /**
+     * Repair suggestions for one poste (issue #71): the assistant that
+     * <em>looks for</em> candidates, where {@code simulation-swap} only scores
+     * the one it is given. Nothing is persisted, and the cost is bounded —
+     * {@code plafond} caps how many candidates are simulated, and the answer
+     * reports both how many were eligible and how many were actually evaluated.
+     */
+    @POST
+    @Path("/{posteId}/suggestions-reparation")
+    public Response suggererReparations(@PathParam("posteId") String posteId,
+            @QueryParam("plafond") Integer plafond, PlanningEvenement planning) {
+        SuggestionsReparation suggestions = planningService.suggererReparations(planning, posteId, plafond);
+        return Response.ok(suggestions).build();
+    }
+
+    /**
+     * Applies one suggestion to the persisted plan: that seat changes hands and
+     * nothing else does. The only endpoint here that writes — hence a separate,
+     * explicit call rather than a flag on the simulation.
+     *
+     * @param animateurId omitted empties the seat
+     */
+    @POST
+    @Path("/{posteId}/affectation")
+    @Consumes(MediaType.WILDCARD)
+    public Response applyReparation(@PathParam("posteId") String posteId,
+            @QueryParam("animateurId") String animateurId) {
+        planningService.applyReparation(posteId, animateurId);
+        return Response.noContent().build();
     }
 
 }

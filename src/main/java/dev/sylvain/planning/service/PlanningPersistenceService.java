@@ -373,6 +373,34 @@ public class PlanningPersistenceService {
         });
     }
 
+    /**
+     * Hands one persisted seat to another animateur (issue #71), leaving every
+     * other row exactly as it was — the surgical counterpart of
+     * {@link #persist}, which rewrites the whole plan.
+     *
+     * <p>Keyed by the seat's own id rather than by its current occupant, unlike
+     * {@link #applyEchange}: a repair suggestion routinely targets an
+     * <em>empty</em> seat (a poste the last solve left unstaffed is precisely
+     * what needs repairing), and there is no occupant to match on there.</p>
+     *
+     * @param animateurId {@code null} empties the seat
+     * @return true when a seat was actually reassigned, false when this edition
+     *         holds no such seat
+     */
+    public boolean reaffecterPoste(String posteId, String animateurId) {
+        return scope.writeAndReturn("Failed to reassign the poste", connection -> {
+            // Not prepareScoped: the SET clause claims placeholder 1, so the
+            // edition_id predicate is bound explicitly here.
+            try (PreparedStatement ps = connection.prepareStatement(
+                    "UPDATE poste_affectation SET animateur_id = ? WHERE edition_id = ? AND id = ?")) {
+                ps.setString(1, animateurId);
+                ps.setString(2, editionId());
+                ps.setString(3, posteId);
+                return ps.executeUpdate();
+            }
+        }) > 0;
+    }
+
     private int reaffecterSiege(Connection connection, long creneauId, String standId,
             String occupantActuelId, String nouvelOccupantId) throws SQLException {
         // Not prepareScoped: the SET clause claims placeholder 1, so the

@@ -505,6 +505,39 @@ export interface SwapSimulation {
   contraintesVioleesApres: ContrainteImpact[];
 }
 
+/**
+ * One viable replacement proposed by the repair assistant: only ever a
+ * candidate that leaves the plan's hard score no worse, so
+ * `violationsIntroduites` never holds a `HARD` one.
+ */
+export interface SuggestionReparation {
+  animateurId: string;
+  scoreApres: HardMediumSoftScore;
+  /** `scoreApres - scoreAvant`: the greater, the better the repair. */
+  delta: HardMediumSoftScore;
+  violationsResolues: ContrainteImpact[];
+  violationsIntroduites: ContrainteImpact[];
+}
+
+/**
+ * `/api/postes/{posteId}/suggestions-reparation`: viable replacements for one
+ * poste, best impact first, nothing persisted.
+ *
+ * The search is bounded — `candidatsEvalues` of the `candidatsEligibles` were
+ * actually simulated. When the two differ the list is the best of what was
+ * seen, not an exhaustive answer, and the UI has to say so.
+ */
+export interface SuggestionsReparation {
+  posteId: string;
+  animateurActuelId: string | null;
+  scoreAvant: HardMediumSoftScore;
+  contraintesVioleesAvant: ContrainteImpact[];
+  candidatsEligibles: number;
+  candidatsEvalues: number;
+  plafond: number;
+  suggestions: SuggestionReparation[];
+}
+
 export interface ConstraintView {
   name: string;
   niveau: NiveauContrainte;

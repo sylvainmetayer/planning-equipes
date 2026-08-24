@@ -445,12 +445,27 @@ export class CalendarMonthPage {
     return isStandLineSansAppreciation(stand);
   }
 
-  /** Opens the "Pourquoi lui ?" dialog for one filled seat, offering every other competent animateur as a swap candidate. */
+  /**
+   * Opens the "Pourquoi lui ?" dialog for one filled seat, offering every other
+   * competent animateur as a swap candidate.
+   *
+   * When its repair assistant applied a suggestion, the persisted plan changed
+   * under the session's cached one: dropping the cache is what makes the
+   * reload show the repaired seat instead of the seat as it was solved.
+   */
   protected openExplanation(poste: PosteAffectation): void {
     const planning = this.planning();
-    if (planning) {
-      ouvrirExplication(this.dialog, planning, poste);
+    if (!planning) {
+      return;
     }
+    ouvrirExplication(this.dialog, planning, poste)
+      .afterClosed()
+      .subscribe((reparation) => {
+        if (reparation) {
+          this.planningState.set(null);
+          void this.refresh();
+        }
+      });
   }
 }
 

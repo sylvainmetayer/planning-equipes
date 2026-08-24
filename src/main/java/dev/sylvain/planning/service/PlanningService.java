@@ -8,10 +8,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -81,6 +83,7 @@ import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.scenario.YamlSections;
 import dev.sylvain.planning.solver.ConstraintCatalog;
+import dev.sylvain.planning.solver.EligibleAnimateurMoveFilter;
 import dev.sylvain.planning.solver.constraints.AdHocConstraints;
 import dev.sylvain.planning.solver.PlanningConstraintProvider;
 
@@ -1994,6 +1997,177 @@ public class PlanningService {
                 scoreAvant, scoreApres, scoreApres.subtract(scoreAvant), violeesAvant, violeesApres);
     }
 
+
+    /**
+     * How many candidates {@link #suggererReparations} simulates when the
+     * caller names no plafond. Every candidate costs one full
+     * {@code SolutionManager.analyze} over the whole planning, so the endpoint's
+     * cost is linear in this number and in nothing else — the eligible pool may
+     * well be the entire referential (~150 animateurs on the reference
+     * scenario).
+     */
+    public static final int SUGGESTIONS_PLAFOND_DEFAUT = 20;
+
+    /** Ceiling a caller may raise the plafond to, so no single request can pay 150 analyses. */
+    public static final int SUGGESTIONS_PLAFOND_MAX = 100;
+
+    /**
+     * Repair suggestions for one poste (issue #71): the loop that <b>looks for</b>
+     * candidates, where {@link #simulateSwap} only scores the one it is handed.
+     * Every eligible animateur is substituted in turn on {@code posteId},
+     * candidates that would worsen the plan's hard score are dropped, and what
+     * survives is returned best impact first. Nothing is persisted — applying a
+     * suggestion is the separate, explicit {@link #applyReparation}.
+     *
+     * <p><b>Bounded on purpose.</b> Only the first {@code plafond} eligible
+     * candidates are simulated (see {@link #SUGGESTIONS_PLAFOND_DEFAUT}); the
+     * result carries both counts so the caller can say "the 20 most promising of
+     * 137" rather than pass a truncated list off as exhaustive.</p>
+     *
+     * @param plafondDemande {@code null} or non-positive falls back to the
+     *                       default, anything above {@link #SUGGESTIONS_PLAFOND_MAX} is clamped
+     */
+    public SuggestionsReparation suggererReparations(PlanningEvenement solved, String posteId,
+            Integer plafondDemande) {
+        PosteAffectation poste = findPoste(solved, posteId);
+        Animateur actuel = poste.getAnimateur();
+        int plafond = effectiveCandidateCap(plafondDemande);
+
+        ScoreAnalysis<?> avant = solutionManager.analyze(solved);
+        HardMediumSoftScore scoreAvant = (HardMediumSoftScore) avant.score();
+        List<ContrainteImpact> violeesAvant = impactsFor(avant, poste, true);
+        Set<String> nomsAvant = violeesAvant.stream().map(ContrainteImpact::name).collect(Collectors.toSet());
+
+        List<Animateur> eligibles = candidatsEligibles(solved, poste);
+        List<Animateur> evalues = eligibles.size() > plafond ? eligibles.subList(0, plafond) : eligibles;
+
+        List<SuggestionReparation> suggestions = new ArrayList<>();
+        for (Animateur candidat : evalues) {
+            // Same throwaway in-place substitution as simulateSwap, reverted in
+            // the finally: the planning is a per-request payload, never shared.
+            ScoreAnalysis<?> apres;
+            poste.setAnimateur(candidat);
+            try {
+                apres = solutionManager.analyze(solved);
+            } finally {
+                poste.setAnimateur(actuel);
+            }
+            HardMediumSoftScore scoreApres = (HardMediumSoftScore) apres.score();
+            // The verdict is planning-wide, like simulateEchange's: moving this
+            // seat can break a hard constraint on a poste it does not touch
+            // (weekly hours, rest periods), which the poste's own matches would
+            // never show.
+            if (scoreApres.hardScore() < scoreAvant.hardScore()) {
+                continue;
+            }
+            List<ContrainteImpact> violeesApres = impactsFor(apres, poste, true);
+            Set<String> nomsApres = violeesApres.stream().map(ContrainteImpact::name).collect(Collectors.toSet());
+            suggestions.add(new SuggestionReparation(candidat.getId(), scoreApres,
+                    scoreApres.subtract(scoreAvant),
+                    violeesAvant.stream().filter(impact -> !nomsApres.contains(impact.name())).toList(),
+                    violeesApres.stream().filter(impact -> !nomsAvant.contains(impact.name())).toList()));
+        }
+        suggestions.sort(Comparator
+                .comparing(SuggestionReparation::delta, Comparator.<HardMediumSoftScore>naturalOrder().reversed())
+                .thenComparing(SuggestionReparation::animateurId, NaturalOrder.DES_IDS));
+        return new SuggestionsReparation(posteId, actuel == null ? null : actuel.getId(), scoreAvant,
+                violeesAvant, eligibles.size(), evalues.size(), plafond, List.copyOf(suggestions));
+    }
+
+    private static int effectiveCandidateCap(Integer demande) {
+        if (demande == null || demande <= 0) {
+            return SUGGESTIONS_PLAFOND_DEFAUT;
+        }
+        return Math.min(demande, SUGGESTIONS_PLAFOND_MAX);
+    }
+
+    /**
+     * Who may be simulated on {@code poste}, most promising first: every
+     * animateur but its current occupant, keeping only those
+     * {@link EligibleAnimateurMoveFilter#isEligible} accepts — reusing the
+     * solver's own notion of a viable candidate rather than restating it, so
+     * the two can never drift apart.
+     *
+     * <p>The order matters because the caller truncates: animateurs free at
+     * that moment come first, since handing them the seat cannot create the
+     * overlap that anyone already busy then would. Natural id order breaks ties
+     * so the same call twice returns the same list.</p>
+     */
+    private static List<Animateur> candidatsEligibles(PlanningEvenement solved, PosteAffectation poste) {
+        String actuelId = poste.getAnimateur() == null ? null : poste.getAnimateur().getId();
+        Set<String> occupes = animateursOccupesPendant(solved, poste);
+        return solved.getAnimateurs().stream()
+                .filter(animateur -> !animateur.getId().equals(actuelId))
+                .filter(animateur -> EligibleAnimateurMoveFilter.isEligible(poste, animateur))
+                .sorted(Comparator.comparing((Animateur animateur) -> occupes.contains(animateur.getId()))
+                        .thenComparing(Animateur::getId, NaturalOrder.DES_IDS))
+                .toList();
+    }
+
+    /**
+     * Ids of the animateurs already holding a seat whose effective window
+     * overlaps {@code poste}'s — the very overlap {@code pasDeChevauchementHoraire}
+     * penalises, compared the same way (effective start plus effective
+     * duration, so a window crossing midnight ends the next day).
+     *
+     * <p>Only used to <em>rank</em> candidates: being busy is not an exclusion,
+     * since a busy candidate may still be the least bad repair and the
+     * simulation is what decides.</p>
+     */
+    private static Set<String> animateursOccupesPendant(PlanningEvenement solved, PosteAffectation poste) {
+        if (!horaireConnu(poste)) {
+            return Set.of();
+        }
+        LocalDateTime debut = debutEffectif(poste);
+        LocalDateTime fin = debut.plusMinutes(poste.getDureeEffectiveMinutes());
+        Set<String> occupes = new HashSet<>();
+        for (PosteAffectation autre : solved.getPostes()) {
+            if (autre == poste || autre.getAnimateur() == null || !horaireConnu(autre)) {
+                continue;
+            }
+            LocalDateTime autreDebut = debutEffectif(autre);
+            if (autreDebut.isBefore(fin) && autreDebut.plusMinutes(autre.getDureeEffectiveMinutes()).isAfter(debut)) {
+                occupes.add(autre.getAnimateur().getId());
+            }
+        }
+        return occupes;
+    }
+
+    private static boolean horaireConnu(PosteAffectation poste) {
+        return poste.getCreneau() != null && poste.getCreneau().getDate() != null
+                && poste.getCreneau().getHeureDebut() != null;
+    }
+
+    private static LocalDateTime debutEffectif(PosteAffectation poste) {
+        return LocalDateTime.of(poste.getCreneau().getDate(), poste.heureDebutEffectif());
+    }
+
+    /**
+     * Applies one repair suggestion to the <b>persisted</b> plan (issue #71):
+     * the seat changes hands and nothing else does, which is exactly the plan
+     * {@link #suggererReparations} scored. A single surgical {@code UPDATE},
+     * no solve, no rewrite of the rest of the plan.
+     *
+     * <p>Refused on a locked seat (issue #87): a verrouillage is the operator
+     * saying "this one does not move", and a one-click assistant that quietly
+     * overrode it would undo a decision the next solve is then told to
+     * restore.</p>
+     *
+     * @param animateurId {@code null} empties the seat
+     */
+    public void applyReparation(String posteId, String animateurId) {
+        PlanningEvenement persiste = planningPersistenceService.loadPersistedPlanning();
+        PosteAffectation poste = findPoste(persiste, posteId);
+        if (animateurId != null) {
+            findAnimateur(persiste, animateurId);
+        }
+        List<VerrouillagePlanning> verrouillages = referenceDataService.listVerrouillages();
+        if (verrouillages.stream().anyMatch(verrouillage -> verrouillage.couvre(poste))) {
+            throw new BusinessError.Invalid(
+                    "Ce poste est verrouillé : déverrouillez-le avant d'y appliquer une réparation.");
+        }
+        planningPersistenceService.reaffecterPoste(posteId, animateurId);
+    }
     /**
      * Simulates a demande d'échange (issue #165) on an already-solved planning:
      * the demandeur's seat on ({@code creneauId}, {@code standId}) goes to
@@ -2215,6 +2389,36 @@ public class PlanningService {
     public record SwapSimulation(String posteId, String animateurActuelId, String animateurCandidatId,
             HardMediumSoftScore scoreAvant, HardMediumSoftScore scoreApres, HardMediumSoftScore delta,
             List<ContrainteImpact> contraintesVioleesAvant, List<ContrainteImpact> contraintesVioleesApres) {
+    }
+
+    /**
+     * One viable replacement for a poste (issue #71): who, what the whole plan
+     * would then score, and which of that poste's violations the move settles
+     * or raises. Only ever produced for a candidate that leaves the plan's hard
+     * score no worse, so {@code violationsIntroduites} never holds a hard one.
+     *
+     * @param delta                 {@code scoreApres - scoreAvant}: the greater, the better the repair
+     * @param violationsResolues    violated for the current occupant, not for this candidate
+     * @param violationsIntroduites the mirror image
+     */
+    public record SuggestionReparation(String animateurId, HardMediumSoftScore scoreApres,
+            HardMediumSoftScore delta, List<ContrainteImpact> violationsResolues,
+            List<ContrainteImpact> violationsIntroduites) {
+    }
+
+    /**
+     * Result of {@link #suggererReparations}, carrying the cost it actually
+     * paid: {@code candidatsEvalues} of the {@code candidatsEligibles} were
+     * simulated, one full analyse each. When the two differ the search stopped
+     * at the plafond and the list is the best of what it saw, not an exhaustive
+     * answer — the UI has to say so rather than imply completeness.
+     *
+     * @param animateurActuelId the poste's occupant before any repair, {@code null} when the seat is empty
+     */
+    public record SuggestionsReparation(String posteId, String animateurActuelId,
+            HardMediumSoftScore scoreAvant, List<ContrainteImpact> contraintesVioleesAvant,
+            int candidatsEligibles, int candidatsEvalues, int plafond,
+            List<SuggestionReparation> suggestions) {
     }
 
     /**

@@ -7,14 +7,19 @@ import {
   PlanningEvenement,
   PosteAffectation,
   Stand,
+  SuggestionReparation,
+  SuggestionsReparation,
   SwapSimulation
 } from '../core/models';
 import {
   aUneAppreciationPour,
   candidatsPour,
   compareDelta,
+  meilleuresSuggestions,
+  nomAnimateur,
   nouvellesViolations,
   sensDuDelta,
+  suggestionsTronquees,
   violationsResolues
 } from './affectation-explanation-rules';
 
@@ -196,5 +201,77 @@ describe('candidatsPour', () => {
     const deux = animateur('a2', { ambiance: 'DEBUTANT' });
 
     expect(candidatsPour(planning([un, deux]), poste(null)).map((each) => each.id)).toEqual(['a1', 'a2']);
+  });
+});
+
+describe('suggestions de réparation (issue #71)', () => {
+  function suggestion(animateurId: string, delta: HardMediumSoftScore): SuggestionReparation {
+    return { animateurId, scoreApres: score(0, 0, 0), delta, violationsResolues: [], violationsIntroduites: [] };
+  }
+
+  function reparations(overrides: Partial<SuggestionsReparation> = {}): SuggestionsReparation {
+    return {
+      posteId: 'p1',
+      animateurActuelId: 'a1',
+      scoreAvant: score(0, 0, 0),
+      contraintesVioleesAvant: [],
+      candidatsEligibles: 3,
+      candidatsEvalues: 3,
+      plafond: 20,
+      suggestions: [],
+      ...overrides
+    };
+  }
+
+  function planning(animateurs: Animateur[]): PlanningEvenement {
+    return { animateurs, postes: [], score: null };
+  }
+
+  function personne(id: string, prenom: string, nom: string): Animateur {
+    return { ...animateur(id), prenom, nom };
+  }
+
+  it('does not call the answer truncated when every eligible candidate was evaluated', () => {
+    expect(suggestionsTronquees(reparations({ candidatsEligibles: 3, candidatsEvalues: 3 }))).toBe(false);
+  });
+
+  it('calls it truncated as soon as the plafond stopped the search short', () => {
+    expect(suggestionsTronquees(reparations({ candidatsEligibles: 137, candidatsEvalues: 20 }))).toBe(true);
+  });
+
+  it('reports nothing truncated while no search has run', () => {
+    expect(suggestionsTronquees(null)).toBe(false);
+  });
+
+  it('keeps the server ranking untouched and only trims to the display cap', () => {
+    const rangees = ['a1', 'a2', 'a3', 'a4', 'a5', 'a6'].map((id, index) =>
+      suggestion(id, score(0, 0, -index))
+    );
+
+    expect(meilleuresSuggestions(reparations({ suggestions: rangees })).map((each) => each.animateurId)).toEqual([
+      'a1',
+      'a2',
+      'a3',
+      'a4',
+      'a5'
+    ]);
+  });
+
+  it('returns every suggestion when there are fewer than the cap', () => {
+    const deux = [suggestion('a1', score(0, 0, 0)), suggestion('a2', score(0, 0, -1))];
+
+    expect(meilleuresSuggestions(reparations({ suggestions: deux }))).toHaveLength(2);
+  });
+
+  it('returns an empty list rather than throwing while no search has run', () => {
+    expect(meilleuresSuggestions(null)).toEqual([]);
+  });
+
+  it('names a suggested animateur from the planning the dialog holds', () => {
+    expect(nomAnimateur(planning([personne('a1', 'Camille', 'Durand')]), 'a1')).toBe('Camille Durand');
+  });
+
+  it('falls back to the raw id when the referential no longer knows that animateur', () => {
+    expect(nomAnimateur(planning([personne('a1', 'Camille', 'Durand')]), 'disparu')).toBe('disparu');
   });
 });

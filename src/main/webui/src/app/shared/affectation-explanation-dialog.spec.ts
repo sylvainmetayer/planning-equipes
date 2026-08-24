@@ -22,6 +22,8 @@ import {
   PlanningEvenement,
   PosteAffectation,
   Stand,
+  SuggestionReparation,
+  SuggestionsReparation,
   SwapSimulation
 } from '../core/models';
 import {
@@ -105,9 +107,36 @@ function simulation(overrides: Partial<SwapSimulation> = {}): SwapSimulation {
   };
 }
 
+function suggestion(animateurId: string, overrides: Partial<SuggestionReparation> = {}): SuggestionReparation {
+  return {
+    animateurId,
+    scoreApres: score(0, 0, -38),
+    delta: score(2, 0, -3),
+    violationsResolues: [],
+    violationsIntroduites: [],
+    ...overrides
+  };
+}
+
+function suggestions(overrides: Partial<SuggestionsReparation> = {}): SuggestionsReparation {
+  return {
+    posteId: 'p1',
+    animateurActuelId: 'a1',
+    scoreAvant: score(-2, 0, -35),
+    contraintesVioleesAvant: [],
+    candidatsEligibles: 1,
+    candidatsEvalues: 1,
+    plafond: 20,
+    suggestions: [],
+    ...overrides
+  };
+}
+
 interface ServiceStub {
   explique: ReturnType<typeof vi.fn>;
   simulerSwap: ReturnType<typeof vi.fn>;
+  suggererReparations: ReturnType<typeof vi.fn>;
+  appliquerReparation: ReturnType<typeof vi.fn>;
 }
 
 function mount(
@@ -123,6 +152,8 @@ function mount(
         useValue: {
           explique: vi.fn(async () => explication()),
           simulerSwap: vi.fn(async () => simulation()),
+          suggererReparations: vi.fn(async () => suggestions()),
+          appliquerReparation: vi.fn(async () => undefined),
           ...service
         }
       },
@@ -401,5 +432,128 @@ describe('AffectationExplanationDialog', () => {
     fermer.click();
 
     expect(close).toHaveBeenCalled();
+  });
+
+  describe("assistant de réparation (issue #71)", () => {
+    /** Clicks the button whose label contains `libelle`, and lets the handler settle. */
+    async function cliquer(
+      fixture: ComponentFixture<AffectationExplanationDialog>,
+      libelle: string
+    ): Promise<void> {
+      const bouton = Array.from(root(fixture).querySelectorAll('button')).find((each) =>
+        each.textContent?.includes(libelle)
+      )!;
+      bouton.click();
+      await fixture.whenStable();
+    }
+
+    it('searches nothing until asked: the endpoint costs one analysis per candidate', async () => {
+      const suggererReparations = vi.fn(async () => suggestions());
+      const { fixture } = mount({ suggererReparations });
+      await fixture.whenStable();
+
+      expect(suggererReparations).not.toHaveBeenCalled();
+      expect(texte(fixture)).toContain('Suggestions de réparation');
+    });
+
+    it('lists the viable replacements with the constraints each one settles', async () => {
+      const { fixture } = mount({
+        suggererReparations: vi.fn(async () =>
+          suggestions({
+            suggestions: [
+              suggestion('a2', {
+                violationsResolues: [impact('pasDeChevauchementHoraire', { description: 'Pas de chevauchement' })]
+              })
+            ]
+          })
+        )
+      });
+      await fixture.whenStable();
+      await cliquer(fixture, 'Chercher des remplaçants viables');
+
+      expect(texte(fixture)).toContain('Alex Martin');
+      expect(texte(fixture)).toContain('Pas de chevauchement');
+    });
+
+    it('says so plainly when no candidate can take the seat without breaking a hard rule', async () => {
+      const { fixture } = mount({
+        suggererReparations: vi.fn(async () => suggestions({ suggestions: [] }))
+      });
+      await fixture.whenStable();
+      await cliquer(fixture, 'Chercher des remplaçants viables');
+
+      expect(texte(fixture)).toContain('Aucun remplacement possible');
+    });
+
+    /**
+     * The dangerous case: a truncated list read as an exhaustive one would let
+     * an operator conclude "nobody else can do it" from twenty candidates out
+     * of a hundred and thirty-seven.
+     */
+    it('warns that a truncated search is not an exhaustive answer', async () => {
+      const { fixture } = mount({
+        suggererReparations: vi.fn(async () =>
+          suggestions({ candidatsEligibles: 137, candidatsEvalues: 20, suggestions: [suggestion('a2')] })
+        )
+      });
+      await fixture.whenStable();
+      await cliquer(fixture, 'Chercher des remplaçants viables');
+
+      expect(texte(fixture)).toContain('pas une réponse exhaustive');
+    });
+
+    it('stays silent about truncation when the whole eligible pool was evaluated', async () => {
+      const { fixture } = mount({
+        suggererReparations: vi.fn(async () =>
+          suggestions({ candidatsEligibles: 2, candidatsEvalues: 2, suggestions: [suggestion('a2')] })
+        )
+      });
+      await fixture.whenStable();
+      await cliquer(fixture, 'Chercher des remplaçants viables');
+
+      expect(texte(fixture)).not.toContain('pas une réponse exhaustive');
+    });
+
+    it('applies a suggestion and closes with what changed, so the calendar can reload', async () => {
+      const appliquerReparation = vi.fn(async () => undefined);
+      const { fixture, close } = mount({
+        suggererReparations: vi.fn(async () => suggestions({ suggestions: [suggestion('a2')] })),
+        appliquerReparation
+      });
+      await fixture.whenStable();
+      await cliquer(fixture, 'Chercher des remplaçants viables');
+      await cliquer(fixture, 'Appliquer');
+
+      expect(appliquerReparation).toHaveBeenCalledWith('p1', 'a2');
+      expect(close).toHaveBeenCalledWith({ posteId: 'p1', animateurId: 'a2' });
+    });
+
+    it('keeps the dialog open and shows why when applying is refused', async () => {
+      const { fixture, close } = mount({
+        suggererReparations: vi.fn(async () => suggestions({ suggestions: [suggestion('a2')] })),
+        appliquerReparation: vi.fn(async () => {
+          throw new Error('Ce poste est verrouillé');
+        })
+      });
+      await fixture.whenStable();
+      await cliquer(fixture, 'Chercher des remplaçants viables');
+      await cliquer(fixture, 'Appliquer');
+
+      expect(close).not.toHaveBeenCalled();
+      expect(texte(fixture)).toContain('Ce poste est verrouillé');
+    });
+
+    it('reports a failed search without wiping the explanation already on screen', async () => {
+      const { fixture } = mount({
+        suggererReparations: vi.fn(async () => {
+          throw new Error('recherche impossible');
+        })
+      });
+      await fixture.whenStable();
+      await cliquer(fixture, 'Chercher des remplaçants viables');
+
+      expect(texte(fixture)).toContain('recherche impossible');
+      expect(texte(fixture)).toContain('Score global');
+    });
   });
 });

@@ -10,6 +10,7 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
+import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
 import { PlanningStateService } from '../../core/planning-state.service';
@@ -77,7 +78,13 @@ interface Options {
 }
 
 function mount(options: Options = {}) {
-  const open = vi.fn();
+  // MatDialog.open always hands back a ref; the page reads `afterClosed()` on
+  // it to reload when the repair assistant wrote to the plan (issue #71), so
+  // the double has to honour that contract too.
+  const open = vi.fn((...args: unknown[]) => {
+    void args;
+    return { afterClosed: () => of(undefined) };
+  });
   const loadForDisplay = options.loadRejects
     ? vi.fn(async () => {
         throw options.loadRejects;
