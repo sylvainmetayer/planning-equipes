@@ -17,7 +17,7 @@ import jakarta.inject.Inject;
 
 /**
  * Direct JDBC access to the {@code edition} table — the editions the whole
- * reference model is partitioned into (see {@code docs/editions.md}).
+ * reference model is partitioned into (see {@code docs/decisions/0001-cloisonnement-par-edition.md}).
  *
  * <p>Deliberately separate from {@link StandRepository} and its siblings: those read
  * and writes <i>inside</i> an edition and gets its scope from

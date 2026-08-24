@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 /**
  * The {@code edition} scope end-to-end: creating an edition, working in it
  * through {@code X-Edition-Id}, duplicating one into another, and the guards
- * around deletion. See {@code docs/editions.md}.
+ * around deletion. See {@code docs/decisions/0001-cloisonnement-par-edition.md}.
  */
 @QuarkusTest
 class EditionResourceTest {

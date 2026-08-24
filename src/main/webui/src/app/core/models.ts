@@ -280,7 +280,7 @@ export interface Creneau {
  * with the former timeslot groups (removed by issue #172: the edition is
  * the only variant carrier). `defaut` is not "the current one": that is this browser's own
  * choice, sent as `X-Edition-Id`; `defaut` is the server's fallback when no
- * edition is designated. See docs/editions.md.
+ * edition is designated. See docs/decisions/0001-cloisonnement-par-edition.md.
  */
 export interface Edition {
   id: string;

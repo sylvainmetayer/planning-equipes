@@ -12,7 +12,7 @@ fonctionnalités métier) : **tout ajout de documentation technique se fait ici*
 | [`api.md`](api.md) | Endpoints REST exposés par le service Quarkus |
 | [`mcp.md`](mcp.md) | Serveur MCP (outils exposés à un assistant IA, authentification, confidentialité) |
 | [`import-export.md`](import-export.md) | Formats d'import / export : dump SQL, PDF, ICS, schéma de validation des scénarios |
-| [`editions.md`](editions.md) | Cloisonnement de tout le référentiel et des résultats de solveur par édition (« Année 2025 » / « Année 2026 ») : modèle, en-tête `X-Edition-Id`, duplication d'édition, plan de migration |
+| [`decisions/`](decisions/README.md) | **Décisions d'architecture** : ce qui a été choisi, contre quelles alternatives, et ce que ça engage. Commence par le cloisonnement par édition (modèle, en-tête `X-Edition-Id`, duplication, plan de migration) |
 | [`developpement.md`](developpement.md) | Build, tests, CI, Podman, réglage du solveur, mises à jour Renovate |
 | [`securite.md`](securite.md) | Durcissement pour une exposition sur Internet : en-têtes de sécurité navigateur, plafonds de taille des requêtes, limitation de débit, déploiement de production |
 | [`observabilite.md`](observabilite.md) | Suivi d'erreurs (Bugsink) et analytics d'usage (Cloudflare Web Analytics) en production : choix, intégration, variables d'environnement |

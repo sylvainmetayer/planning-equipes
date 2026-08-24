@@ -2,7 +2,7 @@
 // in. Stored client-side and sent on every request as `X-Edition-Id`, rather
 // than flagged server-side: two tabs can then sit on two different editions at
 // once, which a global "active edition" flag would make impossible. See
-// docs/editions.md §5.
+// docs/decisions/0001-cloisonnement-par-edition.md §5.
 //
 // Deliberately a plain module, not an injectable: the HTTP interceptor reads it
 // on every request, and going through a service would make it depend on the

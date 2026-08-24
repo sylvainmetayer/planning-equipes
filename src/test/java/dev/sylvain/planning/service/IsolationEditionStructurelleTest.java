@@ -15,7 +15,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
 /**
- * Everything is partitioned by edition (see {@code docs/editions.md}), and a
+ * Everything is partitioned by edition (see {@code docs/decisions/0001-cloisonnement-par-edition.md}), and a
  * statement that forgets its {@code edition_id} predicate does not show: it
  * throws nothing, it simply reads or writes at the neighbours'.
  *

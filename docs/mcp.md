@@ -205,7 +205,7 @@ complet les effacerait à chaque modification.
 Tout le référentiel est cloisonné par **édition** (« Année 2025 », « Année
 2026 », un plan canicule) : deux éditions ne voient jamais les données l'une de
 l'autre, et depuis l'issue #172 une variante *est* une édition dupliquée. Voir
-[`editions.md`](editions.md).
+[`decisions/0001-cloisonnement-par-edition.md`](decisions/0001-cloisonnement-par-edition.md).
 
 Une requête MCP n'est pas une requête JAX-RS : `EditionHeaderFilter` ne la voit
 jamais, l'en-tête `X-Edition-Id` n'a donc aucun effet sur `/mcp`. L'édition se

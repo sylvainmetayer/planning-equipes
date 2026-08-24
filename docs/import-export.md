@@ -5,7 +5,7 @@ l'[API](api.md).
 
 Sauf mention contraire, tout ce qui suit est lu et écrit dans l'**édition**
 désignée par l'en-tête `X-Edition-Id` de la requête — voir
-[`editions.md`](editions.md).
+[`decisions/0001-cloisonnement-par-edition.md`](decisions/0001-cloisonnement-par-edition.md).
 
 ## Export / import SQL
 

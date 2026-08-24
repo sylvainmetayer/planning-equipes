@@ -17,7 +17,7 @@ const STORAGE_KEY_BASE = 'planning-equipes.notifications';
 
 /**
  * One log per edition: a warning about 2026's data has no business showing up
- * while looking at 2025 (docs/editions.md §6). Resolved lazily rather than
+ * while looking at 2025 (docs/decisions/0001-cloisonnement-par-edition.md §6). Resolved lazily rather than
  * once at module scope — the key must follow the edition the page was loaded
  * with, and switching edition reloads the page anyway.
  */

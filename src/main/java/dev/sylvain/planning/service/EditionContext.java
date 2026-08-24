@@ -11,7 +11,7 @@ import jakarta.inject.Inject;
 
 /**
  * Answers the one question every reference-data query needs: <b>which edition
- * am I reading and writing?</b> (see {@code docs/editions.md} §5).
+ * am I reading and writing?</b> (see {@code docs/decisions/0001-cloisonnement-par-edition.md} §5).
  *
  * <p>The client designates it per request through the {@code X-Edition-Id}
  * header — not a global {@code actif} flag in the database, which would force

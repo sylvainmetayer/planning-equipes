@@ -193,7 +193,7 @@ Single Quarkus service, no separate solver microservice. Package root:
   the package instead of over a file. What makes that safe is not the reader's
   diligence: `IsolationEditionStructurelleTest` reads the backend's SQL and
   fails on any business-table statement without an `edition_id` predicate. See
-  `docs/editions.md`.
+  `docs/decisions/0001-cloisonnement-par-edition.md`.
 - Solver tuning: `planning.solver.seconds-limit` /
   `planning.solver.unimproved-seconds-limit` in `application.properties`.
 
@@ -365,7 +365,19 @@ The doc layout is intentional — respect it when adding or updating docs.
    `docs/api.md`; new constraint → `docs/contraintes.md` **and**
    `ConstraintCatalog`; new business capability → README section 2; new
    command/CI/tooling → `docs/developpement.md`.
-6. Don't create planning/notes/tracking Markdown files in the repository.
+6. **Architecture decisions go to `docs/decisions/`**, one file per decision,
+   named `NNNN-short-title.md` and listed in `docs/decisions/README.md`. A
+   decision record answers *why*, where the rest of `docs/` answers *what*.
+   Write one when a choice closes off alternatives that a future reader would
+   otherwise reopen — a schema shape, a solver mechanism, a classification
+   rule. Never rewrite a past decision: when it is revised, set its status and
+   link forward to the one that replaces it. The chain of revisions is the
+   value; the latest state alone is not.
+   Two rules keep these records publishable: **no issue references** (they
+   point at a backlog that stays private) and **no client operating data** —
+   figures are allowed only when they are reproducible on a scenario versioned
+   under `src/main/resources/scenarios/`.
+7. Don't create planning/notes/tracking Markdown files in the repository.
 
 ## Dependency updates
 

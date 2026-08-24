@@ -24,7 +24,7 @@ import { errorMessage } from '../../core/error-message';
  *
  * Duplication is the action that makes several editions practical at all —
  * "2026 = 2025 minus the assignments" — so it is offered on every row rather
- * than buried behind the creation form. See `docs/editions.md` §6.
+ * than buried behind the creation form. See `docs/decisions/0001-cloisonnement-par-edition.md` §6.
  */
 @Component({
   selector: 'app-editions-page',

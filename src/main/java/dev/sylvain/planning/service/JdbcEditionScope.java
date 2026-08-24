@@ -23,7 +23,7 @@ import jakarta.inject.Inject;
  * {@code connection.prepareStatement} — and the {@code edition_id} predicate
  * went with it, silently, for two releases.</p>
  *
- * <p>Everything is partitioned by edition (see {@code docs/editions.md}), so
+ * <p>Everything is partitioned by edition (see {@code docs/decisions/0001-cloisonnement-par-edition.md}), so
  * the edition must be the hardest thing in this codebase to forget, not the
  * easiest. {@code IsolationEditionStructurelleTest} closes the loop: it reads
  * the SQL of every class that touches the database and fails on any statement

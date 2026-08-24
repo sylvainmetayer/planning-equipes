@@ -146,7 +146,7 @@ animateurs, paramètres) restait partagé par l'édition, si bien qu'une
 « variante » de plan y mélangeait silencieusement les référentiels. L'édition
 est désormais l'**unique porteur de variantes** : un plan canicule est une
 édition dupliquée la veille (le rituel de bascule est décrit dans
-[`editions.md`](editions.md)), et le découpage automatique remplace les
+[`decisions/0001-cloisonnement-par-edition.md`](decisions/0001-cloisonnement-par-edition.md)), et le découpage automatique remplace les
 créneaux de l'édition **en place** — les amplitudes qu'il lit sont consommées,
 l'édition ne porte jamais qu'une seule grille. Pour re-découper avec d'autres
 paramètres : ré-importer le scénario source (le YAML reste la source de vérité

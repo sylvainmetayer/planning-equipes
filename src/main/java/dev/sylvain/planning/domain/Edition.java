@@ -12,7 +12,7 @@ import java.util.Objects;
  *
  * <p>Since issue #172 the edition is the <b>only</b> variant carrier: a
  * "plan canicule" is a duplicated edition, and the découpage replaces the
- * edition's créneaux in place. See {@code docs/editions.md}.</p>
+ * edition's créneaux in place. See {@code docs/decisions/0001-cloisonnement-par-edition.md}.</p>
  *
  * <p>{@code defaut} is not "the current edition" — that one is designated by
  * the client on every request through the {@code X-Edition-Id} header. It is

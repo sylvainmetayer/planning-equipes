@@ -85,8 +85,8 @@ dans [`domaine.md`](domaine.md).
 | `ReferenceData` | Ce que la construction d'un problème lit du référentiel, et rien d'autre. Implémenté par `ReferenceDataService` ; les tests hors CDI en fournissent une version vide, qui vit dans `src/test` |
 | `StandRepository`, `AnimateurRepository`, `CreneauRepository`, `EmplacementRepository`, `TypologieRepository`, `ContrainteAdHocRepository`, `VerrouillageRepository`, `ParametresRepository` | Le SQL d'une famille chacun. Le prédicat `edition_id` reste auditable d'un `grep` sur le paquet, et `IsolationEditionStructurelleTest` le vérifie mécaniquement |
 | `ReferenceDataImportRepository` | La seule écriture qui traverse toutes les familles : remplacer le référentiel entier par celui d'un scénario, en une transaction. Il emprunte une connexion et la passe à chaque dépôt de famille |
-| `JdbcEditionScope` | Le seul endroit qui emprunte une connexion, lie l'édition courante au **premier** paramètre d'une requête (`prepareScoped`) et porte la transaction (`read` / `write` / `writeAndReturn`). C'est ce qui rend le prédicat `edition_id` mécanique — voir [`editions.md`](editions.md) |
-| `EditionService` / `EditionRepository` | Gestion des éditions elles-mêmes : création, duplication, suppression — voir [`editions.md`](editions.md) |
+| `JdbcEditionScope` | Le seul endroit qui emprunte une connexion, lie l'édition courante au **premier** paramètre d'une requête (`prepareScoped`) et porte la transaction (`read` / `write` / `writeAndReturn`). C'est ce qui rend le prédicat `edition_id` mécanique — voir [`decisions/0001-cloisonnement-par-edition.md`](decisions/0001-cloisonnement-par-edition.md) |
+| `EditionService` / `EditionRepository` | Gestion des éditions elles-mêmes : création, duplication, suppression — voir [`decisions/0001-cloisonnement-par-edition.md`](decisions/0001-cloisonnement-par-edition.md) |
 | `EditionContext` / `EditionRequestScope` | Résout l'édition que la requête courante lit et écrit (en-tête `X-Edition-Id`, repli sur l'édition par défaut), et permet de lier une édition à un thread sans requête (worker du solveur) |
 | `PlanningPersistenceService` | Lecture / écriture du planning persisté, cloisonnée par édition |
 | `PlanningKpiService` | KPI agrégés et non nominatifs d'un plan (score par niveau, couverture, dispersion des heures, taux de modifications manuelles) — issue #89 |
@@ -326,7 +326,7 @@ même convention, et sa requête doit passer par `JdbcEditionScope` — l'invari
 porte sur le helper, pas sur une classe unique.
 `IsolationEditionStructurelleTest` le vérifie mécaniquement : il lit le SQL de
 tout le backend et échoue sur toute requête visant une table métier sans
-prédicat `edition_id`. Voir [`editions.md`](editions.md).
+prédicat `edition_id`. Voir [`decisions/0001-cloisonnement-par-edition.md`](decisions/0001-cloisonnement-par-edition.md).
 
 ## Conteneurisation
 

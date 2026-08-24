@@ -1,23 +1,26 @@
-# Éditions — cloisonner le référentiel et les résultats de solveur
+# 0001 — Cloisonner le référentiel et les résultats de solveur par édition
 
-**Statut : implémenté.** Les migrations `V32` à `V35` (qui créent le
+- **Statut** : accepté, puis **révisé par [0009](0009-edition-unique-porteur-de-variantes.md)**
+- **Date** : août 2026
+- **Portée** : persistance, domaine, API, frontend
+
+**Ce qui est en place.** Les migrations `V32` à `V35` (qui créent le
 cloisonnement sous le nom `groupe`) puis `V36` (qui le renomme en `edition`,
 plus parlant d'un point de vue métier), le contexte d'édition côté serveur,
 l'API `/api/editions`, l'intercepteur et la page « Éditions » côté Angular
 sont livrés. Une base existante devient une mono-édition `DEFAUT` strictement
 identique à ce qu'elle était.
 
-**Révision (issue #172, `V45`) : l'édition est devenue l'unique porteur de
-variantes.** Le second niveau de cloisonnement décrit dans les sections 2 et 3
-— les « groupes de créneaux » — a été **supprimé** : il ne cloisonnait que les
-créneaux alors que stands, horaires, animateurs et paramètres restaient
-partagés par l'édition, si bien qu'une « variante » de plan y mélangeait
-silencieusement les référentiels (constaté sur données réelles :
-edition-1708 × canicule). Les sections 2 et 3 sont conservées comme trace du
-raisonnement d'origine ; le modèle courant est : **une édition = un
-référentiel complet + une seule grille de créneaux + un planning résolu**, et
-le découpage remplace les créneaux en place. Voir le rituel de bascule en
-section 6 bis.
+**Révision.** Le second niveau de cloisonnement décrit dans les sections 2 et 3
+— les « groupes de créneaux » — a depuis été **supprimé** (`V45`) : il ne
+cloisonnait que les créneaux alors que stands, horaires, animateurs et
+paramètres restaient partagés par l'édition, si bien qu'une « variante » de
+plan y mélangeait silencieusement les référentiels. Les sections 2 et 3 sont
+conservées comme trace du raisonnement d'origine ; le modèle courant est :
+**une édition = un référentiel complet + une seule grille de créneaux + un
+planning résolu**, et le découpage remplace les créneaux en place. Le raisonnement
+complet de cette révision est en [0009](0009-edition-unique-porteur-de-variantes.md) ;
+le rituel de bascule qui en découle est en section 6 bis.
 
 ## 1. Le besoin
 
@@ -165,7 +168,7 @@ Une migration par lot, pour rester relisible et rejouable :
 | `V34` | bascule des clés primaires métier en `(groupe_id, id)` et réécriture des FK |
 | `V35` | singletons de paramètres : PK `groupe_id`, une ligne par groupe |
 | `V36` | renomme `groupe` → `edition`, `groupe_id` → `edition_id` partout (colonnes, contraintes, index), et le seed `'Groupe par défaut'` → `'2026'` — sans toucher à `groupe_creneau` |
-| `V45` | **supprime `groupe_creneau`** (issue #172) : chaque édition garde les créneaux et verrouillages de son groupe alors actif, les colonnes `groupe_creneau_id` tombent partout, l'unicité des verrous redevient par édition |
+| `V45` | **supprime `groupe_creneau`** : chaque édition garde les créneaux et verrouillages de son groupe alors actif, les colonnes `groupe_creneau_id` tombent partout, l'unicité des verrous redevient par édition |
 
 Aucune perte de donnée : une base existante devient une mono-édition `DEFAUT`,
 strictement identique à ce qu'elle était. Aucune sémantique de suppression n'est
@@ -215,7 +218,7 @@ Mise en œuvre :
   le SQL de tout le backend et échoue sur toute requête visant une table métier
   sans prédicat d'édition. Les deux exceptions assumées y sont listées et
   justifiées, et le test vérifie qu'elles correspondent encore à une requête
-  réelle. La première est `resolveAnimateurToken` (issue #165), qui résout un
+  réelle. La première est `resolveAnimateurToken`, qui résout un
   jeton d'espace animateur **globalement** — le jeton arrive sur une URL
   publique sans en-tête d'édition à croire, et est justement unique toutes
   éditions confondues pour désigner la sienne ; les gardes de l'espace lient
@@ -239,7 +242,7 @@ l'en-tête HTTP : une édition inconnue **échoue** côté MCP au lieu de retomb
 sur l'édition par défaut. Un onglet resté ouvert sur une édition supprimée doit
 continuer à afficher des écrans ; un assistant qui nomme une édition s'apprête
 à y écrire, et un repli silencieux enverrait cette écriture ailleurs sans que
-personne ne puisse le voir (issue #181, voir [`mcp.md`](mcp.md#éditions)).
+personne ne puisse le voir (voir [`mcp.md`](../mcp.md#éditions)).
 
 Le verrou du solveur (`SolverJobService`) reste **global** : une résolution à la
 fois pour toute l'instance, quelle que soit sa cible. Un verrou par édition ferait
@@ -273,7 +276,7 @@ globalement.
   indisponibilités des animateurs comme les règles d'horaires des stands ; le
   **jeton d'accès de l'espace animateur n'est volontairement pas copié** — chaque
   édition frappe le sien, un lien d'espace désigne donc toujours exactement une
-  édition (le rituel de bascule de l'issue #172 se conclut par un « Envoyer à
+  édition (le rituel de bascule de la révision [0009](0009-edition-unique-porteur-de-variantes.md) se conclut par un « Envoyer à
   tous » qui diffuse les liens de l'édition fraîchement activée).
 - **Supprimer une édition** : `ON DELETE CASCADE` emporte tout le référentiel ;
   confirmation explicite obligatoire côté IHM, et refus côté serveur de
@@ -301,7 +304,7 @@ globalement.
   le comportement voulu pour un appelant qui ne désigne rien ; exposer le choix
   de l'édition à l'assistant reste à faire.
 
-## 6 bis. Le rituel de bascule (issue #172)
+## 6 bis. Le rituel de bascule
 
 L'édition étant l'unique porteur de variantes, préparer puis jouer un plan
 alternatif (canicule, repli) suit six étapes :
@@ -321,7 +324,7 @@ alternatif (canicule, repli) suit six étapes :
 
 Le jour J, une absence de dernière minute se saisit sur la seule édition
 vivante — une fois. La replanification minimale autour de l'absent est le
-périmètre restant de l'issue #86.
+périmètre restant de la révision décrite en 0009.
 
 ## 7. Les écrans
 
@@ -345,7 +348,7 @@ présent sur **tous** les écrans :
   action rare et délibérée.
 
 Il était complémentaire du bandeau `app-groupe-mismatch-banner` (supprimé
-avec les groupes de créneaux par l'issue #172), qui restait
+avec les groupes de créneaux par la révision décrite en 0009), qui restait
 silencieux tant que tout est cohérent : l'un rappelle **où** on est, l'autre
 prévient quand le planning affiché **n'est plus à jour** pour cet endroit.
 

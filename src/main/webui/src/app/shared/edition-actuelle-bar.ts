@@ -10,7 +10,7 @@ import { Edition } from '../core/models';
  * Persistent strip under the toolbar naming the edition every screen is
  * currently reading from, with a one-click switcher. Every page's data
  * depends on that answer, so it is given once in the shell instead of on any
- * one page — see `docs/editions.md`.
+ * one page — see `docs/decisions/0001-cloisonnement-par-edition.md`.
  *
  * Switching reloads the page rather than refreshing the stores: it swaps the
  * data behind *every* open screen at once, and a full reload is the only way

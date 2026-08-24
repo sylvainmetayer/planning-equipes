@@ -9,7 +9,7 @@ import jakarta.ws.rs.NotFoundException;
 
 /**
  * CRUD over the editions themselves — create "Année 2026", duplicate "Année
- * 2025" into it, rename one, drop one. See {@code docs/editions.md} §6.
+ * 2025" into it, rename one, drop one. See {@code docs/decisions/0001-cloisonnement-par-edition.md} §6.
  */
 @ApplicationScoped
 public class EditionService {

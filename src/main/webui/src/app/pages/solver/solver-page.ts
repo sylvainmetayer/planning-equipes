@@ -135,7 +135,7 @@ export class SolverPage {
    * read the planning persisted for the edition on screen, so only a solve
    * writing to THAT edition can hand out a half-rewritten planning; a run on
    * another edition leaves this one exactly as it was saved. Same rule as the
-   * data-entry screens (see `docs/editions.md`, §5).
+   * data-entry screens (see `docs/decisions/0001-cloisonnement-par-edition.md`, §5).
    */
   protected readonly editingLocked = inject(SolverJobService).editingLocked;
 

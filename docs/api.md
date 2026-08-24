@@ -352,7 +352,7 @@ La reprise se désactive avec `planning.jobs.reprise-au-demarrage=false` (voir
 [`developpement.md`](developpement.md#réglage-du-solveur)).
 
 Chaque job expose `editionId` et `editionNom`, captés à la soumission :
-l'édition dans laquelle il écrit son résultat (voir `docs/editions.md` §5),
+l'édition dans laquelle il écrit son résultat (voir `docs/decisions/0001-cloisonnement-par-edition.md` §5),
 que l'IHM affiche et utilise pour ne verrouiller la saisie que sur cette
 édition. Il expose aussi `elapsedSeconds`, calculé côté serveur : le temps écoulé
 affiché est identique quel que soit le client, son horloge ou son heure de
@@ -655,7 +655,7 @@ l'adresse et le numéro d'immatriculation *sont* des données personnelles.
 Tout le référentiel est cloisonné par **édition** — une édition complète du
 festival, « Année 2025 », « Année 2026 » — avec ses propres stands, animateurs,
 typologies, emplacements, paramètres et planning résolu.
-Rien ne circule de l'une à l'autre. Voir [`editions.md`](editions.md).
+Rien ne circule de l'une à l'autre. Voir [`decisions/0001-cloisonnement-par-edition.md`](decisions/0001-cloisonnement-par-edition.md).
 
 **Le client désigne l'édition qu'il consulte à chaque requête**, via l'en-tête
 `X-Edition-Id` :
