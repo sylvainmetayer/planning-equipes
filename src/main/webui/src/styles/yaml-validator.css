@@ -7,7 +7,7 @@
 }
 
 .yaml-validator-result.is-valid {
-  color: var(--mat-sys-primary);
+  color: var(--app-accent);
 }
 
 .yaml-validator-result.is-invalid {

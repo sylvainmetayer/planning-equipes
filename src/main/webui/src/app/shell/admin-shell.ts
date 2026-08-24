@@ -36,6 +36,7 @@ import { NotificationService } from '../core/notification.service';
 import { PlanningResolutionStore } from '../core/planning-resolution.store';
 import { APP_CONFIG } from '../core/app-config';
 import { SolverJobService } from '../core/solver-job.service';
+import { BrandLogo } from '../shared/brand-logo';
 import { DataStaleIndicator } from '../shared/data-stale-indicator';
 import { ScrollHint } from '../shared/scroll-hint';
 import { SolverRunningIndicator } from '../shared/solver-running-indicator';
@@ -232,6 +233,7 @@ function buildNavGroups(devMode: boolean): NavGroup[] {
     MatButtonModule,
     MatBadgeModule,
     MatDividerModule,
+    BrandLogo,
     DataStaleIndicator,
     ScrollHint,
     SolverRunningIndicator,

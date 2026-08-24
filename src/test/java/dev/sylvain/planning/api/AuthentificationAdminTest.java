@@ -72,6 +72,16 @@ class AuthentificationAdminTest {
         given().when().get("/api/mentions-legales").then().statusCode(200);
     }
 
+    /**
+     * The frontend reads its own name, logo and accent colour before it
+     * bootstraps — on the login page above all. Behind the session wall, the
+     * very page that asks for credentials would render nameless.
+     */
+    @Test
+    void theDeploymentBrandIsReadableWithoutASession() {
+        given().when().get("/api/branding").then().statusCode(200);
+    }
+
     @Test
     void leStatutDeSessionEstPublicEtAnonymeParDefaut() {
         given().when().get("/api/auth/me")

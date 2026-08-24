@@ -85,7 +85,7 @@
 }
 
 .graphe-noeud-actif {
-  border-color: var(--mat-sys-primary);
+  border-color: var(--app-accent);
   background: var(--mat-sys-secondary-container);
 }
 
@@ -167,7 +167,7 @@
 }
 
 .graphe-arete-parent {
-  stroke: var(--mat-sys-primary);
+  stroke: var(--app-accent);
   stroke-dasharray: 3 3;
 }
 
@@ -179,12 +179,12 @@
 
 .graphe-point-parent {
   fill: var(--mat-sys-primary-container);
-  stroke: var(--mat-sys-primary);
+  stroke: var(--app-accent);
 }
 
 .graphe-point-centre {
-  fill: var(--mat-sys-primary);
-  stroke: var(--mat-sys-primary);
+  fill: var(--app-accent);
+  stroke: var(--app-accent);
 }
 
 .graphe-vide {

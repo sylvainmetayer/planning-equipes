@@ -91,13 +91,17 @@ public class DatabaseDumpService {
     @Inject
     JdbcEditionScope scope;
 
+    /** Named in the header of the dump, so a script found later says which instance produced it. */
+    @Inject
+    ProductName productName;
+
     /**
      * Builds a self-contained SQL script that wipes and repopulates every
      * business table.
      */
     public String exportDump() {
         StringBuilder sql = new StringBuilder();
-        sql.append("-- Planning Équipes database dump\n");
+        sql.append("-- ").append(productName.value()).append(" database dump\n");
         sql.append("-- Generated at ").append(Instant.now()).append('\n');
         sql.append("-- Replay with the \"Import SQL\" admin action.\n\n");
         try (Connection connection = dataSource.getConnection()) {

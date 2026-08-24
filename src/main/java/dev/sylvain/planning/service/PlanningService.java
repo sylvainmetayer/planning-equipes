@@ -800,7 +800,12 @@ public class PlanningService {
         List<Map<String, Object>> creneauxYaml = new ArrayList<>();
         for (Creneau creneau : creneaux) {
             Map<String, Object> item = new LinkedHashMap<>();
-            item.put("id", creneau.getId());
+            // asString, as everywhere else: the id is a Long in the database,
+            // but the published schema declares it `string` and the loader
+            // reads it back as one. Writing it raw produced a YAML number that
+            // no import could read — see the round trip covered by
+            // PlanningServiceScenarioAllerRetourTest.
+            item.put("id", asString(creneau.getId()));
             item.put("jour", creneau.getJour());
             item.put("date", asString(creneau.getDate()));
             item.put("heureDebut", asString(creneau.getHeureDebut()));
@@ -869,7 +874,7 @@ public class PlanningService {
             Map<String, Object> item = new LinkedHashMap<>();
             item.put("id", poste.getId());
             item.put("standId", poste.getStand().getId());
-            item.put("creneauId", poste.getCreneau().getId());
+            item.put("creneauId", asString(poste.getCreneau().getId()));
             item.put("animateurId", null);
             postesYaml.add(item);
         }
@@ -1168,9 +1173,9 @@ public class PlanningService {
         } else {
             postes = new ArrayList<>();
             for (Map<String, Object> posteData : postesList) {
-                String id = (String) posteData.get("id");
-                String standId = (String) posteData.get("standId");
-                String creneauId = (String) posteData.get("creneauId");
+                String id = parseTextId(posteData.get("id"));
+                String standId = parseTextId(posteData.get("standId"));
+                String creneauId = parseTextId(posteData.get("creneauId"));
 
                 Stand stand = reference.standsById().get(standId);
                 Creneau creneau = reference.creneauxParId().get(creneauId);
@@ -1278,13 +1283,11 @@ public class PlanningService {
         long compteurCreneauId = 1;
         List<Map<String, Object>> creneauxList = YamlSections.objets(scenarioData, "creneaux");
         for (Map<String, Object> creneauData : creneauxList) {
-            String id = (String) creneauData.get("id");
-            String heureDebutStr = (String) creneauData.get("heureDebut");
-            String heureFinStr = (String) creneauData.get("heureFin");
+            String id = parseTextId(creneauData.get("id"));
 
             LocalDate date = parseLocalDate(creneauData.get("date"), "creneaux.date");
-            LocalTime heureDebut = LocalTime.parse(heureDebutStr);
-            LocalTime heureFin = LocalTime.parse(heureFinStr);
+            LocalTime heureDebut = parseLocalTime(creneauData.get("heureDebut"));
+            LocalTime heureFin = parseLocalTime(creneauData.get("heureFin"));
 
             Creneau creneau = new Creneau(compteurCreneauId++, 0, date, heureDebut, heureFin);
             creneauxMap.put(id, creneau);
@@ -1796,6 +1799,23 @@ public class PlanningService {
      * value happens to equal the second-of-day, same as {@link LocalTime}'s own
      * representation.
      */
+    /**
+     * A scenario's textual id, read whatever type the YAML resolver gave it.
+     *
+     * <p>These ids only tie the sections of one file together, and the
+     * published schema declares them {@code string} — but nothing forces an
+     * author to write {@code id: "1"} rather than {@code id: 1}, and the export
+     * itself produced the latter for a long time. A direct cast to
+     * {@code String} then throws a {@link ClassCastException} on an otherwise
+     * valid file.</p>
+     *
+     * <p>Same stance as {@link #parseLocalTime}: accept what YAML resolved,
+     * rather than require the author to know the quoting rules of YAML 1.1.</p>
+     */
+    private static String parseTextId(Object value) {
+        return value == null ? null : value.toString();
+    }
+
     private static LocalTime parseLocalTime(Object value) {
         if (value instanceof Number number) {
             return LocalTime.ofSecondOfDay(number.longValue());

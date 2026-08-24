@@ -53,7 +53,7 @@
 
 .apercu-jour {
   border: 1px solid var(--mat-sys-outline-variant);
-  border-left: 4px solid var(--mat-sys-primary);
+  border-left: 4px solid var(--app-accent);
   border-radius: var(--mat-sys-corner-small, 0.5rem);
   padding: 0.4rem 0.5rem;
   font-size: 0.8rem;

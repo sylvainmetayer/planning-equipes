@@ -6,8 +6,9 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { MentionsLegales } from '../../core/models';
-import { REPO_URL } from '../../version';
+import { BrandLogo } from '../../shared/brand-logo';
 import { StatusMessage } from '../../shared/status-message';
+import { REPO_URL } from '../../version';
 
 /**
  * Legal notice, shared by both sides of the application and reachable without
@@ -23,7 +24,7 @@ import { StatusMessage } from '../../shared/status-message';
  */
 @Component({
   selector: 'app-mentions-legales-page',
-  imports: [MatButtonModule, MatCardModule, MatIconModule, MatToolbarModule, RouterLink, StatusMessage],
+  imports: [BrandLogo, MatButtonModule, MatCardModule, MatIconModule, MatToolbarModule, RouterLink, StatusMessage],
   templateUrl: './mentions-legales-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })

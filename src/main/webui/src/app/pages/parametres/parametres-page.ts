@@ -11,6 +11,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
+import { BRANDING, slugMarque } from '../../core/branding';
 import { EditionStore } from '../../core/edition.store';
 import { ImportSummary, ImportScenarioResult, ParametresDecoupage } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
@@ -68,6 +69,9 @@ import { errorMessage, errorPrefix } from '../../core/error-message';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ParametresPage {
+  /** Dump named after the deployment, so two instances' exports never collide in a downloads folder. */
+  private readonly nomFichierDump = `${slugMarque(inject(BRANDING).productName)}.sql`;
+
   protected readonly output = signal('');
   protected readonly sampleLoading = signal(false);
   protected readonly exporting = signal(false);
@@ -387,7 +391,7 @@ export class ParametresPage {
     this.transferBusy.set(true);
     this.output.set($localize`:@@dataTransfer.buildingSqlDump:Construction du dump SQL...`);
     try {
-      this.output.set(await this.api.downloadGet('/api/database/export', 'planning-equipes.sql', 'application/sql'));
+      this.output.set(await this.api.downloadGet('/api/database/export', this.nomFichierDump, 'application/sql'));
     } catch (error) {
       this.output.set(errorPrefix(error));
     } finally {

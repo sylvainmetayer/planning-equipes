@@ -98,7 +98,7 @@
 /* One assigned name, clickable to open "Pourquoi lui ?" (see AffectationExplanationDialog). */
 .affectation-link {
   font: inherit;
-  color: var(--mat-sys-primary);
+  color: var(--app-accent);
   background: none;
   border: none;
   padding: 0;

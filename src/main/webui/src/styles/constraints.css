@@ -128,5 +128,5 @@
 }
 
 .constraint-result-clean {
-  color: var(--mat-sys-primary);
+  color: var(--app-accent);
 }

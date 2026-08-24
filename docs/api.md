@@ -22,10 +22,11 @@ langage naturel depuis un assistant IA : voir [`mcp.md`](mcp.md).
 
 ## Authentification
 
-Toute l'API `/api/*` est réservée à la session admin (issue #165), avec trois
+Toute l'API `/api/*` est réservée à la session admin (issue #165), avec quatre
 exceptions volontaires : l'espace animateur (`/api/espace-animateur/*`, dont le
-jeton d'URL est la clé d'accès), les routes de session ci-dessous et
-`/api/config`. Le serveur MCP garde sa propre clé d'API (voir
+jeton d'URL est la clé d'accès), les routes de session ci-dessous, `/api/config`
+et `/api/branding` — tous deux lus par le frontend avant son démarrage, page de
+connexion comprise — et `/api/mentions-legales`. Le serveur MCP garde sa propre clé d'API (voir
 [`mcp.md`](mcp.md)). Un appel non authentifié répond `401` — jamais une
 redirection HTML.
 
@@ -654,6 +655,27 @@ l'administrateur à la fin de chaque résolution de cette édition : l'édition,
 score et la faisabilité, rien d'autre. L'envoi est *best-effort* et
 silencieusement inerte tant qu'aucune adresse n'est configurée
 (`MAIL_ADMIN`) ; `GET /api/debug/mail-config` dit laquelle, ou `null`.
+
+## Marque du déploiement
+
+| Méthode | Chemin | Description |
+| --- | --- | --- |
+| `GET` | `/api/branding` | Identité portée par cette instance : `productName`, `organisation`, `logoUrl`, `accentColor` |
+
+**Public**, comme `/api/config` et `/api/mentions-legales` : la page de
+connexion et l'espace animateur sont lus par des gens qui n'ont pas de session
+admin, et une application incapable de dire son propre nom avant connexion
+accueillerait ses visiteurs avec une barre vide.
+
+Le frontend l'appelle **une fois, avant son démarrage** : le titre de l'onglet
+et le logo décident de la toute première image affichée, aucun écran ne peut
+attendre un aller-retour pour savoir comment il s'appelle.
+
+`productName` n'est jamais vide — il retombe sur un nom neutre plutôt que sur
+rien. `logoUrl` vide signifie **« n'affiche aucun logo »**, jamais « affiche
+celui par défaut » : une instance par client, et aucun client n'hérite de la
+marque d'un autre. Les valeurs viennent des variables `BRANDING_*`
+(voir [`README.md`](../README.md#configuration)).
 
 ## Mentions légales
 

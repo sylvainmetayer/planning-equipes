@@ -14,7 +14,7 @@
 
 .staffing-stat-value {
   font: var(--mat-sys-display-small);
-  color: var(--mat-sys-primary);
+  color: var(--app-accent);
 }
 
 .staffing-stat-label {

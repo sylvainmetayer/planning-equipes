@@ -12,6 +12,7 @@ import dev.sylvain.planning.domain.DemandeEchange;
 import dev.sylvain.planning.domain.StatutDemandeEchange;
 import dev.sylvain.planning.service.AdminAddress;
 import dev.sylvain.planning.service.ApplicationLinks;
+import dev.sylvain.planning.service.ProductName;
 
 /**
  * The writing of the notifications (issue #165), with no {@code Mailer}, no
@@ -33,6 +34,7 @@ class NotificationWriterTest {
         redacteur = new NotificationWriter();
         redacteur.adminAddress = adminAddress("admin@example.org");
         redacteur.liens = linksTo("https://planning.example.org");
+        redacteur.productName = ProductName.neutral();
     }
 
     private static AdminAddress adminAddress(String address) {

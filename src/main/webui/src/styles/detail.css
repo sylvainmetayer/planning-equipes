@@ -13,7 +13,7 @@
 
 .detail-section-title {
   font: var(--mat-sys-title-small);
-  color: var(--mat-sys-primary);
+  color: var(--app-accent);
   margin: 0 0 0.5rem;
 }
 

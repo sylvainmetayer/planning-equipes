@@ -600,6 +600,25 @@ export interface ParametresSolveur {
 }
 
 /**
+ * `GET /api/branding` — the identity this deployment wears. Read once before
+ * the application bootstraps: the product name goes in the browser tab and in
+ * every page title, the logo in the toolbars, the accent colour into the
+ * `--app-accent` custom property.
+ *
+ * <p>An empty `logoUrl` means "show no logo", never "show a default one": one
+ * instance per customer, and no customer inherits another's mark.</p>
+ */
+export interface Branding {
+  /** Never empty: the server falls back to a neutral name rather than to nothing. */
+  productName: string;
+  /** Customer this instance is deployed for; empty when the deployment did not say. */
+  organisation: string;
+  logoUrl: string;
+  /** Any CSS colour; empty leaves the compiled Material accent in place. */
+  accentColor: string;
+}
+
+/**
  * `GET /api/mentions-legales` — deployment-specific facts of the legal notice.
  * Every field is an empty string when the deployment did not configure it; the
  * page then says what is missing rather than inventing it.

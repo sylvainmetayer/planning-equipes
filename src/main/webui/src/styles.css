@@ -1,7 +1,9 @@
 /* Global stylesheet aggregator: only the rules Material does not already cover.
    Import order matters: fonts first (self-hosted @font-face + .material-icons),
-   then shared page layout, then the view-specific grids. */
+   then the deployment's brand tokens (--app-accent, read by every partial
+   below), then shared page layout, then the view-specific grids. */
 @import url('./styles/fonts.css');
+@import url('./styles/branding.css');
 @import url('./styles/pages.css');
 @import url('./styles/bulk-actions.css');
 @import url('./styles/feedback.css');

@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import dev.sylvain.planning.domain.DemandeEchange;
 import dev.sylvain.planning.service.AdminAddress;
 import dev.sylvain.planning.service.ApplicationLinks;
+import dev.sylvain.planning.service.ProductName;
 import io.quarkus.mailer.Mail;
 
 /**
@@ -31,6 +32,7 @@ class NotificationDispatcherTest {
         NotificationWriter redacteur = new NotificationWriter();
         redacteur.adminAddress = new AdminAddress(Optional.of("admin@example.org"));
         redacteur.liens = new ApplicationLinks(Optional.of("https://planning.example.org"));
+        redacteur.productName = ProductName.neutral();
 
         expediteur = new NotificationDispatcher();
         expediteur.redacteur = redacteur;

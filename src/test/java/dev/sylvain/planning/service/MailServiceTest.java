@@ -33,6 +33,7 @@ class MailServiceTest {
         service = new MailService();
         service.mailer = mails -> envoyes.addAll(List.of(mails));
         service.adminAddress = new AdminAddress(Optional.of("admin@example.org"));
+        service.productName = ProductName.neutral();
     }
 
     @Test

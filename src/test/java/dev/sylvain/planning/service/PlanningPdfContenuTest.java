@@ -40,7 +40,7 @@ import dev.sylvain.planning.domain.Stand;
 class PlanningPdfContenuTest {
 
     private final PlanningExportService service = new PlanningExportService(new ApplicationLinks(Optional.empty()),
-            new AnimateurPlanningPdf(), new GlobalPlanningPdf(), new PlanningIcs());
+            new AnimateurPlanningPdf(new PdfTheme()), new GlobalPlanningPdf(new PdfTheme()), new PlanningIcs());
 
     @Test
     void lePdfIndividuelNommeLAnimateurSesStandsEtSesRepos() throws IOException {

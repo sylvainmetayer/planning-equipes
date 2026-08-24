@@ -44,6 +44,16 @@ services:
       # Suivi d'erreurs : vide = désactivé. Voir docs/observabilite.md.
       SENTRY_DSN: ${SENTRY_DSN:-}
       SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}
+      # Marque blanche : une instance par client, réglée par déploiement. Sans
+      # ces variables l'application s'appelle « Planning Équipes », n'affiche
+      # aucun logo plutôt que celui d'un autre, et imprime ses PDF dans une
+      # palette neutre. Voir README.md § Marque blanche.
+      BRANDING_PRODUCT_NAME: ${BRANDING_PRODUCT_NAME:-Planning Équipes}
+      BRANDING_ORGANISATION: ${BRANDING_ORGANISATION:-}
+      BRANDING_LOGO_URL: ${BRANDING_LOGO_URL:-}
+      BRANDING_ACCENT_COLOR: ${BRANDING_ACCENT_COLOR:-}
+      BRANDING_PDF_LOGO: ${BRANDING_PDF_LOGO:-}
+      BRANDING_PDF_STRIP: ${BRANDING_PDF_STRIP:-}
       # Mentions légales, servies publiquement sur /mentions-legales : vides,
       # la page existe mais n'annonce rien — ce qui est précisément ce qu'un
       # site accessible au public ne peut pas se permettre.

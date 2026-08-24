@@ -4,7 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -31,6 +30,7 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
 /**
  * The whole planning in a single landscape PDF, for the organiser rather than
@@ -46,18 +46,24 @@ import jakarta.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class GlobalPlanningPdf {
 
+    private final PdfTheme theme;
+
+    @Inject
+    public GlobalPlanningPdf(PdfTheme theme) {
+        this.theme = theme;
+    }
+
     byte[] construire(PlanningFestival planning) {
         List<LigneAffectation> lignes = lignesAffectation(planning);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         Document document = new Document(PageSize.A4.rotate(), 34, 34, 34, 50);
         PdfWriter writer = PdfWriter.getInstance(document, output);
-        writer.setPageEvent(new PdfTheme.FooterEvent("Festival — Centre-ville · planning global généré le "
-                + PdfTheme.GENERATED_AT_FORMAT.format(Instant.now().atZone(ZoneOffset.systemDefault()))));
+        writer.setPageEvent(theme.footerEvent("planning global", Instant.now()));
         document.open();
 
         addGlobalHeader(document, planning, lignes);
         if (lignes.isEmpty()) {
-            document.add(PdfTheme.emptyState());
+            document.add(theme.emptyState());
         } else {
             addSectionByDay(document, lignes);
             document.newPage();
@@ -116,19 +122,19 @@ public class GlobalPlanningPdf {
     }
 
     private void addGlobalHeader(Document document, PlanningFestival planning, List<LigneAffectation> lignes) {
-        document.add(PdfTheme.brandHeader(document, 420f, "PLANNING GLOBAL", "Toutes les affectations", 18f));
+        document.add(theme.brandHeader(document, 420f, "PLANNING GLOBAL", "Toutes les affectations", 18f));
 
         PdfPTable stats = new PdfPTable(new float[] { 10f, 0.6f, 10f, 0.6f, 10f, 0.6f, 10f });
         stats.setWidthPercentage(100);
-        stats.addCell(PosteStatistics.statCell(PosteStatistics.distinctDayCount(planning.getPostes()), "JOURS", null));
+        stats.addCell(PosteStatistics.statCell(theme, PosteStatistics.distinctDayCount(planning.getPostes()), "JOURS", null));
         stats.addCell(PosteStatistics.gapCell());
-        stats.addCell(PosteStatistics.statCell(PosteStatistics.distinctStandCount(planning.getPostes()), "STANDS", null));
+        stats.addCell(PosteStatistics.statCell(theme, PosteStatistics.distinctStandCount(planning.getPostes()), "STANDS", null));
         stats.addCell(PosteStatistics.gapCell());
         int sieges = lignes.stream().mapToInt(ligne -> ligne.sieges()[0]).sum();
         int pourvus = lignes.stream().mapToInt(ligne -> ligne.animateurs().size()).sum();
-        stats.addCell(PosteStatistics.statCell(sieges, "SIÈGES", String.format(Locale.FRENCH, "%d POURVUS", pourvus)));
+        stats.addCell(PosteStatistics.statCell(theme, sieges, "SIÈGES", String.format(Locale.FRENCH, "%d POURVUS", pourvus)));
         stats.addCell(PosteStatistics.gapCell());
-        stats.addCell(PosteStatistics.statCell(planning.getAnimateurs().size(), "ANIMATEURS",
+        stats.addCell(PosteStatistics.statCell(theme, planning.getAnimateurs().size(), "ANIMATEURS",
                 String.format(Locale.FRENCH, "TOTAL %.0f H TRAVAILLÉES", PosteStatistics.totalHeures(planning.getPostes()))));
         stats.setSpacingAfter(20f);
         document.add(stats);
@@ -201,13 +207,13 @@ public class GlobalPlanningPdf {
     }
 
     private Paragraph sectionTitle(String text) {
-        Paragraph paragraph = new Paragraph(text, PdfTheme.NAME_FONT);
+        Paragraph paragraph = new Paragraph(text, theme.nameFont());
         paragraph.setSpacingAfter(12f);
         return paragraph;
     }
 
     private Paragraph groupTitle(String text) {
-        Paragraph paragraph = new Paragraph(text, PdfTheme.DATE_FONT);
+        Paragraph paragraph = new Paragraph(text, theme.dateFont());
         paragraph.setSpacingBefore(10f);
         paragraph.setSpacingAfter(6f);
         // Never leave a group heading alone at the bottom of a page.
@@ -222,9 +228,9 @@ public class GlobalPlanningPdf {
         table.setHeaderRows(1);
         table.setSpacingAfter(8f);
         for (String entete : entetes) {
-            PdfPCell cell = new PdfPCell(new Phrase(entete, PdfTheme.TABLE_HEADER_FONT));
-            cell.setBackgroundColor(PdfTheme.YELLOW);
-            cell.setBorderColor(PdfTheme.PILL_BACKGROUND);
+            PdfPCell cell = new PdfPCell(new Phrase(entete, theme.tableHeaderFont()));
+            cell.setBackgroundColor(theme.highlight());
+            cell.setBorderColor(theme.pill());
             cell.setPadding(5f);
             table.addCell(cell);
         }
@@ -232,8 +238,8 @@ public class GlobalPlanningPdf {
     }
 
     private PdfPCell bodyCell(String text) {
-        PdfPCell cell = new PdfPCell(new Phrase(text == null ? "—" : text, PdfTheme.TABLE_BODY_FONT));
-        cell.setBorderColor(PdfTheme.PILL_BACKGROUND);
+        PdfPCell cell = new PdfPCell(new Phrase(text == null ? "—" : text, theme.tableBodyFont()));
+        cell.setBorderColor(theme.pill());
         cell.setPadding(4f);
         return cell;
     }
@@ -241,26 +247,26 @@ public class GlobalPlanningPdf {
     /** Names on the line, or the shortfall spelled out in red when seats are left unfilled. */
     private PdfPCell animateursCell(LigneAffectation ligne) {
         if (ligne.animateurs().isEmpty()) {
-            PdfPCell cell = new PdfPCell(new Phrase("Aucun animateur affecté", PdfTheme.TABLE_ALERT_FONT));
-            cell.setBorderColor(PdfTheme.PILL_BACKGROUND);
+            PdfPCell cell = new PdfPCell(new Phrase("Aucun animateur affecté", theme.tableAlertFont()));
+            cell.setBorderColor(theme.pill());
             cell.setPadding(4f);
             return cell;
         }
-        Paragraph paragraph = new Paragraph(String.join(", ", ligne.animateurs()), PdfTheme.TABLE_BODY_FONT);
+        Paragraph paragraph = new Paragraph(String.join(", ", ligne.animateurs()), theme.tableBodyFont());
         if (ligne.incomplete()) {
             paragraph.add(new Chunk("  ·  " + (ligne.sieges()[0] - ligne.animateurs().size())
-                    + " siège(s) non pourvu(s)", PdfTheme.TABLE_ALERT_FONT));
+                    + " siège(s) non pourvu(s)", theme.tableAlertFont()));
         }
         PdfPCell cell = new PdfPCell(paragraph);
-        cell.setBorderColor(PdfTheme.PILL_BACKGROUND);
+        cell.setBorderColor(theme.pill());
         cell.setPadding(4f);
         return cell;
     }
 
     private PdfPCell effectifCell(LigneAffectation ligne) {
         PdfPCell cell = new PdfPCell(new Phrase(ligne.animateurs().size() + "/" + ligne.sieges()[0],
-                ligne.incomplete() ? PdfTheme.TABLE_ALERT_FONT : PdfTheme.TABLE_BODY_FONT));
-        cell.setBorderColor(PdfTheme.PILL_BACKGROUND);
+                ligne.incomplete() ? theme.tableAlertFont() : theme.tableBodyFont()));
+        cell.setBorderColor(theme.pill());
         cell.setHorizontalAlignment(Element.ALIGN_CENTER);
         cell.setPadding(4f);
         return cell;

@@ -34,22 +34,25 @@ final class PosteStatistics {
         return cell;
     }
 
-    /** @param subLabel extra line below the main label (e.g. total hours), omitted when {@code null}. */
-    static PdfPCell statCell(int value, String label, String subLabel) {
+    /**
+     * @param theme    the deployment's palette and fonts
+     * @param subLabel extra line below the main label (e.g. total hours), omitted when {@code null}.
+     */
+    static PdfPCell statCell(PdfTheme theme, int value, String label, String subLabel) {
         PdfPCell cell = new PdfPCell();
         cell.setBorder(Rectangle.NO_BORDER);
         cell.setHorizontalAlignment(Element.ALIGN_CENTER);
         cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
         cell.setPadding(14f);
-        cell.setCellEvent(new PdfTheme.RoundedCellFillEvent(PdfTheme.YELLOW, 10f));
+        cell.setCellEvent(new PdfTheme.RoundedCellFillEvent(theme.highlight(), 10f));
 
-        Paragraph number = new Paragraph(String.valueOf(value), PdfTheme.STAT_NUMBER_FONT);
+        Paragraph number = new Paragraph(String.valueOf(value), theme.statNumberFont());
         number.setAlignment(Element.ALIGN_CENTER);
         number.setSpacingAfter(2f);
 
         Paragraph labelParagraph = new Paragraph();
         labelParagraph.setAlignment(Element.ALIGN_CENTER);
-        Chunk labelChunk = new Chunk(label, PdfTheme.STAT_LABEL_FONT);
+        Chunk labelChunk = new Chunk(label, theme.statLabelFont());
         labelChunk.setCharacterSpacing(1.1f);
         labelParagraph.add(labelChunk);
 
@@ -60,7 +63,7 @@ final class PosteStatistics {
             Paragraph subLabelParagraph = new Paragraph();
             subLabelParagraph.setAlignment(Element.ALIGN_CENTER);
             subLabelParagraph.setSpacingBefore(3f);
-            Chunk subLabelChunk = new Chunk(subLabel, PdfTheme.STAT_SUBLABEL_FONT);
+            Chunk subLabelChunk = new Chunk(subLabel, theme.statSubLabelFont());
             subLabelChunk.setCharacterSpacing(0.6f);
             subLabelParagraph.add(subLabelChunk);
             cell.addElement(subLabelParagraph);

@@ -7,6 +7,7 @@ import dev.sylvain.planning.domain.DemandeEchange;
 import dev.sylvain.planning.domain.StatutDemandeEchange;
 import dev.sylvain.planning.service.AdminAddress;
 import dev.sylvain.planning.service.ApplicationLinks;
+import dev.sylvain.planning.service.ProductName;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -32,6 +33,10 @@ public class NotificationWriter {
     @Inject
     ApplicationLinks liens;
 
+    /** Every subject opens with the deployment's own name, never the vendor's. */
+    @Inject
+    ProductName productName;
+
     public Optional<MailDraft> rediger(Notification notification) {
         return switch (notification) {
             case Notification.TargetSolicited n -> targetSolicited(n);
@@ -46,8 +51,8 @@ public class NotificationWriter {
         if (withoutRecipient(n.emailCible())) {
             return Optional.empty();
         }
-        String sujet = "Planning Équipes — " + n.demandeurNomComplet()
-                + (n.nombre() == 1 ? " vous propose un échange de créneau" : " vous propose des échanges de créneaux");
+        String sujet = productName.subject(n.demandeurNomComplet()
+                + (n.nombre() == 1 ? " vous propose un échange de créneau" : " vous propose des échanges de créneaux"));
         String corps = new StringBuilder()
                 .append(n.demandeurNomComplet()).append(" vous propose ")
                 .append(n.nombre() == 1 ? "un échange de créneau" : n.nombre() + " échanges de créneaux")
@@ -69,7 +74,7 @@ public class NotificationWriter {
         }
         corps.append(".\nVous pouvez proposer l'échange à quelqu'un d'autre depuis votre espace.\n");
         return Optional.of(new MailDraft(n.emailDemandeur(),
-                "Planning Équipes — votre demande d'échange a été déclinée", corps.toString()));
+                productName.subject("votre demande d'échange a été déclinée"), corps.toString()));
     }
 
     private Optional<MailDraft> demandesSoumises(Notification.DemandesSoumises n) {
@@ -78,9 +83,9 @@ public class NotificationWriter {
         if (admin.isEmpty() || demandes.isEmpty()) {
             return Optional.empty();
         }
-        String sujet = demandes.size() == 1
-                ? "Planning Équipes — nouvelle demande d'échange de " + n.demandeurNomComplet()
-                : "Planning Équipes — " + demandes.size() + " nouvelles demandes d'échange de " + n.demandeurNomComplet();
+        String sujet = productName.subject(demandes.size() == 1
+                ? "nouvelle demande d'échange de " + n.demandeurNomComplet()
+                : demandes.size() + " nouvelles demandes d'échange de " + n.demandeurNomComplet());
         StringBuilder corps = new StringBuilder()
                 .append(n.demandeurNomComplet())
                 .append(" a soumis ")
@@ -110,9 +115,9 @@ public class NotificationWriter {
         }
         DemandeEchange demande = n.demande();
         boolean acceptee = demande.getStatut() == StatutDemandeEchange.ACCEPTEE;
-        String sujet = acceptee
-                ? "Planning Équipes — votre demande d'échange est acceptée"
-                : "Planning Équipes — votre demande d'échange est refusée";
+        String sujet = productName.subject(acceptee
+                ? "votre demande d'échange est acceptée"
+                : "votre demande d'échange est refusée");
         StringBuilder corps = new StringBuilder()
                 .append("Votre demande d'échange")
                 .append(n.libelleCreneau() == null || n.libelleCreneau().isBlank()
@@ -134,7 +139,7 @@ public class NotificationWriter {
             return Optional.empty();
         }
         String etat = n.faisable() ? "planning faisable" : "planning NON faisable";
-        String sujet = "Planning Équipes — résolution terminée sur « " + n.editionNom() + " » : " + etat;
+        String sujet = productName.subject("résolution terminée sur « " + n.editionNom() + " » : " + etat);
         StringBuilder corps = new StringBuilder()
                 .append("Édition : ").append(n.editionNom()).append('\n')
                 .append("Score : ").append(n.score() == null ? "non mesuré" : n.score()).append('\n')

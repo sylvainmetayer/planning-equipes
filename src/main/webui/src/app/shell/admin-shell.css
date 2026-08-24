@@ -33,7 +33,7 @@
 }
 
 .app-page:focus-visible {
-  outline: 2px solid var(--mat-sys-primary);
+  outline: 2px solid var(--app-accent);
   outline-offset: -2px;
 }
 
@@ -128,8 +128,8 @@
 }
 
 .active-link {
-  --mat-list-list-item-label-text-color: var(--mat-sys-primary);
-  --mat-list-list-item-leading-icon-color: var(--mat-sys-primary);
+  --mat-list-list-item-label-text-color: var(--app-accent);
+  --mat-list-list-item-leading-icon-color: var(--app-accent);
   background: var(--mat-sys-secondary-container);
 }
 

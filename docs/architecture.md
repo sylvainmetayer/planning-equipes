@@ -97,7 +97,8 @@ dans [`domaine.md`](domaine.md).
 | `DatabaseDumpService` | Export / import de dump SQL |
 | `PlanningExportService` | Façade des exports d'un planning, **côté serveur uniquement** : qui est concerné, comment on le nomme, ses jours de repos, le lien de son espace, et les ZIP qui distribuent le tout |
 | `AnimateurPlanningPdf` / `GlobalPlanningPdf` / `PlanningIcs` | Un document chacun : le PDF en cartes qu'on lit sur un téléphone, le récapitulatif paysage de l'organisateur, le calendrier iCalendar |
-| `PdfTheme` | L'identité visuelle des PDF (palette, fontes, logo, icônes, coins arrondis). Séparée parce qu'elle change quand la charte change, jamais quand la façon de planifier change |
+| `PdfTheme` | L'identité visuelle des PDF (palette, fontes, images, icônes, coins arrondis). Séparée parce qu'elle change quand la charte change, jamais quand la façon de planifier change. **Un bean, pas un sac de constantes** : la charte appartient au déploiement (`ConfigBranding`), une instance par client |
+| `ProductName` | Seul lecteur de `planning.branding.product-name` dans la couche service : sujets de mails, en-tête du dump SQL, `PRODID` des exports ICS. Jamais vide — un nom vide produirait des sujets commençant par un tiret |
 | `PosteStatistics` | Ce qu'un ensemble de sièges représente — jours, stands, créneaux, heures — et la tuile qui l'affiche. Partagée par les deux PDF, pour que « 3 JOURS » veuille dire la même chose sur les deux |
 | `ApplicationLinks` | Toute URL publique imprimée hors de l'application (mail, PDF) : seul endroit qui connaît `planning.public-url` et les routes du SPA visées — voir [`developpement.md`](developpement.md#conventions-de-code) |
 | `AdminAddress` | Seul lecteur de `planning.mail.admin` ; vide = notifications administrateur désactivées |
@@ -125,8 +126,11 @@ fait.
 
 Ressources JAX-RS : `PlanningResource`, `SolverJobResource`, `EditionResource`,
 `ConstraintResource`, `AffectationExplanationResource`, `CsvImportResource`,
-`DatabaseResource`, `PlanningExportResource`, `KpiResource`, plus le filtre
-`EditionHeaderFilter` qui dépose l'en-tête `X-Edition-Id` dans le scope de requête.
+`DatabaseResource`, `PlanningExportResource`, `KpiResource`, plus les trois
+ressources publiques que le frontend lit sans session — `ConfigResource`,
+`BrandingResource` (la marque du déploiement) et `MentionsLegalesResource` —, et
+le filtre `EditionHeaderFilter` qui dépose l'en-tête `X-Edition-Id` dans le
+scope de requête.
 
 Le CRUD du référentiel a une ressource par famille — `StandResource`,
 `AnimateurResource`, `CreneauResource`, `DecoupageResource`,
@@ -184,6 +188,23 @@ défini dans `src/material-theme.scss` via `mat.theme()` (palettes azure / blue,
 typographie Roboto) ; le CSS applicatif n'utilise que les variables système
 `--mat-sys-*`. L'application ne dépend pas de `@angular/animations` : les
 composants Material s'animent en CSS.
+
+**La marque, elle, appartient au déploiement** — une instance par client. Le nom
+du produit, le logo et la couleur d'accent sont lus une seule fois sur
+`GET /api/branding` dans `src/main.ts`, avant `bootstrapApplication()`, au même
+titre que le catalogue i18n et `/api/config` : le titre de l'onglet et le logo
+décident de la première image affichée. `app/core/branding.ts` porte le jeton
+`BRANDING` (dont la fabrique par défaut est une identité neutre, pour que tout
+test rende une marque cohérente sans fournisseur), `app/core/branding-title.strategy.ts`
+accole le nom du produit au titre de chaque route — les routes ne nomment plus
+que leur page —, et `app/shared/brand-logo.ts` affiche le logo, ou **rien du
+tout** quand aucun n'est configuré.
+
+Une limite à connaître : `mat.theme()` compile toute la palette tonale dans le
+bundle. La couleur d'accent configurable n'alimente donc que la custom property
+`--app-accent` (`src/styles/branding.css`), lue par les feuilles de style
+propres à l'application ; **recolorer les composants Material eux-mêmes demande
+une recompilation** du frontend, pas une variable d'environnement.
 
 Chaque bloc fonctionnel a **sa propre route et sa propre page**, chargée en
 *lazy loading* :
@@ -303,7 +324,9 @@ Conventions :
 
 Le CSS global se limite à ce que Material ne couvre pas : `src/styles.css` n'est
 qu'un agrégateur de règles `@import` et chaque partial vit sous `src/styles/`
-(`pages.css` cartes / formulaires / tableaux, `feedback.css` moniteur de job et
+(`branding.css` — les jetons de la marque du déploiement, importé en premier
+puisque tous les autres lisent `--app-accent` —, `pages.css` cartes /
+formulaires / tableaux, `feedback.css` moniteur de job et
 variantes de snack bar, `calendar-month.css`, `calendar-day.css`,
 `constraints.css`, `problemes.css`, `staffing.css`, `ouvertures.css`
 — grille des ouvertures de stands —, `horaires-stand.css`

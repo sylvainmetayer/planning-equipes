@@ -8,7 +8,9 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { Router } from '@angular/router';
+import { BRANDING } from '../../core/branding';
 import { StatutSession } from '../../core/models';
+import { BrandLogo } from '../../shared/brand-logo';
 
 /**
  * Admin login (issue #165): posts the credentials to Quarkus' form
@@ -21,11 +23,14 @@ import { StatutSession } from '../../core/models';
  */
 @Component({
   selector: 'app-login-page',
-  imports: [FormsModule, MatButtonModule, MatCardModule, MatFormFieldModule, MatIconModule, MatInputModule],
+  imports: [BrandLogo, FormsModule, MatButtonModule, MatCardModule, MatFormFieldModule, MatIconModule, MatInputModule],
   templateUrl: './login-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LoginPage {
+  /** The card names the deployment, not the software: "<produit> — administration". */
+  protected readonly productName = inject(BRANDING).productName;
+
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
 

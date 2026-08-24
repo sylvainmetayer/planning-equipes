@@ -43,6 +43,16 @@ services:
       MAIL_FROM: ${MAIL_FROM:-planning-equipes@localhost}
       MAIL_ADMIN: ${MAIL_ADMIN:-}
       PUBLIC_URL: ${PUBLIC_URL:-http://localhost:8080}
+      # Marque blanche : une instance par client, réglée par déploiement. Sans
+      # ces variables l'application s'appelle « Planning Équipes », n'affiche
+      # aucun logo plutôt que celui d'un autre, et imprime ses PDF dans une
+      # palette neutre. Voir README.md § Marque blanche.
+      BRANDING_PRODUCT_NAME: ${BRANDING_PRODUCT_NAME:-Planning Équipes}
+      BRANDING_ORGANISATION: ${BRANDING_ORGANISATION:-}
+      BRANDING_LOGO_URL: ${BRANDING_LOGO_URL:-}
+      BRANDING_ACCENT_COLOR: ${BRANDING_ACCENT_COLOR:-}
+      BRANDING_PDF_LOGO: ${BRANDING_PDF_LOGO:-}
+      BRANDING_PDF_STRIP: ${BRANDING_PDF_STRIP:-}
       # Mentions légales (page publique /mentions-legales). Vides = la page
       # affiche ce qui manque plutôt que d'inventer un éditeur.
       LEGAL_EDITEUR: ${LEGAL_EDITEUR:-}

@@ -97,6 +97,17 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 | `MAIL_MOCK` | `false` (tests : toujours mockés) | `true` : les mails sont journalisés au lieu d'être envoyés |
 | `MAIL_FROM` | `planning-equipes@localhost` | Adresse expéditrice |
 | `MAIL_ADMIN` | *(vide = désactivé)* | Adresse de l'administrateur : demandes d'échange soumises, et fin de résolution si l'édition le demande |
+| `BRANDING_PRODUCT_NAME` | `Planning Équipes` | Nom du produit : onglet du navigateur, titre de chaque page, sujets des mails, en-tête du dump SQL, `PRODID` des exports ICS, en-tête des PDF |
+| `BRANDING_ORGANISATION` | *(vide)* | Client pour lequel cette instance est déployée, imprimé au pied des PDF ; vide = seule la date de génération y figure |
+| `BRANDING_LOGO_URL` | *(vide = aucun logo)* | URL du logo affiché dans les barres d'outils et sur la carte de connexion (`logo.png` pour un fichier servi à la racine, ou une URL absolue) |
+| `BRANDING_ACCENT_COLOR` | *(vide = accent Material compilé)* | Couleur d'accent de l'IHM, toute couleur CSS ; alimente `--app-accent` |
+| `BRANDING_PDF_LOGO` | *(vide = aucun logo)* | Logo de l'en-tête des PDF : `classpath:/branding/xxx.png` pour une image embarquée, sinon un chemin de fichier monté |
+| `BRANDING_PDF_STRIP` | *(vide = aucun bandeau)* | Bandeau décoratif de la première page du planning individuel, même syntaxe |
+| `BRANDING_PDF_HEADLINE` | `#1f2933` | Encre principale des PDF (titres, noms, corps des tableaux) |
+| `BRANDING_PDF_MUTED` | `#6b7280` | Texte secondaire des PDF (horaires, emplacements, coéquipiers, pied de page) |
+| `BRANDING_PDF_ACCENT` | `#3a6ea5` | Accent des PDF (pastilles de journée, titres d'encadré, bordures de carte, alertes) |
+| `BRANDING_PDF_HIGHLIGHT` | `#e4eaf1` | Fond des tuiles de statistiques et des en-têtes de tableau |
+| `BRANDING_PDF_PILL` | `#f1f4f8` | Fond des pastilles d'horaire et couleur des filets de tableau |
 | `LEGAL_EDITEUR` | *(vide)* | Éditeur du site (nom, forme juridique, adresse, immatriculation) affiché sur `/mentions-legales` |
 | `LEGAL_DIRECTEUR_PUBLICATION` | *(vide)* | Directeur de la publication |
 | `LEGAL_HEBERGEUR` | *(vide)* | Hébergeur (nom et adresse) |
@@ -117,6 +128,34 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 > **Renommage** : les variables `PLANNING_MCP_*` remplacent les anciennes
 > `PLANNING_MCP_*`, encore acceptées en repli pour ne pas casser un déploiement
 > existant. Elles seront retirées dans une version ultérieure.
+
+#### Marque blanche
+
+Le modèle de déploiement est **une instance par client** : l'identité se règle
+donc par déploiement, avec les variables `BRANDING_*` ci-dessus, et rien n'est
+stocké en base — pas d'écran d'administration de la marque, un redémarrage est
+le seul moment où un logo change. Le frontend les lit une fois, avant son
+démarrage, sur l'endpoint public `GET /api/branding`.
+
+Sans aucune de ces variables, l'application démarre, s'appelle « Planning
+Équipes », **n'affiche aucun logo** plutôt que celui d'un autre, et imprime ses
+documents dans une palette gris-bleu neutre.
+
+Deux limites à connaître :
+
+- la **palette d'Angular Material** (boutons, barres, champs) est compilée par
+  `mat.theme()` dans `src/main/webui/src/material-theme.scss` :
+  `BRANDING_ACCENT_COLOR` ne pilote que `--app-accent`, lu par les feuilles de
+  style propres à l'application. Recolorer les composants Material eux-mêmes
+  demande une recompilation du frontend ;
+- les **images** ne sont pas téléversables depuis l'application. Un logo se
+  fournit soit par une URL (`BRANDING_LOGO_URL` — la CSP par défaut accepte
+  `https:` et `data:`), soit par un fichier monté à côté du conteneur
+  (`BRANDING_PDF_LOGO`), soit par une image embarquée dans le jar
+  (`classpath:/branding/…`). Les visuels du festival restent livrés
+  sous ce préfixe : `BRANDING_PDF_LOGO=classpath:/branding/logo.png`,
+  `BRANDING_PDF_STRIP=classpath:/branding/bandeau.png`, et
+  `BRANDING_LOGO_URL=logo.png` côté web.
 
 Détails et mise en place : [`docs/observabilite.md`](docs/observabilite.md) (Sentry/Cloudflare),
 [`docs/mcp.md`](docs/mcp.md) (serveur MCP).

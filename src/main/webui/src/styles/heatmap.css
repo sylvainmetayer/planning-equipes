@@ -104,7 +104,7 @@
 /* The grid is keyboard-navigable (roving tabindex): the focused cell must be
    unmistakable, since the arrows move it one step at a time. */
 .heatmap-cell:focus-visible {
-  outline: 3px solid var(--mat-sys-primary);
+  outline: 3px solid var(--app-accent);
   outline-offset: -3px;
 }
 

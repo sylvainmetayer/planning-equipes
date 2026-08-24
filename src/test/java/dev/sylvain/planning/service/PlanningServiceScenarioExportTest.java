@@ -73,7 +73,7 @@ class PlanningServiceScenarioExportTest {
 
         List<Map<String, Object>> creneaux = (List<Map<String, Object>>) parsed.get("creneaux");
         assertThat(creneaux).hasSize(1);
-        assertThat(creneaux.get(0)).containsEntry("id", 1)
+        assertThat(creneaux.get(0)).containsEntry("id", "1")
                 .containsEntry("heureDebut", "09:00")
                 .containsEntry("heureFin", "13:00");
 
@@ -108,8 +108,11 @@ class PlanningServiceScenarioExportTest {
 
         List<Map<String, Object>> postesYaml = (List<Map<String, Object>>) parsed.get("postes");
         assertThat(postesYaml).hasSize(1);
+        // A string, not a number: the published schema declares the id
+        // `string`, and this assertion used to pin down the very gap that made
+        // every exported file impossible to import back.
         assertThat(postesYaml.get(0)).containsEntry("standId", "STAND-A")
-                .containsEntry("creneauId", 1)
+                .containsEntry("creneauId", "1")
                 .containsEntry("animateurId", null);
     }
 

@@ -3,7 +3,11 @@ package dev.sylvain.planning.service;
 import java.awt.Color;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,19 +33,28 @@ import org.openpdf.text.pdf.PdfPageEventHelper;
 import org.openpdf.text.pdf.PdfTemplate;
 import org.openpdf.text.pdf.PdfWriter;
 
+import dev.sylvain.planning.config.ConfigBranding;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+
 /**
- * The visual identity of the PDFs: the palette, the fonts, the logo, the
- * hand-drawn icons and the cell events that draw the rounded corners.
+ * The visual identity of the PDFs: the palette, the fonts, the images and the
+ * cell events that draw the rounded corners.
  *
  * <p>Kept apart from the three documents because it changes for other reasons
  * than they do: a colour or a font weight moves when the theme moves, never
  * when the way of planning changes. The global PDF and the individual one both
  * use it — which is what makes them look alike.</p>
+ *
+ * <p>It is a bean rather than a bag of constants because the theme belongs to
+ * the <b>deployment</b>: one instance per customer, each with its own name,
+ * images and colours ({@link ConfigBranding}). What does not depend on the
+ * customer — the date formats, the icon drawing, the layout events — stays
+ * static.</p>
  */
-final class PdfTheme {
-
-    private PdfTheme() {
-    }
+@ApplicationScoped
+public class PdfTheme {
 
     static final String FESTIVAL_TIMEZONE = "Europe/Paris";
     static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ISO_LOCAL_DATE;
@@ -49,77 +62,258 @@ final class PdfTheme {
     static final DateTimeFormatter FRENCH_DAY_DATE_FORMAT = DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.FRENCH);
     static final DateTimeFormatter GENERATED_AT_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy 'à' HH:mm");
 
-    static final String LOGO_RESOURCE = "/branding/logo.png";
-    static final String STRIP_RESOURCE = "/branding/strip.png";
+    /** Prefix marking an image bundled in the application rather than mounted next to it. */
+    private static final String CLASSPATH_PREFIX = "classpath:";
 
-    // --- Palette, sampled from the brand mark: crimson red, golden yellow, warm dark ink ---
-    static final Color HEADLINE = new Color(43, 33, 24);
-    static final Color MUTED = new Color(146, 121, 87);
-    static final Color RED = new Color(200, 29, 37);
-    static final Color YELLOW = new Color(255, 214, 62);
-    static final Color CARD_BACKGROUND = Color.WHITE;
-    static final Color PILL_BACKGROUND = new Color(250, 235, 208);
+    private final String productName;
+    private final String organisation;
+    private final String logoResource;
+    private final String stripResource;
 
-    // --- Fonts: bold rounded sans for headline figures, plain sans for supporting text ---
-    static final Font BRAND_LABEL_FONT = new Font(Font.HELVETICA, 8.5f, Font.BOLD, RED);
-    static final Font NAME_FONT = new Font(Font.HELVETICA, 24, Font.BOLD, HEADLINE);
-    static final Font STAT_NUMBER_FONT = new Font(Font.HELVETICA, 19, Font.BOLD, HEADLINE);
-    static final Font STAT_LABEL_FONT = new Font(Font.HELVETICA, 7.5f, Font.BOLD, HEADLINE);
-    static final Font STAT_SUBLABEL_FONT = new Font(Font.HELVETICA, 6.5f, Font.BOLD, MUTED);
-    static final Font DATE_FONT = new Font(Font.HELVETICA, 13, Font.BOLD, HEADLINE);
-    static final Font CALLOUT_TITLE_FONT = new Font(Font.HELVETICA, 8.5f, Font.BOLD, RED);
-    static final Font CALLOUT_TEXT_FONT = new Font(Font.HELVETICA, 10.5f, Font.NORMAL, HEADLINE);
-    static final Font BADGE_FONT = new Font(Font.HELVETICA, 7.5f, Font.BOLD, Color.WHITE);
-    static final Font TIME_FONT = new Font(Font.HELVETICA, 8.5f, Font.BOLD, MUTED);
-    static final Font STAND_FONT = new Font(Font.HELVETICA, 10.5f, Font.BOLD, HEADLINE);
-    static final Font LOCATION_FONT = new Font(Font.HELVETICA, 9, Font.NORMAL, MUTED);
+    // --- Palette: five colours, all deployment-configurable, neutral grey-blue by default ---
+    private final Color headline;
+    private final Color muted;
+    private final Color accent;
+    private final Color highlight;
+    private final Color pill;
+    private final Color cardBackground = Color.WHITE;
+
+    // --- Fonts: bold sans for headline figures, plain sans for supporting text ---
+    private final Font brandLabelFont;
+    private final Font nameFont;
+    private final Font statNumberFont;
+    private final Font statLabelFont;
+    private final Font statSubLabelFont;
+    private final Font dateFont;
+    private final Font calloutTitleFont;
+    private final Font calloutTextFont;
+    private final Font badgeFont;
+    private final Font timeFont;
+    private final Font standFont;
+    private final Font locationFont;
     /** Teammates line under the stand name: present but secondary to the stand itself. */
-    static final Font TEAM_FONT = new Font(Font.HELVETICA, 9, Font.ITALIC, MUTED);
-    static final Font EMPTY_STATE_FONT = new Font(Font.HELVETICA, 10, Font.ITALIC, MUTED);
-    static final Font FOOTER_FONT = new Font(Font.HELVETICA, 8, Font.NORMAL, MUTED);
+    private final Font teamFont;
+    private final Font emptyStateFont;
+    private final Font footerFont;
     // --- Global (organiser) export: dense tables rather than per-seat cards ---
-    static final Font TABLE_HEADER_FONT = new Font(Font.HELVETICA, 8, Font.BOLD, HEADLINE);
-    static final Font TABLE_BODY_FONT = new Font(Font.HELVETICA, 8, Font.NORMAL, HEADLINE);
-    static final Font TABLE_ALERT_FONT = new Font(Font.HELVETICA, 8, Font.BOLD, RED);
+    private final Font tableHeaderFont;
+    private final Font tableBodyFont;
+    private final Font tableAlertFont;
+
+    @Inject
+    PdfTheme(ConfigBranding branding, ProductName productName) {
+        this(productName.value(),
+                branding.organisation().orElse(""),
+                branding.pdf().palette().headline(),
+                branding.pdf().palette().muted(),
+                branding.pdf().palette().accent(),
+                branding.pdf().palette().highlight(),
+                branding.pdf().palette().pill(),
+                branding.pdf().logo().orElse(""),
+                branding.pdf().strip().orElse(""));
+    }
+
+    /**
+     * Neutral defaults, for the callers that live outside CDI — the export
+     * tests, which assert on content and not on a customer's colours.
+     */
+    PdfTheme() {
+        this(ProductName.neutral().value(), "", "#1f2933", "#6b7280", "#3a6ea5", "#e4eaf1", "#f1f4f8", "", "");
+    }
+
+    private PdfTheme(String productName, String organisation, String headline, String muted, String accent,
+            String highlight, String pill, String logoResource, String stripResource) {
+        this.productName = productName.trim();
+        this.organisation = organisation.trim();
+        this.logoResource = logoResource.trim();
+        this.stripResource = stripResource.trim();
+        this.headline = parseColor(headline);
+        this.muted = parseColor(muted);
+        this.accent = parseColor(accent);
+        this.highlight = parseColor(highlight);
+        this.pill = parseColor(pill);
+
+        this.brandLabelFont = new Font(Font.HELVETICA, 8.5f, Font.BOLD, this.accent);
+        this.nameFont = new Font(Font.HELVETICA, 24, Font.BOLD, this.headline);
+        this.statNumberFont = new Font(Font.HELVETICA, 19, Font.BOLD, this.headline);
+        this.statLabelFont = new Font(Font.HELVETICA, 7.5f, Font.BOLD, this.headline);
+        this.statSubLabelFont = new Font(Font.HELVETICA, 6.5f, Font.BOLD, this.muted);
+        this.dateFont = new Font(Font.HELVETICA, 13, Font.BOLD, this.headline);
+        this.calloutTitleFont = new Font(Font.HELVETICA, 8.5f, Font.BOLD, this.accent);
+        this.calloutTextFont = new Font(Font.HELVETICA, 10.5f, Font.NORMAL, this.headline);
+        this.badgeFont = new Font(Font.HELVETICA, 7.5f, Font.BOLD, Color.WHITE);
+        this.timeFont = new Font(Font.HELVETICA, 8.5f, Font.BOLD, this.muted);
+        this.standFont = new Font(Font.HELVETICA, 10.5f, Font.BOLD, this.headline);
+        this.locationFont = new Font(Font.HELVETICA, 9, Font.NORMAL, this.muted);
+        this.teamFont = new Font(Font.HELVETICA, 9, Font.ITALIC, this.muted);
+        this.emptyStateFont = new Font(Font.HELVETICA, 10, Font.ITALIC, this.muted);
+        this.footerFont = new Font(Font.HELVETICA, 8, Font.NORMAL, this.muted);
+        this.tableHeaderFont = new Font(Font.HELVETICA, 8, Font.BOLD, this.headline);
+        this.tableBodyFont = new Font(Font.HELVETICA, 8, Font.NORMAL, this.headline);
+        this.tableAlertFont = new Font(Font.HELVETICA, 8, Font.BOLD, this.accent);
+    }
+
+    String productName() {
+        return productName;
+    }
+
+    /**
+     * Who this document belongs to, as printed at the foot of every page: the
+     * customer when the deployment named one, the product otherwise — never a
+     * festival nobody here has heard of.
+     */
+    String footerOwner() {
+        return organisation.isEmpty() ? productName : organisation;
+    }
+
+    Color headline() {
+        return headline;
+    }
+
+    Color muted() {
+        return muted;
+    }
+
+    Color accent() {
+        return accent;
+    }
+
+    Color highlight() {
+        return highlight;
+    }
+
+    Color pill() {
+        return pill;
+    }
+
+    Color cardBackground() {
+        return cardBackground;
+    }
+
+    Font brandLabelFont() {
+        return brandLabelFont;
+    }
+
+    Font nameFont() {
+        return nameFont;
+    }
+
+    Font statNumberFont() {
+        return statNumberFont;
+    }
+
+    Font statLabelFont() {
+        return statLabelFont;
+    }
+
+    Font statSubLabelFont() {
+        return statSubLabelFont;
+    }
+
+    Font dateFont() {
+        return dateFont;
+    }
+
+    Font calloutTitleFont() {
+        return calloutTitleFont;
+    }
+
+    Font calloutTextFont() {
+        return calloutTextFont;
+    }
+
+    Font badgeFont() {
+        return badgeFont;
+    }
+
+    Font timeFont() {
+        return timeFont;
+    }
+
+    Font standFont() {
+        return standFont;
+    }
+
+    Font locationFont() {
+        return locationFont;
+    }
+
+    Font teamFont() {
+        return teamFont;
+    }
+
+    Font footerFont() {
+        return footerFont;
+    }
+
+    Font tableHeaderFont() {
+        return tableHeaderFont;
+    }
+
+    Font tableBodyFont() {
+        return tableBodyFont;
+    }
+
+    Font tableAlertFont() {
+        return tableAlertFont;
+    }
+
+    /** The footer of every page: who the document belongs to, then when it was produced. */
+    FooterEvent footerEvent(String what, Instant generatedAt) {
+        String text = footerOwner() + " · " + what + " généré le "
+                + GENERATED_AT_FORMAT.format(generatedAt.atZone(ZoneId.systemDefault()));
+        return new FooterEvent(text, footerFont, muted);
+    }
 
     /**
      * Branded page header shared by the global and per-animateur PDFs: the
-     * FESTIVAL logo, a spaced small-caps brand label and the page's title —
-     * only the title-column width, the texts and the bottom spacing differ.
+     * deployment's logo when it has one, a spaced small-caps brand label and
+     * the page's title — only the title-column width, the texts and the bottom
+     * spacing differ.
+     *
+     * <p>An instance that configured no logo gets the same header without the
+     * image column: a missing mark is better than someone else's.</p>
      */
-    static PdfPTable brandHeader(Document document, float titleWidth, String brandText, String title,
-            float spacingAfter) {
-        Image logo = loadImage(LOGO_RESOURCE);
-        logo.scaleToFit(46f, 46f);
-
-        PdfPTable header = new PdfPTable(new float[] { 46f, titleWidth });
+    PdfPTable brandHeader(Document document, float titleWidth, String brandText, String title, float spacingAfter) {
+        Image logo = loadOptionalImage(logoResource);
+        PdfPTable header = logo == null
+                ? new PdfPTable(new float[] { titleWidth })
+                : new PdfPTable(new float[] { 46f, titleWidth });
         header.setTotalWidth(document.getPageSize().getWidth() - document.leftMargin() - document.rightMargin());
         header.setLockedWidth(true);
 
-        PdfPCell logoCell = new PdfPCell(logo, false);
-        logoCell.setBorder(Rectangle.NO_BORDER);
-        logoCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
-        logoCell.setPadding(0f);
-        header.addCell(logoCell);
+        if (logo != null) {
+            logo.scaleToFit(46f, 46f);
+            PdfPCell logoCell = new PdfPCell(logo, false);
+            logoCell.setBorder(Rectangle.NO_BORDER);
+            logoCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+            logoCell.setPadding(0f);
+            header.addCell(logoCell);
+        }
 
         PdfPCell titleCell = new PdfPCell();
         titleCell.setBorder(Rectangle.NO_BORDER);
         titleCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
-        titleCell.setPaddingLeft(14f);
+        titleCell.setPaddingLeft(logo == null ? 0f : 14f);
         Paragraph brandLabel = new Paragraph();
-        Chunk brandChunk = new Chunk(brandText, BRAND_LABEL_FONT);
+        Chunk brandChunk = new Chunk(brandText, brandLabelFont);
         brandChunk.setCharacterSpacing(1.4f);
         brandLabel.add(brandChunk);
         brandLabel.setSpacingAfter(3f);
         titleCell.addElement(brandLabel);
-        titleCell.addElement(new Paragraph(title, NAME_FONT));
+        titleCell.addElement(new Paragraph(title, nameFont));
         header.addCell(titleCell);
         header.setSpacingAfter(spacingAfter);
         return header;
     }
 
-    static Paragraph emptyState() {
-        Paragraph paragraph = new Paragraph("Aucune affectation pour ce festival.", EMPTY_STATE_FONT);
+    /** Decorative band of the individual planning's first page, or {@code null} when the deployment configured none. */
+    Image strip() {
+        return loadOptionalImage(stripResource);
+    }
+
+    Paragraph emptyState() {
+        Paragraph paragraph = new Paragraph("Aucune affectation pour ce festival.", emptyStateFont);
         paragraph.setAlignment(Element.ALIGN_CENTER);
         paragraph.setSpacingBefore(24f);
         return paragraph;
@@ -130,15 +324,53 @@ final class PdfTheme {
         return raw.substring(0, 1).toUpperCase(Locale.FRENCH) + raw.substring(1);
     }
 
-    /** Loads a PNG bundled under {@code src/main/resources} (not the webui's own public/ folder, which isn't on the Java classpath). */
-    static Image loadImage(String resourcePath) {
-        try (InputStream in = PdfTheme.class.getResourceAsStream(resourcePath)) {
-            if (in == null) {
-                throw new IOException("Missing classpath resource: " + resourcePath);
-            }
-            return Image.getInstance(in.readAllBytes());
+    /**
+     * Reads {@code #rrggbb} (the {@code #} optional), the shape an operator
+     * copies out of a brand guide. Anything else is a configuration mistake and
+     * must be loud: a silently ignored colour would ship a customer's documents
+     * in the wrong palette.
+     */
+    private static Color parseColor(String value) {
+        String hex = value.trim();
+        if (hex.startsWith("#")) {
+            hex = hex.substring(1);
+        }
+        if (hex.length() != 6) {
+            throw new IllegalArgumentException("Invalid branding colour '" + value + "': expected #rrggbb");
+        }
+        try {
+            return new Color(Integer.parseInt(hex, 16));
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid branding colour '" + value + "': expected #rrggbb", e);
+        }
+    }
+
+    /**
+     * Loads a configured image, or answers {@code null} when the deployment
+     * configured none. {@code classpath:/x.png} reads an image bundled in the
+     * application; anything else is a filesystem path, which is how a logo
+     * mounted next to the container reaches the documents.
+     */
+    private static Image loadOptionalImage(String resource) {
+        if (resource == null || resource.isEmpty()) {
+            return null;
+        }
+        try {
+            byte[] bytes = resource.startsWith(CLASSPATH_PREFIX)
+                    ? readClasspath(resource.substring(CLASSPATH_PREFIX.length()))
+                    : Files.readAllBytes(Path.of(resource));
+            return Image.getInstance(bytes);
         } catch (IOException e) {
-            throw new RuntimeException("Unable to load image " + resourcePath, e);
+            throw new IllegalStateException("Unable to load branding image " + resource, e);
+        }
+    }
+
+    private static byte[] readClasspath(String path) throws IOException {
+        try (InputStream in = PdfTheme.class.getResourceAsStream(path)) {
+            if (in == null) {
+                throw new IOException("Missing classpath resource: " + path);
+            }
+            return in.readAllBytes();
         }
     }
 
@@ -200,6 +432,7 @@ final class PdfTheme {
     /** Draws a centered pill (background + clock icon + text) sized to its own content, ignoring the cell's own padding. */
     static final class TimePillEvent implements PdfPCellEvent {
         private final String text;
+        private final Font font;
         private final Color background;
         private final Color contentColor;
         private final float pillWidth;
@@ -207,9 +440,10 @@ final class PdfTheme {
         private final float iconDiameter;
         private final float iconGap;
 
-        TimePillEvent(String text, Color background, Color contentColor, float pillWidth,
+        TimePillEvent(String text, Font font, Color background, Color contentColor, float pillWidth,
                 float pillHeight, float iconDiameter, float iconGap) {
             this.text = text;
+            this.font = font;
             this.background = background;
             this.contentColor = contentColor;
             this.pillWidth = pillWidth;
@@ -231,8 +465,8 @@ final class PdfTheme {
             background2.fill();
             background2.restoreState();
 
-            BaseFont baseFont = TIME_FONT.getCalculatedBaseFont(false);
-            float textWidth = baseFont.getWidthPoint(text, TIME_FONT.getCalculatedSize());
+            BaseFont baseFont = font.getCalculatedBaseFont(false);
+            float textWidth = baseFont.getWidthPoint(text, font.getCalculatedSize());
             float contentLeft = left + (pillWidth - (iconDiameter + iconGap + textWidth)) / 2f;
 
             PdfContentByte line = canvases[PdfPTable.LINECANVAS];
@@ -241,9 +475,9 @@ final class PdfTheme {
             PdfContentByte textCanvas = canvases[PdfPTable.TEXTCANVAS];
             textCanvas.saveState();
             textCanvas.beginText();
-            textCanvas.setFontAndSize(baseFont, TIME_FONT.getCalculatedSize());
+            textCanvas.setFontAndSize(baseFont, font.getCalculatedSize());
             textCanvas.setColorFill(contentColor);
-            textCanvas.setTextMatrix(contentLeft + iconDiameter + iconGap, centerY - TIME_FONT.getCalculatedSize() * 0.35f);
+            textCanvas.setTextMatrix(contentLeft + iconDiameter + iconGap, centerY - font.getCalculatedSize() * 0.35f);
             textCanvas.showText(text);
             textCanvas.endText();
             textCanvas.restoreState();
@@ -342,10 +576,14 @@ final class PdfTheme {
     /** Draws the "généré le ..." footer and a "Page x/y" counter, back-filled once the total page count is known. */
     static final class FooterEvent extends PdfPageEventHelper {
         private final String generatedAtText;
+        private final Font font;
+        private final Color color;
         private final List<PdfTemplate> pageCounterTemplates = new ArrayList<>();
 
-        FooterEvent(String generatedAtText) {
+        FooterEvent(String generatedAtText, Font font, Color color) {
             this.generatedAtText = generatedAtText;
+            this.font = font;
+            this.color = color;
         }
 
         @Override
@@ -354,7 +592,7 @@ final class PdfTheme {
             float y = document.bottomMargin() - 18;
 
             PdfContentByte canvas = writer.getDirectContent();
-            Phrase generated = new Phrase(generatedAtText, FOOTER_FONT);
+            Phrase generated = new Phrase(generatedAtText, font);
             ColumnText.showTextAligned(canvas, Element.ALIGN_LEFT, generated, document.leftMargin(), y, 0);
 
             float templateWidth = 70f;
@@ -369,13 +607,13 @@ final class PdfTheme {
             // own counter is already sitting on the next, not-yet-written page,
             // which is what made every document read "Page 1/2" at one page.
             int totalPages = pageCounterTemplates.size();
-            BaseFont baseFont = FOOTER_FONT.getCalculatedBaseFont(false);
+            BaseFont baseFont = font.getCalculatedBaseFont(false);
             for (int i = 0; i < pageCounterTemplates.size(); i++) {
                 PdfTemplate template = pageCounterTemplates.get(i);
                 String text = "Page " + (i + 1) + "/" + totalPages;
                 template.beginText();
-                template.setFontAndSize(baseFont, FOOTER_FONT.getSize());
-                template.setColorFill(MUTED);
+                template.setFontAndSize(baseFont, font.getSize());
+                template.setColorFill(color);
                 template.showTextAligned(Element.ALIGN_RIGHT, text, 70f, 3f, 0);
                 template.endText();
             }

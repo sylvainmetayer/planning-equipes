@@ -36,7 +36,7 @@ import dev.sylvain.planning.domain.Stand;
 class PlanningExportServiceTest {
 
     private final PlanningExportService service = new PlanningExportService(new ApplicationLinks(Optional.empty()),
-            new AnimateurPlanningPdf(), new GlobalPlanningPdf(), new PlanningIcs());
+            new AnimateurPlanningPdf(new PdfTheme()), new GlobalPlanningPdf(new PdfTheme()), new PlanningIcs());
     private final AtomicInteger posteSequence = new AtomicInteger();
 
     @Test
@@ -332,7 +332,7 @@ class PlanningExportServiceTest {
     /** The same service, but with a public URL configured: the espace links become printable. */
     private static PlanningExportService exportsWithLinks(String baseUrl) {
         return new PlanningExportService(new ApplicationLinks(Optional.of(baseUrl)),
-                new AnimateurPlanningPdf(), new GlobalPlanningPdf(), new PlanningIcs());
+                new AnimateurPlanningPdf(new PdfTheme()), new GlobalPlanningPdf(new PdfTheme()), new PlanningIcs());
     }
 
     private Set<String> typologies(String... typologies) {

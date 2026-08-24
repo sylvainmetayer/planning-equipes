@@ -6,7 +6,7 @@
 }
 
 .page-card.is-editing {
-  border-color: var(--mat-sys-primary);
+  border-color: var(--app-accent);
 }
 
 /* Element-qualified selector: Angular injects Material's own
@@ -255,7 +255,7 @@ form.form-grid {
 }
 
 .snapshot-message {
-  color: var(--mat-sys-primary);
+  color: var(--app-accent);
   font: var(--mat-sys-body-medium);
   margin: 0.75rem 0 0;
 }

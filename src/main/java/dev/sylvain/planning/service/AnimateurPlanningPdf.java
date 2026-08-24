@@ -4,7 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.ZoneOffset;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -29,6 +28,7 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
 /**
  * The planning of one animateur, as cards rather than as a table: one card per
@@ -42,21 +42,26 @@ import jakarta.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class AnimateurPlanningPdf {
 
+    private final PdfTheme theme;
+
+    @Inject
+    public AnimateurPlanningPdf(PdfTheme theme) {
+        this.theme = theme;
+    }
+
     byte[] construire(String animateurName, List<PosteAffectation> postes,
             Map<String, List<String>> teammatesByPoste, List<PlanningExportService.JourRepos> joursRepos,
             String lienEspaceAnimateur) {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         Document document = new Document(PageSize.A4, 40, 40, 40, 54);
         PdfWriter writer = PdfWriter.getInstance(document, output);
-        String generatedAt = "Festival — Centre-ville · généré le "
-                + PdfTheme.GENERATED_AT_FORMAT.format(Instant.now().atZone(ZoneOffset.systemDefault()));
-        writer.setPageEvent(new PdfTheme.FooterEvent(generatedAt));
+        writer.setPageEvent(theme.footerEvent("planning individuel", Instant.now()));
         document.open();
 
         addHeader(document, animateurName, postes);
 
         if (postes.isEmpty()) {
-            document.add(PdfTheme.emptyState());
+            document.add(theme.emptyState());
         } else {
             document.add(buildStandsAffectesCard(postes));
             // Rest days are interleaved at their chronological place, so the
@@ -90,15 +95,15 @@ public class AnimateurPlanningPdf {
      * on screen, or type the printed URL — it opens their planning and the
      * échange request form, no account needed.
      */
-    private static Paragraph espaceAnimateurCallout(String lien) {
+    private Paragraph espaceAnimateurCallout(String lien) {
         Paragraph callout = new Paragraph();
         callout.setSpacingBefore(18f);
-        callout.add(new Chunk("VOTRE ESPACE EN LIGNE\n", PdfTheme.CALLOUT_TITLE_FONT));
+        callout.add(new Chunk("VOTRE ESPACE EN LIGNE\n", theme.calloutTitleFont()));
         Chunk action = new Chunk(
-                "Consulter mon planning et proposer un échange de créneau", PdfTheme.CALLOUT_TEXT_FONT);
+                "Consulter mon planning et proposer un échange de créneau", theme.calloutTextFont());
         action.setAnchor(lien);
         callout.add(action);
-        Chunk url = new Chunk("\n" + lien, PdfTheme.FOOTER_FONT);
+        Chunk url = new Chunk("\n" + lien, theme.footerFont());
         url.setAnchor(lien);
         callout.add(url);
         return callout;
@@ -108,13 +113,16 @@ public class AnimateurPlanningPdf {
         float pageWidth = document.getPageSize().getWidth();
         float pageHeight = document.getPageSize().getHeight();
 
-        Image strip = PdfTheme.loadImage(PdfTheme.STRIP_RESOURCE);
-        float stripWidth = 210f;
-        strip.scaleToFit(stripWidth, stripWidth * strip.getHeight() / strip.getWidth());
-        strip.setAbsolutePosition(pageWidth - 22f - strip.getScaledWidth(), pageHeight - 20f - strip.getScaledHeight());
-        document.add(strip);
+        Image strip = theme.strip();
+        if (strip != null) {
+            float stripWidth = 210f;
+            strip.scaleToFit(stripWidth, stripWidth * strip.getHeight() / strip.getWidth());
+            strip.setAbsolutePosition(pageWidth - 22f - strip.getScaledWidth(),
+                    pageHeight - 20f - strip.getScaledHeight());
+            document.add(strip);
+        }
 
-        document.add(PdfTheme.brandHeader(document, 320f, "PLANNING", animateurName, 22f));
+        document.add(theme.brandHeader(document, 320f, "PLANNING", animateurName, 22f));
 
         PdfPTable stats = statBlock(postes);
         stats.setSpacingAfter(24f);
@@ -124,12 +132,12 @@ public class AnimateurPlanningPdf {
     private PdfPTable statBlock(List<PosteAffectation> postes) {
         PdfPTable table = new PdfPTable(new float[] { 10f, 0.6f, 10f, 0.6f, 10f });
         table.setWidthPercentage(100);
-        table.addCell(PosteStatistics.statCell(PosteStatistics.distinctCreneauCount(postes), "CRÉNEAUX", null));
+        table.addCell(PosteStatistics.statCell(theme, PosteStatistics.distinctCreneauCount(postes), "CRÉNEAUX", null));
         table.addCell(PosteStatistics.gapCell());
-        table.addCell(PosteStatistics.statCell(PosteStatistics.distinctStandCount(postes), "STANDS", null));
+        table.addCell(PosteStatistics.statCell(theme, PosteStatistics.distinctStandCount(postes), "STANDS", null));
         table.addCell(PosteStatistics.gapCell());
         String heuresSubLabel = String.format(Locale.FRENCH, "TOTAL %.1f H TRAVAILLÉES", PosteStatistics.totalHeures(postes));
-        table.addCell(PosteStatistics.statCell(PosteStatistics.distinctDayCount(postes), "JOURS", heuresSubLabel));
+        table.addCell(PosteStatistics.statCell(theme, PosteStatistics.distinctDayCount(postes), "JOURS", heuresSubLabel));
         return table;
     }
 
@@ -144,20 +152,20 @@ public class AnimateurPlanningPdf {
         card.setWidthPercentage(100);
         card.setSpacingAfter(18f);
         card.getDefaultCell().setBorder(Rectangle.NO_BORDER);
-        card.setTableEvent(new PdfTheme.RoundedBackgroundEvent(PdfTheme.CARD_BACKGROUND, PdfTheme.RED, 10f));
+        card.setTableEvent(new PdfTheme.RoundedBackgroundEvent(theme.cardBackground(), theme.accent(), 10f));
 
         PdfPCell cell = new PdfPCell();
         cell.setBorder(Rectangle.NO_BORDER);
         cell.setPadding(14f);
 
         Paragraph title = new Paragraph();
-        Chunk titleChunk = new Chunk("VOS STANDS AFFECTÉS", PdfTheme.CALLOUT_TITLE_FONT);
+        Chunk titleChunk = new Chunk("VOS STANDS AFFECTÉS", theme.calloutTitleFont());
         titleChunk.setCharacterSpacing(1.1f);
         title.add(titleChunk);
         title.setSpacingAfter(5f);
         cell.addElement(title);
 
-        cell.addElement(new Paragraph(String.join("  ·  ", PosteStatistics.distinctStandNames(postes)), PdfTheme.CALLOUT_TEXT_FONT));
+        cell.addElement(new Paragraph(String.join("  ·  ", PosteStatistics.distinctStandNames(postes)), theme.calloutTextFont()));
 
         card.addCell(cell);
         return card;
@@ -171,7 +179,7 @@ public class AnimateurPlanningPdf {
         card.setWidthPercentage(100);
         card.setSpacingAfter(9f);
         card.getDefaultCell().setBorder(Rectangle.NO_BORDER);
-        card.setTableEvent(new PdfTheme.RoundedBackgroundEvent(PdfTheme.CARD_BACKGROUND, PdfTheme.RED, 10f));
+        card.setTableEvent(new PdfTheme.RoundedBackgroundEvent(theme.cardBackground(), theme.accent(), 10f));
 
         card.addCell(dayCell(creneau));
         card.addCell(timePillCell(poste.heureDebutEffectif(), poste.heureFinEffectif()));
@@ -192,7 +200,7 @@ public class AnimateurPlanningPdf {
 
         cell.addElement(dayBadge(jour));
 
-        Paragraph dateLine = new Paragraph(PdfTheme.formatFrenchDayDate(date), PdfTheme.DATE_FONT);
+        Paragraph dateLine = new Paragraph(PdfTheme.formatFrenchDayDate(date), theme.dateFont());
         dateLine.setSpacingBefore(7f);
 
         cell.addElement(dateLine);
@@ -209,7 +217,7 @@ public class AnimateurPlanningPdf {
         card.setWidthPercentage(100);
         card.setSpacingAfter(9f);
         card.getDefaultCell().setBorder(Rectangle.NO_BORDER);
-        card.setTableEvent(new PdfTheme.RoundedBackgroundEvent(PdfTheme.CARD_BACKGROUND, PdfTheme.MUTED, 10f));
+        card.setTableEvent(new PdfTheme.RoundedBackgroundEvent(theme.cardBackground(), theme.muted(), 10f));
 
         card.addCell(dayCell(jourRepos.jour(), jourRepos.date()));
 
@@ -217,7 +225,7 @@ public class AnimateurPlanningPdf {
         repos.setBorder(Rectangle.NO_BORDER);
         repos.setVerticalAlignment(Element.ALIGN_MIDDLE);
         repos.setPadding(14f);
-        repos.addElement(new Paragraph("Repos", PdfTheme.STAND_FONT));
+        repos.addElement(new Paragraph("Repos", theme.standFont()));
         card.addCell(repos);
         return card;
     }
@@ -226,8 +234,8 @@ public class AnimateurPlanningPdf {
     private PdfPTable dayBadge(int jour) {
         String text = "JOUR" + jour;
         float characterSpacing = 0.6f;
-        BaseFont baseFont = PdfTheme.BADGE_FONT.getCalculatedBaseFont(false);
-        float textWidth = baseFont.getWidthPoint(text, PdfTheme.BADGE_FONT.getCalculatedSize()) + characterSpacing * text.length();
+        BaseFont baseFont = theme.badgeFont().getCalculatedBaseFont(false);
+        float textWidth = baseFont.getWidthPoint(text, theme.badgeFont().getCalculatedSize()) + characterSpacing * text.length();
         float pillHeight = 15f;
         float pillWidth = textWidth + 18f;
 
@@ -241,8 +249,8 @@ public class AnimateurPlanningPdf {
         cell.setFixedHeight(pillHeight);
         cell.setHorizontalAlignment(Element.ALIGN_CENTER);
         cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
-        cell.setCellEvent(new PdfTheme.RoundedCellFillEvent(PdfTheme.RED, pillHeight / 2f));
-        Chunk chunk = new Chunk(text, PdfTheme.BADGE_FONT);
+        cell.setCellEvent(new PdfTheme.RoundedCellFillEvent(theme.accent(), pillHeight / 2f));
+        Chunk chunk = new Chunk(text, theme.badgeFont());
         chunk.setCharacterSpacing(characterSpacing);
         cell.setPhrase(new Phrase(chunk));
         table.addCell(cell);
@@ -251,8 +259,8 @@ public class AnimateurPlanningPdf {
 
     private PdfPCell timePillCell(LocalTime heureDebut, LocalTime heureFin) {
         String text = heureDebut.format(PdfTheme.TIME_FORMAT) + " - " + heureFin.format(PdfTheme.TIME_FORMAT);
-        BaseFont baseFont = PdfTheme.TIME_FONT.getCalculatedBaseFont(false);
-        float textWidth = baseFont.getWidthPoint(text, PdfTheme.TIME_FONT.getCalculatedSize());
+        BaseFont baseFont = theme.timeFont().getCalculatedBaseFont(false);
+        float textWidth = baseFont.getWidthPoint(text, theme.timeFont().getCalculatedSize());
         float iconDiameter = 8f;
         float iconGap = 5f;
         float pillHeight = 20f;
@@ -263,7 +271,8 @@ public class AnimateurPlanningPdf {
         cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
         cell.setHorizontalAlignment(Element.ALIGN_CENTER);
         cell.setPadding(14f);
-        cell.setCellEvent(new PdfTheme.TimePillEvent(text, PdfTheme.PILL_BACKGROUND, PdfTheme.MUTED, pillWidth, pillHeight, iconDiameter, iconGap));
+        cell.setCellEvent(new PdfTheme.TimePillEvent(text, theme.timeFont(), theme.pill(), theme.muted(), pillWidth,
+                pillHeight, iconDiameter, iconGap));
         return cell;
     }
 
@@ -273,11 +282,11 @@ public class AnimateurPlanningPdf {
         cell.setBorder(Rectangle.NO_BORDER);
         cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
         cell.setPadding(14f);
-        cell.addElement(new Paragraph("Stand " + stand.getNom(), PdfTheme.STAND_FONT));
+        cell.addElement(new Paragraph("Stand " + stand.getNom(), theme.standFont()));
 
         Paragraph equipe = new Paragraph(coequipiers.isEmpty()
                 ? "Seul(e) sur ce stand"
-                : "Avec " + String.join(", ", coequipiers), PdfTheme.TEAM_FONT);
+                : "Avec " + String.join(", ", coequipiers), theme.teamFont());
         equipe.setSpacingBefore(3f);
         cell.addElement(equipe);
         return cell;
@@ -296,7 +305,7 @@ public class AnimateurPlanningPdf {
             String url = emplacement.getLatitude() != null && emplacement.getLongitude() != null
                     ? osmUrl(emplacement)
                     : null;
-            cell.setCellEvent(new PdfTheme.LocationPinEvent(emplacement.getNom(), PdfTheme.LOCATION_FONT, PdfTheme.MUTED, 7f, 4f, url));
+            cell.setCellEvent(new PdfTheme.LocationPinEvent(emplacement.getNom(), theme.locationFont(), theme.muted(), 7f, 4f, url));
         }
         return cell;
     }

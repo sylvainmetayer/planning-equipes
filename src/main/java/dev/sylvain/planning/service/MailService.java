@@ -38,6 +38,14 @@ public class MailService {
     AdminAddress adminAddress;
 
     /**
+     * Every subject opens with the product name of this deployment: the first
+     * thing an animateur reads in their inbox must be the service they signed
+     * up with, not the software vendor's.
+     */
+    @Inject
+    ProductName productName;
+
+    /**
      * Sends one animateur their individual planning: the PDF attached, the
      * espace link in the body.
      */
@@ -51,7 +59,7 @@ public class MailService {
                     .append(lienEspace).append('\n');
         }
         corps.append("\nÀ bientôt,\nL'équipe d'organisation\n");
-        mailer.send(Mail.withText(emailAnimateur, "Planning Équipes — votre planning individuel", corps.toString())
+        mailer.send(Mail.withText(emailAnimateur, productName.subject("votre planning individuel"), corps.toString())
                 .addAttachment(fileName, pdf, "application/pdf"));
     }
 
@@ -61,7 +69,7 @@ public class MailService {
                 + "Voici votre code d'accès à votre espace animateur : " + code + "\n\n"
                 + "Il est valable 10 minutes. Si vous n'êtes pas à l'origine de cette demande, "
                 + "ignorez simplement ce message.\n";
-        mailer.send(Mail.withText(emailAnimateur, "Planning Équipes — votre code d'accès", corps));
+        mailer.send(Mail.withText(emailAnimateur, productName.subject("votre code d'accès"), corps));
     }
 
     /**
@@ -74,7 +82,7 @@ public class MailService {
                 .orElseThrow(() -> new IllegalStateException(
                         "Aucune adresse e-mail administrateur configurée (MAIL_ADMIN)."));
         mailer.send(Mail.withText(destinataire,
-                "Planning Équipes — mail de test",
+                productName.subject("mail de test"),
                 "Ce message confirme que l'envoi d'e-mails fonctionne pour cette instance.\n"
                         + "Envoyé depuis la page Débogage le " + ZonedDateTime.now() + ".\n"));
         return destinataire;

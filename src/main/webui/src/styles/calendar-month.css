@@ -64,7 +64,7 @@
 }
 
 .calendar-day-cell:focus-visible {
-  outline: 2px solid var(--mat-sys-primary);
+  outline: 2px solid var(--app-accent);
   outline-offset: 2px;
 }
 
@@ -73,13 +73,13 @@
 }
 
 .calendar-day-cell.is-today {
-  border-color: var(--mat-sys-primary);
+  border-color: var(--app-accent);
 }
 
 .calendar-day-cell.is-selected {
   background: var(--mat-sys-secondary-container);
   color: var(--mat-sys-on-secondary-container);
-  border-color: var(--mat-sys-primary);
+  border-color: var(--app-accent);
 }
 
 /* At-a-glance flag on the month grid: at least one understaffed stand-line that day. */
@@ -124,7 +124,7 @@
 }
 
 .calendar-dot.has-events {
-  background: var(--mat-sys-primary);
+  background: var(--app-accent);
 }
 
 .calendar-empty {

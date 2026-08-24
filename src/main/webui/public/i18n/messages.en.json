@@ -933,7 +933,7 @@
   "shell.logout": "Log out",
   "nav.link.echanges": "Swaps",
   "verrouillages.type.animateurCreneau": "Staff member on a time slot",
-  "login.titre": "Planning Équipes — administration",
+  "login.titre": "{$INTERPOLATION} — administration",
   "login.sousTitre": "This area is for the organisers. Staff members: use the personal link printed on your schedule.",
   "login.utilisateur": "Username",
   "login.motDePasse": "Password",

@@ -1,0 +1,22 @@
+/* Ce que la marque du déploiement peut changer sans recompiler.
+
+   `--app-accent` est la seule couleur pilotable à l'exécution : le thème
+   Angular Material est compilé par `mat.theme()` dans `material-theme.scss`,
+   qui produit toute la palette tonale (`--mat-sys-primary`, ses conteneurs,
+   ses états). Recolorer les composants Material eux-mêmes demande donc une
+   recompilation, pas une variable — voir docs/architecture.md.
+
+   Ce que cette variable couvre : tout ce que les feuilles de style de
+   l'application peignent elle-même (titres de section, bordures actives,
+   pastilles de calendrier, liens d'aide…). Par défaut elle vaut l'accent
+   Material, donc une instance qui ne configure rien reste cohérente. */
+:root {
+  --app-accent: var(--mat-sys-primary);
+}
+
+/* Le logo est rendu par <app-brand-logo> : `display: contents` laisse l'image
+   être l'élément flex que les barres d'outils stylent déjà (.app-logo), sans
+   qu'un conteneur supplémentaire ne s'intercale dans leur mise en page. */
+app-brand-logo {
+  display: contents;
+}

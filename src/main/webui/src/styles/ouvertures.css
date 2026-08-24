@@ -64,7 +64,7 @@
 }
 
 .ouvertures-legende .pastille.source-regle {
-  border-left: 5px solid var(--mat-sys-primary);
+  border-left: 5px solid var(--app-accent);
 }
 
 .ouvertures-legende .pastille.source-exception {
@@ -197,7 +197,7 @@
 /* Quelle couche a décidé du jour : un liseré, pour que l'état reste porté par le
    fond et la provenance par la bordure — deux informations, deux canaux. */
 .source-regle {
-  border-left: 3px solid var(--mat-sys-primary);
+  border-left: 3px solid var(--app-accent);
 }
 
 .source-exception {
