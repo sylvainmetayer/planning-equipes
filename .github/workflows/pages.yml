@@ -1,0 +1,46 @@
+# Publication de la page vitrine (`site/`) sur GitHub Pages.
+#
+# Déclenchement MANUEL uniquement pour l'instant, volontairement : GitHub Pages
+# n'est pas disponible sur un dépôt privé sans compte payant, et ce dépôt est
+# privé. Un déclencheur `push` ferait donc échouer le workflow à chaque commit.
+#
+# À l'ouverture du dépôt public, ajouter :
+#
+#   push:
+#     branches: [main]
+#     paths: ['site/**', '.github/workflows/pages.yml']
+#
+# et activer Pages avec « Source: GitHub Actions » dans les réglages du dépôt.
+
+name: Pages
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Une seule publication à la fois ; on ne coupe pas celle qui est en cours.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploiement.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+
+      - id: deploiement
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Planning Équipes — le planning de vos animateurs, dans les règles</title>
+<meta name="description" content="Logiciel de planification d'équipes pour festivals et accueils collectifs de mineurs : construit les plannings, respecte le Code du travail et le cadre applicable aux mineurs.">
+<meta name="color-scheme" content="light dark">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!--
+  PLACEHOLDERS À TRAITER AVANT MISE EN LIGNE — voir l'issue « page vitrine ».
+  Chaque bloc marqué data-todo attend une décision de positionnement ou un
+  contenu réel. Le reste de la page est factuel et vérifiable dans le code.
+
+  La page n'a ni marque ni favicon : le produit n'a pas encore d'identité
+  visuelle propre, et emprunter celle d'un client sur la page commerciale du
+  produit n'en est pas une. Rétablir <img class="mark"> et <link rel="icon">
+  quand ce visuel existera.
+-->
+
+<header class="hero">
+  <div class="wrap">
+    <h1>Le planning de vos animateurs,<br>construit dans les règles</h1>
+    <p class="lede">
+      Vous affectez des dizaines de personnes à des dizaines de postes, sur plusieurs
+      jours, avec des disponibilités qui changent et un cadre légal à respecter.
+      Aujourd'hui, ça se passe dans un tableur.
+    </p>
+    <p class="actions">
+      <a class="btn btn--primary" href="#demo" data-todo="lien démo publique">Voir une démonstration</a>
+      <a class="btn" href="#contact">Nous écrire</a>
+    </p>
+  </div>
+</header>
+
+<main>
+
+  <section class="wrap section">
+    <h2>Le tableur finit toujours par lâcher</h2>
+    <p>
+      Il tient tant que rien ne bouge. Puis quelqu'un se désiste, un stand ouvre plus tôt,
+      un mineur ne peut pas fermer — et il faut tout reprendre à la main, sans jamais
+      être certain de n'avoir rien cassé ailleurs.
+    </p>
+    <p>
+      Le calcul du planning n'est pas le vrai problème. Le vrai problème, c'est de
+      garantir qu'après la trentième retouche, aucune règle n'est violée.
+    </p>
+  </section>
+
+  <section class="wrap section">
+    <h2>Ce que fait le logiciel</h2>
+    <div class="grid">
+      <article>
+        <h3>Il construit le planning</h3>
+        <p>
+          À partir de vos postes, de vos créneaux et des disponibilités de chacun, il
+          propose une affectation complète — et vous dit ce qui l'empêche quand c'est
+          impossible, plutôt que de rendre un résultat approximatif.
+        </p>
+      </article>
+      <article>
+        <h3>Il refuse l'illégal</h3>
+        <p>
+          Durées maximales, repos quotidien et hebdomadaire, travail de nuit, jours
+          fériés, encadrement des mineurs : ces règles ne sont pas des conseils, ce sont
+          des contraintes que le calcul ne peut pas enfreindre.
+        </p>
+      </article>
+      <article>
+        <h3>Il explique ses choix</h3>
+        <p>
+          Pour chaque affectation, vous pouvez demander pourquoi cette personne, et
+          simuler un échange avant de le décider. Vous gardez la main : l'outil propose,
+          vous tranchez.
+        </p>
+      </article>
+      <article>
+        <h3>Il diffuse et absorbe les changements</h3>
+        <p>
+          Chaque animateur reçoit son planning par courriel, en PDF et au format
+          calendrier. Depuis son espace personnel, il consulte ses créneaux et propose
+          des échanges, que vous validez ou refusez.
+        </p>
+      </article>
+    </div>
+  </section>
+
+  <section class="wrap section section--accent">
+    <h2>La conformité n'est pas une case à cocher</h2>
+    <p>
+      Les règles du Code du travail et de la convention collective de l'animation
+      (ÉCLAT, IDCC 1518) sont écrites dans le logiciel, article par article, et
+      vérifiées à chaque calcul. Les dispositions propres aux jeunes travailleurs y
+      tiennent une place à part : ce sont elles qu'un planning fait à la main enfreint
+      le plus facilement.
+    </p>
+    <p class="fine">
+      Le logiciel est une aide à la décision, pas une validation juridique.
+      L'organisation qui l'utilise reste l'employeur, et demeure responsable du planning
+      qu'elle diffuse.
+    </p>
+  </section>
+
+  <section class="wrap section" id="demo">
+    <h2>Voir avant de décider</h2>
+    <p data-todo="remplacer par le lien réel + captures d'écran">
+      Une démonstration publique, chargée de données fictives et remise à zéro chaque
+      nuit, permet de manipuler l'outil sans rien installer.
+    </p>
+    <p class="actions">
+      <a class="btn btn--primary" href="#contact" data-todo="URL de la démo">Ouvrir la démonstration</a>
+    </p>
+  </section>
+
+  <section class="wrap section">
+    <h2>Comment ça se passe</h2>
+    <ol class="steps">
+      <li>
+        <strong>On regarde vos données.</strong> Vos fichiers actuels, vos postes, vos
+        contraintes propres. C'est là qu'on voit si l'outil convient à votre
+        organisation — et on vous le dit franchement si ce n'est pas le cas.
+      </li>
+      <li>
+        <strong>On installe et on paramètre.</strong> Votre instance, vos règles, vos
+        équipes importées. Vous n'avez rien à héberger ni à administrer.
+      </li>
+      <li>
+        <strong>Vous l'utilisez, on reste joignable.</strong> Particulièrement pendant
+        la période qui compte, celle où le planning bouge tous les jours.
+      </li>
+    </ol>
+    <p data-todo="grille tarifaire à arrêter">
+      Tarification à la mise en place, puis un abonnement annuel qui couvre
+      l'hébergement, les sauvegardes et le support.
+    </p>
+  </section>
+
+  <section class="wrap section" id="contact">
+    <h2>Parlons de votre organisation</h2>
+    <p>
+      Dites-nous combien de personnes vous planifiez, sur combien de jours, et comment
+      vous faites aujourd'hui. La réponse vous dira si l'outil a un intérêt pour vous.
+    </p>
+    <p class="actions">
+      <a class="btn btn--primary" href="mailto:planning@sylvain.dev">planning@sylvain.dev</a>
+    </p>
+  </section>
+
+</main>
+
+<footer class="wrap">
+  <p>
+    Logiciel libre sous licence <abbr title="GNU Affero General Public License v3">AGPL-3.0</abbr> —
+    <a href="https://github.com/sylvainmetayer/planning-equipes">code source</a>.
+    Vous pouvez l'auditer, l'héberger vous-même, ou le faire reprendre par quelqu'un d'autre.
+  </p>
+</footer>
+
+</body>
+</html>

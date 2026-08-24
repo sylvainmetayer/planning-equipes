@@ -1,0 +1,129 @@
+/*
+ * Feuille de style de la page vitrine.
+ *
+ * Volontairement sobre et conventionnelle : la cible est une association, pas
+ * un public de développeurs, et un design original raté inspire moins confiance
+ * qu'une mise en page banale bien exécutée. Aucune dépendance, aucune requête
+ * externe — la page se charge sur une connexion de salle des fêtes.
+ */
+
+:root {
+  --ground: #ffffff;
+  --surface: #f4f6f8;
+  --ink: #16202a;
+  --ink-soft: #45535f;
+  --rule: #dde3e8;
+  --accent: #1f4b7a;
+  --accent-ink: #ffffff;
+  --measure: 38rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground: #11171d;
+    --surface: #182028;
+    --ink: #e6ecf1;
+    --ink-soft: #b3c0cb;
+    --rule: #2a343e;
+    --accent: #7ea9d8;
+    --accent-ink: #11171d;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font: 400 1.0625rem/1.65 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+
+.wrap {
+  max-width: 62rem;
+  margin: 0 auto;
+  padding: 0 1.25rem;
+}
+
+h1, h2, h3 {
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+h1 { font-size: clamp(2rem, 5.5vw, 3rem); margin: 0 0 1rem; }
+h2 { font-size: clamp(1.4rem, 3.2vw, 1.8rem); margin: 0 0 0.9rem; }
+h3 { font-size: 1.05rem; margin: 0 0 0.5rem; }
+
+p { margin: 0 0 1rem; max-width: var(--measure); }
+
+a { color: var(--accent); }
+
+/* ---------- en-tête ---------- */
+
+.hero {
+  background: var(--surface);
+  border-bottom: 1px solid var(--rule);
+  padding: clamp(2.5rem, 8vw, 5rem) 0;
+}
+
+.lede {
+  font-size: clamp(1.05rem, 2.4vw, 1.2rem);
+  color: var(--ink-soft);
+  max-width: 34rem;
+}
+
+/* ---------- boutons ---------- */
+
+.actions { display: flex; flex-wrap: wrap; gap: 0.7rem; margin-top: 1.5rem; }
+
+.btn {
+  display: inline-block;
+  padding: 0.65rem 1.15rem;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.97rem;
+}
+
+.btn:hover, .btn:focus-visible { background: var(--accent); color: var(--accent-ink); }
+.btn--primary { background: var(--accent); color: var(--accent-ink); }
+.btn--primary:hover, .btn--primary:focus-visible { filter: brightness(1.12); }
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+/* ---------- sections ---------- */
+
+.section { padding: clamp(2.25rem, 6vw, 3.5rem) 1.25rem; border-bottom: 1px solid var(--rule); }
+.section--accent { background: var(--surface); }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  gap: 1.75rem 2.5rem;
+  margin-top: 1.5rem;
+}
+
+.grid p { margin: 0; color: var(--ink-soft); font-size: 0.97rem; }
+
+.steps { max-width: var(--measure); padding-left: 1.2rem; }
+.steps li { margin-bottom: 0.9rem; color: var(--ink-soft); }
+.steps strong { color: var(--ink); }
+
+.fine { font-size: 0.92rem; color: var(--ink-soft); }
+
+footer {
+  padding: 2rem 1.25rem 3rem;
+  font-size: 0.92rem;
+  color: var(--ink-soft);
+}
+
+footer p { max-width: 46rem; }
+
+/* Repère visuel discret sur les contenus encore provisoires : visible en
+   relecture, invisible pour un visiteur si le bloc est validé et l'attribut
+   retiré. */
+[data-todo] { border-left: 3px solid #c9a227; padding-left: 0.75rem; }
