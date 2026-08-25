@@ -141,13 +141,14 @@ public class PlanPublicationService {
         boolean jamaisPublie = planPublieService.jamaisPublie();
         PlanSnapshotService.SnapshotMeta derniere = planPublieService.dernierePublication();
 
+        Map<String, Identite> identites = identites();
         List<ChangementAnimateur> changements = diffService.comparer(
                 PublicationDiffService.vacationsParAnimateur(publie),
                 PublicationDiffService.vacationsParAnimateur(courant),
-                identites(),
+                identites,
                 jamaisPublie);
 
-        List<DestinatairePublication> destinataires = assembler(changements);
+        List<DestinatairePublication> destinataires = assembler(changements, identites);
         return new ApercuPublication(
                 jamaisPublie,
                 courant.getPostes().stream().noneMatch(poste -> poste.getAnimateur() != null),
@@ -163,10 +164,10 @@ public class PlanPublicationService {
      * nothing in the plan, and staying silent about it would leave them
      * waiting for an answer that already exists.
      */
-    private List<DestinatairePublication> assembler(List<ChangementAnimateur> changements) {
+    private List<DestinatairePublication> assembler(List<ChangementAnimateur> changements,
+            Map<String, Identite> identites) {
         Map<String, List<String>> decisions = decisionsParAnimateur();
         Map<String, List<String>> enCours = enCoursParAnimateur();
-        Map<String, Identite> identites = identites();
 
         Map<String, DestinatairePublication> parAnimateur = new LinkedHashMap<>();
         for (ChangementAnimateur changement : changements) {

@@ -1,9 +1,23 @@
 // The espace animateur and the foire au planning flow (issue #165), end to
 // end: token boundary, planning view, submission with prevalidation, admin
 // decision, and the outcome back on the animateur's side.
+//
+// Depuis #245 l'espace montre le plan PUBLIÉ : une décision d'admin est
+// visible aussitôt dans l'onglet Échanges, mais le planning lui-même n'a
+// bougé qu'une fois publié. Les deux temps sont vérifiés ici.
 
 import { APIRequestContext, expect, test } from '@playwright/test';
-import { SEED, contexteAdmin, dernierCodeMailpit, jetonDe, ouvrirSessionEspace, pageAdmin, seedPlanning, ouvrirSelect } from './support';
+import {
+  SEED,
+  contexteAdmin,
+  dernierCodeMailpit,
+  jetonDe,
+  ouvrirSelect,
+  ouvrirSessionEspace,
+  pageAdmin,
+  publierPlanning,
+  seedPlanning
+} from './support';
 
 const EMAIL_ALICE = `${SEED.demandeur}@example.org`;
 const EMAIL_BRUNO = `${SEED.cible}@example.org`;
@@ -118,10 +132,18 @@ test.describe('espace animateur', () => {
     await expect(pageAdmin.getByText('Acceptée').first()).toBeVisible();
     await contexteAdminNavigateur.close();
 
-    // --- Back on the animateur side: outcome visible, swap applied. ---
+    // --- Côté animateur : la décision est visible, le planning pas encore. ---
+    // L'échange a changé le plan de travail, pas celui qu'Alice a reçu
+    // (issue #245) : son espace montre toujours son stand d'origine.
     await page.reload({ waitUntil: 'domcontentloaded' });
     await expect(page.getByText('Acceptée').first()).toBeVisible();
     await page.getByRole('link', { name: 'Mon planning' }).click();
+    await expect(page.getByText('Stand E2E un')).toBeVisible();
+    await expect(page.getByText('Stand E2E deux')).toHaveCount(0);
+
+    // --- Publier : c'est là, et seulement là, que l'espace bouge. ---
+    await publierPlanning(admin);
+    await page.reload({ waitUntil: 'domcontentloaded' });
     await expect(page.getByText('Stand E2E deux')).toBeVisible();
   });
 
