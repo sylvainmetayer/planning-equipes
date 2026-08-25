@@ -23,6 +23,7 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeVerrouillage;
 import org.junit.jupiter.api.AfterEach;
 
+import dev.sylvain.planning.service.PlanPublicationService;
 import dev.sylvain.planning.service.PlanningPersistenceService;
 import dev.sylvain.planning.service.ReferenceDataService;
 import io.quarkus.mailer.Mail;
@@ -50,6 +51,9 @@ class DemandeEchangeFlowTest {
 
     @Inject
     PlanningPersistenceService persistence;
+
+    @Inject
+    PlanPublicationService publication;
 
     @Inject
     ReferenceDataService referenceData;
@@ -147,6 +151,7 @@ class DemandeEchangeFlowTest {
         PosteAffectation posteBruno = new PosteAffectation("ECH-P2", standDeux, creneauB);
         posteBruno.setAnimateur(bruno);
         persistence.persist(new PlanningEvenement(JOUR, List.of(alice, bruno), List.of(posteAlice, posteBruno)));
+        PlansPublies.publier(publication);
         String token = tokenOf("ECH-A");
 
         // The picker's data source: Bruno's seats, slots and stands only.
@@ -647,6 +652,7 @@ class DemandeEchangeFlowTest {
         PosteAffectation posteDeux = new PosteAffectation("ECH-P2", standDeux, creneau);
         posteDeux.setAnimateur(bruno);
         persistence.persist(new PlanningEvenement(JOUR, List.of(alice, bruno, chloe), List.of(posteUn, posteDeux)));
+        PlansPublies.publier(publication);
 
         // The espace requires an e-mail-code session since the auth follow-up:
         // both actors get an address, a session, and Alice's cookie rides on
@@ -684,6 +690,7 @@ class DemandeEchangeFlowTest {
         postes.removeIf(poste -> "ECH-P3".equals(poste.getId()));
         postes.add(posteDenis);
         persistence.persist(new PlanningEvenement(JOUR, animateurs, postes));
+        PlansPublies.publier(publication);
     }
 
     private static Map<String, Object> suggestionOf(List<Map<String, Object>> suggestions,

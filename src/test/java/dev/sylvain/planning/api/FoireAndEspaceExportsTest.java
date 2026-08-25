@@ -19,6 +19,7 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.PlanPublicationService;
 import dev.sylvain.planning.service.PlanningPersistenceService;
 import dev.sylvain.planning.service.ReferenceDataService;
 import io.quarkus.mailer.MockMailbox;
@@ -44,6 +45,9 @@ class FoireAndEspaceExportsTest {
     PlanningPersistenceService persistence;
 
     @Inject
+    PlanPublicationService publication;
+
+    @Inject
     ReferenceDataService referenceData;
 
     @Inject
@@ -64,6 +68,8 @@ class FoireAndEspaceExportsTest {
 
         // Alice's espace session (e-mail code flow) rides on every request.
         donnerEmail("FOIRE-A", "foire-alice@example.org");
+        // L'espace montre le plan publié : sans publication il est vide.
+        PlansPublies.publier(publication);
         mailbox.clear();
         RestAssured.requestSpecification = null;
         String session = EspaceSessions.open(mailbox, tokenOf("FOIRE-A"), "foire-alice@example.org");

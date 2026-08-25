@@ -29,7 +29,7 @@ import jakarta.inject.Inject;
 public class PlanningDeliveryService {
 
     @Inject
-    PlanningPersistenceService persistenceService;
+    PlanPublieService planPublieService;
 
     @Inject
     PlanningExportService planningExportService;
@@ -49,11 +49,21 @@ public class PlanningDeliveryService {
      * described rather than as a stack trace: {@code echecs} then carries what
      * to tell the operator, and the resource decides which status carries it.
      *
+     * <p>Resends the <b>published</b> plan, not the working one: the PDF must
+     * say the same thing as their espace and as the mail they already got.
+     * Resending a plan nobody announced would create a second version in
+     * circulation, which is the whole problem issue #245 removes.</p>
+     *
      * @throws BusinessError.NotFound when the id names nobody in the plan
-     * @throws BusinessError.Invalid    when their fiche carries no address
+     * @throws BusinessError.Invalid    when their fiche carries no address, or
+     *         when nothing has been published yet
      */
     public DeliveryReport sendToOneAnimateur(String animateurId) {
-        PlanningEvenement planning = persistenceService.loadPersistedPlanning();
+        if (planPublieService.jamaisPublie()) {
+            throw new BusinessError.Invalid(
+                    "Le planning n'a pas encore été publié : il n'y a rien à renvoyer.");
+        }
+        PlanningEvenement planning = planPublieService.planPublie();
         Animateur animateur = planning.getAnimateurs().stream()
                 .filter(candidat -> candidat.getId().equals(animateurId))
                 .findFirst()

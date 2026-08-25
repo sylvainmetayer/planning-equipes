@@ -11,7 +11,7 @@ import dev.sylvain.planning.service.EspaceAnimateurService;
 import dev.sylvain.planning.service.EspaceAnimateurService.DemandeEchangeView;
 import dev.sylvain.planning.service.EspaceAnimateurService.EspaceAnimateurView;
 import dev.sylvain.planning.service.PlanningExportService;
-import dev.sylvain.planning.service.PlanningPersistenceService;
+import dev.sylvain.planning.service.PlanPublieService;
 import io.quarkus.logging.Log;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -64,7 +64,7 @@ public class EspaceAnimateurResource {
     EditionRequestScope editionRequestScope;
 
     @Inject
-    PlanningPersistenceService persistenceService;
+    PlanPublieService planPublieService;
 
     @Inject
     PlanningExportService planningExportService;
@@ -173,7 +173,7 @@ public class EspaceAnimateurResource {
     @EspaceSessionRequired
     @Produces("application/pdf")
     public Response planningPdf() {
-        PlanningEvenement planning = persistenceService.loadPersistedPlanning();
+        PlanningEvenement planning = planPublieService.planPublie();
         byte[] contenu = planningExportService.exportAnimateurPdf(planning, animateurCourant());
         return Response.ok(contenu)
                 .header(HttpHeaders.CONTENT_DISPOSITION,
@@ -187,7 +187,7 @@ public class EspaceAnimateurResource {
     @EspaceSessionRequired
     @Produces("text/calendar")
     public Response planningIcs() {
-        PlanningEvenement planning = persistenceService.loadPersistedPlanning();
+        PlanningEvenement planning = planPublieService.planPublie();
         String contenu = planningExportService.exportAnimateurIcs(planning, animateurCourant());
         return Response.ok(contenu)
                 .type("text/calendar; charset=utf-8")

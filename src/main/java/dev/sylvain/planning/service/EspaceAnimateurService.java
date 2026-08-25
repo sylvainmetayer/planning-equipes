@@ -28,6 +28,14 @@ import jakarta.ws.rs.NotFoundException;
  * <p>Everything here is scoped to the edition resolved from the access token
  * by the caller (see {@code EspaceAnimateurResource}), and read-only: the
  * espace can never trigger a solve or touch the planning.</p>
+ *
+ * <p>Since issue #245 it reads the <b>published</b> plan, not the working one:
+ * what an animateur sees is what somebody sent them. A swap validated this
+ * morning, a repair applied from « Pourquoi lui ? », a fresh solve — none of
+ * them move anybody's espace before the admin publishes. Before the first
+ * publication the plan is empty on purpose, and {@code publieLe} being
+ * {@code null} is how the interface says « votre planning n'a pas encore été
+ * communiqué » instead of showing a planning nobody promised.</p>
  */
 @ApplicationScoped
 public class EspaceAnimateurService {
@@ -36,7 +44,7 @@ public class EspaceAnimateurService {
     ReferenceDataService referenceDataService;
 
     @Inject
-    PlanningPersistenceService persistenceService;
+    PlanPublieService planPublieService;
 
     @Inject
     PlanningExportService exportService;
@@ -67,7 +75,12 @@ public class EspaceAnimateurService {
      *                    as explicit « Repos » days rather than silently
      *                    missing cards; empty when they hold no seat at all
      */
-    public record EspaceAnimateurView(String animateurId, String prenom, String nom, Instant planningResoluLe,
+    /**
+     * @param publieLe when the plan on display was communicated, {@code null}
+     *                 while nothing has ever been published on this edition —
+     *                 the postes are then empty, and the espace says so
+     */
+    public record EspaceAnimateurView(String animateurId, String prenom, String nom, Instant publieLe,
             boolean foireOuverte, List<PosteAnimateurView> postes,
             List<LocalDate> joursRepos, List<ColleagueView> collegues) {
     }
@@ -94,7 +107,7 @@ public class EspaceAnimateurService {
                 .findFirst()
                 .orElseThrow(() -> new BusinessError.Invalid("Animateur inconnu : " + animateurId));
 
-        PlanningEvenement planning = persistenceService.loadPersistedPlanning();
+        PlanningEvenement planning = planPublieService.planPublie();
         Map<String, List<String>> coequipiers = exportService.teammatesByPoste(planning, animateurId);
         List<PosteAnimateurView> postes = postesOf(planning, animateurId, coequipiers);
 
@@ -108,9 +121,9 @@ public class EspaceAnimateurService {
                 .map(PlanningExportService.JourRepos::date)
                 .toList();
 
-        PlanningPersistenceService.PlanningResolution resolution = persistenceService.loadResolution();
+        PlanSnapshotService.SnapshotMeta publication = planPublieService.dernierePublication();
         return new EspaceAnimateurView(animateur.getId(), animateur.getPrenom(), animateur.getNom(),
-                resolution == null ? null : resolution.resoluLe(),
+                publication == null ? null : publication.publieLe(),
                 demandeEchangeService.isFoireOpen(), postes, joursRepos, collegues);
     }
 
@@ -160,7 +173,7 @@ public class EspaceAnimateurService {
         if (!connu) {
             throw new NotFoundException("Animateur not found: " + collegueId);
         }
-        return postesOf(persistenceService.loadPersistedPlanning(), collegueId, Map.of());
+        return postesOf(planPublieService.planPublie(), collegueId, Map.of());
     }
 
     /**
@@ -213,8 +226,12 @@ public class EspaceAnimateurService {
         if (creneauId == null || standId == null || standId.isBlank()) {
             throw new BusinessError.Invalid("Créneau ou stand manquant");
         }
+        // Sur le plan publié, comme tout le reste de l'espace : on n'échange que
+        // ce qu'on nous a annoncé. L'application d'un échange accepté se fait,
+        // elle, contre le plan de travail — c'est l'admin qui arbitre entre les
+        // deux, à la validation.
         PlanningService.SuggestionsEchange suggestions = planningService.suggererEchanges(
-                persistenceService.loadPersistedPlanning(), animateurId, creneauId, standId, plafond);
+                planPublieService.planPublie(), animateurId, creneauId, standId, plafond);
         Map<String, Animateur> animateurs = referenceDataService.listAnimateurs().stream()
                 .collect(Collectors.toMap(Animateur::getId, Function.identity()));
         Map<String, Stand> stands = referenceDataService.listStands().stream()
