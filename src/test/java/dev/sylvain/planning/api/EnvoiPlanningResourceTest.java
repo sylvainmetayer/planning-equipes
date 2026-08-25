@@ -4,7 +4,6 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasItem;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -28,10 +27,11 @@ import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
 
 /**
- * Sending the individual plannings by e-mail ({@code /api/planning/envoi}),
+ * Resending one animateur their planning ({@code /api/planning/envoi}),
  * against the real database and the mock mailbox: the PDF really is built from
- * the persisted planning, the espace link really carries the animateur's
- * token, and the compte rendu names exactly who was skipped.
+ * the persisted planning and the espace link really carries the animateur's
+ * token. Sending to everybody is no longer here — see
+ * {@link PublicationResourceTest}.
  */
 @QuarkusTest
 class EnvoiPlanningResourceTest {
@@ -108,25 +108,6 @@ class EnvoiPlanningResourceTest {
                 .when().post("/api/planning/envoi/animateur/MAIL-FANTOME")
                 .then()
                 .statusCode(404);
-    }
-
-    /**
-     * The global send reaches every seated animateur with an address, names
-     * the seated ones without, and ignores the seatless — mailing an empty
-     * planning to someone who does not work would only confuse them.
-     */
-    @Test
-    void lEnvoiATousNommeLesSansEmailEtIgnoreLesSansPoste() {
-        given().contentType(ContentType.JSON)
-                .when().post("/api/planning/envoi/tous")
-                .then()
-                .statusCode(200)
-                .body("envoyes", equalTo(1))
-                .body("sansEmail", hasItem("Bruno Petit"))
-                .body("echecs.size()", equalTo(0));
-
-        assertThat(mailbox.getMailsSentTo(EMAIL_ALICE)).hasSize(1);
-        assertThat(mailbox.getMailsSentTo("chloe-envoi@example.org")).isEmpty();
     }
 
     private void donnerEmail(String animateurId, String email) {

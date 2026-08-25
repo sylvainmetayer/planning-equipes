@@ -12,8 +12,13 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 /**
- * The two buttons that send the individual plannings (follow-up to issue
+ * The button that resends one animateur their planning (follow-up to issue
  * #165).
+ *
+ * <p>Sending to everybody moved to {@code PublicationResource} with issue
+ * #245, where it became « publier » — and stopped writing to people nothing
+ * changed for. This one stays: it is how an operator catches up with somebody
+ * a publication mail failed to reach.</p>
  *
  * <p>Nothing but transport here: {@link PlanningDeliveryService} decides who is
  * concerned, builds the PDFs and returns the report; a business error carries
@@ -27,13 +32,6 @@ public class EnvoiPlanningResource {
 
     @Inject
     PlanningDeliveryService envoiPlanningService;
-
-    /** Sends their planning to every animateur holding at least one poste. */
-    @POST
-    @Path("/tous")
-    public DeliveryReport sendToAll() {
-        return envoiPlanningService.sendToAll();
-    }
 
     /**
      * Sends one animateur their planning; 400 without an address, 404 unknown,

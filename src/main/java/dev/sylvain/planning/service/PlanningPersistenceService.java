@@ -514,6 +514,26 @@ public class PlanningPersistenceService {
      * planning (no postes) when nothing has been solved yet.
      */
     public PlanningEvenement loadPersistedPlanning() {
+        return assemblerPlanning(readSieges());
+    }
+
+    /**
+     * One seat, referential ids only — what both the {@code poste_affectation}
+     * table and a snapshot's denormalised content carry.
+     */
+    public record Siege(String posteId, String standId, long creneauId, String animateurId,
+            LocalTime heureDebutEffective, LocalTime heureFinEffective) {
+    }
+
+    /**
+     * Resolves seats against today's referential and returns a planning ready
+     * to read. Shared by the persisted plan and by the published one
+     * (issue #245), which lives in a snapshot rather than in
+     * {@code poste_affectation} but resolves exactly the same way — a seat
+     * naming a stand or a créneau that no longer exists is dropped, since
+     * there is nothing left to display it against.
+     */
+    public PlanningEvenement assemblerPlanning(List<Siege> sieges) {
         List<Animateur> animateurs = referenceDataService.listAnimateurs();
         Map<String, Animateur> animateursById = indexById(animateurs, Animateur::getId);
         List<Creneau> creneaux = referenceDataService.listCreneaux();
@@ -526,31 +546,19 @@ public class PlanningPersistenceService {
         Map<Long, Creneau> creneauxById = indexById(creneaux, Creneau::getId);
 
         List<PosteAffectation> postes = new ArrayList<>();
-        String sql = """
- SELECT id, stand_id, creneau_id, animateur_id, heure_debut_effective, heure_fin_effective
- FROM poste_affectation
- WHERE edition_id = ?
- ORDER BY id""";
-        try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = scope.prepareScoped(connection, sql);
-                ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                Stand stand = standsById.get(rs.getString("stand_id"));
-                Creneau creneau = creneauxById.get(rs.getLong("creneau_id"));
-                if (stand == null || creneau == null) {
-                    continue;
-                }
-                PosteAffectation poste = new PosteAffectation(rs.getString("id"), stand, creneau);
-                String animateurId = rs.getString("animateur_id");
-                if (animateurId != null) {
-                    poste.setAnimateur(animateursById.get(animateurId));
-                }
-                poste.setHeureDebutEffective(rs.getObject("heure_debut_effective", LocalTime.class));
-                poste.setHeureFinEffective(rs.getObject("heure_fin_effective", LocalTime.class));
-                postes.add(poste);
+        for (Siege siege : sieges) {
+            Stand stand = standsById.get(siege.standId());
+            Creneau creneau = creneauxById.get(siege.creneauId());
+            if (stand == null || creneau == null) {
+                continue;
             }
-        } catch (SQLException e) {
-            throw new IllegalStateException("Failed to load persisted planning", e);
+            PosteAffectation poste = new PosteAffectation(siege.posteId(), stand, creneau);
+            if (siege.animateurId() != null) {
+                poste.setAnimateur(animateursById.get(siege.animateurId()));
+            }
+            poste.setHeureDebutEffective(siege.heureDebutEffective());
+            poste.setHeureFinEffective(siege.heureFinEffective());
+            postes.add(poste);
         }
 
         LocalDate dateDebut = postes.stream()
@@ -560,6 +568,31 @@ public class PlanningPersistenceService {
                 .orElse(null);
         return new PlanningEvenement(dateDebut, animateurs, postes,
                 referenceDataService.snapshotContraintes());
+    }
+
+    private List<Siege> readSieges() {
+        List<Siege> sieges = new ArrayList<>();
+        String sql = """
+ SELECT id, stand_id, creneau_id, animateur_id, heure_debut_effective, heure_fin_effective
+ FROM poste_affectation
+ WHERE edition_id = ?
+ ORDER BY id""";
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = scope.prepareScoped(connection, sql);
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                sieges.add(new Siege(
+                        rs.getString("id"),
+                        rs.getString("stand_id"),
+                        rs.getLong("creneau_id"),
+                        rs.getString("animateur_id"),
+                        rs.getObject("heure_debut_effective", LocalTime.class),
+                        rs.getObject("heure_fin_effective", LocalTime.class)));
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to load persisted planning", e);
+        }
+        return sieges;
     }
 
     private <T, K> Map<K, T> indexById(List<T> items, Function<T, K> idFn) {

@@ -14,6 +14,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
+import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.PosteAffectation;
 import jakarta.enterprise.context.ApplicationScoped;
 
 /**
@@ -28,7 +30,7 @@ import jakarta.enterprise.context.ApplicationScoped;
  * du temps a-t-il changé depuis ce qu'on vous a envoyé ? », one person at a
  * time, and only for the people it is about to write to.</p>
  *
- * <p>Pure function of its two inputs: no database, no mail, no clock. What it
+ * <p>Pure function of its inputs: no database, no mail, no clock. What it
  * returns feeds both the confirmation screen and the mail body, so the admin
  * reads beforehand exactly the sentences the animateur will receive.</p>
  */
@@ -138,6 +140,38 @@ public class PublicationDiffService {
 
     /** Display name and address of one animateur — all the diff needs of a fiche. */
     public record Identite(String nomAffiche, String email) {
+    }
+
+    /**
+     * An animateur's schedule as this diff defines it: their seats, keyed by
+     * animateur id. Unassigned seats are ignored — an empty chair concerns
+     * nobody.
+     *
+     * <p>Seats naming a stand or a créneau the referential no longer holds
+     * have already been dropped upstream, on both sides alike: deleting a
+     * créneau removes it from the working plan and from the published one at
+     * once, so it produces no diff and warns nobody. Telling people about a
+     * day that no longer exists is a different feature.</p>
+     */
+    public static Map<String, List<Vacation>> vacationsParAnimateur(PlanningEvenement planning) {
+        Map<String, List<Vacation>> parAnimateur = new LinkedHashMap<>();
+        if (planning == null || planning.getPostes() == null) {
+            return parAnimateur;
+        }
+        for (PosteAffectation poste : planning.getPostes()) {
+            if (poste.getAnimateur() == null || poste.getStand() == null || poste.getCreneau() == null) {
+                continue;
+            }
+            parAnimateur.computeIfAbsent(poste.getAnimateur().getId(), unused -> new ArrayList<>())
+                    .add(new Vacation(poste.getCreneau().getDate(), poste.heureDebutEffectif(),
+                            poste.heureFinEffectif(), poste.getStand().getId(), poste.getStand().getNom()));
+        }
+        return parAnimateur;
+    }
+
+    /** « samedi 11/07 : Cirque 14h-18h » — one vacation, worded as the change lines word it. */
+    public String libelleVacation(Vacation vacation) {
+        return jour(vacation) + " : " + creneau(vacation);
     }
 
     /**

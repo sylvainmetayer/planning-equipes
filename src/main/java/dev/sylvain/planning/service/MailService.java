@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service;
 
 import java.time.ZonedDateTime;
+import java.util.List;
 
 import io.quarkus.mailer.Mail;
 import io.quarkus.mailer.Mailer;
@@ -60,6 +61,53 @@ public class MailService {
         }
         corps.append("\nÀ bientôt,\nL'équipe d'organisation\n");
         mailer.send(Mail.withText(emailAnimateur, productName.subject("votre planning individuel"), corps.toString())
+                .addAttachment(fileName, pdf, "application/pdf"));
+    }
+
+    /**
+     * Sends one animateur the planning that has just been published, and what
+     * changed for <b>them</b> since the last one (issue #245).
+     *
+     * <p>The lines are computed and reviewed upstream: the admin saw exactly
+     * these sentences on screen before clicking Publier. Nothing is worded
+     * here beyond the frame around them — a mail that says what moved is worth
+     * more than a PDF redelivered without a word.</p>
+     *
+     * @param premiereDiffusion nothing was ever published to this person, so
+     *                          their whole planning is the news; the change
+     *                          list is then their planning, not a list of
+     *                          corrections, and is left out of the body
+     * @param changements       one sentence per moved vacation, in reading order
+     * @param demandes          where their échange requests stand, if any
+     */
+    public void sendPlanningPublie(String emailAnimateur, String prenom, String lienEspace,
+            byte[] pdf, String fileName, boolean premiereDiffusion,
+            List<String> changements, List<String> demandes) {
+        StringBuilder corps = new StringBuilder()
+                .append("Bonjour").append(prenom == null || prenom.isBlank() ? "" : " " + prenom).append(",\n\n");
+        if (premiereDiffusion) {
+            corps.append("Vous trouverez en pièce jointe votre planning individuel pour l'événement.\n");
+        } else {
+            corps.append("Votre planning a changé depuis le dernier envoi. Voici ce qui vous concerne :\n\n");
+            for (String changement : changements) {
+                corps.append("- ").append(changement).append('\n');
+            }
+            corps.append("\nLe planning à jour est en pièce jointe.\n");
+        }
+        if (demandes != null && !demandes.isEmpty()) {
+            corps.append("\nVos demandes d'échange :\n\n");
+            for (String demande : demandes) {
+                corps.append("- ").append(demande).append('\n');
+            }
+        }
+        if (lienEspace != null && !lienEspace.isBlank()) {
+            corps.append("\nVotre espace en ligne (planning à jour, demandes d'échange) : ")
+                    .append(lienEspace).append('\n');
+        }
+        corps.append("\nÀ bientôt,\nL'équipe d'organisation\n");
+        mailer.send(Mail.withText(emailAnimateur, productName.subject(premiereDiffusion
+                ? "votre planning individuel"
+                : "votre planning a changé"), corps.toString())
                 .addAttachment(fileName, pdf, "application/pdf"));
     }
 
