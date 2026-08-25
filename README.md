@@ -251,7 +251,7 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 | Export PDF global | Toutes les affectations dans un seul document pour l'organisateur, journée par journée puis stand par stand, places vides signalées |
 | Export PDF individuel | Le planning d'un animateur, ou de tous en une archive ; les journées sans affectation y figurent explicitement comme jours de repos |
 | Export ICS | Le planning individuel importable dans Google Calendar, Apple Calendar ou Outlook |
-| Envoi par e-mail | Envoyer à chaque animateur son planning et le lien vers son espace, en une action |
+| Publication | Envoyer leur planning et le lien de leur espace aux seules personnes dont l'emploi du temps a changé, en leur disant ce qui change |
 | Espace animateur | Un espace personnel par lien nominatif : son planning, ses jours de repos, ses demandes d'échange — sans compte à créer |
 | Foire au planning | Les animateurs proposent leurs échanges de créneaux en libre-service ; le collègue visé donne son accord, l'organisation arbitre, rien ne s'applique sans validation |
 | Qui peut me remplacer ? | Sans personne en tête, l'animateur ne désigne que son créneau : l'application cherche les échanges qui tiennent vraiment et les range en trois familles — on vous libère, vous permutez sur le même créneau, ou vous l'échangez contre un créneau d'un autre jour |

@@ -107,8 +107,8 @@ export function buildHelpSections(): HelpSection[] {
             $localize`:@@aide.editions.rituel2:2. Appliquer les restrictions dans la copie (horaires, effectifs…).`,
             $localize`:@@aide.editions.rituel3:3. Lancer la résolution dans la copie (la nuit fait le reste).`,
             $localize`:@@aide.editions.rituel4:4. Le matin : basculer d'édition dans le bandeau.`,
-            $localize`:@@aide.editions.rituel5:5. « Envoyer à tous » — les animateurs reçoivent le plan et les liens de cette édition.`,
-            $localize`:@@aide.editions.rituel6:6. Au retour à la normale : re-basculer vers l'édition nominale, intacte, et ré-envoyer les plannings.`
+            $localize`:@@aide.editions.rituel5:5. « Publier » — les animateurs concernés reçoivent le plan et les liens de cette édition.`,
+            $localize`:@@aide.editions.rituel6:6. Au retour à la normale : re-basculer vers l'édition nominale, intacte, et publier à nouveau.`
           ]
         }
       ],
@@ -486,15 +486,19 @@ export function buildHelpSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.foire.term.connexion:Connexion et notifications`,
-              text: $localize`:@@aide.foire.def.connexion:L'administration est protégée par le compte admin ; seuls les espaces animateurs restent accessibles par leur lien personnel. Si la messagerie est configurée, vous êtes prévenu par e-mail à chaque soumission, et l'animateur reçoit le résultat de ses demandes à l'adresse renseignée sur sa fiche.`
+              text: $localize`:@@aide.foire.def.connexion:L'administration est protégée par le compte admin ; seuls les espaces animateurs restent accessibles par leur lien personnel. Si la messagerie est configurée, vous êtes prévenu par e-mail à chaque soumission. L'animateur, lui, apprend le sort de ses demandes à la publication suivante, avec le planning qui les porte : accepter un échange change le plan de travail, pas encore celui qu'il a reçu.`
+            },
+            {
+              term: $localize`:@@aide.foire.term.planPublie:Plan publié et plan de travail`,
+              text: $localize`:@@aide.foire.def.planPublie:L'espace d'un animateur montre le plan qu'on lui a envoyé, pas celui sur lequel vous travaillez : un échange validé, un remplacement appliqué ou une nouvelle résolution ne déplacent son espace qu'une fois publiés. Tant que rien ne l'a été sur l'édition, les espaces restent vides et le disent — l'application ne peut pas affirmer avoir communiqué un planning qu'elle n'a jamais envoyé. La première publication concerne donc tout le monde. Publier est refusé pendant une résolution : ce serait figer un plan sur le point d'être réécrit.`
             },
             {
               term: $localize`:@@aide.foire.term.ouverture:Ouverture et fermeture`,
               text: $localize`:@@aide.foire.def.ouverture:L'interrupteur en tête de l'écran Échanges ouvre ou ferme la foire pour l'édition courante. Fermée, les espaces animateurs passent en consultation seule — le planning reste visible et téléchargeable (PDF, ICS), mais plus aucune demande ne peut être soumise ni annulée, et le refus est appliqué côté serveur, pas seulement masqué à l'écran.`
             },
             {
-              term: $localize`:@@aide.foire.term.envoi:Envoi des plannings`,
-              text: $localize`:@@aide.foire.def.envoi:Le bouton « Envoyer à tous » de la page Solveur (à côté de l'export du planning global) envoie à chaque animateur tenant au moins un poste son planning individuel par e-mail : le PDF en pièce jointe, avec le lien de son espace personnel — après confirmation. La page Timeline animateur offre le même envoi pour l'animateur affiché seulement. Le compte rendu nomme les animateurs sans adresse e-mail et les envois en échec.`
+              term: $localize`:@@aide.foire.term.envoi:Publier le planning`,
+              text: $localize`:@@aide.foire.def.envoi:Le bouton « Publier » de la page Solveur (à côté de l'export du planning global) porte son décompte : « Publier — 3 personnes concernées ». Il n'écrit qu'aux animateurs dont l'emploi du temps a changé depuis la dernière publication, et le message dit ce qui change pour chacun — la même liste que vous relisez à l'écran avant de valider. Une correction qui ne déplace personne ne déclenche donc aucun envoi, et dix corrections d'affilée ne font pas dix courriels : elles remplissent une file que vous videz quand vous avez fini. Le compte rendu nomme les animateurs sans adresse e-mail et les envois en échec ; la page Timeline animateur permet de renvoyer à l'un d'eux le plan publié.`
             }
           ]
         }

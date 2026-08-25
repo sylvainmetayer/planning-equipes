@@ -17,6 +17,7 @@ import {
   pageAdmin,
   planningPersiste,
   postesDe,
+  publierPlanning,
   seedReferentielSolveur
 } from './support';
 
@@ -211,6 +212,9 @@ test("un échange accepté survit à la régénération du planning", async ({ b
   expect(surS2).toBeTruthy();
 
   const jeton = await jetonDe(admin, surS1);
+  // L'espace montre le plan publié : sans publication, le siège que la demande
+  // d'échange désigne n'y existe pas encore (issue #245).
+  await publierPlanning(admin);
   await ouvrirSessionEspace(admin, jeton, `${surS1}@example.org`);
   const soumission = await admin.post(`/api/espace-animateur/${jeton}/demandes`, {
     data: [{ creneauId: C1, standId: 'SOLV-S1', cibleId: surS2, motif: 'E2E régénération' }]

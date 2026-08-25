@@ -214,9 +214,47 @@ re-résolution**, puis pose deux verrous sur le créneau que chacun **reçoit** 
 la régénération suivante ne défera pas l'échange, sans geler le reste du
 planning des deux animateurs.
 
+**L'annonce attend la publication.** Trancher une demande ne mail personne sur
+le champ : l'échange a changé le planning de travail, pas celui que le demandeur
+a reçu, et son espace montre encore le précédent. La décision — acceptée ou
+refusée — voyage avec la publication qui la porte, aux côtés des demandes encore
+en attente. Voir *Planning publié* ci-dessous.
+
 **Foire fermée** : soumissions et annulations refusées côté serveur, l'espace
 passe en consultation seule — planning visible et téléchargeable, historique
 conservé.
+
+### Planning publié
+
+Deux plannings coexistent par édition, et il faut les nommer.
+
+Le **planning de travail** est celui que la résolution écrit et que
+l'administration manipule : `poste_affectation`, un seul par édition. Le
+**planning publié** est celui que les animateurs ont reçu — le dernier
+instantané marqué publié (`plan_snapshot.publie_le`). C'est un instantané et
+rien d'autre : le contenu dénormalisé de l'ADR 0007 était déjà exactement « un
+planning complet, indépendant de ce qui bouge après ».
+
+**L'espace animateur lit le planning publié.** Ce qu'une personne voit est ce
+qu'on lui a envoyé — un échange validé, un remplacement appliqué, une nouvelle
+résolution ne déplacent son espace qu'une fois publiés. Tant que rien ne l'a été
+sur l'édition, l'espace est **vide** et le dit : replier sur le planning de
+travail recréerait l'incohérence que la distinction supprime.
+
+**Publier n'écrit qu'aux personnes concernées.** L'unité de comparaison est la
+**vacation** — jour, heures effectives, stand — et l'identité comparée est celle
+de la personne, pas celle du siège : un `poste_affectation` renuméroté par une
+résolution ne déplace personne. Renommer un stand ne réveille donc personne ;
+échanger deux vacations réveille exactement deux personnes. Un écart se dit en
+ajout, retrait, ou **déplacement** quand un ajout et un retrait se répondent le
+même jour — « Ninja 14h-18h remplace Cirque 14h-18h » est un changement, pas
+deux.
+
+Le calcul est volontairement **hors de la comparaison d'instantanés**, qui est
+non nominative par choix (l'équité est une dispersion d'heures, jamais un
+classement de personnes nommées). Celui-ci ne classe personne : il répond
+« votre emploi du temps a-t-il changé depuis ce qu'on vous a envoyé ? », une
+personne à la fois, et seulement pour celles à qui il va écrire.
 
 ## Découpage automatique en vacations
 
@@ -375,6 +413,8 @@ peut donc pas desserrer un seuil de qualité en l'envoyant dans son payload.
   une récompense soft, par conception.
 - Un créneau reste toujours l'unité de travail réellement assignable — jamais
   une amplitude d'ouverture brute.
+- L'espace animateur ne montre jamais le planning de travail : ce qu'une
+  personne voit est ce qu'on lui a envoyé.
 - Les noms de domaine restent en français métier.
 
 <!-- Liens vers Légifrance. Chaque référence pointe vers la recherche par

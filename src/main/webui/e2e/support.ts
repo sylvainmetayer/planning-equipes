@@ -68,8 +68,8 @@ export async function seedPlanning(
   const script = [
     // Clean previous runs, children first. Postes of the other test prefixes
     // are wiped too: a solver spec may have persisted a whole planning over
-    // its SOLV-/FUZZ- referential, and the sends ("Envoyer à tous") must see
-    // exactly the two-seat planning seeded here.
+    // its SOLV-/FUZZ- referential, and the publication below must see exactly
+    // the two-seat planning seeded here.
     `delete from demande_echange where demandeur_id like 'E2E-%' or cible_id like 'E2E-%';`,
     `delete from verrouillage_planning where animateur_id like 'E2E-%';`,
     `delete from poste_affectation where id like 'E2E-%' or stand_id like 'E2E-%' or animateur_id like 'E2E-%';`,
@@ -115,6 +115,24 @@ export async function seedPlanning(
     data: script
   });
   expect(importReponse.ok(), await importReponse.text()).toBe(true);
+  await publierPlanning(admin);
+}
+
+/**
+ * Publishes what was just seeded. Since issue #245 the espace animateur shows
+ * the **published** plan, so a fixture that only writes `poste_affectation`
+ * leaves every espace legitimately empty.
+ *
+ * A `409` means nobody is concerned — the published plan already says what the
+ * fixture says — which is a perfectly good state to start a test from, not a
+ * failed seeding.
+ */
+export async function publierPlanning(admin: APIRequestContext): Promise<void> {
+  const reponse = await admin.post('/api/planning/publication');
+  expect(
+    reponse.ok() || reponse.status() === 409,
+    await reponse.text()
+  ).toBe(true);
 }
 
 /* ------------------------- Solver-backed seeding ------------------------- */
@@ -356,11 +374,18 @@ async function lireCodeMailpit(
   for (let essai = 0; essai < 40; essai++) {
     const recherche = await rechercherMails(requeteur, email);
     if (recherche && recherche.messages_count > mailsAvant && recherche.messages.length > 0) {
-      const detail = await requeteur.get(`${MAILPIT_URL}/api/v1/message/${recherche.messages[0].ID}`);
-      const texte = ((await detail.json()) as { Text: string }).Text;
-      const code = /\b(\d{6})\b/.exec(texte)?.[1];
-      if (code) {
-        return code;
+      // Parmi les seuls messages NOUVEAUX, du plus récent au plus ancien : la
+      // publication (issue #245) écrit elle aussi à cette adresse, et son mail
+      // peut arriver entre-temps sans porter de code. Se limiter aux nouveaux
+      // évite de rejouer un code déjà consommé.
+      const nouveaux = recherche.messages.slice(0, recherche.messages_count - mailsAvant);
+      for (const message of nouveaux) {
+        const detail = await requeteur.get(`${MAILPIT_URL}/api/v1/message/${message.ID}`);
+        const texte = ((await detail.json()) as { Text: string }).Text;
+        const code = /\b(\d{6})\b/.exec(texte)?.[1];
+        if (code) {
+          return code;
+        }
       }
     }
     await new Promise((resolve) => setTimeout(resolve, 250));

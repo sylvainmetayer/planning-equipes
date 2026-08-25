@@ -34,6 +34,7 @@ scénario versionné de `src/main/resources/scenarios/`.
 | [0008](0008-file-sequentielle-avant-parallelisme.md) | Résoudre les variantes en file séquentielle avant d'envisager le parallélisme | **Retiré** · remplacé par 0009 |
 | [0009](0009-edition-unique-porteur-de-variantes.md) | L'édition est l'unique porteur de variantes | Accepté · révise 0001, remplace 0008 |
 | [0010](0010-contraintes-ad-hoc-contradiction-plutot-que-budget.md) | Contraintes ad hoc : détecter la contradiction, pas plafonner le nombre | Accepté |
+| [0011](0011-publier-plutot-qu-envoyer-a-tous.md) | Publier, plutôt qu'envoyer à tous : le planning publié est distinct du planning de travail | Accepté |
 
 Deux décisions se lisent ensemble : **0001** pose le cloisonnement par édition,
 **0009** le révise en supprimant le second niveau qu'il avait retenu. **0008**

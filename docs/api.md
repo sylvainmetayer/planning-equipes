@@ -178,6 +178,11 @@ défaut) ; ceux créés à la main, jamais.
 Une restauration répond `409` **sans rien écrire** si des références ont
 disparu, en listant lesquelles.
 
+**Un instantané peut porter l'état « publié »** (`publieLe`). C'est le plan que
+les animateurs ont reçu, et celui que leur espace affiche — voir *Publication*
+ci-dessous. Un instantané publié sort de la purge de rétention et refuse d'être
+supprimé (`409`) : ce serait reprendre sans un mot ce qui a été annoncé.
+
 La comparaison A/B **ne déclenche aucune résolution** : elle lit des KPI
 mesurés à la capture, jamais un score recalculé. `editionsDifferentes` n'est
 **pas** une anomalie — depuis la suppression des groupes de créneaux, une
@@ -185,6 +190,43 @@ variante *est* une autre édition — mais l'IHM doit le dire. Dans `diffViolati
 `null` signifie **non mesuré**, jamais zéro. `kpiRecalcule` marque le mode
 dégradé d'un instantané qui ne porte pas de KPI stockés : couverture et
 volumétrie exactes, violations non mesurées.
+
+## Publication
+
+`GET /api/planning/publication` — qui serait prévenu, et ce qu'il lirait.
+N'envoie rien. `POST` publie.
+
+Publier, c'est **marquer le plan de travail comme le plan communiqué** et
+n'écrire qu'aux personnes dont l'emploi du temps a changé depuis la dernière
+publication. Le décompte est **par personne** : renommer un stand ne réveille
+personne, échanger deux vacations réveille exactement deux personnes. Chaque
+destinataire arrive avec les phrases exactes de son courriel (`changements`),
+que l'administrateur relit **avant** tout envoi.
+
+L'aperçu se lit **à la demande** : rien n'est poussé, rien n'est scruté. Le
+seul garde-fou est de concurrence, pas de temps — publier pendant un solve
+figerait un plan sur le point d'être réécrit, donc `409`. Idem quand personne
+n'est concerné (`409`) : ce n'est pas une erreur à contourner, c'est le but.
+
+`premiereDiffusion` distingue quelqu'un à qui rien n'a jamais été envoyé : son
+planning entier est la nouvelle, pas une liste de corrections. Tant que
+`jamaisPublie` vaut `true`, **l'espace animateur est vide** — l'application ne
+peut pas prétendre avoir communiqué un plan qu'elle n'a pas envoyé.
+
+Un envoi qui échoue ne revient **pas** dans le décompte suivant : le compteur
+mesure ce qui a changé, pas ce qui a été délivré. Le rapport nomme les manqués,
+et `POST /api/planning/envoi/animateur/{id}` est le rattrapage — il renvoie le
+plan **publié**, refusé (`400`) tant que rien ne l'a été.
+
+`GET /api/planning/publication/destinataires` rend la trace : qui a été prévenu
+de quoi, et quand, y compris ceux qu'on n'a pas pu joindre (`SANS_EMAIL`,
+`ECHEC`). Sans paramètre, celle de la dernière publication ; liste vide quand
+il n'y en a jamais eu.
+
+**Une décision d'échange n'est plus annoncée au moment où elle est prise**,
+mais par la publication qui la porte : accepter un échange change le plan de
+travail, pas le plan publié, et prévenir tout de suite promettrait un planning
+que l'espace ne montre pas encore.
 
 ## Contraintes
 
@@ -317,6 +359,13 @@ le compteur.
 La rotation du jeton (`POST /api/animateurs/{id}/token`) invalide aussitôt le
 lien déjà distribué : c'est le geste à faire quand un planning individuel a
 fuité.
+
+**L'espace montre le plan publié**, pas le plan de travail : ce qu'un animateur
+voit est ce qu'on lui a envoyé. Un échange validé, une réparation appliquée ou
+un solve ne déplacent pas son espace tout seuls — il faut publier. `publieLe`
+nul signifie que rien n'a encore été communiqué : les postes sont alors vides,
+et l'interface le dit. Les suggestions d'échange se calculent sur ce même plan
+publié : on ne troque que ce qu'on nous a annoncé.
 
 **Foire fermée** : soumissions et annulations sont refusées **côté serveur**
 (`400`) ; la vue `foireOuverte` ne sert qu'à l'afficher. Le planning reste
@@ -492,8 +541,10 @@ global** : un planning de la taille de l'événement pèse plusieurs mégaoctets
 JSON, que l'appelant n'a pas à téléverser pour récupérer un document. Il lit
 donc la même source que les calendriers.
 
-L'envoi par e-mail ne concerne que les animateurs **titulaires d'au moins un
-poste**, et répond un compte rendu nommant ceux sans adresse et les échecs.
+L'envoi par e-mail est le renvoi individuel de `POST
+/api/planning/envoi/animateur/{id}`, et répond un compte rendu nommant ceux
+sans adresse et les échecs. L'envoi collectif, lui, est passé sous
+*Publication* : il ne s'agit plus d'envoyer à tous mais de publier.
 
 ## Deux pièges
 
