@@ -316,19 +316,34 @@ n'apprend ce qui a été proposé à un autre.
 
 Pour l'animateur qui ne veut pas d'un créneau et n'a personne en tête : au lieu
 de désigner un collègue, il ne désigne que **son** siège et l'assistant cherche
-ceux avec qui l'échange tient. Même mécanique que l'assistant de réparation —
-filtre d'éligibilité du solveur, une simulation par candidat, verdict sur le
-**plan entier**, plafond de 20 (100 au maximum) — appliquée cette fois à
-l'échange plutôt qu'au remplacement.
+les échanges qui tiennent. Même mécanique que l'assistant de réparation —
+filtre d'éligibilité du solveur des deux côtés du troc, une simulation par
+piste, verdict sur le **plan entier**, plafond de 20 (100 au maximum).
+
+**Trois familles**, portées par `nature`, parce qu'un échange n'est pas
+seulement « quelqu'un prend ma place » :
+
+| `nature` | Ce que ça fait au demandeur |
+| --- | --- |
+| `LIBERE` | Le collègue est libre à cette heure-là : le créneau quitte ses mains |
+| `CROISE` | Le collègue travaille ce même créneau : les deux sièges permutent, le demandeur change de stand |
+| `DIRIGE` | Un siège d'**un autre créneau** revient — « je te laisse mon lundi, je prends ton mardi » |
+
+Une suggestion `DIRIGE` porte `creneauCibleId`, sa date, ses horaires et son
+stand : de quoi construire la demande dirigée telle quelle. Les deux autres se
+jouent sur le seul créneau du demandeur.
+
+Les trois familles sont évaluées **en alternance**, pas l'une après l'autre :
+avec 150 collègues libres, le plafond partirait entier en « on vous libère »
+sans jamais demander si un mardi peut s'échanger contre un lundi. Au plus deux
+sièges par collègue sont proposés en retour, pour que le choix porte sur des
+jours et pas sur une seule personne. `listeTronquee` dit que la recherche s'est
+arrêtée au plafond, pour que l'IHM ne laisse pas lire « rien d'autre n'est
+possible ».
 
 La réponse ne porte **aucun score** : un `HardMediumSoftScore` ne dit rien à un
 animateur, et publier la santé globale du plan dans l'espace la donnerait à tout
-porteur de jeton. Elle porte, pour chaque collègue, ce qui décide : `nomComplet`,
-et `echangeCroise` — vrai quand il tient déjà un poste sur ce créneau, auquel cas
-le demandeur n'est pas libéré mais passe sur `standCibleNom`. Les collègues qui
-libèrent viennent d'abord : c'est la question posée. `listeTronquee` dit que la
-recherche s'est arrêtée au plafond, pour que l'IHM ne laisse pas lire « personne
-d'autre ne peut le faire ».
+porteur de jeton.
 
 Route en lecture seule : elle ne crée aucune demande. On ne cherche que pour ses
 propres sièges (`400` sinon), et seulement **foire ouverte** — chercher des

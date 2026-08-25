@@ -165,8 +165,8 @@ describe('EspaceAnimateurService', () => {
     api.get.mockResolvedValue({
       creneauId: 12,
       standId: 'stand/un',
-      candidatsEligibles: 3,
-      candidatsEvalues: 3,
+      optionsEligibles: 3,
+      optionsEvaluees: 3,
       listeTronquee: false,
       suggestions: []
     });

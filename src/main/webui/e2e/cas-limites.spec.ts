@@ -80,11 +80,11 @@ test.describe('cas limites', () => {
   /**
    * « Qui peut me remplacer ? » : Alice ne veut pas de son créneau et n'a
    * personne en tête. Elle ne désigne que SON siège, et l'assistant lui rend
-   * les collègues avec qui l'échange tient vraiment — ceux qui la libèrent en
-   * tête. Il propose, il ne soumet rien : le nom retenu retombe dans le
-   * formulaire ordinaire, que l'animatrice remplit et envoie elle-même.
+   * les trois façons d'en sortir — on la libère, elle échange sur le même
+   * créneau, ou elle échange contre un créneau d'un autre jour. Il propose, il
+   * ne soumet rien : le choix retenu retombe dans le formulaire ordinaire.
    */
-  test('« qui peut me remplacer ? » propose les collègues avec qui l’échange tient', async ({ page }) => {
+  test('« qui peut me remplacer ? » propose les trois façons d’échanger', async ({ page }) => {
     await seedPlanning(admin, { avecCollegueIndisponible: true, avecCollegueLibre: true });
     const jeton = await jetonDe(admin, SEED.demandeur);
     await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
@@ -95,25 +95,43 @@ test.describe('cas limites', () => {
     await page.getByRole('option').first().click();
     await page.getByRole('button', { name: 'Qui peut me remplacer ?' }).click();
 
-    const suggestions = page.locator('.espace-suggestions-liste li');
-    // Denis ne tient aucun siège ce jour-là : il libère Alice, donc il passe devant.
-    await expect(suggestions.first()).toContainText('Denis E2E');
-    await expect(suggestions.first()).toContainText('vous libère de ce créneau');
-    // Bruno travaille déjà ce créneau : l'échange tient, mais Alice ne serait
-    // pas libérée — elle changerait de stand, ce que la liste dit.
-    await expect(suggestions.filter({ hasText: 'Bruno E2E' })).toContainText('Stand E2E deux');
-    // Chloé a posé la journée : l'échange casserait une règle, elle n'est jamais proposée.
-    await expect(suggestions.filter({ hasText: 'Chloé E2E' })).toHaveCount(0);
+    // Trois familles, trois sections : elles ne se valent pas pour qui lit.
+    const libere = page.locator('.espace-suggestions-liste').nth(0);
+    await expect(page.getByRole('heading', { name: 'On vous libère de ce créneau' })).toBeVisible();
+    await expect(libere).toContainText('Denis E2E');
+    await expect(libere).toContainText("vous n'êtes plus de service");
 
-    // Retenir un nom remplit le formulaire, il ne soumet rien de lui-même.
-    await suggestions.first().getByRole('button', { name: 'Choisir' }).click();
+    // Denis tient aussi un siège le lendemain : c'est l'échange d'un jour
+    // contre un autre, celui qui fait de ce bouton un assistant d'ÉCHANGE.
+    const dirige = page.locator('.espace-suggestions-liste').nth(1);
+    await expect(page.getByRole('heading', { name: 'Vous échangez contre un autre créneau' })).toBeVisible();
+    await expect(dirige).toContainText('Denis E2E');
+    await expect(dirige).toContainText('Stand E2E deux');
+
+    // Bruno travaille déjà ce créneau : l'échange tient, mais Alice ne serait
+    // pas libérée — elle changerait de stand.
+    const croise = page.locator('.espace-suggestions-liste').nth(2);
+    await expect(page.getByRole('heading', { name: 'Vous échangez sur ce même créneau' })).toBeVisible();
+    await expect(croise).toContainText('Bruno E2E');
+
+    // Chloé a posé la journée : l'échange casserait une règle, elle n'est jamais proposée.
+    await expect(page.locator('.espace-suggestions-liste li').filter({ hasText: 'Chloé E2E' })).toHaveCount(0);
+
+    // Retenir l'échange d'un jour contre un autre remplit le formulaire — le
+    // collègue ET le créneau repris — sans rien soumettre de lui-même.
+    await dirige.getByRole('button', { name: 'Choisir' }).first().click();
     await expect(
       page.locator('mat-form-field').filter({ hasText: 'Échanger avec' }).first()
     ).toContainText('Denis E2E');
+    await expect(
+      page.locator('mat-form-field').filter({ hasText: 'Son créneau que je veux en échange' }).first()
+    ).toContainText('Stand E2E deux');
     await expect(page.getByText('En attente du collègue')).toHaveCount(0);
 
-    // Et la demande construite depuis une suggestion part comme une autre.
+    // Et la demande construite depuis une suggestion part comme une autre, en
+    // gardant le créneau repris en échange.
     await page.getByRole('button', { name: 'Ajouter à la liste' }).click();
+    await expect(page.locator('.espace-brouillons li').first()).toContainText('contre');
     await page.getByRole('button', { name: 'Soumettre mes demandes' }).click();
     await expect(page.getByText('En attente du collègue').first()).toBeVisible();
   });

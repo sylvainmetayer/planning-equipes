@@ -17,7 +17,10 @@ export const SEED = {
   standDemandeur: 'E2E-S1',
   standCible: 'E2E-S2',
   creneauId: 987001,
-  jour: '2026-07-10'
+  /** The day after, where the free colleague holds the seat a directed échange trades against. */
+  creneauAutreJour: 987002,
+  jour: '2026-07-10',
+  jourSuivant: '2026-07-11'
 } as const;
 
 /**
@@ -54,7 +57,9 @@ export async function contexteAdmin(
  * prevalidation edge cases. With `avecCollegueLibre`, a fourth (Denis) who is
  * free that day and holds no seat: the only one an échange can hand the
  * demandeur's créneau to without leaving them at work, which is what the
- * « qui peut me remplacer ? » assistant is asked for.
+ * « qui peut me remplacer ? » assistant is asked for. Denis also holds a seat
+ * the day after: the only thing the demandeur can take in return, so the
+ * assistant's three families all exist on this fixture.
  */
 export async function seedPlanning(
   admin: APIRequestContext,
@@ -75,9 +80,9 @@ export async function seedPlanning(
     // no prefix matches — and those rows then hold the créneau's foreign key,
     // failing every later seeding. seedPlanningSolver already clears the range;
     // this one used to leave its own leftovers behind.
-    `delete from verrouillage_planning where creneau_id = ${SEED.creneauId};`,
-    `delete from poste_affectation where creneau_id = ${SEED.creneauId};`,
-    `delete from creneau where id = ${SEED.creneauId};`,
+    `delete from verrouillage_planning where creneau_id in (${SEED.creneauId}, ${SEED.creneauAutreJour});`,
+    `delete from poste_affectation where creneau_id in (${SEED.creneauId}, ${SEED.creneauAutreJour});`,
+    `delete from creneau where id in (${SEED.creneauId}, ${SEED.creneauAutreJour});`,
     `delete from animateur where id like 'E2E-%';`,
     `delete from stand where id like 'E2E-%';`,
     // The dataset itself. access_token is deliberately omitted: the database
@@ -98,7 +103,9 @@ export async function seedPlanning(
       : []),
     ...(options.avecCollegueLibre
       ? [
-          `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager) values ('DEFAUT', '${SEED.collegueLibre}', 'Denis', 'E2E', '1988-04-04', false);`
+          `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager) values ('DEFAUT', '${SEED.collegueLibre}', 'Denis', 'E2E', '1988-04-04', false);`,
+          `insert into creneau (edition_id, id, date_creneau, heure_debut, heure_fin) values ('DEFAUT', ${SEED.creneauAutreJour}, '${SEED.jourSuivant}', '14:00', '16:00');`,
+          `insert into poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id) values ('DEFAUT', 'E2E-P3', '${SEED.standCible}', ${SEED.creneauAutreJour}, '${SEED.collegueLibre}');`
         ]
       : [])
   ].join('\n');

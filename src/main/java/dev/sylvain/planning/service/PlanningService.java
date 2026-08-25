@@ -2276,25 +2276,36 @@ public class PlanningService {
     }
 
     /**
-     * Who could take this seat off the animateur's hands (the espace's « qui
-     * peut me remplacer ? »): the same search as {@link #suggererReparations},
-     * but for an <b>échange</b> — the demandeur names only their own seat, and
-     * every colleague is tried on it in turn, exactly as
-     * {@link #simulateEchange} would score the one they had named themselves.
+     * What an animateur could really do with a créneau they do not want (the
+     * espace's « qui peut me remplacer ? »): the same search as
+     * {@link #suggererReparations}, but for an <b>échange</b> — the demandeur
+     * names only their own seat, and each way out is tried in turn, scored
+     * exactly as {@link #simulateEchange} would score the one they had named
+     * themselves.
      *
-     * <p>Candidates that would worsen the plan's hard score are dropped, so
-     * what comes back is viable in the current planning, not merely plausible.
-     * The verdict is planning-wide for the same reason as everywhere else
-     * here: taking this seat can break a rule on a poste it does not touch
-     * (weekly hours, rest), which the seat's own matches would never show.</p>
+     * <p>Three ways out, because an échange is not only « quelqu'un prend ma
+     * place » (see {@link NatureEchange}): being freed outright, trading seats
+     * on that same créneau, or trading it against a colleague's seat on
+     * <b>another day</b>. All three are enumerated and all three are scored
+     * the same way, so the answer never silently omits a family.</p>
+     *
+     * <p>Options that would worsen the plan's hard score are dropped, so what
+     * comes back is viable in the current planning, not merely plausible. The
+     * verdict is planning-wide for the same reason as everywhere else here:
+     * moving these seats can break a rule on a poste they do not touch (weekly
+     * hours, rest), which the seats' own matches would never show.</p>
      *
      * <p>Nothing is persisted and no demande is created: the animateur still
-     * picks a name and submits, and the colleague still has to agree.</p>
+     * picks one and submits, and the colleague still has to agree.</p>
      *
      * <p><b>Bounded like the repair assistant</b>, and for the same reason —
-     * one full analyse per candidate. The result carries both counts so the
-     * caller can say « les 20 plus prometteurs sur 137 » instead of passing a
-     * truncated list off as the whole truth.</p>
+     * one full analyse per option. The three families are evaluated
+     * <b>round-robin</b> rather than one after the other: a roster of 150 free
+     * colleagues would otherwise spend the whole plafond on « on vous libère »
+     * and never once ask whether a Tuesday could be traded for a Monday. The
+     * result carries both counts so the caller can say « les 20 pistes les plus
+     * prometteuses sur 400 » instead of passing a truncated list off as the
+     * whole truth.</p>
      */
     public SuggestionsEchange suggererEchanges(PlanningEvenement solved, String demandeurId,
             long creneauId, String standId, Integer plafondDemande) {
@@ -2305,16 +2316,16 @@ public class PlanningService {
         ScoreAnalysis<?> avant = solutionManager.analyze(solved);
         HardMediumSoftScore scoreAvant = (HardMediumSoftScore) avant.score();
 
-        List<CandidatEchange> eligibles = candidatsEchange(solved, posteDemandeur);
-        List<CandidatEchange> evalues = eligibles.size() > plafond ? eligibles.subList(0, plafond) : eligibles;
+        List<OptionEchange> eligibles = optionsEchange(solved, posteDemandeur);
+        List<OptionEchange> evaluees = eligibles.size() > plafond ? eligibles.subList(0, plafond) : eligibles;
 
         List<SuggestionEchange> suggestions = new ArrayList<>();
-        for (CandidatEchange candidat : evalues) {
-            PosteAffectation siege = candidat.siege();
+        for (OptionEchange option : evaluees) {
+            PosteAffectation siege = option.siege();
             // Same throwaway in-place substitution as simulateEchange, reverted
             // in the finally: the planning is a per-request payload.
             ScoreAnalysis<?> apres;
-            posteDemandeur.setAnimateur(candidat.animateur());
+            posteDemandeur.setAnimateur(option.animateur());
             if (siege != null) {
                 siege.setAnimateur(demandeur);
             }
@@ -2323,86 +2334,134 @@ public class PlanningService {
             } finally {
                 posteDemandeur.setAnimateur(demandeur);
                 if (siege != null) {
-                    siege.setAnimateur(candidat.animateur());
+                    siege.setAnimateur(option.animateur());
                 }
             }
             HardMediumSoftScore scoreApres = (HardMediumSoftScore) apres.score();
             if (scoreApres.hardScore() < scoreAvant.hardScore()) {
                 continue;
             }
-            suggestions.add(new SuggestionEchange(candidat.animateur().getId(), siege != null,
+            suggestions.add(new SuggestionEchange(option.animateur().getId(), option.nature(),
+                    option.nature() == NatureEchange.DIRIGE ? siege.getCreneau().getId() : null,
                     siege == null ? null : siege.getStand().getId(),
                     scoreApres, scoreApres.subtract(scoreAvant)));
         }
-        // Those who free the demandeur outright come first: the button exists
-        // for « je ne veux pas de ce créneau », and a croisé merely moves them
-        // to another stand at the same hour. Within each group, best impact on
-        // the plan first, then a stable id order.
-        suggestions.sort(Comparator.comparing(SuggestionEchange::echangeCroise)
+        // Grouped by family, which is how the espace lists them, then best
+        // impact on the plan first and a stable id order to break ties.
+        suggestions.sort(Comparator.comparing(SuggestionEchange::nature)
                 .thenComparing(SuggestionEchange::delta, Comparator.<HardMediumSoftScore>naturalOrder().reversed())
                 .thenComparing(SuggestionEchange::animateurId, NaturalOrder.DES_IDS));
         return new SuggestionsEchange(creneauId, standId, scoreAvant,
-                eligibles.size(), evalues.size(), plafond, List.copyOf(suggestions));
-    }
-
-    /** One candidate for an échange, with the seat they would hand back — {@code null} frees the demandeur. */
-    private record CandidatEchange(Animateur animateur, PosteAffectation siege) {
+                eligibles.size(), evaluees.size(), plafond, List.copyOf(suggestions));
     }
 
     /**
-     * Who may be tried on {@code posteDemandeur}, most promising first. Both
-     * halves of the trade are filtered through the solver's own
-     * {@link EligibleAnimateurMoveFilter}: the candidate must be eligible on
-     * the demandeur's seat, and — when they hold one on the same créneau, which
-     * makes the échange croisé — the demandeur must be eligible on theirs.
+     * One way out of a créneau, before it is scored: who takes it, and which
+     * seat — if any — comes back in return.
      *
-     * <p>The order matters because the caller truncates. First those who leave
-     * the demandeur free and are themselves free at that hour: the very answer
-     * the button is asked for, and the only one that cannot create an overlap.
-     * Then the croisés, viable but keeping the demandeur at work. Last those
-     * free of that créneau yet busy on an overlapping one — almost certainly
-     * infeasible, kept only so a small roster still gets an answer.</p>
+     * @param siege {@code null} for {@link NatureEchange#LIBERE}; the
+     *              colleague's seat on the same créneau for
+     *              {@link NatureEchange#CROISE}; one of their seats elsewhere
+     *              for {@link NatureEchange#DIRIGE}
      */
-    private static List<CandidatEchange> candidatsEchange(PlanningEvenement solved,
+    private record OptionEchange(Animateur animateur, PosteAffectation siege, NatureEchange nature) {
+    }
+
+    /**
+     * How many seats of a single colleague are offered as a trade in return.
+     * A colleague holding fifteen seats would otherwise eat the whole DIRIGE
+     * share of the plafond on their own, and the animateur would be shown one
+     * name where they wanted a choice of days.
+     */
+    private static final int SIEGES_DIRIGES_PAR_COLLEGUE = 2;
+
+    /**
+     * Every way out of {@code posteDemandeur}, the most promising of each
+     * family first, then the three families interleaved.
+     *
+     * <p>Both halves of every trade go through the solver's own
+     * {@link EligibleAnimateurMoveFilter}: the colleague must be eligible on
+     * the demandeur's seat, and the demandeur on whatever seat comes back.
+     * Filtering here rather than by the score keeps the plafond for options
+     * that stand a chance.</p>
+     *
+     * <p>Within LIBERE, colleagues free at that hour come first — the only
+     * ones who cannot create an overlap by taking the seat.</p>
+     */
+    private static List<OptionEchange> optionsEchange(PlanningEvenement solved,
             PosteAffectation posteDemandeur) {
         Animateur demandeur = posteDemandeur.getAnimateur();
         long creneauId = posteDemandeur.getCreneau().getId();
         Set<String> occupes = animateursOccupesPendant(solved, posteDemandeur);
-        List<CandidatEchange> candidats = new ArrayList<>();
-        for (Animateur candidat : solved.getAnimateurs()) {
-            if (candidat.getId().equals(demandeur.getId())
-                    || !EligibleAnimateurMoveFilter.isEligible(posteDemandeur, candidat)) {
-                continue;
+        // Indexed once: the alternative rescans the whole poste list per
+        // colleague, twice, on a planning that holds a couple of thousand.
+        Map<String, List<PosteAffectation>> siegesParAnimateur = solved.getPostes().stream()
+                .filter(poste -> poste.getAnimateur() != null && poste.getStand() != null
+                        && poste.getCreneau() != null && poste.getCreneau().getId() != null)
+                .collect(Collectors.groupingBy(poste -> poste.getAnimateur().getId()));
+
+        List<OptionEchange> liberent = new ArrayList<>();
+        List<OptionEchange> croises = new ArrayList<>();
+        List<OptionEchange> diriges = new ArrayList<>();
+        List<Animateur> collegues = solved.getAnimateurs().stream()
+                .filter(collegue -> !collegue.getId().equals(demandeur.getId()))
+                .filter(collegue -> EligibleAnimateurMoveFilter.isEligible(posteDemandeur, collegue))
+                .sorted(Comparator.comparing(Animateur::getId, NaturalOrder.DES_IDS))
+                .toList();
+        for (Animateur collegue : collegues) {
+            List<PosteAffectation> sieges = siegesParAnimateur.getOrDefault(collegue.getId(), List.of());
+            PosteAffectation memeCreneau = sieges.stream()
+                    .filter(poste -> poste != posteDemandeur && poste.getCreneau().getId() == creneauId)
+                    .findFirst()
+                    .orElse(null);
+            if (memeCreneau == null) {
+                liberent.add(new OptionEchange(collegue, null, NatureEchange.LIBERE));
+            } else if (EligibleAnimateurMoveFilter.isEligible(memeCreneau, demandeur)) {
+                croises.add(new OptionEchange(collegue, memeCreneau, NatureEchange.CROISE));
             }
-            PosteAffectation siege = siegeSur(solved, candidat.getId(), creneauId, posteDemandeur);
-            if (siege != null && !EligibleAnimateurMoveFilter.isEligible(siege, demandeur)) {
-                continue;
+            for (PosteAffectation ailleurs : siegesAilleurs(sieges, creneauId, demandeur)) {
+                diriges.add(new OptionEchange(collegue, ailleurs, NatureEchange.DIRIGE));
             }
-            candidats.add(new CandidatEchange(candidat, siege));
         }
-        candidats.sort(Comparator
-                .comparingInt((CandidatEchange candidat) -> rangEchange(candidat, occupes))
-                .thenComparing(candidat -> candidat.animateur().getId(), NaturalOrder.DES_IDS));
-        return candidats;
+        liberent.sort(Comparator
+                .comparing((OptionEchange option) -> occupes.contains(option.animateur().getId()))
+                .thenComparing(option -> option.animateur().getId(), NaturalOrder.DES_IDS));
+        return entrelacer(liberent, croises, diriges);
     }
 
-    private static int rangEchange(CandidatEchange candidat, Set<String> occupes) {
-        if (candidat.siege() != null) {
-            return 1;
-        }
-        return occupes.contains(candidat.animateur().getId()) ? 2 : 0;
+    /**
+     * The colleague's seats on <b>other</b> créneaux that the demandeur could
+     * take in return, earliest first and capped per colleague — the « je te
+     * laisse mon lundi, je prends ton mardi » family.
+     */
+    private static List<PosteAffectation> siegesAilleurs(List<PosteAffectation> sieges, long creneauId,
+            Animateur demandeur) {
+        return sieges.stream()
+                .filter(poste -> poste.getCreneau().getId() != creneauId)
+                .filter(poste -> EligibleAnimateurMoveFilter.isEligible(poste, demandeur))
+                .sorted(Comparator
+                        .comparing((PosteAffectation poste) -> poste.getCreneau().getDate(),
+                                Comparator.nullsLast(Comparator.naturalOrder()))
+                        .thenComparing(PosteAffectation::heureDebutEffectif,
+                                Comparator.nullsLast(Comparator.naturalOrder()))
+                        .thenComparing(PosteAffectation::getId, NaturalOrder.DES_IDS))
+                .limit(SIEGES_DIRIGES_PAR_COLLEGUE)
+                .toList();
     }
 
-    /** The seat {@code animateurId} holds on the same créneau as {@code posteDemandeur}, if any. */
-    private static PosteAffectation siegeSur(PlanningEvenement solved, String animateurId, long creneauId,
-            PosteAffectation posteDemandeur) {
-        return solved.getPostes().stream()
-                .filter(poste -> poste != posteDemandeur
-                        && poste.getCreneau() != null && poste.getCreneau().getId() != null
-                        && poste.getCreneau().getId() == creneauId
-                        && poste.getAnimateur() != null && animateurId.equals(poste.getAnimateur().getId()))
-                .findFirst()
-                .orElse(null);
+    /** Round-robin over the three families, so a truncation trims all of them evenly rather than erasing two. */
+    @SafeVarargs
+    private static List<OptionEchange> entrelacer(List<OptionEchange>... familles) {
+        List<OptionEchange> entrelacees = new ArrayList<>();
+        int plusLongue = Stream.of(familles).mapToInt(List::size).max().orElse(0);
+        for (int rang = 0; rang < plusLongue; rang++) {
+            for (List<OptionEchange> famille : familles) {
+                if (rang < famille.size()) {
+                    entrelacees.add(famille.get(rang));
+                }
+            }
+        }
+        return entrelacees;
     }
 
     /** The seat {@code animateurId} holds on (créneau, stand), or throws in business words. */
@@ -2552,30 +2611,50 @@ public class PlanningService {
     }
 
     /**
-     * One colleague this seat could be traded with (the espace's « qui peut me
-     * remplacer ? »). Only ever produced for a candidate that leaves the plan's
-     * hard score no worse.
+     * What an échange actually does for the animateur who asked — the three
+     * distinct answers to « je ne veux pas de ce créneau », which the espace
+     * lists apart because they are not interchangeable for the person reading.
      *
-     * @param echangeCroise true when the colleague already works that créneau —
-     *                      the demandeur then takes {@code standCibleId} instead
-     *                      of being freed
-     * @param standCibleId  the stand the demandeur would end up on, {@code null}
-     *                      when the échange frees them
-     * @param delta         {@code scoreApres - scoreAvant}: the greater, the better for the plan
+     * <p>Declaration order is display order: freed first, then the two trades
+     * that keep them on duty.</p>
      */
-    public record SuggestionEchange(String animateurId, boolean echangeCroise, String standCibleId,
-            HardMediumSoftScore scoreApres, HardMediumSoftScore delta) {
+    public enum NatureEchange {
+        /** The colleague is free then and simply takes the seat: the demandeur is off. */
+        LIBERE,
+        /** The colleague works that same créneau: the two seats swap, the demandeur only changes stand. */
+        CROISE,
+        /** A seat on ANOTHER créneau comes back — « je te laisse mon lundi, je prends ton mardi ». */
+        DIRIGE
+    }
+
+    /**
+     * One viable way out of a créneau (the espace's « qui peut me remplacer ? »).
+     * Only ever produced for an option that leaves the plan's hard score no
+     * worse.
+     *
+     * @param creneauCibleId the créneau of the seat coming back, set for
+     *                       {@link NatureEchange#DIRIGE} only — the two other
+     *                       families play out on the demandeur's own créneau
+     * @param standCibleId   the stand the demandeur would end up on, {@code null}
+     *                       when the échange frees them
+     * @param delta          {@code scoreApres - scoreAvant}: the greater, the better for the plan
+     */
+    public record SuggestionEchange(String animateurId, NatureEchange nature, Long creneauCibleId,
+            String standCibleId, HardMediumSoftScore scoreApres, HardMediumSoftScore delta) {
     }
 
     /**
      * Result of {@link #suggererEchanges}, carrying the cost it actually paid,
-     * like {@link SuggestionsReparation}: {@code candidatsEvalues} of the
-     * {@code candidatsEligibles} were simulated. When the two differ the search
+     * like {@link SuggestionsReparation}: {@code optionsEvaluees} of the
+     * {@code optionsEligibles} were simulated. When the two differ the search
      * stopped at the plafond and the list is the best of what it saw, not an
      * exhaustive answer.
+     *
+     * <p>Options, not colleagues: one colleague can hold several — take my
+     * seat, or trade me your Tuesday, or your Thursday.</p>
      */
     public record SuggestionsEchange(long creneauId, String standId, HardMediumSoftScore scoreAvant,
-            int candidatsEligibles, int candidatsEvalues, int plafond,
+            int optionsEligibles, int optionsEvaluees, int plafond,
             List<SuggestionEchange> suggestions) {
     }
 

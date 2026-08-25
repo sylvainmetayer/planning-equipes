@@ -8,6 +8,7 @@ import static org.hamcrest.Matchers.notNullValue;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -44,6 +45,8 @@ class DemandeEchangeFlowTest {
 
     private static final LocalDate JOUR = LocalDate.of(2026, 7, 10);
     private static final long CRENEAU_ID = 9101L;
+    /** A seat the day after, the fixture of the « je prends ton mardi » family. */
+    private static final long CRENEAU_AUTRE_JOUR = 9103L;
 
     @Inject
     PlanningPersistenceService persistence;
@@ -197,13 +200,15 @@ class DemandeEchangeFlowTest {
 
     /**
      * « Qui peut me remplacer ? »: the animateur names only THEIR OWN seat and
-     * the assistant looks for the colleagues an échange really works with.
-     * Denis, free that day, comes first — he frees Alice; Bruno, already on the
-     * other stand of the same créneau, is only a croisé; Chloé, unavailable
-     * that day, is not proposed at all.
+     * the assistant answers with the three things an échange can do for them —
+     * Denis is free that day and takes the seat outright (LIBERE); Bruno works
+     * the other stand of that same créneau, so the two would only swap stands
+     * (CROISE); and Denis also holds a seat the day after, which Alice can take
+     * in return (DIRIGE). Chloé declared the day off: infeasible, never
+     * proposed.
      */
     @Test
-    void lAssistantProposeLesCollegesAvecQuiLEchangeTient() {
+    void lAssistantProposeLesTroisFacadesDUnEchange() {
         persistTwoSeatPlanningWithSpareColleague();
         String token = tokenOf("ECH-A");
 
@@ -217,32 +222,46 @@ class DemandeEchangeFlowTest {
                 .extract().jsonPath().getList("suggestions");
 
         assertThat(suggestions).extracting(suggestion -> suggestion.get("animateurId"))
-                .contains("ECH-D", "ECH-B")
                 .doesNotContain("ECH-C", "ECH-A");
 
-        Map<String, Object> denis = suggestionOf(suggestions, "ECH-D");
-        assertThat(denis.get("nomComplet")).isEqualTo("Denis Roux");
-        assertThat(denis.get("echangeCroise")).isEqualTo(false);
-        assertThat(denis.get("standCibleNom")).isNull();
+        // Freed: nothing comes back, the créneau simply leaves Alice's hands.
+        Map<String, Object> libere = suggestionOf(suggestions, "ECH-D", "LIBERE");
+        assertThat(libere.get("nomComplet")).isEqualTo("Denis Roux");
+        assertThat(libere.get("standCibleNom")).isNull();
+        assertThat(libere.get("creneauCibleId")).isNull();
 
-        // Bruno holds the other stand of that créneau: Alice would not be
-        // freed, she would move to stand deux — which the view spells out.
-        Map<String, Object> bruno = suggestionOf(suggestions, "ECH-B");
-        assertThat(bruno.get("echangeCroise")).isEqualTo(true);
-        assertThat(bruno.get("standCibleNom")).isEqualTo("Stand deux");
+        // Croisé: Alice stays on duty that hour, on stand deux.
+        Map<String, Object> croise = suggestionOf(suggestions, "ECH-B", "CROISE");
+        assertThat(croise.get("standCibleNom")).isEqualTo("Stand deux");
+        assertThat(croise.get("creneauCibleId")).isNull();
 
-        // Those who free the demandeur rank before the croisés: that is the
-        // question the button asks.
-        assertThat(rankOf(suggestions, "ECH-D")).isLessThan(rankOf(suggestions, "ECH-B"));
+        // Dirigé: a seat on ANOTHER day comes back, dated and named — this is
+        // what makes the button an exchange assistant and not a hand-over one.
+        Map<String, Object> dirige = suggestionOf(suggestions, "ECH-D", "DIRIGE");
+        assertThat(dirige.get("creneauCibleId")).isEqualTo((int) CRENEAU_AUTRE_JOUR);
+        assertThat(dirige.get("dateCible")).isEqualTo(JOUR.plusDays(1).toString());
+        assertThat(dirige.get("standCibleNom")).isEqualTo("Stand deux");
 
-        // And a suggestion submits as is: it names a colleague the ordinary
-        // form accepts, with no seat wanted in return.
+        // Being freed is listed before the trades that keep Alice at work.
+        assertThat(rankOf(suggestions, "ECH-D", "LIBERE"))
+                .isLessThan(rankOf(suggestions, "ECH-B", "CROISE"));
+
+        // Each family submits as is through the ordinary form: the plain one
+        // as a bare seat, the directed one carrying the seat wanted in return.
         given().contentType(ContentType.JSON)
                 .body("[{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"ECH-S1\",\"cibleId\":\"ECH-D\"}]")
                 .when().post("/api/espace-animateur/" + token + "/demandes")
                 .then()
                 .statusCode(200)
                 .body("[0].prevalidationOk", equalTo(true));
+        given().contentType(ContentType.JSON)
+                .body("[{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"ECH-S1\",\"cibleId\":\"ECH-D\","
+                        + "\"creneauCibleId\":" + CRENEAU_AUTRE_JOUR + ",\"standCibleId\":\"ECH-S2\"}]")
+                .when().post("/api/espace-animateur/" + token + "/demandes")
+                .then()
+                .statusCode(200)
+                .body("[0].prevalidationOk", equalTo(true))
+                .body("[0].creneauCibleId", equalTo((int) CRENEAU_AUTRE_JOUR));
     }
 
     /** Only one's own seats are searchable — Bruno's answers 400. */
@@ -645,27 +664,40 @@ class DemandeEchangeFlowTest {
 
     /**
      * The two-seat planning, plus Denis: available that day and holding no
-     * seat, hence the only one who can really free Alice from her créneau.
+     * seat on it, so he can free Alice outright — and holding one the day
+     * after, the only thing she could take in return. The fixture of the three
+     * families at once.
      */
     private void persistTwoSeatPlanningWithSpareColleague() {
         persistTwoSeatPlanning();
         Animateur denis = new Animateur("ECH-D", "Denis", "Roux", LocalDate.of(1988, 4, 4), false);
         PlanningEvenement planning = persistence.loadPersistedPlanning();
-        List<Animateur> animateurs = new java.util.ArrayList<>(planning.getAnimateurs());
+        List<Animateur> animateurs = new ArrayList<>(planning.getAnimateurs());
         animateurs.removeIf(animateur -> "ECH-D".equals(animateur.getId()));
         animateurs.add(denis);
-        persistence.persist(new PlanningEvenement(JOUR, animateurs, planning.getPostes()));
+        Creneau lendemain = new Creneau(CRENEAU_AUTRE_JOUR, 2, JOUR.plusDays(1),
+                LocalTime.of(14, 0), LocalTime.of(16, 0));
+        Stand standDeux = new Stand("ECH-S2", "Stand deux", Set.of(), 1, 1, false);
+        PosteAffectation posteDenis = new PosteAffectation("ECH-P3", standDeux, lendemain);
+        posteDenis.setAnimateur(denis);
+        List<PosteAffectation> postes = new ArrayList<>(planning.getPostes());
+        postes.removeIf(poste -> "ECH-P3".equals(poste.getId()));
+        postes.add(posteDenis);
+        persistence.persist(new PlanningEvenement(JOUR, animateurs, postes));
     }
 
-    private static Map<String, Object> suggestionOf(List<Map<String, Object>> suggestions, String animateurId) {
+    private static Map<String, Object> suggestionOf(List<Map<String, Object>> suggestions,
+            String animateurId, String nature) {
         return suggestions.stream()
-                .filter(suggestion -> animateurId.equals(suggestion.get("animateurId")))
+                .filter(suggestion -> animateurId.equals(suggestion.get("animateurId"))
+                        && nature.equals(suggestion.get("nature")))
                 .findFirst()
-                .orElseThrow();
+                .orElseThrow(() -> new AssertionError("No " + nature + " suggestion for " + animateurId
+                        + " in " + suggestions));
     }
 
-    private static int rankOf(List<Map<String, Object>> suggestions, String animateurId) {
-        return suggestions.indexOf(suggestionOf(suggestions, animateurId));
+    private static int rankOf(List<Map<String, Object>> suggestions, String animateurId, String nature) {
+        return suggestions.indexOf(suggestionOf(suggestions, animateurId, nature));
     }
 
     private void donnerEmail(String animateurId, String email) {

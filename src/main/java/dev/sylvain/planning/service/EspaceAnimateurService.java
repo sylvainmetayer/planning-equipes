@@ -164,20 +164,19 @@ public class EspaceAnimateurService {
     }
 
     /**
-     * One viable partner for an échange, in the espace's words: who, and what
-     * the demandeur would get in return.
+     * One viable way out of a créneau, in the espace's words: who takes it,
+     * what it does for the demandeur, and — when a seat comes back — which one.
      *
      * <p>Carries <b>no score</b> on purpose, where the admin's repair
      * suggestions do: a {@code HardMediumSoftScore} means nothing to an
      * animateur, and publishing the plan's global health in the espace tells
      * every holder of a token how healthy (or not) the whole event's planning
-     * is. What they need is the two facts below.</p>
+     * is. What they need is the facts below.</p>
      *
-     * @param echangeCroise true when the colleague already works that créneau:
-     *                      the demandeur would take {@code standCibleNom}
-     *                      instead of being freed
+     * @param nature LIBERE / CROISE / DIRIGE — see {@link PlanningService.NatureEchange}
      */
-    public record SuggestionEchangeView(String animateurId, String nomComplet, boolean echangeCroise,
+    public record SuggestionEchangeView(String animateurId, String nomComplet, String nature,
+            Long creneauCibleId, LocalDate dateCible, LocalTime heureDebutCible, LocalTime heureFinCible,
             String standCibleId, String standCibleNom) {
     }
 
@@ -188,20 +187,26 @@ public class EspaceAnimateurService {
      *                      best of what was tried, and the interface must say so
      *                      rather than let « personne d'autre » be read into it
      */
-    public record SuggestionsEchangeView(Long creneauId, String standId, int candidatsEligibles,
-            int candidatsEvalues, boolean listeTronquee, List<SuggestionEchangeView> suggestions) {
+    public record SuggestionsEchangeView(Long creneauId, String standId, int optionsEligibles,
+            int optionsEvaluees, boolean listeTronquee, List<SuggestionEchangeView> suggestions) {
     }
 
     /**
-     * Colleagues this animateur could really trade one of their seats with: the
-     * search behind the espace's « qui peut me remplacer ? » button, for the
-     * animateur who does not want that créneau and has nobody in mind.
+     * Every viable way this animateur could get rid of one of their créneaux:
+     * the search behind the espace's « qui peut me remplacer ? » button, for
+     * the animateur who does not want that créneau and has nobody in mind.
+     *
+     * <p>Three families, deliberately — being freed, trading on the same
+     * créneau, or trading against a colleague's seat on another day (see
+     * {@link PlanningService.NatureEchange}). An échange is not only « someone
+     * takes my place », and an assistant that only proposed that would hide
+     * half of what the foire allows.</p>
      *
      * <p>Only the demandeur's own seats are searchable — the créneau/stand pair
      * must be one of theirs, which {@link PlanningService#suggererEchanges}
      * enforces by looking the seat up under their id. Nothing is created here:
-     * the animateur still picks a name, submits a demande, and the colleague
-     * still has to agree.</p>
+     * the animateur still picks one, submits a demande, and the colleague still
+     * has to agree.</p>
      */
     public SuggestionsEchangeView suggestionsEchange(String animateurId, Long creneauId, String standId,
             Integer plafond) {
@@ -214,18 +219,32 @@ public class EspaceAnimateurService {
                 .collect(Collectors.toMap(Animateur::getId, Function.identity()));
         Map<String, Stand> stands = referenceDataService.listStands().stream()
                 .collect(Collectors.toMap(Stand::getId, Function.identity()));
+        Map<Long, Creneau> creneaux = referenceDataService.listCreneaux().stream()
+                .filter(creneau -> creneau.getId() != null)
+                .collect(Collectors.toMap(Creneau::getId, Function.identity()));
         List<SuggestionEchangeView> vues = suggestions.suggestions().stream()
-                .map(suggestion -> new SuggestionEchangeView(
-                        suggestion.animateurId(),
-                        nomComplet(animateurs.get(suggestion.animateurId()), suggestion.animateurId()),
-                        suggestion.echangeCroise(),
-                        suggestion.standCibleId(),
-                        suggestion.standCibleId() == null ? null
-                                : nomStand(stands.get(suggestion.standCibleId()), suggestion.standCibleId())))
+                .map(suggestion -> toView(suggestion, animateurs, stands, creneaux))
                 .toList();
         return new SuggestionsEchangeView(creneauId, standId,
-                suggestions.candidatsEligibles(), suggestions.candidatsEvalues(),
-                suggestions.candidatsEvalues() < suggestions.candidatsEligibles(), vues);
+                suggestions.optionsEligibles(), suggestions.optionsEvaluees(),
+                suggestions.optionsEvaluees() < suggestions.optionsEligibles(), vues);
+    }
+
+    private static SuggestionEchangeView toView(PlanningService.SuggestionEchange suggestion,
+            Map<String, Animateur> animateurs, Map<String, Stand> stands, Map<Long, Creneau> creneaux) {
+        Stand standCible = suggestion.standCibleId() == null ? null : stands.get(suggestion.standCibleId());
+        Creneau creneauCible = suggestion.creneauCibleId() == null ? null
+                : creneaux.get(suggestion.creneauCibleId());
+        return new SuggestionEchangeView(
+                suggestion.animateurId(),
+                nomComplet(animateurs.get(suggestion.animateurId()), suggestion.animateurId()),
+                suggestion.nature().name(),
+                suggestion.creneauCibleId(),
+                creneauCible == null ? null : creneauCible.getDate(),
+                creneauCible == null ? null : creneauCible.getHeureDebut(),
+                creneauCible == null ? null : creneauCible.getHeureFin(),
+                suggestion.standCibleId(),
+                suggestion.standCibleId() == null ? null : nomStand(standCible, suggestion.standCibleId()));
     }
 
     private static String nomStand(Stand stand, String fallbackId) {

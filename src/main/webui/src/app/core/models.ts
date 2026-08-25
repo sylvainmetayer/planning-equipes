@@ -992,15 +992,32 @@ export interface EspaceAnimateurView {
 }
 
 /**
- * One colleague the assistant found for an échange
- * (`/api/espace-animateur/{jeton}/suggestions-echange`): the swap really holds
+ * What an échange would actually do for the animateur who asked. Three answers,
+ * listed apart because they are not interchangeable for the person reading.
+ */
+export type NatureEchange =
+  /** The colleague is free then: the créneau leaves your hands entirely. */
+  | 'LIBERE'
+  /** They work that same créneau: you swap seats and only change stand. */
+  | 'CROISE'
+  /** A seat on another créneau comes back — « je te laisse mon lundi, je prends ton mardi ». */
+  | 'DIRIGE';
+
+/**
+ * One viable way out of a créneau, found by
+ * `/api/espace-animateur/{jeton}/suggestions-echange`: the trade really holds
  * against the current planning, hard constraints included.
  */
 export interface SuggestionEchangeView {
   animateurId: string;
   nomComplet: string;
-  /** True when they already work that slot: you would move to `standCibleNom`, not be freed. */
-  echangeCroise: boolean;
+  nature: NatureEchange;
+  /** Set for `DIRIGE` only: the colleague's seat you would take in return. */
+  creneauCibleId: number | null;
+  /** ISO date of that seat. */
+  dateCible: string | null;
+  heureDebutCible: string | null;
+  heureFinCible: string | null;
   standCibleId: string | null;
   standCibleNom: string | null;
 }
@@ -1009,9 +1026,10 @@ export interface SuggestionEchangeView {
 export interface SuggestionsEchangeView {
   creneauId: number;
   standId: string;
-  candidatsEligibles: number;
-  candidatsEvalues: number;
-  /** The search stopped at its ceiling: the list is the best of what was tried, not everyone. */
+  /** Options, not colleagues: one colleague can hold several. */
+  optionsEligibles: number;
+  optionsEvaluees: number;
+  /** The search stopped at its ceiling: the list is the best of what was tried, not everything. */
   listeTronquee: boolean;
   suggestions: SuggestionEchangeView[];
 }

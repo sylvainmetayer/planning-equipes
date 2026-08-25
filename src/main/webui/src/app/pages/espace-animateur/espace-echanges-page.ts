@@ -12,6 +12,7 @@ import { statutDemandeClasse, statutDemandeLabel } from '../../core/demande-echa
 import { EspaceAnimateurService } from '../../core/espace-animateur.service';
 import {
   DemandeEchangeView,
+  NatureEchange,
   PosteAnimateurView,
   SuggestionEchangeView,
   SuggestionsEchangeView
@@ -36,9 +37,10 @@ interface DemandeRow extends DemandeEchangeView {
  * The échange request form of the espace animateur (issue #165): the
  * animateur lists the créneaux they want to trade (poste + colleague + motif),
  * then submits the whole list at once. When they have nobody in mind — they
- * simply do not want that créneau — « qui peut me remplacer ? » searches the
- * colleagues an échange would really work with and fills the colleague field
- * from the one they pick. Each demande is prevalidated
+ * simply do not want that créneau — « qui peut me remplacer ? » searches every
+ * viable way out (being freed, swapping on that same créneau, or trading it
+ * against a colleague's seat on another day) and fills the form from the one
+ * they pick. Each demande is prevalidated
  * server-side against the hard constraints; an infeasible one is still
  * submitted, but flagged here in business words. Below, the history of their
  * demandes with statut and the admin's comment.
@@ -178,9 +180,30 @@ export class EspaceEchangesPage {
     }
   }
 
-  /** One suggestion retained: it fills the colleague field, the rest of the form is unchanged. */
+  /**
+   * One suggestion retained: it fills the ordinary form and stops there — the
+   * animateur still adds it to the list and submits. A DIRIGE also preselects
+   * the colleague's seat wanted in return, picked from the very options the
+   * "créneau souhaité" select holds, so the two stay one and the same choice.
+   */
   protected async retenirSuggestion(suggestion: SuggestionEchangeView): Promise<void> {
     await this.choisirCible(suggestion.animateurId);
+    if (suggestion.nature !== 'DIRIGE') {
+      return;
+    }
+    this.posteCibleChoisi.set(
+      this.postesCollegue().find(
+        (poste) =>
+          poste.creneauId === suggestion.creneauCibleId && poste.standId === suggestion.standCibleId
+      ) ?? null
+    );
+  }
+
+  /** The retained suggestions of one family, in the order the server ranked them. */
+  protected suggestionsDe(nature: NatureEchange): SuggestionEchangeView[] {
+    return (this.suggestions()?.suggestions ?? []).filter(
+      (suggestion) => suggestion.nature === nature
+    );
   }
 
   /** Colleague picked: load their seats so the optional "wanted in return" select has real options. */

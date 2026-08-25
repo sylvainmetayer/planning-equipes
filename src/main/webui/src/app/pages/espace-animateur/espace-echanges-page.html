@@ -78,38 +78,81 @@
         } @else if (suggestions(); as trouvees) {
           @if (trouvees.suggestions.length === 0) {
             <p class="espace-suggestions-vide" i18n="@@espace.echanges.suggestionsAucune">
-              Aucun collègue ne peut reprendre ce créneau sans casser une règle du planning. Vous
-              pouvez tout de même proposer l'échange à quelqu'un : l'organisation tranchera.
+              Aucun échange ne tient sur ce créneau en l'état du planning. Vous pouvez tout de même
+              proposer l'échange à quelqu'un : l'organisation tranchera.
             </p>
           } @else {
             <p class="espace-suggestions-intro" i18n="@@espace.echanges.suggestionsIntro">
-              Avec ces collègues, l'échange tient en l'état du planning. Choisissez-en un : il ou
-              elle devra donner son accord, puis l'organisation tranchera.
+              Ces échanges tiennent en l'état du planning. Choisissez-en un : le ou la collègue
+              devra donner son accord, puis l'organisation tranchera.
             </p>
-            <ul class="espace-suggestions-liste">
-              @for (suggestion of trouvees.suggestions; track suggestion.animateurId) {
-                <li>
-                  <strong>{{ suggestion.nomComplet }}</strong>
-                  @if (suggestion.echangeCroise) {
+
+            @if (suggestionsDe('LIBERE').length > 0) {
+              <h3 class="espace-suggestions-famille" i18n="@@espace.echanges.familleLibere">
+                On vous libère de ce créneau
+              </h3>
+              <ul class="espace-suggestions-liste">
+                @for (suggestion of suggestionsDe('LIBERE'); track suggestion.animateurId) {
+                  <li>
+                    <strong>{{ suggestion.nomComplet }}</strong>
+                    <span class="espace-suggestion-detail" i18n="@@espace.echanges.suggestionLibere">
+                      reprend votre créneau, vous n'êtes plus de service
+                    </span>
+                    <button matButton (click)="retenirSuggestion(suggestion)">
+                      <mat-icon>check</mat-icon>
+                      <span i18n="@@espace.echanges.suggestionRetenir">Choisir</span>
+                    </button>
+                  </li>
+                }
+              </ul>
+            }
+
+            @if (suggestionsDe('DIRIGE').length > 0) {
+              <h3 class="espace-suggestions-famille" i18n="@@espace.echanges.familleDirige">
+                Vous échangez contre un autre créneau
+              </h3>
+              <ul class="espace-suggestions-liste">
+                @for (suggestion of suggestionsDe('DIRIGE');
+                      track suggestion.animateurId + '-' + suggestion.creneauCibleId + '-' + suggestion.standCibleId) {
+                  <li>
+                    <strong>{{ suggestion.nomComplet }}</strong>
+                    <span class="espace-suggestion-detail" i18n="@@espace.echanges.suggestionDirige">
+                      vous prenez son {{ suggestion.dateCible | date: 'EEE d MMM' }}
+                      {{ suggestion.heureDebutCible }}–{{ suggestion.heureFinCible }} · {{ suggestion.standCibleNom }}
+                    </span>
+                    <button matButton (click)="retenirSuggestion(suggestion)">
+                      <mat-icon>check</mat-icon>
+                      <span i18n="@@espace.echanges.suggestionRetenir">Choisir</span>
+                    </button>
+                  </li>
+                }
+              </ul>
+            }
+
+            @if (suggestionsDe('CROISE').length > 0) {
+              <h3 class="espace-suggestions-famille" i18n="@@espace.echanges.familleCroise">
+                Vous échangez sur ce même créneau
+              </h3>
+              <ul class="espace-suggestions-liste">
+                @for (suggestion of suggestionsDe('CROISE'); track suggestion.animateurId) {
+                  <li>
+                    <strong>{{ suggestion.nomComplet }}</strong>
                     <span class="espace-suggestion-detail" i18n="@@espace.echanges.suggestionCroise">
                       vous passeriez sur {{ suggestion.standCibleNom }} au même horaire
                     </span>
-                  } @else {
-                    <span class="espace-suggestion-detail" i18n="@@espace.echanges.suggestionLibere">
-                      vous libère de ce créneau
-                    </span>
-                  }
-                  <button matButton (click)="retenirSuggestion(suggestion)">
-                    <mat-icon>check</mat-icon>
-                    <span i18n="@@espace.echanges.suggestionRetenir">Choisir</span>
-                  </button>
-                </li>
-              }
-            </ul>
+                    <button matButton (click)="retenirSuggestion(suggestion)">
+                      <mat-icon>check</mat-icon>
+                      <span i18n="@@espace.echanges.suggestionRetenir">Choisir</span>
+                    </button>
+                  </li>
+                }
+              </ul>
+            }
+
             @if (suggestionsTronquees()) {
               <p class="espace-suggestions-vide" i18n="@@espace.echanges.suggestionsTronquees">
-                {{ trouvees.candidatsEvalues }} collègues ont été testés sur {{ trouvees.candidatsEligibles }} :
-                voici les plus prometteurs, pas la liste complète.
+                {{ trouvees.optionsEvaluees }} pistes ont été testées sur {{ trouvees.optionsEligibles }} :
+                voici les plus prometteuses, pas la liste complète.
               </p>
             }
           }

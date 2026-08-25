@@ -21,6 +21,7 @@ import {
   DemandeEchangeView,
   EspaceAnimateurView,
   PosteAnimateurView,
+  NatureEchange,
   StatutDemandeEchange,
   SuggestionEchangeView,
   SuggestionsEchangeView
@@ -88,10 +89,29 @@ function suggestions(
   return {
     creneauId: 1,
     standId: 'tir',
-    candidatsEligibles: trouvees.length,
-    candidatsEvalues: trouvees.length,
+    optionsEligibles: trouvees.length,
+    optionsEvaluees: trouvees.length,
     listeTronquee: false,
     suggestions: trouvees,
+    ...overrides
+  };
+}
+
+function suggestion(
+  animateurId: string,
+  nature: NatureEchange,
+  overrides: Partial<SuggestionEchangeView> = {}
+): SuggestionEchangeView {
+  return {
+    animateurId,
+    nomComplet: `${animateurId} Durand`,
+    nature,
+    creneauCibleId: null,
+    dateCible: null,
+    heureDebutCible: null,
+    heureFinCible: null,
+    standCibleId: null,
+    standCibleNom: null,
     ...overrides
   };
 }
@@ -113,6 +133,7 @@ type PageInternals = {
   choisirPoste: (poste: PosteAnimateurView | null) => void;
   chercherRemplacants: () => Promise<void>;
   retenirSuggestion: (suggestion: SuggestionEchangeView) => Promise<void>;
+  suggestionsDe: (nature: NatureEchange) => SuggestionEchangeView[];
   suggestions: WritableSignal<SuggestionsEchangeView | null>;
   rechercheEnCours: Signal<boolean>;
   suggestionsTronquees: Signal<boolean>;
@@ -182,10 +203,7 @@ describe('EspaceEchangesPage', () => {
     it('searches on the picked seat and keeps the answer', async () => {
       const page = createPage();
       page.choisirPoste(poste({ creneauId: 7, standId: 'quilles' }));
-      espace.suggestionsEchange.mockResolvedValue(
-        suggestions([{ animateurId: 'bob', nomComplet: 'Bob Durand', echangeCroise: false,
-          standCibleId: null, standCibleNom: null }])
-      );
+      espace.suggestionsEchange.mockResolvedValue(suggestions([suggestion('bob', 'LIBERE')]));
 
       await page.chercherRemplacants();
 
@@ -208,10 +226,7 @@ describe('EspaceEchangesPage', () => {
     it('drops the answer as soon as another seat is picked', async () => {
       const page = createPage();
       page.choisirPoste(poste());
-      espace.suggestionsEchange.mockResolvedValue(
-        suggestions([{ animateurId: 'bob', nomComplet: 'Bob Durand', echangeCroise: false,
-          standCibleId: null, standCibleNom: null }])
-      );
+      espace.suggestionsEchange.mockResolvedValue(suggestions([suggestion('bob', 'LIBERE')]));
       await page.chercherRemplacants();
 
       page.choisirPoste(poste({ creneauId: 2 }));
@@ -238,9 +253,10 @@ describe('EspaceEchangesPage', () => {
       const page = createPage();
       page.choisirPoste(poste());
       espace.suggestionsEchange.mockResolvedValue(
-        suggestions([{ animateurId: 'bob', nomComplet: 'Bob Durand', echangeCroise: true,
-          standCibleId: 'quilles', standCibleNom: 'Quilles' }],
-          { candidatsEligibles: 137, candidatsEvalues: 20, listeTronquee: true })
+        suggestions(
+          [suggestion('bob', 'CROISE', { standCibleId: 'quilles', standCibleNom: 'Quilles' })],
+          { optionsEligibles: 137, optionsEvaluees: 20, listeTronquee: true }
+        )
       );
 
       await page.chercherRemplacants();
@@ -252,13 +268,66 @@ describe('EspaceEchangesPage', () => {
       const page = createPage();
       espace.postesCollegue.mockResolvedValue([poste({ creneauId: 9, standId: 'quilles' })]);
 
-      await page.retenirSuggestion({ animateurId: 'bob', nomComplet: 'Bob Durand',
-        echangeCroise: false, standCibleId: null, standCibleNom: null });
+      await page.retenirSuggestion(suggestion('bob', 'LIBERE'));
 
       expect(page.cibleId()).toBe('bob');
       // A plain échange: the retained name never preselects a seat in return.
       expect(page.posteCibleChoisi()).toBeNull();
       expect(espace.soumettre).not.toHaveBeenCalled();
+    });
+
+    // The cross-day family is the whole point of an EXCHANGE assistant: the
+    // retained suggestion has to carry the seat wanted in return all the way
+    // into the demande, or it degrades into a plain hand-over.
+    it('preselects the seat wanted in return for a cross-day trade', async () => {
+      const page = createPage();
+      const mardi = poste({ creneauId: 9, standId: 'quilles', date: '2026-08-02' });
+      espace.postesCollegue.mockResolvedValue([poste({ creneauId: 3, standId: 'tir' }), mardi]);
+
+      await page.retenirSuggestion(
+        suggestion('bob', 'DIRIGE', {
+          creneauCibleId: 9,
+          standCibleId: 'quilles',
+          dateCible: '2026-08-02',
+          standCibleNom: 'Quilles'
+        })
+      );
+
+      expect(page.cibleId()).toBe('bob');
+      // The very option object the select holds, not a rebuilt lookalike.
+      expect(page.posteCibleChoisi()).toBe(mardi);
+    });
+
+    // A seat the colleague no longer holds (the planning moved between the
+    // search and the click) must leave the form plain rather than silently
+    // sending a directed demande on a seat nobody owns.
+    it('falls back to a plain swap when the seat wanted in return is gone', async () => {
+      const page = createPage();
+      espace.postesCollegue.mockResolvedValue([poste({ creneauId: 3, standId: 'tir' })]);
+
+      await page.retenirSuggestion(
+        suggestion('bob', 'DIRIGE', { creneauCibleId: 9, standCibleId: 'quilles' })
+      );
+
+      expect(page.posteCibleChoisi()).toBeNull();
+    });
+
+    it('splits the answer into the three families the espace lists apart', async () => {
+      const page = createPage();
+      page.choisirPoste(poste());
+      espace.suggestionsEchange.mockResolvedValue(
+        suggestions([
+          suggestion('bob', 'LIBERE'),
+          suggestion('carole', 'DIRIGE', { creneauCibleId: 9, standCibleId: 'quilles' }),
+          suggestion('david', 'CROISE', { standCibleId: 'quilles', standCibleNom: 'Quilles' })
+        ])
+      );
+
+      await page.chercherRemplacants();
+
+      expect(page.suggestionsDe('LIBERE').map((s) => s.animateurId)).toEqual(['bob']);
+      expect(page.suggestionsDe('DIRIGE').map((s) => s.animateurId)).toEqual(['carole']);
+      expect(page.suggestionsDe('CROISE').map((s) => s.animateurId)).toEqual(['david']);
     });
   });
 
