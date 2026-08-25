@@ -1,8 +1,8 @@
 <mat-card appearance="outlined">
   <mat-card-header>
-    <h1 mat-card-title i18n="@@kpi.title">Historique des KPI</h1>
+    <h1 mat-card-title i18n="@@kpi.title">Autopsie du planning</h1>
     <mat-card-subtitle i18n="@@kpi.subtitle">
-      Une ligne par résolution terminée, toutes éditions confondues : score, couverture, fairness (dispersion des
+      Une ligne par résolution terminée, toutes éditions confondues : score, couverture, équilibre (dispersion des
       heures, jamais nominative), modifications manuelles et durée. L'historique survit à la suppression d'une édition.
     </mat-card-subtitle>
   </mat-card-header>
@@ -20,7 +20,7 @@
     <div class="table-wrapper">
       <table mat-table [dataSource]="entries()">
         <caption class="visually-hidden" i18n="@@kpi.table.caption">
-          Historique des KPI par résolution : date, édition, score, couverture, fairness, modifications
+          Autopsie du planning par résolution : date, édition, score, couverture, équilibre, modifications
           manuelles et durée
         </caption>
         <ng-container matColumnDef="creeLe">
@@ -47,7 +47,7 @@
             matTooltip="Écart-type des heures par animateur : plus il est bas, plus la charge est équitable."
             i18n="@@kpi.column.fairness"
           >
-            Fairness
+            Équilibre
           </th>
           <td mat-cell *matCellDef="let entry">{{ fairnessLabel(entry) }}</td>
         </ng-container>
