@@ -23,6 +23,7 @@ import org.junit.jupiter.api.AfterEach;
 
 import dev.sylvain.planning.service.PlanningPersistenceService;
 import dev.sylvain.planning.service.ReferenceDataService;
+import io.quarkus.mailer.Mail;
 import io.quarkus.mailer.MockMailbox;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
@@ -248,6 +249,61 @@ class DemandeEchangeFlowTest {
                 .when().post("/api/espace-animateur/" + token + "/demandes-recues/" + autreDemande + "/accord")
                 .then()
                 .statusCode(400);
+    }
+
+    /**
+     * A batch spread over two colleagues solicits BOTH of them. The mail used
+     * to go to {@code nouvelles.get(0)} alone, so everyone but the first named
+     * colleague waited for an agreement they were never asked for — and the
+     * demande stayed stuck in EN_ATTENTE_CIBLE.
+     */
+    @Test
+    void unLotVisantDeuxColleguesLesSollicteTousLesDeux() {
+        persistTwoSeatPlanning();
+        donnerEmail("ECH-C", "ech-chloe@example.org");
+        String token = tokenOf("ECH-A");
+        mailbox.clear();
+
+        // Alice offers her single seat to Bruno and to Chloé: two demandes,
+        // two different targets, one submission.
+        given().contentType(ContentType.JSON)
+                .body("[{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"ECH-S1\",\"cibleId\":\"ECH-B\"},"
+                        + "{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"ECH-S1\",\"cibleId\":\"ECH-C\"}]")
+                .when().post("/api/espace-animateur/" + token + "/demandes")
+                .then()
+                .statusCode(200)
+                .body("size()", equalTo(2));
+
+        assertThat(mailbox.getMailsSentTo("ech-bruno@example.org")).hasSize(1);
+        assertThat(mailbox.getMailsSentTo("ech-chloe@example.org")).hasSize(1);
+        // Each of them is told about THEIR demande only, not about the batch:
+        // the count is per colleague, so nobody learns what was proposed to
+        // someone else.
+        assertThat(mailbox.getMailsSentTo("ech-chloe@example.org").get(0).getText())
+                .contains("un échange de créneau")
+                .doesNotContain("2 échanges");
+    }
+
+    /** Two seats offered to the same colleague stay one mail — announcing both. */
+    @Test
+    void deuxDemandesPourLeMemeCollegueTiennentEnUnSeulMail() {
+        persistTwoSeatPlanning();
+        String token = tokenOf("ECH-A");
+        mailbox.clear();
+
+        given().contentType(ContentType.JSON)
+                .body("[{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"ECH-S1\",\"cibleId\":\"ECH-B\","
+                        + "\"motif\":\"le matin\"},"
+                        + "{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"ECH-S1\",\"cibleId\":\"ECH-B\","
+                        + "\"motif\":\"ou alors l'après-midi\"}]")
+                .when().post("/api/espace-animateur/" + token + "/demandes")
+                .then()
+                .statusCode(200)
+                .body("size()", equalTo(2));
+
+        List<Mail> mails = mailbox.getMailsSentTo("ech-bruno@example.org");
+        assertThat(mails).hasSize(1);
+        assertThat(mails.get(0).getText()).contains("2 échanges de créneaux");
     }
 
     /** Bruno (the target) agrees: the demande enters the admin queue. */

@@ -7,7 +7,9 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.sql.DataSource;
@@ -89,7 +91,8 @@ public class DemandeEchangeService {
      * prevalidated against the hard constraints (see
      * {@link PlanningService#simulateEchange}) but stored <b>whatever the
      * verdict</b> — the animateur is simply told which ones are infeasible in
-     * the current planning. One admin notification per batch.
+     * the current planning. One notification per solicited colleague — a batch
+     * spread over several of them asks each of them, not just the first.
      *
      * @throws IllegalArgumentException when a demande does not reference one of
      *                                  the demandeur's own seats or a known colleague
@@ -110,9 +113,18 @@ public class DemandeEchangeService {
         }
         // The colleague agrees first (see acceptByTarget); the admin is only
         // notified once that agreement lands — never having to ask both sides.
-        String emailCible = emailOf(nouvelles.get(0).cibleId());
-        notifications.fire(new Notification.TargetSolicited(
-                emailCible, nomComplet(demandeurId), demandes.size()));
+        // One mail per SOLICITED COLLEAGUE, not one per batch: a batch may
+        // propose seats to several of them, and each has to be asked for their
+        // own agreement. The count is theirs alone, so nobody is told about
+        // demandes addressed to someone else.
+        Map<String, Integer> parCible = new LinkedHashMap<>();
+        for (DemandeEchange demande : demandes) {
+            parCible.merge(demande.getCibleId(), 1, Integer::sum);
+        }
+        for (Map.Entry<String, Integer> sollicitation : parCible.entrySet()) {
+            notifications.fire(new Notification.TargetSolicited(
+                    emailOf(sollicitation.getKey()), nomComplet(demandeurId), sollicitation.getValue()));
+        }
         return demandes;
     }
 
