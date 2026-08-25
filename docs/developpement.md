@@ -109,7 +109,8 @@ Cinq familles :
 - **frontend** (Vitest, jsdom) — pas branchés sur la phase Maven, job CI dédié ;
 - **structurels** — ils ne jouent aucun scénario, ils **relisent le code** et
   échouent sur une règle que rien d'autre ne vérifie ;
-- **bout en bout** (Playwright) — jamais sur une PR, rejoués **chaque nuit**.
+- **bout en bout** (Playwright) — jamais sur une PR, rejoués **chaque nuit** ;
+  voir [plus bas](#tests-de-bout-en-bout-playwright) pour les lancer en local.
 
 ### Les tests structurels
 
@@ -135,6 +136,37 @@ assistant francophone).
 Quand il échoue sur un nom légitime : le renommer, ou l'ajouter à
 `EXCEPTIONS_ASSUMEES` **avec sa raison**. Un troisième test vérifie que chaque
 exception correspond encore à du code réel.
+
+### Tests de bout en bout (Playwright)
+
+Ils réamorcent la base par `/api/database/import` : ne jamais les pointer
+ailleurs que sur une pile jetable.
+
+```bash
+docker compose up -d postgres mailpit
+./mvnw quarkus:dev                       # les défauts suffisent : mail sur :1025, mot de passe « admin »
+cd src/main/webui && npm run e2e         # + --headed, --ui, --project=mobile, un chemin de spec
+```
+
+Réglages par variable d'environnement, tous facultatifs : `E2E_BASE_URL`
+(défaut `http://localhost:8080`), `E2E_ADMIN_PASSWORD`, `E2E_MAILPIT_URL`
+(défaut `http://localhost:8025`), `E2E_CHROMIUM`.
+
+**La trace d'abord.** `trace: 'retain-on-failure'` est déjà en place : un échec
+laisse une trace navigable — pellicule, DOM, réseau, console — que la vidéo ne
+remplace pas.
+
+```bash
+npm run e2e -- --trace on
+npx playwright show-trace test-results/<dossier-du-test>/trace.zip
+```
+
+**La vidéo ensuite**, par `E2E_VIDEO` — absente, rien n'est enregistré. Elle
+sert à montrer un parcours à qui ne lancera pas Playwright, pas à diagnostiquer.
+
+```bash
+E2E_VIDEO=retain-on-failure npm run e2e   # ou 'on' ; .webm dans test-results/<test>/
+```
 
 ## Réglage du solveur
 

@@ -1,4 +1,4 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices, type VideoMode } from '@playwright/test';
 
 /**
  * End-to-end perimeter tests (issue #165), deliberately OUT of CI: they need
@@ -13,6 +13,8 @@ import { defineConfig, devices } from '@playwright/test';
  * - E2E_ADMIN_PASSWORD  (default admin, must match the app's ADMIN_PASSWORD)
  * - E2E_CHROMIUM        optional Chromium executable, for sandboxes that ship
  *                       a browser without letting Playwright download its own
+ * - E2E_VIDEO           optional Playwright video mode ('on',
+ *                       'retain-on-failure', …); unset records nothing
  *
  * Deux projets : `chromium` (bureau, toute la suite) et `mobile`, qui rejoue la
  * seule suite de l'espace animateur sur un viewport de téléphone — c'est de là
@@ -21,6 +23,15 @@ import { defineConfig, devices } from '@playwright/test';
 /** Chromium déjà présent sur la machine, pour un environnement qui interdit son téléchargement. */
 const chromiumInstalle = process.env['E2E_CHROMIUM']
   ? { launchOptions: { executablePath: process.env['E2E_CHROMIUM'] } }
+  : {};
+
+/*
+ * Vidéo à la demande, et jamais par défaut : 57 tests filmés pèsent lourd pour
+ * un signal que la trace donne déjà en mieux (pellicule, DOM, réseau, console).
+ * Elle sert à montrer un parcours à qui ne lancera pas Playwright.
+ */
+const videoDemandee = process.env['E2E_VIDEO']
+  ? { video: process.env['E2E_VIDEO'] as VideoMode }
   : {};
 
 export default defineConfig({
@@ -37,7 +48,8 @@ export default defineConfig({
     baseURL: process.env['E2E_BASE_URL'] ?? 'http://localhost:8080',
     // The UI's source language; the specs assert on French labels.
     locale: 'fr-FR',
-    trace: 'retain-on-failure'
+    trace: 'retain-on-failure',
+    ...videoDemandee
   },
   projects: [
     {
