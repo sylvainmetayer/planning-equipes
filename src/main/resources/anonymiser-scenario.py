@@ -8,9 +8,17 @@ utilisable comme jeu de démonstration et comme test de convergence.
 
 Ne sont réécrits que les identifiants : prénoms et noms des animateurs, ids et
 noms des emplacements et des stands, nom de l'édition. Tout ce que le solveur
-lit — dates, heures, effectifs, compétences, horaires, typologies, paramètres —
-est recopié tel quel, parce qu'une fixture qui ne converge pas comme sa source
-ne teste pas ce qu'elle prétend tester.
+lit — heures, effectifs, compétences, horaires, typologies, paramètres — est
+recopié tel quel, parce qu'une fixture qui ne converge pas comme sa source ne
+teste pas ce qu'elle prétend tester.
+
+`--date-debut` fait exception, et c'est la seule : tout le calendrier est
+translaté en bloc pour que l'événement commence au jour demandé (les dates de
+naissance, elles, ne bougent jamais — décaler un anniversaire changerait qui est
+mineur). Un décalage multiple de 7 conserve les jours de la semaine et l'ancrage
+des semaines ISO ; tout autre décalage les déplace, et change au passage les
+jours fériés traversés (`JoursFeries`) — donc la pression légale sur les
+mineurs. La convergence est alors à revérifier, pas à supposer.
 
 Deux précautions dictées par le solveur :
 
@@ -33,10 +41,12 @@ Usage :
     python3 src/main/resources/anonymiser-scenario.py \\
         docs/reel-1708.yaml \\
         src/main/resources/scenarios/festival-realiste.yaml \\
-        --edition-id festival-realiste --edition-nom "Festival réaliste"
+        --edition-id festival-realiste --edition-nom "Festival réaliste" \\
+        --date-debut 2026-09-01
 """
 
 import argparse
+import datetime
 import sys
 
 import yaml
@@ -51,12 +61,43 @@ ENTETE = """# yaml-language-server: $schema=../../../../docs/schema/scenario-sch
 # dans la source : la prochaine régénération écrase ce fichier.
 #
 # Seuls les identifiants ont changé — prénoms/noms des animateurs, ids et noms
-# des emplacements et des stands, nom de l'édition. Dates, heures, effectifs,
+# des emplacements et des stands, nom de l'édition. Heures, effectifs,
 # compétences, horaires et paramètres sont ceux de l'original, et les
 # coordonnées sont translatées en longitude à latitude constante : la
 # contrainte de distance entre emplacements voit exactement les mêmes valeurs.
-# Cette fixture doit donc converger comme sa source.
+# Cette fixture converge donc comme sa source, au calendrier près lorsqu'il a
+# été translaté (mention ci-dessous).
 """
+
+MENTION_DECALAGE = """#
+# Calendrier translaté de {jours} jours (ouverture le {debut}), option
+# --date-debut : les dates de naissance sont les seules à ne pas bouger. À
+# régénérer avec la même option, sans quoi la fixture retombe sur les dates de
+# sa source.
+"""
+
+
+def decaler_dates(donnees, date_debut):
+    """Translate tout le calendrier pour que l'événement commence à `date_debut`.
+
+    Toute date est décalée du même nombre de jours — créneaux, règles d'horaires,
+    exceptions datées, jours d'indisponibilité — sauf `dateNaissance` : l'âge
+    d'un animateur décide s'il est mineur, et le décaler changerait le problème.
+    """
+    depart = donnees["festival"]["dateDebut"]
+    decalage = date_debut - depart
+
+    def decaler(valeur, cle):
+        if isinstance(valeur, dict):
+            return {k: decaler(v, k) for k, v in valeur.items()}
+        if isinstance(valeur, list):
+            return [decaler(v, cle) for v in valeur]
+        if isinstance(valeur, datetime.date) and cle != "dateNaissance":
+            return valeur + decalage
+        return valeur
+
+    donnees.update(decaler(donnees, None))
+    return decalage
 
 
 def anonymiser(donnees, edition_id, edition_nom):
@@ -92,15 +133,22 @@ def main():
     parseur.add_argument("cible", help="Fixture à écrire")
     parseur.add_argument("--edition-id", required=True)
     parseur.add_argument("--edition-nom", required=True)
+    parseur.add_argument("--date-debut", type=datetime.date.fromisoformat,
+                         help="Jour d'ouverture de la fixture : tout le calendrier est translaté "
+                              "d'autant (dates de naissance exclues)")
     args = parseur.parse_args()
 
     with open(args.source, encoding="utf-8") as fichier:
         donnees = yaml.safe_load(fichier)
 
     anonymiser(donnees, args.edition_id, args.edition_nom)
+    entete = ENTETE
+    if args.date_debut is not None:
+        decalage = decaler_dates(donnees, args.date_debut)
+        entete += MENTION_DECALAGE.format(jours=decalage.days, debut=args.date_debut)
 
     with open(args.cible, "w", encoding="utf-8") as fichier:
-        fichier.write(ENTETE)
+        fichier.write(entete)
         yaml.safe_dump(donnees, fichier, sort_keys=False, allow_unicode=True,
                        default_flow_style=False, width=100)
 

@@ -77,6 +77,10 @@ référentiel.
 **Présente**, elle est reprise telle quelle, y compris vide. C'est ce qui permet
 un staffing s'écartant de la règle.
 
+Aucun scénario livré ne s'en sert : tous laissent l'import générer leurs sièges.
+Une liste écrite à la main répète ce que `effectifMin` dit déjà, et le jour où
+elle dérive des stands, le fichier décrit un problème qu'il ne dit plus.
+
 ## `contraintes` : en bloc, pas en fusion
 
 Une règle que la section ne cite pas **redevient active, à son poids par
@@ -114,11 +118,20 @@ d'une édition réelle**. Ils servent à une démo grandeur nature et à la
 régression de convergence de `PlanningServiceScenarioFestivalRealisteTest`.
 
 Réécrits : prénoms, noms, ids et noms d'emplacements et de stands, nom de
-l'édition. **Pas** réécrits : dates, heures, effectifs, compétences, horaires,
+l'édition. **Pas** réécrits : heures, effectifs, compétences, horaires,
 typologies, paramètres — une fixture qui ne converge pas comme sa source ne
 teste pas ce qu'elle prétend tester.
 
-Deux détails avant de les régénérer :
+Le calendrier fait exception, et c'est la seule : `--date-debut` translate tout
+l'événement en bloc pour le détacher des dates réelles de sa source (ces
+fixtures ouvrent le **01/09/2026**, 57 jours après l'original). Les dates de
+naissance ne bougent jamais — les décaler changerait qui est mineur, donc le
+problème lui-même. Un décalage multiple de 7 conserverait les jours de la
+semaine et l'ancrage des semaines ISO ; celui-ci ne l'est pas, il déplace donc
+les bornes de semaine et les jours fériés traversés. **La convergence est à
+revérifier après tout changement de cette option**, jamais à supposer.
+
+Trois détails avant de les régénérer :
 
 - **les coordonnées sont translatées en longitude, à latitude constante**, pas
   supprimées. Une contrainte de qualité pénalise deux emplacements distants :
@@ -126,7 +139,10 @@ Deux détails avant de les régénérer :
   rend les mêmes distances — vérifié au mètre près ;
 - **les ids anonymes sont numérotés dans l'ordre d'apparition**, et l'ordre des
   sections préservé. Timefold épingle `randomSeed=0`, mais un tri ou un hachage
-  s'appuyant sur les ids ferait diverger la trajectoire de recherche.
+  s'appuyant sur les ids ferait diverger la trajectoire de recherche ;
+- **le décalage de calendrier n'est pas mémorisé dans le fichier** autrement que
+  par l'en-tête que le script y écrit : régénérer sans repasser `--date-debut`
+  ramène les dates de la source.
 
 Les sources restent hors dépôt : `docs/reel-*.yaml` et
 `scenarios/reel-*.yaml` sont dans `.gitignore`, elles portent des données
@@ -134,7 +150,14 @@ personnelles réelles. **Le préfixe `reel-` est précisément ce qui les rend
 invisibles à git** — d'où le nom `festival-realiste`, sans quoi la fixture ne
 serait pas versionnée et le test casserait en CI.
 
-Régénération : `src/main/resources/anonymiser-scenario.py`.
+Régénération :
+
+```bash
+python3 src/main/resources/anonymiser-scenario.py \
+    ~/…/reel-2026.yaml src/main/resources/scenarios/festival-realiste.yaml \
+    --edition-id festival-realiste --edition-nom "Festival réaliste" \
+    --date-debut 2026-09-01
+```
 
 ## Fixture volontairement insoluble
 

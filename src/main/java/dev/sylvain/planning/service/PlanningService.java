@@ -617,8 +617,9 @@ public class PlanningService {
      * is the upper capacity a stand could accept, not the number of seats that
      * must be staffed (that's exactly what {@code posteDoitEtrePourvu} makes a
      * hard requirement for every generated poste). Confirmed against
-     * scenario-complet.yaml, whose own hand-authored poste list has 2088
-     * entries — precisely {@code sum(effectifMin) * creneaux} (58 * 36); the
+     * scenario-complet.yaml, whose hand-authored poste list — since dropped as
+     * redundant with this very method — held 2088 entries, precisely
+     * {@code sum(effectifMin) * creneaux} (58 * 36); the
      * effectifMax sum instead gives 2736, 31% more mandatory seats than the
      * scenario intends. Building a problem from reference data with effectifMax
      * silently inflated every solve started from "Lancer le solveur" into a

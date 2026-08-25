@@ -18,7 +18,10 @@ import dev.sylvain.planning.domain.PlanningEvenement;
  * on a scenario this size, unconstrained by the %test profile's 3s/2s solver
  * budget (tuned for the small nominal scenario, far too short here).
  *
- * <p>Tagged {@code scenario-lent} (~385s): excluded from the default
+ * <p>Tagged {@code scenario-lent} (~12s since the seats are generated rather
+ * than enumerated by the file — {@code buildPostes} orders them stand by stand,
+ * where the hand-written list did not, and the solver converges far faster on
+ * that order; it took ~385s before): excluded from the default
  * {@code ./mvnw test}/CI run (see the {@code scenario-tests} Maven profile in
  * {@code pom.xml}) and only run with {@code ./mvnw test -Pscenario-tests}.
  * Run it in the background (not a blocking foreground wait) when triggered
