@@ -1,14 +1,15 @@
 // Loading / error / empty / data states of the A/B comparator, plus the picker
-// defaults, the comparison guard and the cell labels. The component is created
-// but never rendered, so this stays a logic test (the project favours those
-// over full DOM rendering). The metric rows themselves are the business of
-// `comparateur-metrics.spec.ts`.
+// defaults, the comparison guard and the cell labels, without rendering. The
+// rendering half at the end covers the three caveats — different editions,
+// different volumetries, recomputed KPI — that qualify every figure of the
+// table: read without them, the comparison says something it does not mean.
+// The metric rows themselves are the business of `comparateur-metrics.spec.ts`.
 //
 // These four states are exactly what a migration to `httpResource()` would
 // re-implement, which is why they are pinned here first.
 
 import { provideZonelessChangeDetection, Signal, WritableSignal } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
 import { ComparaisonSnapshots, CoteComparaison, PlanningKpi, PlanSnapshot } from '../../core/models';
@@ -383,5 +384,149 @@ describe('ComparateurPage', () => {
       expect(page.violationsLabel(null)).toContain('non mesuré');
       expect(page.violationsLabel(0)).toBe('0');
     });
+  });
+});
+
+describe('ComparateurPage rendering', () => {
+  let fixture: ComponentFixture<ComparateurPage>;
+  let get: ReturnType<typeof vi.fn>;
+
+  async function rendre(
+    instantanes: PlanSnapshot[],
+    resultat: ComparaisonSnapshots | Error | null = null
+  ): Promise<void> {
+    get = vi.fn(async (url: string) => {
+      if (url.includes('comparables')) {
+        return instantanes;
+      }
+      if (resultat instanceof Error) {
+        throw resultat;
+      }
+      return resultat;
+    });
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection(), { provide: ApiService, useValue: { get } }]
+    });
+    fixture = TestBed.createComponent(ComparateurPage);
+    await fixture.whenStable();
+  }
+
+  function racine(): HTMLElement {
+    return fixture.nativeElement as HTMLElement;
+  }
+
+  function texte(): string {
+    return racine().textContent!.replace(/\s+/g, ' ');
+  }
+
+  function bouton(libelle: string): HTMLButtonElement {
+    const trouve = Array.from(racine().querySelectorAll('button')).find((each) =>
+      each.textContent!.includes(libelle)
+    );
+    expect(trouve, `bouton « ${libelle} » absent`).toBeDefined();
+    return trouve as HTMLButtonElement;
+  }
+
+  async function comparer(): Promise<void> {
+    bouton('Comparer').click();
+    await fixture.whenStable();
+  }
+
+  it('tells the user how to get a first snapshot instead of showing empty pickers', async () => {
+    await rendre([]);
+
+    expect(texte()).toContain('Aucun instantané enregistré');
+    expect(racine().querySelector('.comparateur-selection')).toBeNull();
+  });
+
+  it('offers the persisted plan and every snapshot on both sides', async () => {
+    await rendre([snapshot(), snapshot({ id: 8, libelle: 'Après canicule' })]);
+
+    const selects = racine().querySelectorAll('mat-select');
+    expect(selects).toHaveLength(2);
+    // Ready out of the box on the nominal pair — the persisted plan against
+    // the latest snapshot — so the screen answers something without a setup step.
+    expect(bouton('Comparer').disabled).toBe(false);
+  });
+
+  it('renders one row per metric once the two plans are compared', async () => {
+    await rendre([snapshot(), snapshot({ id: 8 })], comparaison());
+    const page = fixture.componentInstance as unknown as PageInternals;
+    page.baseId.set('7');
+    page.varianteId.set('8');
+    fixture.detectChanges();
+
+    await comparer();
+
+    const lignes = Array.from(racine().querySelectorAll('tbody tr')).map((row) =>
+      Array.from(row.querySelectorAll('td')).map((cell) => cell.textContent!.trim())
+    );
+    expect(lignes.length).toBeGreaterThan(0);
+    expect(lignes[0][0]).not.toBe('');
+    // Both column headers name their side, so a reader knows which is which.
+    const entetes = Array.from(racine().querySelectorAll('thead th')).map((each) => each.textContent!.trim());
+    expect(entetes.some((entete) => entete.includes('Avant canicule'))).toBe(true);
+    expect(entetes.some((entete) => entete.includes('Après canicule'))).toBe(true);
+  });
+
+  async function comparerAvec(overrides: Partial<ComparaisonSnapshots>): Promise<void> {
+    await rendre([snapshot(), snapshot({ id: 8 })], comparaison(overrides));
+    const page = fixture.componentInstance as unknown as PageInternals;
+    page.baseId.set('7');
+    page.varianteId.set('8');
+    fixture.detectChanges();
+    await comparer();
+  }
+
+  it('warns that two plans of different editions are not comparable all things equal', async () => {
+    await comparerAvec({ editionsDifferentes: true });
+
+    expect(texte()).toContain('éditions différentes');
+  });
+
+  it('warns that a volumetry gap is not a quality gap', async () => {
+    await comparerAvec({ volumetriesDifferentes: true });
+
+    expect(texte()).toContain("n'ont pas le même nombre de postes");
+  });
+
+  it('warns when a snapshot predates the KPI and had to be recomputed', async () => {
+    await comparerAvec({ base: cote({ kpiRecalcule: true }) });
+
+    // Its violations are simply not measured: saying so is what keeps the
+    // "0 violation" of that column from being read as good news.
+    expect(texte()).toContain('mode dégradé');
+  });
+
+  it('stays silent about all three caveats when none applies', async () => {
+    await comparerAvec({});
+
+    expect(racine().querySelectorAll('.locked-hint')).toHaveLength(0);
+  });
+
+  it('lists the violations per constraint, and only when there are some', async () => {
+    await comparerAvec({});
+    expect(texte()).not.toContain('Violations par contrainte');
+
+    await comparerAvec({
+      diffViolations: [{ contrainte: 'Repos quotidien', base: 3, variante: 0 }]
+    } as Partial<ComparaisonSnapshots>);
+
+    expect(texte()).toContain('Violations par contrainte');
+    expect(texte()).toContain('Repos quotidien');
+  });
+
+  it('shows the comparison error instead of a stale table', async () => {
+    await rendre([snapshot(), snapshot({ id: 8 })], new Error('comparaison impossible'));
+    const page = fixture.componentInstance as unknown as PageInternals;
+    page.baseId.set('7');
+    page.varianteId.set('8');
+    fixture.detectChanges();
+
+    await comparer();
+
+    expect(texte()).toContain('comparaison impossible');
+    expect(racine().querySelector('tbody tr')).toBeNull();
   });
 });

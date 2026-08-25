@@ -6,11 +6,14 @@
 // into a draft, submitting the batch, and how every outcome is announced to an
 // animateur who is not an admin and has no console to read.
 //
-// The component is created but never rendered, so this stays a logic test (the
-// project favours those over full DOM rendering).
+// The first half creates the component without rendering it. The second one
+// renders it, for one rule that lives entirely in the template: once the foire
+// is closed, every action must disappear — proposing, accepting, declining,
+// cancelling — while the lists stay readable. A stale button there lets an
+// animateur act on a planning the organisation considers frozen.
 
 import { provideZonelessChangeDetection, Signal, WritableSignal, signal } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EspaceAnimateurService } from '../../core/espace-animateur.service';
 import { NotificationService } from '../../core/notification.service';
@@ -480,5 +483,170 @@ describe('EspaceEchangesPage', () => {
         expect.objectContaining({ variant: 'error', message: expect.stringContaining('Demande déjà tranchée.') })
       );
     });
+  });
+});
+
+describe('EspaceEchangesPage rendering', () => {
+  let fixture: ComponentFixture<EspaceEchangesPage>;
+  const espaceVue = signal<EspaceAnimateurView | null>(vue());
+  const espaceDemandes = signal<DemandeEchangeView[]>([]);
+  const espaceRecues = signal<DemandeEchangeView[]>([]);
+  let espace: {
+    postesCollegue: ReturnType<typeof vi.fn>;
+    soumettre: ReturnType<typeof vi.fn>;
+    annuler: ReturnType<typeof vi.fn>;
+    accorderRecue: ReturnType<typeof vi.fn>;
+    declinerRecue: ReturnType<typeof vi.fn>;
+  };
+
+  async function rendre(): Promise<void> {
+    espace = {
+      postesCollegue: vi.fn(async () => []),
+      soumettre: vi.fn(async () => undefined),
+      annuler: vi.fn(async () => undefined),
+      accorderRecue: vi.fn(async () => undefined),
+      declinerRecue: vi.fn(async () => undefined)
+    };
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        provideZonelessChangeDetection(),
+        {
+          provide: EspaceAnimateurService,
+          useValue: { vue: espaceVue, demandes: espaceDemandes, demandesRecues: espaceRecues, ...espace }
+        },
+        { provide: NotificationService, useValue: { notify: vi.fn() } }
+      ]
+    });
+    fixture = TestBed.createComponent(EspaceEchangesPage);
+    await fixture.whenStable();
+  }
+
+  function racine(): HTMLElement {
+    return fixture.nativeElement as HTMLElement;
+  }
+
+  function texte(): string {
+    return racine().textContent!.replace(/\s+/g, ' ');
+  }
+
+  function bouton(libelle: string): HTMLButtonElement | undefined {
+    return Array.from(racine().querySelectorAll('button')).find((each) => each.textContent!.includes(libelle));
+  }
+
+  beforeEach(() => {
+    espaceVue.set(vue());
+    espaceDemandes.set([]);
+    espaceRecues.set([]);
+  });
+
+  it('says there is nothing yet rather than showing an empty list', async () => {
+    await rendre();
+
+    expect(texte()).toContain('Aucune demande pour le moment.');
+  });
+
+  it('shows the form while the foire is open', async () => {
+    await rendre();
+
+    expect(racine().querySelector('.espace-form')).not.toBeNull();
+    expect(racine().querySelector('.espace-foire-fermee')).toBeNull();
+    // Nothing picked yet: adding to the list must not be possible.
+    expect(bouton('Ajouter à la liste')!.disabled).toBe(true);
+  });
+
+  it('withdraws every action once the foire is closed, and says so', async () => {
+    espaceVue.set(vue({ foireOuverte: false }));
+    espaceDemandes.set([demande('d1', 'PROPOSEE')]);
+    espaceRecues.set([demande('d2', 'EN_ATTENTE_CIBLE', { demandeurId: 'bob', cibleId: 'alice' })]);
+    await rendre();
+
+    expect(racine().querySelector('.espace-foire-fermee')).not.toBeNull();
+    expect(racine().querySelector('.espace-form')).toBeNull();
+    expect(bouton('Annuler cette demande')).toBeUndefined();
+    expect(bouton("Je suis d'accord")).toBeUndefined();
+    expect(bouton('Décliner')).toBeUndefined();
+    // The history stays readable: only acting is closed.
+    expect(texte()).toContain('Mes demandes');
+    expect(texte()).toContain('Bob Durand');
+  });
+
+  it('lists a received request with its two seats, and both answers', async () => {
+    espaceRecues.set([
+      demande('d2', 'EN_ATTENTE_CIBLE', {
+        demandeurId: 'bob',
+        demandeurNom: 'Bob Durand',
+        cibleId: 'alice',
+        creneauCibleId: 2,
+        dateCible: '2026-08-02',
+        heureDebutCible: '14:00',
+        heureFinCible: '18:00',
+        standCibleNom: 'Molkky',
+        motif: 'Mariage'
+      })
+    ]);
+    await rendre();
+
+    expect(texte()).toContain('vous propose de reprendre');
+    expect(texte()).toContain('contre votre créneau');
+    expect(texte()).toContain('Molkky');
+    expect(texte()).toContain('Mariage');
+
+    bouton("Je suis d'accord")!.click();
+    await fixture.whenStable();
+    expect(espace.accorderRecue).toHaveBeenCalled();
+  });
+
+  it('declines a received request through the other button', async () => {
+    espaceRecues.set([demande('d2', 'EN_ATTENTE_CIBLE', { demandeurId: 'bob', cibleId: 'alice' })]);
+    await rendre();
+
+    bouton('Décliner')!.click();
+    await fixture.whenStable();
+
+    expect(espace.declinerRecue).toHaveBeenCalled();
+    expect(espace.accorderRecue).not.toHaveBeenCalled();
+  });
+
+  it('warns that a pending request would break the planning, without hiding that it was sent anyway', async () => {
+    espaceDemandes.set([
+      demande('d1', 'PROPOSEE', {
+        prevalidationOk: false,
+        contraintesViolees: ['Repos quotidien insuffisant']
+      } as Partial<DemandeEchangeView>)
+    ]);
+    await rendre();
+
+    const alerte = racine().querySelector('.espace-demande-alerte')!;
+    expect(alerte.textContent!).toContain('Repos quotidien insuffisant');
+    expect(alerte.textContent!).toContain("l'organisation tranchera");
+  });
+
+  it('keeps the warning off a request that is already settled', async () => {
+    espaceDemandes.set([
+      demande('d1', 'REFUSEE', {
+        prevalidationOk: false,
+        contraintesViolees: ['Repos quotidien insuffisant'],
+        commentaireAdmin: 'Impossible ce week-end.'
+      } as Partial<DemandeEchangeView>)
+    ]);
+    await rendre();
+
+    // Nothing left to arbitrate: the warning would only be noise.
+    expect(racine().querySelector('.espace-demande-alerte')).toBeNull();
+    expect(bouton('Annuler cette demande')).toBeUndefined();
+    // The organisation's answer, however, must be shown.
+    expect(texte()).toContain('Impossible ce week-end.');
+  });
+
+  it('lets a pending request be cancelled, and names its status', async () => {
+    espaceDemandes.set([demande('d1', 'PROPOSEE')]);
+    await rendre();
+
+    expect(racine().querySelector('.espace-statut')!.textContent!.trim()).not.toBe('');
+    bouton('Annuler cette demande')!.click();
+    await fixture.whenStable();
+
+    expect(espace.annuler).toHaveBeenCalled();
   });
 });
