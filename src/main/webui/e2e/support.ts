@@ -12,6 +12,8 @@ export const SEED = {
   cible: 'E2E-B',
   /** Seatless colleague, unavailable on the seeded day (edge-case suite). */
   collegueIndisponible: 'E2E-C',
+  /** Seatless colleague, free on the seeded day — the only one an échange can really free the demandeur with. */
+  collegueLibre: 'E2E-D',
   standDemandeur: 'E2E-S1',
   standCible: 'E2E-S2',
   creneauId: 987001,
@@ -49,11 +51,14 @@ export async function contexteAdmin(
  *
  * With `avecCollegueIndisponible`, a third, seatless colleague (Chloé) who
  * declared the seeded day off joins the referential — the fixture of the
- * prevalidation edge cases.
+ * prevalidation edge cases. With `avecCollegueLibre`, a fourth (Denis) who is
+ * free that day and holds no seat: the only one an échange can hand the
+ * demandeur's créneau to without leaving them at work, which is what the
+ * « qui peut me remplacer ? » assistant is asked for.
  */
 export async function seedPlanning(
   admin: APIRequestContext,
-  options: { avecCollegueIndisponible?: boolean } = {}
+  options: { avecCollegueIndisponible?: boolean; avecCollegueLibre?: boolean } = {}
 ): Promise<void> {
   const script = [
     // Clean previous runs, children first. Postes of the other test prefixes
@@ -62,9 +67,16 @@ export async function seedPlanning(
     // exactly the two-seat planning seeded here.
     `delete from demande_echange where demandeur_id like 'E2E-%' or cible_id like 'E2E-%';`,
     `delete from verrouillage_planning where animateur_id like 'E2E-%';`,
-    `delete from poste_affectation where id like 'E2E-%';`,
+    `delete from poste_affectation where id like 'E2E-%' or stand_id like 'E2E-%' or animateur_id like 'E2E-%';`,
     `delete from poste_affectation where stand_id like 'SOLV-%' or animateur_id like 'SOLV-%';`,
     `delete from poste_affectation where stand_id like 'FUZZ-%' or animateur_id like 'FUZZ-%';`,
+    // By créneau too, not only by prefix: a solver spec that really solved and
+    // persisted rewrites the assignments with generated ids ('poste-12'), which
+    // no prefix matches — and those rows then hold the créneau's foreign key,
+    // failing every later seeding. seedPlanningSolver already clears the range;
+    // this one used to leave its own leftovers behind.
+    `delete from verrouillage_planning where creneau_id = ${SEED.creneauId};`,
+    `delete from poste_affectation where creneau_id = ${SEED.creneauId};`,
     `delete from creneau where id = ${SEED.creneauId};`,
     `delete from animateur where id like 'E2E-%';`,
     `delete from stand where id like 'E2E-%';`,
@@ -82,6 +94,11 @@ export async function seedPlanning(
       ? [
           `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager) values ('DEFAUT', '${SEED.collegueIndisponible}', 'Chloé', 'E2E', '1995-03-03', false);`,
           `insert into animateur_jour_indispo (edition_id, animateur_id, jour) values ('DEFAUT', '${SEED.collegueIndisponible}', '${SEED.jour}');`
+        ]
+      : []),
+    ...(options.avecCollegueLibre
+      ? [
+          `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager) values ('DEFAUT', '${SEED.collegueLibre}', 'Denis', 'E2E', '1988-04-04', false);`
         ]
       : [])
   ].join('\n');

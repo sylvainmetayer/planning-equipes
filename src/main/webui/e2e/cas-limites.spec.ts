@@ -77,6 +77,47 @@ test.describe('cas limites', () => {
     await pageEchanges.context().close();
   });
 
+  /**
+   * « Qui peut me remplacer ? » : Alice ne veut pas de son créneau et n'a
+   * personne en tête. Elle ne désigne que SON siège, et l'assistant lui rend
+   * les collègues avec qui l'échange tient vraiment — ceux qui la libèrent en
+   * tête. Il propose, il ne soumet rien : le nom retenu retombe dans le
+   * formulaire ordinaire, que l'animatrice remplit et envoie elle-même.
+   */
+  test('« qui peut me remplacer ? » propose les collègues avec qui l’échange tient', async ({ page }) => {
+    await seedPlanning(admin, { avecCollegueIndisponible: true, avecCollegueLibre: true });
+    const jeton = await jetonDe(admin, SEED.demandeur);
+    await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
+
+    await page.goto(`/animateur/${jeton}/echanges`);
+    // Le créneau, et rien d'autre : aucun collègue n'est choisi avant la recherche.
+    await ouvrirSelect(page, 'Créneau concerné');
+    await page.getByRole('option').first().click();
+    await page.getByRole('button', { name: 'Qui peut me remplacer ?' }).click();
+
+    const suggestions = page.locator('.espace-suggestions-liste li');
+    // Denis ne tient aucun siège ce jour-là : il libère Alice, donc il passe devant.
+    await expect(suggestions.first()).toContainText('Denis E2E');
+    await expect(suggestions.first()).toContainText('vous libère de ce créneau');
+    // Bruno travaille déjà ce créneau : l'échange tient, mais Alice ne serait
+    // pas libérée — elle changerait de stand, ce que la liste dit.
+    await expect(suggestions.filter({ hasText: 'Bruno E2E' })).toContainText('Stand E2E deux');
+    // Chloé a posé la journée : l'échange casserait une règle, elle n'est jamais proposée.
+    await expect(suggestions.filter({ hasText: 'Chloé E2E' })).toHaveCount(0);
+
+    // Retenir un nom remplit le formulaire, il ne soumet rien de lui-même.
+    await suggestions.first().getByRole('button', { name: 'Choisir' }).click();
+    await expect(
+      page.locator('mat-form-field').filter({ hasText: 'Échanger avec' }).first()
+    ).toContainText('Denis E2E');
+    await expect(page.getByText('En attente du collègue')).toHaveCount(0);
+
+    // Et la demande construite depuis une suggestion part comme une autre.
+    await page.getByRole('button', { name: 'Ajouter à la liste' }).click();
+    await page.getByRole('button', { name: 'Soumettre mes demandes' }).click();
+    await expect(page.getByText('En attente du collègue').first()).toBeVisible();
+  });
+
   test("fermer la foire rend l'espace consultable seulement, téléchargements compris", async ({ page, browser }) => {
     test.slow();
     await seedPlanning(admin);
