@@ -48,7 +48,7 @@ function vue(overrides: Partial<EspaceAnimateurView> = {}): EspaceAnimateurView 
     animateurId: 'alice',
     prenom: 'Alice',
     nom: 'Martin',
-    planningResoluLe: '2026-07-01T10:00:00Z',
+    publieLe: '2026-07-01T10:00:00Z',
     foireOuverte: true,
     postes: [poste()],
     collegues: [{ id: 'bob', nomComplet: 'Bob Durand' }],

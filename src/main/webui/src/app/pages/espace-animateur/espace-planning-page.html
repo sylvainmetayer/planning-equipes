@@ -3,10 +3,10 @@
     Aucune affectation pour le moment : le planning n'a pas encore été publié.
   </p>
 } @else {
-  @if (espace.vue()?.planningResoluLe; as resolu) {
+  @if (espace.vue()?.publieLe; as publie) {
     <p class="espace-groupe">
       <mat-icon inline>event_note</mat-icon>
-      <span i18n="@@espace.planning.resoluLe">Planning mis à jour le {{ resolu | date: 'short' }}</span>
+      <span i18n="@@espace.planning.publieLe">Planning communiqué le {{ publie | date: 'short' }}</span>
     </p>
   }
   @if (lienPdf(); as pdf) {

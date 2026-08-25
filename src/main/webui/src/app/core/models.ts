@@ -992,7 +992,12 @@ export interface EspaceAnimateurView {
   animateurId: string;
   prenom: string;
   nom: string;
-  planningResoluLe: string | null;
+  /**
+   * When the plan on display was communicated (issue #245). `null` means
+   * nothing has been published yet: `postes` is then empty on purpose, and the
+   * espace says so rather than showing a planning nobody announced.
+   */
+  publieLe: string | null;
   /** False turns the espace read-only: the foire is closed by the admin (enforced server-side too). */
   foireOuverte: boolean;
   postes: PosteAnimateurView[];
@@ -1103,6 +1108,45 @@ export interface ImpactImport {
   demandesEchange: number;
   demandesEnAttente: number;
   verrous: number;
+}
+
+/**
+ * One person the next publication would write to (`/api/planning/publication`),
+ * with the exact sentences they would read — the admin reviews them before
+ * anything leaves.
+ */
+export interface DestinatairePublication {
+  animateurId: string;
+  nomAffiche: string;
+  email: string | null;
+  /** Nothing was ever published to them: their whole planning is the news. */
+  premiereDiffusion: boolean;
+  /** One line per moved vacation, in reading order. */
+  changements: string[];
+  /** Where their échange requests stand, if any. */
+  demandes: string[];
+}
+
+/** `/api/planning/publication`: who is concerned, and what publishing would say. */
+export interface ApercuPublication {
+  /** No plan was ever published on this edition: the first one concerns everybody. */
+  jamaisPublie: boolean;
+  /** Nothing is persisted to publish at all. */
+  planVide: boolean;
+  /** A solve is running: publishing would freeze a plan about to be overwritten. */
+  solveEnCours: boolean;
+  dernierePublicationLe: string | null;
+  nombreConcernes: number;
+  destinataires: DestinatairePublication[];
+}
+
+/** Outcome of a publication: display names, ready to show. */
+export interface RapportPublication {
+  snapshotId: number;
+  publieLe: string;
+  envoyes: number;
+  sansEmail: string[];
+  echecs: string[];
 }
 
 /** Outcome of mailing the individual plannings (`/api/planning/envoi/*`): display names, ready to show. */

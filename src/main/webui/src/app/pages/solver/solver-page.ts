@@ -12,15 +12,21 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ApiService } from '../../core/api.service';
-import { resumeEnvoi } from '../../core/envoi-planning';
 import { intlLocale } from '../../core/locale';
 import {
+  libelleDernierePublication,
+  libellePublier,
+  raisonIndisponible,
+  resumePublication
+} from '../../core/publication';
+import {
+  ApercuPublication,
   ChangementAffectation,
-  CompteRenduEnvoi,
   FeasibilityReport,
   JobView,
   PerimetreReplanification,
   PlanningDiagnostic,
+  RapportPublication,
   ResultatSolveIncremental,
   StatistiquesIncremental
 } from '../../core/models';
@@ -95,8 +101,27 @@ export class SolverPage {
   protected readonly hardScore = signal<number | null>(null);
   protected readonly hardIssues = signal<HardIssue[]>([]);
   protected readonly exportBusy = signal(false);
-  protected readonly envoiBusy = signal(false);
   protected readonly arretEnCours = signal(false);
+
+  /**
+   * Publication state (issue #245), read on demand — when the screen opens and
+   * after each publication. Nothing polls: the count is pending work to look
+   * at, not an alarm to be pushed.
+   */
+  protected readonly publicationApercu = signal<ApercuPublication | null>(null);
+  protected readonly publicationBusy = signal(false);
+  protected readonly publicationListeOuverte = signal(false);
+  protected readonly publicationLibelle = computed(() => libellePublier(this.publicationApercu()));
+  protected readonly publicationRaisonIndisponible = computed(() =>
+    raisonIndisponible(this.publicationApercu())
+  );
+  protected readonly publicationDerniere = computed(() =>
+    libelleDernierePublication(this.publicationApercu(), intlLocale())
+  );
+  protected readonly publicationPossible = computed(() => {
+    const apercu = this.publicationApercu();
+    return !!apercu && apercu.nombreConcernes > 0 && !apercu.solveEnCours && !apercu.planVide;
+  });
 
   /**
    * Result of the last incremental re-solve (issue #86), cleared as soon as a
@@ -243,6 +268,7 @@ export class SolverPage {
     void this.problemes.reload();
     void this.loadSolverDuration();
     void this.crud.reload();
+    void this.chargerApercuPublication();
     // Results are pushed by the job service, whoever started the job: a solve
     // launched from another browser also lands here when it completes, already
     // analyzed.
@@ -260,6 +286,9 @@ export class SolverPage {
       }
       this.applyIncrementalResult(result);
       void this.loadLastRun();
+      // Le solve vient de réécrire le plan : le décompte des personnes à
+      // prévenir n'est plus celui d'avant.
+      void this.chargerApercuPublication();
       // The solve rewrote both problem sources server-side (fresh feasibility
       // input and a new constraint analysis): re-read them for the summary.
       void this.problemes.reload();
@@ -544,28 +573,54 @@ export class SolverPage {
    * planning — same read-only source as the global PDF above. Confirmed
    * first: it reaches everyone at once.
    */
-  protected async onEnvoyerPlannings(): Promise<void> {
-    if (this.envoiBusy()) {
+  protected async onPublier(): Promise<void> {
+    if (this.publicationBusy() || !this.publicationPossible()) {
       return;
     }
+    const apercu = this.publicationApercu();
+    const nombre = apercu ? apercu.nombreConcernes : 0;
     const confirme = await this.confirm.ask({
-      title: $localize`:@@solver.envoiTous.confirmTitre:Envoyer tous les plannings ?`,
-      message: $localize`:@@solver.envoiTous.confirmMessage:Chaque animateur du planning enregistré ayant une adresse e-mail recevra son planning individuel en PDF, avec le lien vers son espace en ligne.`,
-      confirmLabel: $localize`:@@solver.envoiTous.confirmAction:Envoyer`
+      title: $localize`:@@publication.confirmTitre:Publier le planning ?`,
+      message: $localize`:@@publication.confirmMessage:${nombre}:count: personne(s) recevront leur planning à jour et le détail de ce qui change pour elles. Personne d'autre ne sera sollicité.`,
+      confirmLabel: $localize`:@@publication.confirmAction:Publier`
     });
     if (!confirme) {
       return;
     }
-    this.envoiBusy.set(true);
-    this.output.set($localize`:@@solver.envoiTousEnCours:Envoi des plannings par e-mail...`);
+    this.publicationBusy.set(true);
+    this.output.set($localize`:@@publication.enCours:Publication du planning...`);
     try {
-      const compteRendu = await this.api.post<CompteRenduEnvoi>('/api/planning/envoi/tous', null);
-      const resume = resumeEnvoi(compteRendu);
+      const rapport = await this.api.post<RapportPublication>('/api/planning/publication', null);
+      const resume = resumePublication(rapport);
       this.output.set(resume.details ? `${resume.titre} — ${resume.details}` : resume.titre);
+      this.publicationListeOuverte.set(false);
     } catch (error) {
       this.output.set(errorPrefix(error));
     } finally {
-      this.envoiBusy.set(false);
+      this.publicationBusy.set(false);
+      await this.chargerApercuPublication();
+    }
+  }
+
+  /**
+   * Reads who is concerned. Called when the screen opens, when the list is
+   * expanded and after a publication — never on a timer: a count that refreshes
+   * behind the user's back is a count they stop reading.
+   */
+  protected async chargerApercuPublication(): Promise<void> {
+    try {
+      this.publicationApercu.set(await this.api.get<ApercuPublication>('/api/planning/publication'));
+    } catch {
+      // Le bloc reste muet plutôt que d'annoncer un décompte qu'on n'a pas lu.
+      this.publicationApercu.set(null);
+    }
+  }
+
+  protected async onBasculerListePublication(): Promise<void> {
+    const ouverte = !this.publicationListeOuverte();
+    this.publicationListeOuverte.set(ouverte);
+    if (ouverte) {
+      await this.chargerApercuPublication();
     }
   }
 

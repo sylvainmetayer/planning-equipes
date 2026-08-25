@@ -255,7 +255,9 @@
     <h2 mat-card-title i18n="@@solver.diffusion.title">Diffusion du planning</h2>
     <mat-card-subtitle i18n="@@solver.diffusion.hint">
       Ce qui sort de l'application une fois le planning satisfaisant : les documents à imprimer ou à archiver, et
-      l'envoi à chaque animateur. Ces actions lisent le planning enregistré de l'édition affichée ; elles ne sont
+      la publication du planning. Publier, c'est envoyer leur planning à jour aux seules personnes dont l'emploi du
+      temps a changé depuis la dernière fois, en leur disant ce qui change — et c'est ce plan publié que chaque
+      animateur voit dans son espace. Ces actions lisent le planning enregistré de l'édition affichée ; elles ne sont
       indisponibles que pendant une résolution sur cette édition-là, puisqu'elle est en train de le réécrire. Une
       résolution lancée sur une autre édition ne les bloque pas.
     </mat-card-subtitle>
@@ -272,14 +274,66 @@
       <mat-icon>picture_as_pdf</mat-icon>
       <ng-container i18n="@@solver.exportGlobal">Exporter le planning global (PDF)</ng-container>
     </button>
-    <button matButton="tonal" [disabled]="envoiBusy() || editingLocked()"
-            i18n-matTooltip="@@solver.envoiTous.tooltip"
-            matTooltip="Envoyer à chaque animateur du planning son planning individuel par e-mail (PDF + lien vers son espace)"
-            (click)="onEnvoyerPlannings()">
+    <button matButton="tonal"
+            [disabled]="publicationBusy() || editingLocked() || !publicationPossible()"
+            i18n-matTooltip="@@publication.bouton.tooltip"
+            matTooltip="Envoyer leur planning à jour aux seules personnes dont l'emploi du temps a changé depuis la dernière publication, en leur disant ce qui change."
+            (click)="onPublier()">
       <mat-icon>forward_to_inbox</mat-icon>
-      <ng-container i18n="@@solver.envoiTous">Envoyer à tous</ng-container>
+      <span>{{ publicationLibelle() }}</span>
     </button>
   </mat-card-actions>
+
+  <mat-card-content class="publication-etat">
+    <p class="publication-derniere">
+      <mat-icon inline>schedule_send</mat-icon>
+      <span>{{ publicationDerniere() }}</span>
+    </p>
+    @if (publicationApercu()?.jamaisPublie) {
+      <p class="publication-note" i18n="@@publication.premiere">
+        Rien n'a encore été communiqué sur cette édition : tant que vous n'avez pas publié, l'espace de chaque
+        animateur reste vide. La première publication concerne donc tout le monde.
+      </p>
+    }
+    @if (publicationRaisonIndisponible(); as raison) {
+      <p class="publication-note">{{ raison }}</p>
+    }
+    @if ((publicationApercu()?.nombreConcernes ?? 0) > 0) {
+      <button matButton (click)="onBasculerListePublication()">
+        <mat-icon>{{ publicationListeOuverte() ? 'expand_less' : 'expand_more' }}</mat-icon>
+        @if (publicationListeOuverte()) {
+          <ng-container i18n="@@publication.liste.masquer">Masquer qui est concerné</ng-container>
+        } @else {
+          <ng-container i18n="@@publication.liste.voir">Voir qui est concerné et ce qui change</ng-container>
+        }
+      </button>
+      @if (publicationListeOuverte()) {
+        <ul class="publication-destinataires">
+          @for (destinataire of publicationApercu()?.destinataires ?? []; track destinataire.animateurId) {
+            <li>
+              <p class="publication-destinataire-nom">
+                {{ destinataire.nomAffiche }}
+                @if (!destinataire.email) {
+                  <span class="publication-sans-email" i18n="@@publication.sansEmail">— sans adresse e-mail</span>
+                }
+                @if (destinataire.premiereDiffusion) {
+                  <span class="publication-premiere" i18n="@@publication.premiereDiffusion">— première diffusion</span>
+                }
+              </p>
+              <ul class="publication-changements">
+                @for (ligne of destinataire.changements; track ligne) {
+                  <li>{{ ligne }}</li>
+                }
+                @for (ligne of destinataire.demandes; track ligne) {
+                  <li class="publication-demande">{{ ligne }}</li>
+                }
+              </ul>
+            </li>
+          }
+        </ul>
+      }
+    }
+  </mat-card-content>
 </mat-card>
 
 <app-feasibility-banner [report]="feasibility()" [hardScore]="hardScore()" [hardIssues]="hardIssues()" />

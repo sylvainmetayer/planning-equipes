@@ -1,0 +1,58 @@
+/* Le bloc « Publier » de l'écran Solveur (issue #245).
+
+   Le décompte est un travail en attente, pas une alerte : rien ici n'est
+   coloré comme un avertissement. La liste nominative se lit comme un
+   sommaire — un nom, puis ce qui change pour lui, en retrait. */
+
+.publication-etat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.publication-derniere {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  opacity: 0.8;
+}
+
+.publication-note {
+  margin: 0;
+  max-width: 70ch;
+  opacity: 0.8;
+}
+
+.publication-destinataires {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.publication-destinataire-nom {
+  margin: 0;
+  font-weight: 600;
+}
+
+.publication-sans-email,
+.publication-premiere {
+  font-weight: 400;
+  opacity: 0.7;
+}
+
+.publication-changements {
+  margin: 0.15rem 0 0;
+  padding-inline-start: 1.5rem;
+}
+
+.publication-changements li {
+  opacity: 0.9;
+}
+
+.publication-demande {
+  font-style: italic;
+}

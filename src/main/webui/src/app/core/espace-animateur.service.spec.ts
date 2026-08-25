@@ -11,7 +11,7 @@ function vue(): EspaceAnimateurView {
     animateurId: 'A1',
     prenom: 'Alice',
     nom: 'Martin',
-    planningResoluLe: null,
+    publieLe: null,
     foireOuverte: true,
     postes: [],
     joursRepos: [],
