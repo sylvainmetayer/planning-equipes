@@ -49,7 +49,7 @@
 <div class="span-2 subform">
   <div class="subform-header">
     <h3 i18n="@@animateurs.appreciation.title">Appréciation</h3>
-    <button matButton type="button" (click)="addCompetence()">
+    <button matButton type="button" [disabled]="toutesTypologiesPrises()" (click)="addCompetence()">
       <mat-icon>add</mat-icon>
       <ng-container i18n="@@animateurs.appreciation.add">Ajouter une appréciation</ng-container>
     </button>
@@ -60,7 +60,7 @@
         <mat-label i18n="@@animateurs.competences.typologie">Typologie</mat-label>
         <mat-select [name]="'typologie-' + $index" [disabled]="editingLocked()" [ngModel]="competence.typologie"
                     (ngModelChange)="updateCompetence($index, { typologie: $event })">
-          @for (typologie of store.typologies(); track typologie.id) {
+          @for (typologie of typologiesDisponibles($index); track typologie.id) {
             <mat-option [value]="typologie.id">{{ typologie.label }}</mat-option>
           }
         </mat-select>

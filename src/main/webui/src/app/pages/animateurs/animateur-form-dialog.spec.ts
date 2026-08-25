@@ -279,12 +279,14 @@ describe('AnimateurFormDialog', () => {
     expect((racine(fixture).querySelector('button[type="submit"]') as HTMLButtonElement).disabled).toBe(true);
   });
 
-  it('drops one of two appreciation rows carrying the same typologie, silently', async () => {
+  // An animateur holds ONE appreciation per typologie: two rows on the same one
+  // collapse into a single map key on save, the last silently overwriting the
+  // level the user had entered. The added row therefore takes a free typologie
+  // rather than the first of the referential.
+  it('adds an appreciation on a typologie that is still free', async () => {
     const { fixture, save } = monter(animateur({ competences: { ambiance: 'REFERENT' } }));
     await fixture.whenStable();
 
-    // "Ajouter une appréciation" always adds a row on the *first* typologie of
-    // the referential, so this is one click away from a normal use.
     cliquer(fixture, 'Ajouter une appréciation');
     await fixture.whenStable();
     expect(racine(fixture).querySelectorAll('.competence-row')).toHaveLength(3); // 2 appréciations + la ligne « Jour »
@@ -292,12 +294,21 @@ describe('AnimateurFormDialog', () => {
     soumettre(fixture);
     await fixture.whenStable();
 
-    // CONSTATÉ, NON VOULU: the two rows collapse into one map key and the last
-    // one silently wins — the REFERENT level entered by the user is downgraded
-    // to the AUTONOME of the freshly added row, with no warning, and the second
-    // row is simply gone on reopening. Left as is: the fix (refuse the
-    // duplicate, or make the added row pick a free typologie) is a product
-    // arbitration. Reported separately.
-    expect(payload(save).competences).toEqual({ ambiance: 'AUTONOME' });
+    expect(payload(save).competences).toEqual({ ambiance: 'REFERENT', expert: 'AUTONOME' });
+  });
+
+  // The other half of the same rule: a typologie already appreciated is not
+  // offered again, and once they are all taken there is nothing left to add.
+  it('offers no taken typologie and stops adding once they are all used', async () => {
+    const { fixture } = monter(animateur({ competences: { ambiance: 'REFERENT' } }));
+    await fixture.whenStable();
+
+    cliquer(fixture, 'Ajouter une appréciation');
+    await fixture.whenStable();
+
+    const ajouter = [...racine(fixture).querySelectorAll('button')].find((bouton) =>
+      bouton.textContent?.includes('Ajouter une appréciation')
+    ) as HTMLButtonElement;
+    expect(ajouter.disabled).toBe(true);
   });
 });

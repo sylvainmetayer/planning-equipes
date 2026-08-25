@@ -13,7 +13,7 @@ import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { urlLegifrance } from '../../core/legifrance';
-import { Animateur, NiveauCompetence } from '../../core/models';
+import { Animateur, NiveauCompetence, TypologieItem } from '../../core/models';
 
 const NIVEAUX: NiveauCompetence[] = ['DEBUTANT', 'AUTONOME', 'REFERENT'];
 
@@ -139,11 +139,37 @@ export class AnimateurFormDialog {
     }
   }
 
+  /**
+   * The typologies a given row may still take: all of them, minus the ones the
+   * other rows already hold. An animateur carries ONE appreciation per
+   * typologie — the model is a map — so two rows on the same typologie collapse
+   * into one on save, the last silently winning over the level the user had
+   * entered. Making the duplicate unselectable is the only fix that also covers
+   * the user picking it by hand.
+   */
+  protected typologiesDisponibles(index: number): TypologieItem[] {
+    const prises = new Set(
+      this.draft()
+        .competences.filter((_, position) => position !== index)
+        .map((row) => row.typologie)
+    );
+    return this.store.typologies().filter((typologie) => !prises.has(typologie.id));
+  }
+
+  /** No typologie left to appreciate: the row would only be a duplicate. */
+  protected readonly toutesTypologiesPrises = computed(() => {
+    const prises = new Set(this.draft().competences.map((row) => row.typologie));
+    return this.store.typologies().every((typologie) => prises.has(typologie.id));
+  });
+
   protected addCompetence(): void {
-    const firstTypologie = this.store.typologies()[0]?.id ?? '';
+    const libre = this.typologiesDisponibles(-1)[0];
+    if (!libre) {
+      return;
+    }
     this.draft.update((draft) => ({
       ...draft,
-      competences: [...draft.competences, { typologie: firstTypologie, niveau: 'AUTONOME' }]
+      competences: [...draft.competences, { typologie: libre.id, niveau: 'AUTONOME' }]
     }));
   }
 
