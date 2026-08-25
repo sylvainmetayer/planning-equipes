@@ -3,7 +3,7 @@ import { Creneau } from '../../core/models';
 import {
   CreneauBulkPatch,
   appliquerPatchCreneau,
-  creneauxAvecHorairesInvalides,
+  creneauxFranchissantMinuit,
   patchCreneauEstVide,
   patchCreneauVide
 } from './creneau-bulk-edit';
@@ -49,16 +49,23 @@ describe('appliquerPatchCreneau', () => {
   });
 });
 
-describe('creneauxAvecHorairesInvalides', () => {
-  it('repère un créneau qui finirait avant de commencer', () => {
+describe('creneauxFranchissantMinuit', () => {
+  it('repère un créneau qui se terminerait le lendemain', () => {
     const creneaux = [creneau({ id: 1 }), creneau({ id: 2, heureDebut: '14:00', heureFin: '18:00' })];
 
-    const invalides = creneauxAvecHorairesInvalides(creneaux, patch({ heureFin: '12:00' }));
+    const deNuit = creneauxFranchissantMinuit(creneaux, patch({ heureFin: '12:00' }));
 
-    expect(invalides.map((c) => c.id)).toEqual([2]);
+    expect(deNuit.map((c) => c.id)).toEqual([2]);
   });
 
-  it('ne signale rien quand les horaires restent cohérents', () => {
-    expect(creneauxAvecHorairesInvalides([creneau()], patch({ heureDebut: '08:00' }))).toEqual([]);
+  it('ne signale rien quand chaque créneau reste dans sa journée', () => {
+    expect(creneauxFranchissantMinuit([creneau()], patch({ heureDebut: '08:00' }))).toEqual([]);
+  });
+
+  // Le cas archétypal : une soirée saisie en masse, 20:00 → 00:00.
+  it('compte le créneau qui se termine à minuit pile', () => {
+    const deNuit = creneauxFranchissantMinuit([creneau({ id: 3 })], patch({ heureDebut: '20:00', heureFin: '00:00' }));
+
+    expect(deNuit.map((c) => c.id)).toEqual([3]);
   });
 });

@@ -20,11 +20,14 @@
   <input matInput name="heureFin" type="time" required
          [ngModel]="draft().heureFin" (ngModelChange)="patch({ heureFin: $event })" />
 </mat-form-field>
+@if (franchitMinuit()) {
+  <p class="locked-hint span-2" i18n="@@creneaux.franchitMinuit">Ce créneau franchit minuit : il se termine le lendemain.</p>
+}
 </fieldset>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button matButton type="button" (click)="dialogRef.close(false)" i18n="@@common.cancel">Annuler</button>
-  <button matButton="filled" type="submit" [disabled]="editingLocked()">
+  <button matButton="filled" type="submit" [disabled]="formulaireInvalide() || editingLocked()">
     <mat-icon>save</mat-icon>
     {{ submitLabel() }}
   </button>

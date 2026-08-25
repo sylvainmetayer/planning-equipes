@@ -162,21 +162,54 @@ describe('CreneauFormDialog', () => {
     expect((racine(fixture).querySelector('button[type="submit"]') as HTMLButtonElement).disabled).toBe(true);
   });
 
-  it('submits an empty créneau, and one ending before it starts', async () => {
+  // The three `required` attributes used to be decorative: `(ngSubmit)` fires
+  // whatever the form's validity, so an empty créneau reached the server, whose
+  // NOT NULL columns rejected it — « Saisie refusée » instead of an error
+  // against the field.
+  it('refuses to submit an empty créneau', async () => {
     const { fixture, save } = monter(null);
     await fixture.whenStable();
+
+    expect((racine(fixture).querySelector('button[type="submit"]') as HTMLButtonElement).disabled).toBe(true);
 
     soumettre(fixture);
     await fixture.whenStable();
 
-    // CONSTATÉ, NON VOULU: the three `required` attributes are decorative —
-    // `(ngSubmit)` fires whatever the form's validity, and the submit button is
-    // only disabled by the solver lock. An empty créneau, or one whose "fin"
-    // precedes its "début", leaves for the server, which answers 400 and the
-    // user gets « Saisie refusée » instead of an inline error. Compare with
-    // `stand-form-dialog`, which does gate its submit. Reported, not fixed here:
-    // it needs the same in-form error treatment as the stand dialog.
-    expect(save).toHaveBeenCalledOnce();
-    expect(payload(save)).toEqual({ date: '', heureDebut: '', heureFin: '' });
+    expect(save).not.toHaveBeenCalled();
+  });
+
+  // An end at or before the start is not a mistake to refuse: it is how the
+  // domain writes a slot running past midnight — `Creneau.getDureeMinutes`
+  // counts 20:00→00:00 as 240 minutes, `CreneauGridServiceTest` slices such a
+  // « nuit », and only such a slot reads a stand window dated J+1. The form
+  // names the case so a typo is caught by the person who made it, and saves it.
+  it('accepts a créneau running past midnight, and names the case', async () => {
+    const { fixture, save } = monter(null);
+    await fixture.whenStable();
+
+    saisir(fixture, 'date', '2026-07-08');
+    saisir(fixture, 'heureDebut', '20:00');
+    saisir(fixture, 'heureFin', '00:00');
+    await fixture.whenStable();
+
+    expect(racine(fixture).textContent).toContain('franchit minuit');
+    expect((racine(fixture).querySelector('button[type="submit"]') as HTMLButtonElement).disabled).toBe(false);
+
+    soumettre(fixture);
+    await fixture.whenStable();
+
+    expect(payload(save)).toEqual({ date: '2026-07-08', heureDebut: '20:00', heureFin: '00:00' });
+  });
+
+  it('says nothing about midnight for a slot that stays inside its day', async () => {
+    const { fixture } = monter(null);
+    await fixture.whenStable();
+
+    saisir(fixture, 'date', '2026-07-08');
+    saisir(fixture, 'heureDebut', '09:00');
+    saisir(fixture, 'heureFin', '18:00');
+    await fixture.whenStable();
+
+    expect(racine(fixture).textContent).not.toContain('franchit minuit');
   });
 });

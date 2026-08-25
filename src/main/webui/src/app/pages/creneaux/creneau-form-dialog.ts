@@ -60,11 +60,47 @@ export class CreneauFormDialog {
       : $localize`:@@creneaux.submit.create:Créer le créneau`
   );
 
+  /**
+   * What the three `required` attributes were promising and not delivering:
+   * `(ngSubmit)` fires whatever the form's validity, so a créneau with empty
+   * fields used to leave for the server, whose `NOT NULL` columns rejected it —
+   * « Saisie refusée » instead of an error against the field. The stand dialog
+   * next door already gates its submit this way.
+   *
+   * <p>A missing field is the <b>only</b> thing refused here. In particular an
+   * end at or before the start is not an error: it is how the domain writes a
+   * slot running past midnight ({@code Creneau.getDureeMinutes} counts
+   * 20:00→00:00 as 240 minutes, and a stand window dated J+1 is only read by
+   * such a slot). Refusing it would make the night slot unwritable from the
+   * screen that exists to write slots.
+   */
+  protected readonly formulaireInvalide = computed(() => {
+    const { date, heureDebut, heureFin } = this.draft();
+    return !date || !heureDebut || !heureFin;
+  });
+
+  /**
+   * Says out loud what an end before the start means, so a typo is caught by
+   * the person who made it rather than accepted in silence — without refusing
+   * the slot, which is legitimate. Only worth saying once both hours are
+   * filled: before that they are simply missing.
+   */
+  protected readonly franchitMinuit = computed(() => {
+    const { heureDebut, heureFin } = this.draft();
+    return Boolean(heureDebut) && Boolean(heureFin) && heureFin <= heureDebut;
+  });
+
   protected patch(patch: Partial<CreneauDraft>): void {
     this.draft.update((draft) => ({ ...draft, ...patch }));
   }
 
   protected async save(): Promise<void> {
+    // Guarded here and not only on the button: pressing Enter in a field
+    // submits the form, and a component that trusts its own template to hold
+    // the rule has no rule.
+    if (this.formulaireInvalide()) {
+      return;
+    }
     const draft = this.draft();
     const editingId = this.editingId();
     const creneau: Partial<Creneau> = {

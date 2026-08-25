@@ -27,11 +27,17 @@ export function appliquerPatchCreneau(creneau: Creneau, patch: CreneauBulkPatch)
 }
 
 /**
- * Créneaux the patch would leave ending before they start. Changing only one of
- * the two hours is legitimate, but it has to stay coherent with each slot's own
- * other hour — hence the check per row rather than on the form alone.
+ * Créneaux the patch would leave running past midnight. Changing only one of the
+ * two hours is legitimate, but the result has to be read against each slot's own
+ * other hour — hence the count per row rather than on the form alone.
+ *
+ * These are reported, not refused: an end at or before the start is how the
+ * domain writes a night slot (`Creneau.getDureeMinutes` counts 20:00→00:00 as
+ * 240 minutes). Refusing them made the night slot unreachable in bulk, which is
+ * precisely where it is tedious to enter one by one — but a batch is worth
+ * naming, since nobody re-reads sixty rows before confirming.
  */
-export function creneauxAvecHorairesInvalides(
+export function creneauxFranchissantMinuit(
   creneaux: readonly Creneau[],
   patch: CreneauBulkPatch
 ): Creneau[] {

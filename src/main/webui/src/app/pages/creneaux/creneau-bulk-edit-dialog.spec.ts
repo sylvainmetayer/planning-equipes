@@ -93,7 +93,10 @@ describe('CreneauBulkEditDialog', () => {
     expect(close).toHaveBeenCalledWith(true);
   });
 
-  it('blocks the whole batch, with a spoken reason, when one créneau would end before it starts', async () => {
+  // Un lot qui fait franchir minuit à une partie de la sélection est légitime —
+  // c'est ainsi que le domaine écrit une soirée — mais personne ne relit
+  // soixante lignes avant de confirmer : le dialogue les compte, et applique.
+  it('names the créneaux that would cross midnight, without blocking the batch', async () => {
     const { fixture, saveMany } = monter(CRENEAUX);
     await fixture.whenStable();
 
@@ -101,14 +104,22 @@ describe('CreneauBulkEditDialog', () => {
     saisir(fixture, 'heureDebut', '13:00');
     await fixture.whenStable();
 
-    const erreur = racine(fixture).querySelector('.field-error')!;
-    expect(erreur.getAttribute('role')).toBe('alert');
-    expect(erreur.textContent!).toContain('finiraient avant de commencer');
-    expect(bouton(fixture).disabled).toBe(true);
+    expect(racine(fixture).textContent).toContain('franchiraient minuit');
+    expect(bouton(fixture).disabled).toBe(false);
 
     soumettre(fixture);
     await fixture.whenStable();
-    expect(saveMany).not.toHaveBeenCalled();
+    expect(saveMany).toHaveBeenCalledOnce();
+  });
+
+  it('says nothing about midnight while every créneau stays inside its day', async () => {
+    const { fixture } = monter(CRENEAUX);
+    await fixture.whenStable();
+
+    saisir(fixture, 'heureFin', '20:00');
+    await fixture.whenStable();
+
+    expect(racine(fixture).textContent).not.toContain('franchiraient minuit');
   });
 
   it('keeps the dialog open when the server saved nothing', async () => {

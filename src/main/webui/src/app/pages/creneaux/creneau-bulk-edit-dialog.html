@@ -22,9 +22,9 @@
              [ngModel]="patch().heureFin" (ngModelChange)="update({ heureFin: $event })" />
     </mat-form-field>
   </div>
-  @if (creneauxInvalides().length) {
-    <p class="field-error" role="alert" i18n="@@creneaux.bulk.horairesInvalides">
-      Certains créneaux sélectionnés finiraient avant de commencer avec ces horaires.
+  @if (creneauxDeNuit().length) {
+    <p class="locked-hint" i18n="@@creneaux.bulk.franchissentMinuit">
+      {{ creneauxDeNuit().length }} créneau(x) franchiraient minuit avec ces horaires : ils se termineraient le lendemain.
     </p>
   }
 </div>
@@ -33,7 +33,7 @@
 <mat-dialog-actions align="end">
   <button matButton type="button" (click)="dialogRef.close(false)" i18n="@@common.cancel">Annuler</button>
   <button matButton="filled" type="submit"
-          [disabled]="editingLocked() || rienAModifier() || creneauxInvalides().length > 0 || enCours()">
+          [disabled]="editingLocked() || rienAModifier() || enCours()">
     <mat-icon>save</mat-icon>
     <ng-container i18n="@@bulk.apply">Appliquer à la sélection</ng-container>
   </button>

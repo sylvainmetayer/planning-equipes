@@ -30,6 +30,7 @@ public class CreneauService {
     }
 
     public Creneau create(Creneau creneau) {
+        CreneauValidator.check(creneau);
         creneau.setId(null); // ignore any client-supplied id — the database always generates it
         Creneau cree = repository.insertCreneau(creneau);
         changeTracker.markModified();
@@ -37,6 +38,7 @@ public class CreneauService {
     }
 
     public Creneau update(Long id, Creneau creneau) {
+        CreneauValidator.check(creneau);
         if (!repository.creneauExists(id)) {
             throw new NotFoundException("Timeslot not found: " + id);
         }
@@ -68,6 +70,7 @@ public class CreneauService {
      */
     public List<Creneau> createInBulk(List<Creneau> creneaux) {
         List<Creneau> crees = new ArrayList<>();
+        creneaux.forEach(CreneauValidator::check);
         for (Creneau creneau : creneaux) {
             creneau.setId(null); // ignore any client-supplied id — the database always generates it
             crees.add(repository.insertCreneau(creneau));

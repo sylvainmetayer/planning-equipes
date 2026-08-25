@@ -310,6 +310,12 @@ compétences et les typologies proposées référencent leurs `id` par clé
 utilisée aussi. `ninja` désigne la typologie des profils polyvalents, au plus
 une à la fois — la poser sur une autre retire le drapeau de la précédente.
 
+Un créneau requiert une date, une heure de début et une heure de fin : sans
+l'une des trois, l'écriture répond `400` plutôt que d'aller heurter la colonne
+`NOT NULL`. En revanche une fin **antérieure ou égale** au début est acceptée —
+c'est ainsi que s'écrit un créneau franchissant minuit (20:00→00:00 dure quatre
+heures), et lui seul lit une fenêtre de stand datée du lendemain.
+
 Contraintes ad hoc et verrouillages sont des **états** : on ne les met pas à
 jour, on les supprime et on les recrée. Une même paire d'animateurs ne peut pas
 être à la fois en incompatibilité et en affinité (`400`). Une cible déjà

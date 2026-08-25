@@ -14,7 +14,7 @@ import { Creneau } from '../../core/models';
 import {
   CreneauBulkPatch,
   appliquerPatchCreneau,
-  creneauxAvecHorairesInvalides,
+  creneauxFranchissantMinuit,
   patchCreneauEstVide,
   patchCreneauVide
 } from './creneau-bulk-edit';
@@ -57,8 +57,8 @@ export class CreneauBulkEditDialog {
   protected readonly enCours = signal(false);
 
   /** Slots the patch would leave ending before they start: the batch is blocked as a whole. */
-  protected readonly creneauxInvalides = computed(() =>
-    creneauxAvecHorairesInvalides(this.data.creneaux, this.patch())
+  protected readonly creneauxDeNuit = computed(() =>
+    creneauxFranchissantMinuit(this.data.creneaux, this.patch())
   );
 
   protected readonly formTitle = $localize`:@@creneaux.bulk.title:Modifier ${this.data.creneaux.length}:count: créneaux`;
@@ -68,7 +68,7 @@ export class CreneauBulkEditDialog {
   }
 
   protected async save(): Promise<void> {
-    if (this.rienAModifier() || this.creneauxInvalides().length > 0 || this.enCours()) {
+    if (this.rienAModifier() || this.enCours()) {
       return;
     }
     const patch = this.patch();
