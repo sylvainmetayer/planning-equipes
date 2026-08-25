@@ -198,12 +198,13 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 | Replanification incrémentale | Repart du planning enregistré, fige ce qui reste valable et ne recalcule que ce qu'un changement tardif a invalidé — quelques dizaines de secondes au lieu de plusieurs minutes |
 | Verrouillage partiel | Geler un animateur, un stand, une journée ou un créneau pour que la prochaine résolution n'y touche plus et optimise le reste |
 | Exceptions ponctuelles | Contraintes ad hoc tracées avec leur raison : indisponibilité forcée, incompatibilité entre deux personnes, affectation imposée, paire à privilégier |
+| Exceptions contradictoires refusées | Une exception qui ne peut pas tenir en même temps qu'une autre déjà saisie est refusée à l'enregistrement, avec un message qui nomme les deux — plutôt qu'un planning déclaré infaisable plusieurs minutes plus tard, sans que rien n'en désigne la cause |
 
 ### Décider et diagnostiquer
 
 | Fonctionnalité | En une phrase |
 | --- | --- |
-| Problèmes | Vue unique des blocages, triés par gravité : causes d'infaisabilité détectées sans résolution, et règles encore en défaut après la dernière analyse |
+| Problèmes | Vue unique des blocages, triés par gravité : causes d'infaisabilité détectées sans résolution, et règles encore en défaut après la dernière analyse. Quand une règle a buté sur des exceptions saisies à la main, elles sont nommées une par une |
 | Ouvertures des stands | Grille stand × jour de ce que le planning retiendra réellement, et les trois erreurs de saisie d'horaires habituelles — à vérifier avant de lancer un calcul |
 | Besoin en animateurs | Effectif minimum estimé à partir des seuls stands et créneaux : dit si le problème est un manque de monde plutôt qu'un manque de temps de calcul |
 | Catalogue des contraintes | Toutes les règles, leur niveau, et le résultat de la dernière analyse — activables ou désactivables une par une pour diagnostiquer, et **dosables** : l'importance des règles de qualité d'organisation se règle par édition, selon ce qui compte pour l'organisateur |

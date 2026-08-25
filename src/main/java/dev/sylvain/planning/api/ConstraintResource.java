@@ -12,6 +12,7 @@ import dev.sylvain.planning.service.ConstraintAnalysisStore.StoredAnalysis;
 import dev.sylvain.planning.service.FeasibilityAnalyzer.FeasibilityReport;
 import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.PlanningService.ConstraintDiagnostic;
+import dev.sylvain.planning.service.PlanningService.ContributionAdHoc;
 import dev.sylvain.planning.service.ReferenceDataService;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.ConstraintCatalog.ConstraintDefinition;
@@ -64,7 +65,8 @@ public class ConstraintResource {
                 analysis == null ? null : analysis.diagnostic().postesNonPourvus(),
                 analysis == null ? null : analysis.diagnostic().faisabilite(),
                 analysis == null ? null : analysis.diagnostic().hardScore(),
-                constraints);
+                constraints,
+                analysis == null ? List.of() : analysis.diagnostic().contraintesAdHocEnCause());
     }
 
     /**
@@ -183,6 +185,12 @@ public class ConstraintResource {
      *                  UI must check {@code hardScore == 0}, not just
      *                  {@code faisabilite.feasible}, to know whether the plan
      *                  actually in hand is fully legal/staffed.
+     * @param contraintesAdHocEnCause the hand-entered exceptions the last
+     *                  analysis found still violated, most violated first —
+     *                  what turns "affectationForcee: 12" into a list of
+     *                  exceptions to arbitrate (issue #84). Empty when the
+     *                  plan honours all of them, and when nothing was ever
+     *                  analysed.
      */
     public record ConstraintsView(
             Instant analysedAt,
@@ -190,6 +198,7 @@ public class ConstraintResource {
             Integer postesNonPourvus,
             FeasibilityReport faisabilite,
             Integer hardScore,
-            List<ConstraintView> contraintes) {
+            List<ConstraintView> contraintes,
+            List<ContributionAdHoc> contraintesAdHocEnCause) {
     }
 }

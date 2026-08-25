@@ -1,0 +1,168 @@
+package dev.sylvain.planning.api;
+
+import static io.restassured.RestAssured.given;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.List;
+import java.util.Map;
+
+import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+/**
+ * The {@code contraintesAdHoc:} section of a scenario, against the same
+ * contradiction check the form applies (issue #84).
+ *
+ * <p>An import writes the whole set in one go, which is precisely how a
+ * combination the form refuses would otherwise get in — and once in, it makes
+ * every solve of that edition end hard-negative with nothing naming the
+ * cause. A file may not install what the form refuses, so the import is
+ * refused as a whole, before anything is written.</p>
+ */
+@QuarkusTest
+class ImportScenarioContraintesAdHocTest {
+
+    private static final String HEADER = "X-Edition-Id";
+    private static final String EDITION = "IMPORT-AD-HOC";
+
+    private static final String ENTETE = """
+            festival:
+              dateDebut: 2026-07-08
+
+            creneaux:
+              - id: J1-MATIN
+                jour: 1
+                date: 2026-07-08
+                heureDebut: "09:00"
+                heureFin: "13:00"
+              - id: J1-MIDI
+                jour: 1
+                date: 2026-07-08
+                heureDebut: "12:00"
+                heureFin: "16:00"
+
+            stands:
+              - id: STAND-STRAT
+                nom: Stand stratégie
+                typologiesProposees:
+                  - STRATEGIE
+                effectifMin: 1
+                effectifMax: 2
+                reserveMajeurs: false
+
+            animateurs:
+              - id: A1
+                prenom: Alice
+                nom: Referente
+                dateNaissance: 2002-07-19
+                manager: false
+                competences:
+                  STRATEGIE: REFERENT
+                joursIndisponibles: []
+              - id: A2
+                prenom: Bob
+                nom: Debutant
+                dateNaissance: 2001-03-04
+                manager: false
+                competences:
+                  STRATEGIE: DEBUTANT
+                joursIndisponibles: []
+            """;
+
+    /** A1 is forced onto the very créneau another exception declares them unavailable on. */
+    private static final String CONTRADICTOIRE = ENTETE + """
+
+            contraintesAdHoc:
+              - id: INDISPO-1
+                type: INDISPONIBILITE_FORCEE
+                animateurs:
+                  - A1
+                creneauId: J1-MATIN
+                raison: Formation
+              - id: FORCE-1
+                type: AFFECTATION_FORCEE
+                animateurs:
+                  - A1
+                creneauId: J1-MATIN
+                standId: STAND-STRAT
+                raison: Promesse faite en juin
+            """;
+
+    /** The same two exceptions, on two créneaux that do not overlap. */
+    private static final String COHERENT = ENTETE + """
+
+            contraintesAdHoc:
+              - id: INDISPO-1
+                type: INDISPONIBILITE_FORCEE
+                animateurs:
+                  - A1
+                creneauId: J1-MATIN
+                raison: Formation
+              - id: FORCE-1
+                type: AFFECTATION_FORCEE
+                animateurs:
+                  - A2
+                creneauId: J1-MIDI
+                standId: STAND-STRAT
+                raison: Promesse faite en juin
+            """;
+
+    /**
+     * The landing edition is created first, on purpose: an unknown
+     * {@code X-Edition-Id} falls back to the default one, and the import would
+     * then replace the referential every other test reads.
+     */
+    @BeforeEach
+    void createTheLandingEdition() {
+        given().contentType("application/json")
+                .body("{\"id\":\"" + EDITION + "\",\"nom\":\"Import contraintes ad hoc\"}")
+                .when().post("/api/editions")
+                .then().statusCode(200);
+    }
+
+    @AfterEach
+    void dropTheLandingEdition() {
+        given().when().delete("/api/editions/" + EDITION);
+    }
+
+    @Test
+    void aScenarioWhoseExceptionsContradictEachOtherIsRefused() {
+        String message = importer(CONTRADICTOIRE, 400).extract().asString();
+
+        assertThat(message).contains("INDISPO-1").contains("FORCE-1");
+    }
+
+    @Test
+    void nothingOfARefusedScenarioIsWritten() {
+        importer(CONTRADICTOIRE, 400);
+
+        // Refused before the first write: the landing edition holds nothing.
+        assertThat(contraintesAdHoc()).extracting(contrainte -> contrainte.get("id"))
+                .doesNotContain("INDISPO-1", "FORCE-1");
+    }
+
+    @Test
+    void aConsistentScenarioGoesThrough() {
+        importer(COHERENT, 200);
+
+        assertThat(contraintesAdHoc()).extracting(contrainte -> contrainte.get("id"))
+                .containsExactlyInAnyOrder("INDISPO-1", "FORCE-1");
+    }
+
+    private static io.restassured.response.ValidatableResponse importer(String yaml, int statut) {
+        return given().header(HEADER, EDITION)
+                .contentType("text/plain")
+                .body(yaml)
+                .when().post("/api/reference-data/import-scenario-fichier")
+                .then().statusCode(statut);
+    }
+
+    private static List<Map<String, Object>> contraintesAdHoc() {
+        return given().header(HEADER, EDITION)
+                .when().get("/api/contraintes-ad-hoc")
+                .then().statusCode(200)
+                .extract().jsonPath().getList("$");
+    }
+}

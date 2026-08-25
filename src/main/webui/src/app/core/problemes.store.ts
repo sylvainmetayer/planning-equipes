@@ -29,7 +29,13 @@ export class ProblemesStore {
   /** True only once a report has actually been loaded and says so. */
   readonly infeasible = computed(() => this.report()?.feasible === false);
 
-  readonly problemes = computed(() => construireProblemes(this.report(), this.constraints()?.contraintes ?? []));
+  readonly problemes = computed(() =>
+    construireProblemes(
+      this.report(),
+      this.constraints()?.contraintes ?? [],
+      this.constraints()?.contraintesAdHocEnCause ?? []
+    )
+  );
   readonly comptage = computed(() => compterProblemes(this.problemes()));
 
   /**
@@ -87,6 +93,23 @@ export class ProblemesStore {
       const key = String(cause.creneauId);
       if (!index.has(key)) {
         index.set(key, cause);
+      }
+    }
+    return index;
+  });
+
+  /**
+   * Ad hoc constraint id → the first cause naming it, for the row badges of the
+   * ad hoc screen. A contradiction names two or three exceptions and each of
+   * them is badged: which one to delete is the user's arbitration, not ours.
+   */
+  readonly causeParContrainteAdHocId = computed<Map<string, CauseInfaisabilite>>(() => {
+    const index = new Map<string, CauseInfaisabilite>();
+    for (const cause of this.causes()) {
+      for (const contrainteId of cause.contrainteIds ?? []) {
+        if (!index.has(contrainteId)) {
+          index.set(contrainteId, cause);
+        }
       }
     }
     return index;

@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service;
 
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -14,6 +15,7 @@ import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -262,8 +264,29 @@ public class ReferenceDataService implements ReferenceData {
      * why it belongs to the facade rather than to any one of them.
      */
     public void importFromPlanning(PlanningEvenement planning) {
+        if (planning != null) {
+            // Refused before anything is written: a file may not install a
+            // combination of ad hoc exceptions the form itself refuses
+            // (issue #84). The créneaux come from the planning's own seats —
+            // the ones already persisted are about to be replaced.
+            contraintesAdHoc.checkNoContradiction(planning.getContraintesAdHoc(), creneauxOf(planning));
+        }
         imports.importFromPlanning(planning);
         changeTracker.markModified();
+    }
+
+    /** The distinct créneaux a planning's seats stand on, in encounter order. */
+    private static List<Creneau> creneauxOf(PlanningEvenement planning) {
+        if (planning.getPostes() == null) {
+            return List.of();
+        }
+        Map<Long, Creneau> byId = new LinkedHashMap<>();
+        for (PosteAffectation poste : planning.getPostes()) {
+            if (poste.getCreneau() != null && poste.getCreneau().getId() != null) {
+                byId.putIfAbsent(poste.getCreneau().getId(), poste.getCreneau());
+            }
+        }
+        return List.copyOf(byId.values());
     }
 
     /* ------------------------------ Parameters ------------------------------ */

@@ -42,6 +42,7 @@ function cause(manque: number): CauseInfaisabilite {
     heureDebut: '10:00',
     heureFin: '12:00',
     standIds: [],
+    contrainteIds: [],
     demande: 6,
     capacite: 6 - manque,
     manque

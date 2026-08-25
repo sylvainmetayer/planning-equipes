@@ -14,6 +14,7 @@ function cause(overrides: Partial<CauseInfaisabilite> = {}): CauseInfaisabilite 
     heureDebut: '12:30',
     heureFin: '15:30',
     standIds: ['tir'],
+    contrainteIds: [],
     demande: 6,
     capacite: 4,
     manque: 2,
@@ -38,6 +39,7 @@ function constraintsView(): ConstraintsView {
     postesNonPourvus: 0,
     faisabilite: null,
     hardScore: -2,
+    contraintesAdHocEnCause: [],
     contraintes: [
       {
         name: 'dureeHebdomadaireMax',
@@ -139,6 +141,25 @@ describe('ProblemesStore', () => {
       expect(store.causeParStandId().size).toBe(0);
       expect(store.causeParCreneauId().size).toBe(0);
       expect(store.causeCritiqueParDate().size).toBe(0);
+      expect(store.causeParContrainteAdHocId().size).toBe(0);
+    });
+
+    it('indexes every ad hoc constraint named by a contradiction', async () => {
+      api.responses = {
+        '/api/feasibility': report([
+          cause({
+            type: 'CONTRAINTES_AD_HOC_CONTRADICTOIRES',
+            severite: 'CRITIQUE',
+            message: 'C1 et C2 se contredisent.',
+            standIds: [],
+            contrainteIds: ['C1', 'C2']
+          })
+        ])
+      };
+      await store.reloadFeasibility();
+      // Both are badged: which one to delete is the user's arbitration.
+      expect([...store.causeParContrainteAdHocId().keys()]).toEqual(['C1', 'C2']);
+      expect(store.causeParContrainteAdHocId().get('C2')?.message).toBe('C1 et C2 se contredisent.');
     });
 
     it('indexes every stand named by a cause', async () => {

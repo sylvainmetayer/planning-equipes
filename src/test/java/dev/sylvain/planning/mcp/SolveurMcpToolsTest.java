@@ -31,7 +31,7 @@ class SolveurMcpToolsTest {
         ConstraintDiagnostic mediumViole = new ConstraintDiagnostic("equilibrerCharge", "0hard/-5medium/0soft", 5,
                 List.of());
         tools.analysisStore.record(new PlanningDiagnostic("-2hard/-5medium/0soft", 2,
-                List.of(hardViole, hardRespecte, mediumViole), null, -2));
+                List.of(hardViole, hardRespecte, mediumViole), null, -2, List.of()));
 
         List<ViolationHardView> violations = tools.expliquer_echec_contraintes_dures(null);
 

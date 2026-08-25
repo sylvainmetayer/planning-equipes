@@ -8,8 +8,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.ContrainteAdHocContradictions.Contradiction;
 import jakarta.enterprise.context.ApplicationScoped;
 
 /**
@@ -21,9 +23,15 @@ import jakarta.enterprise.context.ApplicationScoped;
  * <p>The result is a ranked list of blocking causes
  * ({@link CauseInfaisabilite}), each carrying a severity and the concrete
  * entities involved, so the setup screen can display them before any solve is
- * launched. The only kind of cause detected is
+ * launched. Two kinds of cause are detected:
  * {@link TypeCauseInfaisabilite#CRENEAU_SOUS_EFFECTIF} — the demand of a
- * créneau exceeds the number of animateurs available to serve it.
+ * créneau exceeds the number of animateurs available to serve it — and
+ * {@link TypeCauseInfaisabilite#CONTRAINTES_AD_HOC_CONTRADICTOIRES} — two
+ * hand-entered exceptions that cannot both hold (issue #84).
+ *
+ * <p>The second one is reported although the same check refuses such a pair at
+ * entry time: exceptions recorded before that check existed, or imported
+ * together, are exactly the ones nobody will find by re-reading the form.</p>
  *
  * <p>The demand of a créneau is counted exactly as
  * {@link PlanningService#buildPostes(List, List)} generates seats:
@@ -64,15 +72,39 @@ public class FeasibilityAnalyzer {
      */
     private static final Comparator<CauseInfaisabilite> ORDRE_CAUSES = Comparator
             .<CauseInfaisabilite, SeveriteInfaisabilite>comparing(CauseInfaisabilite::severite)
+            .thenComparingInt(FeasibilityAnalyzer::rank)
             .thenComparing(CauseInfaisabilite::manque, Comparator.reverseOrder())
             .thenComparingLong(cause -> cause.creneauId() == null ? Long.MIN_VALUE : cause.creneauId());
 
+    /**
+     * Within one severity, a contradiction between two exceptions comes first:
+     * it is a one-click fix on data the user typed themselves, where a
+     * shortfall of animateurs takes recruiting or reopening a stand. Not the
+     * enum's own order — that one is on the wire and is only ever appended to.
+     */
+    private static int rank(CauseInfaisabilite cause) {
+        return cause.type() == TypeCauseInfaisabilite.CONTRAINTES_AD_HOC_CONTRADICTOIRES ? 0 : 1;
+    }
+
+    /**
+     * Capacity check alone, for the callers analysing a hypothetical variant of
+     * the stands, animateurs or créneaux ({@code WhatIfService},
+     * {@code CreneauGridService}): the ad hoc exceptions are not what those
+     * screens vary, and their contradictions are already reported by the
+     * edition's own report.
+     */
     public FeasibilityReport analyze(List<Animateur> animateurs, List<Stand> stands, List<Creneau> creneaux) {
+        return analyze(animateurs, stands, creneaux, List.of());
+    }
+
+    public FeasibilityReport analyze(List<Animateur> animateurs, List<Stand> stands, List<Creneau> creneaux,
+            List<ContrainteAdHoc> contraintesAdHoc) {
         List<Animateur> animateursSurs = animateurs == null ? List.of() : animateurs;
         List<Stand> standsSurs = stands == null ? List.of() : stands;
         List<Creneau> creneauxSurs = creneaux == null ? List.of() : creneaux;
 
         List<CauseInfaisabilite> causes = new ArrayList<>(creneauxSousEffectif(animateursSurs, standsSurs, creneauxSurs));
+        causes.addAll(contraintesContradictoires(contraintesAdHoc, creneauxSurs));
         causes.sort(ORDRE_CAUSES);
 
         int manqueAnimateurs = causes.stream()
@@ -112,7 +144,27 @@ public class FeasibilityAnalyzer {
                             + " pour couvrir " + describeStands(standsOuverts) + ".",
                     creneau.getId(), creneau.getDate(), creneau.getHeureDebut(), creneau.getHeureFin(),
                     standsOuverts.stream().map(Stand::getId).toList(),
+                    List.of(),
                     demande, (int) capacite, manque));
+        }
+        return causes;
+    }
+
+    /**
+     * One cause per impossible combination of hand-entered exceptions. Always
+     * CRITIQUE: unlike a shortfall of animateurs — which the solver can still
+     * mitigate — a contradiction guarantees a negative hard score, whatever
+     * time budget it is given.
+     */
+    private List<CauseInfaisabilite> contraintesContradictoires(List<ContrainteAdHoc> contraintes,
+            List<Creneau> creneaux) {
+        List<CauseInfaisabilite> causes = new ArrayList<>();
+        for (Contradiction contradiction : ContrainteAdHocContradictions.detectAll(contraintes, creneaux)) {
+            causes.add(new CauseInfaisabilite(
+                    TypeCauseInfaisabilite.CONTRAINTES_AD_HOC_CONTRADICTOIRES,
+                    SeveriteInfaisabilite.CRITIQUE,
+                    contradiction.message(),
+                    null, null, null, null, List.of(), contradiction.contrainteIds(), 0, 0, 0));
         }
         return causes;
     }
@@ -169,7 +221,8 @@ public class FeasibilityAnalyzer {
 
     /** Kind of blocking cause detected before any solve. */
     public enum TypeCauseInfaisabilite {
-        CRENEAU_SOUS_EFFECTIF
+        CRENEAU_SOUS_EFFECTIF,
+        CONTRAINTES_AD_HOC_CONTRADICTOIRES
     }
 
     /**
@@ -184,11 +237,14 @@ public class FeasibilityAnalyzer {
     /**
      * One blocking cause, ready to display.
      *
-     * @param message    French sentence describing the cause
-     * @param standIds   stands concerned, always at least one
-     * @param demande    seats to fill
-     * @param capacite   animateurs able to fill them
-     * @param manque     {@code demande - capacite}
+     * @param message       French sentence describing the cause
+     * @param standIds      stands concerned, empty on a cause that names none
+     * @param contrainteIds ad hoc constraints concerned, empty on a cause that
+     *                      names none — the exceptions to edit or delete when
+     *                      the cause is a contradiction between them
+     * @param demande       seats to fill, {@code 0} outside a capacity cause
+     * @param capacite      animateurs able to fill them
+     * @param manque        {@code demande - capacite}
      */
     public record CauseInfaisabilite(
             TypeCauseInfaisabilite type,
@@ -199,6 +255,7 @@ public class FeasibilityAnalyzer {
             LocalTime heureDebut,
             LocalTime heureFin,
             List<String> standIds,
+            List<String> contrainteIds,
             int demande,
             int capacite,
             int manque) {

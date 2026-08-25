@@ -46,6 +46,7 @@ function cause(severite: CauseInfaisabilite['severite'], date: string): CauseInf
     heureDebut: '12:30',
     heureFin: '15:30',
     standIds: ['tir'],
+    contrainteIds: [],
     demande: 6,
     capacite: 4,
     manque: 2

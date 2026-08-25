@@ -10,10 +10,12 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.service.FeasibilityAnalyzer.CauseInfaisabilite;
 import dev.sylvain.planning.service.FeasibilityAnalyzer.FeasibilityReport;
 import dev.sylvain.planning.service.FeasibilityAnalyzer.SeveriteInfaisabilite;
@@ -210,6 +212,66 @@ class FeasibilityAnalyzerTest {
         assertThat(report.manqueAnimateurs()).isZero();
         assertThat(report.causes()).isEmpty();
         assertThat(report.totalCauses()).isZero();
+    }
+
+    @Test
+    void contradictoryAdHocConstraintsAreReportedAsABlockingCause() {
+        // Recorded before the entry-time check existed, or imported together:
+        // nothing else would ever point at them (issue #84).
+        Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
+        ContrainteAdHoc indisponibilite = contrainte("C1", TypeContrainteAdHoc.INDISPONIBILITE_FORCEE, creneau);
+        ContrainteAdHoc forcee = contrainte("C2", TypeContrainteAdHoc.AFFECTATION_FORCEE, creneau);
+
+        FeasibilityReport report = analyzer.analyze(List.of(animateur("a1", "STRATEGIE")),
+                List.of(stand("stand-1", 1, "STRATEGIE")), List.of(creneau),
+                List.of(indisponibilite, forcee));
+
+        assertThat(report.feasible()).isFalse();
+        assertThat(report.manqueAnimateurs()).isZero();
+        assertThat(report.message()).contains("1 cause bloquante").contains("C1").contains("C2");
+
+        CauseInfaisabilite cause = report.causes().getFirst();
+        assertThat(cause.type()).isEqualTo(TypeCauseInfaisabilite.CONTRAINTES_AD_HOC_CONTRADICTOIRES);
+        assertThat(cause.severite()).isEqualTo(SeveriteInfaisabilite.CRITIQUE);
+        assertThat(cause.contrainteIds()).containsExactly("C1", "C2");
+        assertThat(cause.standIds()).isEmpty();
+    }
+
+    @Test
+    void aContradictionIsRankedBeforeAShortfallOfAnimateurs() {
+        // Both are CRITIQUE, but one is fixed by deleting a line the user typed
+        // and the other one takes recruiting.
+        Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
+        FeasibilityReport report = analyzer.analyze(List.of(), List.of(stand("stand-1", 3, "STRATEGIE")),
+                List.of(creneau),
+                List.of(contrainte("C1", TypeContrainteAdHoc.INDISPONIBILITE_FORCEE, creneau),
+                        contrainte("C2", TypeContrainteAdHoc.AFFECTATION_FORCEE, creneau)));
+
+        assertThat(report.causes()).extracting(CauseInfaisabilite::type)
+                .containsExactly(TypeCauseInfaisabilite.CONTRAINTES_AD_HOC_CONTRADICTOIRES,
+                        TypeCauseInfaisabilite.CRENEAU_SOUS_EFFECTIF);
+    }
+
+    @Test
+    void consistentAdHocConstraintsChangeNothing() {
+        Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
+
+        FeasibilityReport report = analyzer.analyze(List.of(animateur("a1", "STRATEGIE")),
+                List.of(stand("stand-1", 1, "STRATEGIE")), List.of(creneau),
+                List.of(contrainte("C1", TypeContrainteAdHoc.AFFECTATION_FORCEE, creneau)));
+
+        assertThat(report.feasible()).isTrue();
+        assertThat(report.causes()).isEmpty();
+    }
+
+    /** A constraint targeting {@code a1} on {@code creneau}, the shape both contradiction tests need. */
+    private static ContrainteAdHoc contrainte(String id, TypeContrainteAdHoc type, Creneau creneau) {
+        ContrainteAdHoc contrainte = new ContrainteAdHoc(id, type);
+        contrainte.setCreneau(creneau);
+        Animateur animateur = new Animateur();
+        animateur.setId("a1");
+        contrainte.setAnimateursConcernes(List.of(animateur));
+        return contrainte;
     }
 
     /**

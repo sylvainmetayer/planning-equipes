@@ -37,12 +37,16 @@ public class FeasibilityResource {
      * report shortfalls on days nobody intends to schedule. Stands come
      * resolved, for the same reason: the analysis decides which stands are open
      * on a créneau, so it has to see what the recurring horaires expand to.
+     * The ad hoc constraints come along so contradictory exceptions — refused
+     * at entry time, but possibly recorded before that check existed or
+     * imported together — are reported here too (issue #84).
      */
     @GET
     public FeasibilityReport analyze() {
         return feasibilityAnalyzer.analyze(
                 referenceDataService.listAnimateurs(),
                 referenceDataService.listSolvedStands(),
-                referenceDataService.listCreneaux());
+                referenceDataService.listCreneaux(),
+                referenceDataService.listContraintesAdHoc());
     }
 }

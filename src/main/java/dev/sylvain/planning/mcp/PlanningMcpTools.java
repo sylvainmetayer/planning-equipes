@@ -78,13 +78,14 @@ public class PlanningMcpTools {
 
     @Tool(description = "Diagnostic de faisabilité avant résolution : calcul de capacité en Java pur (aucune "
             + "résolution lancée) sur les données de référence courantes, listant les causes structurellement "
-            + "bloquantes (stand sans animateur compétent, créneau en sous-effectif).")
+            + "bloquantes : créneau en sous-effectif, contraintes ad hoc contradictoires.")
     FeasibilityReport analyser_faisabilite(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return feasibilityAnalyzer.analyze(
                 referenceDataService.listAnimateurs(),
                 referenceDataService.listSolvedStands(),
-                referenceDataService.listCreneaux());
+                referenceDataService.listCreneaux(),
+                referenceDataService.listContraintesAdHoc());
     }
 
     @Tool(description = "État du planning persisté : pour quel groupe de créneaux la dernière résolution a "

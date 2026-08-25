@@ -202,6 +202,27 @@ la surcharge et rend la règle à la valeur du déploiement.
 Une désactivation insère une ligne dans `constraint_toggle`, une réactivation la
 supprime : c'est tout ce que la table porte.
 
+`GET /api/constraints` porte aussi `contraintesAdHocEnCause` : les exceptions
+saisies à la main que la dernière analyse a trouvées encore violées, la plus
+violée d'abord, avec leur id, leur raison et le nombre de violations qu'elles
+portent. C'est ce qui répond à « *lesquelles* de mes exceptions » quand une
+règle ad hoc affiche douze correspondances. Liste vide quand le plan les honore
+toutes — et quand rien n'a jamais été analysé.
+
+### Une exception contradictoire est refusée
+
+`POST /api/contraintes-ad-hoc` répond **400** quand la contrainte envoyée ne
+peut pas être satisfaite en même temps qu'une exception déjà enregistrée, avec
+un message qui les nomme toutes les deux. Le même contrôle s'applique à l'import
+de scénario, qui écrit tout le jeu d'un coup. Ce qui est refusé, ce qui passe
+délibérément, et pourquoi un plafond numérique a été écarté :
+[`contraintes.md`](contraintes.md#contraintes-ad-hoc--les-contradictions-refusées-à-la-saisie).
+
+Réenregistrer une contrainte **sous son propre id** n'est jamais refusé : la
+version envoyée remplace la précédente au lieu de coexister avec elle. C'est
+d'ailleurs la seule façon de modifier une exception — l'API n'expose que `POST`
+et `DELETE`.
+
 ## Explicabilité
 
 « Pourquoi lui ? » cible un seul poste du planning envoyé, **déjà résolu et
@@ -262,6 +283,14 @@ La compétence n'entre pas dans le calcul : depuis sa bascule en contrainte
 medium, n'importe quel animateur disponible peut tenir n'importe quel stand. Un
 écart d'appréciation est signalé *après* résolution, jamais comme cause
 bloquante avant.
+
+Une cause n'est pas toujours un manque d'animateurs : `GET /api/feasibility`
+remonte aussi les **contraintes ad hoc contradictoires**
+(`CONTRAINTES_AD_HOC_CONTRADICTOIRES`, `contrainteIds` nommant les exceptions
+concernées). Elles sont refusées à la saisie, donc ce que cette cause désigne a
+été enregistré avant ce contrôle, ou importé en un bloc — rien d'autre ne le
+signalerait. Toujours `CRITIQUE`, et classée avant les sous-effectifs : elle se
+corrige en supprimant une ligne que l'utilisateur a saisie lui-même.
 
 Trois bornes pour le besoin minimum, la plus grande étant retenue : pic
 simultané, **pic avec pause** (le nombre exact d'animateurs distincts qu'exige

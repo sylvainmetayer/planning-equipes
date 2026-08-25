@@ -52,10 +52,7 @@ final class ViolationFormatter {
             return stand.getNom();
         }
         if (fact instanceof ContrainteAdHoc contrainte) {
-            return contrainte.getType()
-                    + (contrainte.getRaison() != null && !contrainte.getRaison().isBlank()
-                            ? " (" + contrainte.getRaison() + ")"
-                            : "");
+            return contrainteLabel(contrainte);
         }
         if (fact instanceof Collection<?> collection) {
             return collection.stream()
@@ -63,6 +60,20 @@ final class ViolationFormatter {
                     .collect(Collectors.joining(", ", "[", "]"));
         }
         return String.valueOf(fact);
+    }
+
+    /**
+     * The exception's own id comes first: a hard-negative solve names the rule
+     * ("affectationForcee") and the reader's next question is always which of
+     * their exceptions it is about (issue #84).
+     */
+    private static String contrainteLabel(ContrainteAdHoc contrainte) {
+        String label = contrainte.getId() == null
+                ? String.valueOf(contrainte.getType())
+                : contrainte.getType() + " " + contrainte.getId();
+        return contrainte.getRaison() == null || contrainte.getRaison().isBlank()
+                ? label
+                : label + " (" + contrainte.getRaison() + ")";
     }
 
     private static String animateurLabel(Animateur animateur) {

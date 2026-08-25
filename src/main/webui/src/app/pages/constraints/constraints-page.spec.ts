@@ -63,6 +63,7 @@ function view(contraintes: ConstraintView[]): ConstraintsView {
     postesNonPourvus: null,
     faisabilite: null,
     hardScore: null,
+    contraintesAdHocEnCause: [],
     contraintes
   };
 }

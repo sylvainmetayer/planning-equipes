@@ -2,12 +2,11 @@ package dev.sylvain.planning.service;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.stream.Collectors;
 
-import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
-import dev.sylvain.planning.domain.TypeContrainteAdHoc;
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.service.ContrainteAdHocContradictions.Contradiction;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -19,6 +18,9 @@ public class ContrainteAdHocService {
     ContrainteAdHocRepository repository;
 
     @Inject
+    CreneauService creneauService;
+
+    @Inject
     ReferenceDataChangeTracker changeTracker;
 
     public List<ContrainteAdHoc> list() {
@@ -27,7 +29,7 @@ public class ContrainteAdHocService {
 
     public ContrainteAdHoc create(ContrainteAdHoc contrainte) {
         contrainte.setId(Ids.required(contrainte.getId(), "constraint id"));
-        validatePairWithoutContradiction(contrainte);
+        refuseContradiction(contrainte);
         if (contrainte.getCreeLe() == null) {
             contrainte.setCreeLe(Instant.now());
         }
@@ -42,52 +44,43 @@ public class ContrainteAdHocService {
     }
 
     /**
-     * A pair declared both INCOMPATIBILITE and AFFINITE must be refused at
-     * entry time, not silently arbitrated by the score (issue #80): the two
-     * facts would pull the solver in opposite directions and the hard one
-     * would always win without the user ever being told. The pair is the
-     * unordered couple of the first two animateur ids — exactly what the
-     * solver evaluates (see {@code AdHocConstraints}). Overwriting a
-     * constraint under its own id is exempt: the saved version replaces the
-     * conflicting one instead of coexisting with it.
+     * Refuses a whole set at once, for the one entry point that writes several
+     * exceptions in a single go: a scenario import. Same rules as the
+     * single-entry check below — a file may not install a combination the form
+     * refuses.
+     *
+     * <p>Every contradiction is named, not just the first: an import is fixed
+     * by editing the file, and answering one contradiction per round-trip
+     * would be a poor way to spend an afternoon.</p>
      */
-    private void validatePairWithoutContradiction(ContrainteAdHoc contrainte) {
-        TypeContrainteAdHoc typeOppose = switch (contrainte.getType()) {
-            case AFFINITE -> TypeContrainteAdHoc.INCOMPATIBILITE;
-            case INCOMPATIBILITE -> TypeContrainteAdHoc.AFFINITE;
-            default -> null;
-        };
-        Set<String> paire = animateurPair(contrainte);
-        if (typeOppose == null || paire == null) {
+    public void checkNoContradiction(List<ContrainteAdHoc> contraintes, List<Creneau> creneaux) {
+        List<Contradiction> contradictions =
+                ContrainteAdHocContradictions.detectAll(contraintes, creneaux);
+        if (contradictions.isEmpty()) {
             return;
         }
-        list().stream()
-                .filter(existante -> existante.getType() == typeOppose)
-                .filter(existante -> !existante.getId().equals(contrainte.getId()))
-                .filter(existante -> paire.equals(animateurPair(existante)))
-                .findFirst()
-                .ifPresent(existante -> {
-                    throw new BusinessError.Invalid(
-                            "La paire d'animateurs " + String.join(" / ", new TreeSet<>(paire))
-                                    + " est déjà visée par la contrainte " + existante.getId()
-                                    + " (" + existante.getType()
-                                    + ") : une même paire ne peut pas être déclarée à la fois incompatible et en affinité."
-                                    + " Supprimez d'abord la contrainte existante.");
-                });
+        String detail = contradictions.stream().map(Contradiction::message).collect(Collectors.joining(" "));
+        throw new BusinessError.Invalid("Les contraintes ad hoc de ce scénario se contredisent : " + detail);
     }
 
-    /** The unordered pair of the first two animateur ids, or null when the constraint doesn't name a genuine pair. */
-    private static Set<String> animateurPair(ContrainteAdHoc contrainte) {
-        List<Animateur> animateurs = contrainte.getAnimateursConcernes();
-        if (animateurs == null || animateurs.size() < 2
-                || animateurs.get(0) == null || animateurs.get(1) == null) {
-            return null;
+    /**
+     * An exception that cannot hold alongside one already recorded is refused
+     * here rather than discovered as a negative hard score two minutes into
+     * the next solve (issue #84) — the failure mode this replaces is silent
+     * and expensive: the user reads "the solver can't do it" where the truth
+     * is "your own exceptions contradict each other".
+     *
+     * <p>The créneaux are read because two forced assignments only clash when
+     * their slots overlap in time, and a {@link ContrainteAdHoc} carries the
+     * créneau id alone. See {@link ContrainteAdHocContradictions} for what
+     * counts as a contradiction — and for what is deliberately left to the
+     * solver.</p>
+     */
+    private void refuseContradiction(ContrainteAdHoc contrainte) {
+        List<Contradiction> contradictions =
+                ContrainteAdHocContradictions.detect(contrainte, list(), creneauService.list());
+        if (!contradictions.isEmpty()) {
+            throw new BusinessError.Invalid(contradictions.getFirst().message());
         }
-        String premier = animateurs.get(0).getId();
-        String second = animateurs.get(1).getId();
-        if (premier == null || second == null || premier.equals(second)) {
-            return null;
-        }
-        return Set.of(premier, second);
     }
 }

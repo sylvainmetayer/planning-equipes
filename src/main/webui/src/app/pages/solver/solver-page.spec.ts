@@ -48,6 +48,7 @@ function diagnostic(overrides: Partial<PlanningDiagnostic> = {}): PlanningDiagno
     contraintes: [],
     faisabilite: null,
     hardScore: -3,
+    contraintesAdHocEnCause: [],
     ...overrides
   };
 }

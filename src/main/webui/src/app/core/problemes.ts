@@ -11,7 +11,14 @@
 // Every function here is pure and called at runtime (never at module scope), so
 // the `$localize` labels resolve after `main.ts` has loaded the translations.
 
-import { CauseInfaisabilite, ConstraintView, FeasibilityReport, NiveauContrainte } from './models';
+import {
+  CauseInfaisabilite,
+  ConstraintView,
+  ContributionAdHoc,
+  FeasibilityReport,
+  NiveauContrainte,
+  TypeCauseInfaisabilite
+} from './models';
 
 /** Display severity of the merged list, from the most to the least blocking. */
 export type NiveauProbleme = 'BLOQUANT' | 'AVERTISSEMENT' | 'MINEUR';
@@ -80,8 +87,10 @@ export function niveauProblemeLabel(niveau: NiveauProbleme): string {
   }
 }
 
-export function typeCauseLabel(): string {
-  return $localize`:@@problemes.cause.creneauSousEffectif:Créneau en sous-effectif`;
+export function typeCauseLabel(type: TypeCauseInfaisabilite): string {
+  return type === 'CONTRAINTES_AD_HOC_CONTRADICTOIRES'
+    ? $localize`:@@problemes.cause.contraintesAdHocContradictoires:Contraintes ad hoc contradictoires`
+    : $localize`:@@problemes.cause.creneauSousEffectif:Créneau en sous-effectif`;
 }
 
 /** Créneau and stands named by a cause, as printable lines. */
@@ -98,6 +107,12 @@ export function liensDeCause(cause: CauseInfaisabilite): LienProbleme[] {
   if (cause.manque > 0) {
     liens.push({ route: '/staffing', libelle: $localize`:@@problemes.lien.staffing:Besoin en animateurs` });
   }
+  if ((cause.contrainteIds ?? []).length > 0) {
+    liens.push({
+      route: '/ad-hoc-constraints',
+      libelle: $localize`:@@problemes.lien.adHoc:Voir les contraintes ad hoc`
+    });
+  }
   return liens;
 }
 
@@ -113,6 +128,10 @@ export function detailsDeCause(cause: CauseInfaisabilite): string[] {
     const stands = cause.standIds.join(', ');
     details.push($localize`:@@problemes.detail.stands:Stands : ${stands}:stands:`);
   }
+  if ((cause.contrainteIds ?? []).length > 0) {
+    const contraintes = cause.contrainteIds.join(', ');
+    details.push($localize`:@@problemes.detail.contraintesAdHoc:Contraintes ad hoc : ${contraintes}:contraintes:`);
+  }
   if (cause.manque > 0) {
     const manque = cause.manque;
     const demande = cause.demande;
@@ -124,6 +143,17 @@ export function detailsDeCause(cause: CauseInfaisabilite): string[] {
   return details;
 }
 
+/** One line naming the exceptions a rule failed on, with how much each accounts for. */
+function detailsEnCause(contributions: ContributionAdHoc[]): string[] {
+  if (contributions.length === 0) {
+    return [];
+  }
+  const noms = contributions
+    .map((contribution) => `${contribution.contrainteId} (${contribution.violations})`)
+    .join(', ');
+  return [$localize`:@@problemes.detail.adHocEnCause:Exceptions en cause : ${noms}:noms:`];
+}
+
 /**
  * Builds the ranked problem list. Both arguments are optional so the caller can
  * render whatever it already has: the feasibility report is available before any
@@ -132,10 +162,14 @@ export function detailsDeCause(cause: CauseInfaisabilite): string[] {
  * Only constraints with at least one match are kept — a satisfied rule is not a
  * problem. HARD constraints carry their per-match `violations` lines; MEDIUM and
  * SOFT ones only report how many matches they scored.
+ *
+ * `contraintesAdHocEnCause` comes from the same diagnostic and attributes the
+ * ad hoc rules' violations to the exceptions that caused them.
  */
 export function construireProblemes(
   report: FeasibilityReport | null,
-  contraintes: ConstraintView[] = []
+  contraintes: ConstraintView[] = [],
+  contraintesAdHocEnCause: ContributionAdHoc[] = []
 ): Probleme[] {
   const problemes: Probleme[] = [];
 
@@ -144,7 +178,7 @@ export function construireProblemes(
       id: `cause-${index}`,
       niveau: niveauDeCause(cause.severite),
       source: 'FAISABILITE',
-      titre: typeCauseLabel(),
+      titre: typeCauseLabel(cause.type),
       message: cause.message,
       details: detailsDeCause(cause),
       liens: liensDeCause(cause)
@@ -155,19 +189,35 @@ export function construireProblemes(
     .filter((contrainte) => (contrainte.matchCount ?? 0) > 0)
     .forEach((contrainte) => {
       const matchCount = contrainte.matchCount ?? 0;
+      // Which of the user's own exceptions this rule failed on, before the
+      // per-match lines: "affectationForcee : 12" is where reading stops
+      // otherwise, and the exceptions are the only thing anyone can act on.
+      const enCause = contraintesAdHocEnCause.filter((contribution) =>
+        contribution.contraintes.includes(contrainte.name)
+      );
+      const lignes =
+        contrainte.violations.length > 0
+          ? contrainte.violations
+          : [$localize`:@@problemes.detail.matches:${matchCount}:count: correspondance(s) sur la dernière analyse.`];
+      const liens: LienProbleme[] = [
+        // A violated rule is acted upon on the constraints screen: that is where
+        // its weight is explained and where it can be relaxed.
+        { route: '/constraints', libelle: $localize`:@@problemes.lien.contraintes:Voir la règle` }
+      ];
+      if (enCause.length > 0) {
+        liens.push({
+          route: '/ad-hoc-constraints',
+          libelle: $localize`:@@problemes.lien.adHoc:Voir les contraintes ad hoc`
+        });
+      }
       problemes.push({
         id: `contrainte-${contrainte.name}`,
         niveau: niveauDeContrainte(contrainte.niveau),
         source: 'CONTRAINTE',
         titre: contrainte.name,
         message: contrainte.description,
-        details:
-          contrainte.violations.length > 0
-            ? contrainte.violations
-            : [$localize`:@@problemes.detail.matches:${matchCount}:count: correspondance(s) sur la dernière analyse.`],
-        // A violated rule is acted upon on the constraints screen: that is where
-        // its weight is explained and where it can be relaxed.
-        liens: [{ route: '/constraints', libelle: $localize`:@@problemes.lien.contraintes:Voir la règle` }]
+        details: [...detailsEnCause(enCause), ...lignes],
+        liens
       });
     });
 

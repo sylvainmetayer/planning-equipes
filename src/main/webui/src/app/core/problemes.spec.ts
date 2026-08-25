@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { compterProblemes, construireProblemes } from './problemes';
-import type { CauseInfaisabilite, ConstraintView, FeasibilityReport } from './models';
+import type { CauseInfaisabilite, ConstraintView, ContributionAdHoc, FeasibilityReport } from './models';
 
 function cause(overrides: Partial<CauseInfaisabilite> = {}): CauseInfaisabilite {
   return {
@@ -12,6 +12,7 @@ function cause(overrides: Partial<CauseInfaisabilite> = {}): CauseInfaisabilite 
     heureDebut: '12:30',
     heureFin: '15:30',
     standIds: ['tir-a-l-arc'],
+    contrainteIds: [],
     demande: 6,
     capacite: 4,
     manque: 2,
@@ -43,6 +44,17 @@ function contrainte(overrides: Partial<ConstraintView> = {}): ConstraintView {
     score: '-2hard/0medium/0soft',
     matchCount: 2,
     violations: ['Alice : 52 h semaine 2026-W28'],
+    ...overrides
+  };
+}
+
+function contribution(overrides: Partial<ContributionAdHoc> = {}): ContributionAdHoc {
+  return {
+    contrainteId: 'C1',
+    type: 'AFFECTATION_FORCEE',
+    raison: 'Formation',
+    violations: 1,
+    contraintes: ['affectationForcee'],
     ...overrides
   };
 }
@@ -117,6 +129,51 @@ describe('construireProblemes', () => {
     ]);
     expect(dur.details).toEqual(['Alice : 52 h', 'Bob : 51 h']);
     expect(moyen.details[0]).toContain('7');
+  });
+
+  it('titles a contradiction between ad hoc constraints and names them', () => {
+    const [probleme] = construireProblemes(
+      report([
+        cause({
+          type: 'CONTRAINTES_AD_HOC_CONTRADICTOIRES',
+          severite: 'CRITIQUE',
+          message: 'Les contraintes C1 et C2 se contredisent.',
+          creneauId: null,
+          standIds: [],
+          contrainteIds: ['C1', 'C2'],
+          demande: 0,
+          capacite: 0,
+          manque: 0
+        })
+      ])
+    );
+
+    expect(probleme.niveau).toBe('BLOQUANT');
+    expect(probleme.titre).not.toContain('sous-effectif');
+    expect(probleme.details.join(' ')).toContain('C1, C2');
+    expect(probleme.liens.map((lien) => lien.route)).toEqual(['/ad-hoc-constraints']);
+  });
+
+  it('attributes an ad hoc rule violations to the exceptions that caused them', () => {
+    const [probleme] = construireProblemes(null, [contrainte({ name: 'affectationForcee', violations: ['P1'] })], [
+      contribution({ contrainteId: 'C1', violations: 3 }),
+      contribution({ contrainteId: 'C2', violations: 1 })
+    ]);
+
+    expect(probleme.details[0]).toContain('C1 (3)');
+    expect(probleme.details[0]).toContain('C2 (1)');
+    // The per-match lines stay: the attribution is prepended, not a replacement.
+    expect(probleme.details).toContain('P1');
+    expect(probleme.liens.map((lien) => lien.route)).toEqual(['/constraints', '/ad-hoc-constraints']);
+  });
+
+  it('leaves a rule no ad hoc exception contributed to untouched', () => {
+    const [probleme] = construireProblemes(null, [contrainte({ name: 'dureeHebdomadaireMax' })], [
+      contribution({ contrainteId: 'C1', contraintes: ['affectationForcee'] })
+    ]);
+
+    expect(probleme.details).toEqual(['Alice : 52 h semaine 2026-W28']);
+    expect(probleme.liens.map((lien) => lien.route)).toEqual(['/constraints']);
   });
 
   it('gives every problem a distinct track key', () => {

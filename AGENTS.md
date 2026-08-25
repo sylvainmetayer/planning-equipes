@@ -303,7 +303,10 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   every admin route plus the language toggle, reference-data CRUD through the
   UI, the planning views over seeded data, locks, the help page, **real short
   solves** (ad hoc constraints respected and visible, a locked animateur
-  unchanged by a re-solve, an accepted échange surviving regeneration) and
+  unchanged by a re-solve, an accepted échange surviving regeneration),
+  **contradictory ad hoc exceptions** (refused at entry, and — seeded straight
+  through `/api/database/import`, the only way in left — reported by the
+  pre-solve diagnostic) and
   **seeded invariant fuzzing** (random referentials solved for real, replayed
   with `E2E_FUZZ_SEED`). **Deliberately excluded from CI**: they need the full
   stack and write to the database — run them only against a disposable local
@@ -326,6 +329,14 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   medium/soft. `AFFINITE` (issue #80) is the one deliberate exception: a soft
   *reward* for co-assigning a preferred pair on the same stand — never promote
   it to hard (that would be a forced assignment in disguise).
+- Two ad hoc exceptions that **cannot both hold** are refused when written —
+  `ContrainteAdHocContradictions`, applied by `ContrainteAdHocService` to a
+  single entry and by `ReferenceDataService.importFromPlanning` to a whole
+  scenario. It refuses only what is *certainly* unsatisfiable, read against the
+  semantics each type has in `AdHocConstraints`: widening it to "suspicious"
+  combinations would cost a user a legitimate exception with no way around it.
+  A numeric budget on how many exceptions may exist was explicitly rejected —
+  `docs/decisions/0010-contraintes-ad-hoc-contradiction-plutot-que-budget.md`.
 - Every constraint has an isolated unit test in the matching
   `solver/constraints/*ConstraintsTest` (Timefold `ConstraintVerifier`, no
   Quarkus/DB, shared `ConstraintTestBase`): at least one penalized case and one

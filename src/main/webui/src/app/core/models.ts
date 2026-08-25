@@ -390,8 +390,12 @@ export interface ConstraintDiagnostic {
  *   of this capacity check: it is a medium constraint now, not a coverage
  *   requirement — any available animateur can literally be assigned to any
  *   stand, just penalised on a mismatch.
+ * - `CONTRAINTES_AD_HOC_CONTRADICTOIRES`: two hand-entered exceptions that
+ *   cannot both hold, whatever the solver does. Refused at entry time, so this
+ *   only ever reports what was recorded before that check existed or imported
+ *   in one go — `contrainteIds` names the exceptions to arbitrate.
  */
-export type TypeCauseInfaisabilite = 'CRENEAU_SOUS_EFFECTIF';
+export type TypeCauseInfaisabilite = 'CRENEAU_SOUS_EFFECTIF' | 'CONTRAINTES_AD_HOC_CONTRADICTOIRES';
 
 /** `CRITIQUE` = no coverage possible at all; `ELEVE` = partial coverage only. */
 export type SeveriteInfaisabilite = 'CRITIQUE' | 'ELEVE';
@@ -413,8 +417,10 @@ export interface CauseInfaisabilite {
   date: string | null;
   heureDebut: string | null;
   heureFin: string | null;
-  /** Always at least one stand. */
+  /** Stands concerned, empty on a cause that names none. */
   standIds: string[];
+  /** Ad hoc constraints concerned, empty on a cause that names none. */
+  contrainteIds: string[];
   demande: number;
   capacite: number;
   manque: number;
@@ -459,6 +465,23 @@ export interface PlanningDiagnostic {
   contraintes: ConstraintDiagnostic[];
   faisabilite: FeasibilityReport | null;
   hardScore: number;
+  contraintesAdHocEnCause: ContributionAdHoc[];
+}
+
+/**
+ * One hand-entered exception the last analysis found still violated, most
+ * violated first. What turns "affectationForcee: 12" into a list of exceptions
+ * to arbitrate: a hard-negative solve names the rule, this names which of the
+ * user's own exceptions the solver could not honour.
+ */
+export interface ContributionAdHoc {
+  contrainteId: string;
+  type: TypeContrainteAdHoc | null;
+  raison: string | null;
+  /** Number of matches this exception accounts for. */
+  violations: number;
+  /** Names of the solver rules it broke, usually one. */
+  contraintes: string[];
 }
 
 /**
@@ -556,6 +579,8 @@ export interface ConstraintsView {
   /** Hard score of the last analysed solve; see {@link PlanningDiagnostic.hardScore}. */
   hardScore: number | null;
   contraintes: ConstraintView[];
+  /** Empty when the plan honours every exception, and when nothing was ever analysed. */
+  contraintesAdHocEnCause: ContributionAdHoc[];
 }
 
 /**

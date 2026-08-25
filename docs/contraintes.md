@@ -159,6 +159,75 @@ granularité ».
 `equilibrerCreneauxPenibles` applique la même technique, mais sur le seul
 sous-ensemble des postes épuisants ou premium.
 
+## Contraintes ad hoc : les contradictions refusées à la saisie
+
+Les exceptions saisies à la main s'appliquent en **dur**, à la même priorité que
+les règles légales. Rien n'empêche donc, en principe, d'en saisir deux qui ne
+peuvent pas être satisfaites ensemble — et le seul symptôme serait un score dur
+négatif au solve suivant, sans que rien ne désigne la cause.
+
+`ContrainteAdHocContradictions` refuse ces combinaisons à l'écriture, avec un
+message qui **nomme les exceptions en cause**. Quatre familles sont détectées :
+
+| Combinaison | Pourquoi elle est impossible |
+| --- | --- |
+| Même paire déclarée `INCOMPATIBILITE` **et** `AFFINITE` | La règle dure gagnerait toujours sur la récompense soft, sans que personne ne soit prévenu |
+| `AFFECTATION_FORCEE` dont tout le périmètre est couvert par une `INDISPONIBILITE_FORCEE` visant chacun des animateurs qu'elle nomme | Tout poste qui satisferait la première est pénalisé par la seconde |
+| Deux `AFFECTATION_FORCEE` fixant **le même animateur** sur des périmètres qui se chevauchent dans le temps | `pasDeChevauchementHoraire` interdit de tenir les deux postes, et aucun poste unique ne satisfait les deux |
+| Deux `AFFECTATION_FORCEE` plaçant une paire `INCOMPATIBILITE` sur **le même créneau** | `incompatibiliteAdHoc` joint sur le créneau seul : deux postes sur deux stands de ce créneau sont tout aussi infaisables |
+
+La quatrième ligne se lit **au créneau, pas au stand** : c'est ce que la règle
+applique réellement. Restreindre la détection au même stand laisserait passer
+des combinaisons que le solveur déclarerait pourtant infaisables.
+
+### Ce qui passe délibérément
+
+La validation ne refuse que ce qui est **certainement** insatisfiable : une
+exception refusée à tort coûte à l'utilisateur une saisie légitime, sans
+contournement, là où une exception litigieuse laissée passer ne coûte qu'un
+solve. Passent donc :
+
+- une `AFFECTATION_FORCEE` nommant deux animateurs, qu'**un seul** d'entre eux
+  suffit à satisfaire — elle ne contredit qu'une indisponibilité qui les couvre
+  tous les deux ;
+- une indisponibilité **plus étroite** que le périmètre forcé : le poste peut
+  se poser ailleurs dans ce périmètre ;
+- deux affectations forcées du même animateur sur le même créneau quand au plus
+  une des deux précise un stand : un seul poste les satisfait toutes les deux.
+
+Les chevauchements se calculent sur la fenêtre **nominale** du créneau. Une
+fermeture de stand peut rétrécir la fenêtre réellement couverte par un poste :
+deux affectations forcées sur des créneaux qui se recouvrent mais sur deux
+stands fermés à des heures complémentaires sont donc refusées alors que le
+solveur aurait pu les poser. Le périmètre d'une exception est ce que
+l'utilisateur a saisi, et refuser cette combinaison — en nommant les deux — est
+la réponse honnête.
+
+### Ce qui est refusé, et où
+
+Le contrôle vaut pour **toute** écriture : la saisie unitaire
+(`POST /api/contraintes-ad-hoc`, outil MCP `creer_contrainte_ad_hoc`) comme
+l'import d'un scénario, qui écrit tout le jeu d'un coup — un fichier ne peut pas
+installer une combinaison que le formulaire refuse. Réenregistrer une contrainte
+**sous son propre id** reste possible : la version sauvegardée remplace la
+précédente au lieu de coexister avec elle.
+
+### Ce qui subsiste, et comment on le voit
+
+Une contradiction saisie **avant** ce contrôle reste en base et n'apparaîtrait
+nulle part. `FeasibilityAnalyzer` la remonte donc comme cause bloquante
+`CONTRAINTES_AD_HOC_CONTRADICTOIRES`, avant tout solve : elle s'affiche sur la
+page Problèmes, et badge les lignes concernées sur la page Contraintes ad hoc.
+
+Et quand le solve termine **quand même** en dur négatif, le diagnostic répond à
+la question suivante — *lesquelles de mes exceptions* ? — avec
+`contraintesAdHocEnCause` : une ligne par exception encore violée, son id, sa
+raison et le nombre de violations qu'elle porte. Les lignes de violation
+nomment elles aussi l'exception par son id.
+
+**Le budget d'exceptions a été explicitement écarté** : voir
+[0010](decisions/0010-contraintes-ad-hoc-contradiction-plutot-que-budget.md).
+
 ## Hors périmètre assumé
 
 Ces obligations sont réelles et **volontairement non implémentées**. Elles sont

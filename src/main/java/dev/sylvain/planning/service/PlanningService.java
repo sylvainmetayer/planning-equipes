@@ -2711,11 +2711,14 @@ public class PlanningService {
     public PlanningDiagnostic diagnose(PlanningEvenement solved) {
         ScoreAnalysis<?> analysis = solutionManager.analyze(solved);
         List<ConstraintDiagnostic> constraintDiagnostics = new ArrayList<>();
+        Map<String, ContributionAdHoc> contributionsAdHoc = new LinkedHashMap<>();
         for (ConstraintAnalysis<?> ca : analysis.constraintAnalyses()) {
             String name = ca.constraintRef().constraintName();
-            List<String> violations = HARD_CONSTRAINT_NAMES.contains(name)
-                    ? formatViolations(ca.matches())
-                    : List.of();
+            boolean hard = HARD_CONSTRAINT_NAMES.contains(name);
+            List<String> violations = hard ? formatViolations(ca.matches()) : List.of();
+            if (hard) {
+                collectContributionsAdHoc(name, ca.matches(), contributionsAdHoc);
+            }
             constraintDiagnostics.add(new ConstraintDiagnostic(
                     name,
                     String.valueOf(ca.score()),
@@ -2727,10 +2730,56 @@ public class PlanningService {
                 .filter(p -> p.getAnimateur() == null)
                 .count();
         FeasibilityAnalyzer.FeasibilityReport faisabilite = feasibilityAnalyzer.analyze(
-                solved.getAnimateurs(), distinctStands(solved), distinctCreneaux(solved));
+                solved.getAnimateurs(), distinctStands(solved), distinctCreneaux(solved),
+                solved.getContraintesAdHoc());
         int hardScore = solved.getScore() == null ? 0 : solved.getScore().hardScore();
+        List<ContributionAdHoc> contraintesAdHocEnCause = contributionsAdHoc.values().stream()
+                .sorted(Comparator.comparingInt(ContributionAdHoc::violations).reversed()
+                        .thenComparing(ContributionAdHoc::contrainteId))
+                .toList();
         return new PlanningDiagnostic(String.valueOf(solved.getScore()), unassigned, constraintDiagnostics,
-                faisabilite, hardScore);
+                faisabilite, hardScore, contraintesAdHocEnCause);
+    }
+
+    /**
+     * Which hand-entered exceptions the still-violated hard constraints are
+     * about (issue #84).
+     *
+     * <p>A solve that ends hard-negative names the rules that failed, and
+     * "affectationForcee: 12" is where the user stops reading: nothing says
+     * <em>which</em> of their exceptions the solver could not honour, so the
+     * usual conclusion is that the solver is at fault. The three prescriptive
+     * ad hoc rules carry the {@code ContrainteAdHoc} itself in their
+     * justification, so the attribution is a matter of reading it back.</p>
+     *
+     * <p>Counted over the matches actually analysed, so a constraint capped by
+     * {@link #MAX_VIOLATIONS_PAR_CONTRAINTE} is not capped here — this reads
+     * the raw matches, not the formatted lines.</p>
+     */
+    private static void collectContributionsAdHoc(String constraintName,
+            List<? extends MatchAnalysis<?>> matches, Map<String, ContributionAdHoc> contributions) {
+        for (MatchAnalysis<?> match : matches) {
+            for (Object fact : factsOf(match)) {
+                if (fact instanceof ContrainteAdHoc contrainte && contrainte.getId() != null) {
+                    contributions.merge(contrainte.getId(),
+                            new ContributionAdHoc(contrainte.getId(),
+                                    contrainte.getType() == null ? null : contrainte.getType().name(),
+                                    contrainte.getRaison(), 1, List.of(constraintName)),
+                            PlanningService::mergeContributions);
+                }
+            }
+        }
+    }
+
+    private static ContributionAdHoc mergeContributions(ContributionAdHoc existing, ContributionAdHoc addition) {
+        List<String> contraintes = new ArrayList<>(existing.contraintes());
+        for (String name : addition.contraintes()) {
+            if (!contraintes.contains(name)) {
+                contraintes.add(name);
+            }
+        }
+        return new ContributionAdHoc(existing.contrainteId(), existing.type(), existing.raison(),
+                existing.violations() + addition.violations(), List.copyOf(contraintes));
     }
 
     /**
@@ -2819,7 +2868,23 @@ public class PlanningService {
             int postesNonPourvus,
             List<ConstraintDiagnostic> contraintes,
             FeasibilityAnalyzer.FeasibilityReport faisabilite,
-            int hardScore) {
+            int hardScore,
+            List<ContributionAdHoc> contraintesAdHocEnCause) {
+    }
+
+    /**
+     * One hand-entered exception the last analysis found still violated, most
+     * violated first.
+     *
+     * @param contrainteId id of the {@code ContrainteAdHoc}, the one shown on
+     *                     the ad hoc screen
+     * @param type         its {@code TypeContrainteAdHoc}, as a name
+     * @param raison       the free text its author typed, kept as-is
+     * @param violations   number of matches it accounts for
+     * @param contraintes  names of the solver rules it broke, usually one
+     */
+    public record ContributionAdHoc(String contrainteId, String type, String raison, int violations,
+            List<String> contraintes) {
     }
 
     /**

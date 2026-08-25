@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
+import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ContrainteAdHoc, TypeContrainteAdHoc } from '../../core/models';
@@ -41,6 +42,13 @@ export class AdHocConstraintsPage {
   protected readonly columns = ['id', 'type', 'animateurs', 'portee', 'raison', 'actions'];
   protected readonly store = inject(ReferenceDataStore);
   protected readonly jobs = inject(SolverJobService);
+  /**
+   * Holds `causeParContrainteAdHocId`: exceptions that contradict each other
+   * are refused at entry time, so what this badges is what was recorded before
+   * that check existed, or imported in one go — nothing else would ever point
+   * at them.
+   */
+  protected readonly problemes = inject(ProblemesStore);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
   protected readonly editingLocked = this.jobs.editingLocked;
 
@@ -49,6 +57,7 @@ export class AdHocConstraintsPage {
 
   constructor() {
     void this.crud.reload();
+    void this.problemes.reloadFeasibility();
   }
 
   protected typeLabel(contrainte: ContrainteAdHoc): string {
