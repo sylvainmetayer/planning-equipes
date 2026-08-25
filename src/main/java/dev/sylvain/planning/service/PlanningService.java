@@ -1221,12 +1221,21 @@ public class PlanningService {
             }
         }
 
-        // The file's own ad hoc constraints when it carries the section, the
-        // database's otherwise: a scenario that pins them describes the whole
-        // problem, and re-importing it must not merge somebody else's.
+        // Exactly the file's own ad hoc constraints, and nothing else: a
+        // scenario describes the whole problem, and re-importing it must not
+        // merge somebody else's. A file carrying no section carries none.
+        //
+        // It used to fall back on the database's — the *current* edition's,
+        // resolved before the target edition is even known. That leaked one
+        // edition's exceptions into another (a foreign key violation as soon
+        // as the target held neither the stand nor the créneau they name), and
+        // was unsound even into the same edition: an import replaces every
+        // créneau, so the ids those exceptions point at are deleted on the way
+        // through. What preserves them across a round-trip is the export,
+        // which writes the section whenever the edition holds any.
         List<ContrainteAdHoc> contraintesAdHoc = parseContraintesAdHoc(scenarioData, reference);
         PlanningEvenement evenement = new PlanningEvenement(reference.dateDebut(), reference.animateurs(), postes,
-                contraintesAdHoc != null ? contraintesAdHoc : referenceDataService.snapshotContraintes());
+                contraintesAdHoc != null ? contraintesAdHoc : new ArrayList<>());
         evenement.setParametresLegaux(List.of(
                 parseParametresLegaux(scenarioData).orElseGet(referenceDataService::getParametresLegaux)));
         // Same reasoning as the ad hoc constraints above, for the dosage: a file

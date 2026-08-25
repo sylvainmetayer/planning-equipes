@@ -24,7 +24,9 @@ scénario YAML.
 - animateurs et stands sont remplacés en totalité ;
 - les créneaux reçoivent de **nouveaux ids en base** — les contraintes ad hoc
   qui les référençaient par leur id de fichier sont réassociées ;
-- affectations et contraintes ad hoc de l'édition sont supprimées.
+- affectations et contraintes ad hoc de l'édition sont supprimées — ces
+  dernières ne sont réécrites que si le fichier porte la section
+  `contraintesAdHoc`.
 
 Une section `edition: { id, nom? }` route l'import vers une autre édition, créée
 vide au besoin. La réponse dit toujours où les données ont atterri : l'opérateur
@@ -99,9 +101,23 @@ neutres du produit — `appreciationIncompatible: 3` et
 `maxJoursConsecutifsTravailles: 5`. Le défaut du déploiement est 1 partout : le
 dosage voyage avec le scénario.
 
-`contraintesAdHoc` **remplace** les contraintes ad hoc de l'édition quand elle
-est présente ; absente, elles sont conservées. Elle désigne animateurs, stands
-et créneaux par les ids **du fichier**.
+`contraintesAdHoc` **remplace** les contraintes ad hoc de l'édition ; absente,
+le fichier n'en installe aucune. Elle désigne animateurs, stands et créneaux par
+les ids **du fichier**.
+
+Elles n'étaient auparavant pas conservées mais **héritées de l'édition
+courante** — celle de l'appelant, résolue avant même que l'édition cible soit
+connue. Une exception ainsi recopiée dans une autre édition y désigne un stand
+et un créneau qui n'existent pas : l'import échouait alors sur une clé
+étrangère. Et l'héritage n'était pas plus sain dans sa propre édition, puisque
+l'import remplace tous les créneaux : les ids visés venaient d'être supprimés.
+Ce qui préserve réellement les exceptions d'un aller-retour, c'est l'export, qui
+écrit la section dès que l'édition en porte une.
+
+Une exception qui ne peut pas tenir en même temps qu'une autre du même fichier
+fait **refuser l'import entier**, avant toute écriture, avec un message qui les
+nomme — le même contrôle qu'à la saisie
+([`contraintes.md`](contraintes.md#contraintes-ad-hoc--les-contradictions-refusées-à-la-saisie)).
 
 ## Typologies
 

@@ -12,20 +12,26 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * The {@code contraintesAdHoc:} section of a scenario, against the same
- * contradiction check the form applies (issue #84).
+ * The {@code contraintesAdHoc:} section of a scenario: what it installs, and
+ * what a file carrying no section installs — nothing.
  *
  * <p>An import writes the whole set in one go, which is precisely how a
  * combination the form refuses would otherwise get in — and once in, it makes
  * every solve of that edition end hard-negative with nothing naming the
- * cause. A file may not install what the form refuses, so the import is
- * refused as a whole, before anything is written.</p>
+ * cause. A file may not install what the form refuses (issue #84), so the
+ * import is refused as a whole, before anything is written.</p>
+ *
+ * <p>The last test covers the opposite leak: a section-less file used to fall
+ * back on the <em>current</em> edition's exceptions and write them into the
+ * target one, which crossed the edition boundary and failed on a foreign key
+ * as soon as the target held neither the stand nor the créneau they name.</p>
  */
 @QuarkusTest
 class ImportScenarioContraintesAdHocTest {
 
     private static final String HEADER = "X-Edition-Id";
     private static final String EDITION = "IMPORT-AD-HOC";
+    private static final String EDITION_CIBLE = "IMPORT-AD-HOC-CIBLE";
 
     private static final String ENTETE = """
             festival:
@@ -90,6 +96,14 @@ class ImportScenarioContraintesAdHocTest {
                 raison: Promesse faite en juin
             """;
 
+    /** No {@code contraintesAdHoc:} section, and a target edition of its own. */
+    private static final String VERS_AUTRE_EDITION = """
+            edition:
+              id: IMPORT-AD-HOC-CIBLE
+              nom: Édition cible ad hoc
+
+            """ + ENTETE;
+
     /** The same two exceptions, on two créneaux that do not overlap. */
     private static final String COHERENT = ENTETE + """
 
@@ -123,8 +137,9 @@ class ImportScenarioContraintesAdHocTest {
     }
 
     @AfterEach
-    void dropTheLandingEdition() {
+    void dropTheLandingEditions() {
         given().when().delete("/api/editions/" + EDITION);
+        given().when().delete("/api/editions/" + EDITION_CIBLE);
     }
 
     @Test
@@ -141,6 +156,22 @@ class ImportScenarioContraintesAdHocTest {
         // Refused before the first write: the landing edition holds nothing.
         assertThat(contraintesAdHoc()).extracting(contrainte -> contrainte.get("id"))
                 .doesNotContain("INDISPO-1", "FORCE-1");
+    }
+
+    @Test
+    void aSectionLessScenarioCarriesNoExceptionOver() {
+        // The source edition holds two exceptions; the file names none and
+        // lands in another edition. Nothing of them may reach it — neither its
+        // stand nor its créneaux exist there.
+        importer(COHERENT, 200);
+        assertThat(contraintesAdHoc()).hasSize(2);
+
+        importer(VERS_AUTRE_EDITION, 200);
+
+        assertThat(given().header(HEADER, EDITION_CIBLE).when().get("/api/contraintes-ad-hoc")
+                .then().statusCode(200).extract().jsonPath().getList("id")).isEmpty();
+        // …and the edition that owns them keeps them.
+        assertThat(contraintesAdHoc()).hasSize(2);
     }
 
     @Test
