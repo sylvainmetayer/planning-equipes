@@ -42,7 +42,6 @@ public class NotificationWriter {
             case Notification.TargetSolicited n -> targetSolicited(n);
             case Notification.DemandeDeclinee n -> demandeDeclinee(n);
             case Notification.DemandesSoumises n -> demandesSoumises(n);
-            case Notification.DemandeTranchee n -> demandeTranchee(n);
             case Notification.ResolutionTerminee n -> resolutionTerminee(n);
         };
     }
@@ -107,30 +106,6 @@ public class NotificationWriter {
                 .append("À valider ou refuser depuis l'écran Échanges : ")
                 .append(lien).append('\n'));
         return Optional.of(new MailDraft(admin.get(), sujet, corps.toString()));
-    }
-
-    private Optional<MailDraft> demandeTranchee(Notification.DemandeTranchee n) {
-        if (withoutRecipient(n.emailDemandeur())) {
-            return Optional.empty();
-        }
-        DemandeEchange demande = n.demande();
-        boolean acceptee = demande.getStatut() == StatutDemandeEchange.ACCEPTEE;
-        String sujet = productName.subject(acceptee
-                ? "votre demande d'échange est acceptée"
-                : "votre demande d'échange est refusée");
-        StringBuilder corps = new StringBuilder()
-                .append("Votre demande d'échange")
-                .append(n.libelleCreneau() == null || n.libelleCreneau().isBlank()
-                        ? ""
-                        : " (" + n.libelleCreneau() + ")")
-                .append(acceptee
-                        ? " a été acceptée : le planning a été mis à jour.\n"
-                        : " a été refusée : le planning reste inchangé.\n");
-        if (demande.getCommentaireAdmin() != null && !demande.getCommentaireAdmin().isBlank()) {
-            corps.append("\nCommentaire de l'organisation : ")
-                    .append(demande.getCommentaireAdmin()).append('\n');
-        }
-        return Optional.of(new MailDraft(n.emailDemandeur(), sujet, corps.toString()));
     }
 
     private Optional<MailDraft> resolutionTerminee(Notification.ResolutionTerminee n) {

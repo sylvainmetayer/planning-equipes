@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,8 +31,9 @@ import jakarta.inject.Inject;
 /**
  * The demande d'échange lifecycle (issue #165): submission with hard-constraint
  * prevalidation from the espace animateur, and the admin decisions — accept
- * (apply the swap exactly as simulated, pin it, notify) or refuse (touch
- * nothing, notify).
+ * (apply the swap exactly as simulated and pin it) or refuse (touch
+ * nothing). Neither mails the demandeur: since issue #245 a decision is
+ * announced by the publication that carries it, not the moment it is taken.
  *
  * <p>Carries its own {@code demande_echange} SQL, like
  * {@link PlanSnapshotService}: every statement is edition-scoped through
@@ -335,9 +337,14 @@ public class DemandeEchangeService {
      * Accepts a pending demande: applies the swap to the persisted planning
      * exactly as just re-simulated, pins both animateurs on the créneau with
      * {@link TypeVerrouillage#ANIMATEUR_CRENEAU} locks (a future regeneration
-     * keeps the échange), marks the demande and notifies the demandeur. The
-     * solver is <b>not</b> relaunched — regeneration stays an explicit admin
-     * action.
+     * keeps the échange) and marks the demande. The solver is <b>not</b>
+     * relaunched — regeneration stays an explicit admin action.
+     *
+     * <p>The demandeur is <b>not</b> mailed here (issue #245): the swap has
+     * changed the working plan, not the published one, so their espace still
+     * shows the previous planning. Announcing an échange nobody can see yet
+     * would promise a planning that is not delivered — the next publication
+     * says it, with the planning that carries it.</p>
      */
     public DemandeEchange accept(String demandeId, String commentaire) {
         DemandeEchange demande = requiredDemande(demandeId);
@@ -356,16 +363,18 @@ public class DemandeEchangeService {
         }
         poserVerrouillages(demande);
         recordDecision(demande, StatutDemandeEchange.ACCEPTEE, commentaire);
-        notifierDemandeur(demande);
         return demande;
     }
 
-    /** Refuses a pending demande: the planning is untouched, the demandeur is told why. */
+    /**
+     * Refuses a pending demande: the planning is untouched, and the demandeur
+     * learns it at the next publication — see {@link #accept} for why the
+     * announcement waits.
+     */
     public DemandeEchange refuse(String demandeId, String commentaire) {
         DemandeEchange demande = requiredDemande(demandeId);
         requireRefusable(demande);
         recordDecision(demande, StatutDemandeEchange.REFUSEE, commentaire);
-        notifierDemandeur(demande);
         return demande;
     }
 
@@ -439,17 +448,6 @@ public class DemandeEchangeService {
         demande.setDecideLe(decideLe);
     }
 
-    private void notifierDemandeur(DemandeEchange demande) {
-        Animateur demandeur = referenceDataService.listAnimateurs().stream()
-                .filter(animateur -> animateur.getId().equals(demande.getDemandeurId()))
-                .findFirst()
-                .orElse(null);
-        if (demandeur != null) {
-            notifications.fire(new Notification.DemandeTranchee(
-                    demandeur.getEmail(), demande, libelleCreneau(demande)));
-        }
-    }
-
     private String libelleCreneau(DemandeEchange demande) {
         return referenceDataService.listCreneaux().stream()
                 .filter(creneau -> creneau.getId() != null && creneau.getId().equals(demande.getCreneauId()))
@@ -464,6 +462,55 @@ public class DemandeEchangeService {
                 .findFirst()
                 .map(Animateur::nomAffiche)
                 .orElse(animateurId);
+    }
+
+    /* ----------------------- Publication (issue #245) ---------------------- */
+
+    /**
+     * Decisions taken but not yet announced. Since #245 an admin's accept or
+     * refuse no longer mails anybody on the spot: until the plan is published,
+     * the espace still shows the previous one, and promising a change nobody
+     * can see is worse than saying nothing. These are the demandes the next
+     * publication has to speak about.
+     */
+    public List<DemandeEchange> decisionsNonCommuniquees() {
+        return list(" AND decide_le IS NOT NULL AND communiquee_le IS NULL", null);
+    }
+
+    /**
+     * Demandes still waiting — for the colleague's agreement or for the
+     * organisation's arbitration. They never make anybody a recipient on their
+     * own (nothing has been decided), but somebody already being written to
+     * deserves to be told where their request stands.
+     */
+    public List<DemandeEchange> demandesEnCours() {
+        return list(" AND statut IN ('EN_ATTENTE_CIBLE', 'PROPOSEE')", null);
+    }
+
+    /** Marks decisions as announced, once the publication mail carrying them has left. */
+    public void marquerCommuniquees(Collection<String> demandeIds, Instant communiqueeLe) {
+        if (demandeIds.isEmpty()) {
+            return;
+        }
+        // Not prepareScoped for the same reason as recordDecision: SET comes first.
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = connection.prepareStatement(
+                        "UPDATE demande_echange SET communiquee_le = ? WHERE edition_id = ? AND id = ?")) {
+            for (String demandeId : demandeIds) {
+                ps.setTimestamp(1, Timestamp.from(communiqueeLe));
+                ps.setString(2, editionContext.editionIdCourant());
+                ps.setString(3, demandeId);
+                ps.addBatch();
+            }
+            ps.executeBatch();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to mark demandes as communicated", e);
+        }
+    }
+
+    /** « 2026-07-11 14:00–18:00 » — the créneau of a demande, spelled out. */
+    public String libelleCreneauDemande(DemandeEchange demande) {
+        return libelleCreneau(demande);
     }
 
     /* --------------------------------- SQL --------------------------------- */

@@ -9,7 +9,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.domain.DemandeEchange;
-import dev.sylvain.planning.domain.StatutDemandeEchange;
 import dev.sylvain.planning.service.AdminAddress;
 import dev.sylvain.planning.service.ApplicationLinks;
 import dev.sylvain.planning.service.ProductName;
@@ -112,47 +111,6 @@ class NotificationWriterTest {
                 "Alice Dupont", List.of(demande(null), demande(true))));
 
         assertThat(courrier.corps()).doesNotContain("Attention");
-    }
-
-    // --- Decision (requester) ----------------------------------------------
-
-    @Test
-    void uneDemandeAccepteeLeDitEtAnnonceLaMiseAJour() {
-        DemandeEchange demande = demande(true);
-        demande.setStatut(StatutDemandeEchange.ACCEPTEE);
-
-        MailDraft courrier = rediger(new Notification.DemandeTranchee(
-                "alice@example.org", demande, "samedi 10h-12h"));
-
-        assertThat(courrier.destinataire()).isEqualTo("alice@example.org");
-        assertThat(courrier.sujet()).contains("acceptée");
-        assertThat(courrier.corps())
-                .contains("(samedi 10h-12h)")
-                .contains("le planning a été mis à jour");
-    }
-
-    @Test
-    void unRefusCommenteReprendLeCommentaireDeLOrganisation() {
-        DemandeEchange demande = demande(true);
-        demande.setStatut(StatutDemandeEchange.REFUSEE);
-        demande.setCommentaireAdmin("Le stand a besoin de toi ce jour-là");
-
-        MailDraft courrier = rediger(new Notification.DemandeTranchee("alice@example.org", demande, null));
-
-        assertThat(courrier.sujet()).contains("refusée");
-        assertThat(courrier.corps())
-                .contains("le planning reste inchangé")
-                .contains("Commentaire de l'organisation : Le stand a besoin de toi ce jour-là");
-    }
-
-    @Test
-    void sansAdresseSurLaFicheAucunCourrierNEstEcrit() {
-        DemandeEchange demande = demande(true);
-        demande.setStatut(StatutDemandeEchange.ACCEPTEE);
-
-        for (String address : new String[] { null, "  " }) {
-            assertThat(redacteur.rediger(new Notification.DemandeTranchee(address, demande, null))).isEmpty();
-        }
     }
 
     // --- Solicited and declined (targeted colleague) -----------------------

@@ -35,11 +35,6 @@ public sealed interface Notification {
     record DemandesSoumises(String demandeurNomComplet, List<DemandeEchange> demandes) implements Notification {
     }
 
-    /** The organisation accepted or refused one demande. */
-    record DemandeTranchee(String emailDemandeur, DemandeEchange demande, String libelleCreneau)
-            implements Notification {
-    }
-
     /**
      * A solve just finished: which edition, what score, and whether the plan is
      * feasible — the three facts one waits for when a multi-minute run was
