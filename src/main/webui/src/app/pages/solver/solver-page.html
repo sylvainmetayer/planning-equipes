@@ -6,46 +6,6 @@
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <h2 mat-card-title i18n="@@solver.volumetry.title">Volumétrie du problème</h2>
-    <mat-card-subtitle i18n="@@solver.volumetry.hint">
-      Données de référence de l'édition, mises à jour dès qu'elles changent.
-    </mat-card-subtitle>
-  </mat-card-header>
-  <mat-card-content>
-    <div class="solver-volumetry">
-      <mat-card appearance="outlined" class="staffing-stat">
-        <div class="staffing-stat-value">{{ animateurTotal() }}</div>
-        <div class="staffing-stat-label" i18n="@@solver.volumetry.animateurs">Animateurs</div>
-      </mat-card>
-      <mat-card appearance="outlined" class="staffing-stat">
-        <div class="staffing-stat-value">{{ posteTotal() }}</div>
-        <div class="staffing-stat-label" i18n="@@solver.volumetry.postes">Postes à pourvoir</div>
-      </mat-card>
-      <mat-card appearance="outlined" class="staffing-stat">
-        <div class="staffing-stat-value">{{ creneauTotal() }}</div>
-        <div class="staffing-stat-label" i18n="@@solver.volumetry.creneaux">Créneaux</div>
-      </mat-card>
-      <mat-card appearance="outlined" class="staffing-stat">
-        <div class="staffing-stat-value">{{ contrainteAdHocTotal() }}</div>
-        <div class="staffing-stat-label" i18n="@@solver.volumetry.contraintesAdHoc">Ajustements manuels</div>
-      </mat-card>
-    </div>
-    <p class="solver-volumetry-formula">
-      <ng-container i18n="@@solver.volumetry.formula">
-        Timefold doit affecter {{ animateurTotal() }} animateurs sur {{ posteTotal() }} postes ({{ creneauTotal() }} créneaux), sous {{ contrainteAdHocTotal() }} ajustements manuels supplémentaires
-      </ng-container>
-      @if (ordreDeGrandeur() > 0) {
-        <strong i18n="@@solver.volumetry.formulaLabel">
-          &nbsp;— soit un espace de recherche d'environ 10^{{ ordreDeGrandeur() }} affectations théoriques
-          (« problem scale » ≈ {{ ordreDeGrandeur() }} au sens Timefold), avant élimination des affectations impossibles.
-        </strong>
-      }
-    </p>
-  </mat-card-content>
-</mat-card>
-
-<mat-card appearance="outlined" class="page-card">
-  <mat-card-header>
     <h2 mat-card-title i18n="@@nav.link.solver">Solveur</h2>
     <mat-card-subtitle i18n="@@solver.description">
       Exécute Timefold en arrière-plan ; le résultat est analysé automatiquement. Une seule tâche du solveur s'exécute à la
@@ -188,68 +148,6 @@
   </mat-card-content>
 </mat-card>
 
-@if (incrementalStats(); as stats) {
-  <mat-card appearance="outlined" class="page-card">
-    <mat-card-header>
-      <h2 mat-card-title i18n="@@solver.incremental.result.title">Dernière replanification incrémentale</h2>
-      <mat-card-subtitle i18n="@@solver.incremental.result.subtitle">
-        Ce que la replanification a rouvert, et qui en ressort avec un planning différent.
-      </mat-card-subtitle>
-    </mat-card-header>
-    <mat-card-content>
-      <div class="solver-volumetry">
-        <mat-card appearance="outlined" class="staffing-stat">
-          <div class="staffing-stat-value">{{ stats.postesFiges }}</div>
-          <div class="staffing-stat-label" i18n="@@solver.incremental.stat.figes">Postes figés</div>
-        </mat-card>
-        <mat-card appearance="outlined" class="staffing-stat">
-          <div class="staffing-stat-value">{{ stats.postesLiberes }}</div>
-          <div class="staffing-stat-label" i18n="@@solver.incremental.stat.liberes">Libérés par un changement</div>
-        </mat-card>
-        <mat-card appearance="outlined" class="staffing-stat">
-          <div class="staffing-stat-value">{{ stats.postesLiberesManuellement }}</div>
-          <div class="staffing-stat-label" i18n="@@solver.incremental.stat.liberesManuellement">Rouverts à la demande</div>
-        </mat-card>
-        <mat-card appearance="outlined" class="staffing-stat">
-          <div class="staffing-stat-value">{{ stats.postesNouveaux }}</div>
-          <div class="staffing-stat-label" i18n="@@solver.incremental.stat.nouveaux">Nouveaux ou restés vides</div>
-        </mat-card>
-      </div>
-      @if (incrementalChangements().length === 0) {
-        <p class="calendar-meta" i18n="@@solver.incremental.aucunChangement">
-          Aucune équipe n'a changé : la replanification a retrouvé exactement les mêmes affectations.
-        </p>
-      } @else {
-        <div class="table-wrapper solver-changements">
-          <table mat-table [dataSource]="incrementalChangements()">
-            <caption class="visually-hidden" i18n="@@solver.incremental.table.caption">
-              Équipes modifiées par la replanification, par stand et par créneau
-            </caption>
-            <ng-container matColumnDef="quand">
-              <th mat-header-cell *matHeaderCellDef i18n="@@solver.incremental.column.quand">Créneau</th>
-              <td mat-cell *matCellDef="let changement">{{ quandLabel(changement) }}</td>
-            </ng-container>
-            <ng-container matColumnDef="stand">
-              <th mat-header-cell *matHeaderCellDef i18n="@@solver.incremental.column.stand">Stand</th>
-              <td mat-cell *matCellDef="let changement">{{ changement.standNom }}</td>
-            </ng-container>
-            <ng-container matColumnDef="avant">
-              <th mat-header-cell *matHeaderCellDef i18n="@@solver.incremental.column.avant">Avant</th>
-              <td mat-cell *matCellDef="let changement">{{ equipeLabel(changement.avant) }}</td>
-            </ng-container>
-            <ng-container matColumnDef="apres">
-              <th mat-header-cell *matHeaderCellDef i18n="@@solver.incremental.column.apres">Après</th>
-              <td mat-cell *matCellDef="let changement">{{ equipeLabel(changement.apres) }}</td>
-            </ng-container>
-            <tr mat-header-row *matHeaderRowDef="columnsChangements"></tr>
-            <tr mat-row *matRowDef="let row; columns: columnsChangements"></tr>
-          </table>
-        </div>
-      }
-    </mat-card-content>
-  </mat-card>
-}
-
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
     <h2 mat-card-title i18n="@@solver.diffusion.title">Diffusion du planning</h2>
@@ -335,6 +233,108 @@
     }
   </mat-card-content>
 </mat-card>
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h2 mat-card-title i18n="@@solver.volumetry.title">Volumétrie du problème</h2>
+    <mat-card-subtitle i18n="@@solver.volumetry.hint">
+      Données de référence de l'édition, mises à jour dès qu'elles changent.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <div class="solver-volumetry">
+      <mat-card appearance="outlined" class="staffing-stat">
+        <div class="staffing-stat-value">{{ animateurTotal() }}</div>
+        <div class="staffing-stat-label" i18n="@@solver.volumetry.animateurs">Animateurs</div>
+      </mat-card>
+      <mat-card appearance="outlined" class="staffing-stat">
+        <div class="staffing-stat-value">{{ posteTotal() }}</div>
+        <div class="staffing-stat-label" i18n="@@solver.volumetry.postes">Postes à pourvoir</div>
+      </mat-card>
+      <mat-card appearance="outlined" class="staffing-stat">
+        <div class="staffing-stat-value">{{ creneauTotal() }}</div>
+        <div class="staffing-stat-label" i18n="@@solver.volumetry.creneaux">Créneaux</div>
+      </mat-card>
+      <mat-card appearance="outlined" class="staffing-stat">
+        <div class="staffing-stat-value">{{ contrainteAdHocTotal() }}</div>
+        <div class="staffing-stat-label" i18n="@@solver.volumetry.contraintesAdHoc">Ajustements manuels</div>
+      </mat-card>
+    </div>
+    <p class="solver-volumetry-formula">
+      <ng-container i18n="@@solver.volumetry.formula">
+        Timefold doit affecter {{ animateurTotal() }} animateurs sur {{ posteTotal() }} postes ({{ creneauTotal() }} créneaux), sous {{ contrainteAdHocTotal() }} ajustements manuels supplémentaires
+      </ng-container>
+      @if (ordreDeGrandeur() > 0) {
+        <strong i18n="@@solver.volumetry.formulaLabel">
+          &nbsp;— soit un espace de recherche d'environ 10^{{ ordreDeGrandeur() }} affectations théoriques
+          (« problem scale » ≈ {{ ordreDeGrandeur() }} au sens Timefold), avant élimination des affectations impossibles.
+        </strong>
+      }
+    </p>
+  </mat-card-content>
+</mat-card>
+
+@if (incrementalStats(); as stats) {
+  <mat-card appearance="outlined" class="page-card">
+    <mat-card-header>
+      <h2 mat-card-title i18n="@@solver.incremental.result.title">Dernière replanification incrémentale</h2>
+      <mat-card-subtitle i18n="@@solver.incremental.result.subtitle">
+        Ce que la replanification a rouvert, et qui en ressort avec un planning différent.
+      </mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="solver-volumetry">
+        <mat-card appearance="outlined" class="staffing-stat">
+          <div class="staffing-stat-value">{{ stats.postesFiges }}</div>
+          <div class="staffing-stat-label" i18n="@@solver.incremental.stat.figes">Postes figés</div>
+        </mat-card>
+        <mat-card appearance="outlined" class="staffing-stat">
+          <div class="staffing-stat-value">{{ stats.postesLiberes }}</div>
+          <div class="staffing-stat-label" i18n="@@solver.incremental.stat.liberes">Libérés par un changement</div>
+        </mat-card>
+        <mat-card appearance="outlined" class="staffing-stat">
+          <div class="staffing-stat-value">{{ stats.postesLiberesManuellement }}</div>
+          <div class="staffing-stat-label" i18n="@@solver.incremental.stat.liberesManuellement">Rouverts à la demande</div>
+        </mat-card>
+        <mat-card appearance="outlined" class="staffing-stat">
+          <div class="staffing-stat-value">{{ stats.postesNouveaux }}</div>
+          <div class="staffing-stat-label" i18n="@@solver.incremental.stat.nouveaux">Nouveaux ou restés vides</div>
+        </mat-card>
+      </div>
+      @if (incrementalChangements().length === 0) {
+        <p class="calendar-meta" i18n="@@solver.incremental.aucunChangement">
+          Aucune équipe n'a changé : la replanification a retrouvé exactement les mêmes affectations.
+        </p>
+      } @else {
+        <div class="table-wrapper solver-changements">
+          <table mat-table [dataSource]="incrementalChangements()">
+            <caption class="visually-hidden" i18n="@@solver.incremental.table.caption">
+              Équipes modifiées par la replanification, par stand et par créneau
+            </caption>
+            <ng-container matColumnDef="quand">
+              <th mat-header-cell *matHeaderCellDef i18n="@@solver.incremental.column.quand">Créneau</th>
+              <td mat-cell *matCellDef="let changement">{{ quandLabel(changement) }}</td>
+            </ng-container>
+            <ng-container matColumnDef="stand">
+              <th mat-header-cell *matHeaderCellDef i18n="@@solver.incremental.column.stand">Stand</th>
+              <td mat-cell *matCellDef="let changement">{{ changement.standNom }}</td>
+            </ng-container>
+            <ng-container matColumnDef="avant">
+              <th mat-header-cell *matHeaderCellDef i18n="@@solver.incremental.column.avant">Avant</th>
+              <td mat-cell *matCellDef="let changement">{{ equipeLabel(changement.avant) }}</td>
+            </ng-container>
+            <ng-container matColumnDef="apres">
+              <th mat-header-cell *matHeaderCellDef i18n="@@solver.incremental.column.apres">Après</th>
+              <td mat-cell *matCellDef="let changement">{{ equipeLabel(changement.apres) }}</td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="columnsChangements"></tr>
+            <tr mat-row *matRowDef="let row; columns: columnsChangements"></tr>
+          </table>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+}
 
 <app-feasibility-banner [report]="feasibility()" [hardScore]="hardScore()" [hardIssues]="hardIssues()" />
 <app-output-panel [text]="output()" />
