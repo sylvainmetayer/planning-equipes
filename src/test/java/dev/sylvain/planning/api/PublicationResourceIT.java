@@ -80,7 +80,7 @@ class PublicationResourceIT {
         JsonPath apres = apercu();
         assertThat(apres.getInt("nombreConcernes")).isZero();
         assertThat(apres.getBoolean("jamaisPublie")).isFalse();
-        assertThat(apres.getString("lastPublicationLe")).isNotBlank();
+        assertThat(apres.getString("dernierePublicationLe")).isNotBlank();
 
         // Nothing new to announce: that is the point, not an error to work around.
         given().contentType(ContentType.JSON)

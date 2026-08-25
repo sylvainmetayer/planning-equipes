@@ -112,13 +112,13 @@ public class PlanPublicationService {
      * @param jamaisPublie      no plan was ever published on this edition; the
      *                          first publication then concerns everybody
      * @param planVide          nothing is persisted to publish at all
-     * @param solveRunning      a solve is running: publishing would freeze a
+     * @param solveEnCours      a solve is running: publishing would freeze a
      *                          plan about to be overwritten, so it is refused
-     * @param lastPublicationLe when the last publication left, {@code null}
+     * @param dernierePublicationLe when the last publication left, {@code null}
      *                          if there has never been one
      */
-    public record ApercuPublication(boolean jamaisPublie, boolean planVide, boolean solveRunning,
-            Instant lastPublicationLe, int nombreConcernes,
+    public record ApercuPublication(boolean jamaisPublie, boolean planVide, boolean solveEnCours,
+            Instant dernierePublicationLe, int nombreConcernes,
             List<DestinatairePublication> destinataires) {
     }
 
@@ -217,7 +217,7 @@ public class PlanPublicationService {
      */
     public RapportPublication publier() {
         ApercuPublication apercu = apercu();
-        if (apercu.solveRunning()) {
+        if (apercu.solveEnCours()) {
             throw new BusinessError.Conflict(
                     "Un solve est en cours : publier maintenant figerait un plan sur le point d'être réécrit.");
         }

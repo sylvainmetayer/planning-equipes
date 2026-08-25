@@ -101,7 +101,7 @@ class PublicationResourceTest {
         JsonPath apercu = apercu();
 
         assertThat(apercu.getBoolean("jamaisPublie")).isTrue();
-        assertThat(apercu.getObject("lastPublicationLe", Object.class)).isNull();
+        assertThat(apercu.getObject("dernierePublicationLe", Object.class)).isNull();
         assertThat(apercu.getInt("nombreConcernes")).isEqualTo(2);
         assertThat(apercu.getList("destinataires.nomAffiche"))
                 .containsExactly("Alice Martin", "Bruno Petit");
@@ -124,7 +124,7 @@ class PublicationResourceTest {
         // Chloé holds no seat: publishing must leave her alone.
         assertThat(mailbox.getMailsSentTo(EMAIL_CHLOE)).isEmpty();
 
-        assertThat(apercu().getString("lastPublicationLe")).isNotBlank();
+        assertThat(apercu().getString("dernierePublicationLe")).isNotBlank();
     }
 
     @Test
