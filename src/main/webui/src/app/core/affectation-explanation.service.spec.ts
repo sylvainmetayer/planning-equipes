@@ -44,20 +44,11 @@ describe('AffectationExplanationService', () => {
     expect(body).toHaveProperty('postes');
   });
 
-  it('builds the simulation-swap url with the candidate animateur id', async () => {
-    await service.simulerSwap(planning(), 'poste-1', 'A2');
-
-    expect(api.post).toHaveBeenCalledOnce();
-    const [url, body] = api.post.mock.calls[0];
-    expect(url).toBe('/api/postes/poste-1/simulation-swap?animateurId=A2');
-    expect(body).not.toHaveProperty('score');
-  });
-
   it('encodes poste and animateur ids used in the URL', async () => {
     await service.explique(planning(), 'poste with space');
     expect(api.post.mock.calls[0][0]).toBe('/api/postes/poste%20with%20space/explication');
 
-    await service.simulerSwap(planning(), 'poste-1', 'id&with=chars');
-    expect(api.post.mock.calls[1][0]).toBe('/api/postes/poste-1/simulation-swap?animateurId=id%26with%3Dchars');
+    await service.appliquerReparation('poste-1', 'id&with=chars');
+    expect(api.post.mock.calls[1][0]).toBe('/api/postes/poste-1/affectation?animateurId=id%26with%3Dchars');
   });
 });

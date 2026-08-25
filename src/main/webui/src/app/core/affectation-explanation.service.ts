@@ -4,12 +4,7 @@
 
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from './api.service';
-import {
-  AffectationExplanation,
-  PlanningEvenement,
-  SuggestionsReparation,
-  SwapSimulation
-} from './models';
+import { AffectationExplanation, PlanningEvenement, SuggestionsReparation } from './models';
 
 @Injectable({ providedIn: 'root' })
 export class AffectationExplanationService {
@@ -20,11 +15,6 @@ export class AffectationExplanationService {
       `/api/postes/${encodeURIComponent(posteId)}/explication`,
       withoutScore(planning)
     );
-  }
-
-  simulerSwap(planning: PlanningEvenement, posteId: string, animateurCandidatId: string): Promise<SwapSimulation> {
-    const url = `/api/postes/${encodeURIComponent(posteId)}/simulation-swap?animateurId=${encodeURIComponent(animateurCandidatId)}`;
-    return this.api.post<SwapSimulation>(url, withoutScore(planning));
   }
 
   /**

@@ -211,6 +211,12 @@ jamais re-résolu** — contrairement à `/api/solve/analyze`.
 poste précis, **pas que la contrainte s'applique à lui** : l'IHM ne doit pas la
 présenter comme un satisfecit. La simulation de remplacement ne persiste rien.
 
+`POST /api/postes/{id}/simulation-swap` note un candidat qu'on lui désigne.
+Aucun écran ne l'appelle : l'IHM n'expose que les remplaçants viables de
+l'assistant ci-dessous, pour ne pas laisser choisir un remplacement qui casse
+une règle dure. L'endpoint reste ouvert à l'API et à l'outil MCP
+`simuler_swap`.
+
 ### Assistant de réparation
 
 | Endpoint | Effet |

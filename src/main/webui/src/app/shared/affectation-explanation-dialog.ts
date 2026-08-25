@@ -1,49 +1,37 @@
 // "Pourquoi lui ?" popup for a single poste: which constraints its current
-// occupant violates/respects, plus an on-demand simulation of handing the
-// same poste to a different animateur, with the resulting score delta.
+// occupant violates/respects, plus — on demand — the replacements that hold
+// without introducing a hard violation.
 // Complements the global diagnostic (constraints page): this is per-assignment
 // explainability, computed on the already-solved planning the caller passes
 // in — never triggers a solve.
 
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSelectModule } from '@angular/material/select';
 import { AffectationExplanationService } from '../core/affectation-explanation.service';
 import { formatDeltaScore } from '../core/score-format';
 import { LegalText } from './legal-text';
 import {
   AffectationExplanation,
-  Animateur,
-  ContrainteImpact,
   HardMediumSoftScore,
   PlanningEvenement,
   PosteAffectation,
   SuggestionReparation,
-  SuggestionsReparation,
-  SwapSimulation
+  SuggestionsReparation
 } from '../core/models';
 import { errorPrefix } from '../core/error-message';
 import {
-  candidatsPour,
   compareDelta,
   meilleuresSuggestions,
   nomAnimateur,
-  nouvellesViolations,
-  sensDuDelta,
-  suggestionsTronquees,
-  violationsResolues
+  suggestionsTronquees
 } from './affectation-explanation-rules';
 
 export interface AffectationExplanationDialogData {
   poste: PosteAffectation;
   planning: PlanningEvenement;
-  /** Other animateurs offered as swap candidates (typically: competent for this poste's stand). */
-  candidats: Animateur[];
 }
 
 @Component({
@@ -52,10 +40,7 @@ export interface AffectationExplanationDialogData {
     MatDialogModule,
     MatButtonModule,
     MatIconModule,
-    MatFormFieldModule,
-    MatSelectModule,
     MatProgressSpinnerModule,
-    FormsModule,
     LegalText
   ],
   template: `
@@ -164,45 +149,6 @@ export interface AffectationExplanationDialogData {
             </ul>
           }
         }
-
-        @if (data.candidats.length > 0) {
-          <h3 i18n="@@affectationExplanation.swapTitle">Simuler un remplacement</h3>
-          <mat-form-field appearance="outline">
-            <mat-label i18n="@@affectationExplanation.swapLabel">Remplacer par…</mat-label>
-            <mat-select [(ngModel)]="candidatId" (ngModelChange)="onCandidatChange($event)">
-              @for (candidat of data.candidats; track candidat.id) {
-                <mat-option [value]="candidat.id">{{ candidat.prenom }} {{ candidat.nom }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-
-          @if (simulationLoading()) {
-            <mat-spinner diameter="24" />
-          } @else if (simulationError()) {
-            <p class="affectation-explanation-error">{{ simulationError() }}</p>
-          } @else if (simulation(); as simulation) {
-            <p class="affectation-explanation-delta" [class]="'delta-' + deltaSens()">
-              <ng-container i18n="@@affectationExplanation.delta">Delta de score :</ng-container>
-              <strong>{{ formatDelta(simulation.delta) }}</strong>
-            </p>
-            @if (violationsResolues().length > 0) {
-              <p i18n="@@affectationExplanation.resolved">Violations résolues par ce remplacement :</p>
-              <ul class="affectation-explanation-list">
-                @for (impact of violationsResolues(); track impact.name) {
-                  <li><app-legal-text [text]="impact.description ?? impact.name" /></li>
-                }
-              </ul>
-            }
-            @if (nouvellesViolations().length > 0) {
-              <p i18n="@@affectationExplanation.newViolations">Nouvelles violations introduites par ce remplacement :</p>
-              <ul class="affectation-explanation-list">
-                @for (impact of nouvellesViolations(); track impact.name) {
-                  <li><app-legal-text [text]="impact.description ?? impact.name" /></li>
-                }
-              </ul>
-            }
-          }
-        }
       }
     </mat-dialog-content>
     <mat-dialog-actions align="end">
@@ -240,11 +186,6 @@ export interface AffectationExplanationDialogData {
       color: var(--mat-sys-on-surface-variant);
       font-style: italic;
     }
-    mat-form-field {
-      width: 100%;
-      max-width: 20rem;
-      display: block;
-    }
     .affectation-explanation-delta.delta-better {
       color: var(--mat-sys-primary);
     }
@@ -262,21 +203,6 @@ export class AffectationExplanationDialog {
   protected readonly loading = signal(true);
   protected readonly error = signal('');
   protected readonly explanation = signal<AffectationExplanation | null>(null);
-
-  protected readonly candidatId = signal<string | null>(null);
-  protected readonly simulationLoading = signal(false);
-  protected readonly simulationError = signal('');
-  protected readonly simulation = signal<SwapSimulation | null>(null);
-
-  protected readonly deltaSens = computed<'better' | 'worse' | 'same'>(() => sensDuDelta(this.simulation()));
-
-  protected readonly violationsResolues = computed<ContrainteImpact[]>(() =>
-    violationsResolues(this.simulation())
-  );
-
-  protected readonly nouvellesViolations = computed<ContrainteImpact[]>(() =>
-    nouvellesViolations(this.simulation())
-  );
 
   protected readonly suggestionsLoading = signal(false);
   protected readonly suggestionsError = signal('');
@@ -300,23 +226,6 @@ export class AffectationExplanationDialog {
       this.error.set(errorPrefix(error));
     } finally {
       this.loading.set(false);
-    }
-  }
-
-  protected async onCandidatChange(animateurId: string | null): Promise<void> {
-    this.simulation.set(null);
-    this.simulationError.set('');
-    if (!animateurId) {
-      return;
-    }
-    this.simulationLoading.set(true);
-    try {
-      const simulation = await this.explanationService.simulerSwap(this.data.planning, this.data.poste.id, animateurId);
-      this.simulation.set(simulation);
-    } catch (error) {
-      this.simulationError.set(errorPrefix(error));
-    } finally {
-      this.simulationLoading.set(false);
     }
   }
 
@@ -398,7 +307,7 @@ export function ouvrirExplication(
   poste: PosteAffectation
 ): MatDialogRef<AffectationExplanationDialog, ReparationAppliquee | undefined> {
   return dialog.open(AffectationExplanationDialog, {
-    data: { poste, planning, candidats: candidatsPour(planning, poste) },
+    data: { poste, planning },
     width: '32rem'
   });
 }

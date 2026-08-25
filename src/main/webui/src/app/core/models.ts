@@ -463,7 +463,7 @@ export interface PlanningDiagnostic {
 
 /**
  * One constraint's impact on a single poste, from `/api/postes/{id}/explication`
- * or `/api/postes/{id}/simulation-swap` — either a violation it is party to,
+ * or `/api/postes/{id}/suggestions-reparation` — either a violation it is party to,
  * or an entry meaning it has no match involving that poste. "Respectée" only
  * means no violation was found for this poste, not that the constraint is
  * even applicable to it — never present it as a positive endorsement.
@@ -486,23 +486,6 @@ export interface AffectationExplanation {
   score: HardMediumSoftScore;
   contraintesViolees: ContrainteImpact[];
   contraintesRespectees: ContrainteImpact[];
-}
-
-/**
- * `/api/postes/{posteId}/simulation-swap?animateurId=…`: score impact of
- * giving that poste to a different animateur, without changing anything.
- * `delta` is `scoreApres - scoreAvant`: positive/less-negative means the
- * swap would improve the score.
- */
-export interface SwapSimulation {
-  posteId: string;
-  animateurActuelId: string | null;
-  animateurCandidatId: string;
-  scoreAvant: HardMediumSoftScore;
-  scoreApres: HardMediumSoftScore;
-  delta: HardMediumSoftScore;
-  contraintesVioleesAvant: ContrainteImpact[];
-  contraintesVioleesApres: ContrainteImpact[];
 }
 
 /**

@@ -2,11 +2,11 @@
 // dialog *is* its template: it is the screen that explains why the solver put
 // someone on a seat, and nothing else in the application says the same thing
 // twice. If it renders the wrong constraint, the wrong count or a stale
-// simulation, no other test — and no user — can tell.
+// suggestion, no other test — and no user — can tell.
 //
 // What the logic tests next door (`affectation-explanation-rules.spec.ts`)
-// cannot see: which branch is on screen, that the loaded explanation is the one
-// being shown, and that the swap select carries an accessible name.
+// cannot see: which branch is on screen, and that the loaded explanation is the
+// one being shown.
 
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -23,8 +23,7 @@ import {
   PosteAffectation,
   Stand,
   SuggestionReparation,
-  SuggestionsReparation,
-  SwapSimulation
+  SuggestionsReparation
 } from '../core/models';
 import {
   AffectationExplanationDialog,
@@ -93,20 +92,6 @@ function explication(overrides: Partial<AffectationExplanation> = {}): Affectati
   };
 }
 
-function simulation(overrides: Partial<SwapSimulation> = {}): SwapSimulation {
-  return {
-    posteId: 'p1',
-    animateurActuelId: 'a1',
-    animateurCandidatId: 'a2',
-    scoreAvant: score(-2, 0, -35),
-    scoreApres: score(0, 0, -38),
-    delta: score(2, 0, -3),
-    contraintesVioleesAvant: [],
-    contraintesVioleesApres: [],
-    ...overrides
-  };
-}
-
 function suggestion(animateurId: string, overrides: Partial<SuggestionReparation> = {}): SuggestionReparation {
   return {
     animateurId,
@@ -134,7 +119,6 @@ function suggestions(overrides: Partial<SuggestionsReparation> = {}): Suggestion
 
 interface ServiceStub {
   explique: ReturnType<typeof vi.fn>;
-  simulerSwap: ReturnType<typeof vi.fn>;
   suggererReparations: ReturnType<typeof vi.fn>;
   appliquerReparation: ReturnType<typeof vi.fn>;
 }
@@ -151,7 +135,6 @@ function mount(
         provide: AffectationExplanationService,
         useValue: {
           explique: vi.fn(async () => explication()),
-          simulerSwap: vi.fn(async () => simulation()),
           suggererReparations: vi.fn(async () => suggestions()),
           appliquerReparation: vi.fn(async () => undefined),
           ...service
@@ -160,7 +143,7 @@ function mount(
       { provide: MatDialogRef, useValue: { close } },
       {
         provide: MAT_DIALOG_DATA,
-        useValue: { poste: POSTE, planning: PLANNING, candidats: [CANDIDAT], ...data }
+        useValue: { poste: POSTE, planning: PLANNING, ...data }
       }
     ]
   });
@@ -174,21 +157,6 @@ function texte(fixture: ComponentFixture<AffectationExplanationDialog>): string 
 
 function root(fixture: ComponentFixture<AffectationExplanationDialog>): HTMLElement {
   return fixture.nativeElement as HTMLElement;
-}
-
-/**
- * Picks a swap candidate. Driving the component's handler rather than the
- * Material overlay: the select's popup does not open in jsdom, but the handler
- * it would call is the code under test.
- */
-async function choisirCandidat(
-  fixture: ComponentFixture<AffectationExplanationDialog>,
-  animateurId: string | null
-): Promise<void> {
-  await (
-    fixture.componentInstance as unknown as { onCandidatChange(id: string | null): Promise<void> }
-  ).onCandidatChange(animateurId);
-  await fixture.whenStable();
 }
 
 /** A promise whose resolution this test controls, to observe the pending state. */
@@ -307,120 +275,6 @@ describe('AffectationExplanationDialog', () => {
     expect(root(fixture).querySelector('.affectation-explanation-error')!.textContent).toContain('poste introuvable');
     expect(root(fixture).querySelector('mat-spinner')).toBeNull();
     expect(texte(fixture)).not.toContain('Score global');
-  });
-
-  it('offers no replacement section at all when there is no candidate to offer', async () => {
-    const { fixture } = mount({}, { candidats: [] });
-    await fixture.whenStable();
-
-    expect(texte(fixture)).not.toContain('Simuler un remplacement');
-    expect(root(fixture).querySelector('mat-select')).toBeNull();
-  });
-
-  it('gives the candidate select an accessible name, so the field can be reached by its label', async () => {
-    const { fixture } = mount({});
-    await fixture.whenStable();
-
-    const select = root(fixture).querySelector('mat-select')!;
-    const ids = select.getAttribute('aria-labelledby')?.split(/\s+/) ?? [];
-    const nom = ids
-      .map((id) => root(fixture).querySelector(`[id="${id}"]`)?.textContent?.trim() ?? '')
-      .join(' ')
-      .trim();
-    expect(nom).toContain('Remplacer par');
-  });
-
-  it('renders the simulated delta, what it resolves and what it breaks, for the chosen candidate', async () => {
-    const simulerSwap = vi.fn(async () =>
-      simulation({
-        delta: score(1, 0, -4),
-        contraintesVioleesAvant: [impact('reposQuotidien', { description: 'Repos quotidien de 11 h' })],
-        contraintesVioleesApres: [impact('competenceRequise', { description: 'Appréciation requise' })]
-      })
-    );
-    const { fixture } = mount({ simulerSwap });
-    await fixture.whenStable();
-
-    await choisirCandidat(fixture, 'a2');
-
-    expect(simulerSwap).toHaveBeenCalledWith(PLANNING, 'p1', 'a2');
-    const affiche = texte(fixture);
-    expect(affiche).toContain('+1hard / 0medium / -4soft');
-    expect(affiche).toContain('Violations résolues par ce remplacement');
-    expect(affiche).toContain('Repos quotidien de 11 h');
-    expect(affiche).toContain('Nouvelles violations introduites par ce remplacement');
-    expect(affiche).toContain('Appréciation requise');
-    // A cleared hard violation is an improvement even at a soft cost — the
-    // colour class is the only thing on screen that says which way it went.
-    expect(root(fixture).querySelector('.affectation-explanation-delta.delta-better')).not.toBeNull();
-  });
-
-  it('shows only the resolved list when the swap breaks nothing new', async () => {
-    const { fixture } = mount({
-      simulerSwap: vi.fn(async () =>
-        simulation({
-          contraintesVioleesAvant: [impact('reposQuotidien', { description: 'Repos quotidien de 11 h' })],
-          contraintesVioleesApres: []
-        })
-      )
-    });
-    await fixture.whenStable();
-    await choisirCandidat(fixture, 'a2');
-
-    const affiche = texte(fixture);
-    expect(affiche).toContain('Violations résolues par ce remplacement');
-    expect(affiche).not.toContain('Nouvelles violations introduites par ce remplacement');
-  });
-
-  it('shows only the new-violation list when the swap resolves nothing', async () => {
-    const { fixture } = mount({
-      simulerSwap: vi.fn(async () =>
-        simulation({
-          contraintesVioleesAvant: [],
-          contraintesVioleesApres: [impact('competenceRequise', { description: 'Appréciation requise' })]
-        })
-      )
-    });
-    await fixture.whenStable();
-    await choisirCandidat(fixture, 'a2');
-
-    const affiche = texte(fixture);
-    expect(affiche).toContain('Nouvelles violations introduites par ce remplacement');
-    expect(affiche).not.toContain('Violations résolues par ce remplacement');
-  });
-
-  it('colours a delta that breaks a hard constraint as a regression', async () => {
-    const { fixture } = mount({ simulerSwap: vi.fn(async () => simulation({ delta: score(-1, 0, 50) })) });
-    await fixture.whenStable();
-
-    await choisirCandidat(fixture, 'a2');
-
-    expect(root(fixture).querySelector('.affectation-explanation-delta.delta-worse')).not.toBeNull();
-  });
-
-  it('drops the previous simulation when the selection is cleared, rather than leaving a stale delta', async () => {
-    const { fixture } = mount({});
-    await fixture.whenStable();
-    await choisirCandidat(fixture, 'a2');
-    expect(texte(fixture)).toContain('Delta de score');
-
-    await choisirCandidat(fixture, null);
-    expect(texte(fixture)).not.toContain('Delta de score');
-  });
-
-  it('reports a failed simulation without wiping the explanation already on screen', async () => {
-    const { fixture } = mount({
-      explique: vi.fn(async () => explication({ contraintesRespectees: [impact('c1')] })),
-      simulerSwap: vi.fn(async () => {
-        throw new Error('simulation impossible');
-      })
-    });
-    await fixture.whenStable();
-
-    await choisirCandidat(fixture, 'a2');
-
-    expect(texte(fixture)).toContain('simulation impossible');
-    expect(texte(fixture)).toContain('Score global');
   });
 
   it('closes on the Fermer button', async () => {
