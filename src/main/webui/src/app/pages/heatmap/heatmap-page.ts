@@ -123,8 +123,27 @@ export class HeatmapPage {
    */
   protected readonly celluleCourante = signal({ ligne: 0, colonne: 0 });
 
+  /**
+   * The same position, held inside the table actually displayed. Filtering out
+   * the row the position pointed at used to leave no cell carrying
+   * `tabindex="0"` at all, so the grid fell out of the tab order until the
+   * filter was cleared — the one way in, gone. Clamped on read rather than
+   * corrected by an effect: the table is the source of truth, and a value
+   * derived from it cannot go stale behind it.
+   */
+  protected readonly positionCourante = computed(() => {
+    const rows = this.activeTable().rows;
+    if (rows.length === 0) {
+      return { ligne: 0, colonne: 0 };
+    }
+    const { ligne, colonne } = this.celluleCourante();
+    const ligneTenue = Math.min(Math.max(ligne, 0), rows.length - 1);
+    const derniereColonne = Math.max((rows[ligneTenue]?.cells.length ?? 1) - 1, 0);
+    return { ligne: ligneTenue, colonne: Math.min(Math.max(colonne, 0), derniereColonne) };
+  });
+
   protected estCelluleCourante(ligne: number, colonne: number): boolean {
-    const courante = this.celluleCourante();
+    const courante = this.positionCourante();
     return courante.ligne === ligne && courante.colonne === colonne;
   }
 

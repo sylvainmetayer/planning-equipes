@@ -342,13 +342,10 @@ describe('HeatmapPage grid', () => {
     input.dispatchEvent(new Event('input'));
     await fixture.whenStable();
 
-    // CONSTATÉ, NON VOULU: `celluleCourante` still points at row 1, which the
-    // filter has just removed, so no cell carries `tabindex="0"` any more and
-    // the grid becomes unreachable by keyboard until the filter is cleared.
-    // The same happens when switching view to a shorter table. Left as is: the
-    // fix (clamp the position on the rows actually displayed) belongs to the
-    // component, not to a test. Reported separately.
+    // The filter has just removed the row the roving position pointed at. The
+    // position is clamped on the rows actually displayed, so the grid keeps
+    // exactly one keyboard entry point instead of falling out of the tab order.
     expect(racine().querySelectorAll('tbody tr')).toHaveLength(1);
-    expect(celluleTabulable()).toBeNull();
+    expect(celluleTabulable()).not.toBeNull();
   });
 });
