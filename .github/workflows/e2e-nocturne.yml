@@ -67,7 +67,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
       mailpit:
-        image: axllent/mailpit:latest
+        image: axllent/mailpit:v1.31
         ports:
           # 1025 = SMTP, par où l'application dépose. 8025 = l'API REST, par où
           # les specs relisent le code d'accès reçu par l'animateur. N'exposer

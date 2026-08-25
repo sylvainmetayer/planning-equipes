@@ -17,8 +17,21 @@
     "dockerfile",
     "docker-compose",
     "github-actions",
+    "maven-wrapper",
     "mise",
-    "npm"
+    "npm",
+    "custom.regex"
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Images started by a workflow `run:`: the github-actions manager only reads `uses:`, `container:` and `services:`. A `# renovate: datasource=… depName=…` comment above a `SOME_IMAGE: name:tag` env var catches them",
+      "managerFilePatterns": [".github/workflows/*.yml"],
+      "matchStrings": [
+        "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)\\s+[A-Z_]+\\s*:\\s*[^\\s:]+:(?<currentValue>[^\\s\"']+)"
+      ],
+      "versioningTemplate": "docker"
+    }
   ],
   "packageRules": [
     {
@@ -74,6 +87,13 @@
       "addLabels": ["frontend"]
     },
     {
+      "description": "The CI container image must follow @playwright/test: a drift hands the suite a browser the image does not tool",
+      "matchPackageNames": ["@playwright/test", "mcr.microsoft.com/playwright"],
+      "minimumReleaseAge": "7 days",
+      "groupName": "playwright",
+      "addLabels": ["frontend"]
+    },
+    {
       "description": "GitHub Actions: one grouped PR for minor and patch",
       "matchManagers": ["github-actions"],
       "matchUpdateTypes": ["minor", "patch", "digest"],
@@ -86,10 +106,23 @@
       "groupName": "container images"
     },
     {
+      "description": "Maven is pinned twice — mise.toml and the wrapper: one PR, or the two drift apart",
+      "matchManagers": ["mise", "maven-wrapper"],
+      "matchPackageNames": [
+        "maven",
+        "org.apache.maven:apache-maven",
+        "org.apache.maven.wrapper:maven-wrapper"
+      ],
+      "minimumReleaseAge": "7 days",
+      "groupName": "maven"
+    },
+    {
       "description": "Java major upgrades touch Dockerfiles, mise.toml, the pom and the workflows: handle them manually",
       "matchPackageNames": [
         "eclipse-temurin",
         "maven",
+        "org.apache.maven:apache-maven",
+        "org.apache.maven.wrapper:maven-wrapper",
         "java",
         "registry.access.redhat.com/**"
       ],

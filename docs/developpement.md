@@ -361,16 +361,35 @@ ne s'y voient pas :
 
 ## Renovate
 
-Couvre Maven, Docker, les actions GitHub, npm et `mise.toml`. Trois règles
-valent d'être connues :
+Couvre Maven, le wrapper Maven, Docker, les actions GitHub, npm et
+`mise.toml`. Quatre règles valent d'être connues :
 
 - les mises à jour **mineures et correctives des dépendances de test** sont
   fusionnées automatiquement ;
 - **Quarkus et Timefold sont groupés par écosystème**, et les paquets
   `@angular/*` dans une seule PR : une montée partielle casse le build ;
+- ce qui est **épinglé deux fois est groupé** : Maven (`mise.toml` et le
+  wrapper), Playwright (le paquet `@playwright/test` et l'image du conteneur
+  e2e) — deux PR séparées laisseraient les deux dériver ;
 - les **majeures** de Java, PostgreSQL et victools passent par le tableau de
   bord (`dependencyDashboardApproval`) — ce qui suppose que l'issue de tableau
   de bord existe.
+
+Une image lancée par un `run:` de workflow échappe au gestionnaire
+`github-actions`, qui ne lit que `uses:`, `container:` et `services:`. Un
+gestionnaire `custom.regex` la rattrape, à condition de sortir l'image dans une
+variable d'environnement précédée de son annotation — c'est ce que fait le job
+Semgrep de `securite.yml` :
+
+```yaml
+env:
+  # renovate: datasource=docker depName=semgrep/semgrep
+  SEMGREP_IMAGE: semgrep/semgrep:1.174.0
+```
+
+Toute image doit porter une balise explicite, y compris dans
+`docker-compose.yml` : sans balise ou sous `latest`, Renovate n'a rien à
+proposer et la version installée dépend du jour du `pull`.
 
 ## Conventions
 

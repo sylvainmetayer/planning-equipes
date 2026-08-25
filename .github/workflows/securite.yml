@@ -84,8 +84,10 @@ jobs:
       #
       # Version épinglée comme le reste de la chaîne d'outils : une montée peut
       # ajouter des règles, et donc faire rougir une PR qui n'a rien changé.
-      # Renovate ne suit pas une image citée dans un `run:` — c'est une mise à
-      # jour à faire à la main, en lisant ce que la nouvelle version trouve.
+      # Une image citée dans un `run:` échappe au gestionnaire `github-actions`
+      # de Renovate ; elle est donc sortie dans `env:` sous l'annotation que le
+      # gestionnaire `custom.regex` reconnaît (voir `renovate.json`). La PR de
+      # montée reste à lire — elle dit ce que la nouvelle version trouve en plus.
       #
       # Six jeux de règles du registre, choisis sur ce que le dépôt contient
       # réellement : les deux langages, le classement OWASP qui les traverse, le
@@ -106,12 +108,15 @@ jobs:
       # coupe la télémétrie anonyme envoyée par défaut lors de la récupération
       # des règles.
       - name: Scanner les sources
+        env:
+          # renovate: datasource=docker depName=semgrep/semgrep
+          SEMGREP_IMAGE: semgrep/semgrep:1.174.0
         run: |
           docker run --rm \
             --volume "$PWD:/src:ro" \
             --workdir /src \
             --env HOME=/tmp \
-            semgrep/semgrep:1.174.0 \
+            "$SEMGREP_IMAGE" \
             semgrep scan \
               --config p/java \
               --config p/typescript \
