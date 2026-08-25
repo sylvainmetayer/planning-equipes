@@ -22,7 +22,7 @@ import dev.sylvain.planning.service.OuvertureStandsAnalyzer.AnomalyType;
 import dev.sylvain.planning.service.OuvertureStandsAnalyzer.RapportOuvertures;
 
 /**
- * {@code scenarios/event-avec-erreur-planning.yaml} is the one shipped scenario
+ * {@code scenarios/scenario-avec-erreur-planning.yaml} is the one shipped scenario
  * that is <b>deliberately unsolvable</b>: a teaching fixture whose six stands
  * each carry one classic opening mistake, so an operator can see what each
  * screen says about it.
@@ -37,7 +37,7 @@ import dev.sylvain.planning.service.OuvertureStandsAnalyzer.RapportOuvertures;
  */
 class PlanningServiceUnsolvableScenarioTest {
 
-    private static final String SCENARIO = "event-avec-erreur-planning.yaml";
+    private static final String SCENARIO = "scenario-avec-erreur-planning.yaml";
 
     private static PlanningService service() {
         return new PlanningService(3L, 2L, ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT,

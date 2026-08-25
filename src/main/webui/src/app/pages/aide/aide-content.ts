@@ -273,7 +273,7 @@ export function buildHelpSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.results.term.pourquoiLui:« Pourquoi lui ? »`,
-              text: $localize`:@@aide.results.def.pourquoiLui:Un clic sur un animateur affecté, dans le calendrier journalier ou le calendrier des affectations, explique cette affectation précise : les règles respectées ou violées pour ce poste, et une simulation à la demande du gain ou de la perte de score si le poste était confié à un autre animateur compétent — sans rien modifier au planning.`
+              text: $localize`:@@aide.results.def.pourquoiLui:Un clic sur un animateur affecté, dans le calendrier journalier ou le calendrier des affectations, explique cette affectation précise : les règles respectées ou violées pour ce poste. À la demande, l'écran cherche aussi qui pourrait le remplacer, et ne propose que les remplacements qui tiennent — ceux qui n'introduisent aucune violation dure — chacun avec son effet sur le score et les règles qu'il débloque. La recherche est bornée : elle annonce combien de candidats elle a évalués et si elle s'est arrêtée au plafond, car une liste courte ne prouve pas qu'il n'existe rien d'autre. « Appliquer » pose le remplacement dans le planning.`
             }
           ]
         }
@@ -403,7 +403,7 @@ export function buildHelpSections(): HelpSection[] {
           items: [
             {
               term: $localize`:@@aide.foire.term.espace:Espace animateur`,
-              text: $localize`:@@aide.foire.def.espace:L'animateur constitue sa liste de demandes (créneau concerné, collègue avec qui échanger, motif) puis la soumet en une fois. Il suit ensuite le statut de chacune — en attente, acceptée, refusée — avec votre commentaire éventuel, et peut annuler une demande tant qu'elle n'est pas décidée. Il peut aussi télécharger son planning en PDF ou l'ajouter à son agenda (ICS) depuis l'onglet « Mon planning ». Le lien de son espace se copie (et se régénère, si un PDF a fuité) depuis sa fiche sur la page Animateurs.`
+              text: $localize`:@@aide.foire.def.espace:L'animateur constitue sa liste de demandes (créneau concerné, collègue avec qui échanger, motif) puis la soumet en une fois. Quand il n'a personne en tête — il ne veut simplement pas ce créneau — « qui peut me remplacer ? » cherche les collègues avec qui l'échange tient réellement, sous ses trois formes : un collègue libre le remplace, une permutation sur le même créneau, ou un troc contre un créneau d'un autre jour. Il choisit dans la liste et le champ collègue se remplit. Il suit ensuite le statut de chacune — en attente, acceptée, refusée — avec votre commentaire éventuel, et peut annuler une demande tant qu'elle n'est pas décidée. Il peut aussi télécharger son planning en PDF ou l'ajouter à son agenda (ICS) depuis l'onglet « Mon planning ». Le lien de son espace se copie (et se régénère, si un PDF a fuité) depuis sa fiche sur la page Animateurs.`
             },
             {
               term: $localize`:@@aide.foire.term.ecran:Écran Échanges`,
