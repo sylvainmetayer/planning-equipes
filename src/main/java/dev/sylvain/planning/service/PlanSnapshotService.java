@@ -104,6 +104,9 @@ public class PlanSnapshotService {
      * @param kpi        the plan's KPI at capture time (issue #70),
      *                   {@code null} on snapshots captured before they were
      *                   stored — the comparator then recomputes what it can
+     * @param publieLe   moment this snapshot was communicated to the animateurs
+     *                   (issue #245), {@code null} on a working snapshot —
+     *                   which every snapshot is until someone publishes one
      */
     public record SnapshotMeta(
             long id,
@@ -114,7 +117,8 @@ public class PlanSnapshotService {
             Instant creeLe,
             String editionId,
             String editionNom,
-            PlanningKpiService.PlanningKpi kpi) {
+            PlanningKpiService.PlanningKpi kpi,
+            Instant publieLe) {
     }
 
     /** A snapshot with its content. */
@@ -153,16 +157,37 @@ public class PlanSnapshotService {
         }
         ConstraintAnalysisStore.StoredAnalysis analysis = analysisStore.latest();
         String score = analysis == null ? null : analysis.diagnostic().score();
-        return inserer(libelle, automatique, score, affectations);
+        return inserer(libelle, automatique, score, affectations, null);
+    }
+
+    /**
+     * Captures the persisted plan <b>as published</b>: this is what the
+     * animateurs have been sent, and from now on what their espace shows
+     * (issue #245). Like {@link #capture}, returns {@code null} when there is
+     * nothing to capture — publishing an empty plan would only tell people
+     * they have no seat.
+     *
+     * <p>Never automatique: a published snapshot is the reference the espace
+     * reads from, so it must not be in reach of the retention purge.</p>
+     */
+    public SnapshotMeta capturePubliee(String libelle) {
+        List<AffectationSnapshot> affectations = readPersistedAffectations();
+        if (affectations.isEmpty()) {
+            return null;
+        }
+        ConstraintAnalysisStore.StoredAnalysis analysis = analysisStore.latest();
+        String score = analysis == null ? null : analysis.diagnostic().score();
+        return inserer(libelle, false, score, affectations, Instant.now());
     }
 
     private SnapshotMeta inserer(String libelle, boolean automatique, String score,
-            List<AffectationSnapshot> affectations) {
+            List<AffectationSnapshot> affectations, Instant publieLe) {
         String contenu = writeContent(affectations);
         PlanningKpiService.PlanningKpi kpi = kpiCourant();
         String sql = """
- INSERT INTO plan_snapshot (edition_id, libelle, automatique, score, nombre_affectations, cree_le, contenu, kpi)
- VALUES (?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb)
+ INSERT INTO plan_snapshot (edition_id, libelle, automatique, score, nombre_affectations, cree_le, contenu, kpi,
+ publie_le)
+ VALUES (?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?)
  RETURNING id, cree_le""";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, sql)) {
@@ -173,11 +198,12 @@ public class PlanSnapshotService {
             ps.setTimestamp(6, Timestamp.from(Instant.now()));
             ps.setString(7, contenu);
             ps.setString(8, kpi == null ? null : writeKpi(kpi));
+            ps.setTimestamp(9, publieLe == null ? null : Timestamp.from(publieLe));
             try (ResultSet rs = ps.executeQuery()) {
                 rs.next();
                 SnapshotMeta meta = new SnapshotMeta(rs.getLong("id"), libelle, automatique,
                         score, affectations.size(), rs.getTimestamp("cree_le").toInstant(),
-                        editionId(), nomEdition(connection, editionId()), kpi);
+                        editionId(), nomEdition(connection, editionId()), kpi, publieLe);
                 if (automatique) {
                     purgeAutomatic(connection);
                 }
@@ -203,7 +229,7 @@ public class PlanSnapshotService {
 
     /** Columns every read below projects, so {@link #readMeta} always finds them. */
     private static final String COLONNES_META = "s.id, s.libelle, s.automatique, s.score, "
-            + "s.nombre_affectations, s.cree_le, s.edition_id, e.nom AS edition_nom";
+            + "s.nombre_affectations, s.cree_le, s.edition_id, s.publie_le, e.nom AS edition_nom";
 
     private static final String DEPUIS_SNAPSHOT = " FROM plan_snapshot s "
             + "LEFT JOIN edition e ON e.id = s.edition_id";
@@ -288,15 +314,75 @@ public class PlanSnapshotService {
         }
     }
 
-    /** @return true when a row was actually deleted. */
+    /**
+     * @return true when a row was actually deleted.
+     * @throws BusinessError.Conflict on a published snapshot: it is the plan
+     *         the animateurs were sent and the one their espace reads
+     *         (issue #245), so deleting it would take back what was said
+     *         without telling anyone
+     */
     public boolean delete(long id) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection,
-                        "DELETE FROM plan_snapshot WHERE edition_id = ? AND id = ?")) {
+                        "DELETE FROM plan_snapshot WHERE edition_id = ? AND id = ? AND publie_le IS NULL")) {
             ps.setLong(2, id);
-            return ps.executeUpdate() > 0;
+            if (ps.executeUpdate() > 0) {
+                return true;
+            }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to delete plan snapshot " + id, e);
+        }
+        SnapshotMeta reste = meta(id);
+        if (reste != null && reste.publieLe() != null) {
+            throw new BusinessError.Conflict(
+                    "Cet instantané est le plan publié : il ne peut pas être supprimé.");
+        }
+        return false;
+    }
+
+    /**
+     * The edition's most recent published snapshot — what the animateurs have
+     * been sent (issue #245). {@code null} when nothing has ever been
+     * published, which is the state of every edition until an admin publishes
+     * once.
+     */
+    public SnapshotMeta dernierePublication() {
+        String sql = "SELECT " + COLONNES_META + ", s.kpi" + DEPUIS_SNAPSHOT
+                + " WHERE s.edition_id = ? AND s.publie_le IS NOT NULL"
+                + " ORDER BY s.publie_le DESC, s.id DESC LIMIT 1";
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = scope.prepareScoped(connection, sql)) {
+            List<SnapshotMeta> metas = readMetas(ps);
+            return metas.isEmpty() ? null : metas.get(0);
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to read the last published plan snapshot", e);
+        }
+    }
+
+    /** Same as {@link #dernierePublication()}, content included. */
+    public SnapshotDetail chargerDernierePublication() {
+        String sql = "SELECT " + COLONNES_META + ", s.contenu, s.kpi" + DEPUIS_SNAPSHOT
+                + " WHERE s.edition_id = ? AND s.publie_le IS NOT NULL"
+                + " ORDER BY s.publie_le DESC, s.id DESC LIMIT 1";
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = scope.prepareScoped(connection, sql)) {
+            return readDetail(ps);
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to load the last published plan snapshot", e);
+        }
+    }
+
+    /** Meta of one snapshot of this edition, content excluded; {@code null} when unknown. */
+    private SnapshotMeta meta(long id) {
+        String sql = "SELECT " + COLONNES_META + ", s.kpi" + DEPUIS_SNAPSHOT
+                + " WHERE s.edition_id = ? AND s.id = ?";
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = scope.prepareScoped(connection, sql)) {
+            ps.setLong(2, id);
+            List<SnapshotMeta> metas = readMetas(ps);
+            return metas.isEmpty() ? null : metas.get(0);
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to read plan snapshot " + id, e);
         }
     }
 
@@ -444,6 +530,7 @@ public class PlanSnapshotService {
  DELETE FROM plan_snapshot
  WHERE edition_id = ?
  AND automatique
+ AND publie_le IS NULL
  AND id NOT IN (SELECT id FROM plan_snapshot WHERE edition_id = ?
  AND automatique ORDER BY cree_le DESC, id DESC LIMIT ?)""";
         try (PreparedStatement ps = scope.prepareScoped(connection, sql)) {
@@ -464,7 +551,8 @@ public class PlanSnapshotService {
                 creeLe == null ? null : creeLe.toInstant(),
                 rs.getString("edition_id"),
                 rs.getString("edition_nom"),
-                readKpi(rs.getString("kpi")));
+                readKpi(rs.getString("kpi")),
+                instant(rs.getTimestamp("publie_le")));
     }
 
     /** Display name of an edition, read on the connection already open. */
@@ -526,6 +614,10 @@ public class PlanSnapshotService {
         } catch (Exception e) {
             throw new IllegalStateException("Failed to read plan snapshot content", e);
         }
+    }
+
+    private static Instant instant(Timestamp timestamp) {
+        return timestamp == null ? null : timestamp.toInstant();
     }
 
     private static String text(LocalTime heure) {
