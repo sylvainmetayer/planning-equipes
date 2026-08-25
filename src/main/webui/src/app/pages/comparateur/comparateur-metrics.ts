@@ -66,7 +66,7 @@ export function construireLignesMetriques(base: PlanningKpi, variante: PlanningK
   );
   ajouter(
     'heuresEcartType',
-    $localize`:@@comparateur.metric.heuresEcartType:Fairness — écart-type des heures`,
+    $localize`:@@comparateur.metric.heuresEcartType:Équilibre — écart-type des heures`,
     base.heuresEcartType,
     variante.heuresEcartType,
     'moins',
