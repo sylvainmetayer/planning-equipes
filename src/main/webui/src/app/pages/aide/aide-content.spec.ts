@@ -33,6 +33,25 @@ describe('buildHelpSections', () => {
     expect(ids).toContain('lire-les-resultats');
     expect(ids).toContain('tuner');
   });
+
+  it('spells out the edge cases of the manual adjustments, not just what the four types are', () => {
+    const section = sections.find((candidate) => candidate.id === 'ajustements-manuels');
+    expect(section).toBeDefined();
+    const texte = textOf(section as HelpSection);
+
+    // The four types, each with what it actually covers.
+    for (const type of ['Indisponibilité forcée', 'Affectation forcée', 'Incompatibilité', 'Affinité']) {
+      expect(texte).toContain(type);
+    }
+    // The traps: any-one-of semantics, slot-not-stand, the empty scope, the
+    // deleted slot, what is refused and what deliberately is not.
+    expect(texte).toContain('jamais un « tous »');
+    expect(texte).toContain('Elle porte sur le créneau, pas sur le stand');
+    expect(texte).toContain('créneau supprimé');
+    expect(texte).toContain('refusés à l\'enregistrement');
+    expect(texte).toContain('Passent donc délibérément');
+    expect(texte).toContain('réenregistrer sous son propre identifiant');
+  });
 });
 
 describe('filterHelpSections', () => {

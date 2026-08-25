@@ -27,12 +27,12 @@
       </mat-card>
       <mat-card appearance="outlined" class="staffing-stat">
         <div class="staffing-stat-value">{{ contrainteAdHocTotal() }}</div>
-        <div class="staffing-stat-label" i18n="@@solver.volumetry.contraintesAdHoc">Contraintes ad hoc</div>
+        <div class="staffing-stat-label" i18n="@@solver.volumetry.contraintesAdHoc">Ajustements manuels</div>
       </mat-card>
     </div>
     <p class="solver-volumetry-formula">
       <ng-container i18n="@@solver.volumetry.formula">
-        Timefold doit affecter {{ animateurTotal() }} animateurs sur {{ posteTotal() }} postes ({{ creneauTotal() }} créneaux), sous {{ contrainteAdHocTotal() }} contraintes ad hoc supplémentaires
+        Timefold doit affecter {{ animateurTotal() }} animateurs sur {{ posteTotal() }} postes ({{ creneauTotal() }} créneaux), sous {{ contrainteAdHocTotal() }} ajustements manuels supplémentaires
       </ng-container>
       @if (ordreDeGrandeur() > 0) {
         <strong i18n="@@solver.volumetry.formulaLabel">

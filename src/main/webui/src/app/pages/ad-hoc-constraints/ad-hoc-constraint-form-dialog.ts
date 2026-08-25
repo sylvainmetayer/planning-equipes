@@ -45,7 +45,7 @@ export interface AdHocConstraintFormData {
 }
 
 /**
- * Add/edit dialog for an ad hoc constraint. The backend only exposes POST
+ * Add/edit dialog for a manual adjustment (a {@code ContrainteAdHoc}). The backend only exposes POST
  * (create or overwrite by id) and DELETE, so editing always re-saves under
  * the same id — `editingId` here only drives the dialog title and the
  * read-only id field, never a PUT-vs-POST branch.
@@ -72,8 +72,8 @@ export class AdHocConstraintFormDialog {
   protected readonly formTitle = computed(() => {
     const id = this.editingId();
     return id
-      ? $localize`:@@adHoc.form.editTitle:Modifier la contrainte ${id}:id:`
-      : $localize`:@@adHoc.form.newTitle:Nouvelle contrainte ad hoc`;
+      ? $localize`:@@adHoc.form.editTitle:Modifier l'ajustement ${id}:id:`
+      : $localize`:@@adHoc.form.newTitle:Nouvel ajustement manuel`;
   });
 
   protected patch(patch: Partial<ContrainteDraft>): void {
@@ -92,7 +92,7 @@ export class AdHocConstraintFormDialog {
       creeParUtilisateurId: 'ui'
     };
     // Always POST (create-or-overwrite): the backend has no PUT for this resource.
-    if (await this.crud.save('contraintes-ad-hoc', contrainte, null, $localize`:@@adHoc.entityLabel:Contrainte`)) {
+    if (await this.crud.save('contraintes-ad-hoc', contrainte, null, $localize`:@@adHoc.entityLabel:Ajustement`)) {
       this.dialogRef.close(true);
     }
   }

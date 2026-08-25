@@ -114,7 +114,7 @@ export function construireLignesMetriques(base: PlanningKpi, variante: PlanningK
   );
   ajouter(
     'modificationsManuelles',
-    $localize`:@@comparateur.metric.modifications:Modifications manuelles (contraintes ad hoc + verrouillages)`,
+    $localize`:@@comparateur.metric.modifications:Modifications manuelles (ajustements manuels + verrouillages)`,
     base.modificationsManuelles,
     variante.modificationsManuelles,
     null

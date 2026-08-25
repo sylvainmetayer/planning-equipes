@@ -102,7 +102,7 @@ export class DebugPage {
     }
     const confirmed = await this.confirm.ask({
       title: $localize`:@@dataSetup.resetConfirmTitle:Vider la base de données ?`,
-      message: $localize`:@@dataSetup.resetConfirmMessage:Tous les stands, créneaux, animateurs, affectations et contraintes ad hoc sont supprimés. Rien n'est rechargé.`,
+      message: $localize`:@@dataSetup.resetConfirmMessage:Tous les stands, créneaux, animateurs, affectations et ajustements manuels sont supprimés. Rien n'est rechargé.`,
       confirmLabel: $localize`:@@dataSetup.resetConfirmLabel:Vider`,
       danger: true
     });

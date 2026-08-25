@@ -197,8 +197,8 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 | File d'attente du solveur | Planifier une résolution derrière celle qui tourne : elle démarre d'elle-même, ce qui permet de préparer l'édition suivante sans attendre devant l'écran. La file survit à un redémarrage du serveur ; la résolution qui était en cours, elle, est perdue et signalée comme interrompue |
 | Replanification incrémentale | Repart du planning enregistré, fige ce qui reste valable et ne recalcule que ce qu'un changement tardif a invalidé — quelques dizaines de secondes au lieu de plusieurs minutes |
 | Verrouillage partiel | Geler un animateur, un stand, une journée ou un créneau pour que la prochaine résolution n'y touche plus et optimise le reste |
-| Exceptions ponctuelles | Contraintes ad hoc tracées avec leur raison : indisponibilité forcée, incompatibilité entre deux personnes, affectation imposée, paire à privilégier |
-| Exceptions contradictoires refusées | Une exception qui ne peut pas tenir en même temps qu'une autre déjà saisie est refusée à l'enregistrement, avec un message qui nomme les deux — plutôt qu'un planning déclaré infaisable plusieurs minutes plus tard, sans que rien n'en désigne la cause |
+| Ajustements manuels | Exceptions ponctuelles tracées avec leur raison : indisponibilité forcée, incompatibilité entre deux personnes, affectation imposée, paire à privilégier |
+| Ajustements contradictoires refusés | Un ajustement qui ne peut pas tenir en même temps qu'un autre déjà saisi est refusé à l'enregistrement, avec un message qui nomme les deux — plutôt qu'un planning déclaré infaisable plusieurs minutes plus tard, sans que rien n'en désigne la cause |
 
 ### Décider et diagnostiquer
 

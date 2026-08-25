@@ -90,6 +90,11 @@ function buildNavGroups(devMode: boolean): NavGroup[] {
       { path: '/problemes', label: $localize`:@@nav.link.problemes:Problèmes`, icon: 'report_problem' },
       { path: '/echanges', label: $localize`:@@nav.link.echanges:Échanges`, icon: 'swap_horiz' },
       { path: '/constraints', label: $localize`:@@nav.link.constraints:Contraintes`, icon: 'fact_check' },
+      {
+        path: '/ad-hoc-constraints',
+        label: $localize`:@@nav.link.adHocConstraints:Ajustements manuels`,
+        icon: 'rule'
+      },
       { path: '/instantanes', label: $localize`:@@nav.link.snapshots:Instantanés`, icon: 'history' },
       { path: '/aide', label: $localize`:@@nav.link.aide:Aide`, icon: 'help_outline' },
       { path: '/editions', label: $localize`:@@nav.link.editions:Éditions`, icon: 'layers' }
@@ -198,11 +203,6 @@ function buildNavGroups(devMode: boolean): NavGroup[] {
     id: 'work-in-progress',
     title: $localize`:@@nav.group.workInProgress:En cours de développement`,
     links: [
-      {
-        path: '/ad-hoc-constraints',
-        label: $localize`:@@nav.link.adHocConstraints:Contraintes ad hoc`,
-        icon: 'rule'
-      },
       { path: '/what-if', label: $localize`:@@nav.link.whatIf:Simulation « et si ? »`, icon: 'science' },
       {
         path: '/verrouillages',

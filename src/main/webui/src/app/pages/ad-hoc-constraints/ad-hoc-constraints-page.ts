@@ -10,7 +10,6 @@ import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ContrainteAdHoc, TypeContrainteAdHoc } from '../../core/models';
-import { WorkInProgressBanner } from '../../shared/work-in-progress-banner';
 import { AdHocConstraintFormData, AdHocConstraintFormDialog } from './ad-hoc-constraint-form-dialog';
 
 /** Called lazily (never at module scope, see `app.ts`'s `buildNavGroups`). */
@@ -28,13 +27,18 @@ function contrainteTypeLabel(value: TypeContrainteAdHoc): string {
 }
 
 /**
- * Ad hoc constraints CRUD. They are evaluated as hard constraints by the
- * solver. The backend only exposes POST (create or overwrite by id) and
- * DELETE, so an edit is always saved as a creation (see the form dialog).
+ * CRUD of the manual adjustments — {@code ContrainteAdHoc} in the domain and on
+ * the wire, « Ajustements manuels » on screen: what an organiser types here is
+ * an exception to the plan, not one of the catalogue's rules, and the two used
+ * to read as the same thing on the Contraintes screen next door.
+ *
+ * <p>The prescriptive ones are evaluated as hard constraints by the solver. The
+ * backend only exposes POST (create or overwrite by id) and DELETE, so an edit
+ * is always saved as a creation (see the form dialog).</p>
  */
 @Component({
   selector: 'app-ad-hoc-constraints-page',
-  imports: [MatCardModule, MatButtonModule, MatIconModule, MatTableModule, MatTooltipModule, WorkInProgressBanner],
+  imports: [MatCardModule, MatButtonModule, MatIconModule, MatTableModule, MatTooltipModule],
   templateUrl: './ad-hoc-constraints-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -110,6 +114,6 @@ export class AdHocConstraintsPage {
   }
 
   protected async remove(contrainte: ContrainteAdHoc): Promise<void> {
-    await this.crud.remove('contraintes-ad-hoc', contrainte.id, $localize`:@@adHoc.entityLabel:Contrainte`);
+    await this.crud.remove('contraintes-ad-hoc', contrainte.id, $localize`:@@adHoc.entityLabel:Ajustement`);
   }
 }

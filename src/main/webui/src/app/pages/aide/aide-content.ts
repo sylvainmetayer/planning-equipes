@@ -196,8 +196,8 @@ export function buildHelpSections(): HelpSection[] {
               text: $localize`:@@aide.config.def.contraintes:Chaque règle du catalogue peut être désactivée depuis la page Contraintes. À utiliser pour diagnostiquer (« sans cette règle, le planning devient-il faisable ? ») bien plus que pour produire : désactiver une contrainte dure produit un planning que la réalité refusera. En revanche, désactiver une contrainte souple qui ne mesure rien — par exemple les souhaits quand aucun animateur n'en a déclaré — rend le score lisible sans rien changer au résultat.`
             },
             {
-              term: $localize`:@@aide.config.term.adhoc:Contraintes ad hoc`,
-              text: $localize`:@@aide.config.def.adhoc:Exceptions saisies au cas par cas, avec une raison tracée : indisponibilité forcée, incompatibilité entre deux animateurs, affectation forcée. Elles sont traitées au même niveau que les contraintes dures, donc jamais contournées silencieusement — et chacune retire des possibilités au solveur. Une contrainte ad hoc mal posée bloque un planning aussi sûrement qu'un manque d'effectif.`
+              term: $localize`:@@aide.config.term.adhoc:Ajustements manuels`,
+              text: $localize`:@@aide.config.def.adhoc:Exceptions saisies au cas par cas, avec une raison tracée : indisponibilité forcée, incompatibilité entre deux animateurs, affectation forcée. Les trois sont traitées au même niveau que les contraintes dures, donc jamais contournées silencieusement — et chacune retire des possibilités au solveur. Un ajustement mal posé bloque un planning aussi sûrement qu'un manque d'effectif. Voir la section « Ajustements manuels » pour ce que chaque type recouvre exactement.`
             },
             {
               term: $localize`:@@aide.config.term.verrouillages:Verrouillages`,
@@ -315,7 +315,7 @@ export function buildHelpSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.tuning.term.adhoc:Le planning est devenu infaisable après une modification`,
-              text: $localize`:@@aide.tuning.def.adhoc:Cherchez du côté des contraintes ad hoc et des verrouillages ajoutés depuis la dernière résolution réussie : ils ont le poids d'une contrainte dure. Désactivez temporairement le dernier ajout et relancez pour confirmer.`
+              text: $localize`:@@aide.tuning.def.adhoc:Cherchez du côté des ajustements manuels et des verrouillages ajoutés depuis la dernière résolution réussie : ils ont le poids d'une contrainte dure. Supprimez temporairement le dernier ajout et relancez pour confirmer. Si deux ajustements se contredisent franchement, la page Problèmes les nomme sans qu'aucune résolution soit nécessaire.`
             },
             {
               term: $localize`:@@aide.tuning.term.gelerBloc:Une part du planning est acquise et ralentit la recherche`,
@@ -340,7 +340,82 @@ export function buildHelpSections(): HelpSection[] {
         { route: '/problemes', label: $localize`:@@nav.link.problemes:Problèmes` },
         { route: '/staffing', label: $localize`:@@nav.link.staffing:Besoin en animateurs` },
         { route: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres` },
-        { route: '/ad-hoc-constraints', label: $localize`:@@nav.link.adHocConstraints:Contraintes ad hoc` },
+        { route: '/ad-hoc-constraints', label: $localize`:@@nav.link.adHocConstraints:Ajustements manuels` },
+        { route: '/verrouillages', label: $localize`:@@nav.link.verrouillages:Verrouillages` }
+      ]
+    },
+    {
+      id: 'ajustements-manuels',
+      icon: 'rule',
+      title: $localize`:@@aide.adHoc.title:Ajustements manuels`,
+      summary: $localize`:@@aide.adHoc.summary:Forcer, interdire, rapprocher : ce que chaque type recouvre exactement, et les cas limites qui surprennent.`,
+      blocks: [
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.adHoc.intro:Un ajustement manuel est une exception que vous saisissez sur vos propres données, à côté des règles du catalogue. Trois des quatre types sont appliqués au même niveau que le cadre légal : le solveur ne les contournera jamais, quitte à rendre un planning en défaut. Chacun se saisit avec une raison, qui reste lisible partout où l'ajustement est cité.`
+        },
+        {
+          kind: 'definitions',
+          items: [
+            {
+              term: $localize`:@@aide.adHoc.term.indisponibilite:Indisponibilité forcée`,
+              text: $localize`:@@aide.adHoc.def.indisponibilite:Interdit à la personne d'occuper un poste dans le périmètre choisi. À distinguer des jours d'indisponibilité saisis sur la fiche de l'animateur, qui portent sur une journée entière : ici, vous pouvez viser un créneau précis, un stand précis, ou les deux.`
+            },
+            {
+              term: $localize`:@@aide.adHoc.term.affectation:Affectation forcée`,
+              text: $localize`:@@aide.adHoc.def.affectation:Exige qu'au moins un poste du périmètre soit tenu par la personne. Attention : si vous nommez plusieurs animateurs, l'ajustement est satisfait dès que l'un d'eux tient le poste — c'est un « l'un de ces animateurs », jamais un « tous ». Pour imposer deux personnes, saisissez deux ajustements.`
+            },
+            {
+              term: $localize`:@@aide.adHoc.term.incompatibilite:Incompatibilité`,
+              text: $localize`:@@aide.adHoc.def.incompatibilite:Interdit à deux personnes de travailler sur le même créneau. Elle porte sur le créneau, pas sur le stand : deux stands différents à la même heure sont tout autant interdits. Restreindre l'ajustement à un stand ne l'assouplit donc que dans ce stand-là. Seuls les deux premiers animateurs de la liste sont pris en compte : pour trois personnes qui ne doivent pas se croiser, saisissez les trois paires.`
+            },
+            {
+              term: $localize`:@@aide.adHoc.term.affinite:Affinité (paire à privilégier)`,
+              text: $localize`:@@aide.adHoc.def.affinite:Le seul type qui n'est pas une règle dure : une simple préférence, récompensée chaque fois que les deux personnes tiennent un poste sur le même stand au même créneau. Elle ne force rien — la rendre dure en ferait une affectation imposée déguisée, qui entrerait en conflit avec l'équilibrage des charges et les disponibilités de chacun.`
+            }
+          ]
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.adHoc.perimetre:Le créneau et le stand sont facultatifs, et les laisser vides veut dire « partout » : une indisponibilité forcée sans périmètre écarte la personne de tout l'événement. Un ajustement conserve l'identifiant du créneau visé — si ce créneau est supprimé ou régénéré par un découpage, la colonne Périmètre affiche « créneau supprimé » et l'ajustement ne s'applique plus à rien. Après un découpage, revérifiez ceux qui visaient un créneau.`
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.adHoc.contradictions:Deux ajustements qui ne peuvent pas tenir ensemble sont refusés à l'enregistrement, avec un message qui les nomme tous les deux — plutôt qu'un planning déclaré infaisable plusieurs minutes plus tard, sans que rien n'en désigne la cause. Quatre situations sont refusées :`
+        },
+        {
+          kind: 'list',
+          items: [
+            $localize`:@@aide.adHoc.refus1:la même paire déclarée à la fois incompatible et en affinité ;`,
+            $localize`:@@aide.adHoc.refus2:une affectation forcée dont tout le périmètre est couvert par une indisponibilité forcée visant chacun des animateurs qu'elle nomme ;`,
+            $localize`:@@aide.adHoc.refus3:deux affectations forcées qui fixent la même personne sur des périmètres se chevauchant dans le temps — personne ne tient deux postes à la même heure ;`,
+            $localize`:@@aide.adHoc.refus4:deux affectations forcées qui placent sur un même créneau deux personnes déclarées incompatibles.`
+          ]
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.adHoc.limites:Le contrôle ne refuse que ce qui est certainement impossible : un ajustement refusé à tort vous coûterait une saisie légitime, sans contournement. Passent donc délibérément une affectation forcée nommant deux animateurs quand un seul d'entre eux est indisponible (l'autre peut la satisfaire), une indisponibilité plus étroite que le périmètre forcé (le poste peut se poser ailleurs dedans), et deux affectations forcées sur le même créneau dont une seule précise un stand (un seul poste les satisfait toutes les deux). Ces combinaisons-là ne sont pas refusées, mais elles peuvent quand même mener à un planning en défaut : c'est la résolution qui tranchera.`
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.adHoc.chevauchement:Le chevauchement se calcule sur les horaires du créneau tels qu'ils sont saisis. Une fermeture de stand peut réduire la plage réellement couverte par un poste : deux affectations forcées sur des créneaux qui se recouvrent, mais sur deux stands fermés à des heures complémentaires, seront donc refusées alors que le solveur aurait pu les poser. Le périmètre d'un ajustement est ce que vous avez saisi ; dans ce cas, visez des créneaux qui ne se recouvrent pas.`
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.adHoc.modifier:Modifier un ajustement, c'est le réenregistrer sous son propre identifiant : la nouvelle version remplace la précédente, et ce cas n'est jamais refusé pour contradiction avec elle-même. Un ajustement enregistré avant que ce contrôle existe, ou importé, peut en revanche subsister : la page Problèmes le signale alors comme cause bloquante, et l'écran des ajustements marque d'un avertissement les lignes concernées. Rien d'autre ne les désignerait.`
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.adHoc.import:À l'import d'un scénario, les ajustements manuels du fichier remplacent en bloc ceux de l'édition : un fichier qui n'en porte aucun n'en installe aucun. Ce qui les préserve d'un aller-retour, c'est l'export, qui écrit la section dès que l'édition en porte. Un fichier dont les ajustements se contredisent est refusé en entier, sans rien écrire.`
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.adHoc.apres:Quand une résolution se termine malgré tout en défaut, la page Problèmes nomme les ajustements que le solveur n'a pas pu honorer, un par un, avec le nombre de violations que chacun porte — c'est ce qui distingue « le solveur n'y arrive pas » de « ces trois exceptions-là sont à arbitrer ».`
+        }
+      ],
+      links: [
+        { route: '/ad-hoc-constraints', label: $localize`:@@nav.link.adHocConstraints:Ajustements manuels` },
+        { route: '/problemes', label: $localize`:@@nav.link.problemes:Problèmes` },
         { route: '/verrouillages', label: $localize`:@@nav.link.verrouillages:Verrouillages` }
       ]
     },

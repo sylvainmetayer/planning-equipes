@@ -161,6 +161,14 @@ sous-ensemble des postes épuisants ou premium.
 
 ## Contraintes ad hoc : les contradictions refusées à la saisie
 
+`ContrainteAdHoc` dans le domaine et sur le fil, **« Ajustements manuels »** à
+l'écran (route `/ad-hoc-constraints`, groupe *Planning* du menu) : ce qu'un
+organisateur saisit là est une exception au plan, pas une règle du catalogue, et
+les deux se lisaient comme la même chose à côté de l'écran Contraintes. Les cas
+limites côté utilisateur — sémantique « l'un de ces animateurs », périmètre
+vide, créneau supprimé — sont détaillés dans l'aide en ligne (`/aide`, section
+« Ajustements manuels »).
+
 Les exceptions saisies à la main s'appliquent en **dur**, à la même priorité que
 les règles légales. Rien n'empêche donc, en principe, d'en saisir deux qui ne
 peuvent pas être satisfaites ensemble — et le seul symptôme serait un score dur

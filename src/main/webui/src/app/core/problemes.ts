@@ -89,7 +89,7 @@ export function niveauProblemeLabel(niveau: NiveauProbleme): string {
 
 export function typeCauseLabel(type: TypeCauseInfaisabilite): string {
   return type === 'CONTRAINTES_AD_HOC_CONTRADICTOIRES'
-    ? $localize`:@@problemes.cause.contraintesAdHocContradictoires:Contraintes ad hoc contradictoires`
+    ? $localize`:@@problemes.cause.contraintesAdHocContradictoires:Ajustements manuels contradictoires`
     : $localize`:@@problemes.cause.creneauSousEffectif:Créneau en sous-effectif`;
 }
 
@@ -110,7 +110,7 @@ export function liensDeCause(cause: CauseInfaisabilite): LienProbleme[] {
   if ((cause.contrainteIds ?? []).length > 0) {
     liens.push({
       route: '/ad-hoc-constraints',
-      libelle: $localize`:@@problemes.lien.adHoc:Voir les contraintes ad hoc`
+      libelle: $localize`:@@problemes.lien.adHoc:Voir les ajustements manuels`
     });
   }
   return liens;
@@ -130,7 +130,7 @@ export function detailsDeCause(cause: CauseInfaisabilite): string[] {
   }
   if ((cause.contrainteIds ?? []).length > 0) {
     const contraintes = cause.contrainteIds.join(', ');
-    details.push($localize`:@@problemes.detail.contraintesAdHoc:Contraintes ad hoc : ${contraintes}:contraintes:`);
+    details.push($localize`:@@problemes.detail.contraintesAdHoc:Ajustements manuels : ${contraintes}:contraintes:`);
   }
   if (cause.manque > 0) {
     const manque = cause.manque;
@@ -151,7 +151,7 @@ function detailsEnCause(contributions: ContributionAdHoc[]): string[] {
   const noms = contributions
     .map((contribution) => `${contribution.contrainteId} (${contribution.violations})`)
     .join(', ');
-  return [$localize`:@@problemes.detail.adHocEnCause:Exceptions en cause : ${noms}:noms:`];
+  return [$localize`:@@problemes.detail.adHocEnCause:Ajustements en cause : ${noms}:noms:`];
 }
 
 /**
@@ -207,7 +207,7 @@ export function construireProblemes(
       if (enCause.length > 0) {
         liens.push({
           route: '/ad-hoc-constraints',
-          libelle: $localize`:@@problemes.lien.adHoc:Voir les contraintes ad hoc`
+          libelle: $localize`:@@problemes.lien.adHoc:Voir les ajustements manuels`
         });
       }
       problemes.push({
