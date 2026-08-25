@@ -112,7 +112,7 @@
         <th mat-header-cell *matHeaderCellDef i18n="@@verrouillages.field.raison">Raison (optionnel)</th>
         <td mat-cell *matCellDef="let row">{{ row.raison || '—' }}</td>
       </ng-container>
-      <ng-container matColumnDef="actions">
+      <ng-container matColumnDef="actions" stickyEnd>
         <th mat-header-cell *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>
         <td mat-cell *matCellDef="let row" class="row-actions">
           <button

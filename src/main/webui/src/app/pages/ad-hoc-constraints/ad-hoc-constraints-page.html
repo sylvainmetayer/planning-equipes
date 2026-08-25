@@ -38,7 +38,7 @@
         <th mat-header-cell *matHeaderCellDef i18n="@@adHoc.field.raison">Raison</th>
         <td mat-cell *matCellDef="let contrainte">{{ contrainte.raison }}</td>
       </ng-container>
-      <ng-container matColumnDef="actions">
+      <ng-container matColumnDef="actions" stickyEnd>
         <th mat-header-cell *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>
         <td mat-cell *matCellDef="let contrainte" class="row-actions">
           <button matIconButton i18n-matTooltip="@@common.edit" matTooltip="Modifier" i18n-aria-label="@@common.edit" aria-label="Modifier" [disabled]="editingLocked()" (click)="edit(contrainte)">

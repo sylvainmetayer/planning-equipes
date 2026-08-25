@@ -69,6 +69,35 @@ test('chaque page du menu admin se charge et affiche son contenu', async ({ brow
   await page.context().close();
 });
 
+/**
+ * The reference screens whose rows carry a delete button, and which the seeded
+ * dataset actually fills.
+ */
+const ROUTES_AVEC_ACTIONS = ['/stands', '/animateurs', '/creneaux'];
+
+test("la colonne d'actions reste visible sur un écran étroit", async ({ browser }) => {
+  // These tables are wider than a laptop screen — /animateurs alone overflows
+  // by ~260 px at 1000 px wide — and the actions column is the last one, so the
+  // delete button used to sit off-screen until you scrolled the table
+  // sideways. It is pinned to the right edge (`stickyEnd`); what this checks is
+  // that it is reachable without that scroll, which is the whole point.
+  const page = await pageAdmin(browser, admin);
+  await page.setViewportSize({ width: 900, height: 900 });
+
+  for (const route of ROUTES_AVEC_ACTIONS) {
+    await page.goto(route);
+    const cellule = page.locator('td.row-actions').first();
+    await expect(cellule, `page ${route}`).toBeVisible();
+
+    const dernierBouton = cellule.locator('button').last();
+    const boite = await dernierBouton.boundingBox();
+    expect(boite, `dernier bouton de ${route}`).not.toBeNull();
+    expect(boite!.x + boite!.width, `dernier bouton hors écran sur ${route}`).toBeLessThanOrEqual(900);
+    expect(boite!.x, `dernier bouton hors écran à gauche sur ${route}`).toBeGreaterThanOrEqual(0);
+  }
+  await page.context().close();
+});
+
 test('le catalogue des contraintes documente le verrouillage des échanges', async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
   await page.goto('/constraints');

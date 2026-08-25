@@ -163,6 +163,41 @@ form.form-grid {
   text-overflow: clip;
 }
 
+/*
+ * … et « c'est le tableau qui défile » posait le problème suivant : la colonne
+ * d'actions est la dernière, donc la première à sortir de l'écran. Sur
+ * /animateurs en 1000 px de large, le tableau déborde de 262 px et les cinq
+ * boutons — dont Supprimer — n'étaient atteignables qu'après un défilement
+ * horizontal, sur tous les écrans à la fois. Elle est donc épinglée à droite
+ * (`stickyEnd` sur chaque `matColumnDef="actions"`), et reste sous les yeux.
+ *
+ * Le fond doit être opaque, sinon les colonnes qui défilent se lisent au
+ * travers : Material donne `background: inherit` aux cellules, ce qui suffit.
+ * Reste la gouttière : `.table-wrapper` est le `mat-card-content` lui-même,
+ * donc il porte le padding de la carte, et une cellule collante s'aligne sur
+ * la boîte de padding alors que le contenu, lui, défile dessous. Sans le
+ * pseudo-élément ci-dessous, un liseré de la colonne voisine dépassait à
+ * droite des actions. `background: inherit` le peint exactement de la couleur
+ * de la cellule, en clair comme en sombre.
+ */
+.table-wrapper .mat-column-actions::after,
+.table-wrapper .mat-column-actionsAuto::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 100%;
+  width: 1rem;
+  background: inherit;
+}
+
+/* L'en-tête de cette colonne est vide : rien à tronquer, et le pseudo-élément
+   ci-dessus a besoin de déborder. */
+.table-wrapper th.mat-column-actions,
+.table-wrapper th.mat-column-actionsAuto {
+  overflow: visible;
+}
+
 .danger-action {
   color: var(--mat-sys-error);
 }

@@ -67,7 +67,7 @@
           <th mat-header-cell *matHeaderCellDef i18n="@@kpi.column.duree">Durée</th>
           <td mat-cell *matCellDef="let entry">{{ dureeLabel(entry) }}</td>
         </ng-container>
-        <ng-container matColumnDef="actions">
+        <ng-container matColumnDef="actions" stickyEnd>
           <th mat-header-cell *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>
           <td mat-cell *matCellDef="let entry" class="row-actions">
             <button
