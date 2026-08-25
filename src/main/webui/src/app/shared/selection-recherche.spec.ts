@@ -132,15 +132,48 @@ describe('SelectionRecherche', () => {
     expect(input.placeholder).toBe('Tapez un nom');
   });
 
-  it('keeps the previous pick when the typed text no longer matches it', () => {
+  // The field must never show one name while the component answers another:
+  // callers read the selection to export a planning, and the person on screen
+  // is the one the user believes they picked.
+  it('drops the pick as soon as the typed text stops naming it', () => {
     picker.choisir('A1');
     picker.onSaisieSimple('zzz');
 
-    // CONSTATÉ, NON VOULU: in single mode only an *empty* field clears the
-    // selection, so the field reads "zzz" while the component still answers
-    // "Émile Zola" — the very thing the code comment above `onSaisieSimple`
-    // says never happens. Left as is: clearing on every non-matching keystroke
-    // is a UX arbitration, not an obvious fix. Reported separately.
+    expect(fixture.componentInstance.valeurs()).toEqual([]);
+  });
+
+  it('keeps the pick while the text still names it', () => {
+    picker.choisir('A1');
+    // `choisir` writes the option's own label into the field; retyping it
+    // character for character must not drop the selection.
+    picker.onSaisieSimple('Émile Zola');
+
     expect(fixture.componentInstance.valeurs()).toEqual(['A1']);
+  });
+
+  // Same rule, selection coming from outside: `/animateur-timeline` reads its
+  // animateur from the URL, so `choisir` never runs and the field used to show
+  // its placeholder while a pick was live — and the first keystroke then
+  // dropped a selection nobody could see.
+  it('shows a selection it received from its caller', async () => {
+    fixture.componentRef.setInput('valeurs', ['A1']);
+    await fixture.whenStable();
+
+    const input = (fixture.nativeElement as HTMLElement).querySelector('input') as HTMLInputElement;
+    expect(input.value).toBe('Émile Zola');
+  });
+
+  it('waits for the options before writing anything in the field', async () => {
+    fixture.componentRef.setInput('options', []);
+    fixture.componentRef.setInput('valeurs', ['A1']);
+    await fixture.whenStable();
+
+    const input = (fixture.nativeElement as HTMLElement).querySelector('input') as HTMLInputElement;
+    expect(input.value).toBe('');
+
+    // The list arrives late — the field catches up instead of staying blank.
+    fixture.componentRef.setInput('options', ANIMATEURS);
+    await fixture.whenStable();
+    expect(input.value).toBe('Émile Zola');
   });
 });

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, model, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, input, model, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatChipsModule } from '@angular/material/chips';
@@ -120,15 +120,46 @@ export class SelectionRecherche {
       : $localize`:@@selectionRecherche.hintTotal:${total}:total: entrée(s) — tapez pour filtrer`;
   });
 
+  constructor() {
+    // The other half of "the field never shows one thing while the component
+    // answers another": a selection can also arrive from outside — the timeline
+    // reads its animateur from the URL — and `choisir` never ran, so the field
+    // stayed on its placeholder while a pick was live. Writing the label back
+    // is what makes the input honest, and what keeps the first keystroke from
+    // dropping a selection the user could not see.
+    effect(() => {
+      if (this.multiple()) {
+        return;
+      }
+      const choisi = this.valeurs()[0];
+      if (!choisi) {
+        return;
+      }
+      // No label yet means the options have not loaded: leave the field alone
+      // rather than blank it, this effect runs again when they arrive.
+      const label = this.options().find((option) => option.id === choisi)?.label;
+      if (label && this.saisie() !== label) {
+        this.saisie.set(label);
+      }
+    });
+  }
+
   protected retirerLabel(label: string): string {
     return $localize`:@@selectionRecherche.remove:Retirer ${label}:label:`;
   }
 
   protected onSaisieSimple(valeur: string): void {
     this.saisie.set(valeur);
-    // Clearing the field clears the selection: the picker never keeps a value
-    // the input no longer shows.
-    if (!valeur.trim()) {
+    // The picker never keeps a value the input no longer shows. Only an empty
+    // field used to clear it, so typing over a pick left the old id selected:
+    // the field read one name while the component answered another, and a
+    // caller exported the planning of someone the user had stopped looking at.
+    const choisi = this.valeurs()[0];
+    if (!choisi) {
+      return;
+    }
+    const label = this.options().find((option) => option.id === choisi)?.label ?? '';
+    if (valeur.trim() !== label.trim()) {
       this.valeurs.set([]);
     }
   }
