@@ -121,7 +121,7 @@ public class EspaceAnimateurService {
                 .map(PlanningExportService.JourRepos::date)
                 .toList();
 
-        PlanSnapshotService.SnapshotMeta publication = planPublieService.dernierePublication();
+        PlanSnapshotService.SnapshotMeta publication = planPublieService.lastPublication();
         return new EspaceAnimateurView(animateur.getId(), animateur.getPrenom(), animateur.getNom(),
                 publication == null ? null : publication.publieLe(),
                 demandeEchangeService.isFoireOpen(), postes, joursRepos, collegues);
@@ -226,10 +226,10 @@ public class EspaceAnimateurService {
         if (creneauId == null || standId == null || standId.isBlank()) {
             throw new BusinessError.Invalid("Créneau ou stand manquant");
         }
-        // Sur le plan publié, comme tout le reste de l'espace : on n'échange que
-        // ce qu'on nous a annoncé. L'application d'un échange accepté se fait,
-        // elle, contre le plan de travail — c'est l'admin qui arbitre entre les
-        // deux, à la validation.
+        // On the published plan, like the rest of the espace: you only trade
+        // what you were told about. Applying an accepted échange, on the other
+        // hand, happens against the working plan — the admin arbitrates between
+        // the two at validation time.
         PlanningService.SuggestionsEchange suggestions = planningService.suggererEchanges(
                 planPublieService.planPublie(), animateurId, creneauId, standId, plafond);
         Map<String, Animateur> animateurs = referenceDataService.listAnimateurs().stream()

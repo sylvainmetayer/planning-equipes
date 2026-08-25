@@ -33,13 +33,13 @@ public class PlanPublieService {
     PlanningPersistenceService persistenceService;
 
     /** The last published snapshot's metadata, {@code null} when nothing was ever published. */
-    public PlanSnapshotService.SnapshotMeta dernierePublication() {
-        return snapshotService.dernierePublication();
+    public PlanSnapshotService.SnapshotMeta lastPublication() {
+        return snapshotService.lastPublication();
     }
 
     /** True while this edition has never published anything — the state every edition starts in. */
     public boolean jamaisPublie() {
-        return dernierePublication() == null;
+        return lastPublication() == null;
     }
 
     /**
@@ -49,7 +49,7 @@ public class PlanPublieService {
      * treats as « rien à montrer », never as « aucune vacation attribuée ».
      */
     public PlanningEvenement planPublie() {
-        PlanSnapshotService.SnapshotDetail detail = snapshotService.chargerDernierePublication();
+        PlanSnapshotService.SnapshotDetail detail = snapshotService.loadLastPublication();
         if (detail == null) {
             return persistenceService.assemblerPlanning(List.of());
         }

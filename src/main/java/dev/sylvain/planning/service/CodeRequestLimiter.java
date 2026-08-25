@@ -44,7 +44,7 @@ public class CodeRequestLimiter {
     @Inject
     ConfigEspaceCode config;
 
-    private final Map<String, Fenetre> parAnimateur = new ConcurrentHashMap<>();
+    private final Map<String, Fenetre> byAnimateur = new ConcurrentHashMap<>();
 
     /** Unconsumed requests, and the start of the window counting them. */
     private record Fenetre(int demandes, Instant debut) {
@@ -57,7 +57,7 @@ public class CodeRequestLimiter {
      */
     public Verdict request(String key) {
         Instant maintenant = Instant.now();
-        Fenetre apres = parAnimateur.compute(key, (ignore, courante) -> {
+        Fenetre apres = byAnimateur.compute(key, (ignore, courante) -> {
             if (courante == null || courante.debut().plus(config.fenetre()).isBefore(maintenant)) {
                 return new Fenetre(1, maintenant);
             }
@@ -72,6 +72,6 @@ public class CodeRequestLimiter {
 
     /** The code was used: the run of requests with no follow-up stops there. */
     public void oublier(String key) {
-        parAnimateur.remove(key);
+        byAnimateur.remove(key);
     }
 }

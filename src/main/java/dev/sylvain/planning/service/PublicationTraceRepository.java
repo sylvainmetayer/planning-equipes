@@ -61,7 +61,7 @@ public class PublicationTraceRepository {
     ObjectMapper objectMapper;
 
     /** Records everyone a publication addressed, reached or not. */
-    public void enregistrer(long snapshotId, List<Destinataire> destinataires) {
+    public void record(long snapshotId, List<Destinataire> destinataires) {
         if (destinataires.isEmpty()) {
             return;
         }
@@ -78,7 +78,7 @@ public class PublicationTraceRepository {
                     ps.setString(5, destinataire.email());
                     ps.setString(6, destinataire.statut().name());
                     ps.setTimestamp(7, Timestamp.from(destinataire.envoyeLe()));
-                    ps.setString(8, ecrire(destinataire.changements()));
+                    ps.setString(8, serialize(destinataire.changements()));
                     ps.addBatch();
                 }
                 ps.executeBatch();
@@ -87,7 +87,7 @@ public class PublicationTraceRepository {
     }
 
     /** The trace of one publication, in the order the admin reviewed it. */
-    public List<Destinataire> parSnapshot(long snapshotId) {
+    public List<Destinataire> bySnapshot(long snapshotId) {
         String sql = """
  SELECT snapshot_id, animateur_id, nom_affiche, email, statut, envoye_le, changements
  FROM publication_destinataire
@@ -96,14 +96,14 @@ public class PublicationTraceRepository {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, sql)) {
             ps.setLong(2, snapshotId);
-            return lire(ps);
+            return read(ps);
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to read the recipients of publication " + snapshotId, e);
         }
     }
 
     /** Everything one animateur was ever told, newest first — their own history. */
-    public List<Destinataire> parAnimateur(String animateurId) {
+    public List<Destinataire> byAnimateur(String animateurId) {
         String sql = """
  SELECT snapshot_id, animateur_id, nom_affiche, email, statut, envoye_le, changements
  FROM publication_destinataire
@@ -112,13 +112,13 @@ public class PublicationTraceRepository {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, sql)) {
             ps.setString(2, animateurId);
-            return lire(ps);
+            return read(ps);
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to read the publications sent to " + animateurId, e);
         }
     }
 
-    private List<Destinataire> lire(PreparedStatement ps) throws SQLException {
+    private List<Destinataire> read(PreparedStatement ps) throws SQLException {
         List<Destinataire> destinataires = new ArrayList<>();
         try (ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
@@ -130,13 +130,13 @@ public class PublicationTraceRepository {
                         rs.getString("email"),
                         StatutEnvoi.valueOf(rs.getString("statut")),
                         envoyeLe == null ? null : envoyeLe.toInstant(),
-                        relire(rs.getString("changements"))));
+                        deserialize(rs.getString("changements"))));
             }
         }
         return destinataires;
     }
 
-    private String ecrire(List<String> changements) {
+    private String serialize(List<String> changements) {
         try {
             return objectMapper.writeValueAsString(changements == null ? List.of() : changements);
         } catch (Exception e) {
@@ -145,7 +145,7 @@ public class PublicationTraceRepository {
     }
 
     /** A payload written by an older format reads as an empty trace, never as an error. */
-    private List<String> relire(String json) {
+    private List<String> deserialize(String json) {
         if (json == null || json.isBlank()) {
             return List.of();
         }

@@ -66,9 +66,9 @@ class PublicationResourceTest {
     @BeforeEach
     void seed() {
         mailbox.clear();
-        oublierLesPublications();
+        forgetPublications();
         persistence.clearDatabase();
-        persisterPlan("MAIL-A", "MAIL-B");
+        persistPlan("MAIL-A", "MAIL-B");
         donnerEmail("PUB-A", EMAIL_ALICE);
         donnerEmail("PUB-B", null);
         donnerEmail("PUB-C", EMAIL_CHLOE);
@@ -82,10 +82,10 @@ class PublicationResourceTest {
      */
     @AfterEach
     void nettoyer() {
-        oublierLesPublications();
+        forgetPublications();
     }
 
-    private void oublierLesPublications() {
+    private void forgetPublications() {
         try (Connection connection = dataSource.getConnection();
                 Statement statement = connection.createStatement()) {
             statement.executeUpdate("DELETE FROM plan_snapshot");
@@ -101,7 +101,7 @@ class PublicationResourceTest {
         JsonPath apercu = apercu();
 
         assertThat(apercu.getBoolean("jamaisPublie")).isTrue();
-        assertThat(apercu.getObject("dernierePublicationLe", Object.class)).isNull();
+        assertThat(apercu.getObject("lastPublicationLe", Object.class)).isNull();
         assertThat(apercu.getInt("nombreConcernes")).isEqualTo(2);
         assertThat(apercu.getList("destinataires.nomAffiche"))
                 .containsExactly("Alice Martin", "Bruno Petit");
@@ -124,7 +124,7 @@ class PublicationResourceTest {
         // Chloé holds no seat: publishing must leave her alone.
         assertThat(mailbox.getMailsSentTo(EMAIL_CHLOE)).isEmpty();
 
-        assertThat(apercu().getString("dernierePublicationLe")).isNotBlank();
+        assertThat(apercu().getString("lastPublicationLe")).isNotBlank();
     }
 
     @Test
@@ -132,7 +132,7 @@ class PublicationResourceTest {
         publier();
         mailbox.clear();
 
-        // Le siège de Bruno passe à Chloé : Alice ne bouge pas.
+        // Bruno's seat goes to Chloé: Alice does not move.
         assertThat(persistence.reaffecterPoste("PUB-P2", "PUB-C")).isTrue();
 
         JsonPath apercu = apercu();
@@ -145,8 +145,8 @@ class PublicationResourceTest {
         assertThat(rapport.getList("sansEmail")).containsExactly("Bruno Petit");
         assertThat(mailbox.getMailsSentTo(EMAIL_ALICE)).isEmpty();
 
-        // Chloé n'avait jamais rien reçu : pour elle ce n'est pas un
-        // changement, c'est son planning.
+        // Chloé had never received anything: for her this is not a change,
+        // it is her planning.
         List<Mail> versChloe = mailbox.getMailsSentTo(EMAIL_CHLOE);
         assertThat(versChloe).hasSize(1);
         assertThat(versChloe.get(0).getSubject()).contains("votre planning individuel");
@@ -159,8 +159,8 @@ class PublicationResourceTest {
         publier();
         mailbox.clear();
 
-        // Alice quitte le stand un pour le stand deux, aux mêmes heures.
-        persisterPlan("MAIL-B", "MAIL-A");
+        // Alice leaves stand one for stand two, at the same hours.
+        persistPlan("MAIL-B", "MAIL-A");
 
         JsonPath rapport = publier();
         assertThat(rapport.getInt("envoyes")).isEqualTo(1);
@@ -205,9 +205,8 @@ class PublicationResourceTest {
         publier();
         mailbox.clear();
 
-        // Même plan, ré-persisté : les identifiants de poste peuvent bouger, les
-        // emplois du temps non.
-        persisterPlan("MAIL-A", "MAIL-B");
+        // Same plan, persisted again: poste ids may move, schedules do not.
+        persistPlan("MAIL-A", "MAIL-B");
 
         assertThat(apercu().getInt("nombreConcernes")).isZero();
         assertThat(mailbox.getTotalMessagesSent()).isZero();
@@ -248,8 +247,8 @@ class PublicationResourceTest {
 
         assertThat(rapport.getList("sansEmail")).contains("Bruno Petit");
         assertThat(rapport.getList("echecs")).isEmpty();
-        // Il reste dans la trace : « prévenu » et « à prévenir » ne doivent pas
-        // se confondre au prochain aperçu.
+        // He stays in the trace: "told" and "to be told" must not read the
+        // same at the next preview.
         assertThat(apercu().getInt("nombreConcernes")).isZero();
     }
 
@@ -267,7 +266,7 @@ class PublicationResourceTest {
     }
 
     /** Persists the two seats, {@code standUn} first, held by the given animateurs. */
-    private void persisterPlan(String surStandUn, String surStandDeux) {
+    private void persistPlan(String surStandUn, String surStandDeux) {
         Animateur alice = new Animateur("PUB-A", "Alice", "Martin", LocalDate.of(1990, 1, 1), false);
         Animateur bruno = new Animateur("PUB-B", "Bruno", "Petit", LocalDate.of(1992, 2, 2), false);
         Animateur chloe = new Animateur("PUB-C", "Chloé", "Durand", LocalDate.of(1995, 3, 3), false);

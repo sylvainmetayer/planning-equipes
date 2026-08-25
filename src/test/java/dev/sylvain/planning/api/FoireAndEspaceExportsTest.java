@@ -68,7 +68,7 @@ class FoireAndEspaceExportsTest {
 
         // Alice's espace session (e-mail code flow) rides on every request.
         donnerEmail("FOIRE-A", "foire-alice@example.org");
-        // L'espace montre le plan publié : sans publication il est vide.
+        // The espace shows the published plan: without a publication it is empty.
         PlansPublies.publier(publication);
         mailbox.clear();
         RestAssured.requestSpecification = null;

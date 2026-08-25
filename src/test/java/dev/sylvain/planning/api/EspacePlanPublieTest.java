@@ -65,12 +65,12 @@ class EspacePlanPublieTest {
     @BeforeEach
     void seed() {
         mailbox.clear();
-        oublierLesPublications();
+        forgetPublications();
         persistence.clearDatabase();
-        persisterPlan("PUBESP-A");
+        persistPlan("PUBESP-A");
         donnerEmail("PUBESP-A", EMAIL_ALICE);
 
-        // La session de l'espace (code par e-mail) accompagne chaque requête.
+        // The espace session (e-mail code flow) rides on every request.
         RestAssured.requestSpecification = null;
         String session = EspaceSessions.open(mailbox, tokenOf("PUBESP-A"), EMAIL_ALICE);
         RestAssured.requestSpecification = new RequestSpecBuilder()
@@ -82,7 +82,7 @@ class EspacePlanPublieTest {
     @AfterEach
     void nettoyer() {
         RestAssured.requestSpecification = null;
-        oublierLesPublications();
+        forgetPublications();
     }
 
     @Test
@@ -110,9 +110,9 @@ class EspacePlanPublieTest {
     void unPlanDeTravailModifieNeBougePasLEspaceAvantLaProchainePublication() {
         publication.publier();
 
-        // Le plan de travail bouge — assistant de réparation, échange validé,
-        // solve incrémental : l'espace ne doit pas suivre tout seul.
-        persisterPlan("PUBESP-B");
+        // The working plan moves — repair assistant, validated échange,
+        // incremental solve: the espace must not follow on its own.
+        persistPlan("PUBESP-B");
 
         given().when().get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
@@ -139,7 +139,7 @@ class EspacePlanPublieTest {
 
     /* -------------------------------- Helpers ------------------------------ */
 
-    private void persisterPlan(String titulaireId) {
+    private void persistPlan(String titulaireId) {
         Animateur alice = new Animateur("PUBESP-A", "Alice", "Martin", LocalDate.of(1990, 1, 1), false);
         Animateur bruno = new Animateur("PUBESP-B", "Bruno", "Petit", LocalDate.of(1992, 2, 2), false);
         Stand stand = new Stand("PUBESP-S1", "Stand espace un", Set.of(), 1, 1, false);
@@ -167,7 +167,7 @@ class EspacePlanPublieTest {
     }
 
     /** A published snapshot survives {@code clearDatabase()} — see PublicationResourceTest. */
-    private void oublierLesPublications() {
+    private void forgetPublications() {
         try (Connection connection = dataSource.getConnection();
                 Statement statement = connection.createStatement()) {
             statement.executeUpdate("DELETE FROM plan_snapshot");

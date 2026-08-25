@@ -153,20 +153,20 @@ public class PublicationDiffService {
      * once, so it produces no diff and warns nobody. Telling people about a
      * day that no longer exists is a different feature.</p>
      */
-    public static Map<String, List<Vacation>> vacationsParAnimateur(PlanningEvenement planning) {
-        Map<String, List<Vacation>> parAnimateur = new LinkedHashMap<>();
+    public static Map<String, List<Vacation>> vacationsByAnimateur(PlanningEvenement planning) {
+        Map<String, List<Vacation>> byAnimateur = new LinkedHashMap<>();
         if (planning == null || planning.getPostes() == null) {
-            return parAnimateur;
+            return byAnimateur;
         }
         for (PosteAffectation poste : planning.getPostes()) {
             if (poste.getAnimateur() == null || poste.getStand() == null || poste.getCreneau() == null) {
                 continue;
             }
-            parAnimateur.computeIfAbsent(poste.getAnimateur().getId(), unused -> new ArrayList<>())
+            byAnimateur.computeIfAbsent(poste.getAnimateur().getId(), unused -> new ArrayList<>())
                     .add(new Vacation(poste.getCreneau().getDate(), poste.heureDebutEffectif(),
                             poste.heureFinEffectif(), poste.getStand().getId(), poste.getStand().getNom()));
         }
-        return parAnimateur;
+        return byAnimateur;
     }
 
     /** « samedi 11/07 : Cirque 14h-18h » — one vacation, worded as the change lines word it. */

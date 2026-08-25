@@ -63,9 +63,9 @@ public class PublicationResource {
     @Path("/destinataires")
     public List<Destinataire> destinataires(@QueryParam("snapshot") Long snapshotId) {
         if (snapshotId != null) {
-            return traceRepository.parSnapshot(snapshotId);
+            return traceRepository.bySnapshot(snapshotId);
         }
-        PlanSnapshotService.SnapshotMeta derniere = planPublieService.dernierePublication();
-        return derniere == null ? List.of() : traceRepository.parSnapshot(derniere.id());
+        PlanSnapshotService.SnapshotMeta derniere = planPublieService.lastPublication();
+        return derniere == null ? List.of() : traceRepository.bySnapshot(derniere.id());
     }
 }

@@ -346,7 +346,7 @@ public class PlanSnapshotService {
      * published, which is the state of every edition until an admin publishes
      * once.
      */
-    public SnapshotMeta dernierePublication() {
+    public SnapshotMeta lastPublication() {
         String sql = "SELECT " + COLONNES_META + ", s.kpi" + DEPUIS_SNAPSHOT
                 + " WHERE s.edition_id = ? AND s.publie_le IS NOT NULL"
                 + " ORDER BY s.publie_le DESC, s.id DESC LIMIT 1";
@@ -359,8 +359,8 @@ public class PlanSnapshotService {
         }
     }
 
-    /** Same as {@link #dernierePublication()}, content included. */
-    public SnapshotDetail chargerDernierePublication() {
+    /** Same as {@link #lastPublication()}, content included. */
+    public SnapshotDetail loadLastPublication() {
         String sql = "SELECT " + COLONNES_META + ", s.contenu, s.kpi" + DEPUIS_SNAPSHOT
                 + " WHERE s.edition_id = ? AND s.publie_le IS NOT NULL"
                 + " ORDER BY s.publie_le DESC, s.id DESC LIMIT 1";

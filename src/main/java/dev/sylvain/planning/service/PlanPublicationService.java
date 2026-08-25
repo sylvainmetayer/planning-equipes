@@ -112,13 +112,13 @@ public class PlanPublicationService {
      * @param jamaisPublie      no plan was ever published on this edition; the
      *                          first publication then concerns everybody
      * @param planVide          nothing is persisted to publish at all
-     * @param solveEnCours      a solve is running: publishing would freeze a
+     * @param solveRunning      a solve is running: publishing would freeze a
      *                          plan about to be overwritten, so it is refused
-     * @param dernierePublicationLe when the last publication left, {@code null}
+     * @param lastPublicationLe when the last publication left, {@code null}
      *                          if there has never been one
      */
-    public record ApercuPublication(boolean jamaisPublie, boolean planVide, boolean solveEnCours,
-            Instant dernierePublicationLe, int nombreConcernes,
+    public record ApercuPublication(boolean jamaisPublie, boolean planVide, boolean solveRunning,
+            Instant lastPublicationLe, int nombreConcernes,
             List<DestinatairePublication> destinataires) {
     }
 
@@ -132,19 +132,19 @@ public class PlanPublicationService {
             List<String> sansEmail, List<String> echecs) {
     }
 
-    /* ------------------------------- Aperçu -------------------------------- */
+    /* ------------------------------- Preview ------------------------------- */
 
     /** Who would be written to, and what they would read. Reads only; sends nothing. */
     public ApercuPublication apercu() {
         PlanningEvenement courant = persistenceService.loadPersistedPlanning();
         PlanningEvenement publie = planPublieService.planPublie();
         boolean jamaisPublie = planPublieService.jamaisPublie();
-        PlanSnapshotService.SnapshotMeta derniere = planPublieService.dernierePublication();
+        PlanSnapshotService.SnapshotMeta derniere = planPublieService.lastPublication();
 
         Map<String, Identite> identites = identites();
         List<ChangementAnimateur> changements = diffService.comparer(
-                PublicationDiffService.vacationsParAnimateur(publie),
-                PublicationDiffService.vacationsParAnimateur(courant),
+                PublicationDiffService.vacationsByAnimateur(publie),
+                PublicationDiffService.vacationsByAnimateur(courant),
                 identites,
                 jamaisPublie);
 
@@ -152,7 +152,7 @@ public class PlanPublicationService {
         return new ApercuPublication(
                 jamaisPublie,
                 courant.getPostes().stream().noneMatch(poste -> poste.getAnimateur() != null),
-                solveEnCours(),
+                solveRunning(),
                 derniere == null ? null : derniere.publieLe(),
                 destinataires.size(),
                 destinataires);
@@ -166,21 +166,21 @@ public class PlanPublicationService {
      */
     private List<DestinatairePublication> assembler(List<ChangementAnimateur> changements,
             Map<String, Identite> identites) {
-        Map<String, List<String>> decisions = decisionsParAnimateur();
-        Map<String, List<String>> enCours = enCoursParAnimateur();
+        Map<String, List<String>> decisions = decisionsByAnimateur();
+        Map<String, List<String>> enCours = pendingByAnimateur();
 
-        Map<String, DestinatairePublication> parAnimateur = new LinkedHashMap<>();
+        Map<String, DestinatairePublication> byAnimateur = new LinkedHashMap<>();
         for (ChangementAnimateur changement : changements) {
             List<String> lignesDemandes = new ArrayList<>(decisions.getOrDefault(changement.animateurId(), List.of()));
             lignesDemandes.addAll(enCours.getOrDefault(changement.animateurId(), List.of()));
-            parAnimateur.put(changement.animateurId(), new DestinatairePublication(
+            byAnimateur.put(changement.animateurId(), new DestinatairePublication(
                     changement.animateurId(), changement.nomAffiche(), changement.email(),
                     changement.premiereDiffusion(),
                     changement.changements().stream().map(ChangementVacation::libelle).toList(),
                     lignesDemandes));
         }
         for (Map.Entry<String, List<String>> entree : decisions.entrySet()) {
-            if (parAnimateur.containsKey(entree.getKey())) {
+            if (byAnimateur.containsKey(entree.getKey())) {
                 continue;
             }
             Identite identite = identites.get(entree.getKey());
@@ -189,11 +189,11 @@ public class PlanPublicationService {
             }
             List<String> lignesDemandes = new ArrayList<>(entree.getValue());
             lignesDemandes.addAll(enCours.getOrDefault(entree.getKey(), List.of()));
-            parAnimateur.put(entree.getKey(), new DestinatairePublication(
+            byAnimateur.put(entree.getKey(), new DestinatairePublication(
                     entree.getKey(), identite.nomAffiche(), identite.email(), false,
                     List.of(), lignesDemandes));
         }
-        List<DestinatairePublication> destinataires = new ArrayList<>(parAnimateur.values());
+        List<DestinatairePublication> destinataires = new ArrayList<>(byAnimateur.values());
         destinataires.sort((gauche, droite) -> String.CASE_INSENSITIVE_ORDER
                 .compare(gauche.nomAffiche(), droite.nomAffiche()));
         return List.copyOf(destinataires);
@@ -217,7 +217,7 @@ public class PlanPublicationService {
      */
     public RapportPublication publier() {
         ApercuPublication apercu = apercu();
-        if (apercu.solveEnCours()) {
+        if (apercu.solveRunning()) {
             throw new BusinessError.Conflict(
                     "Un solve est en cours : publier maintenant figerait un plan sur le point d'être réécrit.");
         }
@@ -242,7 +242,7 @@ public class PlanPublicationService {
         List<String> echecs = new ArrayList<>();
         int envoyes = 0;
         for (DestinatairePublication destinataire : apercu.destinataires()) {
-            StatutEnvoi statut = envoyer(planning, destinataire);
+            StatutEnvoi statut = send(planning, destinataire);
             switch (statut) {
                 case ENVOYE -> envoyes++;
                 case SANS_EMAIL -> sansEmail.add(destinataire.nomAffiche());
@@ -251,14 +251,14 @@ public class PlanPublicationService {
             trace.add(new Destinataire(meta.id(), destinataire.animateurId(), destinataire.nomAffiche(),
                     destinataire.email(), statut, envoyeLe, destinataire.lignes()));
         }
-        traceRepository.enregistrer(meta.id(), trace);
-        demandeEchangeService.marquerCommuniquees(decisionsAnnoncees(), envoyeLe);
+        traceRepository.record(meta.id(), trace);
+        demandeEchangeService.markAsCommunicated(decisionsAnnoncees(), envoyeLe);
 
         return new RapportPublication(meta.id(), meta.publieLe(), envoyes,
                 List.copyOf(sansEmail), List.copyOf(echecs));
     }
 
-    private StatutEnvoi envoyer(PlanningEvenement planning, DestinatairePublication destinataire) {
+    private StatutEnvoi send(PlanningEvenement planning, DestinatairePublication destinataire) {
         if (destinataire.email() == null || destinataire.email().isBlank()) {
             return StatutEnvoi.SANS_EMAIL;
         }
@@ -283,7 +283,7 @@ public class PlanPublicationService {
 
     /* -------------------------------- Helpers ------------------------------ */
 
-    private boolean solveEnCours() {
+    private boolean solveRunning() {
         Optional<SolverJobService.SolverJob> actif = solverJobService.findActive();
         return actif.isPresent()
                 && editionContext.editionIdCourant().equals(actif.get().getEditionId());
@@ -314,7 +314,7 @@ public class PlanPublicationService {
     }
 
     /** Wording of the decisions taken since the last publication, per demandeur. */
-    private Map<String, List<String>> decisionsParAnimateur() {
+    private Map<String, List<String>> decisionsByAnimateur() {
         Map<String, List<String>> lignes = new LinkedHashMap<>();
         for (DemandeEchange demande : demandeEchangeService.decisionsNonCommuniquees()) {
             lignes.computeIfAbsent(demande.getDemandeurId(), unused -> new ArrayList<>())
@@ -324,11 +324,11 @@ public class PlanPublicationService {
     }
 
     /** Wording of the requests still waiting, per demandeur. */
-    private Map<String, List<String>> enCoursParAnimateur() {
+    private Map<String, List<String>> pendingByAnimateur() {
         Map<String, List<String>> lignes = new LinkedHashMap<>();
-        for (DemandeEchange demande : demandeEchangeService.demandesEnCours()) {
+        for (DemandeEchange demande : demandeEchangeService.pendingDemandes()) {
             lignes.computeIfAbsent(demande.getDemandeurId(), unused -> new ArrayList<>())
-                    .add(libelleEnCours(demande));
+                    .add(libellePendingDemande(demande));
         }
         return lignes;
     }
@@ -348,7 +348,7 @@ public class PlanPublicationService {
         return ligne.toString();
     }
 
-    private String libelleEnCours(DemandeEchange demande) {
+    private String libellePendingDemande(DemandeEchange demande) {
         String creneau = libelleCreneau(demande);
         return "Votre demande d'échange" + (creneau == null ? "" : " (" + creneau + ")")
                 + (demande.getStatut() == StatutDemandeEchange.EN_ATTENTE_CIBLE

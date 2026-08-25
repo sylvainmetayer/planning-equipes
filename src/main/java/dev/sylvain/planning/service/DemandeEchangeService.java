@@ -483,12 +483,12 @@ public class DemandeEchangeService {
      * own (nothing has been decided), but somebody already being written to
      * deserves to be told where their request stands.
      */
-    public List<DemandeEchange> demandesEnCours() {
+    public List<DemandeEchange> pendingDemandes() {
         return list(" AND statut IN ('EN_ATTENTE_CIBLE', 'PROPOSEE')", null);
     }
 
     /** Marks decisions as announced, once the publication mail carrying them has left. */
-    public void marquerCommuniquees(Collection<String> demandeIds, Instant communiqueeLe) {
+    public void markAsCommunicated(Collection<String> demandeIds, Instant communiqueeLe) {
         if (demandeIds.isEmpty()) {
             return;
         }

@@ -116,16 +116,16 @@ class PlanningServiceIncrementalTest {
 
     @Test
     void lePerimetreManuelRouvreUnAnimateurUnJourOuUnStandEncoreValides() {
-        List<PosteAffectation> parAnimateur = List.of(poste("p0", standA, matinJ1), poste("p1", standA, matinJ1));
+        List<PosteAffectation> byAnimateur = List.of(poste("p0", standA, matinJ1), poste("p1", standA, matinJ1));
         Map<String, List<String>> persiste = Map.of(key("STAND-A", 1L), List.of("A1", "A2"));
 
-        StatistiquesIncremental stats = PlanningService.figerPostesIncremental(parAnimateur, animateurs, persiste,
+        StatistiquesIncremental stats = PlanningService.figerPostesIncremental(byAnimateur, animateurs, persiste,
                 new ReplanificationScope(Set.of("A1"), Set.of(), Set.of()), List.of());
 
         // Alice's seat is re-opened even though nothing invalidated it — that is
         // the operator saying "elle se désiste, refais-le".
-        assertThat(parAnimateur.get(0).getAnimateur()).isNull();
-        assertThat(parAnimateur.get(1).getAnimateur()).isEqualTo(bob);
+        assertThat(byAnimateur.get(0).getAnimateur()).isNull();
+        assertThat(byAnimateur.get(1).getAnimateur()).isEqualTo(bob);
         assertThat(stats).isEqualTo(new StatistiquesIncremental(2, 1, 0, 1, 0));
 
         List<PosteAffectation> parJour = List.of(poste("p0", standA, matinJ1), poste("p1", standA, matinJ2));

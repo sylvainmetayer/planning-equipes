@@ -135,8 +135,8 @@ class PublicationDiffServiceTest {
 
     @Test
     void deuxVacationsDuMemeJourSurLeMemeStandNeSontPasApparieesEntreElles() {
-        // Matin et soir sur le même stand : retirer le soir est un retrait, pas
-        // un déplacement du matin vers le soir.
+        // Morning and evening on the same stand: removing the evening one is a
+        // retrait, not a move of the morning one into the evening.
         List<ChangementAnimateur> changements = diff.comparer(
                 Map.of("camille", List.of(
                         vacation(SAMEDI, 9, 12, "ninja", "Ninja"),
@@ -211,8 +211,8 @@ class PublicationDiffServiceTest {
 
     @Test
     void unDestinataireSansAdresseResteDansLaListe() {
-        // Sans adresse il ne recevra rien, mais l'admin doit le voir : c'est le
-        // seul moment où il apprend qu'il faut le prévenir autrement.
+        // With no address they will receive nothing, but the admin has to see
+        // them: this is the only moment they learn to reach them another way.
         List<ChangementAnimateur> changements = diff.comparer(
                 Map.of(),
                 Map.of("sasha", List.of(vacation(SAMEDI, 14, 18, "cirque", "Cirque"))),

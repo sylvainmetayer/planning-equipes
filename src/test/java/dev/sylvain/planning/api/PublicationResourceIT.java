@@ -80,9 +80,9 @@ class PublicationResourceIT {
         JsonPath apres = apercu();
         assertThat(apres.getInt("nombreConcernes")).isZero();
         assertThat(apres.getBoolean("jamaisPublie")).isFalse();
-        assertThat(apres.getString("dernierePublicationLe")).isNotBlank();
+        assertThat(apres.getString("lastPublicationLe")).isNotBlank();
 
-        // Rien de nouveau à annoncer : c'est le but, pas une erreur à contourner.
+        // Nothing new to announce: that is the point, not an error to work around.
         given().contentType(ContentType.JSON)
                 .when().post("/api/planning/publication")
                 .then()
@@ -102,8 +102,8 @@ class PublicationResourceIT {
                 .then().statusCode(200).extract().jsonPath();
         assertThat(trace.getList("animateurId")).contains("ITPB-A", "ITPB-B");
         assertThat(trace.getList("envoyeLe", String.class)).allSatisfy(quand -> assertThat(quand).isNotBlank());
-        // Bruno n'a pas d'adresse : il reste dans la trace, sinon « prévenu » et
-        // « à prévenir » se confondraient au prochain aperçu.
+        // Bruno has no address: he stays in the trace, otherwise "told" and
+        // "to be told" would read the same at the next preview.
         assertThat(trace.getList("statut", String.class)).contains("SANS_EMAIL");
     }
 

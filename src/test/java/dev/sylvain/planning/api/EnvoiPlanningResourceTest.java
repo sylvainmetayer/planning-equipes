@@ -74,7 +74,7 @@ class EnvoiPlanningResourceTest {
         donnerEmail("MAIL-A", EMAIL_ALICE);
         donnerEmail("MAIL-B", null);
         donnerEmail("MAIL-C", "chloe-envoi@example.org");
-        // Le renvoi individuel renvoie le plan publié, pas le plan de travail.
+        // The individual resend sends the published plan, not the working one.
         PlansPublies.publier(publication);
         mailbox.clear();
     }
