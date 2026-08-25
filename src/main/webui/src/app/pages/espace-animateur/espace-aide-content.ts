@@ -116,7 +116,7 @@ export function buildEspaceAideSections(): EspaceAideSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@espace.aide.planning.maj:La mention « Planning mis à jour le… » indique de quand date la version que vous lisez. L'organisation peut relancer un calcul ou valider des échanges après coup : repassez sur cette page avant de partir, c'est elle qui fait foi.`
+          text: $localize`:@@espace.aide.planning.maj:La mention « Planning communiqué le… » indique de quand date la version que vous lisez. C'est celle que l'organisation vous a envoyée : elle ne change que lorsqu'elle publie à nouveau, et vous êtes alors prévenu par e-mail de ce qui bouge pour vous. Repassez tout de même sur cette page avant de partir, c'est elle qui fait foi.`
         },
         {
           kind: 'paragraph',
