@@ -9,6 +9,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
@@ -192,6 +193,73 @@ class DemandeEchangeFlowTest {
                 .filteredOn(v -> v.getType() == TypeVerrouillage.ANIMATEUR_CRENEAU)
                 .extracting(v -> v.getAnimateurId() + "@" + v.getCreneauId())
                 .contains("ECH-B@" + CRENEAU_ID, "ECH-A@" + creneauCibleId);
+    }
+
+    /**
+     * « Qui peut me remplacer ? »: the animateur names only THEIR OWN seat and
+     * the assistant looks for the colleagues an échange really works with.
+     * Denis, free that day, comes first — he frees Alice; Bruno, already on the
+     * other stand of the same créneau, is only a croisé; Chloé, unavailable
+     * that day, is not proposed at all.
+     */
+    @Test
+    void lAssistantProposeLesCollegesAvecQuiLEchangeTient() {
+        persistTwoSeatPlanningWithSpareColleague();
+        String token = tokenOf("ECH-A");
+
+        List<Map<String, Object>> suggestions = given()
+                .when().get("/api/espace-animateur/" + token + "/suggestions-echange"
+                        + "?creneauId=" + CRENEAU_ID + "&standId=ECH-S1&plafond=100")
+                .then()
+                .statusCode(200)
+                .body("creneauId", equalTo((int) CRENEAU_ID))
+                .body("standId", equalTo("ECH-S1"))
+                .extract().jsonPath().getList("suggestions");
+
+        assertThat(suggestions).extracting(suggestion -> suggestion.get("animateurId"))
+                .contains("ECH-D", "ECH-B")
+                .doesNotContain("ECH-C", "ECH-A");
+
+        Map<String, Object> denis = suggestionOf(suggestions, "ECH-D");
+        assertThat(denis.get("nomComplet")).isEqualTo("Denis Roux");
+        assertThat(denis.get("echangeCroise")).isEqualTo(false);
+        assertThat(denis.get("standCibleNom")).isNull();
+
+        // Bruno holds the other stand of that créneau: Alice would not be
+        // freed, she would move to stand deux — which the view spells out.
+        Map<String, Object> bruno = suggestionOf(suggestions, "ECH-B");
+        assertThat(bruno.get("echangeCroise")).isEqualTo(true);
+        assertThat(bruno.get("standCibleNom")).isEqualTo("Stand deux");
+
+        // Those who free the demandeur rank before the croisés: that is the
+        // question the button asks.
+        assertThat(rankOf(suggestions, "ECH-D")).isLessThan(rankOf(suggestions, "ECH-B"));
+
+        // And a suggestion submits as is: it names a colleague the ordinary
+        // form accepts, with no seat wanted in return.
+        given().contentType(ContentType.JSON)
+                .body("[{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"ECH-S1\",\"cibleId\":\"ECH-D\"}]")
+                .when().post("/api/espace-animateur/" + token + "/demandes")
+                .then()
+                .statusCode(200)
+                .body("[0].prevalidationOk", equalTo(true));
+    }
+
+    /** Only one's own seats are searchable — Bruno's answers 400. */
+    @Test
+    void lAssistantRefuseUnSiegeQuiNEstPasLeMien() {
+        persistTwoSeatPlanning();
+        String token = tokenOf("ECH-A");
+
+        given().when().get("/api/espace-animateur/" + token + "/suggestions-echange"
+                        + "?creneauId=" + CRENEAU_ID + "&standId=ECH-S2")
+                .then()
+                .statusCode(400);
+
+        // A missing créneau or stand is refused the same way.
+        given().when().get("/api/espace-animateur/" + token + "/suggestions-echange?standId=ECH-S1")
+                .then()
+                .statusCode(400);
     }
 
     @Test
@@ -573,6 +641,31 @@ class DemandeEchangeFlowTest {
         RestAssured.requestSpecification = new RequestSpecBuilder()
                 .addCookie("planning-espace", sessionAlice)
                 .build();
+    }
+
+    /**
+     * The two-seat planning, plus Denis: available that day and holding no
+     * seat, hence the only one who can really free Alice from her créneau.
+     */
+    private void persistTwoSeatPlanningWithSpareColleague() {
+        persistTwoSeatPlanning();
+        Animateur denis = new Animateur("ECH-D", "Denis", "Roux", LocalDate.of(1988, 4, 4), false);
+        PlanningEvenement planning = persistence.loadPersistedPlanning();
+        List<Animateur> animateurs = new java.util.ArrayList<>(planning.getAnimateurs());
+        animateurs.removeIf(animateur -> "ECH-D".equals(animateur.getId()));
+        animateurs.add(denis);
+        persistence.persist(new PlanningEvenement(JOUR, animateurs, planning.getPostes()));
+    }
+
+    private static Map<String, Object> suggestionOf(List<Map<String, Object>> suggestions, String animateurId) {
+        return suggestions.stream()
+                .filter(suggestion -> animateurId.equals(suggestion.get("animateurId")))
+                .findFirst()
+                .orElseThrow();
+    }
+
+    private static int rankOf(List<Map<String, Object>> suggestions, String animateurId) {
+        return suggestions.indexOf(suggestionOf(suggestions, animateurId));
     }
 
     private void donnerEmail(String animateurId, String email) {

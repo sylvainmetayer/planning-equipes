@@ -50,6 +50,7 @@ function demande(id: string): DemandeEchangeView {
 }
 
 class FakeApi {
+  get = vi.fn(async (_url: string): Promise<unknown> => null);
   getPreservingHttpError = vi.fn(async (_url: string): Promise<unknown> => null);
   post = vi.fn(async (_url: string, _body: unknown): Promise<unknown> => null);
 }
@@ -157,6 +158,25 @@ describe('EspaceAnimateurService', () => {
       null
     );
     expect(service.demandes()[0].statut).toBe('ANNULEE');
+  });
+
+  it('« qui peut me remplacer ? » interroge le siège demandé, id de stand échappé', async () => {
+    service.jeton.set('jeton-1');
+    api.get.mockResolvedValue({
+      creneauId: 12,
+      standId: 'stand/un',
+      candidatsEligibles: 3,
+      candidatsEvalues: 3,
+      listeTronquee: false,
+      suggestions: []
+    });
+
+    const trouvees = await service.suggestionsEchange(12, 'stand/un');
+
+    expect(api.get).toHaveBeenCalledWith(
+      '/api/espace-animateur/jeton-1/suggestions-echange?creneauId=12&standId=stand%2Fun'
+    );
+    expect(trouvees.suggestions).toEqual([]);
   });
 
   it('soumettre ou annuler sans espace chargé est un bug appelant : erreur explicite', async () => {

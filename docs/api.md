@@ -306,6 +306,35 @@ L'acceptation applique l'échange exactement comme simulé, pose deux verrous
 `ANIMATEUR_CRENEAU` sur le créneau que chacun **reçoit**, et notifie. **Le
 solveur n'est pas relancé.**
 
+Un lot sollicite **chaque collègue visé**, une notification par collègue et non
+une par lot : le compte annoncé est celui de ses seules demandes, personne
+n'apprend ce qui a été proposé à un autre.
+
+### Qui peut me remplacer ?
+
+`GET /api/espace-animateur/{jeton}/suggestions-echange?creneauId=X&standId=Y&plafond=N`
+
+Pour l'animateur qui ne veut pas d'un créneau et n'a personne en tête : au lieu
+de désigner un collègue, il ne désigne que **son** siège et l'assistant cherche
+ceux avec qui l'échange tient. Même mécanique que l'assistant de réparation —
+filtre d'éligibilité du solveur, une simulation par candidat, verdict sur le
+**plan entier**, plafond de 20 (100 au maximum) — appliquée cette fois à
+l'échange plutôt qu'au remplacement.
+
+La réponse ne porte **aucun score** : un `HardMediumSoftScore` ne dit rien à un
+animateur, et publier la santé globale du plan dans l'espace la donnerait à tout
+porteur de jeton. Elle porte, pour chaque collègue, ce qui décide : `nomComplet`,
+et `echangeCroise` — vrai quand il tient déjà un poste sur ce créneau, auquel cas
+le demandeur n'est pas libéré mais passe sur `standCibleNom`. Les collègues qui
+libèrent viennent d'abord : c'est la question posée. `listeTronquee` dit que la
+recherche s'est arrêtée au plafond, pour que l'IHM ne laisse pas lire « personne
+d'autre ne peut le faire ».
+
+Route en lecture seule : elle ne crée aucune demande. On ne cherche que pour ses
+propres sièges (`400` sinon), et seulement **foire ouverte** — chercher des
+partenaires pour un échange que plus personne ne peut proposer n'induirait qu'en
+erreur.
+
 ## Marque et mentions légales
 
 `/api/branding` et `/api/mentions-legales` sont **publics**, comme

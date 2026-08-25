@@ -20,6 +20,7 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
@@ -88,6 +89,27 @@ public class EspaceAnimateurResource {
     public List<EspaceAnimateurService.PosteAnimateurView> colleaguePostes(
             @PathParam("collegueId") String collegueId) {
         return espaceAnimateurService.colleaguePostes(collegueId);
+    }
+
+    /**
+     * « Qui peut me remplacer ? » on one of MY seats: the colleagues an
+     * échange would really work with, for the animateur who does not want that
+     * créneau and has nobody in mind. Read-only — no demande is created, and
+     * the chosen colleague still has to agree.
+     *
+     * <p>Bounded like the admin's repair assistant: {@code plafond} caps how
+     * many colleagues are simulated (one full analyse each), and the answer
+     * says how many were eligible against how many were tried.</p>
+     */
+    @GET
+    @Path("/{jeton}/suggestions-echange")
+    @EspaceSessionRequired
+    @FoireOpenRequired
+    public EspaceAnimateurService.SuggestionsEchangeView suggestionsEchange(
+            @QueryParam("creneauId") Long creneauId,
+            @QueryParam("standId") String standId,
+            @QueryParam("plafond") Integer plafond) {
+        return espaceAnimateurService.suggestionsEchange(animateurCourant(), creneauId, standId, plafond);
     }
 
     /** My demandes d'échange, most recent first, whatever their statut. */

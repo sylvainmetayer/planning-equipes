@@ -398,6 +398,48 @@
   font-style: italic;
 }
 
+/* ---------- « Qui peut me remplacer ? » (assistant d'échange) ---------- */
+
+.espace-suggestions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.espace-suggestions-intro,
+.espace-suggestions-vide {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.9rem;
+}
+
+.espace-suggestions-liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.espace-suggestions-liste li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 0.75rem;
+}
+
+.espace-suggestion-detail {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.9rem;
+}
+
 .espace-section-titre {
   margin: 0.5rem 0 0;
 }

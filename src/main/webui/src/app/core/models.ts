@@ -991,6 +991,31 @@ export interface EspaceAnimateurView {
   collegues: CollegueView[];
 }
 
+/**
+ * One colleague the assistant found for an échange
+ * (`/api/espace-animateur/{jeton}/suggestions-echange`): the swap really holds
+ * against the current planning, hard constraints included.
+ */
+export interface SuggestionEchangeView {
+  animateurId: string;
+  nomComplet: string;
+  /** True when they already work that slot: you would move to `standCibleNom`, not be freed. */
+  echangeCroise: boolean;
+  standCibleId: string | null;
+  standCibleNom: string | null;
+}
+
+/** Answer of « qui peut me remplacer ? » on one of my own seats. */
+export interface SuggestionsEchangeView {
+  creneauId: number;
+  standId: string;
+  candidatsEligibles: number;
+  candidatsEvalues: number;
+  /** The search stopped at its ceiling: the list is the best of what was tried, not everyone. */
+  listeTronquee: boolean;
+  suggestions: SuggestionEchangeView[];
+}
+
 export type StatutDemandeEchange =
   | 'EN_ATTENTE_CIBLE'
   | 'PROPOSEE'

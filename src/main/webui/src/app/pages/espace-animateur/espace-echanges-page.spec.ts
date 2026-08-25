@@ -21,7 +21,9 @@ import {
   DemandeEchangeView,
   EspaceAnimateurView,
   PosteAnimateurView,
-  StatutDemandeEchange
+  StatutDemandeEchange,
+  SuggestionEchangeView,
+  SuggestionsEchangeView
 } from '../../core/models';
 import { BrouillonDemande } from './echange-brouillon';
 import { EspaceEchangesPage } from './espace-echanges-page';
@@ -79,6 +81,21 @@ function demande(id: string, statut: StatutDemandeEchange, overrides: Partial<De
   } as DemandeEchangeView;
 }
 
+function suggestions(
+  trouvees: SuggestionEchangeView[],
+  overrides: Partial<SuggestionsEchangeView> = {}
+): SuggestionsEchangeView {
+  return {
+    creneauId: 1,
+    standId: 'tir',
+    candidatsEligibles: trouvees.length,
+    candidatsEvalues: trouvees.length,
+    listeTronquee: false,
+    suggestions: trouvees,
+    ...overrides
+  };
+}
+
 /** Reaches the protected members the template binds to. */
 type PageInternals = {
   posteChoisi: WritableSignal<PosteAnimateurView | null>;
@@ -93,6 +110,12 @@ type PageInternals = {
   demandes: Signal<{ id: string; statutLabel: string; statutClasse: string }[]>;
   recuesEnAttente: Signal<{ id: string }[]>;
   choisirCible: (cibleId: string) => Promise<void>;
+  choisirPoste: (poste: PosteAnimateurView | null) => void;
+  chercherRemplacants: () => Promise<void>;
+  retenirSuggestion: (suggestion: SuggestionEchangeView) => Promise<void>;
+  suggestions: WritableSignal<SuggestionsEchangeView | null>;
+  rechercheEnCours: Signal<boolean>;
+  suggestionsTronquees: Signal<boolean>;
   ajouter: () => void;
   retirer: (index: number) => void;
   soumettre: () => Promise<void>;
@@ -110,6 +133,7 @@ describe('EspaceEchangesPage', () => {
     demandes: espaceDemandes,
     demandesRecues: espaceRecues,
     postesCollegue: vi.fn(),
+    suggestionsEchange: vi.fn(),
     soumettre: vi.fn(),
     annuler: vi.fn(),
     accorderRecue: vi.fn(),
@@ -123,6 +147,7 @@ describe('EspaceEchangesPage', () => {
     espaceRecues.set([]);
     for (const stub of [
       espace.postesCollegue,
+      espace.suggestionsEchange,
       espace.soumettre,
       espace.annuler,
       espace.accorderRecue,
@@ -132,6 +157,7 @@ describe('EspaceEchangesPage', () => {
     }
     notifications.notify.mockReset();
     espace.postesCollegue.mockResolvedValue([]);
+    espace.suggestionsEchange.mockResolvedValue(suggestions([]));
     espace.soumettre.mockResolvedValue([]);
     espace.annuler.mockResolvedValue(undefined);
     espace.accorderRecue.mockResolvedValue(undefined);
@@ -148,6 +174,93 @@ describe('EspaceEchangesPage', () => {
   function createPage(): PageInternals {
     return TestBed.createComponent(EspaceEchangesPage).componentInstance as unknown as PageInternals;
   }
+
+  // « Qui peut me remplacer ? » — the animateur who does not want a créneau and
+  // has nobody in mind. The search only proposes names: it creates no demande,
+  // and the picked colleague still lands in the ordinary form.
+  describe('searching who could take the seat over', () => {
+    it('searches on the picked seat and keeps the answer', async () => {
+      const page = createPage();
+      page.choisirPoste(poste({ creneauId: 7, standId: 'quilles' }));
+      espace.suggestionsEchange.mockResolvedValue(
+        suggestions([{ animateurId: 'bob', nomComplet: 'Bob Durand', echangeCroise: false,
+          standCibleId: null, standCibleNom: null }])
+      );
+
+      await page.chercherRemplacants();
+
+      expect(espace.suggestionsEchange).toHaveBeenCalledExactlyOnceWith(7, 'quilles');
+      expect(page.suggestions()?.suggestions).toHaveLength(1);
+      expect(page.rechercheEnCours()).toBe(false);
+    });
+
+    it('asks for nothing while no seat is picked', async () => {
+      const page = createPage();
+
+      await page.chercherRemplacants();
+
+      expect(espace.suggestionsEchange).not.toHaveBeenCalled();
+      expect(page.suggestions()).toBeNull();
+    });
+
+    // A list found for Monday says nothing about Tuesday: leaving it on screen
+    // would answer a question nobody asked.
+    it('drops the answer as soon as another seat is picked', async () => {
+      const page = createPage();
+      page.choisirPoste(poste());
+      espace.suggestionsEchange.mockResolvedValue(
+        suggestions([{ animateurId: 'bob', nomComplet: 'Bob Durand', echangeCroise: false,
+          standCibleId: null, standCibleNom: null }])
+      );
+      await page.chercherRemplacants();
+
+      page.choisirPoste(poste({ creneauId: 2 }));
+
+      expect(page.suggestions()).toBeNull();
+    });
+
+    it('reports a failed search instead of leaving a stale list', async () => {
+      const page = createPage();
+      page.choisirPoste(poste());
+      espace.suggestionsEchange.mockRejectedValue(new Error('Aucun planning persisté.'));
+
+      await page.chercherRemplacants();
+
+      expect(page.suggestions()).toBeNull();
+      expect(page.rechercheEnCours()).toBe(false);
+      expect(notifications.notify).toHaveBeenCalledWith(
+        expect.objectContaining({ variant: 'error', message: 'Aucun planning persisté.' })
+      );
+    });
+
+    // A truncated search is the best of what was tried, never « nobody else can ».
+    it('says when the search stopped short of the whole roster', async () => {
+      const page = createPage();
+      page.choisirPoste(poste());
+      espace.suggestionsEchange.mockResolvedValue(
+        suggestions([{ animateurId: 'bob', nomComplet: 'Bob Durand', echangeCroise: true,
+          standCibleId: 'quilles', standCibleNom: 'Quilles' }],
+          { candidatsEligibles: 137, candidatsEvalues: 20, listeTronquee: true })
+      );
+
+      await page.chercherRemplacants();
+
+      expect(page.suggestionsTronquees()).toBe(true);
+    });
+
+    it('fills the colleague field from the retained suggestion, nothing more', async () => {
+      const page = createPage();
+      espace.postesCollegue.mockResolvedValue([poste({ creneauId: 9, standId: 'quilles' })]);
+
+      await page.retenirSuggestion({ animateurId: 'bob', nomComplet: 'Bob Durand',
+        echangeCroise: false, standCibleId: null, standCibleNom: null });
+
+      expect(page.cibleId()).toBe('bob');
+      // A plain échange: the retained name never preselects a seat in return.
+      expect(page.posteCibleChoisi()).toBeNull();
+      expect(espace.soumettre).not.toHaveBeenCalled();
+    });
+  });
 
   describe('picking the colleague', () => {
     it('loads the colleague seats so the "wanted in return" picker has real options', async () => {

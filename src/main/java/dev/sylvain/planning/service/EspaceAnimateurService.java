@@ -44,6 +44,9 @@ public class EspaceAnimateurService {
     @Inject
     DemandeEchangeService demandeEchangeService;
 
+    @Inject
+    PlanningService planningService;
+
     /** One of the animateur's seats in the persisted planning. */
     public record PosteAnimateurView(Long creneauId, LocalDate date, LocalTime heureDebut, LocalTime heureFin,
             String standId, String standNom, List<String> coequipiers) {
@@ -158,6 +161,75 @@ public class EspaceAnimateurService {
             throw new NotFoundException("Animateur not found: " + collegueId);
         }
         return postesOf(persistenceService.loadPersistedPlanning(), collegueId, Map.of());
+    }
+
+    /**
+     * One viable partner for an échange, in the espace's words: who, and what
+     * the demandeur would get in return.
+     *
+     * <p>Carries <b>no score</b> on purpose, where the admin's repair
+     * suggestions do: a {@code HardMediumSoftScore} means nothing to an
+     * animateur, and publishing the plan's global health in the espace tells
+     * every holder of a token how healthy (or not) the whole event's planning
+     * is. What they need is the two facts below.</p>
+     *
+     * @param echangeCroise true when the colleague already works that créneau:
+     *                      the demandeur would take {@code standCibleNom}
+     *                      instead of being freed
+     */
+    public record SuggestionEchangeView(String animateurId, String nomComplet, boolean echangeCroise,
+            String standCibleId, String standCibleNom) {
+    }
+
+    /**
+     * Answer of « qui peut me remplacer ? ».
+     *
+     * @param listeTronquee the search stopped at its plafond: the list is the
+     *                      best of what was tried, and the interface must say so
+     *                      rather than let « personne d'autre » be read into it
+     */
+    public record SuggestionsEchangeView(Long creneauId, String standId, int candidatsEligibles,
+            int candidatsEvalues, boolean listeTronquee, List<SuggestionEchangeView> suggestions) {
+    }
+
+    /**
+     * Colleagues this animateur could really trade one of their seats with: the
+     * search behind the espace's « qui peut me remplacer ? » button, for the
+     * animateur who does not want that créneau and has nobody in mind.
+     *
+     * <p>Only the demandeur's own seats are searchable — the créneau/stand pair
+     * must be one of theirs, which {@link PlanningService#suggererEchanges}
+     * enforces by looking the seat up under their id. Nothing is created here:
+     * the animateur still picks a name, submits a demande, and the colleague
+     * still has to agree.</p>
+     */
+    public SuggestionsEchangeView suggestionsEchange(String animateurId, Long creneauId, String standId,
+            Integer plafond) {
+        if (creneauId == null || standId == null || standId.isBlank()) {
+            throw new BusinessError.Invalid("Créneau ou stand manquant");
+        }
+        PlanningService.SuggestionsEchange suggestions = planningService.suggererEchanges(
+                persistenceService.loadPersistedPlanning(), animateurId, creneauId, standId, plafond);
+        Map<String, Animateur> animateurs = referenceDataService.listAnimateurs().stream()
+                .collect(Collectors.toMap(Animateur::getId, Function.identity()));
+        Map<String, Stand> stands = referenceDataService.listStands().stream()
+                .collect(Collectors.toMap(Stand::getId, Function.identity()));
+        List<SuggestionEchangeView> vues = suggestions.suggestions().stream()
+                .map(suggestion -> new SuggestionEchangeView(
+                        suggestion.animateurId(),
+                        nomComplet(animateurs.get(suggestion.animateurId()), suggestion.animateurId()),
+                        suggestion.echangeCroise(),
+                        suggestion.standCibleId(),
+                        suggestion.standCibleId() == null ? null
+                                : nomStand(stands.get(suggestion.standCibleId()), suggestion.standCibleId())))
+                .toList();
+        return new SuggestionsEchangeView(creneauId, standId,
+                suggestions.candidatsEligibles(), suggestions.candidatsEvalues(),
+                suggestions.candidatsEvalues() < suggestions.candidatsEligibles(), vues);
+    }
+
+    private static String nomStand(Stand stand, String fallbackId) {
+        return stand == null ? fallbackId : stand.getNom();
     }
 
     /** Resolves labels for a batch of demandes, in their given order. */

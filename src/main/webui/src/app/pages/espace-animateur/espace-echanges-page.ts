@@ -6,10 +6,16 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { statutDemandeClasse, statutDemandeLabel } from '../../core/demande-echange-labels';
 import { EspaceAnimateurService } from '../../core/espace-animateur.service';
-import { DemandeEchangeView, PosteAnimateurView } from '../../core/models';
+import {
+  DemandeEchangeView,
+  PosteAnimateurView,
+  SuggestionEchangeView,
+  SuggestionsEchangeView
+} from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { LegalText } from '../../shared/legal-text';
 import {
@@ -29,7 +35,10 @@ interface DemandeRow extends DemandeEchangeView {
 /**
  * The échange request form of the espace animateur (issue #165): the
  * animateur lists the créneaux they want to trade (poste + colleague + motif),
- * then submits the whole list at once. Each demande is prevalidated
+ * then submits the whole list at once. When they have nobody in mind — they
+ * simply do not want that créneau — « qui peut me remplacer ? » searches the
+ * colleagues an échange would really work with and fills the colleague field
+ * from the one they pick. Each demande is prevalidated
  * server-side against the hard constraints; an infeasible one is still
  * submitted, but flagged here in business words. Below, the history of their
  * demandes with statut and the admin's comment.
@@ -44,6 +53,7 @@ interface DemandeRow extends DemandeEchangeView {
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
+    MatProgressSpinnerModule,
     MatSelectModule,
     LegalText
   ],
@@ -64,12 +74,22 @@ export class EspaceEchangesPage {
   protected readonly posteCibleChoisi = signal<PosteAnimateurView | null>(null);
   protected readonly postesCollegue = signal<PosteAnimateurView[]>([]);
   protected readonly motif = signal('');
+  /**
+   * Answer of « qui peut me remplacer ? » for the currently picked seat, or
+   * null while nothing was searched — cleared whenever that seat changes, so a
+   * stale list can never be read as an answer about another créneau.
+   */
+  protected readonly suggestions = signal<SuggestionsEchangeView | null>(null);
+  protected readonly rechercheEnCours = signal(false);
   protected readonly brouillons = signal<BrouillonDemande[]>([]);
   protected readonly envoiEnCours = signal(false);
 
   protected readonly formulaireComplet = computed(() =>
     brouillonComplet(this.posteChoisi(), this.cibleId())
   );
+
+  /** True when the search stopped at its ceiling: the list is the best of what was tried, not everyone. */
+  protected readonly suggestionsTronquees = computed(() => this.suggestions()?.listeTronquee ?? false);
 
   /** Closed foire = read-only history: no submission form, no withdrawals. */
   protected readonly foireOuverte = computed(() => this.espace.vue()?.foireOuverte ?? true);
@@ -127,6 +147,42 @@ export class EspaceEchangesPage {
     }
   }
 
+  /** Seat picked: the previous search answered about another créneau, so it goes. */
+  protected choisirPoste(poste: PosteAnimateurView | null): void {
+    this.posteChoisi.set(poste);
+    this.suggestions.set(null);
+  }
+
+  /**
+   * Searches the colleagues this seat could really be traded with. Read-only:
+   * it proposes names, it does not create anything — the animateur still adds
+   * the demande and submits it, and the colleague still has to agree.
+   */
+  protected async chercherRemplacants(): Promise<void> {
+    const poste = this.posteChoisi();
+    if (!poste || this.rechercheEnCours()) {
+      return;
+    }
+    this.rechercheEnCours.set(true);
+    this.suggestions.set(null);
+    try {
+      this.suggestions.set(await this.espace.suggestionsEchange(poste.creneauId, poste.standId));
+    } catch (error) {
+      this.notifications.notify({
+        title: $localize`:@@crud.error:Erreur`,
+        message: errorMessage(error),
+        variant: 'error'
+      });
+    } finally {
+      this.rechercheEnCours.set(false);
+    }
+  }
+
+  /** One suggestion retained: it fills the colleague field, the rest of the form is unchanged. */
+  protected async retenirSuggestion(suggestion: SuggestionEchangeView): Promise<void> {
+    await this.choisirCible(suggestion.animateurId);
+  }
+
   /** Colleague picked: load their seats so the optional "wanted in return" select has real options. */
   protected async choisirCible(cibleId: string): Promise<void> {
     this.cibleId.set(cibleId);
@@ -171,6 +227,7 @@ export class EspaceEchangesPage {
     this.posteCibleChoisi.set(null);
     this.postesCollegue.set([]);
     this.motif.set('');
+    this.suggestions.set(null);
   }
 
   protected retirer(index: number): void {

@@ -960,7 +960,7 @@
   "espace.planning.repos": "Day off — no assignment today.",
   "espace.echanges.foireFermee": "The schedule fair is closed: you can browse your schedule and your past requests, but no longer submit or withdraw any. Reach out to the organisation if a swap is still needed.",
   "espace.echanges.formTitre": "Propose a swap",
-  "espace.echanges.formSousTitre": "Pick one of your timeslots, the colleague to swap with, and a reason. You can also designate the colleague's timeslot you want back in exchange (“I leave you my Monday, I take your Tuesday”) — without that choice, the swap plays out on your timeslot alone. Add as many requests as needed then submit the list: the organisation validates (or not) each swap.",
+  "espace.echanges.formSousTitre": "Pick one of your timeslots, the colleague to swap with, and a reason. If you simply do not want that timeslot and have nobody in mind, the “Who can replace me?” button searches the colleagues a swap would actually work with. You can also designate the colleague's timeslot you want back in exchange (“I leave you my Monday, I take your Tuesday”) — without that choice, the swap plays out on your timeslot alone. Add as many requests as needed then submit the list: the organisation validates (or not) each swap.",
   "espace.echanges.creneau": "Time slot",
   "espace.echanges.collegue": "Swap with",
   "espace.echanges.motif": "Reason",
@@ -1424,5 +1424,12 @@
   "mentions.responsabilite.title": "Responsibility",
   "mentions.responsabilite.texte": " The organisation operating this application remains the employer or principal of the people being scheduled, and remains responsible for the data entered as well as for the schedule produced and shared: compliance with employment rules, accuracy of the information, assignment decisions. The application computes proposals and flags anomalies — it is a decision aid, never a legal validation. ",
   "mentions.chargementImpossible": "This information could not be loaded. Try again in a moment; if it persists, let the organisation know.",
-  "espace.menuLegal": "Legal information"
+  "espace.menuLegal": "Legal information",
+  "espace.echanges.chercherRemplacants": "Who can replace me?",
+  "espace.echanges.suggestionsAucune": "No colleague can take this timeslot over without breaking a scheduling rule. You may still propose the swap to someone: the organisers will decide.",
+  "espace.echanges.suggestionsIntro": "A swap with these colleagues holds against the current schedule. Pick one: they will have to agree, then the organisers will decide.",
+  "espace.echanges.suggestionCroise": "you would move to {$INTERPOLATION} at the same hour",
+  "espace.echanges.suggestionLibere": "frees you from this timeslot",
+  "espace.echanges.suggestionRetenir": "Pick",
+  "espace.echanges.suggestionsTronquees": "{$INTERPOLATION} colleagues were tried out of {$INTERPOLATION_1}: these are the most promising ones, not the full list."
 }

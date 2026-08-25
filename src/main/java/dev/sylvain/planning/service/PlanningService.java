@@ -2275,6 +2275,136 @@ public class PlanningService {
                 extraHardViolations(avant, apres));
     }
 
+    /**
+     * Who could take this seat off the animateur's hands (the espace's « qui
+     * peut me remplacer ? »): the same search as {@link #suggererReparations},
+     * but for an <b>échange</b> — the demandeur names only their own seat, and
+     * every colleague is tried on it in turn, exactly as
+     * {@link #simulateEchange} would score the one they had named themselves.
+     *
+     * <p>Candidates that would worsen the plan's hard score are dropped, so
+     * what comes back is viable in the current planning, not merely plausible.
+     * The verdict is planning-wide for the same reason as everywhere else
+     * here: taking this seat can break a rule on a poste it does not touch
+     * (weekly hours, rest), which the seat's own matches would never show.</p>
+     *
+     * <p>Nothing is persisted and no demande is created: the animateur still
+     * picks a name and submits, and the colleague still has to agree.</p>
+     *
+     * <p><b>Bounded like the repair assistant</b>, and for the same reason —
+     * one full analyse per candidate. The result carries both counts so the
+     * caller can say « les 20 plus prometteurs sur 137 » instead of passing a
+     * truncated list off as the whole truth.</p>
+     */
+    public SuggestionsEchange suggererEchanges(PlanningEvenement solved, String demandeurId,
+            long creneauId, String standId, Integer plafondDemande) {
+        PosteAffectation posteDemandeur = posteOf(solved, demandeurId, creneauId, standId);
+        Animateur demandeur = posteDemandeur.getAnimateur();
+        int plafond = effectiveCandidateCap(plafondDemande);
+
+        ScoreAnalysis<?> avant = solutionManager.analyze(solved);
+        HardMediumSoftScore scoreAvant = (HardMediumSoftScore) avant.score();
+
+        List<CandidatEchange> eligibles = candidatsEchange(solved, posteDemandeur);
+        List<CandidatEchange> evalues = eligibles.size() > plafond ? eligibles.subList(0, plafond) : eligibles;
+
+        List<SuggestionEchange> suggestions = new ArrayList<>();
+        for (CandidatEchange candidat : evalues) {
+            PosteAffectation siege = candidat.siege();
+            // Same throwaway in-place substitution as simulateEchange, reverted
+            // in the finally: the planning is a per-request payload.
+            ScoreAnalysis<?> apres;
+            posteDemandeur.setAnimateur(candidat.animateur());
+            if (siege != null) {
+                siege.setAnimateur(demandeur);
+            }
+            try {
+                apres = solutionManager.analyze(solved);
+            } finally {
+                posteDemandeur.setAnimateur(demandeur);
+                if (siege != null) {
+                    siege.setAnimateur(candidat.animateur());
+                }
+            }
+            HardMediumSoftScore scoreApres = (HardMediumSoftScore) apres.score();
+            if (scoreApres.hardScore() < scoreAvant.hardScore()) {
+                continue;
+            }
+            suggestions.add(new SuggestionEchange(candidat.animateur().getId(), siege != null,
+                    siege == null ? null : siege.getStand().getId(),
+                    scoreApres, scoreApres.subtract(scoreAvant)));
+        }
+        // Those who free the demandeur outright come first: the button exists
+        // for « je ne veux pas de ce créneau », and a croisé merely moves them
+        // to another stand at the same hour. Within each group, best impact on
+        // the plan first, then a stable id order.
+        suggestions.sort(Comparator.comparing(SuggestionEchange::echangeCroise)
+                .thenComparing(SuggestionEchange::delta, Comparator.<HardMediumSoftScore>naturalOrder().reversed())
+                .thenComparing(SuggestionEchange::animateurId, NaturalOrder.DES_IDS));
+        return new SuggestionsEchange(creneauId, standId, scoreAvant,
+                eligibles.size(), evalues.size(), plafond, List.copyOf(suggestions));
+    }
+
+    /** One candidate for an échange, with the seat they would hand back — {@code null} frees the demandeur. */
+    private record CandidatEchange(Animateur animateur, PosteAffectation siege) {
+    }
+
+    /**
+     * Who may be tried on {@code posteDemandeur}, most promising first. Both
+     * halves of the trade are filtered through the solver's own
+     * {@link EligibleAnimateurMoveFilter}: the candidate must be eligible on
+     * the demandeur's seat, and — when they hold one on the same créneau, which
+     * makes the échange croisé — the demandeur must be eligible on theirs.
+     *
+     * <p>The order matters because the caller truncates. First those who leave
+     * the demandeur free and are themselves free at that hour: the very answer
+     * the button is asked for, and the only one that cannot create an overlap.
+     * Then the croisés, viable but keeping the demandeur at work. Last those
+     * free of that créneau yet busy on an overlapping one — almost certainly
+     * infeasible, kept only so a small roster still gets an answer.</p>
+     */
+    private static List<CandidatEchange> candidatsEchange(PlanningEvenement solved,
+            PosteAffectation posteDemandeur) {
+        Animateur demandeur = posteDemandeur.getAnimateur();
+        long creneauId = posteDemandeur.getCreneau().getId();
+        Set<String> occupes = animateursOccupesPendant(solved, posteDemandeur);
+        List<CandidatEchange> candidats = new ArrayList<>();
+        for (Animateur candidat : solved.getAnimateurs()) {
+            if (candidat.getId().equals(demandeur.getId())
+                    || !EligibleAnimateurMoveFilter.isEligible(posteDemandeur, candidat)) {
+                continue;
+            }
+            PosteAffectation siege = siegeSur(solved, candidat.getId(), creneauId, posteDemandeur);
+            if (siege != null && !EligibleAnimateurMoveFilter.isEligible(siege, demandeur)) {
+                continue;
+            }
+            candidats.add(new CandidatEchange(candidat, siege));
+        }
+        candidats.sort(Comparator
+                .comparingInt((CandidatEchange candidat) -> rangEchange(candidat, occupes))
+                .thenComparing(candidat -> candidat.animateur().getId(), NaturalOrder.DES_IDS));
+        return candidats;
+    }
+
+    private static int rangEchange(CandidatEchange candidat, Set<String> occupes) {
+        if (candidat.siege() != null) {
+            return 1;
+        }
+        return occupes.contains(candidat.animateur().getId()) ? 2 : 0;
+    }
+
+    /** The seat {@code animateurId} holds on the same créneau as {@code posteDemandeur}, if any. */
+    private static PosteAffectation siegeSur(PlanningEvenement solved, String animateurId, long creneauId,
+            PosteAffectation posteDemandeur) {
+        return solved.getPostes().stream()
+                .filter(poste -> poste != posteDemandeur
+                        && poste.getCreneau() != null && poste.getCreneau().getId() != null
+                        && poste.getCreneau().getId() == creneauId
+                        && poste.getAnimateur() != null && animateurId.equals(poste.getAnimateur().getId()))
+                .findFirst()
+                .orElse(null);
+    }
+
     /** The seat {@code animateurId} holds on (créneau, stand), or throws in business words. */
     private static PosteAffectation posteOf(PlanningEvenement solved, String animateurId, long creneauId,
             String standId) {
@@ -2419,6 +2549,34 @@ public class PlanningService {
             HardMediumSoftScore scoreAvant, List<ContrainteImpact> contraintesVioleesAvant,
             int candidatsEligibles, int candidatsEvalues, int plafond,
             List<SuggestionReparation> suggestions) {
+    }
+
+    /**
+     * One colleague this seat could be traded with (the espace's « qui peut me
+     * remplacer ? »). Only ever produced for a candidate that leaves the plan's
+     * hard score no worse.
+     *
+     * @param echangeCroise true when the colleague already works that créneau —
+     *                      the demandeur then takes {@code standCibleId} instead
+     *                      of being freed
+     * @param standCibleId  the stand the demandeur would end up on, {@code null}
+     *                      when the échange frees them
+     * @param delta         {@code scoreApres - scoreAvant}: the greater, the better for the plan
+     */
+    public record SuggestionEchange(String animateurId, boolean echangeCroise, String standCibleId,
+            HardMediumSoftScore scoreApres, HardMediumSoftScore delta) {
+    }
+
+    /**
+     * Result of {@link #suggererEchanges}, carrying the cost it actually paid,
+     * like {@link SuggestionsReparation}: {@code candidatsEvalues} of the
+     * {@code candidatsEligibles} were simulated. When the two differ the search
+     * stopped at the plafond and the list is the best of what it saw, not an
+     * exhaustive answer.
+     */
+    public record SuggestionsEchange(long creneauId, String standId, HardMediumSoftScore scoreAvant,
+            int candidatsEligibles, int candidatsEvalues, int plafond,
+            List<SuggestionEchange> suggestions) {
     }
 
     /**

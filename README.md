@@ -253,6 +253,7 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 | Envoi par e-mail | Envoyer à chaque animateur son planning et le lien vers son espace, en une action |
 | Espace animateur | Un espace personnel par lien nominatif : son planning, ses jours de repos, ses demandes d'échange — sans compte à créer |
 | Foire au planning | Les animateurs proposent leurs échanges de créneaux en libre-service ; le collègue visé donne son accord, l'organisation arbitre, rien ne s'applique sans validation |
+| Qui peut me remplacer ? | Sans personne en tête, l'animateur ne désigne que son créneau : l'application lui propose les collègues avec qui l'échange tient vraiment, en indiquant lesquels le libèrent |
 
 ### Outils
 

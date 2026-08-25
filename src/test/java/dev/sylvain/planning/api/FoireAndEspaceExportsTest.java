@@ -127,6 +127,14 @@ class FoireAndEspaceExportsTest {
                 .statusCode(400)
                 .body("message", containsString("fermée"));
 
+        // Same for « qui peut me remplacer ? » — searching partners for an
+        // échange nobody may propose any more would only mislead.
+        given().when().get("/api/espace-animateur/" + token + "/suggestions-echange"
+                        + "?creneauId=" + CRENEAU_ID + "&standId=FOIRE-S1")
+                .then()
+                .statusCode(400)
+                .body("message", containsString("fermée"));
+
         // The espace stays consultable and says the foire is closed.
         given().when().get("/api/espace-animateur/" + token)
                 .then()
@@ -137,6 +145,9 @@ class FoireAndEspaceExportsTest {
         // Reopening restores the whole flow, cancellation and picker included.
         configure(true);
         given().when().get("/api/espace-animateur/" + token + "/collegues/FOIRE-B/postes")
+                .then().statusCode(200);
+        given().when().get("/api/espace-animateur/" + token + "/suggestions-echange"
+                        + "?creneauId=" + CRENEAU_ID + "&standId=FOIRE-S1")
                 .then().statusCode(200);
         given().contentType(ContentType.JSON)
                 .when().post("/api/espace-animateur/" + token + "/demandes/" + demandeId + "/annulation")

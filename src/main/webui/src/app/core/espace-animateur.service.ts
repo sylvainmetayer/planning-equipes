@@ -5,7 +5,13 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { ApiService, toError } from './api.service';
-import { DemandeEchangeView, EspaceAnimateurView, NouvelleDemandeEchange, PosteAnimateurView } from './models';
+import {
+  DemandeEchangeView,
+  EspaceAnimateurView,
+  NouvelleDemandeEchange,
+  PosteAnimateurView,
+  SuggestionsEchangeView
+} from './models';
 
 @Injectable({ providedIn: 'root' })
 export class EspaceAnimateurService {
@@ -96,6 +102,18 @@ export class EspaceAnimateurService {
   async postesCollegue(collegueId: string): Promise<PosteAnimateurView[]> {
     return this.api.get<PosteAnimateurView[]>(
       `/api/espace-animateur/${this.jeton()}/collegues/${encodeURIComponent(collegueId)}/postes`);
+  }
+
+  /**
+   * Colleagues this seat could really be traded with — the « qui peut me
+   * remplacer ? » button, for when the animateur wants rid of a slot and has
+   * nobody in mind. Read-only: it creates no demande.
+   */
+  async suggestionsEchange(creneauId: number, standId: string): Promise<SuggestionsEchangeView> {
+    const jeton = this.jetonRequis();
+    return this.api.get<SuggestionsEchangeView>(
+      `/api/espace-animateur/${jeton}/suggestions-echange`
+        + `?creneauId=${creneauId}&standId=${encodeURIComponent(standId)}`);
   }
 
   async soumettre(nouvelles: NouvelleDemandeEchange[]): Promise<DemandeEchangeView[]> {

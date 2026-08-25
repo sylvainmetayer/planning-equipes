@@ -13,7 +13,9 @@
   <mat-card-header>
     <mat-card-title i18n="@@espace.echanges.formTitre">Proposer un échange</mat-card-title>
     <mat-card-subtitle i18n="@@espace.echanges.formSousTitre">
-      Choisissez un de vos créneaux, le ou la collègue avec qui échanger, et un motif. Vous pouvez
+      Choisissez un de vos créneaux, le ou la collègue avec qui échanger, et un motif. Si vous ne
+      voulez simplement pas de ce créneau et n'avez personne en tête, le bouton « Qui peut me
+      remplacer ? » cherche pour vous les collègues avec qui l'échange tient. Vous pouvez
       aussi désigner le créneau du collègue que vous voulez récupérer en échange (« je te laisse mon
       lundi, je prends ton mardi ») — sans ce choix, l'échange se joue sur votre seul créneau.
       Ajoutez autant de demandes que nécessaire puis soumettez la liste : l'organisation valide (ou
@@ -24,7 +26,7 @@
     <div class="espace-form-champs">
       <mat-form-field appearance="outline">
         <mat-label i18n="@@espace.echanges.creneau">Créneau concerné</mat-label>
-        <mat-select [ngModel]="posteChoisi()" (ngModelChange)="posteChoisi.set($event)">
+        <mat-select [ngModel]="posteChoisi()" (ngModelChange)="choisirPoste($event)">
           @for (poste of espace.vue()?.postes ?? []; track poste.standId + '-' + poste.creneauId + '-' + poste.heureDebut) {
             <mat-option [value]="poste">
               {{ poste.date | date: 'EEE d MMM' }} {{ poste.heureDebut }}–{{ poste.heureFin }} · {{ poste.standNom }}
@@ -64,6 +66,56 @@
         <span i18n="@@espace.echanges.ajouter">Ajouter à la liste</span>
       </button>
     </div>
+
+    @if (posteChoisi()) {
+      <div class="espace-suggestions">
+        <button matButton="tonal" [disabled]="rechercheEnCours()" (click)="chercherRemplacants()">
+          <mat-icon>person_search</mat-icon>
+          <span i18n="@@espace.echanges.chercherRemplacants">Qui peut me remplacer ?</span>
+        </button>
+        @if (rechercheEnCours()) {
+          <mat-spinner diameter="24" />
+        } @else if (suggestions(); as trouvees) {
+          @if (trouvees.suggestions.length === 0) {
+            <p class="espace-suggestions-vide" i18n="@@espace.echanges.suggestionsAucune">
+              Aucun collègue ne peut reprendre ce créneau sans casser une règle du planning. Vous
+              pouvez tout de même proposer l'échange à quelqu'un : l'organisation tranchera.
+            </p>
+          } @else {
+            <p class="espace-suggestions-intro" i18n="@@espace.echanges.suggestionsIntro">
+              Avec ces collègues, l'échange tient en l'état du planning. Choisissez-en un : il ou
+              elle devra donner son accord, puis l'organisation tranchera.
+            </p>
+            <ul class="espace-suggestions-liste">
+              @for (suggestion of trouvees.suggestions; track suggestion.animateurId) {
+                <li>
+                  <strong>{{ suggestion.nomComplet }}</strong>
+                  @if (suggestion.echangeCroise) {
+                    <span class="espace-suggestion-detail" i18n="@@espace.echanges.suggestionCroise">
+                      vous passeriez sur {{ suggestion.standCibleNom }} au même horaire
+                    </span>
+                  } @else {
+                    <span class="espace-suggestion-detail" i18n="@@espace.echanges.suggestionLibere">
+                      vous libère de ce créneau
+                    </span>
+                  }
+                  <button matButton (click)="retenirSuggestion(suggestion)">
+                    <mat-icon>check</mat-icon>
+                    <span i18n="@@espace.echanges.suggestionRetenir">Choisir</span>
+                  </button>
+                </li>
+              }
+            </ul>
+            @if (suggestionsTronquees()) {
+              <p class="espace-suggestions-vide" i18n="@@espace.echanges.suggestionsTronquees">
+                {{ trouvees.candidatsEvalues }} collègues ont été testés sur {{ trouvees.candidatsEligibles }} :
+                voici les plus prometteurs, pas la liste complète.
+              </p>
+            }
+          }
+        }
+      </div>
+    }
 
     @if (brouillons().length > 0) {
       <ul class="espace-brouillons">
