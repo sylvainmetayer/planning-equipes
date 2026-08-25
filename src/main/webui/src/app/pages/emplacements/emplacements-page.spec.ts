@@ -1,15 +1,17 @@
 // Filtering, multi-selection and cell labels of the emplacements table,
 // including the nearest-neighbour column that mirrors the solver's 300 m
-// threshold. The component is created but never rendered, so this stays a
-// logic test (the project favours those over full DOM rendering) — same shape
-// as `animateurs-page.spec.ts`.
+// threshold. The first half creates the component without rendering it; the
+// second one renders the table, because a column computed correctly and a
+// column *shown* are two different claims, and only the second one is what the
+// user acts on.
 //
 // Written as the safety net the `<app-reference-table>` extraction needs.
 // `distance.spec.ts` owns the great-circle maths; what is pinned here is the
 // column built on top of it.
 
-import { provideZonelessChangeDetection, Signal } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import { provideZonelessChangeDetection, signal, Signal } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { of } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
@@ -18,6 +20,8 @@ import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { TableSelection } from '../../core/table-selection';
 import { Emplacement } from '../../core/models';
+import { DetailDialog } from '../../shared/detail-dialog';
+import { EmplacementFormDialog } from './emplacement-form-dialog';
 import { EmplacementsPage } from './emplacements-page';
 
 // A degree of latitude is ~111 km, so 0.001° ≈ 111 m: near enough to place a
@@ -293,5 +297,118 @@ describe('EmplacementsPage', () => {
 
     expect(page.columns[0]).toBe('select');
     expect(page.columns.at(-1)).toBe('actions');
+  });
+});
+
+describe('EmplacementsPage table', () => {
+  let referenceData: ReferenceDataStore;
+  let fixture: ComponentFixture<EmplacementsPage>;
+  let dialog: { open: ReturnType<typeof vi.fn> };
+  const crud = { reload: vi.fn(async () => undefined), remove: vi.fn(async () => true), removeMany: vi.fn(async () => 0) };
+  const editingLocked = signal(false);
+
+  async function rendre(emplacements: Emplacement[]): Promise<void> {
+    referenceData.emplacements.set(emplacements);
+    fixture = TestBed.createComponent(EmplacementsPage);
+    await fixture.whenStable();
+  }
+
+  function racine(): HTMLElement {
+    return fixture.nativeElement as HTMLElement;
+  }
+
+  function lignes(): string[][] {
+    return Array.from(racine().querySelectorAll('tbody tr')).map((row) =>
+      Array.from(row.querySelectorAll('td')).map((cell) => cell.textContent!.trim())
+    );
+  }
+
+  function action(indexLigne: number, nom: string): HTMLButtonElement {
+    const bouton = Array.from(
+      racine().querySelectorAll('tbody tr')[indexLigne].querySelectorAll('.row-actions button')
+    ).find((each) => each.getAttribute('aria-label') === nom);
+    expect(bouton, `action « ${nom} » absente`).toBeDefined();
+    return bouton as HTMLButtonElement;
+  }
+
+  beforeEach(() => {
+    TestBed.resetTestingModule();
+    editingLocked.set(false);
+    dialog = { open: vi.fn(() => ({ afterClosed: () => of(undefined) })) };
+    TestBed.configureTestingModule({
+      providers: [
+        provideZonelessChangeDetection(),
+        { provide: ApiService, useValue: { get: vi.fn(async () => []) } },
+        { provide: ReferenceCrudService, useValue: crud },
+        { provide: SolverJobService, useValue: { solverBusy: () => false, editingLocked } },
+        { provide: MatDialog, useValue: dialog }
+      ]
+    });
+    referenceData = TestBed.inject(ReferenceDataStore);
+  });
+
+  it('renders the coordinates and the nearest neighbour of each row', async () => {
+    await rendre([
+      emplacement('hall', { nom: 'Hall A', latitude: 47.2, longitude: -1.55 }),
+      emplacement('salle', { nom: 'Salle B', latitude: 47.201, longitude: -1.55 })
+    ]);
+
+    expect(racine().querySelector('h1')!.textContent!).toContain('Emplacements (2)');
+    expect(lignes()[0][1]).toBe('hall');
+    expect(lignes()[0][3]).toContain('47.2');
+    // 0.001° of latitude is ~111 m: under the solver's 300 m threshold.
+    expect(lignes()[0][4]).toBe('111 m de Salle B');
+  });
+
+  it('warns in the neighbour cell when the closest place is past the threshold', async () => {
+    await rendre([
+      emplacement('hall', { nom: 'Hall A', latitude: 47.2, longitude: -1.55 }),
+      emplacement('loin', { nom: 'Chapiteau', latitude: 47.21, longitude: -1.55 })
+    ]);
+
+    expect(lignes()[0][4]).toContain("au-delà du seuil d'éloignement");
+  });
+
+  it('writes an em dash rather than an empty cell for a place with no coordinates', async () => {
+    await rendre([emplacement('hall', { nom: 'Hall A' })]);
+
+    expect(lignes()[0][4]).toBe('—');
+  });
+
+  it('distinguishes an empty referential from a filter that matched nothing', async () => {
+    await rendre([]);
+    expect(racine().querySelector('.empty-hint')!.textContent!.trim()).toBe(
+      'Aucun emplacement pour le moment. Créez-en un ci-dessus.'
+    );
+
+    await rendre([emplacement('hall', { nom: 'Hall A' })]);
+    const input = racine().querySelector('app-table-filter input') as HTMLInputElement;
+    input.value = 'zzz';
+    input.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+
+    expect(racine().querySelector('.empty-hint')!.textContent!.trim()).toBe('Aucune ligne ne correspond au filtre.');
+  });
+
+  it('greys out the writing actions while a solve is running, but not the consultation', async () => {
+    await rendre([emplacement('hall', { nom: 'Hall A' })]);
+    editingLocked.set(true);
+    await fixture.whenStable();
+
+    expect(action(0, 'Modifier').disabled).toBe(true);
+    expect(action(0, 'Supprimer').disabled).toBe(true);
+    expect(action(0, 'Consulter le détail').disabled).toBe(false);
+  });
+
+  it('opens the read-only detail, and hands over to the form when the user asks to edit', async () => {
+    await rendre([emplacement('hall', { nom: 'Hall A' })]);
+    dialog.open.mockReturnValue({ afterClosed: () => of('edit') });
+
+    action(0, 'Consulter le détail').click();
+    await fixture.whenStable();
+
+    expect(dialog.open.mock.calls[0][0]).toBe(DetailDialog);
+    expect(dialog.open.mock.calls[1][0]).toBe(EmplacementFormDialog);
+    expect(dialog.open.mock.calls[1][1].data.emplacement.id).toBe('hall');
   });
 });

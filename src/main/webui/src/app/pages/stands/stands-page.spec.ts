@@ -1,14 +1,16 @@
 // Filtering, multi-selection and cell labels of the stands table, plus the
-// horaires compaction it alone carries. The component is created but never
-// rendered, so this stays a logic test (the project favours those over full
-// DOM rendering) — same shape as `animateurs-page.spec.ts`.
+// horaires compaction it alone carries. The first half creates the component
+// without rendering it; the second one renders the table, where the claims a
+// user acts on live — the summarised horaires column, the shortfall icon and
+// what the solver lock really greys out.
 //
 // Written as the safety net the `<app-reference-table>` extraction needs: what
 // is pinned here is the glue the five reference pages repeat, not the CRUD
 // service underneath (`reference-crud.service.spec.ts` owns that).
 
-import { provideZonelessChangeDetection, Signal } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import { provideZonelessChangeDetection, signal, Signal } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { of } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
@@ -19,7 +21,9 @@ import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { TableSelection } from '../../core/table-selection';
 import { ConfirmService } from '../../shared/confirm-dialog';
-import { Emplacement, HoraireStand, Stand } from '../../core/models';
+import { CauseInfaisabilite, Emplacement, HoraireStand, Stand } from '../../core/models';
+import { DetailDialog } from '../../shared/detail-dialog';
+import { StandFormDialog } from './stand-form-dialog';
 import { StandsPage } from './stands-page';
 
 function stand(overrides: Partial<Stand> & { id: string }): Stand {
@@ -363,5 +367,159 @@ describe('StandsPage', () => {
 
     expect(page.columns[0]).toBe('select');
     expect(page.columns.at(-1)).toBe('actions');
+  });
+});
+
+describe('StandsPage table', () => {
+  let referenceData: ReferenceDataStore;
+  let fixture: ComponentFixture<StandsPage>;
+  let dialog: { open: ReturnType<typeof vi.fn> };
+  const causeParStandId = signal(new Map<string, CauseInfaisabilite>());
+  const editingLocked = signal(false);
+  const crud = {
+    reload: vi.fn(async () => undefined),
+    remove: vi.fn(async () => true),
+    removeMany: vi.fn(async () => 0),
+    reportError: vi.fn()
+  };
+
+  async function rendre(stands: Stand[]): Promise<void> {
+    referenceData.stands.set(stands);
+    fixture = TestBed.createComponent(StandsPage);
+    await fixture.whenStable();
+  }
+
+  function racine(): HTMLElement {
+    return fixture.nativeElement as HTMLElement;
+  }
+
+  function lignes(): string[][] {
+    return Array.from(racine().querySelectorAll('tbody tr')).map((row) =>
+      Array.from(row.querySelectorAll('td')).map((cell) => cell.textContent!.trim())
+    );
+  }
+
+  function action(indexLigne: number, nom: string): HTMLButtonElement {
+    const bouton = Array.from(
+      racine().querySelectorAll('tbody tr')[indexLigne].querySelectorAll('.row-actions button')
+    ).find((each) => each.getAttribute('aria-label') === nom);
+    expect(bouton, `action « ${nom} » absente`).toBeDefined();
+    return bouton as HTMLButtonElement;
+  }
+
+  function boutonCarte(libelle: string): HTMLButtonElement {
+    const bouton = Array.from(racine().querySelectorAll('mat-card-actions button')).find((each) =>
+      each.textContent!.includes(libelle)
+    );
+    expect(bouton, `bouton « ${libelle} » absent`).toBeDefined();
+    return bouton as HTMLButtonElement;
+  }
+
+  beforeEach(() => {
+    TestBed.resetTestingModule();
+    editingLocked.set(false);
+    causeParStandId.set(new Map());
+    crud.reportError.mockClear();
+    dialog = { open: vi.fn(() => ({ afterClosed: () => of(undefined) })) };
+    TestBed.configureTestingModule({
+      providers: [
+        provideZonelessChangeDetection(),
+        { provide: ApiService, useValue: { get: vi.fn(async () => []), post: vi.fn(async () => ({ standsCompactes: 0, fenetresAvant: 0, fenetresApres: 0 })) } },
+        { provide: ReferenceCrudService, useValue: crud },
+        { provide: SolverJobService, useValue: { solverBusy: () => false, editingLocked } },
+        { provide: MatDialog, useValue: dialog },
+        { provide: ConfirmService, useValue: { ask: vi.fn(async () => false) } },
+        { provide: NotificationService, useValue: { notify: vi.fn() } },
+        {
+          provide: ProblemesStore,
+          useValue: { reloadFeasibility: vi.fn(async () => undefined), causeParStandId }
+        }
+      ]
+    });
+    referenceData = TestBed.inject(ReferenceDataStore);
+  });
+
+  it('renders the staffing range, its qualifiers and the typologies of each stand', async () => {
+    await rendre([
+      stand({ id: 's1', nom: 'Loup-Garou', effectifMin: 2, effectifMax: 4, premium: true, reserveMajeurs: true, typologiesProposees: ['ambiance', 'expert'] }),
+      stand({ id: 's2', nom: 'Dixit' })
+    ]);
+
+    expect(racine().querySelector('h1')!.textContent!).toContain('Stands (2)');
+    expect(lignes()[0][3]).toBe('2–4 · majeurs · premium');
+    expect(lignes()[0][4]).toBe('ambiance, expert');
+    expect(lignes()[1][4]).toBe('—');
+  });
+
+  it('summarises the horaires as rules and exceptions, not as a raw window count', async () => {
+    await rendre([stand({ id: 's1', horaires: [horaire(3), horaire(2)] })]);
+
+    // A stand open 10:00-12:00 then 14:00-20:00 every day used to read "24".
+    expect(lignes()[0][6]).toBe('2 règle(s)');
+  });
+
+  it('flags a stand named by a feasibility cause, for a screen reader too', async () => {
+    causeParStandId.set(
+      new Map([
+        [
+          's1',
+          {
+            type: 'STAND_SANS_COMPETENCE',
+            severite: 'CRITIQUE',
+            message: 'Aucun animateur compétent pour ce stand.',
+            creneauId: null,
+            date: null,
+            heureDebut: null,
+            heureFin: null,
+            standIds: ['s1'],
+            demande: 1,
+            capacite: 0,
+            manque: 1
+          } as unknown as CauseInfaisabilite
+        ]
+      ])
+    );
+    await rendre([stand({ id: 's1', nom: 'Loup-Garou' })]);
+
+    const icone = racine().querySelector('.row-problem-icon')!;
+    expect(icone.getAttribute('aria-label')).toBe('Aucun animateur compétent pour ce stand.');
+  });
+
+  it('distinguishes an empty referential from a filter that matched nothing', async () => {
+    await rendre([]);
+    expect(racine().querySelector('.empty-hint')!.textContent!).toContain('Aucun stand pour le moment');
+
+    await rendre([stand({ id: 's1', nom: 'Loup-Garou' })]);
+    const input = racine().querySelector('app-table-filter input') as HTMLInputElement;
+    input.value = 'zzz';
+    input.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+
+    expect(racine().querySelector('.empty-hint')!.textContent!.trim()).toBe('Aucune ligne ne correspond au filtre.');
+  });
+
+  it('greys out the writing actions while a solve is running, the horaires compaction included', async () => {
+    await rendre([stand({ id: 's1', nom: 'Loup-Garou' })]);
+    editingLocked.set(true);
+    await fixture.whenStable();
+
+    expect(action(0, 'Modifier').disabled).toBe(true);
+    expect(action(0, 'Supprimer').disabled).toBe(true);
+    expect(action(0, 'Consulter le détail').disabled).toBe(false);
+    // The compaction rewrites every stand's horaires: it is a write like any other.
+    expect(boutonCarte('Compacter les horaires').disabled).toBe(true);
+    expect(boutonCarte('Ajouter').disabled).toBe(true);
+  });
+
+  it('opens the read-only detail, and hands over to the form when the user asks to edit', async () => {
+    await rendre([stand({ id: 's1', nom: 'Loup-Garou' })]);
+    dialog.open.mockReturnValue({ afterClosed: () => of('edit') });
+
+    action(0, 'Consulter le détail').click();
+    await fixture.whenStable();
+
+    expect(dialog.open.mock.calls[0][0]).toBe(DetailDialog);
+    expect(dialog.open.mock.calls[1][0]).toBe(StandFormDialog);
+    expect(dialog.open.mock.calls[1][1].data.stand.id).toBe('s1');
   });
 });

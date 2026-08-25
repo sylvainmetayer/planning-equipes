@@ -1,15 +1,17 @@
 // Sorting, the conditional « Famille » column, multi-selection, the feasibility
-// index and the auto-slicing round-trip of the timeslots table. The component
-// is created but never rendered, so this stays a logic test (the project
-// favours those over full DOM rendering) — same shape as
-// `animateurs-page.spec.ts`.
+// index and the auto-slicing round-trip of the timeslots table. The first half
+// creates the component without rendering it; the second one renders the page,
+// because the slicing card is a destructive action (it replaces every créneau
+// and wipes the solved planning) and what guards it — a confirmation, a
+// disabled button while it runs — only exists in the template.
 //
 // Written as the safety net the `<app-reference-table>` extraction needs.
 // `decoupage.spec.ts` owns the per-day summary; what is pinned here is the
 // page that drives it.
 
 import { provideZonelessChangeDetection, Signal, WritableSignal, signal } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { of } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
 import { Sort } from '@angular/material/sort';
 import { provideRouter } from '@angular/router';
@@ -372,5 +374,167 @@ describe('CreneauxPage', () => {
     const page = createPage();
 
     expect(page.editingLocked()).toBe(false);
+  });
+});
+
+describe('CreneauxPage rendering', () => {
+  let referenceData: ReferenceDataStore;
+  let fixture: ComponentFixture<CreneauxPage>;
+  const causeParCreneauId = signal(new Map<string, CauseInfaisabilite>());
+  const editingLocked = signal(false);
+  const api = { get: vi.fn(async (): Promise<Creneau[]> => []), post: vi.fn(async () => undefined) };
+  const confirm = { ask: vi.fn(async () => false) };
+  const crud = {
+    reload: vi.fn(async () => undefined),
+    remove: vi.fn(async () => true),
+    removeMany: vi.fn(async () => 0),
+    reportError: vi.fn()
+  };
+
+  async function rendre(creneaux: Creneau[]): Promise<void> {
+    referenceData.creneaux.set(creneaux);
+    fixture = TestBed.createComponent(CreneauxPage);
+    await fixture.whenStable();
+  }
+
+  function racine(): HTMLElement {
+    return fixture.nativeElement as HTMLElement;
+  }
+
+  function entetes(): string[] {
+    return Array.from(racine().querySelectorAll('thead th')).map((each) => each.textContent!.trim());
+  }
+
+  function lignes(): string[][] {
+    return Array.from(racine().querySelectorAll('tbody tr')).map((row) =>
+      Array.from(row.querySelectorAll('td')).map((cell) => cell.textContent!.replace(/\s+/g, ' ').trim())
+    );
+  }
+
+  function bouton(libelle: string): HTMLButtonElement {
+    const trouve = Array.from(racine().querySelectorAll('button')).find((each) =>
+      each.textContent!.includes(libelle)
+    );
+    expect(trouve, `bouton « ${libelle} » absent`).toBeDefined();
+    return trouve as HTMLButtonElement;
+  }
+
+  beforeEach(() => {
+    TestBed.resetTestingModule();
+    editingLocked.set(false);
+    causeParCreneauId.set(new Map());
+    api.get.mockClear();
+    api.post.mockClear();
+    confirm.ask.mockClear();
+    confirm.ask.mockResolvedValue(false);
+    TestBed.configureTestingModule({
+      providers: [
+        provideZonelessChangeDetection(),
+        provideRouter([]),
+        { provide: ApiService, useValue: api },
+        { provide: ReferenceCrudService, useValue: crud },
+        { provide: SolverJobService, useValue: { solverBusy: () => false, editingLocked } },
+        { provide: MatDialog, useValue: { open: vi.fn(() => ({ afterClosed: () => of(undefined) })) } },
+        { provide: ConfirmService, useValue: confirm },
+        { provide: NotificationService, useValue: { notify: vi.fn() } },
+        { provide: PlanningResolutionStore, useValue: { reload: vi.fn(async () => undefined) } },
+        {
+          provide: ProblemesStore,
+          useValue: { reloadFeasibility: vi.fn(async () => undefined), causeParCreneauId }
+        }
+      ]
+    });
+    referenceData = TestBed.inject(ReferenceDataStore);
+  });
+
+  it('renders one row per créneau, with its event day and hours', async () => {
+    await rendre([creneau({ id: 1, jour: 1 }), creneau({ id: 2, jour: 2, heureDebut: '14:00', heureFin: '19:00' })]);
+
+    expect(racine().querySelector('h2')!.textContent!).toContain('Créneaux (2)');
+    expect(lignes().map((row) => [row[1], row[3]])).toEqual([
+      ['J1', '10:00–12:00'],
+      ['J2', '14:00–19:00']
+    ]);
+  });
+
+  it('hides the « Famille » column while every créneau belongs to the first family', async () => {
+    await rendre([creneau({ id: 1, jour: 1 })]);
+    expect(entetes()).not.toContain('Famille');
+
+    await rendre([creneau({ id: 1, jour: 1 }), creneau({ id: 2, jour: 1, famille: 1 })]);
+    // Two identical hours in different families are not duplicates: the column
+    // is what says so, and it only appears when there is something to say.
+    expect(entetes()).toContain('Famille');
+    expect(lignes().map((row) => row[4])).toEqual(['1', '2']);
+  });
+
+  it('names the shortfall in the problem column, and says « Aucun » for the others', async () => {
+    causeParCreneauId.set(new Map([['1', cause(2)]]));
+    await rendre([creneau({ id: 1, jour: 1 }), creneau({ id: 2, jour: 1 })]);
+
+    expect(lignes()[0].at(-2)).toContain('2 animateur(s) manquant(s)');
+    // Not an empty cell: a screen reader reading the row must hear something.
+    expect(lignes()[1].at(-2)).toBe('Aucun');
+  });
+
+  it('says the referential is empty rather than showing a bare table', async () => {
+    await rendre([]);
+
+    expect(racine().querySelector('.empty-hint')!.textContent!.trim()).toBe('Aucun créneau pour le moment.');
+  });
+
+  it('locks the writing actions, and says why, while a solve is running', async () => {
+    await rendre([creneau({ id: 1, jour: 1 })]);
+    editingLocked.set(true);
+    await fixture.whenStable();
+
+    expect(racine().querySelector('.locked-hint')).not.toBeNull();
+    const actions = racine().querySelectorAll('tbody .row-actions button');
+    expect(Array.from(actions).every((each) => (each as HTMLButtonElement).disabled)).toBe(true);
+    // Generating the slicing replaces every créneau: locked with the rest.
+    expect(bouton('Générer les vacations').disabled).toBe(true);
+  });
+
+  it('previews the slicing without writing anything', async () => {
+    api.get.mockResolvedValue([
+      { id: 1, jour: 1, date: '2026-08-01', heureDebut: '10:00', heureFin: '12:00' },
+      { id: 2, jour: 1, date: '2026-08-01', heureDebut: '12:00', heureFin: '14:00' }
+    ]);
+    await rendre([creneau({ id: 1, jour: 1 })]);
+
+    bouton('Prévisualiser').click();
+    await fixture.whenStable();
+
+    expect(api.post).not.toHaveBeenCalled();
+    const resume = racine().querySelector('.decoupage-resume')!;
+    expect(resume.textContent!).toContain('2026-08-01');
+    expect(Array.from(resume.querySelectorAll('.vacation-chip')).map((each) => each.textContent!.trim())).toEqual([
+      '10:00–12:00',
+      '12:00–14:00'
+    ]);
+  });
+
+  it('never generates the slicing without an explicit confirmation', async () => {
+    await rendre([creneau({ id: 1, jour: 1 })]);
+
+    bouton('Générer les vacations').click();
+    await fixture.whenStable();
+
+    // It replaces every créneau of the edition and wipes the solved planning.
+    expect(api.post).not.toHaveBeenCalled();
+
+    confirm.ask.mockResolvedValue(true);
+    bouton('Générer les vacations').click();
+    await fixture.whenStable();
+    expect(api.post).toHaveBeenCalledWith('/api/decoupage/generer', {});
+  });
+
+  it('points at the Paramètres page for the slicing settings', async () => {
+    await rendre([creneau({ id: 1, jour: 1 })]);
+
+    const lien = Array.from(racine().querySelectorAll('a')).find((each) =>
+      each.textContent!.includes('découpage')
+    )!;
+    expect(lien.getAttribute('href')).toBe('/parametres');
   });
 });
