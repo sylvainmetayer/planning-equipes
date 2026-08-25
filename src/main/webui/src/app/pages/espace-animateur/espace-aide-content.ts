@@ -1,0 +1,308 @@
+/**
+ * Content of the espace animateur's help page: what an animateur can do here,
+ * written in the business vocabulary the screens already use (créneau, stand,
+ * coéquipiers, foire au planning, organisation).
+ *
+ * Kept as data rather than as template markup — the page renders it
+ * generically as an accordion, and a unit test can assert on it without
+ * rendering anything. Deliberately separate from `pages/aide/aide-content.ts`:
+ * that guide addresses the organisers and speaks of solving, scores and
+ * découpage, none of which an animateur ever sees.
+ */
+
+/** Tab of the espace a section sends the reader to, when there is one. */
+export type EspaceAideCible = 'planning' | 'echanges';
+
+export type EspaceAideBlock =
+  | { kind: 'paragraph'; text: string }
+  | { kind: 'list'; items: string[] }
+  /** Numbered sequence: the reader is meant to follow it in order. */
+  | { kind: 'steps'; items: string[] }
+  | { kind: 'definitions'; items: { term: string; text: string }[] };
+
+export interface EspaceAideSection {
+  /** Anchor id, also used as the `track` key. */
+  id: string;
+  icon: string;
+  /** The question as an animateur would ask it — this is the panel header. */
+  question: string;
+  /** One-line answer, readable while the panel is still collapsed. */
+  resume: string;
+  blocks: EspaceAideBlock[];
+  /** Where to act on what the section describes. */
+  cible?: EspaceAideCible;
+}
+
+/**
+ * Built lazily (never at module scope): `$localize` only resolves once
+ * `main.ts` has loaded the translation catalog, which happens after this
+ * module is imported. Same reasoning as `buildHelpSections()` next door.
+ */
+export function buildEspaceAideSections(): EspaceAideSection[] {
+  return [
+    {
+      id: 'mon-espace',
+      icon: 'home',
+      question: $localize`:@@espace.aide.espace.question:À quoi sert cet espace ?`,
+      resume: $localize`:@@espace.aide.espace.resume:À consulter votre planning personnel, toujours à jour, et à demander un échange de créneau.`,
+      blocks: [
+        {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.espace.intro:L'organisation construit le planning de l'événement en répartissant les animateurs sur les stands, créneau par créneau. Cet espace est votre vue personnelle de ce planning : vos créneaux à vous, et rien d'autre.`
+        },
+        {
+          kind: 'list',
+          items: [
+            $localize`:@@espace.aide.espace.item1:Consulter vos créneaux jour par jour, avec le stand et vos coéquipiers.`,
+            $localize`:@@espace.aide.espace.item2:Emporter votre planning en PDF ou dans l'agenda de votre téléphone.`,
+            $localize`:@@espace.aide.espace.item3:Demander un échange de créneau avec un collègue, tant que la foire au planning est ouverte.`,
+            $localize`:@@espace.aide.espace.item4:Répondre aux demandes d'échange que des collègues vous adressent.`
+          ]
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.espace.limite:Vous ne modifiez jamais le planning directement : tout passe par une demande que l'organisation valide.`
+        }
+      ]
+    },
+    {
+      id: 'acces',
+      icon: 'key',
+      question: $localize`:@@espace.aide.acces.question:Comment j'accède à mon espace ?`,
+      resume: $localize`:@@espace.aide.acces.resume:Par votre lien personnel, puis par un code reçu par e-mail, demandé une fois par appareil.`,
+      blocks: [
+        {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.acces.intro:Le lien que l'organisation vous a envoyé est personnel : il désigne votre planning et lui seul. La première fois que vous l'ouvrez sur un téléphone ou un ordinateur, un code vous est envoyé à l'adresse e-mail que l'organisation connaît. Il est valable 10 minutes.`
+        },
+        {
+          kind: 'list',
+          items: [
+            $localize`:@@espace.aide.acces.item1:Un code par appareil : une fois saisi, cet appareil garde l'accès, vous n'avez plus à recommencer.`,
+            $localize`:@@espace.aide.acces.item2:Code non reçu ? Regardez dans les indésirables, puis demandez-en un nouveau.`,
+            $localize`:@@espace.aide.acces.item3:Ne transférez pas votre lien : la personne qui l'ouvre accède à votre planning.`,
+            $localize`:@@espace.aide.acces.item4:« Ce lien n'est plus valide » : rapprochez-vous de l'organisation, elle vous en enverra un nouveau.`
+          ]
+        }
+      ]
+    },
+    {
+      id: 'lire-planning',
+      icon: 'calendar_month',
+      question: $localize`:@@espace.aide.planning.question:Comment lire mon planning ?`,
+      resume: $localize`:@@espace.aide.planning.resume:Une carte par journée ; sur chaque ligne, l'horaire, le stand et vos coéquipiers.`,
+      cible: 'planning',
+      blocks: [
+        {
+          kind: 'definitions',
+          items: [
+            {
+              term: $localize`:@@espace.aide.planning.term.horaire:L'horaire`,
+              text: $localize`:@@espace.aide.planning.def.horaire:Le début et la fin de votre créneau. C'est à l'heure de début que vous êtes attendu au stand, pas à l'heure d'ouverture du stand.`
+            },
+            {
+              term: $localize`:@@espace.aide.planning.term.stand:Le stand`,
+              text: $localize`:@@espace.aide.planning.def.stand:Le jeu ou le poste que vous tenez pendant ce créneau. Il peut changer d'un créneau à l'autre dans la même journée.`
+            },
+            {
+              term: $localize`:@@espace.aide.planning.term.coequipiers:Les coéquipiers`,
+              text: $localize`:@@espace.aide.planning.def.coequipiers:Les animateurs affectés au même stand, sur le même créneau que vous.`
+            }
+          ]
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.planning.repos:Les journées où vous n'êtes affecté nulle part apparaissent quand même, marquées « Repos » : une journée absente de la liste serait un oubli, une journée « Repos » est une décision.`
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.planning.maj:La mention « Planning mis à jour le… » indique de quand date la version que vous lisez. L'organisation peut relancer un calcul ou valider des échanges après coup : repassez sur cette page avant de partir, c'est elle qui fait foi.`
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.planning.vide:Si rien ne s'affiche, le planning n'a pas encore été publié. Il n'y a rien à faire de votre côté.`
+        }
+      ]
+    },
+    {
+      id: 'emporter',
+      icon: 'download',
+      question: $localize`:@@espace.aide.emporter.question:Puis-je emporter mon planning ?`,
+      resume: $localize`:@@espace.aide.emporter.resume:Oui, en PDF à imprimer ou dans l'agenda de votre téléphone.`,
+      cible: 'planning',
+      blocks: [
+        {
+          kind: 'list',
+          items: [
+            $localize`:@@espace.aide.emporter.item1:« Télécharger en PDF » : votre planning sur une page, à imprimer ou à garder hors connexion.`,
+            $localize`:@@espace.aide.emporter.item2:« Ajouter à mon agenda (ICS) » : chaque créneau devient un rendez-vous dans l'agenda de votre téléphone.`
+          ]
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.emporter.photo:Ces deux fichiers sont une photo prise au moment du téléchargement : ils ne se mettent pas à jour tout seuls quand le planning change ou qu'un échange est accepté. Au moindre doute, fiez-vous à cette page plutôt qu'au fichier.`
+        }
+      ]
+    },
+    {
+      id: 'demander-echange',
+      icon: 'swap_horiz',
+      question: $localize`:@@espace.aide.echange.question:Comment demander un échange ?`,
+      resume: $localize`:@@espace.aide.echange.resume:Depuis « Mes échanges », en montant une liste de demandes puis en la soumettant.`,
+      cible: 'echanges',
+      blocks: [
+        {
+          kind: 'steps',
+          items: [
+            $localize`:@@espace.aide.echange.step1:Choisissez le créneau dont vous voulez vous libérer.`,
+            $localize`:@@espace.aide.echange.step2:Choisissez le ou la collègue avec qui échanger.`,
+            $localize`:@@espace.aide.echange.step3:Si vous voulez reprendre un de ses créneaux en contrepartie, désignez-le. Sans ce choix, l'échange ne porte que sur le vôtre.`,
+            $localize`:@@espace.aide.echange.step4:Indiquez un motif : c'est ce que lira l'organisation pour trancher.`,
+            $localize`:@@espace.aide.echange.step5:« Ajouter à la liste », puis recommencez si plusieurs créneaux sont concernés.`,
+            $localize`:@@espace.aide.echange.step6:« Soumettre mes demandes » : rien ne part avant ce bouton.`
+          ]
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.echange.brouillon:Tant que vous n'avez pas soumis, la liste n'est qu'un brouillon : la croix retire une demande, et personne n'a encore rien reçu.`
+        }
+      ]
+    },
+    {
+      id: 'remplacants',
+      icon: 'person_search',
+      question: $localize`:@@espace.aide.remplacants.question:Je n'ai personne en tête, que faire ?`,
+      resume: $localize`:@@espace.aide.remplacants.resume:Le bouton « Qui peut me remplacer ? » cherche pour vous les échanges qui tiennent.`,
+      cible: 'echanges',
+      blocks: [
+        {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.remplacants.intro:Une fois votre créneau choisi, ce bouton passe les collègues en revue et ne retient que les échanges compatibles avec le reste du planning et avec les règles de repos. Les propositions arrivent en trois familles :`
+        },
+        {
+          kind: 'definitions',
+          items: [
+            {
+              term: $localize`:@@espace.aide.remplacants.term.libere:On vous libère de ce créneau`,
+              text: $localize`:@@espace.aide.remplacants.def.libere:Un collègue le reprend et vous n'êtes plus de service à ce moment-là, sans contrepartie.`
+            },
+            {
+              term: $localize`:@@espace.aide.remplacants.term.dirige:Vous échangez contre un autre créneau`,
+              text: $localize`:@@espace.aide.remplacants.def.dirige:Vous lui laissez le vôtre et vous reprenez l'un des siens, à un autre moment.`
+            },
+            {
+              term: $localize`:@@espace.aide.remplacants.term.croise:Vous échangez sur ce même créneau`,
+              text: $localize`:@@espace.aide.remplacants.def.croise:Vous restez de service au même horaire, mais sur un autre stand.`
+            }
+          ]
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.remplacants.limite:La liste montre les pistes les plus prometteuses, pas toutes. Et si rien ne ressort, vous pouvez tout de même proposer l'échange à quelqu'un : l'organisation tranchera.`
+        }
+      ]
+    },
+    {
+      id: 'suivi',
+      icon: 'hourglass_top',
+      question: $localize`:@@espace.aide.suivi.question:Que devient ma demande ?`,
+      resume: $localize`:@@espace.aide.suivi.resume:Elle passe par l'accord du collègue, puis par la décision de l'organisation.`,
+      cible: 'echanges',
+      blocks: [
+        {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.suivi.intro:Chaque demande porte une pastille qui dit où elle en est :`
+        },
+        {
+          kind: 'definitions',
+          items: [
+            {
+              term: $localize`:@@echanges.statut.attenteCible:En attente du collègue`,
+              text: $localize`:@@espace.aide.suivi.def.attenteCible:Votre collègue doit d'abord donner son accord.`
+            },
+            {
+              term: $localize`:@@echanges.statut.proposee:En attente de l'organisation`,
+              text: $localize`:@@espace.aide.suivi.def.proposee:L'accord est donné ; l'organisation doit encore trancher.`
+            },
+            {
+              term: $localize`:@@echanges.statut.acceptee:Acceptée`,
+              text: $localize`:@@espace.aide.suivi.def.acceptee:L'échange est fait : votre planning a changé, vérifiez-le.`
+            },
+            {
+              term: $localize`:@@echanges.statut.refusee:Refusée`,
+              text: $localize`:@@espace.aide.suivi.def.refusee:L'organisation n'a pas retenu l'échange ; votre créneau reste le vôtre.`
+            },
+            {
+              term: $localize`:@@echanges.statut.refuseeCible:Déclinée par le collègue`,
+              text: $localize`:@@espace.aide.suivi.def.refuseeCible:Le collègue n'a pas souhaité l'échange ; la demande est close.`
+            },
+            {
+              term: $localize`:@@echanges.statut.annulee:Annulée`,
+              text: $localize`:@@espace.aide.suivi.def.annulee:Vous avez retiré la demande vous-même.`
+            }
+          ]
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.suivi.alerte:Un encadré « cet échange poserait un problème » signale que l'échange se heurte à une règle : temps de repos trop court, horaire déjà occupé, stand qui vous attend au même moment… C'est un avertissement, pas un refus, et la demande est transmise quand même.`
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.suivi.annulation:Tant qu'une demande n'est pas tranchée, « Annuler cette demande » la retire. Et si l'organisation a joint un commentaire à sa décision, il s'affiche juste en dessous.`
+        }
+      ]
+    },
+    {
+      id: 'demandes-recues',
+      icon: 'thumb_up',
+      question: $localize`:@@espace.aide.recues.question:Un collègue me demande un échange`,
+      resume: $localize`:@@espace.aide.recues.resume:Il attend votre accord : rien ne bouge tant que vous n'avez pas répondu.`,
+      cible: 'echanges',
+      blocks: [
+        {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.recues.intro:Les demandes qui vous sont adressées s'affichent en haut de « Mes échanges », sous « Demandes reçues ». Lisez le créneau qu'on vous propose de reprendre et, s'il y en a un, celui qu'on vous prend en contrepartie.`
+        },
+        {
+          kind: 'list',
+          items: [
+            $localize`:@@espace.aide.recues.item1:« Je suis d'accord » transmet la demande à l'organisation, qui tranche : votre accord seul ne suffit pas à échanger.`,
+            $localize`:@@espace.aide.recues.item2:« Décliner » clôt la demande, et votre collègue en est informé.`
+          ]
+        }
+      ]
+    },
+    {
+      id: 'foire-fermee',
+      icon: 'lock',
+      question: $localize`:@@espace.aide.foire.question:Pourquoi je ne peux plus rien demander ?`,
+      resume: $localize`:@@espace.aide.foire.resume:La foire au planning est fermée : l'espace passe en consultation seule.`,
+      blocks: [
+        {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.foire.intro:La foire au planning est la période pendant laquelle l'organisation accepte les échanges. Une fois qu'elle est fermée — parce que le planning est figé, ou parce que l'événement a commencé — vous gardez l'accès à votre planning et à l'historique de vos demandes, mais vous ne pouvez plus en proposer, en accorder ni en annuler.`
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.foire.suite:Si un empêchement survient après la fermeture, prévenez directement l'organisation : elle peut encore agir, pas cet espace.`
+        }
+      ]
+    },
+    {
+      id: 'contact',
+      icon: 'support_agent',
+      question: $localize`:@@espace.aide.contact.question:Une erreur, une question ?`,
+      resume: $localize`:@@espace.aide.contact.resume:L'organisation reste votre interlocuteur ; cet espace ne remplace pas un mot ou un appel.`,
+      blocks: [
+        {
+          kind: 'list',
+          items: [
+            $localize`:@@espace.aide.contact.item1:Une affectation vous semble fausse, ou une indisponibilité annoncée n'a pas été prise en compte : signalez-le, vous ne pouvez pas corriger vos données vous-même.`,
+            $localize`:@@espace.aide.contact.item2:Empêchement de dernière minute : prévenez tout de suite, sans attendre qu'une demande d'échange soit validée.`,
+            $localize`:@@espace.aide.contact.item3:Ce que l'application sait de vous et ce qu'elle en fait est décrit dans la politique de confidentialité, dans le menu en haut à droite de l'écran.`
+          ]
+        }
+      ]
+    }
+  ];
+}

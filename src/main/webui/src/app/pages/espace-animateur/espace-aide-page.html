@@ -1,0 +1,73 @@
+<mat-card class="espace-aide-intro" appearance="outlined">
+  <mat-card-header>
+    <mat-card-title i18n="@@espace.aide.titre">Comment ça marche ?</mat-card-title>
+    <mat-card-subtitle i18n="@@espace.aide.sousTitre">
+      Tout ce que vous pouvez faire depuis votre espace : lire votre planning, l'emporter, et
+      demander un échange de créneau. Ouvrez la question qui vous concerne.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <button matButton="tonal" type="button" class="espace-aide-tout" (click)="basculerTout()"
+            [attr.aria-expanded]="toutDeplie()">
+      <mat-icon>{{ toutDeplie() ? 'unfold_less' : 'unfold_more' }}</mat-icon>
+      @if (toutDeplie()) {
+        <span i18n="@@espace.aide.toutReplier">Tout replier</span>
+      } @else {
+        <span i18n="@@espace.aide.toutDeplier">Tout déplier</span>
+      }
+    </button>
+  </mat-card-content>
+</mat-card>
+
+<mat-accordion class="espace-aide-accordeon" multi>
+  @for (section of sections; track section.id) {
+    <mat-expansion-panel [id]="section.id" [expanded]="toutDeplie()">
+      <mat-expansion-panel-header collapsedHeight="auto" expandedHeight="auto">
+        <mat-panel-title>
+          <mat-icon class="espace-aide-icone">{{ section.icon }}</mat-icon>
+          <span>{{ section.question }}</span>
+        </mat-panel-title>
+        <mat-panel-description>{{ section.resume }}</mat-panel-description>
+      </mat-expansion-panel-header>
+
+      @for (block of section.blocks; track $index) {
+        @switch (block.kind) {
+          @case ('paragraph') {
+            <p class="espace-aide-paragraphe">{{ block.text }}</p>
+          }
+          @case ('list') {
+            <ul class="espace-aide-liste">
+              @for (item of block.items; track item) {
+                <li>{{ item }}</li>
+              }
+            </ul>
+          }
+          @case ('steps') {
+            <ol class="espace-aide-etapes">
+              @for (item of block.items; track item) {
+                <li>{{ item }}</li>
+              }
+            </ol>
+          }
+          @case ('definitions') {
+            <dl class="espace-aide-definitions">
+              @for (definition of block.items; track definition.term) {
+                <dt>{{ definition.term }}</dt>
+                <dd>{{ definition.text }}</dd>
+              }
+            </dl>
+          }
+        }
+      }
+
+      @if (section.cible; as cible) {
+        @if (lienVers(cible); as lien) {
+          <a matButton="tonal" class="espace-aide-lien" [routerLink]="lien">
+            <mat-icon>arrow_forward</mat-icon>
+            <span>{{ libelleCible(cible) }}</span>
+          </a>
+        }
+      }
+    </mat-expansion-panel>
+  }
+</mat-accordion>

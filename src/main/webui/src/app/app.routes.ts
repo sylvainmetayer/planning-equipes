@@ -216,6 +216,12 @@ export const routes: Routes = [
         title: 'Mes échanges',
         loadComponent: () =>
           import('./pages/espace-animateur/espace-echanges-page').then((m) => m.EspaceEchangesPage)
+      },
+      {
+        path: 'aide',
+        title: 'Aide',
+        loadComponent: () =>
+          import('./pages/espace-animateur/espace-aide-page').then((m) => m.EspaceAidePage)
       }
     ]
   },

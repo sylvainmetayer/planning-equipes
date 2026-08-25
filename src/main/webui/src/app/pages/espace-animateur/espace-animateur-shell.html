@@ -100,6 +100,15 @@
         <mat-icon>swap_horiz</mat-icon>
         <span i18n="@@espace.nav.echanges">Mes échanges</span>
       </a>
+      <!-- Taille de son contenu, là où les deux premiers se partagent le reste :
+           « Aide » est un mot court, et trois onglets à parts égales rognaient
+           les deux libellés utiles sur un téléphone étroit. -->
+      <a matButton class="espace-nav-aide" [routerLink]="['/animateur', jeton(), 'aide']"
+         routerLinkActive="espace-nav-active" #rlaAide="routerLinkActive"
+         [attr.aria-current]="rlaAide.isActive ? 'page' : null">
+        <mat-icon>help_outline</mat-icon>
+        <span i18n="@@espace.nav.aide">Aide</span>
+      </a>
     </nav>
     <router-outlet />
   }
