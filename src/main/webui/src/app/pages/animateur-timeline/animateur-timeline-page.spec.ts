@@ -1,6 +1,24 @@
-import { describe, expect, it } from 'vitest';
-import { Animateur, Creneau, PosteAffectation, Stand } from '../../core/models';
-import { buildAnimateurOptions, buildAnimateurTimeline, buildStandsSummary, exportFilename } from './animateur-timeline-page';
+// The builders below are pure and tested as such. The rendering half at the end
+// covers what the page does around them: which animateur it lands on (the URL
+// carries the selection, so a shared link must open on the right person), and
+// the three exports, which are the only actions of the screen — each of them
+// hands out a file or a mail carrying someone's personal planning.
+
+import { provideZonelessChangeDetection } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ActivatedRoute, Router } from '@angular/router';
+import { describe, expect, it, vi } from 'vitest';
+import { ApiService } from '../../core/api.service';
+import { NotificationService } from '../../core/notification.service';
+import { PlanningStateService } from '../../core/planning-state.service';
+import { Animateur, Creneau, PlanningEvenement, PosteAffectation, Stand } from '../../core/models';
+import {
+  AnimateurTimelinePage,
+  buildAnimateurOptions,
+  buildAnimateurTimeline,
+  buildStandsSummary,
+  exportFilename
+} from './animateur-timeline-page';
 
 function creneau(overrides: Partial<Creneau> & { id: number; jour: number }): Creneau {
   return { date: '2026-08-01', heureDebut: '09:00', heureFin: '12:00', ...overrides };
@@ -256,5 +274,174 @@ describe('buildStandsSummary', () => {
 
     expect(summary.stands[0].colorClass).toBe(summary.stands[1].colorClass);
     expect(summary.stands[2].colorClass).toBe('typologie-color-none');
+  });
+});
+
+describe('AnimateurTimelinePage', () => {
+  let fixture: ComponentFixture<AnimateurTimelinePage>;
+  let api: { get: ReturnType<typeof vi.fn>; post: ReturnType<typeof vi.fn>; downloadPost: ReturnType<typeof vi.fn> };
+  let notify: ReturnType<typeof vi.fn>;
+  let navigate: ReturnType<typeof vi.fn>;
+  let planningState: { loadForDisplay: ReturnType<typeof vi.fn>; require: ReturnType<typeof vi.fn> };
+
+  function planningDeDeux(): PlanningEvenement {
+    const matin = creneau({ id: 1, jour: 1 });
+    const apresMidi = creneau({ id: 2, jour: 1, heureDebut: '14:00', heureFin: '18:00' });
+    return {
+      postes: [
+        poste({ id: 'p1', creneau: matin, stand: stand('Tir'), animateur: animateur('a1', 'Alice', 'Martin') }),
+        poste({ id: 'p2', creneau: matin, stand: stand('Tir'), animateur: animateur('a2', 'Bob', 'Durand') }),
+        poste({ id: 'p3', creneau: apresMidi, stand: stand('Dixit'), animateur: animateur('a1', 'Alice', 'Martin') })
+      ]
+    } as unknown as PlanningEvenement;
+  }
+
+  async function rendre(
+    evenement: PlanningEvenement | null,
+    options: { animateurEnParametre?: string | null } = {}
+  ): Promise<void> {
+    api = {
+      get: vi.fn(async () => []),
+      post: vi.fn(async () => ({ envoyes: 1, echecs: [] })),
+      downloadPost: vi.fn(async () => 'Téléchargement démarré.')
+    };
+    notify = vi.fn();
+    navigate = vi.fn(async () => true);
+    planningState = {
+      loadForDisplay: vi.fn(async () => evenement),
+      require: vi.fn(async () => evenement)
+    };
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        provideZonelessChangeDetection(),
+        { provide: ApiService, useValue: api },
+        { provide: NotificationService, useValue: { notify } },
+        { provide: PlanningStateService, useValue: planningState },
+        { provide: Router, useValue: { navigate } },
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: { queryParamMap: { get: () => options.animateurEnParametre ?? null } }
+          }
+        }
+      ]
+    });
+    fixture = TestBed.createComponent(AnimateurTimelinePage);
+    await fixture.whenStable();
+  }
+
+  function racine(): HTMLElement {
+    return fixture.nativeElement as HTMLElement;
+  }
+
+  function bouton(libelle: string): HTMLButtonElement {
+    const trouve = Array.from(racine().querySelectorAll('button')).find((each) =>
+      each.textContent!.includes(libelle)
+    );
+    expect(trouve, `bouton « ${libelle} » absent`).toBeDefined();
+    return trouve as HTMLButtonElement;
+  }
+
+  it('lands on the first animateur when the URL names none', async () => {
+    await rendre(planningDeDeux());
+
+    expect(racine().querySelector('.timeline-animateur-select input')).not.toBeNull();
+    expect(racine().querySelectorAll('.timeline-day-card')).toHaveLength(1);
+    expect(racine().querySelector('.timeline-day-card h2')!.textContent!).toContain('Jour 1');
+  });
+
+  it('opens on the animateur the URL names, so a shared link points at the right person', async () => {
+    await rendre(planningDeDeux(), { animateurEnParametre: 'a2' });
+
+    // Bob holds one seat only, Alice two: the day list is what tells them apart.
+    expect(racine().querySelectorAll('.timeline-block-list li')).toHaveLength(1);
+  });
+
+  it('keeps the selection in the URL without piling up history entries', async () => {
+    await rendre(planningDeDeux());
+
+    expect(navigate).toHaveBeenCalled();
+    const [, extras] = navigate.mock.calls.at(-1) as unknown as [unknown[], { queryParams: { animateur: string }; replaceUrl: boolean }];
+    expect(extras.queryParams.animateur).toBe('a1');
+    expect(extras.replaceUrl).toBe(true);
+  });
+
+  it('names the teammates of each seat, and says so when there are none', async () => {
+    await rendre(planningDeDeux());
+
+    const lignes = Array.from(racine().querySelectorAll('.timeline-block-list li')).map((each) =>
+      each.textContent!.replace(/\s+/g, ' ').trim()
+    );
+    expect(lignes[0]).toContain('avec Bob Durand');
+    expect(lignes[1]).toContain('seul(e) sur ce stand');
+  });
+
+  it('recaps the stands to cover above the days', async () => {
+    await rendre(planningDeDeux());
+
+    expect(Array.from(racine().querySelectorAll('.timeline-stand-chip')).map((each) => each.textContent!.trim())).toEqual([
+      'Dixit',
+      'Tir'
+    ]);
+    expect(racine().querySelector('.timeline-stands-card mat-card-subtitle')!.textContent!).toContain('2 stand(s)');
+  });
+
+  it('says what to do when there is no planning at all', async () => {
+    await rendre({ postes: [] } as unknown as PlanningEvenement);
+
+    expect(racine().textContent!).toContain('Lancez une résolution depuis la page Solveur');
+    // Nothing to export: the three actions must not look available.
+    expect(bouton('Exporter le PDF').disabled).toBe(true);
+    expect(bouton("Exporter l'ICS").disabled).toBe(true);
+    expect(bouton('Envoyer par e-mail').disabled).toBe(true);
+  });
+
+  it('shows the load error instead of an empty timeline', async () => {
+    await rendre(null);
+    planningState.loadForDisplay.mockRejectedValue(new Error('boom'));
+
+    bouton('Actualiser').click();
+    await fixture.whenStable();
+
+    expect(racine().querySelector('.empty-hint')!.textContent!).toContain('boom');
+  });
+
+  it('exports the displayed animateur, and only them', async () => {
+    await rendre(planningDeDeux());
+
+    bouton('Exporter le PDF').click();
+    await fixture.whenStable();
+
+    expect(api.downloadPost).toHaveBeenCalledOnce();
+    const [url, filename, corps, contentType] = api.downloadPost.mock.calls[0] as unknown as [string, string, unknown, string];
+    expect(url).toBe('/api/planning/export/pdf/animateur/a1');
+    // Named after the person, not after their id: the file lands in a mailbox.
+    expect(filename).toBe('planning-Alice-Martin.pdf');
+    // The planning goes as the request body: what is exported is what is shown.
+    expect(corps).toEqual(await planningState.require.mock.results[0].value);
+    expect(contentType).toBe('application/pdf');
+    expect(notify.mock.calls.at(-1)![0].variant).toBe('success');
+  });
+
+  it('reports an export failure instead of failing silently', async () => {
+    await rendre(planningDeDeux());
+    api.downloadPost.mockRejectedValue(new Error('serveur indisponible'));
+
+    bouton("Exporter l'ICS").click();
+    await fixture.whenStable();
+
+    const dernier = notify.mock.calls.at(-1)![0];
+    expect(dernier.variant).toBe('error');
+    expect(dernier.message).toContain('serveur indisponible');
+  });
+
+  it('mails the planning of the displayed animateur', async () => {
+    await rendre(planningDeDeux());
+
+    bouton('Envoyer par e-mail').click();
+    await fixture.whenStable();
+
+    expect(api.post).toHaveBeenCalledWith('/api/planning/envoi/animateur/a1', null);
   });
 });

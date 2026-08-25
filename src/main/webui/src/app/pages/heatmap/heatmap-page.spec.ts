@@ -1,6 +1,16 @@
-import { describe, expect, it } from 'vitest';
-import { Animateur, Creneau, PosteAffectation, Stand } from '../../core/models';
-import { buildAnimateurHeatmap, buildStandHeatmap } from './heatmap-page';
+// The two table builders are pure functions and tested as such below. The
+// rendering half at the end exists for the grid itself: this table is the one
+// screen of the application navigated with the arrow keys (roving tabindex),
+// and a roving tabindex is exactly the kind of thing that works until the rows
+// underneath change.
+
+import { provideZonelessChangeDetection } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { describe, expect, it, vi } from 'vitest';
+import { ApiService } from '../../core/api.service';
+import { PlanningStateService } from '../../core/planning-state.service';
+import { Animateur, Creneau, PlanningEvenement, PosteAffectation, Stand } from '../../core/models';
+import { buildAnimateurHeatmap, buildStandHeatmap, HeatmapPage } from './heatmap-page';
 
 function creneau(overrides: Partial<Creneau> & { id: number; jour: number }): Creneau {
   return { date: '2026-08-01', heureDebut: '13:40', heureFin: '19:00', ...overrides };
@@ -160,5 +170,185 @@ describe('buildAnimateurHeatmap', () => {
     const table = buildStandHeatmap([poste({ id: 'p1', creneau: creneau({ id: 1, jour: 1 }), stand: stand('S1') })]);
 
     expect(table.rows[0].headerTooltip).toBe('');
+  });
+});
+
+describe('HeatmapPage grid', () => {
+  let fixture: ComponentFixture<HeatmapPage>;
+  let loadForDisplay: ReturnType<typeof vi.fn>;
+
+  function planning(postes: PosteAffectation[]): PlanningEvenement {
+    return { postes } as unknown as PlanningEvenement;
+  }
+
+  /** Two animateurs over two days, so the grid has both rows and columns. */
+  function planningDeuxAnimateurs(): PlanningEvenement {
+    const j1 = creneau({ id: 1, jour: 1 });
+    const j2 = creneau({ id: 2, jour: 2, date: '2026-08-02' });
+    return planning([
+      poste({ id: 'p1', creneau: j1, stand: stand('Tir'), animateur: animateur('Alice') }),
+      poste({ id: 'p2', creneau: j2, stand: stand('Tir'), animateur: animateur('Alice') }),
+      poste({ id: 'p3', creneau: j1, stand: stand('Dixit'), animateur: animateur('Bob') })
+    ]);
+  }
+
+  async function rendre(evenement: PlanningEvenement | null): Promise<void> {
+    loadForDisplay = vi.fn(async () => evenement);
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        provideZonelessChangeDetection(),
+        { provide: ApiService, useValue: { get: vi.fn(async () => []) } },
+        { provide: PlanningStateService, useValue: { loadForDisplay } }
+      ]
+    });
+    fixture = TestBed.createComponent(HeatmapPage);
+    await fixture.whenStable();
+  }
+
+  function racine(): HTMLElement {
+    return fixture.nativeElement as HTMLElement;
+  }
+
+  function cellules(): HTMLElement[] {
+    return Array.from(racine().querySelectorAll('td.heatmap-cell'));
+  }
+
+  function cellule(ligne: number, colonne: number): HTMLElement {
+    return racine().querySelector(`[data-ligne="${ligne}"][data-colonne="${colonne}"]`) as HTMLElement;
+  }
+
+  /** The single cell the grid hands the focus to on Tab. */
+  function celluleTabulable(): HTMLElement | null {
+    return racine().querySelector('td.heatmap-cell[tabindex="0"]');
+  }
+
+  function toucher(ligne: number, colonne: number, key: string): void {
+    cellule(ligne, colonne).dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+  }
+
+  async function basculerVue(libelle: string): Promise<void> {
+    const bouton = Array.from(racine().querySelectorAll('mat-button-toggle button')).find((each) =>
+      each.textContent!.includes(libelle)
+    ) as HTMLElement;
+    bouton.click();
+    await fixture.whenStable();
+  }
+
+  it('renders one row per stand and one column per event day', async () => {
+    await rendre(planningDeuxAnimateurs());
+
+    expect(Array.from(racine().querySelectorAll('.heatmap-row-label')).map((each) => each.textContent!.trim())).toEqual([
+      'Dixit',
+      'Tir'
+    ]);
+    expect(racine().querySelectorAll('.heatmap-day-header')).toHaveLength(2);
+    // Every cell describes its day out loud: the colour alone means nothing.
+    expect(cellules()[0].getAttribute('aria-label')).toBeTruthy();
+  });
+
+  it('says what to do rather than showing an empty grid when no planning exists', async () => {
+    await rendre(planning([]));
+
+    expect(racine().querySelector('.heatmap-table')).toBeNull();
+    expect(racine().textContent!).toContain('Lancez une résolution depuis la page Solveur');
+  });
+
+  it('shows the load error instead of a stale grid', async () => {
+    loadForDisplay = vi.fn(async () => {
+      throw new Error('boom');
+    });
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        provideZonelessChangeDetection(),
+        { provide: ApiService, useValue: { get: vi.fn(async () => []) } },
+        { provide: PlanningStateService, useValue: { loadForDisplay } }
+      ]
+    });
+    fixture = TestBed.createComponent(HeatmapPage);
+    await fixture.whenStable();
+
+    expect(racine().querySelector('.heatmap-table')).toBeNull();
+    const messages = Array.from(racine().querySelectorAll('.empty-hint')).map((each) => each.textContent!);
+    expect(messages.some((texte) => texte.includes('boom'))).toBe(true);
+  });
+
+  it('offers the name filter on the animateur view only', async () => {
+    await rendre(planningDeuxAnimateurs());
+    expect(racine().querySelector('.heatmap-filter')).toBeNull();
+
+    await basculerVue('Par animateur');
+    expect(racine().querySelector('.heatmap-filter')).not.toBeNull();
+    expect(Array.from(racine().querySelectorAll('.heatmap-row-label')).map((each) => each.textContent!.trim())).toEqual([
+      'Alice',
+      'Bob'
+    ]);
+  });
+
+  it('exposes exactly one tab stop for the whole grid', async () => {
+    await rendre(planningDeuxAnimateurs());
+
+    // A grid where every cell is tabbable is a grid nobody tabs past.
+    expect(racine().querySelectorAll('td.heatmap-cell[tabindex="0"]')).toHaveLength(1);
+    expect(cellule(0, 0).getAttribute('tabindex')).toBe('0');
+  });
+
+  it('moves the tab stop with the arrow keys, and clamps it at the edges', async () => {
+    await rendre(planningDeuxAnimateurs());
+
+    toucher(0, 0, 'ArrowRight');
+    await fixture.whenStable();
+    expect(cellule(0, 1).getAttribute('tabindex')).toBe('0');
+
+    toucher(0, 1, 'ArrowRight');
+    await fixture.whenStable();
+    // Last column: the focus stays instead of wrapping to the next row.
+    expect(cellule(0, 1).getAttribute('tabindex')).toBe('0');
+
+    toucher(0, 1, 'ArrowDown');
+    await fixture.whenStable();
+    expect(cellule(1, 1).getAttribute('tabindex')).toBe('0');
+
+    toucher(1, 1, 'ArrowUp');
+    toucher(0, 1, 'Home');
+    await fixture.whenStable();
+    expect(cellule(0, 0).getAttribute('tabindex')).toBe('0');
+
+    toucher(0, 0, 'End');
+    await fixture.whenStable();
+    expect(cellule(0, 1).getAttribute('tabindex')).toBe('0');
+  });
+
+  it('ignores a key it does not handle, leaving the tab stop where it was', async () => {
+    await rendre(planningDeuxAnimateurs());
+
+    toucher(0, 0, 'a');
+    await fixture.whenStable();
+
+    expect(cellule(0, 0).getAttribute('tabindex')).toBe('0');
+  });
+
+  it('loses its only tab stop when the filter drops the row that held it', async () => {
+    await rendre(planningDeuxAnimateurs());
+    await basculerVue('Par animateur');
+
+    toucher(0, 0, 'ArrowDown'); // second row, "Bob"
+    await fixture.whenStable();
+    expect(celluleTabulable()).not.toBeNull();
+
+    const input = racine().querySelector('.heatmap-filter input') as HTMLInputElement;
+    input.value = 'alice';
+    input.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+
+    // CONSTATÉ, NON VOULU: `celluleCourante` still points at row 1, which the
+    // filter has just removed, so no cell carries `tabindex="0"` any more and
+    // the grid becomes unreachable by keyboard until the filter is cleared.
+    // The same happens when switching view to a shorter table. Left as is: the
+    // fix (clamp the position on the rows actually displayed) belongs to the
+    // component, not to a test. Reported separately.
+    expect(racine().querySelectorAll('tbody tr')).toHaveLength(1);
+    expect(celluleTabulable()).toBeNull();
   });
 });
