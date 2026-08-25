@@ -1165,8 +1165,6 @@
   "graphe.voisinage.label": "Immediate neighbourhood of the selected node",
   "graphe.voisinage.tronque": " +{$INTERPOLATION} neighbours not shown ",
   "graphe.sansCoordonnees": " This emplacement has no coordinates: nothing to place on the map. ",
-  "filter.summary.all": "{$total} row(s).",
-  "filter.summary.filtered": "{$count} of {$total} row(s) shown. Bulk actions only apply to the rows shown.",
   "calendarDay.partiallyClosed": " (open {$INTERPOLATION} – {$INTERPOLATION_1} only) ",
   "calendarDay.understaffed": "Understaffed: {$count} / {$min} staff member(s) assigned",
   "calendarMonth.cellUnderstaffed": "At least one stand is understaffed that day",
