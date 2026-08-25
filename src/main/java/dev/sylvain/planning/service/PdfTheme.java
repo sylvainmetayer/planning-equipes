@@ -264,14 +264,30 @@ public class PdfTheme {
      * and when that édition was solved.
      *
      * <p>The generation date alone dates the click, not the schedule. Someone
-     * holding a printed copy needs the solve date to know whether the planning
-     * has moved since — and an animateur comparing two downloads has nothing
-     * else to go on.</p>
+     * holding a printed copy needs the date of the plan itself to know whether
+     * it has moved since — and an animateur comparing two downloads has nothing
+     * else to go on. Which date that is depends on which plan the document
+     * carries: see {@link ExportProvenance}.</p>
      */
     FooterEvent footerEvent(String what, Instant generatedAt, ExportProvenance.Provenance provenance) {
         String text = footerOwner() + " · " + what + " généré le "
                 + GENERATED_AT_FORMAT.format(generatedAt.atZone(ZoneId.systemDefault()));
         return new FooterEvent(text, provenanceText(provenance), footerFont, muted);
+    }
+
+    /**
+     * How the plan's date is said, which depends on which plan the document
+     * carries: an animateur's PDF renders the published plan, so it is dated by
+     * its publication — saying « résolue le » there would name a version they
+     * do not hold (issue #245).
+     */
+    private static String datation(ExportProvenance.Provenance provenance) {
+        boolean publiee = provenance.nature() == ExportProvenance.Nature.PUBLICATION;
+        if (provenance.date() == null) {
+            return publiee ? ", jamais publiée" : ", jamais résolue";
+        }
+        return (publiee ? ", publiée le " : ", résolue le ")
+                + GENERATED_AT_FORMAT.format(provenance.date().atZone(ZoneId.systemDefault()));
     }
 
     private static String provenanceText(ExportProvenance.Provenance provenance) {
@@ -281,11 +297,7 @@ public class PdfTheme {
         String edition = provenance.editionNom() == null || provenance.editionNom().isBlank()
                 ? "à partir des données de l'édition courante"
                 : "à partir des données de l'édition « " + provenance.editionNom() + " »";
-        String resolution = provenance.resoluLe() == null
-                ? ", jamais résolue"
-                : ", résolue le " + GENERATED_AT_FORMAT.format(
-                        provenance.resoluLe().atZone(ZoneId.systemDefault()));
-        return edition + resolution;
+        return edition + datation(provenance);
     }
 
     /**

@@ -40,9 +40,22 @@ import dev.sylvain.planning.domain.Stand;
  */
 class PlanningPdfContenuTest {
 
-    /** A fixed provenance: these tests read the documents, not the database. */
-    private static final ExportProvenance PROVENANCE = () -> new ExportProvenance.Provenance(
-            "Édition de test", Instant.parse("2026-07-01T08:30:00Z"));
+    /**
+     * A fixed provenance: these tests read the documents, not the database.
+     * The two plans are dated apart on purpose — a document must carry the date
+     * of the plan it renders, not of the other one (issue #245).
+     */
+    private static final ExportProvenance PROVENANCE = new ExportProvenance() {
+        @Override
+        public Provenance courante() {
+            return new Provenance("Édition de test", Instant.parse("2026-07-01T08:30:00Z"), Nature.RESOLUTION);
+        }
+
+        @Override
+        public Provenance publiee() {
+            return new Provenance("Édition de test", Instant.parse("2026-06-28T17:00:00Z"), Nature.PUBLICATION);
+        }
+    };
 
     private final PlanningExportService service = new PlanningExportService(new ApplicationLinks(Optional.empty()),
             new AnimateurPlanningPdf(new PdfTheme()), new GlobalPlanningPdf(new PdfTheme()), new PlanningIcs(), PROVENANCE);
@@ -131,12 +144,53 @@ class PlanningPdfContenuTest {
     /** An édition never solved says so rather than leaving the reader to guess. */
     @Test
     void uneEditionJamaisResolueLeDitDansLePied() throws IOException {
-        PlanningExportService jamaisResolue = new PlanningExportService(new ApplicationLinks(Optional.empty()),
-                new AnimateurPlanningPdf(new PdfTheme()), new GlobalPlanningPdf(new PdfTheme()), new PlanningIcs(),
-                () -> new ExportProvenance.Provenance("Édition de test", null));
-
-        assertThat(textOf(jamaisResolue.exportAnimateurPdf(planning(), "A-ADA")))
+        assertThat(textOf(withoutDate().exportAnimateurPdf(planning(), "A-ADA")))
                 .contains("« Édition de test », jamais résolue");
+    }
+
+    /** Same for an édition whose plan was never communicated. */
+    @Test
+    void uneEditionJamaisPublieeLeDitDansLePied() throws IOException {
+        assertThat(textOf(withoutDate().exportAnimateurPdfPublie(planning(), "A-ADA")))
+                .contains("« Édition de test », jamais publiée");
+    }
+
+    /**
+     * The bug this split exists to remove: a solve run after the publication
+     * moved the footer's date without moving a single line of the document.
+     * An animateur's PDF renders the published plan, so it is dated by its
+     * publication — the later solve must not show through.
+     */
+    @Test
+    void lePdfDUnAnimateurEstDateParSaPublicationPasParUnSolvePosterieur() throws IOException {
+        assertThat(textOf(service.exportAnimateurPdfPublie(planning(), "A-ADA")))
+                .contains("publiée le 28/06/2026")
+                .doesNotContain("résolue le");
+    }
+
+    /** The administration's own export still renders — and dates — the working plan. */
+    @Test
+    void lExportDeLAdministrationResteDateParLaResolution() throws IOException {
+        assertThat(textOf(service.exportAnimateurPdf(planning(), "A-ADA")))
+                .contains("résolue le 01/07/2026")
+                .doesNotContain("publiée le");
+    }
+
+    /** A provenance carrying no date at all, whichever plan is asked for. */
+    private static PlanningExportService withoutDate() {
+        return new PlanningExportService(new ApplicationLinks(Optional.empty()),
+                new AnimateurPlanningPdf(new PdfTheme()), new GlobalPlanningPdf(new PdfTheme()), new PlanningIcs(),
+                new ExportProvenance() {
+                    @Override
+                    public Provenance courante() {
+                        return new Provenance("Édition de test", null, Nature.RESOLUTION);
+                    }
+
+                    @Override
+                    public Provenance publiee() {
+                        return new Provenance("Édition de test", null, Nature.PUBLICATION);
+                    }
+                });
     }
 
     private static String textOf(byte[] pdf) throws IOException {

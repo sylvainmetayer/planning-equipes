@@ -36,9 +36,22 @@ import dev.sylvain.planning.domain.Stand;
  */
 class PlanningExportServiceTest {
 
-    /** A fixed provenance: these tests read the documents, not the database. */
-    private static final ExportProvenance PROVENANCE = () -> new ExportProvenance.Provenance(
-            "Édition de test", Instant.parse("2026-07-01T08:30:00Z"));
+    /**
+     * A fixed provenance: these tests read the documents, not the database.
+     * The two plans are dated apart on purpose — a document must carry the date
+     * of the plan it renders, not of the other one (issue #245).
+     */
+    private static final ExportProvenance PROVENANCE = new ExportProvenance() {
+        @Override
+        public Provenance courante() {
+            return new Provenance("Édition de test", Instant.parse("2026-07-01T08:30:00Z"), Nature.RESOLUTION);
+        }
+
+        @Override
+        public Provenance publiee() {
+            return new Provenance("Édition de test", Instant.parse("2026-06-28T17:00:00Z"), Nature.PUBLICATION);
+        }
+    };
 
     private final PlanningExportService service = new PlanningExportService(new ApplicationLinks(Optional.empty()),
             new AnimateurPlanningPdf(new PdfTheme()), new GlobalPlanningPdf(new PdfTheme()), new PlanningIcs(), PROVENANCE);

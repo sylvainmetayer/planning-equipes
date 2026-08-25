@@ -58,14 +58,33 @@ public class PlanningExportService {
         this.provenance = provenance;
     }
 
+    /**
+     * One animateur's PDF, rendering the <b>working</b> plan — the
+     * administration's own export, dated by the last solve.
+     */
     public byte[] exportAnimateurPdf(PlanningEvenement planning, String animateurId) {
+        return exportAnimateurPdf(planning, animateurId, provenance.courante());
+    }
+
+    /**
+     * The same PDF, rendering the <b>published</b> plan: what the espace shows,
+     * what the publication mails carry, and what an individual resend puts back
+     * in circulation. Dated by its publication, never by a solve run since
+     * (issue #245) — the document has not moved, so its date must not either.
+     */
+    public byte[] exportAnimateurPdfPublie(PlanningEvenement planning, String animateurId) {
+        return exportAnimateurPdf(planning, animateurId, provenance.publiee());
+    }
+
+    private byte[] exportAnimateurPdf(PlanningEvenement planning, String animateurId,
+            ExportProvenance.Provenance provenanceDuPlan) {
         List<PosteAffectation> animateurPostes = planning.getPostes().stream()
                 .filter(poste -> poste.getAnimateur() != null && animateurId.equals(poste.getAnimateur().getId()))
                 .sorted(byCreneauThenStand())
                 .toList();
         return pdfAnimateur.construire(resolveAnimateurName(planning, animateurId), animateurPostes,
                 teammatesByPoste(planning, animateurId), daysOff(planning, animateurId),
-                lienEspaceAnimateur(planning, animateurId), provenance.courante());
+                lienEspaceAnimateur(planning, animateurId), provenanceDuPlan);
     }
 
     /** An event day the animateur is off: its day number and its date. */

@@ -263,7 +263,7 @@ public class PlanPublicationService {
             return StatutEnvoi.SANS_EMAIL;
         }
         try {
-            byte[] pdf = planningExportService.exportAnimateurPdf(planning, destinataire.animateurId());
+            byte[] pdf = planningExportService.exportAnimateurPdfPublie(planning, destinataire.animateurId());
             Animateur animateur = animateur(destinataire.animateurId());
             mailService.sendPlanningPublie(
                     destinataire.email(),

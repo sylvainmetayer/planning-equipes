@@ -85,7 +85,7 @@ public class PlanningDeliveryService {
     }
 
     private void send(PlanningEvenement planning, Animateur animateur) {
-        byte[] pdf = planningExportService.exportAnimateurPdf(planning, animateur.getId());
+        byte[] pdf = planningExportService.exportAnimateurPdfPublie(planning, animateur.getId());
         mailService.sendIndividualPlanning(
                 animateur.getEmail(),
                 animateur.getPrenom(),

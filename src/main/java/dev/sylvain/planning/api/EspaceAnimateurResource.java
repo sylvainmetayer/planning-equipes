@@ -174,7 +174,7 @@ public class EspaceAnimateurResource {
     @Produces("application/pdf")
     public Response planningPdf() {
         PlanningEvenement planning = planPublieService.planPublie();
-        byte[] contenu = planningExportService.exportAnimateurPdf(planning, animateurCourant());
+        byte[] contenu = planningExportService.exportAnimateurPdfPublie(planning, animateurCourant());
         return Response.ok(contenu)
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         "attachment; filename=\"" + fileName(planning, "pdf") + "\"")
