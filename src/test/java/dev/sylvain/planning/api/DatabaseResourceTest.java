@@ -226,4 +226,70 @@ class DatabaseResourceTest {
                 .statusCode(400)
                 .body("message", containsString("does not contain any statement"));
     }
+
+    /**
+     * A dump carries its own {@code edition} table, so replaying one can wipe
+     * the edition every request was resolving to. The ids EditionContext caches
+     * must therefore be dropped along with the rows, otherwise the first
+     * request after the restore looks up an edition that no longer exists.
+     */
+    @Test
+    void importResolvesTheRestoredDefaultEditionInsteadOfTheWipedOne() {
+        given()
+                .when().post("/api/planning/reset")
+                .then()
+                .statusCode(200);
+
+        // A dump whose only edition is "restauree" — DEFAUT is nowhere in it.
+        creerEdition("restauree", "Édition restaurée");
+        designerParDefaut("restauree");
+        supprimerEdition("DEFAUT");
+        String dump = given()
+                .when().get("/api/database/export")
+                .then()
+                .statusCode(200)
+                .extract().asString();
+        assertThat(dump).contains("INSERT INTO edition (").doesNotContain("'DEFAUT'");
+
+        // Back to a database that only knows DEFAUT, and a request that caches it.
+        creerEdition("DEFAUT", "Édition par défaut");
+        designerParDefaut("DEFAUT");
+        supprimerEdition("restauree");
+        given()
+                .when().get("/api/editions/courant")
+                .then()
+                .statusCode(200)
+                .body("id", equalTo("DEFAUT"));
+
+        sqlRequest(dump)
+                .when().post("/api/database/import")
+                .then()
+                .statusCode(200);
+
+        given()
+                .when().get("/api/editions/courant")
+                .then()
+                .statusCode(200)
+                .body("id", equalTo("restauree"));
+
+        // Leave the shared dev-services database as this class found it.
+        creerEdition("DEFAUT", "Édition par défaut");
+        designerParDefaut("DEFAUT");
+        supprimerEdition("restauree");
+    }
+
+    private static void creerEdition(String id, String nom) {
+        given().contentType(ContentType.JSON)
+                .body("{\"id\":\"" + id + "\",\"nom\":\"" + nom + "\"}")
+                .when().post("/api/editions")
+                .then().statusCode(200);
+    }
+
+    private static void designerParDefaut(String id) {
+        given().when().put("/api/editions/" + id + "/defaut").then().statusCode(204);
+    }
+
+    private static void supprimerEdition(String id) {
+        given().when().delete("/api/editions/" + id).then().statusCode(204);
+    }
 }

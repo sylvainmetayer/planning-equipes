@@ -91,6 +91,13 @@ public class DatabaseDumpService {
     @Inject
     JdbcEditionScope scope;
 
+    /**
+     * The dump rewrites the {@code edition} table itself, so the ids and the
+     * default one this cache holds are those of the <i>previous</i> dataset.
+     */
+    @Inject
+    EditionContext editionContext;
+
     /** Named in the header of the dump, so a script found later says which instance produced it. */
     @Inject
     ProductName productName;
@@ -129,7 +136,7 @@ public class DatabaseDumpService {
             throw new BusinessError.Invalid("The SQL script does not contain any statement");
         }
         statements.forEach(DatabaseDumpService::checkStatementIsAllowed);
-        return scope.writeAndReturn("Failed to import the database", connection -> {
+        int executed = scope.writeAndReturn("Failed to import the database", connection -> {
             try (Statement statement = connection.createStatement()) {
                 for (String sql : statements) {
                     statement.execute(sql);
@@ -142,6 +149,11 @@ public class DatabaseDumpService {
                 throw new BusinessError.Invalid("The SQL script could not be replayed: " + e.getMessage(), e);
             }
         });
+        // The replayed dump brings its own editions: without this, every
+        // subsequent request keeps resolving to the default edition of the
+        // dataset that was just wiped, which no longer exists.
+        editionContext.invaliderCache();
+        return executed;
     }
 
     /**

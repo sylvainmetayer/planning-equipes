@@ -116,13 +116,17 @@ public class EditionRepository {
     }
 
     /**
-     * Id of the edition flagged {@code defaut}, or {@value #EDITION_DEFAUT_ID} if
-     * none is — a database always has one (V30 seeds it, and the service
-     * refuses to delete it), so the fallback only covers a hand-edited base.
+     * Id of the edition flagged {@code defaut} — the oldest existing one if no
+     * row carries the flag, and only then {@value #EDITION_DEFAUT_ID}, for an
+     * empty table. A database normally always has a flagged default (V30 seeds
+     * it, and the service refuses to delete it), but a restored dump brings its
+     * own editions: naming one that does not exist would 500 every screen
+     * instead of just landing the caller elsewhere.
      */
     public String defaultEditionId() {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = connection.prepareStatement("SELECT id FROM edition WHERE defaut");
+                PreparedStatement ps = connection.prepareStatement(
+                        "SELECT id FROM edition ORDER BY defaut DESC, cree_le, id LIMIT 1");
                 ResultSet rs = ps.executeQuery()) {
             return rs.next() ? rs.getString("id") : EDITION_DEFAUT_ID;
         } catch (SQLException e) {
