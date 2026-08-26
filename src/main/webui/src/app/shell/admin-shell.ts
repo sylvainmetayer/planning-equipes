@@ -6,6 +6,7 @@ import {
   DestroyRef,
   ElementRef,
   computed,
+  effect,
   inject,
   linkedSignal,
   signal,
@@ -19,6 +20,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatDialog } from '@angular/material/dialog';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
@@ -261,6 +263,7 @@ export class AdminShell {
   private readonly dialog = inject(MatDialog);
   private readonly title = inject(Title);
   private readonly announcer = inject(LiveAnnouncer);
+  private readonly snackBar = inject(MatSnackBar);
 
   /** True while at least one unread notification is severity 'alert': overrides the badge count with a warning glyph. */
   protected readonly hasUnreadAlert = computed(() =>
@@ -326,6 +329,36 @@ export class AdminShell {
       )
       .subscribe(() => queueMicrotask(() => this.annoncerNavigation()));
     this.ecouterKonami();
+    this.ecarterLeBandeauDuMenu();
+  }
+
+  /**
+   * Dismisses the notification snackbar whenever the overlay drawer opens.
+   *
+   * <p>On a handset Material ignores {@code horizontalPosition} and lays the
+   * snackbar out full width ({@code .mat-mdc-snack-bar-handset}), inside the
+   * CDK overlay — which is a top-layer popover, so no z-index puts the drawer
+   * back in front of it. A snackbar standing at the bottom of the screen
+   * therefore covers the last links of the navigation drawer and swallows the
+   * taps aimed at them: the menu opens, the user taps « Stands », and the page
+   * simply does not change.</p>
+   *
+   * <p>It bit the Solveur page first because that is where a notification is
+   * most likely to be on screen at the very moment the menu is opened — the
+   * job service reports the solver's state as the page loads ("résolution déjà
+   * en cours", a failed job, which is even shown with no timeout at all).
+   * Reaching another page by its URL left the snackbar time to expire, which
+   * is why the same menu worked from there.</p>
+   *
+   * <p>Nothing is lost by dismissing it: {@code NotificationService.notify}
+   * also files every message on the Notifications page, badge included.</p>
+   */
+  private ecarterLeBandeauDuMenu(): void {
+    effect(() => {
+      if (this.handset() && this.drawerOpen()) {
+        this.snackBar.dismiss();
+      }
+    });
   }
 
   /**

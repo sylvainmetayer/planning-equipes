@@ -13,6 +13,7 @@ import { provideZonelessChangeDetection, Signal, WritableSignal } from '@angular
 import { BRANDING, BRANDING_NEUTRE } from '../core/branding';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { Title } from '@angular/platform-browser';
 import { NavigationEnd, Router, provideRouter } from '@angular/router';
 import { Subject } from 'rxjs';
@@ -57,6 +58,7 @@ describe('AdminShell', () => {
   const jobs = { start: vi.fn(), stop: vi.fn(), onResult: vi.fn(), file: () => [], activeJob: () => null };
   const announcer = { announce: vi.fn() };
   const dialog = { open: vi.fn() };
+  const snackBar = { dismiss: vi.fn() };
   const api = { post: vi.fn(), get: vi.fn() };
   /**
    * Handlers the shell registers, by job type. Keyed rather than collapsed into
@@ -98,6 +100,7 @@ describe('AdminShell', () => {
       jobs.onResult,
       announcer.announce,
       dialog.open,
+      snackBar.dismiss,
       api.post,
       api.get,
       unregisterResult
@@ -119,6 +122,7 @@ describe('AdminShell', () => {
         { provide: SolverJobService, useValue: jobs },
         { provide: LiveAnnouncer, useValue: announcer },
         { provide: MatDialog, useValue: dialog },
+        { provide: MatSnackBar, useValue: snackBar },
         { provide: ApiService, useValue: api },
         // A mascot is configured by default here: the Konami easter egg only
         // exists on a deployment that has one, and most of these tests are
@@ -290,6 +294,36 @@ describe('AdminShell', () => {
       expect(shell.drawerOpen()).toBe(true);
     });
 
+    /*
+     * Material lays a snackbar out full width on a handset and renders it in
+     * the CDK overlay, a top-layer popover: it then sits over the last links of
+     * the open drawer and eats the taps meant for them — the menu opens, the
+     * link does nothing, the page stays put. Opening the menu clears it; the
+     * message itself is kept on the Notifications page.
+     */
+    it('clears the notification snackbar when it opens over the page', () => {
+      const shell = createShell();
+      handset.next({ matches: true });
+      TestBed.tick();
+      expect(snackBar.dismiss).not.toHaveBeenCalled();
+
+      shell.toggleDrawer();
+      TestBed.tick();
+
+      expect(shell.drawerOpen()).toBe(true);
+      expect(snackBar.dismiss).toHaveBeenCalled();
+    });
+
+    // A docked drawer takes its own room instead of overlaying the page: the
+    // snackbar covers nothing, and dismissing it would drop a message the user
+    // never had the chance to read.
+    it('leaves the snackbar alone while the drawer is docked', () => {
+      const shell = createShell();
+
+      expect(shell.drawerOpen()).toBe(true);
+      expect(snackBar.dismiss).not.toHaveBeenCalled();
+    });
+
     it('closes itself after navigating on a small screen', () => {
       const shell = createShell();
       handset.next({ matches: true });
@@ -459,6 +493,7 @@ describe('AdminShell', () => {
           { provide: SolverJobService, useValue: jobs },
           { provide: LiveAnnouncer, useValue: announcer },
           { provide: MatDialog, useValue: dialog },
+          { provide: MatSnackBar, useValue: snackBar },
           { provide: ApiService, useValue: api },
           { provide: BRANDING, useValue: BRANDING_NEUTRE }
         ]
