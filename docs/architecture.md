@@ -83,7 +83,7 @@ n'est pas un secours mais l'**oracle** du test de contrat — c'est ce qui rend
 tenable de s'appuyer sur `ai.timefold.solver.core.impl`, hors semver : une
 montée de version qui change le comportement fait échouer la comparaison et
 nomme l'écart, au lieu de déformer cinq écrans en silence. Voir
-[`decisions/0012-diagnostic-par-le-score-director.md`](decisions/0012-diagnostic-par-le-score-director.md).
+[`decisions/0013-diagnostic-par-le-score-director.md`](decisions/0013-diagnostic-par-le-score-director.md).
 
 ## Deux politiques d'échec sur les mails, séparées structurellement
 

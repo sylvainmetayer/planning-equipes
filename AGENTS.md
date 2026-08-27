@@ -146,7 +146,7 @@ Single Quarkus service, no separate solver microservice. Package root:
   `ConstraintDiagnosticServiceContractTest` compares against. That test is the
   only thing making a dependency on `ai.timefold.solver.core.impl` tenable —
   **run it on every Timefold bump**. See
-  `docs/decisions/0012-diagnostic-par-le-score-director.md`.
+  `docs/decisions/0013-diagnostic-par-le-score-director.md`.
 - `api/` — JAX-RS resources: `PlanningResource`, `SolverJobResource`,
   `EditionResource`, `ConstraintResource`, `DatabaseResource`,
   `PlanningExportResource`, `EspaceAnimateurResource` (token-authenticated, the

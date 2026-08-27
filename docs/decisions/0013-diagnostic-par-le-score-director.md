@@ -1,4 +1,4 @@
-# 0012 — Diagnostiquer par le score director, sans mode dégradé
+# 0013 — Diagnostiquer par le score director, sans mode dégradé
 
 - **Statut** : accepté — remplace [0002](0002-diagnostic-decouple-du-solveur.md)
 - **Date** : août 2026
