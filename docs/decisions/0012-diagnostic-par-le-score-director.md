@@ -62,10 +62,15 @@ est le seul endroit du code qui sait qu'il en existe deux.
   une classe, et le test de contrat est ce qui rend la dépendance surveillable
   plutôt que silencieuse. Une montée de version de Timefold doit faire tourner
   ce test.
-- Deux points changent dans cette classe lors du passage à la 2.x, et nulle part
-  ailleurs : deux imports qui se déplacent d'un paquet `api` vers un paquet
-  `impl`, et le type de clé de la table des correspondances — que le code évite
-  déjà en n'en lisant que les valeurs.
+- Le passage à la 2.x reste borné, mais pas trivial. Vérifié contre 2.5.0 :
+  `ConstraintMatchTotal` et `ConstraintMatch` se déplacent d'un paquet `api`
+  vers un paquet `impl` ; `ConstraintRef` perd `constraintName()` au profit
+  d'`id()`, et **il faudra vérifier ce que cet identifiant contient** — ces noms
+  servent de clés vers le catalogue des contraintes, donc un identifiant
+  qualifié casserait toutes les recherches en silence ; le type de score change
+  de paquet et passe en `long`, ce qui dépasse cette classe. Le type de clé de
+  la table des correspondances change aussi, mais le code l'évite déjà en n'en
+  lisant que les valeurs.
 - L'implémentation conservée cessera de fonctionner en 2.x sans licence. C'est
   attendu : c'est la propriété qu'elle documente, et le test de contrat devra
   alors être exécuté sur la 1.x ou avec une licence, ou retiré en connaissance

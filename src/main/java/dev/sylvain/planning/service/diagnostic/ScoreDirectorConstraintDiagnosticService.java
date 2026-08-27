@@ -46,12 +46,24 @@ import dev.sylvain.planning.domain.PlanningEvenement;
  * of quietly reshaping five screens. The project already takes this bet in
  * {@code EligibleAnimateurMoveFilter} and {@code UnassignedPosteFilter}.</p>
  *
- * <p><b>What a Timefold 2.x migration must change here</b>, and nowhere else:
- * {@code ConstraintMatchTotal} and {@code ConstraintMatch} move from
- * {@code api.score.constraint} to {@code impl.score.constraint} — two import
- * lines. The map's key type changes too (from {@code String} to
- * {@code ConstraintRef}), which is why the loop below reads
- * {@code values()} and never a key.</p>
+ * <p><b>What a Timefold 2.x migration must change here</b>, checked against
+ * 2.5.0:</p>
+ * <ul>
+ * <li>{@code ConstraintMatchTotal} and {@code ConstraintMatch} move from
+ *     {@code api.score.constraint} to {@code impl.score.constraint};</li>
+ * <li>{@code ConstraintRef} loses {@code constraintName()} — it becomes a
+ *     one-component record and the accessor is {@code id()}. <b>Check what that
+ *     id actually holds before trusting the swap</b>: these names are looked up
+ *     in {@code ConstraintCatalog} and matched against
+ *     {@code HARD_CONSTRAINT_NAMES}, so a qualified id would break every
+ *     lookup silently rather than loudly;</li>
+ * <li>{@code HardMediumSoftScore} moves to {@code api.score} and its components
+ *     become {@code long} — project-wide, not specific to this class.</li>
+ * </ul>
+ *
+ * <p>The map's key type changes too (from {@code String} to
+ * {@code ConstraintRef}), which is why the loop below reads {@code values()}
+ * and never a key.</p>
  */
 public final class ScoreDirectorConstraintDiagnosticService implements ConstraintDiagnosticService {
 
