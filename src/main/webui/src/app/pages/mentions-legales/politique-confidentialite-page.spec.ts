@@ -13,7 +13,9 @@ const VIDE: MentionsLegales = {
   contact: '',
   responsableTraitement: '',
   baseLegale: '',
-  conservation: ''
+  conservation: '',
+  mesureAudience: false,
+  suiviErreurs: false
 };
 
 function monter(mentions: MentionsLegales) {
@@ -34,13 +36,61 @@ describe('PolitiqueConfidentialitePage', () => {
     // La page l'affirmait autrefois : « aucune donnée cédée à un tiers ».
     // C'était faux dès que la mesure d'audience tournait — un lecteur doit
     // pouvoir savoir qui reçoit quoi.
-    const fixture = monter(VIDE);
+    const fixture = monter({ ...VIDE, mesureAudience: true, suiviErreurs: true });
     await fixture.whenStable();
 
     const texte = fixture.nativeElement.textContent as string;
     expect(texte).toContain('Cloudflare');
     expect(texte).toContain("l'espace personnel des animateurs sont exclues");
     expect(texte).toContain('Suivi des erreurs');
+    expect(texte).toContain('Ces deux traitements');
+    expect(texte).toContain('les outils techniques décrits ci-dessous');
+    expect(texte).toContain("Mesure d'audience et suivi technique");
+  });
+
+  it('ne nomme aucun outil tiers quand le déploiement n’en fait tourner aucun', async () => {
+    // Les deux briques se désactivent par variable vide, et c'est le défaut.
+    // Annoncer un transfert hors UE qui n'a pas lieu est faux dans le sens le
+    // moins grave, mais un lecteur qui prend en défaut la seule affirmation
+    // qu'il peut vérifier n'a plus de raison de croire les autres.
+    const fixture = monter(VIDE);
+    await fixture.whenStable();
+
+    const texte = fixture.nativeElement.textContent as string;
+    expect(texte).not.toContain('Cloudflare');
+    expect(texte).not.toContain('Bugsink');
+    expect(texte).not.toContain("Mesure d'audience");
+    expect(texte).not.toContain('décrits ci-dessous');
+    // Les sous-traitants qui restent, eux, sont toujours là.
+    expect(texte).toContain("le service d'envoi des e-mails");
+  });
+
+  it('ne décrit que l’outil actif, et accorde le titre comme le paragraphe d’opposition', async () => {
+    // Le titre et le renvoi « décrits ci-dessous » sont écrits pour deux
+    // outils : les accrocher au fait qu'il y en ait *un* annoncerait une
+    // mesure d'audience au-dessus d'une liste qui ne contient que le suivi
+    // des erreurs — la même affirmation sans objet, un outil plus tard.
+    const audience = monter({ ...VIDE, mesureAudience: true });
+    await audience.whenStable();
+
+    const texteAudience = audience.nativeElement.textContent as string;
+    expect(texteAudience).toContain('Cloudflare');
+    expect(texteAudience).not.toContain('Bugsink');
+    expect(texteAudience).toContain('Ce traitement repose');
+    expect(texteAudience).not.toContain('Ces deux traitements');
+    expect(texteAudience).not.toContain('suivi technique');
+    expect(texteAudience).toContain("l'outil technique décrit ci-dessous");
+
+    TestBed.resetTestingModule();
+    const erreurs = monter({ ...VIDE, suiviErreurs: true });
+    await erreurs.whenStable();
+
+    const texteErreurs = erreurs.nativeElement.textContent as string;
+    expect(texteErreurs).toContain('Bugsink');
+    expect(texteErreurs).not.toContain('Cloudflare');
+    expect(texteErreurs).toContain('Ce traitement repose');
+    expect(texteErreurs).not.toContain("Mesure d'audience");
+    expect(texteErreurs).toContain("l'outil technique décrit ci-dessous");
   });
 
   it('s’adresse aux mineurs, et dit à quoi sert leur date de naissance', async () => {

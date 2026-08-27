@@ -454,6 +454,20 @@ correspondante manque, et la page affiche alors **ce qui manque** plutôt qu'un
 public, et pour un éditeur personne physique l'adresse et le numéro
 d'immatriculation *sont* des données personnelles.
 
+La réponse porte aussi deux booléens, `mesureAudience` et `suiviErreurs` : vrai
+quand le token Cloudflare et le DSN Sentry ont une valeur — celle que lisent
+vraiment le beacon et le SDK, et non le fait d'avoir posé la variable
+d'environnement. La nuance compte en `%prod`, qui fournit un token Cloudflare de
+repli : `mesureAudience` y est vrai sans que `CLOUDFLARE_WEB_ANALYTICS_TOKEN`
+soit posé, parce que la mesure tourne bel et bien (voir `docs/observabilite.md`).
+La politique de confidentialité y accroche les paragraphes qui nomment Cloudflare
+et Bugsink — sans eux, un déploiement qui laisse les deux vides annonçait deux
+traitements qui n'ont pas lieu, dont un transfert hors UE. Ces drapeaux passent
+par cet endpoint et non par `/api/config`, qui porte pourtant les mêmes clés :
+sa lecture échoue en silence vers une configuration désactivée, ce qui
+**masquerait** ces paragraphes là où les outils tournent vraiment. Ici, un échec
+affiche un message d'erreur au lieu d'une page silencieusement fausse.
+
 ## Référentiels
 
 Même schéma CRUD partout, tout cloisonné par édition — deux éditions portent les

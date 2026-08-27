@@ -13,7 +13,9 @@ const VIDE: MentionsLegales = {
   contact: '',
   responsableTraitement: '',
   baseLegale: '',
-  conservation: ''
+  conservation: '',
+  mesureAudience: false,
+  suiviErreurs: false
 };
 
 function monter() {

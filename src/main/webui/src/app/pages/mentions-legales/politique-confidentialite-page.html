@@ -156,35 +156,67 @@
           des collègues affectés aux mêmes créneaux que lui, ainsi que les créneaux de ceux à qui il peut proposer un
           échange — les mêmes informations que sur le planning affiché sur place.
         </p>
-        <p i18n="@@confidentialite.qui.soustraitants">
-          Interviennent également, pour notre seul compte et sans pouvoir utiliser ces données à d'autres fins :
-          l'hébergeur indiqué dans les mentions légales, le service d'envoi des e-mails, et les outils techniques
-          décrits ci-dessous.
-        </p>
+        @if (outilsTiers()) {
+          @if (deuxOutils()) {
+            <p i18n="@@confidentialite.qui.soustraitants">
+              Interviennent également, pour notre seul compte et sans pouvoir utiliser ces données à d'autres fins :
+              l'hébergeur indiqué dans les mentions légales, le service d'envoi des e-mails, et les outils techniques
+              décrits ci-dessous.
+            </p>
 
-        <h3 i18n="@@confidentialite.outils.title">Mesure d'audience et suivi technique</h3>
-        <ul>
-          <li i18n="@@confidentialite.outils.cloudflare">
-            <strong>Mesure d'audience</strong> — Cloudflare Web Analytics compte les pages consultées (page, site de
-            provenance, pays, type d'appareil, navigateur, système d'exploitation). Cet outil ne dépose ni cookie ni
-            identifiant sur votre appareil et ne permet pas de vous suivre d'un site à l'autre. Il est fourni par
-            Cloudflare, Inc., société établie aux États-Unis, adhérente au cadre de protection des données
-            UE–États-Unis, sur le fondement de la décision d'adéquation de la Commission européenne du 10 juillet
-            2023. Les pages de l'espace personnel des animateurs sont exclues de cette mesure.
-          </li>
-          <li i18n="@@confidentialite.outils.bugsink">
-            <strong>Suivi des erreurs</strong> — lorsqu'une erreur technique survient, un rapport automatique est
-            envoyé à Bugsink, prestataire spécialisé dans le diagnostic d'incidents, sur un espace réservé à
-            l'organisation. Ce rapport contient la page concernée, le message d'erreur et des informations sur votre
-            navigateur ; l'identifiant figurant dans le lien de votre espace personnel en est retiré avant l'envoi. Il
-            sert uniquement à corriger les dysfonctionnements. Le prestataire annonce un hébergement au sein de
-            l'Union européenne ; ces rapports ne sont donc pas transférés hors de l'Union.
-          </li>
-        </ul>
-        <p i18n="@@confidentialite.outils.opposition">
-          Ces deux traitements reposent sur l'intérêt légitime de l'organisation à maintenir l'application en bon état
-          de fonctionnement. Vous pouvez vous y opposer en écrivant à l'adresse de contact.
-        </p>
+            <h3 i18n="@@confidentialite.outils.title">Mesure d'audience et suivi technique</h3>
+          } @else {
+            <p i18n="@@confidentialite.qui.soustraitants.outilUnique">
+              Interviennent également, pour notre seul compte et sans pouvoir utiliser ces données à d'autres fins :
+              l'hébergeur indiqué dans les mentions légales, le service d'envoi des e-mails, et l'outil technique
+              décrit ci-dessous.
+            </p>
+
+            @if (infos.mesureAudience) {
+              <h3 i18n="@@confidentialite.outils.titleAudience">Mesure d'audience</h3>
+            } @else {
+              <h3 i18n="@@confidentialite.outils.titleErreurs">Suivi des erreurs</h3>
+            }
+          }
+          <ul>
+            @if (infos.mesureAudience) {
+              <li i18n="@@confidentialite.outils.cloudflare">
+                <strong>Mesure d'audience</strong> — Cloudflare Web Analytics compte les pages consultées (page, site
+                de provenance, pays, type d'appareil, navigateur, système d'exploitation). Cet outil ne dépose ni
+                cookie ni identifiant sur votre appareil et ne permet pas de vous suivre d'un site à l'autre. Il est
+                fourni par Cloudflare, Inc., société établie aux États-Unis, adhérente au cadre de protection des
+                données UE–États-Unis, sur le fondement de la décision d'adéquation de la Commission européenne du
+                10 juillet 2023. Les pages de l'espace personnel des animateurs sont exclues de cette mesure.
+              </li>
+            }
+            @if (infos.suiviErreurs) {
+              <li i18n="@@confidentialite.outils.bugsink">
+                <strong>Suivi des erreurs</strong> — lorsqu'une erreur technique survient, un rapport automatique est
+                envoyé à Bugsink, prestataire spécialisé dans le diagnostic d'incidents, sur un espace réservé à
+                l'organisation. Ce rapport contient la page concernée, le message d'erreur et des informations sur
+                votre navigateur ; l'identifiant figurant dans le lien de votre espace personnel en est retiré avant
+                l'envoi. Il sert uniquement à corriger les dysfonctionnements. Le prestataire annonce un hébergement
+                au sein de l'Union européenne ; ces rapports ne sont donc pas transférés hors de l'Union.
+              </li>
+            }
+          </ul>
+          @if (deuxOutils()) {
+            <p i18n="@@confidentialite.outils.opposition">
+              Ces deux traitements reposent sur l'intérêt légitime de l'organisation à maintenir l'application en bon
+              état de fonctionnement. Vous pouvez vous y opposer en écrivant à l'adresse de contact.
+            </p>
+          } @else {
+            <p i18n="@@confidentialite.outils.oppositionUnique">
+              Ce traitement repose sur l'intérêt légitime de l'organisation à maintenir l'application en bon état de
+              fonctionnement. Vous pouvez vous y opposer en écrivant à l'adresse de contact.
+            </p>
+          }
+        } @else {
+          <p i18n="@@confidentialite.qui.soustraitants.sansOutils">
+            Interviennent également, pour notre seul compte et sans pouvoir utiliser ces données à d'autres fins :
+            l'hébergeur indiqué dans les mentions légales et le service d'envoi des e-mails.
+          </p>
+        }
 
         <h3 i18n="@@confidentialite.cookies.title">Cookies</h3>
         <p i18n="@@confidentialite.cookies.texte">

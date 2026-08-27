@@ -34,4 +34,22 @@ class MentionsLegalesResourceTest {
                 .body("baseLegale", equalTo(""))
                 .body("conservation", equalTo(""));
     }
+
+    @Test
+    void reportsWhichThirdPartyToolsRunSoThePageAnnouncesOnlyThose() {
+        given()
+                .when().get("/api/mentions-legales")
+                .then()
+                .statusCode(200)
+                // Neither runs here: the Cloudflare token is blank outside %prod,
+                // and %test pins observability.sentry.dsn empty so an exported
+                // SENTRY_DSN cannot turn this assertion into a machine-dependent
+                // failure. The privacy notice hangs its Cloudflare and Bugsink
+                // paragraphs on these two booleans, and announcing a processing
+                // that does not happen — a transfer outside the EU, for the first
+                // one — costs the credit of every sentence on that page a reader
+                // cannot check.
+                .body("mesureAudience", equalTo(false))
+                .body("suiviErreurs", equalTo(false));
+    }
 }

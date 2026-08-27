@@ -677,6 +677,15 @@ export interface MentionsLegales {
   responsableTraitement: string;
   baseLegale: string;
   conservation: string;
+  /**
+   * Whether this deployment actually runs Cloudflare Web Analytics / sends
+   * error reports to a Sentry-protocol endpoint. The privacy notice describes
+   * only the tools that are on: naming a processing that does not happen —
+   * a transfer outside the EU, for the first one — costs the credit of every
+   * other sentence on that page.
+   */
+  mesureAudience: boolean;
+  suiviErreurs: boolean;
 }
 
 /** Ordre public ceiling for adults, in hours (Code du travail art. L3121-20). */

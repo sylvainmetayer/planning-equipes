@@ -60,6 +60,17 @@ Bugsink est consommé en **offre hébergée**, pas auto-hébergé : c'est donc u
 Hébergement UE annoncé par l'éditeur, donc pas de transfert hors UE à déclarer —
 contrairement à Cloudflare.
 
+Elle ne le dit **que si l'outil tourne** : `/api/mentions-legales` renvoie
+`mesureAudience` et `suiviErreurs`, calculés sur la **valeur effective** de ces
+deux clés — celle que lisent le beacon et le SDK, repli `%prod` compris — et la
+page n'affiche que les paragraphes correspondants. En production, Cloudflare
+tourne donc et se déclare tant que `CLOUDFLARE_WEB_ANALYTICS_TOKEN` n'a pas été
+**explicitement vidé** : ne rien poser ne suffit pas. Vider une variable ne se
+contente pas d'éteindre l'outil, cela retire aussi sa déclaration — les deux vont
+ensemble, et c'est le point : un déploiement qui n'envoie rien à Cloudflare ne
+doit pas annoncer un transfert hors UE. Ajouter une troisième brique suppose
+donc un troisième drapeau, pas un paragraphe de plus en dur.
+
 ## Analytics produit : retirée
 
 PostHog a été déposé. Personne ne consultait les tableaux de bord, et la brique

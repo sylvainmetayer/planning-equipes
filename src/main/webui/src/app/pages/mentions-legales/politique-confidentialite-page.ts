@@ -40,6 +40,30 @@ export class PolitiqueConfidentialitePage {
     return mentions ? mentions.responsableTraitement || mentions.editeur : '';
   });
 
+  /**
+   * Whether this deployment runs any third-party tool worth a paragraph. The
+   * section describing them is written for the deployment that has them: on
+   * one that has neither, it announced two processings — including a transfer
+   * outside the EU — that do not take place, which is the fastest way to lose
+   * the reader's trust in the sentences they cannot check themselves.
+   */
+  protected readonly outilsTiers = computed(() => {
+    const mentions = this.mentions();
+    return !!mentions && (mentions.mesureAudience || mentions.suiviErreurs);
+  });
+
+  /**
+   * Whether both of them run. The heading, the sentence that refers to them and
+   * the objection paragraph are all written in the plural: hanging them on
+   * `outilsTiers` instead would announce "Mesure d'audience et suivi technique"
+   * above a list holding the error-monitoring bullet alone — the same unbacked
+   * claim, one tool later.
+   */
+  protected readonly deuxOutils = computed(() => {
+    const mentions = this.mentions();
+    return !!mentions && mentions.mesureAudience && mentions.suiviErreurs;
+  });
+
   /** Absent when the page was opened in a new tab from the espace animateur. */
   protected readonly peutRevenir = signal(typeof history !== 'undefined' && history.length > 1);
 
