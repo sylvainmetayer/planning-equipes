@@ -1,6 +1,8 @@
 package dev.sylvain.planning.service;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
@@ -17,7 +19,7 @@ import jakarta.ws.rs.NotFoundException;
  * being copied into each of them: an unknown id is one message, written once.
  */
 @ApplicationScoped
-public class TypologieService {
+public class TypologieService implements TypologieLibelles {
 
     @Inject
     TypologieRepository repository;
@@ -27,6 +29,18 @@ public class TypologieService {
 
     public List<TypologieItem> list() {
         return repository.listTypologies();
+    }
+
+    /**
+     * The whole vocabulary in one read, for the documents that print labels
+     * where the domain holds ids — one query per document rather than one per
+     * typologie met along the way.
+     */
+    @Override
+    public Map<String, String> parId() {
+        return repository.listTypologies().stream()
+                .collect(Collectors.toMap(TypologieItem::id, TypologieItem::label, (premier, doublon) -> premier,
+                        LinkedHashMap::new));
     }
 
     public TypologieItem create(TypologieItem typologie) {

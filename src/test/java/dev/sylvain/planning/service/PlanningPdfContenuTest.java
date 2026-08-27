@@ -11,6 +11,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -57,8 +58,13 @@ class PlanningPdfContenuTest {
         }
     };
 
+    /** The typologie vocabulary the documents translate stand ids against. */
+    private static final TypologieLibelles TYPOLOGIES = () -> Map.of(
+            "STRATEGIE", "Jeux de stratégie",
+            "AMBIANCE", "Jeux d'ambiance");
+
     private final PlanningExportService service = new PlanningExportService(new ApplicationLinks(Optional.empty()),
-            new AnimateurPlanningPdf(new PdfTheme()), new GlobalPlanningPdf(new PdfTheme()), new PlanningIcs(), PROVENANCE);
+            new AnimateurPlanningPdf(new PdfTheme(), TYPOLOGIES), new GlobalPlanningPdf(new PdfTheme()), new PlanningIcs(), PROVENANCE);
 
     @Test
     void lePdfIndividuelNommeLAnimateurSesStandsEtSesRepos() throws IOException {
@@ -76,6 +82,21 @@ class PlanningPdfContenuTest {
                 .contains("Repos");
         assertThat(text).doesNotContain("null");
         write("contenu-animateur.txt", text);
+    }
+
+    /**
+     * The « vos stands affectés » callout is a list, not a sentence: one stand
+     * per line, and under each one the games played there, one per line too —
+     * this is what an animateur revises before the event.
+     */
+    @Test
+    void leRappelDesStandsMetUnStandParLigneAvecSesTypologiesDeJeux() throws IOException {
+        String text = textOf(service.exportAnimateurPdf(planning(), "A-ADA"));
+
+        assertThat(text.lines().map(String::strip).toList())
+                .containsSubsequence("VOS STANDS AFFECTÉS",
+                        "Stratèges Associés", "Jeux de stratégie",
+                        "Éditeur Vedette", "Jeux d'ambiance");
     }
 
     /** The team-mates on the same row are named, the animateur themselves is not. */
@@ -179,7 +200,7 @@ class PlanningPdfContenuTest {
     /** A provenance carrying no date at all, whichever plan is asked for. */
     private static PlanningExportService withoutDate() {
         return new PlanningExportService(new ApplicationLinks(Optional.empty()),
-                new AnimateurPlanningPdf(new PdfTheme()), new GlobalPlanningPdf(new PdfTheme()), new PlanningIcs(),
+                new AnimateurPlanningPdf(new PdfTheme(), TYPOLOGIES), new GlobalPlanningPdf(new PdfTheme()), new PlanningIcs(),
                 new ExportProvenance() {
                     @Override
                     public Provenance courante() {

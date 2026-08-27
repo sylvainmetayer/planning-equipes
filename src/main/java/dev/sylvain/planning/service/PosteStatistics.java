@@ -79,17 +79,17 @@ final class PosteStatistics {
         return totalMinutes / 60.0;
     }
 
-    /** Stand names this animateur is assigned to, deduplicated, in first-appearance (chronological) order. */
-    static List<String> distinctStandNames(List<PosteAffectation> postes) {
-        List<String> names = new ArrayList<>();
+    /** Stands this animateur is assigned to, deduplicated, in first-appearance (chronological) order. */
+    static List<Stand> distinctStands(List<PosteAffectation> postes) {
+        List<Stand> stands = new ArrayList<>();
         Set<String> seenIds = new LinkedHashSet<>();
         for (PosteAffectation poste : postes) {
             Stand stand = poste.getStand();
             if (stand != null && seenIds.add(stand.getId())) {
-                names.add(stand.getNom());
+                stands.add(stand);
             }
         }
-        return names;
+        return stands;
     }
 
     static int distinctStandCount(List<PosteAffectation> postes) {

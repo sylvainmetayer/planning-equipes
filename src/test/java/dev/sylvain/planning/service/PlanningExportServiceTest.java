@@ -54,7 +54,7 @@ class PlanningExportServiceTest {
     };
 
     private final PlanningExportService service = new PlanningExportService(new ApplicationLinks(Optional.empty()),
-            new AnimateurPlanningPdf(new PdfTheme()), new GlobalPlanningPdf(new PdfTheme()), new PlanningIcs(), PROVENANCE);
+            new AnimateurPlanningPdf(new PdfTheme(), Map::of), new GlobalPlanningPdf(new PdfTheme()), new PlanningIcs(), PROVENANCE);
     private final AtomicInteger posteSequence = new AtomicInteger();
 
     @Test
@@ -350,7 +350,7 @@ class PlanningExportServiceTest {
     /** The same service, but with a public URL configured: the espace links become printable. */
     private static PlanningExportService exportsWithLinks(String baseUrl) {
         return new PlanningExportService(new ApplicationLinks(Optional.of(baseUrl)),
-                new AnimateurPlanningPdf(new PdfTheme()), new GlobalPlanningPdf(new PdfTheme()), new PlanningIcs(), PROVENANCE);
+                new AnimateurPlanningPdf(new PdfTheme(), Map::of), new GlobalPlanningPdf(new PdfTheme()), new PlanningIcs(), PROVENANCE);
     }
 
     private Set<String> typologies(String... typologies) {

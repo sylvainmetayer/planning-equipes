@@ -43,10 +43,12 @@ import jakarta.inject.Inject;
 public class AnimateurPlanningPdf {
 
     private final PdfTheme theme;
+    private final TypologieLibelles typologies;
 
     @Inject
-    public AnimateurPlanningPdf(PdfTheme theme) {
+    public AnimateurPlanningPdf(PdfTheme theme, TypologieLibelles typologies) {
         this.theme = theme;
+        this.typologies = typologies;
     }
 
     byte[] construire(String animateurName, List<PosteAffectation> postes,
@@ -144,8 +146,10 @@ public class AnimateurPlanningPdf {
     /**
      * Rounded callout listing every stand this animateur is assigned to at
      * least once over the whole event, in the order they first come up
-     * chronologically. Placed between the stat block and the day-by-day
-     * planning so the animateur can see at a glance which stands to revise.
+     * chronologically — one stand per line, and under each one the game
+     * typologies it proposes, one per line too. Placed between the stat block
+     * and the day-by-day planning: this is the revision list, so it says both
+     * which stands to revise and which games are played there.
      */
     private PdfPTable buildStandsAffectesCard(List<PosteAffectation> postes) {
         PdfPTable card = new PdfPTable(1);
@@ -165,10 +169,37 @@ public class AnimateurPlanningPdf {
         title.setSpacingAfter(5f);
         cell.addElement(title);
 
-        cell.addElement(new Paragraph(String.join("  ·  ", PosteStatistics.distinctStandNames(postes)), theme.calloutTextFont()));
+        Map<String, String> libelles = typologies.parId();
+        List<Stand> stands = PosteStatistics.distinctStands(postes);
+        for (int i = 0; i < stands.size(); i++) {
+            Stand stand = stands.get(i);
+            Paragraph ligne = new Paragraph(stand.getNom(), theme.standFont());
+            ligne.setSpacingBefore(i == 0 ? 0f : 7f);
+            cell.addElement(ligne);
+            for (String typologie : typologiesLisibles(stand, libelles)) {
+                Paragraph detail = new Paragraph(typologie, theme.locationFont());
+                detail.setIndentationLeft(12f);
+                cell.addElement(detail);
+            }
+        }
 
         card.addCell(cell);
         return card;
+    }
+
+    /**
+     * The game typologies of a stand, as the animateur reads them: labels
+     * rather than referential ids, sorted so two runs of the same planning
+     * produce the same document — {@code typologiesProposees} is a set with no
+     * order of its own. An id the referential no longer knows is printed as-is
+     * rather than dropped: a stand losing a line silently would be worse than
+     * a raw id.
+     */
+    private List<String> typologiesLisibles(Stand stand, Map<String, String> libelles) {
+        return stand.getTypologiesProposees().stream()
+                .map(id -> libelles.getOrDefault(id, id))
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .toList();
     }
 
     /** One rounded card per assignment: day/date with a "JOURx" badge, a time pill, the stand, its location and the teammates. */
