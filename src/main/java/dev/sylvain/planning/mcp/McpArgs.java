@@ -113,6 +113,25 @@ final class McpArgs {
         return result;
     }
 
+    /**
+     * The cap a listing tool applies, {@code defaut} when the caller says
+     * nothing.
+     *
+     * <p>No upper bound is imposed on an explicit value: a tool that silently
+     * returned fewer rows than asked would be indistinguishable from one that
+     * found fewer. The tools pairing this with a total count are what makes a
+     * truncation readable, not a hidden ceiling.</p>
+     */
+    static int limite(Integer demandee, int defaut) {
+        if (demandee == null) {
+            return defaut;
+        }
+        if (demandee <= 0) {
+            throw new BusinessError.Invalid("limite : attendu un entier strictement positif, reçu " + demandee);
+        }
+        return demandee;
+    }
+
     static <E extends Enum<E>> E enumeration(Class<E> type, String value, String champ) {
         if (value == null || value.isBlank()) {
             return null;

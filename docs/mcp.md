@@ -77,6 +77,18 @@ remplacer, contrairement au `PUT` REST. Un assistant qui ne peut pas lire
 nom/prénom/date de naissance ne peut pas les renvoyer : un remplacement complet
 les effacerait à chaque modification.
 
+## Divergences volontaires avec le REST
+
+Chacune répond à la même question : l'appelant est un assistant, pas un écran
+qui vient d'afficher la donnée.
+
+| Outil | Ce qu'il fait autrement | Pourquoi |
+| --- | --- | --- |
+| `modifier_animateur` | fusionne au lieu de remplacer | voir le corollaire ci-dessus |
+| `deverrouiller` | échoue sur un id inconnu, là où `DELETE /api/verrouillages/{id}` répond 204 | un écran vient de lister les verrouillages et sait que la ligne existait ; un assistant travaille sur des ids qu'il a pu inventer, et « supprimé » sur un verrouillage inexistant lui ferait croire le planning libre de bouger |
+| `capturer_instantane`, `restaurer_instantane` | lèvent une erreur là où le REST renvoie un 409 avec un corps | une réponse d'outil que l'assistant lit comme un succès ne doit pas être celle qui dit que rien n'a été écrit |
+| `consulter_instantane` | plafonne les affectations renvoyées et annonce le total | un instantané réel en porte plusieurs milliers ; le total à côté de la liste est ce qui rend la troncature lisible, plutôt qu'un plafond caché |
+
 ## L'édition se désigne argument par argument
 
 Une requête MCP n'est pas une requête JAX-RS : `EditionHeaderFilter` ne la voit
