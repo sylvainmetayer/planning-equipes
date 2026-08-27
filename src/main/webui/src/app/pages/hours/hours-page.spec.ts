@@ -9,6 +9,7 @@ import { provideZonelessChangeDetection, Signal, WritableSignal } from '@angular
 import { TestBed } from '@angular/core/testing';
 import { Sort } from '@angular/material/sort';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { HeuresAnimateur, HeuresRapport, PlanningEvenement } from '../../core/models';
@@ -69,6 +70,8 @@ describe('HoursPage', () => {
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
+        { provide: Router, useValue: { navigate: vi.fn(async () => true) } },
+        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({}) } } },
         { provide: ApiService, useValue: api },
         { provide: PlanningStateService, useValue: planningState }
       ]

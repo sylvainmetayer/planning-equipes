@@ -8,11 +8,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { PlanningEvenement, PosteAffectation, TypologieItem } from '../../core/models';
 import { standTypologies, typologieColorClass, typologieLabel, typologieLabels } from '../../core/typologie-colors';
 import { errorPrefix } from '../../core/error-message';
+import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
 
 export type HeatmapView = 'stand' | 'animateur';
 
@@ -91,6 +93,8 @@ export class HeatmapPage {
   protected readonly planning = signal<PlanningEvenement | null>(null);
   protected readonly view = signal<HeatmapView>('stand');
   protected readonly animateurFilter = signal('');
+  /** True as soon as the view differs from the one this page opens on. */
+  protected readonly vueModifiee = computed(() => this.view() !== 'stand' || this.animateurFilter().trim() !== '');
   protected readonly standColumnLabel = $localize`:@@heatmap.column.stand:Stand`;
   protected readonly animateurColumnLabel = $localize`:@@heatmap.column.animateur:Animateur`;
   /** Typologie referential, only used to turn ids into display labels. */
@@ -98,6 +102,7 @@ export class HeatmapPage {
 
   private readonly api = inject(ApiService);
   private readonly planningState = inject(PlanningStateService);
+  private readonly route = inject(ActivatedRoute);
 
   private readonly postes = computed(() => this.planning()?.postes ?? []);
 
@@ -184,7 +189,29 @@ export class HeatmapPage {
   private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef);
 
   constructor() {
+    this.seedStateFromQueryParams();
     void this.refresh();
+    keepViewInQueryParams(() => ({
+      view: this.view() === 'stand' ? null : this.view(),
+      q: optionalParam(this.animateurFilter())
+    }));
+  }
+
+  private seedStateFromQueryParams(): void {
+    const params = this.route.snapshot.queryParamMap;
+    // Anything other than the two views this page knows is ignored rather than
+    // rendered: `activeTable` would silently fall back to the animateur table
+    // for a value it cannot match, showing the wrong grid under the wrong toggle.
+    if (params.get('view') === 'animateur') {
+      this.view.set('animateur');
+    }
+    this.animateurFilter.set(params.get('q') ?? '');
+  }
+
+  /** Back to the view this page opens on: coverage by stand, no search. */
+  protected reinitialiserVue(): void {
+    this.view.set('stand');
+    this.animateurFilter.set('');
   }
 
   protected async refresh(): Promise<void> {

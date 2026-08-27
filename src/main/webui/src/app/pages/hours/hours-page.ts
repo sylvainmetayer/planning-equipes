@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
+import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import {
   DUREE_HEBDOMADAIRE_MAX_HEURES,
@@ -16,6 +17,7 @@ import {
 import { PlanningStateService } from '../../core/planning-state.service';
 import { OutputPanel } from '../../shared/output-panel';
 import { errorPrefix } from '../../core/error-message';
+import { NO_SORT, keepViewInQueryParams, readSort, sortQueryParams } from '../../core/view-query-params';
 
 /**
  * Hours screen: hours planned per animateur, broken down by ISO calendar
@@ -44,7 +46,9 @@ export class HoursPage {
   protected readonly exportBusy = signal(false);
   protected readonly rapport = signal<HeuresRapport | null>(null);
   protected readonly columns = computed(() => ['animateur', ...(this.rapport()?.semaines ?? []), 'total']);
-  protected readonly sort = signal<Sort>({ active: '', direction: '' });
+  protected readonly sort = signal<Sort>(NO_SORT);
+  /** True as soon as the table is sorted on something other than its source order. */
+  protected readonly vueModifiee = computed(() => this.sort().active !== '' && this.sort().direction !== '');
 
   /**
    * Weekly ceilings the table marks up. The point of this screen is to catch an
@@ -107,9 +111,17 @@ export class HoursPage {
 
   private readonly api = inject(ApiService);
   private readonly planningState = inject(PlanningStateService);
+  private readonly route = inject(ActivatedRoute);
 
   constructor() {
+    this.sort.set(readSort(this.route.snapshot.queryParamMap));
     void this.load();
+    keepViewInQueryParams(() => sortQueryParams(this.sort()));
+  }
+
+  /** Back to the order the report came in. */
+  protected reinitialiserVue(): void {
+    this.sort.set(NO_SORT);
   }
 
   protected async load(): Promise<void> {

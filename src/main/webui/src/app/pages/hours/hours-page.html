@@ -15,6 +15,12 @@
       <mat-icon>download</mat-icon>
       <ng-container i18n="@@hours.exportCsv">Exporter en CSV</ng-container>
     </button>
+    @if (vueModifiee()) {
+      <button matButton type="button" (click)="reinitialiserVue()">
+        <mat-icon>filter_alt_off</mat-icon>
+        <ng-container i18n="@@common.resetView">Réinitialiser la vue</ng-container>
+      </button>
+    }
   </mat-card-actions>
   @if (busy()) {
     <mat-progress-bar mode="indeterminate" />

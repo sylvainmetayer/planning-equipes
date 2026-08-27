@@ -168,6 +168,7 @@
   "animateurs.bulk.title": "Edit {$count} staff members",
   "calendarDay.subtitle": "Time slots grouped by event day, with the staff assigned to each stand.",
   "common.refresh": "Refresh",
+  "common.resetView": "Reset view",
   "calendarDay.persistedCount": "Assignments saved in the database: {$START_TAG_STRONG}{$INTERPOLATION}{$CLOSE_TAG_STRONG}",
   "calendarDay.empty": "No schedule data available yet. Run a solve from the Solver page.",
   "calendarDay.noStand": "No stand",

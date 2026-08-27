@@ -8,6 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { Animateur } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
@@ -18,6 +19,7 @@ import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { TableSelection } from '../../core/table-selection';
 import { correspondAuFiltre } from '../../core/text-filter';
+import { NO_SORT, keepViewInQueryParams, optionalParam, readSort, sortQueryParams } from '../../core/view-query-params';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { DetailData, DetailDialog } from '../../shared/detail-dialog';
@@ -57,9 +59,13 @@ import { errorMessage } from '../../core/error-message';
 })
 export class AnimateursPage {
   protected readonly columns = ['select', 'id', 'nom', 'majorite', 'manager', 'competences', 'indisponibilites', 'actions'];
-  protected readonly sort = signal<Sort>({ active: '', direction: '' });
+  protected readonly sort = signal<Sort>(NO_SORT);
   /** Quick filter of the table: id, identity and compétences. Applied before the sort. */
   protected readonly filtre = signal('');
+  /** True as soon as the table shows something other than the whole referential, unsorted. */
+  protected readonly vueModifiee = computed(
+    () => this.filtre().trim() !== '' || (this.sort().active !== '' && this.sort().direction !== '')
+  );
   protected readonly animateursFiltres = computed(() =>
     this.store
       .animateurs()
@@ -99,6 +105,7 @@ export class AnimateursPage {
   private readonly api = inject(ApiService);
   private readonly notifications = inject(NotificationService);
   private readonly confirmDialog = inject(ConfirmService);
+  private readonly route = inject(ActivatedRoute);
 
   /** Copies the animateur's personal espace link (issue #165) — what the PDF prints. */
   protected async copierLienEspace(animateur: Animateur): Promise<void> {
@@ -171,8 +178,18 @@ export class AnimateursPage {
   });
 
   constructor() {
+    const params = this.route.snapshot.queryParamMap;
+    this.sort.set(readSort(params));
+    this.filtre.set(params.get('q') ?? '');
     void this.crud.reload();
     void this.problemes.reloadFeasibility();
+    keepViewInQueryParams(() => ({ ...sortQueryParams(this.sort()), q: optionalParam(this.filtre()) }));
+  }
+
+  /** Back to the whole referential, in the order the store holds it. */
+  protected reinitialiserVue(): void {
+    this.filtre.set('');
+    this.sort.set(NO_SORT);
   }
 
   private indisponibiliteCritiqueMessage(jour: string, cause: string): string {

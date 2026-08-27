@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
@@ -9,8 +9,9 @@ import { MatListModule } from '@angular/material/list';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { intlLocale } from '../../core/locale';
+import { keepViewInQueryParams } from '../../core/view-query-params';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { VerrouillageStore } from '../../core/verrouillage.store';
 import { PlanningEvenement, PosteAffectation } from '../../core/models';
@@ -134,7 +135,6 @@ export class CalendarMonthPage {
   protected readonly verrous = inject(VerrouillageStore);
   private readonly planningState = inject(PlanningStateService);
   private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
   private readonly dialog = inject(MatDialog);
 
   protected readonly dayDetailsFallback = $localize`:@@calendarMonth.dayDetails:Détails du jour`;
@@ -264,10 +264,13 @@ export class CalendarMonthPage {
     // the calendar the user came to read.
     void this.verrous.reload().catch(() => undefined);
     // Keeps month/day/filters in the URL so a refresh (F5) restores the view
-    // instead of resetting it — replaceUrl avoids piling up a history entry
-    // per click while browsing (month nav, day/filter changes all go through
-    // the same effect).
-    effect(() => this.syncQueryParams());
+    // instead of resetting it.
+    keepViewInQueryParams(() => ({
+      month: toMonthKey(this.month()),
+      date: this.selectedDateKey(),
+      animateur: this.animateurFilter() === ALL ? null : this.animateurFilter(),
+      stand: this.standFilter() === ALL ? null : this.standFilter()
+    }));
   }
 
   /** True when the whole date is frozen by a JOUR lock on the edition. */
@@ -303,15 +306,6 @@ export class CalendarMonthPage {
     }
   }
 
-  private syncQueryParams(): void {
-    const queryParams = {
-      month: toMonthKey(this.month()),
-      date: this.selectedDateKey(),
-      animateur: this.animateurFilter() === ALL ? null : this.animateurFilter(),
-      stand: this.standFilter() === ALL ? null : this.standFilter()
-    };
-    void this.router.navigate([], { relativeTo: this.route, queryParams, replaceUrl: true });
-  }
 
   protected async refresh(): Promise<void> {
     this.loading.set(true);

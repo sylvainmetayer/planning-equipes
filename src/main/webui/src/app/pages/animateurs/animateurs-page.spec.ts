@@ -11,6 +11,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
@@ -77,6 +78,8 @@ describe('AnimateursPage alert badges', () => {
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
+        { provide: Router, useValue: { navigate: vi.fn(async () => true) } },
+        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({}) } } },
         { provide: ApiService, useValue: api },
         { provide: ReferenceCrudService, useValue: { reload: vi.fn(async () => undefined) } },
         { provide: SolverJobService, useValue: { solverBusy: () => false, editingLocked: () => false } },
@@ -202,6 +205,8 @@ describe('AnimateursPage table', () => {
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
+        { provide: Router, useValue: { navigate: vi.fn(async () => true) } },
+        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({}) } } },
         { provide: ApiService, useValue: api },
         { provide: ReferenceCrudService, useValue: { reload: vi.fn(async () => undefined), remove: vi.fn(async () => true), removeMany: vi.fn(async () => 0) } },
         { provide: SolverJobService, useValue: { solverBusy: () => false, editingLocked } },

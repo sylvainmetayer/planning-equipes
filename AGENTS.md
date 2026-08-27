@@ -253,6 +253,13 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
 - State flows one way: the solver page pushes the solved planning into
   `PlanningStateService`, calendars read it back read-only and never start a
   solve. Components don't call `fetch` directly.
+- **View state — a sort, a quick filter, a chosen view — goes in the URL**, via
+  `core/view-query-params.ts`: a refresh restores the screen and the link is
+  shareable, with no schema and no browser storage. The default of a control is
+  the *absence* of its param, reading is tolerant (an unknown value falls back
+  to the default rather than failing the page), writing uses `replaceUrl`, and
+  every such screen carries a one-action reset. See
+  `docs/decisions/0012-etat-de-vue-dans-l-url.md`.
 - The "a solver is running" state is never stored in the browser
   (`localStorage` / `sessionStorage`): `SolverJobService` reads it from the
   server, so a solve started from another browser or a private window also
