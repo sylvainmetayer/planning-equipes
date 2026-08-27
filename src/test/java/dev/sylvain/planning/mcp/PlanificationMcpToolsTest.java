@@ -106,7 +106,7 @@ class PlanificationMcpToolsTest {
     @Test
     void verrouillerPuisDeverrouillerUnAnimateurDuPlanning() throws InterruptedException {
         solve();
-        String animateurId = planningTools.lister_affectations(null, null, null, false, null).stream()
+        String animateurId = planningTools.lister_affectations(null, null, null, false, null, null).affectations().stream()
                 .map(AffectationView::animateurId)
                 .filter(id -> id != null)
                 .findFirst()

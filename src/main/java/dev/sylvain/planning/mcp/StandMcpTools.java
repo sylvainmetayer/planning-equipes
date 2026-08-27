@@ -50,12 +50,18 @@ public class StandMcpTools {
 
     @Tool(description = "Liste les stands, avec leurs typologies proposées, effectifs requis, "
             + "réserve majeurs/premium, niveau d'effort, emplacement, horaires récurrents et plages datées "
-            + "(fermetures/ouvertures) qui les surchargent.",
+            + "(fermetures/ouvertures) qui les surchargent. Sans limite, renvoie tous les stands ; total dit "
+            + "toujours combien il y en a.",
             annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
                     idempotentHint = true, openWorldHint = false))
-    List<StandView> lister_stands(
+    StandsView lister_stands(
+            @ToolArg(description = "Nombre maximum de stands renvoyés (défaut : tous)", required = false) Integer limite,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        return referenceDataService.listStands().stream().map(StandMcpTools::toView).toList();
+        List<Stand> stands = referenceDataService.listStands();
+        return new StandsView(stands.size(), stands.stream()
+                .limit(McpArgs.limite(limite, stands.size()))
+                .map(StandMcpTools::toView)
+                .toList());
     }
 
     @Tool(description = "Consulte un stand par son id.",
@@ -509,6 +515,10 @@ public class StandMcpTools {
     static EmplacementView toView(Emplacement emplacement) {
         return new EmplacementView(emplacement.getId(), emplacement.getNom(), emplacement.getLatitude(),
                 emplacement.getLongitude());
+    }
+
+    /** @param total stands in the edition, which may exceed the number returned */
+    public record StandsView(int total, List<StandView> stands) {
     }
 
     public record StandView(String id, String nom, Set<String> typologiesProposees, int effectifMin,

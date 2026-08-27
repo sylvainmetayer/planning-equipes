@@ -43,15 +43,19 @@ public class AnimateurMcpTools {
 
     @Tool(description = "Liste les animateurs. Ne renvoie aucune donnée personnelle identifiante (pas de nom, "
             + "prénom, ni date de naissance) : uniquement l'id, le statut majeur/mineur, et les attributs de "
-            + "planification (compétences, souhaits, jours indisponibles).",
+            + "planification (compétences, souhaits, jours indisponibles). Sans limite, renvoie tout l'effectif ; "
+            + "total dit toujours combien il y en a.",
             annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
                     idempotentHint = true, openWorldHint = false))
-    List<AnimateurView> lister_animateurs(
+    AnimateursView lister_animateurs(
+            @ToolArg(description = "Nombre maximum d'animateurs renvoyés (défaut : tous)", required = false) Integer limite,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         LocalDate reference = dateReference();
-        return referenceDataService.listAnimateurs().stream()
+        List<Animateur> animateurs = referenceDataService.listAnimateurs();
+        return new AnimateursView(animateurs.size(), animateurs.stream()
+                .limit(McpArgs.limite(limite, animateurs.size()))
                 .map(animateur -> toView(animateur, reference))
-                .toList();
+                .toList());
     }
 
     @Tool(description = "Consulte un animateur par son id. Ne renvoie aucune donnée personnelle identifiante.",
@@ -160,6 +164,10 @@ public class AnimateurMcpTools {
      * @param statut         "majeur" or "mineur", computed at the date of the first timeslot of the active group
      * @param moinsDe16Ans   the third regime of French labour law, derived from the same reference date
      */
+    /** @param total animateurs in the edition, which may exceed the number returned */
+    public record AnimateursView(int total, List<AnimateurView> animateurs) {
+    }
+
     public record AnimateurView(String id, String statut, boolean moinsDe16Ans, boolean manager,
             Map<String, NiveauCompetence> competences, Set<String> souhaits, Set<LocalDate> joursIndisponibles) {
     }

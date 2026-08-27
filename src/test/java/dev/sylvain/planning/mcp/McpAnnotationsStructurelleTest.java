@@ -43,7 +43,7 @@ class McpAnnotationsStructurelleTest {
     private static final List<String> LECTURE = List.of(
             "lister_", "consulter_", "previsualiser_", "diagnostiquer_", "valider_", "expliquer_",
             "analyser_", "comparer_", "simuler_", "statut_", "resultats_", "heures_", "etat_",
-            "volumes", "edition_courante");
+            "synthese_", "volumes", "edition_courante");
 
     /**
      * Tools that overwrite or drop something the user cannot get back by

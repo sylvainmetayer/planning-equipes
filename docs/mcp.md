@@ -87,7 +87,14 @@ qui vient d'afficher la donnée.
 | `modifier_animateur` | fusionne au lieu de remplacer | voir le corollaire ci-dessus |
 | `deverrouiller` | échoue sur un id inconnu, là où `DELETE /api/verrouillages/{id}` répond 204 | un écran vient de lister les verrouillages et sait que la ligne existait ; un assistant travaille sur des ids qu'il a pu inventer, et « supprimé » sur un verrouillage inexistant lui ferait croire le planning libre de bouger |
 | `capturer_instantane`, `restaurer_instantane` | lèvent une erreur là où le REST renvoie un 409 avec un corps | une réponse d'outil que l'assistant lit comme un succès ne doit pas être celle qui dit que rien n'a été écrit |
-| `consulter_instantane` | plafonne les affectations renvoyées et annonce le total | un instantané réel en porte plusieurs milliers ; le total à côté de la liste est ce qui rend la troncature lisible, plutôt qu'un plafond caché |
+| `lister_affectations`, `consulter_instantane` | plafonnent la liste (200 par défaut) et annoncent le total | un planning réel porte plusieurs milliers de postes ; le total à côté de la liste est ce qui rend la troncature lisible, plutôt qu'un plafond caché |
+| `lister_animateurs`, `lister_stands` | acceptent une `limite` mais ne plafonnent rien par défaut | leur taille est celle du référentiel, pas celle du planning : l'appelant qui les demande les veut en général en entier |
+
+**La question « où ça coince ? » ne passe pas par la liste.**
+`synthese_affectations` répond en quelques dizaines de lignes — postes pourvus
+au total, par stand et par jour — là où `lister_affectations` dépenserait le
+contexte entier de l'assistant avant qu'il ne voie qu'un stand est en
+sous-effectif le samedi.
 
 ## L'édition se désigne argument par argument
 

@@ -3,8 +3,12 @@ package dev.sylvain.planning.mcp;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
@@ -43,6 +47,15 @@ import jakarta.inject.Inject;
 @EditionCiblee
 @ApplicationScoped
 public class PlanningMcpTools {
+
+    /**
+     * Seats returned by {@code lister_affectations} when the caller does not
+     * say. The persisted plan of a real festival holds a few thousand of them;
+     * the questions actually asked of it are about one stand, one animateur or
+     * one créneau, and the whole-plan question is answered by
+     * {@code synthese_affectations} instead.
+     */
+    static final int LIMITE_AFFECTATIONS_DEFAUT = 200;
 
     @Inject
     PlanningService planningService;
@@ -110,15 +123,70 @@ public class PlanningMcpTools {
 
     @Tool(description = "Affectations du dernier planning persisté, filtrables par stand, par créneau ou par "
             + "animateur. Ne renvoie que des ids, jamais de données personnelles. Les postes non pourvus ont un "
-            + "animateurId nul.",
+            + "animateurId nul. La liste est plafonnée (200 par défaut) : total dit combien de postes "
+            + "correspondent réellement aux filtres. Pour une vue d'ensemble, préférer synthese_affectations.",
             annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
                     idempotentHint = true, openWorldHint = false))
-    List<AffectationView> lister_affectations(
+    AffectationsView lister_affectations(
             @ToolArg(description = "Id de stand pour filtrer", required = false) String standId,
             @ToolArg(description = "Id de créneau pour filtrer", required = false) Long creneauId,
             @ToolArg(description = "Id d'animateur pour filtrer", required = false) String animateurId,
             @ToolArg(description = "Ne garder que les postes non pourvus", required = false) Boolean seulementNonPourvus,
+            @ToolArg(description = "Nombre maximum d'affectations renvoyées (défaut 200)", required = false) Integer limite,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+        List<PosteAffectation> retenus = postesFiltres(standId, creneauId, animateurId, seulementNonPourvus);
+        return new AffectationsView(retenus.size(), retenus.stream()
+                .limit(McpArgs.limite(limite, LIMITE_AFFECTATIONS_DEFAUT))
+                .map(PlanningMcpTools::toView)
+                .toList());
+    }
+
+    /**
+     * The one answer that scales with the event instead of with the plan: a
+     * real festival persists thousands of seats, and "où ça coince ?" asked
+     * with {@code lister_affectations} costs an assistant its whole context
+     * before it can even see that one stand is short on Saturday.
+     */
+    @Tool(description = "Synthèse du dernier planning persisté : combien de postes sont pourvus, au total puis "
+            + "par stand et par jour. Quelques dizaines de lignes au lieu de plusieurs milliers d'affectations, "
+            + "pour repérer d'un coup d'œil où il manque du monde.",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
+    SyntheseView synthese_affectations(
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+        List<PosteAffectation> postes = postesFiltres(null, null, null, null);
+        Map<String, LigneSynthese> parStand = new LinkedHashMap<>();
+        Map<LocalDate, LigneSynthese> parJour = new TreeMap<>();
+        Set<String> animateurs = new HashSet<>();
+        for (PosteAffectation poste : postes) {
+            boolean pourvu = poste.getAnimateur() != null;
+            if (pourvu) {
+                animateurs.add(poste.getAnimateur().getId());
+            }
+            if (poste.getStand() != null) {
+                parStand.computeIfAbsent(poste.getStand().getId(),
+                        id -> new LigneSynthese(poste.getStand().getNom())).ajouter(pourvu);
+            }
+            if (poste.getCreneau() != null && poste.getCreneau().getDate() != null) {
+                parJour.computeIfAbsent(poste.getCreneau().getDate(),
+                        date -> new LigneSynthese(null)).ajouter(pourvu);
+            }
+        }
+        int pourvus = (int) postes.stream().filter(poste -> poste.getAnimateur() != null).count();
+        return new SyntheseView(postes.size(), pourvus, postes.size() - pourvus, animateurs.size(),
+                parStand.entrySet().stream()
+                        .map(entree -> new StandSyntheseView(entree.getKey(), entree.getValue().nom,
+                                entree.getValue().postes, entree.getValue().pourvus,
+                                entree.getValue().postes - entree.getValue().pourvus))
+                        .toList(),
+                parJour.entrySet().stream()
+                        .map(entree -> new JourSyntheseView(entree.getKey(), entree.getValue().postes,
+                                entree.getValue().pourvus, entree.getValue().postes - entree.getValue().pourvus))
+                        .toList());
+    }
+
+    private List<PosteAffectation> postesFiltres(String standId, Long creneauId, String animateurId,
+            Boolean seulementNonPourvus) {
         PlanningEvenement planning = persistenceService.loadPersistedPlanning();
         if (planning == null || planning.getPostes() == null) {
             return List.of();
@@ -131,7 +199,6 @@ public class PlanningMcpTools {
                 .filter(poste -> animateurId == null
                         || (poste.getAnimateur() != null && animateurId.equals(poste.getAnimateur().getId())))
                 .filter(poste -> !Boolean.TRUE.equals(seulementNonPourvus) || poste.getAnimateur() == null)
-                .map(PlanningMcpTools::toView)
                 .toList();
     }
 
@@ -217,6 +284,39 @@ public class PlanningMcpTools {
 
     public record AffectationView(String posteId, String standId, String standNom, Long creneauId,
             LocalDate date, LocalTime heureDebut, LocalTime heureFin, String animateurId) {
+    }
+
+    /** @param total seats matching the filters, which may exceed the number returned */
+    public record AffectationsView(int total, List<AffectationView> affectations) {
+    }
+
+    public record SyntheseView(int postesTotal, int postesPourvus, int postesNonPourvus, int animateursAffectes,
+            List<StandSyntheseView> parStand, List<JourSyntheseView> parJour) {
+    }
+
+    public record StandSyntheseView(String standId, String standNom, int postes, int pourvus, int nonPourvus) {
+    }
+
+    public record JourSyntheseView(LocalDate date, int postes, int pourvus, int nonPourvus) {
+    }
+
+    /** Mutable tally behind one line of the synthèse, never exposed. */
+    private static final class LigneSynthese {
+
+        private final String nom;
+        private int postes;
+        private int pourvus;
+
+        LigneSynthese(String nom) {
+            this.nom = nom;
+        }
+
+        void ajouter(boolean pourvu) {
+            postes++;
+            if (pourvu) {
+                pourvus++;
+            }
+        }
     }
 
     public record HeuresView(List<String> semaines, List<HeuresAnimateurView> animateurs) {
