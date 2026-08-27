@@ -15,6 +15,7 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 
+import io.quarkiverse.mcp.server.Prompt;
 import io.quarkiverse.mcp.server.Tool;
 
 /**
@@ -40,11 +41,20 @@ class McpToolNamesTest {
     private static final Path SOURCES_MCP =
             Path.of("src/main/java/dev/sylvain/planning/mcp");
 
-    /** Every file that quotes tool names at the user, outside the Java code. */
+    /**
+     * Every file that quotes tool names at the user rather than calling them.
+     *
+     * <p>The prompts and the resources are Java, but they are documents all
+     * the same: their text is read by an assistant, not compiled against the
+     * tools it names. A wrong name there fails exactly the way the ready-to-copy
+     * prompt of the MCP page once did.</p>
+     */
     private static final List<Path> DOCUMENTS = List.of(
             Path.of("src/main/webui/src/app/pages/mcp/mcp-page.ts"),
             Path.of("src/main/webui/public/i18n/messages.en.json"),
-            Path.of("docs/mcp.md"));
+            Path.of("docs/mcp.md"),
+            Path.of("src/main/java/dev/sylvain/planning/mcp/McpPrompts.java"),
+            Path.of("src/main/java/dev/sylvain/planning/mcp/McpResources.java"));
 
     /** A tool name shape: {@code lister_stands}, {@code creer_stand_complet}. */
     private static final Pattern SNAKE_CASE = Pattern.compile("\\b[a-z][a-z0-9]*(?:_[a-z0-9]+)+\\b");
@@ -62,7 +72,15 @@ class McpToolNamesTest {
      */
     private static final Set<String> NOT_TOOL_NAMES = Set.of("p_token");
 
-    /** Every method the MCP server actually exposes, read from the annotation itself. */
+    /**
+     * Every feature the MCP server actually announces, read from the
+     * annotations themselves.
+     *
+     * <p>Prompts count as well as tools: a prompt is named in the same
+     * snake_case, and {@link #DOCUMENTS} now holds the file that declares
+     * them — its own names must not read as citations of tools that do not
+     * exist.</p>
+     */
     private static Set<String> exposedTools() throws IOException {
         Set<String> tools = new TreeSet<>();
         try (Stream<Path> files = Files.list(SOURCES_MCP)) {
@@ -78,7 +96,7 @@ class McpToolNamesTest {
                     continue;
                 }
                 for (var method : type.getDeclaredMethods()) {
-                    if (method.isAnnotationPresent(Tool.class)) {
+                    if (method.isAnnotationPresent(Tool.class) || method.isAnnotationPresent(Prompt.class)) {
                         tools.add(method.getName());
                     }
                 }

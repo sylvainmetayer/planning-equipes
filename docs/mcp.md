@@ -190,6 +190,29 @@ le même appel ne laisse plus aucune étape à laquelle un humain puisse dire no
 et il **refuse un poste verrouillé** — le verrou est ce qu'on lui demande de
 respecter, il ne doit pas pouvoir passer dessus en silence.
 
+## Le serveur ne sert pas que des outils
+
+Deux autres familles MCP sont servies, parce qu'elles portent ce qu'un outil ne
+peut pas dire.
+
+**Trois prompts** — diagnostiquer les contraintes dures, vérifier une édition
+avant de résoudre, résoudre sans perdre le planning en place. Chacun prend un
+argument `edition` facultatif et enchaîne les outils dans le bon ordre. Ils sont
+**distincts** du texte prêt-à-copier de la page MCP : celui-là est affiché,
+traduit et collé par un humain, et reste en place pour les clients sans support
+des prompts. Le texte des prompts est lu par `McpToolNamesTest`, qui échoue s'il
+nomme un outil inexistant — la panne qu'avait déjà connue la page.
+
+**Deux ressources**, à attacher une fois pour informer tous les appels suivants :
+
+| URI | Contenu |
+| --- | --- |
+| `planning://contraintes` | le catalogue des contraintes, **généré depuis `ConstraintCatalog`** : c'est la liste que le solveur applique, elle ne peut donc ni décrire une règle absente ni en oublier une ajoutée la veille |
+| `planning://vocabulaire` | stand, créneau, poste, vacation, amplitude, typologie, découpage, édition — et l'ordre dans lequel on prépare un événement |
+
+Le vocabulaire est le seul texte écrit à la main ici : il résume
+`docs/domaine.md` pour un lecteur qui ne verra jamais le modèle Java.
+
 ## Hors périmètre, volontairement
 
 | Ce qui n'a pas d'outil | Pourquoi |
