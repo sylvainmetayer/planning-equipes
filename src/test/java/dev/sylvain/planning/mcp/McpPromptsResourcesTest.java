@@ -3,9 +3,12 @@ package dev.sylvain.planning.mcp;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import dev.sylvain.planning.mcp.McpPrompts.PromptExpose;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import io.quarkiverse.mcp.server.Prompt;
 import io.quarkiverse.mcp.server.PromptManager;
@@ -34,6 +37,41 @@ class McpPromptsResourcesTest {
 
     @Inject
     ResourceManager resourceManager;
+
+    /**
+     * The catalogue drives the MCP page, so a prompt missing from it would be
+     * announced over MCP and invisible in the interface — and one listed but
+     * no longer declared would break the page at runtime. Both directions are
+     * checked, since the order is written by hand.
+     */
+    @Test
+    void leCatalogueCouvreExactementLesPromptsDeclares() {
+        List<String> declares = Arrays.stream(McpPrompts.class.getDeclaredMethods())
+                .filter(methode -> methode.isAnnotationPresent(Prompt.class))
+                .map(Method::getName)
+                .toList();
+
+        assertThat(prompts.catalogue()).extracting(PromptExpose::nom)
+                .containsExactlyInAnyOrderElementsOf(declares);
+    }
+
+    @Test
+    void chaqueEntreeDuCatalogueEstUtilisableTelleQuelle() {
+        for (PromptExpose expose : prompts.catalogue()) {
+            assertThat(expose.description()).as("description de %s", expose.nom()).isNotBlank();
+            assertThat(expose.texte()).as("texte de %s", expose.nom()).isNotBlank()
+                    .doesNotContain("%s")
+                    .doesNotContain("null");
+        }
+    }
+
+    /** The page shows them in this order, which is the order of a real event. */
+    @Test
+    void leCatalogueCommenceParLaGrilleEtFinitParLeDiagnostic() {
+        assertThat(prompts.catalogue()).extracting(PromptExpose::nom)
+                .startsWith("construire_la_grille_de_creneaux")
+                .endsWith("diagnostiquer_contraintes_dures");
+    }
 
     @Test
     void chaquePromptPorteLEditionQuOnLuiDonne() {

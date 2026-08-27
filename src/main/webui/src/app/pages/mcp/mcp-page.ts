@@ -6,7 +6,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { ApiService } from '../../core/api.service';
-import { CleMcp, StatutMcp } from '../../core/models';
+import { CleMcp, PromptMcp, StatutMcp } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { StatusMessage } from '../../shared/status-message';
 
@@ -15,8 +15,8 @@ import { StatusMessage } from '../../shared/status-message';
  * docs/mcp.md): endpoint, API-key header, and — when the app answers through
  * a Pangolin access proxy (detected via the `X-Pangolin: true` response
  * header on any API call) — the proxy access-token headers that must ride
- * along on every MCP request. Ends with ready-to-paste prompts naming the
- * server, for the two most common needs.
+ * along on every MCP request. Ends with the prompts the server announces,
+ * ready to paste for a client that cannot fetch them itself.
  *
  * <h2>The key</h2>
  * The page tells the operator up front whether a key exists at all: without
@@ -55,6 +55,13 @@ export class McpPage implements OnDestroy {
   /** Server-side key status; `null` until `/api/mcp/statut` has answered. */
   protected readonly statut = signal<StatutMcp | null>(null);
 
+  /**
+   * The prompts the MCP server announces. Empty until `/api/mcp/prompts` has
+   * answered — and the section stays hidden rather than showing an empty card,
+   * since a page that cannot reach its own API has worse news to give.
+   */
+  protected readonly prompts = signal<PromptMcp[]>([]);
+
   protected readonly formulaireOuvert = signal(false);
   protected readonly motDePasse = signal('');
   protected readonly enCours = signal(false);
@@ -68,6 +75,7 @@ export class McpPage implements OnDestroy {
   constructor() {
     void this.detecterPangolin();
     void this.chargerStatut();
+    void this.chargerPrompts();
   }
 
   ngOnDestroy(): void {
@@ -91,6 +99,15 @@ export class McpPage implements OnDestroy {
     } catch {
       // Leave it null: the page then says nothing about the key rather than
       // claiming it is missing, which would be a worse kind of wrong.
+    }
+  }
+
+  private async chargerPrompts(): Promise<void> {
+    try {
+      this.prompts.set(await this.api.get<PromptMcp[]>('/api/mcp/prompts'));
+    } catch {
+      // Same choice as the key status: say nothing rather than show a section
+      // that looks like "this server has no prompt".
     }
   }
 
@@ -167,10 +184,6 @@ export class McpPage implements OnDestroy {
     clearTimeout(this.effacement);
     this.effacement = setTimeout(() => this.oublierCle(), McpPage.EFFACEMENT_MS);
   }
-
-  protected readonly promptExemple = $localize`:@@mcp.prompt.texte:Utilise le serveur MCP « planning-equipes » : le dernier planning résolu contient des violations de contraintes dures. Récupère le diagnostic de la dernière analyse (lance une analyse via lancer_analyse si aucune n'est disponible), puis liste chaque contrainte HARD en défaut avec son nombre de correspondances. Pour chacune : identifie les postes et créneaux touchés (expliquer_affectation sur les postes concernés), donne la cause racine probable (manque de compétences sur la typologie, indisponibilité, effectif insuffisant sur la tranche horaire, plafond légal d'heures atteint, aucun animateur polyvalent…), et dis-moi précisément ce que je dois modifier dans les données de référence pour la corriger (ajouter des disponibilités, ajuster l'effectif minimum du stand, revoir les amplitudes, désigner une typologie ninja, désactiver temporairement une contrainte…). Termine par une liste d'actions concrètes classées par impact décroissant, sans exposer de données nominatives inutiles.`;
-
-  protected readonly promptGrille = $localize`:@@mcp.prompt.grille.texte:Utilise le serveur MCP « planning-equipes » pour construire la grille de créneaux de l'édition. Commence par diagnostiquer_grille_creneaux pour voir ce qui existe déjà, et demande-moi si la grille doit être en AMPLITUDES (journées à découper en vacations) ou en VACATIONS (vacations finales) avant d'écrire quoi que ce soit. Utilise ensuite previsualiser_creneaux_recurrents pour me montrer ce que ta règle produirait, et n'appelle creer_creneaux_recurrents qu'après mon accord. Termine par valider_creneaux et explique-moi chaque anomalie remontée — doublon, chevauchement, trou dans une journée, date isolée, stand que personne ne pourra armer, sous-effectif — en me disant pour chacune si c'est une vraie erreur ou un choix légitime de ma part.`;
 
   protected async copier(texte: string): Promise<void> {
     await navigator.clipboard.writeText(texte);

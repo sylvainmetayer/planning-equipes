@@ -42,6 +42,26 @@ class McpResourceTest {
                 .body("$", org.hamcrest.Matchers.not(org.hamcrest.Matchers.hasKey("cle")));
     }
 
+    /**
+     * The page reads its prompts here rather than carrying its own copies —
+     * one of those copies had drifted to a tool the application never exposed.
+     * What matters on the wire is that every entry is complete: a description
+     * to choose by, and a text to paste.
+     */
+    @Test
+    @Order(1)
+    void lesPromptsDuServeurSontServisAuComplet() {
+        given()
+                .when().get("/api/mcp/prompts")
+                .then()
+                .statusCode(200)
+                .body("size()", org.hamcrest.Matchers.greaterThan(0))
+                .body("nom", org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.not(org.hamcrest.Matchers.emptyString())))
+                .body("description", org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.not(org.hamcrest.Matchers.emptyString())))
+                .body("texte", org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.not(org.hamcrest.Matchers.emptyString())))
+                .body("[0].nom", equalTo("construire_la_grille_de_creneaux"));
+    }
+
     @Test
     @Order(2)
     void leBonMotDePasseRevelaLaCle() {

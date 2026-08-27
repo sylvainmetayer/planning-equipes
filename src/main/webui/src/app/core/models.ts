@@ -975,6 +975,22 @@ export interface CleMcp {
   pangolinAccessToken: string | null;
 }
 
+/**
+ * One prompt the MCP server announces, as `/api/mcp/prompts` serves it.
+ *
+ * Read from the server rather than written into the page: the page used to
+ * carry its own copies of these texts, and one of them named a tool the
+ * application has never exposed.
+ */
+export interface PromptMcp {
+  /** Technical name, the one an MCP client shows in its prompt list. */
+  nom: string;
+  /** What the prompt is for, one sentence. */
+  description: string;
+  /** The prompt itself, ready to paste. Served in French, like the domain. */
+  texte: string;
+}
+
 /** One of the animateur's seats, as shown in their espace. */
 export interface PosteAnimateurView {
   creneauId: number;

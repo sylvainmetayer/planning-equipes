@@ -44,6 +44,12 @@ session ne suffit pas, parce que cette clé donne un accès complet en écriture
 **survit à la session** d'où elle a été copiée. La révélation doit être liée à
 quelqu'un présent au clavier.
 
+`GET /api/mcp/prompts` sert les prompts que le serveur MCP annonce — nom,
+description, texte — pour que la page MCP les propose aux clients qui ne savent
+pas les récupérer eux-mêmes. Rien de secret ici : c'est la session admin qui
+protège la route, comme le reste de l'API. Elle existe pour que la page **ne
+recopie pas** ces textes ; voir [`mcp.md`](mcp.md).
+
 ### Derrière un reverse proxy qui termine le TLS
 
 Quarkus fabrique la redirection de connexion en **absolu**, depuis le schéma de

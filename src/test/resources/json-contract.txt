@@ -60,6 +60,7 @@ domain.PlanningEvenement = animateurs, constraintsDesactivees, contraintesAdHoc,
 domain.PosteAffectation = animateur, creneau, dureeEffectiveMinutes, heureDebutEffective, heureFinEffective, id, stand, verrouille
 domain.Stand = effectifMax, effectifMin, emplacement, horaires, id, indisponibilites, niveauEffort, nom, ouvertures, premium, reserveMajeurs, typologiesProposees
 domain.VerrouillagePlanning = animateurId, creeLe, creneauId, id, jour, raison, standId, type
+mcp.McpPrompts$PromptExpose = description, nom, texte
 service.DemandeEchangeService$NouvelleDemande = cibleId, creneauCibleId, creneauId, motif, standCibleId, standId
 service.EspaceAnimateurService$ColleagueView = id, nomComplet
 service.EspaceAnimateurService$DemandeEchangeView = cibleDecideLe, cibleId, cibleNom, commentaireAdmin, contraintesViolees, creeLe, creneauCibleId, creneauId, date, dateCible, decideLe, demandeurId, demandeurNom, heureDebut, heureDebutCible, heureFin, heureFinCible, id, motif, prevalidationOk, standCibleId, standCibleNom, standId, standNom, statut

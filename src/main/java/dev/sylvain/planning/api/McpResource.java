@@ -1,7 +1,10 @@
 package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.config.ConfigMcp;
+import dev.sylvain.planning.mcp.McpPrompts;
+import dev.sylvain.planning.mcp.McpPrompts.PromptExpose;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.Instant;
@@ -63,6 +66,9 @@ public class McpResource {
     @Inject
     ConfigMcp mcp;
 
+    @Inject
+    McpPrompts prompts;
+
     /**
      * The Pangolin access-proxy token, set server-side so the operator can
      * reveal it from the MCP page instead of copying it in by hand each time
@@ -92,6 +98,21 @@ public class McpResource {
     @Path("/statut")
     public StatutMcp statut() {
         return new StatutMcp(mcp.apiKey().isPresent() && !mcp.apiKey().get().isBlank(), mcp.apiKeyHeader());
+    }
+
+    /**
+     * The prompts the MCP server announces, so the page can offer them to a
+     * client that does not support prompts.
+     *
+     * <p>Read from the server rather than written into the page: the page used
+     * to carry its own copies, and one of them named a tool this application
+     * has never exposed. Nobody could have noticed — a prompt is prose until
+     * somebody pastes it.</p>
+     */
+    @GET
+    @Path("/prompts")
+    public List<PromptExpose> prompts() {
+        return prompts.catalogue();
     }
 
     /** Exchanges the admin password for the API cle. {@code 401} on a wrong password, {@code 429} once locked out. */

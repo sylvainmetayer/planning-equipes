@@ -49,11 +49,14 @@ class McpToolNamesTest {
      * tools it names. A wrong name there fails exactly the way the ready-to-copy
      * prompt of the MCP page once did.</p>
      */
+    private static final Path PROMPTS = Path.of("src/main/java/dev/sylvain/planning/mcp/McpPrompts.java");
+    private static final Path DOC_MCP = Path.of("docs/mcp.md");
+
     private static final List<Path> DOCUMENTS = List.of(
             Path.of("src/main/webui/src/app/pages/mcp/mcp-page.ts"),
             Path.of("src/main/webui/public/i18n/messages.en.json"),
-            Path.of("docs/mcp.md"),
-            Path.of("src/main/java/dev/sylvain/planning/mcp/McpPrompts.java"),
+            DOC_MCP,
+            PROMPTS,
             Path.of("src/main/java/dev/sylvain/planning/mcp/McpResources.java"));
 
     /** A tool name shape: {@code lister_stands}, {@code creer_stand_complet}. */
@@ -154,6 +157,12 @@ class McpToolNamesTest {
      * <p>{@code docs/mcp.md} is only required to quote <em>some</em> tool name,
      * not the whole catalogue: the server announces its own tools, and the
      * documentation deliberately stops at what the server cannot say.</p>
+     *
+     * <p>The MCP page is deliberately <b>not</b> one of the two witnesses any
+     * more: it no longer holds a prompt of its own, it reads them from
+     * {@code /api/mcp/prompts}. It stays in {@link #DOCUMENTS} so that putting
+     * a hand-written prompt back would be caught, but the citations now live
+     * in {@link #PROMPTS}.</p>
      */
     @Test
     void theScanReadsRealToolsAndRealCitations() throws IOException {
@@ -164,10 +173,10 @@ class McpToolNamesTest {
         for (Path document : DOCUMENTS) {
             assertThat(document).exists();
         }
-        assertThat(citedNames(DOCUMENTS.get(0)))
-                .as("the MCP page quotes tool names in its ready-to-copy prompt")
+        assertThat(citedNames(PROMPTS))
+                .as("the prompts the server serves name the tools they chain")
                 .isNotEmpty();
-        assertThat(citedNames(DOCUMENTS.get(2)))
+        assertThat(citedNames(DOC_MCP))
                 .as("docs/mcp.md still quotes tool names, so the check above has something to bite on")
                 .isNotEmpty();
     }

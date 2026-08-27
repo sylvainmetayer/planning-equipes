@@ -481,6 +481,23 @@ table td.hours-verifier {
   white-space: pre-wrap;
 }
 
+/* Several prompts now share one card, so each needs its own visible block. */
+.mcp-prompt-bloc + .mcp-prompt-bloc {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+}
+
+.mcp-prompt-nom {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.mcp-prompt-description {
+  margin: 0.25rem 0 0;
+  color: var(--mat-sys-on-surface-variant);
+}
+
 /* MCP: the API-key reveal — a short form, then the key itself, both inline in
    the connection card rather than in a dialog, so the configuration block
    right below updates with the real key under the reader's eyes. */

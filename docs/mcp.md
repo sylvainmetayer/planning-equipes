@@ -195,13 +195,22 @@ respecter, il ne doit pas pouvoir passer dessus en silence.
 Deux autres familles MCP sont servies, parce qu'elles portent ce qu'un outil ne
 peut pas dire.
 
-**Trois prompts** — diagnostiquer les contraintes dures, vérifier une édition
-avant de résoudre, résoudre sans perdre le planning en place. Chacun prend un
-argument `edition` facultatif et enchaîne les outils dans le bon ordre. Ils sont
-**distincts** du texte prêt-à-copier de la page MCP : celui-là est affiché,
-traduit et collé par un humain, et reste en place pour les clients sans support
-des prompts. Le texte des prompts est lu par `McpToolNamesTest`, qui échoue s'il
-nomme un outil inexistant — la panne qu'avait déjà connue la page.
+**Quatre prompts** — construire la grille de créneaux, vérifier une édition
+avant de résoudre, résoudre sans perdre le planning en place, diagnostiquer les
+contraintes dures. Chacun prend un argument `edition` facultatif et enchaîne les
+outils dans le bon ordre.
+
+La page MCP de l'interface **ne les recopie pas** : elle les lit sur
+`GET /api/mcp/prompts`. Elle portait auparavant ses propres textes, et l'un
+d'eux avait dérivé vers un outil que cette application n'a jamais exposé —
+personne ne pouvait s'en apercevoir, un prompt n'étant que de la prose jusqu'à
+ce que quelqu'un le colle. Un seul texte, une seule source, quel que soit le
+chemin par lequel un client l'atteint.
+
+Conséquence assumée : ces textes ne sont **pas traduits**. Le catalogue i18n
+porte les libellés autour d'eux, pas les prompts eux-mêmes, qui restent en
+français comme le vocabulaire métier. `McpToolNamesTest` les lit et échoue si
+l'un d'eux nomme un outil inexistant.
 
 **Deux ressources**, à attacher une fois pour informer tous les appels suivants :
 

@@ -146,41 +146,31 @@
   </mat-card>
 }
 
-<mat-card appearance="outlined" class="page-card">
-  <mat-card-header>
-    <h2 mat-card-title i18n="@@mcp.prompt.title">Exemple : déboguer une solution avec des contraintes dures</h2>
-    <mat-card-subtitle i18n="@@mcp.prompt.subtitle">
-      Une fois le client connecté, collez ce prompt dans votre assistant : il analysera les violations
-      dures du dernier planning et vous dira concrètement quoi corriger dans les données.
-    </mat-card-subtitle>
-  </mat-card-header>
-  <mat-card-content>
-    <pre class="mcp-pre mcp-prompt">{{ promptExemple }}</pre>
-    <div class="card-actions">
-      <button matButton="tonal" type="button" (click)="copier(promptExemple)">
-        <mat-icon>content_copy</mat-icon>
-        <ng-container i18n="@@mcp.copierPrompt">Copier le prompt</ng-container>
-      </button>
-    </div>
-  </mat-card-content>
-</mat-card>
-
-<mat-card appearance="outlined" class="page-card">
-  <mat-card-header>
-    <h2 mat-card-title i18n="@@mcp.prompt.grille.title">Exemple : construire la grille de créneaux</h2>
-    <mat-card-subtitle i18n="@@mcp.prompt.grille.subtitle">
-      Poser des créneaux récurrents — « de 9h à 12h et de 14h à 18h, tous les jours sauf le week-end » — sans
-      les saisir un par un, en faisant contrôler la grille obtenue avant de la garder.
-    </mat-card-subtitle>
-  </mat-card-header>
-  <mat-card-content>
-    <pre class="mcp-pre mcp-prompt">{{ promptGrille }}</pre>
-    <div class="card-actions">
-      <button matButton="tonal" type="button" (click)="copier(promptGrille)">
-        <mat-icon>content_copy</mat-icon>
-        <ng-container i18n="@@mcp.copierPrompt.grille">Copier le prompt</ng-container>
-      </button>
-    </div>
-  </mat-card-content>
-</mat-card>
+@if (prompts().length) {
+  <mat-card appearance="outlined" class="page-card">
+    <mat-card-header>
+      <h2 mat-card-title i18n="@@mcp.prompts.title">Prompts prêts à l'emploi</h2>
+      <mat-card-subtitle i18n="@@mcp.prompts.subtitle">
+        Ce sont les prompts que le serveur annonce lui-même : un client qui gère les prompts MCP les
+        propose directement, sans copier-coller. Pour les autres, collez le texte dans votre assistant.
+        Ils sont rédigés en français, comme le reste du métier.
+      </mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      @for (prompt of prompts(); track prompt.nom) {
+        <section class="mcp-prompt-bloc">
+          <h3 class="mcp-prompt-nom"><code>{{ prompt.nom }}</code></h3>
+          <p class="mcp-prompt-description">{{ prompt.description }}</p>
+          <pre class="mcp-pre mcp-prompt">{{ prompt.texte }}</pre>
+          <div class="card-actions">
+            <button matButton="tonal" type="button" (click)="copier(prompt.texte)">
+              <mat-icon>content_copy</mat-icon>
+              <ng-container i18n="@@mcp.copierPrompt">Copier le prompt</ng-container>
+            </button>
+          </div>
+        </section>
+      }
+    </mat-card-content>
+  </mat-card>
+}
 
