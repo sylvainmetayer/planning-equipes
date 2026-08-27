@@ -78,10 +78,10 @@ import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.scenario.YamlSections;
 import dev.sylvain.planning.service.diagnostic.ConstraintContribution;
+import dev.sylvain.planning.service.diagnostic.ConstraintDiagnosticMode;
 import dev.sylvain.planning.service.diagnostic.ConstraintDiagnosticService;
 import dev.sylvain.planning.service.diagnostic.MatchFacts;
 import dev.sylvain.planning.service.diagnostic.PlanningAnalysis;
-import dev.sylvain.planning.service.diagnostic.SolutionManagerConstraintDiagnosticService;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.EligibleAnimateurMoveFilter;
 import dev.sylvain.planning.solver.constraints.AdHocConstraints;
@@ -133,12 +133,25 @@ public class PlanningService {
         applyTermination(solverConfig, secondsLimit, unimprovedSecondsLimit);
         this.solverFactory = SolverFactory.create(solverConfig);
         this.solutionManager = SolutionManager.create(this.solverFactory);
-        this.constraintDiagnosticService = new SolutionManagerConstraintDiagnosticService(this.solverFactory);
+        this.constraintDiagnosticService = ConstraintDiagnosticService.of(
+                readDiagnosticMode(config), this.solverFactory);
         this.referenceDataService = referenceDataService;
         this.feasibilityAnalyzer = feasibilityAnalyzer;
         this.defaultSecondsLimit = secondsLimit;
         this.maxEmplacementsParJour = maxEmplacementsParJour;
         this.configuredWeights = readConfiguredWeights(config);
+    }
+
+    /**
+     * Which implementation breaks a score down per constraint. Read here rather
+     * than injected as a {@code @ConfigProperty} because the plain (non-CDI)
+     * tests build this service with {@code new}, and because the value is only
+     * ever consumed once, to pick the implementation.
+     */
+    private static ConstraintDiagnosticMode readDiagnosticMode(Config config) {
+        return config.getOptionalValue(ConstraintDiagnosticMode.CONFIG_PROPERTY, String.class)
+                .map(ConstraintDiagnosticMode::fromConfigValue)
+                .orElse(ConstraintDiagnosticMode.DEFAULT);
     }
 
     /**

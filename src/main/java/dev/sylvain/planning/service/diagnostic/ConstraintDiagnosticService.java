@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service.diagnostic;
 
+import ai.timefold.solver.core.api.solver.SolverFactory;
 import dev.sylvain.planning.domain.PlanningEvenement;
 
 /**
@@ -34,4 +35,16 @@ public interface ConstraintDiagnosticService {
      * effect, which {@code diagnose} reads back.</p>
      */
     PlanningAnalysis analyze(PlanningEvenement solution);
+
+    /**
+     * The single, explicit switch point between implementations — the one place
+     * in the codebase that knows there is more than one.
+     */
+    static ConstraintDiagnosticService of(ConstraintDiagnosticMode mode,
+            SolverFactory<PlanningEvenement> solverFactory) {
+        return switch (mode) {
+            case SCORE_DIRECTOR -> new ScoreDirectorConstraintDiagnosticService(solverFactory);
+            case SOLUTION_MANAGER -> new SolutionManagerConstraintDiagnosticService(solverFactory);
+        };
+    }
 }

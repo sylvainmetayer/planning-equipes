@@ -13,11 +13,18 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 
 /**
  * Diagnoses through Timefold's {@code SolutionManager.analyze()} — what every
- * consumer used to call directly, now behind {@link ConstraintDiagnosticService}
- * and reachable through one seam instead of a dozen call sites.
+ * consumer used to call directly, before {@link ConstraintDiagnosticService}
+ * turned a dozen call sites into one seam.
  *
- * <p>Nothing here is new behaviour: the conversion below is the same walk over
- * {@code constraintAnalyses()} the callers were doing themselves, done once.</p>
+ * <p><b>No longer the default</b> (see {@link ConstraintDiagnosticMode}), and
+ * kept for one reason: {@code ConstraintDiagnosticServiceContractTest} runs it
+ * beside {@link ScoreDirectorConstraintDiagnosticService} and fails when the two
+ * disagree. That makes it the oracle guarding a replacement built on Timefold's
+ * internals — not a fallback for when the replacement misbehaves.</p>
+ *
+ * <p>It is expected to stop working on Timefold 2.x without an Enterprise
+ * licence, since {@code analyze()} throws there. That is a property of this
+ * class, not a regression of the feature.</p>
  */
 public final class SolutionManagerConstraintDiagnosticService implements ConstraintDiagnosticService {
 
