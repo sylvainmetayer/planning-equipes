@@ -218,12 +218,44 @@ public class PlanSnapshotService {
      * The safety net: taken right before a solve overwrites the persisted plan,
      * labelled with the moment it was taken. Never fails the solve — a snapshot
      * that could not be written must not cost the user their run.
+     *
+     * <p>Returns what it captured so the caller can tell the user what the
+     * solve replaced (issue #274), or {@code null} when there was nothing to
+     * capture (first solve of an edition) or the capture failed. A caller must
+     * therefore treat {@code null} as "no comparison to offer", never as an
+     * error.</p>
      */
-    public void captureBeforeSolve() {
+    public SnapshotMeta captureBeforeSolve() {
         try {
-            capture("Avant solve du " + LIBELLE_AUTO_FORMAT.format(ZonedDateTime.now()), true);
+            return capture("Avant solve du " + LIBELLE_AUTO_FORMAT.format(ZonedDateTime.now()), true);
         } catch (RuntimeException e) {
             // Deliberately swallowed: see javadoc.
+            return null;
+        }
+    }
+
+    /**
+     * Fills in the score of a snapshot captured without one (issue #274).
+     *
+     * <p>{@link #capture} reads it from the in-memory
+     * {@link ConstraintAnalysisStore}, which is empty after a restart. When the
+     * caller establishes it afterwards — by analysing the plan the snapshot
+     * holds — writing it back keeps the snapshots screen consistent with what
+     * the solve recap announced. Only ever fills a hole: an existing score is
+     * the one recorded at capture time and stays.</p>
+     */
+    public void recordScore(long id, String score) {
+        // Not prepareScoped: the SET clause claims placeholder 1, so the
+        // edition_id predicate is bound explicitly.
+        String sql = "UPDATE plan_snapshot SET score = ? WHERE edition_id = ? AND id = ? AND score IS NULL";
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, score);
+            ps.setString(2, editionId());
+            ps.setLong(3, id);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to record snapshot score", e);
         }
     }
 

@@ -225,12 +225,30 @@ export async function seedReferentielSolveur(
   expect(importReponse.ok(), await importReponse.text()).toBe(true);
 }
 
+/** What a solve says about its own outcome. */
+export interface DiagnosticJob {
+  hardScore: number;
+  postesNonPourvus: number;
+  score: string;
+}
+
+/**
+ * The plan the solve replaced (issue #274). Null on the first solve of an
+ * edition: there was nothing to capture, so nothing to compare against.
+ */
+export interface PlanPrecedentJob {
+  snapshotId: number;
+  score: string | null;
+  degraded: boolean;
+}
+
 /** Terminal view of a solver job, as `/api/jobs/{id}` answers it. */
 export interface JobTermine {
   id: string;
   status: string;
   error: string | null;
-  result: { hardScore: number; postesNonPourvus: number; score: string } | null;
+  /** A SOLVE wraps its diagnostic, next to the plan it replaced (issue #274). */
+  result: { diagnostic: DiagnosticJob; previousPlan: PlanPrecedentJob | null } | null;
 }
 
 /**

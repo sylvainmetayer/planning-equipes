@@ -43,7 +43,7 @@ class MailFinResolutionTest {
     }
 
     @Test
-    void unSolveTermineEcritALAdminQuandLEditionLeDemande() throws InterruptedException {
+    void mailsTheAdminWhenTheEditionAsksForIt() throws InterruptedException {
         planImporte();
         reglerNotification(true);
 
@@ -55,7 +55,7 @@ class MailFinResolutionTest {
         // The three facts asked for, and nothing else: edition, score, feasibility.
         assertThat(mail.getText())
                 .contains("Édition : ")
-                .contains("Score : " + job.getString("result.score"))
+                .contains("Score : " + job.getString("result.diagnostic.score"))
                 .contains("Faisabilité : ");
         // Never nominative: this mail leaves the application unattended.
         assertThat(mail.getText()).doesNotContain("prenom");

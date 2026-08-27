@@ -167,8 +167,23 @@ public class SolverJobService {
         // stored. Never queued either, so a restart can only ever find it in a
         // terminal state or interrupted.
         return submit(JobType.SOLVE, secondsLimit, false, null, false,
-                job -> pipeline.execute(job.getEditionNom(), problem, secondsLimit, job::attachSolver)
-                        .diagnostic());
+                job -> resultatSolve(
+                        pipeline.execute(job.getEditionNom(), problem, secondsLimit, job::attachSolver)));
+    }
+
+    /**
+     * Result of a full solve: the usual diagnostic, plus the plan it replaced
+     * (issue #274) — a solve that announces only its own score lets an
+     * operator walk away with a worse planning than the one they had, without
+     * ever being told.
+     */
+    public record ResultatSolve(
+            PlanningService.PlanningDiagnostic diagnostic,
+            PreviousPlan previousPlan) {
+    }
+
+    private static ResultatSolve resultatSolve(SolvePipeline.Resolution<?> resolution) {
+        return new ResultatSolve(resolution.diagnostic(), resolution.previousPlan());
     }
 
     /**
@@ -186,9 +201,9 @@ public class SolverJobService {
 
     /** The work of {@link #submitSolveFromReferenceData}, see {@link #replayableTask}. */
     private JobTask solveTaskFromReferenceData(Long secondsLimit) {
-        return job -> pipeline.execute(job.getEditionNom(),
+        return job -> resultatSolve(pipeline.execute(job.getEditionNom(),
                 planningService::buildFromReferenceData, Function.identity(),
-                secondsLimit, job::attachSolver).diagnostic();
+                secondsLimit, job::attachSolver));
     }
 
     /**
@@ -200,7 +215,8 @@ public class SolverJobService {
     public record ResultatSolveIncremental(
             PlanningService.PlanningDiagnostic diagnostic,
             PlanningService.StatistiquesIncremental statistiques,
-            List<ReplanificationDiff.ChangementAffectation> changements) {
+            List<ReplanificationDiff.ChangementAffectation> changements,
+            PreviousPlan previousPlan) {
     }
 
     /**
@@ -231,7 +247,8 @@ public class SolverJobService {
                             secondsLimit, job::attachSolver);
             PlanningService.ProblemeIncremental probleme = resolution.probleme();
             return new ResultatSolveIncremental(resolution.diagnostic(), probleme.statistiques(),
-                    ReplanificationDiff.compute(probleme.affectationsPrecedentes(), resolution.planning()));
+                    ReplanificationDiff.compute(probleme.affectationsPrecedentes(), resolution.planning()),
+                    resolution.previousPlan());
         };
     }
 

@@ -26,17 +26,25 @@ import {
   JobView,
   PerimetreReplanification,
   PlanningDiagnostic,
+  PreviousPlan,
   RapportPublication,
   ResultatSolveIncremental,
   StatistiquesIncremental
 } from '../../core/models';
+import { PlanSnapshotStore } from '../../core/plan-snapshot.store';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
-import { JobResults, SolverJobService, extraireDiagnostic, formatDuration } from '../../core/solver-job.service';
+import {
+  JobResults,
+  SolverJobService,
+  extraireDiagnostic,
+  extrairePlanPrecedent,
+  formatDuration
+} from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { FeasibilityBanner, HardIssue } from '../../shared/feasibility-banner';
@@ -99,6 +107,8 @@ export class SolverPage {
   protected readonly output = signal('');
   protected readonly feasibility = signal<FeasibilityReport | null>(null);
   protected readonly hardScore = signal<number | null>(null);
+  /** Full score of the last solve, the half of the comparison of issue #274 that this page produced. */
+  protected readonly score = signal<string | null>(null);
   protected readonly hardIssues = signal<HardIssue[]>([]);
   protected readonly exportBusy = signal(false);
   protected readonly arretEnCours = signal(false);
@@ -131,6 +141,22 @@ export class SolverPage {
   protected readonly incrementalStats = signal<StatistiquesIncremental | null>(null);
   protected readonly incrementalChangements = signal<ChangementAffectation[]>([]);
   protected readonly columnsChangements = ['quand', 'stand', 'avant', 'apres'];
+
+  /**
+   * What the last solve replaced (issue #274). A solve announcing only its own
+   * score let an operator re-solve a good plan, read "0 hard" and leave with a
+   * worse planning without ever being told; this is what makes the trade
+   * legible. Null when there is nothing to compare against — first solve of an
+   * edition, or a score that could not be established.
+   */
+  protected readonly planPrecedent = signal<PreviousPlan | null>(null);
+  /** The comparison is only worth showing when both scores are known. */
+  protected readonly comparaisonPlan = computed(() => {
+    const precedent = this.planPrecedent();
+    const apres = this.score();
+    return precedent?.score && apres ? { avant: precedent.score, apres } : null;
+  });
+  protected readonly restaurationEnCours = signal(false);
 
   protected readonly solverDurationLoading = signal(false);
   protected readonly solverDurationSaving = signal(false);
@@ -260,6 +286,7 @@ export class SolverPage {
   private readonly solverSettings = inject(SolverSettingsService);
   private readonly notifications = inject(NotificationService);
   private readonly confirm = inject(ConfirmService);
+  private readonly snapshots = inject(PlanSnapshotStore);
   private readonly dialog = inject(MatDialog);
   private readonly crud = inject(ReferenceCrudService);
 
@@ -285,6 +312,7 @@ export class SolverPage {
         this.applySolveResult(diagnostic);
       }
       this.applyIncrementalResult(result);
+      this.planPrecedent.set(extrairePlanPrecedent(result));
       void this.loadLastRun();
       // Le solve vient de réécrire le plan : le décompte des personnes à
       // prévenir n'est plus celui d'avant.
@@ -447,6 +475,45 @@ export class SolverPage {
     }
     this.incrementalStats.set(null);
     this.incrementalChangements.set([]);
+  }
+
+  /**
+   * Puts back the plan the last solve replaced (issue #274). Offered only when
+   * the solve made things worse — the same restore the snapshots screen does,
+   * brought to where the user learns they lost something rather than leaving
+   * them to find it.
+   */
+  protected async revenirAuPlanPrecedent(): Promise<void> {
+    const precedent = this.planPrecedent();
+    if (!precedent || this.restaurationEnCours()) {
+      return;
+    }
+    const confirme = await this.confirm.ask({
+      title: $localize`:@@solver.previousPlan.restore.title:Revenir au plan d'avant ?`,
+      message: $localize`:@@solver.previousPlan.restore.message:Le résultat de cette résolution est remplacé par le plan qui était enregistré avant elle.`,
+      confirmLabel: $localize`:@@solver.previousPlan.restore.confirm:Revenir`,
+      danger: true
+    });
+    if (!confirme) {
+      return;
+    }
+    this.restaurationEnCours.set(true);
+    try {
+      const resultat = await this.snapshots.restaurer(precedent.snapshotId);
+      await this.resolution.reload();
+      this.planningState.set(null);
+      // The comparison described a plan that is no longer the persisted one.
+      this.planPrecedent.set(null);
+      this.output.set(
+        $localize`:@@solver.previousPlan.restored:${resultat.affectations}:count: affectation(s) restaurée(s) : le plan d'avant la résolution est de nouveau enregistré.`
+      );
+      void this.chargerApercuPublication();
+      void this.problemes.reload();
+    } catch (error) {
+      this.output.set(errorPrefix(error));
+    } finally {
+      this.restaurationEnCours.set(false);
+    }
   }
 
   /** What a planned job will do, and to which edition — the two things worth reading in the queue. */
@@ -658,6 +725,7 @@ export class SolverPage {
     this.planningState.set(null);
     this.feasibility.set(diagnostic.faisabilite);
     this.hardScore.set(diagnostic.hardScore);
+    this.score.set(diagnostic.score);
     const hardIssues = diagnostic.contraintes
       .filter((constraint) => hardPart(constraint.score) < 0)
       .map((constraint) => ({ name: constraint.name, matchCount: constraint.matchCount }));

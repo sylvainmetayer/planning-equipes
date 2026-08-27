@@ -29,6 +29,14 @@
   color: var(--mat-sys-tertiary);
 }
 
+/* A solve that scored lower than the plan it replaced (issue #274). As loud as
+   .groupe-mismatch: nothing else on the page says the run was a step back, and
+   the snapshot that can undo it expires after a few solves. */
+.plan-degrade {
+  color: var(--mat-sys-error);
+  font-weight: 600;
+}
+
 /* Notifications page. A plain flex layout rather than mat-list/mat-list-item:
    Material's list item is single/two-line by design (fixed height, clipped
    text), which doesn't fit messages of arbitrary length — they were getting

@@ -257,6 +257,10 @@ export function buildHelpSections(): HelpSection[] {
           text: $localize`:@@aide.results.mediumFloor:Attention aux points de medium qui ne mesurent rien : une contrainte qui pénalise chaque poste faute de donnée saisie — aucun souhait déclaré, aucun animateur de niveau référent — produit un plancher constant, parfois plus de 80 % du total. Comparez des scores entre deux résolutions du même jeu de données, pas la valeur absolue.`
         },
         {
+          kind: 'paragraph',
+          text: $localize`:@@aide.results.previousPlan:Relancer une résolution sur une édition qui a déjà un bon planning peut le dégrader : le solveur repart de zéro et n'est pas tenu de retrouver aussi bien. La page Solveur affiche donc le score d'avant à côté de celui d'après, et le signale quand la nouvelle résolution est moins bonne — un score dur toujours à zéro ne veut pas dire que rien n'a été perdu, l'écart se lit sur le medium. Un bouton « Revenir au plan d'avant » remet alors en place le planning précédent. Ne tardez pas : ce filet est un instantané automatique, et seuls les cinq derniers sont conservés par édition.`
+        },
+        {
           kind: 'definitions',
           items: [
             {

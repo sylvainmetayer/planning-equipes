@@ -148,8 +148,8 @@ test('les contraintes ad hoc sont respectées par le solve et visibles dans le f
   await expect(page.locator('#contenu')).toContainText('Rita et Tom incompatibles');
 
   const job = await lancerSolve(admin, 6);
-  expect(job.result?.hardScore, 'the constrained problem must stay feasible').toBe(0);
-  expect(job.result?.postesNonPourvus).toBe(0);
+  expect(job.result?.diagnostic.hardScore, 'the constrained problem must stay feasible').toBe(0);
+  expect(job.result?.diagnostic.postesNonPourvus).toBe(0);
 
   const planning = await planningPersiste(admin);
   // INDISPONIBILITE_FORCEE : Paula never works créneau C1.
@@ -179,7 +179,7 @@ test('un animateur verrouillé garde exactement son planning après re-résoluti
   test.slow();
   // Continue from the previous state: solve once, freeze Paula, solve again.
   const avant = await lancerSolve(admin, 6);
-  expect(avant.result?.hardScore).toBe(0);
+  expect(avant.result?.diagnostic.hardScore).toBe(0);
   const planAvant = postesDe(await planningPersiste(admin), 'SOLV-P');
 
   const verrou = await admin.post('/api/verrouillages', {
@@ -189,7 +189,7 @@ test('un animateur verrouillé garde exactement son planning après re-résoluti
   const verrouId = ((await verrou.json()) as { id: string }).id;
 
   const apres = await lancerSolve(admin, 6);
-  expect(apres.result?.hardScore).toBe(0);
+  expect(apres.result?.diagnostic.hardScore).toBe(0);
   expect(postesDe(await planningPersiste(admin), 'SOLV-P')).toEqual(planAvant);
 
   await admin.delete(`/api/verrouillages/${verrouId}`);
@@ -200,7 +200,7 @@ test("un échange accepté survit à la régénération du planning", async ({ b
   // Clean problem: no ad hoc constraint, no lock, fresh solve.
   await reseed();
   const initial = await lancerSolve(admin, 6);
-  expect(initial.result?.hardScore).toBe(0);
+  expect(initial.result?.diagnostic.hardScore).toBe(0);
 
   // Whoever holds the two seats of créneau C1 swaps stands, via the real flow:
   // demande from the occupant's espace, accord of the colleague it targets,
@@ -241,7 +241,7 @@ test("un échange accepté survit à la régénération du planning", async ({ b
 
   // …and pinned: a full re-solve does not undo it.
   const regeneration = await lancerSolve(admin, 6);
-  expect(regeneration.result?.hardScore).toBe(0);
+  expect(regeneration.result?.diagnostic.hardScore).toBe(0);
   const regenere = await planningPersiste(admin);
   expect(occupantDe(regenere, 'SOLV-S1', C1)).toBe(surS2);
   expect(occupantDe(regenere, 'SOLV-S2', C1)).toBe(surS1);

@@ -175,6 +175,22 @@ filet anti-écrasement, celui qui protège l'utilisateur qui n'a pas pensé à
 enregistrer. Les automatiques sont purgés au-delà des N derniers (5 par
 défaut) ; ceux créés à la main, jamais.
 
+**Le résultat d'un solve nomme cet instantané et le score qu'il porte**
+(`previousPlan : { snapshotId, score, degraded }`). Un solve n'annonçait que
+son propre score : relancer une résolution sur une édition qui avait déjà un
+bon plan pouvait le dégrader sans que rien ne le dise, le score dur restant à
+zéro. `degraded` compare les deux scores dans l'ordre de Timefold — dur, puis
+medium, puis souple — et vaut `false` dès qu'un des deux scores manque ou est
+illisible : mieux vaut ne rien affirmer qu'une fausse alerte. `previousPlan`
+est `null` au premier solve d'une édition, et absent des résultats produits
+avant cette version.
+
+Le score d'un instantané est copié à la capture depuis la dernière analyse, qui
+vit en mémoire : après un redémarrage, elle est vide. Le solve suivant
+rétablit alors ce score en analysant le plan persisté avant de le remplacer, et
+l'écrit dans l'instantané — une analyse par édition et par redémarrage, devant
+un calcul qui va durer des minutes.
+
 Une restauration répond `409` **sans rien écrire** si des références ont
 disparu, en listant lesquelles.
 

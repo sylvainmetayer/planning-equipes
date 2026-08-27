@@ -214,6 +214,7 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 | Notification de fin de résolution | Un e-mail à l'administrateur dès qu'une résolution se termine — édition, score, faisabilité — pour ne pas rester devant l'écran ; s'active par édition sur la page Paramètres |
 | Autopsie du planning | Une ligne de mesures par résolution terminée, toutes éditions confondues et sans rien de nominatif ; survit à la suppression de l'édition décrite |
 | Instantanés de plan | Met un planning de côté avec son score et sa date, et le remet en place plus tard ; une capture est prise automatiquement avant chaque résolution |
+| Résolution qui dégrade le plan | Le score d'avant s'affiche à côté de celui d'après : relancer un calcul sur un bon planning peut le dégrader sans que le score dur bouge. Quand c'est le cas, l'écran le dit et propose de revenir au plan précédent |
 
 ### Organiser l'année
 

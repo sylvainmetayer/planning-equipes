@@ -220,7 +220,7 @@ for (const iteration of [0, 1]) {
     }
 
     const job = await lancerSolve(admin, 8);
-    expect(job.result?.hardScore, `problème infaisable (graine ${graine}, itération ${iteration})`).toBe(0);
+    expect(job.result?.diagnostic.hardScore, `problème infaisable (graine ${graine}, itération ${iteration})`).toBe(0);
     verifierInvariants(await planningPersiste(admin), probleme);
   });
 }

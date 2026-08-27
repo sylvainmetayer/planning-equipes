@@ -41,11 +41,12 @@ class SolverJobResourceTest {
 
         JsonPath job = pollUntilFinished(jobId);
         assertThat(job.getString("status")).isEqualTo("COMPLETED");
-        // The job result is the diagnostic only (score, unfilled seats,
-        // constraint breakdown, feasibility) — the solved planning itself is
-        // not part of the polling payload, it is fetched from
-        // /api/planning/persisted by the dedicated screens instead.
-        assertThat(job.getString("result.score")).isNotBlank();
+        // The job result wraps the diagnostic (score, unfilled seats,
+        // constraint breakdown, feasibility) next to the plan this solve
+        // replaced (issue #274) — the solved planning itself is not part of
+        // the polling payload, it is fetched from /api/planning/persisted by
+        // the dedicated screens instead.
+        assertThat(job.getString("result.diagnostic.score")).isNotBlank();
     }
 
     /**
@@ -68,11 +69,44 @@ class SolverJobResourceTest {
 
         JsonPath job = pollUntilFinished(jobId);
         assertThat(job.getString("status")).isEqualTo("COMPLETED");
-        assertThat(job.getString("result.score")).isNotBlank();
+        assertThat(job.getString("result.diagnostic.score")).isNotBlank();
         // The solved planning is persisted server-side even though it never
         // travels back as part of the job result.
         assertThat(given().when().get("/api/planning/persisted").then().extract().jsonPath().getList("postes"))
                 .isNotEmpty();
+    }
+
+    /**
+     * Issue #274: a solve announced its own score and never the one it
+     * overwrote, so re-solving a good plan read as a success while quietly
+     * costing medium points. The second solve must name what it replaced, and
+     * the snapshot holding it — the first one has nothing to name.
+     */
+    @Test
+    void aSolveNamesThePlanItReplaced() throws InterruptedException {
+        given()
+                .when().post("/api/reference-data/import-scenario?name=scenario.yml")
+                .then().statusCode(200);
+
+        JsonPath premier = pollUntilFinished(solveFromReferenceData());
+        assertThat(premier.getString("status")).isEqualTo("COMPLETED");
+        assertThat(premier.getMap("result.previousPlan")).isNull();
+
+        awaitIdleSolver();
+        JsonPath second = pollUntilFinished(solveFromReferenceData());
+
+        assertThat(second.getString("status")).isEqualTo("COMPLETED");
+        assertThat(second.getLong("result.previousPlan.snapshotId")).isPositive();
+        assertThat(second.getString("result.previousPlan.score")).isNotBlank();
+        assertThat(second.getBoolean("result.previousPlan.degraded")).isNotNull();
+    }
+
+    private String solveFromReferenceData() {
+        return given()
+                .when().post("/api/solve/async/reference-data")
+                .then()
+                .statusCode(202)
+                .extract().path("id");
     }
 
     @Test

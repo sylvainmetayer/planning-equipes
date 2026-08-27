@@ -920,11 +920,29 @@ export interface ChangementAffectation {
   apres: string[];
 }
 
+/**
+ * The plan a solve replaced, and whether replacing it made things worse
+ * (issue #274). `score` is null when it could not be established — the
+ * comparison is then not shown at all rather than shown half-empty.
+ */
+export interface PreviousPlan {
+  snapshotId: number;
+  score: string | null;
+  degraded: boolean;
+}
+
+/** Payload of a finished full SOLVE job: a diagnostic plus the plan it replaced. */
+export interface ResultatSolve {
+  diagnostic: PlanningDiagnostic;
+  previousPlan: PreviousPlan | null;
+}
+
 /** Payload of a finished incremental SOLVE job: a diagnostic plus what moved. */
 export interface ResultatSolveIncremental {
   diagnostic: PlanningDiagnostic;
   statistiques: StatistiquesIncremental;
   changements: ChangementAffectation[];
+  previousPlan: PreviousPlan | null;
 }
 
 /** `POST /api/planning/snapshots/{id}/restore` on success. */

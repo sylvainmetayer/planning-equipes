@@ -27,6 +27,7 @@ import {
   FeasibilityReport,
   JobView,
   PlanningDiagnostic,
+  PreviousPlan,
   ResultatSolveIncremental,
   StatistiquesIncremental
 } from '../../core/models';
@@ -115,6 +116,8 @@ type PageInternals = {
   incrementalChangements: Signal<ChangementAffectation[]>;
   raisonVerrou: Signal<string>;
   lastRunAt: Signal<string | null>;
+  planPrecedent: Signal<PreviousPlan | null>;
+  comparaisonPlan: Signal<{ avant: string; apres: string } | null>;
 };
 
 describe('SolverPage', () => {
@@ -331,7 +334,8 @@ describe('SolverPage', () => {
       return {
         diagnostic: diagnostic({ hardScore: 0 }),
         statistiques: statistiques(),
-        changements: [changement('tir'), changement('quilles')]
+        changements: [changement('tir'), changement('quilles')],
+        previousPlan: null
       };
     }
 
@@ -365,6 +369,68 @@ describe('SolverPage', () => {
 
       expect(page.incrementalStats()).toBeNull();
       expect(page.incrementalChangements()).toEqual([]);
+    });
+  });
+
+  // Issue #274: a solve announced its own score and never the one it
+  // replaced, so re-solving a good plan read as a success — "0 hard" — while
+  // costing medium points nobody was shown.
+  describe('the plan a solve replaced', () => {
+    const resultat = (previousPlan: PreviousPlan | null): unknown => ({
+      diagnostic: diagnostic({ score: '0hard/-7434medium/-564soft', hardScore: 0 }),
+      previousPlan
+    });
+
+    it('compares the score before and after the solve', () => {
+      const page = createPage();
+
+      pushResult('SOLVE', resultat({ snapshotId: 12, score: '0hard/-6232medium/-920soft', degraded: true }));
+
+      expect(page.comparaisonPlan()).toEqual({
+        avant: '0hard/-6232medium/-920soft',
+        apres: '0hard/-7434medium/-564soft'
+      });
+      expect(page.planPrecedent()?.degraded).toBe(true);
+    });
+
+    // The whole point is to be believed: flagging a solve that improved things
+    // would train the user to ignore the flag.
+    it('flags nothing when the solve improved the plan', () => {
+      const page = createPage();
+
+      pushResult('SOLVE', resultat({ snapshotId: 12, score: '0hard/-9000medium/-999soft', degraded: false }));
+
+      expect(page.planPrecedent()?.degraded).toBe(false);
+    });
+
+    // Half a comparison is worse than none: it would read as a score of zero.
+    it('draws no comparison when the previous score is unknown', () => {
+      const page = createPage();
+
+      pushResult('SOLVE', resultat({ snapshotId: 12, score: null, degraded: false }));
+
+      expect(page.comparaisonPlan()).toBeNull();
+      expect(page.planPrecedent()?.snapshotId).toBe(12);
+    });
+
+    it('draws no comparison on the first solve of an edition', () => {
+      const page = createPage();
+
+      pushResult('SOLVE', resultat(null));
+
+      expect(page.planPrecedent()).toBeNull();
+      expect(page.comparaisonPlan()).toBeNull();
+    });
+
+    // A job that finished before this shipped answers a bare diagnostic: it
+    // must still display, minus the comparison.
+    it('still displays a result carrying no previous plan at all', () => {
+      const page = createPage();
+
+      pushResult('SOLVE', diagnostic({ hardScore: 0 }));
+
+      expect(page.hardScore()).toBe(0);
+      expect(page.planPrecedent()).toBeNull();
     });
   });
 

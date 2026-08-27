@@ -30,6 +30,8 @@ import {
   PerimetreReplanification,
   PlanningDiagnostic,
   PlanningEvenement,
+  PreviousPlan,
+  ResultatSolve,
   ResultatSolveIncremental
 } from './models';
 
@@ -131,11 +133,12 @@ export interface TrackedJob {
  * payload server-side, then broke nothing at compile time and everything at
  * runtime, on the user's screen, on an `undefined`.
  *
- * <p>SOLVE is genuinely a union: a full solve answers a bare diagnostic, an
- * incremental one wraps it (issue #86) — see {@link extraireDiagnostic}.</p>
+ * <p>SOLVE is genuinely a union: both a full solve (issue #274) and an
+ * incremental one (issue #86) wrap the diagnostic, and a job finished before
+ * either shipped still answers a bare one — see {@link extraireDiagnostic}.</p>
  */
 export interface JobResults {
-  SOLVE: PlanningDiagnostic | ResultatSolveIncremental;
+  SOLVE: PlanningDiagnostic | ResultatSolve | ResultatSolveIncremental;
   SOLVE_INCREMENTAL: ResultatSolveIncremental;
   ANALYZE: PlanningDiagnostic;
 }
@@ -844,16 +847,30 @@ export function formatDuration(totalSeconds: number): string {
 }
 
 /**
- * The diagnostic inside a SOLVE payload: the payload itself for a full solve,
- * the `diagnostic` field for an incremental one (issue #86). Null when the job
- * carries no result at all — a cancelled job, or one still running.
+ * The diagnostic inside a SOLVE payload: the `diagnostic` field when the
+ * payload wraps one (issues #86 and #274), the payload itself otherwise — a
+ * job finished before those shipped answers a bare diagnostic and must keep
+ * displaying. Null when the job carries no result at all — a cancelled job, or
+ * one still running.
  */
 export function extraireDiagnostic(result: unknown): PlanningDiagnostic | null {
   if (!result || typeof result !== 'object') {
     return null;
   }
-  const incremental = result as Partial<ResultatSolveIncremental>;
-  return (incremental.diagnostic ?? (result as PlanningDiagnostic)) || null;
+  const enveloppe = result as Partial<ResultatSolveIncremental>;
+  return (enveloppe.diagnostic ?? (result as PlanningDiagnostic)) || null;
+}
+
+/**
+ * The plan a finished solve replaced (issue #274), or null when there is
+ * nothing to compare against: the first solve of an edition, a payload from
+ * before this shipped, or a capture that failed.
+ */
+export function extrairePlanPrecedent(result: unknown): PreviousPlan | null {
+  if (!result || typeof result !== 'object') {
+    return null;
+  }
+  return (result as Partial<ResultatSolve>).previousPlan ?? null;
 }
 
 function describeResult(result: unknown): string {

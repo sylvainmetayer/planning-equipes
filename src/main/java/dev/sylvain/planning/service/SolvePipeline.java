@@ -63,14 +63,16 @@ public class SolvePipeline {
     /**
      * What a solve produced.
      *
-     * @param probleme    the object it started from, returned as is — an
-     *                    incremental replanning needs to read it back afterwards
-     *                    (frozen scope, previous assignments)
-     * @param planning    the solved plan, already persisted
-     * @param diagnostic  its score and its violations, already recorded
+     * @param probleme     the object it started from, returned as is — an
+     *                     incremental replanning needs to read it back afterwards
+     *                     (frozen scope, previous assignments)
+     * @param planning     the solved plan, already persisted
+     * @param diagnostic   its score and its violations, already recorded
+     * @param previousPlan the plan it replaced and whether that was a step
+     *                     back (issue #274); {@code null} when there was none
      */
     public record Resolution<P>(P probleme, PlanningEvenement planning,
-            PlanningService.PlanningDiagnostic diagnostic) {
+            PlanningService.PlanningDiagnostic diagnostic, PreviousPlan previousPlan) {
     }
 
     /**
@@ -105,7 +107,8 @@ public class SolvePipeline {
             Consumer<Solver<PlanningEvenement>> attacheSolveur) {
         // The net of issue #138: the plan about to be overwritten is
         // snapshotted first, so a solve no longer destroys the previous result.
-        snapshotService.captureBeforeSolve();
+        PlanSnapshotService.SnapshotMeta replaced = snapshotService.captureBeforeSolve();
+        String scoreBefore = scoreOfReplacedPlan(replaced);
         P probleme = buildProblem.get();
         Instant debutSolve = Instant.now();
         PlanningEvenement resolu = planningService.solve(planningOf.apply(probleme), secondsLimit, attacheSolveur);
@@ -118,7 +121,44 @@ public class SolvePipeline {
         // has just recorded — and never in a position to fail the solve.
         kpiHistoriqueService.recordAfterSolve(dureeSolveSecondes);
         announce(editionNom, diagnostic);
-        return new Resolution<>(probleme, resolu, diagnostic);
+        return new Resolution<>(probleme, resolu, diagnostic,
+                PreviousPlan.of(replaced == null ? null : replaced.id(), scoreBefore, diagnostic.score()));
+    }
+
+    /**
+     * The score of the plan this solve is about to overwrite (issue #274).
+     *
+     * <p>A snapshot normally carries it already, copied from
+     * {@link ConstraintAnalysisStore} at capture time. That store is in-memory,
+     * so it is empty after a restart — which is exactly the case that matters
+     * here: coming back the next day and re-solving is when an operator is
+     * most likely to lose a good plan without noticing. Recomputing it costs
+     * one score analysis of the persisted plan, paid once per edition and per
+     * restart, in front of a solve that is about to run for minutes.</p>
+     *
+     * <p>Never fails the solve, for the same reason the snapshot itself does
+     * not: an unavailable comparison is a missing line on a screen, not a lost
+     * run.</p>
+     */
+    private String scoreOfReplacedPlan(PlanSnapshotService.SnapshotMeta replaced) {
+        if (replaced == null) {
+            return null;
+        }
+        if (replaced.score() != null) {
+            return replaced.score();
+        }
+        try {
+            PlanningService.PlanningDiagnostic diagnostic = planningService.diagnosePersistedPlan();
+            if (diagnostic == null) {
+                return null;
+            }
+            // Written back so the snapshots screen shows the same score as the
+            // recap that sent the user there to restore it.
+            snapshotService.recordScore(replaced.id(), diagnostic.score());
+            return diagnostic.score();
+        } catch (RuntimeException e) {
+            return null;
+        }
     }
 
     /**
