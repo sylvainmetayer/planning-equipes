@@ -1,6 +1,6 @@
 package dev.sylvain.planning.service;
 
-import ai.timefold.solver.core.api.score.buildin.hardmediumsoft.HardMediumSoftScore;
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 
 /**
  * The plan a solve replaced, and whether replacing it made things worse
