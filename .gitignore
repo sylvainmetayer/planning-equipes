@@ -62,3 +62,7 @@ assets/
 
 # Worktrees des agents
 .claude/worktrees/
+
+# Explorbot (branche test/explorbot)
+/explorbot/output/
+/explorbot/experience/

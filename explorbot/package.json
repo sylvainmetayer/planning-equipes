@@ -1,0 +1,13 @@
+{
+  "name": "planning-equipes-explorbot",
+  "private": true,
+  "type": "module",
+  "description": "Exploratory testing harness (explorbot) — not part of the Maven build",
+  "scripts": {
+    "explore": "explorbot explore",
+    "explorbot": "explorbot"
+  },
+  "devDependencies": {
+    "explorbot": "^0.3.0"
+  }
+}
