@@ -8,7 +8,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import ai.timefold.solver.core.api.score.stream.Constraint;
-import ai.timefold.solver.test.api.score.stream.ConstraintVerifier;
+import ai.timefold.solver.core.api.score.stream.test.ConstraintVerifier;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 
@@ -38,7 +38,7 @@ class ConstraintCatalogTest {
         check.verifyThat((provider, factory) -> {
             Constraint[] constraints = provider.defineConstraints(factory);
             for (Constraint constraint : constraints) {
-                noms.add(constraint.getConstraintName());
+                noms.add(constraint.getConstraintRef().id());
             }
             return constraints[0];
         }).given().penalizesBy(0);

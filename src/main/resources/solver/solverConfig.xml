@@ -9,17 +9,22 @@
         solution diversity across repeated solves is ever wanted back.
     -->
     <!--
-        Timefold 1.x defaults to PHASE_ASSERT, which re-runs a full score
-        recalculation to check for score corruption at every phase boundary and
-        keeps the intrusive bookkeeping needed to do so. REPRODUCIBLE keeps the
-        fixed-seed determinism below (same seed, same plan) without paying for
-        those checks. If score corruption is ever suspected, set this back to
-        PHASE_ASSERT (or FULL_ASSERT to pinpoint the guilty move).
+        Avoid the assert modes, which re-run a full score recalculation to check
+        for score corruption at every phase boundary and keep the intrusive
+        bookkeeping needed to do so. If score corruption is ever suspected, set
+        this to PHASE_ASSERT (or FULL_ASSERT to pinpoint the guilty move).
+
+        This was REPRODUCIBLE on Timefold 1.x. That mode is gone in 2.x, where
+        reproducibility is no longer a mode but a consequence of the fixed
+        randomSeed below: NO_ASSERT is the same trade-off under the new naming
+        (no checks, same seed, same plan). The whole tuning recorded further
+        down rests on that determinism, so a run that stops being reproducible
+        invalidates those measurements rather than merely being noisy.
 
         Element order is imposed by the XSD (SolverConfig's propOrder):
         environmentMode, then randomSeed, then moveThreadCount.
     -->
-    <environmentMode>REPRODUCIBLE</environmentMode>
+    <environmentMode>NO_ASSERT</environmentMode>
 
     <randomSeed>0</randomSeed>
 

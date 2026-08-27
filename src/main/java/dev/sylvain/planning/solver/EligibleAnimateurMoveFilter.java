@@ -2,10 +2,10 @@ package dev.sylvain.planning.solver;
 
 import java.time.LocalTime;
 
-import ai.timefold.solver.core.api.score.director.ScoreDirector;
 import ai.timefold.solver.core.impl.heuristic.selector.common.decorator.SelectionFilter;
-import ai.timefold.solver.core.impl.heuristic.selector.move.generic.ChangeMove;
-import ai.timefold.solver.core.impl.heuristic.selector.move.generic.SwapMove;
+import ai.timefold.solver.core.impl.heuristic.selector.move.generic.SelectorBasedChangeMove;
+import ai.timefold.solver.core.impl.heuristic.selector.move.generic.SelectorBasedSwapMove;
+import ai.timefold.solver.core.impl.score.director.ScoreDirector;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.JoursFeries;
@@ -80,18 +80,18 @@ public final class EligibleAnimateurMoveFilter {
                 && creneau.getDureeMinutes() <= PlafondsLegauxMineurs.TRAVAIL_CONTINU_MAX_MINUTES;
     }
 
-    public static final class ChangeMoveFilter implements SelectionFilter<PlanningEvenement, ChangeMove<PlanningEvenement>> {
+    public static final class ChangeMoveFilter implements SelectionFilter<PlanningEvenement, SelectorBasedChangeMove<PlanningEvenement>> {
         @Override
-        public boolean accept(ScoreDirector<PlanningEvenement> scoreDirector, ChangeMove<PlanningEvenement> move) {
+        public boolean accept(ScoreDirector<PlanningEvenement> scoreDirector, SelectorBasedChangeMove<PlanningEvenement> move) {
             PosteAffectation poste = (PosteAffectation) move.getEntity();
             Animateur animateur = (Animateur) move.getToPlanningValue();
             return isEligible(poste, animateur);
         }
     }
 
-    public static final class SwapMoveFilter implements SelectionFilter<PlanningEvenement, SwapMove<PlanningEvenement>> {
+    public static final class SwapMoveFilter implements SelectionFilter<PlanningEvenement, SelectorBasedSwapMove<PlanningEvenement>> {
         @Override
-        public boolean accept(ScoreDirector<PlanningEvenement> scoreDirector, SwapMove<PlanningEvenement> move) {
+        public boolean accept(ScoreDirector<PlanningEvenement> scoreDirector, SelectorBasedSwapMove<PlanningEvenement> move) {
             PosteAffectation left = (PosteAffectation) move.getLeftEntity();
             PosteAffectation right = (PosteAffectation) move.getRightEntity();
             return isEligible(left, right.getAnimateur()) && isEligible(right, left.getAnimateur());

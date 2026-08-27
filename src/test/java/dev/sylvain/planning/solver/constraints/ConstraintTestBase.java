@@ -11,8 +11,8 @@ import java.util.stream.Stream;
 
 import ai.timefold.solver.core.api.score.stream.Constraint;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
-import ai.timefold.solver.test.api.score.stream.ConstraintVerifier;
-import ai.timefold.solver.test.api.score.stream.SingleConstraintVerification;
+import ai.timefold.solver.core.api.score.stream.test.ConstraintVerifier;
+import ai.timefold.solver.core.api.score.stream.test.SingleConstraintVerification;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
@@ -66,7 +66,7 @@ abstract class ConstraintTestBase {
                         new QualiteConstraints().define(factory),
                         new PreferenceConstraints().define(factory))
                 .flatMap(Stream::of)
-                .filter(c -> c.getConstraintName().equals(name))
+                .filter(c -> c.getConstraintRef().id().equals(name))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Unknown constraint: " + name));
     }

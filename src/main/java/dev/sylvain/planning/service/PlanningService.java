@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import ai.timefold.solver.core.api.domain.solution.ConstraintWeightOverrides;
-import ai.timefold.solver.core.api.score.buildin.hardmediumsoft.HardMediumSoftScore;
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.solver.Solver;
 import ai.timefold.solver.core.api.solver.SolutionManager;
 import ai.timefold.solver.core.api.solver.SolverFactory;
@@ -2738,7 +2738,7 @@ public class PlanningService {
         FeasibilityAnalyzer.FeasibilityReport faisabilite = feasibilityAnalyzer.analyze(
                 solved.getAnimateurs(), distinctStands(solved), distinctCreneaux(solved),
                 solved.getContraintesAdHoc());
-        int hardScore = solved.getScore() == null ? 0 : solved.getScore().hardScore();
+        int hardScore = solved.getScore() == null ? 0 : Math.toIntExact(solved.getScore().hardScore());
         List<ContributionAdHoc> contraintesAdHocEnCause = contributionsAdHoc.values().stream()
                 .sorted(Comparator.comparingInt(ContributionAdHoc::violations).reversed()
                         .thenComparing(ContributionAdHoc::contrainteId))

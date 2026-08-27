@@ -149,8 +149,12 @@ Single Quarkus service, no separate solver microservice. Package root:
   no licence; the `analyze()` one is kept as the oracle
   `ConstraintDiagnosticServiceContractTest` compares against. That test is the
   only thing making a dependency on `ai.timefold.solver.core.impl` tenable —
-  **run it on every Timefold bump**. See
-  `docs/decisions/0013-diagnostic-par-le-score-director.md`.
+  **run it on every Timefold bump**, and read its result rather than the build's:
+  on a Community 2.x build the oracle is gated, so the test reports itself
+  **skipped** instead of failing, and a green build then proves nothing about
+  the diagnostic. A licence restores the comparison with no configuration
+  change. See `docs/decisions/0013-diagnostic-par-le-score-director.md` and
+  `docs/migration-timefold-2.md`.
 - `api/` — JAX-RS resources: `PlanningResource`, `SolverJobResource`,
   `EditionResource`, `ConstraintResource`, `DatabaseResource`,
   `PlanningExportResource`, `EspaceAnimateurResource` (token-authenticated, the

@@ -2,7 +2,7 @@ package dev.sylvain.planning.service.diagnostic;
 
 import java.util.List;
 
-import ai.timefold.solver.core.api.score.buildin.hardmediumsoft.HardMediumSoftScore;
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 
 /**
  * What one constraint contributed to a planning's score: its total, and the

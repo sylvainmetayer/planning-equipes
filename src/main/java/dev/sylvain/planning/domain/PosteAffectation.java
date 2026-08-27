@@ -2,9 +2,9 @@ package dev.sylvain.planning.domain;
 
 import java.time.LocalTime;
 
+import ai.timefold.solver.core.api.domain.common.PlanningId;
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.entity.PlanningPin;
-import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
 import dev.sylvain.planning.solver.PosteAffectationDifficultyComparatorFactory;
 

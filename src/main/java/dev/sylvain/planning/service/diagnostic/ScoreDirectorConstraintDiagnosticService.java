@@ -5,9 +5,9 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import ai.timefold.solver.core.api.score.buildin.hardmediumsoft.HardMediumSoftScore;
-import ai.timefold.solver.core.api.score.constraint.ConstraintMatch;
-import ai.timefold.solver.core.api.score.constraint.ConstraintMatchTotal;
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
+import ai.timefold.solver.core.impl.score.constraint.ConstraintMatch;
+import ai.timefold.solver.core.impl.score.constraint.ConstraintMatchTotal;
 import ai.timefold.solver.core.api.score.stream.ConstraintJustification;
 import ai.timefold.solver.core.api.solver.SolverFactory;
 import ai.timefold.solver.core.impl.score.constraint.ConstraintMatchPolicy;
@@ -89,7 +89,7 @@ public final class ScoreDirectorConstraintDiagnosticService implements Constrain
             List<ConstraintContribution> contributions = new ArrayList<>();
             for (ConstraintMatchTotal<HardMediumSoftScore> total : scoreDirector.getConstraintMatchTotalMap().values()) {
                 contributions.add(new ConstraintContribution(
-                        total.getConstraintRef().constraintName(),
+                        total.getConstraintRef().id(),
                         total.getScore(),
                         matchFacts(total)));
             }

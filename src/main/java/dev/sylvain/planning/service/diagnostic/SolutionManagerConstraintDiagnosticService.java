@@ -3,10 +3,10 @@ package dev.sylvain.planning.service.diagnostic;
 import java.util.ArrayList;
 import java.util.List;
 
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.score.analysis.ConstraintAnalysis;
 import ai.timefold.solver.core.api.score.analysis.MatchAnalysis;
 import ai.timefold.solver.core.api.score.analysis.ScoreAnalysis;
-import ai.timefold.solver.core.api.score.buildin.hardmediumsoft.HardMediumSoftScore;
 import ai.timefold.solver.core.api.solver.SolutionManager;
 import ai.timefold.solver.core.api.solver.SolverFactory;
 import dev.sylvain.planning.domain.PlanningEvenement;
@@ -40,7 +40,7 @@ public final class SolutionManagerConstraintDiagnosticService implements Constra
         List<ConstraintContribution> contributions = new ArrayList<>();
         for (ConstraintAnalysis<HardMediumSoftScore> constraintAnalysis : analysis.constraintAnalyses()) {
             contributions.add(new ConstraintContribution(
-                    constraintAnalysis.constraintRef().constraintName(),
+                    constraintAnalysis.constraintRef().id(),
                     constraintAnalysis.score(),
                     matchFacts(constraintAnalysis)));
         }
