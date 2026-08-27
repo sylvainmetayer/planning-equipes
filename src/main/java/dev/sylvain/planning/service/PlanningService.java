@@ -37,12 +37,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import ai.timefold.solver.core.api.domain.solution.ConstraintWeightOverrides;
-import ai.timefold.solver.core.api.score.analysis.ConstraintAnalysis;
-import ai.timefold.solver.core.api.score.analysis.MatchAnalysis;
-import ai.timefold.solver.core.api.score.analysis.ScoreAnalysis;
 import ai.timefold.solver.core.api.score.buildin.hardmediumsoft.HardMediumSoftScore;
-import ai.timefold.solver.core.api.score.stream.ConstraintJustification;
-import ai.timefold.solver.core.api.score.stream.DefaultConstraintJustification;
 import ai.timefold.solver.core.api.solver.Solver;
 import ai.timefold.solver.core.api.solver.SolutionManager;
 import ai.timefold.solver.core.api.solver.SolverFactory;
@@ -82,6 +77,11 @@ import dev.sylvain.planning.domain.TypeJoursHoraire;
 import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.scenario.YamlSections;
+import dev.sylvain.planning.service.diagnostic.ConstraintContribution;
+import dev.sylvain.planning.service.diagnostic.ConstraintDiagnosticService;
+import dev.sylvain.planning.service.diagnostic.MatchFacts;
+import dev.sylvain.planning.service.diagnostic.PlanningAnalysis;
+import dev.sylvain.planning.service.diagnostic.SolutionManagerConstraintDiagnosticService;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.EligibleAnimateurMoveFilter;
 import dev.sylvain.planning.solver.constraints.AdHocConstraints;
@@ -91,7 +91,13 @@ import dev.sylvain.planning.solver.PlanningConstraintProvider;
 public class PlanningService {
 
     private final SolverFactory<PlanningEvenement> solverFactory;
+    /**
+     * Kept for {@link SolutionManager#update} alone — refreshing a reloaded
+     * plan's score. Everything that used to break a score down per constraint
+     * now goes through {@link #constraintDiagnosticService}.
+     */
     private final SolutionManager<PlanningEvenement, ?> solutionManager;
+    private final ConstraintDiagnosticService constraintDiagnosticService;
     private final ReferenceData referenceDataService;
     private final FeasibilityAnalyzer feasibilityAnalyzer;
     private final long defaultSecondsLimit;
@@ -127,6 +133,7 @@ public class PlanningService {
         applyTermination(solverConfig, secondsLimit, unimprovedSecondsLimit);
         this.solverFactory = SolverFactory.create(solverConfig);
         this.solutionManager = SolutionManager.create(this.solverFactory);
+        this.constraintDiagnosticService = new SolutionManagerConstraintDiagnosticService(this.solverFactory);
         this.referenceDataService = referenceDataService;
         this.feasibilityAnalyzer = feasibilityAnalyzer;
         this.defaultSecondsLimit = secondsLimit;
@@ -1965,9 +1972,9 @@ public class PlanningService {
      */
     public AffectationExplanation explainAffectation(PlanningEvenement solved, String posteId) {
         PosteAffectation poste = findPoste(solved, posteId);
-        ScoreAnalysis<?> analysis = solutionManager.analyze(solved);
+        PlanningAnalysis analysis = constraintDiagnosticService.analyze(solved);
         String animateurId = poste.getAnimateur() == null ? null : poste.getAnimateur().getId();
-        return new AffectationExplanation(posteId, animateurId, (HardMediumSoftScore) analysis.score(),
+        return new AffectationExplanation(posteId, animateurId, analysis.score(),
                 impactsFor(analysis, poste, true), impactsFor(analysis, poste, false));
     }
 
@@ -1986,20 +1993,20 @@ public class PlanningService {
         Animateur candidat = findAnimateur(solved, animateurCandidatId);
         Animateur actuel = poste.getAnimateur();
 
-        ScoreAnalysis<?> avant = solutionManager.analyze(solved);
+        PlanningAnalysis avant = constraintDiagnosticService.analyze(solved);
         List<ContrainteImpact> violeesAvant = impactsFor(avant, poste, true);
 
-        ScoreAnalysis<?> apres;
+        PlanningAnalysis apres;
         poste.setAnimateur(candidat);
         try {
-            apres = solutionManager.analyze(solved);
+            apres = constraintDiagnosticService.analyze(solved);
         } finally {
             poste.setAnimateur(actuel);
         }
         List<ContrainteImpact> violeesApres = impactsFor(apres, poste, true);
 
-        HardMediumSoftScore scoreAvant = (HardMediumSoftScore) avant.score();
-        HardMediumSoftScore scoreApres = (HardMediumSoftScore) apres.score();
+        HardMediumSoftScore scoreAvant = avant.score();
+        HardMediumSoftScore scoreApres = apres.score();
         return new SwapSimulation(posteId, actuel == null ? null : actuel.getId(), animateurCandidatId,
                 scoreAvant, scoreApres, scoreApres.subtract(scoreAvant), violeesAvant, violeesApres);
     }
@@ -2040,8 +2047,8 @@ public class PlanningService {
         Animateur actuel = poste.getAnimateur();
         int plafond = effectiveCandidateCap(plafondDemande);
 
-        ScoreAnalysis<?> avant = solutionManager.analyze(solved);
-        HardMediumSoftScore scoreAvant = (HardMediumSoftScore) avant.score();
+        PlanningAnalysis avant = constraintDiagnosticService.analyze(solved);
+        HardMediumSoftScore scoreAvant = avant.score();
         List<ContrainteImpact> violeesAvant = impactsFor(avant, poste, true);
         Set<String> nomsAvant = violeesAvant.stream().map(ContrainteImpact::name).collect(Collectors.toSet());
 
@@ -2052,14 +2059,14 @@ public class PlanningService {
         for (Animateur candidat : evalues) {
             // Same throwaway in-place substitution as simulateSwap, reverted in
             // the finally: the planning is a per-request payload, never shared.
-            ScoreAnalysis<?> apres;
+            PlanningAnalysis apres;
             poste.setAnimateur(candidat);
             try {
-                apres = solutionManager.analyze(solved);
+                apres = constraintDiagnosticService.analyze(solved);
             } finally {
                 poste.setAnimateur(actuel);
             }
-            HardMediumSoftScore scoreApres = (HardMediumSoftScore) apres.score();
+            HardMediumSoftScore scoreApres = apres.score();
             // The verdict is planning-wide, like simulateEchange's: moving this
             // seat can break a hard constraint on a poste it does not touch
             // (weekly hours, rest periods), which the poste's own matches would
@@ -2218,14 +2225,14 @@ public class PlanningService {
                 .findFirst()
                 .orElse(null);
 
-        ScoreAnalysis<?> avant = solutionManager.analyze(solved);
-        ScoreAnalysis<?> apres;
+        PlanningAnalysis avant = constraintDiagnosticService.analyze(solved);
+        PlanningAnalysis apres;
         posteDemandeur.setAnimateur(target);
         if (posteCible != null) {
             posteCible.setAnimateur(demandeur);
         }
         try {
-            apres = solutionManager.analyze(solved);
+            apres = constraintDiagnosticService.analyze(solved);
         } finally {
             posteDemandeur.setAnimateur(demandeur);
             if (posteCible != null) {
@@ -2233,8 +2240,8 @@ public class PlanningService {
             }
         }
 
-        HardMediumSoftScore scoreAvant = (HardMediumSoftScore) avant.score();
-        HardMediumSoftScore scoreApres = (HardMediumSoftScore) apres.score();
+        HardMediumSoftScore scoreAvant = avant.score();
+        HardMediumSoftScore scoreApres = apres.score();
         return new EchangeSimulation(
                 posteDemandeur.getId(),
                 posteCible == null ? null : posteCible.getId(),
@@ -2259,19 +2266,19 @@ public class PlanningService {
         Animateur demandeur = posteDemandeur.getAnimateur();
         Animateur target = posteCible.getAnimateur();
 
-        ScoreAnalysis<?> avant = solutionManager.analyze(solved);
-        ScoreAnalysis<?> apres;
+        PlanningAnalysis avant = constraintDiagnosticService.analyze(solved);
+        PlanningAnalysis apres;
         posteDemandeur.setAnimateur(target);
         posteCible.setAnimateur(demandeur);
         try {
-            apres = solutionManager.analyze(solved);
+            apres = constraintDiagnosticService.analyze(solved);
         } finally {
             posteDemandeur.setAnimateur(demandeur);
             posteCible.setAnimateur(target);
         }
 
-        HardMediumSoftScore scoreAvant = (HardMediumSoftScore) avant.score();
-        HardMediumSoftScore scoreApres = (HardMediumSoftScore) apres.score();
+        HardMediumSoftScore scoreAvant = avant.score();
+        HardMediumSoftScore scoreApres = apres.score();
         return new EchangeSimulation(
                 posteDemandeur.getId(),
                 posteCible.getId(),
@@ -2320,8 +2327,8 @@ public class PlanningService {
         Animateur demandeur = posteDemandeur.getAnimateur();
         int plafond = effectiveCandidateCap(plafondDemande);
 
-        ScoreAnalysis<?> avant = solutionManager.analyze(solved);
-        HardMediumSoftScore scoreAvant = (HardMediumSoftScore) avant.score();
+        PlanningAnalysis avant = constraintDiagnosticService.analyze(solved);
+        HardMediumSoftScore scoreAvant = avant.score();
 
         List<OptionEchange> eligibles = optionsEchange(solved, posteDemandeur);
         List<OptionEchange> evaluees = eligibles.size() > plafond ? eligibles.subList(0, plafond) : eligibles;
@@ -2331,20 +2338,20 @@ public class PlanningService {
             PosteAffectation siege = option.siege();
             // Same throwaway in-place substitution as simulateEchange, reverted
             // in the finally: the planning is a per-request payload.
-            ScoreAnalysis<?> apres;
+            PlanningAnalysis apres;
             posteDemandeur.setAnimateur(option.animateur());
             if (siege != null) {
                 siege.setAnimateur(demandeur);
             }
             try {
-                apres = solutionManager.analyze(solved);
+                apres = constraintDiagnosticService.analyze(solved);
             } finally {
                 posteDemandeur.setAnimateur(demandeur);
                 if (siege != null) {
                     siege.setAnimateur(option.animateur());
                 }
             }
-            HardMediumSoftScore scoreApres = (HardMediumSoftScore) apres.score();
+            HardMediumSoftScore scoreApres = apres.score();
             if (scoreApres.hardScore() < scoreAvant.hardScore()) {
                 continue;
             }
@@ -2490,15 +2497,15 @@ public class PlanningService {
      * {@link ConstraintCatalog} — what the animateur (and the admin) reads,
      * rather than a technical constraint dump.
      */
-    private static List<HardViolation> extraHardViolations(ScoreAnalysis<?> avant,
-            ScoreAnalysis<?> apres) {
+    private static List<HardViolation> extraHardViolations(PlanningAnalysis avant,
+            PlanningAnalysis apres) {
         Map<String, Integer> matchesAvant = new HashMap<>();
-        for (ConstraintAnalysis<?> ca : avant.constraintAnalyses()) {
-            matchesAvant.put(ca.constraintRef().constraintName(), ca.matchCount());
+        for (ConstraintContribution ca : avant.contributions()) {
+            matchesAvant.put(ca.constraintName(), ca.matchCount());
         }
         List<HardViolation> violations = new ArrayList<>();
-        for (ConstraintAnalysis<?> ca : apres.constraintAnalyses()) {
-            String name = ca.constraintRef().constraintName();
+        for (ConstraintContribution ca : apres.contributions()) {
+            String name = ca.constraintName();
             if (!HARD_CONSTRAINT_NAMES.contains(name)) {
                 continue;
             }
@@ -2514,18 +2521,18 @@ public class PlanningService {
     }
 
     /** @return one {@link ContrainteImpact} per constraint that matches (violées) or does not (respectées) for {@code poste}. */
-    private static List<ContrainteImpact> impactsFor(ScoreAnalysis<?> analysis, PosteAffectation poste, boolean violees) {
+    private static List<ContrainteImpact> impactsFor(PlanningAnalysis analysis, PosteAffectation poste, boolean violees) {
         List<ContrainteImpact> impacts = new ArrayList<>();
-        for (ConstraintAnalysis<?> ca : analysis.constraintAnalyses()) {
-            List<? extends MatchAnalysis<?>> matches = ca.matches().stream()
+        for (ConstraintContribution ca : analysis.contributions()) {
+            List<MatchFacts> matches = ca.matches().stream()
                     .filter(match -> concerns(match, poste))
                     .toList();
             if (matches.isEmpty() == violees) {
                 continue;
             }
-            ConstraintCatalog.ConstraintDefinition definition = DEFINITIONS_PAR_NOM.get(ca.constraintRef().constraintName());
+            ConstraintCatalog.ConstraintDefinition definition = DEFINITIONS_PAR_NOM.get(ca.constraintName());
             impacts.add(new ContrainteImpact(
-                    ca.constraintRef().constraintName(),
+                    ca.constraintName(),
                     definition == null ? null : definition.niveau().name(),
                     definition == null ? null : definition.categorie(),
                     definition == null ? null : definition.description(),
@@ -2536,8 +2543,8 @@ public class PlanningService {
     }
 
     /** True when {@code poste} itself appears among a match's justification facts, flattening any collection fact. */
-    private static boolean concerns(MatchAnalysis<?> match, PosteAffectation poste) {
-        return factsOf(match).stream().anyMatch(fact -> concernsFact(fact, poste));
+    private static boolean concerns(MatchFacts match, PosteAffectation poste) {
+        return match.facts().stream().anyMatch(fact -> concernsFact(fact, poste));
     }
 
     private static boolean concernsFact(Object fact, PosteAffectation poste) {
@@ -2715,11 +2722,11 @@ public class PlanningService {
     }
 
     public PlanningDiagnostic diagnose(PlanningEvenement solved) {
-        ScoreAnalysis<?> analysis = solutionManager.analyze(solved);
+        PlanningAnalysis analysis = constraintDiagnosticService.analyze(solved);
         List<ConstraintDiagnostic> constraintDiagnostics = new ArrayList<>();
         Map<String, ContributionAdHoc> contributionsAdHoc = new LinkedHashMap<>();
-        for (ConstraintAnalysis<?> ca : analysis.constraintAnalyses()) {
-            String name = ca.constraintRef().constraintName();
+        for (ConstraintContribution ca : analysis.contributions()) {
+            String name = ca.constraintName();
             boolean hard = HARD_CONSTRAINT_NAMES.contains(name);
             List<String> violations = hard ? formatViolations(ca.matches()) : List.of();
             if (hard) {
@@ -2763,9 +2770,9 @@ public class PlanningService {
      * the raw matches, not the formatted lines.</p>
      */
     private static void collectContributionsAdHoc(String constraintName,
-            List<? extends MatchAnalysis<?>> matches, Map<String, ContributionAdHoc> contributions) {
-        for (MatchAnalysis<?> match : matches) {
-            for (Object fact : factsOf(match)) {
+            List<MatchFacts> matches, Map<String, ContributionAdHoc> contributions) {
+        for (MatchFacts match : matches) {
+            for (Object fact : match.facts()) {
                 if (fact instanceof ContrainteAdHoc contrainte && contrainte.getId() != null) {
                     contributions.merge(contrainte.getId(),
                             new ContributionAdHoc(contrainte.getId(),
@@ -2795,19 +2802,11 @@ public class PlanningService {
      * {@code posteDoitEtrePourvu} seat. Capped at {@link #MAX_VIOLATIONS_PAR_CONTRAINTE}:
      * this feeds a UI detail popup, not an export.
      */
-    private static List<String> formatViolations(List<? extends MatchAnalysis<?>> matches) {
+    private static List<String> formatViolations(List<MatchFacts> matches) {
         return matches.stream()
                 .limit(MAX_VIOLATIONS_PAR_CONTRAINTE)
-                .map(match -> ViolationFormatter.describe(factsOf(match)))
+                .map(match -> ViolationFormatter.describe(match.facts()))
                 .toList();
-    }
-
-    private static List<Object> factsOf(MatchAnalysis<?> match) {
-        ConstraintJustification justification = match.justification();
-        if (justification instanceof DefaultConstraintJustification defaultJustification) {
-            return defaultJustification.getFacts();
-        }
-        return List.of(justification);
     }
 
     private static List<Stand> distinctStands(PlanningEvenement solved) {
