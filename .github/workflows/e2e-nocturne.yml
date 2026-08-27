@@ -1,6 +1,6 @@
 # Playwright, une fois par nuit — et délibérément pas sur les PR.
 #
-# Ces 46 tests demandent la pile complète (application + PostgreSQL + serveur
+# Ces 75 tests demandent la pile complète (application + PostgreSQL + serveur
 # de mail) et réamorcent la base à chaque exécution : les accrocher à chaque
 # PR coûterait plusieurs minutes par poussée pour un signal que la suite
 # unitaire donne déjà en six secondes.
