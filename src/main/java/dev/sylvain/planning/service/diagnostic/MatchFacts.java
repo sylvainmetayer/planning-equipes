@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import ai.timefold.solver.core.api.score.stream.ConstraintJustification;
+import ai.timefold.solver.core.api.score.stream.DefaultConstraintJustification;
+
 /**
  * The justification facts of one constraint match, in the order the constraint
  * declared them — an {@code Animateur}, a {@code PosteAffectation}, a
@@ -22,5 +25,21 @@ public record MatchFacts(List<Object> facts) {
      */
     public MatchFacts {
         facts = Collections.unmodifiableList(new ArrayList<>(facts));
+    }
+
+    /**
+     * Reads a Timefold justification the one way both implementations of
+     * {@link ConstraintDiagnosticService} must read it — otherwise the same
+     * match would describe itself differently depending on which one ran.
+     *
+     * <p>A constraint that does not name its own justification type gets
+     * Timefold's default one, whose facts are the tuple the constraint stream
+     * matched on. Anything else is a justification object the constraint built
+     * itself, and is its own single fact.</p>
+     */
+    public static MatchFacts of(ConstraintJustification justification) {
+        return justification instanceof DefaultConstraintJustification defaultJustification
+                ? new MatchFacts(defaultJustification.getFacts())
+                : new MatchFacts(List.of(justification));
     }
 }

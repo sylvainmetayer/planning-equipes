@@ -7,8 +7,6 @@ import ai.timefold.solver.core.api.score.analysis.ConstraintAnalysis;
 import ai.timefold.solver.core.api.score.analysis.MatchAnalysis;
 import ai.timefold.solver.core.api.score.analysis.ScoreAnalysis;
 import ai.timefold.solver.core.api.score.buildin.hardmediumsoft.HardMediumSoftScore;
-import ai.timefold.solver.core.api.score.stream.ConstraintJustification;
-import ai.timefold.solver.core.api.score.stream.DefaultConstraintJustification;
 import ai.timefold.solver.core.api.solver.SolutionManager;
 import ai.timefold.solver.core.api.solver.SolverFactory;
 import dev.sylvain.planning.domain.PlanningEvenement;
@@ -51,19 +49,7 @@ public final class SolutionManagerConstraintDiagnosticService implements Constra
             return List.of();
         }
         return matches.stream()
-                .map(match -> new MatchFacts(factsOf(match.justification())))
+                .map(match -> MatchFacts.of(match.justification()))
                 .toList();
-    }
-
-    /**
-     * A constraint that does not name its own justification type gets Timefold's
-     * default one, whose facts are the tuple the constraint stream matched on.
-     * Anything else is a justification object the constraint built itself, and
-     * is its own single fact.
-     */
-    static List<Object> factsOf(ConstraintJustification justification) {
-        return justification instanceof DefaultConstraintJustification defaultJustification
-                ? defaultJustification.getFacts()
-                : List.of(justification);
     }
 }
