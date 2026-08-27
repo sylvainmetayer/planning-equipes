@@ -55,21 +55,27 @@ public class ScenarioMcpTools {
     @Inject
     EditionService editionService;
 
-    @Tool(description = "Liste les scénarios livrés avec l'application, importables par leur nom.")
+    @Tool(description = "Liste les scénarios livrés avec l'application, importables par leur nom.",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     List<String> lister_scenarios() {
         return planningService.listScenarios();
     }
 
     @Tool(description = "Importe un scénario livré dans les données de référence : remplace stands, créneaux, "
             + "animateurs et postes existants. Applique aussi les paramètres légaux/découpage/solveur et le "
-            + "découpage automatique que le scénario épingle éventuellement. Opération destructive.")
+            + "découpage automatique que le scénario épingle éventuellement. Opération destructive.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = true,
+                    idempotentHint = true, openWorldHint = false))
     ImportResult importer_scenario(@ToolArg(description = "Nom du scénario (voir lister_scenarios)") String nom,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return toImportResult(referenceDataResource.importScenario(nom));
     }
 
     @Tool(description = "Importe un scénario fourni sous forme de contenu YAML (même format que l'export). "
-            + "Opération destructive : remplace les données de référence existantes.")
+            + "Opération destructive : remplace les données de référence existantes.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = true,
+                    idempotentHint = true, openWorldHint = false))
     ImportResult importer_scenario_yaml(@ToolArg(description = "Contenu YAML du scénario") String yaml,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         Response response = referenceDataResource.importScenarioFile(yaml);
@@ -80,7 +86,9 @@ public class ScenarioMcpTools {
     }
 
     @Tool(description = "Valide la structure d'un scénario YAML sans rien importer. Renvoie la liste des erreurs "
-            + "trouvées, vide si le fichier est valide.")
+            + "trouvées, vide si le fichier est valide.",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     ValidationResult valider_scenario_yaml(@ToolArg(description = "Contenu YAML du scénario") String yaml) {
         if (yaml == null || yaml.isBlank()) {
             return new ValidationResult(false, List.of("Le fichier est vide."));
@@ -96,7 +104,9 @@ public class ScenarioMcpTools {
 
     @Tool(description = "Vide entièrement UNE ÉDITION : stands, créneaux, animateurs, affectations et "
             + "contraintes ad hoc de l'édition ciblée, les autres éditions n'y touchent pas. Opération "
-            + "destructive et irréversible, à ne lancer que sur demande explicite.")
+            + "destructive et irréversible, à ne lancer que sur demande explicite.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = true,
+                    idempotentHint = true, openWorldHint = false))
     ResetResult reinitialiser_donnees(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         persistenceService.clearDatabase();

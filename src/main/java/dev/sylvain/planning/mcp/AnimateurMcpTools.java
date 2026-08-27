@@ -43,7 +43,9 @@ public class AnimateurMcpTools {
 
     @Tool(description = "Liste les animateurs. Ne renvoie aucune donnée personnelle identifiante (pas de nom, "
             + "prénom, ni date de naissance) : uniquement l'id, le statut majeur/mineur, et les attributs de "
-            + "planification (compétences, souhaits, jours indisponibles).")
+            + "planification (compétences, souhaits, jours indisponibles).",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     List<AnimateurView> lister_animateurs(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         LocalDate reference = dateReference();
@@ -52,7 +54,9 @@ public class AnimateurMcpTools {
                 .toList();
     }
 
-    @Tool(description = "Consulte un animateur par son id. Ne renvoie aucune donnée personnelle identifiante.")
+    @Tool(description = "Consulte un animateur par son id. Ne renvoie aucune donnée personnelle identifiante.",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     AnimateurView consulter_animateur(@ToolArg(description = "Id de l'animateur") String id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return toView(find(id), dateReference());
@@ -61,7 +65,9 @@ public class AnimateurMcpTools {
     @Tool(description = "Crée un animateur. Les données personnelles (nom, prénom, date de naissance) sont "
             + "facultatives et ne sont jamais relues par MCP ; la date de naissance reste toutefois la seule "
             + "source du statut mineur/majeur utilisé par les contraintes légales, un animateur créé sans elle "
-            + "sera donc traité comme majeur.")
+            + "sera donc traité comme majeur.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
+                    idempotentHint = false, openWorldHint = false))
     AnimateurView creer_animateur(
             @ToolArg(description = "Id de l'animateur (unique)") String id,
             @ToolArg(description = "Date de naissance (AAAA-MM-JJ), nécessaire pour les contraintes légales sur les mineurs", required = false) String dateNaissance,
@@ -85,7 +91,9 @@ public class AnimateurMcpTools {
     }
 
     @Tool(description = "Modifie un animateur. Seuls les champs fournis sont modifiés : les champs omis — dont "
-            + "les données personnelles que MCP ne peut pas lire — conservent leur valeur en base.")
+            + "les données personnelles que MCP ne peut pas lire — conservent leur valeur en base.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     AnimateurView modifier_animateur(
             @ToolArg(description = "Id de l'animateur") String id,
             @ToolArg(description = "Statut manager", required = false) Boolean manager,
@@ -109,7 +117,9 @@ public class AnimateurMcpTools {
         return toView(referenceDataService.updateAnimateur(id, animateur), dateReference());
     }
 
-    @Tool(description = "Supprime un animateur et ses affectations.")
+    @Tool(description = "Supprime un animateur et ses affectations.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = true,
+                    idempotentHint = false, openWorldHint = false))
     SuppressionResult supprimer_animateur(@ToolArg(description = "Id de l'animateur") String id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         referenceDataService.deleteAnimateur(id);

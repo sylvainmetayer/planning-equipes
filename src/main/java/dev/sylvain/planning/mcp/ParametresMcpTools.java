@@ -37,14 +37,18 @@ public class ParametresMcpTools {
 
     /* ----------------------------- Legal parameters ------------------------- */
 
-    @Tool(description = "Consulte les paramètres légaux appliqués par le solveur (durées maximales, pauses, repos).")
+    @Tool(description = "Consulte les paramètres légaux appliqués par le solveur (durées maximales, pauses, repos).",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     ParametresLegauxView consulter_parametres_legaux(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return toView(referenceDataService.getParametresLegaux());
     }
 
     @Tool(description = "Modifie les paramètres légaux. Seuls les champs fournis sont modifiés. Les plafonds "
-            + "d'ordre public (48 h hebdomadaires pour un majeur, 35 h pour un mineur) sont refusés au-delà.")
+            + "d'ordre public (48 h hebdomadaires pour un majeur, 35 h pour un mineur) sont refusés au-delà.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     ParametresLegauxView modifier_parametres_legaux(
             @ToolArg(description = "Durée hebdomadaire maximale d'un majeur, en minutes", required = false) Integer dureeHebdomadaireMaxMinutes,
             @ToolArg(description = "Durée hebdomadaire maximale d'un mineur, en minutes", required = false) Integer dureeHebdomadaireMaxMineurMinutes,
@@ -69,14 +73,18 @@ public class ParametresMcpTools {
 
     /* --------------------------- Slicing parameters ------------------------- */
 
-    @Tool(description = "Consulte les paramètres de découpage des amplitudes en vacations.")
+    @Tool(description = "Consulte les paramètres de découpage des amplitudes en vacations.",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     ParametresDecoupageView consulter_parametres_decoupage(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return toView(referenceDataService.getParametresDecoupage());
     }
 
     @Tool(description = "Modifie les paramètres de découpage. Seuls les champs fournis sont modifiés. "
-            + "Prend effet au prochain découpage généré, pas sur les créneaux déjà produits.")
+            + "Prend effet au prochain découpage généré, pas sur les créneaux déjà produits.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     ParametresDecoupageView modifier_parametres_decoupage(
             @ToolArg(description = "Durée cible d'une vacation, en minutes", required = false) Integer dureeVacationCibleMinutes,
             @ToolArg(description = "Durée minimale d'une vacation, en minutes", required = false) Integer dureeVacationMinMinutes,
@@ -135,13 +143,17 @@ public class ParametresMcpTools {
 
     /* ---------------------------- Solver parameters ------------------------- */
 
-    @Tool(description = "Consulte la durée de résolution par défaut du solveur, en secondes.")
+    @Tool(description = "Consulte la durée de résolution par défaut du solveur, en secondes.",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     ParametresSolveurView consulter_parametres_solveur(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return toView(referenceDataService.getParametresSolveur());
     }
 
-    @Tool(description = "Modifie la durée de résolution par défaut du solveur, en secondes (valeur strictement positive).")
+    @Tool(description = "Modifie la durée de résolution par défaut du solveur, en secondes (valeur strictement positive).",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     ParametresSolveurView modifier_parametres_solveur(
             @ToolArg(description = "Durée de résolution par défaut, en secondes") int dureeResolutionSecondes,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
@@ -155,7 +167,9 @@ public class ParametresMcpTools {
 
     @Tool(description = "Liste les contraintes ad hoc saisies au cas par cas (indisponibilité forcée, "
             + "incompatibilité entre animateurs, affectation forcée, affinité entre animateurs). "
-            + "Les animateurs y sont désignés par id seul.")
+            + "Les animateurs y sont désignés par id seul.",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     List<ContrainteAdHocView> lister_contraintes_ad_hoc(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return referenceDataService.listContraintesAdHoc().stream().map(ParametresMcpTools::toView).toList();
@@ -167,7 +181,9 @@ public class ParametresMcpTools {
             + "sur ce créneau. INCOMPATIBILITE : les animateurs listés ne peuvent pas être affectés au même stand "
             + "sur le même créneau. AFFECTATION_FORCEE : l'animateur doit être affecté à ce stand sur ce créneau. "
             + "AFFINITE : privilégier, sans l'imposer, les créneaux où les deux animateurs listés tiennent le "
-            + "même stand ; refusée si la même paire est déjà déclarée incompatible (et réciproquement).")
+            + "même stand ; refusée si la même paire est déjà déclarée incompatible (et réciproquement).",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
+                    idempotentHint = false, openWorldHint = false))
     ContrainteAdHocView creer_contrainte_ad_hoc(
             @ToolArg(description = "Id de la contrainte (unique)") String id,
             @ToolArg(description = "Type : INDISPONIBILITE_FORCEE, INCOMPATIBILITE, AFFECTATION_FORCEE ou AFFINITE") String type,
@@ -196,7 +212,9 @@ public class ParametresMcpTools {
         return toView(referenceDataService.createContrainteAdHoc(contrainte));
     }
 
-    @Tool(description = "Supprime une contrainte ad hoc.")
+    @Tool(description = "Supprime une contrainte ad hoc.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = true,
+                    idempotentHint = false, openWorldHint = false))
     SuppressionResult supprimer_contrainte_ad_hoc(@ToolArg(description = "Id de la contrainte") String id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         referenceDataService.deleteContrainteAdHoc(id);

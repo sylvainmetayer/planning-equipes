@@ -50,19 +50,25 @@ public class StandMcpTools {
 
     @Tool(description = "Liste les stands, avec leurs typologies proposées, effectifs requis, "
             + "réserve majeurs/premium, niveau d'effort, emplacement, horaires récurrents et plages datées "
-            + "(fermetures/ouvertures) qui les surchargent.")
+            + "(fermetures/ouvertures) qui les surchargent.",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     List<StandView> lister_stands(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return referenceDataService.listStands().stream().map(StandMcpTools::toView).toList();
     }
 
-    @Tool(description = "Consulte un stand par son id.")
+    @Tool(description = "Consulte un stand par son id.",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     StandView consulter_stand(@ToolArg(description = "Id du stand") String id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return toView(findStand(id));
     }
 
-    @Tool(description = "Crée un stand. Les typologies proposées doivent exister dans le référentiel des typologies.")
+    @Tool(description = "Crée un stand. Les typologies proposées doivent exister dans le référentiel des typologies.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
+                    idempotentHint = false, openWorldHint = false))
     StandView creer_stand(
             @ToolArg(description = "Id du stand (unique)") String id,
             @ToolArg(description = "Nom affiché") String nom,
@@ -99,7 +105,9 @@ public class StandMcpTools {
             + "en dehors, ce qui est la façon d'exprimer « ce stand n\u0027ouvre que de tant à tant ». Pour une règle "
             + "de fermeture, ou plusieurs règles de portées différentes, utiliser ajouter_horaire_stand. "
             + "La réponse énumère ce qui a été créé au passage, pour que rien ne soit créé à l\u0027insu de "
-            + "l\u0027utilisateur.")
+            + "l\u0027utilisateur.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
+                    idempotentHint = false, openWorldHint = false))
     CreationStandComplet creer_stand_complet(
             @ToolArg(description = "Id du stand (unique)") String id,
             @ToolArg(description = "Nom affiché") String nom,
@@ -204,7 +212,9 @@ public class StandMcpTools {
     }
 
     @Tool(description = "Modifie un stand. Seuls les champs fournis sont modifiés ; les fermetures et ouvertures "
-            + "se gèrent avec les outils dédiés.")
+            + "se gèrent avec les outils dédiés.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     StandView modifier_stand(
             @ToolArg(description = "Id du stand") String id,
             @ToolArg(description = "Nom affiché", required = false) String nom,
@@ -244,7 +254,9 @@ public class StandMcpTools {
         return toView(referenceDataService.updateStand(id, stand));
     }
 
-    @Tool(description = "Supprime un stand.")
+    @Tool(description = "Supprime un stand.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = true,
+                    idempotentHint = false, openWorldHint = false))
     SuppressionResult supprimer_stand(@ToolArg(description = "Id du stand") String id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         referenceDataService.deleteStand(id);
@@ -254,7 +266,9 @@ public class StandMcpTools {
     @Tool(description = "Ajoute une fermeture (indisponibilité) datée sur un stand : le stand ne peut pas être armé "
             + "entre ces heures ce jour-là. Une fenêtre ne peut pas chevaucher minuit — dans ce cas, en saisir deux. "
             + "Omettre heureFin ferme jusqu'à la fermeture du jour. Une plage datée prime sur les horaires "
-            + "récurrents du stand pour ce jour-là ; pour un motif qui se répète, préférer ajouter_horaire_stand.")
+            + "récurrents du stand pour ce jour-là ; pour un motif qui se répète, préférer ajouter_horaire_stand.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
+                    idempotentHint = false, openWorldHint = false))
     StandView ajouter_fermeture_stand(
             @ToolArg(description = "Id du stand") String standId,
             @ToolArg(description = "Date (AAAA-MM-JJ)") String date,
@@ -270,7 +284,9 @@ public class StandMcpTools {
 
     @Tool(description = "Ajoute une ouverture datée sur un stand : ce jour-là, le stand n'est armé QUE sur cette "
             + "plage. Un même jour ne peut pas porter à la fois une fermeture et une ouverture. Omettre heureFin "
-            + "ouvre jusqu'à la fermeture du jour. Pour un motif qui se répète, préférer ajouter_horaire_stand.")
+            + "ouvre jusqu'à la fermeture du jour. Pour un motif qui se répète, préférer ajouter_horaire_stand.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
+                    idempotentHint = false, openWorldHint = false))
     StandView ajouter_ouverture_stand(
             @ToolArg(description = "Id du stand") String standId,
             @ToolArg(description = "Date (AAAA-MM-JJ)") String date,
@@ -290,7 +306,9 @@ public class StandMcpTools {
     }
 
     @Tool(description = "Retire toutes les fermetures et ouvertures d'un stand pour une date donnée. Les horaires "
-            + "récurrents ne sont pas touchés : la date redevient donc gouvernée par eux, s'il en existe.")
+            + "récurrents ne sont pas touchés : la date redevient donc gouvernée par eux, s'il en existe.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = true,
+                    idempotentHint = true, openWorldHint = false))
     StandView effacer_plages_stand(
             @ToolArg(description = "Id du stand") String standId,
             @ToolArg(description = "Date (AAAA-MM-JJ)") String date,
@@ -308,7 +326,9 @@ public class StandMcpTools {
             + "joursSemaine), PLAGE (avec dateDebut/dateFin) ou DATES (avec dates). Les fenêtres se saisissent "
             + "« HH:MM-HH:MM », ou « HH:MM- » pour courir jusqu'à la fermeture du jour ; plusieurs fenêtres se "
             + "séparent par une virgule (ex. « 10:00-12:00,14:00- » pour une coupure méridienne). Une plage datée "
-            + "existante prime toujours sur les règles, pour le jour qu'elle nomme.")
+            + "existante prime toujours sur les règles, pour le jour qu'elle nomme.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
+                    idempotentHint = false, openWorldHint = false))
     StandView ajouter_horaire_stand(
             @ToolArg(description = "Id du stand") String standId,
             @ToolArg(description = "OUVERTURE ou FERMETURE") String mode,
@@ -346,7 +366,9 @@ public class StandMcpTools {
         return toView(referenceDataService.updateStand(standId, stand));
     }
 
-    @Tool(description = "Retire tous les horaires récurrents d'un stand. Ses plages datées restent en place.")
+    @Tool(description = "Retire tous les horaires récurrents d'un stand. Ses plages datées restent en place.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = true,
+                    idempotentHint = true, openWorldHint = false))
     StandView effacer_horaires_stand(@ToolArg(description = "Id du stand") String standId,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         Stand stand = findStand(standId);
@@ -356,13 +378,17 @@ public class StandMcpTools {
 
     /* ----------------------------- Emplacements ---------------------------- */
 
-    @Tool(description = "Liste les emplacements géographiques (utilisés pour limiter les déplacements entre stands).")
+    @Tool(description = "Liste les emplacements géographiques (utilisés pour limiter les déplacements entre stands).",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     List<EmplacementView> lister_emplacements(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return referenceDataService.listEmplacements().stream().map(StandMcpTools::toView).toList();
     }
 
-    @Tool(description = "Crée un emplacement géographique.")
+    @Tool(description = "Crée un emplacement géographique.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
+                    idempotentHint = false, openWorldHint = false))
     EmplacementView creer_emplacement(
             @ToolArg(description = "Id de l'emplacement (unique)") String id,
             @ToolArg(description = "Nom affiché") String nom,
@@ -372,7 +398,9 @@ public class StandMcpTools {
         return toView(referenceDataService.createEmplacement(new Emplacement(id, nom, latitude, longitude)));
     }
 
-    @Tool(description = "Modifie un emplacement. Seuls les champs fournis sont modifiés.")
+    @Tool(description = "Modifie un emplacement. Seuls les champs fournis sont modifiés.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     EmplacementView modifier_emplacement(
             @ToolArg(description = "Id de l'emplacement") String id,
             @ToolArg(description = "Nom affiché", required = false) String nom,
@@ -392,7 +420,9 @@ public class StandMcpTools {
         return toView(referenceDataService.updateEmplacement(id, emplacement));
     }
 
-    @Tool(description = "Supprime un emplacement.")
+    @Tool(description = "Supprime un emplacement.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = true,
+                    idempotentHint = false, openWorldHint = false))
     SuppressionResult supprimer_emplacement(@ToolArg(description = "Id de l'emplacement") String id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         referenceDataService.deleteEmplacement(id);
@@ -402,13 +432,17 @@ public class StandMcpTools {
     /* ------------------------------ Typologies ----------------------------- */
 
     @Tool(description = "Liste les typologies de jeu (référentiel CRUD auquel se réfèrent les compétences des "
-            + "animateurs et les typologies proposées par les stands).")
+            + "animateurs et les typologies proposées par les stands).",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     List<TypologieItem> lister_typologies(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return referenceDataService.listTypologies();
     }
 
-    @Tool(description = "Crée une typologie de jeu.")
+    @Tool(description = "Crée une typologie de jeu.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
+                    idempotentHint = false, openWorldHint = false))
     TypologieItem creer_typologie(
             @ToolArg(description = "Id de la typologie (unique)") String id,
             @ToolArg(description = "Libellé affiché", required = false) String label,
@@ -416,7 +450,9 @@ public class StandMcpTools {
         return referenceDataService.createTypologie(new TypologieItem(id, label));
     }
 
-    @Tool(description = "Renomme une typologie de jeu.")
+    @Tool(description = "Renomme une typologie de jeu.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     TypologieItem modifier_typologie(
             @ToolArg(description = "Id de la typologie") String id,
             @ToolArg(description = "Nouveau libellé") String label,
@@ -424,7 +460,9 @@ public class StandMcpTools {
         return referenceDataService.updateTypologie(id, new TypologieItem(id, label));
     }
 
-    @Tool(description = "Supprime une typologie de jeu. Refusé tant qu'elle est référencée par un stand ou un animateur.")
+    @Tool(description = "Supprime une typologie de jeu. Refusé tant qu'elle est référencée par un stand ou un animateur.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = true,
+                    idempotentHint = false, openWorldHint = false))
     SuppressionResult supprimer_typologie(@ToolArg(description = "Id de la typologie") String id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         referenceDataService.deleteTypologie(id);

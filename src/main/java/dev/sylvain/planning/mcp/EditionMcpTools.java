@@ -54,7 +54,9 @@ public class EditionMcpTools {
             + "et deux éditions ne voient jamais les données l'une de l'autre. Chaque ligne indique laquelle "
             + "est courante (celle utilisée par les autres outils quand aucune n'est précisée), laquelle est "
             + "l'édition par défaut, et de quoi la reconnaître : nombre de créneaux, période couverte, "
-            + "nombre de stands et d'animateurs.")
+            + "nombre de stands et d'animateurs.",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     List<EditionView> lister_editions() {
         String courante = editionContext.editionIdCourant();
         return editionService.listEditions().stream()
@@ -64,14 +66,18 @@ public class EditionMcpTools {
 
     @Tool(description = "Nomme l'édition dans laquelle travaillent tous les autres outils quand leur argument "
             + "« edition » n'est pas précisé. À appeler avant toute écriture si l'utilisateur a plusieurs "
-            + "éditions : rien d'autre n'indique laquelle est en train d'être modifiée.")
+            + "éditions : rien d'autre n'indique laquelle est en train d'être modifiée.",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     EditionView edition_courante() {
         String courante = editionContext.editionIdCourant();
         return view(editionService.editionCourante(), courante);
     }
 
     @Tool(description = "Crée une édition vide. Pour repartir d'une édition existante (stands, animateurs, "
-            + "paramètres), utiliser dupliquer_edition à la place.")
+            + "paramètres), utiliser dupliquer_edition à la place.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
+                    idempotentHint = false, openWorldHint = false))
     EditionView creer_edition(
             @ToolArg(description = "Id de la nouvelle édition, repris tel quel dans les URLs (ex. « 2027 »)") String id,
             @ToolArg(description = "Nom affiché (ex. « Année 2027 »)") String nom) {
@@ -81,7 +87,9 @@ public class EditionMcpTools {
     @Tool(description = "Duplique une édition dans une nouvelle : stands, animateurs, typologies, emplacements, "
             + "créneaux, contraintes et paramètres sont recopiés, jamais le planning résolu. C'est la façon de "
             + "préparer une variante (« plan canicule ») sans toucher à l'originale : depuis l'issue #172, une "
-            + "variante EST une édition dupliquée.")
+            + "variante EST une édition dupliquée.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
+                    idempotentHint = false, openWorldHint = false))
     EditionView dupliquer_edition(
             @ToolArg(description = "Édition à copier : son id ou son nom (voir lister_editions)") String source,
             @ToolArg(description = "Id de l'édition à créer") String id,
@@ -92,7 +100,9 @@ public class EditionMcpTools {
     }
 
     @Tool(description = "Renomme une édition. Seul le nom affiché change : l'id, lui, est repris dans les URLs "
-            + "et les configurations, il n'est pas modifiable.")
+            + "et les configurations, il n'est pas modifiable.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     EditionView renommer_edition(
             @ToolArg(description = "Édition à renommer : son id ou son nom") String edition,
             @ToolArg(description = "Nouveau nom affiché") String nom) {
@@ -102,7 +112,9 @@ public class EditionMcpTools {
     }
 
     @Tool(description = "Désigne l'édition par défaut : celle dans laquelle travaille tout appelant qui n'en "
-            + "précise aucune, y compris les outils MCP sans argument « edition ».")
+            + "précise aucune, y compris les outils MCP sans argument « edition ».",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     EditionView definir_edition_par_defaut(
             @ToolArg(description = "Édition à rendre par défaut : son id ou son nom") String edition) {
         String id = requireEdition(edition, "edition");
@@ -112,7 +124,9 @@ public class EditionMcpTools {
 
     @Tool(description = "Supprime une édition ET tout ce qu'elle contient : stands, animateurs, créneaux, "
             + "contraintes, planning résolu. Destructif et irréversible, à ne lancer que sur demande explicite. "
-            + "L'édition par défaut, l'édition courante et la dernière édition restante sont refusées.")
+            + "L'édition par défaut, l'édition courante et la dernière édition restante sont refusées.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = true,
+                    idempotentHint = false, openWorldHint = false))
     SuppressionResult supprimer_edition(
             @ToolArg(description = "Édition à supprimer : son id ou son nom") String edition) {
         String id = requireEdition(edition, "edition");

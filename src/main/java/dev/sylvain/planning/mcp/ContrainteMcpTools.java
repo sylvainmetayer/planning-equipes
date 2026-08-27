@@ -34,7 +34,9 @@ public class ContrainteMcpTools {
     ReferenceDataService referenceDataService;
 
     @Tool(description = "Liste le catalogue métier des contraintes du solveur : niveau (HARD/MEDIUM/SOFT), "
-            + "description, si elle est active, et son score/nombre de correspondances lors de la dernière analyse.")
+            + "description, si elle est active, et son score/nombre de correspondances lors de la dernière analyse.",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     List<ContrainteView> lister_contraintes(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         StoredAnalysis analysis = analysisStore.latest();
@@ -50,13 +52,17 @@ public class ContrainteMcpTools {
                 .toList();
     }
 
-    @Tool(description = "Active une contrainte pour le prochain solve (annule une désactivation précédente).")
+    @Tool(description = "Active une contrainte pour le prochain solve (annule une désactivation précédente).",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     ToggleResult activer_contrainte(@ToolArg(description = "Nom technique de la contrainte (voir lister_contraintes)") String nom,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return setActive(nom, true);
     }
 
-    @Tool(description = "Désactive une contrainte pour le prochain solve. Le solveur l'ignorera jusqu'à réactivation.")
+    @Tool(description = "Désactive une contrainte pour le prochain solve. Le solveur l'ignorera jusqu'à réactivation.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     ToggleResult desactiver_contrainte(@ToolArg(description = "Nom technique de la contrainte (voir lister_contraintes)") String nom,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return setActive(nom, false);

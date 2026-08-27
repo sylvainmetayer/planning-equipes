@@ -42,14 +42,18 @@ public class CreneauMcpTools {
     @Inject
     CreneauGridService grilleCreneauxService;
 
-    @Tool(description = "Liste les créneaux de l'édition — ceux sur lesquels portera la prochaine résolution.")
+    @Tool(description = "Liste les créneaux de l'édition — ceux sur lesquels portera la prochaine résolution.",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     List<CreneauView> lister_creneaux(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return creneauxCourants();
     }
 
     @Tool(description = "Crée un créneau. Le numéro de jour n'est pas à fournir : il est recalculé pour toute "
-            + "l'édition à partir des dates.")
+            + "l'édition à partir des dates.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
+                    idempotentHint = false, openWorldHint = false))
     CreneauView creer_creneau(
             @ToolArg(description = "Date (AAAA-MM-JJ)") String date,
             @ToolArg(description = "Heure de début (HH:MM)") String heureDebut,
@@ -60,7 +64,9 @@ public class CreneauMcpTools {
         return toView(referenceDataService.createCreneau(creneau));
     }
 
-    @Tool(description = "Modifie un créneau. Seuls les champs fournis sont modifiés.")
+    @Tool(description = "Modifie un créneau. Seuls les champs fournis sont modifiés.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     CreneauView modifier_creneau(
             @ToolArg(description = "Id du créneau") long id,
             @ToolArg(description = "Date (AAAA-MM-JJ)", required = false) String date,
@@ -80,7 +86,9 @@ public class CreneauMcpTools {
         return toView(referenceDataService.updateCreneau(id, creneau));
     }
 
-    @Tool(description = "Supprime un créneau.")
+    @Tool(description = "Supprime un créneau.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = true,
+                    idempotentHint = false, openWorldHint = false))
     SuppressionResult supprimer_creneau(@ToolArg(description = "Id du créneau") long id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         referenceDataService.deleteCreneau(id);
@@ -93,7 +101,9 @@ public class CreneauMcpTools {
             + "AMPLITUDES journalières (à découper en vacations) ou des VACATIONS déjà solvables. Appeler cet "
             + "outil AVANT de créer des créneaux, pour ne pas mélanger les deux natures dans une même édition. "
             + "Le champ modeCertain dit si la réponse est prouvée par les données ou seulement probable : quand "
-            + "il vaut false, demander confirmation à l'utilisateur plutôt que de supposer.")
+            + "il vaut false, demander confirmation à l'utilisateur plutôt que de supposer.",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     DiagnosticGrille diagnostiquer_grille_creneaux(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return CreneauGridService.diagnose(referenceDataService.listCreneaux(),
@@ -105,7 +115,9 @@ public class CreneauMcpTools {
             + "personne ne pourra armer, et sous-effectif. Le mode est OBLIGATOIRE parce qu'il change le verdict : "
             + "deux créneaux qui se chevauchent le même jour sont une erreur de saisie entre AMPLITUDES, et la "
             + "situation normale entre VACATIONS décalées. En cas de doute, appeler diagnostiquer_grille_creneaux "
-            + "puis demander à l'utilisateur.")
+            + "puis demander à l'utilisateur.",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     RapportGrille valider_creneaux(
             @ToolArg(description = "AMPLITUDES (journées à découper) ou VACATIONS (vacations finales)") String mode,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
@@ -122,7 +134,9 @@ public class CreneauMcpTools {
             + "aux horaires de stand, l'heure de fin est obligatoire. La portée vaut TOUS (toutes les dates de "
             + "la plage), JOURS_SEMAINE (avec joursSemaine, ex. MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY pour "
             + "« sauf le week-end »), PLAGE (identique à TOUS) ou DATES (avec dates). Les exclusions retirent "
-            + "des dates précises quel que soit le sélecteur.")
+            + "des dates précises quel que soit le sélecteur.",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     PrevisualisationRecurrence previsualiser_creneaux_recurrents(
             @ToolArg(description = "AMPLITUDES ou VACATIONS — demander à l'utilisateur s'il ne l'a pas dit") String mode,
             @ToolArg(description = "Fenêtres, ex. « 09:00-12:00,14:00-18:00 »") String fenetres,
@@ -145,7 +159,9 @@ public class CreneauMcpTools {
     @Tool(description = "Crée les créneaux d'une règle récurrente et renvoie le contrôle de cohérence de la "
             + "grille obtenue. Mêmes arguments que previsualiser_creneaux_recurrents, qu'il faut avoir appelé "
             + "d'abord. Les créneaux existants ne sont pas touchés : la règle AJOUTE. Pour repartir de zéro, "
-            + "appeler supprimer_creneaux avant.")
+            + "appeler supprimer_creneaux avant.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
+                    idempotentHint = false, openWorldHint = false))
     PrevisualisationRecurrence creer_creneaux_recurrents(
             @ToolArg(description = "AMPLITUDES ou VACATIONS — demander à l'utilisateur s'il ne l'a pas dit") String mode,
             @ToolArg(description = "Fenêtres, ex. « 09:00-12:00,14:00-18:00 »") String fenetres,
@@ -166,7 +182,9 @@ public class CreneauMcpTools {
 
     @Tool(description = "Supprime en une fois les créneaux que les filtres désignent — l'inverse de "
             + "creer_creneaux_recurrents, pour reprendre une règle qui s'est trompée. DESTRUCTIF. Au moins un "
-            + "filtre est exigé ; pour vider toute la grille, passer explicitement tous=true.")
+            + "filtre est exigé ; pour vider toute la grille, passer explicitement tous=true.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = true,
+                    idempotentHint = false, openWorldHint = false))
     BulkDeleteResult supprimer_creneaux(
             @ToolArg(description = "Ne supprimer qu'à partir de cette date (AAAA-MM-JJ)", required = false) String dateDebut,
             @ToolArg(description = "Ne supprimer que jusqu'à cette date (AAAA-MM-JJ)", required = false) String dateFin,
@@ -202,7 +220,9 @@ public class CreneauMcpTools {
 
     @Tool(description = "Prévisualise le découpage : les vacations que les créneaux actuels de l'édition "
             + "(lus comme des amplitudes) produiraient avec les paramètres de découpage courants. "
-            + "Ne persiste rien.")
+            + "Ne persiste rien.",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     List<CreneauView> previsualiser_decoupage(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return referenceDataService.previewDecoupage().stream()
@@ -212,7 +232,9 @@ public class CreneauMcpTools {
 
     @Tool(description = "Génère le découpage EN PLACE : les créneaux actuels de l'édition (les amplitudes) sont "
             + "remplacés par les vacations générées, et le planning résolu est effacé avec eux. Pour re-découper "
-            + "avec d'autres paramètres, ré-importer le scénario source.")
+            + "avec d'autres paramètres, ré-importer le scénario source.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = true,
+                    idempotentHint = false, openWorldHint = false))
     List<CreneauView> generer_decoupage(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         referenceDataService.generateDecoupage();

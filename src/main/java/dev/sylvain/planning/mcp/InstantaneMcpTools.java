@@ -53,7 +53,9 @@ public class InstantaneMcpTools {
 
     @Tool(description = "Liste les instantanés du planning de l'édition, du plus récent au plus ancien : "
             + "libellé, score, nombre d'affectations et KPI au moment de la capture. Ne renvoie pas leur contenu "
-            + "(voir consulter_instantane).")
+            + "(voir consulter_instantane).",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     List<InstantaneView> lister_instantanes(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return snapshotService.list().stream().map(InstantaneMcpTools::toView).toList();
@@ -61,7 +63,9 @@ public class InstantaneMcpTools {
 
     @Tool(description = "Contenu d'un instantané : ses métadonnées et ses affectations, filtrables par stand ou "
             + "par animateur. Ne renvoie que des ids, jamais de données personnelles. La liste est plafonnée : "
-            + "affectationsTotal dit combien il en contient réellement.")
+            + "affectationsTotal dit combien il en contient réellement.",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     InstantaneDetailView consulter_instantane(@ToolArg(description = "Id de l'instantané") long id,
             @ToolArg(description = "Id de stand pour filtrer", required = false) String standId,
             @ToolArg(description = "Id d'animateur pour filtrer", required = false) String animateurId,
@@ -81,7 +85,9 @@ public class InstantaneMcpTools {
     }
 
     @Tool(description = "Capture le planning persisté dans un nouvel instantané, pour pouvoir y revenir. "
-            + "Échoue s'il n'y a aucun planning persisté : un instantané vide ne serait qu'un piège à restaurer.")
+            + "Échoue s'il n'y a aucun planning persisté : un instantané vide ne serait qu'un piège à restaurer.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
+                    idempotentHint = false, openWorldHint = false))
     InstantaneView capturer_instantane(
             @ToolArg(description = "Libellé de l'instantané", required = false) String libelle,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
@@ -100,7 +106,9 @@ public class InstantaneMcpTools {
      * says nothing was restored.
      */
     @Tool(description = "Restaure un instantané à la place du planning courant. Refusé si l'instantané référence "
-            + "des stands, créneaux ou animateurs qui n'existent plus : rien n'est alors écrit.")
+            + "des stands, créneaux ou animateurs qui n'existent plus : rien n'est alors écrit.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = true,
+                    idempotentHint = true, openWorldHint = false))
     RestaurationView restaurer_instantane(@ToolArg(description = "Id de l'instantané") long id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         RestaurationResult result = snapshotService.restaurer(id);
@@ -114,7 +122,9 @@ public class InstantaneMcpTools {
         return new RestaurationView(id, result.affectations());
     }
 
-    @Tool(description = "Supprime un instantané. Le planning courant n'est pas touché.")
+    @Tool(description = "Supprime un instantané. Le planning courant n'est pas touché.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = true,
+                    idempotentHint = false, openWorldHint = false))
     SuppressionResult supprimer_instantane(@ToolArg(description = "Id de l'instantané") long id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         if (!snapshotService.delete(id)) {
@@ -131,7 +141,9 @@ public class InstantaneMcpTools {
      */
     @Tool(description = "Compare deux plannings, chacun désigné par un id d'instantané ou par « courant » pour le "
             + "planning persisté. Ne relance aucune résolution et ne recalcule aucun score : lit les mesures déjà "
-            + "prises. Les deux côtés peuvent appartenir à des éditions différentes.")
+            + "prises. Les deux côtés peuvent appartenir à des éditions différentes.",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     ComparaisonSnapshots comparer_instantanes(
             @ToolArg(description = "Côté de référence : id d'instantané ou « courant »") String base,
             @ToolArg(description = "Côté comparé : id d'instantané ou « courant »") String variante,

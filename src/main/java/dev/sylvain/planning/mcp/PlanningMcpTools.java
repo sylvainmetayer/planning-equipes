@@ -64,7 +64,9 @@ public class PlanningMcpTools {
 
     @Tool(description = "Volumétrie réelle du problème que construirait la prochaine résolution : nombre "
             + "d'animateurs, de postes à pourvoir et de contraintes ad hoc. Tout à zéro si les données de "
-            + "référence ne sont pas chargées.")
+            + "référence ne sont pas chargées.",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     VolumeView volumes(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         try {
@@ -78,7 +80,9 @@ public class PlanningMcpTools {
 
     @Tool(description = "Diagnostic de faisabilité avant résolution : calcul de capacité en Java pur (aucune "
             + "résolution lancée) sur les données de référence courantes, listant les causes structurellement "
-            + "bloquantes : créneau en sous-effectif, contraintes ad hoc contradictoires.")
+            + "bloquantes : créneau en sous-effectif, contraintes ad hoc contradictoires.",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     FeasibilityReport analyser_faisabilite(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return feasibilityAnalyzer.analyze(
@@ -90,7 +94,9 @@ public class PlanningMcpTools {
 
     @Tool(description = "État du planning persisté : pour quel groupe de créneaux la dernière résolution a "
             + "tourné, quand, combien d'affectations sont stockées, et quand les données de référence ont été "
-            + "modifiées pour la dernière fois (si c'est après la résolution, le planning affiché est périmé).")
+            + "modifiées pour la dernière fois (si c'est après la résolution, le planning affiché est périmé).",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     EtatPlanningView etat_planning(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         PlanningPersistenceService.PlanningResolution resolution = persistenceService.loadResolution();
@@ -104,7 +110,9 @@ public class PlanningMcpTools {
 
     @Tool(description = "Affectations du dernier planning persisté, filtrables par stand, par créneau ou par "
             + "animateur. Ne renvoie que des ids, jamais de données personnelles. Les postes non pourvus ont un "
-            + "animateurId nul.")
+            + "animateurId nul.",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     List<AffectationView> lister_affectations(
             @ToolArg(description = "Id de stand pour filtrer", required = false) String standId,
             @ToolArg(description = "Id de créneau pour filtrer", required = false) Long creneauId,
@@ -128,7 +136,9 @@ public class PlanningMcpTools {
     }
 
     @Tool(description = "Heures travaillées par animateur d'après le dernier planning persisté, par semaine ISO "
-            + "et au total. Les animateurs sont désignés par id seul.")
+            + "et au total. Les animateurs sont désignés par id seul.",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     HeuresView heures_travaillees(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         PlanningEvenement planning = persistenceService.loadPersistedPlanning();
@@ -142,7 +152,9 @@ public class PlanningMcpTools {
     }
 
     @Tool(description = "Explique le score d'un poste du dernier planning persisté : contraintes violées et "
-            + "contraintes respectées le concernant. Ne relance aucune résolution.")
+            + "contraintes respectées le concernant. Ne relance aucune résolution.",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     ExplicationView expliquer_affectation(@ToolArg(description = "Id du poste") String posteId,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         AffectationExplanation explication = planningService.explainAffectation(persistedPlanning(), posteId);
@@ -152,7 +164,9 @@ public class PlanningMcpTools {
     }
 
     @Tool(description = "Simule l'affectation d'un poste à un autre animateur sur le dernier planning persisté, "
-            + "et renvoie l'impact sur le score. Ne persiste rien et ne relance aucune résolution.")
+            + "et renvoie l'impact sur le score. Ne persiste rien et ne relance aucune résolution.",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     SwapView simuler_swap(
             @ToolArg(description = "Id du poste") String posteId,
             @ToolArg(description = "Id de l'animateur candidat") String animateurId,

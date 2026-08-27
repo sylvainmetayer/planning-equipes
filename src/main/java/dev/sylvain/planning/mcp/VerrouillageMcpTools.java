@@ -33,7 +33,9 @@ public class VerrouillageMcpTools {
     ReferenceDataService referenceDataService;
 
     @Tool(description = "Liste les verrouillages du planning : ce que le solveur n'a plus le droit de déplacer. "
-            + "Les animateurs y sont désignés par id seul.")
+            + "Les animateurs y sont désignés par id seul.",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     List<VerrouillageView> lister_verrouillages(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return referenceDataService.listVerrouillages().stream()
@@ -52,7 +54,9 @@ public class VerrouillageMcpTools {
     @Tool(description = "Fige une partie du planning pour les prochaines résolutions. Le type détermine la cible "
             + "attendue : ANIMATEUR (animateurId), STAND (standId), CRENEAU (creneauId), JOUR (jour), "
             + "ANIMATEUR_CRENEAU (animateurId + creneauId). Verrouiller une cible déjà verrouillée ne crée pas "
-            + "de doublon.")
+            + "de doublon.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
     VerrouillageView verrouiller(
             @ToolArg(description = "ANIMATEUR | STAND | CRENEAU | JOUR | ANIMATEUR_CRENEAU") String type,
             @ToolArg(description = "Id de l'animateur (types ANIMATEUR et ANIMATEUR_CRENEAU)", required = false) String animateurId,
@@ -78,7 +82,9 @@ public class VerrouillageMcpTools {
      * from ids it may have invented, and "supprimé" on a lock that never
      * existed would let it believe the planning is free to move.
      */
-    @Tool(description = "Retire un verrouillage : la partie du planning qu'il figeait redevient déplaçable.")
+    @Tool(description = "Retire un verrouillage : la partie du planning qu'il figeait redevient déplaçable.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = true,
+                    idempotentHint = false, openWorldHint = false))
     SuppressionResult deverrouiller(@ToolArg(description = "Id du verrouillage") String id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         boolean connu = referenceDataService.listVerrouillages().stream()

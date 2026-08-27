@@ -146,6 +146,30 @@ Le périmètre de `resoudre_incremental` (animateurs, jours, stands) **ne touche
 pas aux verrouillages** : il ne vaut que pour ce job. Ce qui est figé
 durablement se pose avec `verrouiller`.
 
+## Chaque outil annonce ce qu'il fait aux données
+
+Les quatre *hints* de la spécification MCP sont déclarés sur **tous** les
+outils. Ce n'est pas cosmétique : leurs valeurs par défaut sont
+`destructiveHint = true` et `openWorldHint = true`, si bien qu'un outil qui ne
+dit rien — `lister_stands` par exemple — s'annonce comme un appel destructif
+vers l'extérieur. Un client qui demande confirmation avant les outils
+destructifs la demandait alors pour chaque lecture, et le signal ne voulait
+plus rien dire.
+
+| Hint | Ce qu'il vaut ici |
+| --- | --- |
+| `readOnlyHint` | vrai pour les outils qui ne font que lire |
+| `destructiveHint` | vrai pour les suppressions, les imports, une restauration d'instantané — et pour les résolutions, qui remplacent le planning persisté |
+| `idempotentHint` | vrai quand rappeler l'outil avec les mêmes arguments ne change plus rien |
+| `openWorldHint` | **toujours faux** : aucun outil ne sort de la base de l'application |
+
+`McpAnnotationsStructurelleTest` tient les deux bouts. Le `openWorldHint = false`
+sert de marqueur — un bloc oublié garde la valeur par défaut et échoue — et les
+hints attendus sont dérivés du **nom** de l'outil, si bien qu'un
+`supprimer_stand` qui se déclarerait en lecture seule échoue aussi. Un nom que
+le test ne sait pas classer échoue également : un nouvel outil ne passe pas
+sans que quelqu'un ait dit ce qu'il fait.
+
 ## Hors périmètre, volontairement
 
 | Ce qui n'a pas d'outil | Pourquoi |
