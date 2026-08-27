@@ -37,7 +37,7 @@ public class TypologieService implements TypologieLibelles {
      * typologie met along the way.
      */
     @Override
-    public Map<String, String> parId() {
+    public Map<String, String> labelsById() {
         return repository.listTypologies().stream()
                 .collect(Collectors.toMap(TypologieItem::id, TypologieItem::label, (premier, doublon) -> premier,
                         LinkedHashMap::new));

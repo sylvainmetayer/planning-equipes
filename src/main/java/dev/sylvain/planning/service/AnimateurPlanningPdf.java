@@ -169,7 +169,7 @@ public class AnimateurPlanningPdf {
         title.setSpacingAfter(5f);
         cell.addElement(title);
 
-        Map<String, String> libelles = typologies.parId();
+        Map<String, String> libelles = typologies.labelsById();
         List<Stand> stands = PosteStatistics.distinctStands(postes);
         for (int i = 0; i < stands.size(); i++) {
             Stand stand = stands.get(i);

@@ -15,5 +15,5 @@ import java.util.Map;
 public interface TypologieLibelles {
 
     /** Label of every typologie of the referential, by id. */
-    Map<String, String> parId();
+    Map<String, String> labelsById();
 }
