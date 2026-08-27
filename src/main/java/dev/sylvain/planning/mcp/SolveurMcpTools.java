@@ -3,16 +3,21 @@ package dev.sylvain.planning.mcp;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Supplier;
 
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.ConstraintAnalysisStore;
 import dev.sylvain.planning.service.ConstraintAnalysisStore.StoredAnalysis;
 import dev.sylvain.planning.service.PlanningPersistenceService;
 import dev.sylvain.planning.service.PlanningService;
+import dev.sylvain.planning.service.ReplanificationScope;
 import dev.sylvain.planning.service.SolverJobService;
 import dev.sylvain.planning.service.SolverJobService.SolverBusyException;
 import dev.sylvain.planning.service.SolverJobService.SolverJob;
@@ -30,6 +35,13 @@ import jakarta.inject.Inject;
  * {@code SolverJobResource#solveFromReferenceData}), since an AI assistant
  * has no practical way to construct the full {@code PlanningEvenement} JSON
  * body the raw REST endpoints expect.
+ *
+ * <p>The two solves go through the <b>replayable</b> submissions, exactly like
+ * the screens do. Building the problem here instead would have cost the three
+ * properties that come with deferring it: no queueing behind a running job, no
+ * replay after a restart, and a problem frozen at the call rather than at the
+ * start — an assistant that keeps preparing the edition while a run finishes
+ * would have solved the edition as it stood before its own edits.</p>
  */
 @EditionCiblee
 @ApplicationScoped
@@ -48,13 +60,47 @@ public class SolveurMcpTools {
     ConstraintAnalysisStore analysisStore;
 
     @Tool(description = "Lance une résolution en tâche de fond à partir des données de référence persistées "
-            + "(stands, créneaux, animateurs). Renvoie l'id du job à interroger via statut_solveur.")
+            + "(stands, créneaux, animateurs). Renvoie l'id du job à interroger via statut_solveur. "
+            + "Avec enFile, la résolution attend son tour au lieu d'être refusée quand le solveur est occupé.")
     JobView lancer_solveur(@ToolArg(description = "Durée max en secondes (défaut : configuration serveur)", required = false) Long secondes,
+            @ToolArg(description = "Attendre son tour si le solveur est occupé, au lieu d'échouer", required = false) Boolean enFile,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+        return submit(() -> solverJobService.submitSolveFromReferenceData(secondes, Boolean.TRUE.equals(enFile)));
+    }
+
+    @Tool(description = "Relance une résolution partielle à partir du planning persisté : tout ce qu'un "
+            + "changement tardif n'a pas invalidé reste figé, seul le périmètre rouvert est recalculé — d'où un "
+            + "budget bien plus court qu'une résolution complète (60 s par défaut). Sans périmètre, seul ce que "
+            + "les changements ont invalidé est rouvert. Le périmètre ne touche pas les verrouillages : il ne "
+            + "vaut que pour ce job.")
+    JobView resoudre_incremental(
+            @ToolArg(description = "Ids d'animateurs dont tous les postes sont rouverts", required = false) List<String> animateurIds,
+            @ToolArg(description = "Jours (AAAA-MM-JJ) dont tous les postes sont rouverts", required = false) List<String> jours,
+            @ToolArg(description = "Ids de stands dont tous les postes sont rouverts", required = false) List<String> standIds,
+            @ToolArg(description = "Durée max en secondes (défaut 60)", required = false) Long secondes,
+            @ToolArg(description = "Attendre son tour si le solveur est occupé, au lieu d'échouer", required = false) Boolean enFile,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+        ReplanificationScope scope = new ReplanificationScope(
+                animateurIds == null ? Set.of() : new LinkedHashSet<>(animateurIds),
+                McpArgs.dates(jours, "jours"),
+                standIds == null ? Set.of() : new LinkedHashSet<>(standIds));
+        return submit(() -> solverJobService.submitSolveIncremental(secondes, scope,
+                Boolean.TRUE.equals(enFile)));
+    }
+
+    /**
+     * Turns the busy-solver refusal into a sentence naming the job in the way,
+     * shared by both launches. The submission itself is a supplier so the
+     * problem is built <b>inside</b> the job rather than here: that is what
+     * makes a queued run solve the edition as it stands when its turn comes,
+     * and what lets a restart replay it.
+     */
+    private JobView submit(Supplier<SolverJob> submission) {
         try {
-            return toView(solverJobService.submitSolve(planningService.buildFromReferenceData(), secondes));
+            return toView(submission.get());
         } catch (SolverBusyException e) {
-            throw new IllegalStateException("Solveur déjà occupé par le job " + e.getActiveJob().getId());
+            throw new BusinessError.Conflict("Solveur déjà occupé par le job " + e.getActiveJob().getId()
+                    + " : relancez avec enFile pour attendre son tour.");
         }
     }
 
@@ -65,7 +111,9 @@ public class SolveurMcpTools {
         try {
             return toView(solverJobService.submitAnalyze(planningService.buildFromReferenceData(), secondes));
         } catch (SolverBusyException e) {
-            throw new IllegalStateException("Solveur déjà occupé par le job " + e.getActiveJob().getId());
+            // No enFile here, unlike the two solves: an analyze carries its own
+            // problem, so it is never queued and never replayed.
+            throw new BusinessError.Conflict("Solveur déjà occupé par le job " + e.getActiveJob().getId());
         }
     }
 

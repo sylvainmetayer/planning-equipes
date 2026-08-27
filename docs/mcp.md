@@ -124,6 +124,28 @@ Deux précisions sur l'écriture : les lancements de solveur capturent l'éditio
 ensuite ; et une section `edition:` dans un YAML importé **prime** sur
 l'argument, puisque le fichier désigne explicitement sa cible.
 
+## Les résolutions construisent leur problème au démarrage
+
+`lancer_solveur` et `resoudre_incremental` passent par les soumissions
+**rejouables** du `SolverJobService`, exactement comme les écrans. Le problème
+n'est donc pas construit à l'appel mais au démarrage du job, ce qui apporte
+trois propriétés d'un coup :
+
+- **la mise en file** (`enFile`) : sans elle, un solveur occupé refuse la
+  demande. Un job qui porte son problème tout construit ne peut pas attendre —
+  il résoudrait l'édition telle qu'elle était avant l'attente ;
+- **le rejeu au redémarrage** : un job en file survit à un arrêt du serveur ;
+- **la fraîcheur** : un assistant qui continue de préparer l'édition pendant
+  qu'une résolution tourne verra ses modifications prises en compte par la
+  suivante.
+
+`lancer_analyse` reste hors de ce mécanisme : une analyse porte son propre
+problème, elle n'est donc ni mise en file ni rejouée.
+
+Le périmètre de `resoudre_incremental` (animateurs, jours, stands) **ne touche
+pas aux verrouillages** : il ne vaut que pour ce job. Ce qui est figé
+durablement se pose avec `verrouiller`.
+
 ## Hors périmètre, volontairement
 
 | Ce qui n'a pas d'outil | Pourquoi |

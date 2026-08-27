@@ -171,7 +171,7 @@ class PlanificationMcpToolsTest {
         awaitSolverIdle();
         scenarioTools.reinitialiser_donnees(null);
         scenarioTools.importer_scenario("scenario.yml", null);
-        JobView job = solveurTools.lancer_solveur(1L, null);
+        JobView job = solveurTools.lancer_solveur(1L, null, null);
         assertThat(awaitFinished(job.id()).status()).isEqualTo("COMPLETED");
         assertThat(planningTools.etat_planning(null).affectationsPersistees()).isPositive();
     }
