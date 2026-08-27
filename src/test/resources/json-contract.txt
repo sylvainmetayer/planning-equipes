@@ -99,5 +99,3 @@ service.SnapshotComparisonService$DiffContrainte = base, contrainte, variante
 service.StaffingAnalyzer$JourStaffing = date, heures, jour, picAvecPause, picSimultane, sieges, standsOuverts
 service.StaffingAnalyzer$StaffingSummary = borneRetenue, capaciteHeuresParAnimateur, chargeTotal, dureeHebdomadaireMaxMinutes, jourCritique, minimumMajeurs, minimumMineurs, minimumTotal, nombreSemaines, parJour, pauseMinimaleMinutes, picAvecPause, picSimultane, totalDemandeHeures
 service.TypologieItem = id, label, ninja
-service.WhatIfService$Mutations = animateursAjoutes, animateursRetires, effectifsMin, standsFermes
-service.WhatIfService$ResultatWhatIf = animateurs, animateursReference, creneaux, reference, simulation, standsOuverts, standsOuvertsReference

@@ -309,23 +309,6 @@ form.form-grid {
   margin-left: 0.5rem;
 }
 
-/* What-if screen (issue #73): the variant's figures, each with its delta
-   against today's referential — the delta is the point, not the absolute. */
-.what-if-deltas {
-  list-style: none;
-  margin: 0 0 1rem;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.5rem;
-  font: var(--mat-sys-body-medium);
-}
-
-.what-if-delta {
-  color: var(--mat-sys-on-surface-variant);
-  margin-left: 0.25rem;
-}
-
 /* Page-level heading for the screens whose first card is not the page itself
    (Solveur, Contraintes, Créneaux, Données, Verrouillages, Calendrier). Every
    other screen carries its <h1> on its first mat-card-title. */

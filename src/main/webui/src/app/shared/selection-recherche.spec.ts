@@ -1,5 +1,5 @@
 // Header: this picker replaces a `mat-select` over 153 animateurs, so it is
-// the entry point of the timeline and what-if pages. The logic cases below were
+// the entry point of the timeline page. The logic cases below were
 // there first; the rendering ones were added because the hint line, the chips
 // and the removal buttons only exist in the template — and because that is
 // where the accessible name of the field lives.

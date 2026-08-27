@@ -52,11 +52,6 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/aide/aide-page').then((m) => m.AidePage)
   },
   {
-    path: 'what-if',
-    title: 'What-if',
-    loadComponent: () => import('./pages/what-if/what-if-page').then((m) => m.WhatIfPage)
-  },
-  {
     path: 'graphe',
     title: 'Graphe',
     loadComponent: () => import('./pages/graphe/graphe-page').then((m) => m.GraphePage)

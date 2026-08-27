@@ -44,7 +44,6 @@ const ROUTES: { path: string; marker?: string }[] = [
   { path: '/heatmap' },
   { path: '/timeline', marker: 'Timeline animateur' },
   { path: '/ad-hoc-constraints' },
-  { path: '/what-if' },
   { path: '/verrouillages', marker: 'Verrouiller une partie du planning' },
   { path: '/parametres', marker: 'Paramètres de découpage' },
   { path: '/mcp-client', marker: 'Se connecter au serveur MCP' },

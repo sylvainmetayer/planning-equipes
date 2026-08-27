@@ -952,25 +952,6 @@ export interface RestaurationSnapshot {
   referencesManquantes: string[];
 }
 
-/** Mutations sent to `POST /api/what-if` (issue #73). Nothing is persisted. */
-export interface MutationsWhatIf {
-  animateursAjoutes: number;
-  animateursRetires: string[];
-  standsFermes: string[];
-  effectifsMin: Record<string, number>;
-}
-
-/** Answer of `POST /api/what-if`: the variant next to today's referential. */
-export interface ResultatWhatIf {
-  animateurs: number;
-  animateursReference: number;
-  standsOuverts: number;
-  standsOuvertsReference: number;
-  creneaux: number;
-  reference: FeasibilityReport;
-  simulation: FeasibilityReport;
-}
-
 /* ----------------------- Foire au planning (issue #165) ----------------------- */
 
 /** `/api/auth/me`: whether the browser holds a valid admin session. */

@@ -205,7 +205,6 @@ function buildNavGroups(devMode: boolean): NavGroup[] {
     id: 'work-in-progress',
     title: $localize`:@@nav.group.workInProgress:En cours de développement`,
     links: [
-      { path: '/what-if', label: $localize`:@@nav.link.whatIf:Simulation « et si ? »`, icon: 'science' },
       {
         path: '/verrouillages',
         label: $localize`:@@nav.link.verrouillages:Verrouillages`,

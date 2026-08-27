@@ -332,13 +332,10 @@ public class PlanningService {
     }
 
     /**
-     * Same problem, built from lists the caller provides instead of reading the
-     * referential — what {@link WhatIfService} uses to evaluate a variant
-     * (animateurs added or removed, a stand closed) without writing anything.
-     * Everything else still comes from the referential: locks, ad hoc
-     * constraints and legal parameters are not what a simulation varies.
+     * The build itself, on lists already read from the referential. Locks, ad
+     * hoc constraints and legal parameters are still read from here.
      */
-    public PlanningEvenement buildFromReferenceData(List<Animateur> animateurs, List<Stand> stands,
+    private PlanningEvenement buildFromReferenceData(List<Animateur> animateurs, List<Stand> stands,
             List<Creneau> creneaux) {
         if (animateurs.isEmpty() || stands.isEmpty() || creneaux.isEmpty()) {
             throw new IllegalStateException(

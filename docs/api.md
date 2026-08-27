@@ -333,9 +333,7 @@ comme une cible :
 
 - la faisabilité ignore quel stand précis chaque animateur pourrait tenir :
   **`feasible: true` ne garantit pas** un score dur nul après résolution ;
-- le besoin minimum ignore compétences et indisponibilités individuelles ;
-- les animateurs ajoutés dans une simulation « et si ? » sont fictifs, majeurs,
-  toujours disponibles et polyvalents — un recrutement réel aide moins.
+- le besoin minimum ignore compétences et indisponibilités individuelles.
 
 La compétence n'entre pas dans le calcul : depuis sa bascule en contrainte
 medium, n'importe quel animateur disponible peut tenir n'importe quel stand. Un

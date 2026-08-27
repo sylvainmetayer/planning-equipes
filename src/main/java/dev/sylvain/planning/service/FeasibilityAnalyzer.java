@@ -88,10 +88,9 @@ public class FeasibilityAnalyzer {
 
     /**
      * Capacity check alone, for the callers analysing a hypothetical variant of
-     * the stands, animateurs or créneaux ({@code WhatIfService},
-     * {@code CreneauGridService}): the ad hoc exceptions are not what those
-     * screens vary, and their contradictions are already reported by the
-     * edition's own report.
+     * the stands, animateurs or créneaux ({@code CreneauGridService}): the ad
+     * hoc exceptions are not what those screens vary, and their contradictions
+     * are already reported by the edition's own report.
      */
     public FeasibilityReport analyze(List<Animateur> animateurs, List<Stand> stands, List<Creneau> creneaux) {
         return analyze(animateurs, stands, creneaux, List.of());
