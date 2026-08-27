@@ -23,16 +23,18 @@ import io.quarkiverse.mcp.server.ToolArg;
  * hole by simply not thinking about it.</p>
  *
  * <p>The exemptions are the tools that read and write nothing inside an
- * edition: the scenario files shipped on disk, a pure YAML validation, and the
+ * edition: the scenario files shipped on disk, a pure YAML validation, the
  * solver job registry — global, each job carrying the edition it was launched
- * for. Giving them an {@code edition} argument would be a lie, since nothing
- * in their answer would change.</p>
+ * for — and the KPI history, which is deliberately unscoped so two editions
+ * can be compared side by side. Giving them an {@code edition} argument would
+ * be a lie, since nothing in their answer would change.</p>
  */
 class McpEditionStructurelleTest {
 
     private static final Set<String> HORS_EDITION = Set.of(
             "lister_scenarios", "valider_scenario_yaml",
-            "arreter_solveur", "statut_solveur", "lister_jobs", "supprimer_job");
+            "arreter_solveur", "statut_solveur", "lister_jobs", "supprimer_job",
+            "lister_kpi_historique");
 
     /** The edition tools themselves designate their target explicitly, argument by argument. */
     private static final String OUTILS_DEDITION = EditionMcpTools.class.getName();

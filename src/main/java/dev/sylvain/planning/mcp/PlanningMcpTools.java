@@ -20,6 +20,7 @@ import dev.sylvain.planning.service.PlanningPersistenceService;
 import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.PlanningService.AffectationExplanation;
 import dev.sylvain.planning.service.PlanningService.ContrainteImpact;
+import dev.sylvain.planning.service.PlanningService.SuggestionsReparation;
 import dev.sylvain.planning.service.PlanningService.SwapSimulation;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.ReferenceDataService;
@@ -245,6 +246,51 @@ public class PlanningMcpTools {
                 toViews(simulation.contraintesVioleesAvant()), toViews(simulation.contraintesVioleesApres()));
     }
 
+    @Tool(description = "Cherche qui pourrait tenir un poste du dernier planning persisté et chiffre chaque "
+            + "candidat : score après, delta, violations résolues et violations introduites. Là où simuler_swap "
+            + "note un animateur qu'on lui désigne, celui-ci les cherche. Ne persiste rien et ne relance aucune "
+            + "résolution ; le coût est borné par plafond, et candidatsEligibles/candidatsEvalues disent si la "
+            + "recherche a été exhaustive.",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
+    SuggestionsView suggerer_reparations(@ToolArg(description = "Id du poste") String posteId,
+            @ToolArg(description = "Nombre maximum de candidats simulés (défaut : configuration serveur)", required = false) Integer plafond,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+        SuggestionsReparation suggestions = planningService.suggererReparations(persistedPlanning(), posteId, plafond);
+        return new SuggestionsView(suggestions.posteId(), suggestions.animateurActuelId(),
+                String.valueOf(suggestions.scoreAvant()), toViews(suggestions.contraintesVioleesAvant()),
+                suggestions.candidatsEligibles(), suggestions.candidatsEvalues(), suggestions.plafond(),
+                suggestions.suggestions().stream()
+                        .map(suggestion -> new SuggestionView(suggestion.animateurId(),
+                                String.valueOf(suggestion.scoreApres()), String.valueOf(suggestion.delta()),
+                                toViews(suggestion.violationsResolues()),
+                                toViews(suggestion.violationsIntroduites())))
+                        .toList());
+    }
+
+    /**
+     * The only tool here that writes into the plan itself. Kept apart from
+     * {@code simuler_swap} rather than added to it as a flag: an assistant
+     * that scores a move and applies it in the same call has no step left at
+     * which a human could say no.
+     */
+    @Tool(description = "Affecte un poste du planning persisté à un animateur — ou le vide si aucun animateur "
+            + "n'est donné. Ce poste seul change de main, aucun autre n'est touché et aucune résolution n'est "
+            + "relancée. Refusé si le poste est verrouillé.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
+    ReaffectationView affecter_poste(@ToolArg(description = "Id du poste") String posteId,
+            @ToolArg(description = "Id de l'animateur ; omis, le poste est vidé", required = false) String animateurId,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+        String precedent = persistedPlanning().getPostes().stream()
+                .filter(poste -> poste.getId().equals(posteId))
+                .findFirst()
+                .map(poste -> poste.getAnimateur() == null ? null : poste.getAnimateur().getId())
+                .orElse(null);
+        planningService.applyReparation(posteId, animateurId);
+        return new ReaffectationView(posteId, precedent, animateurId);
+    }
+
     private PlanningEvenement persistedPlanning() {
         PlanningEvenement planning = persistenceService.loadPersistedPlanning();
         if (planning == null || planning.getPostes() == null || planning.getPostes().isEmpty()) {
@@ -332,6 +378,25 @@ public class PlanningMcpTools {
     public record SwapView(String posteId, String animateurActuelId, String animateurCandidatId,
             String scoreAvant, String scoreApres, String delta,
             List<ContrainteImpactView> contraintesVioleesAvant, List<ContrainteImpactView> contraintesVioleesApres) {
+    }
+
+    /**
+     * @param candidatsEligibles animateurs the search could have tried
+     * @param candidatsEvalues   animateurs it actually simulated; below
+     *                           {@code candidatsEligibles} the list is the best
+     *                           of what it saw, not an exhaustive answer
+     */
+    public record SuggestionsView(String posteId, String animateurActuelId, String scoreAvant,
+            List<ContrainteImpactView> contraintesVioleesAvant, int candidatsEligibles, int candidatsEvalues,
+            int plafond, List<SuggestionView> suggestions) {
+    }
+
+    public record SuggestionView(String animateurId, String scoreApres, String delta,
+            List<ContrainteImpactView> violationsResolues, List<ContrainteImpactView> violationsIntroduites) {
+    }
+
+    /** @param animateurPrecedentId who held the seat before, null when it was empty */
+    public record ReaffectationView(String posteId, String animateurPrecedentId, String animateurId) {
     }
 
     /** @param details readable lines describing every match, anonymised (animateur id, never a name) */

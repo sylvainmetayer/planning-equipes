@@ -43,7 +43,7 @@ class McpAnnotationsStructurelleTest {
     private static final List<String> LECTURE = List.of(
             "lister_", "consulter_", "previsualiser_", "diagnostiquer_", "valider_", "expliquer_",
             "analyser_", "comparer_", "simuler_", "statut_", "resultats_", "heures_", "etat_",
-            "synthese_", "volumes", "edition_courante");
+            "synthese_", "suggerer_", "volumes", "edition_courante");
 
     /**
      * Tools that overwrite or drop something the user cannot get back by
@@ -57,7 +57,8 @@ class McpAnnotationsStructurelleTest {
     /** Tools that write without destroying: creations, edits, toggles, locks. */
     private static final List<String> ECRITURE = List.of(
             "creer_", "modifier_", "ajouter_", "activer_", "desactiver_", "dupliquer_",
-            "renommer_", "definir_", "verrouiller", "capturer_", "arreter_", "lancer_analyse");
+            "renommer_", "definir_", "verrouiller", "capturer_", "arreter_", "affecter_",
+            "lancer_analyse");
 
     @Test
     void chaqueOutilDeclareSesAnnotations() throws Exception {

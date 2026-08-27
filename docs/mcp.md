@@ -122,9 +122,11 @@ l'appel.
 > l'outil voisin.
 
 `McpEditionStructurelleTest` échoue sur tout `@Tool` qui travaille dans une
-édition sans laisser la désigner. Six exemptions : les deux outils de scénario
-(fichiers livrés, validation pure) et les quatre de pilotage des jobs — le
-registre est global, chaque job portant l'édition pour laquelle il a été lancé.
+édition sans laisser la désigner. Sept exemptions : les deux outils de scénario
+(fichiers livrés, validation pure), les quatre de pilotage des jobs — le
+registre est global, chaque job portant l'édition pour laquelle il a été lancé —
+et `lister_kpi_historique`, délibérément non cloisonné pour qu'une édition se
+compare à la précédente.
 
 Deux précisions sur l'écriture : les lancements de solveur capturent l'édition
 **à la soumission**, donc le job y reste attaché même si le défaut change
@@ -176,6 +178,17 @@ hints attendus sont dérivés du **nom** de l'outil, si bien qu'un
 `supprimer_stand` qui se déclarerait en lecture seule échoue aussi. Un nom que
 le test ne sait pas classer échoue également : un nouvel outil ne passe pas
 sans que quelqu'un ait dit ce qu'il fait.
+
+## Retoucher un poste sans relancer le solveur
+
+`suggerer_reparations` cherche qui pourrait tenir un poste et chiffre chaque
+candidat ; `affecter_poste` applique le choix. Ce sont deux outils et non un
+seul avec un drapeau : un assistant qui évalue un mouvement et l'applique dans
+le même appel ne laisse plus aucune étape à laquelle un humain puisse dire non.
+
+`affecter_poste` est le seul outil qui écrit dans le planning résolu lui-même,
+et il **refuse un poste verrouillé** — le verrou est ce qu'on lui demande de
+respecter, il ne doit pas pouvoir passer dessus en silence.
 
 ## Hors périmètre, volontairement
 
