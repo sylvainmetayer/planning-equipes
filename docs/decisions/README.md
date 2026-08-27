@@ -25,7 +25,7 @@ scénario versionné de `src/main/resources/scenarios/`.
 | # | Décision | Statut |
 | --- | --- | --- |
 | [0001](0001-cloisonnement-par-edition.md) | Cloisonner le référentiel et les résultats de solveur par édition | Accepté · révisé par 0009 |
-| [0002](0002-diagnostic-decouple-du-solveur.md) | Découpler le diagnostic de contraintes de l'édition du solveur | **Proposé** · non implémenté |
+| [0002](0002-diagnostic-decouple-du-solveur.md) | Découpler le diagnostic de contraintes de l'édition du solveur | **Remplacé** par 0012 |
 | [0003](0003-verrouillage-par-pin-natif.md) | Figer les affectations validées par le mécanisme natif du solveur | Accepté |
 | [0004](0004-competence-transverse-dans-les-typologies.md) | Une compétence transverse réutilise l'énumération des typologies | Accepté |
 | [0005](0005-polyvalence-reserve-plutot-que-reservation.md) | Polyvalence : garantir une réserve, plutôt que réserver les personnes | Accepté |
@@ -36,6 +36,12 @@ scénario versionné de `src/main/resources/scenarios/`.
 | [0010](0010-contraintes-ad-hoc-contradiction-plutot-que-budget.md) | Contraintes ad hoc : détecter la contradiction, pas plafonner le nombre | Accepté |
 | [0011](0011-publier-plutot-qu-envoyer-a-tous.md) | Publier, plutôt qu'envoyer à tous : le planning publié est distinct du planning de travail | Accepté |
 | [0012](0012-etat-de-vue-dans-l-url.md) | L'état de vue d'un écran est porté par l'URL | Accepté |
+| [0012](0012-diagnostic-par-le-score-director.md) | Diagnostiquer par le score director, sans mode dégradé | Accepté · remplace 0002 |
+
+**0002** et **0012** se lisent ensemble : la première pose le blocage du
+diagnostic par l'édition du solveur et retient deux modes de qualité inégale,
+la seconde montre que le verrou ne portait que sur une façade et n'en garde
+qu'un seul.
 
 Deux décisions se lisent ensemble : **0001** pose le cloisonnement par édition,
 **0009** le révise en supprimant le second niveau qu'il avait retenu. **0008**

@@ -1,6 +1,8 @@
 # 0002 — Découpler le diagnostic de contraintes de l'édition du solveur
 
-- **Statut** : proposé — non implémenté
+- **Statut** : remplacé par [0012](0012-diagnostic-par-le-score-director.md) —
+  le découplage a été réalisé, mais avec une seule implémentation au lieu des
+  deux modes retenus ici
 - **Date** : août 2026
 - **Portée** : service, API, frontend
 

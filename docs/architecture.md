@@ -48,6 +48,43 @@ passent toutes. Deux coutures seulement : comment le problème est construit, et
 qui doit tenir le solveur pour pouvoir l'arrêter. Voir
 [`api.md`](api.md#résolution) pour ce que ça a corrigé.
 
+## Le diagnostic ne passe plus par l'API réservée de Timefold
+
+Décomposer le score contrainte par contrainte alimente beaucoup de monde : les
+pages *Contraintes*, *Problèmes* et *Heatmap*, l'explication d'affectation, les
+simulations de swap et d'échange, l'assistant de réparation, et leurs
+équivalents MCP. Tout cela appelait `SolutionManager.analyze()`, en une douzaine
+d'endroits — méthode réservée à l'édition Enterprise à partir de Timefold 2.x.
+La portée du verrou dépassait d'ailleurs les écrans : la fin de chaque solve
+appelle cette analyse, donc sans licence un solve réussi était rapporté en
+échec.
+
+`service/diagnostic/` remplace ces douze appels par une couture unique,
+`ConstraintDiagnosticService`, qui rend un `PlanningAnalysis` — un type du
+projet, pas de Timefold. Deux implémentations la satisfont :
+
+| Implémentation | Chemin | Licence |
+| --- | --- | --- |
+| `ScoreDirectorConstraintDiagnosticService` | le score director du solveur | aucune |
+| `SolutionManagerConstraintDiagnosticService` | `SolutionManager.analyze()` | Enterprise en 2.x |
+
+**Ce ne sont pas un mode complet et un mode dégradé.** Seule la *façade*
+`analyze()` est verrouillée ; le constraint matching qu'elle appelle,
+justifications comprises, est du code Community ordinaire. Les deux
+implémentations rendent donc la même analyse — même score, mêmes contraintes,
+mêmes correspondances, mêmes faits — ce que
+`ConstraintDiagnosticServiceContractTest` vérifie en les exécutant côte à côte.
+Il n'y a rien à détecter au démarrage, et rien à signaler à l'utilisateur.
+
+Le choix se fait par `planning.diagnostic.mode` (`score-director` par défaut) et
+nulle part ailleurs : `ConstraintDiagnosticService.of` est le seul endroit du
+code qui sait qu'il existe deux implémentations. Celle basée sur `analyze()`
+n'est pas un secours mais l'**oracle** du test de contrat — c'est ce qui rend
+tenable de s'appuyer sur `ai.timefold.solver.core.impl`, hors semver : une
+montée de version qui change le comportement fait échouer la comparaison et
+nomme l'écart, au lieu de déformer cinq écrans en silence. Voir
+[`decisions/0012-diagnostic-par-le-score-director.md`](decisions/0012-diagnostic-par-le-score-director.md).
+
 ## Deux politiques d'échec sur les mails, séparées structurellement
 
 Un mail qui **accompagne** une opération déjà faite (demande soumise, décision
