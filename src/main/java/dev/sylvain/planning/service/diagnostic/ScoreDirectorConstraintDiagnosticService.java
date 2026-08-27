@@ -46,17 +46,21 @@ import dev.sylvain.planning.domain.PlanningEvenement;
  * of quietly reshaping five screens. The project already takes this bet in
  * {@code EligibleAnimateurMoveFilter} and {@code UnassignedPosteFilter}.</p>
  *
- * <p><b>What a Timefold 2.x migration must change here</b>, checked against
- * 2.5.0:</p>
+ * <p><b>What a Timefold 2.x migration must change here.</b> Run against 2.5.0
+ * Community with no licence: {@code analyze()} throws
+ * <i>"A commercial feature "Score analysis" was requested but it could not be
+ * loaded"</i>, while the loop below returns the whole diagnostic — per-constraint
+ * score and weight, match counts, per-match score, justification facts, and the
+ * constraints that matched nothing. What the code has to change:</p>
  * <ul>
  * <li>{@code ConstraintMatchTotal} and {@code ConstraintMatch} move from
  *     {@code api.score.constraint} to {@code impl.score.constraint};</li>
  * <li>{@code ConstraintRef} loses {@code constraintName()} — it becomes a
- *     one-component record and the accessor is {@code id()}. <b>Check what that
- *     id actually holds before trusting the swap</b>: these names are looked up
- *     in {@code ConstraintCatalog} and matched against
- *     {@code HARD_CONSTRAINT_NAMES}, so a qualified id would break every
- *     lookup silently rather than loudly;</li>
+ *     one-component record whose accessor is {@code id()}. Verified on 2.5.0
+ *     that this id is the <b>bare</b> constraint name, so the swap is safe:
+ *     these names are looked up in {@code ConstraintCatalog} and matched
+ *     against {@code HARD_CONSTRAINT_NAMES}, and a qualified id would have
+ *     broken every lookup silently rather than loudly;</li>
  * <li>{@code HardMediumSoftScore} moves to {@code api.score} and its components
  *     become {@code long} — project-wide, not specific to this class.</li>
  * </ul>
