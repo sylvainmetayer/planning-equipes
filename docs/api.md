@@ -499,6 +499,11 @@ l'une des trois, l'écriture répond `400` plutôt que d'aller heurter la colonn
 c'est ainsi que s'écrit un créneau franchissant minuit (20:00→00:00 dure quatre
 heures), et lui seul lit une fenêtre de stand datée du lendemain.
 
+**Supprimer un créneau emporte les postes du planning persisté qui s'y
+trouvaient**, et eux seuls — un poste ne survit pas au créneau sur lequel il
+était placé. Le reste du plan est conservé. C'est la même règle que le
+découpage applique déjà à la grille entière lorsqu'il la remplace.
+
 Contraintes ad hoc et verrouillages sont des **états** : on ne les met pas à
 jour, on les supprime et on les recrée. Une même paire d'animateurs ne peut pas
 être à la fois en incompatibilité et en affinité (`400`). Une cible déjà

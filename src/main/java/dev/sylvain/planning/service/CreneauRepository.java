@@ -132,8 +132,36 @@ public class CreneauRepository {
         });
     }
 
+    /**
+     * Deletes one timeslot, and the seats that were scheduled on it.
+     *
+     * <p>A poste cannot outlive its créneau — {@code poste_affectation} is the
+     * one table referencing {@code creneau} whose foreign key neither cascades
+     * nor nulls out, so until now the delete simply failed as soon as a plan
+     * was persisted, and failed as a 500 rather than as a refusal anyone could
+     * act on.</p>
+     *
+     * <p>{@link #replaceCreneaux} already answered the same question for the
+     * découpage: "the persisted plan goes with the créneaux it referenced".
+     * This is that rule applied to one créneau instead of the whole grid, so
+     * only the seats on that slot go and the rest of the plan survives.
+     * Destroying them is what the caller asked for — deleting créneaux is
+     * documented as destructive and, in bulk, demands an explicit
+     * confirmation.</p>
+     */
     public void deleteCreneau(Long id) {
-        scope.delete("DELETE FROM creneau WHERE edition_id = ? AND id = ?", id);
+        scope.write("Failed to delete timeslot " + id, connection -> {
+            try (PreparedStatement ps = scope.prepareScoped(connection,
+                    "DELETE FROM poste_affectation WHERE edition_id = ? AND creneau_id = ?")) {
+                ps.setLong(2, id);
+                ps.executeUpdate();
+            }
+            try (PreparedStatement ps = scope.prepareScoped(connection,
+                    "DELETE FROM creneau WHERE edition_id = ? AND id = ?")) {
+                ps.setLong(2, id);
+                ps.executeUpdate();
+            }
+        });
     }
 
     /** Inserts a new timeslot row; the generated id is set back onto {@code creneau} and returned. */
