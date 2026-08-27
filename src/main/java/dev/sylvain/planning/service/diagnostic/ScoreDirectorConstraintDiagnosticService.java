@@ -1,11 +1,14 @@
 package dev.sylvain.planning.service.diagnostic;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import ai.timefold.solver.core.api.score.buildin.hardmediumsoft.HardMediumSoftScore;
 import ai.timefold.solver.core.api.score.constraint.ConstraintMatch;
 import ai.timefold.solver.core.api.score.constraint.ConstraintMatchTotal;
+import ai.timefold.solver.core.api.score.stream.ConstraintJustification;
 import ai.timefold.solver.core.api.solver.SolverFactory;
 import ai.timefold.solver.core.impl.score.constraint.ConstraintMatchPolicy;
 import ai.timefold.solver.core.impl.score.director.InnerScoreDirector;
@@ -26,11 +29,12 @@ import dev.sylvain.planning.domain.PlanningEvenement;
  * layer lower.</p>
  *
  * <p><b>Same work, not merely similar work.</b> On Timefold 1.x,
- * {@code analyze()} is exactly a {@code calculateScore()} followed by a walk
- * over {@code getConstraintMatchTotalMap().values()} — the loop below. Same
+ * {@code analyze()} is a {@code calculateScore()} followed by a walk over
+ * {@code getConstraintMatchTotalMap().values()}, each total folded into one
+ * entry per distinct justification — which is the loop below, down to the
  * score director options (no look-up, no cloning, constraint matching with
- * justifications), same single score calculation, same map. The equivalence is
- * therefore by construction, and
+ * justifications) and the folding (see {@link #distinctFacts}). The
+ * equivalence is therefore by construction, and
  * {@code ConstraintDiagnosticServiceContractTest} keeps proving it.</p>
  *
  * <p><b>The cost, stated plainly.</b> {@code ScoreDirectorFactory},
@@ -92,9 +96,42 @@ public final class ScoreDirectorConstraintDiagnosticService implements Constrain
     }
 
     private static List<MatchFacts> matchFacts(ConstraintMatchTotal<HardMediumSoftScore> total) {
-        List<MatchFacts> matches = new ArrayList<>();
+        List<ConstraintJustification> justifications = new ArrayList<>();
         for (ConstraintMatch<HardMediumSoftScore> match : total.getConstraintMatchSet()) {
-            matches.add(MatchFacts.of(match.getJustification()));
+            justifications.add(match.getJustification());
+        }
+        return distinctFacts(justifications);
+    }
+
+    /**
+     * One entry per <b>distinct</b> justification, in encounter order.
+     *
+     * <p>This is not a tidying pass, it is parity. Asked for every match,
+     * {@code SolutionManager.analyze()} does not hand back the raw match set: it
+     * groups matches sharing a justification and folds them into one, so both
+     * the reported matches and the match count are counted over distinct
+     * justifications. Returning the raw set would report a larger count for the
+     * same planning.</p>
+     *
+     * <p>No constraint in this project justifies itself with anything but the
+     * tuple it matched on, so today the two coincide — but "coincide today" is
+     * exactly the kind of equivalence that breaks quietly the first time a
+     * constraint narrows its own justification.</p>
+     *
+     * <p>A justification's identity is its facts and nothing else — the impact
+     * it carried is not part of it. So two matches over the same facts fold
+     * into one whatever they weighed, which is why {@code analyze()} <em>sums</em>
+     * the impacts it folds. Nothing is lost here by not doing that sum:
+     * {@link MatchFacts} carries no score, and the constraint's own total
+     * already includes every match.</p>
+     */
+    static List<MatchFacts> distinctFacts(List<ConstraintJustification> justifications) {
+        Set<ConstraintJustification> seen = new LinkedHashSet<>();
+        List<MatchFacts> matches = new ArrayList<>();
+        for (ConstraintJustification justification : justifications) {
+            if (seen.add(justification)) {
+                matches.add(MatchFacts.of(justification));
+            }
         }
         return matches;
     }
