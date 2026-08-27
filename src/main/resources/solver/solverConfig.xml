@@ -147,10 +147,11 @@
                 NOT transfer to 2.x. Measured on 2.5 with this very setting, a
                 local-search step evaluates ~278 moves where 1.34 evaluated ~24:
                 the effective sampling is ten times wider without the value
-                having changed. The reference scenario still reaches 0 hard, but
-                spends 86% of its budget doing so instead of 14%. Re-run the
-                protocol before trusting these numbers again — see
-                docs/migration-timefold-2.md.
+                having changed. festival-realiste still reaches 0 hard, with a
+                better medium, but takes 40% of its budget instead of 7%.
+                Re-measure on that fixture — not on its canicule variant, which
+                reaches feasibility in the construction heuristic and so never
+                exercises this setting at all. See docs/migration-timefold-2.md.
             -->
             <acceptedCountLimit>2</acceptedCountLimit>
         </forager>
