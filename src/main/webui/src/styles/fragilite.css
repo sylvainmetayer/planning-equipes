@@ -1,0 +1,155 @@
+/* « Fragilité du planning »: the criticality ranking and its unfolded detail.
+   Same severity colours as the constraint level badges (constraints.css) and
+   the problem chips (problemes.css), so "critique" reads the same everywhere. */
+
+.fragilite-message {
+  font: var(--mat-sys-body-medium);
+  margin: 0 0 0.75rem;
+}
+
+.fragilite-synthese {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.fragilite-synthese .synthese-alerte {
+  color: var(--mat-sys-error);
+}
+
+.fragilite-controles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.fragilite-recherche {
+  flex: 1 1 14rem;
+  max-width: 22rem;
+}
+
+.fragilite-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.fragilite-table th,
+.fragilite-table td {
+  padding: 0.35rem 0.6rem;
+  text-align: left;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  vertical-align: middle;
+}
+
+.fragilite-table thead th {
+  font: var(--mat-sys-label-large);
+  color: var(--mat-sys-on-surface-variant);
+  white-space: nowrap;
+}
+
+.fragilite-ligne {
+  cursor: pointer;
+}
+
+.fragilite-ligne:hover,
+.fragilite-ligne-ouverte {
+  background: var(--mat-sys-surface-container-high);
+}
+
+.fragilite-nom {
+  font: var(--mat-sys-body-medium);
+}
+
+.fragilite-badge {
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: var(--mat-sys-corner-small);
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+  font-size: 0.75rem;
+}
+
+.fragilite-alerte {
+  color: var(--mat-sys-error);
+  font-weight: 600;
+}
+
+.fragilite-critique,
+.fragilite-elevee,
+.fragilite-moderee {
+  display: table-cell;
+  white-space: nowrap;
+}
+
+.fragilite-critique mat-icon,
+.fragilite-elevee mat-icon,
+.fragilite-moderee mat-icon {
+  vertical-align: middle;
+  margin-right: 0.25rem;
+  font-size: 1.1rem;
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.fragilite-critique {
+  color: var(--mat-sys-error);
+}
+
+.fragilite-elevee {
+  color: var(--mat-sys-tertiary);
+}
+
+.fragilite-moderee {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.fragilite-detail > td {
+  background: var(--mat-sys-surface-container-low);
+}
+
+.fragilite-postes {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.fragilite-postes li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.9rem;
+  align-items: baseline;
+}
+
+.fragilite-postes .poste-stand {
+  font-weight: 600;
+}
+
+.fragilite-postes .poste-quand,
+.fragilite-postes .poste-effectif,
+.fragilite-postes .poste-remplacants {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.85rem;
+}
+
+.fragilite-postes li.fragilite-alerte .poste-remplacants {
+  color: var(--mat-sys-error);
+}
+
+@media (max-width: 700px) {
+  .fragilite-table {
+    font-size: 0.8rem;
+  }
+
+  .fragilite-table th,
+  .fragilite-table td {
+    padding: 0.3rem 0.35rem;
+  }
+}

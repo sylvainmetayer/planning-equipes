@@ -144,6 +144,11 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/staffing/staffing-page').then((m) => m.StaffingPage)
   },
   {
+    path: 'fragilite',
+    title: 'Planning fragility',
+    loadComponent: () => import('./pages/fragilite/fragilite-page').then((m) => m.FragilitePage)
+  },
+  {
     path: 'ouvertures',
     title: 'Stand opening schedule',
     loadComponent: () =>

@@ -1,0 +1,196 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h1 mat-card-title i18n="@@fragilite.title">Fragilité du planning</h1>
+    <mat-card-subtitle i18n="@@fragilite.subtitle">
+      Qui est un point de défaillance unique : les postes qui passeraient sous l'effectif minimum si un animateur se
+      désiste, et les stands tenus par une seule personne compétente. Calculé sur le planning persisté, sans lancer le
+      solveur.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-actions class="card-actions">
+    <button matButton type="button" [disabled]="chargement()" (click)="recharger()">
+      <mat-icon>refresh</mat-icon>
+      <ng-container i18n="@@common.refresh">Actualiser</ng-container>
+    </button>
+    @if (vueModifiee()) {
+      <button matButton type="button" (click)="reinitialiser()">
+        <mat-icon>filter_alt_off</mat-icon>
+        <ng-container i18n="@@fragilite.reset">Réinitialiser la vue</ng-container>
+      </button>
+    }
+  </mat-card-actions>
+  <mat-card-content>
+    @if (chargement() && !rapport()) {
+      <mat-progress-bar mode="indeterminate" />
+      <p class="empty-hint" i18n="@@fragilite.loading">Analyse de la fragilité du planning…</p>
+    } @else if (erreur()) {
+      <p class="empty-hint">{{ erreur() }}</p>
+    } @else if (!rapport() || rapport()!.groupesAnalyses === 0) {
+      <p class="empty-hint" i18n="@@fragilite.empty">
+        Aucun planning persisté : lancez une résolution, puis revenez ici pour savoir qui est irremplaçable.
+      </p>
+    } @else {
+      <p class="fragilite-message">{{ rapport()!.message }}</p>
+
+      @if (synthese(); as bilan) {
+        <div class="fragilite-synthese">
+          <span><strong>{{ bilan.animateurs }}</strong>&nbsp;<ng-container i18n="@@fragilite.synthese.animateurs">animateurs affectés</ng-container></span>
+          <span class="synthese-alerte"><strong>{{ bilan.irremplacables }}</strong>&nbsp;<ng-container i18n="@@fragilite.synthese.irremplacables">irremplaçables</ng-container></span>
+          <span><strong>{{ bilan.groupes }}</strong>&nbsp;<ng-container i18n="@@fragilite.synthese.groupes">couples stand × créneau</ng-container></span>
+          <span class="synthese-alerte"><strong>{{ bilan.competencesRares }}</strong>&nbsp;<ng-container i18n="@@fragilite.synthese.competencesRares">tenus par une seule personne compétente</ng-container></span>
+          @if (bilan.sansSpecialiste > 0) {
+            <span class="synthese-alerte"><strong>{{ bilan.sansSpecialiste }}</strong>&nbsp;<ng-container i18n="@@fragilite.synthese.sansSpecialiste">sans aucun spécialiste</ng-container></span>
+          }
+          @if (bilan.dejaSousEffectif > 0) {
+            <span><strong>{{ bilan.dejaSousEffectif }}</strong>&nbsp;<ng-container i18n="@@fragilite.synthese.dejaSousEffectif">déjà sous l'effectif minimum</ng-container></span>
+          }
+        </div>
+      }
+
+      <div class="fragilite-controles">
+        <mat-button-toggle-group [value]="vue()" (valueChange)="vue.set($event)" hideSingleSelectionIndicator>
+          <mat-button-toggle value="ANIMATEURS" i18n="@@fragilite.vue.animateurs">Animateurs</mat-button-toggle>
+          <mat-button-toggle value="COMPETENCES" i18n="@@fragilite.vue.competences">Compétences rares</mat-button-toggle>
+        </mat-button-toggle-group>
+        <mat-button-toggle-group [value]="filtre()" (valueChange)="filtre.set($event)" hideSingleSelectionIndicator>
+          <mat-button-toggle value="TOUS" i18n="@@fragilite.filtre.tous">Tous</mat-button-toggle>
+          <mat-button-toggle value="CRITIQUES" i18n="@@fragilite.filtre.critiques">Critiques</mat-button-toggle>
+        </mat-button-toggle-group>
+        <mat-form-field appearance="outline" class="fragilite-recherche">
+          <mat-label i18n="@@fragilite.recherche">Filtrer</mat-label>
+          <input matInput name="recherche" [ngModel]="recherche()" (ngModelChange)="recherche.set($event)" />
+        </mat-form-field>
+      </div>
+
+      @if (!rapport()!.ninjaConfigure) {
+        <p class="empty-hint" i18n="@@fragilite.aucunNinja">
+          Aucune typologie n'est marquée « ninja » dans cette édition : la colonne des renforts polyvalents reste donc
+          vide partout.
+        </p>
+      }
+
+      @if (vue() === 'ANIMATEURS') {
+        <div class="table-wrapper">
+          <table class="fragilite-table">
+            <caption class="visually-hidden" i18n="@@fragilite.animateurs.caption">Animateurs classés par criticité : ce que leur désistement laisserait sous l'effectif minimum</caption>
+            <thead>
+              <tr>
+                <th scope="col" i18n="@@fragilite.colonne.animateur">Animateur</th>
+                <th scope="col" i18n="@@fragilite.colonne.affectations">Affectations</th>
+                <th scope="col" i18n="@@fragilite.colonne.effondres">Postes sous l'effectif</th>
+                <th scope="col" i18n="@@fragilite.colonne.irremplacables">Sans remplaçant</th>
+                <th scope="col" i18n="@@fragilite.colonne.competencesRares">Seul compétent</th>
+                <th scope="col" i18n="@@fragilite.colonne.severite">Criticité</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (ligne of animateurs(); track ligne.animateurId) {
+                <tr class="fragilite-ligne" [class.fragilite-ligne-ouverte]="ouvert() === ligne.animateurId"
+                    (click)="basculer(ligne.animateurId)">
+                  <th scope="row">
+                    <button matIconButton type="button"
+                            [attr.aria-expanded]="ouvert() === ligne.animateurId"
+                            [attr.aria-label]="ligne.nom"
+                            (click)="basculer(ligne.animateurId); $event.stopPropagation()">
+                      <mat-icon>{{ ouvert() === ligne.animateurId ? 'expand_less' : 'expand_more' }}</mat-icon>
+                    </button>
+                    <span class="fragilite-nom">{{ ligne.nom }}</span>
+                    @if (ligne.ninja) {
+                      <span class="fragilite-badge" i18n="@@fragilite.badge.ninja">ninja</span>
+                    }
+                  </th>
+                  <td>{{ ligne.affectations }}</td>
+                  <td>{{ ligne.postesEffondres }}</td>
+                  <td [class.fragilite-alerte]="ligne.postesIrremplacables > 0">{{ ligne.postesIrremplacables }}</td>
+                  <td [class.fragilite-alerte]="ligne.competencesRares > 0">{{ ligne.competencesRares }}</td>
+                  <td [class]="classeSeverite(ligne.severite)">
+                    <mat-icon aria-hidden="true">{{ iconeSeverite(ligne.severite) }}</mat-icon>
+                    <span>{{ libelleSeverite(ligne.severite) }}</span>
+                  </td>
+                </tr>
+                @if (ouvert() === ligne.animateurId) {
+                  <tr class="fragilite-detail">
+                    <td colspan="6">
+                      @if (ligne.postes.length === 0) {
+                        <p class="empty-hint" i18n="@@fragilite.detail.aucun">
+                          Aucun poste ne passerait sous l'effectif minimum : les créneaux tenus par cette personne sont
+                          déjà en sous-effectif.
+                        </p>
+                      } @else {
+                        <ul class="fragilite-postes">
+                          @for (poste of ligne.postes; track poste.standId + '-' + poste.creneauId) {
+                            <li [class.fragilite-alerte]="poste.irremplacable">
+                              <span class="poste-stand">{{ poste.standNom || poste.standId }}</span>
+                              <span class="poste-quand">J{{ poste.jour }} · {{ libelleJour(poste.date) }} · {{ heure(poste.heureDebut) }}→{{ heure(poste.heureFin) }}</span>
+                              <span class="poste-effectif" i18n="@@fragilite.detail.effectif">{{ poste.siegesPourvus }}/{{ poste.siegesRequis }} places, il en resterait {{ poste.siegesPourvus - poste.siegesLiberes }}</span>
+                              @if (poste.irremplacable) {
+                                <span class="poste-remplacants" i18n="@@fragilite.detail.aucunRemplacant">aucun remplaçant disponible</span>
+                              } @else {
+                                <span class="poste-remplacants" i18n="@@fragilite.detail.remplacants">{{ poste.remplacants }} remplaçants possibles</span>
+                              }
+                            </li>
+                          }
+                        </ul>
+                        @if (ligne.postesNonDetailles > 0) {
+                          <p class="empty-hint" i18n="@@fragilite.detail.reste">… et {{ ligne.postesNonDetailles }} autres postes non détaillés.</p>
+                        }
+                      }
+                    </td>
+                  </tr>
+                }
+              } @empty {
+                <tr>
+                  <td colspan="6" class="empty-hint" i18n="@@fragilite.animateurs.aucun">Aucun animateur ne correspond à ce filtre.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <div class="table-wrapper">
+          <table class="fragilite-table">
+            <caption class="visually-hidden" i18n="@@fragilite.competences.caption">Couples stand × créneau tenus par au plus une personne compétente pour la typologie requise</caption>
+            <thead>
+              <tr>
+                <th scope="col" i18n="@@fragilite.colonne.stand">Stand</th>
+                <th scope="col" i18n="@@fragilite.colonne.creneau">Créneau</th>
+                <th scope="col" i18n="@@fragilite.colonne.typologies">Typologies</th>
+                <th scope="col" i18n="@@fragilite.colonne.specialiste">Seule personne compétente</th>
+                <th scope="col" i18n="@@fragilite.colonne.renforts">Renforts ninja</th>
+                <th scope="col" i18n="@@fragilite.colonne.severite">Criticité</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (ligne of competences(); track ligne.standId + '-' + ligne.creneauId) {
+                <tr>
+                  <th scope="row">{{ ligne.standNom || ligne.standId }}</th>
+                  <td>J{{ ligne.jour }} · {{ libelleJour(ligne.date) }} · {{ heure(ligne.heureDebut) }}→{{ heure(ligne.heureFin) }}</td>
+                  <td>{{ ligne.typologies.join(', ') }}</td>
+                  <td>
+                    @if (ligne.nom) {
+                      {{ ligne.nom }}
+                    } @else {
+                      <span class="fragilite-alerte" i18n="@@fragilite.competences.personne">personne</span>
+                    }
+                  </td>
+                  <td>{{ ligne.renforts }}</td>
+                  <td [class]="classeSeverite(ligne.severite)" [matTooltip]="explicationCompetence(ligne)">
+                    <mat-icon aria-hidden="true">{{ iconeSeverite(ligne.severite) }}</mat-icon>
+                    <span>{{ libelleSeverite(ligne.severite) }}</span>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="6" class="empty-hint" i18n="@@fragilite.competences.aucun">Aucun couple stand × créneau ne correspond à ce filtre.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        @if (rapport()!.totalCompetencesRares > rapport()!.competencesRares.length) {
+          <p class="empty-hint" i18n="@@fragilite.competences.reste">{{ rapport()!.totalCompetencesRares - rapport()!.competencesRares.length }} autres couples stand × créneau ne sont pas listés ici.</p>
+        }
+      }
+    }
+  </mat-card-content>
+</mat-card>

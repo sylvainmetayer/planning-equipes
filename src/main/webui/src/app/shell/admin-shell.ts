@@ -115,6 +115,11 @@ function buildNavGroups(devMode: boolean): NavGroup[] {
         path: '/staffing',
         label: $localize`:@@nav.link.staffing:Besoin en animateurs`,
         icon: 'engineering'
+      },
+      {
+        path: '/fragilite',
+        label: $localize`:@@nav.link.fragilite:Fragilité du planning`,
+        icon: 'personal_injury'
       }
     ]
   },

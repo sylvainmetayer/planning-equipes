@@ -455,6 +455,10 @@ export function buildHelpSections(): HelpSection[] {
             {
               term: $localize`:@@aide.views.term.hours:Heures et besoin en animateurs`,
               text: $localize`:@@aide.views.def.hours:Les heures travaillées par animateur d'un côté, l'estimation du nombre minimum d'animateurs à recruter de l'autre. La seconde se calcule avant toute résolution, à partir des seuls stands et créneaux.`
+            },
+            {
+              term: $localize`:@@aide.views.term.fragilite:Fragilité du planning`,
+              text: $localize`:@@aide.views.def.fragilite:Qui est irremplaçable. Pour chaque personne, les créneaux qui passeraient sous l'effectif minimum si elle se désiste — et, colonne décisive, ceux que personne d'autre ne pourrait reprendre ce jour-là. La seconde vue liste les stands tenus par une seule personne compétente pour leurs typologies, ce qui désigne où recruter ou former. Les polyvalents « ninja » y sont comptés à part, en renforts : ils peuvent dépanner partout, mais un stand qu'ils sont seuls à pouvoir tenir n'a toujours aucun spécialiste. Rien n'est recalculé par le solveur : l'écran lit le planning enregistré.`
             }
           ]
         }
@@ -464,6 +468,7 @@ export function buildHelpSections(): HelpSection[] {
         { route: '/heatmap', label: $localize`:@@nav.link.heatmap:Heatmap de charge` },
         { route: '/timeline', label: $localize`:@@nav.link.timeline:Timeline animateur` },
         { route: '/hours', label: $localize`:@@nav.link.hours:Heures` },
+        { route: '/fragilite', label: $localize`:@@nav.link.fragilite:Fragilité du planning` },
         { route: '/comparateur', label: $localize`:@@nav.link.comparateur:Comparateur A/B` }
       ]
     },

@@ -381,6 +381,64 @@ mémoire — rien n'est écrit, elle meurt avec la requête. Côté serveur et n
 le navigateur pour la même raison que les résolutions depuis le référentiel : le
 JSON d'un planning réel dépasse la taille de corps admise.
 
+## Fragilité du planning
+
+`GET /api/fragilite` répond à une troisième question, distincte des deux
+précédentes : **qui est irremplaçable**. Là où `/api/feasibility` dit pourquoi
+un planning ne tient pas et `/api/staffing` combien recruter, celui-ci mesure ce
+qu'un désistement emporterait. Comme eux, il ne lance **aucune résolution** : il
+lit le plan déjà persisté et le référentiel des compétences.
+
+Deux indicateurs dans la même réponse :
+
+- **par animateur**, les couples stand × créneau qui passeraient sous
+  l'effectif minimum s'il se désiste. Les sièges étant générés à
+  `max(1, effectifMin)` par couple (moitié sur une vacation de couverture de
+  pause), le nombre de sièges d'un groupe **est** son plancher : un groupe
+  complet descend sous l'effectif dès qu'un siège se libère. Le chiffre qui
+  classe vraiment est donc `postesIrremplacables` — les groupes où *personne
+  d'autre* ne pourrait reprendre le siège. Un groupe **déjà** en sous-effectif
+  n'est imputé à personne : il est compté à part
+  (`groupesDejaSousEffectif`) ;
+- **les couples stand × créneau tenus par au plus une personne compétente**
+  pour les typologies du stand, avec la sévérité correspondante.
+
+Un remplaçant possible est quelqu'un de compétent, non déclaré indisponible ce
+jour-là, majeur si le stand est réservé aux majeurs, et qui ne tient pas déjà un
+siège chevauchant. Repos quotidien, plafond hebdomadaire, contraintes ad hoc et
+préférences ne sont **pas** vérifiés : la réponse reste optimiste, comme les
+bornes du besoin minimum. Un « irremplaçable » l'est certainement ; un
+« remplaçable » peut ne pas l'être après résolution. Un seul désistement est
+simulé à la fois.
+
+### Le cas des ninjas
+
+`Animateur.hasCompetenceFor` répond « oui » pour un ninja sur **tous** les
+stands : c'est le sens même de la polyvalence. Les deux indicateurs les comptent
+donc différemment, délibérément :
+
+- la **rareté de compétence** ne compte que les *spécialistes* — ceux qui
+  détiennent une des typologies proposées par le stand — et affiche les ninjas
+  disponibles à côté, en `renforts`. Les inclure ferait disparaître presque
+  toutes les lignes sur un référentiel qui compte quelques ninjas, et ce vide
+  serait un artefact de mesure, pas une bonne nouvelle. Un stand avec un
+  spécialiste et trois ninjas reste un stand à un spécialiste, simplement moins
+  grave qu'un stand sans aucun ;
+- la **remplaçabilité** d'un siège les compte pleinement : la question y est de
+  savoir si le siège peut être tenu demain, et le solveur y enverrait un ninja.
+
+Le raisonnement complet, et les deux options écartées, sont dans
+[`decisions/0017-fragilite-le-ninja-est-un-renfort-pas-un-specialiste.md`](decisions/0017-fragilite-le-ninja-est-un-renfort-pas-un-specialiste.md).
+
+`ninjaConfigure: false` signale qu'aucune typologie n'est marquée ninja dans
+l'édition — les deux comptages coïncident alors, et un `renforts` à zéro partout
+ne veut pas dire pénurie.
+
+Les listes sont bornées (20 postes détaillés par animateur, 100 couples
+stand × créneau), `postesNonDetailles` et `totalCompetencesRares` disant ce qui
+n'est pas montré. Les animateurs sans aucune affectation ne sont pas listés :
+ils ne peuvent pas être un point de défaillance.
+
 ## Espace animateur
 
 Seules routes accessibles sans session admin. Le jeton — le lien imprimé sur le

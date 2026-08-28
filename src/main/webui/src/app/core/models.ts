@@ -242,6 +242,76 @@ export interface RapportOuvertures {
   anomalies: AnomalieOuverture[];
 }
 
+/* ------------------ Fragilité du planning (`/api/fragilite`) ------------------ */
+
+/** How badly a fragility row hurts, worst first. */
+export type SeveriteFragilite = 'CRITIQUE' | 'ELEVEE' | 'MODEREE';
+
+/** One stand × créneau an animateur's withdrawal would leave under its effectif. */
+export interface PosteFragile {
+  standId: string;
+  standNom: string;
+  creneauId: number;
+  date: string;
+  jour: number;
+  heureDebut: string;
+  heureFin: string;
+  effectifMin: number;
+  siegesRequis: number;
+  siegesPourvus: number;
+  siegesLiberes: number;
+  remplacants: number;
+  irremplacable: boolean;
+}
+
+export interface AnimateurFragilite {
+  animateurId: string;
+  nom: string;
+  ninja: boolean;
+  affectations: number;
+  postesEffondres: number;
+  postesIrremplacables: number;
+  competencesRares: number;
+  severite: SeveriteFragilite;
+  postes: PosteFragile[];
+  postesNonDetailles: number;
+}
+
+/**
+ * One stand × créneau at most one *specialist* can hold. Ninjas are counted
+ * apart, as `renforts`: they are competent everywhere, so folding them in would
+ * erase the scarcity this list exists to show.
+ */
+export interface CompetenceRare {
+  standId: string;
+  standNom: string;
+  creneauId: number;
+  date: string;
+  jour: number;
+  heureDebut: string;
+  heureFin: string;
+  typologies: string[];
+  specialistes: number;
+  animateurId: string | null;
+  nom: string | null;
+  renforts: number;
+  pourvu: boolean;
+  severite: SeveriteFragilite;
+}
+
+/** What `GET /api/fragilite` returns — computed without any solve. */
+export interface RapportFragilite {
+  animateurs: AnimateurFragilite[];
+  competencesRares: CompetenceRare[];
+  totalCompetencesRares: number;
+  standsSansSpecialiste: number;
+  groupesAnalyses: number;
+  groupesDejaSousEffectif: number;
+  animateursIrremplacables: number;
+  ninjaConfigure: boolean;
+  message: string;
+}
+
 /** Editable GPS-located place a stand can be tied to (`/api/emplacements`). */
 export interface Emplacement {
   id: string;
