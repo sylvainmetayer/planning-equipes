@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { HelpSection, buildHelpSections, filterHelpSections } from './aide-content';
+import { buildRaccourcisNavigation } from '../../core/keyboard-shortcuts';
 
 /** Every string of a section, so the tests can assert on its whole content. */
 function textOf(section: HelpSection): string {
@@ -32,6 +33,23 @@ describe('buildHelpSections', () => {
     expect(ids).toContain('configuration-solveur');
     expect(ids).toContain('lire-les-resultats');
     expect(ids).toContain('tuner');
+  });
+
+  it('documents the keyboard shortcuts, and can be found by looking for them', () => {
+    const section = sections.find((candidate) => candidate.id === 'raccourcis-clavier');
+    expect(section).toBeDefined();
+    const texte = textOf(section as HelpSection);
+    // The entry points, spelled the way a reader would look for them.
+    for (const raccourci of ['Ctrl+K', 'Ctrl+Entrée', 'Échap']) {
+      expect(texte).toContain(raccourci);
+    }
+    // The `g` + letter table itself, not just a mention that one exists.
+    for (const raccourci of buildRaccourcisNavigation()) {
+      expect(texte).toContain(`g ${raccourci.touche}`);
+    }
+    // Both words a lost user types into the search box of this very page.
+    expect(filterHelpSections(sections, 'raccourci')).toContainEqual(section);
+    expect(filterHelpSections(sections, 'clavier')).toContainEqual(section);
   });
 
   it('spells out the edge cases of the manual adjustments, not just what the four types are', () => {

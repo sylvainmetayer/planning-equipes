@@ -8,6 +8,8 @@
  * — the guide answers "how do I use this screen", not "how is it built".
  */
 
+import { buildRaccourcisNavigation } from '../../core/keyboard-shortcuts';
+
 /**
  * Where the reader should go to act on what a section describes: an in-app
  * route, or an external destination (mailto:, GitHub) for the contact section.
@@ -533,6 +535,63 @@ export function buildHelpSections(): HelpSection[] {
         { route: '/fragilite', label: $localize`:@@nav.link.fragilite:Fragilité du planning` },
         { route: '/banc-de-touche', label: $localize`:@@nav.link.bancDeTouche:Banc de touche` },
         { route: '/comparateur', label: $localize`:@@nav.link.comparateur:Comparateur A/B` }
+      ]
+    },
+    {
+      id: 'raccourcis-clavier',
+      icon: 'keyboard',
+      title: $localize`:@@aide.shortcuts.title:Raccourcis clavier`,
+      summary: $localize`:@@aide.shortcuts.summary:Se déplacer d'un écran à l'autre et retrouver un animateur sans lâcher le clavier.`,
+      blocks: [
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.shortcuts.intro:Ctrl+K ouvre la palette de commandes : une seule zone de saisie qui mène à n'importe quelle page de l'application et qui cherche aussi dans les données de référence — un animateur (sa timeline s'ouvre), un stand ou un créneau (le calendrier s'ouvre dessus). Les flèches parcourent la liste, Entrée ouvre, Échap referme. C'est le point d'entrée à retenir : tous les autres raccourcis ne sont que des abrégés de ce qu'elle sait déjà faire.`
+        },
+        {
+          kind: 'definitions',
+          items: [
+            {
+              term: $localize`:@@aide.shortcuts.term.palette:Ctrl+K`,
+              text: $localize`:@@aide.shortcuts.def.palette:Ouvre (et referme) la palette de commandes. Le navigateur ne reçoit pas ce raccourci tant qu'un onglet de l'application est au premier plan.`
+            },
+            {
+              term: $localize`:@@aide.shortcuts.term.help:?`,
+              text: $localize`:@@aide.shortcuts.def.help:Affiche la liste complète des raccourcis, sans quitter l'écran en cours.`
+            },
+            {
+              term: $localize`:@@aide.shortcuts.term.filter:/`,
+              text: $localize`:@@aide.shortcuts.def.filter:Place le curseur dans le filtre de la page courante, quand elle en a un (les pages de données de référence, et cette page d'aide).`
+            },
+            {
+              term: $localize`:@@aide.shortcuts.term.submit:Ctrl+Entrée`,
+              text: $localize`:@@aide.shortcuts.def.submit:Valide le formulaire en cours de saisie, comme un clic sur son bouton d'enregistrement. Un formulaire dont le bouton est désactivé (une saisie incomplète) n'est pas enregistré pour autant : le clavier ne fait rien que la souris ne ferait.`
+            },
+            {
+              term: $localize`:@@aide.shortcuts.term.escape:Échap`,
+              text: $localize`:@@aide.shortcuts.def.escape:Ferme la fenêtre ouverte (palette, formulaire, confirmation) et rend le focus à l'endroit d'où elle a été ouverte.`
+            }
+          ]
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.shortcuts.go:Pour aller directement sur un écran, tapez « g » puis la lettre de la destination — « g » puis « a » pour les animateurs. Les pages qui n'ont pas de lettre restent atteignables par la palette, qui les liste toutes.`
+        },
+        {
+          kind: 'definitions',
+          items: buildRaccourcisNavigation().map((raccourci) => ({
+            term: `g ${raccourci.touche}`,
+            text: raccourci.label
+          }))
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.shortcuts.guard:Aucun raccourci à une touche ne se déclenche pendant que vous saisissez du texte : tant que le curseur est dans un champ, « g », « / » et « ? » restent des caractères ordinaires. Ils reprennent dès que le focus quitte le champ.`
+        }
+      ],
+      links: [
+        { route: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs` },
+        { route: '/timeline', label: $localize`:@@nav.link.timeline:Timeline animateur` },
+        { route: '/calendar', label: $localize`:@@nav.link.calendar:Calendrier des affectations` }
       ]
     },
     {

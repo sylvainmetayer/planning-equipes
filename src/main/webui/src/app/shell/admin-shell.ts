@@ -34,6 +34,7 @@ import {
   toggleCollapsedGroup,
   writeCollapsedGroups
 } from '../core/nav-collapse';
+import { KeyboardShortcutsService } from '../core/keyboard-shortcuts.service';
 import { NotificationService } from '../core/notification.service';
 import { PlanningResolutionStore } from '../core/planning-resolution.store';
 import { APP_CONFIG } from '../core/app-config';
@@ -286,6 +287,7 @@ export class AdminShell {
 
   private readonly router = inject(Router);
   private readonly dialog = inject(MatDialog);
+  private readonly shortcuts = inject(KeyboardShortcutsService);
   private readonly title = inject(Title);
   private readonly announcer = inject(LiveAnnouncer);
   private readonly snackBar = inject(MatSnackBar);
@@ -353,6 +355,11 @@ export class AdminShell {
         takeUntilDestroyed()
       )
       .subscribe(() => queueMicrotask(() => this.annoncerNavigation()));
+    // Global keyboard shortcuts (issue #314), armed for the admin session only:
+    // /login and the espace animateur render outside this shell and have
+    // neither a palette nor any of these destinations.
+    this.shortcuts.start();
+    destroyRef.onDestroy(() => this.shortcuts.stop());
     this.ecouterKonami();
     this.ecarterLeBandeauDuMenu();
   }

@@ -293,12 +293,28 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   "contains every term" matching behind those pages' quick filter; `bulk-edit.ts` — the "leave unchanged / add / remove
   / replace" modes a bulk edit applies to one row; `entity-labels.ts` — plural
   entity labels of the bulk actions;
-  `solver-job.service.ts`; `notification.service.ts`, backed by `MatSnackBar`),
+  `solver-job.service.ts`; `notification.service.ts`, backed by `MatSnackBar`;
+  `keyboard-shortcuts.ts` + `keyboard-shortcuts.service.ts` — the application's
+  **only** global `keydown`, armed with the admin shell, see below),
   `app/shared/` holds cross-page components (`job-monitor.ts`,
   `confirm-dialog.ts` — replaces `window.confirm`, `output-panel.ts`,
   `bulk-actions-bar.ts`, `table-filter.ts` — the reference pages' quick-filter
   field, `detail-dialog.ts` — their read-only "consultation" view, whose
-  content each page builds in a plain `<entity>-detail.ts` next to it), and `app/pages/<page>/` holds one folder per route.
+  content each page builds in a plain `<entity>-detail.ts` next to it,
+  `command-palette-dialog.ts` and `keyboard-shortcuts-dialog.ts` — Ctrl+K and
+  `?`), and `app/pages/<page>/` holds one folder per route.
+- **One global keyboard listener, and it already exists.** Ctrl+K (command
+  palette), `g`+letter (navigation), `/` (the page's filter, marked by
+  `data-page-filter`), `?` (the shortcut list) and Ctrl+Enter (submit the
+  active form) all go through `core/keyboard-shortcuts.service.ts`; its
+  destinations are derived from `app.routes.ts`, so a new route is reachable
+  by keyboard without being registered anywhere. Single-key shortcuts are
+  suppressed while the focus is in a text entry — modifier combinations are
+  not, since Ctrl+Enter is meant to be pressed from inside a field. Escape is
+  deliberately not implemented: no dialog sets `disableClose`, so `MatDialog`
+  already closes the topmost one. Do not add a second `document`-level
+  `keydown`; the Konami easter egg of the shell and the arrow navigation local
+  to a calendar are the two accepted exceptions.
 - Bulk edits go through one dialog per entity (`<entity>-bulk-edit-dialog.ts`),
   whose rules live in a plain `<entity>-bulk-edit.ts` next to it so they are
   unit-tested without rendering. Every field defaults to "ne pas modifier": a

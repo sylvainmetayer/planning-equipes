@@ -281,6 +281,7 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 | Politique de confidentialité | Page publique elle aussi : quelles données, pourquoi, combien de temps, qui y accède — y compris les outils de mesure d'audience et de suivi d'erreurs — et comment exercer ses droits. S'adresse explicitement aux animateurs mineurs |
 | Conditions d'utilisation | La ligne de partage, écrite noir sur blanc : l'application calcule des propositions, l'organisation décide. Elle reste l'employeur, le responsable des données et du respect de la réglementation ; le logiciel est fourni en l'état |
 | Aide intégrée | Le mode d'emploi complet, cherchable, consultable pendant qu'une résolution tourne ou sur une édition vide |
+| Palette de commandes | Ctrl+K ouvre une zone de saisie unique qui mène à n'importe quel écran et retrouve un animateur, un stand ou un créneau ; « g » suivi d'une lettre va droit à un écran, « / » saisit le filtre de la page et « ? » liste les raccourcis |
 | Accès | Connexion administrateur par mot de passe, ou attestation par en-tête derrière un proxy d'accès ; les espaces animateurs restent joignables par leur lien |
 
 Formats d'échange détaillés dans

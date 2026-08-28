@@ -156,6 +156,25 @@ strictement pire qu'un poll, lequel se répare tout seul au tick suivant.
 Le poll garde la main tant que le flux n'a pas prouvé qu'il vit, redescend à
 30 s tant qu'il vit, et **reprend la main** après 45 s de silence.
 
+### Un seul écouteur clavier global
+
+`core/keyboard-shortcuts.service.ts` porte l'unique `keydown` posé sur le
+document pour les raccourcis (Ctrl+K, `g`+lettre, `/`, `?`, Ctrl+Entrée). Il est
+armé et désarmé avec le shell d'administration : `/login` et l'espace animateur
+n'ont ni palette ni ces destinations. **N'en ajoutez pas un second** — deux
+écouteurs globaux se disputent la même frappe sans que rien ne le signale.
+
+Deux exceptions volontaires : le code Konami du shell (une séquence, son propre
+état) et les flèches des calendriers et de la heatmap, locales au composant
+affiché. Échap n'est écrit nulle part : aucun dialogue n'utilise
+`disableClose`, donc `MatDialog` ferme déjà le dialogue du dessus et rend le
+focus.
+
+La table `g`+lettre et les libellés de la palette vivent dans
+`core/keyboard-shortcuts.ts` ; les destinations, elles, sont **dérivées de
+`app.routes.ts`**, pour qu'une page ajoutée demain soit atteignable au clavier
+sans qu'on ait pensé à l'y inscrire.
+
 ### Le seul endroit où le frontend réimplémente du domaine
 
 `app/core/horaire-stand.ts` résout les règles d'horaire d'un stand en fenêtres

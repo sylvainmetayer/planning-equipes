@@ -57,7 +57,9 @@ describe('AdminShell', () => {
   const breakpoints = { observe: vi.fn(() => handset.asObservable()) };
   const jobs = { start: vi.fn(), stop: vi.fn(), onResult: vi.fn(), file: () => [], activeJob: () => null };
   const announcer = { announce: vi.fn() };
-  const dialog = { open: vi.fn() };
+  // `openDialogs` too: the global shortcuts (issue #314) ask MatDialog whether
+  // something is already open before reacting to a single key press.
+  const dialog = { open: vi.fn(), openDialogs: [] as unknown[] };
   const snackBar = { dismiss: vi.fn() };
   const api = { post: vi.fn(), get: vi.fn() };
   /**

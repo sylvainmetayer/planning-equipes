@@ -21,10 +21,14 @@ import { MatInputModule } from '@angular/material/input';
     <mat-form-field appearance="outline" class="table-filter">
       <mat-label>{{ label() }}</mat-label>
       <mat-icon matPrefix>search</mat-icon>
+      <!-- data-page-filter is what the global "/" shortcut jumps to
+           (core/keyboard-shortcuts.service.ts): a page declares which of its
+           fields is the filter, instead of the shortcut guessing. -->
       <input
         matInput
         type="search"
         name="tableFilter"
+        data-page-filter=""
         [ngModel]="value()"
         (ngModelChange)="value.set($event)"
         [placeholder]="placeholder()"
