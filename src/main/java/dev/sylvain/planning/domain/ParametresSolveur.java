@@ -20,7 +20,7 @@ package dev.sylvain.planning.domain;
 public record ParametresSolveur(int dureeResolutionSecondes, boolean mailFinResolution) {
 
     /** Mirrors the default of `planning.solver.seconds-limit` in application.properties. */
-    public static final int DUREE_RESOLUTION_SECONDES_PAR_DEFAUT = 180;
+    public static final int DUREE_RESOLUTION_SECONDES_PAR_DEFAUT = 900;
 
     public ParametresSolveur() {
         this(DUREE_RESOLUTION_SECONDES_PAR_DEFAUT, false);

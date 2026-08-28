@@ -24,7 +24,7 @@ describe('SolverSettingsService', () => {
     api = new FakeApi();
   });
 
-  it('defaults to 180 seconds (3 min) before the initial fetch resolves', () => {
+  it('defaults to 900 seconds (15 min) before the initial fetch resolves', () => {
     const service = configure(api);
     expect(service.secondsLimit()).toBe(DEFAULT_SOLVER_SECONDS_LIMIT);
   });

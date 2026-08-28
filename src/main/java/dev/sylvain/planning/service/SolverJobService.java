@@ -77,7 +77,7 @@ public class SolverJobService {
 
     /**
      * Default budget of an incremental re-solve (issue #86). An order of
-     * magnitude under a full solve's (180 s by default, 600 s on the reference
+     * magnitude under a full solve's (900 s by default, 600 s on the reference
      * scenario) because the effective problem is a fraction of the full one:
      * most seats are pinned, and the whole point is a fast answer to a
      * last-minute change.

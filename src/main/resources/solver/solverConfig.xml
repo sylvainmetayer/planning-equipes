@@ -133,27 +133,39 @@
                 step costs enough that sampling 20 candidates starves the
                 search, and the setting that was "safer" never reaches
                 feasibility at all — the 1800 s production run stalled at
-                -2 hard while 2 gets there in under three minutes. 2 rather
-                than 1: both reach feasibility on every seed tried, 1 gets
-                there ~45 s earlier but with a visibly worse medium score
-                (-9 211 vs -8 502 at equal time), and what follows feasibility
-                is precisely medium/soft polishing.
+                -2 hard while 2 gets there in under three minutes.
 
                 lateAcceptanceSize was re-measured alongside: 100 / 400 / 1500
                 give -14 / -14 / -12 at acceptedCountLimit 20, and -1 / 0 / 0
                 at 2. Below 400 it hurts, above it changes nothing: left as is.
 
-                WARNING — the table above was measured on Timefold 1.x and does
-                NOT transfer to 2.x. Measured on 2.5 with this very setting, a
-                local-search step evaluates ~278 moves where 1.34 evaluated ~24:
-                the effective sampling is ten times wider without the value
-                having changed. festival-realiste still reaches 0 hard, with a
-                better medium, but takes 40% of its budget instead of 7%.
-                Re-measure on that fixture — not on its canicule variant, which
-                reaches feasibility in the construction heuristic and so never
-                exercises this setting at all. See docs/migration-timefold-2.md.
+                The table above is Timefold 1.x and does NOT transfer: on 2.5 a
+                local-search step evaluates ~278 moves where 1.34 evaluated ~24,
+                so the effective sampling is ten times wider without the value
+                having changed. Re-measured on the production profile (3499
+                postes, 153 animateurs), same seed, 1800 s, runs sequential:
+
+                    acceptedCountLimit :      1          2
+                    score dur a 180 s  :     -2        -10
+                    0 hard atteint a   :    333s       526s
+                    medium a 1800 s    : -4 697     -4 748
+
+                Hence 1, where 1.x wanted 2, and the reason is that the 1.x
+                argument no longer holds: back then 1 reached feasibility
+                earlier but polished visibly worse, so 2 bought quality. On 2.5
+                a step already samples ten times wider, so lowering the count
+                no longer starves anything — 1 is feasible 1.6x sooner AND ends
+                with the better medium. It gives up only soft (-368 vs -336),
+                the level that yields to the other two by construction.
+
+                Measured on the production profile rather than on
+                festival-realiste, which understates it by a third (0 hard at
+                359 s, construction heuristic ending at -110 hard instead of
+                -218) — and never on its canicule variant, which reaches
+                feasibility in the construction heuristic and so does not
+                exercise this setting at all. See docs/migration-timefold-2.md.
             -->
-            <acceptedCountLimit>2</acceptedCountLimit>
+            <acceptedCountLimit>1</acceptedCountLimit>
         </forager>
     </localSearch>
 

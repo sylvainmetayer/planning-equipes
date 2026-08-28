@@ -12,7 +12,7 @@ import { ApiService } from './api.service';
 import { ParametresSolveur } from './models';
 
 /** Mirrors the backend default (`planning.solver.seconds-limit` in application.properties). */
-export const DEFAULT_SOLVER_SECONDS_LIMIT = 180;
+export const DEFAULT_SOLVER_SECONDS_LIMIT = 900;
 
 @Injectable({ providedIn: 'root' })
 export class SolverSettingsService {

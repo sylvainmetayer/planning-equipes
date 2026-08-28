@@ -172,7 +172,7 @@ E2E_VIDEO=retain-on-failure npm run e2e   # ou 'on' ; .webm dans test-results/<t
 
 | Propriété | Défaut | Rôle |
 | --- | --- | --- |
-| `planning.solver.seconds-limit` | `180` (`3` en `%test`) | Budget de résolution |
+| `planning.solver.seconds-limit` | `900` (`3` en `%test`) | Budget de résolution |
 | `planning.solver.unimproved-seconds-limit` | `300` (`2` en `%test`), `0` = désactivé | Arrêt sur plateau, **conditionné à la faisabilité** |
 | `planning.constraint-weights.<contrainte>` | `1` | Voir [`contraintes.md`](contraintes.md#pondérer-une-contrainte) |
 | `planning.jobs.reprise-au-demarrage` | `true` (`false` en `%test`) | Rejoue la file persistée. En test, une tâche laissée en file déclencherait un vrai solve au démarrage suivant |
@@ -186,14 +186,42 @@ le cas où il a besoin du reste de son budget.
 
 ### `acceptedCountLimit` : mesuré, pas hérité
 
-> **Toutes les tables de cette section ont été mesurées en Timefold 1.34 et ne
-> transfèrent pas telles quelles en 2.5.** À réglage identique, la 2.5 évalue
-> environ dix fois plus de mouvements par pas de recherche locale : les valeurs
-> gardent leur sens relatif, pas leurs temps. Ce qui a été remesuré en 2.5, et
-> ce qui en découle pour le budget, est en
-> [`migration-timefold-2.md`](migration-timefold-2.md#le-réglage-du-solveur--mesuré-et-il-a-bougé).
-> Le raisonnement ci-dessous — pourquoi le compromis dépend de la taille du
-> problème, pourquoi deux phases plutôt qu'une — reste valable.
+> **Les tables de cette section ont été mesurées en Timefold 1.34.** Elles sont
+> conservées pour le raisonnement — pourquoi le compromis dépend de la taille du
+> problème, pourquoi deux phases plutôt qu'une — mais **pas pour leurs temps** :
+> à réglage identique, la 2.5 évalue environ dix fois plus de mouvements par pas
+> de recherche locale. La mesure qui fait foi aujourd'hui est celle du profil de
+> production en 2.5, juste en dessous.
+
+#### Ce qui fait foi en 2.5
+
+Remesuré sur le profil de production (3 499 postes, 153 animateurs), même
+graine, budget de 1800 s, runs séquentiels :
+
+| | `acl=2` (réglage 1.x) | `acl=1` (retenu) |
+| --- | --- | --- |
+| score dur à 180 s | -10 | -2 |
+| **0 hard atteint à** | 526 s | **333 s** |
+| medium à 1800 s | -4 748 | **-4 697** |
+| soft à 1800 s | **-336** | -368 |
+
+Deux conséquences, et une mise en garde.
+
+**Le budget par défaut est passé de 180 à 900 s.** À 180 s, aucun des deux
+réglages n'atteint la faisabilité sur le profil réel : le solveur rendait un
+plan avec des places que personne ne tient, sans lever d'erreur — l'arrêt sur
+plateau étant conditionné à la faisabilité, il ne peut pas le signaler non plus.
+900 s laisse 2,7× la durée mesurée, de quoi absorber une machine plus lente.
+
+**`acceptedCountLimit` de phase 1 passe de 2 à 1.** L'argument de la 1.x — 1
+trouve plus tôt mais polit moins bien — ne tient plus : un pas échantillonnant
+déjà dix fois plus large, baisser le compteur n'affame plus rien, et 1 gagne à
+la fois sur le temps et sur le medium. Il ne cède que sur le soft.
+
+**Ce que la fixture versionnée ne montrait pas.** `festival-realiste` sous-estime
+le problème d'un tiers : elle sort de l'heuristique de construction à -110 hard
+quand le profil réel en sort à -218, et atteint 0 hard à 359 s contre 526 s. Un
+réglage arbitré sur elle seule est optimiste.
 
 Le nombre de mouvements candidats échantillonnés par pas de recherche locale
 (`solverConfig.xml`, `<forager>`) est le réglage le plus sensible du fichier, et

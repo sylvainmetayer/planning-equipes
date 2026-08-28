@@ -56,17 +56,25 @@ class PlanningServiceScenarioFestivalRealisteTest {
      * as soon as the hard score reaches zero, so this only bounds a run that
      * is <em>not</em> converging.
      *
-     * <p>Measured convergence, once the stand horaires are resolved (see
-     * below): 150 s on the base fixture and 10 s on the canicule variant.
-     * 900 s therefore leaves roughly a sixfold margin locally, and still two
-     * to three times the CI runner's slower pace (7 700–9 800 move
-     * evaluations/s there against 10 400–29 900 here).</p>
+     * <p>Measured convergence on Timefold 2.5, once the stand horaires are
+     * resolved (see below): 94 s then 103 s across two runs on the base
+     * fixture, 8 s on the canicule variant — which reaches feasibility in the
+     * construction heuristic and never enters local search. 900 s therefore
+     * leaves roughly an eightfold margin locally, and still several times the
+     * CI runner's slower pace (7 700–9 800 move evaluations/s there against
+     * 5 400–34 000 here).</p>
+     *
+     * <p>The figures are the solver's, not a stopwatch's: they come from the
+     * {@code Local Search phase (1) ended} line, which is where the hard score
+     * reaches zero. They moved with the 2.x migration — 150 s on 1.34 — so a
+     * Timefold bump is a reason to read them again rather than trust them.</p>
      *
      * <p>Deliberately not the fixtures' own 1800 s production budget: at that
      * ceiling a genuine convergence regression would burn an hour of the
      * self-hosted runner before turning the build red. Not shaved to the
-     * observed 150 s either — a guardrail set to the minimum that happened to
-     * work once turns every unrelated solver tuning into a false alarm.</p>
+     * hundred seconds observed either — a guardrail set to the minimum that
+     * happened to work once turns every unrelated solver tuning into a false
+     * alarm, and the two runs above already differ by 10 %.</p>
      */
     private static final long SECONDS_LIMITE_SECURITE = 900L;
 
