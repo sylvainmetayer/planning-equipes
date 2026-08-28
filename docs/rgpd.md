@@ -4,11 +4,13 @@
 dit **comment exploiter**. Ce document dit **ce qu'il faut avoir écrit** avant
 d'héberger l'instance de quelqu'un d'autre, et **ce qui se tient ensuite**.
 
-Deux obligations, et elles ne se déclenchent pas au premier euro mais au
+Trois obligations, et elles ne se déclenchent pas au premier euro mais au
 **premier hébergement, même gratuit** : une convention de sous-traitance
-(art. 28) et un registre des traitements (art. 30). Aucune des deux n'est un
-document qu'on produit une fois : la première se signe avant la mise en
-production, le second se tient.
+(art. 28), un registre des traitements (art. 30) et une procédure de
+notification de violation (art. 33). Aucune n'est un document qu'on produit une
+fois : la convention se signe avant la mise en production, le registre se
+tient, et la procédure se décide **avant** d'en avoir besoin — un dimanche de
+festival n'est pas le moment de chercher qui appeler.
 
 > Ce document décrit ce que le dépôt permet d'affirmer et ce qu'il oblige à
 > écrire. **Ce n'est pas un avis juridique** : la qualification exacte du
@@ -46,7 +48,7 @@ l'annexe sans être réécrit.
 | Catégories de données et de personnes | Voir le socle du §4 — dont des **mineurs**. Ce mot n'est pas décoratif : il justifie les mesures renforcées |
 | Obligations du sous-traitant | N'agir que sur instruction documentée, confidentialité des personnes autorisées, mesures de sécurité (§4), **pas de sous-traitance ultérieure sans autorisation** — donc les briques du §1 sont nommées dans l'écrit |
 | Sort des données en fin de contrat | Restitution ou suppression, **au choix du responsable**, à trancher explicitement. La restitution s'appuie sur l'export SQL (`import-export.md`), la suppression sur la procédure de purge (`exploitation.md` §6) |
-| Assistance | Aide à répondre aux demandes d'exercice de droits, et **notification de violation sans délai** — cette procédure-là (art. 33) reste à écrire, elle n'est pas couverte ici |
+| Assistance | Aide à répondre aux demandes d'exercice de droits, et **notification de violation sans délai** — la procédure et le délai engagé sont au §6, et c'est de là que se recopie la clause |
 | Audit | Mise à disposition des informations nécessaires pour démontrer la conformité : ce document, le registre, et `securite.md` |
 
 ### Ce qu'il ne faut pas signer
@@ -96,7 +98,7 @@ crochet.
 | Catégories de données | Nom, prénom, **date de naissance**, adresse électronique (facultative), compétences, souhaits d'affectation, jours d'indisponibilité, jeton d'accès à l'espace animateur, affectations et échanges, instantanés de planning, sessions et journaux d'accès |
 | Traitements réalisés | Hébergement, planification et résolution, envoi d'e-mails (codes d'accès, plannings individuels, notifications d'échange), sauvegarde, purge |
 | Destinataires | L'organisateur via l'interface d'administration ; l'animateur via son espace ; les autres animateurs pour la part visible du planning (voir `securite.md`) ; le relais SMTP |
-| Mesures de sécurité | TLS et HSTS ; en-têtes CSP et `Referrer-Policy` — **le jeton d'espace voyage dans l'URL** ; chiffrement des sessions ; limitation de débit sur les codes d'espace et verrouillage du formulaire de connexion ; origine injoignable autrement que par le reverse proxy ; sauvegardes **chiffrées au repos et rangées hors machine** (`exploitation.md` §5) |
+| Mesures de sécurité | TLS et HSTS ; en-têtes CSP et `Referrer-Policy` — **le jeton d'espace voyage dans l'URL** ; chiffrement des sessions ; limitation de débit sur les codes d'espace et verrouillage du formulaire de connexion ; origine injoignable autrement que par le reverse proxy ; sauvegarde nocturne automatique par `pg_dump`, en rotation dans un volume dédié, dont l'**externalisation chiffrée hors machine reste à la charge de l'exploitant** (`exploitation.md` §5) |
 
 ### Bloc variable, par instance
 
@@ -104,11 +106,12 @@ crochet.
 | --- | --- |
 | Responsable de traitement et contact | `LEGAL_RESPONSABLE_TRAITEMENT`, `LEGAL_CONTACT` |
 | Base légale déclarée | `LEGAL_BASE_LEGALE` |
-| Durée de conservation annoncée | `LEGAL_CONSERVATION` — voir la limite du §6 |
+| Durée de conservation annoncée | `LEGAL_CONSERVATION` — voir la limite du §7 |
 | Hébergeur d'infrastructure | `LEGAL_HEBERGEUR` |
 | Relais SMTP | `MAIL_HOST` |
 | Suivi d'erreurs | `SENTRY_DSN` renseigné ⇒ Bugsink, hébergement UE, **pas de transfert à déclarer** |
 | Mesure d'audience | `CLOUDFLARE_WEB_ANALYTICS_TOKEN` renseigné ⇒ **transfert hors UE à déclarer**. La variable a un défaut en profil `%prod` : ne rien poser ne suffit pas à l'éteindre, il faut la **vider explicitement** (`observabilite.md`) |
+| Contact de notification et son suppléant | Nommés dans la convention (§6) — **une personne, pas une adresse générique** |
 | Dates | Début et fin de l'hébergement |
 
 ## 5. Le journal des purges et des restaurations
@@ -128,27 +131,133 @@ dans le même document que le registre :
 Une purge manuelle sans écrit ne prouve rien : c'est ce journal qui rend tenable
 la durée annoncée par `LEGAL_CONSERVATION`, pas la procédure seule.
 
-## 6. Les limites à consigner telles quelles
+## 6. Notification de violation (art. 33)
+
+Décider **qui on appelle et sous quel délai** coûte dix minutes maintenant.
+L'improviser un dimanche de festival coûte la relation.
+
+Le sous-traitant ne notifie **jamais la CNIL** : il alerte le responsable de
+traitement, **sans délai injustifié**, et c'est le responsable qui décide de
+notifier l'autorité — il dispose de 72 heures **à compter du moment où
+l'hébergeur l'a prévenu**. Tout retard pris ici est pris sur son délai à lui :
+c'est la seule raison pour laquelle l'engagement doit être chiffré.
+
+### Ce qui compte comme violation
+
+Une violation n'est pas seulement une intrusion : c'est toute atteinte à la
+**confidentialité**, à l'**intégrité** ou à la **disponibilité** des données,
+accidentelle ou non. Les trois se notifient, même si elles ne se traitent pas
+pareil.
+
+| Cas | Ce qu'il faut savoir avant d'appeler |
+| --- | --- |
+| Dump égaré : sauvegarde déposée en clair, envoyée par un canal non maîtrisé, oubliée sur une machine cédée | Ce qu'il contenait — un dump est **complet** : noms, dates de naissance de mineurs, adresses, jetons d'espace (`exploitation.md` §5) |
+| Accès non autorisé à l'administration | Depuis quand, ce qui a été consulté ou modifié, et si le mot de passe d'administration a servi ailleurs |
+| Fuite de jetons d'espace animateur | Les jetons voyagent **dans le chemin de l'URL** : des journaux d'accès de reverse proxy partagés, indexés ou transmis sont une violation, pas une négligence sans suite (`securite.md`, dernière section) |
+| Base ou sauvegarde perdue sans copie | C'est une violation de **disponibilité** : elle se notifie, même sans le moindre accès d'un tiers |
+| Envoi d'un planning individuel à la mauvaise adresse | Violation aussi, à sa mesure — l'erreur de destinataire est le cas le plus fréquent en pratique |
+
+Deux cas qui n'en sont **pas** : une panne de l'instance sans perte de données
+(c'est un incident d'exploitation, §7 d'`exploitation.md`), et un animateur qui
+voit le planning d'un collègue par une fonction prévue pour ça
+(`securite.md` § *Lecture des créneaux d'un collègue*).
+
+### Le délai qu'on s'engage à tenir
+
+| Étape | Engagement |
+| --- | --- |
+| Alerter le contact client | **Dans les 24 heures** suivant la prise de connaissance, même sans diagnostic complet — le premier appel dit *ce qu'on sait*, pas *ce qu'on a compris* |
+| Premier écrit qualifiant les faits | Dans les 48 heures |
+| Compte rendu final | Une fois l'investigation close, sans échéance fixée à l'avance |
+
+Notifier tôt et incomplet est explicitement prévu par le règlement : l'art. 33.4
+autorise une information **par phases**. Attendre d'avoir tout compris est la
+seule faute vraiment coûteuse.
+
+### Qui on appelle
+
+**Une personne nommée et un suppléant**, pas une adresse générique : un
+`contact@` n'est lu par personne un dimanche. Ils sont nommés dans la
+convention de sous-traitance (§2) et reportés au registre (§4), avec un numéro
+de téléphone — l'incident peut être précisément celui qui empêche l'e-mail
+d'arriver.
+
+### Ce que contient l'alerte
+
+L'art. 33.3 fixe le contenu ; le responsable reprendra ces éléments tels quels
+pour la CNIL :
+
+- la nature de la violation, et les **catégories et le nombre approximatif** de
+  personnes et d'enregistrements concernés ;
+- les conséquences probables ;
+- les mesures prises ou proposées, y compris pour en atténuer les effets ;
+- le point de contact côté hébergeur.
+
+Le nombre de personnes concernées se lit dans l'application : c'est l'effectif
+des éditions touchées. Le rappeler ici évite d'avoir à le chercher sous
+pression.
+
+### Le journal des violations
+
+L'art. 33.5 impose de **documenter toute violation, y compris celle qu'on ne
+notifie pas** — c'est ce registre qui permet de démontrer qu'on a bien qualifié
+les faits. Il vit avec le registre des traitements et le journal des purges
+(§5) :
+
+| Colonne | Contenu |
+| --- | --- |
+| Découverte | Date et heure de la **prise de connaissance**, pas de la survenue : c'est elle qui déclenche les délais |
+| Faits | Ce qui s'est passé, et par quel canal on l'a appris (sonde, suivi d'erreurs, signalement d'un animateur) |
+| Périmètre | Éditions et catégories de données touchées, volume approximatif |
+| Qualification | Violation ou non — **et pourquoi**, y compris quand la réponse est non |
+| Notification | Qui a été prévenu, quand, par quel moyen |
+| Suites | Mesures correctives, et ce qu'elles changent aux mesures de sécurité déclarées au registre |
+
+### Ce qui manque pour tenir cet engagement
+
+Un délai de 24 heures suppose de **savoir** qu'il s'est passé quelque chose.
+`exploitation.md` §7 le dit déjà pour les pannes, et c'est la même dépendance
+ici : sans `SENTRY_DSN` renseigné ni sonde externe, une instance peut être
+tombée — ou pire — sans que personne ne l'apprenne avant le lundi. S'engager
+sur un délai de notification sans avoir posé ces deux briques, c'est signer
+une obligation qu'on ne tiendra pas.
+
+## 7. Les limites à consigner telles quelles
 
 Le registre demande de **décrire** les mesures, pas de prétendre qu'elles sont
-complètes. Trois points sont connus et se consignent :
+complètes. Quatre points sont connus et se consignent :
 
 - **aucune purge automatique n'existe** : la durée annoncée est tenue à la main,
   à date fixe (`exploitation.md` §6). C'est l'écart le plus exposant, parce
-  qu'il porte sur un engagement public ;
+  qu'il porte sur un engagement public. Le choix est délibéré et son échéance
+  est connue — voir
+  [décision 0016](decisions/0016-purge-manuelle-avant-automatisation.md) : la
+  tâche planifiée, son journal et le test de cascade viennent quand plusieurs
+  instances tournent en parallèle. Ce qui se consigne au registre n'est donc pas
+  « purge automatique : non », mais « purge manuelle, à date fixe, tracée au
+  journal du §5 » ;
 - **le jeton d'accès voyage dans le chemin de l'URL** : il atterrit tel quel
   dans les journaux d'accès du reverse proxy, qui doivent donc être purgés ou
   écrits sans ces chemins (`securite.md`, dernière section) ;
+- **les sauvegardes sont un lieu de stockage à part entière** : depuis qu'elles
+  sont automatiques, un dump complet — mineurs et jetons compris — existe en
+  permanence sur le volume. Le registre doit le dire, et l'entrée n'est
+  honnête que si l'externalisation chiffrée annoncée au socle existe
+  réellement ;
 - **l'effacement demandé par un animateur sur une édition encore active** n'a
-  pas de procédure outillée : c'est une suppression manuelle de sa fiche.
+  pas de procédure outillée : c'est une suppression manuelle de sa fiche. Une
+  demande d'effacement ne se refuse pas au motif que l'événement n'est pas
+  terminé, et automatiser la purge par édition échue ne le réglera pas — c'est
+  une opération distincte.
 
-## 7. Rythme de tenue
+## 8. Rythme de tenue
 
 | Quand | Quoi |
 | --- | --- |
 | Avant chaque première mise en production | Convention de sous-traitance signée des deux côtés (§2), puis création de l'entrée de registre (§4) |
 | À chaque changement de brique tierce | Mise à jour des sous-traitants ultérieurs et des transferts — un changement de variable d'environnement est un changement de registre |
 | À chaque purge ou restauration | Une ligne dans le journal (§5) |
+| À chaque violation, notifiée ou non | Une ligne dans le journal des violations (§6) — l'art. 33.5 ne distingue pas |
 | Une fois par an, après l'événement | Relecture de toutes les entrées, en même temps que la purge |
 | En fin d'hébergement | Sort des données tranché et exécuté, date portée au registre |
 
