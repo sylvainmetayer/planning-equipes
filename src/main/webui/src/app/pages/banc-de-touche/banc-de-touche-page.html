@@ -1,0 +1,100 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h1 mat-card-title i18n="@@bancDeTouche.title">Banc de touche</h1>
+    <mat-card-subtitle i18n="@@bancDeTouche.description">
+      Pour un créneau donné, qui n'est affecté nulle part — et, pour chacun, la règle qui l'empêcherait de prendre le
+      siège évalué. Chaque motif est une contrainte réellement appliquée par le solveur, avec son libellé du catalogue :
+      cet écran n'en réécrit aucune. Tous les motifs applicables sont affichés, pas seulement le plus bloquant. En
+      lecture seule : affecter quelqu'un passe par l'assistant de réparation.
+    </mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    <div class="banc-controls">
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@bancDeTouche.slotLabel">Créneau</mat-label>
+        <mat-select [ngModel]="creneauId()" (ngModelChange)="changerCreneau($event)">
+          @for (creneau of creneaux(); track creneau.id) {
+            <mat-option [value]="creneau.id">{{ libelleCreneau(creneau) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@bancDeTouche.standLabel">Stand (facultatif)</mat-label>
+        <mat-select [ngModel]="standId()" (ngModelChange)="changerStand($event)">
+          <mat-option value="" i18n="@@bancDeTouche.anyStand">N'importe lequel</mat-option>
+          @for (stand of stands(); track stand.id) {
+            <mat-option [value]="stand.id">{{ stand.nom }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <button matButton (click)="reinitialiser()" i18n="@@bancDeTouche.reset">Réinitialiser</button>
+    </div>
+
+    @if (chargement()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    @if (erreur()) {
+      <p class="calendar-empty">{{ erreur() }}</p>
+    }
+
+    @if (banc(); as resultat) {
+      <p class="banc-seat">
+        <mat-icon inline aria-hidden="true">event_seat</mat-icon>
+        {{ siegeLibelle() }}
+      </p>
+      @if (resultat.animateurCibleId) {
+        <p class="banc-seat-taken">{{ occupantLibelle() }}</p>
+      }
+      <p class="banc-summary">{{ resumeLibelle() }}</p>
+
+      @if (lignes().length === 0) {
+        <p class="calendar-empty" i18n="@@bancDeTouche.everyoneOnDuty">
+          Tout le monde est de service sur ce créneau : le banc est vide.
+        </p>
+      } @else {
+        <div class="table-wrapper">
+          <table class="banc-table">
+          <thead>
+            <tr>
+              <th scope="col" i18n="@@bancDeTouche.column.animateur">Animateur</th>
+              <th scope="col" i18n="@@bancDeTouche.column.state">État</th>
+              <th scope="col" i18n="@@bancDeTouche.column.reasons">Motifs</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (ligne of lignes(); track ligne.animateurId) {
+              <tr [class]="'banc-row banc-row-' + ligne.etat">
+                <td>{{ ligne.nom }}</td>
+                <td>
+                  <span class="banc-state">
+                    <mat-icon inline aria-hidden="true">{{ etatIcone(ligne.etat) }}</mat-icon>
+                    {{ etatLibelle(ligne.etat) }}
+                  </span>
+                </td>
+                <td>
+                  @if (ligne.motifs.length === 0) {
+                    <span class="banc-no-reason" i18n="@@bancDeTouche.noReason">Aucune règle ne s'y oppose</span>
+                  } @else {
+                    @for (motif of ligne.motifs; track motif.contrainte) {
+                      <span
+                        class="banc-reason"
+                        [class.banc-reason-hard]="motif.niveau === 'HARD'"
+                        [matTooltip]="motifInfobulle(motif.categorie, motif.description)"
+                      >
+                        {{ motif.contrainte }}
+                      </span>
+                    }
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        </div>
+      }
+    }
+  </mat-card-content>
+</mat-card>

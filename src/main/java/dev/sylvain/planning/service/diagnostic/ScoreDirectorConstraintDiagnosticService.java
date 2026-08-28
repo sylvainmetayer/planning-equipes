@@ -1,8 +1,10 @@
 package dev.sylvain.planning.service.diagnostic;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
@@ -14,7 +16,9 @@ import ai.timefold.solver.core.impl.score.constraint.ConstraintMatchPolicy;
 import ai.timefold.solver.core.impl.score.director.InnerScoreDirector;
 import ai.timefold.solver.core.impl.score.director.ScoreDirectorFactory;
 import ai.timefold.solver.core.impl.solver.DefaultSolverFactory;
+import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.PosteAffectation;
 
 /**
  * Diagnoses through the solver's own score director, which the Community
@@ -71,6 +75,14 @@ import dev.sylvain.planning.domain.PlanningEvenement;
  */
 public final class ScoreDirectorConstraintDiagnosticService implements ConstraintDiagnosticService {
 
+    /**
+     * The genuine planning variable of {@code PosteAffectation}, named here
+     * because {@code beforeVariableChanged} takes it as a string. A rename of
+     * the field without a rename here throws at the first probe rather than
+     * corrupting anything silently.
+     */
+    private static final String VARIABLE_ANIMATEUR = "animateur";
+
     private final ScoreDirectorFactory<PlanningEvenement, HardMediumSoftScore> scoreDirectorFactory;
 
     public ScoreDirectorConstraintDiagnosticService(SolverFactory<PlanningEvenement> solverFactory) {
@@ -95,6 +107,89 @@ public final class ScoreDirectorConstraintDiagnosticService implements Constrain
             }
             return new PlanningAnalysis(score, contributions);
         }
+    }
+
+    /**
+     * The same answer as {@link ConstraintDiagnosticService#hypotheses}'s
+     * default, for a fraction of the cost: one score director, built once, and
+     * stepped from candidate to candidate the way local search steps from move
+     * to move.
+     *
+     * <p><b>Why the fast path is worth its lines.</b> The default pays a full
+     * {@code analyze()} per candidate — a fresh constraint session plus a
+     * from-scratch score calculation over every poste. On the reference
+     * scenario that is ~150 of them for a single screen. Here the session is
+     * built once and each candidate costs only the incremental recalculation
+     * of what the one changed variable touches, which is exactly the operation
+     * the solver performs millions of times per solve.</p>
+     *
+     * <p><b>Why it cannot drift from the rules.</b> It runs the constraints.
+     * The only thing this method decides is which per-constraint totals got
+     * worse; the totals themselves are the score director's.</p>
+     *
+     * <p><b>Why the seat comes back untouched.</b> Every substitution is
+     * wrapped in the {@code beforeVariableChanged}/{@code afterVariableChanged}
+     * pair the score director requires, and the original occupant is restored
+     * through the same pair in a {@code finally} — skipping either half is what
+     * score corruption is made of. {@code AffectationHypothesisTest} asserts
+     * both the parity with the default implementation and that the plan's
+     * score is unchanged once the loop is over.</p>
+     *
+     * <p>Justifications are deliberately <b>not</b> tracked
+     * ({@link ConstraintMatchPolicy#ENABLED_WITHOUT_JUSTIFICATIONS}): building
+     * the facts of every match is the expensive half of constraint matching,
+     * and this method reports names and scores, never facts.</p>
+     */
+    @Override
+    public List<AffectationHypothesis> hypotheses(PlanningEvenement solution, PosteAffectation cible,
+            List<Animateur> candidats) {
+        Animateur initial = cible.getAnimateur();
+        try (InnerScoreDirector<PlanningEvenement, HardMediumSoftScore> scoreDirector = buildProbeScoreDirector()) {
+            scoreDirector.setWorkingSolution(solution);
+            HardMediumSoftScore avant = scoreDirector.calculateScore().raw();
+            Map<String, HardMediumSoftScore> totalsBefore = totals(scoreDirector);
+            List<AffectationHypothesis> hypotheses = new ArrayList<>(candidats.size());
+            try {
+                for (Animateur candidat : candidats) {
+                    assign(scoreDirector, cible, candidat);
+                    HardMediumSoftScore apres = scoreDirector.calculateScore().raw();
+                    hypotheses.add(new AffectationHypothesis(candidat.getId(), apres, apres.subtract(avant),
+                            AffectationHypothesis.worsened(totalsBefore, totals(scoreDirector))));
+                }
+            } finally {
+                assign(scoreDirector, cible, initial);
+            }
+            return List.copyOf(hypotheses);
+        }
+    }
+
+    /** The one mutation, always through the score director so its match totals stay in step. */
+    private static void assign(InnerScoreDirector<PlanningEvenement, HardMediumSoftScore> scoreDirector,
+            PosteAffectation cible, Animateur animateur) {
+        scoreDirector.beforeVariableChanged(cible, VARIABLE_ANIMATEUR);
+        cible.setAnimateur(animateur);
+        scoreDirector.afterVariableChanged(cible, VARIABLE_ANIMATEUR);
+    }
+
+    private static Map<String, HardMediumSoftScore> totals(
+            InnerScoreDirector<PlanningEvenement, HardMediumSoftScore> scoreDirector) {
+        Map<String, HardMediumSoftScore> totals = new HashMap<>();
+        for (ConstraintMatchTotal<HardMediumSoftScore> total : scoreDirector.getConstraintMatchTotalMap().values()) {
+            totals.put(total.getConstraintRef().id(), total.getScore());
+        }
+        return totals;
+    }
+
+    /**
+     * Same options as {@link #buildScoreDirector()} but without justification
+     * tracking, which this probe has no reader for.
+     */
+    private InnerScoreDirector<PlanningEvenement, HardMediumSoftScore> buildProbeScoreDirector() {
+        return scoreDirectorFactory.createScoreDirectorBuilder()
+                .withLookUpEnabled(false)
+                .withConstraintMatchPolicy(ConstraintMatchPolicy.ENABLED_WITHOUT_JUSTIFICATIONS)
+                .withExpectShadowVariablesInCorrectState(false)
+                .build();
     }
 
     /**

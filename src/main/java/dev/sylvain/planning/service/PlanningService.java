@@ -80,6 +80,7 @@ import dev.sylvain.planning.scenario.YamlSections;
 import dev.sylvain.planning.service.diagnostic.ConstraintContribution;
 import dev.sylvain.planning.service.diagnostic.ConstraintDiagnosticMode;
 import dev.sylvain.planning.service.diagnostic.ConstraintDiagnosticService;
+import dev.sylvain.planning.service.diagnostic.AffectationHypothesis;
 import dev.sylvain.planning.service.diagnostic.MatchFacts;
 import dev.sylvain.planning.service.diagnostic.PlanningAnalysis;
 import dev.sylvain.planning.solver.ConstraintCatalog;
@@ -2167,6 +2168,165 @@ public class PlanningService {
     }
 
     /**
+     * The « banc de touche » of one créneau (issue #303): everyone <b>not</b>
+     * on duty then, and — seat by seat — why they could not be.
+     *
+     * <p><b>Read-only, and derived, not restated.</b> Every reason returned is
+     * the name of a constraint {@code PlanningConstraintProvider} actually
+     * enforces, obtained one of the two ways this application already has of
+     * asking the rules rather than repeating them:</p>
+     * <ol>
+     * <li>{@link EligibleAnimateurMoveFilter#motifs} for what the (poste,
+     *     animateur) pair alone decides — the very predicate the solver's move
+     *     filters and {@code candidatsEligibles} use, so an animateur this
+     *     screen refuses is one the repair assistant never proposes;</li>
+     * <li>{@link ConstraintDiagnosticService#hypotheses} for everything that
+     *     depends on the rest of the plan (daily and weekly caps, rest,
+     *     breaks, overlaps, adult supervision, appreciation): the seat is
+     *     handed to each candidate in turn and the constraints are asked what
+     *     changed. Nothing here knows what a cap is worth.</li>
+     * </ol>
+     *
+     * <p><b>{@code AnimateurAvailability.envisageable} is exactly
+     * {@link #suggererReparations}' verdict</b> — eligible, and a hard score no
+     * worse — and {@code CreneauAvailabilityCoherenceTest} pins the two together in
+     * both directions, so an animateur this screen rules out is never one the
+     * repair assistant proposes for the same seat. {@code disponible} is the
+     * stricter reading the screen displays; see {@link AnimateurAvailability} for why
+     * the two are not one field.</p>
+     *
+     * <p>All applicable reasons are listed, not the first one found: three
+     * reasons and one reason are different situations for whoever has to fill
+     * the seat, and only the full list says whether lifting one obstacle would
+     * be enough.</p>
+     *
+     * @param standId optional — narrows which seat of the créneau is probed
+     * @param posteId optional — names that seat outright; wins over {@code standId}
+     */
+    public CreneauAvailability creneauAvailability(PlanningEvenement solved, long creneauId, String standId,
+            String posteId) {
+        List<PosteAffectation> postesDuCreneau = solved.getPostes().stream()
+                .filter(poste -> poste.getCreneau() != null
+                        && Objects.equals(poste.getCreneau().getId(), creneauId))
+                .toList();
+        if (postesDuCreneau.isEmpty()) {
+            throw new BusinessError.NotFound("Créneau inconnu dans le planning: " + creneauId);
+        }
+        PosteAffectation cible = targetSeat(solved, postesDuCreneau, creneauId, standId, posteId);
+
+        Set<String> deja = postesDuCreneau.stream()
+                .map(PosteAffectation::getAnimateur)
+                .filter(Objects::nonNull)
+                .map(Animateur::getId)
+                .collect(Collectors.toSet());
+        List<Animateur> banc = solved.getAnimateurs().stream()
+                .filter(animateur -> !deja.contains(animateur.getId()))
+                .sorted(Comparator.comparing(Animateur::getId, NaturalOrder.DES_IDS))
+                .toList();
+
+        Map<String, AffectationHypothesis> hypotheses = constraintDiagnosticService
+                .hypotheses(solved, cible, banc).stream()
+                .collect(Collectors.toMap(AffectationHypothesis::animateurId, Function.identity()));
+
+        List<AnimateurAvailability> lignes = new ArrayList<>(banc.size());
+        for (Animateur animateur : banc) {
+            AffectationHypothesis hypothese = hypotheses.get(animateur.getId());
+            Set<String> contraintes = new LinkedHashSet<>();
+            for (EligibleAnimateurMoveFilter.Motif motif : EligibleAnimateurMoveFilter.motifs(cible, animateur)) {
+                contraintes.add(motif.contrainte());
+            }
+            if (hypothese != null) {
+                contraintes.addAll(hypothese.contraintesAggravees());
+            }
+            List<MotifExclusion> motifs = contraintes.stream().map(PlanningService::motifExclusion).toList();
+            boolean disponible = motifs.stream().noneMatch(PlanningService::isHardRule);
+            boolean envisageable = EligibleAnimateurMoveFilter.isEligible(cible, animateur)
+                    && (hypothese == null || !hypothese.degradesHardScore());
+            lignes.add(new AnimateurAvailability(animateur.getId(), disponible, envisageable,
+                    hypothese == null ? null : hypothese.delta(), motifs));
+        }
+        // Available first: this screen is opened to find someone, and the
+        // people who can take the seat without breaking anything are the
+        // answer — the refusals are the explanation of why the list is short.
+        lignes.sort(Comparator.comparing(AnimateurAvailability::disponible, Comparator.reverseOrder())
+                .thenComparing(AnimateurAvailability::envisageable, Comparator.reverseOrder())
+                .thenComparing(AnimateurAvailability::animateurId, NaturalOrder.DES_IDS));
+        int disponibles = (int) lignes.stream().filter(AnimateurAvailability::disponible).count();
+        return new CreneauAvailability(creneauId, cible.getId(),
+                cible.getStand() == null ? null : cible.getStand().getId(),
+                cible.getAnimateur() == null ? null : cible.getAnimateur().getId(),
+                lignes.size(), disponibles, List.copyOf(lignes));
+    }
+
+    /**
+     * Same, on the last persisted plan — what the screen calls, with no payload
+     * of its own. Prepared like a solve would prepare it (ad hoc constraints,
+     * legal parameters, toggles, weights) so the hypotheses are scored against
+     * the rules currently in force, not against defaults.
+     *
+     * @throws BusinessError.Conflict when nothing has been solved yet: the
+     *         question « qui est disponible sur ce créneau » has no answer
+     *         before there is a plan to be absent from
+     */
+    public CreneauAvailability persistedCreneauAvailability(long creneauId, String standId, String posteId) {
+        PlanningEvenement persiste = planningPersistenceService.loadPersistedPlanning();
+        if (persiste == null || persiste.getPostes() == null || persiste.getPostes().isEmpty()) {
+            throw new BusinessError.Conflict("Aucun planning persisté : lancez d'abord une résolution.");
+        }
+        prepareProblem(persiste);
+        return creneauAvailability(persiste, creneauId, standId, posteId);
+    }
+
+    /**
+     * The seat the hypotheses are evaluated on: the one named, else the first
+     * unfilled seat of the créneau (of {@code standId} when given), else its
+     * first seat — probing an occupied seat is the « qui pourrait le
+     * remplacer ? » question, which is exactly what
+     * {@link #suggererReparations} answers on the same poste.
+     *
+     * <p>Ordered by id so the same request twice probes the same seat.</p>
+     */
+    private static PosteAffectation targetSeat(PlanningEvenement solved, List<PosteAffectation> postesDuCreneau,
+            long creneauId, String standId, String posteId) {
+        if (posteId != null && !posteId.isBlank()) {
+            PosteAffectation poste = findPoste(solved, posteId);
+            if (poste.getCreneau() == null || !Objects.equals(poste.getCreneau().getId(), creneauId)) {
+                throw new BusinessError.Invalid(
+                        "Le poste " + posteId + " n'appartient pas au créneau " + creneauId + ".");
+            }
+            return poste;
+        }
+        List<PosteAffectation> candidats = standId == null || standId.isBlank()
+                ? postesDuCreneau
+                : postesDuCreneau.stream()
+                        .filter(poste -> poste.getStand() != null && standId.equals(poste.getStand().getId()))
+                        .toList();
+        if (candidats.isEmpty()) {
+            throw new BusinessError.NotFound(
+                    "Aucun poste sur le créneau " + creneauId + " pour le stand " + standId + ".");
+        }
+        Comparator<PosteAffectation> byId = Comparator.comparing(PosteAffectation::getId, NaturalOrder.DES_IDS);
+        return candidats.stream()
+                .filter(poste -> poste.getAnimateur() == null)
+                .min(byId)
+                .orElseGet(() -> candidats.stream().min(byId).orElseThrow());
+    }
+
+    /** True for a reason the catalogue rates as a hard rule — the ones « disponible » may not hide. */
+    private static boolean isHardRule(MotifExclusion motif) {
+        return ConstraintCatalog.Niveau.HARD.name().equals(motif.niveau());
+    }
+
+    /** A constraint name dressed with the business wording {@link ConstraintCatalog} already holds for it. */
+    private static MotifExclusion motifExclusion(String contrainte) {
+        ConstraintCatalog.ConstraintDefinition definition = DEFINITIONS_PAR_NOM.get(contrainte);
+        return new MotifExclusion(contrainte,
+                definition == null ? null : definition.niveau().name(),
+                definition == null ? null : definition.categorie(),
+                definition == null ? null : definition.description());
+    }
+
+    /**
      * Applies one repair suggestion to the <b>persisted</b> plan (issue #71):
      * the seat changes hands and nothing else does, which is exactly the plan
      * {@link #suggererReparations} scored. A single surgical {@code UPDATE},
@@ -2655,6 +2815,65 @@ public class PlanningService {
             HardMediumSoftScore scoreAvant, List<ContrainteImpact> contraintesVioleesAvant,
             int candidatsEligibles, int candidatsEvalues, int plafond,
             List<SuggestionReparation> suggestions) {
+    }
+
+    /**
+     * One reason an animateur is not on this seat, named by the constraint
+     * that says so and worded by {@link ConstraintCatalog}.
+     *
+     * <p>The name is the payload; {@code niveau}, {@code categorie} and
+     * {@code description} are the catalogue's, copied here so a caller needs
+     * one round trip instead of two. A reason with no catalogue entry keeps
+     * its name and nulls the rest rather than inventing wording.</p>
+     */
+    public record MotifExclusion(String contrainte, String niveau, String categorie, String description) {
+    }
+
+    /**
+     * One line of the banc de touche, with <b>two</b> verdicts, because there
+     * are genuinely two questions and they do not have the same answer.
+     *
+     * <p>{@code disponible} is the one the screen is named after: not a single
+     * hard rule stands between this animateur and the seat.
+     * {@code envisageable} is {@link #suggererReparations}' own test —
+     * eligible, and the plan's hard score no worse — and it is the
+     * <i>laxer</i> of the two: filling an empty seat earns back the hard point
+     * {@code posteDoitEtrePourvu} was costing, so a candidate introducing
+     * exactly one new hard violation comes out score-neutral and the repair
+     * assistant keeps them, reporting what they would break as
+     * {@code violationsIntroduites}. « Il peut le prendre, mais il sera sur
+     * deux stands à la fois » is a real answer; « il est disponible » would be
+     * a false one.</p>
+     *
+     * <p>Carrying both is what lets this screen stay honest and stay in step
+     * with the repair assistant at the same time — the correspondence
+     * {@code CreneauAvailabilityCoherenceTest} pins in both directions is on
+     * {@code envisageable}. {@code disponible} implies {@code envisageable},
+     * never the reverse.</p>
+     *
+     * @param delta  what the plan's score would become minus what it is, so a
+     *               viable candidate can still be ranked by what they would cost
+     * @param motifs every applicable reason, not the most blocking one: the
+     *               point of the screen is to tell « lever l'indisponibilité
+     *               suffirait » apart from « il en resterait trois »
+     */
+    public record AnimateurAvailability(String animateurId, boolean disponible, boolean envisageable,
+            HardMediumSoftScore delta, List<MotifExclusion> motifs) {
+    }
+
+    /**
+     * Result of {@link #creneauAvailability}: who is off duty on a créneau, and why
+     * the seat probed is or is not within their reach.
+     *
+     * @param posteCibleId     the seat every reason is relative to
+     * @param animateurCibleId its current occupant, {@code null} when the seat
+     *                         is free — when it is not, the question answered is
+     *                         « qui pourrait le remplacer ? »
+     * @param disponibles      how many of {@code animateurs} could take the
+     *                         seat without breaking a hard rule
+     */
+    public record CreneauAvailability(long creneauId, String posteCibleId, String standCibleId, String animateurCibleId,
+            int total, int disponibles, List<AnimateurAvailability> animateurs) {
     }
 
     /**

@@ -154,6 +154,12 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/fragilite/fragilite-page').then((m) => m.FragilitePage)
   },
   {
+    path: 'banc-de-touche',
+    title: 'Banc de touche',
+    loadComponent: () =>
+      import('./pages/banc-de-touche/banc-de-touche-page').then((m) => m.BancDeTouchePage)
+  },
+  {
     path: 'ouvertures',
     title: 'Stand opening schedule',
     loadComponent: () =>

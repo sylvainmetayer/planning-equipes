@@ -453,6 +453,62 @@ personne le voie.
 Rien ici ne déclenche de résolution, et rien n'envoie de courriel : l'écran
 affiche le compte de la [publication](#publication) et renvoie vers le bouton,
 il ne le duplique pas.
+### Banc de touche
+
+| Endpoint | Effet |
+| --- | --- |
+| `GET /api/banc-de-touche/{creneauId}?standId=X&posteId=P` | Qui n'est pas de service sur ce créneau, et pourquoi il ne pourrait pas l'être. Lecture seule. |
+
+Répond sur le **dernier plan enregistré**, sans relancer de solveur — `409` tant
+qu'aucune résolution n'a eu lieu, puisque « qui est disponible sur ce créneau »
+n'a pas de sens avant qu'un plan existe. Affecter quelqu'un depuis cet écran est
+hors périmètre : cela passe par l'assistant de réparation ci-dessus.
+
+Les raisons ne sont **pas réécrites ici** : chacune porte le `contrainte` d'une
+règle réellement appliquée par le solveur, avec le `niveau`, la `categorie` et
+la `description` que `GET /api/constraints` en donne. Elles viennent de deux
+sources, et d'aucune troisième :
+
+- ce que le couple (poste, animateur) décide à lui seul — indisponibilité, stand
+  réservé aux majeurs, jour férié, nuit, plafonds mineurs d'un créneau isolé —
+  est lu dans le **filtre d'éligibilité du solveur lui-même**, celui que
+  l'assistant de réparation applique déjà ;
+- tout ce qui dépend du reste du plan — plafonds quotidiens et hebdomadaires,
+  repos, pauses, chevauchements, encadrement d'un mineur, appréciation
+  manquante — est obtenu en **posant le siège à chaque candidat et en demandant
+  aux contraintes ce qui a empiré**. Aucun seuil n'est recopié.
+
+Le siège évalué est nommé par `posteCibleId` : celui que `posteId` désigne,
+sinon le premier siège libre du créneau (restreint à `standId` s'il est fourni),
+sinon son premier siège — auquel cas la question posée devient « qui pourrait le
+remplacer ? », et `animateurCibleId` dit qui l'occupe.
+
+Chaque ligne porte **deux verdicts, qui ne disent pas la même chose** :
+
+| Champ | Sens |
+| --- | --- |
+| `disponible` | Aucune règle dure ne s'oppose à cette affectation. C'est ce que l'écran affiche. |
+| `envisageable` | Le verdict de l'assistant de réparation : éligible, et le score dur du plan pas plus mauvais. |
+
+`disponible` implique `envisageable`, jamais l'inverse. Pourvoir un siège vide
+récupère le point dur que `posteDoitEtrePourvu` coûtait, si bien qu'un candidat
+qui introduit **exactement une** violation dure ressort à score constant :
+l'assistant le garde en annonçant ce qu'il casserait, alors que l'appeler
+« disponible » serait faux. La correspondance entre les deux écrans est vérifiée
+dans les deux sens sur `envisageable` (`CreneauAvailabilityCoherenceTest`).
+
+Tous les motifs applicables sont listés, pas seulement le plus bloquant : savoir
+que lever l'indisponibilité en laisserait trois autres derrière est précisément
+ce qui permet de décider s'il vaut la peine de négocier.
+
+**« Compétence absente » n'est pas une exclusion.** L'appréciation est une
+contrainte *medium* (`appreciationIncompatible`) depuis qu'elle a cessé d'être
+une qualification bloquante : elle apparaît donc comme motif, au niveau
+`MEDIUM`, sur une ligne qui peut rester `disponible`. Un **renfort**
+(typologie ninja) n'en porte jamais : `Animateur.hasCompetenceFor` le considère
+compétent partout, et cette vue lit ce verdict au lieu d'en produire un second.
+Elle ne mesure aucune rareté de compétence — c'est le sujet du goulot par
+compétence, où un renfort ne compte jamais comme **spécialiste**.
 
 ### Figer la date du jour — développement uniquement
 

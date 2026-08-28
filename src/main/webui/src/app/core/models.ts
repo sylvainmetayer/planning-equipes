@@ -910,6 +910,52 @@ export interface StaffingSummary {
   parCompetence: CompetenceStaffing;
 }
 
+/**
+ * One reason an animateur is not on a seat, as `/api/banc-de-touche` returns
+ * it: the name of a constraint the solver really enforces, plus the wording the
+ * constraint catalogue holds for it. Nothing here is worded by the frontend —
+ * that is the whole point of issue #303.
+ */
+export interface MotifExclusion {
+  contrainte: string;
+  niveau: 'HARD' | 'MEDIUM' | 'SOFT' | null;
+  categorie: string | null;
+  description: string | null;
+}
+
+/**
+ * One line of the banc de touche, with two verdicts that are deliberately not
+ * the same one:
+ *
+ * - `disponible` — no hard rule stands between this animateur and the seat.
+ *   This is what the screen shows.
+ * - `envisageable` — the repair assistant's own test (eligible, and the plan's
+ *   hard score no worse). Laxer: filling an empty seat earns back a hard point,
+ *   so a candidate introducing exactly one hard violation comes out
+ *   score-neutral. `disponible` implies `envisageable`, never the reverse.
+ */
+export interface AnimateurBanc {
+  animateurId: string;
+  disponible: boolean;
+  envisageable: boolean;
+  /** Score delta the assignment would cause; null when no hypothesis was evaluated. */
+  delta: HardMediumSoftScore | null;
+  motifs: MotifExclusion[];
+}
+
+/** Answer of `GET /api/banc-de-touche/{creneauId}`. */
+export interface BancDeTouche {
+  creneauId: number;
+  /** The seat every reason is relative to. */
+  posteCibleId: string;
+  standCibleId: string | null;
+  /** Its current occupant, null when the seat is free. */
+  animateurCibleId: string | null;
+  total: number;
+  disponibles: number;
+  animateurs: AnimateurBanc[];
+}
+
 /** One row of `/api/planning/hours`: hours planned per ISO week (`AAAA-Wss`) plus the total. */
 export interface HeuresAnimateur {
   animateurId: string;

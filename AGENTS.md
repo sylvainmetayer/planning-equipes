@@ -262,7 +262,8 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   path and the domain type keep the `ContrainteAdHoc` name, only the label was
   renamed), `/calendar`, `/day-calendar`, `/constraints`,
   `/problemes`, `/echanges`, `/hours`, `/staffing`, `/jour-j` (« Mode jour J » —
-  the day-of screen: mark somebody absent, repair the seats they held), `/aide` (`/solver`,
+  the day-of screen: mark somebody absent, repair the seats they held),
+  `/banc-de-touche`, `/aide` (`/solver`,
   `/exports`, `/data-transfer`, `/data-setup`, `/decoupage` and
   `/validateur-yaml` are legacy redirects, kept for old bookmarks/links).
   Adding a functional block means adding a route and a `app/pages/<block>/`

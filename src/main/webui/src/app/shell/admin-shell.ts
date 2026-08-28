@@ -116,6 +116,11 @@ function buildNavGroups(devMode: boolean): NavGroup[] {
         path: '/staffing',
         label: $localize`:@@nav.link.staffing:Besoin en animateurs`,
         icon: 'engineering'
+      },
+      {
+        path: '/banc-de-touche',
+        label: $localize`:@@nav.link.bancDeTouche:Banc de touche`,
+        icon: 'airline_seat_recline_normal'
       }
     ]
   },

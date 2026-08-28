@@ -502,6 +502,10 @@ export function buildHelpSections(): HelpSection[] {
               text: $localize`:@@aide.views.def.comparateur:Deux plannings côte à côte — deux instantanés, ou un instantané et le planning actuel — sur le score, la couverture, l'équité et les violations, avec le sens de chaque écart écrit en toutes lettres. Les instantanés de toutes les éditions sont proposés : c'est ainsi qu'on compare une variante (canicule, repli) à l'édition nominale. L'écran prévient quand les deux plannings n'ont pas la même taille ou ne viennent pas de la même édition : une partie de l'écart vient alors du problème posé, pas de la qualité de la résolution. Comparer ne lance jamais de calcul.`
             },
             {
+              term: $localize`:@@aide.views.term.banc:Banc de touche`,
+              text: $localize`:@@aide.views.def.banc:Pour un créneau, qui n'est affecté nulle part — et, pour chacun, la règle qui l'empêcherait de prendre la place restée libre : indisponible ce jour-là, repos légal, plafond d'heures atteint, appréciation manquante. Toutes les raisons applicables sont affichées, pas seulement la première : c'est ce qui dit si lever un obstacle suffirait. La vue est en lecture seule ; pour agir, passez par l'assistant de réparation du calendrier journalier.`
+            },
+            {
               term: $localize`:@@aide.views.term.hours:Heures et besoin en animateurs`,
               text: $localize`:@@aide.views.def.hours:Les heures travaillées par animateur d'un côté, l'estimation du nombre minimum d'animateurs à recruter de l'autre. La seconde se calcule avant toute résolution, à partir des seuls stands et créneaux. Elle se lit aussi typologie par typologie, en bas de la page : une typologie dont le minimum dépasse le nombre d'animateurs qui la déclarent est le goulot — il n'y manque pas des animateurs en général, mais des animateurs compétents sur ce jeu-là. Deux règles rendent cette lecture honnête : un siège n'est compté pour une typologie que si son stand ne propose qu'elle, et un polyvalent ne compte comme spécialiste que dans les compétences qu'il déclare — ailleurs il apparaît à part, comme un renfort mobilisable sur n'importe quelle typologie mais sur un siège à la fois.`
             },
@@ -518,6 +522,7 @@ export function buildHelpSections(): HelpSection[] {
         { route: '/timeline', label: $localize`:@@nav.link.timeline:Timeline animateur` },
         { route: '/hours', label: $localize`:@@nav.link.hours:Heures` },
         { route: '/fragilite', label: $localize`:@@nav.link.fragilite:Fragilité du planning` },
+        { route: '/banc-de-touche', label: $localize`:@@nav.link.bancDeTouche:Banc de touche` },
         { route: '/comparateur', label: $localize`:@@nav.link.comparateur:Comparateur A/B` }
       ]
     },
