@@ -106,3 +106,94 @@
     }
   </mat-card-content>
 </mat-card>
+
+@if (competence(); as goulot) {
+  <mat-card appearance="outlined" class="page-card">
+    <mat-card-header>
+      <h2 mat-card-title i18n="@@staffing.competence.title">Goulot par compétence</h2>
+      <mat-card-subtitle i18n="@@staffing.competence.description">
+        Les mêmes bornes, typologie par typologie : celle dont la borne dépasse ses spécialistes est le goulot. Un
+        polyvalent compte en renfort, jamais comme spécialiste. Les règles d'attribution sont détaillées sur la page
+        « Aide ».
+      </mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      @if (goulot.parTypologie.length === 0) {
+        <p class="empty-hint" i18n="@@staffing.competence.empty">
+          Aucun siège n'est rattaché à une typologie unique : rien à décliner par compétence pour le moment.
+        </p>
+      } @else {
+        <p class="empty-hint staffing-caveat">
+          <mat-icon inline aria-hidden="true">groups_2</mat-icon>
+          <span>{{ reserveLabel() }}</span>
+        </p>
+        <div class="table-wrapper">
+          <table mat-table [dataSource]="goulot.parTypologie">
+            <caption class="visually-hidden" i18n="@@staffing.competence.table.caption">
+              Borne minimale et vivier d'animateurs compétents, typologie par typologie
+            </caption>
+            <ng-container matColumnDef="typologie">
+              <th mat-header-cell *matHeaderCellDef i18n="@@staffing.competence.column.typologie">Typologie</th>
+              <td mat-cell *matCellDef="let row">
+                {{ row.label }}
+                @if (row.ninja) {
+                  <!--
+                    aria-hidden="false" on purpose: MatIcon hides itself from assistive tech, which
+                    would drop the tooltip's own description. Same trap as the shell's icon buttons.
+                  -->
+                  <mat-icon
+                    inline
+                    aria-hidden="false"
+                    class="staffing-ninja"
+                    [matTooltip]="ninjaTooltip"
+                    [attr.aria-label]="ninjaTooltip"
+                    >bolt</mat-icon
+                  >
+                }
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="sieges">
+              <th mat-header-cell *matHeaderCellDef i18n="@@staffing.competence.column.siegesExclusifs">
+                Sièges exclusifs
+              </th>
+              <td mat-cell *matCellDef="let row">{{ row.sieges }}</td>
+            </ng-container>
+            <ng-container matColumnDef="minimumTotal">
+              <th mat-header-cell *matHeaderCellDef i18n="@@staffing.competence.column.minimum">Minimum requis</th>
+              <td mat-cell *matCellDef="let row">
+                <strong>{{ row.minimumTotal }}</strong>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="specialistes">
+              <th mat-header-cell *matHeaderCellDef i18n="@@staffing.competence.column.specialistes">
+                Spécialistes
+              </th>
+              <td mat-cell *matCellDef="let row">{{ row.specialistes }}</td>
+            </ng-container>
+            <ng-container matColumnDef="manque">
+              <th mat-header-cell *matHeaderCellDef i18n="@@staffing.competence.column.manque">Manque</th>
+              <td mat-cell *matCellDef="let row">
+                @if (estGoulot(row)) {
+                  <strong class="staffing-critical">
+                    <mat-icon inline aria-hidden="true">priority_high</mat-icon>
+                    {{ row.manque }}
+                  </strong>
+                } @else {
+                  <span class="staffing-ok">0</span>
+                }
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="competenceColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: competenceColumns" [class.staffing-goulot]="estGoulot(row)"></tr>
+          </table>
+        </div>
+        @if (goulot.siegesNonAttribues > 0) {
+          <p class="empty-hint staffing-caveat">
+            <mat-icon inline aria-hidden="true">call_split</mat-icon>
+            <span>{{ siegesNonAttribuesLabel() }}</span>
+          </p>
+        }
+      }
+    </mat-card-content>
+  </mat-card>
+}

@@ -2,7 +2,9 @@ package dev.sylvain.planning.service;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.temporal.IsoFields;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -11,6 +13,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -61,10 +64,51 @@ import jakarta.enterprise.context.ApplicationScoped;
  * may legally work over the event's ISO weeks.</li>
  * </ol>
  *
- * <p>All three stay optimistic: none of them accounts for compétences, for
- * individual disponibilités, or for the daily-rest constraints. They are a
- * recruitment floor to exceed, never a target — the exact answer only comes
- * from a real solve.</p>
+ * <p>All three stay optimistic: none of them accounts for individual
+ * disponibilités or for the daily-rest constraints. They are a recruitment
+ * floor to exceed, never a target — the exact answer only comes from a real
+ * solve.</p>
+ *
+ * <h2>Bottleneck per game category</h2>
+ *
+ * <p>The three bounds above are global, so they answer "how many animateurs"
+ * and never "how many of which kind" — yet a plan that misses four people
+ * almost always misses four people <em>competent on one game category</em>.
+ * {@link CompetenceStaffing} replays the same three bounds on the seats of a
+ * single category and puts them against the animateurs who can hold them. Two
+ * attribution rules make that comparison sound rather than merely plausible:</p>
+ *
+ * <ul>
+ * <li><b>Demand is attributed exclusively.</b> A seat counts for category
+ * {@code T} only when its stand proposes {@code T} and nothing else — then,
+ * and only then, is {@code T} provably required to staff it. The seats of a
+ * stand proposing several categories can be covered from either pool, so no
+ * single category can claim them; they are reported apart, as
+ * {@link CompetenceStaffing#siegesNonAttribues()}. Splitting them over every
+ * category of their stand would count the same seat several times and invent
+ * bottlenecks.</li>
+ * <li><b>A ninja is a reinforcement, never a specialist.</b>
+ * {@link Animateur#hasCompetenceFor(Stand)} lets a polyvalent take any stand,
+ * so counting them as available in every category would add the same person to
+ * every row — inflating each pool and hiding the very bottleneck this exists
+ * to show. A pool therefore holds the {@code specialistes} of a category: the
+ * animateurs who declared it (the ninja category included, since on the demand
+ * side it is a category like any other). The polyvalents are reported once
+ * more, apart, as a shared reserve — {@link CompetenceStaffing#polyvalents()},
+ * dispatchable anywhere but each on one seat at a time. A
+ * {@link CompetenceStaffing#manqueTotal()} larger than that reserve is a
+ * signal, not a proof: two categories peaking at different hours can be served
+ * by the same polyvalent. This is the reading the decision record "le ninja
+ * est un renfort, jamais un spécialiste" settles for the neighbouring
+ * fragilité screen, applied to the same question — measuring the rarity of a
+ * competence never counts the polyvalents in.</li>
+ * </ul>
+ *
+ * <p>Both approximations this leaves point the same way — demand understated
+ * for a stand proposing several categories, supply overstated for an animateur
+ * competent on several — so a flagged bottleneck is a real one, while the
+ * absence of one proves nothing. That is the same optimism as the bounds
+ * above.</p>
  */
 @ApplicationScoped
 public class StaffingAnalyzer {
@@ -104,15 +148,75 @@ public class StaffingAnalyzer {
             int minimumMajeurs,
             int minimumMineurs,
             int pauseMinimaleMinutes,
-            int dureeHebdomadaireMaxMinutes) {
+            int dureeHebdomadaireMaxMinutes,
+            CompetenceStaffing parCompetence) {
+    }
+
+    /**
+     * One game category: the same bounds as {@link StaffingSummary}, computed
+     * on the seats that provably require it, against its {@code specialistes}
+     * — the animateurs declaring it. {@code manque} is what that pool is short
+     * of: zero when the bound is met, and zero as long as no animateur is
+     * known at all, since there is then nothing to compare the bound to.
+     */
+    public record TypologieStaffing(
+            String typologie,
+            String label,
+            boolean ninja,
+            int sieges,
+            double heures,
+            int nombreSemaines,
+            int picSimultane,
+            int picAvecPause,
+            int chargeTotal,
+            int minimumTotal,
+            BorneRetenue borneRetenue,
+            int specialistes,
+            int manque) {
+    }
+
+    /**
+     * The bottleneck view: one row per game category holding seats, plus what
+     * the per-category reading deliberately leaves out — see the class javadoc.
+     *
+     * @param parTypologie      rows, the tightest bottleneck first
+     * @param polyvalents       animateurs holding the ninja category: a shared
+     *                          reserve, dispatchable on any category but on one
+     *                          seat at a time
+     * @param siegesNonAttribues seats of stands proposing several categories (or
+     *                          none), which no single category can claim
+     * @param manqueTotal       sum of the {@code manque} of every row
+     * @param animateursTotal   animateurs known at all — {@code 0} means the
+     *                          référentiel is still empty and nothing is compared
+     * @param typologieNinjaDefinie whether the referential marks a ninja category
+     *                          at all. Without it nobody is polyvalent, and a
+     *                          reserve of zero must be read as "no such notion
+     *                          here" rather than as a shortage of backup
+     */
+    public record CompetenceStaffing(
+            List<TypologieStaffing> parTypologie,
+            int polyvalents,
+            int siegesNonAttribues,
+            int manqueTotal,
+            int animateursTotal,
+            boolean typologieNinjaDefinie) {
     }
 
     /** Half-open interval of one seat, in minutes from the start of its day. */
     private record Siege(LocalDate date, int debut, int fin, Stand stand) {
     }
 
-    public StaffingSummary analyze(List<PosteAffectation> postes, int dureeHebdomadaireMaxMinutes,
-            int pauseMinimaleMinutes) {
+    /**
+     * @param animateurs  the animateurs the referential holds, only ever
+     *                    counted — never named. An empty list still yields
+     *                    every bound; only the bottleneck comparison is left
+     *                    out, since there is nothing to compare against yet.
+     * @param typologies  the game category referential, which is what tells
+     *                    the ninja one apart. Never a hard-coded list: those
+     *                    categories are CRUD data.
+     */
+    public StaffingSummary analyze(List<PosteAffectation> postes, List<Animateur> animateurs,
+            List<TypologieItem> typologies, int dureeHebdomadaireMaxMinutes, int pauseMinimaleMinutes) {
         List<Siege> sieges = sieges(postes);
         Map<LocalDate, List<Siege>> byDate = new TreeMap<>();
         for (Siege siege : sieges) {
@@ -177,7 +281,131 @@ public class StaffingAnalyzer {
                 minimumMajeurs,
                 minimumTotal - minimumMajeurs,
                 pauseMinimaleMinutes,
-                dureeHebdomadaireMaxMinutes);
+                dureeHebdomadaireMaxMinutes,
+                bottleneckPerCategory(sieges, animateurs, typologies, dureeHebdomadaireMaxMinutes,
+                        pauseMinimaleMinutes));
+    }
+
+    /**
+     * Replays the three bounds on the seats of each game category and puts
+     * them against the animateurs who declare it — see the class javadoc for
+     * the two attribution rules this rests on.
+     */
+    private static CompetenceStaffing bottleneckPerCategory(List<Siege> sieges, List<Animateur> animateurs,
+            List<TypologieItem> typologies, int dureeHebdomadaireMaxMinutes, int pauseMinimaleMinutes) {
+        List<Animateur> connus = animateurs == null ? List.of() : animateurs;
+        List<TypologieItem> referentiel = typologies == null ? List.of() : typologies;
+
+        Map<String, List<Siege>> parTypologie = new LinkedHashMap<>();
+        int siegesNonAttribues = 0;
+        for (Siege siege : sieges) {
+            String typologie = typologieExclusive(siege.stand());
+            if (typologie == null) {
+                siegesNonAttribues++;
+            } else {
+                parTypologie.computeIfAbsent(typologie, id -> new ArrayList<>()).add(siege);
+            }
+        }
+
+        String ninja = referentiel.stream().filter(TypologieItem::ninja).map(TypologieItem::id).findFirst()
+                .orElse(null);
+        Map<String, String> labels = new LinkedHashMap<>();
+        referentiel.forEach(typologie -> labels.put(typologie.id(), typologie.label()));
+
+        Map<String, Integer> specialistes = new LinkedHashMap<>();
+        int polyvalents = 0;
+        for (Animateur animateur : connus) {
+            Map<String, ?> competences = animateur.getCompetences() == null ? Map.of() : animateur.getCompetences();
+            // Declared competences only: a ninja is eligible everywhere, but
+            // counting them in every category would add one person to every
+            // pool at once. They are the shared reserve below instead.
+            competences.keySet().forEach(id -> specialistes.merge(id, 1, Integer::sum));
+            if (animateur.isNinja() || (ninja != null && competences.containsKey(ninja))) {
+                polyvalents++;
+            }
+        }
+
+        List<TypologieStaffing> lignes = new ArrayList<>();
+        for (Map.Entry<String, List<Siege>> entree : parTypologie.entrySet()) {
+            String id = entree.getKey();
+            Bornes bornes = bornes(entree.getValue(), dureeHebdomadaireMaxMinutes, pauseMinimaleMinutes);
+            int disponibles = specialistes.getOrDefault(id, 0);
+            int manque = connus.isEmpty() ? 0 : Math.max(0, bornes.minimumTotal() - disponibles);
+            lignes.add(new TypologieStaffing(
+                    id,
+                    labels.getOrDefault(id, id),
+                    id.equals(ninja),
+                    entree.getValue().size(),
+                    bornes.heures(),
+                    bornes.semaines(),
+                    bornes.picSimultane(),
+                    bornes.picAvecPause(),
+                    bornes.chargeTotal(),
+                    bornes.minimumTotal(),
+                    bornes.borneRetenue(),
+                    disponibles,
+                    manque));
+        }
+        // Tightest bottleneck first, so the row that explains an infeasibility
+        // is the one read first.
+        lignes.sort(Comparator.comparingInt(TypologieStaffing::manque).reversed()
+                .thenComparing(Comparator.comparingInt(TypologieStaffing::minimumTotal).reversed())
+                .thenComparing(TypologieStaffing::label)
+                .thenComparing(TypologieStaffing::typologie));
+
+        return new CompetenceStaffing(
+                List.copyOf(lignes),
+                polyvalents,
+                siegesNonAttribues,
+                lignes.stream().mapToInt(TypologieStaffing::manque).sum(),
+                connus.size(),
+                ninja != null);
+    }
+
+    /**
+     * The one game category a stand's seats provably require, or {@code null}
+     * when it proposes several (either pool staffs them) or none at all.
+     */
+    private static String typologieExclusive(Stand stand) {
+        if (stand == null || stand.getTypologiesProposees() == null
+                || stand.getTypologiesProposees().size() != 1) {
+            return null;
+        }
+        return stand.getTypologiesProposees().iterator().next();
+    }
+
+    /** The three bounds of the class javadoc, over an arbitrary set of seats. */
+    private record Bornes(double heures, int semaines, int picSimultane, int picAvecPause, int chargeTotal,
+            int minimumTotal, BorneRetenue borneRetenue) {
+    }
+
+    private static Bornes bornes(Collection<Siege> sieges, int dureeHebdomadaireMaxMinutes,
+            int pauseMinimaleMinutes) {
+        Map<LocalDate, List<Siege>> byDate = new TreeMap<>();
+        double heures = 0;
+        for (Siege siege : sieges) {
+            byDate.computeIfAbsent(siege.date(), date -> new ArrayList<>()).add(siege);
+            heures += (siege.fin() - siege.debut()) / 60.0;
+        }
+        int picSimultane = 0;
+        int picAvecPause = 0;
+        for (List<Siege> duJour : byDate.values()) {
+            // Peaks are per day: minutes are counted from the start of a day,
+            // so seats of two different dates never overlap.
+            picSimultane = Math.max(picSimultane, pic(duJour, 0));
+            picAvecPause = Math.max(picAvecPause, pic(duJour, pauseMinimaleMinutes));
+        }
+        int semaines = (int) byDate.keySet().stream().mapToInt(StaffingAnalyzer::semaineIso).distinct().count();
+        double capacite = semaines * (dureeHebdomadaireMaxMinutes / 60.0);
+        int chargeTotal = capacite > 0 ? (int) Math.ceil(heures / capacite) : 0;
+        int minimumTotal = Math.max(Math.max(picSimultane, picAvecPause), chargeTotal);
+        return new Bornes(heures, semaines, picSimultane, picAvecPause, chargeTotal, minimumTotal,
+                borneRetenue(picSimultane, picAvecPause, chargeTotal));
+    }
+
+    /** Same weeks {@code Creneau#semaineIso()} names, as a comparable number. */
+    private static int semaineIso(LocalDate date) {
+        return date.get(IsoFields.WEEK_BASED_YEAR) * 100 + date.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR);
     }
 
     private static BorneRetenue borneRetenue(int picSimultane, int picAvecPause, int chargeTotal) {

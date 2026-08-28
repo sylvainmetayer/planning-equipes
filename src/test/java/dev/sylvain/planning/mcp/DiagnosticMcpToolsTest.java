@@ -10,7 +10,9 @@ import dev.sylvain.planning.mcp.ContrainteMcpTools.ContrainteView;
 import dev.sylvain.planning.mcp.StandMcpTools.StandsView;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.OuvertureStandsAnalyzer.RapportOuvertures;
+import dev.sylvain.planning.service.StaffingAnalyzer.CompetenceStaffing;
 import dev.sylvain.planning.service.StaffingAnalyzer.StaffingSummary;
+import dev.sylvain.planning.service.StaffingAnalyzer.TypologieStaffing;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.NotFoundException;
@@ -59,6 +61,23 @@ class DiagnosticMcpToolsTest {
         assertThat(effectifs.parJour()).isNotEmpty();
         assertThat(effectifs.borneRetenue()).isNotNull();
         assertThat(effectifs.jourCritique()).isNotNull();
+    }
+
+    @Test
+    void staffingIsAlsoBrokenDownPerGameCategoryOfTheReferential() {
+        // Proves the wiring, not the arithmetic: the analyzer only sees the
+        // categories and the animateurs the edition actually holds — nothing
+        // here is a hard-coded list of typologies.
+        loadScenario();
+
+        CompetenceStaffing competence = diagnosticTools.analyser_effectifs(null).parCompetence();
+
+        assertThat(competence.animateursTotal()).isPositive();
+        assertThat(competence.parTypologie()).extracting(TypologieStaffing::typologie)
+                .containsExactlyInAnyOrder("STRATEGIE", "HOMME_JEU");
+        assertThat(competence.parTypologie()).allSatisfy(
+                ligne -> assertThat(ligne.minimumTotal()).isPositive());
+        assertThat(competence.siegesNonAttribues()).isZero();
     }
 
     @Test

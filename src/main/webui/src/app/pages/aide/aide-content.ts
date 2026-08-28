@@ -454,7 +454,7 @@ export function buildHelpSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.views.term.hours:Heures et besoin en animateurs`,
-              text: $localize`:@@aide.views.def.hours:Les heures travaillées par animateur d'un côté, l'estimation du nombre minimum d'animateurs à recruter de l'autre. La seconde se calcule avant toute résolution, à partir des seuls stands et créneaux.`
+              text: $localize`:@@aide.views.def.hours:Les heures travaillées par animateur d'un côté, l'estimation du nombre minimum d'animateurs à recruter de l'autre. La seconde se calcule avant toute résolution, à partir des seuls stands et créneaux. Elle se lit aussi typologie par typologie, en bas de la page : une typologie dont le minimum dépasse le nombre d'animateurs qui la déclarent est le goulot — il n'y manque pas des animateurs en général, mais des animateurs compétents sur ce jeu-là. Deux règles rendent cette lecture honnête : un siège n'est compté pour une typologie que si son stand ne propose qu'elle, et un polyvalent ne compte comme spécialiste que dans les compétences qu'il déclare — ailleurs il apparaît à part, comme un renfort mobilisable sur n'importe quelle typologie mais sur un siège à la fois.`
             },
             {
               term: $localize`:@@aide.views.term.fragilite:Fragilité du planning`,

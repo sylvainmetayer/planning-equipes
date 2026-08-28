@@ -46,3 +46,18 @@
   gap: 0.5rem;
   margin: 1rem 0 1.25rem;
 }
+
+/* Bottleneck per game category: the rows whose bound exceeds their pool. */
+
+.staffing-goulot {
+  background: color-mix(in srgb, var(--mat-sys-error-container) 45%, transparent);
+}
+
+.staffing-ninja {
+  color: var(--mat-sys-primary);
+  vertical-align: middle;
+}
+
+.staffing-ok {
+  color: var(--mat-sys-on-surface-variant);
+}

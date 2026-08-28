@@ -10,7 +10,7 @@ import { provideZonelessChangeDetection, Signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
-import { BorneStaffing, JourStaffing, StaffingSummary } from '../../core/models';
+import { BorneStaffing, CompetenceStaffing, JourStaffing, StaffingSummary, TypologieStaffing } from '../../core/models';
 import { StaffingPage } from './staffing-page';
 
 /** A promise whose settlement the test drives, to observe the in-flight state. */
@@ -35,6 +35,37 @@ function jour(overrides: Partial<JourStaffing> = {}): JourStaffing {
   };
 }
 
+function typologie(overrides: Partial<TypologieStaffing> = {}): TypologieStaffing {
+  return {
+    typologie: 'ESCAPE',
+    label: 'Escape game',
+    ninja: false,
+    sieges: 12,
+    heures: 60,
+    nombreSemaines: 1,
+    picSimultane: 4,
+    picAvecPause: 6,
+    chargeTotal: 3,
+    minimumTotal: 6,
+    borneRetenue: 'PIC_AVEC_PAUSE',
+    specialistes: 6,
+    manque: 0,
+    ...overrides
+  };
+}
+
+function competence(overrides: Partial<CompetenceStaffing> = {}): CompetenceStaffing {
+  return {
+    parTypologie: [typologie()],
+    polyvalents: 3,
+    siegesNonAttribues: 0,
+    manqueTotal: 0,
+    animateursTotal: 40,
+    typologieNinjaDefinie: true,
+    ...overrides
+  };
+}
+
 function summary(overrides: Partial<StaffingSummary> = {}): StaffingSummary {
   return {
     parJour: [jour()],
@@ -51,6 +82,7 @@ function summary(overrides: Partial<StaffingSummary> = {}): StaffingSummary {
     minimumMineurs: 7,
     pauseMinimaleMinutes: 30,
     dureeHebdomadaireMaxMinutes: 2880,
+    parCompetence: competence(),
     ...overrides
   };
 }
@@ -65,6 +97,11 @@ type PageInternals = {
   jourCritiqueLabel: (jour: JourStaffing) => string;
   estBorneRetenue: (borne: BorneStaffing) => boolean;
   pauseMinutes: () => number;
+  competenceColumns: string[];
+  competence: Signal<CompetenceStaffing | null>;
+  estGoulot: (ligne: TypologieStaffing) => boolean;
+  reserveLabel: Signal<string>;
+  siegesNonAttribuesLabel: Signal<string>;
   /** Private to the component; reachable here because `private` is compile-time only. */
   load: () => Promise<void>;
 };
@@ -220,6 +257,81 @@ describe('StaffingPage', () => {
 
       expect(page.columns).toContain('picSimultane');
       expect(page.columns).toContain('picAvecPause');
+    });
+  });
+
+  describe('bottleneck per game category', () => {
+    /** Loads a page whose summary carries the given breakdown, and waits for it. */
+    async function pageWith(overrides: Partial<CompetenceStaffing>): Promise<PageInternals> {
+      api.get.mockResolvedValue(summary({ parCompetence: competence(overrides) }));
+      const page = createPage();
+      await vi.waitFor(() => expect(page.competence()).not.toBeNull());
+      return page;
+    }
+
+    // The decision this pins: one payload, one round trip. The breakdown is
+    // the same computation on the same seats, so it travels with them rather
+    // than through an endpoint that would rebuild the whole problem.
+    it('reads the breakdown from the same payload, without a second request', async () => {
+      const page = await pageWith({ polyvalents: 7 });
+
+      expect(api.get).toHaveBeenCalledExactlyOnceWith('/api/staffing');
+      expect(page.competence()?.polyvalents).toBe(7);
+    });
+
+    it('has no breakdown to show while nothing is loaded', () => {
+      api.get.mockReturnValue(deferred<StaffingSummary>().promise);
+
+      const page = createPage();
+
+      expect(page.competence()).toBeNull();
+      expect(page.reserveLabel()).toBe('');
+    });
+
+    it('highlights the rows the server reported a shortfall on, and only those', () => {
+      const page = createPage();
+
+      expect(page.estGoulot(typologie({ manque: 4 }))).toBe(true);
+      expect(page.estGoulot(typologie({ manque: 0 }))).toBe(false);
+    });
+
+    it('says nothing can be detected yet while no animateur is known', async () => {
+      const page = await pageWith({ animateursTotal: 0, polyvalents: 0, manqueTotal: 0 });
+
+      expect(page.reserveLabel()).toContain('Aucun animateur');
+    });
+
+    it('announces the absence of a bottleneck without claiming a reserve there is none of', async () => {
+      const withReserve = await pageWith({ manqueTotal: 0, polyvalents: 4 });
+      expect(withReserve.reserveLabel()).toContain('Aucun goulot');
+      expect(withReserve.reserveLabel()).toContain('4');
+
+      const withoutReserve = await pageWith({ manqueTotal: 0, polyvalents: 0 });
+      expect(withoutReserve.reserveLabel()).toContain('Aucun goulot');
+      expect(withoutReserve.reserveLabel()).not.toContain('0 polyvalents');
+    });
+
+    it('says a reserve of zero is no notion here when no typologie is marked polyvalente', async () => {
+      const page = await pageWith({ manqueTotal: 3, polyvalents: 0, typologieNinjaDefinie: false });
+
+      expect(page.reserveLabel()).toContain('Aucune typologie');
+      expect(page.reserveLabel()).not.toContain('plus mince');
+    });
+
+    it('reads the shortfall against the polyvalent reserve, which absorbs it or does not', async () => {
+      const absorbable = await pageWith({ manqueTotal: 2, polyvalents: 5 });
+      expect(absorbable.reserveLabel()).toContain('peuvent y répondre');
+      expect(absorbable.reserveLabel()).not.toContain('plus mince');
+
+      const shortfall = await pageWith({ manqueTotal: 8, polyvalents: 5 });
+      expect(shortfall.reserveLabel()).toContain('8');
+      expect(shortfall.reserveLabel()).toContain('plus mince');
+    });
+
+    it('reports the seats no single typologie can claim', async () => {
+      const page = await pageWith({ siegesNonAttribues: 14 });
+
+      expect(page.siegesNonAttribuesLabel()).toContain('14');
     });
   });
 });

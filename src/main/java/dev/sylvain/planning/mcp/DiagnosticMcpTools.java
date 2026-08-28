@@ -55,9 +55,10 @@ public class DiagnosticMcpTools {
      * change the count.
      */
     @Tool(description = "Combien d'animateurs il faut au minimum pour couvrir l'événement, et pourquoi : pic "
-            + "simultané, pic avec pause, charge horaire totale, jour critique, et le détail par jour. Calcul en "
-            + "Java pur, aucune résolution lancée. Le résultat est un plancher optimiste — il ignore compétences, "
-            + "disponibilités individuelles et repos quotidien.",
+            + "simultané, pic avec pause, charge horaire totale, jour critique, et le détail par jour, plus le "
+            + "goulot par typologie : les mêmes bornes sur les sièges d'une seule typologie, face aux animateurs "
+            + "qui la déclarent. Calcul en Java pur, aucune résolution lancée. Le résultat est un plancher "
+            + "optimiste — il ignore disponibilités individuelles et repos quotidien.",
             annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
                     idempotentHint = true, openWorldHint = false))
     StaffingSummary analyser_effectifs(
@@ -70,7 +71,8 @@ public class DiagnosticMcpTools {
         } catch (IllegalStateException e) {
             postes = List.of();
         }
-        return staffingAnalyzer.analyze(postes, parametres.getDureeHebdomadaireMaxMinutes(),
+        return staffingAnalyzer.analyze(postes, referenceDataService.listAnimateurs(),
+                referenceDataService.listTypologies(), parametres.getDureeHebdomadaireMaxMinutes(),
                 parametres.getPauseMinimaleEntreVacationsMinutes());
     }
 

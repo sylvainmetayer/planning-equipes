@@ -5,26 +5,36 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
+import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.StaffingAnalyzer.BorneRetenue;
+import dev.sylvain.planning.domain.NiveauCompetence;
+import dev.sylvain.planning.service.StaffingAnalyzer.CompetenceStaffing;
 import dev.sylvain.planning.service.StaffingAnalyzer.StaffingSummary;
+import dev.sylvain.planning.service.StaffingAnalyzer.TypologieStaffing;
 
 class StaffingAnalyzerTest {
 
     private static final LocalDate JOUR = LocalDate.of(2026, 7, 10);
+    private static final List<TypologieItem> TYPOLOGIES = List.of(
+            new TypologieItem("JEUX", "Jeux de société"),
+            new TypologieItem("ESCAPE", "Escape game"),
+            new TypologieItem("NINJA", "Ninja", true));
 
     private final StaffingAnalyzer analyzer = new StaffingAnalyzer();
 
     @Test
     void emptyProblemNeedsNobody() {
-        StaffingSummary summary = analyzer.analyze(List.of(), 48 * 60, 30);
+        StaffingSummary summary = analyzer.analyze(List.of(), List.of(), TYPOLOGIES, 48 * 60, 30);
 
         assertThat(summary.minimumTotal()).isZero();
         assertThat(summary.parJour()).isEmpty();
@@ -42,7 +52,7 @@ class StaffingAnalyzerTest {
         postes.addAll(postes(stand("B", 2), matin, 2));
         postes.addAll(postes(stand("C", 3), afternoon, 3));
 
-        StaffingSummary summary = analyzer.analyze(postes, 48 * 60, 0);
+        StaffingSummary summary = analyzer.analyze(postes, List.of(), TYPOLOGIES, 48 * 60, 0);
 
         assertThat(summary.picSimultane()).isEqualTo(4);
         assertThat(summary.parJour()).hasSize(1);
@@ -63,7 +73,7 @@ class StaffingAnalyzerTest {
         postes.addAll(postes(stand, creneau(1, LocalTime.of(10, 0), LocalTime.of(15, 15)), 1));
         postes.addAll(postes(stand, creneau(2, LocalTime.of(15, 0), LocalTime.of(20, 0)), 1));
 
-        StaffingSummary summary = analyzer.analyze(postes, 48 * 60, 0);
+        StaffingSummary summary = analyzer.analyze(postes, List.of(), TYPOLOGIES, 48 * 60, 0);
 
         // 2 only during the 15 min handover the relay pattern is built on.
         assertThat(summary.picSimultane()).isEqualTo(2);
@@ -80,7 +90,7 @@ class StaffingAnalyzerTest {
         postes.addAll(postes(stand, creneau(1, LocalTime.of(10, 0), LocalTime.of(15, 0)), 1));
         postes.addAll(postes(stand, creneau(2, LocalTime.of(15, 0), LocalTime.of(20, 0)), 1));
 
-        StaffingSummary summary = analyzer.analyze(postes, 48 * 60, 30);
+        StaffingSummary summary = analyzer.analyze(postes, List.of(), TYPOLOGIES, 48 * 60, 30);
 
         assertThat(summary.picSimultane()).isEqualTo(1);
         assertThat(summary.picAvecPause()).isEqualTo(2);
@@ -100,7 +110,7 @@ class StaffingAnalyzerTest {
             postes.addAll(postes(stand("A", 1), creneau, 1));
         }
 
-        StaffingSummary summary = analyzer.analyze(postes, 20 * 60, 30);
+        StaffingSummary summary = analyzer.analyze(postes, List.of(), TYPOLOGIES, 20 * 60, 30);
 
         assertThat(summary.nombreSemaines()).isEqualTo(1);
         assertThat(summary.totalDemandeHeures()).isEqualTo(70.0);
@@ -112,7 +122,7 @@ class StaffingAnalyzerTest {
     @Test
     void aWindowCrossingMidnightStaysOnTheEveningItStartedOn() {
         Creneau soiree = creneau(1, LocalTime.of(22, 0), LocalTime.of(2, 0));
-        StaffingSummary summary = analyzer.analyze(postes(stand("A", 1), soiree, 1), 48 * 60, 30);
+        StaffingSummary summary = analyzer.analyze(postes(stand("A", 1), soiree, 1), List.of(), TYPOLOGIES, 48 * 60, 30);
 
         assertThat(summary.parJour()).hasSize(1);
         assertThat(summary.parJour().get(0).date()).isEqualTo(JOUR);
@@ -127,7 +137,7 @@ class StaffingAnalyzerTest {
         List<PosteAffectation> postes = new ArrayList<>(postes(majeurs, matin, 2));
         postes.addAll(postes(stand("B", 2), matin, 2));
 
-        StaffingSummary summary = analyzer.analyze(postes, 48 * 60, 0);
+        StaffingSummary summary = analyzer.analyze(postes, List.of(), TYPOLOGIES, 48 * 60, 0);
 
         // 2 adult-only seats + 1 of the 2 remaining ones = 3 of 4.
         assertThat(summary.minimumTotal()).isEqualTo(4);
@@ -135,8 +145,149 @@ class StaffingAnalyzerTest {
         assertThat(summary.minimumMineurs()).isEqualTo(1);
     }
 
+    @Test
+    void aTypologieIsABottleneckWhenItsBoundExceedsItsCompetentPool() {
+        Creneau matin = creneau(1, LocalTime.of(10, 0), LocalTime.of(12, 0));
+        List<PosteAffectation> postes = new ArrayList<>(postes(stand("A", 3, "ESCAPE"), matin, 3));
+        postes.addAll(postes(stand("B", 1, "JEUX"), matin, 1));
+
+        CompetenceStaffing competence = analyzer.analyze(postes,
+                List.of(animateur("1", "ESCAPE"), animateur("2", "JEUX"), animateur("3", "JEUX")),
+                TYPOLOGIES, 48 * 60, 0).parCompetence();
+
+        // Sorted by shortfall: the bottleneck is what the reader must see first.
+        assertThat(competence.parTypologie()).extracting(TypologieStaffing::typologie)
+                .containsExactly("ESCAPE", "JEUX");
+        TypologieStaffing escape = competence.parTypologie().get(0);
+        assertThat(escape.label()).isEqualTo("Escape game");
+        assertThat(escape.sieges()).isEqualTo(3);
+        assertThat(escape.minimumTotal()).isEqualTo(3);
+        assertThat(escape.specialistes()).isEqualTo(1);
+        assertThat(escape.manque()).isEqualTo(2);
+        // The global bound sees 4 seats for 3 animateurs and misses which one
+        // is short: that gap is the whole point of the per-typologie reading.
+        assertThat(competence.parTypologie().get(1).manque()).isZero();
+        assertThat(competence.manqueTotal()).isEqualTo(2);
+    }
+
+    @Test
+    void aNinjaCountsInTheirDeclaredTypologiesAndInTheSharedReserveOnly() {
+        // A polyvalent may take any stand, so counting them as available in
+        // every typologie would add the same person to every pool and hide
+        // the bottleneck. They count where they declared, plus once as the
+        // reserve.
+        Creneau matin = creneau(1, LocalTime.of(10, 0), LocalTime.of(12, 0));
+        List<PosteAffectation> postes = new ArrayList<>(postes(stand("A", 2, "ESCAPE"), matin, 2));
+        postes.addAll(postes(stand("B", 1, "NINJA"), matin, 1));
+
+        CompetenceStaffing competence = analyzer.analyze(postes,
+                List.of(animateur("1", "NINJA"), animateur("2", "NINJA", "JEUX")),
+                TYPOLOGIES, 48 * 60, 0).parCompetence();
+
+        assertThat(competence.polyvalents()).isEqualTo(2);
+        assertThat(competence.typologieNinjaDefinie()).isTrue();
+        assertThat(competence.parTypologie()).extracting(TypologieStaffing::typologie)
+                .containsExactly("ESCAPE", "NINJA");
+        assertThat(competence.parTypologie().get(0).specialistes()).isZero();
+        assertThat(competence.parTypologie().get(0).manque()).isEqualTo(2);
+        TypologieStaffing ninja = competence.parTypologie().get(1);
+        assertThat(ninja.ninja()).isTrue();
+        assertThat(ninja.specialistes()).isEqualTo(2);
+        assertThat(ninja.manque()).isZero();
+        // The reserve can absorb the shortfall here — one polyvalent per seat.
+        assertThat(competence.manqueTotal()).isEqualTo(2);
+    }
+
+    @Test
+    void aReferentialWithoutANinjaCategorySaysSoRatherThanReportingAnEmptyReserve() {
+        // Nobody is polyvalent when no category carries the flag, so a reserve
+        // of zero must read as "no such notion here", never as a shortage.
+        Creneau matin = creneau(1, LocalTime.of(10, 0), LocalTime.of(12, 0));
+
+        CompetenceStaffing competence = analyzer
+                .analyze(postes(stand("A", 2, "ESCAPE"), matin, 2), List.of(animateur("1", "ESCAPE")),
+                        List.of(new TypologieItem("ESCAPE", "Escape game")), 48 * 60, 0)
+                .parCompetence();
+
+        assertThat(competence.typologieNinjaDefinie()).isFalse();
+        assertThat(competence.polyvalents()).isZero();
+        assertThat(competence.parTypologie().get(0).ninja()).isFalse();
+    }
+
+    @Test
+    void seatsOfAStandProposingSeveralTypologiesBelongToNoneOfThem() {
+        // Either pool staffs them, so no single typologie provably requires
+        // them: claiming them for both would invent two bottlenecks.
+        Creneau matin = creneau(1, LocalTime.of(10, 0), LocalTime.of(12, 0));
+        List<PosteAffectation> postes = new ArrayList<>(postes(stand("A", 2, "ESCAPE", "JEUX"), matin, 2));
+        postes.addAll(postes(stand("B", 1, "JEUX"), matin, 1));
+
+        CompetenceStaffing competence = analyzer.analyze(postes, List.of(animateur("1", "JEUX")),
+                TYPOLOGIES, 48 * 60, 0).parCompetence();
+
+        assertThat(competence.siegesNonAttribues()).isEqualTo(2);
+        assertThat(competence.parTypologie()).extracting(TypologieStaffing::typologie).containsExactly("JEUX");
+        assertThat(competence.parTypologie().get(0).sieges()).isEqualTo(1);
+        assertThat(competence.manqueTotal()).isZero();
+    }
+
+    @Test
+    void anEmptyAnimateurReferentialFlagsNoBottleneckAtAll() {
+        Creneau matin = creneau(1, LocalTime.of(10, 0), LocalTime.of(12, 0));
+
+        CompetenceStaffing competence = analyzer
+                .analyze(postes(stand("A", 3, "ESCAPE"), matin, 3), List.of(), TYPOLOGIES, 48 * 60, 0)
+                .parCompetence();
+
+        assertThat(competence.animateursTotal()).isZero();
+        assertThat(competence.parTypologie().get(0).minimumTotal()).isEqualTo(3);
+        assertThat(competence.parTypologie().get(0).specialistes()).isZero();
+        assertThat(competence.parTypologie().get(0).manque()).isZero();
+        assertThat(competence.manqueTotal()).isZero();
+    }
+
+    @Test
+    void aTypologieBoundUsesTheSameThreeBoundsAsTheGlobalOne() {
+        // One ESCAPE seat open 10 h a day over one ISO week: the workload
+        // bound wins there too, exactly as it does globally.
+        List<PosteAffectation> postes = new ArrayList<>();
+        for (int jour = 0; jour < 7; jour++) {
+            Creneau creneau = new Creneau((long) jour, jour + 1, LocalDate.of(2026, 7, 6).plusDays(jour),
+                    LocalTime.of(10, 0), LocalTime.of(20, 0));
+            postes.addAll(postes(stand("A", 1, "ESCAPE"), creneau, 1));
+        }
+
+        TypologieStaffing escape = analyzer.analyze(postes, List.of(animateur("1", "ESCAPE")), TYPOLOGIES,
+                20 * 60, 30).parCompetence().parTypologie().get(0);
+
+        assertThat(escape.nombreSemaines()).isEqualTo(1);
+        assertThat(escape.heures()).isEqualTo(70.0);
+        assertThat(escape.picSimultane()).isEqualTo(1);
+        assertThat(escape.chargeTotal()).isEqualTo(4);
+        assertThat(escape.minimumTotal()).isEqualTo(4);
+        assertThat(escape.borneRetenue()).isEqualTo(BorneRetenue.CHARGE_HORAIRE);
+        assertThat(escape.manque()).isEqualTo(3);
+    }
+
     private static Stand stand(String id, int effectifMin) {
         return new Stand(id, id, Set.of("JEUX"), effectifMin, effectifMin, false);
+    }
+
+    private static Stand stand(String id, int effectifMin, String... typologies) {
+        return new Stand(id, id, Set.of(typologies), effectifMin, effectifMin, false);
+    }
+
+    /** {@code ninja} is derived from the referential, exactly as the problem build does it. */
+    private static Animateur animateur(String id, String... competences) {
+        Animateur animateur = new Animateur(id, id, id, LocalDate.of(1990, 1, 1), false);
+        Map<String, NiveauCompetence> declarees = new LinkedHashMap<>();
+        for (String competence : competences) {
+            declarees.put(competence, NiveauCompetence.AUTONOME);
+        }
+        animateur.setCompetences(declarees);
+        animateur.applyNinjaTypologie(TYPOLOGIES.stream().filter(TypologieItem::ninja).map(TypologieItem::id)
+                .findFirst().orElse(null));
+        return animateur;
     }
 
     private static Creneau creneau(long id, LocalTime debut, LocalTime fin) {

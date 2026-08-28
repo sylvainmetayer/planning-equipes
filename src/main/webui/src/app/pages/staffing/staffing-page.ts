@@ -6,7 +6,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ApiService } from '../../core/api.service';
-import { JourStaffing, StaffingSummary } from '../../core/models';
+import { CompetenceStaffing, JourStaffing, StaffingSummary, TypologieStaffing } from '../../core/models';
 import { errorPrefix } from '../../core/error-message';
 
 /**
@@ -20,6 +20,17 @@ import { errorPrefix } from '../../core/error-message';
  * vacations several times over — on edition-1708 it announced more than 1500
  * animateurs for an event staffed by 153. See `StaffingAnalyzer` on the
  * backend for the methodology and its limits.
+ *
+ * The second section reads the same payload per game category — the bottleneck
+ * view: which typologie the referential is short of specialists on. It
+ * lives here rather than on a route of its own because it is the same question,
+ * the same computation and the same seats, split one level finer.
+ *
+ * A polyvalent counts as a specialist only where they declared the competence,
+ * and shows up apart as a reinforcement everywhere else — the same asymmetry
+ * the "le ninja est un renfort, jamais un spécialiste" decision settles for the
+ * fragilité screen, so two neighbouring screens do not answer the same question
+ * two different ways.
  */
 @Component({
   selector: 'app-staffing-page',
@@ -29,6 +40,7 @@ import { errorPrefix } from '../../core/error-message';
 })
 export class StaffingPage {
   protected readonly columns = ['jour', 'standsOuverts', 'sieges', 'heures', 'picSimultane', 'picAvecPause'];
+  protected readonly competenceColumns = ['typologie', 'sieges', 'minimumTotal', 'specialistes', 'manque'];
   protected readonly summary = signal<StaffingSummary | null>(null);
   // `false`, not `true`: the constructor calls `load()`, which flips it to
   // `true` synchronously before its first `await`. The initial value was
@@ -41,6 +53,51 @@ export class StaffingPage {
     const summary = this.summary();
     return summary && summary.nombreSemaines > 0 ? summary.capaciteHeuresParAnimateur / summary.nombreSemaines : 0;
   });
+
+  protected readonly competence = computed<CompetenceStaffing | null>(() => this.summary()?.parCompetence ?? null);
+
+  /**
+   * How the shared polyvalent reserve reads against the shortfalls — an
+   * indication, never a recruitment figure: a polyvalent covers any typologie
+   * but only one seat at a time.
+   */
+  protected readonly reserveLabel = computed(() => {
+    const competence = this.competence();
+    if (!competence) {
+      return '';
+    }
+    const polyvalents = competence.polyvalents;
+    const manque = competence.manqueTotal;
+    if (competence.animateursTotal === 0) {
+      return $localize`:@@staffing.competence.noAnimateurs:Aucun animateur saisi pour le moment : les bornes par typologie s'affichent, mais aucun goulot ne peut encore être détecté.`;
+    }
+    if (manque === 0) {
+      return polyvalents === 0
+        ? $localize`:@@staffing.competence.noBottleneck:Aucun goulot : chaque typologie compte au moins autant de spécialistes que sa borne.`
+        : $localize`:@@staffing.competence.noBottleneckWithReserve:Aucun goulot : chaque typologie compte au moins autant de spécialistes que sa borne, et ${polyvalents}:reserve: polyvalents restent mobilisables en renfort sur n'importe laquelle.`;
+    }
+    if (!competence.typologieNinjaDefinie) {
+      // A reserve of zero because no typologie carries the ninja flag is not a
+      // shortage of backup: there is no such notion in this référentiel.
+      return $localize`:@@staffing.competence.shortfallWithoutNinja:${manque}:manque: places de plus que de spécialistes, cumulées sur les typologies ci-dessous. Aucune typologie n'est marquée « polyvalente » dans le référentiel : il n'existe pas de renfort à mobiliser pour les absorber.`;
+    }
+    if (manque <= polyvalents) {
+      return $localize`:@@staffing.competence.absorbable:${manque}:manque: places de plus que de spécialistes, cumulées sur les typologies ci-dessous. Les ${polyvalents}:reserve: polyvalents peuvent y répondre en renfort, mais chacun ne couvre qu'un siège à la fois.`;
+    }
+    return $localize`:@@staffing.competence.shortfall:${manque}:manque: places de plus que de spécialistes, cumulées sur les typologies ci-dessous, pour seulement ${polyvalents}:reserve: polyvalents en renfort : la réserve est plus mince que le cumul des manques.`;
+  });
+
+  protected readonly siegesNonAttribuesLabel = computed(() => {
+    const sieges = this.competence()?.siegesNonAttribues ?? 0;
+    return $localize`:@@staffing.competence.unattributed:${sieges}:count: sièges appartiennent à des stands proposant plusieurs typologies : l'un ou l'autre vivier peut les tenir, donc aucune typologie ne les revendique ici.`;
+  });
+
+  /**
+   * On the icon itself rather than in the template: `MatIcon` sets its own
+   * `aria-hidden`, which drops the tooltip's `aria-describedby` — the label
+   * has to be carried explicitly. Same trap as the shell's icon buttons.
+   */
+  protected readonly ninjaTooltip = $localize`:@@staffing.competence.ninjaTooltip:Typologie des polyvalents : ses titulaires peuvent tenir n'importe quel stand, mais ne comptent comme spécialistes que dans les compétences qu'ils déclarent — ailleurs, ils sont un renfort.`;
 
   private readonly api = inject(ApiService);
 
@@ -74,5 +131,10 @@ export class StaffingPage {
 
   protected pauseMinutes(): number {
     return this.summary()?.pauseMinimaleMinutes ?? 0;
+  }
+
+  /** A typologie whose bound exceeds the animateurs declaring it: the bottleneck. */
+  protected estGoulot(ligne: TypologieStaffing): boolean {
+    return ligne.manque > 0;
   }
 }

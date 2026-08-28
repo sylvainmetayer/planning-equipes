@@ -825,6 +825,57 @@ export interface JourStaffing {
 export type BorneStaffing = 'PIC_SIMULTANE' | 'PIC_AVEC_PAUSE' | 'CHARGE_HORAIRE';
 
 /**
+ * One game category of `GET /api/staffing`: the same three bounds, computed on
+ * the seats that provably require it, against the animateurs who declare it.
+ */
+export interface TypologieStaffing {
+  typologie: string;
+  label: string;
+  /** True for the referential's polyvalent ("ninja") typologie, if any. */
+  ninja: boolean;
+  sieges: number;
+  heures: number;
+  nombreSemaines: number;
+  picSimultane: number;
+  picAvecPause: number;
+  chargeTotal: number;
+  minimumTotal: number;
+  borneRetenue: BorneStaffing;
+  /**
+   * Animateurs declaring this typologie among their competences. Polyvalents
+   * are not counted here unless they declared it: a ninja is a reinforcement,
+   * never a specialist.
+   */
+  specialistes: number;
+  /** What the pool is short of; `0` while no animateur is known at all. */
+  manque: number;
+}
+
+/**
+ * The bottleneck view of `GET /api/staffing`: which game category the plan is
+ * short of competent animateurs on. See `StaffingAnalyzer` for the two
+ * attribution rules — seats are claimed by a typologie only when their stand
+ * proposes it alone, and a polyvalent counts in the typologies they declared
+ * plus once in the shared reserve, never in every row.
+ */
+export interface CompetenceStaffing {
+  parTypologie: TypologieStaffing[];
+  /** Animateurs holding the ninja typologie: dispatchable anywhere, one seat at a time. */
+  polyvalents: number;
+  /** Seats of stands proposing several typologies (or none): claimed by no row. */
+  siegesNonAttribues: number;
+  manqueTotal: number;
+  /** `0` means the animateur referential is still empty and nothing was compared. */
+  animateursTotal: number;
+  /**
+   * Whether the referential marks a ninja typologie at all. Without one nobody
+   * is polyvalent, and `polyvalents: 0` must read as "no such notion here"
+   * rather than as a shortage of backup.
+   */
+  typologieNinjaDefinie: boolean;
+}
+
+/**
  * `GET /api/staffing`: the minimum number of animateurs the current stands and
  * créneaux require, computed server-side on the very seats a solve would have
  * to fill.
@@ -844,6 +895,7 @@ export interface StaffingSummary {
   minimumMineurs: number;
   pauseMinimaleMinutes: number;
   dureeHebdomadaireMaxMinutes: number;
+  parCompetence: CompetenceStaffing;
 }
 
 /** One row of `/api/planning/hours`: hours planned per ISO week (`AAAA-Wss`) plus the total. */

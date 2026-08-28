@@ -24,6 +24,11 @@ import jakarta.ws.rs.core.MediaType;
  * horaires récurrents, families de relais, effectif réduit pendant les pauses).
  * Computing it in the browser from stands × créneaux did drift, badly — see
  * {@link StaffingAnalyzer}.</p>
+ *
+ * <p>The same payload carries the bottleneck per game category — the bounds
+ * of a single typologie against the animateurs who declare it. It is the same
+ * computation on the same seats, so it travels with them rather than through
+ * a second endpoint rebuilding the whole problem.</p>
  */
 @Path("/staffing")
 @Produces(MediaType.APPLICATION_JSON)
@@ -53,7 +58,8 @@ public class StaffingResource {
         } catch (IllegalStateException e) {
             postes = List.of();
         }
-        return staffingAnalyzer.analyze(postes, parametres.getDureeHebdomadaireMaxMinutes(),
+        return staffingAnalyzer.analyze(postes, referenceDataService.listAnimateurs(),
+                referenceDataService.listTypologies(), parametres.getDureeHebdomadaireMaxMinutes(),
                 parametres.getPauseMinimaleEntreVacationsMinutes());
     }
 }
