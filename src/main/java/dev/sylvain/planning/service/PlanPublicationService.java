@@ -84,6 +84,9 @@ public class PlanPublicationService {
     @Inject
     EditionContext editionContext;
 
+    @Inject
+    ConfirmationPlanningService confirmationService;
+
     /**
      * One person the next publication would write to, with the exact sentences
      * they would read.
@@ -253,6 +256,15 @@ public class PlanPublicationService {
         }
         traceRepository.record(meta.id(), trace);
         demandeEchangeService.markAsCommunicated(decisionsAnnoncees(), envoyeLe);
+        // Back to NON_VU for the people whose own schedule moved, and for
+        // nobody else (issue #293): a recipient who is only being told that an
+        // échange was decided reads the same days as before, and asking them to
+        // re-confirm an unchanged planning is how a confirmation button becomes
+        // a reflex instead of an answer.
+        confirmationService.reset(apercu.destinataires().stream()
+                .filter(destinataire -> !destinataire.changements().isEmpty())
+                .map(DestinatairePublication::animateurId)
+                .toList());
 
         return new RapportPublication(meta.id(), meta.publieLe(), envoyes,
                 List.copyOf(sansEmail), List.copyOf(echecs));

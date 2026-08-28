@@ -10,7 +10,8 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/api.service';
-import { Animateur } from '../../core/models';
+import { intlLocale } from '../../core/locale';
+import { Animateur, ConfirmationView, StatutConfirmation } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { labelAnimateursPluriel } from '../../core/entity-labels';
 import { ProblemesStore } from '../../core/problemes.store';
@@ -58,7 +59,7 @@ import { errorMessage } from '../../core/error-message';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AnimateursPage {
-  protected readonly columns = ['select', 'id', 'nom', 'majorite', 'manager', 'competences', 'indisponibilites', 'actions'];
+  protected readonly columns = ['select', 'id', 'nom', 'majorite', 'manager', 'competences', 'indisponibilites', 'confirmation', 'actions'];
   protected readonly sort = signal<Sort>(NO_SORT);
   /** Quick filter of the table: id, identity and compétences. Applied before the sort. */
   protected readonly filtre = signal('');
@@ -74,10 +75,22 @@ export class AnimateursPage {
           animateur.id,
           animateur.prenom,
           animateur.nom,
-          ...Object.keys(animateur.competences ?? {})
+          ...Object.keys(animateur.competences ?? {}),
+          // The acknowledgement label travels with the row so the existing
+          // quick filter finds « relancé » or « silencieux » without a control
+          // of its own (issue #293).
+          this.confirmationLabel(animateur)
         ])
       )
   );
+
+  /**
+   * Acknowledgement of the published planning, by animateur id (issue #293).
+   * Loaded apart from the roster: an animateur clicking in their espace moves
+   * it with nothing happening on the admin side, so it is not part of the
+   * reference-data store that only reloads on a CRUD write.
+   */
+  protected readonly confirmations = signal<Map<string, ConfirmationView>>(new Map());
 
   protected readonly sortedAnimateurs = computed(() => {
     const animateurs = this.animateursFiltres();
@@ -183,7 +196,48 @@ export class AnimateursPage {
     this.filtre.set(params.get('q') ?? '');
     void this.crud.reload();
     void this.problemes.reloadFeasibility();
+    void this.chargerConfirmations();
     keepViewInQueryParams(() => ({ ...sortQueryParams(this.sort()), q: optionalParam(this.filtre()) }));
+  }
+
+  /**
+   * A missing answer is not an error worth a snack bar: the column then simply
+   * shows nothing, and every other feature of the page still works.
+   */
+  private async chargerConfirmations(): Promise<void> {
+    try {
+      const confirmations = await this.api.get<ConfirmationView[]>('/api/animateurs/confirmations');
+      this.confirmations.set(new Map(confirmations.map((confirmation) => [confirmation.animateurId, confirmation])));
+    } catch {
+      this.confirmations.set(new Map());
+    }
+  }
+
+  /** Wording of the acknowledgement column, and the text its quick filter matches on. */
+  protected confirmationLabel(animateur: Animateur): string {
+    const confirmation = this.confirmations().get(animateur.id);
+    if (!confirmation || !confirmation.affecte) {
+      return '';
+    }
+    return CONFIRMATION_LABELS[confirmation.statut]();
+  }
+
+  /**
+   * The timestamp behind the label, as a tooltip: when they confirmed, or —
+   * failing that — when the automatic reminder went out. Empty when there is
+   * nothing to date, which is exactly the « silencieux » case.
+   */
+  protected confirmationDate(animateur: Animateur): string | null {
+    const confirmation = this.confirmations().get(animateur.id);
+    if (confirmation?.confirmeLe) {
+      const date = new Date(confirmation.confirmeLe).toLocaleString(intlLocale());
+      return $localize`:@@animateurs.confirmation.confirmeLe:Confirmé le ${date}:date:`;
+    }
+    if (confirmation?.relanceLe) {
+      const date = new Date(confirmation.relanceLe).toLocaleString(intlLocale());
+      return $localize`:@@animateurs.confirmation.relanceLe:Relancé le ${date}:date:`;
+    }
+    return null;
   }
 
   /** Back to the whole referential, in the order the store holds it. */
@@ -269,6 +323,16 @@ export class AnimateursPage {
     });
   }
 }
+
+/**
+ * Called from a method, never at module scope: `$localize` only resolves once
+ * `main.ts` has loaded the translations.
+ */
+const CONFIRMATION_LABELS: Record<StatutConfirmation, () => string> = {
+  NON_VU: () => $localize`:@@animateurs.confirmation.nonVu:Silencieux`,
+  CONFIRME: () => $localize`:@@animateurs.confirmation.confirme:Confirmé`,
+  RELANCE: () => $localize`:@@animateurs.confirmation.relance:Relancé`
+};
 
 function compareByColumn(a: Animateur, b: Animateur, column: string): number {
   if (column !== 'majorite') {

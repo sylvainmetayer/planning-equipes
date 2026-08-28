@@ -9,6 +9,25 @@
       <span i18n="@@espace.planning.publieLe">Planning communiqué le {{ publie | date: 'short' }}</span>
     </p>
   }
+  @if (confirmationDemandee()) {
+    <div class="espace-confirmation">
+      <button matButton="filled" type="button" [disabled]="confirmationEnCours()" (click)="confirmer()">
+        <mat-icon>check_circle</mat-icon>
+        <span i18n="@@espace.planning.confirmer">J'ai lu et je serai là</span>
+      </button>
+      <p class="espace-confirmation-aide" i18n="@@espace.planning.confirmerAide">
+        Un clic suffit : l'organisation saura que vous avez pris connaissance de ce planning.
+      </p>
+      @if (erreurConfirmation(); as erreur) {
+        <p class="espace-confirmation-erreur">{{ erreur }}</p>
+      }
+    </div>
+  } @else if (espace.vue()?.confirmeLe; as confirme) {
+    <p class="espace-confirmation-faite">
+      <mat-icon inline>check_circle</mat-icon>
+      <span i18n="@@espace.planning.confirmeLe">Présence confirmée le {{ confirme | date: 'short' }}</span>
+    </p>
+  }
   @if (lienPdf(); as pdf) {
     <div class="espace-telechargements">
       <a matButton [href]="pdf" download>

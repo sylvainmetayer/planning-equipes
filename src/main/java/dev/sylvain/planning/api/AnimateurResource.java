@@ -3,6 +3,7 @@ package dev.sylvain.planning.api;
 import java.util.List;
 
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.service.ConfirmationPlanningService;
 import dev.sylvain.planning.service.ReferenceDataService;
 import dev.sylvain.planning.service.ReferenceUsage;
 import jakarta.inject.Inject;
@@ -19,7 +20,8 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 /**
- * CRUD of the animateurs, plus the rotation of their espace access token.
+ * CRUD of the animateurs, plus the rotation of their espace access token and
+ * the read of who acknowledged the published planning.
  */
 @Path("/animateurs")
 @Produces(MediaType.APPLICATION_JSON)
@@ -29,9 +31,28 @@ public class AnimateurResource {
     @Inject
     ReferenceDataService referenceDataService;
 
+    @Inject
+    ConfirmationPlanningService confirmationService;
+
     @GET
     public List<Animateur> listAnimateurs() {
         return referenceDataService.listAnimateurs();
+    }
+
+    /**
+     * Who acknowledged the published planning (issue #293): one line per
+     * animateur, NON_VU included, so the screen can show a column rather than
+     * a second list to reconcile by hand.
+     *
+     * <p>A separate read from {@code GET /api/animateurs} on purpose: the
+     * roster is cached and reloaded on every CRUD write, while this answer
+     * changes on its own — an animateur clicking in their espace moves it with
+     * nothing else happening on the admin side.</p>
+     */
+    @GET
+    @Path("/confirmations")
+    public List<ConfirmationPlanningService.ConfirmationView> confirmations() {
+        return confirmationService.byAnimateur();
     }
 
     @POST

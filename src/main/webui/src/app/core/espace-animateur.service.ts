@@ -7,6 +7,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { ApiService, toError } from './api.service';
 import {
   DeclarationEspaceView,
+  AccuseReception,
   DemandeEchangeView,
   EspaceAnimateurView,
   NouvelleDeclaration,
@@ -98,6 +99,20 @@ export class EspaceAnimateurService {
     const demande = await this.api.post<DemandeEchangeView>(
       `/api/espace-animateur/${jeton}/demandes-recues/${demandeId}/refus`, null);
     this.demandesRecues.set(this.demandesRecues().map((d) => (d.id === demandeId ? demande : d)));
+  }
+
+  /**
+   * « J'ai lu et je serai là » (issue #293). Refreshes the loaded view in
+   * place rather than reloading the whole espace: the answer carries the new
+   * state, and nothing else on the page can have moved because of the click.
+   */
+  async confirmerPlanning(): Promise<void> {
+    const jeton = this.jetonRequis();
+    const accuse = await this.api.post<AccuseReception>(`/api/espace-animateur/${jeton}/confirmation`, null);
+    const vue = this.vue();
+    if (vue) {
+      this.vue.set({ ...vue, statutConfirmation: accuse.statut, confirmeLe: accuse.confirmeLe });
+    }
   }
 
   /** A colleague's seats, for the « créneau souhaité en échange » picker of a directed exchange. */

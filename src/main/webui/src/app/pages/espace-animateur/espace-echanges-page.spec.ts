@@ -52,6 +52,8 @@ function vue(overrides: Partial<EspaceAnimateurView> = {}): EspaceAnimateurView 
     foireOuverte: true,
     postes: [poste()],
     collegues: [{ id: 'bob', nomComplet: 'Bob Durand' }],
+    statutConfirmation: 'NON_VU',
+    confirmeLe: null,
     ...overrides
   };
 }

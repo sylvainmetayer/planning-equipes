@@ -1,9 +1,10 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { EspaceAnimateurService } from '../../core/espace-animateur.service';
+import { errorMessage } from '../../core/error-message';
 import { PosteAnimateurView } from '../../core/models';
 
 interface JourPlanning {
@@ -27,6 +28,32 @@ interface JourPlanning {
 })
 export class EspacePlanningPage {
   protected readonly espace = inject(EspaceAnimateurService);
+
+  /* --------- « J'ai lu et je serai là » (issue #293) ---------- */
+
+  protected readonly confirmationEnCours = signal(false);
+  /** Message of a failed confirmation, `null` while everything is fine. */
+  protected readonly erreurConfirmation = signal<string | null>(null);
+
+  /**
+   * The button only exists once something has been published: before that the
+   * espace shows no planning at all, and there would be nothing to acknowledge.
+   */
+  protected readonly confirmationDemandee = computed(
+    () => !!this.espace.vue()?.publieLe && this.espace.vue()?.statutConfirmation !== 'CONFIRME'
+  );
+
+  protected async confirmer(): Promise<void> {
+    this.confirmationEnCours.set(true);
+    this.erreurConfirmation.set(null);
+    try {
+      await this.espace.confirmerPlanning();
+    } catch (error) {
+      this.erreurConfirmation.set(errorMessage(error));
+    } finally {
+      this.confirmationEnCours.set(false);
+    }
+  }
 
   /** Direct download links — the token in the URL is the whole credential. */
   protected readonly lienPdf = computed(() =>

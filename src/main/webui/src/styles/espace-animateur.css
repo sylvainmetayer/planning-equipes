@@ -233,6 +233,42 @@
   color: var(--mat-sys-on-surface-variant);
 }
 
+/*
+ * Accusé de réception du planning publié (#293). Encadré plutôt que posé au fil
+ * du texte : c'est la seule chose que l'animateur a à FAIRE sur cette page, et
+ * elle doit se distinguer des deux téléchargements qui la suivent.
+ */
+.espace-confirmation {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: var(--mat-sys-surface-container-high);
+}
+
+.espace-confirmation-aide {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.9em;
+}
+
+.espace-confirmation-erreur {
+  margin: 0;
+  color: var(--mat-sys-error);
+}
+
+/* Une fois confirmé, la même information redevient une ligne d'état discrète. */
+.espace-confirmation-faite {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin: 0 0 1rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
 /* Téléchargements du planning personnel (PDF / ICS). */
 .espace-telechargements {
   display: flex;

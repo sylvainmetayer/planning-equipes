@@ -67,6 +67,16 @@
           }
         </td>
       </ng-container>
+      <ng-container matColumnDef="confirmation">
+        <th mat-header-cell *matHeaderCellDef i18n="@@animateurs.column.confirmation">Accusé de réception</th>
+        <td mat-cell *matCellDef="let animateur">
+          @if (confirmationLabel(animateur); as libelle) {
+            <span [matTooltip]="confirmationDate(animateur) ?? ''">{{ libelle }}</span>
+          } @else {
+            —
+          }
+        </td>
+      </ng-container>
       <ng-container matColumnDef="actions" stickyEnd>
         <th mat-header-cell *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>
         <td mat-cell *matCellDef="let animateur" class="row-actions">

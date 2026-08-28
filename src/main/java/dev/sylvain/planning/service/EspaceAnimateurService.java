@@ -16,6 +16,7 @@ import dev.sylvain.planning.domain.DemandeEchange;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.domain.StatutConfirmation;
 import dev.sylvain.planning.domain.StatutDeclaration;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -62,6 +63,7 @@ public class EspaceAnimateurService {
 
     @Inject
     TypologieService typologieService;
+    ConfirmationPlanningService confirmationService;
 
     /** One of the animateur's seats in the persisted planning. */
     public record PosteAnimateurView(Long creneauId, LocalDate date, LocalTime heureDebut, LocalTime heureFin,
@@ -88,9 +90,18 @@ public class EspaceAnimateurService {
      *                 while nothing has ever been published on this edition —
      *                 the postes are then empty, and the espace says so
      */
+    /**
+     * @param statutConfirmation NON_VU / CONFIRME / RELANCE (issue #293) — the
+     *                 espace only ever moves it to CONFIRME, and a
+     *                 republication that changes this planning sends it back
+     *                 to NON_VU
+     * @param confirmeLe when « j'ai lu et je serai là » was clicked,
+     *                 {@code null} while it has not been
+     */
     public record EspaceAnimateurView(String animateurId, String prenom, String nom, Instant publieLe,
             boolean foireOuverte, List<PosteAnimateurView> postes,
-            List<LocalDate> joursRepos, List<ColleagueView> collegues) {
+            List<LocalDate> joursRepos, List<ColleagueView> collegues,
+            String statutConfirmation, Instant confirmeLe) {
     }
 
     /**
@@ -130,9 +141,13 @@ public class EspaceAnimateurService {
                 .toList();
 
         PlanSnapshotService.SnapshotMeta publication = planPublieService.lastPublication();
+        ConfirmationPlanningRepository.Confirmation confirmation =
+                confirmationService.stored(animateurId).orElse(null);
         return new EspaceAnimateurView(animateur.getId(), animateur.getPrenom(), animateur.getNom(),
                 publication == null ? null : publication.publieLe(),
-                demandeEchangeService.isFoireOpen(), postes, joursRepos, collegues);
+                demandeEchangeService.isFoireOpen(), postes, joursRepos, collegues,
+                (confirmation == null ? StatutConfirmation.NON_VU : confirmation.statut()).name(),
+                confirmation == null ? null : confirmation.confirmeLe());
     }
 
     private static List<PosteAnimateurView> postesOf(PlanningEvenement planning, String animateurId,

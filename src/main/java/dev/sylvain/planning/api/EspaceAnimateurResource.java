@@ -3,8 +3,9 @@ package dev.sylvain.planning.api;
 import java.util.List;
 
 import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.service.DeclarationDisponibiliteService;
+import dev.sylvain.planning.service.ConfirmationPlanningService;
 import dev.sylvain.planning.service.DeclarationDisponibiliteService.NouvelleDeclaration;
+import dev.sylvain.planning.service.DeclarationDisponibiliteService;
 import dev.sylvain.planning.service.DemandeEchangeService;
 import dev.sylvain.planning.service.DemandeEchangeService.NouvelleDemande;
 import dev.sylvain.planning.service.EditionRequestScope;
@@ -74,12 +75,32 @@ public class EspaceAnimateurResource {
     @Inject
     PlanningExportService planningExportService;
 
+    @Inject
+    ConfirmationPlanningService confirmationService;
+
     /** Who I am, my persisted planning (with teammates) and the colleagues I can swap with. */
     @GET
     @Path("/{jeton}")
     @EspaceSessionRequired
     public EspaceAnimateurView espace() {
         return espaceAnimateurService.buildView(animateurCourant());
+    }
+
+    /**
+     * « J'ai lu et je serai là » (issue #293): the only thing the espace ever
+     * writes about the planning itself.
+     *
+     * <p>Deliberately not idempotent-by-refusal — clicking twice is a normal
+     * gesture on a refreshed page and answers {@code 200} with the first date,
+     * never an error. Confirming before anything was published is a
+     * {@code 409}, raised by the service as a {@code BusinessError}.</p>
+     */
+    @POST
+    @Path("/{jeton}/confirmation")
+    @Consumes(MediaType.WILDCARD)
+    @EspaceSessionRequired
+    public ConfirmationPlanningService.AccuseReception confirmerPlanning() {
+        return confirmationService.confirmer(animateurCourant());
     }
 
     /**
