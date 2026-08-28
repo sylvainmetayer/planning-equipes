@@ -214,7 +214,15 @@ Ce qu'elle change :
 - **aucune valeur par défaut sur les secrets** : `DB_PASSWORD`,
   `ADMIN_PASSWORD`, `SESSION_ENCRYPTION_KEY`, `PUBLIC_URL`, `MAIL_HOST` et
   `MAIL_FROM` font échouer le démarrage si l'environnement ne les fournit pas,
-  plutôt que de laisser passer un identifiant de développement.
+  plutôt que de laisser passer un identifiant de développement ;
+- **un volume de sauvegarde** monté sur `BACKUP_DIR`, où la tâche de nuit écrit
+  ses `pg_dump`. C'est le seul endroit où l'application écrit sur le disque, et
+  ces fichiers sont le jeu de données complet en clair — noms, dates de
+  naissance et adresses des animateurs, mineurs compris. Ils se traitent comme
+  la base elle-même : accès restreint sur l'hôte, recopie hors machine
+  chiffrée, et jamais dans un ticket ni sur une instance de démonstration.
+  L'application ne les expose par aucun endpoint, et il ne faut pas les servir
+  depuis le reverse proxy non plus.
 
 ### Ce qui reste à la charge du reverse proxy
 

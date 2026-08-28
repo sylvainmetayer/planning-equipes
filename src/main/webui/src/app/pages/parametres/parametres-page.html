@@ -262,6 +262,96 @@
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
+    <h3 mat-card-title i18n="@@parametres.sauvegarde.title">Sauvegarde automatique</h3>
+    <mat-card-subtitle i18n="@@parametres.sauvegarde.subtitle">
+      Chaque nuit, toute la base de données est copiée dans un fichier de sauvegarde, sur un disque
+      décidé par l'hébergeur. C'est le filet en cas de fausse manipulation : une suppression massive,
+      un import qui écrase tout. Les copies les plus anciennes sont effacées au fur et à mesure.
+      La restauration, elle, n'est pas une opération de cet écran : elle se fait sur la base PostgreSQL,
+      par l'exploitant.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    @if (sauvegarde(); as etat) {
+      @if (etat.configured) {
+        <mat-slide-toggle
+          [checked]="etat.active"
+          [disabled]="sauvegardeBusy()"
+          (change)="basculerSauvegarde($event.checked)"
+          i18n-matTooltip="@@parametres.sauvegarde.tooltip"
+          matTooltip="Suspend la sauvegarde de cette nuit et des suivantes. Les fichiers déjà écrits sont conservés."
+        >
+          <ng-container i18n="@@parametres.sauvegarde.toggle">Sauvegarder la base automatiquement chaque nuit</ng-container>
+        </mat-slide-toggle>
+
+        <dl class="parametres-faits">
+          <dt i18n="@@parametres.sauvegarde.emplacement">Emplacement</dt>
+          <dd>{{ etat.directory }}</dd>
+          <dt i18n="@@parametres.sauvegarde.conservation">Copies conservées</dt>
+          <dd i18n="@@parametres.sauvegarde.conservationValeur">{{ etat.retention }} sauvegardes, la plus ancienne étant effacée à chaque nouvelle</dd>
+          @if (etat.nextRun) {
+            <dt i18n="@@parametres.sauvegarde.prochaine">Prochaine sauvegarde</dt>
+            <dd>{{ etat.nextRun | date: 'EEEE d MMMM y, HH:mm' }} ({{ etat.zone }})</dd>
+          }
+        </dl>
+
+        <p class="calendar-meta" i18n="@@parametres.sauvegarde.reglage">
+          L'emplacement et le nombre de copies sont réglés par l'hébergeur (variables BACKUP_DIR et
+          BACKUP_RETENTION) : ils dépendent du disque qui les porte, pas de cet écran.
+        </p>
+
+        @if (etat.lastRun.attemptedAt) {
+          @if (etat.lastRun.succeeded) {
+            <p class="calendar-meta" i18n="@@parametres.sauvegarde.derniereOk">
+              Dernière sauvegarde réussie le {{ etat.lastRun.attemptedAt | date: 'd MMMM y à HH:mm' }} :
+              {{ etat.lastRun.file }}
+            </p>
+          } @else {
+            <p class="locked-hint" i18n="@@parametres.sauvegarde.derniereEchec">
+              La dernière sauvegarde a échoué le {{ etat.lastRun.attemptedAt | date: 'd MMMM y à HH:mm' }} :
+              {{ etat.lastRun.message }}
+            </p>
+          }
+        } @else {
+          <p class="calendar-meta" i18n="@@parametres.sauvegarde.jamais">
+            Aucune sauvegarde n'a encore été tentée sur cette instance.
+          </p>
+        }
+
+        @if (etat.directoryError) {
+          <p class="locked-hint" i18n="@@parametres.sauvegarde.repertoireIllisible">
+            Le répertoire de sauvegarde n'a pas pu être lu : {{ etat.directoryError }}
+          </p>
+        } @else if (fichiersSauvegarde().length > 0) {
+          <table class="parametres-sauvegardes">
+            <caption i18n="@@parametres.sauvegarde.listeTitre">Sauvegardes présentes, de la plus récente à la plus ancienne</caption>
+            <tbody>
+              @for (fichier of fichiersSauvegarde(); track fichier.name) {
+                <tr>
+                  <td>{{ fichier.name }}</td>
+                  <td>{{ fichier.createdAt | date: 'd MMM y, HH:mm' }}</td>
+                  <td>{{ tailleLisible(fichier.sizeBytes) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        } @else {
+          <p class="calendar-meta" i18n="@@parametres.sauvegarde.listeVide">
+            Le répertoire ne contient encore aucune sauvegarde.
+          </p>
+        }
+      } @else {
+        <p class="locked-hint" i18n="@@parametres.sauvegarde.nonConfiguree">
+          Aucun emplacement de sauvegarde n'est configuré sur ce serveur (variable BACKUP_DIR) : tant
+          qu'il manque, rien n'est planifié et la base n'est sauvegardée que manuellement.
+        </p>
+      }
+    }
+  </mat-card-content>
+</mat-card>
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
     <h3 mat-card-title i18n="@@dataTransfer.sql.title">Export SQL</h3>
     <mat-card-subtitle i18n="@@dataTransfer.sql.description">
       Exporte ou rejoue toute la base de données sous forme de script SQL — toutes les éditions,

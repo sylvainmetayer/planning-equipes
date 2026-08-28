@@ -86,6 +86,21 @@ services:
       MAIL_USERNAME: ${MAIL_USERNAME:-}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
       MAIL_START_TLS: ${MAIL_START_TLS:-REQUIRED}
+      # Sauvegarde automatique de nuit : un pg_dump complet écrit dans le
+      # volume monté ci-dessous. Vider BACKUP_DIR désactive la fonctionnalité.
+      # BACKUP_RETENTION est borné à [1, 30] et refuse le démarrage hors de ces
+      # valeurs. Voir docs/exploitation.md § Sauvegarde et restauration.
+      BACKUP_DIR: ${BACKUP_DIR:-/backups}
+      BACKUP_RETENTION: ${BACKUP_RETENTION:-10}
+      BACKUP_TIMEZONE: ${BACKUP_TIMEZONE:-Europe/Paris}
+    volumes:
+      # Un volume nommé suffit à survivre au conteneur, pas à la machine : ces
+      # fichiers portent des données personnelles de mineurs et doivent être
+      # recopiés hors de l'hôte, chiffrés. Un montage de répertoire hôte
+      # (`- /srv/sauvegardes:/backups`) est le montage attendu dès qu'une
+      # externalisation existe — il faut alors que le répertoire appartienne à
+      # l'uid 1001.
+      - backups:/backups
     depends_on:
       postgres:
         condition: service_healthy
@@ -111,3 +126,5 @@ services:
 volumes:
   postgres_data:
     name: postgres_data_pg18
+  backups:
+    name: planning_backups

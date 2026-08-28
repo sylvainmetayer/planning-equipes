@@ -1237,3 +1237,37 @@ export interface KpiHistoriqueEntry {
   kpi: PlanningKpi;
   creeLe: string | null;
 }
+
+/** One dump present in the automatic-backup directory (`GET /api/backups`). */
+export interface FichierSauvegarde {
+  name: string;
+  sizeBytes: number;
+  createdAt: string;
+}
+
+/** Outcome of the last automatic backup, successful or not. */
+export interface ExecutionSauvegarde {
+  attemptedAt: string | null;
+  succeeded: boolean;
+  file: string | null;
+  message: string | null;
+}
+
+/**
+ * The automatic backup as the Paramètres screen sees it. Everything but
+ * `active` is read-only here: the destination directory and the retention are
+ * environment variables of the deployment, because a disk path and how many
+ * copies a volume holds are decided with that volume, not from a browser.
+ */
+export interface EtatSauvegarde {
+  configured: boolean;
+  directory: string | null;
+  active: boolean;
+  retention: number;
+  cron: string;
+  zone: string;
+  nextRun: string | null;
+  lastRun: ExecutionSauvegarde;
+  files: FichierSauvegarde[];
+  directoryError: string | null;
+}

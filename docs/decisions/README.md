@@ -38,6 +38,7 @@ scénario versionné de `src/main/resources/scenarios/`.
 | [0012](0012-etat-de-vue-dans-l-url.md) | L'état de vue d'un écran est porté par l'URL | Accepté |
 | [0013](0013-diagnostic-par-le-score-director.md) | Diagnostiquer par le score director, sans mode dégradé | Accepté · remplace 0002 |
 | [0014](0014-analyser-le-plan-persiste.md) | Analyser le plan persisté, plutôt que résoudre pour jeter | Accepté · prolonge 0013 |
+| [0015](0015-sauvegarde-par-pg-dump-restauration-hors-application.md) | Sauvegarder par `pg_dump`, restaurer hors de l'application | Accepté |
 
 **0002** et **0013** se lisent ensemble : la première pose le blocage du
 diagnostic par l'édition du solveur et retient deux modes de qualité inégale,

@@ -14,6 +14,7 @@
 api.AdminLoginLimiter$Echecs = dernier, nombre
 api.AnimateurResource$AnimateurToken = token
 api.AuthResource$StatutSession = authentifie, nom
+api.BackupResource$ActiveRequest = active
 api.BrandingResource$BrandingView = accentColor, logoUrl, mascotIconUrl, mascotUrl, organisation, productName
 api.ConfigResource$ConfigView = cloudflareWebAnalyticsToken, devMode, sentryDsn, sentryEnvironment
 api.ConstraintResource$ConstraintPoidsUpdate = poids
@@ -98,3 +99,6 @@ service.SnapshotComparisonService$DiffContrainte = base, contrainte, variante
 service.StaffingAnalyzer$JourStaffing = date, heures, jour, picAvecPause, picSimultane, sieges, standsOuverts
 service.StaffingAnalyzer$StaffingSummary = borneRetenue, capaciteHeuresParAnimateur, chargeTotal, dureeHebdomadaireMaxMinutes, jourCritique, minimumMajeurs, minimumMineurs, minimumTotal, nombreSemaines, parJour, pauseMinimaleMinutes, picAvecPause, picSimultane, totalDemandeHeures
 service.TypologieItem = id, label, ninja
+service.backup.BackupFile = createdAt, name, sizeBytes
+service.backup.BackupRun = attemptedAt, file, message, succeeded
+service.backup.BackupState = active, configured, cron, directory, directoryError, files, lastRun, nextRun, retention, zone

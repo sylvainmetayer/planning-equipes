@@ -82,6 +82,9 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 | `HTTP_PORT` | `8080` | Port HTTP exposé |
 | `SENTRY_DSN` | *(vide = désactivé)* | Suivi d'erreurs (Bugsink ou tout endpoint compatible Sentry) |
 | `SENTRY_ENVIRONMENT` | `local` | Étiquette d'environnement jointe aux erreurs remontées |
+| `BACKUP_DIR` | *(vide = sauvegarde automatique désactivée)* | Répertoire où la sauvegarde de nuit écrit ses `pg_dump` — voir [`docs/exploitation.md`](docs/exploitation.md) |
+| `BACKUP_RETENTION` | `10` | Nombre de sauvegardes conservées, entre 1 et 30 ; hors bornes, le démarrage est refusé |
+| `BACKUP_TIMEZONE` | `Europe/Paris` | Fuseau dans lequel se lit l'heure de la sauvegarde (4 h) |
 | `PLANNING_MCP_API_KEY` | *(vide = MCP inutilisable)* | Clé API attendue pour authentifier le serveur MCP |
 | `PLANNING_MCP_API_KEY_HEADER` | `X-MCP-Api-Key` | En-tête HTTP portant la clé (ou `Authorization: Bearer <clé>`) |
 | `PLANNING_MCP_REQUIRED_HEADERS` | *(vide)* | En-têtes supplémentaires exigés en plus de la clé, `Nom=valeur` séparés par des virgules (déploiement derrière un proxy type Pangolin) |
@@ -263,6 +266,7 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 | --- | --- |
 | Import / export de scénario | Un fichier YAML décrit une configuration complète d'événement ; l'import valide le fichier et explique ce qui cloche |
 | Export / import d'un dump SQL | Dupliquer ou restaurer un jeu de données complet |
+| Sauvegarde automatique | Chaque nuit, toute la base est copiée sur le disque de l'hébergeur, et seules les dernières copies sont gardées. L'écran des paramètres dit où elles vont, lesquelles existent et si la dernière nuit s'est bien passée. La restauration, elle, est une opération de l'exploitant sur la base |
 | Assistant IA (MCP) | Un assistant IA consulte et pilote l'application en langage naturel, sans jamais voir les données personnelles des animateurs — voir [`docs/mcp.md`](docs/mcp.md) |
 | Mentions légales | Page publique, lisible sans être connecté et sans lien valide : éditeur, hébergeur, contact, propriété intellectuelle |
 | Politique de confidentialité | Page publique elle aussi : quelles données, pourquoi, combien de temps, qui y accède — y compris les outils de mesure d'audience et de suivi d'erreurs — et comment exercer ses droits. S'adresse explicitement aux animateurs mineurs |

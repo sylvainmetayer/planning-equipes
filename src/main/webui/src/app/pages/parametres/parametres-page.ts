@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -13,7 +14,7 @@ import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { BRANDING, slugMarque } from '../../core/branding';
 import { EditionStore } from '../../core/edition.store';
-import { ImportSummary, ImportScenarioResult, ParametresDecoupage } from '../../core/models';
+import { EtatSauvegarde, ImportSummary, ImportScenarioResult, ParametresDecoupage } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { PlanningStateService } from '../../core/planning-state.service';
@@ -40,8 +41,9 @@ import { errorMessage, errorPrefix } from '../../core/error-message';
  *   lives with the créneaux it replaces), the ninja typologie, plus pointers
  *   to the parameters that stay on their own screen (solver duration, foire
  *   aux échanges, constraint toggles).
- * - "Paramètres globaux" — the SQL dump import/export: it replays the WHOLE
- *   database, every edition included, so it does not belong to any edition.
+ * - "Paramètres globaux" — the SQL dump import/export and the automatic
+ *   backup: both take the WHOLE database, every edition included, so neither
+ *   belongs to any edition.
  *
  * Also runs the solver-free feasibility check on entry and after every import,
  * as the former Données page did: a structurally impossible planning is called
@@ -50,6 +52,7 @@ import { errorMessage, errorPrefix } from '../../core/error-message';
 @Component({
   selector: 'app-parametres-page',
   imports: [
+    DatePipe,
     FormsModule,
     MatCardModule,
     MatButtonModule,
@@ -128,6 +131,7 @@ export class ParametresPage {
     void this.crud.reload();
     void this.chargerParametresDecoupage();
     void this.chargerReglagesNotification();
+    void this.chargerSauvegarde();
   }
 
   /* --------------------- Notification de fin de résolution -------------------- */
@@ -383,6 +387,51 @@ export class ParametresPage {
     if (cible) {
       await this.crud.save('typologies', { ...cible, ninja: true }, cible.id, label);
     }
+  }
+
+  /* --------------------------- Sauvegarde automatique ------------------------- */
+
+  protected readonly sauvegarde = signal<EtatSauvegarde | null>(null);
+  protected readonly sauvegardeBusy = signal(false);
+
+  /**
+   * The dumps, newest first, as the server listed them. Kept as a computed so
+   * the template never has to guard `sauvegarde()` being null twice.
+   */
+  protected readonly fichiersSauvegarde = computed(() => this.sauvegarde()?.files ?? []);
+
+  private async chargerSauvegarde(): Promise<void> {
+    try {
+      this.sauvegarde.set(await this.api.get<EtatSauvegarde>('/api/backups'));
+    } catch {
+      // A settings screen that fails to load as a whole because one card could
+      // not be read would be a worse outcome than that card staying absent.
+      this.sauvegarde.set(null);
+    }
+  }
+
+  protected async basculerSauvegarde(actif: boolean): Promise<void> {
+    this.sauvegardeBusy.set(true);
+    try {
+      this.sauvegarde.set(await this.api.put<EtatSauvegarde>('/api/backups/active', { active: actif }));
+      this.notifications.notify({
+        title: actif
+          ? $localize`:@@parametres.sauvegarde.reprise:Sauvegarde automatique réactivée`
+          : $localize`:@@parametres.sauvegarde.suspendue:Sauvegarde automatique suspendue`,
+        variant: 'success',
+        timeout: 4000
+      });
+    } catch (error) {
+      this.output.set(errorPrefix(error));
+    } finally {
+      this.sauvegardeBusy.set(false);
+    }
+  }
+
+  /** Human-sized file length; a dump is megabytes, never bytes worth reading one by one. */
+  protected tailleLisible(octets: number): string {
+    const mega = octets / (1024 * 1024);
+    return mega >= 1 ? `${mega.toFixed(1)} Mo` : `${Math.max(1, Math.round(octets / 1024))} Ko`;
   }
 
   /* --------------------------------- SQL dump -------------------------------- */

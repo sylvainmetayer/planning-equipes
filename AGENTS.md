@@ -123,6 +123,7 @@ Single Quarkus service, no separate solver microservice. Package root:
   (`StandRepository`, `AnimateurRepository`, …, plus
   `ReferenceDataImportRepository` for the one write that spans all of them),
   `PlanningPersistenceService`, `DatabaseDumpService`,
+  `service/backup/` (nightly `pg_dump` — see below),
   `PlanningExportService` (facade over `AnimateurPlanningPdf`,
   `GlobalPlanningPdf` and `PlanningIcs`, sharing `PdfTheme` — server-side only),
   `DemandeEchangeService` / `EspaceAnimateurService` (foire au planning, issue
@@ -191,6 +192,22 @@ Single Quarkus service, no separate solver microservice. Package root:
      interceptor.
 
   See `docs/mcp.md`.
+- **`service/backup/` holds the application's only scheduled job**, and the
+  only place it writes to disk: a nightly `pg_dump` of the whole cluster into
+  `BACKUP_DIR`, keeping the `BACKUP_RETENTION` most recent copies. Three rules
+  it is built on, and none of them is an oversight to fix later —
+  **restoring is out of scope** (an infrastructure operation with
+  `pg_restore`; a "restore everything" button would be the very gesture the
+  backup exists to undo), the dumps are **never downloadable** (they carry
+  every animateur's name, birth date and e-mail, minors included), and the
+  destination and retention are **environment variables**, not screen
+  settings — the one thing the Paramètres screen writes is the boolean that
+  *suspends* the run. A failure is recorded and shown rather than propagated.
+  `PgDump` is a bean of its own solely so the suite can replace it: nothing in
+  a test may shell out to that binary, whose presence and version belong to the
+  machine. The client is pinned to `postgresql-client-18` in the runtime image
+  and must move with the `postgres:` image of the production stack. See
+  `docs/decisions/0015-sauvegarde-par-pg-dump-restauration-hors-application.md`.
 - Persistence: PostgreSQL + Flyway migrations in
   `src/main/resources/db/migration/`. Schema change = **new versioned file**;
   never edit an applied migration.

@@ -24,7 +24,7 @@ import { ConfirmService } from '../../shared/confirm-dialog';
 import { InstantaneAvantAction } from '../../shared/instantane-avant-action';
 import { ScenarioImportService } from '../../core/scenario-import.service';
 import { ParametresPage } from './parametres-page';
-import type { TypologieItem } from '../../core/models';
+import type { EtatSauvegarde, TypologieItem } from '../../core/models';
 
 /** Reaches the protected members the template binds to. */
 type PageInternals = {
@@ -171,7 +171,30 @@ describe('ParametresPage rendering', () => {
     dureeDecalageMaxMinutes: 60
   };
 
-  async function rendre(options: { adminEmail?: string | null } = {}): Promise<void> {
+  const SAUVEGARDE: EtatSauvegarde = {
+    configured: true,
+    directory: '/backups',
+    active: true,
+    retention: 10,
+    cron: '0 0 4 * * ?',
+    zone: 'Europe/Paris',
+    nextRun: '2026-03-09T03:00:00Z',
+    lastRun: {
+      attemptedAt: '2026-03-08T03:00:00Z',
+      succeeded: true,
+      file: 'planning-20260308-040000.dump',
+      message: null
+    },
+    files: [
+      { name: 'planning-20260308-040000.dump', sizeBytes: 5 * 1024 * 1024, createdAt: '2026-03-08T03:00:00Z' },
+      { name: 'planning-20260307-040000.dump', sizeBytes: 5 * 1024 * 1024, createdAt: '2026-03-07T03:00:00Z' }
+    ],
+    directoryError: null
+  };
+
+  async function rendre(
+    options: { adminEmail?: string | null; sauvegarde?: EtatSauvegarde } = {}
+  ): Promise<void> {
     editingLocked.set(false);
     mailFinResolution.set(false);
     notify = vi.fn();
@@ -185,6 +208,9 @@ describe('ParametresPage rendering', () => {
         }
         if (url.includes('parametres-decoupage')) {
           return { ...PARAMETRES };
+        }
+        if (url.includes('/api/backups')) {
+          return options.sauvegarde ?? SAUVEGARDE;
         }
         if (url.includes('mail-config')) {
           return { adminEmail: options.adminEmail === undefined ? 'admin@exemple.test' : options.adminEmail };
@@ -257,6 +283,19 @@ describe('ParametresPage rendering', () => {
   /** The end-of-solve mail switch — Material renders it as a `role="switch"` button. */
   function interrupteur(): HTMLButtonElement {
     return racine().querySelector('mat-slide-toggle button[role="switch"]') as HTMLButtonElement;
+  }
+
+  /** One card of the page, found by its heading — several now carry a switch. */
+  function carte(titre: string): HTMLElement {
+    const trouve = Array.from(racine().querySelectorAll('mat-card')).find((each) =>
+      each.textContent!.includes(titre)
+    );
+    expect(trouve, `carte « ${titre} » absente`).toBeDefined();
+    return trouve as HTMLElement;
+  }
+
+  function texte(element: HTMLElement): string {
+    return element.textContent!.replace(/\s+/g, ' ').trim();
   }
 
   /** A `File` jsdom can read: its own implementation has no `text()`. */
@@ -383,5 +422,60 @@ describe('ParametresPage rendering', () => {
     const [url, filename] = api.downloadGet.mock.calls[0] as unknown as [string, string];
     expect(url).toBe('/api/database/export');
     expect(filename.endsWith('.sql')).toBe(true);
+  });
+
+  // The automatic backup. What an administrator comes to this card for is one
+  // question — "is the database still being backed up?" — so what it must
+  // never do is answer it by silence: a missing directory, a failed night and
+  // a dead deployment all look the same on a card that only shows a switch.
+
+  it('shows where the dumps go, how many are kept and which ones are there', async () => {
+    await rendre();
+
+    const contenu = texte(carte('Sauvegarde automatique'));
+    expect(contenu).toContain('/backups');
+    expect(contenu).toContain('10 sauvegardes');
+    expect(contenu).toContain('planning-20260308-040000.dump');
+    expect(contenu).toContain('5.0 Mo');
+  });
+
+  it('reports the last failed night instead of looking idle', async () => {
+    await rendre({
+      sauvegarde: {
+        ...SAUVEGARDE,
+        lastRun: {
+          attemptedAt: '2026-03-08T03:00:00Z',
+          succeeded: false,
+          file: null,
+          message: 'pg_dump failed (exit 1): connection refused'
+        }
+      }
+    });
+
+    expect(texte(carte('Sauvegarde automatique'))).toContain('connection refused');
+  });
+
+  it('says the feature is inert when the deployment configured no directory', async () => {
+    await rendre({
+      sauvegarde: { ...SAUVEGARDE, configured: false, directory: null, files: [], nextRun: null }
+    });
+
+    const contenu = texte(carte('Sauvegarde automatique'));
+    expect(contenu).toContain('BACKUP_DIR');
+    // No switch to flip: turning one on would promise a backup nothing writes.
+    expect(carte('Sauvegarde automatique').querySelector('mat-slide-toggle')).toBeNull();
+  });
+
+  it('suspends the nightly backup through the server, never in the browser alone', async () => {
+    await rendre();
+
+    const bascule = carte('Sauvegarde automatique').querySelector(
+      'mat-slide-toggle button[role="switch"]'
+    ) as HTMLButtonElement;
+    bascule.click();
+    await fixture.whenStable();
+
+    expect(api.put).toHaveBeenCalledWith('/api/backups/active', { active: false });
+    expect(notify).toHaveBeenCalled();
   });
 });

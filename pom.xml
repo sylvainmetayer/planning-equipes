@@ -81,6 +81,13 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-arc</artifactId>
         </dependency>
+        <!-- Nightly database backup (dev.sylvain.planning.service.backup): the
+             only scheduled job in the application. Disabled under %test, where
+             a cron firing mid-suite would shell out to pg_dump. -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-scheduler</artifactId>
+        </dependency>
         <!-- Backs the MCP API-key check (dev.sylvain.planning.mcp):
              quarkus.http.auth.permission.* policies are the only mechanism that
              gates a path regardless of which extension mounted it (a plain

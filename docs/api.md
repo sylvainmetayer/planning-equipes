@@ -603,6 +603,31 @@ L'envoi par e-mail est le renvoi individuel de `POST
 sans adresse et les échecs. L'envoi collectif, lui, est passé sous
 *Publication* : il ne s'agit plus d'envoyer à tous mais de publier.
 
+## Sauvegarde automatique
+
+Deux endpoints, en lecture pour l'essentiel : la sauvegarde de nuit est réglée
+par l'hébergeur, pas par l'API.
+
+| Endpoint | Ce qu'il fait |
+| --- | --- |
+| `GET /api/backups` | L'état complet : emplacement et rétention (variables d'environnement), interrupteur, prochaine exécution, compte rendu de la dernière tentative, et la liste des dumps présents (nom, taille, date). |
+| `PUT /api/backups/active` | `{ "active": false }` **suspend** la sauvegarde de nuit ; `true` la reprend. C'est la seule valeur que cet écran écrit. |
+
+Trois choses volontairement absentes, et qui le resteront :
+
+- **pas de téléchargement d'un dump.** Un fichier de sauvegarde porte les noms,
+  dates de naissance et adresses de tous les animateurs, mineurs compris : le
+  navigateur n'est pas un canal de diffusion pour ça ;
+- **pas de restauration.** C'est une opération sur la base PostgreSQL, faite
+  par l'exploitant (`pg_restore`) — voir
+  [`exploitation.md`](exploitation.md) ;
+- **pas d'écriture de l'emplacement ni de la rétention.** Un chemin de disque et
+  le nombre de copies qu'un volume porte se décident avec ce volume
+  (`BACKUP_DIR`, `BACKUP_RETENTION`), pas depuis un écran.
+
+Comme le dump SQL, ces endpoints ignorent `X-Edition-Id` : une sauvegarde prend
+l'instance entière.
+
 ## Deux pièges
 
 **Un dump pris avant `V52` ne se réimporte plus.** Le dump nomme ses colonnes

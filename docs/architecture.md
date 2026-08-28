@@ -171,10 +171,32 @@ démarrage. Elle vaut `false` et n'a de sens qu'en exploitation, le temps de
 débloquer une migration interrompue — voir
 [`exploitation.md`](exploitation.md).
 
+## Une seule tâche planifiée, et le seul endroit qui écrit sur le disque
+
+`service/backup/` sauvegarde la base chaque nuit par un vrai `pg_dump`, dans le
+répertoire que désigne `BACKUP_DIR`, en ne gardant que les `BACKUP_RETENTION`
+copies les plus récentes. C'est la seule tâche planifiée de l'application
+(l'extension `quarkus-scheduler` n'est là que pour elle, et le profil `%test`
+la désactive), et le seul fichier qu'elle écrit hors de la base.
+
+Trois choix structurent le paquet, détaillés dans
+[`decisions/0015-sauvegarde-par-pg-dump-restauration-hors-application.md`](decisions/0015-sauvegarde-par-pg-dump-restauration-hors-application.md) :
+la **restauration reste hors de l'application**, les dumps ne sont **pas
+téléchargeables**, et l'emplacement comme la rétention sont des **variables
+d'environnement** — l'écran n'écrit qu'un booléen, celui qui suspend la tâche.
+
+`PgDump` est un bean à part pour une seule raison : c'est la part que les tests
+remplacent. Rien dans la suite ne doit lancer ce binaire, dont la présence et la
+version appartiennent à la machine — et dont la rotation, elle, se prouve sur un
+répertoire temporaire (`BackupStoreTest`), parce que c'est la moitié de la
+fonctionnalité qui **supprime**.
+
 ## Conteneurisation
 
 `docker-compose.yml` : l'application (build multi-stage, JRE en image finale,
 utilisateur non privilégié `uid 1001`), PostgreSQL avec son volume et son
-healthcheck, pgAdmin. La configuration de production est dans
+healthcheck, pgAdmin. L'image finale embarque `postgresql-client-18` pour la
+sauvegarde de nuit : un `pg_dump` plus ancien que le serveur refuse de tourner,
+donc cette version suit celle de l'image `postgres:`. La configuration de production est dans
 [`exploitation.md`](exploitation.md) et le durcissement dans
 [`securite.md`](securite.md).

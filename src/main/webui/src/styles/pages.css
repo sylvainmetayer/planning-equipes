@@ -466,6 +466,64 @@ table td.hours-verifier {
   gap: 0.5rem;
 }
 
+/* Paramètres, automatic backup: the deployment's own facts (where the dumps
+   go, how many are kept) read as a definition list, not as a form — none of
+   them is editable from here. */
+.parametres-faits {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.25rem 1rem;
+  margin: 1rem 0 0.5rem;
+}
+
+.parametres-faits dt {
+  font-weight: 500;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.parametres-faits dd {
+  margin: 0;
+  word-break: break-word;
+}
+
+@media (max-width: 600px) {
+  .parametres-faits {
+    grid-template-columns: 1fr;
+  }
+
+  .parametres-faits dd {
+    margin-bottom: 0.5rem;
+  }
+}
+
+/* The dumps on disk: a plain listing, scrollable rather than wrapping — a
+   file name broken over two lines stops being one a reader can match against
+   what they see on the server. */
+.parametres-sauvegardes {
+  width: 100%;
+  margin-top: 1rem;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  display: block;
+  overflow-x: auto;
+}
+
+.parametres-sauvegardes caption {
+  text-align: left;
+  padding-bottom: 0.5rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.parametres-sauvegardes td {
+  padding: 0.35rem 1rem 0.35rem 0;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  white-space: nowrap;
+}
+
+.parametres-sauvegardes td:first-child {
+  font-family: var(--mat-sys-body-medium-font, monospace);
+}
+
 /* MCP: configuration and prompt blocks — selectable, copyable, scrollable. */
 .mcp-pre {
   margin: 0.5rem 0;
