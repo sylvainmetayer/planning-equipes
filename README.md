@@ -286,6 +286,7 @@ Formats d'échange détaillés dans
 | L'API REST | [`docs/api.md`](docs/api.md) |
 | Le durcissement avant mise sur Internet | [`docs/securite.md`](docs/securite.md) |
 | **Exploiter une instance** (installation, e-mails, sauvegarde, conservation) | [`docs/exploitation.md`](docs/exploitation.md) |
+| Héberger pour un tiers : sous-traitance et registre RGPD | [`docs/rgpd.md`](docs/rgpd.md) |
 | Les imports / exports | [`docs/import-export.md`](docs/import-export.md) |
 | Contribuer (build, tests, CI, Renovate) | [`docs/developpement.md`](docs/developpement.md) |
 | Les conventions suivies par les agents IA | [`AGENTS.md`](AGENTS.md) |
