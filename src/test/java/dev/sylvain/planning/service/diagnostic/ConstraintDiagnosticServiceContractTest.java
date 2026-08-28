@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import ai.timefold.solver.core.api.solver.SolverFactory;
+import ai.timefold.solver.core.enterprise.TimefoldSolverEnterpriseService;
 import ai.timefold.solver.core.config.score.director.ScoreDirectorFactoryConfig;
 import ai.timefold.solver.core.config.solver.SolverConfig;
 import org.junit.jupiter.api.BeforeEach;
@@ -61,8 +62,14 @@ class ConstraintDiagnosticServiceContractTest {
      * Whether the oracle can run at all here. From Timefold 2.x,
      * {@code SolutionManager.analyze()} is Enterprise-gated, so on a Community
      * build there is nothing to compare against.
+     *
+     * <p>Probed on first use rather than in a static initialiser: the probe
+     * runs a full analysis, so anything it throws that is <em>not</em> the gate
+     * — including an {@link Error} such as a {@code NoClassDefFoundError} from
+     * a Timefold bump — must surface as a test failure naming its own cause,
+     * not as an {@code ExceptionInInitializerError} on the class.</p>
      */
-    private static final boolean ORACLE_AVAILABLE = oracleAvailable();
+    private static Boolean oracleAvailable;
 
     /**
      * Skipped rather than tagged out of the build, deliberately.
@@ -77,19 +84,59 @@ class ConstraintDiagnosticServiceContractTest {
      */
     @BeforeEach
     void skipWhenTheOracleIsEnterpriseGated() {
-        assumeTrue(ORACLE_AVAILABLE,
+        if (oracleAvailable == null) {
+            oracleAvailable = probeOracle();
+        }
+        assumeTrue(oracleAvailable,
                 "SolutionManager.analyze() is Enterprise-gated in this Timefold edition:"
                         + " there is no reference to compare the score director against.");
     }
 
-    private static boolean oracleAvailable() {
+    /**
+     * Runs the oracle once to see whether it is allowed to run at all.
+     *
+     * <p>Only the Enterprise gate is turned into a skip. Anything else is
+     * rethrown, and that distinction is the point: swallowing every
+     * {@link RuntimeException} here would let a broken oracle — an NPE after a
+     * domain change, the {@code IllegalStateException} a stale score raises, a
+     * solver-config error — disable all four comparisons while blaming a
+     * missing licence. That is exactly the cost this class exists to keep
+     * visible.</p>
+     */
+    private static boolean probeOracle() {
         try {
             new SolutionManagerConstraintDiagnosticService(SOLVER_FACTORY)
                     .analyze(planningWithoutViolations());
             return true;
-        } catch (RuntimeException enterpriseGated) {
+        } catch (RuntimeException failure) {
+            if (isEnterpriseGate(failure)) {
+                return false;
+            }
+            throw failure;
+        }
+    }
+
+    /**
+     * The gate's own signature, as {@code TimefoldSolverEnterpriseService
+     * .loadOrFail()} builds it: an {@link IllegalStateException} wrapping the
+     * reason the Enterprise module could not be loaded. On a Community build
+     * that cause is a {@link ClassNotFoundException}; with a licence present
+     * but not covering score analysis it is one of the service's own two
+     * exceptions.
+     *
+     * <p>Matched on the cause rather than on the message, which is Timefold's
+     * to reword, or on {@code IllegalStateException} alone, which
+     * {@code DefaultSolutionManager} also raises for a score that is out of
+     * date — a real failure that must not be read as a missing licence.</p>
+     */
+    private static boolean isEnterpriseGate(RuntimeException failure) {
+        if (!(failure instanceof IllegalStateException)) {
             return false;
         }
+        Throwable cause = failure.getCause();
+        return cause instanceof ClassNotFoundException
+                || cause instanceof TimefoldSolverEnterpriseService.EnterpriseLicenseException
+                || cause instanceof TimefoldSolverEnterpriseService.EnterpriseProductException;
     }
 
     @Test
