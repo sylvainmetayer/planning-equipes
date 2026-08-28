@@ -235,6 +235,11 @@ public class ReferenceDataService implements ReferenceData {
         return contraintesAdHoc.create(contrainte);
     }
 
+    /** See {@link ContrainteAdHocService#createAll} — all or none. */
+    public List<ContrainteAdHoc> createContraintesAdHoc(List<ContrainteAdHoc> contraintes) {
+        return contraintesAdHoc.createAll(contraintes);
+    }
+
     public void deleteContrainteAdHoc(String id) {
         contraintesAdHoc.delete(id);
     }

@@ -424,6 +424,43 @@ export function buildHelpSections(): HelpSection[] {
       ]
     },
     {
+      id: 'jour-j',
+      icon: 'emergency',
+      title: $localize`:@@aide.jourJ.title:Mode jour J`,
+      summary: $localize`:@@aide.jourJ.summary:Quelqu'un ne s'est pas présenté : le marquer absent, trouver un remplaçant, appliquer — sans relancer de calcul.`,
+      blocks: [
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.jourJ.intro:Tous les autres écrans travaillent en amont de l'événement. Celui-ci est pensé pour le jour même, debout dans l'allée, sur un téléphone : peu de clics, de grandes cibles, et les trois étapes dans l'ordre du geste — qui manque, quelles places cela ouvre, qui peut les reprendre.`
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.jourJ.portee:Marquer quelqu'un absent le déclare indisponible sur les créneaux restants de la journée, et sur ceux-là seulement. Un créneau est restant tant qu'il n'est pas terminé — celui qui est en cours en fait partie, c'est justement celui où personne n'est au poste. Les créneaux déjà passés ne sont jamais touchés : la personne les a réellement tenus, et le planning doit continuer à le dire.`
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.jourJ.refus:L'absence est appliquée en entier ou pas du tout. Elle est refusée, sans rien écrire, si elle contredit une affectation forcée sur l'un des créneaux visés — le message nomme les deux ajustements — ou si l'un des postes à libérer est verrouillé : levez le verrou d'abord.`
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.jourJ.suggestions:Pour chaque place ouverte, l'assistant propose les remplaçants viables, du meilleur au moins bon, et n'en propose aucun qui casserait une règle dure. Il s'arrête aux vingt premiers candidats éligibles, parce que chacun coûte une analyse complète du planning : l'écran affiche toujours combien ont été évalués sur combien d'éligibles, pour qu'une liste écourtée ne se lise pas comme « il n'y a personne d'autre ». Appliquer une suggestion réaffecte ce seul siège, sans relancer de résolution.`
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.jourJ.publication:Rien n'est envoyé aux animateurs depuis cet écran : leur espace continue d'afficher le planning publié tant que vous n'avez pas republié. Le bandeau rappelle combien de personnes attendent un changement et renvoie vers le bouton Publier, sur la page Solveur — un envoi à cent cinquante personnes à portée de pouce dans un écran d'urgence se paierait cher.`
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.jourJ.trace:Chaque absence marquée est un ajustement manuel enregistré, avec sa raison, son auteur et son horodatage : elle se retrouve telle quelle le lendemain sur la page Ajustements manuels. Elle s'annule créneau par créneau ou d'un bloc — mais les postes déjà réaffectés ne reviennent pas d'eux-mêmes : qui tient un poste reste une décision.`
+        }
+      ],
+      links: [
+        { route: '/jour-j', label: $localize`:@@nav.link.jourJ:Mode jour J` },
+        { route: '/ad-hoc-constraints', label: $localize`:@@nav.link.adHocConstraints:Ajustements manuels` },
+        { route: '/verrouillages', label: $localize`:@@nav.link.verrouillages:Verrouillages` }
+      ]
+    },
+    {
       id: 'consulter',
       icon: 'calendar_month',
       title: $localize`:@@aide.views.title:Consulter le planning`,

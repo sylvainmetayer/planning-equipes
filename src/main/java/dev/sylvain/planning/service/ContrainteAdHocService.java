@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -36,6 +37,46 @@ public class ContrainteAdHocService {
         repository.saveContrainte(contrainte);
         changeTracker.markModified();
         return contrainte;
+    }
+
+    /**
+     * Writes several exceptions as one indivisible gesture: every one of them
+     * is checked against what is already recorded <b>and</b> against the ones
+     * ahead of it in the batch, and nothing is written unless all of them pass.
+     *
+     * <p>Calling {@link #create} in a loop would leave the first entries behind
+     * when the third is refused, which is worse than refusing outright: the
+     * caller is told "no" while half of its intent is already in the database.
+     * The one gesture that needs this is marking somebody absent for the rest
+     * of a day (issue #297) — one exception per remaining timeslot.</p>
+     *
+     * <p>Every contradiction is named, not just the first, for the same reason
+     * a scenario import names them all: the answer has to be actionable in one
+     * read.</p>
+     */
+    public List<ContrainteAdHoc> createAll(List<ContrainteAdHoc> contraintes) {
+        List<Creneau> creneaux = creneauService.list();
+        List<ContrainteAdHoc> deja = new ArrayList<>(list());
+        List<String> messages = new ArrayList<>();
+        for (ContrainteAdHoc contrainte : contraintes) {
+            contrainte.setId(Ids.required(contrainte.getId(), "constraint id"));
+            ContrainteAdHocContradictions.detect(contrainte, deja, creneaux).stream()
+                    .map(Contradiction::message)
+                    .filter(message -> !messages.contains(message))
+                    .forEach(messages::add);
+            deja.add(contrainte);
+        }
+        if (!messages.isEmpty()) {
+            throw new BusinessError.Invalid(String.join(" ", messages));
+        }
+        for (ContrainteAdHoc contrainte : contraintes) {
+            if (contrainte.getCreeLe() == null) {
+                contrainte.setCreeLe(Instant.now());
+            }
+            repository.saveContrainte(contrainte);
+        }
+        changeTracker.markModified();
+        return contraintes;
     }
 
     public void delete(String id) {

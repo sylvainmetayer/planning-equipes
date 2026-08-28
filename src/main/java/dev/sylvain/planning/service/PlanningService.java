@@ -2018,13 +2018,17 @@ public class PlanningService {
     /** Ceiling a caller may raise the plafond to, so no single request can pay 150 analyses. */
     public static final int SUGGESTIONS_PLAFOND_MAX = 100;
 
+    /** {@link ConstraintCatalog.Niveau#HARD} as {@link ContrainteImpact} spells it. */
+    private static final String DUR = ConstraintCatalog.Niveau.HARD.name();
+
     /**
      * Repair suggestions for one poste (issue #71): the loop that <b>looks for</b>
      * candidates, where {@link #simulateSwap} only scores the one it is handed.
      * Every eligible animateur is substituted in turn on {@code posteId},
-     * candidates that would worsen the plan's hard score are dropped, and what
-     * survives is returned best impact first. Nothing is persisted — applying a
-     * suggestion is the separate, explicit {@link #applyReparation}.
+     * candidates that would worsen the plan's hard score <b>or introduce a hard
+     * violation on that very seat</b> are dropped, and what survives is returned
+     * best impact first. Nothing is persisted — applying a suggestion is the
+     * separate, explicit {@link #applyReparation}.
      *
      * <p><b>Bounded on purpose.</b> Only the first {@code plafond} eligible
      * candidates are simulated (see {@link #SUGGESTIONS_PLAFOND_DEFAUT}); the
@@ -2069,10 +2073,23 @@ public class PlanningService {
             }
             List<ContrainteImpact> violeesApres = impactsFor(apres, poste, true);
             Set<String> nomsApres = violeesApres.stream().map(ContrainteImpact::name).collect(Collectors.toSet());
+            List<ContrainteImpact> introduites =
+                    violeesApres.stream().filter(impact -> !nomsAvant.contains(impact.name())).toList();
+            // The planning-wide test above is not enough on an empty seat: filling
+            // it settles one hard point (posteDoitEtrePourvu) and can spend it on
+            // another, leaving the global hard score flat while the candidate
+            // plainly breaks a rule on this very poste — an animateur forced
+            // unavailable on that timeslot being the case issue #297 walks into.
+            // The invariant SuggestionReparation states is therefore enforced
+            // here, not merely hoped for: a suggestion never introduces a hard
+            // violation on the seat it repairs.
+            if (introduites.stream().anyMatch(impact -> DUR.equals(impact.niveau()))) {
+                continue;
+            }
             suggestions.add(new SuggestionReparation(candidat.getId(), scoreApres,
                     scoreApres.subtract(scoreAvant),
                     violeesAvant.stream().filter(impact -> !nomsApres.contains(impact.name())).toList(),
-                    violeesApres.stream().filter(impact -> !nomsAvant.contains(impact.name())).toList()));
+                    introduites));
         }
         suggestions.sort(Comparator
                 .comparing(SuggestionReparation::delta, Comparator.<HardMediumSoftScore>naturalOrder().reversed())

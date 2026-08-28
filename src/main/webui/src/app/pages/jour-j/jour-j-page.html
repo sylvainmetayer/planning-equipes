@@ -1,0 +1,267 @@
+<mat-card appearance="outlined" class="page-card jour-j-entete">
+  <mat-card-header>
+    <h1 mat-card-title i18n="@@jourJ.title">Mode jour J</h1>
+    <mat-card-subtitle i18n="@@jourJ.description">
+      Quelqu'un ne s'est pas présenté : marquez-le absent, voyez qui peut le remplacer, appliquez.
+      Aucune résolution n'est relancée, et rien n'est envoyé aux animateurs depuis cet écran.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <p class="jour-j-resume">{{ resume() }}</p>
+    @if (creneaux().length > 0) {
+      <ul class="jour-j-creneaux">
+        @for (creneau of creneaux(); track creneau.id) {
+          <li>{{ creneau.libelle }}</li>
+        }
+      </ul>
+    }
+    <button
+      matButton="tonal"
+      type="button"
+      class="jour-j-action"
+      [disabled]="chargement()"
+      (click)="recharger()"
+    >
+      <mat-icon>refresh</mat-icon>
+      <ng-container i18n="@@common.refresh">Actualiser</ng-container>
+    </button>
+    @if (chargement()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    @if (erreur()) {
+      <p class="jour-j-erreur">{{ erreur() }}</p>
+    }
+  </mat-card-content>
+</mat-card>
+
+@if (rappel()) {
+  <mat-card appearance="outlined" class="page-card jour-j-rappel">
+    <mat-card-content>
+      <mat-icon>mark_email_unread</mat-icon>
+      <div>
+        <p>{{ rappel() }}</p>
+        <a routerLink="/" i18n="@@jourJ.publication.lien">Aller à la publication</a>
+      </div>
+    </mat-card-content>
+  </mat-card>
+}
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h2 mat-card-title i18n="@@jourJ.absents.titre">Qui manque ?</h2>
+    <mat-card-subtitle i18n="@@jourJ.absents.description">
+      Les animateurs qui tiennent au moins un poste sur les créneaux restants. Marquer quelqu'un
+      absent le déclare indisponible sur ces créneaux-là uniquement : les créneaux déjà passés
+      restent à son nom, il les a réellement tenus.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    @if (deService().length === 0) {
+      <p class="jour-j-vide" i18n="@@jourJ.absents.aucun">
+        Personne n'est de service sur les créneaux restants.
+      </p>
+    }
+    <ul class="jour-j-liste">
+      @for (animateur of deService(); track animateur.animateurId) {
+        <li class="jour-j-personne" [class.est-absent]="animateur.absent">
+          <div class="jour-j-personne-identite">
+            <span class="jour-j-nom">{{ animateur.nomAffiche }}</span>
+            <span class="jour-j-detail">{{ animateur.charge }}</span>
+          </div>
+          @if (animateur.absent) {
+            <span class="jour-j-badge" i18n="@@jourJ.absents.deja">Déjà marqué absent</span>
+          } @else if (candidatAbsence() !== animateur.animateurId) {
+            <button
+              matButton="filled"
+              type="button"
+              class="jour-j-cible"
+              (click)="ouvrirAbsence(animateur.animateurId)"
+            >
+              <mat-icon>person_off</mat-icon>
+              <ng-container i18n="@@jourJ.absents.marquer">Marquer absent</ng-container>
+            </button>
+          }
+          @if (candidatAbsence() === animateur.animateurId) {
+            <div class="jour-j-confirmation">
+              <mat-form-field appearance="outline">
+                <mat-label i18n="@@jourJ.absents.raison">Raison (facultative)</mat-label>
+                <input
+                  matInput
+                  type="text"
+                  [ngModel]="raison()"
+                  (ngModelChange)="raison.set($event)"
+                  name="raison"
+                />
+              </mat-form-field>
+              <div class="jour-j-confirmation-actions">
+                <button
+                  matButton="filled"
+                  type="button"
+                  class="jour-j-cible"
+                  [disabled]="enCoursDAbsence()"
+                  (click)="marquerAbsent(animateur.animateurId)"
+                >
+                  <mat-icon>person_off</mat-icon>
+                  <ng-container i18n="@@jourJ.absents.confirmer"
+                    >Confirmer l'absence pour la suite de la journée</ng-container
+                  >
+                </button>
+                <button
+                  matButton
+                  type="button"
+                  [disabled]="enCoursDAbsence()"
+                  (click)="fermerAbsence()"
+                >
+                  <ng-container i18n="@@common.cancel">Annuler</ng-container>
+                </button>
+              </div>
+            </div>
+          }
+        </li>
+      }
+    </ul>
+  </mat-card-content>
+</mat-card>
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h2 mat-card-title i18n="@@jourJ.trous.titre">Postes à pourvoir</h2>
+    <mat-card-subtitle i18n="@@jourJ.trous.description">
+      Les places vides sur les créneaux restants, celles qu'une absence vient d'ouvrir comprises.
+      Appliquer un remplacement réaffecte ce seul siège, sans relancer de résolution.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    @if (trous().length === 0) {
+      <p class="jour-j-vide" i18n="@@jourJ.trous.aucun">
+        Toutes les places des créneaux restants sont pourvues.
+      </p>
+    }
+    <ul class="jour-j-liste">
+      @for (poste of trous(); track poste.posteId) {
+        <li class="jour-j-poste">
+          <div class="jour-j-personne-identite">
+            <span class="jour-j-nom">{{ poste.standNom }}</span>
+            <span class="jour-j-detail">{{ poste.plage }}</span>
+          </div>
+          @if (poste.blocage) {
+            <p class="jour-j-blocage">{{ poste.blocage }}</p>
+          } @else {
+            <button
+              matButton="tonal"
+              type="button"
+              class="jour-j-cible"
+              [disabled]="enRecherche(poste.posteId)"
+              (click)="chercherRemplacants(poste.posteId)"
+            >
+              <mat-icon>person_search</mat-icon>
+              <ng-container i18n="@@jourJ.trous.chercher">Trouver un remplaçant</ng-container>
+            </button>
+          }
+          @if (enRecherche(poste.posteId)) {
+            <mat-progress-bar mode="indeterminate" />
+          }
+          @if (suggestionsDe(poste.posteId)) {
+            <p class="jour-j-portee">{{ portee(poste.posteId) }}</p>
+            @if (vide(poste.posteId)) {
+              <p class="jour-j-vide" i18n="@@jourJ.suggestions.aucune">
+                Aucun remplaçant viable parmi les candidats évalués.
+              </p>
+            }
+            <ul class="jour-j-candidats">
+              @for (candidat of candidats(poste.posteId); track candidat.animateurId) {
+                <li>
+                  <span class="jour-j-nom">{{ candidat.nom }}</span>
+                  @if (candidat.ameliore) {
+                    <span
+                      class="jour-j-badge jour-j-badge-mieux"
+                      i18n="@@jourJ.suggestions.ameliore"
+                      >Améliore le planning</span
+                    >
+                  }
+                  <button
+                    matButton="filled"
+                    type="button"
+                    class="jour-j-cible"
+                    [disabled]="affectationEnCours() === poste.posteId"
+                    (click)="affecter(poste.posteId, candidat.animateurId)"
+                  >
+                    <mat-icon>how_to_reg</mat-icon>
+                    <ng-container i18n="@@jourJ.suggestions.affecter">Affecter</ng-container>
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </li>
+      }
+    </ul>
+  </mat-card-content>
+</mat-card>
+
+@if (absences().length > 0) {
+  <mat-card appearance="outlined" class="page-card">
+    <mat-card-header>
+      <h2 mat-card-title i18n="@@jourJ.journal.titre">Absences du jour</h2>
+      <mat-card-subtitle i18n="@@jourJ.journal.description">
+        Chaque absence est un ajustement manuel enregistré, avec son auteur et son horodatage : elle
+        se retrouve demain sur la page Ajustements manuels. Annulable créneau par créneau — les
+        postes déjà réaffectés ne reviennent pas d'eux-mêmes.
+      </mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <ul class="jour-j-liste">
+        @for (absence of absences(); track absence.animateurId) {
+          <li class="jour-j-absence">
+            <div class="jour-j-personne-identite">
+              <span class="jour-j-nom">{{ absence.nomAffiche }}</span>
+            </div>
+            <ul class="jour-j-entrees">
+              @for (entree of absence.entrees; track entree.contrainteId) {
+                <li>
+                  <span class="jour-j-detail">{{ entree.plage }}</span>
+                  @if (entree.raison) {
+                    <span class="jour-j-raison">{{ entree.raison }}</span>
+                  }
+                  @if (entree.creeParUtilisateurId) {
+                    <span class="jour-j-detail" i18n="@@jourJ.journal.auteur"
+                      >par {{ entree.creeParUtilisateurId }}</span
+                    >
+                  }
+                  @if (entree.annulable) {
+                    <button
+                      matButton
+                      type="button"
+                      (click)="annulerAbsence(absence.animateurId, entree.creneauId)"
+                    >
+                      <mat-icon>undo</mat-icon>
+                      <ng-container i18n="@@jourJ.journal.annulerCreneau"
+                        >Annuler ce créneau</ng-container
+                      >
+                    </button>
+                  } @else {
+                    <span class="jour-j-detail" i18n="@@jourJ.journal.partagee"
+                      >Ajustement partagé avec d'autres animateurs : à modifier depuis Ajustements
+                      manuels.</span
+                    >
+                  }
+                </li>
+              }
+            </ul>
+            <button
+              matButton="tonal"
+              type="button"
+              class="jour-j-cible"
+              (click)="annulerAbsence(absence.animateurId)"
+            >
+              <mat-icon>undo</mat-icon>
+              <ng-container i18n="@@jourJ.journal.annulerTout"
+                >Annuler toute l'absence</ng-container
+              >
+            </button>
+          </li>
+        }
+      </ul>
+    </mat-card-content>
+  </mat-card>
+}

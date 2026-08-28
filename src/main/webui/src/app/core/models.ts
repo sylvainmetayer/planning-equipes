@@ -587,8 +587,9 @@ export interface AffectationExplanation {
 
 /**
  * One viable replacement proposed by the repair assistant: only ever a
- * candidate that leaves the plan's hard score no worse, so
- * `violationsIntroduites` never holds a `HARD` one.
+ * candidate that leaves the plan's hard score no worse *and* breaks no hard
+ * rule on the seat it takes, so `violationsIntroduites` never holds a `HARD`
+ * one.
  */
 export interface SuggestionReparation {
   animateurId: string;
@@ -1421,4 +1422,76 @@ export interface EtatSauvegarde {
   lastRun: ExecutionSauvegarde;
   files: FichierSauvegarde[];
   directoryError: string | null;
+}
+
+/* --------------------------- Mode « jour J » ------------------------------ */
+
+/** One timeslot of the day still ahead of the reference time. */
+export interface CreneauJourJ {
+  id: number;
+  date: string;
+  heureDebut: string;
+  heureFin: string;
+  /** Started but not over: the one nobody is standing at right now. */
+  enCours: boolean;
+}
+
+/** Somebody holding at least one seat over the remaining timeslots. */
+export interface AnimateurAffecte {
+  animateurId: string;
+  nomAffiche: string;
+  postesRestants: number;
+  absent: boolean;
+}
+
+/** An unstaffed seat on a remaining timeslot. */
+export interface PosteAPourvoir {
+  posteId: string;
+  standId: string;
+  standNom: string;
+  creneauId: number;
+  heureDebut: string;
+  heureFin: string;
+  /** A lock covers it: the repair assistant refuses to write here until it is lifted. */
+  verrouille: boolean;
+}
+
+/** One timeslot of an absence, with the trace the ad hoc exception carries. */
+export interface EntreeAbsence {
+  contrainteId: string;
+  creneauId: number;
+  heureDebut: string | null;
+  heureFin: string | null;
+  raison: string | null;
+  creeParUtilisateurId: string | null;
+  creeLe: string | null;
+  /** False when the exception names several animateurs: it is not this screen's to undo. */
+  annulable: boolean;
+}
+
+/** Somebody missing today, and over which timeslots. */
+export interface AbsenceJourJ {
+  animateurId: string;
+  nomAffiche: string;
+  entrees: EntreeAbsence[];
+}
+
+/** `/api/jour-j`: the whole event-day screen in one answer. */
+export interface EtatJourJ {
+  date: string;
+  /** The moment "remaining" is counted from, as the *server* reads its clock. */
+  heureReference: string;
+  creneauxDuJour: number;
+  creneauxRestants: CreneauJourJ[];
+  animateursDeService: AnimateurAffecte[];
+  postesAPourvoir: PosteAPourvoir[];
+  absences: AbsenceJourJ[];
+}
+
+/** What one « marquer absent » wrote, so the screen goes straight to the holes it opened. */
+export interface AbsenceMarquee {
+  animateurId: string;
+  nomAffiche: string;
+  entrees: EntreeAbsence[];
+  postesLiberes: PosteAPourvoir[];
 }

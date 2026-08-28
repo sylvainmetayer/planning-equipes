@@ -25,6 +25,11 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/notifications/notifications-page').then((m) => m.NotificationsPage)
   },
   {
+    path: 'jour-j',
+    title: 'Jour J',
+    loadComponent: () => import('./pages/jour-j/jour-j-page').then((m) => m.JourJPage)
+  },
+  {
     path: 'problemes',
     title: 'Problems',
     loadComponent: () => import('./pages/problemes/problemes-page').then((m) => m.ProblemesPage)

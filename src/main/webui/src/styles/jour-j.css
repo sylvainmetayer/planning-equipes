@@ -1,0 +1,226 @@
+/* Mode « jour J » (issue #297).
+
+   Mobile first, and literally so: this screen is read standing up, on a phone,
+   one-handed, while somebody waits. So the base rules are the phone ones and
+   the only @media widens them for a desk — the opposite of every other page
+   here, which starts from a table. What that buys is a minimum touch target of
+   48px on every control, one column, and no horizontal scroll.
+
+   Only what Material does not already theme: it themes the cards, the buttons
+   and the fields, so what is left is the list scaffolding and the two status
+   colours. */
+
+.jour-j-entete .jour-j-resume {
+  margin: 0 0 0.5rem;
+  font-weight: 500;
+}
+
+.jour-j-creneaux {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.jour-j-creneaux li {
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: var(--mat-sys-surface-container-high);
+  font-variant-numeric: tabular-nums;
+}
+
+.jour-j-erreur {
+  margin: 0.5rem 0 0;
+  color: var(--mat-sys-error);
+}
+
+/* The publication reminder. Deliberately not an alert colour: nothing is
+   broken, there is simply pending work — and no send button here on purpose. */
+.jour-j-rappel mat-card-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding-top: 1rem;
+}
+
+.jour-j-rappel p {
+  margin: 0 0 0.25rem;
+}
+
+.jour-j-rappel mat-icon {
+  color: var(--mat-sys-primary);
+  flex: none;
+}
+
+.jour-j-liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.jour-j-personne,
+.jour-j-poste,
+.jour-j-absence {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+}
+
+.jour-j-personne.est-absent {
+  opacity: 0.65;
+}
+
+.jour-j-personne-identite {
+  display: flex;
+  flex-direction: column;
+}
+
+.jour-j-nom {
+  font-weight: 500;
+}
+
+.jour-j-detail,
+.jour-j-raison {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.875rem;
+}
+
+/* Every control of this screen is a target for a thumb, not a cursor. The
+   primary ones take the full width; the secondary ones keep the height only. */
+.jour-j-cible {
+  min-height: 48px;
+  width: 100%;
+}
+
+.jour-j-action {
+  min-height: 48px;
+}
+
+.jour-j-confirmation {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.jour-j-confirmation mat-form-field {
+  width: 100%;
+}
+
+.jour-j-confirmation-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.jour-j-badge {
+  align-self: flex-start;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: var(--mat-sys-surface-container-high);
+  font-size: 0.8125rem;
+}
+
+.jour-j-badge-mieux {
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}
+
+.jour-j-blocage {
+  margin: 0;
+  color: var(--mat-sys-error);
+  font-size: 0.875rem;
+}
+
+.jour-j-portee {
+  margin: 0.25rem 0 0;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.875rem;
+}
+
+.jour-j-vide {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.jour-j-candidats,
+.jour-j-entrees {
+  list-style: none;
+  margin: 0.25rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.jour-j-candidats > li,
+.jour-j-entrees > li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 10px;
+  background: var(--mat-sys-surface-container-low);
+}
+
+/* From a desk, the same rows have room to breathe sideways. Nothing shrinks
+   below the touch target: a screen used with a thumb in the morning is used
+   with a thumb in the afternoon too. */
+@media (min-width: 700px) {
+  .jour-j-personne,
+  .jour-j-poste {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .jour-j-personne-identite {
+    flex: 1 1 12rem;
+  }
+
+  .jour-j-cible {
+    width: auto;
+    min-width: 14rem;
+  }
+
+  .jour-j-confirmation,
+  .jour-j-confirmation-actions {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    width: 100%;
+  }
+
+  .jour-j-confirmation mat-form-field {
+    flex: 1 1 18rem;
+    width: auto;
+  }
+
+  .jour-j-candidats > li,
+  .jour-j-entrees > li {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .jour-j-candidats > li .jour-j-nom,
+  .jour-j-entrees > li .jour-j-detail:first-child {
+    flex: 1 1 10rem;
+  }
+
+  .jour-j-portee,
+  .jour-j-blocage,
+  .jour-j-candidats,
+  .jour-j-entrees {
+    flex-basis: 100%;
+  }
+}

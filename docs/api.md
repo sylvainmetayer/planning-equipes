@@ -347,6 +347,65 @@ sans relancer de solveur ni réécrire le reste du plan : le résultat est
 exactement le plan simulé. Un poste couvert par un verrouillage est refusé
 (400) — déverrouillez-le d'abord.
 
+**Un candidat qui casserait une règle dure sur ce siège n'est jamais proposé**,
+même quand le score dur global ne bouge pas. Le cas n'est pas théorique : sur un
+siège vide, pourvoir la place règle un point dur (`posteDoitEtrePourvu`) et peut
+le redépenser aussitôt sur un autre — l'animateur qu'on vient de déclarer
+indisponible se retrouvait alors en tête des suggestions, à delta nul.
+`violationsIntroduites` ne porte donc jamais de `HARD`, comme sa documentation
+l'annonçait déjà.
+
+## Mode « jour J »
+
+L'écran du jour même (`/jour-j`) : quelqu'un ne s'est pas présenté, et ses
+sièges doivent changer de mains **maintenant**. Rien de neuf sous le capot — ce
+sont les briques ci-dessus, appelées dans l'ordre du geste.
+
+| Endpoint | Effet |
+| --- | --- |
+| `GET /api/jour-j?date=&heure=` | L'écran complet : créneaux restants, animateurs de service, places vides, absences du jour. Ne lit que. |
+| `POST /api/jour-j/absences?date=&heure=` | `{ "animateurId": "A1", "raison": "…" }` — une `INDISPONIBILITE_FORCEE` par créneau restant, et les sièges tenus sur ces créneaux vidés. Écrit. |
+| `DELETE /api/jour-j/absences/{animateurId}?date=&creneauId=` | Annule l'absence : un créneau si `creneauId` est donné, toute la journée sinon. |
+| `POST /api/jour-j/postes/{posteId}/suggestions?plafond=N` | L'assistant de réparation ci-dessus, sur le **plan enregistré** au lieu d'un plan envoyé dans le corps. |
+
+`date` et `heure` valent par défaut aujourd'hui et maintenant, **à l'horloge du
+serveur** — la réponse renvoie `heureReference` pour que l'écran énonce cette
+heure-là plutôt que celle du téléphone. Lire un autre jour que le jour courant
+le lit en entier (`heure` retombe à `00:00`) : « maintenant » ne veut rien dire
+sur une autre date.
+
+**La portée d'une absence, ce sont les créneaux restants, et eux seuls.** Un
+créneau est restant quand sa **fin** est postérieure à l'heure de référence —
+celui qui est en cours en fait donc partie, c'est précisément celui où personne
+n'est au poste. Les créneaux déjà terminés ne sont jamais touchés : la personne
+les a réellement tenus, les transformer en indisponibilités ferait mentir le
+planning sur ce qui s'est passé.
+
+**Tout ou rien.** Une absence, c'est plusieurs exceptions et plusieurs sièges ;
+un refus sur le troisième ne doit pas laisser les deux premiers écrits. Les
+contradictions et les verrouillages sont donc vérifiés sur toute la portée avant
+la moindre écriture. Deux refus possibles, tous deux en **400** :
+
+- une `AFFECTATION_FORCEE` sur l'un des créneaux visés — c'est la règle 2 de
+  [`ContrainteAdHocContradictions`](contraintes.md#contraintes-ad-hoc--les-contradictions-refusées-à-la-saisie),
+  et le message **nomme les deux** exceptions ;
+- un siège à libérer couvert par un verrouillage : le message nomme le stand et
+  l'heure, et invite à lever le verrou d'abord.
+
+Chaque exception écrite porte sa trace — `raison`, `creeParUtilisateurId` (le
+compte admin de la session, `jour-j` à défaut) et `creeLe` — et se retrouve
+telle quelle sur la page « Ajustements manuels » le lendemain.
+
+Annuler une absence **ne rend pas les sièges** : qui tient un siège est une
+décision, et supposer que l'occupant précédent doit le récupérer effacerait en
+silence le remplacement appliqué entre-temps. L'annulation ne touche que les
+exceptions ne visant **que** cet animateur ; une exception nominative multiple
+appartient à qui l'a écrite.
+
+Rien ici ne déclenche de résolution, et rien n'envoie de courriel : l'écran
+affiche le compte de la [publication](#publication) et renvoie vers le bouton,
+il ne le duplique pas.
+
 ## Faisabilité et besoin en animateurs
 
 Deux calculs de capacité **sans lancer le solveur**, donc affichables avant une

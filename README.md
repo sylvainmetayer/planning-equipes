@@ -218,6 +218,7 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 | Autopsie du planning | Une ligne de mesures par résolution terminée, toutes éditions confondues et sans rien de nominatif ; survit à la suppression de l'édition décrite |
 | Instantanés de plan | Met un planning de côté avec son score et sa date, et le remet en place plus tard ; une capture est prise automatiquement avant chaque résolution |
 | Résolution qui dégrade le plan | Le score d'avant s'affiche à côté de celui d'après : relancer un calcul sur un bon planning peut le dégrader sans que le score dur bouge. Quand c'est le cas, l'écran le dit et propose de revenir au plan précédent |
+| Mode jour J | L'écran du jour même, pensé pour un téléphone : quelqu'un ne s'est pas présenté, on le marque absent pour la suite de la journée, on voit qui peut reprendre ses postes, on applique. Les créneaux déjà tenus ne bougent pas, aucun calcul n'est relancé, et rien n'est envoyé aux animateurs tant que le planning n'a pas été republié |
 
 ### Organiser l'année
 
