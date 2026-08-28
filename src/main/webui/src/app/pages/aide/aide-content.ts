@@ -236,6 +236,10 @@ export function buildHelpSections(): HelpSection[] {
           text: $localize`:@@aide.results.score:Une résolution rend un score à trois composantes, de la forme « 0hard / -6675medium / -120soft ». Elles ne se compensent jamais : le solveur préfère toujours un planning meilleur en dur, quel que soit le prix payé en medium et en souple.`
         },
         {
+          kind: 'paragraph',
+          text: $localize`:@@aide.results.courbe:Pendant la résolution, la page Solveur trace ces trois composantes en direct, chacune dans son propre cadre — un score dur à -36 et un score souple à -400 000 ne se comparent pas sur le même axe. Le haut d'un cadre est le zéro : une courbe qui vient s'y coller veut dire « plus rien à corriger à ce niveau-là ». C'est ce qui permet de décider quand arrêter : le dur à zéro depuis plusieurs minutes et le souple qui ne bouge plus, la résolution plafonne et le bouton « Arrêter le solveur » ne vous coûtera rien — un solveur arrêté enregistre et analyse quand même ce qu'il a trouvé. Seule la résolution en cours est tracée : l'historique des résolutions passées n'est pas conservé.`
+        },
+        {
           kind: 'definitions',
           items: [
             {

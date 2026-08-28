@@ -5,7 +5,10 @@ import { ApiService } from './api.service';
 import { EditionStore } from './edition.store';
 import { NotificationService } from './notification.service';
 import { SolverJobService } from './solver-job.service';
-import type { JobView } from './models';
+import type { JobView, ScorePoint, ScoreTrace } from './models';
+
+/** Wire shape of a `score` event, mirrored here so the fake stays honest. */
+type ScoreDeltaWire = Omit<ScoreTrace, 'points'> & { depuis: number; points: ScorePoint[] };
 
 /**
  * The stream half of `SolverJobService`, and above all its fallback.
@@ -102,8 +105,28 @@ class FakeEventSource {
     this.emit('heartbeat', JSON.stringify({ at: '2026-07-01T10:00:00Z' }));
   }
 
+  /** One `score` delta of the running solve's curve (issue #304). */
+  emitScore(delta: Partial<ScoreDeltaWire> & { depuis: number; points: ScorePoint[] }): void {
+    this.emit(
+      'score',
+      JSON.stringify({
+        jobId: 'job-1',
+        editionId: 'ed-1',
+        generation: 1,
+        intervalleMs: 1000,
+        termine: false,
+        ...delta
+      })
+    );
+  }
+
   fail(): void {
     this.onerror?.(new Event('error'));
+  }
+
+  /** Raw payload, for the events a truncated connection cuts in half. */
+  emitRaw(type: string, data: string): void {
+    this.emit(type, data);
   }
 
   private emit(type: string, data: string): void {
@@ -356,5 +379,101 @@ describe('SolverJobService — server-sent events', () => {
     // The fast pace, untouched: no stream means the poll is the only source.
     expect(api.getResponse.mock.calls.length - afterStart).toBe(3);
     expect(FakeEventSource.instances).toHaveLength(0);
+  });
+
+  /**
+   * The live score curve (issue #304). What is worth testing is not that points
+   * arrive — it is the splice: the events are <b>deltas</b>, because the series
+   * grows for as long as the solve runs and re-sending it whole every second
+   * would make the traffic grow with the budget. A delta protocol has exactly
+   * one failure mode, and it is the one that costs the user a wrong curve
+   * rather than an error: appending what should have replaced.
+   */
+  describe('score curve', () => {
+    const point = (tempsMs: number, hard: number): ScorePoint => ({ tempsMs, hard, medium: 0, soft: 0 });
+
+    it('has no curve at all until the server sends one', async () => {
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(service.scoreTrace()).toBeNull();
+    });
+
+    it('appends the points of each delta to the series it already holds', async () => {
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+
+      FakeEventSource.last.emitScore({ depuis: 0, points: [point(0, -40), point(1000, -30)] });
+      FakeEventSource.last.emitScore({ depuis: 2, points: [point(2000, -10)] });
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(service.scoreTrace()?.points.map((p) => p.hard)).toEqual([-40, -30, -10]);
+    });
+
+    it('replaces the series when the server restarts at zero', async () => {
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+      FakeEventSource.last.emitScore({ depuis: 0, points: [point(0, -40), point(1000, -30)] });
+      await vi.advanceTimersByTimeAsync(0);
+
+      // A reconnection, or a series the server has just decimated: it starts
+      // over at zero, and appending here would draw every point twice.
+      FakeEventSource.last.emitScore({ generation: 2, depuis: 0, points: [point(0, -40), point(2000, -10)] });
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(service.scoreTrace()?.points.map((p) => p.hard)).toEqual([-40, -10]);
+    });
+
+    it('starts a new run from scratch rather than after the previous curve', async () => {
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+      FakeEventSource.last.emitScore({ depuis: 0, points: [point(0, -40)], termine: true });
+      await vi.advanceTimersByTimeAsync(0);
+
+      FakeEventSource.last.emitScore({ jobId: 'job-2', generation: 2, depuis: 0, points: [point(0, -900)] });
+      await vi.advanceTimersByTimeAsync(0);
+
+      const trace = service.scoreTrace();
+      expect(trace?.jobId).toBe('job-2');
+      expect(trace?.termine).toBe(false);
+      expect(trace?.points.map((p) => p.hard)).toEqual([-900]);
+    });
+
+    it('survives a truncated event instead of losing the curve', async () => {
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+      FakeEventSource.last.emitScore({ depuis: 0, points: [point(0, -40)] });
+      await vi.advanceTimersByTimeAsync(0);
+
+      FakeEventSource.last.emitRaw('score', '{"jobId":"job-1","poi');
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(service.scoreTrace()?.points).toHaveLength(1);
+    });
+
+    it('refuses to expose a curve belonging to another edition', async () => {
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+
+      // The stream carries every run, whatever edition it writes to — the lock
+      // is global. Drawing this one on the Solveur page of edition ed-1 would
+      // show an operator the progress of a solve that is not rewriting the
+      // planning in front of them.
+      FakeEventSource.last.emitScore({ editionId: 'ed-2', depuis: 0, points: [point(0, -40)] });
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(service.scoreTrace()?.points).toHaveLength(1);
+      expect(service.scoreTraceEdition()).toBeNull();
+    });
+
+    it('exposes the curve of the edition this browser is on', async () => {
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+
+      FakeEventSource.last.emitScore({ editionId: 'ed-1', depuis: 0, points: [point(0, -40)] });
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(service.scoreTraceEdition()?.points).toHaveLength(1);
+    });
   });
 });

@@ -5,14 +5,17 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import dev.sylvain.planning.config.ConfigJobStream;
 import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.JobStreamBroadcaster;
 import dev.sylvain.planning.service.ReplanificationScope;
 import dev.sylvain.planning.service.SolverJobService;
 import dev.sylvain.planning.service.SolverJobService.SolverBusyException;
 import dev.sylvain.planning.service.SolverJobService.SolverJob;
+import dev.sylvain.planning.service.SolverScoreTrace;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.infrastructure.Infrastructure;
 import jakarta.inject.Inject;
@@ -47,6 +50,9 @@ public class SolverJobResource {
     /** Event name of the keep-alive beat; carries no state. */
     static final String EVENT_HEARTBEAT = "heartbeat";
 
+    /** Event name carrying new points of the running solve's score curve. */
+    static final String EVENT_SCORE = "score";
+
     @Inject
     SolverJobService solverJobService;
 
@@ -55,6 +61,12 @@ public class SolverJobResource {
 
     @Inject
     ConfigJobStream configJobStream;
+
+    @Inject
+    SolverScoreTrace scoreTrace;
+
+    @Inject
+    EditionContext editionContext;
 
     @Context
     Sse sse;
@@ -173,6 +185,10 @@ public class SolverJobResource {
     @Path("/jobs/stream")
     @Produces(MediaType.SERVER_SENT_EVENTS)
     public Multi<OutboundSseEvent> streamJobs() {
+        // Per connection, not per server: this method runs once per request, so
+        // the cursor below belongs to exactly one subscriber and two clients
+        // can be at two different points of the same curve.
+        ScoreCursor scoreCursor = new ScoreCursor();
         // merging, not concatenating: both upstreams are subscribed to at once,
         // so no transition can slip through between the initial state and the
         // subscription to the broadcaster. The item(0) is what makes the first
@@ -191,7 +207,101 @@ public class SolverJobResource {
                 .ticks().every(configJobStream.heartbeat())
                 .onOverflow().drop()
                 .map(tick -> heartbeatEvent());
-        return Multi.createBy().merging().streams(states, heartbeats);
+        // The score curve beats on its own clock rather than on the job
+        // transitions: a running solve improves constantly and transitions
+        // almost never, so there is nothing to hang these events on. A tick
+        // that has nothing new to say emits nothing at all.
+        Multi<OutboundSseEvent> scores = Multi.createFrom()
+                .ticks().every(configJobStream.score())
+                .onOverflow().drop()
+                .emitOn(Infrastructure.getDefaultWorkerPool())
+                // Zero or one event per tick, expressed as a list rather than a
+                // nullable mapping: Mutiny rejects a mapper returning null, and
+                // a downstream filter would already be too late.
+                .onItem().transformToIterable(tick -> scoreEvents(scoreCursor));
+        return Multi.createBy().merging().streams(states, heartbeats, scores);
+    }
+
+    /**
+     * How far along the curve one open connection has been served. Mutable and
+     * owned by a single subscription, which is what lets the {@code score}
+     * events be deltas: a full series would be re-sent every second and would
+     * grow with the run.
+     */
+    private static final class ScoreCursor {
+
+        /** Generation of the series this cursor describes; -1 before the first event. */
+        private int generation = -1;
+        /** Number of points already sent for that generation. */
+        private int envoyes;
+        /** Whether anything at all was sent for it — an empty curve is still news. */
+        private boolean amorce;
+        /** Last {@code termine} flag sent, so the end of a run is pushed too. */
+        private boolean termine;
+    }
+
+    /**
+     * The points this connection has not seen yet, as an event — or nothing at
+     * all when there is nothing to say. A generation change (a new run, or a
+     * decimation of the series — see {@code SolverScoreTrace}) restarts the
+     * cursor at zero, and the client replaces its series whenever
+     * {@code depuis} is 0 rather than appending to it.
+     *
+     * <p>The edition is on the wire and the filtering is the client's, exactly
+     * as it already is for {@code JobView.editionId} on the {@code state}
+     * events: {@code EventSource} cannot send the {@code X-Edition-Id} header,
+     * so a stream has no edition of its own. The request-scoped read,
+     * {@code GET /api/jobs/score}, does carry the header and refuses a curve
+     * belonging to another edition server-side.</p>
+     */
+    private List<OutboundSseEvent> scoreEvents(ScoreCursor cursor) {
+        SolverScoreTrace.Trace trace = scoreTrace.snapshot();
+        if (trace == null) {
+            return List.of();
+        }
+        if (trace.generation() != cursor.generation) {
+            cursor.generation = trace.generation();
+            cursor.envoyes = 0;
+            cursor.amorce = false;
+        }
+        int depuis = Math.min(cursor.envoyes, trace.points().size());
+        List<SolverScoreTrace.Point> nouveaux = trace.points().subList(depuis, trace.points().size());
+        if (nouveaux.isEmpty() && cursor.amorce && cursor.termine == trace.termine()) {
+            return List.of();
+        }
+        cursor.envoyes = trace.points().size();
+        cursor.amorce = true;
+        cursor.termine = trace.termine();
+        ScoreDelta delta = new ScoreDelta(trace.jobId(), trace.editionId(), trace.generation(),
+                depuis, trace.intervalleMs(), trace.termine(), List.copyOf(nouveaux));
+        return List.of(sse.newEventBuilder()
+                .name(EVENT_SCORE)
+                .mediaType(MediaType.APPLICATION_JSON_TYPE)
+                .data(ScoreDelta.class, delta)
+                .build());
+    }
+
+    /**
+     * The score curve of the running solve, in full (issue #304).
+     *
+     * <p>Read once, when the Solveur page opens — the curve is not polled: a
+     * new stream connection is sent the whole series in its first {@code score}
+     * event, and the client already reopens that stream on error and after 45 s
+     * of silence. What this buys is the window before that, and a browser with
+     * no {@code EventSource} at all.</p>
+     *
+     * <p>It is also the only read of the curve that carries an edition, hence
+     * the only one that can refuse it: a curve belonging to another edition
+     * answers 204, like an idle solver.</p>
+     */
+    @GET
+    @Path("/jobs/score")
+    public Response scoreCurve() {
+        SolverScoreTrace.Trace trace = scoreTrace.snapshot();
+        if (trace == null || !Objects.equals(trace.editionId(), editionContext.editionIdCourant())) {
+            return Response.noContent().build();
+        }
+        return Response.ok(trace).build();
     }
 
     private OutboundSseEvent stateEvent() {
@@ -258,6 +368,21 @@ public class SolverJobResource {
 
     /** Payload of a heartbeat: a timestamp, so the event is never empty. */
     public record Heartbeat(Instant at) {
+    }
+
+    /**
+     * One {@code score} event: the points of the curve this connection had not
+     * received yet.
+     *
+     * @param depuis       index the first point of {@code points} has in the
+     *                     series — 0 means "replace what you hold", anything
+     *                     else means "append at that index"
+     * @param intervalleMs current sampling interval, which doubles every time
+     *                     the series is decimated
+     * @param termine      whether the run is over and the curve final
+     */
+    public record ScoreDelta(String jobId, String editionId, int generation, int depuis,
+            long intervalleMs, boolean termine, List<SolverScoreTrace.Point> points) {
     }
 
     public record JobView(

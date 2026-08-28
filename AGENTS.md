@@ -313,7 +313,14 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   (a `state` or a `heartbeat`), drops to 30 s while it is, and takes the lead
   back — fast pace, immediate refresh — after 45 s of silence. Without the
   stream the loop paces itself as before: every 2 s while a job runs or one is
-  queued, every 30 s otherwise. Both are stopped with the shell that started
+  queued, every 30 s otherwise. That same stream also carries the running
+  solve's **score curve** (issue #304) as `score` events — deltas, sampled and
+  capped server-side by `SolverScoreTrace`, drawn on the Solveur page by
+  hand-written SVG polylines, one per score level and each on its own scale.
+  **There is no charting dependency**, and adding one needs the same explicit
+  sign-off as any other. That curve is not polled: the stream is already
+  reopened on error and after 45 s of silence, and a new connection is sent the
+  whole series. See `docs/api.md`. Both loops are stopped with the shell that started
   them (the service is `providedIn: 'root'` and would outlive it).
 - CSS stays **global** and limited to what Material does not cover:
   `src/styles.css` is a thin aggregator of `@import` rules only and the partials

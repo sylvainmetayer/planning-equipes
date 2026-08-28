@@ -173,6 +173,37 @@ class SolverJobResourceTest {
                 .statusCode(204);
     }
 
+    /**
+     * The score curve of the running solve (issue #304), read back through the
+     * one route that carries an edition. Asserted on a finished run rather than
+     * mid-solve: what matters is that a curve exists, that it is closed by the
+     * end of the job, and that it carries the three levels separately.
+     */
+    @Test
+    void aSolveLeavesAReadableScoreCurveBehindIt() throws InterruptedException {
+        String jobId = given()
+                .contentType("application/json")
+                .body(sampleplanning())
+                .when().post("/api/solve/async")
+                .then().statusCode(202)
+                .extract().path("id");
+
+        assertThat(pollUntilFinished(jobId).getString("status")).isEqualTo("COMPLETED");
+
+        JsonPath courbe = given().when().get("/api/jobs/score")
+                .then().statusCode(200)
+                .extract().jsonPath();
+        assertThat(courbe.getString("jobId")).isEqualTo(jobId);
+        // Closed by the end of the job, whichever way it ended: this is what
+        // stops the curve on screen instead of leaving it looking live.
+        assertThat(courbe.getBoolean("termine")).isTrue();
+        assertThat(courbe.getList("points")).isNotEmpty();
+        assertThat(courbe.getLong("points[0].tempsMs")).isGreaterThanOrEqualTo(0);
+        // Three levels, never one merged number: a hard score at -36 and a soft
+        // one at -400 000 have nothing to say to each other on a single axis.
+        assertThat(courbe.getMap("points[0]")).containsKeys("hard", "medium", "soft");
+    }
+
     @Test
     void cancelUnknownJobReturnsNotFound() {
         given().when().post("/api/jobs/does-not-exist/cancel")

@@ -52,6 +52,7 @@ import { OutputPanel } from '../../shared/output-panel';
 import { ProblemSummaryBanner } from '../../shared/problem-summary-banner';
 import { StatusMessage } from '../../shared/status-message';
 import { ReplanificationDialog } from './replanification-dialog';
+import { ScoreChart } from './score-chart';
 import { errorPrefix } from '../../core/error-message';
 import {
   SOLVER_DURATION_UNIT_STEP,
@@ -98,7 +99,8 @@ function hardPart(score: string): number {
     MatTooltipModule,
     FeasibilityBanner,
     ProblemSummaryBanner,
-    OutputPanel
+    OutputPanel,
+    ScoreChart
   ],
   templateUrl: './solver-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -296,6 +298,12 @@ export class SolverPage {
     void this.loadSolverDuration();
     void this.crud.reload();
     void this.chargerApercuPublication();
+    // The score curve (issue #304) is pushed from here on; this one read is
+    // what puts a solve already under way on screen at once, rather than at the
+    // stream's next tick — and what shows it at all in a browser without
+    // `EventSource`. It is the only read of the curve carrying an edition, so
+    // it is also the server's chance to refuse one belonging to another.
+    void this.jobs.chargerCourbeScore();
     // Results are pushed by the job service, whoever started the job: a solve
     // launched from another browser also lands here when it completes, already
     // analyzed.
@@ -408,6 +416,33 @@ export class SolverPage {
       ? this.jobs.activeJobDescription()
       : $localize`:@@solver.locked.unknown:L'état du solveur n'est pas encore connu : les actions se débloquent dès la première réponse du serveur.`;
   });
+
+  /**
+   * The score curve to draw (issue #304): the running solve's, or the last
+   * one's until the next replaces it.
+   *
+   * <p>Null in the one case that would mislead — a solve has taken the solver
+   * but has not announced a first complete solution yet. The curve still on
+   * hand is the <em>previous</em> run's, and leaving it up while a new job is
+   * described as running would read as that job's progress.</p>
+   */
+  protected readonly courbeScore = computed(() => {
+    const trace = this.jobs.scoreTraceEdition();
+    const actif = this.jobs.activeJob();
+    return trace && actif && trace.jobId !== actif.id ? null : trace;
+  });
+
+  protected readonly courbePoints = computed(() => this.courbeScore()?.points ?? []);
+  protected readonly courbeTerminee = computed(() => this.courbeScore()?.termine ?? false);
+
+  /**
+   * Whether the curve's card is on screen at all. A run on this edition brings
+   * it up even before its first point, so the card appears when the solve
+   * starts rather than a few seconds later.
+   */
+  protected readonly courbeVisible = computed(
+    () => this.courbeScore() !== null || (this.jobs.activeJob() !== null && this.editingLocked())
+  );
 
   /**
    * Progress of the running job, as a share of the budget it was given —

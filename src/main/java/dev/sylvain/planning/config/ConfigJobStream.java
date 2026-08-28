@@ -17,4 +17,13 @@ import io.smallrye.config.ConfigMapping;
 public interface ConfigJobStream {
 
     Duration heartbeat();
+
+    /**
+     * How often the running solve's score curve is flushed to the open streams
+     * (issue #304). This is the second half of the rate limiting — the first
+     * being the sampling {@code SolverScoreTrace} applies as the solver
+     * announces its improvements. A tick with nothing new emits nothing, so an
+     * idle solver costs no traffic here.
+     */
+    Duration score();
 }

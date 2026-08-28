@@ -122,6 +122,47 @@ class SolverJobStreamResourceTest {
         assertThat(waitForIdleIn(first)).isTrue();
     }
 
+    /**
+     * The score curve of the running solve (issue #304) travels on this same
+     * connection, as {@code score} events. Two properties are asserted here and
+     * nowhere else: that the events reach a client that only ever opened the
+     * jobs stream, and that the first one for a run starts at {@code depuis: 0}
+     * — the marker the browser reads as "replace what you hold" rather than
+     * "append", and therefore the only thing that keeps a reconnection from
+     * drawing the same points twice.
+     */
+    @Test
+    void theRunningSolveScoreCurveIsPushedOnTheSameStream() {
+        planImported();
+        StreamClient client = connect();
+        assertThat(client.next("state").data()).contains("\"active\":null");
+
+        String jobId = given().when().post("/api/solve/async/reference-data?seconds=3")
+                .then().statusCode(202)
+                .extract().path("id");
+
+        JsonPath premier = new JsonPath(scoreEventFor(client, jobId));
+        assertThat(premier.getInt("depuis")).isZero();
+        assertThat(premier.getString("editionId")).isNotBlank();
+
+        assertThat(waitForIdleIn(client)).isTrue();
+    }
+
+    /** Reads events until a score one describes this job; fails rather than hanging. */
+    private String scoreEventFor(StreamClient client, String jobId) {
+        for (int i = 0; i < 40; i++) {
+            SseEvent event = client.next(null);
+            if (!"score".equals(event.name())) {
+                continue;
+            }
+            JsonPath score = new JsonPath(event.data());
+            if (jobId.equals(score.getString("jobId"))) {
+                return event.data();
+            }
+        }
+        throw new AssertionError("No score event ever described job " + jobId);
+    }
+
     /* ------------------------------- Helpers ------------------------------- */
 
     /** Reads state events until one reports this job as holding the solver. */

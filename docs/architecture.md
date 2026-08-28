@@ -48,6 +48,14 @@ passent toutes. Deux coutures seulement : comment le problème est construit, et
 qui doit tenir le solveur pour pouvoir l'arrêter. Voir
 [`api.md`](api.md#résolution) pour ce que ça a corrigé.
 
+Cette seconde couture — « qui tient le solveur » — en porte deux usages, pas
+un : l'arrêter, et **le suivre**. `SolverScoreTrace` s'abonne au même
+`Solver`, au même instant, pour enregistrer la courbe de score de la
+résolution en cours ; elle est lue par `GET /api/jobs/score` et poussée sur le
+flux des jobs. Un seul consommateur reçoit donc le solveur, ce qui évite que
+les deux besoins se désynchronisent. Échantillonnage et cloisonnement dans
+[`api.md`](api.md#courbe-de-score-en-direct).
+
 ## Le diagnostic ne passe plus par l'API réservée de Timefold
 
 Décomposer le score contrainte par contrainte alimente beaucoup de monde : les

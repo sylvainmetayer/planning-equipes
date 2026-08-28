@@ -118,6 +118,22 @@
   }
 </mat-card>
 
+@if (courbeVisible()) {
+  <mat-card appearance="outlined" class="page-card">
+    <mat-card-header>
+      <h2 mat-card-title i18n="@@solver.scoreCurve.title">Progression du score</h2>
+      <mat-card-subtitle i18n="@@solver.scoreCurve.hint">
+        Les trois niveaux de score pendant la résolution, chacun à son échelle : un score dur à -36 et un score souple à
+        -400 000 ne se comparent pas sur le même axe. Le haut de chaque cadre est le zéro, c'est-à-dire « plus rien à
+        corriger à ce niveau-là ». Rien n'est conservé : seule la résolution en cours est tracée.
+      </mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <app-score-chart [points]="courbePoints()" [termine]="courbeTerminee()" />
+    </mat-card-content>
+  </mat-card>
+}
+
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
     <h2 mat-card-title i18n="@@dataSetup.solverDuration.title">Résolution du solveur</h2>

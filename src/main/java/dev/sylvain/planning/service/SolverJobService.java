@@ -16,6 +16,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import ai.timefold.solver.core.api.solver.Solver;
@@ -133,6 +134,15 @@ public class SolverJobService {
     JobStreamBroadcaster jobStream;
 
     /**
+     * Records the score curve of the running solve (issue #304). Fed by the
+     * listener {@link #onSolverReady} registers, read back by
+     * {@code GET /api/jobs/score} and by the {@code score} events of
+     * {@code /api/jobs/stream}.
+     */
+    @Inject
+    SolverScoreTrace scoreTrace;
+
+    /**
      * Whether the queue is replayed at startup. On by default — that is the
      * whole point — but switched off under {@code %test}, where a job left
      * queued by a previous run would start a real solve as the next test boots.
@@ -164,7 +174,7 @@ public class SolverJobService {
         // terminal state or interrupted.
         return submit(JobType.SOLVE, secondsLimit, false, null, false,
                 job -> resultatSolve(
-                        pipeline.execute(job.getEditionNom(), problem, secondsLimit, job::attachSolver)));
+                        pipeline.execute(job.getEditionNom(), problem, secondsLimit, onSolverReady(job))));
     }
 
     /**
@@ -199,7 +209,7 @@ public class SolverJobService {
     private JobTask solveTaskFromReferenceData(Long secondsLimit) {
         return job -> resultatSolve(pipeline.execute(job.getEditionNom(),
                 planningService::buildFromReferenceData, Function.identity(),
-                secondsLimit, job::attachSolver));
+                secondsLimit, onSolverReady(job)));
     }
 
     /**
@@ -240,7 +250,7 @@ public class SolverJobService {
                     pipeline.execute(job.getEditionNom(),
                             () -> planningService.buildIncrementalFromReferenceData(scope),
                             PlanningService.ProblemeIncremental::planning,
-                            secondsLimit, job::attachSolver);
+                            secondsLimit, onSolverReady(job));
             PlanningService.ProblemeIncremental probleme = resolution.probleme();
             return new ResultatSolveIncremental(resolution.diagnostic(), probleme.statistiques(),
                     ReplanificationDiff.compute(probleme.affectationsPrecedentes(), resolution.planning()),
@@ -355,6 +365,25 @@ public class SolverJobService {
                 .orElse(editionId);
     }
 
+    /**
+     * What a job does with the {@link Solver} it has just been handed: hold it,
+     * so a cancel can stop it, and follow the scores it announces, so the
+     * browser can draw the run as it happens (issue #304).
+     *
+     * <p>One consumer rather than two hooks: both need the solver at the exact
+     * same instant — after it is built, before it blocks on {@code solve()} —
+     * and a second seam through {@code SolvePipeline} would only be a way for
+     * the two to drift apart.</p>
+     */
+    private Consumer<Solver<PlanningEvenement>> onSolverReady(SolverJob job) {
+        return solver -> {
+            // Holding it first: attachSolver honours a cancel that arrived
+            // during the build, and there is nothing to trace in that case.
+            job.attachSolver(solver);
+            scoreTrace.follow(job.getId(), job.getEditionId(), solver);
+        };
+    }
+
     private void run(SolverJob job, JobTask task) {
         if (job.getStatus() == JobStatus.CANCELLED) {
             // Cancelled between promotion and start: the solver is free, so the
@@ -383,6 +412,10 @@ public class SolverJobService {
      * run alongside the one being promoted.
      */
     private synchronized void finishAndChain(SolverJob job, Object result, Exception failure) {
+        // Closes the score curve before anything else, so the screen stops it
+        // on the run's real final score — whether it completed, failed, or was
+        // stopped by hand.
+        scoreTrace.finish(job.getId());
         if (failure != null) {
             if (job.isCancelRequested()) {
                 job.markCancelled(null);

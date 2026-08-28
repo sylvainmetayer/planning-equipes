@@ -802,6 +802,37 @@ export interface JobView {
   result: unknown;
 }
 
+/**
+ * One sample of the running solve's score curve (issue #304): how long the
+ * solver had been running, and the best score it had reached by then. Three
+ * levels kept apart, never merged — a hard score at -36 and a soft one at
+ * -400 000 share no scale, and it is the hard one that decides feasibility.
+ */
+export interface ScorePoint {
+  tempsMs: number;
+  hard: number;
+  medium: number;
+  soft: number;
+}
+
+/**
+ * The curve of the solve currently running (or of the last one, until the next
+ * starts). Read whole from `GET /api/jobs/score`, and pushed point by point as
+ * `score` events of `/api/jobs/stream`.
+ */
+export interface ScoreTrace {
+  jobId: string;
+  /** Edition that run writes to: the curve is only shown on that edition. */
+  editionId: string | null;
+  /** Moves whenever the series stops being an append-only extension of itself. */
+  generation: number;
+  /** Current sampling interval, which widens as a long run is decimated. */
+  intervalleMs: number;
+  /** True once the run is over, whichever way it ended. */
+  termine: boolean;
+  points: ScorePoint[];
+}
+
 
 /**
  * One event day of `GET /api/staffing`: what its generated seats demand.

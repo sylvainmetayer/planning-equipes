@@ -31,7 +31,9 @@ import {
   PlanningEvenement,
   PreviousPlan,
   ResultatSolve,
-  ResultatSolveIncremental
+  ResultatSolveIncremental,
+  ScorePoint,
+  ScoreTrace
 } from './models';
 
 /**
@@ -70,6 +72,23 @@ const STREAM_RETRY_MAX_MS = 30000;
 interface JobsStreamState {
   active: JobView | null;
   file: JobView[];
+}
+
+/**
+ * One `score` event (issue #304): the points of the running solve's curve this
+ * connection had not received yet.
+ *
+ * A delta rather than a snapshot, because the series grows for as long as the
+ * run lasts — re-sending it every second would make the traffic grow with the
+ * solve. `depuis` is the index the first point holds in the series: 0 means
+ * "replace what you hold" (a fresh connection, a new run, or a series the
+ * server has just decimated), anything else means "append at that index". The
+ * client never resets on its own, so both sides stay on the same series without
+ * a handshake.
+ */
+interface ScoreStreamDelta extends Omit<ScoreTrace, 'points'> {
+  depuis: number;
+  points: ScorePoint[];
 }
 
 /**
@@ -151,6 +170,17 @@ export class SolverJobService {
    * browser shows up (and can be removed) here too.
    */
   readonly file = signal<JobView[]>([]);
+  /**
+   * Score curve of the solve currently running — or of the last one, until the
+   * next replaces it (issue #304). Null when no solve has run since the server
+   * started, or when the one that did belongs to another edition.
+   *
+   * <p>Server-side state like everything else here: a solve started from
+   * another browser draws its curve on this one too. It carries the edition it
+   * describes rather than being filtered here, exactly as {@link TrackedJob}
+   * does — see {@link ScoreStreamDelta}.</p>
+   */
+  readonly scoreTrace = signal<ScoreTrace | null>(null);
   /** Ticks every second so the monitor can display a live duration. */
   readonly now = signal(Date.now());
 
@@ -176,6 +206,32 @@ export class SolverJobService {
     }
     const courante = this.editions.courant()?.id;
     return courante == null || job.editionId == null || job.editionId === courante;
+  });
+
+  /**
+   * {@link scoreTrace}, but only when it describes a run on the edition this
+   * browser is on — null otherwise, and null while either side's edition is
+   * still unknown.
+   *
+   * <p>The filter that makes the curve honest, and the reason it is here and
+   * not in the page: a solve running on another edition is followed by this
+   * client (its lock is global) but says nothing about the planning on screen,
+   * and drawing its progress on the Solveur page of another edition would be a
+   * plain lie. The request-scoped read of the curve applies the same rule
+   * server-side, where the edition header exists; a stream has none, so this is
+   * where it is applied for the pushed half — exactly as {@link editingLocked}
+   * already does for the job itself.</p>
+   */
+  readonly scoreTraceEdition = computed(() => {
+    const trace = this.scoreTrace();
+    if (!trace) {
+      return null;
+    }
+    const courante = this.editions.courant()?.id;
+    if (courante == null || trace.editionId == null) {
+      return null;
+    }
+    return trace.editionId === courante ? trace : null;
   });
 
   /**
@@ -510,6 +566,36 @@ export class SolverJobService {
   }
 
   /**
+   * Reads the score curve whole, once, from the only route that carries an
+   * edition — so the server, not this client, decides whether the running solve
+   * concerns the edition on screen (204 when it does not).
+   *
+   * <p>Called when the Solveur page opens, and only there: the curve is not
+   * polled. It does not need to be. A new connection is sent the entire series
+   * in its first `score` event, and the stream is already torn down and
+   * reopened both on error and after {@link STREAM_SILENCE_MS} of silence — so
+   * a stream that dies, buffers, or was never opened at all repairs the curve
+   * through machinery that exists anyway. What this one read buys is the
+   * window before that: an operator opening the page mid-solve sees the run so
+   * far immediately, and sees it even in a browser with no `EventSource`.</p>
+   *
+   * <p>Safe next to the deltas despite being a second writer: the server's
+   * per-connection cursor is what the next delta is indexed on, and it either
+   * says "replace" (0) or an index this series already holds — see
+   * {@link appliquerDeltaScore}.</p>
+   */
+  async chargerCourbeScore(): Promise<void> {
+    try {
+      const response = await this.api.getResponse<ScoreTrace>('/api/jobs/score');
+      // 204 is "no curve for the edition this browser is on" — a display state
+      // of its own, not a failure to swallow.
+      this.scoreTrace.set(response.status === 204 ? null : (response.body ?? null));
+    } catch {
+      // Transient error: keep whatever is on screen rather than blanking it.
+    }
+  }
+
+  /**
    * The one place the server's answer becomes this client's state, whichever
    * of the two sources brought it. Keeping a single body is what makes the
    * fallback honest: a poll tick and a stream event produce exactly the same
@@ -566,6 +652,7 @@ export class SolverJobService {
     // A heartbeat carries no state; it is only the proof the stream is alive,
     // and that proof is precisely what the watchdog below waits for.
     stream.addEventListener('heartbeat', () => this.markStreamAlive());
+    stream.addEventListener('score', (event) => this.onStreamScore(event as MessageEvent<string>));
     stream.onerror = () => this.onStreamError();
     // Armed from the open, not from the first event: a proxy that accepts the
     // connection and then buffers it forever never sends a first event, and
@@ -583,6 +670,38 @@ export class SolverJobService {
       return; // a truncated event says nothing about the state; wait for the next
     }
     void this.applyServerState(state.active ?? null, state.file ?? []);
+  }
+
+  /** New points of the running solve's curve — see {@link ScoreStreamDelta}. */
+  private onStreamScore(event: MessageEvent<string>): void {
+    this.markStreamAlive();
+    let delta: ScoreStreamDelta;
+    try {
+      delta = JSON.parse(event.data) as ScoreStreamDelta;
+    } catch {
+      return; // a truncated event says nothing about the curve; wait for the next
+    }
+    this.appliquerDeltaScore(delta);
+  }
+
+  /** Splices a delta into the series held here; exported logic stays trivial on purpose. */
+  private appliquerDeltaScore(delta: ScoreStreamDelta): void {
+    const courante = this.scoreTrace();
+    // Anything but a plain append restarts from what the server just sent: the
+    // server resets its cursor for exactly the same cases (a new run, a
+    // decimated series, a reconnection), so the two never disagree.
+    const rattache = delta.depuis > 0 && courante !== null && courante.jobId === delta.jobId;
+    const points = rattache
+      ? [...courante.points.slice(0, delta.depuis), ...delta.points]
+      : [...delta.points];
+    this.scoreTrace.set({
+      jobId: delta.jobId,
+      editionId: delta.editionId,
+      generation: delta.generation,
+      intervalleMs: delta.intervalleMs,
+      termine: delta.termine,
+      points
+    });
   }
 
   private markStreamAlive(): void {

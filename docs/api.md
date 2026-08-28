@@ -158,6 +158,53 @@ donc pas servir de preuve de vie.
 état périmé sans rien signaler. Le navigateur garde un poll lent (30 s) et
 reprend la main après ~45 s de silence.
 
+### Courbe de score en direct
+
+Le même flux porte un troisième type d'événement, `score` : les points
+(temps écoulé, hard, medium, soft) que Timefold annonce déjà par son
+`bestSolutionChanged`. `GET /api/jobs/score` rend la même courbe d'un bloc.
+
+**Ce qui est tracé est la résolution en cours** — ou la dernière, jusqu'à ce
+que la suivante la remplace. Rien n'est persisté : un redémarrage oublie tout,
+et rejouer les solves passés est hors périmètre.
+
+Un solve annonce bien plus d'améliorations par seconde qu'une courbe n'a de
+pixels. **Deux bornes, toutes deux côté serveur** :
+
+| Borne | Effet |
+| --- | --- |
+| un point par seconde au plus | c'est **le plus récent** de la fenêtre qui est retenu, jamais le premier — le score ne fait que s'améliorer |
+| 400 points au plus | au-delà, la série est **divisée par deux** et l'intervalle d'échantillonnage double avec elle |
+
+Un solve de 15 min et un de 4 h coûtent donc la même mémoire et le même volume
+sur le fil, et la courbe garde sa forme. Les annonces portant une solution
+**non encore initialisée** sont ignorées : leur score décrit une affectation
+partielle — un planning aux trois quarts vide ne viole presque rien — et les
+tracer dessinerait une falaise au moment précis où le plan devient complet.
+
+Les événements `score` sont des **deltas**, seuls voyagent les points que cette
+connexion n'a pas encore reçus. `depuis` est l'indice du premier point envoyé :
+`0` veut dire « remplace ce que tu as » (connexion neuve, nouvelle résolution,
+série qui vient d'être divisée), toute autre valeur « ajoute à cet indice ».
+`generation` bouge dès que la série cesse d'être une extension de elle-même,
+c'est ce qui rend la lecture incrémentale sûre. Un tick sans rien de neuf
+n'émet rien du tout.
+
+**Cloisonnement.** `EventSource` ne peut pas poser d'en-tête, donc le flux n'a
+pas d'édition : chaque événement `score` porte l'`editionId` de la résolution
+et le navigateur n'affiche la courbe que si c'est la sienne — exactement ce
+qu'il fait déjà de `JobView.editionId`. La lecture qui, elle, porte un en-tête
+— `GET /api/jobs/score` — applique le filtre **côté serveur** et répond `204`
+pour une courbe d'une autre édition. C'est elle que la page Solveur appelle à
+son ouverture.
+
+La courbe se ferme à la fin du job, dans les trois cas — succès, échec,
+annulation à la main : le dernier score annoncé est ajouté même si la fenêtre
+d'échantillonnage n'était pas écoulée, et `termine` passe à `true`.
+
+Réglage : `planning.jobs.stream.score` (1 s par défaut,
+`JOBS_STREAM_SCORE`).
+
 ### Replanification incrémentale
 
 Repart du plan persisté, épingle ce qu'un changement tardif n'a pas invalidé,

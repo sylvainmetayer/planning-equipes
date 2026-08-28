@@ -29,6 +29,8 @@ import {
   PlanningDiagnostic,
   PreviousPlan,
   ResultatSolveIncremental,
+  ScorePoint,
+  ScoreTrace,
   StatistiquesIncremental
 } from '../../core/models';
 import { HardIssue } from '../../shared/feasibility-banner';
@@ -118,12 +120,17 @@ type PageInternals = {
   lastRunAt: Signal<string | null>;
   planPrecedent: Signal<PreviousPlan | null>;
   comparaisonPlan: Signal<{ avant: string; apres: string } | null>;
+  courbeScore: Signal<ScoreTrace | null>;
+  courbePoints: Signal<ScorePoint[]>;
+  courbeVisible: Signal<boolean>;
 };
 
 describe('SolverPage', () => {
   const activeJob = signal<TrackedJob | null>(null);
   const solverBusy = signal(false);
   const editingLocked = signal(false);
+  /** The live score curve of issue #304, already narrowed to this edition. */
+  const scoreTraceEdition = signal<ScoreTrace | null>(null);
   /** Handlers the page registers per job type, so the tests can push a result. */
   const handlers = new Map<string, ((result: unknown) => void)[]>();
 
@@ -132,6 +139,8 @@ describe('SolverPage', () => {
     solverBusy: () => solverBusy(),
     editingLocked: () => editingLocked(),
     file: () => [],
+    scoreTraceEdition,
+    chargerCourbeScore: vi.fn(async () => undefined),
     activeJobDescription: vi.fn(() => 'Une résolution est en cours (autre navigateur).'),
     estimatedEndMs: () => null,
     remainingSeconds: () => null,
@@ -164,9 +173,11 @@ describe('SolverPage', () => {
     activeJob.set(null);
     solverBusy.set(false);
     editingLocked.set(false);
+    scoreTraceEdition.set(null);
     for (const stub of [
       jobs.listJobs,
       jobs.onResult,
+      jobs.chargerCourbeScore,
       jobs.activeJobDescription,
       api.get,
       api.post,
@@ -431,6 +442,83 @@ describe('SolverPage', () => {
 
       expect(page.hardScore()).toBe(0);
       expect(page.planPrecedent()).toBeNull();
+    });
+  });
+
+  /**
+   * The live score curve (issue #304). The page decides two things about it,
+   * and both are about not lying: whether the card is on screen at all, and
+   * whether the curve on hand really describes the run being reported.
+   */
+  describe('the live score curve', () => {
+    const trace = (overrides: Partial<ScoreTrace> = {}): ScoreTrace => ({
+      jobId: 'job-1',
+      editionId: 'festival-2026',
+      generation: 1,
+      intervalleMs: 1000,
+      termine: false,
+      points: [{ tempsMs: 0, hard: -40, medium: -10, soft: -1000 }],
+      ...overrides
+    });
+
+    it('shows nothing at all when no solve has ever run', () => {
+      const page = createPage();
+
+      expect(page.courbeVisible()).toBe(false);
+      expect(page.courbeScore()).toBeNull();
+    });
+
+    it('keeps the curve of the last run up once it is over', () => {
+      // Out of scope is replaying PAST solves; the one that just finished is
+      // still the answer to "was it worth waiting?", so it stays on screen
+      // until the next run replaces it.
+      scoreTraceEdition.set(trace({ termine: true }));
+      const page = createPage();
+
+      expect(page.courbeVisible()).toBe(true);
+      expect(page.courbePoints()).toHaveLength(1);
+    });
+
+    it('brings the card up as soon as a solve starts on this edition', () => {
+      // Before its first point: the card has to appear when the solve does,
+      // not a few seconds later when the solver announces a first solution.
+      activeJob.set(tracked({ id: 'job-2' }));
+      editingLocked.set(true);
+      const page = createPage();
+
+      expect(page.courbeVisible()).toBe(true);
+      expect(page.courbePoints()).toEqual([]);
+    });
+
+    it('drops the previous run\u2019s curve the moment another job takes the solver', () => {
+      // The lie this guards against: a new job is reported as running while the
+      // curve still on hand is the previous one's, so its points read as this
+      // run's progress.
+      scoreTraceEdition.set(trace({ jobId: 'job-1', termine: true }));
+      activeJob.set(tracked({ id: 'job-2' }));
+      editingLocked.set(true);
+      const page = createPage();
+
+      expect(page.courbeScore()).toBeNull();
+      expect(page.courbeVisible()).toBe(true);
+    });
+
+    it('leaves the card out for a solve running on another edition', () => {
+      // `scoreTraceEdition` is already null there (the service narrows it), and
+      // `editingLocked` is false because that run does not freeze this edition.
+      activeJob.set(tracked({ id: 'job-2', editionId: 'festival-2025' }));
+      editingLocked.set(false);
+      const page = createPage();
+
+      expect(page.courbeVisible()).toBe(false);
+    });
+
+    it('reads the curve once when the page opens', () => {
+      createPage();
+
+      // The one read carrying an edition header, hence the only one the server
+      // can refuse — see SolverJobService.chargerCourbeScore.
+      expect(jobs.chargerCourbeScore).toHaveBeenCalledTimes(1);
     });
   });
 
