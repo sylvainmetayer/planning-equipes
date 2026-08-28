@@ -523,10 +523,21 @@ l'une des trois, l'écriture répond `400` plutôt que d'aller heurter la colonn
 c'est ainsi que s'écrit un créneau franchissant minuit (20:00→00:00 dure quatre
 heures), et lui seul lit une fenêtre de stand datée du lendemain.
 
-**Supprimer un créneau emporte les postes du planning persisté qui s'y
-trouvaient**, et eux seuls — un poste ne survit pas au créneau sur lequel il
-était placé. Le reste du plan est conservé. C'est la même règle que le
-découpage applique déjà à la grille entière lorsqu'il la remplace.
+**Supprimer un créneau, un stand ou un animateur emporte les postes du planning
+persisté qui les référençaient**, et eux seuls — un poste ne survit ni au
+créneau sur lequel il était placé, ni au stand sur lequel il était ouvert, ni à
+l'animateur qui le tenait. Le reste du plan est conservé. C'est la même règle
+que le découpage applique déjà à la grille entière lorsqu'il la remplace, et
+elle vaut ligne à ligne en suppression en lot, chaque suppression étant sa
+propre transaction.
+
+Conséquence à connaître pour la suppression d'un **animateur** : le poste qu'il
+tenait disparaît au lieu de redevenir une place non pourvue. Les écrans qui
+comptent les postes persistés (heatmap, KPI de couverture, `postesNonPourvus`)
+voient donc le besoin diminuer d'autant ; ceux qui recalculent la demande depuis
+`effectifMin` (Problèmes, faisabilité) signalent bien le sous-effectif
+qui en résulte. Une nouvelle résolution remet les deux familles d'écrans
+d'accord.
 
 Contraintes ad hoc et verrouillages sont des **états** : on ne les met pas à
 jour, on les supprime et on les recrée. Une même paire d'animateurs ne peut pas

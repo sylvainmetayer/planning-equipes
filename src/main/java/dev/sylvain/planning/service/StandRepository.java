@@ -225,8 +225,38 @@ public class StandRepository {
         });
     }
 
+    /**
+     * Deletes one stand, and the seats that were opened on it.
+     *
+     * <p>Twin of {@link CreneauRepository#deleteCreneau}: {@code poste_affectation}
+     * is the one table referencing {@code stand} whose foreign key neither
+     * cascades nor nulls out, so until now the delete simply failed as soon as a
+     * plan was persisted — that is after any solve at all — and failed as a 500
+     * rather than as a refusal anyone could act on.</p>
+     *
+     * <p>Destroying the seats is the only reading available and the right one:
+     * {@code poste_affectation.stand_id} is {@code NOT NULL}, so a seat cannot
+     * outlive its stand, and the reader already agrees —
+     * {@code PlanningPersistenceService.assemblerPlanning} drops any seat naming
+     * a stand the referential no longer holds. The rest of the plan survives.</p>
+     *
+     * <p>The rule lives here rather than in an {@code ON DELETE CASCADE} so that
+     * it can be read and tested in the code, which is the decision issue #281
+     * took for créneaux.</p>
+     */
     public void deleteStand(String id) {
-        scope.delete("DELETE FROM stand WHERE edition_id = ? AND id = ?", id);
+        scope.write("Failed to delete stand " + id, connection -> {
+            try (PreparedStatement ps = scope.prepareScoped(connection,
+                    "DELETE FROM poste_affectation WHERE edition_id = ? AND stand_id = ?")) {
+                ps.setString(2, id);
+                ps.executeUpdate();
+            }
+            try (PreparedStatement ps = scope.prepareScoped(connection,
+                    "DELETE FROM stand WHERE edition_id = ? AND id = ?")) {
+                ps.setString(2, id);
+                ps.executeUpdate();
+            }
+        });
     }
 
     void upsertStand(Connection connection, Stand stand) throws SQLException {
