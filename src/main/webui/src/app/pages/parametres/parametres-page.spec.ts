@@ -20,10 +20,11 @@ import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';
-import { ConfirmService } from '../../shared/confirm-dialog';
+import { ConfirmationRecopie } from '../../shared/confirmation-recopie';
 import { InstantaneAvantAction } from '../../shared/instantane-avant-action';
 import { ScenarioImportService } from '../../core/scenario-import.service';
-import { ParametresPage } from './parametres-page';
+import { MOT_CLE_REMPLACER, ParametresPage } from './parametres-page';
+import type { DemandeRecopie } from '../../shared/confirmation-recopie';
 import type { EtatSauvegarde, TypologieItem } from '../../core/models';
 
 /** Reaches the protected members the template binds to. */
@@ -61,7 +62,7 @@ describe('ParametresPage ninja picker', () => {
         { provide: NotificationService, useValue: { notify: vi.fn() } },
         { provide: PlanSnapshotStore, useValue: { capturer: vi.fn(async () => undefined) } },
         { provide: InstantaneAvantAction, useValue: { proposer: vi.fn(async () => undefined) } },
-        { provide: ConfirmService, useValue: { ask: vi.fn(async () => true) } }
+        { provide: ConfirmationRecopie, useValue: { demander: vi.fn(async () => true) } }
       ]
     });
     referenceData = TestBed.inject(ReferenceDataStore);
@@ -150,7 +151,7 @@ describe('ParametresPage rendering', () => {
     downloadGet: ReturnType<typeof vi.fn>;
     postRaw: ReturnType<typeof vi.fn>;
   };
-  let confirm: { ask: ReturnType<typeof vi.fn> };
+  let recopie: { demander: ReturnType<typeof vi.fn> };
   let instantane: { proposer: ReturnType<typeof vi.fn> };
   let notify: ReturnType<typeof vi.fn>;
   let setMailFinResolution: ReturnType<typeof vi.fn>;
@@ -199,7 +200,7 @@ describe('ParametresPage rendering', () => {
     mailFinResolution.set(false);
     notify = vi.fn();
     setMailFinResolution = vi.fn(async (actif: boolean) => mailFinResolution.set(actif));
-    confirm = { ask: vi.fn(async () => true) };
+    recopie = { demander: vi.fn(async () => true) };
     instantane = { proposer: vi.fn(async () => undefined) };
     api = {
       get: vi.fn(async (url: string) => {
@@ -247,7 +248,7 @@ describe('ParametresPage rendering', () => {
         { provide: NotificationService, useValue: { notify } },
         { provide: PlanSnapshotStore, useValue: { capturer: vi.fn(async () => undefined) } },
         { provide: InstantaneAvantAction, useValue: instantane },
-        { provide: ConfirmService, useValue: confirm },
+        { provide: ConfirmationRecopie, useValue: recopie },
         {
           provide: ScenarioImportService,
           useValue: { importer: vi.fn(async () => ({ status: 'imported', result: null })), rechargerApresImport: vi.fn(async () => undefined) }
@@ -389,28 +390,46 @@ describe('ParametresPage rendering', () => {
     expect(racine().textContent!).toContain("Aucune adresse administrateur n'est configurée");
   });
 
-  it('never replays a SQL dump without a confirmation and a snapshot offer', async () => {
-    await rendre();
-    confirm.ask.mockResolvedValue(false);
-
+  /** Picks the dump file the SQL card's hidden input reacts to. */
+  function choisirDump(): void {
     const input = racine().querySelector('input[type="file"][accept^=".sql"]') as HTMLInputElement;
-    const dump = fichier('sauvegarde.sql', '-- dump');
-    Object.defineProperty(input, 'files', { configurable: true, value: [dump] });
+    Object.defineProperty(input, 'files', { configurable: true, value: [fichier('sauvegarde.sql', '-- dump')] });
     input.dispatchEvent(new Event('change'));
+  }
+
+  it('never replays a SQL dump without a typed confirmation and a snapshot offer', async () => {
+    await rendre();
+    recopie.demander.mockResolvedValue(false);
+
+    choisirDump();
     await fixture.whenStable();
 
-    // Refused: it replaces the whole database.
+    // Refused — a wrong entry and a cancellation both land here: it replaces
+    // the whole database, every edition included.
     expect(api.postRaw).not.toHaveBeenCalled();
     expect(instantane.proposer).not.toHaveBeenCalled();
 
-    confirm.ask.mockResolvedValue(true);
-    Object.defineProperty(input, 'files', { configurable: true, value: [dump] });
-    input.dispatchEvent(new Event('change'));
+    recopie.demander.mockResolvedValue(true);
+    choisirDump();
     await fixture.whenStable();
 
     expect(instantane.proposer).toHaveBeenCalledOnce();
     expect(api.postRaw).toHaveBeenCalledWith('/api/database/import', '-- dump', 'application/sql');
     expect(racine().textContent!).toContain('Base remplacée.');
+  });
+
+  // A dump is not scoped to an edition, so it must not ask for an edition
+  // name: that would describe an operation narrower than the one it runs.
+  it('asks for a keyword and says every edition is overwritten', async () => {
+    await rendre();
+
+    choisirDump();
+    await fixture.whenStable();
+
+    const demande = recopie.demander.mock.calls[0][0] as DemandeRecopie;
+    expect(demande.valeurAttendue).toBe(MOT_CLE_REMPLACER);
+    expect(demande.message).toContain('toutes les éditions sont écrasées');
+    expect(demande.message).toContain('sauvegarde.sql');
   });
 
   it('exports the database as a file named after the deployment', async () => {

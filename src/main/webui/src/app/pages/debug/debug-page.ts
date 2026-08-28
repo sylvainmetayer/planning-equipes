@@ -4,6 +4,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ApiService } from '../../core/api.service';
+import { EditionStore } from '../../core/edition.store';
 import { ConstraintsView, ResetSummary } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
@@ -12,13 +13,20 @@ import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';
-import { ConfirmService } from '../../shared/confirm-dialog';
+import { ConfirmationRecopie } from '../../shared/confirmation-recopie';
 import { InstantaneAvantAction } from '../../shared/instantane-avant-action';
 import { OutputPanel } from '../../shared/output-panel';
 import { APP_VERSION, REPO_URL } from '../../version';
 import { StatusMessage } from '../../shared/status-message';
 import { YamlValidator } from './yaml-validator';
 import { errorMessage, errorPrefix } from '../../core/error-message';
+
+/**
+ * Typed back instead of the edition name when no edition is loaded. Left
+ * untranslated on purpose: a keyword whose spelling follows the interface
+ * language is a keyword an administrator gets wrong after a language switch.
+ */
+export const MOT_CLE_VIDER = 'VIDER';
 
 /**
  * Raw dump of the last constraint analysis (`GET /api/constraints`):
@@ -54,7 +62,8 @@ export class DebugPage {
   private readonly api = inject(ApiService);
   private readonly notifications = inject(NotificationService);
   private readonly jobs = inject(SolverJobService);
-  private readonly confirm = inject(ConfirmService);
+  private readonly recopie = inject(ConfirmationRecopie);
+  private readonly editions = inject(EditionStore);
   private readonly instantane = inject(InstantaneAvantAction);
   // Emptying the database moves the resolution stamp, the "data
   // edited since the last solve" stamp and the feasibility diagnostic: the
@@ -100,11 +109,19 @@ export class DebugPage {
       });
       return;
     }
-    const confirmed = await this.confirm.ask({
+    // The reset is scoped to the current edition (`clearDatabase` deletes
+    // where `edition_id` matches), so what has to be typed back is that
+    // edition's name — the very thing that is about to be emptied. Without a
+    // loaded edition the name is unknown, and a keyword takes its place rather
+    // than a confirmation naming an edition we cannot vouch for.
+    const nomEdition = this.editions.courant()?.nom ?? null;
+    const confirmed = await this.recopie.demander({
       title: $localize`:@@dataSetup.resetConfirmTitle:Vider la base de données ?`,
-      message: $localize`:@@dataSetup.resetConfirmMessage:Tous les stands, créneaux, animateurs, affectations et ajustements manuels sont supprimés. Rien n'est rechargé.`,
-      confirmLabel: $localize`:@@dataSetup.resetConfirmLabel:Vider`,
-      danger: true
+      message: nomEdition
+        ? $localize`:@@dataSetup.resetPromptMessage:Tous les stands, créneaux, animateurs, affectations et ajustements manuels de l'édition « ${nomEdition}:edition: » sont supprimés, et rien n'est rechargé. Les autres éditions ne sont pas touchées.`
+        : $localize`:@@dataSetup.resetPromptMessageSansEdition:Tous les stands, créneaux, animateurs, affectations et ajustements manuels de l'édition courante sont supprimés, et rien n'est rechargé. Les autres éditions ne sont pas touchées.`,
+      valeurAttendue: nomEdition ?? MOT_CLE_VIDER,
+      confirmLabel: $localize`:@@dataSetup.resetConfirmLabel:Vider`
     });
     if (!confirmed) {
       return;

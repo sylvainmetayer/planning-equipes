@@ -25,12 +25,19 @@ import { SolverJobService } from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';
 import { ScenarioImportService } from '../../core/scenario-import.service';
 import { PlanSnapshotStore } from '../../core/plan-snapshot.store';
-import { ConfirmService } from '../../shared/confirm-dialog';
+import { ConfirmationRecopie } from '../../shared/confirmation-recopie';
 import { FeasibilityBanner } from '../../shared/feasibility-banner';
 import { InstantaneAvantAction } from '../../shared/instantane-avant-action';
 import { OutputPanel } from '../../shared/output-panel';
 import { StatusMessage } from '../../shared/status-message';
 import { errorMessage, errorPrefix } from '../../core/error-message';
+
+/**
+ * Typed back before a SQL dump is replayed. Left untranslated on purpose: a
+ * keyword whose spelling follows the interface language is a keyword an
+ * administrator gets wrong after a language switch.
+ */
+export const MOT_CLE_REMPLACER = 'REMPLACER';
 
 /**
  * The single settings page, split in two sections mirroring the data model:
@@ -117,7 +124,7 @@ export class ParametresPage {
   // "data edited since the last solve" hint: refresh the store the toolbar
   // warnings read, or they keep showing the previous dataset.
   private readonly resolution = inject(PlanningResolutionStore);
-  private readonly confirm = inject(ConfirmService);
+  private readonly recopie = inject(ConfirmationRecopie);
   private readonly snapshots = inject(PlanSnapshotStore);
   private readonly instantane = inject(InstantaneAvantAction);
 
@@ -457,11 +464,15 @@ export class ParametresPage {
     if (!file) {
       return;
     }
-    const confirmed = await this.confirm.ask({
+    // Not the edition name here: replaying a dump rewrites the whole database,
+    // every edition included, so asking for the current edition's name would
+    // describe an operation narrower than the one about to run. A keyword says
+    // the truth of the scope instead.
+    const confirmed = await this.recopie.demander({
       title: $localize`:@@dataTransfer.replaySqlTitle:Rejouer ce dump SQL ?`,
-      message: $localize`:@@dataTransfer.replaySqlMessage:${file.name}:fileName: remplace le contenu actuel de la base de données.`,
-      confirmLabel: $localize`:@@dataTransfer.importAction:Importer`,
-      danger: true
+      message: $localize`:@@dataTransfer.replaySqlPromptMessage:${file.name}:fileName: remplace la base de données entière : toutes les éditions sont écrasées, pas seulement l'édition courante. L'opération est irréversible.`,
+      valeurAttendue: MOT_CLE_REMPLACER,
+      confirmLabel: $localize`:@@dataTransfer.replaySqlAction:Remplacer la base`
     });
     if (!confirmed) {
       return;
