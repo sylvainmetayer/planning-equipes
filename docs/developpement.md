@@ -186,6 +186,15 @@ le cas où il a besoin du reste de son budget.
 
 ### `acceptedCountLimit` : mesuré, pas hérité
 
+> **Toutes les tables de cette section ont été mesurées en Timefold 1.34 et ne
+> transfèrent pas telles quelles en 2.5.** À réglage identique, la 2.5 évalue
+> environ dix fois plus de mouvements par pas de recherche locale : les valeurs
+> gardent leur sens relatif, pas leurs temps. Ce qui a été remesuré en 2.5, et
+> ce qui en découle pour le budget, est en
+> [`migration-timefold-2.md`](migration-timefold-2.md#le-réglage-du-solveur--mesuré-et-il-a-bougé).
+> Le raisonnement ci-dessous — pourquoi le compromis dépend de la taille du
+> problème, pourquoi deux phases plutôt qu'une — reste valable.
+
 Le nombre de mouvements candidats échantillonnés par pas de recherche locale
 (`solverConfig.xml`, `<forager>`) est le réglage le plus sensible du fichier, et
 il dépend de la **taille du problème**. Mesures sur le scénario réel 2026
@@ -319,14 +328,20 @@ le *move evaluation speed* du log solveur, pas le temps écoulé.
 
 ### Mode d'environnement et parallélisme
 
-`solverConfig.xml` fixe `<environmentMode>REPRODUCIBLE</environmentMode>`.
-Timefold 1.x démarre sinon en `PHASE_ASSERT`, qui recalcule intégralement le
-score à chaque frontière de phase pour détecter une corruption : mesuré à
-**+7,4 %** de *move evaluation speed* une fois retiré (4074 → 4377/s sur le
-scénario de référence). Le déterminisme reste assuré par `<randomSeed>`. En
-contrepartie la détection de corruption de score est désactivée — en cas de
-doute, repasser à `PHASE_ASSERT`, ou `FULL_ASSERT` pour identifier le move
-fautif.
+`solverConfig.xml` fixe `<environmentMode>NO_ASSERT</environmentMode>`. Les
+modes *assert* recalculent intégralement le score à chaque frontière de phase
+pour détecter une corruption : mesuré à **+7,4 %** de *move evaluation speed*
+une fois retiré (4074 → 4377/s sur le scénario de référence, en 1.x). Le
+déterminisme reste assuré par `<randomSeed>`. En contrepartie la détection de
+corruption de score est désactivée — en cas de doute, repasser à
+`PHASE_ASSERT`, ou `FULL_ASSERT` pour identifier le move fautif, puis **revenir
+à `NO_ASSERT`**.
+
+Ce réglage s'appelait `REPRODUCIBLE` en Timefold 1.x. Ce mode **n'existe plus
+en 2.x** : la reproductibilité n'y est plus un mode mais une conséquence du
+`randomSeed`, et `NO_ASSERT` est le même compromis sous le nouveau nom. Écrire
+`REPRODUCIBLE` dans le fichier fait désormais échouer la construction de la
+*solver factory* — voir [`migration-timefold-2.md`](migration-timefold-2.md).
 
 Il n'y a **pas** de `<moveThreadCount>` : la résolution incrémentale
 multi-thread appartient à Timefold Solver *Enterprise Edition*, produit
