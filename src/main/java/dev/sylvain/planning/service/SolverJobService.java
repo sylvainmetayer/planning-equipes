@@ -447,6 +447,35 @@ public class SolverJobService {
                 .min(Comparator.comparing(SolverJob::getSubmittedAt));
     }
 
+    /**
+     * Refuses the caller when a solve holds the solver — used by the
+     * referential deletes, which a landing solve would otherwise undo.
+     *
+     * <p>{@link SolvePipeline#execute} builds its problem from the referential,
+     * then persists the result; {@code PlanningPersistenceService.persist}
+     * re-upserts the stands and animateurs that result names. So deleting one
+     * <em>while</em> a solve is in flight lets the solve put it back, seats and
+     * all, minutes after the operator watched it disappear. For an animateur
+     * that is personal data returning on its own, on a base that holds
+     * minors — so the delete is refused rather than silently reverted.</p>
+     *
+     * <p>Scoped to {@link #findActive}, hence to PENDING and RUNNING only: a
+     * QUEUED job has not built its problem yet and will read the referential as
+     * it stands when its turn comes, deletion included. Blocking on it would
+     * freeze data entry on the very edition it was queued to keep preparing,
+     * which is the trade-off {@link #findActive} already documents.</p>
+     *
+     * <p>{@code synchronized} on the same monitor as {@link #submit}, so a job
+     * cannot take the solver while this check is being made.</p>
+     */
+    public synchronized void refuseIfSolving() {
+        purgeExpiredJobs();
+        Optional<SolverJob> actif = findActive();
+        if (actif.isPresent()) {
+            throw new SolverBusyException(actif.get());
+        }
+    }
+
     /** Newest job first, so the UI can show a readable history. */
     public List<SolverJob> list() {
         return jobs.values().stream()

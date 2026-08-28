@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -44,6 +45,9 @@ class ReferenceDataServiceSuppressionTest {
 
     @Inject
     PlanningService planningService;
+
+    @Inject
+    SolverJobService solverJobs;
 
     private static final LocalDate JOUR = LocalDate.of(2030, 7, 3);
 
@@ -151,6 +155,97 @@ class ReferenceDataServiceSuppressionTest {
         }
     }
 
+
+    /**
+     * The race the fix above made reachable, and that this guard closes.
+     *
+     * <p>A solve builds its problem from the referential at its start and
+     * persists the result at the end — and that persist re-upserts every stand
+     * and animateur its result names. Deleting one meanwhile therefore used to
+     * be undone by the solve landing, minutes later: the animateur was back,
+     * reattached to their seats. On a base holding minors, that is personal data
+     * returning on its own, so the delete is refused while the solver is held
+     * rather than silently reverted.</p>
+     *
+     * <p>Not a defect this PR introduced — before it, the delete failed with a
+     * 500 and never got far enough to be reverted. Making the delete work is
+     * what makes the race reachable, which is why it is closed here.</p>
+     */
+    @Test
+    void supprimerPendantUnSolveEstRefuseAuLieuDetreAnnuleParLatterrissage() {
+        Creneau creneau = creneau(9504L);
+        Stand stand = stand("SUP-S7");
+        Animateur animateur = animateur("SUP-A7");
+        PlanningEvenement probleme = new PlanningEvenement(JOUR, List.of(animateur),
+                List.of(poste("SUP-P8", stand, creneau, animateur)));
+        String jobId = null;
+        try {
+            persistence.persist(probleme);
+            attendreSolveurLibre();
+
+            // The solve is now holding the solver, with the referential of its
+            // start captured in its problem — exactly the window in which a
+            // delete would be undone by the landing.
+            jobId = solverJobs.submitSolve(probleme, 60L).getId();
+            assertThat(solverJobs.findActive()).isPresent();
+
+            assertThatThrownBy(() -> referenceData.deleteAnimateur("SUP-A7"))
+                    .isInstanceOf(SolverJobService.SolverBusyException.class);
+            assertThatThrownBy(() -> referenceData.deleteStand("SUP-S7"))
+                    .isInstanceOf(SolverJobService.SolverBusyException.class);
+
+            // Refused, so still there — and still there for the solve to land on.
+            assertThat(referenceData.listAnimateurs()).anyMatch(a -> "SUP-A7".equals(a.getId()));
+            assertThat(referenceData.listStands()).anyMatch(st -> "SUP-S7".equals(st.getId()));
+        } finally {
+            if (jobId != null) {
+                solverJobs.cancel(jobId);
+            }
+            // The cancelled solve still persists its best solution: let it land
+            // before cleaning, or it would put the fixture back after the wipe.
+            attendreSolveurLibre();
+            nettoyer();
+        }
+    }
+
+    /** Once the solver is free again, the same delete goes through. */
+    @Test
+    void supprimerUneFoisLeSolveTermineFonctionne() {
+        Creneau creneau = creneau(9505L);
+        Stand stand = stand("SUP-S8");
+        Animateur animateur = animateur("SUP-A8");
+        try {
+            persistence.persist(new PlanningEvenement(JOUR, List.of(animateur),
+                    List.of(poste("SUP-P9", stand, creneau, animateur))));
+            attendreSolveurLibre();
+
+            referenceData.deleteAnimateur("SUP-A8");
+            referenceData.deleteStand("SUP-S8");
+
+            assertThat(referenceData.listAnimateurs()).noneMatch(a -> "SUP-A8".equals(a.getId()));
+            assertThat(referenceData.listStands()).noneMatch(st -> "SUP-S8".equals(st.getId()));
+        } finally {
+            nettoyer();
+        }
+    }
+
+    /**
+     * The solver is a single shared resource, and the deletes under test now
+     * refuse while it is held — so every fixture waits for it, including the
+     * cleanup, which would otherwise throw on a job another class left running.
+     */
+    private void attendreSolveurLibre() {
+        for (int essai = 0; essai < 240 && solverJobs.findActive().isPresent(); essai++) {
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException interrompu) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+        assertThat(solverJobs.findActive()).isEmpty();
+    }
+
     private List<PosteAffectation> postesForStand(String standId) {
         return persistence.loadPersistedPlanning().getPostes().stream()
                 .filter(poste -> poste.getStand() != null && standId.equals(poste.getStand().getId()))
@@ -170,14 +265,15 @@ class ReferenceDataServiceSuppressionTest {
      * PR #281 walked into.
      */
     private void nettoyer() {
+        attendreSolveurLibre();
         persistence.persist(new PlanningEvenement(JOUR, List.of(), List.of()));
-        for (String id : List.of("SUP-S1", "SUP-S2", "SUP-S3", "SUP-S4", "SUP-S5", "SUP-S6")) {
+        for (String id : List.of("SUP-S1", "SUP-S2", "SUP-S3", "SUP-S4", "SUP-S5", "SUP-S6", "SUP-S7", "SUP-S8")) {
             referenceData.deleteStand(id);
         }
-        for (String id : List.of("SUP-A1", "SUP-A2", "SUP-A3", "SUP-A4", "SUP-A5", "SUP-A6")) {
+        for (String id : List.of("SUP-A1", "SUP-A2", "SUP-A3", "SUP-A4", "SUP-A5", "SUP-A6", "SUP-A7", "SUP-A8")) {
             referenceData.deleteAnimateur(id);
         }
-        referenceData.deleteCreneaux(List.of(9501L, 9502L, 9503L));
+        referenceData.deleteCreneaux(List.of(9501L, 9502L, 9503L, 9504L, 9505L));
     }
 
     private static Creneau creneau(long id) {

@@ -20,6 +20,9 @@ public class AnimateurService {
     @Inject
     ReferenceDataChangeTracker changeTracker;
 
+    @Inject
+    SolverJobService solverJobs;
+
     public List<Animateur> list() {
         return repository.listAnimateurs();
     }
@@ -43,7 +46,17 @@ public class AnimateurService {
         return animateur;
     }
 
+    /**
+     * Removes the animateur, and vacates the seats they held (see
+     * {@link AnimateurRepository#deleteAnimateur}).
+     *
+     * <p>Refused while a solve holds the solver: that solve built its problem
+     * from the referential as it stood at its start, and persisting its result
+     * would re-insert the animateur — personal data coming back on its own,
+     * minutes later. See {@link SolverJobService#refuseIfSolving}.</p>
+     */
     public void delete(String id) {
+        solverJobs.refuseIfSolving();
         repository.deleteAnimateur(id);
         changeTracker.markModified();
     }

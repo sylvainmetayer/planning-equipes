@@ -543,6 +543,15 @@ replanifier.
 Dans les deux cas la règle vaut ligne à ligne en suppression en lot, chaque
 suppression étant sa propre transaction.
 
+**Supprimer un stand ou un animateur est refusé (`409`) tant qu'une résolution
+tient le solveur**, avec le job en cause dans le corps de la réponse. Une
+résolution construit son problème depuis le référentiel au démarrage et
+réenregistre ce référentiel en persistant son résultat : supprimer entre les deux
+serait annulé par l'atterrissage du solve, et l'entité reviendrait d'elle-même
+plusieurs minutes plus tard — pour un animateur, une donnée personnelle qui
+ressuscite. Une résolution seulement *en file* ne bloque rien : elle lira le
+référentiel à son tour venu, suppression comprise.
+
 Contraintes ad hoc et verrouillages sont des **états** : on ne les met pas à
 jour, on les supprime et on les recrée. Une même paire d'animateurs ne peut pas
 être à la fois en incompatibilité et en affinité (`400`). Une cible déjà

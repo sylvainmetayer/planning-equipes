@@ -260,7 +260,10 @@ public class StandMcpTools {
         return toView(referenceDataService.updateStand(id, stand));
     }
 
-    @Tool(description = "Supprime un stand.",
+    @Tool(description = "Supprime un stand. Emporte aussi les postes du planning enregistré qui "
+            + "étaient ouverts sur ce stand : contrairement à un animateur, un poste ne peut pas "
+            + "survivre à son stand. Refusé (409) tant qu'une résolution est en cours, sinon elle "
+            + "réinsérerait le stand en enregistrant son résultat.",
             annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = true,
                     idempotentHint = false, openWorldHint = false))
     SuppressionResult supprimer_stand(@ToolArg(description = "Id du stand") String id,

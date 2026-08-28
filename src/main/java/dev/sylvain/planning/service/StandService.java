@@ -27,6 +27,9 @@ public class StandService {
     @Inject
     ReferenceDataChangeTracker changeTracker;
 
+    @Inject
+    SolverJobService solverJobs;
+
     /**
      * Stands as entered: the recurring {@link HoraireStand} rules and the dated
      * exceptions, side by side, with no expansion. This is the CRUD view — what
@@ -73,7 +76,19 @@ public class StandService {
         return stand;
     }
 
+    /**
+     * Removes the stand, and with it the seats opened on it (see
+     * {@link StandRepository#deleteStand}).
+     *
+     * <p>Refused while a solve holds the solver: that solve built its problem
+     * from the referential as it stood at its start, and persisting its result
+     * would re-insert the stand — and re-insert it <em>degraded</em>, since
+     * {@code PlanningPersistenceService}'s own upsert writes only nom, effectifs
+     * and reserveMajeurs, dropping emplacement, premium and niveauEffort. See
+     * {@link SolverJobService#refuseIfSolving}.</p>
+     */
     public void delete(String id) {
+        solverJobs.refuseIfSolving();
         repository.deleteStand(id);
         changeTracker.markModified();
     }
