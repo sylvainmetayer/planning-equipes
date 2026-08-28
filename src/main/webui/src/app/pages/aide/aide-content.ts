@@ -452,6 +452,10 @@ export function buildHelpSections(): HelpSection[] {
         {
           kind: 'paragraph',
           text: $localize`:@@aide.jourJ.trace:Chaque absence marquée est un ajustement manuel enregistré, avec sa raison, son auteur et son horodatage : elle se retrouve telle quelle le lendemain sur la page Ajustements manuels. Elle s'annule créneau par créneau ou d'un bloc — mais les postes déjà réaffectés ne reviennent pas d'eux-mêmes : qui tient un poste reste une décision.`
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.jourJ.mock:Cet écran ne parle que d'aujourd'hui, ce qui le rend difficile à découvrir hors de la période de l'événement. En développement seulement, la page Débogage permet donc de figer la date que le serveur considère comme aujourd'hui ; une icône d'avertissement apparaît alors dans la barre du haut, sur tous les écrans, et son lien ramène directement au champ pour la modifier ou l'effacer. Sur une instance déployée, le réglage n'existe pas et le serveur refuse de le poser : l'écran y lit toujours l'horloge réelle.`
         }
       ],
       links: [

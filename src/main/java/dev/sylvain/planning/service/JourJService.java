@@ -79,6 +79,9 @@ public class JourJService {
     @Inject
     SecurityIdentity identity;
 
+    @Inject
+    JourJClock clock;
+
     /* -------------------------------- Reads -------------------------------- */
 
     /**
@@ -92,7 +95,7 @@ public class JourJService {
      *              all of it
      */
     public EtatJourJ etat(LocalDate date, LocalTime heure) {
-        LocalDate jour = date != null ? date : LocalDate.now();
+        LocalDate jour = date != null ? date : clock.today();
         LocalTime reference = referenceTime(jour, heure);
         PlanningEvenement plan = persistenceService.loadPersistedPlanning();
         List<Creneau> creneauxDuJour = creneauxOf(referenceDataService.listCreneaux(), jour);
@@ -147,7 +150,7 @@ public class JourJService {
      * {@link ContrainteAdHocContradictions} exists to replace.</p>
      */
     public AbsenceMarquee recordAbsence(String animateurId, String raison, LocalDate date, LocalTime heure) {
-        LocalDate jour = date != null ? date : LocalDate.now();
+        LocalDate jour = date != null ? date : clock.today();
         LocalTime reference = referenceTime(jour, heure);
         Animateur animateur = findAnimateur(animateurId, true);
 
@@ -207,7 +210,7 @@ public class JourJService {
      * @return how many exceptions were removed
      */
     public int cancelAbsence(String animateurId, LocalDate date, Long creneauId) {
-        LocalDate jour = date != null ? date : LocalDate.now();
+        LocalDate jour = date != null ? date : clock.today();
         findAnimateur(animateurId, false);
         Map<Long, Creneau> creneaux = creneauxById(creneauxOf(referenceDataService.listCreneaux(), jour));
         List<ContrainteAdHoc> aSupprimer = referenceDataService.listContraintesAdHoc().stream()
@@ -230,12 +233,16 @@ public class JourJService {
     /**
      * Reading a day other than today reads all of it: "now" only means
      * something on the day it belongs to.
+     *
+     * <p>"Today" is {@link JourJClock#today()}, which a developer may have
+     * frozen — the point of that seam being that this very branch can be
+     * exercised out of season.</p>
      */
-    private static LocalTime referenceTime(LocalDate jour, LocalTime heure) {
+    private LocalTime referenceTime(LocalDate jour, LocalTime heure) {
         if (heure != null) {
             return heure;
         }
-        return jour.equals(LocalDate.now()) ? LocalTime.now().withNano(0) : LocalTime.MIN;
+        return jour.equals(clock.today()) ? clock.now() : LocalTime.MIN;
     }
 
     /**

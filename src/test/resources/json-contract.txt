@@ -22,6 +22,7 @@ api.ConstraintResource$ConstraintToggleUpdate = actif
 api.ConstraintResource$ConstraintView = actif, categorie, description, dosable, matchCount, name, niveau, poids, protegee, score, violations
 api.ConstraintResource$ConstraintsView = analysedAt, contraintes, contraintesAdHocEnCause, faisabilite, hardScore, postesNonPourvus, scoreGlobal
 api.DatabaseResource$ImportSummary = message, statements
+api.DebugResource$DateJourJView = dateDuJour, modifiable
 api.DebugResource$MailConfigView = adminEmail
 api.DemandeEchangeResource$ConfigurationFoire = foireOuverte
 api.DemandeEchangeResource$Decision = commentaire

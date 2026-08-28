@@ -4,7 +4,7 @@ import jakarta.inject.Inject;
 import dev.sylvain.planning.config.ConfigObservabilite;
 import java.util.Optional;
 
-import io.quarkus.runtime.LaunchMode;
+import dev.sylvain.planning.config.DevMode;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -34,13 +34,16 @@ public class ConfigResource {
     @Inject
     ConfigObservabilite observabilite;
 
+    @Inject
+    DevMode devMode;
+
     @GET
     public ConfigView get() {
         return new ConfigView(
                 observabilite.sentry().dsn().orElse(""),
                 observabilite.sentry().environment(),
                 observabilite.cloudflare().webAnalyticsToken().orElse(""),
-                LaunchMode.current() == LaunchMode.DEVELOPMENT);
+                devMode.isActive());
     }
 
     /**

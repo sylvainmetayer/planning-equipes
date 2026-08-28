@@ -90,6 +90,42 @@
   </mat-card-content>
 </mat-card>
 
+@if (dates.modifiable()) {
+  <mat-card appearance="outlined" class="page-card">
+    <mat-card-header>
+      <h2 mat-card-title i18n="@@debug.dateDuJour.title">Date du jour (mock)</h2>
+      <mat-card-subtitle i18n="@@debug.dateDuJour.description">
+        Fige la date que le serveur considère comme « aujourd'hui », pour pouvoir essayer le mode
+        jour J hors de la période de l'événement. Seule la date est remplacée : l'heure reste
+        réelle, et rien d'autre ne s'en trouve modifié — ni l'âge des mineurs, ni l'horodatage de
+        ce qui est enregistré. Laissez le champ vide pour revenir à l'horloge de la machine.
+      </mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <mat-form-field appearance="outline" class="debug-date-du-jour">
+        <mat-label i18n="@@debug.dateDuJour.label">Date du jour</mat-label>
+        <input
+          matInput
+          #champDateDuJour
+          [id]="ancreDateDuJour"
+          type="date"
+          name="dateDuJour"
+          [ngModel]="dates.dateDuJour()"
+          (ngModelChange)="onDateDuJour($event)"
+        />
+      </mat-form-field>
+      @if (dateDuJourErreur()) {
+        <p class="field-error">{{ dateDuJourErreur() }}</p>
+      }
+      @if (dates.actif()) {
+        <p class="debug-date-du-jour-actif" i18n="@@debug.dateDuJour.actif">
+          Date figée : les écrans qui raisonnent sur « maintenant » ne montrent pas la réalité.
+        </p>
+      }
+    </mat-card-content>
+  </mat-card>
+}
+
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
     <h2 mat-card-title i18n="@@dataSetup.database.title">Base de données</h2>

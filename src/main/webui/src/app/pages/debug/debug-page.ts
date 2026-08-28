@@ -1,9 +1,23 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  computed,
+  effect,
+  inject,
+  signal,
+  viewChild
+} from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/api.service';
+import { ANCRE_DATE_DU_JOUR, DateMockService } from '../../core/date-mock.service';
 import { EditionStore } from '../../core/edition.store';
 import { ConstraintsView, ResetSummary } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
@@ -43,8 +57,8 @@ export const MOT_CLE_VIDER = 'VIDER';
  */
 @Component({
   selector: 'app-debug-page',
-  imports: [MatCardModule, MatButtonModule, MatIconModule, MatProgressBarModule, OutputPanel,
-    StatusMessage, YamlValidator],
+  imports: [FormsModule, MatCardModule, MatButtonModule, MatFormFieldModule, MatIconModule,
+    MatInputModule, MatProgressBarModule, OutputPanel, StatusMessage, YamlValidator],
   templateUrl: './debug-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -74,10 +88,59 @@ export class DebugPage {
   private readonly resolution = inject(PlanningResolutionStore);
   private readonly solverSettings = inject(SolverSettingsService);
   private readonly problemes = inject(ProblemesStore);
+  protected readonly dates = inject(DateMockService);
+
+  protected readonly ancreDateDuJour = ANCRE_DATE_DU_JOUR;
+  protected readonly dateDuJourErreur = signal('');
+
+  /**
+   * Resolves only once the field is rendered, which is itself conditional on
+   * the server saying the setting may be used — so this is what the deep link
+   * of the toolbar warning has to wait for.
+   */
+  private readonly champDateDuJour = viewChild<ElementRef<HTMLInputElement>>('champDateDuJour');
+
+  /**
+   * `?focus=date-du-jour`, set by the toolbar warning. Read once from the
+   * snapshot and honoured once: the point is to land on the control, not to
+   * steal the focus back every time the page re-renders. An unknown value
+   * simply does nothing (decision 0012: reading view state is tolerant).
+   */
+  private focusEnAttente =
+    inject(ActivatedRoute, { optional: true })?.snapshot.queryParamMap.get('focus') ===
+    ANCRE_DATE_DU_JOUR;
 
   constructor() {
     void this.chargerMailConfig();
     void this.refresh();
+    effect(() => {
+      const champ = this.champDateDuJour();
+      if (!champ || !this.focusEnAttente) {
+        return;
+      }
+      this.focusEnAttente = false;
+      // Scrolling is the nicety, the focus is the point: jsdom has no
+      // scrollIntoView, and neither does an old browser.
+      champ.nativeElement.scrollIntoView?.({ block: 'center' });
+      champ.nativeElement.focus();
+    });
+  }
+
+  /**
+   * Saved on change, with no Validate button: the field holds one value, and a
+   * second click to confirm a date somebody just picked buys nothing.
+   *
+   * <p>A refusal is shown next to the field rather than as a toast — the most
+   * likely one is "this server is not in development mode", which is an answer
+   * about that control and should stay under it.
+   */
+  protected async onDateDuJour(valeur: string): Promise<void> {
+    this.dateDuJourErreur.set('');
+    try {
+      await this.dates.set(valeur);
+    } catch (error) {
+      this.dateDuJourErreur.set(errorMessage(error));
+    }
   }
 
   protected async refresh(): Promise<void> {

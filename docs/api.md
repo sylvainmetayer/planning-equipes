@@ -406,6 +406,47 @@ Rien ici ne déclenche de résolution, et rien n'envoie de courriel : l'écran
 affiche le compte de la [publication](#publication) et renvoie vers le bouton,
 il ne le duplique pas.
 
+### Figer la date du jour — développement uniquement
+
+Cet écran ne se teste, sinon, que le jour de l'événement. `/api/debug/date-du-jour`
+remplace donc la date que le serveur considère comme « aujourd'hui ».
+
+| Endpoint | Effet |
+| --- | --- |
+| `GET /api/debug/date-du-jour` | `{ "dateDuJour": "2026-07-08"\|null, "modifiable": true\|false }`. |
+| `PUT /api/debug/date-du-jour` | `{ "dateDuJour": "2026-07-08" }` fige la date ; une valeur vide ou `null` rend la main à l'horloge de la machine. |
+
+**Refusé (400) sur toute instance qui n'a pas été lancée avec `quarkus:dev`.**
+`/debug` est une route d'administration ordinaire, disponible en production : un
+mock activable là-bas ferait mentir l'écran jour J sur un vrai événement. Le
+garde-fou est donc **sur l'écriture, côté serveur**, pas sur l'affichage du
+champ — `modifiable` n'existe que pour que l'IHM masque un contrôle inutilisable,
+et l'endpoint refuse quoi que croie l'appelant.
+
+**Ce que le mock remplace, exactement : la date, et seulement pour l'écran
+jour J** — quel jour est regardé, quels créneaux de ce jour sont encore devant,
+et lesquels une absence couvre. **L'heure de la journée n'est jamais figée** :
+la figer rendrait l'écran statique, alors que ce qu'on veut vérifier est
+justement que les créneaux passent derrière au fil de l'après-midi.
+
+Délibérément hors de portée, et rien de tout cela ne passe par ce mock :
+
+- le **statut mineur/majeur**, dérivé de la date de naissance contre la date du
+  *créneau* et non contre aujourd'hui — un mock qui l'atteindrait pourrait faire
+  travailler un mineur de nuit ;
+- **l'horodatage de ce qui est écrit** (`creeLe` d'un ajustement, dates de
+  publication et d'instantané) : ils enregistrent quand une chose s'est
+  réellement produite ;
+- la sauvegarde de nuit, les travaux du solveur, les codes de l'espace animateur
+  et toute autre échéance : ils répondent à l'horloge de la machine.
+
+Le réglage est persisté en base (table `horloge_jour_j`, non cloisonnée par
+édition : c'est l'horloge du serveur, pas une propriété d'un événement) plutôt
+que gardé en mémoire, pour la même raison que le budget de résolution manuel —
+un réglage qui vit dans un processus disparaît au premier rechargement à chaud.
+Quand il est actif, la barre d'outils porte une icône d'avertissement sur tous
+les écrans, dont le lien mène directement au champ.
+
 ## Faisabilité et besoin en animateurs
 
 Deux calculs de capacité **sans lancer le solveur**, donc affichables avant une

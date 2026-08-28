@@ -1426,6 +1426,20 @@ export interface EtatSauvegarde {
 
 /* --------------------------- Mode « jour J » ------------------------------ */
 
+/**
+ * `/api/debug/date-du-jour`: the development-only override of the server's
+ * notion of today, and whether this server would accept one.
+ */
+export interface DateJourJView {
+  /** `AAAA-MM-JJ`, or `null` when the real clock is in use. */
+  dateDuJour: string | null;
+  /**
+   * Server launched with `quarkus:dev`. Hides the field when false — the guard
+   * itself is server-side, on the write endpoint.
+   */
+  modifiable: boolean;
+}
+
 /** One timeslot of the day still ahead of the reference time. */
 export interface CreneauJourJ {
   id: number;
