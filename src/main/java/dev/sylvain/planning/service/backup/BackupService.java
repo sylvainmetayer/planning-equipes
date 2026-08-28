@@ -136,8 +136,19 @@ public class BackupService {
     /**
      * When the scheduler will fire next, or {@code null} when it is off — which
      * it is in tests, and would be in any deployment that disabled it.
+     *
+     * <p>The {@code isRunning()} guard is not belt and braces: with
+     * {@code quarkus.scheduler.enabled=false},
+     * {@code getScheduledJob()} does not answer {@code null}, it throws
+     * {@code UnsupportedOperationException("Scheduler was not started")}. The
+     * null check below never gets its chance, and since this method is reached
+     * from {@link #state()}, the whole backup screen answers 500 — on the one
+     * configuration this method claims to handle.</p>
      */
     private Instant nextRun() {
+        if (!scheduler.isRunning()) {
+            return null;
+        }
         var job = scheduler.getScheduledJob(JOB_IDENTITY);
         return job == null || job.getNextFireTime() == null ? null : job.getNextFireTime();
     }
