@@ -1,0 +1,210 @@
+/* Day rail (issue #305): one line per animateur of the edition, hours on the x
+   axis, vacations as positioned blocks. Sized for ~150 lines on screen at once,
+   so a line is one table row, one track and its blocks — no per-hour element,
+   the gridlines are a repeating background whose step the component binds. */
+
+.rail-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.rail-jour-select {
+  width: 18rem;
+  max-width: 100%;
+  margin-bottom: -1.25rem;
+}
+
+.rail-compteurs {
+  margin: 0.25rem 0 0.5rem;
+  font: var(--mat-sys-body-medium);
+}
+
+.rail-legende {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem 1.25rem;
+  list-style: none;
+  margin: 0 0 0.5rem;
+  padding: 0;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.rail-legende li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.rail-swatch {
+  display: inline-block;
+  width: 1.5rem;
+  height: 0.75rem;
+  border-radius: var(--mat-sys-corner-extra-small);
+  border: 1px solid var(--mat-sys-outline-variant);
+  background: var(--mat-sys-surface-container-low);
+}
+
+/* Same hatching as the track of an unavailable animateur — the two must read as one thing. */
+.rail-swatch-indisponible,
+.rail-cell-indisponible .rail-track {
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--mat-sys-surface-container-highest),
+    var(--mat-sys-surface-container-highest) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+}
+
+.rail-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.rail-table th,
+.rail-table td {
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+/* The hour scale stays readable while a hundred and fifty lines scroll under it. */
+.rail-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--mat-sys-surface);
+  font: var(--mat-sys-label-medium);
+  text-align: left;
+  padding: 0.25rem 0.5rem 0.5rem;
+}
+
+.rail-nom-header {
+  width: 15rem;
+}
+
+.rail-scale-header {
+  position: relative;
+}
+
+.rail-scale {
+  position: relative;
+  display: block;
+  height: 1rem;
+}
+
+.rail-tick {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  font: var(--mat-sys-label-small);
+  color: var(--mat-sys-on-surface-variant);
+  white-space: nowrap;
+}
+
+/* Left column of the grid. Kept a plain table cell — a flex `th` drops out of
+   the table box model and takes the fixed column widths with it — so the name
+   and its meta are inline, and the whole cell ellipsises. */
+.rail-nom {
+  padding: 0.125rem 0.5rem;
+  font: var(--mat-sys-body-small);
+  font-weight: 500;
+  text-align: left;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Angular strips the whitespace between the two spans; the separator has to be drawn. */
+.rail-nom-meta::before {
+  content: '\00a0\00b7\00a0';
+}
+
+.rail-nom-meta {
+  font-weight: 400;
+  color: var(--mat-sys-on-surface-variant);
+  white-space: nowrap;
+}
+
+.rail-nom-libre {
+  color: var(--mat-sys-primary);
+  font-weight: 500;
+}
+
+.rail-nom-indisponible {
+  font-style: italic;
+}
+
+.rail-cell {
+  padding: 0.125rem 0.5rem 0.125rem 0;
+}
+
+/* One tab stop for the whole rail, then the arrows walk the lines: the focused
+   line has to be unmistakable since it moves one step at a time. */
+.rail-cell:focus-visible {
+  outline: 3px solid var(--app-accent);
+  outline-offset: -3px;
+}
+
+.rail-track {
+  position: relative;
+  display: block;
+  height: 1.375rem;
+  border-radius: var(--mat-sys-corner-extra-small);
+  background-color: var(--mat-sys-surface-container-low);
+  /* Hour gridlines; the step comes from the component (`background-size`). */
+  background-image: linear-gradient(to right, var(--mat-sys-outline-variant) 0 1px, transparent 1px);
+  background-repeat: repeat;
+}
+
+/* Blocks take their background and text colour from the `typologie-color-*`
+   class the component binds on top of this one — see typologie-colors.css. */
+.rail-bloc {
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  min-width: 2px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  padding: 0 0.25rem;
+  border-radius: var(--mat-sys-corner-extra-small);
+  border: 1px solid var(--mat-sys-surface);
+}
+
+.rail-bloc-label {
+  font: var(--mat-sys-label-small);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Two seats at the same moment: never a normal state, so it is outlined rather
+   than merely stacked — the block underneath would otherwise vanish. */
+.rail-bloc-chevauchement {
+  outline: 2px solid var(--mat-sys-error);
+  outline-offset: -2px;
+}
+
+.rail-chevauchement-icon {
+  color: var(--mat-sys-error);
+}
+
+@media (max-width: 60rem) {
+  .rail-nom-header {
+    width: 9rem;
+  }
+
+  /* The daily span and the total no longer fit next to the name; the line's
+     summary still carries them for a screen reader. */
+  .rail-nom-meta {
+    display: none;
+  }
+
+  .rail-bloc-label {
+    display: none;
+  }
+}

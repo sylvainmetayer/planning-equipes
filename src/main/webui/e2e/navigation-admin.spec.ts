@@ -46,6 +46,7 @@ const ROUTES: { path: string; marker?: string }[] = [
   { path: '/jour-j', marker: 'Mode jour J' },
   { path: '/heatmap' },
   { path: '/timeline', marker: 'Timeline animateur' },
+  { path: '/rail-jour', marker: 'Rail de la journée' },
   { path: '/ad-hoc-constraints' },
   { path: '/verrouillages', marker: 'Verrouiller une partie du planning' },
   { path: '/parametres', marker: 'Paramètres de découpage' },

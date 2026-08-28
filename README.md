@@ -248,6 +248,7 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 | Heures | Heures planifiées par animateur, semaine ISO par semaine ISO, avec le total de l'événement |
 | Heatmap de charge | Jour croisé avec le stand (trous de couverture) ou avec l'animateur (surcharges) |
 | Timeline animateur | Le planning d'une personne : amplitude, vacations, pauses et coéquipiers présents sur le même stand |
+| Rail de la journée | Une journée vue par personne : une ligne par animateur, vacations placées dans le temps, lignes vides pour qui reste mobilisable |
 | Graphe | Navigation descendante des lieux vers les stands puis vers les personnes |
 | Notifications | Journal des alertes de l'édition — résolutions terminées, contraintes en défaut, erreurs de saisie — consultable après coup |
 

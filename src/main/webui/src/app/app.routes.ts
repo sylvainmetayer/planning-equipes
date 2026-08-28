@@ -176,6 +176,11 @@ const adminRoutes: Routes = [
     loadComponent: () =>
       import('./pages/animateur-timeline/animateur-timeline-page').then((m) => m.AnimateurTimelinePage)
   },
+  {
+    path: 'rail-jour',
+    title: 'Day rail',
+    loadComponent: () => import('./pages/rail-jour/rail-jour-page').then((m) => m.RailJourPage)
+  },
   { path: '**', redirectTo: '' }
 ];
 

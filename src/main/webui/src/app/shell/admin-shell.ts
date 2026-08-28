@@ -155,6 +155,11 @@ function buildNavGroups(devMode: boolean): NavGroup[] {
         label: $localize`:@@nav.link.timeline:Timeline animateur`,
         icon: 'timeline'
       },
+      {
+        path: '/rail-jour',
+        label: $localize`:@@nav.link.railJour:Rail de la journée`,
+        icon: 'view_timeline'
+      },
       { path: '/graphe', label: $localize`:@@nav.link.graphe:Graphe`, icon: 'hub' },
       { path: '/kpi', label: $localize`:@@nav.link.kpi:Autopsie du planning`, icon: 'query_stats' },
       {

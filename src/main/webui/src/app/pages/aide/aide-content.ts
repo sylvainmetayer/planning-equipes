@@ -502,6 +502,10 @@ export function buildHelpSections(): HelpSection[] {
               text: $localize`:@@aide.views.def.timeline:Le planning d'une personne : stands à couvrir, amplitude journalière, vacations et pauses entre elles. C'est la vue à envoyer à l'intéressé, exportable en PDF ou en ICS.`
             },
             {
+              term: $localize`:@@aide.views.term.railJour:Rail de la journée`,
+              text: $localize`:@@aide.views.def.railJour:La même journée que le calendrier journalier, mais vue par personne : une ligne par animateur, les vacations placées dans le temps. Les trous, les amplitudes et les enchaînements sautent aux yeux, et les lignes vides disent qui reste mobilisable — celles marquées « indisponible » signalent au contraire de ne pas solliciter la personne.`
+            },
+            {
               term: $localize`:@@aide.views.term.comparateur:Comparateur A/B`,
               text: $localize`:@@aide.views.def.comparateur:Deux plannings côte à côte — deux instantanés, ou un instantané et le planning actuel — sur le score, la couverture, l'équité et les violations, avec le sens de chaque écart écrit en toutes lettres. Les instantanés de toutes les éditions sont proposés : c'est ainsi qu'on compare une variante (canicule, repli) à l'édition nominale. L'écran prévient quand les deux plannings n'ont pas la même taille ou ne viennent pas de la même édition : une partie de l'écart vient alors du problème posé, pas de la qualité de la résolution. Comparer ne lance jamais de calcul.`
             },
@@ -524,6 +528,7 @@ export function buildHelpSections(): HelpSection[] {
         { route: '/calendar', label: $localize`:@@nav.link.calendar:Calendrier des affectations` },
         { route: '/heatmap', label: $localize`:@@nav.link.heatmap:Heatmap de charge` },
         { route: '/timeline', label: $localize`:@@nav.link.timeline:Timeline animateur` },
+        { route: '/rail-jour', label: $localize`:@@nav.link.railJour:Rail de la journée` },
         { route: '/hours', label: $localize`:@@nav.link.hours:Heures` },
         { route: '/fragilite', label: $localize`:@@nav.link.fragilite:Fragilité du planning` },
         { route: '/banc-de-touche', label: $localize`:@@nav.link.bancDeTouche:Banc de touche` },

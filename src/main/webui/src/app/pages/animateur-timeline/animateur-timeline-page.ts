@@ -9,6 +9,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { uniqueById } from '../../core/date-utils';
+import { endMinutesOfDay, formatDuration, minutesOfDay } from '../../core/time-of-day';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { Animateur, CompteRenduEnvoi, PlanningEvenement, PosteAffectation, TypologieItem } from '../../core/models';
@@ -470,27 +471,4 @@ function buildTimelineDay(
     blocks,
     gaps
   };
-}
-
-/** `'00:00'` means midnight, i.e. the end of this event day — never the start of the next one (this app's `jour` never spans two calendar dates). */
-function endMinutesOfDay(heureFin: string): number {
-  const minutes = minutesOfDay(heureFin);
-  return minutes === 0 ? 1440 : minutes;
-}
-
-function minutesOfDay(time: string): number {
-  const [hours, minutes] = time.split(':').map(Number);
-  return hours * 60 + minutes;
-}
-
-function formatDuration(totalMinutes: number): string {
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  if (hours === 0) {
-    return $localize`:@@timeline.duration.minutesOnly:${minutes}:minutes: min`;
-  }
-  if (minutes === 0) {
-    return $localize`:@@timeline.duration.hoursOnly:${hours}:hours: h`;
-  }
-  return $localize`:@@timeline.duration.hoursAndMinutes:${hours}:hours: h ${minutes}:minutes:`;
 }

@@ -1,0 +1,154 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h1 mat-card-title i18n="@@nav.link.railJour">Rail de la journée</h1>
+    <mat-card-subtitle i18n="@@railJour.subtitle">
+      Une journée, une ligne par animateur : les vacations placées dans le temps, et les lignes vides de celles et ceux qui restent mobilisables.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <div class="rail-toolbar">
+      <button matIconButton type="button" [disabled]="estPremierJour()" (click)="decalerJour(-1)"
+              [attr.aria-label]="jourPrecedentLabel" [title]="jourPrecedentLabel">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      <mat-form-field appearance="outline" class="rail-jour-select">
+        <mat-label i18n="@@railJour.day.label">Journée</mat-label>
+        <mat-select [value]="jourCourant()?.jour ?? null" (valueChange)="selectionnerJour($event)">
+          @for (jour of jours(); track jour.jour) {
+            <mat-option [value]="jour.jour">{{ jour.title }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <button matIconButton type="button" [disabled]="estDernierJour()" (click)="decalerJour(1)"
+              [attr.aria-label]="jourSuivantLabel" [title]="jourSuivantLabel">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+      <mat-button-toggle-group [value]="vue()" (change)="vue.set($event.value)"
+                               aria-label="Lignes affichées" i18n-aria-label="@@railJour.view.label">
+        <mat-button-toggle value="tous" i18n="@@railJour.view.all">Tous</mat-button-toggle>
+        <mat-button-toggle value="libres" i18n="@@railJour.view.free">Mobilisables</mat-button-toggle>
+        <mat-button-toggle value="affectes" i18n="@@railJour.view.assigned">Affectés</mat-button-toggle>
+      </mat-button-toggle-group>
+      @if (vueModifiee()) {
+        <button matButton type="button" (click)="reinitialiserVue()">
+          <mat-icon>filter_alt_off</mat-icon>
+          <ng-container i18n="@@common.resetView">Réinitialiser la vue</ng-container>
+        </button>
+      }
+      <button matButton="tonal" type="button" [disabled]="loading()" (click)="refresh()">
+        <mat-icon>refresh</mat-icon>
+        <ng-container i18n="@@common.refresh">Actualiser</ng-container>
+      </button>
+    </div>
+
+    <app-table-filter
+      [(value)]="filtre"
+      label="Filtrer par nom"
+      i18n-label="@@railJour.filter.label"
+      placeholder="Nom, prénom…"
+      i18n-placeholder="@@railJour.filter.placeholder"
+      [matches]="lignesAffichees().length"
+      [total]="lignes().length"
+    />
+
+    @if (jourCourant()) {
+      <p class="rail-compteurs" role="status">{{ compteursLabel() }}</p>
+      <p class="empty-hint" i18n="@@railJour.keyboardHint">
+        Dans le rail : Tab entre dans la grille, les flèches haut et bas passent d'un animateur à l'autre,
+        Origine et Fin vont à la première et à la dernière ligne. Chaque ligne annonce sa journée en entier.
+      </p>
+      <ul class="rail-legende">
+        <li><span class="rail-swatch rail-swatch-libre"></span>
+          <span i18n="@@railJour.legend.free">Ligne vide : aucune vacation ce jour-là, animateur mobilisable</span></li>
+        <li><span class="rail-swatch rail-swatch-indisponible"></span>
+          <span i18n="@@railJour.legend.unavailable">Ligne vide mais indisponibilité déclarée : à ne pas solliciter</span></li>
+        <li><mat-icon inline class="rail-chevauchement-icon" aria-hidden="true">warning</mat-icon>
+          <span i18n="@@railJour.legend.overlap">Vacations qui se chevauchent</span></li>
+        @for (item of legende(); track item.id) {
+          <li><span class="typologie-dot" [class]="item.colorClass" aria-hidden="true"></span>{{ item.label }}</li>
+        }
+      </ul>
+    }
+
+    @if (loading()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    @if (error()) {
+      <p class="empty-hint">{{ error() }}</p>
+    }
+  </mat-card-content>
+</mat-card>
+
+@if (!error() && !loading()) {
+  <mat-card appearance="outlined" class="page-card">
+    <mat-card-content>
+      @if (!jourCourant()) {
+        <p class="empty-hint" i18n="@@railJour.empty">Aucune donnée de planning disponible pour le moment. Lancez une résolution depuis la page Solveur.</p>
+      } @else if (lignesAffichees().length === 0) {
+        <p class="empty-hint" i18n="@@railJour.noRow">Aucun animateur ne correspond au filtre pour cette journée.</p>
+      } @else {
+        <table class="rail-table" role="grid">
+          <caption class="visually-hidden" i18n="@@railJour.table.caption">
+            Rail d'une journée : une ligne par animateur, les heures en abscisse, une cellule par animateur annonçant ses vacations.
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col" class="rail-nom-header">{{ animateurColumnLabel }}</th>
+              <th scope="col" class="rail-scale-header">
+                <span class="visually-hidden" i18n="@@railJour.column.rail">Journée, heure par heure</span>
+                <span class="rail-scale" aria-hidden="true">
+                  @for (heure of jourCourant()!.heures; track heure.minutes) {
+                    <span class="rail-tick" [style.left.%]="heure.offsetPercent">{{ heure.label }}</span>
+                  }
+                </span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (ligne of lignesAffichees(); track ligne.animateurId; let index = $index) {
+              <tr class="rail-ligne">
+                <th scope="row" class="rail-nom">
+                  <span class="rail-nom-label">{{ ligne.nom }}</span>
+                  @if (ligne.statut === 'affecte') {
+                    <span class="rail-nom-meta">{{ ligne.amplitudeDebut }} – {{ ligne.amplitudeFin }} · {{ ligne.dureeLabel }}</span>
+                  } @else if (ligne.statut === 'indisponible') {
+                    <span class="rail-nom-meta rail-nom-indisponible">{{ indisponibleLabel }}</span>
+                  } @else {
+                    <span class="rail-nom-meta rail-nom-libre">{{ libreLabel }}</span>
+                  }
+                  @if (ligne.chevauchement) {
+                    <mat-icon inline class="rail-chevauchement-icon" [title]="chevauchementLabel" aria-hidden="true">warning</mat-icon>
+                  }
+                </th>
+                <td
+                  class="rail-cell"
+                  [class.rail-cell-libre]="ligne.statut === 'libre'"
+                  [class.rail-cell-indisponible]="ligne.statut === 'indisponible'"
+                  [attr.data-ligne]="index"
+                  [tabindex]="ligneCourante() === index ? 0 : -1"
+                  (focus)="focusLigne(index)"
+                  (keydown)="naviguer($event, index)"
+                  [attr.aria-label]="ligne.resume"
+                >
+                  <span class="rail-track" aria-hidden="true" [style.background-size]="gridSize()">
+                    @for (bloc of ligne.blocs; track bloc.posteId) {
+                      <span
+                        class="rail-bloc"
+                        [class]="bloc.colorClass"
+                        [class.rail-bloc-chevauchement]="bloc.chevauchement"
+                        [style.left.%]="bloc.offsetPercent"
+                        [style.width.%]="bloc.widthPercent"
+                        [title]="bloc.label"
+                        [attr.data-poste-id]="bloc.posteId"
+                      ><span class="rail-bloc-label">{{ bloc.standNom }}</span></span>
+                    }
+                  </span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </mat-card-content>
+  </mat-card>
+}
