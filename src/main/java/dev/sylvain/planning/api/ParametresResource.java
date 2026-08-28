@@ -2,6 +2,7 @@ package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.service.ReferenceDataService;
 import jakarta.inject.Inject;
@@ -14,7 +15,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 /**
- * The three sets of parameters the Données and Débogage tabs can tune. Three
+ * The parameter sets the Données and Débogage tabs can tune. Several
  * distinct published URL roots, hence the class-level {@code @Path} at the
  * root: grouping them under a common prefix would break the frontend and every
  * MCP client for a purely cosmetic gain.
@@ -68,5 +69,23 @@ public class ParametresResource {
     @Path("/parametres-solveur")
     public Response updateParametresSolveur(ParametresSolveur parametres) {
         return Response.ok(referenceDataService.updateParametresSolveur(parametres)).build();
+    }
+
+    /**
+     * What the scheduled notifications may do on this edition (issues #298,
+     * #299, #300). An edition that has never been configured answers the
+     * defaults — {@code actives} false above all: nothing leaves an edition
+     * nobody armed.
+     */
+    @GET
+    @Path("/parametres-notifications")
+    public ParametresNotifications getParametresNotifications() {
+        return referenceDataService.getParametresNotifications();
+    }
+
+    @PUT
+    @Path("/parametres-notifications")
+    public Response updateParametresNotifications(ParametresNotifications parametres) {
+        return Response.ok(referenceDataService.updateParametresNotifications(parametres)).build();
     }
 }

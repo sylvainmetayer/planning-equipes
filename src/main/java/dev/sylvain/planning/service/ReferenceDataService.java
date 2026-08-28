@@ -13,6 +13,7 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
@@ -344,6 +345,14 @@ public class ReferenceDataService implements ReferenceData {
 
     public ParametresSolveur updateParametresSolveur(ParametresSolveur valeurs) {
         return parametres.updateSolveur(valeurs);
+    }
+
+    public ParametresNotifications getParametresNotifications() {
+        return parametres.getNotifications();
+    }
+
+    public ParametresNotifications updateParametresNotifications(ParametresNotifications valeurs) {
+        return parametres.updateNotifications(valeurs);
     }
 
     @Override

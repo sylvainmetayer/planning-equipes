@@ -1,0 +1,73 @@
+@if (parametres(); as reglages) {
+  <mat-card appearance="outlined" class="page-card">
+    <mat-card-header>
+      <h3 mat-card-title i18n="@@parametres.notifications.title">Rappels et relances automatiques</h3>
+      <mat-card-subtitle i18n="@@parametres.notifications.subtitle">
+        Chaque nuit, l'application peut rappeler aux animateurs qu'ils sont attendus le lendemain, relancer ceux
+        qui n'ont pas accusé réception de leur planning, et signaler les demandes d'échange qui attendent une
+        décision. Rien ne part tant que cette édition n'est pas explicitement activée ci-dessous : une édition
+        passée porte les mêmes animateurs, et personne ne veut écrire aux bénévoles de l'an dernier.
+      </mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <mat-slide-toggle
+        [checked]="reglages.actives"
+        (change)="majActives($event.checked)"
+        i18n="@@parametres.notifications.actives"
+      >
+        Activer les envois automatiques pour cette édition
+      </mat-slide-toggle>
+
+      <fieldset class="form-grid" [disabled]="!reglages.actives">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label i18n="@@parametres.notifications.heure">Heure d'envoi du rappel de la veille</mat-label>
+          <input
+            matInput
+            type="time"
+            [value]="reglages.heureRappelVeille"
+            (change)="majHeure($any($event.target).value)"
+          />
+          <mat-hint i18n="@@parametres.notifications.heureAide">
+            Le rappel liste les postes du lendemain, tels qu'ils ont été publiés.
+          </mat-hint>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label i18n="@@parametres.notifications.delaiRelance">Délai avant relance (heures)</mat-label>
+          <input
+            matInput
+            type="number"
+            min="1"
+            max="720"
+            [value]="reglages.delaiRelanceHeures"
+            (change)="majDelaiRelance($any($event.target).value)"
+          />
+          <mat-hint i18n="@@parametres.notifications.delaiRelanceAide">
+            Compté depuis la publication. Une seule relance par personne et par planning publié.
+          </mat-hint>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label i18n="@@parametres.notifications.ancienneteEchange">Alerte échange après (jours)</mat-label>
+          <input
+            matInput
+            type="number"
+            min="1"
+            max="60"
+            [value]="reglages.ancienneteEchangeJours"
+            (change)="majAnciennete($any($event.target).value)"
+          />
+          <mat-hint i18n="@@parametres.notifications.ancienneteEchangeAide">
+            Compté depuis l'accord du collègue. Chaque demande n'est signalée qu'une fois.
+          </mat-hint>
+        </mat-form-field>
+      </fieldset>
+    </mat-card-content>
+    <mat-card-actions class="card-actions">
+      <button matButton="filled" type="button" [disabled]="enregistrement()" (click)="enregistrer()">
+        <mat-icon>save</mat-icon>
+        <ng-container i18n="@@common.save">Enregistrer</ng-container>
+      </button>
+    </mat-card-actions>
+  </mat-card>
+}

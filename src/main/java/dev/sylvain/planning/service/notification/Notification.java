@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service.notification;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import dev.sylvain.planning.domain.DemandeEchange;
@@ -58,5 +59,36 @@ public sealed interface Notification {
      *                 subject line rather than in the body
      */
     record ResolutionTerminee(String editionNom, String score, boolean faisable) implements Notification {
+    }
+
+    /**
+     * The day-before reminder (issue #298): what this person holds tomorrow,
+     * in the published plan and in no other.
+     *
+     * @param postes one line per seat, already worded — the reminder repeats
+     *               what was communicated, it never announces anything new
+     * @param lienEspace their espace, {@code null} when no public URL is
+     *                   configured or the fiche carries no token
+     */
+    record RappelVeille(String email, String prenom, LocalDate date, List<String> postes,
+            String lienEspace) implements Notification {
+    }
+
+    /**
+     * A published planning nobody acknowledged (issue #299). Sent once and
+     * once only: the status moves to RELANCE, which is what stops the loop.
+     */
+    record RelanceConfirmation(String email, String prenom, String lienEspace) implements Notification {
+    }
+
+    /**
+     * Swap requests left waiting for a decision (issue #300), counted rather
+     * than named: the admin needs to know there is a queue and how old it is,
+     * and the Échanges screen — one click away — is where the names live.
+     *
+     * @param nombre    how many crossed the threshold in this run
+     * @param joursMax  age of the oldest of them, in days
+     */
+    record PendingEchanges(int nombre, long joursMax) implements Notification {
     }
 }

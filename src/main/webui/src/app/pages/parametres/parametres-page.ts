@@ -30,6 +30,7 @@ import { FeasibilityBanner } from '../../shared/feasibility-banner';
 import { InstantaneAvantAction } from '../../shared/instantane-avant-action';
 import { OutputPanel } from '../../shared/output-panel';
 import { StatusMessage } from '../../shared/status-message';
+import { ParametresNotificationsPanel } from './parametres-notifications';
 import { errorMessage, errorPrefix } from '../../core/error-message';
 
 /**
@@ -73,6 +74,7 @@ export const MOT_CLE_REMPLACER = 'REMPLACER';
     RouterLink,
     FeasibilityBanner,
     OutputPanel,
+    ParametresNotificationsPanel,
     StatusMessage
   ],
   templateUrl: './parametres-page.html',

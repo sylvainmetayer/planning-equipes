@@ -2,6 +2,7 @@ package dev.sylvain.planning.service;
 
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresSolveur;
 
 /**
@@ -71,6 +72,29 @@ final class ParametresValidator {
     static void checkParametresSolveur(ParametresSolveur parametres) {
         if (parametres.dureeResolutionSecondes() <= 0) {
             throw new BusinessError.Invalid("dureeResolutionSecondes must be positive");
+        }
+    }
+
+    /**
+     * Refuses a schedule that could not be honoured, or a delay that turns a
+     * reminder into harassment.
+     *
+     * <p>The upper bounds are not arbitrary limits on the organiser: they are
+     * what keeps a typo from making the feature dangerous. A reminder delay of
+     * zero would write to somebody the minute their planning is published,
+     * before they have had any chance to read it, and a swap-request threshold
+     * of zero would alert on every request as it arrives — turning an alert
+     * into the noise it exists to avoid.</p>
+     */
+    static void checkParametresNotifications(ParametresNotifications parametres) {
+        if (parametres.heureRappelVeille() == null) {
+            throw new BusinessError.Invalid("heureRappelVeille is required");
+        }
+        if (parametres.delaiRelanceHeures() < 1 || parametres.delaiRelanceHeures() > 24 * 30) {
+            throw new BusinessError.Invalid("delaiRelanceHeures must be between 1 and 720");
+        }
+        if (parametres.ancienneteEchangeJours() < 1 || parametres.ancienneteEchangeJours() > 60) {
+            throw new BusinessError.Invalid("ancienneteEchangeJours must be between 1 and 60");
         }
     }
 

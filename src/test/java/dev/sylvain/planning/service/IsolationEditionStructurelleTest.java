@@ -47,7 +47,7 @@ class IsolationEditionStructurelleTest {
             "animateur_competence", "animateur_souhait", "animateur_indisponibilite",
             "stand_indisponibilite", "stand_ouverture", "stand_horaire", "stand_horaire_fenetre",
             "demande_echange", "espace_session", "espace_code", "plan_snapshot", "creneau_remap",
-            "declaration_disponibilite", "parametres_collecte");
+            "declaration_disponibilite", "parametres_collecte", "confirmation_planning", "parametres_notifications", "notification_planifiee");
 
     /**
      * The two deliberately cross-edition statements, and why.

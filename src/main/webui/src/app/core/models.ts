@@ -1284,6 +1284,55 @@ export interface EspaceAnimateurView {
   foireOuverte: boolean;
   postes: PosteAnimateurView[];
   collegues: CollegueView[];
+  /** Where this animateur stands with the published plan (issue #293). */
+  statutConfirmation: StatutConfirmation;
+  /** When « j'ai lu et je serai là » was clicked, `null` while it has not been. */
+  confirmeLe: string | null;
+}
+
+/**
+ * Acknowledgement of the published planning (issue #293). `NON_VU` is the
+ * state everybody starts in and the one a republication sends back the people
+ * whose own schedule moved; `RELANCE` means the automatic reminder went out
+ * and is still unanswered.
+ */
+export type StatutConfirmation = 'NON_VU' | 'CONFIRME' | 'RELANCE';
+
+/** One animateur's acknowledgement, as the Animateurs table shows it. */
+export interface ConfirmationView {
+  animateurId: string;
+  nomAffiche: string;
+  statut: StatutConfirmation;
+  /** Holds at least one seat in the published plan: the only people the question is asked of. */
+  affecte: boolean;
+  confirmeLe: string | null;
+  relanceLe: string | null;
+}
+
+/** What the espace reads back after the click: its own new state, and nothing about anybody else. */
+export interface AccuseReception {
+  statut: StatutConfirmation;
+  confirmeLe: string | null;
+}
+
+/**
+ * An alert raised by one of the nightly jobs (issues #298, #299, #300).
+ *
+ * Server-side on purpose, unlike the rest of the Notifications page: these
+ * happen at four in the morning with nobody watching, so a log kept in this
+ * browser's `localStorage` would never see them.
+ */
+export interface AlerteView {
+  /** Which job raised it: `RAPPEL_VEILLE_INJOIGNABLE`, `RELANCE_INJOIGNABLE`, `ALERTE_ECHANGE`. */
+  type: string;
+  cle: string;
+  declencheLe: string;
+  libelle: string;
+  severite: 'INFO' | 'WARNING' | 'ALERTE';
+  /** `null` for an alert about nobody in particular — a stale swap request, say. */
+  animateurId: string | null;
+  /** Resolved server-side at read time; `null` when the fiche is gone. */
+  nomAffiche: string | null;
 }
 
 /**

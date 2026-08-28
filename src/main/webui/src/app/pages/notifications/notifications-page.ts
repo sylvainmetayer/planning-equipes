@@ -1,8 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
+import { ApiService } from '../../core/api.service';
 import { intlLocale } from '../../core/locale';
+import { AlerteView } from '../../core/models';
 import { AppNotification, NotificationService, NotificationSeverity } from '../../core/notification.service';
 
 const SEVERITY_ICONS: Record<NotificationSeverity, string> = {
@@ -26,6 +28,58 @@ const SEVERITY_ICONS: Record<NotificationSeverity, string> = {
 })
 export class NotificationsPage {
   protected readonly notifications = inject(NotificationService);
+
+  private readonly api = inject(ApiService);
+
+  /**
+   * Alerts raised by the nightly jobs (issues #298, #299, #300), kept apart
+   * from the log above rather than merged into it.
+   *
+   * Two reasons, and both are about not lying to the reader: these come from
+   * the server, so « Effacer l'historique » — which only empties this
+   * browser's storage — must visibly not apply to them; and an alert is
+   * closed by doing the thing it names (deciding the échange, filling in the
+   * missing address), never by dismissing it.
+   */
+  protected readonly alertes = signal<AlerteView[]>([]);
+
+  constructor() {
+    void this.chargerAlertes();
+  }
+
+  /** A server that cannot answer leaves the local log perfectly usable. */
+  private async chargerAlertes(): Promise<void> {
+    try {
+      this.alertes.set(await this.api.get<AlerteView[]>('/api/alertes'));
+    } catch {
+      this.alertes.set([]);
+    }
+  }
+
+  /** Same three icons as the local log, so one page speaks one language. */
+  protected alerteIcon(severite: AlerteView['severite']): string {
+    if (severite === 'ALERTE') {
+      return SEVERITY_ICONS.alert;
+    }
+    return severite === 'WARNING' ? SEVERITY_ICONS.warning : SEVERITY_ICONS.info;
+  }
+
+  /** Reuses the three CSS variants of the local log rather than inventing a fourth. */
+  protected alerteVariante(alerte: AlerteView): NotificationSeverity {
+    if (alerte.severite === 'ALERTE') {
+      return 'alert';
+    }
+    return alerte.severite === 'WARNING' ? 'warning' : 'info';
+  }
+
+  /** The person an alert is about, when it is about one. */
+  protected alerteQui(alerte: AlerteView): string | null {
+    return alerte.nomAffiche ?? alerte.animateurId;
+  }
+
+  protected formattedDateTime(iso: string): string {
+    return new Date(iso).toLocaleString(intlLocale());
+  }
 
   /**
    * Notifications grouped by day, newest day first. An event week piles up

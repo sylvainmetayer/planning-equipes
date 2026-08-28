@@ -1,3 +1,32 @@
+@if (alertes().length > 0) {
+  <mat-card appearance="outlined" class="page-card">
+    <mat-card-header>
+      <h1 mat-card-title i18n="@@notifications.alertes.title">Alertes de l'organisation ({{ alertes().length }})</h1>
+      <mat-card-subtitle i18n="@@notifications.alertes.description">
+        Ce que les envois automatiques de nuit ont laissé sur le bureau : un rappel qui n'a pas pu partir faute
+        d'adresse, une demande d'échange qui attend une décision. Elles viennent du serveur et se referment en
+        traitant ce qu'elles signalent, pas en les effaçant — chacune n'est signalée qu'une fois.
+      </mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="notification-list">
+        @for (alerte of alertes(); track alerte.type + '|' + alerte.cle) {
+          <div class="notification-item notification-item-{{ alerteVariante(alerte) }}">
+            <mat-icon class="notification-icon">{{ alerteIcon(alerte.severite) }}</mat-icon>
+            <div class="notification-body">
+              @if (alerteQui(alerte); as qui) {
+                <span class="notification-title">{{ qui }}</span>
+              }
+              <span class="notification-message">{{ alerte.libelle }}</span>
+            </div>
+            <span class="notification-timestamp">{{ formattedDateTime(alerte.declencheLe) }}</span>
+          </div>
+        }
+      </div>
+    </mat-card-content>
+  </mat-card>
+}
+
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
     <h1 mat-card-title i18n="@@notifications.list.title">Notifications ({{ notifications.notifications().length }})</h1>

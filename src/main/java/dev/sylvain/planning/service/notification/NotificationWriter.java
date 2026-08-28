@@ -1,6 +1,8 @@
 package dev.sylvain.planning.service.notification;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 import dev.sylvain.planning.domain.DemandeEchange;
@@ -27,6 +29,10 @@ import jakarta.inject.Inject;
 @ApplicationScoped
 public class NotificationWriter {
 
+    /** « samedi 11 juillet » — the same way a planning is read aloud. */
+    private static final DateTimeFormatter JOUR =
+            DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.FRENCH);
+
     @Inject
     AdminAddress adminAddress;
 
@@ -44,6 +50,9 @@ public class NotificationWriter {
             case Notification.DemandesSoumises n -> demandesSoumises(n);
             case Notification.DeclarationSoumise n -> declarationSoumise(n);
             case Notification.ResolutionTerminee n -> resolutionTerminee(n);
+            case Notification.RappelVeille n -> rappelVeille(n);
+            case Notification.RelanceConfirmation n -> relanceConfirmation(n);
+            case Notification.PendingEchanges n -> pendingEchanges(n);
         };
     }
 
@@ -70,6 +79,71 @@ public class NotificationWriter {
         liens.disponibilitesScreen().ifPresent(lien -> corps
                 .append("\nÀ valider ou refuser depuis l'écran Disponibilités : ")
                 .append(lien).append('\n'));
+    /**
+     * The day-before reminder. Repeats the seats of the <b>published</b> plan
+     * and nothing else: a reminder that announced a change would be a
+     * publication in disguise, sent at night, with nobody having reviewed it.
+     */
+    private Optional<MailDraft> rappelVeille(Notification.RappelVeille n) {
+        if (withoutRecipient(n.email()) || n.postes().isEmpty()) {
+            return Optional.empty();
+        }
+        String sujet = productName.subject("demain, " + JOUR.format(n.date()) + " — votre planning");
+        StringBuilder corps = new StringBuilder();
+        if (n.prenom() != null && !n.prenom().isBlank()) {
+            corps.append("Bonjour ").append(n.prenom()).append(",\n\n");
+        }
+        corps.append("Petit rappel : vous êtes attendu·e demain, ").append(JOUR.format(n.date()))
+                .append(".\n\n");
+        for (String poste : n.postes()) {
+            corps.append("- ").append(poste).append('\n');
+        }
+        corps.append("\nC'est le planning qui vous a été communiqué ; s'il a changé depuis, "
+                + "vous auriez reçu un message le disant.\n");
+        if (n.lienEspace() != null) {
+            corps.append("\nVotre espace personnel : ").append(n.lienEspace()).append('\n');
+        }
+        return Optional.of(new MailDraft(n.email(), sujet, corps.toString()));
+    }
+
+    /** One reminder, never a series: the RELANCE status is what makes it the last. */
+    private Optional<MailDraft> relanceConfirmation(Notification.RelanceConfirmation n) {
+        if (withoutRecipient(n.email())) {
+            return Optional.empty();
+        }
+        StringBuilder corps = new StringBuilder();
+        if (n.prenom() != null && !n.prenom().isBlank()) {
+            corps.append("Bonjour ").append(n.prenom()).append(",\n\n");
+        }
+        corps.append("Votre planning a été publié et nous n'avons pas encore votre confirmation.\n\n")
+                .append("Un clic suffit, depuis votre espace personnel : « J'ai lu et je serai là ».\n");
+        if (n.lienEspace() != null) {
+            corps.append('\n').append(n.lienEspace()).append('\n');
+        }
+        corps.append("\nSi quelque chose ne va pas sur ce planning, c'est le moment de le dire.\n");
+        return Optional.of(new MailDraft(n.email(),
+                productName.subject("confirmez-vous votre planning ?"), corps.toString()));
+    }
+
+    /**
+     * Counted, never named: the admin has to know a queue is ageing, and the
+     * Échanges screen — one click away — is where the people are.
+     */
+    private Optional<MailDraft> pendingEchanges(Notification.PendingEchanges n) {
+        Optional<String> admin = adminAddress.resolue();
+        if (admin.isEmpty() || n.nombre() <= 0) {
+            return Optional.empty();
+        }
+        String sujet = productName.subject(n.nombre() == 1
+                ? "une demande d'échange attend une décision"
+                : n.nombre() + " demandes d'échange attendent une décision");
+        StringBuilder corps = new StringBuilder()
+                .append(n.nombre() == 1 ? "Une demande d'échange attend" : n.nombre() + " demandes d'échange attendent")
+                .append(" depuis plus longtemps que le délai que vous avez fixé — la plus ancienne depuis ")
+                .append(n.joursMax()).append(n.joursMax() > 1 ? " jours" : " jour").append(".\n\n")
+                .append("Chacune n'est signalée qu'une fois : ce message ne reviendra pas chaque nuit.\n");
+        liens.echangesScreen().ifPresent(lien -> corps
+                .append("\nÀ trancher depuis l'écran Échanges : ").append(lien).append('\n'));
         return Optional.of(new MailDraft(admin.get(), sujet, corps.toString()));
     }
 

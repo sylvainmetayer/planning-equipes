@@ -175,6 +175,16 @@ public class PublicationDiffService {
     }
 
     /**
+     * « Cirque 14h-18h » — the same vacation without its day, for a message
+     * whose subject line already carries the date (the J-1 reminder of issue
+     * #298). Exposed rather than re-derived at the call site so the hour
+     * formatting — « 14h » and not « 14h00 » — has exactly one definition.
+     */
+    public String libelleCreneauSeul(Vacation vacation) {
+        return creneau(vacation);
+    }
+
+    /**
      * The changes of one person, ordered as their planning reads: by day, then
      * by hour.
      *

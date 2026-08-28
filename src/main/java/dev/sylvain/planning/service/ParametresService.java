@@ -5,6 +5,7 @@ import java.util.Set;
 
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -59,6 +60,22 @@ public class ParametresService {
     public ParametresSolveur updateSolveur(ParametresSolveur parametres) {
         ParametresValidator.checkParametresSolveur(parametres);
         repository.saveParametresSolveur(parametres);
+        return parametres;
+    }
+
+    public ParametresNotifications getNotifications() {
+        return repository.getParametresNotifications();
+    }
+
+    /**
+     * Saves what the scheduled notifications may do on this edition (issues
+     * #298, #299, #300). Not a problem fact, and deliberately not tracked by
+     * {@link ReferenceDataChangeTracker}: it changes who gets written to at
+     * night, never the data a solve reads.
+     */
+    public ParametresNotifications updateNotifications(ParametresNotifications parametres) {
+        ParametresValidator.checkParametresNotifications(parametres);
+        repository.saveParametresNotifications(parametres);
         return parametres;
     }
 
