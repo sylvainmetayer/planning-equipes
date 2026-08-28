@@ -123,7 +123,7 @@ public class AnimateurMcpTools {
 
     @Tool(description = "Supprime un animateur. Ses postes dans le planning enregistré ne sont pas "
             + "supprimés : ils sont vidés et redeviennent des places non pourvues, à repourvoir "
-            + "à la prochaine résolution. Refusé (409) tant qu'une résolution est en cours, "
+            + "à la prochaine résolution. Refusé (409) tant qu'une résolution est en cours sur cette édition, "
             + "sinon elle réinsérerait l'animateur en enregistrant son résultat.",
             annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = true,
                     idempotentHint = false, openWorldHint = false))

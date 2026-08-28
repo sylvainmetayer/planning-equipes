@@ -448,8 +448,9 @@ public class SolverJobService {
     }
 
     /**
-     * Refuses the caller when a solve holds the solver — used by the
-     * referential deletes, which a landing solve would otherwise undo.
+     * Refuses the caller when a solve holds the solver <b>for the current
+     * edition</b> — used by the referential deletes, which that solve would
+     * otherwise undo.
      *
      * <p>{@link SolvePipeline#execute} builds its problem from the referential,
      * then persists the result; {@code PlanningPersistenceService.persist}
@@ -459,21 +460,36 @@ public class SolverJobService {
      * that is personal data returning on its own, on a base that holds
      * minors — so the delete is refused rather than silently reverted.</p>
      *
+     * <p><b>Scoped to the job's own edition</b>, not to the solver as a whole.
+     * A job runs inside {@code editionContext.executeIn(job.getEditionId(), …)},
+     * so its landing persist writes to that edition and no other: a solve on the
+     * fallback variant cannot resurrect anything in the edition being prepared
+     * next door. Refusing there anyway would break the promise the queue exists
+     * to keep — preparing the next edition without waiting in front of the
+     * screen. Compared on the <em>job's</em> edition rather than on whoever
+     * submitted it, so a run launched on A stays blocking for A even once the
+     * operator's tab has moved to B. Same comparison {@link #refuseDuplicate}
+     * already makes.</p>
+     *
      * <p>Scoped to {@link #findActive}, hence to PENDING and RUNNING only: a
      * QUEUED job has not built its problem yet and will read the referential as
      * it stands when its turn comes, deletion included. Blocking on it would
      * freeze data entry on the very edition it was queued to keep preparing,
-     * which is the trade-off {@link #findActive} already documents.</p>
+     * which is the trade-off {@link #findActive} already documents. Filtering
+     * its single result is enough because the solver lock is global and
+     * sequential (decision 0008): at most one job is ever PENDING or RUNNING.</p>
      *
      * <p>{@code synchronized} on the same monitor as {@link #submit}, so a job
      * cannot take the solver while this check is being made.</p>
      */
     public synchronized void refuseIfSolving() {
         purgeExpiredJobs();
-        Optional<SolverJob> actif = findActive();
-        if (actif.isPresent()) {
-            throw new SolverBusyException(actif.get());
-        }
+        String editionId = editionContext.editionIdCourant();
+        findActive()
+                .filter(job -> job.getEditionId().equals(editionId))
+                .ifPresent(job -> {
+                    throw new SolverBusyException(job);
+                });
     }
 
     /** Newest job first, so the UI can show a readable history. */

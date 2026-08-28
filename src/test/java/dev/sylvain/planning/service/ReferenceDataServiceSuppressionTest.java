@@ -13,6 +13,7 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
@@ -49,7 +50,15 @@ class ReferenceDataServiceSuppressionTest {
     @Inject
     SolverJobService solverJobs;
 
+    @Inject
+    EditionService editions;
+
+    @Inject
+    EditionContext editionContext;
+
     private static final LocalDate JOUR = LocalDate.of(2030, 7, 3);
+
+    private static final String EDITION_VOISINE = "SUP-EDITION-B";
 
     /** Deleting a stand takes the seats that were opened on it, and only those. */
     @Test
@@ -208,6 +217,67 @@ class ReferenceDataServiceSuppressionTest {
         }
     }
 
+
+    /**
+     * The guard must not refuse beyond the danger: a solve on edition A cannot
+     * resurrect anything in edition B.
+     *
+     * <p>A job runs inside {@code editionContext.executeIn(job.getEditionId(),
+     * …)}, so its landing persist writes to its own edition only. Refusing in B
+     * anyway would break what the queue is for — the README's promise of
+     * preparing the next edition without waiting in front of the screen — and
+     * the default budget being 900 s (V57), that wait is not theoretical.</p>
+     *
+     * <p>The comparison is on the <b>job's</b> edition, not on whoever submitted
+     * it: the solve below is launched from A and stays blocking for A even
+     * though the assertions then run with the context moved to B.</p>
+     */
+    @Test
+    void supprimerDansUneAutreEditionEstAccepteePendantUnSolve() {
+        Creneau creneau = creneau(9506L);
+        Stand stand = stand("SUP-S9");
+        Animateur animateur = animateur("SUP-A9");
+        PlanningEvenement probleme = new PlanningEvenement(JOUR, List.of(animateur),
+                List.of(poste("SUP-P10", stand, creneau, animateur)));
+        String jobId = null;
+        editions.create(new Edition(EDITION_VOISINE, "Édition voisine", false, null));
+        try {
+            // Edition B gets a referential of its own, through the edition scope.
+            editionContext.executeIn(EDITION_VOISINE, () -> {
+                referenceData.createStand(stand("SUP-S10"));
+                referenceData.createAnimateur(animateur("SUP-A10"));
+            });
+
+            persistence.persist(probleme);
+            attendreSolveurLibre();
+
+            // The solve holds the solver, for edition A (the default one).
+            jobId = solverJobs.submitSolve(probleme, 60L).getId();
+            assertThat(solverJobs.findActive()).isPresent();
+            assertThat(solverJobs.findActive().orElseThrow().getEditionId())
+                    .isEqualTo(editionContext.editionIdCourant());
+
+            // In B, nothing is at risk: the deletes go through.
+            editionContext.executeIn(EDITION_VOISINE, () -> {
+                referenceData.deleteAnimateur("SUP-A10");
+                referenceData.deleteStand("SUP-S10");
+                assertThat(referenceData.listAnimateurs()).noneMatch(a -> "SUP-A10".equals(a.getId()));
+                assertThat(referenceData.listStands()).noneMatch(st -> "SUP-S10".equals(st.getId()));
+            });
+
+            // And A is still protected by the very same running job.
+            assertThatThrownBy(() -> referenceData.deleteAnimateur("SUP-A9"))
+                    .isInstanceOf(SolverJobService.SolverBusyException.class);
+        } finally {
+            if (jobId != null) {
+                solverJobs.cancel(jobId);
+            }
+            attendreSolveurLibre();
+            editions.delete(EDITION_VOISINE);
+            nettoyer();
+        }
+    }
+
     /** Once the solver is free again, the same delete goes through. */
     @Test
     void supprimerUneFoisLeSolveTermineFonctionne() {
@@ -267,13 +337,15 @@ class ReferenceDataServiceSuppressionTest {
     private void nettoyer() {
         attendreSolveurLibre();
         persistence.persist(new PlanningEvenement(JOUR, List.of(), List.of()));
-        for (String id : List.of("SUP-S1", "SUP-S2", "SUP-S3", "SUP-S4", "SUP-S5", "SUP-S6", "SUP-S7", "SUP-S8")) {
+        for (String id : List.of("SUP-S1", "SUP-S2", "SUP-S3", "SUP-S4", "SUP-S5", "SUP-S6", "SUP-S7", "SUP-S8",
+                "SUP-S9")) {
             referenceData.deleteStand(id);
         }
-        for (String id : List.of("SUP-A1", "SUP-A2", "SUP-A3", "SUP-A4", "SUP-A5", "SUP-A6", "SUP-A7", "SUP-A8")) {
+        for (String id : List.of("SUP-A1", "SUP-A2", "SUP-A3", "SUP-A4", "SUP-A5", "SUP-A6", "SUP-A7", "SUP-A8",
+                "SUP-A9")) {
             referenceData.deleteAnimateur(id);
         }
-        referenceData.deleteCreneaux(List.of(9501L, 9502L, 9503L, 9504L, 9505L));
+        referenceData.deleteCreneaux(List.of(9501L, 9502L, 9503L, 9504L, 9505L, 9506L));
     }
 
     private static Creneau creneau(long id) {

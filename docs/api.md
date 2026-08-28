@@ -552,6 +552,13 @@ plusieurs minutes plus tard — pour un animateur, une donnée personnelle qui
 ressuscite. Une résolution seulement *en file* ne bloque rien : elle lira le
 référentiel à son tour venu, suppression comprise.
 
+Le refus est **cantonné à l'édition de la résolution**, comparée à l'édition
+courante : un solve lancé sur une variante de repli ne bloque rien dans
+l'édition qu'on prépare à côté, puisqu'il n'écrit que dans la sienne. C'est la
+comparaison sur l'édition **du job**, pas sur celle qui l'a soumis — une
+résolution lancée sur A reste donc bloquante pour A même si l'onglet est passé
+sur B.
+
 Contraintes ad hoc et verrouillages sont des **états** : on ne les met pas à
 jour, on les supprime et on les recrée. Une même paire d'animateurs ne peut pas
 être à la fois en incompatibilité et en affinité (`400`). Une cible déjà
