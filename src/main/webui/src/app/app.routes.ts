@@ -40,6 +40,12 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/echanges/echanges-page').then((m) => m.EchangesPage)
   },
   {
+    path: 'disponibilites',
+    title: 'Disponibilités',
+    loadComponent: () =>
+      import('./pages/disponibilites/disponibilites-page').then((m) => m.DisponibilitesPage)
+  },
+  {
     // Not `/mcp`: that very path is the backend's MCP transport endpoint —
     // the SPA would never be served there (405 on GET).
     path: 'mcp-client',
@@ -232,6 +238,14 @@ export const routes: Routes = [
         title: 'Mes échanges',
         loadComponent: () =>
           import('./pages/espace-animateur/espace-echanges-page').then((m) => m.EspaceEchangesPage)
+      },
+      {
+        path: 'disponibilites',
+        title: 'Mes disponibilités',
+        loadComponent: () =>
+          import('./pages/espace-animateur/espace-disponibilites-page').then(
+            (m) => m.EspaceDisponibilitesPage
+          )
       },
       {
         path: 'aide',

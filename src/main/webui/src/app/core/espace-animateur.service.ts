@@ -6,8 +6,10 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { ApiService, toError } from './api.service';
 import {
+  DeclarationEspaceView,
   DemandeEchangeView,
   EspaceAnimateurView,
+  NouvelleDeclaration,
   NouvelleDemandeEchange,
   PosteAnimateurView,
   SuggestionsEchangeView
@@ -132,6 +134,33 @@ export class EspaceAnimateurService {
     await this.api.post<void>(`/api/espace-animateur/${jeton}/demandes/${demandeId}/annulation`, null);
     this.demandes.set(
       await this.api.getPreservingHttpError<DemandeEchangeView[]>(`/api/espace-animateur/${jeton}/demandes`)
+    );
+  }
+
+  /* ----- Declaration of availability (issue #291): the espace's only write ----- */
+
+  /** `null` until the declaration tab has been opened once. */
+  readonly declaration = signal<DeclarationEspaceView | null>(null);
+
+  /** Loads (or reloads) the declaration tab. Kept out of `charger`: three
+   * requests already fire on entering the espace, and most visits never open
+   * this tab. */
+  async chargerDeclaration(): Promise<void> {
+    const jeton = this.jetonRequis();
+    this.declaration.set(
+      await this.api.get<DeclarationEspaceView>(`/api/espace-animateur/${jeton}/disponibilites`)
+    );
+  }
+
+  /**
+   * Sends what I declare. It replaces whatever I had pending rather than
+   * queueing behind it, and nothing of it reaches the organisation's data
+   * before they apply it.
+   */
+  async declarer(nouvelle: NouvelleDeclaration): Promise<void> {
+    const jeton = this.jetonRequis();
+    this.declaration.set(
+      await this.api.post<DeclarationEspaceView>(`/api/espace-animateur/${jeton}/disponibilites`, nouvelle)
     );
   }
 

@@ -105,6 +105,38 @@ delà, la réponse est `429` avec un `Retry-After`.
 Le compteur vit en mémoire (application mono-instance), comme le verrouillage
 de la révélation de clé MCP.
 
+### Débit des déclarations de disponibilités
+
+`POST /api/espace-animateur/{jeton}/disponibilites` (issue #291) est la
+**première route qui écrit** depuis l'espace, et l'espace est ouvert sur
+Internet avec une URL pour tout justificatif. Deux bornes, qui ne se remplacent
+pas :
+
+- le **volume** est borné par le métier — une seule proposition en attente par
+  animateur, garantie par un index unique partiel (`V58`) : renvoyer mille fois
+  laisse une ligne, et l'admin n'a jamais deux versions contradictoires de la
+  même personne à arbitrer ;
+- le **rythme** est borné ici. Sans plafond, une session ouverte écrit et
+  notifie à la vitesse du réseau. Personne ne déclare ses disponibilités vingt
+  fois en dix minutes ; celui qui se corrige n'atteint jamais le plafond.
+
+| Variable | Défaut | Usage |
+| --- | --- | --- |
+| `ESPACE_DECLARATION_MAX_ENVOIS` | `20` | Déclarations tolérées par animateur et par fenêtre |
+| `ESPACE_DECLARATION_FENETRE` | `PT10M` | Durée de la fenêtre |
+
+Au-delà, `429` avec un `Retry-After`, comme pour les codes. Le compte est tenu
+**par animateur** et non par adresse IP : la session nomme déjà l'animateur, et
+une IP est ce qu'un téléphone change entre deux cellules. Les deux compteurs
+partagent la même arithmétique (`SlidingWindowCounter`) pour qu'ils ne dérivent
+pas l'un de l'autre.
+
+Deux garde-fous de plus, côté contenu : un jour hors des dates de l'événement
+et une typologie inconnue sont refusés, et la déclaration **n'écrit rien dans
+le référentiel** — elle attend une décision explicite de l'admin. Un porteur de
+jeton ne peut donc pas modifier les données d'entrée du solveur, seulement
+proposer.
+
 ### Verrouillage du form login admin
 
 L'application n'a qu'un compte, `admin`, sans second facteur : une seule paire

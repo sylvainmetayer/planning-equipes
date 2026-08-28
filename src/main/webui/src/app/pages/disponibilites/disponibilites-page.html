@@ -1,0 +1,166 @@
+<div class="page-header">
+  <h1 i18n="@@dispo.titre">Disponibilités déclarées</h1>
+  <p i18n="@@dispo.intro">
+    Les jours d'indisponibilité et les souhaits que les animateurs déclarent eux-mêmes depuis leur
+    espace, pendant la fenêtre de collecte que vous ouvrez. Une déclaration ne modifie rien tant
+    que vous ne l'avez pas appliquée : appliquer écrit la proposition entière sur la fiche de
+    l'animateur, refuser ne touche à rien. Un animateur n'a jamais qu'une proposition en attente —
+    la dernière qu'il a envoyée.
+  </p>
+  <button matButton (click)="reload()" [disabled]="chargement()">
+    <mat-icon>refresh</mat-icon>
+    <span i18n="@@dispo.recharger">Recharger</span>
+  </button>
+</div>
+
+@if (configuration(); as config) {
+  <mat-card class="dispo-admin-declaration" appearance="outlined">
+    <mat-card-header>
+      <mat-card-title i18n="@@dispo.fenetre.titre">Fenêtre de collecte</mat-card-title>
+      <mat-card-subtitle>
+        @if (config.collecteOuverte) {
+          <ng-container i18n="@@dispo.fenetre.ouverte"
+            >Ouverte : les animateurs peuvent déclarer depuis leur espace.</ng-container
+          >
+        } @else {
+          <ng-container i18n="@@dispo.fenetre.fermee"
+            >Fermée : les déclarations sont refusées côté serveur, pas seulement masquées.</ng-container
+          >
+        }
+      </mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="dispo-admin-dates">
+        <mat-form-field appearance="outline">
+          <mat-label i18n="@@dispo.fenetre.debut">Début (facultatif)</mat-label>
+          <input matInput type="date" name="debut" [ngModel]="debut()" (ngModelChange)="debut.set($event)" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label i18n="@@dispo.fenetre.fin">Fin (facultatif)</mat-label>
+          <input matInput type="date" name="fin" [ngModel]="fin()" (ngModelChange)="fin.set($event)" />
+        </mat-form-field>
+      </div>
+      <mat-checkbox [checked]="prevenir()" (change)="prevenir.set($event.checked)">
+        <ng-container i18n="@@dispo.fenetre.prevenir"
+          >Prévenir les animateurs par e-mail en ouvrant (lien vers leur espace)</ng-container
+        >
+      </mat-checkbox>
+      <p class="dispo-admin-commentaire" i18n="@@dispo.fenetre.prevenirAide">
+        À cocher au premier tour. Inutile — et lassant — quand vous rouvrez la fenêtre après une
+        correction.
+      </p>
+      <div class="dispo-admin-actions">
+        <button
+          matButton="filled"
+          [disabled]="fenetreEnCours()"
+          (click)="enregistrerFenetre(true)"
+        >
+          <mat-icon>lock_open</mat-icon>
+          <span i18n="@@dispo.fenetre.ouvrir">Ouvrir la collecte</span>
+        </button>
+        <button matButton [disabled]="fenetreEnCours()" (click)="enregistrerFenetre(false)">
+          <mat-icon>lock</mat-icon>
+          <span i18n="@@dispo.fenetre.fermer">Fermer la collecte</span>
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+}
+
+@if (chargement()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<h2 i18n="@@dispo.enAttenteTitre">En attente de votre décision</h2>
+@if (enAttente().length === 0) {
+  <p class="espace-vide" i18n="@@dispo.aucuneEnAttente">Aucune déclaration en attente.</p>
+}
+@for (declaration of enAttente(); track declaration.id) {
+  <mat-card class="dispo-admin-declaration" appearance="outlined">
+    <mat-card-header>
+      <mat-card-title>{{ declaration.animateurNom }}</mat-card-title>
+      <mat-card-subtitle>{{ declaration.creeLe | date: 'short' }}</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="dispo-admin-colonnes">
+        <div class="dispo-admin-colonne">
+          <h4 i18n="@@dispo.colonne.declare">Ce qu'il déclare</h4>
+          <ul class="dispo-admin-valeurs">
+            @for (jour of declaration.joursIndisponibles; track jour) {
+              <li>{{ jour | date: 'EEE d MMM y' }}</li>
+            } @empty {
+              <li i18n="@@dispo.aucunJour">Disponible tous les jours</li>
+            }
+          </ul>
+          <ul class="dispo-admin-valeurs">
+            @for (souhait of declaration.souhaitsLabels; track souhait) {
+              <li>{{ souhait }}</li>
+            } @empty {
+              <li i18n="@@dispo.aucunSouhait">Aucun souhait</li>
+            }
+          </ul>
+        </div>
+        <div class="dispo-admin-colonne">
+          <h4 i18n="@@dispo.colonne.actuel">Ce que dit sa fiche aujourd'hui</h4>
+          <ul class="dispo-admin-valeurs">
+            @for (jour of declaration.joursActuels; track jour) {
+              <li>{{ jour | date: 'EEE d MMM y' }}</li>
+            } @empty {
+              <li i18n="@@dispo.aucunJourActuel">Disponible tous les jours</li>
+            }
+          </ul>
+          <ul class="dispo-admin-valeurs">
+            @for (souhait of declaration.souhaitsActuelsLabels; track souhait) {
+              <li>{{ souhait }}</li>
+            } @empty {
+              <li i18n="@@dispo.aucunSouhaitActuel">Aucun souhait</li>
+            }
+          </ul>
+        </div>
+      </div>
+      @if (declaration.commentaire) {
+        <p class="dispo-admin-commentaire">
+          <mat-icon inline>forum</mat-icon>
+          {{ declaration.commentaire }}
+        </p>
+      }
+    </mat-card-content>
+    <mat-card-actions>
+      <div class="dispo-admin-actions">
+        <button
+          matButton="filled"
+          [disabled]="decisionEnCours() === declaration.id"
+          (click)="appliquer(declaration)"
+        >
+          <mat-icon>check</mat-icon>
+          <span i18n="@@dispo.appliquer">Appliquer</span>
+        </button>
+        <button matButton [disabled]="decisionEnCours() === declaration.id" (click)="refuser(declaration)">
+          <mat-icon>close</mat-icon>
+          <span i18n="@@dispo.refuser">Refuser</span>
+        </button>
+      </div>
+    </mat-card-actions>
+  </mat-card>
+}
+
+@if (decidees().length > 0) {
+  <h2 i18n="@@dispo.decideesTitre">Déjà traitées</h2>
+  @for (declaration of decidees(); track declaration.id) {
+    <mat-card class="dispo-admin-declaration" appearance="outlined">
+      <mat-card-content>
+        <p class="dispo-admin-commentaire">
+          <strong>{{ declaration.animateurNom }}</strong>
+          <span>{{ statutLabel(declaration) }}</span>
+          <span>{{ declaration.decideLe | date: 'short' }}</span>
+        </p>
+        @if (declaration.commentaireAdmin) {
+          <p class="dispo-admin-commentaire">
+            <mat-icon inline>forum</mat-icon>
+            {{ declaration.commentaireAdmin }}
+          </p>
+        }
+      </mat-card-content>
+    </mat-card>
+  }
+}

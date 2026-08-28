@@ -42,8 +42,35 @@ public class NotificationWriter {
             case Notification.TargetSolicited n -> targetSolicited(n);
             case Notification.DemandeDeclinee n -> demandeDeclinee(n);
             case Notification.DemandesSoumises n -> demandesSoumises(n);
+            case Notification.DeclarationSoumise n -> declarationSoumise(n);
             case Notification.ResolutionTerminee n -> resolutionTerminee(n);
         };
+    }
+
+    private Optional<MailDraft> declarationSoumise(Notification.DeclarationSoumise n) {
+        Optional<String> admin = adminAddress.resolue();
+        if (admin.isEmpty()) {
+            return Optional.empty();
+        }
+        String sujet = productName.subject(
+                "déclaration de disponibilités de " + n.animateurNomComplet());
+        StringBuilder corps = new StringBuilder()
+                .append(n.animateurNomComplet())
+                .append(" a déclaré ses disponibilités depuis son espace : ")
+                .append(n.joursIndisponibles() == 0
+                        ? "aucun jour d'indisponibilité"
+                        : n.joursIndisponibles() + (n.joursIndisponibles() == 1
+                                ? " jour d'indisponibilité"
+                                : " jours d'indisponibilité"))
+                .append(", ")
+                .append(n.souhaits() == 0
+                        ? "aucun souhait"
+                        : n.souhaits() + (n.souhaits() == 1 ? " souhait" : " souhaits"))
+                .append(".\n\nRien n'est appliqué tant que vous ne l'avez pas validé.\n");
+        liens.disponibilitesScreen().ifPresent(lien -> corps
+                .append("\nÀ valider ou refuser depuis l'écran Disponibilités : ")
+                .append(lien).append('\n'));
+        return Optional.of(new MailDraft(admin.get(), sujet, corps.toString()));
     }
 
     private Optional<MailDraft> targetSolicited(Notification.TargetSolicited n) {

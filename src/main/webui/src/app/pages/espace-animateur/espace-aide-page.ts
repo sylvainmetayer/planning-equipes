@@ -53,12 +53,17 @@ export class EspaceAidePage {
     if (!jeton) {
       return null;
     }
-    return cible === 'echanges' ? ['/animateur', jeton, 'echanges'] : ['/animateur', jeton];
+    return cible === 'planning' ? ['/animateur', jeton] : ['/animateur', jeton, cible];
   }
 
   protected libelleCible(cible: EspaceAideCible): string {
-    return cible === 'echanges'
-      ? $localize`:@@espace.nav.echanges:Mes échanges`
-      : $localize`:@@espace.nav.planning:Mon planning`;
+    switch (cible) {
+      case 'echanges':
+        return $localize`:@@espace.nav.echanges:Mes échanges`;
+      case 'disponibilites':
+        return $localize`:@@espace.nav.disponibilites:Mes disponibilités`;
+      default:
+        return $localize`:@@espace.nav.planning:Mon planning`;
+    }
   }
 }

@@ -95,7 +95,7 @@ crochet.
 | Rubrique | Contenu |
 | --- | --- |
 | Catégories de personnes | Animateurs, **dont des mineurs** ; encadrants et managers |
-| Catégories de données | Nom, prénom, **date de naissance**, adresse électronique (facultative), compétences, souhaits d'affectation, jours d'indisponibilité, jeton d'accès à l'espace animateur, affectations et échanges, instantanés de planning, sessions et journaux d'accès |
+| Catégories de données | Nom, prénom, **date de naissance**, adresse électronique (facultative), compétences, souhaits d'affectation, jours d'indisponibilité, jeton d'accès à l'espace animateur, affectations et échanges, **déclarations de disponibilités en libre-service**, instantanés de planning, sessions et journaux d'accès |
 | Traitements réalisés | Hébergement, planification et résolution, envoi d'e-mails (codes d'accès, plannings individuels, notifications d'échange), sauvegarde, purge |
 | Destinataires | L'organisateur via l'interface d'administration ; l'animateur via son espace ; les autres animateurs pour la part visible du planning (voir `securite.md`) ; le relais SMTP |
 | Mesures de sécurité | TLS et HSTS ; en-têtes CSP et `Referrer-Policy` — **le jeton d'espace voyage dans l'URL** ; chiffrement des sessions ; limitation de débit sur les codes d'espace et verrouillage du formulaire de connexion ; origine injoignable autrement que par le reverse proxy ; sauvegarde nocturne automatique par `pg_dump`, en rotation dans un volume dédié, dont l'**externalisation chiffrée hors machine reste à la charge de l'exploitant** (`exploitation.md` §5) |
@@ -244,6 +244,20 @@ complètes. Quatre points sont connus et se consignent :
   permanence sur le volume. Le registre doit le dire, et l'entrée n'est
   honnête que si l'externalisation chiffrée annoncée au socle existe
   réellement ;
+- **une déclaration de disponibilités traitée survit à sa décision** : appliquée
+  ou refusée, elle reste en base pour que l'organisation puisse dire *pourquoi*
+  la fiche de quelqu'un affirme ce qu'elle affirme, et pour que l'animateur
+  relise dans son espace ce qui lui a été répondu. Elle n'a **aucune purge
+  propre** : elle disparaît avec son édition, en cascade sur `edition_id`,
+  c'est-à-dire à la purge annuelle du §5 — la durée de conservation proposée est
+  donc **celle de l'édition, pas davantage**, et elle se consigne telle quelle
+  au registre. Deux choses la rendent moins exposante que le reste : la table ne
+  porte **aucune donnée nouvelle** (des dates, des identifiants de typologie et
+  un mot libre — les mêmes catégories que la fiche animateur), et une seule
+  proposition en attente existe par personne. Le mot libre est le point à
+  surveiller : c'est le seul champ où quelqu'un peut écrire une raison de santé
+  ou de famille que personne ne lui a demandée, et il part tel quel dans le dump
+  nocturne ;
 - **l'effacement demandé par un animateur sur une édition encore active** n'a
   pas de procédure outillée : c'est une suppression manuelle de sa fiche. Une
   demande d'effacement ne se refuse pas au motif que l'événement n'est pas

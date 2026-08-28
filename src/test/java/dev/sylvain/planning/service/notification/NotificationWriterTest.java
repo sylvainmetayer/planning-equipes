@@ -183,4 +183,35 @@ class NotificationWriterTest {
 
         assertThat(courrier.corps()).contains("Score : non mesuré");
     }
+
+    @Test
+    void uneDeclarationSoumiseCompteLesJoursEtLesSouhaitsSansLesNommer() {
+        MailDraft courrier = rediger(new Notification.DeclarationSoumise("Alice Dupont", 3, 2));
+
+        assertThat(courrier.sujet()).contains("déclaration de disponibilités de Alice Dupont");
+        assertThat(courrier.corps()).contains("3 jours d'indisponibilité");
+        assertThat(courrier.corps()).contains("2 souhaits");
+        assertThat(courrier.corps()).contains("Rien n'est appliqué");
+        assertThat(courrier.corps()).contains("https://planning.example.org/disponibilites");
+        // The days themselves stay out of the mailbox: the screen shows them,
+        // the mail only says that something is waiting.
+        assertThat(courrier.corps()).doesNotMatch("(?s).*\\d{4}-\\d{2}-\\d{2}.*");
+    }
+
+    @Test
+    void uneDeclarationSansJourNiSouhaitEstAnnonceeQuandMeme() {
+        // "I am available every day and have no preference" is a statement, and
+        // the admin has to be told it landed.
+        MailDraft courrier = rediger(new Notification.DeclarationSoumise("Bruno Petit", 0, 0));
+
+        assertThat(courrier.corps()).contains("aucun jour d'indisponibilité");
+        assertThat(courrier.corps()).contains("aucun souhait");
+    }
+
+    @Test
+    void sansAdresseAdminAucuneNotificationDeDeclaration() {
+        redacteur.adminAddress = adminAddress(null);
+
+        assertThat(redacteur.rediger(new Notification.DeclarationSoumise("Alice Dupont", 1, 0))).isEmpty();
+    }
 }

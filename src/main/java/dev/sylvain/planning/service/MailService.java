@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service;
 
+import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.List;
 
@@ -10,10 +11,11 @@ import jakarta.inject.Inject;
 
 /**
  * The mails an administrator <b>asks for</b>, and only those: sending an
- * animateur their individual planning, sending an espace access code, sending
- * the test mail of the Débogage screen.
+ * animateur their individual planning, sending an espace access code, inviting
+ * the animateurs to declare their availability, sending the test mail of the
+ * Débogage screen.
  *
- * <p>What these three have in common — and what separates them from every
+ * <p>What these have in common — and what separates them from every
  * notification of
  * {@link dev.sylvain.planning.service.notification} — is that
  * <b>a failure must propagate</b>. The mail is not decorating an operation
@@ -118,6 +120,57 @@ public class MailService {
                 + "Il est valable 10 minutes. Si vous n'êtes pas à l'origine de cette demande, "
                 + "ignorez simplement ce message.\n";
         mailer.send(Mail.withText(emailAnimateur, productName.subject("votre code d'accès"), corps));
+    }
+
+    /**
+     * Invites one animateur to declare their availability from their espace
+     * (issue #291), on a collection window the admin has just opened.
+     *
+     * <p>An explicit administration action, ticked on the opening dialog, so it
+     * belongs here rather than in the notifications: it is indispensable on the
+     * first round and merely tiresome on a reopening, and the caller reports
+     * who could not be reached.</p>
+     *
+     * @param lienDeclaration the declaration tab of their espace, built by
+     *                        {@link ApplicationLinks} — never concatenated
+     * @param debut           first day of the window, {@code null} when the
+     *                        admin set no bound
+     * @param fin             last day of the window, {@code null} likewise
+     */
+    public void sendInvitationDeclaration(String emailAnimateur, String prenom, String lienDeclaration,
+            LocalDate debut, LocalDate fin) {
+        StringBuilder corps = new StringBuilder()
+                .append("Bonjour").append(prenom == null || prenom.isBlank() ? "" : " " + prenom).append(",\n\n")
+                .append("L'organisation prépare le planning de l'événement et a besoin de vos ")
+                .append("disponibilités : les jours où vous ne pouvez pas venir, et les types de jeux ")
+                .append("que vous aimeriez animer.\n");
+        String fenetre = describeFenetre(debut, fin);
+        if (fenetre != null) {
+            corps.append('\n').append(fenetre).append('\n');
+        }
+        corps.append("\nVotre espace personnel, onglet « Mes disponibilités » : ")
+                .append(lienDeclaration).append('\n')
+                .append("\nCe lien est personnel. Un code vous sera demandé par e-mail à la première ")
+                .append("ouverture sur un appareil.\n")
+                .append("\nCe que vous déclarez est une proposition : l'organisation la relit avant de ")
+                .append("l'appliquer.\n")
+                .append("\nMerci,\nL'équipe d'organisation\n");
+        mailer.send(Mail.withText(emailAnimateur,
+                productName.subject("vos disponibilités sont attendues"), corps.toString()));
+    }
+
+    /** The window in one sentence, {@code null} when the admin bounded neither end. */
+    private static String describeFenetre(LocalDate debut, LocalDate fin) {
+        if (debut == null && fin == null) {
+            return null;
+        }
+        if (debut == null) {
+            return "Vous avez jusqu'au " + fin + " pour répondre.";
+        }
+        if (fin == null) {
+            return "La collecte est ouverte depuis le " + debut + ".";
+        }
+        return "La collecte est ouverte du " + debut + " au " + fin + ".";
     }
 
     /**

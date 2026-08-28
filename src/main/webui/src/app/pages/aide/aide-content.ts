@@ -582,6 +582,48 @@ export function buildHelpSections(): HelpSection[] {
       ]
     },
     {
+      id: 'disponibilites',
+      icon: 'event_available',
+      title: $localize`:@@aide.dispo.title:Collecte des disponibilités`,
+      summary: $localize`:@@aide.dispo.summary:Les animateurs déclarent eux-mêmes leurs jours d'indisponibilité et leurs souhaits ; vous appliquez, ou non.`,
+      blocks: [
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.dispo.intro:Avant de construire un planning, il faut savoir qui ne peut pas venir quand. Plutôt que de collecter ça hors de l'application puis de le ressaisir, vous ouvrez une fenêtre de collecte : chaque animateur déclare depuis son espace, sur son téléphone, les jours où il est indisponible et les types de jeux qu'il aimerait animer. Ce qu'il envoie ne touche à rien : c'est une proposition, qui attend votre décision sur l'écran Disponibilités.`
+        },
+        {
+          kind: 'definitions',
+          items: [
+            {
+              term: $localize`:@@aide.dispo.term.fenetre:Ouvrir la collecte`,
+              text: $localize`:@@aide.dispo.def.fenetre:La collecte est fermée tant que vous ne l'avez pas ouverte — contrairement à la foire au planning, ouverte par défaut. Les deux dates sont facultatives : elles bornent la période, l'interrupteur reste le maître. Fermée, l'espace refuse toute déclaration côté serveur, pas seulement à l'écran ; l'animateur garde l'accès à ce qu'il a déclaré et à vos réponses.`
+            },
+            {
+              term: $localize`:@@aide.dispo.term.prevenir:Prévenir les animateurs`,
+              text: $localize`:@@aide.dispo.def.prevenir:Une case à cocher au moment d'ouvrir, jamais un réglage permanent : elle envoie à chacun le lien de son espace, directement sur l'onglet de déclaration. Cochez-la au premier tour ; laissez-la de côté quand vous rouvrez la fenêtre après une correction, sinon tout le monde reçoit une relance pour rien. Le compte rendu nomme ceux qui n'ont pas d'adresse e-mail et les envois en échec.`
+            },
+            {
+              term: $localize`:@@aide.dispo.term.decision:Appliquer ou refuser, en bloc`,
+              text: $localize`:@@aide.dispo.def.decision:L'écran montre côte à côte ce que l'animateur déclare et ce que sa fiche dit aujourd'hui. Appliquer écrit la proposition entière sur sa fiche, exactement comme si vous aviez ouvert sa fiche pour la modifier — le planning enregistré est alors signalé comme périmé, et la régénération reste une action à part depuis la page Solveur. Refuser ne modifie rien ; le motif que vous saisissez est lu par l'animateur dans son espace. Il n'y a délibérément pas de validation ligne à ligne : un désaccord se règle par un mot, et l'animateur renvoie une version corrigée.`
+            },
+            {
+              term: $localize`:@@aide.dispo.term.remplacement:Une seule proposition par personne`,
+              text: $localize`:@@aide.dispo.def.remplacement:Un animateur qui se corrige remplace sa proposition en attente, il n'en empile pas une seconde : vous n'aurez jamais à arbitrer deux versions contradictoires de la même personne, et c'est toujours la dernière qui vous parvient. Vous n'êtes prévenu par e-mail qu'à l'arrivée d'une proposition sur votre bureau, pas à chaque correction qu'il y apporte avant que vous ne la traitiez.`
+            },
+            {
+              term: $localize`:@@aide.dispo.term.competences:Ce qui ne se déclare pas`,
+              text: $localize`:@@aide.dispo.def.competences:Les compétences restent décidées avec vous. Une compétence auto-déclarée alimente des règles dures — qui a le droit de tenir quel stand — et l'enjeu n'est pas celui d'une indisponibilité ou d'un souhait, qui se rattrapent. Un animateur qui déclare un jour hors des dates de l'événement, ou une typologie qui n'existe pas, est refusé à l'envoi.`
+            }
+          ]
+        }
+      ],
+      links: [
+        { route: '/disponibilites', label: $localize`:@@nav.link.disponibilites:Disponibilités` },
+        { route: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs` },
+        { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` }
+      ]
+    },
+    {
       id: 'echanges',
       icon: 'swap_horiz',
       title: $localize`:@@aide.exchange.title:Imports, exports et outils`,

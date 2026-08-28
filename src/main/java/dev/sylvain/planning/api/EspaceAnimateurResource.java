@@ -3,6 +3,8 @@ package dev.sylvain.planning.api;
 import java.util.List;
 
 import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.service.DeclarationDisponibiliteService;
+import dev.sylvain.planning.service.DeclarationDisponibiliteService.NouvelleDeclaration;
 import dev.sylvain.planning.service.DemandeEchangeService;
 import dev.sylvain.planning.service.DemandeEchangeService.NouvelleDemande;
 import dev.sylvain.planning.service.EditionRequestScope;
@@ -59,6 +61,9 @@ public class EspaceAnimateurResource {
 
     @Inject
     DemandeEchangeService demandeEchangeService;
+
+    @Inject
+    DeclarationDisponibiliteService declarationService;
 
     @Inject
     EditionRequestScope editionRequestScope;
@@ -161,6 +166,44 @@ public class EspaceAnimateurResource {
     public Response submit(List<NouvelleDemande> nouvelles) {
         return Response.ok(espaceAnimateurService.toViews(
                 demandeEchangeService.submit(animateurCourant(), nouvelles))).build();
+    }
+
+    /**
+     * The declaration tab (issue #291): whether the collection window is open,
+     * which days the event covers, what game categories exist, what the
+     * organisation currently holds for me, and where my own declarations stand.
+     *
+     * <p>Readable window closed — an animateur must be able to see what they
+     * declared and what became of it, long after they may still change it.</p>
+     */
+    @GET
+    @Path("/{jeton}/disponibilites")
+    @EspaceSessionRequired
+    public EspaceAnimateurService.DeclarationEspaceView declaration() {
+        return espaceAnimateurService.buildDeclarationView(animateurCourant());
+    }
+
+    /**
+     * Declares my unavailable days and my wishes. <b>The only write the espace
+     * has ever opened</b>, and it writes nothing anybody relies on: the
+     * proposal waits for an admin decision, and it replaces whatever I had
+     * pending, so resending corrects rather than queues.
+     */
+    @POST
+    @Path("/{jeton}/disponibilites")
+    @EspaceSessionRequired
+    public Response declarer(NouvelleDeclaration nouvelle) {
+        try {
+            declarationService.submit(animateurCourant(), nouvelle);
+        } catch (DeclarationDisponibiliteService.TooManyRequests e) {
+            // Same shape as the access-code ceiling next door: 429 carries the
+            // delay left, so the interface can say when rather than only that.
+            return Response.status(429)
+                    .header(HttpHeaders.RETRY_AFTER, e.secondsBeforeNextTry())
+                    .entity(new ValidationError(e.getMessage()))
+                    .build();
+        }
+        return Response.ok(espaceAnimateurService.buildDeclarationView(animateurCourant())).build();
     }
 
     /**

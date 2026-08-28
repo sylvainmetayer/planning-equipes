@@ -260,9 +260,11 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 | Export PDF individuel | Le planning d'un animateur, ou de tous en une archive ; les journées sans affectation y figurent explicitement comme jours de repos |
 | Export ICS | Le planning individuel importable dans Google Calendar, Apple Calendar ou Outlook |
 | Publication | Envoyer leur planning et le lien de leur espace aux seules personnes dont l'emploi du temps a changé, en leur disant ce qui change |
-| Espace animateur | Un espace personnel par lien nominatif : son planning, ses jours de repos, ses demandes d'échange — sans compte à créer |
+| Espace animateur | Un espace personnel par lien nominatif : son planning, ses jours de repos, ses demandes d'échange, ses disponibilités déclarées — sans compte à créer |
 | Foire au planning | Les animateurs proposent leurs échanges de créneaux en libre-service ; le collègue visé donne son accord, l'organisation arbitre, rien ne s'applique sans validation |
 | Qui peut me remplacer ? | Sans personne en tête, l'animateur ne désigne que son créneau : l'application cherche les échanges qui tiennent vraiment et les range en trois familles — on vous libère, vous permutez sur le même créneau, ou vous l'échangez contre un créneau d'un autre jour |
+| Collecte des disponibilités | L'organisation ouvre une période pendant laquelle chaque animateur déclare lui-même, depuis son espace, les jours où il ne peut pas venir et ce qu'il aimerait animer — au doigt sur un téléphone, en cochant des jours. La déclaration reste une proposition : elle n'est prise en compte qu'une fois appliquée par l'organisation, en bloc |
+| Invitation à déclarer | Une case à cocher au moment d'ouvrir la collecte envoie à chacun le lien de son espace. À cocher au premier tour, à laisser de côté quand on rouvre la période après une correction |
 | Aide de l'espace animateur | Un onglet « Aide » dans l'espace, écrit pour l'animateur et non pour l'organisation : lire son planning, l'emporter, demander un échange et suivre ce qu'il devient — en questions repliées, lisibles au doigt sur un téléphone |
 
 ### Outils

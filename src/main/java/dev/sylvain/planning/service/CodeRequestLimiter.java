@@ -2,12 +2,6 @@ package dev.sylvain.planning.service;
 
 import jakarta.inject.Inject;
 import dev.sylvain.planning.config.ConfigEspaceCode;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
@@ -25,10 +19,9 @@ import jakarta.enterprise.context.ApplicationScoped;
  * accumulation of requests with no follow-up, which is exactly the abuse, leads
  * there. The window slides from the first request left without effect.</p>
  *
- * <p>In memory, like the {@code McpResource} lockout: the application is
- * single-instance, and a restart is not within reach of the attacker this
- * counter aims at. Rate limiting per IP address belongs to the reverse proxy —
- * see {@code docs/securite.md}.</p>
+ * <p>The arithmetic lives in {@link SlidingWindowCounter}, shared with
+ * {@link DeclarationRateLimiter}; what belongs here is the abuse being guarded
+ * and the configuration that sizes it.</p>
  */
 @ApplicationScoped
 public class CodeRequestLimiter {
@@ -44,11 +37,7 @@ public class CodeRequestLimiter {
     @Inject
     ConfigEspaceCode config;
 
-    private final Map<String, Fenetre> byAnimateur = new ConcurrentHashMap<>();
-
-    /** Unconsumed requests, and the start of the window counting them. */
-    private record Fenetre(int demandes, Instant debut) {
-    }
+    private final SlidingWindowCounter counter = new SlidingWindowCounter();
 
     /**
      * Consumes one rate-limit token for {@code key}. A negative verdict carries
@@ -56,22 +45,12 @@ public class CodeRequestLimiter {
      * {@code Retry-After}.
      */
     public Verdict request(String key) {
-        Instant maintenant = Instant.now();
-        Fenetre apres = byAnimateur.compute(key, (ignore, courante) -> {
-            if (courante == null || courante.debut().plus(config.fenetre()).isBefore(maintenant)) {
-                return new Fenetre(1, maintenant);
-            }
-            return new Fenetre(courante.demandes() + 1, courante.debut());
-        });
-        if (apres.demandes() <= config.maxDemandes()) {
-            return Verdict.ok();
-        }
-        long restant = Duration.between(maintenant, apres.debut().plus(config.fenetre())).toSeconds();
-        return new Verdict(false, Math.max(restant, 1));
+        SlidingWindowCounter.Verdict verdict = counter.use(key, config.maxDemandes(), config.fenetre());
+        return new Verdict(verdict.autorise(), verdict.secondsBeforeNextTry());
     }
 
     /** The code was used: the run of requests with no follow-up stops there. */
     public void oublier(String key) {
-        byAnimateur.remove(key);
+        counter.forget(key);
     }
 }

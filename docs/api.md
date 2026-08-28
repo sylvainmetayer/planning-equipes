@@ -923,6 +923,62 @@ propres sièges (`400` sinon), et seulement **foire ouverte** — chercher des
 partenaires pour un échange que plus personne ne peut proposer n'induirait qu'en
 erreur.
 
+## Déclaration de disponibilités
+
+L'animateur déclare lui-même, depuis son espace, ses **jours d'indisponibilité**
+et ses **souhaits** de typologies. Rien n'est écrit dans le référentiel à la
+soumission : la déclaration attend une décision explicite de l'admin.
+
+C'est la **première route en écriture** ouverte depuis l'espace animateur, qui
+est public. Trois bornes, et aucune n'est cosmétique :
+
+| Borne | Ce qu'elle empêche |
+| --- | --- |
+| Fenêtre de collecte **fermée par défaut** | La foire au planning (V42) est ouverte tant que personne ne l'a fermée, par compatibilité ; une route qui écrit ne s'ouvre pas par omission |
+| **Une seule proposition en attente par animateur** (index unique partiel, V58) | Le volume : renvoyer mille fois laisse une ligne |
+| `ESPACE_DECLARATION_MAX_ENVOIS` par animateur et par fenêtre | Le rythme : une boucle d'écritures et de notifications à la vitesse du réseau. Au-delà, `429` + `Retry-After` (voir `securite.md`) |
+
+Un jour hors des dates de l'événement et une typologie inconnue sont refusés
+(`400`) — l'IHM n'offre que les bonnes valeurs, cette vérification ne rejette
+donc que des charges utiles fabriquées à la main. Tant qu'aucun créneau
+n'existe, aucun jour n'est imposé : collecter les disponibilités **avant** que
+la grille existe est précisément le cas d'usage.
+
+### Espace animateur
+
+| Route | Effet |
+| --- | --- |
+| `GET /api/espace-animateur/{jeton}/disponibilites` | État de la fenêtre, jours de l'événement, typologies, ce que le référentiel dit de moi aujourd'hui, ma proposition en attente et mon historique. **Lisible fenêtre fermée** : on doit pouvoir relire ce qu'on a déclaré |
+| `POST /api/espace-animateur/{jeton}/disponibilites` | Déclare ; **remplace** la proposition en attente, s'il y en avait une. Répond la même vue que le `GET` |
+
+Le formulaire s'ouvre sur la proposition en attente s'il y en a une, sinon sur
+ce que le référentiel contient : une page blanche voudrait dire « je suis
+disponible tous les jours », ce que personne n'a voulu déclarer.
+
+### Écran admin
+
+| Route | Effet |
+| --- | --- |
+| `GET /api/disponibilites` | Toutes les déclarations de l'édition, les plus récentes d'abord |
+| `GET /api/disponibilites/configuration` | La fenêtre de collecte (fermée tant que rien n'a été décidé) |
+| `PUT /api/disponibilites/configuration` | Ouvre ou ferme ; `prevenirAnimateurs` déclenche **en plus** l'envoi des invitations |
+| `POST /api/disponibilites/{id}/application` | Applique la proposition **entière** sur la fiche, via `AnimateurService` — donc `dataStale` se déclenche |
+| `POST /api/disponibilites/{id}/refus` | Ne touche à rien ; le commentaire est lu par l'animateur dans son espace |
+
+**Tout ou rien** : l'admin accepte ou refuse la proposition entière, jamais
+ligne à ligne. Le désaccord se règle hors application — l'animateur renvoie une
+version corrigée tant que la fenêtre est ouverte.
+
+`prevenirAnimateurs` est une **action, pas un réglage** : il n'est jamais
+renvoyé dans la réponse. L'invitation est indispensable au premier tour et
+lassante à la réouverture après correction, donc elle se coche à chaque fois
+qu'on la veut. La réponse porte alors `invitation` : envoyés, sans adresse,
+échecs. Le lien pointe l'onglet de déclaration de chaque espace, construit par
+`ApplicationLinks` — jamais par concaténation.
+
+Les compétences ne se déclarent **pas** ici : une compétence auto-déclarée
+alimente des contraintes *dures*, et l'enjeu de validation n'est pas le même.
+
 ## Marque et mentions légales
 
 `/api/branding` et `/api/mentions-legales` sont **publics**, comme

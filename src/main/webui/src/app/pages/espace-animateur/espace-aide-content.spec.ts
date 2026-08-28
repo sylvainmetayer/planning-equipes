@@ -27,6 +27,7 @@ describe('buildEspaceAideSections', () => {
         'remplacants',
         'suivi',
         'demandes-recues',
+        'declarer-disponibilites',
         'foire-fermee'
       ])
     );
@@ -56,7 +57,7 @@ describe('buildEspaceAideSections', () => {
     const cibles = sections.map((section) => section.cible).filter(Boolean);
     expect(cibles.length).toBeGreaterThan(0);
     for (const cible of cibles) {
-      expect(['planning', 'echanges']).toContain(cible);
+      expect(['planning', 'echanges', 'disponibilites']).toContain(cible);
     }
   });
 

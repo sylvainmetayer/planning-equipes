@@ -1,0 +1,223 @@
+/* Declaration of availability (issue #291): the espace's declaration tab and
+   the admin "Disponibilités" screen. Read with a thumb on a phone, so the day
+   and wish toggles are sized as touch targets first — 2.75rem is the floor a
+   finger needs, and the grid grows from there rather than shrinking. */
+
+/* ---------- Espace: the declaration form ---------- */
+
+.espace-dispo-intro,
+.espace-dispo-attente {
+  margin-bottom: 1rem;
+}
+
+.espace-dispo-fenetre,
+.espace-dispo-fermee,
+.espace-dispo-envoye,
+.espace-dispo-erreur,
+.espace-dispo-reponse {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.5rem 0 0;
+}
+
+.espace-dispo-fermee {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.espace-dispo-erreur {
+  color: var(--mat-sys-error);
+}
+
+.espace-dispo-envoye {
+  color: var(--mat-sys-primary);
+}
+
+.espace-dispo-section {
+  margin-bottom: 1.5rem;
+}
+
+.espace-dispo-section h2 {
+  font-size: 1.05rem;
+  margin: 0 0 0.25rem;
+}
+
+.espace-dispo-aide {
+  margin: 0 0 0.75rem;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.9rem;
+}
+
+.espace-dispo-mois {
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin: 0.75rem 0 0.4rem;
+  text-transform: capitalize;
+}
+
+.espace-dispo-grille {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(3.25rem, 1fr));
+  gap: 0.5rem;
+}
+
+.espace-dispo-jour {
+  min-height: 3.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  padding: 0.25rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium, 0.75rem);
+  background: var(--mat-sys-surface-container-low);
+  color: var(--mat-sys-on-surface);
+  font: inherit;
+  cursor: pointer;
+}
+
+.espace-dispo-jour-nom {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.espace-dispo-jour-numero {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+/* Selected means "I cannot come": stated by colour AND by the pressed state on
+   the button, so it is not carried by colour alone. */
+.espace-dispo-jour-actif {
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+  border-color: var(--mat-sys-error);
+}
+
+.espace-dispo-souhaits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.espace-dispo-souhait {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.75rem;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-full, 2rem);
+  background: var(--mat-sys-surface-container-low);
+  color: var(--mat-sys-on-surface);
+  font: inherit;
+  cursor: pointer;
+}
+
+.espace-dispo-souhait-actif {
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+  border-color: var(--mat-sys-primary);
+}
+
+.espace-dispo-commentaire {
+  width: 100%;
+}
+
+.espace-dispo-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.espace-dispo-passee {
+  margin-bottom: 0.75rem;
+}
+
+.espace-dispo-passee-entete {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0 0 0.35rem;
+  font-size: 0.85rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.espace-dispo-statut {
+  font-weight: 600;
+  color: var(--mat-sys-on-surface);
+}
+
+/* ---------- Admin: the "Disponibilités" screen ---------- */
+
+.dispo-admin-fenetre {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+}
+
+.dispo-admin-dates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.dispo-admin-declaration {
+  margin-bottom: 1rem;
+}
+
+.dispo-admin-colonnes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 1rem;
+}
+
+.dispo-admin-colonne h4 {
+  margin: 0 0 0.35rem;
+  font-size: 0.9rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.dispo-admin-valeurs {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.dispo-admin-commentaire {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  margin: 0.75rem 0 0;
+}
+
+.dispo-admin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* ---------- Espace: the tab bar, now that there are four of them ---------- */
+
+/* Added by this feature rather than by the layout partial next door: it is the
+   fourth tab that makes the rule necessary, and it belongs with the change
+   that caused it. Three routed labels — « Mon planning », « Mes échanges »,
+   « Mes disponibilités » — plus « Aide » no longer fit one row of a narrow
+   phone, and equal shares turned each of them into two letters. Two rows of
+   real touch targets beat one row of ellipses. */
+.espace-nav {
+  flex-wrap: wrap;
+}
+
+.espace-nav a {
+  flex: 1 1 40%;
+}
+
+@media (min-width: 40rem) {
+  .espace-nav a {
+    flex: 0 0 auto;
+  }
+}

@@ -11,7 +11,7 @@
  */
 
 /** Tab of the espace a section sends the reader to, when there is one. */
-export type EspaceAideCible = 'planning' | 'echanges';
+export type EspaceAideCible = 'planning' | 'echanges' | 'disponibilites';
 
 export type EspaceAideBlock =
   | { kind: 'paragraph'; text: string }
@@ -56,7 +56,8 @@ export function buildEspaceAideSections(): EspaceAideSection[] {
             $localize`:@@espace.aide.espace.item1:Consulter vos créneaux jour par jour, avec le stand et vos coéquipiers.`,
             $localize`:@@espace.aide.espace.item2:Emporter votre planning en PDF ou dans l'agenda de votre téléphone.`,
             $localize`:@@espace.aide.espace.item3:Demander un échange de créneau avec un collègue, tant que la foire au planning est ouverte.`,
-            $localize`:@@espace.aide.espace.item4:Répondre aux demandes d'échange que des collègues vous adressent.`
+            $localize`:@@espace.aide.espace.item4:Répondre aux demandes d'échange que des collègues vous adressent.`,
+            $localize`:@@espace.aide.espace.item5:Déclarer vos jours d'indisponibilité et vos souhaits, quand l'organisation ouvre la collecte.`
           ]
         },
         {
@@ -273,6 +274,37 @@ export function buildEspaceAideSections(): EspaceAideSection[] {
       ]
     },
     {
+      id: 'declarer-disponibilites',
+      icon: 'event_available',
+      question: $localize`:@@espace.aide.dispo.question:Comment je dis quand je ne peux pas venir ?`,
+      resume: $localize`:@@espace.aide.dispo.resume:Dans « Mes disponibilités », tant que l'organisation a ouvert la collecte.`,
+      cible: 'disponibilites',
+      blocks: [
+        {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.dispo.intro:Avant de construire le planning, l'organisation ouvre une période pendant laquelle chacun dit les jours où il ne peut pas venir, et les types de jeux qu'il aimerait animer. Vous le faites depuis l'onglet « Mes disponibilités », sur votre téléphone : les jours de l'événement s'affichent en pastilles, touchez celles qui ne vont pas.`
+        },
+        {
+          kind: 'steps',
+          items: [
+            $localize`:@@espace.aide.dispo.etape1:Touchez chaque jour où vous ne pouvez pas venir. Les jours que vous ne touchez pas veulent dire « je suis disponible ».`,
+            $localize`:@@espace.aide.dispo.etape2:Choisissez les types de jeux qui vous plairaient. Un souhait n'est pas une garantie : il est suivi quand le planning le permet.`,
+            $localize`:@@espace.aide.dispo.etape3:Ajoutez un mot si votre situation ne tient pas dans des cases (« je pars dimanche après le déjeuner »).`,
+            $localize`:@@espace.aide.dispo.etape4:Envoyez. Le formulaire s'ouvre déjà sur ce que l'organisation sait de vous : vous corrigez, vous ne repartez pas de zéro.`
+          ]
+        },
+        {
+          kind: 'list',
+          items: [
+            $localize`:@@espace.aide.dispo.item1:Ce que vous envoyez est une proposition : l'organisation la relit et l'applique, ou vous répond. Rien n'est enregistré sur votre fiche avant.`,
+            $localize`:@@espace.aide.dispo.item2:Vous pouvez renvoyer une version corrigée tant que la collecte est ouverte : elle remplace la précédente, il n'y en a jamais deux en attente.`,
+            $localize`:@@espace.aide.dispo.item3:Vos compétences ne se déclarent pas ici : elles restent décidées avec l'organisation.`,
+            $localize`:@@espace.aide.dispo.item4:Collecte fermée, l'onglet reste consultable mais n'accepte plus d'envoi — prévenez alors directement l'organisation.`
+          ]
+        }
+      ]
+    },
+    {
       id: 'foire-fermee',
       icon: 'lock',
       question: $localize`:@@espace.aide.foire.question:Pourquoi je ne peux plus rien demander ?`,
@@ -297,7 +329,7 @@ export function buildEspaceAideSections(): EspaceAideSection[] {
         {
           kind: 'list',
           items: [
-            $localize`:@@espace.aide.contact.item1:Une affectation vous semble fausse, ou une indisponibilité annoncée n'a pas été prise en compte : signalez-le, vous ne pouvez pas corriger vos données vous-même.`,
+            $localize`:@@espace.aide.contact.item1:Une affectation vous semble fausse, ou une indisponibilité annoncée n'a pas été prise en compte : signalez-le. Hors période de collecte, vous ne pouvez pas corriger vos données vous-même.`,
             $localize`:@@espace.aide.contact.item2:Empêchement de dernière minute : prévenez tout de suite, sans attendre qu'une demande d'échange soit validée.`,
             $localize`:@@espace.aide.contact.item3:Ce que l'application sait de vous et ce qu'elle en fait est décrit dans la politique de confidentialité, dans le menu en haut à droite de l'écran.`
           ]

@@ -46,7 +46,8 @@ class IsolationEditionStructurelleTest {
             "poste_affectation", "planning_resolution", "stand_typologie",
             "animateur_competence", "animateur_souhait", "animateur_indisponibilite",
             "stand_indisponibilite", "stand_ouverture", "stand_horaire", "stand_horaire_fenetre",
-            "demande_echange", "espace_session", "espace_code", "plan_snapshot", "creneau_remap");
+            "demande_echange", "espace_session", "espace_code", "plan_snapshot", "creneau_remap",
+            "declaration_disponibilite", "parametres_collecte");
 
     /**
      * The two deliberately cross-edition statements, and why.

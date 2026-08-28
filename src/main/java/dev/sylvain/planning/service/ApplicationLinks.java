@@ -37,8 +37,14 @@ public class ApplicationLinks {
     /** Admin screen listing the constraints a solved plan still breaks. */
     private static final String ECRAN_PROBLEMES = "problemes";
 
+    /** Admin screen where self-service declarations are applied or refused. */
+    private static final String ECRAN_DISPONIBILITES = "disponibilites";
+
     /** Espace animateur, whose {@code :token} segment IS the credential. */
     private static final String ESPACE_ANIMATEUR = "animateur";
+
+    /** Tab of the espace where an animateur declares — a child route of the above. */
+    private static final String ESPACE_DISPONIBILITES = "disponibilites";
 
     /** Configured base URL, trimmed, or empty when unset or blank. */
     private final Optional<String> base;
@@ -73,6 +79,10 @@ public class ApplicationLinks {
         return base.map(url -> UriBuilder.fromUri(url).path(ECRAN_PROBLEMES).build().toString());
     }
 
+    public Optional<String> disponibilitesScreen() {
+        return base.map(url -> UriBuilder.fromUri(url).path(ECRAN_DISPONIBILITES).build().toString());
+    }
+
     /**
      * The espace of the animateur holding {@code token}, empty without a token.
      * The token travels as a template value rather than being concatenated, so
@@ -84,6 +94,20 @@ public class ApplicationLinks {
         }
         return base.map(url -> UriBuilder.fromUri(url)
                 .path(ESPACE_ANIMATEUR).path("{jeton}")
+                .build(token).toString());
+    }
+
+    /**
+     * The declaration tab of that espace — where the invitation mail of a
+     * collection window sends its reader, so the form is the first thing they
+     * see rather than something to go looking for.
+     */
+    public Optional<String> espaceDisponibilites(String token) {
+        if (token == null || token.isBlank()) {
+            return Optional.empty();
+        }
+        return base.map(url -> UriBuilder.fromUri(url)
+                .path(ESPACE_ANIMATEUR).path("{jeton}").path(ESPACE_DISPONIBILITES)
                 .build(token).toString());
     }
 }

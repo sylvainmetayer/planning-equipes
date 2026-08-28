@@ -11,10 +11,12 @@ import java.util.stream.Collectors;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.DeclarationDisponibilite;
 import dev.sylvain.planning.domain.DemandeEchange;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.domain.StatutDeclaration;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.NotFoundException;
@@ -54,6 +56,12 @@ public class EspaceAnimateurService {
 
     @Inject
     PlanningService planningService;
+
+    @Inject
+    DeclarationDisponibiliteService declarationService;
+
+    @Inject
+    TypologieService typologieService;
 
     /** One of the animateur's seats in the persisted planning. */
     public record PosteAnimateurView(Long creneauId, LocalDate date, LocalTime heureDebut, LocalTime heureFin,
@@ -320,5 +328,126 @@ public class EspaceAnimateurService {
     /** {@code null} happens: an échange can name an animateur the referential no longer holds. */
     private static String nomComplet(Animateur animateur, String fallbackId) {
         return animateur == null ? fallbackId : animateur.nomAffiche();
+    }
+
+    /* ---------------- Declaration of availability (issue #291) ---------------- */
+
+    /** One game category, as the espace offers it: an id and the word for it. */
+    public record TypologieChoixView(String id, String label) {
+    }
+
+    /** One of my declarations, with the game categories named rather than referenced. */
+    public record DeclarationView(String id, String statut, List<LocalDate> joursIndisponibles,
+            List<String> souhaits, List<String> souhaitsLabels, String commentaire,
+            String commentaireAdmin, Instant creeLe, Instant decideLe) {
+    }
+
+    /**
+     * Everything the declaration tab needs in one read: whether the window is
+     * open, which days the event covers, what game categories exist, what the
+     * organisation currently holds for me, and where my own declarations stand.
+     *
+     * @param collecteOuverte the closure is enforced server-side on submit;
+     *                        this flag only lets the interface say so instead
+     *                        of failing on the button
+     * @param joursActuels    what the referential says today — the form opens
+     *                        on it, so a declaration corrects rather than
+     *                        starts from a blank page
+     * @param enAttente       my single pending proposal, {@code null} when I
+     *                        have none: submitting again replaces it
+     */
+    public record DeclarationEspaceView(boolean collecteOuverte, LocalDate collecteDebut, LocalDate collecteFin,
+            List<LocalDate> joursEvenement, List<TypologieChoixView> typologies,
+            List<LocalDate> joursActuels, List<String> souhaitsActuels,
+            DeclarationView enAttente, List<DeclarationView> historique) {
+    }
+
+    public DeclarationEspaceView buildDeclarationView(String animateurId) {
+        Animateur animateur = referenceDataService.listAnimateurs().stream()
+                .filter(candidat -> candidat.getId().equals(animateurId))
+                .findFirst()
+                .orElseThrow(() -> new BusinessError.Invalid("Animateur inconnu : " + animateurId));
+        Map<String, String> labels = typologieService.labelsById();
+        List<TypologieChoixView> typologies = labels.entrySet().stream()
+                .map(entree -> new TypologieChoixView(entree.getKey(), entree.getValue()))
+                .sorted(Comparator.comparing(TypologieChoixView::label, String.CASE_INSENSITIVE_ORDER))
+                .toList();
+        List<DeclarationView> mesDeclarations = declarationService.listForAnimateur(animateurId).stream()
+                .map(declaration -> toView(declaration, labels))
+                .toList();
+        DeclarationDisponibiliteRepository.FenetreCollecte fenetre = declarationService.fenetre();
+        return new DeclarationEspaceView(
+                declarationService.isCollecteOuverte(), fenetre.debut(), fenetre.fin(),
+                declarationService.joursEvenement(),
+                typologies,
+                animateur.getJoursIndisponibles().stream().sorted().toList(),
+                animateur.getSouhaits().stream().sorted(String.CASE_INSENSITIVE_ORDER).toList(),
+                mesDeclarations.stream()
+                        .filter(vue -> StatutDeclaration.EN_ATTENTE.name().equals(vue.statut()))
+                        .findFirst()
+                        .orElse(null),
+                mesDeclarations.stream()
+                        .filter(vue -> !StatutDeclaration.EN_ATTENTE.name().equals(vue.statut()))
+                        .toList());
+    }
+
+    /**
+     * One declaration for the admin screen: the animateur named, and the game
+     * categories spelled out — the admin decides on words, not on ids.
+     *
+     * @param joursActuels what the fiche says today, so the screen can show
+     *                     what applying would change rather than only what was
+     *                     asked for
+     */
+    public record DeclarationAdminView(String id, String animateurId, String animateurNom, String statut,
+            List<LocalDate> joursIndisponibles, List<String> souhaits, List<String> souhaitsLabels,
+            String commentaire, String commentaireAdmin, Instant creeLe, Instant decideLe,
+            List<LocalDate> joursActuels, List<String> souhaitsActuelsLabels) {
+    }
+
+    /** Resolves labels for a batch of declarations, in their given order. */
+    public List<DeclarationAdminView> toDeclarationViews(List<DeclarationDisponibilite> declarations) {
+        Map<String, String> labels = typologieService.labelsById();
+        Map<String, Animateur> animateurs = referenceDataService.listAnimateurs().stream()
+                .collect(Collectors.toMap(Animateur::getId, Function.identity()));
+        return declarations.stream()
+                .map(declaration -> {
+                    Animateur animateur = animateurs.get(declaration.getAnimateurId());
+                    return new DeclarationAdminView(
+                            declaration.getId(),
+                            declaration.getAnimateurId(),
+                            nomComplet(animateur, declaration.getAnimateurId()),
+                            declaration.getStatut().name(),
+                            declaration.getJoursIndisponibles(),
+                            declaration.getSouhaits(),
+                            labelsOf(declaration.getSouhaits(), labels),
+                            declaration.getCommentaire(),
+                            declaration.getCommentaireAdmin(),
+                            declaration.getCreeLe(),
+                            declaration.getDecideLe(),
+                            animateur == null ? List.of()
+                                    : animateur.getJoursIndisponibles().stream().sorted().toList(),
+                            animateur == null ? List.of()
+                                    : labelsOf(animateur.getSouhaits().stream().sorted().toList(), labels));
+                })
+                .toList();
+    }
+
+    private static DeclarationView toView(DeclarationDisponibilite declaration, Map<String, String> labels) {
+        return new DeclarationView(
+                declaration.getId(),
+                declaration.getStatut().name(),
+                declaration.getJoursIndisponibles(),
+                declaration.getSouhaits(),
+                labelsOf(declaration.getSouhaits(), labels),
+                declaration.getCommentaire(),
+                declaration.getCommentaireAdmin(),
+                declaration.getCreeLe(),
+                declaration.getDecideLe());
+    }
+
+    /** A category dropped since the declaration was written falls back to its id. */
+    private static List<String> labelsOf(List<String> ids, Map<String, String> labels) {
+        return ids.stream().map(id -> labels.getOrDefault(id, id)).toList();
     }
 }

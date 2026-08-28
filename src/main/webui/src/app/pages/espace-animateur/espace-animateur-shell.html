@@ -100,6 +100,12 @@
         <mat-icon>swap_horiz</mat-icon>
         <span i18n="@@espace.nav.echanges">Mes échanges</span>
       </a>
+      <a matButton [routerLink]="['/animateur', jeton(), 'disponibilites']" routerLinkActive="espace-nav-active"
+         #rlaDispo="routerLinkActive"
+         [attr.aria-current]="rlaDispo.isActive ? 'page' : null">
+        <mat-icon>event_available</mat-icon>
+        <span i18n="@@espace.nav.disponibilites">Mes disponibilités</span>
+      </a>
       <!-- Taille de son contenu, là où les deux premiers se partagent le reste :
            « Aide » est un mot court, et trois onglets à parts égales rognaient
            les deux libellés utiles sur un téléphone étroit. -->

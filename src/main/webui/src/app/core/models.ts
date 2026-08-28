@@ -1395,6 +1395,92 @@ export interface ReferenceUsage {
   verrouillages: number;
 }
 
+/* ---------- Self-service declaration of availability (issue #291) ---------- */
+
+/** Lifecycle of a declaration: only one is ever `EN_ATTENTE` per animateur. */
+export type StatutDeclaration = 'EN_ATTENTE' | 'APPLIQUEE' | 'REFUSEE';
+
+/** One game category, as the espace offers it to pick from. */
+export interface TypologieChoixView {
+  id: string;
+  label: string;
+}
+
+/** One declaration seen from the espace: what I said, and what became of it. */
+export interface DeclarationView {
+  id: string;
+  statut: StatutDeclaration;
+  /** ISO dates. */
+  joursIndisponibles: string[];
+  souhaits: string[];
+  /** The same wishes, spelled out — a category dropped since falls back to its id. */
+  souhaitsLabels: string[];
+  commentaire: string | null;
+  commentaireAdmin: string | null;
+  creeLe: string;
+  decideLe: string | null;
+}
+
+/** `/api/espace-animateur/{jeton}/disponibilites`: everything the declaration tab needs. */
+export interface DeclarationEspaceView {
+  /** False hides the form: the closure is enforced server-side too. */
+  collecteOuverte: boolean;
+  collecteDebut: string | null;
+  collecteFin: string | null;
+  /** ISO dates of the event days — the only ones a declaration may name. */
+  joursEvenement: string[];
+  typologies: TypologieChoixView[];
+  /** What the organisation currently holds for me: the form opens on it. */
+  joursActuels: string[];
+  souhaitsActuels: string[];
+  /** My single pending proposal, `null` when I have none — resending replaces it. */
+  enAttente: DeclarationView | null;
+  historique: DeclarationView[];
+}
+
+/** Payload of a declaration sent from the espace. */
+export interface NouvelleDeclaration {
+  joursIndisponibles: string[];
+  souhaits: string[];
+  commentaire: string | null;
+}
+
+/** One declaration on the admin screen, with the animateur named and the wishes spelled out. */
+export interface DeclarationAdminView {
+  id: string;
+  animateurId: string;
+  animateurNom: string;
+  statut: StatutDeclaration;
+  joursIndisponibles: string[];
+  souhaits: string[];
+  souhaitsLabels: string[];
+  commentaire: string | null;
+  commentaireAdmin: string | null;
+  creeLe: string;
+  decideLe: string | null;
+  /** What the fiche says today, so the screen can show what applying would change. */
+  joursActuels: string[];
+  souhaitsActuelsLabels: string[];
+}
+
+/** Who the invitation mails reached, when the admin asked for them. */
+export interface InvitationReport {
+  envoyes: number;
+  sansEmail: string[];
+  echecs: string[];
+}
+
+/** `/api/disponibilites/configuration`: the collection window, closed by default. */
+export interface ConfigurationCollecte {
+  collecteOuverte: boolean;
+  debut: string | null;
+  fin: string | null;
+  /** Request only: mail every animateur their espace link now. Never echoed back. */
+  prevenirAnimateurs?: boolean;
+  /** Response only: `null` when no invitation was asked for. */
+  invitation?: InvitationReport | null;
+}
+
 /** `/api/reference-data/impact-import`: what a scenario import would touch, for the confirmation dialog. */
 export interface ImpactImport {
   animateurs: number;

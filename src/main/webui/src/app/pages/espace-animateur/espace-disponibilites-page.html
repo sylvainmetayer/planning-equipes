@@ -1,0 +1,177 @@
+@if (chargement()) {
+  <mat-progress-bar mode="indeterminate" />
+} @else if (vue(); as declaration) {
+  <mat-card class="espace-dispo-intro" appearance="outlined">
+    <mat-card-content>
+      <p i18n="@@espace.dispo.intro">
+        Dites à l'organisation les jours où vous ne pouvez pas venir, et les types de jeux que vous
+        aimeriez animer. Ce que vous envoyez est une <strong>proposition</strong> : l'organisation la
+        relit avant de l'appliquer.
+      </p>
+      @if (declaration.collecteOuverte) {
+        <p class="espace-dispo-fenetre">
+          <mat-icon inline>event_available</mat-icon>
+          @if (declaration.collecteFin) {
+            <span i18n="@@espace.dispo.fenetre.fin"
+              >Vous avez jusqu'au {{ declaration.collecteFin | date: 'longDate' }} pour répondre.</span
+            >
+          } @else {
+            <span i18n="@@espace.dispo.fenetre.ouverte">La collecte est ouverte.</span>
+          }
+        </p>
+      } @else {
+        <p class="espace-dispo-fermee">
+          <mat-icon inline>lock</mat-icon>
+          <span i18n="@@espace.dispo.fermee"
+            >La collecte est fermée : vous ne pouvez plus envoyer de déclaration. Prévenez
+            directement l'organisation en cas d'empêchement.</span
+          >
+        </p>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  @if (declaration.enAttente; as attente) {
+    <mat-card class="espace-dispo-attente" appearance="outlined">
+      <mat-card-header>
+        <mat-card-title i18n="@@espace.dispo.attente.titre">Votre déclaration en attente</mat-card-title>
+        <mat-card-subtitle i18n="@@espace.dispo.attente.sousTitre">
+          Envoyée le {{ attente.creeLe | date: 'short' }} — l'organisation ne l'a pas encore traitée.
+        </mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <p i18n="@@espace.dispo.attente.corps">
+          Tant qu'elle est en attente, vous pouvez la corriger : votre nouvel envoi remplace celui-ci.
+        </p>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  @if (declaration.collecteOuverte) {
+    <section class="espace-dispo-section">
+      <h2 i18n="@@espace.dispo.jours.titre">Les jours où je ne peux pas venir</h2>
+      @if (sansJours()) {
+        <p class="espace-vide" i18n="@@espace.dispo.jours.vide">
+          Les dates de l'événement ne sont pas encore connues : vous pouvez déjà déclarer vos souhaits.
+        </p>
+      } @else {
+        <p class="espace-dispo-aide" i18n="@@espace.dispo.jours.aide">
+          Touchez un jour pour le marquer comme indisponible. Les jours non touchés valent
+          « je suis disponible ».
+        </p>
+        @for (bloc of mois(); track bloc.premierJour) {
+          <h3 class="espace-dispo-mois">{{ bloc.premierJour | date: 'MMMM y' }}</h3>
+          <div class="espace-dispo-grille">
+            @for (jour of bloc.jours; track jour) {
+              <button
+                type="button"
+                class="espace-dispo-jour"
+                [class.espace-dispo-jour-actif]="jourCoche(jour)"
+                [attr.aria-pressed]="jourCoche(jour)"
+                (click)="basculerJour(jour)"
+              >
+                <span class="espace-dispo-jour-nom">{{ jour | date: 'EEE' }}</span>
+                <span class="espace-dispo-jour-numero">{{ jour | date: 'd' }}</span>
+              </button>
+            }
+          </div>
+        }
+      }
+    </section>
+
+    <section class="espace-dispo-section">
+      <h2 i18n="@@espace.dispo.souhaits.titre">Ce que j'aimerais animer</h2>
+      @if (declaration.typologies.length === 0) {
+        <p class="espace-vide" i18n="@@espace.dispo.souhaits.vide">
+          Aucun type de jeu n'est encore défini par l'organisation.
+        </p>
+      } @else {
+        <p class="espace-dispo-aide" i18n="@@espace.dispo.souhaits.aide">
+          Un souhait n'est pas une garantie : il est pris en compte quand le planning le permet.
+        </p>
+        <div class="espace-dispo-souhaits">
+          @for (typologie of declaration.typologies; track typologie.id) {
+            <button
+              type="button"
+              class="espace-dispo-souhait"
+              [class.espace-dispo-souhait-actif]="souhaitCoche(typologie.id)"
+              [attr.aria-pressed]="souhaitCoche(typologie.id)"
+              (click)="basculerSouhait(typologie.id)"
+            >
+              <mat-icon inline>{{ souhaitCoche(typologie.id) ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+              <span>{{ typologie.label }}</span>
+            </button>
+          }
+        </div>
+      }
+    </section>
+
+    <section class="espace-dispo-section">
+      <mat-form-field appearance="outline" class="espace-dispo-commentaire">
+        <mat-label i18n="@@espace.dispo.commentaire.label">Un mot à l'organisation (facultatif)</mat-label>
+        <textarea
+          matInput
+          rows="3"
+          maxlength="2000"
+          [ngModel]="brouillon().commentaire"
+          (ngModelChange)="majCommentaire($event)"
+          name="commentaire"
+          i18n-placeholder="@@espace.dispo.commentaire.placeholder"
+          placeholder="Par exemple : je pars dimanche après le déjeuner."
+        ></textarea>
+      </mat-form-field>
+    </section>
+
+    <div class="espace-dispo-actions">
+      <button matButton="filled" type="button" [disabled]="envoiEnCours() || !modifiee()" (click)="envoyer()">
+        <mat-icon>send</mat-icon>
+        <span i18n="@@espace.dispo.envoyer">Envoyer ma déclaration</span>
+      </button>
+      @if (envoye()) {
+        <p class="espace-dispo-envoye">
+          <mat-icon inline>check_circle</mat-icon>
+          <span i18n="@@espace.dispo.envoyee"
+            >Envoyée. L'organisation la relit ; rien n'est appliqué avant sa validation.</span
+          >
+        </p>
+      }
+    </div>
+  }
+
+  @if (declaration.historique.length > 0) {
+    <section class="espace-dispo-section">
+      <h2 i18n="@@espace.dispo.historique.titre">Mes déclarations précédentes</h2>
+      @for (passee of declaration.historique; track passee.id) {
+        <mat-card class="espace-dispo-passee" appearance="outlined">
+          <mat-card-content>
+            <p class="espace-dispo-passee-entete">
+              <span class="espace-dispo-statut">{{ statutLabel(passee) }}</span>
+              <span>{{ passee.creeLe | date: 'short' }}</span>
+            </p>
+            <p i18n="@@espace.dispo.historique.resume">
+              {{ passee.joursIndisponibles.length }} jour(s) déclaré(s), {{ passee.souhaitsLabels.length }} souhait(s).
+            </p>
+            @if (passee.commentaireAdmin) {
+              <p class="espace-dispo-reponse">
+                <mat-icon inline>forum</mat-icon>
+                {{ passee.commentaireAdmin }}
+              </p>
+            }
+          </mat-card-content>
+        </mat-card>
+      }
+    </section>
+  }
+
+  @if (erreur(); as message) {
+    <p class="espace-dispo-erreur">
+      <mat-icon inline>error</mat-icon>
+      {{ message }}
+    </p>
+  }
+} @else if (erreur(); as message) {
+  <p class="espace-dispo-erreur">
+    <mat-icon inline>error</mat-icon>
+    {{ message }}
+  </p>
+}

@@ -36,6 +36,19 @@ public sealed interface Notification {
     }
 
     /**
+     * An animateur declared their unavailable days and wishes from their
+     * espace (issue #291), and the proposal is waiting on the admin's desk.
+     *
+     * <p>Carries counts rather than the days and the categories themselves:
+     * the mail says that something is waiting and where to look at it, the
+     * screen says what it contains. A mail is the least protected place these
+     * data pass through, and nothing here needs them to do its job.</p>
+     */
+    record DeclarationSoumise(String animateurNomComplet, int joursIndisponibles, int souhaits)
+            implements Notification {
+    }
+
+    /**
      * A solve just finished: which edition, what score, and whether the plan is
      * feasible — the three facts one waits for when a multi-minute run was
      * launched before walking away.

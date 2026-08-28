@@ -92,6 +92,11 @@ function buildNavGroups(devMode: boolean): NavGroup[] {
       },
       { path: '/problemes', label: $localize`:@@nav.link.problemes:Problèmes`, icon: 'report_problem' },
       { path: '/echanges', label: $localize`:@@nav.link.echanges:Échanges`, icon: 'swap_horiz' },
+      {
+        path: '/disponibilites',
+        label: $localize`:@@nav.link.disponibilites:Disponibilités`,
+        icon: 'event_available'
+      },
       { path: '/constraints', label: $localize`:@@nav.link.constraints:Contraintes`, icon: 'fact_check' },
       {
         path: '/ad-hoc-constraints',
