@@ -1707,5 +1707,8 @@
   "bancDeTouche.seatTaken": "This seat is held by {$animateur} \u2014 the question asked is \u201cwho could replace them?\u201d.",
   "bancDeTouche.summary": "{$available} staff members available out of {$total} off duty on this timeslot",
   "aide.views.term.banc": "Bench",
-  "aide.views.def.banc": "For one timeslot, who is not assigned anywhere \u2014 and, for each of them, the rule that would stop them taking the seat left open: unavailable that day, legal rest, hours cap reached, missing appreciation. All applicable reasons are shown, not just the first one: that is what tells you whether lifting one obstacle would be enough. The view is read-only; to act, go through the repair assistant of the daily calendar."
+  "aide.views.def.banc": "For one timeslot, who is not assigned anywhere \u2014 and, for each of them, the rule that would stop them taking the seat left open: unavailable that day, legal rest, hours cap reached, missing appreciation. All applicable reasons are shown, not just the first one: that is what tells you whether lifting one obstacle would be enough. The view is read-only; to act, go through the repair assistant of the daily calendar. It reads the saved schedule, which carries fewer timeslots than the referential: on a timeslot where no stand is open, or before any solve has run, it tells you so instead of staying blank.",
+  "bancDeTouche.slotWithoutSeat": "no seat",
+  "bancDeTouche.noPlan": "No saved schedule yet: run a solve so this screen has a plan to question.",
+  "bancDeTouche.noSeat": "No seat on this timeslot in the saved schedule: no stand is open then, or the timeslot was created after the last solve. Pick a timeslot that carries seats, or run a solve again."
 }

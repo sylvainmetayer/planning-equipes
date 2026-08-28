@@ -2205,14 +2205,24 @@ public class PlanningService {
      */
     public CreneauAvailability creneauAvailability(PlanningEvenement solved, long creneauId, String standId,
             String posteId) {
+        List<Long> creneauxAvecSieges = solved.getPostes().stream()
+                .map(PosteAffectation::getCreneau)
+                .filter(Objects::nonNull)
+                .map(Creneau::getId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .sorted()
+                .toList();
         List<PosteAffectation> postesDuCreneau = solved.getPostes().stream()
                 .filter(poste -> poste.getCreneau() != null
                         && Objects.equals(poste.getCreneau().getId(), creneauId))
                 .toList();
-        if (postesDuCreneau.isEmpty()) {
-            throw new BusinessError.NotFound("Créneau inconnu dans le planning: " + creneauId);
-        }
         PosteAffectation cible = targetSeat(solved, postesDuCreneau, creneauId, standId, posteId);
+        if (cible == null) {
+            return new CreneauAvailability(creneauId,
+                    solved.getPostes().isEmpty() ? SeatStatus.NO_PLAN : SeatStatus.NO_SEAT,
+                    null, null, null, 0, 0, creneauxAvecSieges, List.of());
+        }
 
         Set<String> deja = postesDuCreneau.stream()
                 .map(PosteAffectation::getAnimateur)
@@ -2252,10 +2262,10 @@ public class PlanningService {
                 .thenComparing(AnimateurAvailability::envisageable, Comparator.reverseOrder())
                 .thenComparing(AnimateurAvailability::animateurId, NaturalOrder.DES_IDS));
         int disponibles = (int) lignes.stream().filter(AnimateurAvailability::disponible).count();
-        return new CreneauAvailability(creneauId, cible.getId(),
+        return new CreneauAvailability(creneauId, SeatStatus.EVALUATED, cible.getId(),
                 cible.getStand() == null ? null : cible.getStand().getId(),
                 cible.getAnimateur() == null ? null : cible.getAnimateur().getId(),
-                lignes.size(), disponibles, List.copyOf(lignes));
+                lignes.size(), disponibles, creneauxAvecSieges, List.copyOf(lignes));
     }
 
     /**
@@ -2264,15 +2274,23 @@ public class PlanningService {
      * legal parameters, toggles, weights) so the hypotheses are scored against
      * the rules currently in force, not against defaults.
      *
-     * @throws BusinessError.Conflict when nothing has been solved yet: the
-     *         question « qui est disponible sur ce créneau » has no answer
-     *         before there is a plan to be absent from
+     * <p>This is the <b>only</b> place that can tell an unknown créneau from a
+     * créneau carrying no seat, because only here is the referential in reach:
+     * the persisted plan holds seats, so a créneau nobody was scheduled on
+     * simply does not appear in it. Getting that distinction wrong is what made
+     * the screen open on « Créneau inconnu » for a perfectly real créneau on
+     * which no stand happened to be open.</p>
+     *
+     * @throws BusinessError.NotFound when the créneau exists in no edition data
+     *         at all — the one case that really is a bad request
      */
     public CreneauAvailability persistedCreneauAvailability(long creneauId, String standId, String posteId) {
-        PlanningEvenement persiste = planningPersistenceService.loadPersistedPlanning();
-        if (persiste == null || persiste.getPostes() == null || persiste.getPostes().isEmpty()) {
-            throw new BusinessError.Conflict("Aucun planning persisté : lancez d'abord une résolution.");
+        boolean connu = referenceDataService.listCreneaux().stream()
+                .anyMatch(creneau -> Objects.equals(creneau.getId(), creneauId));
+        if (!connu) {
+            throw new BusinessError.NotFound("Créneau inconnu: " + creneauId);
         }
+        PlanningEvenement persiste = planningPersistenceService.loadPersistedPlanning();
         prepareProblem(persiste);
         return creneauAvailability(persiste, creneauId, standId, posteId);
     }
@@ -2283,6 +2301,13 @@ public class PlanningService {
      * first seat — probing an occupied seat is the « qui pourrait le
      * remplacer ? » question, which is exactly what
      * {@link #suggererReparations} answers on the same poste.
+     *
+     * <p>{@code null} when the plan holds no seat to probe: on this créneau at
+     * all, or on the stand asked for. That is <b>an answer, not a refusal</b> —
+     * a créneau on which no stand is open, or one added after the last solve,
+     * legitimately carries none, and this screen exists precisely to say so.
+     * Only a caller-supplied {@code posteId} can still be wrong enough to be
+     * refused, and it is not something a user types.</p>
      *
      * <p>Ordered by id so the same request twice probes the same seat.</p>
      */
@@ -2301,15 +2326,12 @@ public class PlanningService {
                 : postesDuCreneau.stream()
                         .filter(poste -> poste.getStand() != null && standId.equals(poste.getStand().getId()))
                         .toList();
-        if (candidats.isEmpty()) {
-            throw new BusinessError.NotFound(
-                    "Aucun poste sur le créneau " + creneauId + " pour le stand " + standId + ".");
-        }
         Comparator<PosteAffectation> byId = Comparator.comparing(PosteAffectation::getId, NaturalOrder.DES_IDS);
         return candidats.stream()
                 .filter(poste -> poste.getAnimateur() == null)
                 .min(byId)
-                .orElseGet(() -> candidats.stream().min(byId).orElseThrow());
+                .or(() -> candidats.stream().min(byId))
+                .orElse(null);
     }
 
     /** True for a reason the catalogue rates as a hard rule — the ones « disponible » may not hide. */
@@ -2862,18 +2884,50 @@ public class PlanningService {
     }
 
     /**
+     * Why the banc de touche has, or has not, anything to say about a créneau.
+     *
+     * <p>The two empty cases are answers, not failures, and the screen has to
+     * word them differently — « lancez une résolution » and « choisissez un
+     * autre créneau » are not the same advice. Returning a {@code 404} for
+     * either of them, which this endpoint used to do for {@link #NO_SEAT}, made
+     * the screen open on an error the user could not act on.</p>
+     */
+    public enum SeatStatus {
+        /** Nothing is saved yet: there is no plan for anybody to be absent from. */
+        NO_PLAN,
+        /**
+         * The saved plan holds seats, but none on this créneau — or none on the
+         * stand asked for. No stand is open then, or the plan predates the
+         * créneau (a découpage regenerated the grid after the last solve).
+         */
+        NO_SEAT,
+        /** A seat was probed: {@code animateurs} is the answer. */
+        EVALUATED
+    }
+
+    /**
      * Result of {@link #creneauAvailability}: who is off duty on a créneau, and why
      * the seat probed is or is not within their reach.
      *
-     * @param posteCibleId     the seat every reason is relative to
-     * @param animateurCibleId its current occupant, {@code null} when the seat
-     *                         is free — when it is not, the question answered is
-     *                         « qui pourrait le remplacer ? »
-     * @param disponibles      how many of {@code animateurs} could take the
-     *                         seat without breaking a hard rule
+     * @param statut             which of the three answers this is; the three
+     *                           fields below are {@code null} and the lists
+     *                           empty unless it is {@link SeatStatus#EVALUATED}
+     * @param posteCibleId       the seat every reason is relative to
+     * @param animateurCibleId   its current occupant, {@code null} when the seat
+     *                           is free — when it is not, the question answered is
+     *                           « qui pourrait le remplacer ? »
+     * @param disponibles        how many of {@code animateurs} could take the
+     *                           seat without breaking a hard rule
+     * @param creneauxAvecSieges every créneau the saved plan holds a seat on,
+     *                           so the screen can point at one that has
+     *                           something to show instead of leaving the user to
+     *                           try them one by one — the selector is fed by the
+     *                           referential, which legitimately holds more
+     *                           créneaux than the plan does
      */
-    public record CreneauAvailability(long creneauId, String posteCibleId, String standCibleId, String animateurCibleId,
-            int total, int disponibles, List<AnimateurAvailability> animateurs) {
+    public record CreneauAvailability(long creneauId, SeatStatus statut, String posteCibleId, String standCibleId,
+            String animateurCibleId, int total, int disponibles, List<Long> creneauxAvecSieges,
+            List<AnimateurAvailability> animateurs) {
     }
 
     /**

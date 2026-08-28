@@ -66,10 +66,42 @@ export function lignes(banc: BancDeTouche | null, animateurs: Animateur[]): Lign
   });
 }
 
-/** `J3 · 2026-07-16 · 10:00-13:00` — enough to tell two same-hour vacations apart. */
-export function libelleCreneau(creneau: Creneau): string {
-  const famille = creneau.famille === undefined ? '' : ` (F${creneau.famille + 1})`;
-  return `J${creneau.jour} · ${creneau.date} · ${creneau.heureDebut}-${creneau.heureFin}${famille}`;
+/**
+ * `J3 · 2026-07-16 · 10:00-13:00`, plus the stagger family when there is one.
+ *
+ * `avecFamille` is decided over the whole list, like the créneaux screen does:
+ * every créneau carries a family, but it only means something once a découpage
+ * has generated several variants of the same hours. Tagging every line `(F1)`
+ * when there is only one family is noise on top of the one thing this label is
+ * for — telling two otherwise identical vacations apart.
+ */
+export function libelleCreneau(creneau: Creneau, avecFamille = false): string {
+  const famille = avecFamille ? ` (F${(creneau.famille ?? 0) + 1})` : '';
+  return `J${creneau.jour} · ${creneau.date} · ${heure(creneau.heureDebut)}-${heure(creneau.heureFin)}${famille}`;
+}
+
+/** Hours arrive as `HH:mm:ss` from the API; the seconds are always zero and never read. */
+function heure(valeur: string): string {
+  return valeur.length > 5 ? valeur.slice(0, 5) : valeur;
+}
+
+/** True once a découpage has produced more than one stagger family, so the tag carries information. */
+export function familleUtile(creneaux: readonly Creneau[]): boolean {
+  return creneaux.some((creneau) => (creneau.famille ?? 0) > 0);
+}
+
+/**
+ * The timeslots the saved plan actually holds a seat on, as a lookup.
+ *
+ * The selector lists the referential's timeslots, which are legitimately more
+ * numerous — nothing is scheduled on a slot where no stand is open, and a
+ * découpage can add slots after the last solve. Marking the difference in the
+ * list is what turns « that one is empty, and so is that one » into a choice.
+ * An empty set means the answer carries no such information (no saved plan at
+ * all), and nothing is marked rather than everything.
+ */
+export function creneauxUtiles(banc: BancDeTouche | null): ReadonlySet<number> {
+  return new Set(banc?.creneauxAvecSieges ?? []);
 }
 
 export function libelleStand(stands: Stand[], standId: string | null): string {

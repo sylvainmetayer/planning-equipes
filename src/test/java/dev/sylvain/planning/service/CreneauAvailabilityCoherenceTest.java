@@ -20,6 +20,7 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.PlanningService.AnimateurAvailability;
 import dev.sylvain.planning.service.PlanningService.CreneauAvailability;
 import dev.sylvain.planning.service.PlanningService.MotifExclusion;
+import dev.sylvain.planning.service.PlanningService.SeatStatus;
 import dev.sylvain.planning.service.PlanningService.SuggestionReparation;
 import dev.sylvain.planning.service.PlanningService.SuggestionsReparation;
 
@@ -180,12 +181,67 @@ class CreneauAvailabilityCoherenceTest {
 
         assertThat(planningService.creneauAvailability(planning, CRENEAU_CIBLE, "S-VOISIN", null).posteCibleId())
                 .isEqualTo("P-VOISIN");
-        assertThatThrownBy(() -> planningService.creneauAvailability(planning, CRENEAU_CIBLE, "S-INCONNU", null))
-                .isInstanceOf(BusinessError.NotFound.class);
-        assertThatThrownBy(() -> planningService.creneauAvailability(planning, 99L, null, null))
-                .isInstanceOf(BusinessError.NotFound.class);
         assertThatThrownBy(() -> planningService.creneauAvailability(planning, CRENEAU_CIBLE, null, "P-AILLEURS"))
                 .isInstanceOf(BusinessError.Invalid.class);
+    }
+
+    /**
+     * The regression this screen shipped with: the selector is fed by the
+     * referential, which holds more créneaux than the plan does, so it offered
+     * créneaux carrying no seat — and the answer was a {@code NotFound} the
+     * user could not act on, on the very first render.
+     *
+     * <p>Having nothing to show is one of the answers this screen exists to
+     * give, so it is now said rather than thrown.</p>
+     */
+    @Test
+    void aCreneauTheSavedPlanHoldsNoSeatOnIsAnAnswerNotARefusal() {
+        PlanningEvenement planning = planning();
+
+        CreneauAvailability sansSiege = planningService.creneauAvailability(planning, 99L, null, null);
+
+        assertThat(sansSiege.statut()).isEqualTo(SeatStatus.NO_SEAT);
+        assertThat(sansSiege.creneauId()).isEqualTo(99L);
+        assertThat(sansSiege.posteCibleId()).isNull();
+        assertThat(sansSiege.standCibleId()).isNull();
+        assertThat(sansSiege.animateurCibleId()).isNull();
+        assertThat(sansSiege.animateurs()).isEmpty();
+        assertThat(sansSiege.total()).isZero();
+        assertThat(sansSiege.disponibles()).isZero();
+    }
+
+    /** Same for a stand that exists but is not open on that créneau. */
+    @Test
+    void aStandWithNoSeatOnThatCreneauIsAnAnswerToo() {
+        CreneauAvailability sansSiege =
+                planningService.creneauAvailability(planning(), CRENEAU_CIBLE, "S-INCONNU", null);
+
+        assertThat(sansSiege.statut()).isEqualTo(SeatStatus.NO_SEAT);
+        assertThat(sansSiege.animateurs()).isEmpty();
+    }
+
+    /** Nothing saved at all deserves its own wording: « lancez une résolution », not « changez de créneau ». */
+    @Test
+    void anEmptyPlanIsToldApartFromACreneauWithoutSeats() {
+        PlanningEvenement vide = new PlanningEvenement(JOUR, List.of(), List.of());
+
+        CreneauAvailability sansPlan = planningService.creneauAvailability(vide, CRENEAU_CIBLE, null, null);
+
+        assertThat(sansPlan.statut()).isEqualTo(SeatStatus.NO_PLAN);
+        assertThat(sansPlan.creneauxAvecSieges()).isEmpty();
+        assertThat(sansPlan.animateurs()).isEmpty();
+    }
+
+    /**
+     * What lets the screen point at a créneau worth opening instead of leaving
+     * the user to try them one by one — the fix's other half.
+     */
+    @Test
+    void theAnswerNamesEveryCreneauTheSavedPlanHoldsASeatOn() {
+        CreneauAvailability banc = planningService.creneauAvailability(planning(), CRENEAU_CIBLE, null, null);
+
+        assertThat(banc.statut()).isEqualTo(SeatStatus.EVALUATED);
+        assertThat(banc.creneauxAvecSieges()).containsExactly(1L, 2L, 3L, 4L);
     }
 
     /** Read-only: asking the question must not move a single seat. */

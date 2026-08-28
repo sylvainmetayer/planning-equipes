@@ -24,6 +24,11 @@ import jakarta.ws.rs.core.MediaType;
  * <p>Its own path rather than a sub-resource of {@code /api/creneaux}: JAX-RS
  * maps one root path to one resource class, and {@code CreneauResource} is the
  * referential CRUD, which this is not.</p>
+ *
+ * <p>A créneau the saved plan holds no seat on answers {@code 200} with a
+ * {@code statut} saying so, not {@code 404}: the selector feeding this screen
+ * is the referential, which legitimately holds more créneaux than the plan
+ * does. Only a créneau that exists nowhere is a {@code 404}.</p>
  */
 @Path("/banc-de-touche")
 @Produces(MediaType.APPLICATION_JSON)

@@ -943,16 +943,30 @@ export interface AnimateurBanc {
   motifs: MotifExclusion[];
 }
 
+/**
+ * Why the bench has, or has not, anything to say about a timeslot.
+ *
+ * The two empty answers are not the same advice, so they are not the same
+ * value: `NO_PLAN` calls for a solve, `NO_SEAT` for another timeslot. The
+ * screen's selector is fed by the referential, which legitimately holds more
+ * timeslots than the saved plan does — a stand closed then, or a découpage run
+ * after the last solve.
+ */
+export type StatutBanc = 'NO_PLAN' | 'NO_SEAT' | 'EVALUATED';
+
 /** Answer of `GET /api/banc-de-touche/{creneauId}`. */
 export interface BancDeTouche {
   creneauId: number;
-  /** The seat every reason is relative to. */
-  posteCibleId: string;
+  statut: StatutBanc;
+  /** The seat every reason is relative to; null unless `statut` is `EVALUATED`. */
+  posteCibleId: string | null;
   standCibleId: string | null;
   /** Its current occupant, null when the seat is free. */
   animateurCibleId: string | null;
   total: number;
   disponibles: number;
+  /** Every timeslot the saved plan holds a seat on, so the screen can point at a useful one. */
+  creneauxAvecSieges: number[];
   animateurs: AnimateurBanc[];
 }
 

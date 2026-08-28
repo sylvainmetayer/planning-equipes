@@ -503,7 +503,7 @@ export function buildHelpSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.views.term.banc:Banc de touche`,
-              text: $localize`:@@aide.views.def.banc:Pour un créneau, qui n'est affecté nulle part — et, pour chacun, la règle qui l'empêcherait de prendre la place restée libre : indisponible ce jour-là, repos légal, plafond d'heures atteint, appréciation manquante. Toutes les raisons applicables sont affichées, pas seulement la première : c'est ce qui dit si lever un obstacle suffirait. La vue est en lecture seule ; pour agir, passez par l'assistant de réparation du calendrier journalier.`
+              text: $localize`:@@aide.views.def.banc:Pour un créneau, qui n'est affecté nulle part — et, pour chacun, la règle qui l'empêcherait de prendre la place restée libre : indisponible ce jour-là, repos légal, plafond d'heures atteint, appréciation manquante. Toutes les raisons applicables sont affichées, pas seulement la première : c'est ce qui dit si lever un obstacle suffirait. La vue est en lecture seule ; pour agir, passez par l'assistant de réparation du calendrier journalier. Elle lit le planning enregistré, qui porte moins de créneaux que le référentiel : sur un créneau où aucun stand n'est ouvert, ou tant qu'aucune résolution n'a tourné, elle vous le dit au lieu de rester vide.`
             },
             {
               term: $localize`:@@aide.views.term.hours:Heures et besoin en animateurs`,

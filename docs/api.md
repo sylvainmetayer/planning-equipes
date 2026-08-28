@@ -459,10 +459,29 @@ il ne le duplique pas.
 | --- | --- |
 | `GET /api/banc-de-touche/{creneauId}?standId=X&posteId=P` | Qui n'est pas de service sur ce créneau, et pourquoi il ne pourrait pas l'être. Lecture seule. |
 
-Répond sur le **dernier plan enregistré**, sans relancer de solveur — `409` tant
-qu'aucune résolution n'a eu lieu, puisque « qui est disponible sur ce créneau »
-n'a pas de sens avant qu'un plan existe. Affecter quelqu'un depuis cet écran est
-hors périmètre : cela passe par l'assistant de réparation ci-dessus.
+Répond sur le **dernier plan enregistré**, sans relancer de solveur. Affecter
+quelqu'un depuis cet écran est hors périmètre : cela passe par l'assistant de
+réparation ci-dessus.
+
+**Ne pas rien avoir à dire n'est pas une erreur.** Le sélecteur de l'écran est
+alimenté par le référentiel, qui porte légitimement **plus** de créneaux que le
+plan : un créneau sur lequel aucun stand n'est ouvert, ou qu'un découpage a créé
+après la dernière résolution, ne porte aucun siège. Renvoyer `404` dans ce cas
+ouvrait l'écran sur « Créneau inconnu » pour un créneau bien réel, sans rien à
+faire pour en sortir. Le champ `statut` distingue donc les trois réponses :
+
+| `statut` | Sens | Ce que l'écran dit |
+| --- | --- | --- |
+| `NO_PLAN` | Rien n'est enregistré | « Lancez une résolution » |
+| `NO_SEAT` | Le plan existe, mais aucun siège sur ce créneau (ou sur le stand demandé) | « Choisissez un créneau porteur de sièges » |
+| `EVALUATED` | Un siège a été sondé | La liste, et ses motifs |
+
+Hors `EVALUATED`, `posteCibleId`, `standCibleId` et `animateurCibleId` sont nuls
+et les listes vides. `creneauxAvecSieges` énumère, dans tous les cas, les
+créneaux sur lesquels le plan enregistré porte au moins un siège : c'est ce qui
+permet à l'écran de désigner un créneau utile au lieu de laisser essayer un par
+un. Un `404` reste réservé à un créneau qui n'existe **nulle part** dans
+l'édition — la seule requête qui soit vraiment fausse.
 
 Les raisons ne sont **pas réécrites ici** : chacune porte le `contrainte` d'une
 règle réellement appliquée par le solveur, avec le `niveau`, la `categorie` et

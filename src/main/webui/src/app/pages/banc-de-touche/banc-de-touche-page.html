@@ -41,18 +41,21 @@
     }
 
     @if (banc(); as resultat) {
-      <p class="banc-seat">
-        <mat-icon inline aria-hidden="true">event_seat</mat-icon>
-        {{ siegeLibelle() }}
-      </p>
-      @if (resultat.animateurCibleId) {
-        <p class="banc-seat-taken">{{ occupantLibelle() }}</p>
+      @if (resultat.posteCibleId) {
+        <p class="banc-seat">
+          <mat-icon inline aria-hidden="true">event_seat</mat-icon>
+          {{ siegeLibelle() }}
+        </p>
+        @if (resultat.animateurCibleId) {
+          <p class="banc-seat-taken">{{ occupantLibelle() }}</p>
+        }
+        <p class="banc-summary">{{ resumeLibelle() }}</p>
       }
-      <p class="banc-summary">{{ resumeLibelle() }}</p>
 
       @if (lignes().length === 0) {
-        <p class="calendar-empty" i18n="@@bancDeTouche.everyoneOnDuty">
-          Tout le monde est de service sur ce créneau : le banc est vide.
+        <p class="banc-vide">
+          <mat-icon inline aria-hidden="true">info_outline</mat-icon>
+          {{ explicationVide() }}
         </p>
       } @else {
         <div class="table-wrapper">

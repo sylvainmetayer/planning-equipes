@@ -79,3 +79,13 @@
     min-width: 100%;
   }
 }
+
+/* The two "nothing to show" answers — no saved plan, or no seat on this
+   créneau — are answers, not errors: they read as information, not in the red
+   the error banner uses. */
+.banc-vide {
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+  padding: 1rem 0;
+  max-width: 60ch;
+}

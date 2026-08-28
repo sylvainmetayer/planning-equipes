@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { Animateur, AnimateurBanc, BancDeTouche, Creneau, MotifExclusion } from '../../core/models';
-import { etatDe, libelleCreneau, libelleStand, lignes, ordreMotifs } from './banc-de-touche';
+import {
+  creneauxUtiles,
+  etatDe,
+  familleUtile,
+  libelleCreneau,
+  libelleStand,
+  lignes,
+  ordreMotifs
+} from './banc-de-touche';
 
 const motif = (contrainte: string, niveau: MotifExclusion['niveau']): MotifExclusion => ({
   contrainte,
@@ -67,11 +75,13 @@ describe('ordreMotifs', () => {
 describe('lignes', () => {
   const banc: BancDeTouche = {
     creneauId: 1,
+    statut: 'EVALUATED',
     posteCibleId: 'P1',
     standCibleId: 'S1',
     animateurCibleId: null,
     total: 3,
     disponibles: 1,
+    creneauxAvecSieges: [1, 2],
     animateurs: [
       ligne({ animateurId: 'A1' }),
       ligne({
@@ -124,8 +134,22 @@ describe('libellés', () => {
   };
 
   it('distingue deux vacations de même horaire par leur famille', () => {
+    expect(libelleCreneau({ ...creneau, famille: 1 }, true)).toBe('J3 · 2026-07-16 · 10:00-13:00 (F2)');
+    expect(libelleCreneau({ ...creneau, famille: 0 }, true)).toBe('J3 · 2026-07-16 · 10:00-13:00 (F1)');
+  });
+
+  // Every créneau carries a family; tagging them all « F1 » when no découpage
+  // ran is noise on top of the one thing the label exists for.
+  it('ne mentionne la famille que lorsqu’un découpage en a produit plusieurs', () => {
     expect(libelleCreneau(creneau)).toBe('J3 · 2026-07-16 · 10:00-13:00');
-    expect(libelleCreneau({ ...creneau, famille: 1 })).toBe('J3 · 2026-07-16 · 10:00-13:00 (F2)');
+    expect(familleUtile([creneau, { ...creneau, id: 8, famille: 0 }])).toBe(false);
+    expect(familleUtile([creneau, { ...creneau, id: 8, famille: 1 }])).toBe(true);
+  });
+
+  it('coupe les secondes que l’API renvoie sur les horaires', () => {
+    expect(libelleCreneau({ ...creneau, heureDebut: '10:00:00', heureFin: '13:00:00' })).toBe(
+      'J3 · 2026-07-16 · 10:00-13:00'
+    );
   });
 
   it("retombe sur l'id d'un stand absent du référentiel, et rend vide sans stand", () => {
@@ -133,5 +157,38 @@ describe('libellés', () => {
     expect(libelleStand(stands as never, 'S1')).toBe('Chamboule-tout');
     expect(libelleStand(stands as never, 'S9')).toBe('S9');
     expect(libelleStand(stands as never, null)).toBe('');
+  });
+});
+
+// The regression the screen shipped with: its selector lists the referential's
+// timeslots, the backend only knows the ones the saved plan holds a seat on,
+// and the mismatch used to surface as « Créneau inconnu » on first render.
+describe('creneauxUtiles', () => {
+  const vide: BancDeTouche = {
+    creneauId: 9,
+    statut: 'NO_SEAT',
+    posteCibleId: null,
+    standCibleId: null,
+    animateurCibleId: null,
+    total: 0,
+    disponibles: 0,
+    creneauxAvecSieges: [1, 2],
+    animateurs: []
+  };
+
+  it('désigne les créneaux que le plan enregistré porte réellement', () => {
+    const utiles = creneauxUtiles(vide);
+    expect(utiles.has(1)).toBe(true);
+    expect(utiles.has(9)).toBe(false);
+  });
+
+  // Marking every option would be noise, not guidance.
+  it('ne marque rien quand la réponse ne porte aucune information', () => {
+    expect(creneauxUtiles(null).size).toBe(0);
+    expect(creneauxUtiles({ ...vide, statut: 'NO_PLAN', creneauxAvecSieges: [] }).size).toBe(0);
+  });
+
+  it("rend une liste vide de lignes sur une réponse sans siège, sans planter", () => {
+    expect(lignes(vide, [])).toEqual([]);
   });
 });

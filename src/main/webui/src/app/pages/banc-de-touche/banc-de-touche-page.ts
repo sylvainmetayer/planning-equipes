@@ -13,7 +13,15 @@ import { ReferenceDataStore } from '../../core/reference-data.store';
 import { BancDeTouche, Creneau } from '../../core/models';
 import { errorPrefix } from '../../core/error-message';
 import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
-import { EtatBanc, LigneBanc, libelleCreneau, libelleStand, lignes } from './banc-de-touche';
+import {
+  creneauxUtiles,
+  EtatBanc,
+  familleUtile,
+  LigneBanc,
+  libelleCreneau,
+  libelleStand,
+  lignes
+} from './banc-de-touche';
 
 /**
  * « Banc de touche » (issue #303): for one créneau, who is not on duty, and
@@ -58,6 +66,9 @@ export class BancDeTouchePage {
   protected readonly standCible = computed(() =>
     libelleStand(this.store.stands(), this.banc()?.standCibleId ?? null)
   );
+  /** Which créneaux the saved plan holds a seat on, to mark the others in the selector. */
+  protected readonly creneauxUtiles = computed(() => creneauxUtiles(this.banc()));
+  private readonly familleUtile = computed(() => familleUtile(this.store.creneaux()));
 
   constructor() {
     const params = this.route.snapshot.queryParamMap;
@@ -129,8 +140,17 @@ export class BancDeTouchePage {
     }
   }
 
+  /**
+   * The créneaux carrying no seat stay selectable — the answer for one of them
+   * is a legitimate one — but they say so up front, so the user is choosing
+   * rather than hunting.
+   */
   protected libelleCreneau(creneau: Creneau): string {
-    return libelleCreneau(creneau);
+    const utiles = this.creneauxUtiles();
+    const marque = utiles.size > 0 && !utiles.has(creneau.id)
+      ? ' — ' + $localize`:@@bancDeTouche.slotWithoutSeat:aucun siège`
+      : '';
+    return libelleCreneau(creneau, this.familleUtile()) + marque;
   }
 
   protected reinitialiser(): void {
@@ -168,12 +188,32 @@ export class BancDeTouchePage {
 
   protected siegeLibelle(): string {
     const banc = this.banc();
-    if (!banc) {
+    if (!banc || !banc.posteCibleId) {
       return '';
     }
     const stand = this.standCible() || banc.standCibleId || '';
     const poste = banc.posteCibleId;
     return $localize`:@@bancDeTouche.seat:Siège évalué : ${poste}:poste: (${stand}:stand:)`;
+  }
+
+  /**
+   * Why there is nothing to show, when there is nothing to show. Having nothing
+   * to say about a créneau is one of this screen's answers, not a failure: the
+   * endpoint used to answer 404 for a créneau carrying no seat, which opened
+   * the page on « Créneau inconnu » with nothing the user could do about it.
+   */
+  protected explicationVide(): string {
+    const banc = this.banc();
+    if (!banc) {
+      return '';
+    }
+    if (banc.statut === 'NO_PLAN') {
+      return $localize`:@@bancDeTouche.noPlan:Aucun planning enregistré : lancez une résolution pour que cet écran ait un plan à interroger.`;
+    }
+    if (banc.statut === 'NO_SEAT') {
+      return $localize`:@@bancDeTouche.noSeat:Aucun siège sur ce créneau dans le planning enregistré : aucun stand n'y est ouvert, ou le créneau a été créé après la dernière résolution. Choisissez un créneau qui porte des sièges, ou relancez une résolution.`;
+    }
+    return $localize`:@@bancDeTouche.everyoneOnDuty:Tout le monde est de service sur ce créneau : le banc est vide.`;
   }
 
   protected occupantLibelle(): string {
