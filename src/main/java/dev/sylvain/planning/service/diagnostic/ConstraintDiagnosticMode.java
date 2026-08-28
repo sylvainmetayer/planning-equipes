@@ -49,8 +49,11 @@ public enum ConstraintDiagnosticMode {
 
     /**
      * @throws IllegalArgumentException naming the accepted values — a typo in a
-     *         property is worth failing at startup for, rather than silently
-     *         running something the operator did not ask for
+     *         property is worth refusing over silently running something the
+     *         operator did not ask for. The refusal surfaces when the
+     *         {@code @ApplicationScoped} {@code PlanningService} is first
+     *         created, so on the first request that reaches it rather than at
+     *         startup
      */
     public static ConstraintDiagnosticMode fromConfigValue(String value) {
         return Arrays.stream(values())

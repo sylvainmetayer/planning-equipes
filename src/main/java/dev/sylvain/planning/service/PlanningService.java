@@ -2028,10 +2028,10 @@ public class PlanningService {
     /**
      * How many candidates {@link #suggererReparations} simulates when the
      * caller names no plafond. Every candidate costs one full
-     * {@code SolutionManager.analyze} over the whole planning, so the endpoint's
-     * cost is linear in this number and in nothing else — the eligible pool may
-     * well be the entire referential (~150 animateurs on the reference
-     * scenario).
+     * {@link ConstraintDiagnosticService#analyze} over the whole planning, so
+     * the endpoint's cost is linear in this number and in nothing else — the
+     * eligible pool may well be the entire referential (~150 animateurs on the
+     * reference scenario).
      */
     public static final int SUGGESTIONS_PLAFOND_DEFAUT = 20;
 

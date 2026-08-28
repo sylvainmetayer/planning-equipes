@@ -25,7 +25,7 @@ scénario versionné de `src/main/resources/scenarios/`.
 | # | Décision | Statut |
 | --- | --- | --- |
 | [0001](0001-cloisonnement-par-edition.md) | Cloisonner le référentiel et les résultats de solveur par édition | Accepté · révisé par 0009 |
-| [0002](0002-diagnostic-decouple-du-solveur.md) | Découpler le diagnostic de contraintes de l'édition du solveur | **Remplacé** par 0012 |
+| [0002](0002-diagnostic-decouple-du-solveur.md) | Découpler le diagnostic de contraintes de l'édition du solveur | **Remplacé** par 0013 |
 | [0003](0003-verrouillage-par-pin-natif.md) | Figer les affectations validées par le mécanisme natif du solveur | Accepté |
 | [0004](0004-competence-transverse-dans-les-typologies.md) | Une compétence transverse réutilise l'énumération des typologies | Accepté |
 | [0005](0005-polyvalence-reserve-plutot-que-reservation.md) | Polyvalence : garantir une réserve, plutôt que réserver les personnes | Accepté |
