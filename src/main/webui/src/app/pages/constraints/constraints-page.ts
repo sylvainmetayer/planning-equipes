@@ -23,7 +23,6 @@ import {
 } from '../../core/models';
 import { ProblemesStore } from '../../core/problemes.store';
 import { SolverJobService } from '../../core/solver-job.service';
-import { SolverSettingsService } from '../../core/solver-settings.service';
 import { FeasibilityBanner } from '../../shared/feasibility-banner';
 import { LegalText } from '../../shared/legal-text';
 import { StatusMessage } from '../../shared/status-message';
@@ -128,7 +127,6 @@ export class ConstraintsPage {
   private readonly api = inject(ApiService);
   private readonly dialog = inject(MatDialog);
   private readonly legalDisable = inject(LegalDisableConfirmService);
-  private readonly solverSettings = inject(SolverSettingsService);
 
   protected readonly summary = computed(() => {
     const view = this.view();
@@ -170,24 +168,23 @@ export class ConstraintsPage {
   constructor() {
     void this.loadConstraints();
     void this.loadParametresLegaux();
-    // The refresh button launches an ANALYZE job (see refresh() below); once
-    // it completes, whichever browser started it, reload the scored view.
+    // Every solve writes a fresh analysis server-side: reload the scored view
+    // once one lands, whichever browser started it.
     // SolverJobService.reportFinishedJob already raises the feasibility
     // notification itself (it must run whether or not this page is mounted).
     // Unregistered on destroy: this page is lazy-loaded and rebuilt on every
     // navigation, so keeping the handler would stack one more copy per visit.
-    inject(DestroyRef).onDestroy(this.jobs.onResult('ANALYZE', () => void this.loadConstraints()));
+    const destroyRef = inject(DestroyRef);
+    for (const type of ['SOLVE', 'SOLVE_INCREMENTAL'] as const) {
+      destroyRef.onDestroy(this.jobs.onResult(type, () => void this.loadConstraints()));
+    }
   }
 
   private async loadConstraints(): Promise<void> {
     this.loading.set(true);
     this.error.set('');
     try {
-      const view = await this.api.get<ConstraintsView>('/api/constraints');
-      this.view.set(view);
-      // Feeds the shared "legal rules disabled" alert, which the Solveur screen
-      // also reads.
-      this.problemes.constraints.set(view);
+      this.apply(await this.api.get<ConstraintsView>('/api/constraints'));
     } catch (error) {
       this.view.set(null);
       this.error.set(errorPrefix(error));
@@ -196,14 +193,31 @@ export class ConstraintsPage {
     }
   }
 
-  /** Refresh button: launches a background solver analysis; loadConstraints() picks up its result via onResult above. */
+  /**
+   * Refresh button: re-derives the analysis from the plan currently persisted
+   * and shows it. It used to submit a full solve whose result was thrown away
+   * — minutes of solver time, and a score describing a planning no screen
+   * would ever display. Nothing is solved here, so the button stays available
+   * while a solve runs; what it scores is simply the plan that solve is about
+   * to replace.
+   */
   protected async refresh(): Promise<void> {
+    this.loading.set(true);
     this.error.set('');
     try {
-      await this.jobs.submitAnalyzeFromReferenceData(this.solverSettings.secondsLimit());
+      this.apply(await this.api.post<ConstraintsView>('/api/constraints/diagnostic', {}));
     } catch (error) {
       this.error.set(errorPrefix(error));
+    } finally {
+      this.loading.set(false);
     }
+  }
+
+  private apply(view: ConstraintsView): void {
+    this.view.set(view);
+    // Feeds the shared "legal rules disabled" alert, which the Solveur screen
+    // also reads.
+    this.problemes.constraints.set(view);
   }
 
   protected async loadParametresLegaux(): Promise<void> {

@@ -111,12 +111,15 @@ Single Quarkus service, no separate solver microservice. Package root:
   served by `GET /api/constraints`; **every new constraint must be registered
   there too**.
 - `service/` — `PlanningService` (SolverFactory from `solver/solverConfig.xml`,
-  loads `scenario.yml` via SnakeYAML), `SolverJobService` (async solve/analyze,
+  loads `scenario.yml` via SnakeYAML), `SolverJobService` (async solves,
   plus the solver queue — persisted through `SolverJobRepository` and replayed
   at startup, so a restart no longer loses the planned runs),
-  `ConstraintAnalysisStore`, `ReferenceDataService` (facade over one service
-  per referential family — `StandService`, `AnimateurService`,
-  `CreneauService`, …) over one repository per family
+  `ConstraintAnalysisStore` (the score breakdown the Contraintes screen shows,
+  written by every solve and re-derivable from the persisted plan alone —
+  **nothing analyses by solving a plan it then throws away**),
+  `ReferenceDataService` (facade over one service per referential family —
+  `StandService`, `AnimateurService`, `CreneauService`, …) over one repository
+  per family
   (`StandRepository`, `AnimateurRepository`, …, plus
   `ReferenceDataImportRepository` for the one write that spans all of them),
   `PlanningPersistenceService`, `DatabaseDumpService`,

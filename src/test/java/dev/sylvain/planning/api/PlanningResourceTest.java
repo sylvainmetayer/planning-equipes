@@ -170,38 +170,6 @@ class PlanningResourceTest {
     }
 
     @Test
-    void analyzeFeedsTheConstraintsScreen() {
-        String planningJson = given()
-                .when().get("/api/planning/sample")
-                .then()
-                .statusCode(200)
-                .extract().asString();
-
-        List<String> analysedNames = given()
-                .contentType("application/json")
-                .body(planningJson)
-                .when().post("/api/solve/analyze?seconds=1")
-                .then()
-                .statusCode(200)
-                .extract().jsonPath().getList("contraintes.name");
-
-        JsonPath view = given()
-                .when().get("/api/constraints")
-                .then()
-                .statusCode(200)
-                .body("analysedAt", notNullValue())
-                .body("scoreGlobal", notNullValue())
-                .extract().jsonPath();
-
-        // The catalogue ids must match the solver constraint ids, otherwise the
-        // screen would silently show rules without any result.
-        List<String> catalogueNames = view.getList("contraintes.name");
-        assertThat(catalogueNames).containsAll(analysedNames);
-        List<String> scoredNames = view.getList("contraintes.findAll { it.score != null }.name");
-        assertThat(scoredNames).containsExactlyInAnyOrderElementsOf(analysedNames);
-    }
-
-    @Test
     void volumetrieMatchesThePlanningActuallyBuiltForASolve() {
         given()
                 .when().post("/api/reference-data/import-scenario?name=scenario.yml")

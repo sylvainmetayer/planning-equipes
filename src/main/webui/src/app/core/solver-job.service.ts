@@ -84,9 +84,6 @@ function jobLabel(type: string): string {
   if (type === 'SOLVE_INCREMENTAL') {
     return $localize`:@@job.type.solveIncremental:Replanification incrémentale`;
   }
-  if (type === 'ANALYZE') {
-    return $localize`:@@job.type.analyze:Analyse de la solution`;
-  }
   return type;
 }
 
@@ -139,7 +136,6 @@ export interface TrackedJob {
 export interface JobResults {
   SOLVE: PlanningDiagnostic | ResultatSolve | ResultatSolveIncremental;
   SOLVE_INCREMENTAL: ResultatSolveIncremental;
-  ANALYZE: PlanningDiagnostic;
 }
 
 /** What a finished job of type `T` is handed to. */
@@ -371,15 +367,6 @@ export class SolverJobService {
     await this.api.delete(`/api/jobs/${encodeURIComponent(jobId)}`);
     this.mesJobs.delete(jobId);
     await this.rafraichirFile();
-  }
-
-  submitAnalyze(planning: PlanningEvenement, seconds?: number): Promise<JobView> {
-    return this.submit('/api/solve/analyze/async', planning, 'ANALYZE', seconds);
-  }
-
-  /** Server-side-built counterpart of {@link submitAnalyze}. */
-  submitAnalyzeFromReferenceData(seconds?: number): Promise<JobView> {
-    return this.submit('/api/solve/analyze/async/reference-data', {}, 'ANALYZE', seconds);
   }
 
   /**
@@ -798,7 +785,7 @@ export class SolverJobService {
       variant: 'success',
       desktop: true
     });
-    // Raised here rather than by the SOLVE/ANALYZE page's onResult handler:
+    // Raised here rather than by the solving page's onResult handler:
     // that handler only exists while its page is mounted, so a solve finishing
     // after the user navigated away would otherwise never surface this. This
     // runs unconditionally, whichever page (if any) is open when the job ends.

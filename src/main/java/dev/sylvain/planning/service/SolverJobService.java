@@ -87,8 +87,7 @@ public class SolverJobService {
     public enum JobType {
         SOLVE,
         /** Incremental re-solve (issue #86) — its own type so the UI can name it. */
-        SOLVE_INCREMENTAL,
-        ANALYZE
+        SOLVE_INCREMENTAL
     }
 
     public enum JobStatus {
@@ -114,9 +113,6 @@ public class SolverJobService {
 
     @Inject
     PlanningService planningService;
-
-    @Inject
-    ConstraintAnalysisStore analysisStore;
 
     @Inject
     EditionContext editionContext;
@@ -269,26 +265,12 @@ public class SolverJobService {
         return submit(type, secondsLimit, enFile, scope, true, replayableTask(type, secondsLimit, scope));
     }
 
-    /**
-     * Rebuilds the work of a replayable job from its persisted intention.
-     * {@link JobType#ANALYZE} has no entry: an analyze always carries a
-     * client-supplied problem, so it is never replayable and never queued.
-     */
+    /** Rebuilds the work of a replayable job from its persisted intention. */
     private JobTask replayableTask(JobType type, Long secondsLimit, ReplanificationScope scope) {
         return switch (type) {
             case SOLVE -> solveTaskFromReferenceData(secondsLimit);
             case SOLVE_INCREMENTAL -> incrementalSolveTask(secondsLimit, scope);
-            case ANALYZE -> throw new BusinessError.Invalid("An analyze job is never replayable");
         };
-    }
-
-    public SolverJob submitAnalyze(PlanningEvenement problem, Long secondsLimit) {
-        return submit(JobType.ANALYZE, secondsLimit, false, null, false, job -> {
-            PlanningService.PlanningDiagnostic diagnostic =
-                    planningService.analyze(problem, secondsLimit, job::attachSolver);
-            analysisStore.record(diagnostic);
-            return diagnostic;
-        });
     }
 
     /**

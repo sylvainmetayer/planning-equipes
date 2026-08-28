@@ -54,7 +54,7 @@ public class ParametresService {
      * Saves the solver's default termination duration (Données tab). Not a
      * problem fact and deliberately not tracked by
      * {@link ReferenceDataChangeTracker}: it only changes how long a
-     * solve/analyze runs, not the reference data fed to it.
+     * solve runs, not the reference data fed to it.
      */
     public ParametresSolveur updateSolveur(ParametresSolveur parametres) {
         ParametresValidator.checkParametresSolveur(parametres);

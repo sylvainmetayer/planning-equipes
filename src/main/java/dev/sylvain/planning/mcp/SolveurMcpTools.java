@@ -16,7 +16,7 @@ import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.ConstraintAnalysisStore;
 import dev.sylvain.planning.service.ConstraintAnalysisStore.StoredAnalysis;
 import dev.sylvain.planning.service.PlanningPersistenceService;
-import dev.sylvain.planning.service.PlanningService;
+import dev.sylvain.planning.service.PlanningService.PlanningDiagnostic;
 import dev.sylvain.planning.service.ReplanificationScope;
 import dev.sylvain.planning.service.SolverJobService;
 import dev.sylvain.planning.service.SolverJobService.SolverBusyException;
@@ -30,11 +30,16 @@ import jakarta.inject.Inject;
 /**
  * MCP tools to drive the solver (start/stop/status) and inspect its results,
  * including — per issue #107 — an explicit way to know exactly which hard
- * constraints are still broken after a run. Every solve/analyze here is
- * built server-side from the persisted reference data (like
+ * constraints are still broken after a run. Every solve here is built
+ * server-side from the persisted reference data (like
  * {@code SolverJobResource#solveFromReferenceData}), since an AI assistant
  * has no practical way to construct the full {@code PlanningEvenement} JSON
  * body the raw REST endpoints expect.
+ *
+ * <p>Diagnosing does not go through the solver at all: {@code diagnostiquer_plan}
+ * scores the plan already persisted. It replaces a tool that launched a full
+ * solve and threw its result away, which cost minutes to describe a plan no
+ * other tool would ever report on.</p>
  *
  * <p>The two solves go through the <b>replayable</b> submissions, exactly like
  * the screens do. Building the problem here instead would have cost the three
@@ -49,9 +54,6 @@ public class SolveurMcpTools {
 
     @Inject
     SolverJobService solverJobService;
-
-    @Inject
-    PlanningService planningService;
 
     @Inject
     PlanningPersistenceService persistenceService;
@@ -108,19 +110,36 @@ public class SolveurMcpTools {
         }
     }
 
-    @Tool(description = "Lance une analyse (score détaillé par contrainte, sans persister) en tâche de fond à "
-            + "partir des données de référence persistées.",
-            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
-                    idempotentHint = false, openWorldHint = false))
-    JobView lancer_analyse(@ToolArg(description = "Durée max en secondes (défaut : configuration serveur)", required = false) Long secondes,
+    /**
+     * Diagnoses the plan that is actually persisted, rather than solving a
+     * fresh one to diagnose that instead: the score breakdown an assistant
+     * needs describes the plan the other tools report on
+     * ({@code etat_planning}, {@code lister_affectations}), and costs one
+     * score calculation instead of a full solve.
+     *
+     * <p>Declared read-only, and it is: the only thing it writes is the
+     * in-memory analysis the Contraintes screen reads, a pure function of the
+     * plan it just read. No business data changes, so a client is right to
+     * call it without asking.</p>
+     */
+    @Tool(description = "Diagnostic du planning persisté : score global et score de chaque contrainte, nombre de "
+            + "correspondances, postes non pourvus. Recalculé à la demande sur le plan en base, avec les "
+            + "contraintes et pondérations actives du moment — aucune résolution n'est lancée. Pour le détail "
+            + "des violations dures, enchaîner avec expliquer_echec_contraintes_dures.",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
+    DiagnosticPlanView diagnostiquer_plan(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        try {
-            return toView(solverJobService.submitAnalyze(planningService.buildFromReferenceData(), secondes));
-        } catch (SolverBusyException e) {
-            // No enFile here, unlike the two solves: an analyze carries its own
-            // problem, so it is never queued and never replayed.
-            throw new BusinessError.Conflict("Solveur déjà occupé par le job " + e.getActiveJob().getId());
+        StoredAnalysis analyse = analysisStore.refreshFromPersistedPlan();
+        if (analyse == null) {
+            throw new IllegalStateException("Aucun planning persisté : lancez d'abord une résolution.");
         }
+        PlanningDiagnostic diagnostic = analyse.diagnostic();
+        return new DiagnosticPlanView(diagnostic.score(), diagnostic.hardScore(), diagnostic.postesNonPourvus(),
+                diagnostic.contraintes().stream()
+                        .map(contrainte -> new ContrainteScoreView(contrainte.name(), contrainte.score(),
+                                contrainte.matchCount()))
+                        .toList());
     }
 
     @Tool(description = "Arrête le job en cours (le solveur renvoie sa meilleure solution trouvée jusqu'ici). "
@@ -232,5 +251,17 @@ public class SolveurMcpTools {
     }
 
     public record ViolationHardView(String contrainte, int nombreCorrespondances, List<String> violations) {
+    }
+
+    /**
+     * Score of the persisted plan, rule by rule. No violation message here —
+     * those name animateurs and go out anonymised, through
+     * {@code expliquer_echec_contraintes_dures}.
+     */
+    public record DiagnosticPlanView(String score, int hardScore, int postesNonPourvus,
+            List<ContrainteScoreView> contraintes) {
+    }
+
+    public record ContrainteScoreView(String name, String score, int nombreCorrespondances) {
     }
 }

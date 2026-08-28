@@ -446,7 +446,7 @@ export interface FeasibilityReport {
 }
 
 /**
- * Payload of a SOLVE or ANALYZE job: score, unfilled seats and feasibility.
+ * Payload of a solve job: score, unfilled seats and feasibility.
  * Deliberately excludes the solved planning itself (animateurs/stands/
  * créneaux/postes) — that payload can reach several dozens of MB and is
  * consulted through the dedicated screens instead, which load it from
@@ -694,7 +694,7 @@ export const DUREE_HEBDOMADAIRE_MAX_HEURES = 48;
 /** Ordre public ceiling for minors, in hours (Code du travail art. L3162-1). */
 export const DUREE_HEBDOMADAIRE_MAX_MINEUR_HEURES = 35;
 
-export type JobType = 'SOLVE' | 'SOLVE_INCREMENTAL' | 'ANALYZE';
+export type JobType = 'SOLVE' | 'SOLVE_INCREMENTAL';
 /**
  * `QUEUED` waits for the solver without holding it; `PENDING` already holds it.
  * `INTERROMPU` is a job the server was running when it stopped: terminal, since

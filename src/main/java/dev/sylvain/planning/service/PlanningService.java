@@ -1946,26 +1946,6 @@ public class PlanningService {
     }
 
     /**
-     * Solve and return a structured explanation of every constraint that
-     * contributed to the final score — including hard/medium violations that
-     * remain in the best solution found. Useful for diagnosing why the solver
-     * did not converge to zero hard.
-     */
-    public PlanningDiagnostic analyze(PlanningEvenement problem, Long secondsLimitOverride) {
-        return analyze(problem, secondsLimitOverride, null);
-    }
-
-    /**
-     * Same as {@link #analyze(PlanningEvenement, Long)}, but exposes the
-     * {@link Solver} it builds so a background caller can stop it early.
-     */
-    public PlanningDiagnostic analyze(PlanningEvenement problem, Long secondsLimitOverride,
-            Consumer<Solver<PlanningEvenement>> onSolverReady) {
-        PlanningEvenement solved = solve(problem, secondsLimitOverride, onSolverReady);
-        return diagnose(solved);
-    }
-
-    /**
      * Every constraint definition indexed by name, for {@link #explainAffectation}
      * and {@link #simulateSwap} to attach the business-facing niveau/catégorie/
      * description to a raw {@code ConstraintAnalysis} without a linear scan.
@@ -2865,7 +2845,7 @@ public class PlanningService {
     }
 
     /**
-     * Business-facing result of a solve/analyze: score, unfilled seats and
+     * Business-facing result of a solve: score, unfilled seats and
      * per-constraint breakdown. Deliberately excludes the {@link PlanningEvenement}
      * itself (animateurs/stands/créneaux/postes) — that payload can reach several
      * dozens of MB and is consulted through the dedicated screens instead, which

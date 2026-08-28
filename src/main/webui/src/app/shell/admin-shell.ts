@@ -314,7 +314,7 @@ export class AdminShell {
     // data changed since the last solve" banner just the same. Listening for
     // `SOLVE` alone left that banner up after a targeted replan until the next
     // referential write or a page reload — telling the operator their fresh
-    // plan was stale. `ANALYZE` is deliberately absent: it persists nothing.
+    // plan was stale.
     for (const type of ['SOLVE', 'SOLVE_INCREMENTAL'] as const) {
       destroyRef.onDestroy(this.jobs.onResult(type, () => void this.resolution.reload()));
     }

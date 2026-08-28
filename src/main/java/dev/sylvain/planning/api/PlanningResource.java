@@ -6,10 +6,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.service.ConstraintAnalysisStore;
 import dev.sylvain.planning.service.PlanningPersistenceService;
 import dev.sylvain.planning.service.PlanningService;
-import dev.sylvain.planning.service.PlanningService.PlanningDiagnostic;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.SolvePipeline;
 import jakarta.inject.Inject;
@@ -36,9 +34,6 @@ public class PlanningResource {
 
     @Inject
     PlanningPersistenceService persistenceService;
-
-    @Inject
-    ConstraintAnalysisStore analysisStore;
 
     @Inject
     ReferenceDataChangeTracker changeTracker;
@@ -173,18 +168,4 @@ public class PlanningResource {
     public record PlanningResolutionView(boolean solved, Instant resoluLe, Instant derniereModificationDonnees) {
     }
 
-    /**
-     * Solve and return a per-constraint breakdown of the resulting score.
-     * Useful when {@code /api/solve} finishes with a non-zero hard score:
-     * this endpoint tells you which constraint(s) are still violated and by
-     * how much, instead of just returning the raw score.
-     */
-    @POST
-    @Path("/solve/analyze")
-    public PlanningDiagnostic analyze(PlanningEvenement planningEvenement,
-            @QueryParam("seconds") Long secondsLimit) {
-        PlanningDiagnostic diagnostic = planningService.analyze(planningEvenement, secondsLimit);
-        analysisStore.record(diagnostic);
-        return diagnostic;
-    }
 }

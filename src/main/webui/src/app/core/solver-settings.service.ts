@@ -25,7 +25,7 @@ export class SolverSettingsService {
   constructor() {
     void this.refresh().catch(() => {
       // Server unreachable at startup: keep the in-memory default, so
-      // solve/analyze requests still work. A caller awaiting refresh()
+      // solve requests still work. A caller awaiting refresh()
       // directly (the Débogage page) still sees the error and can report it.
     });
   }

@@ -59,8 +59,8 @@ public class McpPrompts {
                 Le dernier planning résolu%s contient des violations de contraintes dures.
 
                 1. Appelle etat_planning pour savoir si le planning affiché est encore à jour.
-                2. Récupère le diagnostic avec expliquer_echec_contraintes_dures ; s'il est vide, \
-                lance lancer_analyse puis réessaie.
+                2. Appelle diagnostiquer_plan pour recalculer le score du plan persisté, puis \
+                expliquer_echec_contraintes_dures pour le détail des violations.
                 3. Pour chaque contrainte HARD en défaut, identifie les postes touchés avec \
                 lister_affectations puis expliquer_affectation, et donne la cause racine probable \
                 (compétences manquantes sur la typologie, indisponibilité, effectif insuffisant sur la \

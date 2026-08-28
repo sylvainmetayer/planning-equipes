@@ -109,22 +109,23 @@ class SolverJobResourceTest {
                 .extract().path("id");
     }
 
+    /** A finished job stays in the journal until it is explicitly dropped. */
     @Test
-    void analyzeAsyncReturnsConstraintBreakdown() throws InterruptedException {
+    void finishedJobIsReadableThenDroppedFromTheJournal() throws InterruptedException {
         String planningJson = sampleplanning();
 
         String jobId = given()
                 .contentType("application/json")
                 .body(planningJson)
-                .when().post("/api/solve/analyze/async")
+                .when().post("/api/solve/async?seconds=1")
                 .then()
                 .statusCode(202)
-                .body("type", equalTo("ANALYZE"))
+                .body("type", equalTo("SOLVE"))
                 .extract().path("id");
 
         JsonPath job = pollUntilFinished(jobId);
         assertThat(job.getString("status")).isEqualTo("COMPLETED");
-        assertThat(job.getString("result.score")).isNotBlank();
+        assertThat(job.getString("result.diagnostic.score")).isNotBlank();
 
         given().when().get("/api/jobs")
                 .then()
@@ -203,7 +204,7 @@ class SolverJobResourceTest {
         given()
                 .contentType("application/json")
                 .body(planningJson)
-                .when().post("/api/solve/analyze/async")
+                .when().post("/api/solve/async")
                 .then()
                 .statusCode(409)
                 .body("id", equalTo(jobId))

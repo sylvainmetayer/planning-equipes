@@ -68,9 +68,6 @@ public class PlanSnapshotService {
     ConstraintAnalysisStore analysisStore;
 
     @Inject
-    PlanningService planningService;
-
-    @Inject
     PlanningKpiService kpiService;
 
     /**
@@ -466,14 +463,12 @@ public class PlanSnapshotService {
         });
         // The restore rewrote the persisted plan outside of any solve, so the
         // stored constraint analysis now describes a plan that is gone.
-        // Cleared first, then re-derived from the restored plan: a failed
-        // re-analysis leaves "no analysis yet", never a stale lie.
         // Best-effort like captureBeforeSolve — it must not undo the restore.
-        analysisStore.clear();
         try {
-            analysisStore.record(planningService.diagnosePersistedPlan());
+            analysisStore.refreshFromPersistedPlan();
         } catch (RuntimeException e) {
-            // Deliberately swallowed: see comment above.
+            // Deliberately swallowed: a missing analysis is an empty screen,
+            // the restore itself succeeded.
         }
         return RestaurationResult.ok(detail.affectations().size());
     }

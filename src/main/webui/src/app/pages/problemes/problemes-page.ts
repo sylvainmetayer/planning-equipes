@@ -69,12 +69,11 @@ export class ProblemesPage {
 
   constructor() {
     void this.store.reload();
-    // A solve or an analysis started from anywhere (this browser or another)
-    // rewrites both sources: refresh once it lands. Unregistered on destroy,
-    // like every other lazy-loaded page's handler.
+    // A solve started from anywhere (this browser or another) rewrites both
+    // sources: refresh once it lands. Unregistered on destroy, like every
+    // other lazy-loaded page's handler.
     const destroyRef = inject(DestroyRef);
     destroyRef.onDestroy(this.jobs.onResult('SOLVE', () => void this.store.reload()));
-    destroyRef.onDestroy(this.jobs.onResult('ANALYZE', () => void this.store.reload()));
   }
 
   protected refresh(): void {

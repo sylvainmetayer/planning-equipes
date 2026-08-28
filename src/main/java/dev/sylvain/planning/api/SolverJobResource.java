@@ -8,7 +8,6 @@ import dev.sylvain.planning.config.ConfigJobStream;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.JobStreamBroadcaster;
 import dev.sylvain.planning.service.ReplanificationScope;
-import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.SolverJobService;
 import dev.sylvain.planning.service.SolverJobService.SolverBusyException;
 import dev.sylvain.planning.service.SolverJobService.SolverJob;
@@ -50,9 +49,6 @@ public class SolverJobResource {
     SolverJobService solverJobService;
 
     @Inject
-    PlanningService planningService;
-
-    @Inject
     JobStreamBroadcaster jobStream;
 
     @Inject
@@ -65,13 +61,6 @@ public class SolverJobResource {
     @Path("/solve/async")
     public Response solveAsync(PlanningEvenement planningEvenement, @QueryParam("seconds") Long secondsLimit) {
         SolverJob job = solverJobService.submitSolve(planningEvenement, secondsLimit);
-        return Response.accepted(JobView.withoutResult(job)).build();
-    }
-
-    @POST
-    @Path("/solve/analyze/async")
-    public Response analyzeAsync(PlanningEvenement planningEvenement, @QueryParam("seconds") Long secondsLimit) {
-        SolverJob job = solverJobService.submitAnalyze(planningEvenement, secondsLimit);
         return Response.accepted(JobView.withoutResult(job)).build();
     }
 
@@ -112,16 +101,6 @@ public class SolverJobResource {
     public Response solveIncremental(ReplanificationScope scope, @QueryParam("seconds") Long secondsLimit,
             @QueryParam("enFile") @DefaultValue("false") boolean enFile) {
         SolverJob job = solverJobService.submitSolveIncremental(secondsLimit, scope, enFile);
-        return Response.accepted(JobView.withoutResult(job)).build();
-    }
-
-    /** Server-side-built counterpart of {@link #analyzeAsync}. */
-    @POST
-    @Path("/solve/analyze/async/reference-data")
-    @Consumes(MediaType.WILDCARD)
-    public Response analyzeFromReferenceData(@QueryParam("seconds") Long secondsLimit) {
-        SolverJob job = solverJobService.submitAnalyze(
-                planningService.buildFromReferenceData(), secondsLimit);
         return Response.accepted(JobView.withoutResult(job)).build();
     }
 
@@ -254,9 +233,9 @@ public class SolverJobResource {
     }
 
     /**
-     * Stops a job started by mistake. A running solve/analyze is terminated
-     * early (the Timefold solver returns its best solution so far, which is
-     * still persisted/analyzed as usual) instead of being killed outright.
+     * Stops a job started by mistake. A running solve is terminated early (the
+     * Timefold solver returns its best solution so far, which is still
+     * persisted and analysed as usual) instead of being killed outright.
      */
     @POST
     @Path("/jobs/{id}/cancel")

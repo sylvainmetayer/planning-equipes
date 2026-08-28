@@ -54,7 +54,7 @@
   </mat-card-header>
   <mat-card-content>
     <div class="calendar-toolbar">
-      <button matButton="tonal" type="button" [disabled]="loading() || jobs.solverBusy()" (click)="refresh()">
+      <button matButton="tonal" type="button" [disabled]="loading()" (click)="refresh()">
         <mat-icon>refresh</mat-icon>
         <ng-container i18n="@@common.refresh">Actualiser</ng-container>
       </button>

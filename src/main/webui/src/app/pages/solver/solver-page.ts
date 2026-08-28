@@ -228,7 +228,7 @@ export class SolverPage {
     return remaining === null ? '' : formatDuration(remaining);
   });
 
-  /** Completion time of the most recent finished SOLVE or ANALYZE job, if any has ever run. */
+  /** Completion time of the most recent finished solve job, if any has ever run. */
   protected readonly lastRunAt = signal<string | null>(null);
   protected readonly formattedLastRun = computed(() => {
     const lastRunAt = this.lastRunAt();

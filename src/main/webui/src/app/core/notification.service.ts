@@ -116,7 +116,7 @@ export class NotificationService {
   }
 
   /**
-   * Logs a post-solve/analyze feasibility issue to the Notifications page, so
+   * Logs a post-solve feasibility issue to the Notifications page, so
    * it stays reviewable even for whoever isn't looking at the Solveur or
    * Contraintes page when the background job completes — both already show
    * the same wording inline via `app-feasibility-banner`, so this is always

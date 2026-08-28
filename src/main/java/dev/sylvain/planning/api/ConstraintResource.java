@@ -20,6 +20,7 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -46,7 +47,28 @@ public class ConstraintResource {
 
     @GET
     public ConstraintsView list() {
-        StoredAnalysis analysis = analysisStore.latest();
+        return view(analysisStore.latest());
+    }
+
+    /**
+     * Re-derives the analysis from the plan currently persisted and returns the
+     * refreshed view. No solver is started: this is one score calculation over
+     * the plan already on screen, where refreshing this screen used to mean a
+     * full solve whose result was thrown away — minutes of solver time to
+     * describe a plan nobody would ever see.
+     *
+     * <p>Returns the empty view (no {@code analysedAt}, no score) when nothing
+     * is persisted yet, which is exactly what the screen has always shown
+     * before the first solve.</p>
+     */
+    @POST
+    @Path("/diagnostic")
+    @Consumes(MediaType.WILDCARD)
+    public ConstraintsView diagnose() {
+        return view(analysisStore.refreshFromPersistedPlan());
+    }
+
+    private ConstraintsView view(StoredAnalysis analysis) {
         Map<String, ConstraintDiagnostic> byName = analysis == null
                 ? Map.of()
                 : analysis.diagnostic().contraintes().stream()

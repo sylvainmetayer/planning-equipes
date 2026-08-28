@@ -133,12 +133,12 @@ describe('SolverJobService', () => {
     });
 
     it('never dispatches to a handler registered for another job type', async () => {
-      const analyze = vi.fn();
-      service.onResult('ANALYZE', analyze);
+      const incremental = vi.fn();
+      service.onResult('SOLVE_INCREMENTAL', incremental);
 
       await runJobToCompletion();
 
-      expect(analyze).not.toHaveBeenCalled();
+      expect(incremental).not.toHaveBeenCalled();
     });
   });
 

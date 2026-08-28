@@ -89,6 +89,7 @@ qui vient d'afficher la donnée.
 | `capturer_instantane`, `restaurer_instantane` | lèvent une erreur là où le REST renvoie un 409 avec un corps | une réponse d'outil que l'assistant lit comme un succès ne doit pas être celle qui dit que rien n'a été écrit |
 | `lister_affectations`, `consulter_instantane` | plafonnent la liste (200 par défaut) et annoncent le total | un planning réel porte plusieurs milliers de postes ; le total à côté de la liste est ce qui rend la troncature lisible, plutôt qu'un plafond caché |
 | `lister_animateurs`, `lister_stands` | acceptent une `limite` mais ne plafonnent rien par défaut | leur taille est celle du référentiel, pas celle du planning : l'appelant qui les demande les veut en général en entier |
+| `diagnostiquer_plan` | lève une erreur sans planning persisté, là où `POST /api/constraints/diagnostic` renvoie la vue vide | l'écran a un état vide permanent qui dit déjà « aucune analyse » ; une structure vide rendue à un assistant se lit comme « aucune contrainte en défaut » |
 
 **La question « où ça coince ? » ne passe pas par la liste.**
 `synthese_affectations` répond en quelques dizaines de lignes — postes pourvus
@@ -148,8 +149,11 @@ trois propriétés d'un coup :
   qu'une résolution tourne verra ses modifications prises en compte par la
   suivante.
 
-`lancer_analyse` reste hors de ce mécanisme : une analyse porte son propre
-problème, elle n'est donc ni mise en file ni rejouée.
+`diagnostiquer_plan` ne passe pas par là du tout : il ne résout rien. Il
+recalcule le score du **plan persisté**, celui dont parlent `etat_planning` et
+`lister_affectations`. Il remplace un outil d'analyse qui lançait une résolution
+complète et en jetait le résultat : le budget d'un solve pour décrire un
+planning que rien ni personne n'aurait affiché ensuite.
 
 Le périmètre de `resoudre_incremental` (animateurs, jours, stands) **ne touche
 pas aux verrouillages** : il ne vaut que pour ce job. Ce qui est figé

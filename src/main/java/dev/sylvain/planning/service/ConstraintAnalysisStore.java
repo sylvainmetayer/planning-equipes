@@ -9,9 +9,9 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 /**
- * Keeps the latest score analysis produced by {@code /api/solve/analyze} (sync
- * or async) so the constraints screen can show, next to each rule, how it
- * scored on the last run. In-memory only: an analysis is a diagnostic, not
+ * Keeps the latest score analysis — written by every solve, and re-derivable
+ * from the persisted plan alone — so the constraints screen can show, next to
+ * each rule, how it scored. In-memory only: an analysis is a diagnostic, not
  * business data worth persisting.
  *
  * <p>Kept per {@code edition}: an analysis describes one edition's data, so
@@ -26,6 +26,9 @@ public class ConstraintAnalysisStore {
     @Inject
     EditionContext editionContext;
 
+    @Inject
+    PlanningService planningService;
+
     private final Map<String, StoredAnalysis> latestByEdition = new ConcurrentHashMap<>();
 
     public void record(PlanningDiagnostic diagnostic) {
@@ -39,11 +42,30 @@ public class ConstraintAnalysisStore {
     }
 
     /**
-     * Drops the edition's analysis. Called when the persisted plan is
-     * rewritten outside of any solve (a snapshot restore) right before the
-     * fresh diagnostic is recorded: if that re-analysis fails, the screen
-     * honestly shows "no analysis yet" instead of the previous solve's
-     * violations against a plan they no longer describe.
+     * Re-derives the analysis from the plan currently persisted, and stores it.
+     * The one operation that produces an analysis <b>without solving</b>: the
+     * stored analysis always describes the persisted plan, so refreshing it can
+     * only ever replace it with itself, computed against today's constraints,
+     * weights and toggles.
+     *
+     * <p>Cleared before, never after: a re-analysis that fails leaves "no
+     * analysis yet" rather than a previous one the screen would present as
+     * describing the plan it shows.</p>
+     *
+     * @return the fresh analysis, or {@code null} when nothing is persisted to
+     *         analyse
+     */
+    public StoredAnalysis refreshFromPersistedPlan() {
+        clear();
+        record(planningService.diagnosePersistedPlan());
+        return latest();
+    }
+
+    /**
+     * Drops the edition's analysis. Called right before a fresh diagnostic is
+     * derived (see {@link #refreshFromPersistedPlan}): if that re-analysis
+     * fails, the screen honestly shows "no analysis yet" instead of the
+     * previous solve's violations against a plan they no longer describe.
      */
     public void clear() {
         latestByEdition.remove(editionId());

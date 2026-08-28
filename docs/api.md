@@ -103,8 +103,8 @@ Un chemin qui s'arrêterait avant la fin laisserait l'écran Contraintes sur
 l'analyse du solve précédent, sans lever d'erreur : le seul symptôme serait un
 écran qui ment. `SolveSynchronePipelineTest` verrouille les deux bouts.
 
-**Un seul job de résolution ou d'analyse à la fois pour toute l'application**,
-verrou porté par le serveur. Toute autre session voit le même job actif via
+**Un seul job de résolution à la fois pour toute l'application**, verrou porté
+par le serveur. Toute autre session voit le même job actif via
 `/api/jobs/active` et se voit refuser un second lancement en `409`, le corps
 portant le job en cours.
 
@@ -273,6 +273,24 @@ portent. C'est ce qui répond à « *lesquelles* de mes exceptions » quand une
 règle ad hoc affiche douze correspondances. Liste vide quand le plan les honore
 toutes — et quand rien n'a jamais été analysé.
 
+### Rafraîchir l'analyse ne relance pas de solveur
+
+`POST /api/constraints/diagnostic` recalcule le score, règle par règle, du
+**plan persisté**, et renvoie la même vue que `GET /api/constraints`. Un seul
+calcul de score, aucun solveur tenu : le bouton « Actualiser » de l'écran
+Contraintes reste donc disponible pendant qu'une résolution tourne.
+
+Il remplace un lancement d'analyse en tâche de fond — une résolution complète
+dont le résultat n'était jamais persisté. L'écran affichait alors le score d'un
+planning que rien d'autre ne montrait, au prix du budget d'un solve. Les trois
+routes `/api/solve/analyze`, `/api/solve/analyze/async` et
+`/api/solve/analyze/async/reference-data` ont disparu avec lui, ainsi que le
+type de job `ANALYZE` (`V55` purge les lignes restantes de `solver_job`, que
+`JobType.valueOf` ne saurait plus relire).
+
+Sans rien de persisté, la réponse est la vue vide (`analysedAt` nul) : c'est
+l'état que l'écran affiche déjà avant la première résolution.
+
 ### Une exception contradictoire est refusée
 
 `POST /api/contraintes-ad-hoc` répond **400** quand la contrainte envoyée ne
@@ -290,7 +308,7 @@ et `DELETE`.
 ## Explicabilité
 
 « Pourquoi lui ? » cible un seul poste du planning envoyé, **déjà résolu et
-jamais re-résolu** — contrairement à `/api/solve/analyze`.
+jamais re-résolu**.
 
 « Respectée » signifie seulement qu'aucune violation n'a été trouvée pour ce
 poste précis, **pas que la contrainte s'applique à lui** : l'IHM ne doit pas la

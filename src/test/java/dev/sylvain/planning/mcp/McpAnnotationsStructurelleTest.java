@@ -39,7 +39,11 @@ import io.quarkiverse.mcp.server.Tool;
  */
 class McpAnnotationsStructurelleTest {
 
-    /** Tools that read and never write. */
+    /**
+     * Tools that read and never write. Refreshing the in-memory analysis a
+     * diagnostic reads back is not a write: it is a pure function of the plan
+     * the tool just read, and no business data changes.
+     */
     private static final List<String> LECTURE = List.of(
             "lister_", "consulter_", "previsualiser_", "diagnostiquer_", "valider_", "expliquer_",
             "analyser_", "comparer_", "simuler_", "statut_", "resultats_", "heures_", "etat_",
@@ -57,8 +61,7 @@ class McpAnnotationsStructurelleTest {
     /** Tools that write without destroying: creations, edits, toggles, locks. */
     private static final List<String> ECRITURE = List.of(
             "creer_", "modifier_", "ajouter_", "activer_", "desactiver_", "dupliquer_",
-            "renommer_", "definir_", "verrouiller", "capturer_", "arreter_", "affecter_",
-            "lancer_analyse");
+            "renommer_", "definir_", "verrouiller", "capturer_", "arreter_", "affecter_");
 
     @Test
     void chaqueOutilDeclareSesAnnotations() throws Exception {

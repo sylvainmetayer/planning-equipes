@@ -21,7 +21,7 @@ import { YamlValidator } from './yaml-validator';
 import { errorMessage, errorPrefix } from '../../core/error-message';
 
 /**
- * Raw dump of the last solve/analyze diagnostic (`GET /api/constraints`):
+ * Raw dump of the last constraint analysis (`GET /api/constraints`):
  * global score, unfilled seats, feasibility and per-constraint score/match
  * count. Deliberately excludes animateurs/creneaux/postes — this is a debug
  * aid, kept separate from the "Constraints" page's business-friendly card

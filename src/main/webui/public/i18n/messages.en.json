@@ -73,7 +73,6 @@
   "bulk.mode.definir": "Set",
   "bulk.mode.effacer": "Clear",
   "job.type.solve": "Timefold solve",
-  "job.type.analyze": "Solution analysis",
   "api.sessionExpiree": "Session expired — signing you back in.",
   "job.status.failed": "failed",
   "job.status.cancelled": "cancelled",
