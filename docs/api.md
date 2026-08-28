@@ -331,6 +331,70 @@ mais par la publication qui la porte : accepter un échange change le plan de
 travail, pas le plan publié, et prévenir tout de suite promettrait un planning
 que l'espace ne montre pas encore.
 
+## Accusé de réception du planning
+
+`POST /api/espace-animateur/{jeton}/confirmation` — « j'ai lu et je serai là ».
+La seule chose que l'espace écrit à propos du planning lui-même. Cliquer deux
+fois répond `200` avec la **première** date, jamais une erreur : c'est un geste
+normal sur une page rafraîchie. Confirmer avant toute publication répond `409`
+— il n'y a rien à confirmer.
+
+`GET /api/animateurs/confirmations` — une ligne par animateur, `NON_VU`
+compris, pour la colonne de la page Animateurs.
+
+Trois statuts, et l'absence de ligne en base **vaut** `NON_VU` : la remise à
+zéro est une suppression, il n'y a donc jamais deux façons d'écrire « cette
+personne n'a pas répondu ».
+
+| Statut | Ce qu'il dit |
+| --- | --- |
+| `NON_VU` | Rien n'est revenu — personne n'a encore été interrogé, ou le plan a bougé depuis |
+| `CONFIRME` | Le bouton a été cliqué, avec la date |
+| `RELANCE` | La relance automatique est partie et reste sans réponse |
+
+`affecte` distingue quelqu'un qui n'a **aucun poste** dans le plan publié : il
+n'est pas silencieux, on ne lui a rien demandé. La colonne ne le compte pas
+parmi les gens à relancer.
+
+**Republier ne remet à `NON_VU` que les personnes dont l'emploi du temps a
+réellement changé** (`PublicationDiffService`). Quelqu'un qu'on prévient
+seulement d'une décision d'échange lit les mêmes journées qu'avant : lui
+redemander de confirmer transformerait le bouton en réflexe plutôt qu'en
+réponse.
+
+## Notifications planifiées
+
+`GET` / `PUT /api/parametres-notifications` — ce que les envois de nuit ont le
+droit de faire **sur cette édition**.
+
+| Champ | Rôle |
+| --- | --- |
+| `actives` | Le garde-fou. `false` par défaut : rien ne part d'une édition que personne n'a armée |
+| `heureRappelVeille` | Heure locale à partir de laquelle le rappel J-1 peut partir |
+| `delaiRelanceHeures` | Silence toléré après la publication avant une relance (1 à 720) |
+| `ancienneteEchangeJours` | Attente d'une demande d'échange avant alerte (1 à 60) |
+
+`actives` est un booléen explicite parce qu'une `Edition` ne porte **ni dates ni
+drapeau « en cours »** : aucun job ne peut deviner que les animateurs de
+l'édition 2025 ne sont pas ceux qu'il faut prévenir pour demain. La duplication
+d'une édition ne recopie pas ce réglage — une édition neuve naît muette.
+
+Le rythme de la machine, lui, n'est pas dans l'API : `NOTIFICATIONS_CRON` et
+`NOTIFICATIONS_TIMEZONE` (voir [`exploitation.md`](exploitation.md)).
+
+`GET /api/alertes` — ce que ces jobs ont laissé sur le bureau, plus récent
+d'abord (`limite`, 100 par défaut, 500 au maximum). En lecture seule : une
+alerte se referme en traitant ce qu'elle signale, pas en l'effaçant. Le journal
+ne stocke qu'un `animateurId` ; `nomAffiche` est résolu **à la lecture** depuis
+le référentiel, donc une fiche supprimée laisse une alerte qui ne nomme plus
+personne.
+
+**Chaque envoi est réservé en base avant de partir**, sur une clé primaire
+`(edition_id, type, cle)` : le job insère, et n'envoie que si l'insertion a
+écrit une ligne. Tourner toutes les heures, redémarrer au milieu ou rejouer le
+job à la main n'écrit donc à personne deux fois — et une demande d'échange
+n'est signalée **qu'une seule fois**, quel que soit son âge ensuite.
+
 ## Contraintes
 
 Chaque entrée du catalogue porte `poids` (la valeur du déploiement, écrasée par

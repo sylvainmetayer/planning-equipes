@@ -624,6 +624,60 @@ export function buildHelpSections(): HelpSection[] {
       ]
     },
     {
+      id: 'rappels',
+      icon: 'notifications_active',
+      title: $localize`:@@aide.rappels.title:Accusés de réception et rappels automatiques`,
+      summary: $localize`:@@aide.rappels.summary:Savoir qui a lu son planning, et laisser l'application relancer les autres — une fois.`,
+      blocks: [
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.rappels.intro:Une fois le planning publié, chaque animateur voit dans son espace un bouton « J'ai lu et je serai là ». La colonne « Accusé de réception » de la page Animateurs vous rend la réponse, et le filtre rapide de la table accepte « confirmé », « relancé » ou « silencieux » comme n'importe quel autre mot.`
+        },
+        {
+          kind: 'definitions',
+          items: [
+            {
+              term: $localize`:@@aide.rappels.term.statuts:Les trois statuts`,
+              text: $localize`:@@aide.rappels.def.statuts:« Silencieux » : rien n'est revenu. « Confirmé » : le bouton a été cliqué, la date s'affiche au survol. « Relancé » : la relance automatique est partie et reste sans réponse. Un animateur sans aucun poste au planning publié affiche « — » : il n'est pas silencieux, on ne lui a rien demandé, et il ne compte pas parmi les gens à relancer.`
+            },
+            {
+              term: $localize`:@@aide.rappels.term.republication:Republier ne remet pas tout le monde à zéro`,
+              text: $localize`:@@aide.rappels.def.republication:Une nouvelle publication ne redemande une confirmation qu'aux personnes dont l'emploi du temps a réellement changé. Quelqu'un qu'on prévient seulement d'une décision d'échange lit les mêmes journées qu'avant : lui reposer la question transformerait le bouton en réflexe plutôt qu'en réponse.`
+            },
+            {
+              term: $localize`:@@aide.rappels.term.activation:Activer l'édition, sur la page Paramètres`,
+              text: $localize`:@@aide.rappels.def.activation:Les envois de nuit sont désactivés tant que vous ne les activez pas, édition par édition. C'est volontaire et c'est le seul garde-fou : une édition passée porte les mêmes animateurs, et rien d'autre ne distingue les bénévoles de cette année de ceux de l'an dernier. Dupliquer une édition ne recopie pas ce réglage.`
+            },
+            {
+              term: $localize`:@@aide.rappels.term.delais:Les trois délais`,
+              text: $localize`:@@aide.rappels.def.delais:L'heure d'envoi du rappel de la veille, le silence toléré après une publication avant de relancer, et l'ancienneté d'une demande d'échange qui déclenche une alerte. Tous trois se règlent par édition sur la page Paramètres.`
+            },
+            {
+              term: $localize`:@@aide.rappels.term.rappel:Le rappel de la veille`,
+              text: $localize`:@@aide.rappels.def.rappel:La veille au soir, chaque animateur affecté le lendemain reçoit la liste de ses créneaux. Elle est tirée du planning publié, jamais du plan de travail : personne n'est rappelé pour un créneau que vous ne lui avez pas communiqué. Un animateur sans adresse e-mail est sauté, et signalé nommément sur la page Notifications — ce sont les gens à prévenir à la main.`
+            },
+            {
+              term: $localize`:@@aide.rappels.term.relance:Une relance, pas une série`,
+              text: $localize`:@@aide.rappels.def.relance:Passé le délai, les silencieux reçoivent un rappel de confirmation et passent à « Relancé ». Ils n'en recevront pas d'autre : relancer quelqu'un tous les soirs ne le fait pas répondre plus vite, ça le fait filtrer vos messages. À vous de reprendre la main sur les derniers.`
+            },
+            {
+              term: $localize`:@@aide.rappels.term.echanges:Les demandes d'échange qui dorment`,
+              text: $localize`:@@aide.rappels.def.echanges:Une demande qui attend votre décision depuis plus longtemps que le délai fixé remonte sur la page Notifications, et une seule fois — même si elle vieillit encore. L'ancienneté se compte à partir de l'accord du collègue : une demande qui attend encore sa réponse n'attend pas après vous.`
+            }
+          ]
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.rappels.silence:« Je n'ai rien reçu » a presque toujours la même cause : l'édition n'a pas été activée. Ensuite viennent le planning jamais publié, puis les fiches sans adresse e-mail. Ces alertes-là se referment en traitant ce qu'elles signalent, pas en les effaçant.`
+        }
+      ],
+      links: [
+        { route: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs` },
+        { route: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres` },
+        { route: '/notifications', label: $localize`:@@nav.link.notifications:Notifications` }
+      ]
+    },
+    {
       id: 'echanges',
       icon: 'swap_horiz',
       title: $localize`:@@aide.exchange.title:Imports, exports et outils`,

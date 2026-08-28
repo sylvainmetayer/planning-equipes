@@ -96,7 +96,7 @@ crochet.
 | --- | --- |
 | Catégories de personnes | Animateurs, **dont des mineurs** ; encadrants et managers |
 | Catégories de données | Nom, prénom, **date de naissance**, adresse électronique (facultative), compétences, souhaits d'affectation, jours d'indisponibilité, jeton d'accès à l'espace animateur, affectations et échanges, **déclarations de disponibilités en libre-service — dont un commentaire en champ libre**, instantanés de planning, sessions et journaux d'accès |
-| Traitements réalisés | Hébergement, planification et résolution, envoi d'e-mails (codes d'accès, plannings individuels, notifications d'échange), sauvegarde, purge |
+| Traitements réalisés | Hébergement, planification et résolution, envoi d'e-mails (codes d'accès, plannings individuels, notifications d'échange, **rappels et relances automatiques de nuit**), sauvegarde, purge |
 | Destinataires | L'organisateur via l'interface d'administration ; l'animateur via son espace ; les autres animateurs pour la part visible du planning (voir `securite.md`) ; le relais SMTP |
 | Mesures de sécurité | TLS et HSTS ; en-têtes CSP et `Referrer-Policy` — **le jeton d'espace voyage dans l'URL** ; chiffrement des sessions ; limitation de débit sur les codes d'espace et verrouillage du formulaire de connexion ; origine injoignable autrement que par le reverse proxy ; sauvegarde nocturne automatique par `pg_dump`, en rotation dans un volume dédié, dont l'**externalisation chiffrée hors machine reste à la charge de l'exploitant** (`exploitation.md` §5) |
 
@@ -263,6 +263,18 @@ complètes. Quatre points sont connus et se consignent :
   chose ailleurs. Il est donc consigné au registre **comme donnée en champ
   libre**, et c'est à ce titre qu'il est traité — sans que rien n'y soit
   demandé, ni exigé, ni exploité au-delà de la décision qu'il éclaire ;
+- **les envois automatiques de nuit écrivent sans qu'un humain relise** : le
+  rappel de la veille et la relance de confirmation partent d'une tâche
+  planifiée, vers des adresses d'animateurs, mineurs compris. Trois bornes sont
+  posées et se consignent telles quelles : rien ne part d'une édition qui n'a
+  pas été **armée explicitement** (l'absence de réglage vaut « muet ») ; le
+  rappel ne dit que ce qui a **déjà été publié**, donc il n'annonce jamais rien
+  de neuf ; et le journal `notification_planifiee` ne stocke **ni nom ni
+  adresse**, seulement un identifiant d'animateur — l'identité est jointe à la
+  lecture depuis le référentiel, si bien qu'une fiche supprimée laisse une
+  alerte qui ne nomme plus personne. Ce journal n'a pas de purge propre : il
+  disparaît avec son édition, en cascade sur `edition_id`, donc à la purge
+  annuelle ;
 - **l'effacement demandé par un animateur sur une édition encore active** n'a
   pas de procédure outillée : c'est une suppression manuelle de sa fiche. Une
   demande d'effacement ne se refuse pas au motif que l'événement n'est pas

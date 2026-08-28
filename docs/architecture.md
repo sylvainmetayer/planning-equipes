@@ -179,13 +179,12 @@ démarrage. Elle vaut `false` et n'a de sens qu'en exploitation, le temps de
 débloquer une migration interrompue — voir
 [`exploitation.md`](exploitation.md).
 
-## Une seule tâche planifiée, et le seul endroit qui écrit sur le disque
+## Les deux tâches planifiées, et le seul endroit qui écrit sur le disque
 
 `service/backup/` sauvegarde la base chaque nuit par un vrai `pg_dump`, dans le
 répertoire que désigne `BACKUP_DIR`, en ne gardant que les `BACKUP_RETENTION`
-copies les plus récentes. C'est la seule tâche planifiée de l'application
-(l'extension `quarkus-scheduler` n'est là que pour elle, et le profil `%test`
-la désactive), et le seul fichier qu'elle écrit hors de la base.
+copies les plus récentes. C'est le **seul fichier écrit hors de la base**, et
+elle reste la seule tâche à toucher le disque.
 
 Trois choix structurent le paquet, détaillés dans
 [`decisions/0015-sauvegarde-par-pg-dump-restauration-hors-application.md`](decisions/0015-sauvegarde-par-pg-dump-restauration-hors-application.md) :
@@ -198,6 +197,37 @@ remplacent. Rien dans la suite ne doit lancer ce binaire, dont la présence et l
 version appartiennent à la machine — et dont la rotation, elle, se prouve sur un
 répertoire temporaire (`BackupStoreTest`), parce que c'est la moitié de la
 fonctionnalité qui **supprime**.
+
+### La tâche des notifications planifiées
+
+`service/notification/NotificationsPlanifieesService` est l'autre `@Scheduled`,
+et le seul point d'entrée des trois envois de nuit — rappel de la veille
+(`RappelVeilleJob`), relance des non-confirmés (`RelanceConfirmationJob`),
+alerte sur les demandes d'échange qui dorment (`AlerteEchangeJob`). Le profil
+`%test` désactive le planificateur pour les deux tâches ; les tests appellent
+les services directement.
+
+Il suit les conventions du paquet `backup` — cron et fuseau configurables,
+`SKIP` en cas de recouvrement, échec journalisé et non propagé — avec deux
+particularités qui lui sont propres :
+
+- **il boucle sur les éditions**, et une seule décide si elle a le droit
+  d'écrire à qui que ce soit. Il n'y a pas d'`X-Edition-Id` sur un fil du
+  planificateur : chaque édition est donc entrée explicitement par
+  `EditionContext.executeIn`, et l'échec de l'une ne doit pas arrêter les
+  suivantes — d'où le `try/catch` **dans** la boucle et non autour ;
+- **le cron est horaire**, parce que l'heure d'envoi se règle par édition et
+  qu'une tâche unique ne peut pas partir à quatre heures différentes. Se
+  réveiller souvent n'est sans danger que grâce à la ligne suivante.
+
+`JournalNotificationsRepository` porte l'idempotence, et il la **réserve** au
+lieu de la vérifier : un job pose une clé `(edition_id, type, cle)` en
+`INSERT … ON CONFLICT DO NOTHING`, et n'envoie que si l'insertion a écrit une
+ligne. Demander « ai-je déjà envoyé ? » puis agir laisserait deux exécutions
+lire « non » et envoyer toutes les deux ; là, c'est la base qui tranche, une
+fois. Une panne entre la réservation et l'envoi coûte un message manquant
+plutôt qu'un message en double — le bon sens, pour un rappel qui se lit aussi
+dans l'espace animateur.
 
 ## Conteneurisation
 

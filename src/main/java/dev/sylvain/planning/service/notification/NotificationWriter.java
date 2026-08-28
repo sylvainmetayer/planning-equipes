@@ -79,6 +79,9 @@ public class NotificationWriter {
         liens.disponibilitesScreen().ifPresent(lien -> corps
                 .append("\nÀ valider ou refuser depuis l'écran Disponibilités : ")
                 .append(lien).append('\n'));
+        return Optional.of(new MailDraft(admin.get(), sujet, corps.toString()));
+    }
+
     /**
      * The day-before reminder. Repeats the seats of the <b>published</b> plan
      * and nothing else: a reminder that announced a change would be a

@@ -63,6 +63,8 @@ public class EspaceAnimateurService {
 
     @Inject
     TypologieService typologieService;
+
+    @Inject
     ConfirmationPlanningService confirmationService;
 
     /** One of the animateur's seats in the persisted planning. */

@@ -126,6 +126,31 @@ export function buildEspaceAideSections(): EspaceAideSection[] {
       ]
     },
     {
+      id: 'confirmer',
+      icon: 'check_circle',
+      question: $localize`:@@espace.aide.confirmer.question:Que veut dire « J'ai lu et je serai là » ?`,
+      resume: $localize`:@@espace.aide.confirmer.resume:Un clic qui dit à l'organisation que vous avez vu votre planning. Un seul suffit.`,
+      cible: 'planning',
+      blocks: [
+        {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.confirmer.pourquoi:Le bouton apparaît dès que votre planning a été publié. Il ne demande rien d'autre qu'un clic : l'organisation voit alors que vous êtes au courant, et n'a pas à vous relancer. Sans réponse de votre part au bout de quelques jours, un rappel automatique vous est envoyé — une seule fois.`
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.confirmer.deuxFois:Cliquer deux fois ne change rien : c'est la première date qui est retenue, et le bouton laisse ensuite la place à la mention « Présence confirmée le… ».`
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.confirmer.republication:Si l'organisation publie une nouvelle version et que vos journées changent, la question vous est reposée — et à vous seul. Quand rien n'a bougé pour vous, votre confirmation reste acquise : on ne vous fera pas reconfirmer un planning identique.`
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.confirmer.probleme:Confirmer n'est pas un engagement irrévocable, et ce n'est pas non plus le bon endroit pour signaler un souci. Si un créneau ne va pas, passez par l'onglet Échanges ou contactez l'organisation.`
+        }
+      ]
+    },
+    {
       id: 'emporter',
       icon: 'download',
       question: $localize`:@@espace.aide.emporter.question:Puis-je emporter mon planning ?`,
@@ -317,6 +342,23 @@ export function buildEspaceAideSections(): EspaceAideSection[] {
         {
           kind: 'paragraph',
           text: $localize`:@@espace.aide.foire.suite:Si un empêchement survient après la fermeture, prévenez directement l'organisation : elle peut encore agir, pas cet espace.`
+        }
+      ]
+    },
+    {
+      id: 'veille',
+      icon: 'notifications_active',
+      question: $localize`:@@espace.aide.veille.question:Vais-je recevoir un rappel avant l'événement ?`,
+      resume: $localize`:@@espace.aide.veille.resume:La veille au soir, un e-mail liste vos postes du lendemain.`,
+      cible: 'planning',
+      blocks: [
+        {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.veille.contenu:Si l'organisation a activé les rappels, vous recevez la veille au soir la liste de vos créneaux du lendemain : horaire et stand, rien de plus. C'est exactement ce que cette page affiche déjà — un rappel ne vous annonce jamais un changement, il répète ce qui vous a été communiqué.`
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.veille.absence:Pas de rappel reçu ? Trois raisons possibles : votre fiche ne porte pas d'adresse e-mail, l'organisation n'a pas activé les rappels, ou vous n'êtes affecté nulle part ce jour-là. Dans tous les cas, cette page reste la référence.`
         }
       ]
     },

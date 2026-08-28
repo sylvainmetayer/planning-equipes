@@ -196,8 +196,8 @@ Single Quarkus service, no separate solver microservice. Package root:
      interceptor.
 
   See `docs/mcp.md`.
-- **`service/backup/` holds the application's only scheduled job**, and the
-  only place it writes to disk: a nightly `pg_dump` of the whole cluster into
+- **`service/backup/` is the only place the application writes to disk**: a
+  nightly `pg_dump` of the whole cluster into
   `BACKUP_DIR`, keeping the `BACKUP_RETENTION` most recent copies. Three rules
   it is built on, and none of them is an oversight to fix later —
   **restoring is out of scope** (an infrastructure operation with
@@ -212,6 +212,21 @@ Single Quarkus service, no separate solver microservice. Package root:
   machine. The client is pinned to `postgresql-client-18` in the runtime image
   and must move with the `postgres:` image of the production stack. See
   `docs/decisions/0015-sauvegarde-par-pg-dump-restauration-hors-application.md`.
+- **`service/notification/NotificationsPlanifieesService` is the application's
+  second (and last) `@Scheduled`**, and the single entry point of the three
+  nightly sends — day-before reminder, reminder of the unconfirmed, alert on
+  stale swap requests. It follows the `backup` conventions (configurable cron
+  and zone, `SKIP` on overlap, failure logged rather than propagated) and adds
+  two rules of its own. It **loops over editions**, entering each through
+  `EditionContext.executeIn` — there is no `X-Edition-Id` on a scheduler
+  thread — and nothing leaves an edition that has not been armed explicitly in
+  `parametres_notifications`: an `Edition` carries neither dates nor an
+  "ongoing" flag, so that boolean is the only thing between the job and last
+  year's volunteers. And **idempotence is claimed, not checked**:
+  `JournalNotificationsRepository` takes a `(edition_id, type, cle)` key with
+  `INSERT … ON CONFLICT DO NOTHING` and the message goes out only for the call
+  that won the insert, so an hourly cron writes to nobody twice. Reading then
+  acting would let two runs both read "not yet".
 - Persistence: PostgreSQL + Flyway migrations in
   `src/main/resources/db/migration/`. Schema change = **new versioned file**;
   never edit an applied migration.
