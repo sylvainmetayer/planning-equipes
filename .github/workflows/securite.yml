@@ -63,6 +63,12 @@ jobs:
           # elle ferait échouer chaque PR sans que personne ne puisse rien y
           # faire.
           ignore-unfixed: true
+          # `explorbot/` est un harnais de test exploratoire, hors du build
+          # Maven et jamais livré : son `package-lock.json` ne décrit aucune
+          # dépendance de l'application. Le faire échouer sur une CVE d'outil
+          # de test bloquerait des PR sans réduire la surface d'attaque de
+          # l'application déployée.
+          skip-dirs: explorbot
 
   code:
     name: Analyse statique du code (Semgrep)
