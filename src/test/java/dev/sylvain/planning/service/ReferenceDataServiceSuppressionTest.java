@@ -24,8 +24,14 @@ import dev.sylvain.planning.domain.Stand;
  * <p>{@code poste_affectation} is the only table referencing {@code stand} and
  * {@code animateur} whose foreign key neither cascades nor nulls out, so both
  * deletes came back as a 500 as soon as a plan existed, that is after any solve
- * at all. The seats go with the entity, in the same transaction, and the rest of
- * the plan survives.</p>
+ * at all.</p>
+ *
+ * <p>The two cases then part ways, and these tests pin the difference. A stand's
+ * seats <b>go</b>: {@code stand_id} is {@code NOT NULL}, a seat cannot outlive
+ * its stand. An animateur's seats are <b>vacated</b>: {@code animateur_id} is
+ * nullable, and a row holding {@code NULL} is exactly how this model spells
+ * "place non pourvue", so the hole stays visible instead of the seat quietly
+ * disappearing from the counts.</p>
  */
 @QuarkusTest
 class ReferenceDataServiceSuppressionTest {
@@ -35,6 +41,9 @@ class ReferenceDataServiceSuppressionTest {
 
     @Inject
     PlanningPersistenceService persistence;
+
+    @Inject
+    PlanningService planningService;
 
     private static final LocalDate JOUR = LocalDate.of(2030, 7, 3);
 
@@ -62,9 +71,12 @@ class ReferenceDataServiceSuppressionTest {
         }
     }
 
-    /** Same for an animateur: the seats they held go with them. */
+    /**
+     * An animateur's seats are vacated rather than removed: each becomes a place
+     * non pourvue the diagnostic screens can still see, and still count.
+     */
     @Test
-    void supprimerUnAnimateurEmporteLesPostesQuIlOccupait() {
+    void supprimerUnAnimateurLaisseSesPostesEnPlaceNonPourvue() {
         Creneau creneau = creneau(9502L);
         Stand stand = stand("SUP-S3");
         Animateur cible = animateur("SUP-A2");
@@ -74,12 +86,26 @@ class ReferenceDataServiceSuppressionTest {
                     List.of(poste("SUP-P3", stand, creneau, cible),
                             poste("SUP-P4", stand, creneau, voisin))));
             assertThat(postesForAnimateur("SUP-A2")).isNotEmpty();
+            assertThat(persistence.countPersistedAssignments()).isEqualTo(2);
 
             referenceData.deleteAnimateur("SUP-A2");
 
             assertThat(referenceData.listAnimateurs()).noneMatch(a -> "SUP-A2".equals(a.getId()));
+            // The seat stays; only its occupant goes.
+            assertThat(persistence.countPersistedAssignments()).isEqualTo(2);
             assertThat(postesForAnimateur("SUP-A2")).isEmpty();
             assertThat(postesForAnimateur("SUP-A3")).hasSize(1);
+            assertThat(persistence.loadPersistedPlanning().getPostes())
+                    .filteredOn(poste -> "SUP-P3".equals(poste.getId()))
+                    .singleElement()
+                    .satisfies(poste -> {
+                        assertThat(poste.getAnimateur()).isNull();
+                        assertThat(poste.getStand().getId()).isEqualTo("SUP-S3");
+                    });
+
+            // And the hole is what the diagnostic reads: had the row been deleted
+            // instead, coverage would have come back greener than reality.
+            assertThat(planningService.diagnosePersistedPlan().postesNonPourvus()).isEqualTo(1);
         } finally {
             nettoyer();
         }
@@ -89,7 +115,9 @@ class ReferenceDataServiceSuppressionTest {
      * Bulk deletion is the same statement repeated — the frontend's
      * {@code removeMany} issues one {@code DELETE /api/stands/{id}} per row, one
      * transaction each — so a lot whose every member holds seats must go through
-     * whole rather than stop on the first referenced one.
+     * whole rather than stop on the first referenced one. It also shows the two
+     * rules side by side: the animateurs of the lot leave their seats behind,
+     * vacant; the stands of the lot take theirs away.
      */
     @Test
     void supprimerUnLotDeStandsEtDAnimateursReferencesPasseEnEntier() {
@@ -104,9 +132,18 @@ class ReferenceDataServiceSuppressionTest {
             assertThat(persistence.countPersistedAssignments()).isEqualTo(3);
 
             animateurs.forEach(animateur -> referenceData.deleteAnimateur(animateur.getId()));
+
+            // Every seat of the lot is vacant now, and still there to be seen.
+            assertThat(referenceData.listAnimateurs()).noneMatch(a -> a.getId().startsWith("SUP-A"));
+            assertThat(persistence.countPersistedAssignments()).isEqualTo(3);
+            assertThat(persistence.loadPersistedPlanning().getPostes())
+                    .filteredOn(poste -> poste.getId().startsWith("SUP-P"))
+                    .hasSize(3)
+                    .allSatisfy(poste -> assertThat(poste.getAnimateur()).isNull());
+
             stands.forEach(stand -> referenceData.deleteStand(stand.getId()));
 
-            assertThat(referenceData.listAnimateurs()).noneMatch(a -> a.getId().startsWith("SUP-A"));
+            // The stands, themselves, do take their seats with them.
             assertThat(referenceData.listStands()).noneMatch(s -> s.getId().startsWith("SUP-S"));
             assertThat(persistence.countPersistedAssignments()).isZero();
         } finally {

@@ -240,6 +240,10 @@ public class StandRepository {
      * {@code PlanningPersistenceService.assemblerPlanning} drops any seat naming
      * a stand the referential no longer holds. The rest of the plan survives.</p>
      *
+     * <p>Contrast {@link AnimateurRepository#deleteAnimateur}, which vacates its
+     * seats instead of removing them: {@code animateur_id} is nullable, so there
+     * the hole can be left visible. Here it cannot.</p>
+     *
      * <p>The rule lives here rather than in an {@code ON DELETE CASCADE} so that
      * it can be read and tested in the code, which is the decision issue #281
      * took for créneaux.</p>

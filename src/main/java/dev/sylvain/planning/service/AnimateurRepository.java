@@ -118,32 +118,38 @@ public class AnimateurRepository {
     }
 
     /**
-     * Deletes one animateur, and the seats they held in the persisted plan.
+     * Deletes one animateur, and vacates the seats they held in the persisted
+     * plan rather than removing them.
      *
-     * <p>Twin of {@link CreneauRepository#deleteCreneau} and of
-     * {@link StandRepository#deleteStand}: {@code poste_affectation} is the one
-     * table referencing {@code animateur} whose foreign key neither cascades nor
-     * nulls out, so until now the delete simply failed as soon as a plan was
-     * persisted — that is after any solve at all — and failed as a 500 rather
-     * than as a refusal anyone could act on.</p>
+     * <p>Same defect as {@link CreneauRepository#deleteCreneau} and
+     * {@link StandRepository#deleteStand} fix: {@code poste_affectation} is the
+     * one table referencing {@code animateur} whose foreign key neither cascades
+     * nor nulls out, so the delete simply failed as soon as a plan was persisted
+     * — that is after any solve at all — and failed as a 500 rather than as a
+     * refusal anyone could act on.</p>
      *
-     * <p>The seat goes rather than being vacated: it was computed for a roster
-     * this animateur belonged to, and nobody is going to re-fill it without a
-     * new solve. Note the consequence, which is real — the screens that count
-     * persisted rows (heatmap, coverage KPI, {@code postesNonPourvus}) see the
-     * seat disappear instead of turning unfilled, so coverage reads greener; the
-     * Problèmes/faisabilité screens, which recompute the demand from
-     * {@code effectifMin} ({@link FeasibilityAnalyzer}), do report the resulting
-     * shortfall. See issue #328.</p>
+     * <p><b>The seat is vacated, not destroyed</b>, and that is the difference
+     * with the stand and créneau cases. {@code animateur_id} is nullable, and a
+     * row holding {@code NULL} <i>is</i> how this model already spells "place
+     * non pourvue" — {@code PlanningPersistenceService.assemblerPlanning} builds
+     * exactly that seat, and {@code PlanningService}'s {@code postesNonPourvus}
+     * counts it. Deleting the row instead would make the seat vanish, and the
+     * screens that count persisted rows (heatmap, coverage KPI) would show a
+     * coverage greener than reality. A stand's seat has no such choice —
+     * {@code poste_affectation.stand_id} is {@code NOT NULL} — which is why the
+     * two deletes read differently.</p>
      *
-     * <p>The rule lives here rather than in an {@code ON DELETE CASCADE} so that
+     * <p>Holes therefore appear in a plan nobody asked to re-solve. That is
+     * deliberate: they are real, and showing them is the point (issue #328).</p>
+     *
+     * <p>The rule lives here rather than in an {@code ON DELETE SET NULL} so that
      * it can be read and tested in the code, which is the decision issue #281
      * took for créneaux.</p>
      */
     public void deleteAnimateur(String id) {
         scope.write("Failed to delete animator " + id, connection -> {
             try (PreparedStatement ps = scope.prepareScoped(connection,
-                    "DELETE FROM poste_affectation WHERE edition_id = ? AND animateur_id = ?")) {
+                    "UPDATE poste_affectation SET animateur_id = NULL WHERE edition_id = ? AND animateur_id = ?")) {
                 ps.setString(2, id);
                 ps.executeUpdate();
             }
