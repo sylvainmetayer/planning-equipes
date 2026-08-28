@@ -581,6 +581,30 @@ jour, on les supprime et on les recrée. Une même paire d'animateurs ne peut pa
 être à la fois en incompatibilité et en affinité (`400`). Une cible déjà
 verrouillée renvoie `200` sans doublon.
 
+### Ce qu'une suppression emporte
+
+`GET /api/stands/usages`, `/api/animateurs/usages` et `/api/creneaux/usages`
+chiffrent ce qui référence une sélection — postes **pourvus** du planning
+persisté, ajustements manuels, verrouillages — pour que la confirmation de
+suppression le dise avant de supprimer. Répéter `id` compte plusieurs entités :
+`?id=S1&id=S2` renvoie **un total agrégé**, pas un détail ligne par ligne, et
+une suppression en lot n'a donc qu'un appel à faire — le client découpe
+au-delà de cent identifiants, pour que la ligne de requête reste dans les
+limites du serveur plutôt que de perdre le décompte sur les grosses
+sélections.
+
+Trois propriétés, et aucune n'est un oubli :
+
+- **le décompte informe, il ne bloque pas** — aucun seuil, aucun refus au-delà
+  d'un nombre ; la suppression reste celle que la ressource expose déjà ;
+- **un `id` inconnu compte pour zéro**, il ne déclenche pas de `404` : l'appel
+  sert un dialogue ouvert sur des lignes déjà affichées, et une ligne
+  supprimée entre-temps ne doit pas transformer une confirmation en message
+  d'erreur — c'est la suppression elle-même qui le dira. Seule la requête sans
+  aucun `id` est refusée (`400`), parce qu'elle ne demande rien ;
+- **un siège vide ne compte pas** : ce que le chiffre annonce, c'est le nombre
+  de créneaux effectivement tenus par quelqu'un qui disparaîtront.
+
 ### Horaires d'un stand
 
 Deux niveaux, rendus tels quels sans expansion — c'est la vue que l'IHM édite :

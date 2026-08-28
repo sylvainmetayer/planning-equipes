@@ -1123,6 +1123,20 @@ export interface NouvelleDemandeEchange {
   standCibleId?: string | null;
 }
 
+/**
+ * `/api/{stands|animateurs|creneaux}/usages`: what deleting a selection would
+ * take with it, totalled over the whole selection — the figures the delete
+ * confirmation shows. It informs and never blocks: no threshold, no refusal.
+ */
+export interface ReferenceUsage {
+  /** Filled seats of the persisted plan referencing the selection. */
+  affectations: number;
+  /** Ad hoc constraints (« ajustements manuels ») naming it. */
+  contraintesAdHoc: number;
+  /** Locks freezing it. */
+  verrouillages: number;
+}
+
 /** `/api/reference-data/impact-import`: what a scenario import would touch, for the confirmation dialog. */
 export interface ImpactImport {
   animateurs: number;

@@ -4,6 +4,7 @@ import java.util.List;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.service.ReferenceDataService;
+import dev.sylvain.planning.service.ReferenceUsage;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -13,6 +14,7 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -48,6 +50,18 @@ public class AnimateurResource {
     public Response deleteAnimateur(@PathParam("id") String id) {
         referenceDataService.deleteAnimateur(id);
         return Response.noContent().build();
+    }
+
+    /**
+     * What deleting these animateurs would take with it — one aggregated total
+     * for the whole selection, which is what the confirmation dialog shows.
+     * Repeat {@code id} to count several at once; a bulk delete asks once,
+     * never once per row.
+     */
+    @GET
+    @Path("/usages")
+    public ReferenceUsage countAnimateurUsages(@QueryParam("id") List<String> ids) {
+        return referenceDataService.countAnimateurUsages(ids);
     }
 
     /**

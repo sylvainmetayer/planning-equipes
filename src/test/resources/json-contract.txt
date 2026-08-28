@@ -92,6 +92,7 @@ service.PlanningHoursService$HeuresRapport = animateurs, semaines
 service.PlanningKpiService$PlanningKpi = animateursAffectes, creneauxDistincts, dureeSolveSecondes, heuresEcartType, heuresIncompletes, heuresMax, heuresMin, heuresMoyenne, heuresTotal, modificationsManuelles, postesPourvus, postesTotal, score, scoreHard, scoreMedium, scoreSoft, standsDistincts, tauxModificationsManuelles, violationsParContrainte
 service.PlanningService$ContributionAdHoc = contrainteId, contraintes, raison, type, violations
 service.PublicationTraceRepository$Destinataire = animateurId, changements, email, envoyeLe, nomAffiche, snapshotId, statut
+service.ReferenceUsage = affectations, contraintesAdHoc, verrouillages
 service.ReplanificationScope = animateurIds, jours, standIds
 service.SnapshotComparisonService$ComparaisonSnapshots = base, diffViolations, editionsDifferentes, variante, volumetriesDifferentes
 service.SnapshotComparisonService$CoteComparaison = creeLe, editionId, editionNom, kpi, kpiRecalcule, libelle, snapshotId

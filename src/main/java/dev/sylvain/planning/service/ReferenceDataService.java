@@ -66,6 +66,9 @@ public class ReferenceDataService implements ReferenceData {
     ParametresService parametres;
 
     @Inject
+    ReferenceUsageService usages;
+
+    @Inject
     ReferenceDataChangeTracker changeTracker;
 
     @Inject
@@ -90,6 +93,10 @@ public class ReferenceDataService implements ReferenceData {
         animateurs.delete(id);
     }
 
+    public ReferenceUsage countAnimateurUsages(List<String> ids) {
+        return usages.forAnimateurs(ids);
+    }
+
     /* -------------------------------- Stands ------------------------------- */
 
     @Override
@@ -112,6 +119,10 @@ public class ReferenceDataService implements ReferenceData {
 
     public void deleteStand(String id) {
         stands.delete(id);
+    }
+
+    public ReferenceUsage countStandUsages(List<String> ids) {
+        return usages.forStands(ids);
     }
 
     public HoraireCompaction.RapportCompactage compactHoraires(boolean apply) {
@@ -162,6 +173,10 @@ public class ReferenceDataService implements ReferenceData {
 
     public int deleteCreneaux(Collection<Long> ids) {
         return creneaux.deleteInBulk(ids);
+    }
+
+    public ReferenceUsage countCreneauUsages(List<Long> ids) {
+        return usages.forCreneaux(ids);
     }
 
     /* ------------------------------- Slicing -------------------------------- */

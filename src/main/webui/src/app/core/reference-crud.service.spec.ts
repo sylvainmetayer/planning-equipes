@@ -6,6 +6,7 @@ import { NotificationService } from './notification.service';
 import { PlanningResolutionStore } from './planning-resolution.store';
 import { ReferenceCrudService } from './reference-crud.service';
 import { ReferenceDataStore } from './reference-data.store';
+import { ReferenceUsageService } from './reference-usage.service';
 import { ConfirmService } from '../shared/confirm-dialog';
 
 class FakeStore {
@@ -35,18 +36,25 @@ class FakeResolution {
   reload = vi.fn(async () => undefined);
 }
 
+class FakeUsages {
+  phrase = '';
+  describe = vi.fn(async (_resource: string, _ids: readonly (string | number)[]) => this.phrase);
+}
+
 describe('ReferenceCrudService', () => {
   let service: ReferenceCrudService;
   let store: FakeStore;
   let notifications: FakeNotifications;
   let confirm: FakeConfirm;
   let resolution: FakeResolution;
+  let usages: FakeUsages;
 
   beforeEach(() => {
     store = new FakeStore();
     notifications = new FakeNotifications();
     confirm = new FakeConfirm();
     resolution = new FakeResolution();
+    usages = new FakeUsages();
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
@@ -54,7 +62,8 @@ describe('ReferenceCrudService', () => {
         { provide: ReferenceDataStore, useValue: store },
         { provide: NotificationService, useValue: notifications },
         { provide: ConfirmService, useValue: confirm },
-        { provide: PlanningResolutionStore, useValue: resolution }
+        { provide: PlanningResolutionStore, useValue: resolution },
+        { provide: ReferenceUsageService, useValue: usages }
       ]
     });
     service = TestBed.inject(ReferenceCrudService);
@@ -162,6 +171,43 @@ describe('ReferenceCrudService', () => {
         expect.objectContaining({ variant: 'error', message: 'référencé ailleurs' })
       );
     });
+
+    // Le décompte serveur est ce que la ligne du tableau ne montre pas : ni le
+    // planning persisté, ni les ajustements manuels, ni les verrous.
+    it('affiche dans la confirmation l\'impact chiffré rendu par le serveur', async () => {
+      usages.phrase = 'Référencé par 42 affectation(s).';
+
+      await service.remove('stands', 'S1', 'le stand');
+
+      expect(usages.describe).toHaveBeenCalledWith('stands', ['S1']);
+      expect(confirm.ask).toHaveBeenCalledWith(
+        expect.objectContaining({ message: expect.stringContaining('Référencé par 42 affectation(s).') })
+      );
+    });
+
+    // Précédent des typologies : la page calcule ses usages côté client et les
+    // passe en `detail`. Ce chemin ne doit pas être doublé d'un appel serveur.
+    it('laisse le détail fourni par la page primer sur le décompte serveur', async () => {
+      usages.phrase = 'décompte serveur';
+
+      await service.remove('typologies', 'T1', 'la typologie', 'détail de la page');
+
+      expect(usages.describe).not.toHaveBeenCalled();
+      expect(confirm.ask).toHaveBeenCalledWith(
+        expect.objectContaining({ message: expect.stringContaining('détail de la page') })
+      );
+    });
+
+    // Le décompte informe, il ne verrouille rien : sans phrase à afficher, la
+    // confirmation reste posée et la suppression part quand même.
+    it('supprime quand même sans décompte à afficher', async () => {
+      usages.phrase = '';
+
+      const ok = await service.remove('stands', 'S1', 'le stand');
+
+      expect(ok).toBe(true);
+      expect(store.remove).toHaveBeenCalledWith('stands', 'S1');
+    });
   });
 
   describe('removeMany', () => {
@@ -184,6 +230,21 @@ describe('ReferenceCrudService', () => {
     it('ne demande rien sur une sélection vide', async () => {
       expect(await service.removeMany('stands', [], 'stands')).toBe(0);
       expect(confirm.ask).not.toHaveBeenCalled();
+      expect(usages.describe).not.toHaveBeenCalled();
+    });
+
+    // Un total agrégé, jamais un détail ligne par ligne : une seule requête
+    // porte toute la sélection.
+    it('agrège l\'impact de toute la sélection en un seul appel', async () => {
+      usages.phrase = 'Référencé par 12 affectation(s).';
+
+      await service.removeMany('stands', ['S1', 'S2'], 'stands');
+
+      expect(usages.describe).toHaveBeenCalledTimes(1);
+      expect(usages.describe).toHaveBeenCalledWith('stands', ['S1', 'S2']);
+      expect(confirm.ask).toHaveBeenCalledWith(
+        expect.objectContaining({ message: expect.stringContaining('Référencé par 12 affectation(s).') })
+      );
     });
 
     // Une ligne refusée par le serveur (typologie encore utilisée, ...) ne doit

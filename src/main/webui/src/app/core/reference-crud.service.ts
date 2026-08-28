@@ -6,6 +6,7 @@ import { ApiError, SessionExpireeError } from './api.service';
 import { NotificationService } from './notification.service';
 import { PlanningResolutionStore } from './planning-resolution.store';
 import { BulkResult, ReferenceDataStore } from './reference-data.store';
+import { ReferenceUsageService } from './reference-usage.service';
 import { ConfirmService } from '../shared/confirm-dialog';
 import { errorMessage } from './error-message';
 
@@ -18,6 +19,7 @@ export class ReferenceCrudService {
   private readonly notifications = inject(NotificationService);
   private readonly confirm = inject(ConfirmService);
   private readonly resolution = inject(PlanningResolutionStore);
+  private readonly usages = inject(ReferenceUsageService);
 
   /** Loads every collection; failures are reported but never thrown to the view. */
   async reload(): Promise<void> {
@@ -71,13 +73,16 @@ export class ReferenceCrudService {
   /**
    * @param detail extra sentence appended to the confirmation, for the entities
    *               whose deletion has consequences the user cannot see from the
-   *               row itself (e.g. how many stands reference a typologie)
+   *               row itself (e.g. how many stands reference a typologie).
+   *               Left empty, the counters of the entity are asked to the
+   *               server instead — see {@link ReferenceUsageService}.
    */
   async remove(resource: string, id: string | number, label: string, detail = ''): Promise<boolean> {
+    const phrase = detail || (await this.usages.describe(resource, [id]));
     const confirmed = await this.confirm.ask({
       title: $localize`:@@crud.deleteTitle:Supprimer ${label}:label: ${id}:id: ?`,
-      message: detail
-        ? $localize`:@@crud.deleteMessageDetail:${detail}:detail: Cette action est irréversible.`
+      message: phrase
+        ? $localize`:@@crud.deleteMessageDetail:${phrase}:detail: Cette action est irréversible.`
         : $localize`:@@crud.deleteMessage:Cette action est irréversible.`,
       confirmLabel: $localize`:@@crud.deleteConfirm:Supprimer`,
       danger: true
@@ -115,9 +120,14 @@ export class ReferenceCrudService {
       return 0;
     }
     const count = ids.length;
+    // One aggregated total for the whole selection, not one line per row: a
+    // list of fifty impact sentences would say less than their sum.
+    const phrase = await this.usages.describe(resource, ids);
     const confirmed = await this.confirm.ask({
       title: $localize`:@@crud.deleteManyTitle:Supprimer ${count}:count: ${labelPluriel}:label: ?`,
-      message: $localize`:@@crud.deleteMessage:Cette action est irréversible.`,
+      message: phrase
+        ? $localize`:@@crud.deleteMessageDetail:${phrase}:detail: Cette action est irréversible.`
+        : $localize`:@@crud.deleteMessage:Cette action est irréversible.`,
       confirmLabel: $localize`:@@crud.deleteConfirm:Supprimer`,
       danger: true
     });
