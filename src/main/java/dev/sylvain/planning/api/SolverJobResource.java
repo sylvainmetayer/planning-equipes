@@ -1,5 +1,7 @@
 package dev.sylvain.planning.api;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -259,6 +261,14 @@ public class SolverJobResource {
     }
 
     public record JobView(
+            /**
+             * Why the request was refused, in the operator's language — set only
+             * on the {@code 409} of {@link SolverOccupeMapper}, absent from the
+             * job payloads themselves. {@code api.service.ts} reads
+             * {@code body.message} and nothing else, so a conflict without it
+             * reaches the screen as "Échec de la requête (code 409)".
+             */
+            @JsonInclude(JsonInclude.Include.NON_NULL) String message,
             String id,
             String type,
             String status,
@@ -273,15 +283,21 @@ public class SolverJobResource {
             Object result) {
 
         public static JobView withoutResult(SolverJob job) {
-            return build(job, null);
+            return build(job, null, null);
         }
 
         static JobView withResult(SolverJob job) {
-            return build(job, job.getResult());
+            return build(job, job.getResult(), null);
         }
 
-        private static JobView build(SolverJob job, Object result) {
+        /** The refused-because-busy form: same job, plus a sentence a human can read. */
+        public static JobView conflit(SolverJob job, String message) {
+            return build(job, null, message);
+        }
+
+        private static JobView build(SolverJob job, Object result, String message) {
             return new JobView(
+                    message,
                     job.getId(),
                     job.getType().name(),
                     job.getStatus().name(),

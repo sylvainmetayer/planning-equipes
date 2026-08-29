@@ -55,6 +55,9 @@ public class PlanningPersistenceService {
     @Inject
     ReferenceDataService referenceDataService;
 
+    @Inject
+    SolverJobService solverJobs;
+
     /** Edition every statement below reads and writes. */
     private String editionId() {
         return scope.editionId();
@@ -86,6 +89,12 @@ public class PlanningPersistenceService {
      * {@code TRUNCATE} it used to be.
      */
     public void clearDatabase() {
+        // Refused while a solve holds this edition's solver, and the stakes are
+        // higher here than for a single delete: the landing persist would put
+        // back stands, animateurs, créneaux and poste_affectation, but not
+        // emplacement, stand_horaire, stand_typologie, stand_ouverture nor the
+        // ad hoc constraints — leaving the edition half-restored (issue #328).
+        solverJobs.refuseIfSolving();
         scope.write("Failed to clear the database", this::clearPlanningTables);
     }
 

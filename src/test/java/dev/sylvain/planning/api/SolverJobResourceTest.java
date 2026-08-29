@@ -9,7 +9,10 @@ import java.util.List;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 
 @QuarkusTest
@@ -208,7 +211,17 @@ class SolverJobResourceTest {
                 .then()
                 .statusCode(409)
                 .body("id", equalTo(jobId))
-                .body("type", equalTo("SOLVE"));
+                .body("type", equalTo("SOLVE"))
+                // The frontend's toError reads body.message and nothing else:
+                // without it every conflict reaches the screen as the useless
+                // "Échec de la requête (code 409)" (issue #328).
+                .body("message", containsString("résolution est en cours"));
+
+        // …and the job payloads themselves stay free of it.
+        given().when().get("/api/jobs/" + jobId)
+                .then()
+                .statusCode(200)
+                .body("$", not(hasKey("message")));
 
         JsonPath active = given().when().get("/api/jobs/active")
                 .then()

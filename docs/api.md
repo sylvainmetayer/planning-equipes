@@ -543,14 +543,23 @@ replanifier.
 Dans les deux cas la règle vaut ligne à ligne en suppression en lot, chaque
 suppression étant sa propre transaction.
 
-**Supprimer un stand ou un animateur est refusé (`409`) tant qu'une résolution
-tient le solveur**, avec le job en cause dans le corps de la réponse. Une
+**Écrire le référentiel est refusé (`409`) tant qu'une résolution tient le
+solveur** : supprimer un stand, un animateur ou un créneau, réinitialiser
+l'édition (`POST /api/planning/reset`) et importer un scénario. Le corps de la
+réponse porte le job en cause **et un `message`** lisible tel quel par l'IHM. Une
 résolution construit son problème depuis le référentiel au démarrage et
 réenregistre ce référentiel en persistant son résultat : supprimer entre les deux
 serait annulé par l'atterrissage du solve, et l'entité reviendrait d'elle-même
 plusieurs minutes plus tard — pour un animateur, une donnée personnelle qui
 ressuscite. Une résolution seulement *en file* ne bloque rien : elle lira le
 référentiel à son tour venu, suppression comprise.
+
+La réinitialisation et l'import sont les cas les plus coûteux : leur
+atterrissage réinsérerait stands, animateurs, créneaux et `poste_affectation`,
+mais laisserait `emplacement`, `stand_horaire`, `stand_typologie`,
+`stand_ouverture` et les contraintes ad hoc effacés — l'édition reviendrait à
+moitié restaurée, et pour l'import les anciens créneaux réapparaîtraient par id
+à côté des nouveaux.
 
 Le refus est **cantonné à l'édition de la résolution**, comparée à l'édition
 courante : un solve lancé sur une variante de repli ne bloque rien dans

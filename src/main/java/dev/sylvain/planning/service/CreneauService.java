@@ -25,6 +25,9 @@ public class CreneauService {
     @Inject
     ReferenceDataChangeTracker changeTracker;
 
+    @Inject
+    SolverJobService solverJobs;
+
     public List<Creneau> list() {
         return repository.listCreneaux();
     }
@@ -48,7 +51,16 @@ public class CreneauService {
         return creneau;
     }
 
+    /**
+     * Removes the créneau, and the seats placed on it (issue #281).
+     *
+     * <p>Refused while a solve holds this edition's solver, for the same reason
+     * as the stand and animateur deletes: the landing persist re-upserts the
+     * créneaux its result names, so the grid would come back on its own. See
+     * {@link SolverJobService#refuseIfSolving}.</p>
+     */
     public void delete(Long id) {
+        solverJobs.refuseIfSolving();
         repository.deleteCreneau(id);
         changeTracker.markModified();
     }
@@ -83,6 +95,9 @@ public class CreneauService {
 
     /** Deletes a batch of créneaux, for the same "one intent, one edit" reason as {@link #createInBulk}. */
     public int deleteInBulk(Collection<Long> ids) {
+        // Checked once for the lot, not once per row: the whole batch is refused
+        // or none of it is, and the solver state cannot change under us anyway.
+        solverJobs.refuseIfSolving();
         int supprimes = 0;
         for (Long id : ids) {
             repository.deleteCreneau(id);

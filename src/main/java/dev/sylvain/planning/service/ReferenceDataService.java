@@ -68,6 +68,9 @@ public class ReferenceDataService implements ReferenceData {
     @Inject
     ReferenceDataChangeTracker changeTracker;
 
+    @Inject
+    SolverJobService solverJobs;
+
     /* ------------------------------ Animateurs ----------------------------- */
 
     @Override
@@ -264,6 +267,11 @@ public class ReferenceDataService implements ReferenceData {
      * why it belongs to the facade rather than to any one of them.
      */
     public void importFromPlanning(PlanningEvenement planning) {
+        // Refused while a solve holds this edition's solver: the landing persist
+        // would re-insert the referential this import just replaced, old créneaux
+        // reappearing by id beside the new ones, while emplacements, horaires and
+        // ad hoc constraints stay wiped (issue #328).
+        solverJobs.refuseIfSolving();
         if (planning != null) {
             // Refused before anything is written: a file may not install a
             // combination of ad hoc exceptions the form itself refuses

@@ -483,7 +483,10 @@ public class SolverJobService {
      * cannot take the solver while this check is being made.</p>
      */
     public synchronized void refuseIfSolving() {
-        purgeExpiredJobs();
+        // No purge here, deliberately: this only looks at PENDING and RUNNING,
+        // which are never purgeable, so purging would be a DELETE and a monitor
+        // hold per call — 200 of them behind a 200-row bulk delete, serialising
+        // the referential screen against job submission for nothing.
         String editionId = editionContext.editionIdCourant();
         findActive()
                 .filter(job -> job.getEditionId().equals(editionId))

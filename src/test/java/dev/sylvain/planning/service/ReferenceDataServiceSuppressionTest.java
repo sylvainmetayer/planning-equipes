@@ -2,6 +2,7 @@ package dev.sylvain.planning.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.InstanceOfAssertFactories.throwable;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -191,6 +192,7 @@ class ReferenceDataServiceSuppressionTest {
         try {
             persistence.persist(probleme);
             attendreSolveurLibre();
+            assertThat(solverJobs.findActive()).isEmpty();
 
             // The solve is now holding the solver, with the referential of its
             // start captured in its problem — exactly the window in which a
@@ -250,9 +252,11 @@ class ReferenceDataServiceSuppressionTest {
 
             persistence.persist(probleme);
             attendreSolveurLibre();
+            assertThat(solverJobs.findActive()).isEmpty();
 
             // The solve holds the solver, for edition A (the default one).
             jobId = solverJobs.submitSolve(probleme, 60L).getId();
+            final String jobEnCours = jobId;
             assertThat(solverJobs.findActive()).isPresent();
             assertThat(solverJobs.findActive().orElseThrow().getEditionId())
                     .isEqualTo(editionContext.editionIdCourant());
@@ -265,16 +269,24 @@ class ReferenceDataServiceSuppressionTest {
                 assertThat(referenceData.listStands()).noneMatch(st -> "SUP-S10".equals(st.getId()));
             });
 
-            // And A is still protected by the very same running job.
+            // And A is still protected by the very same running job, with the
+            // blocking run named — what SolverOccupeMapper turns into the 409
+            // body's message, the only field the frontend's toError reads.
             assertThatThrownBy(() -> referenceData.deleteAnimateur("SUP-A9"))
-                    .isInstanceOf(SolverJobService.SolverBusyException.class);
+                    .isInstanceOf(SolverJobService.SolverBusyException.class)
+                    .asInstanceOf(throwable(SolverJobService.SolverBusyException.class))
+                    .extracting(occupe -> occupe.getActiveJob().getId())
+                    .isEqualTo(jobEnCours);
         } finally {
             if (jobId != null) {
                 solverJobs.cancel(jobId);
             }
             attendreSolveurLibre();
-            editions.delete(EDITION_VOISINE);
+            // Cleaned before the edition is dropped: EditionService.delete throws
+            // on several conditions, and letting it run first would skip nettoyer()
+            // entirely, leaking the SUP-* fixtures into the classes that follow.
             nettoyer();
+            editions.delete(EDITION_VOISINE);
         }
     }
 
@@ -288,6 +300,7 @@ class ReferenceDataServiceSuppressionTest {
             persistence.persist(new PlanningEvenement(JOUR, List.of(animateur),
                     List.of(poste("SUP-P9", stand, creneau, animateur))));
             attendreSolveurLibre();
+            assertThat(solverJobs.findActive()).isEmpty();
 
             referenceData.deleteAnimateur("SUP-A8");
             referenceData.deleteStand("SUP-S8");
@@ -297,23 +310,6 @@ class ReferenceDataServiceSuppressionTest {
         } finally {
             nettoyer();
         }
-    }
-
-    /**
-     * The solver is a single shared resource, and the deletes under test now
-     * refuse while it is held — so every fixture waits for it, including the
-     * cleanup, which would otherwise throw on a job another class left running.
-     */
-    private void attendreSolveurLibre() {
-        for (int essai = 0; essai < 240 && solverJobs.findActive().isPresent(); essai++) {
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException interrompu) {
-                Thread.currentThread().interrupt();
-                break;
-            }
-        }
-        assertThat(solverJobs.findActive()).isEmpty();
     }
 
     private List<PosteAffectation> postesForStand(String standId) {
@@ -346,6 +342,28 @@ class ReferenceDataServiceSuppressionTest {
             referenceData.deleteAnimateur(id);
         }
         referenceData.deleteCreneaux(List.of(9501L, 9502L, 9503L, 9504L, 9505L, 9506L));
+    }
+
+    /**
+     * The solver is a single shared resource, and the deletes under test now
+     * refuse while it is held — so every fixture waits for it, including the
+     * cleanup, which would otherwise throw on a job another class left running.
+     *
+     * <p>Deliberately asserts nothing: this is the first statement of the helper
+     * every {@code finally} calls, so an {@code AssertionError} raised here would
+     * replace the real failure of the test body — the very trap this class was
+     * written to avoid. A solver that never frees up shows as the refusal it
+     * causes, which names the job.</p>
+     */
+    private void attendreSolveurLibre() {
+        for (int essai = 0; essai < 240 && solverJobs.findActive().isPresent(); essai++) {
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException interrompu) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+        }
     }
 
     private static Creneau creneau(long id) {
