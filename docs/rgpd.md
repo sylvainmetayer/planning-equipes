@@ -95,7 +95,7 @@ crochet.
 | Rubrique | Contenu |
 | --- | --- |
 | Catégories de personnes | Animateurs, **dont des mineurs** ; encadrants et managers |
-| Catégories de données | Nom, prénom, **date de naissance**, adresse électronique (facultative), compétences, souhaits d'affectation, jours d'indisponibilité, jeton d'accès à l'espace animateur, affectations et échanges, **déclarations de disponibilités en libre-service**, instantanés de planning, sessions et journaux d'accès |
+| Catégories de données | Nom, prénom, **date de naissance**, adresse électronique (facultative), compétences, souhaits d'affectation, jours d'indisponibilité, jeton d'accès à l'espace animateur, affectations et échanges, **déclarations de disponibilités en libre-service — dont un commentaire en champ libre**, instantanés de planning, sessions et journaux d'accès |
 | Traitements réalisés | Hébergement, planification et résolution, envoi d'e-mails (codes d'accès, plannings individuels, notifications d'échange), sauvegarde, purge |
 | Destinataires | L'organisateur via l'interface d'administration ; l'animateur via son espace ; les autres animateurs pour la part visible du planning (voir `securite.md`) ; le relais SMTP |
 | Mesures de sécurité | TLS et HSTS ; en-têtes CSP et `Referrer-Policy` — **le jeton d'espace voyage dans l'URL** ; chiffrement des sessions ; limitation de débit sur les codes d'espace et verrouillage du formulaire de connexion ; origine injoignable autrement que par le reverse proxy ; sauvegarde nocturne automatique par `pg_dump`, en rotation dans un volume dédié, dont l'**externalisation chiffrée hors machine reste à la charge de l'exploitant** (`exploitation.md` §5) |
@@ -254,10 +254,15 @@ complètes. Quatre points sont connus et se consignent :
   au registre. Deux choses la rendent moins exposante que le reste : la table ne
   porte **aucune donnée nouvelle** (des dates, des identifiants de typologie et
   un mot libre — les mêmes catégories que la fiche animateur), et une seule
-  proposition en attente existe par personne. Le mot libre est le point à
-  surveiller : c'est le seul champ où quelqu'un peut écrire une raison de santé
+  proposition en attente existe par personne. Le mot libre reste le point
+  sensible : c'est le seul champ où quelqu'un peut écrire une raison de santé
   ou de famille que personne ne lui a demandée, et il part tel quel dans le dump
-  nocturne ;
+  nocturne. **Le choix est fait de le conserver** plutôt que de le supprimer ou
+  d'en borner le contenu : un animateur qui explique son indisponibilité aide
+  l'organisation à décider, et un champ contraint le pousserait à écrire la même
+  chose ailleurs. Il est donc consigné au registre **comme donnée en champ
+  libre**, et c'est à ce titre qu'il est traité — sans que rien n'y soit
+  demandé, ni exigé, ni exploité au-delà de la décision qu'il éclaire ;
 - **l'effacement demandé par un animateur sur une édition encore active** n'a
   pas de procédure outillée : c'est une suppression manuelle de sa fiche. Une
   demande d'effacement ne se refuse pas au motif que l'événement n'est pas
