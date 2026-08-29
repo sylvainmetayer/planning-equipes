@@ -370,7 +370,7 @@ droit de faire **sur cette édition**.
 | Champ | Rôle |
 | --- | --- |
 | `actives` | Le garde-fou. `false` par défaut : rien ne part d'une édition que personne n'a armée |
-| `heureRappelVeille` | Heure locale à partir de laquelle le rappel J-1 peut partir |
+| `heureRappelVeille` | Heure locale à partir de laquelle le rappel J-1 peut partir. **23h00 au plus tard** : la tâche s'exécute une fois par heure et la fenêtre se ferme à minuit (après, « demain » serait faux), donc une heure plus tardive tomberait entre deux exécutions et ne partirait jamais. Refusée (`400`) plutôt qu'acceptée et silencieuse |
 | `delaiRelanceHeures` | Silence toléré après la publication avant une relance (1 à 720) |
 | `ancienneteEchangeJours` | Attente d'une demande d'échange avant alerte (1 à 60) |
 
@@ -383,7 +383,11 @@ Le rythme de la machine, lui, n'est pas dans l'API : `NOTIFICATIONS_CRON` et
 `NOTIFICATIONS_TIMEZONE` (voir [`exploitation.md`](exploitation.md)).
 
 `GET /api/alertes` — ce que ces jobs ont laissé sur le bureau, plus récent
-d'abord (`limite`, 100 par défaut, 500 au maximum). En lecture seule : une
+d'abord. `limite` s'applique **par type** (50 par défaut, 500 au maximum), et
+c'est le point : une fiche sans adresse produit une alerte *chaque soir*, si
+bien qu'un plafond global laissait une poignée d'injoignables enterrer les
+`ALERTE_ECHANGE` en quelques jours — les seules qui appellent une **décision**,
+et dont cet écran est le seul point de sortie. En lecture seule : une
 alerte se referme en traitant ce qu'elle signale, pas en l'effaçant. Le journal
 ne stocke qu'un `animateurId` ; `nomAffiche` est résolu **à la lecture** depuis
 le référentiel, donc une fiche supprimée laisse une alerte qui ne nomme plus

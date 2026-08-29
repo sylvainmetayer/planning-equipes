@@ -4,8 +4,8 @@ import java.util.List;
 
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.ConfirmationPlanningService;
-import dev.sylvain.planning.service.DeclarationDisponibiliteService.NouvelleDeclaration;
 import dev.sylvain.planning.service.DeclarationDisponibiliteService;
+import dev.sylvain.planning.service.DeclarationDisponibiliteService.NouvelleDeclaration;
 import dev.sylvain.planning.service.DemandeEchangeService;
 import dev.sylvain.planning.service.DemandeEchangeService.NouvelleDemande;
 import dev.sylvain.planning.service.EditionRequestScope;

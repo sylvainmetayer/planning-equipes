@@ -28,6 +28,24 @@ public record ParametresNotifications(boolean actives, LocalTime heureRappelVeil
     /** Late enough that the next day's planning is settled, early enough to be read. */
     public static final LocalTime HEURE_RAPPEL_VEILLE_PAR_DEFAUT = LocalTime.of(18, 0);
 
+    /**
+     * Latest sending time the scheduler can honour, and the reason it exists.
+     *
+     * <p>The reminder for day D goes out on D-1, between {@link
+     * #heureRappelVeille()} and midnight — after that the day it announces has
+     * begun, and « demain » would be a lie. The job wakes up <b>hourly</b>
+     * (see {@code planning.notifications.cron}), so an hour later than 23:00
+     * can fall entirely between two runs: the last run of the evening is still
+     * too early, the next one has already rolled over to the following day,
+     * and the reminder is never sent at all.</p>
+     *
+     * <p>That silence is the failure this bound exists to prevent. An
+     * organiser who sets 23:30, sees it saved and believes the reminders are
+     * on has no way of finding out that nothing will ever leave — so the value
+     * is refused at the door rather than accepted and quietly ignored.</p>
+     */
+    public static final LocalTime HEURE_RAPPEL_VEILLE_MAX = LocalTime.of(23, 0);
+
     /** Three days: long enough for a weekend to pass without chasing anybody. */
     public static final int DELAI_RELANCE_HEURES_PAR_DEFAUT = 72;
 

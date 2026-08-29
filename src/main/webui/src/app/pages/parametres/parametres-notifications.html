@@ -24,11 +24,13 @@
           <input
             matInput
             type="time"
+            max="23:00"
             [value]="reglages.heureRappelVeille"
             (change)="majHeure($any($event.target).value)"
           />
           <mat-hint i18n="@@parametres.notifications.heureAide">
-            Le rappel liste les postes du lendemain, tels qu'ils ont été publiés.
+            Le rappel liste les postes du lendemain, tels qu'ils ont été publiés. Au plus tard 23h00 : la tâche
+            s'exécute une fois par heure, et un rappel réglé plus tard ne partirait jamais.
           </mat-hint>
         </mat-form-field>
 

@@ -69,6 +69,19 @@ public class RappelVeilleJob {
     /**
      * Sends tomorrow's reminders, if the edition's own sending time has passed.
      *
+     * <p>The window runs from {@code heureRappelVeille} to <b>midnight</b>, and
+     * stops there on purpose: past midnight the day being announced has begun,
+     * and « demain » would be false. The window is therefore never shorter than
+     * an hour — {@code ParametresNotifications.HEURE_RAPPEL_VEILLE_MAX} refuses
+     * an hour that would leave less — so the hourly job always gets at least one
+     * run inside it and the reminder cannot fall between two runs.</p>
+     *
+     * <p><b>Known limit, deliberately not covered:</b> an outage spanning every
+     * remaining run of the evening loses that day's reminder, with no catch-up.
+     * Catching up would mean sending it after midnight, when it announces a day
+     * that has already started — later is not better than not at all here, and
+     * the espace still shows the planning.</p>
+     *
      * @param maintenant current time in the deployment's notification zone —
      *                   passed in rather than read here, so the whole run shares
      *                   one clock and a test can place itself in the day
@@ -115,7 +128,8 @@ public class RappelVeilleJob {
             // from reappearing every hour.
             journal.claim(JournalNotificationsRepository.Type.RAPPEL_VEILLE_INJOIGNABLE, cle, fiche.getId(),
                     "Rappel de la veille impossible : aucune adresse e-mail sur la fiche."
-                            + " Cette personne est affectée le " + demain + " et doit être prévenue à la main.",
+                            + " Cette personne est affectée le " + NotificationWriter.JOUR.format(demain)
+                            + " et doit être prévenue à la main.",
                     JournalNotificationsRepository.Severite.WARNING);
             return false;
         }

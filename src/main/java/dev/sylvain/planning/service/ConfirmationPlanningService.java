@@ -52,11 +52,25 @@ public class ConfirmationPlanningService {
     public record AccuseReception(String statut, Instant confirmeLe) {
     }
 
-    /** Records the animateur's own click. Idempotent: clicking twice keeps the first date. */
+    /**
+     * Records the animateur's own click. Idempotent: clicking twice keeps the
+     * first date.
+     *
+     * <p>Refused for somebody who holds no seat in the published plan, and that
+     * refusal is the server's job rather than the interface's. The espace is
+     * public, so hiding the button is a courtesy, not a guarantee — and an
+     * answer that was accepted, stored, then shown as « — » on the admin screen
+     * (because {@code affecte} is false) is worse than a refusal: the person
+     * believes they have answered, and nobody sees it.</p>
+     */
     public AccuseReception confirmer(String animateurId) {
         if (planPublieService.jamaisPublie()) {
             throw new BusinessError.Conflict(
                     "Aucun planning n'a encore été communiqué : il n'y a rien à confirmer.");
+        }
+        if (!assignedAnimateurs().contains(animateurId)) {
+            throw new BusinessError.Conflict(
+                    "Vous n'avez aucun poste sur le planning publié : il n'y a rien à confirmer.");
         }
         repository.confirmer(animateurId, Instant.now());
         return stored(animateurId)
@@ -69,9 +83,14 @@ public class ConfirmationPlanningService {
      * One animateur's stored answer, or empty while they have none — read
      * straight from the table, without loading the published plan, because the
      * espace has already loaded it and does not need the {@code affecte} flag.
+     *
+     * <p>A single-row query, not a filter over {@link #byAnimateur()}: this sits
+     * on the espace's home payload, so every animateur opening their space
+     * would otherwise read the whole edition's confirmations to learn about
+     * their own.</p>
      */
     public Optional<ConfirmationPlanningRepository.Confirmation> stored(String animateurId) {
-        return Optional.ofNullable(repository.byAnimateur().get(animateurId));
+        return repository.byId(animateurId);
     }
 
     /** The whole edition's answers, one line per animateur, sorted by display name. */

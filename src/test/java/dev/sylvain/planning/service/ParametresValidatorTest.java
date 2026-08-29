@@ -5,7 +5,10 @@ import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException
 
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalTime;
+
 import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresSolveur;
 
 /**
@@ -90,6 +93,39 @@ class ParametresValidatorTest {
         assertThatIllegalArgumentException()
                 .isThrownBy(() -> ParametresValidator.checkConstraintWeight(
                         ParametresValidator.CONSTRAINT_WEIGHT_MAX + 1));
+    }
+
+    /**
+     * The failure this bound exists for: a sending time the hourly job can
+     * never fall inside produces no reminder at all, and nothing on the screen
+     * says so. Accepting it would let an organiser configure the reminders,
+     * believe them on, and send nothing all week.
+     */
+    @Test
+    void aSendingTimeTheSchedulerCannotHonourIsRefused() {
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> ParametresValidator.checkParametresNotifications(
+                        new ParametresNotifications(true, LocalTime.of(23, 30), 72, 3)))
+                .withMessageContaining("une fois par heure");
+    }
+
+    @Test
+    void theLatestHonourableSendingTimeIsAccepted() {
+        assertThatCode(() -> ParametresValidator.checkParametresNotifications(
+                new ParametresNotifications(true, ParametresNotifications.HEURE_RAPPEL_VEILLE_MAX, 72, 3)))
+                .doesNotThrowAnyException();
+        assertThatCode(() -> ParametresValidator.checkParametresNotifications(new ParametresNotifications()))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void aReminderDelayOfZeroIsRefused() {
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> ParametresValidator.checkParametresNotifications(
+                        new ParametresNotifications(true, LocalTime.of(18, 0), 0, 3)));
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> ParametresValidator.checkParametresNotifications(
+                        new ParametresNotifications(true, LocalTime.of(18, 0), 72, 0)));
     }
 
     @Test

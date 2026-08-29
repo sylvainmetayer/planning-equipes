@@ -1,6 +1,7 @@
 package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
@@ -24,6 +25,7 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.ConfirmationPlanningService;
 import dev.sylvain.planning.service.PlanPublicationService;
 import dev.sylvain.planning.service.PlanningPersistenceService;
@@ -152,6 +154,29 @@ class ConfirmationPlanningTest {
                 // she was never asked — the column must not count her among the
                 // people to chase.
                 .body("find { it.animateurId == 'CONF-C' }.affecte", equalTo(false));
+    }
+
+    /**
+     * Carla holds no seat in the published plan, so there is nothing for her to
+     * acknowledge. Accepting the click would store a row the admin column then
+     * shows as « — » (because {@code affecte} is false): she would believe she
+     * had answered, and nobody would ever see it.
+     */
+    @Test
+    void confirmingWithoutAnySeatIsRefused() {
+        publication.publier();
+
+        // Asserted on the service rather than over HTTP: the espace session of
+        // this fixture belongs to Alice, so Carla's route would answer 401 and
+        // prove nothing about the rule being tested.
+        assertThatThrownBy(() -> confirmationService.confirmer("CONF-C"))
+                .isInstanceOf(BusinessError.Conflict.class)
+                .hasMessageContaining("aucun poste");
+
+        given().when().get("/api/animateurs/confirmations")
+                .then()
+                .statusCode(200)
+                .body("find { it.animateurId == 'CONF-C' }.statut", equalTo("NON_VU"));
     }
 
     /**

@@ -101,16 +101,31 @@ public class JournalNotificationsRepository {
         });
     }
 
-    /** The alerts of this edition, newest first, capped so the screen stays readable. */
+    /**
+     * The alerts of this edition, newest first, capped <b>per type</b> so that
+     * one noisy kind cannot starve another.
+     *
+     * <p>A flat « newest N » was wrong, not merely imprecise. An edition with
+     * twenty addressless fiches raises twenty {@code RAPPEL_VEILLE_INJOIGNABLE}
+     * rows <i>every evening</i>, so within a few days they fill any global cap
+     * and push the {@code ALERTE_ECHANGE} rows off the screen — the only ones
+     * that ask the admin for a <b>decision</b>, and whose only way out is this
+     * very screen. The window function gives each type its own quota; the
+     * merged result is still read newest-first.</p>
+     */
     public List<Alerte> alertes(int limite) {
         return scope.read("Failed to load the scheduled notification alerts", connection -> {
             try (PreparedStatement ps = scope.prepareScoped(connection,
                     """
                     SELECT type, cle, declenche_le, libelle, severite, animateur_id
-                    FROM notification_planifiee
-                    WHERE edition_id = ? AND libelle IS NOT NULL
-                    ORDER BY declenche_le DESC
-                    LIMIT ?""")) {
+                    FROM (
+                        SELECT type, cle, declenche_le, libelle, severite, animateur_id,
+                               ROW_NUMBER() OVER (PARTITION BY type ORDER BY declenche_le DESC) AS rang
+                        FROM notification_planifiee
+                        WHERE edition_id = ? AND libelle IS NOT NULL
+                    ) classees
+                    WHERE rang <= ?
+                    ORDER BY declenche_le DESC""")) {
                 ps.setInt(2, limite);
                 try (ResultSet rs = ps.executeQuery()) {
                     List<Alerte> alertes = new ArrayList<>();

@@ -29,8 +29,15 @@ import jakarta.inject.Inject;
 @ApplicationScoped
 public class NotificationWriter {
 
-    /** « samedi 11 juillet » — the same way a planning is read aloud. */
-    private static final DateTimeFormatter JOUR =
+    /**
+     * « samedi 11 juillet » — the same way a planning is read aloud.
+     *
+     * <p>Package-private rather than private: {@code RappelVeilleJob} words the
+     * same day in the alert it leaves on the Notifications screen, and two
+     * definitions would drift into a mail saying « samedi 11 juillet » next to
+     * an alert saying « 2026-07-11 ».</p>
+     */
+    static final DateTimeFormatter JOUR =
             DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.FRENCH);
 
     @Inject

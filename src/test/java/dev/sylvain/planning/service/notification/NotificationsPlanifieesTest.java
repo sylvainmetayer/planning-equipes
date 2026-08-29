@@ -74,6 +74,9 @@ class NotificationsPlanifieesTest {
     AlerteService alerteService;
 
     @Inject
+    JournalNotificationsRepository journal;
+
+    @Inject
     MockMailbox mailbox;
 
     @Inject
@@ -160,6 +163,36 @@ class NotificationsPlanifieesTest {
 
         assertThat(alerteService.alertes(null))
                 .filteredOn(alerte -> "RAPPEL_VEILLE_INJOIGNABLE".equals(alerte.type()))
+                .hasSize(1);
+    }
+
+    /**
+     * One noisy kind of alert must not push another off the screen.
+     *
+     * <p>An addressless fiche raises one row <b>every evening</b>, so a flat
+     * « newest N » let a handful of unreachable people bury the swap-request
+     * alerts within days — the only ones asking the admin for a decision, and
+     * whose sole way out is this screen. The cap is therefore per type.</p>
+     */
+    @Test
+    void aNoisyKindOfAlertCannotBuryTheOnesNeedingADecision() {
+        // Far more unreachable-reminder alerts than the requested cap.
+        for (int jour = 0; jour < 6; jour++) {
+            journal.claim(JournalNotificationsRepository.Type.RAPPEL_VEILLE_INJOIGNABLE,
+                    "PLAN-B|bruit-" + jour, "PLAN-B", "Rappel impossible, fiche sans adresse.",
+                    JournalNotificationsRepository.Severite.WARNING);
+        }
+        journal.claim(JournalNotificationsRepository.Type.ALERTE_ECHANGE, "demande-qui-dort", null,
+                "Une demande d'échange attend une décision depuis 9 jours.",
+                JournalNotificationsRepository.Severite.WARNING);
+
+        List<AlerteService.AlerteView> alertes = alerteService.alertes(2);
+
+        assertThat(alertes)
+                .filteredOn(alerte -> "RAPPEL_VEILLE_INJOIGNABLE".equals(alerte.type()))
+                .hasSize(2);
+        assertThat(alertes)
+                .filteredOn(alerte -> "ALERTE_ECHANGE".equals(alerte.type()))
                 .hasSize(1);
     }
 

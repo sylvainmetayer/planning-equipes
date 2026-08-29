@@ -7,6 +7,7 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import dev.sylvain.planning.domain.StatutConfirmation;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -51,6 +52,33 @@ public class ConfirmationPlanningRepository {
                             instant(rs.getTimestamp("relance_le"))));
                 }
                 return confirmations;
+            }
+        });
+    }
+
+    /**
+     * One stored answer, by animateur id — the single-row read the espace does
+     * on every load, kept apart from {@link #byAnimateur()} so it does not
+     * scan the whole edition to answer about one person.
+     */
+    public Optional<Confirmation> byId(String animateurId) {
+        return scope.read("Failed to load a planning confirmation", connection -> {
+            try (PreparedStatement ps = scope.prepareScoped(connection,
+                    """
+                    SELECT animateur_id, statut, confirme_le, relance_le
+                    FROM confirmation_planning
+                    WHERE edition_id = ? AND animateur_id = ?""")) {
+                ps.setString(2, animateurId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (!rs.next()) {
+                        return Optional.<Confirmation>empty();
+                    }
+                    return Optional.of(new Confirmation(
+                            rs.getString("animateur_id"),
+                            StatutConfirmation.valueOf(rs.getString("statut")),
+                            instant(rs.getTimestamp("confirme_le")),
+                            instant(rs.getTimestamp("relance_le"))));
+                }
             }
         });
     }

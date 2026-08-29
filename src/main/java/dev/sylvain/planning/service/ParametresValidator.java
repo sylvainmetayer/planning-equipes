@@ -90,6 +90,17 @@ final class ParametresValidator {
         if (parametres.heureRappelVeille() == null) {
             throw new BusinessError.Invalid("heureRappelVeille is required");
         }
+        // Refused rather than accepted and silently ignored: past this hour the
+        // sending window is shorter than the interval between two runs of the
+        // hourly job, so the reminder would never leave at all — and nothing on
+        // the screen would say so. See ParametresNotifications.HEURE_RAPPEL_VEILLE_MAX.
+        if (parametres.heureRappelVeille().isAfter(ParametresNotifications.HEURE_RAPPEL_VEILLE_MAX)) {
+            throw new BusinessError.Invalid(
+                    "L'heure d'envoi du rappel ne peut pas dépasser "
+                            + ParametresNotifications.HEURE_RAPPEL_VEILLE_MAX
+                            + " : la tâche s'exécute une fois par heure, et un rappel réglé plus tard"
+                            + " ne partirait jamais.");
+        }
         if (parametres.delaiRelanceHeures() < 1 || parametres.delaiRelanceHeures() > 24 * 30) {
             throw new BusinessError.Invalid("delaiRelanceHeures must be between 1 and 720");
         }

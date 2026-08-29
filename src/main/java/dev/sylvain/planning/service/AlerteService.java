@@ -24,8 +24,12 @@ import jakarta.inject.Inject;
 @ApplicationScoped
 public class AlerteService {
 
-    /** Enough to cover an event week without letting one screen read a whole season. */
-    private static final int LIMITE_PAR_DEFAUT = 100;
+    /**
+     * Alerts kept <b>per type</b>, not in total: one noisy kind must not push
+     * another off the screen. Fifty covers an event week of a given kind, and
+     * the count stays small enough to read.
+     */
+    private static final int LIMITE_PAR_DEFAUT = 50;
 
     private static final int LIMITE_MAX = 500;
 
@@ -47,6 +51,11 @@ public class AlerteService {
             String animateurId, String nomAffiche) {
     }
 
+    /**
+     * @param limite how many alerts to bring back <b>of each type</b>; clamped,
+     *               so a client asking for a million gets the cap rather than
+     *               the database
+     */
     public List<AlerteView> alertes(Integer limite) {
         int plafond = limite == null || limite <= 0 ? LIMITE_PAR_DEFAUT : Math.min(limite, LIMITE_MAX);
         List<JournalNotificationsRepository.Alerte> alertes = journal.alertes(plafond);

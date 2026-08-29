@@ -36,8 +36,10 @@ public class AlerteResource {
     /**
      * The edition's alerts, newest first.
      *
-     * @param limite how many to bring back; the service clamps it, so a client
-     *               asking for a million gets the cap rather than the database
+     * @param limite how many to bring back <b>per type</b> — one noisy kind of
+     *               alert must not push another off the screen; the service
+     *               clamps it, so a client asking for a million gets the cap
+     *               rather than the database
      */
     @GET
     public List<AlerteView> alertes(@QueryParam("limite") Integer limite) {

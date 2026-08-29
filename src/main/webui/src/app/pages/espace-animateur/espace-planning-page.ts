@@ -36,12 +36,20 @@ export class EspacePlanningPage {
   protected readonly erreurConfirmation = signal<string | null>(null);
 
   /**
-   * The button only exists once something has been published: before that the
-   * espace shows no planning at all, and there would be nothing to acknowledge.
+   * The button only exists once something has been published AND this person
+   * actually holds a seat in it.
+   *
+   * `publieLe` alone is not enough: it is the edition's publication instant,
+   * not « this person has assignments ». Someone with no seat would be shown
+   * « J'ai lu et je serai là » under an empty planning, and their answer —
+   * accepted by the server before this check existed — showed as « — » on the
+   * admin column. Being asked nothing is the honest state here; the server
+   * refuses it too, this only avoids offering the gesture.
    */
-  protected readonly confirmationDemandee = computed(
-    () => !!this.espace.vue()?.publieLe && this.espace.vue()?.statutConfirmation !== 'CONFIRME'
-  );
+  protected readonly confirmationDemandee = computed(() => {
+    const vue = this.espace.vue();
+    return !!vue?.publieLe && vue.postes.length > 0 && vue.statutConfirmation !== 'CONFIRME';
+  });
 
   protected async confirmer(): Promise<void> {
     this.confirmationEnCours.set(true);

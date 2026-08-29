@@ -10,6 +10,13 @@ import { ApiService } from '../../core/api.service';
 import { errorMessage } from '../../core/error-message';
 import { NotificationService } from '../../core/notification.service';
 
+/**
+ * Latest sending time the hourly job can honour — mirrors
+ * `ParametresNotifications.HEURE_RAPPEL_VEILLE_MAX` on the server, which
+ * refuses anything later rather than accepting a setting that would never fire.
+ */
+const HEURE_RAPPEL_MAX = '23:00';
+
 /** What the nightly jobs are allowed to do on this edition (issues #298, #299, #300). */
 export interface ParametresNotifications {
   actives: boolean;
@@ -71,16 +78,49 @@ export class ParametresNotificationsPanel {
     this.patch({ actives });
   }
 
-  protected majHeure(heureRappelVeille: string): void {
-    this.patch({ heureRappelVeille });
+  /**
+   * Clearing a field is an edit in progress, not a value.
+   *
+   * `Number('')` is `0` and an emptied time input is `''`, so writing them
+   * through would send `delaiRelanceHeures: 0` — refused by the server with a
+   * raw 400 about a field the user merely blanked. The previous value is kept
+   * instead, and the save button reports nothing because nothing was asked.
+   */
+  protected majHeure(valeur: string): void {
+    if (!valeur) {
+      return;
+    }
+    this.patch({ heureRappelVeille: valeur > HEURE_RAPPEL_MAX ? HEURE_RAPPEL_MAX : valeur });
   }
 
   protected majDelaiRelance(valeur: string): void {
-    this.patch({ delaiRelanceHeures: Number(valeur) });
+    const heures = this.borne(valeur, 1, 720);
+    if (heures !== null) {
+      this.patch({ delaiRelanceHeures: heures });
+    }
   }
 
   protected majAnciennete(valeur: string): void {
-    this.patch({ ancienneteEchangeJours: Number(valeur) });
+    const jours = this.borne(valeur, 1, 60);
+    if (jours !== null) {
+      this.patch({ ancienneteEchangeJours: jours });
+    }
+  }
+
+  /**
+   * The `min`/`max` of an input are a hint the browser gives, not a rule it
+   * enforces on a typed value — clamping here is what keeps the request within
+   * what the server accepts.
+   */
+  private borne(valeur: string, min: number, max: number): number | null {
+    if (!valeur.trim()) {
+      return null;
+    }
+    const nombre = Number(valeur);
+    if (!Number.isFinite(nombre)) {
+      return null;
+    }
+    return Math.min(Math.max(Math.round(nombre), min), max);
   }
 
   private patch(champs: Partial<ParametresNotifications>): void {

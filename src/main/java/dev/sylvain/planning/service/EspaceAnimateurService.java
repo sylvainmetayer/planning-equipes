@@ -81,18 +81,17 @@ public class EspaceAnimateurService {
      * and whether the foire is open ({@code foireOuverte} false turns the
      * espace read-only: the closure itself is enforced server-side, this flag
      * only lets the interface say so instead of failing on submit).
-     */
-    /**
-     * @param joursRepos event days the animateur holds no seat on — shown
-     *                    as explicit « Repos » days rather than silently
-     *                    missing cards; empty when they hold no seat at all
-     */
-    /**
+     *
+     * <p>One block, not four: only the <b>last</b> javadoc comment before a
+     * declaration is attached to it, so the successive blocks this grew into
+     * were silently dropping every {@code @param} but the newest.</p>
+     *
      * @param publieLe when the plan on display was communicated, {@code null}
      *                 while nothing has ever been published on this edition —
      *                 the postes are then empty, and the espace says so
-     */
-    /**
+     * @param joursRepos event days the animateur holds no seat on — shown as
+     *                 explicit « Repos » days rather than silently missing
+     *                 cards; empty when they hold no seat at all
      * @param statutConfirmation NON_VU / CONFIRME / RELANCE (issue #293) — the
      *                 espace only ever moves it to CONFIRME, and a
      *                 republication that changes this planning sends it back

@@ -650,7 +650,7 @@ export function buildHelpSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.rappels.term.delais:Les trois délais`,
-              text: $localize`:@@aide.rappels.def.delais:L'heure d'envoi du rappel de la veille, le silence toléré après une publication avant de relancer, et l'ancienneté d'une demande d'échange qui déclenche une alerte. Tous trois se règlent par édition sur la page Paramètres.`
+              text: $localize`:@@aide.rappels.def.delais:L'heure d'envoi du rappel de la veille (23h00 au plus tard : la tâche s'exécute une fois par heure, et un rappel réglé plus tard ne partirait jamais), le silence toléré après une publication avant de relancer, et l'ancienneté d'une demande d'échange qui déclenche une alerte. Tous trois se règlent par édition sur la page Paramètres.`
             },
             {
               term: $localize`:@@aide.rappels.term.rappel:Le rappel de la veille`,
