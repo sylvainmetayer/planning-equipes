@@ -101,6 +101,51 @@ class SolverScoreTraceTest {
         assertThat(trace.generation()).isGreaterThan(avant);
     }
 
+    /**
+     * The property the whole screen rests on. Timefold fires
+     * {@code bestSolutionChanged} <b>only on a strict improvement</b>, so a
+     * solve that plateaus records nothing at all — and a reader with the points
+     * alone would see a curve whose last point is its right edge, i.e. a run
+     * that looks like it is still climbing however long it has been stuck.
+     */
+    @Test
+    void aRunThatStopsImprovingKeepsReportingTimePassing() throws InterruptedException {
+        trace.start("job-1", "edition-1");
+        trace.record("job-1", event(0, -40, -10, -1000));
+
+        long avant = trace.snapshot().dureeMs();
+        // No further announcement: this is exactly what a plateau produces.
+        Thread.sleep(30);
+
+        Trace apres = trace.snapshot();
+        assertThat(apres.points()).hasSize(1);
+        assertThat(apres.dureeMs()).isGreaterThan(avant);
+    }
+
+    @Test
+    void aFinishedRunStopsStretchingInsteadOfGrowingForever() throws InterruptedException {
+        trace.start("job-1", "edition-1");
+        trace.record("job-1", event(0, -40, -10, -1000));
+        trace.finish("job-1");
+
+        long fige = trace.snapshot().dureeMs();
+        Thread.sleep(30);
+
+        // Frozen: a curve left on screen after a solve must not keep widening,
+        // which would make its plateau grow for a run that is over.
+        assertThat(trace.snapshot().dureeMs()).isEqualTo(fige);
+    }
+
+    @Test
+    void theCurveNeverEndsBeforeItsOwnLastPoint() {
+        trace.start("job-1", "edition-1");
+        // A point Timefold timed well past the wall clock this trace started
+        // on: the axis must still contain it rather than cut it off.
+        trace.record("job-1", event(600_000, -40, -10, -1000));
+
+        assertThat(trace.snapshot().dureeMs()).isGreaterThanOrEqualTo(600_000);
+    }
+
     @Test
     void theEndOfTheRunFlushesTheFinalScoreEvenMidWindow() {
         trace.start("job-1", "edition-1");

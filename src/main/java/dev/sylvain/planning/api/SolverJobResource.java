@@ -53,6 +53,13 @@ public class SolverJobResource {
     /** Event name carrying new points of the running solve's score curve. */
     static final String EVENT_SCORE = "score";
 
+    /**
+     * Generation of "no curve at all": what a cursor holds before its first
+     * event, and what {@link #absenceEvent} sends. A real generation starts at
+     * 1, so the two can never be confused.
+     */
+    private static final int GENERATION_ABSENTE = -1;
+
     @Inject
     SolverJobService solverJobService;
 
@@ -230,8 +237,8 @@ public class SolverJobResource {
      */
     private static final class ScoreCursor {
 
-        /** Generation of the series this cursor describes; -1 before the first event. */
-        private int generation = -1;
+        /** Generation of the series this cursor describes; see {@link #GENERATION_ABSENTE}. */
+        private int generation = GENERATION_ABSENTE;
         /** Number of points already sent for that generation. */
         private int envoyes;
         /** Whether anything at all was sent for it — an empty curve is still news. */
@@ -257,7 +264,7 @@ public class SolverJobResource {
     private List<OutboundSseEvent> scoreEvents(ScoreCursor cursor) {
         SolverScoreTrace.Trace trace = scoreTrace.snapshot();
         if (trace == null) {
-            return List.of();
+            return absenceEvent(cursor);
         }
         if (trace.generation() != cursor.generation) {
             cursor.generation = trace.generation();
@@ -266,19 +273,48 @@ public class SolverJobResource {
         }
         int depuis = Math.min(cursor.envoyes, trace.points().size());
         List<SolverScoreTrace.Point> nouveaux = trace.points().subList(depuis, trace.points().size());
-        if (nouveaux.isEmpty() && cursor.amorce && cursor.termine == trace.termine()) {
+        // A running solve beats every tick even with nothing new to add: its
+        // dureeMs is what draws the plateau, and a plateau is precisely the
+        // state that produces no new point at all. A finished curve goes quiet.
+        boolean rienDeNeuf = nouveaux.isEmpty() && cursor.amorce && cursor.termine == trace.termine();
+        if (rienDeNeuf && trace.termine()) {
             return List.of();
         }
         cursor.envoyes = trace.points().size();
         cursor.amorce = true;
         cursor.termine = trace.termine();
-        ScoreDelta delta = new ScoreDelta(trace.jobId(), trace.editionId(), trace.generation(),
-                depuis, trace.intervalleMs(), trace.termine(), List.copyOf(nouveaux));
-        return List.of(sse.newEventBuilder()
+        return List.of(scoreEvent(new ScoreDelta(trace.jobId(), trace.editionId(), trace.generation(),
+                depuis, trace.intervalleMs(), trace.dureeMs(), trace.termine(), List.copyOf(nouveaux))));
+    }
+
+    /**
+     * "There is no curve" — a {@code score} event with no {@code jobId}, sent
+     * once per connection.
+     *
+     * <p>The case it exists for is a restart. The client holds a curve whose
+     * last event said {@code termine: false}; the server it reconnects to has
+     * no trace at all, and silence would leave that curve on screen looking
+     * live forever, for a run the server has already reported as
+     * {@code INTERROMPU}. Nothing else can produce it: a trace is never
+     * un-created within one JVM.</p>
+     */
+    private List<OutboundSseEvent> absenceEvent(ScoreCursor cursor) {
+        if (cursor.amorce && cursor.generation == GENERATION_ABSENTE) {
+            return List.of();
+        }
+        cursor.generation = GENERATION_ABSENTE;
+        cursor.envoyes = 0;
+        cursor.amorce = true;
+        cursor.termine = false;
+        return List.of(scoreEvent(new ScoreDelta(null, null, GENERATION_ABSENTE, 0, 0, 0, false, List.of())));
+    }
+
+    private OutboundSseEvent scoreEvent(ScoreDelta delta) {
+        return sse.newEventBuilder()
                 .name(EVENT_SCORE)
                 .mediaType(MediaType.APPLICATION_JSON_TYPE)
                 .data(ScoreDelta.class, delta)
-                .build());
+                .build();
     }
 
     /**
@@ -374,15 +410,20 @@ public class SolverJobResource {
      * One {@code score} event: the points of the curve this connection had not
      * received yet.
      *
+     * @param jobId        {@code null} means "there is no curve any more" —
+     *                      see {@link #absenceEvent}
      * @param depuis       index the first point of {@code points} has in the
      *                     series — 0 means "replace what you hold", anything
      *                     else means "append at that index"
      * @param intervalleMs current sampling interval, which doubles every time
      *                     the series is decimated
+     * @param dureeMs      how long the run has been going: the curve's right
+     *                     edge, which the points alone cannot give since
+     *                     Timefold only announces strict improvements
      * @param termine      whether the run is over and the curve final
      */
     public record ScoreDelta(String jobId, String editionId, int generation, int depuis,
-            long intervalleMs, boolean termine, List<SolverScoreTrace.Point> points) {
+            long intervalleMs, long dureeMs, boolean termine, List<SolverScoreTrace.Point> points) {
     }
 
     public record JobView(

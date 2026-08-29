@@ -148,6 +148,34 @@ class SolverJobStreamResourceTest {
         assertThat(waitForIdleIn(client)).isTrue();
     }
 
+    /**
+     * The property the curve rests on, asserted on the wire: a running solve
+     * keeps beating <b>even with no new point</b>.
+     *
+     * <p>Timefold announces a new best score only when it strictly improves, so
+     * a solve that plateaus produces no point at all — and a plateau is exactly
+     * what the screen exists to show. What travels instead is {@code dureeMs},
+     * the run's elapsed time, which is what lets the browser hold the last
+     * value flat to the right edge and say how long it has held. A stream that
+     * only spoke when a point appeared could not carry it.</p>
+     */
+    @Test
+    void aRunningSolveKeepsBeatingWithTheTimeItHasSpent() {
+        planImported();
+        StreamClient client = connect();
+        assertThat(client.next("state").data()).contains("\"active\":null");
+
+        String jobId = given().when().post("/api/solve/async/reference-data?seconds=5")
+                .then().statusCode(202)
+                .extract().path("id");
+
+        long premiere = new JsonPath(scoreEventFor(client, jobId)).getLong("dureeMs");
+        long suivante = new JsonPath(scoreEventFor(client, jobId)).getLong("dureeMs");
+        assertThat(suivante).isGreaterThan(premiere);
+
+        assertThat(waitForIdleIn(client)).isTrue();
+    }
+
     /** Reads events until a score one describes this job; fails rather than hanging. */
     private String scoreEventFor(StreamClient client, String jobId) {
         for (int i = 0; i < 40; i++) {

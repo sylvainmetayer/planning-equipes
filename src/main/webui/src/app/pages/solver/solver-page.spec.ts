@@ -456,6 +456,7 @@ describe('SolverPage', () => {
       editionId: 'festival-2026',
       generation: 1,
       intervalleMs: 1000,
+      dureeMs: 30000,
       termine: false,
       points: [{ tempsMs: 0, hard: -40, medium: -10, soft: -1000 }],
       ...overrides

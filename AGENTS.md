@@ -318,9 +318,14 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   capped server-side by `SolverScoreTrace`, drawn on the Solveur page by
   hand-written SVG polylines, one per score level and each on its own scale.
   **There is no charting dependency**, and adding one needs the same explicit
-  sign-off as any other. That curve is not polled: the stream is already
-  reopened on error and after 45 s of silence, and a new connection is sent the
-  whole series. See `docs/api.md`. Both loops are stopped with the shell that started
+  sign-off as any other. Each event also carries `dureeMs`, and that is not a
+  detail: Timefold announces a new best score **only when it strictly
+  improves**, so a solve that plateaus records no point at all — and the
+  plateau is what the screen is for. The elapsed time is what draws it, so a
+  running solve beats every tick even with nothing new to send. That curve is
+  not polled: the stream is already reopened on error and after 45 s of
+  silence, and a new connection is sent the whole series. See `docs/api.md`.
+  Both loops are stopped with the shell that started
   them (the service is `providedIn: 'root'` and would outlive it).
 - CSS stays **global** and limited to what Material does not cover:
   `src/styles.css` is a thin aggregator of `@import` rules only and the partials

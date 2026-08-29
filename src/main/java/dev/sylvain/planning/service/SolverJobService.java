@@ -378,8 +378,16 @@ public class SolverJobService {
     private Consumer<Solver<PlanningEvenement>> onSolverReady(SolverJob job) {
         return solver -> {
             // Holding it first: attachSolver honours a cancel that arrived
-            // during the build, and there is nothing to trace in that case.
+            // while the problem was being built, by terminating the solver
+            // before it ever starts.
             job.attachSolver(solver);
+            if (job.isCancelRequested()) {
+                // And then there is nothing to follow. Starting a trace anyway
+                // would clear the previous run's curve and replace it with an
+                // empty one — the screen would announce "no solution yet" for a
+                // solve that finished minutes ago.
+                return;
+            }
             scoreTrace.follow(job.getId(), job.getEditionId(), solver);
         };
     }

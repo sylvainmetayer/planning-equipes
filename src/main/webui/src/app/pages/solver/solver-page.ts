@@ -434,6 +434,8 @@ export class SolverPage {
 
   protected readonly courbePoints = computed(() => this.courbeScore()?.points ?? []);
   protected readonly courbeTerminee = computed(() => this.courbeScore()?.termine ?? false);
+  /** Elapsed time of the run the curve describes: its right edge, see `score-curve.ts`. */
+  protected readonly courbeDureeMs = computed(() => this.courbeScore()?.dureeMs ?? 0);
 
   /**
    * Whether the curve's card is on screen at all. A run on this edition brings

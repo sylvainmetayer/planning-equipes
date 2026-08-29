@@ -69,12 +69,19 @@ import { HAUTEUR_COURBE, LARGEUR_COURBE, NiveauScore, SerieScore, construireSeri
 export class ScoreChart {
   /** The curve so far. Growing at one point per second at most — see the backend's `SolverScoreTrace`. */
   readonly points = input.required<ScorePoint[]>();
+  /**
+   * How long the run has been going. Carried apart from the points because
+   * Timefold only announces *strict improvements*: a solve at a standstill adds
+   * no point at all, so the points alone cannot say where the curve's right
+   * edge is, nor how long a level has held.
+   */
+  readonly dureeMs = input(0);
   /** True once the run is over: the curve is final and says so rather than looking live. */
   readonly termine = input(false);
 
   protected readonly largeur = LARGEUR_COURBE;
   protected readonly hauteur = HAUTEUR_COURBE;
-  protected readonly series = computed(() => construireSeries(this.points()));
+  protected readonly series = computed(() => construireSeries(this.points(), this.dureeMs()));
 
   /**
    * Short names, not the constraint-page ones: these label an axis, and

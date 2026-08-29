@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -48,6 +50,23 @@ import jakarta.enterprise.context.ApplicationScoped;
  * off a cliff at the exact moment the plan becomes complete, which reads as a
  * regression when it is the opposite.</p>
  *
+ * <h2>Why the elapsed time is carried apart from the points</h2>
+ *
+ * <p>Timefold fires {@code bestSolutionChanged} <b>only when the best score
+ * strictly improves</b>. A solve that stops progressing therefore stops
+ * producing points altogether — which is exactly the state this whole feature
+ * exists to make visible. A curve read from the points alone cannot show it:
+ * its last point is its right edge, so a run whose last improvement was at
+ * t=200 s of a 900 s budget draws as if it were still climbing at t=900 s.</p>
+ *
+ * <p>Hence {@link Trace#dureeMs()}, measured on the clock rather than on the
+ * events: the reader knows how long the run has actually been going, extends
+ * the last value flat to that point, and can say how long each level has held.
+ * The alternative — appending a "nothing new" sample every second — would put
+ * the plateau in the series at the cost of a scheduler, of memory, and of
+ * points on the wire that carry no information. Frozen at {@link #finish}, so
+ * a finished curve stops instead of stretching forever.</p>
+ *
  * <h2>Reading it back</h2>
  *
  * <p>{@link #generation()} is what makes an incremental read possible: it moves
@@ -77,10 +96,13 @@ public class SolverScoreTrace {
      *                    refuses it on any other
      * @param generation  see {@link SolverScoreTrace}
      * @param intervalleMs current sampling interval, after any decimation
+     * @param dureeMs     how long the run has been going — the curve's right
+     *                    edge, which the points cannot give (see above); frozen
+     *                    once the run is over
      * @param termine     whether the run is over: the curve stops here
      */
     public record Trace(String jobId, String editionId, int generation, long intervalleMs,
-            boolean termine, List<Point> points) {
+            long dureeMs, boolean termine, List<Point> points) {
     }
 
     private final List<Point> points = new ArrayList<>();
@@ -89,6 +111,10 @@ public class SolverScoreTrace {
     private int generation;
     private long intervalleMs = INTERVALLE_INITIAL_MS;
     private boolean termine;
+    /** Wall clock the run started on, the origin {@link #dureeMs()} counts from. */
+    private Instant debut;
+    /** Duration of a finished run, frozen by {@link #finish}. */
+    private long dureeFinaleMs;
     /** Latest best announced, recorded or not: what {@link #finish} flushes. */
     private Point dernier;
     private long dernierAjoutMs;
@@ -109,6 +135,8 @@ public class SolverScoreTrace {
         this.points.clear();
         this.intervalleMs = INTERVALLE_INITIAL_MS;
         this.termine = false;
+        this.debut = Instant.now();
+        this.dureeFinaleMs = 0;
         this.dernier = null;
         this.dernierAjoutMs = Long.MIN_VALUE;
         this.generation++;
@@ -150,6 +178,7 @@ public class SolverScoreTrace {
             // for one point, and force every reader to take the series again.
             points.add(dernier);
         }
+        dureeFinaleMs = elapsedMs();
         termine = true;
     }
 
@@ -158,7 +187,27 @@ public class SolverScoreTrace {
         if (jobId == null) {
             return null;
         }
-        return new Trace(jobId, editionId, generation, intervalleMs, termine, List.copyOf(points));
+        return new Trace(jobId, editionId, generation, intervalleMs, dureeMs(), termine,
+                List.copyOf(points));
+    }
+
+    /**
+     * How long the run has been going: measured live while it runs, frozen at
+     * its real duration once it is over.
+     *
+     * <p>Never shorter than the last point: the two clocks are the same one —
+     * {@link #follow} is called on the thread that is about to block on
+     * {@code solve()}, and Timefold counts from there — but a snapshot taken
+     * between an announcement and the tick after it must not report a curve
+     * that ends before its own last point.</p>
+     */
+    private long dureeMs() {
+        long ecoule = termine ? dureeFinaleMs : elapsedMs();
+        return points.isEmpty() ? ecoule : Math.max(ecoule, points.get(points.size() - 1).tempsMs());
+    }
+
+    private long elapsedMs() {
+        return debut == null ? 0 : Math.max(0, Duration.between(debut, Instant.now()).toMillis());
     }
 
     synchronized int generation() {

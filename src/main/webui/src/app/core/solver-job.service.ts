@@ -86,7 +86,9 @@ interface JobsStreamState {
  * client never resets on its own, so both sides stay on the same series without
  * a handshake.
  */
-interface ScoreStreamDelta extends Omit<ScoreTrace, 'points'> {
+interface ScoreStreamDelta extends Omit<ScoreTrace, 'points' | 'jobId'> {
+  /** Null means "there is no curve any more" — a restarted server. */
+  jobId: string | null;
   depuis: number;
   points: ScorePoint[];
 }
@@ -579,17 +581,31 @@ export class SolverJobService {
    * window before that: an operator opening the page mid-solve sees the run so
    * far immediately, and sees it even in a browser with no `EventSource`.</p>
    *
-   * <p>Safe next to the deltas despite being a second writer: the server's
-   * per-connection cursor is what the next delta is indexed on, and it either
-   * says "replace" (0) or an index this series already holds — see
-   * {@link appliquerDeltaScore}.</p>
+   * <p>It only ever <b>fills a hole</b>, never overwrites: the stream is the
+   * writer, and the two are not ordered. A snapshot taken before a delta but
+   * applied after it would leave the series shorter than what the server
+   * believes this connection holds, and every following delta would splice one
+   * gap too far — a desynchronisation lasting the whole run, for a curve that
+   * would look plausible throughout. So it does nothing at all as soon as
+   * anything is held, before <em>and</em> after the await.</p>
    */
   async chargerCourbeScore(): Promise<void> {
+    if (this.scoreTrace() !== null) {
+      return;
+    }
     try {
-      const response = await this.api.getResponse<ScoreTrace>('/api/jobs/score');
-      // 204 is "no curve for the edition this browser is on" — a display state
-      // of its own, not a failure to swallow.
-      this.scoreTrace.set(response.status === 204 ? null : (response.body ?? null));
+      // A 204 — no curve, or one belonging to another edition — arrives here as
+      // a null body, which is exactly the "nothing to fill the hole with" case.
+      const trace = await this.api.get<ScoreTrace | null>('/api/jobs/score');
+      // Re-checked after the await, not only before it: a delta may have landed
+      // while this request was in flight, and overwriting it with an older
+      // snapshot would leave the series SHORTER than what the stream believes
+      // it has sent. The next delta's `depuis` would then overshoot, `slice`
+      // would silently return fewer points than asked for, and the two sides
+      // would stay one gap apart for the rest of the run.
+      if (trace && this.scoreTrace() === null) {
+        this.scoreTrace.set(trace);
+      }
     } catch {
       // Transient error: keep whatever is on screen rather than blanking it.
     }
@@ -686,6 +702,14 @@ export class SolverJobService {
 
   /** Splices a delta into the series held here; exported logic stays trivial on purpose. */
   private appliquerDeltaScore(delta: ScoreStreamDelta): void {
+    if (delta.jobId === null) {
+      // The server has no curve at all — it restarted. Without this the last
+      // curve received would stay on screen with its last `termine: false`,
+      // reading as a live solve for a run the server already reports as
+      // interrupted.
+      this.scoreTrace.set(null);
+      return;
+    }
     const courante = this.scoreTrace();
     // Anything but a plain append restarts from what the server just sent: the
     // server resets its cursor for exactly the same cases (a new run, a
@@ -699,6 +723,7 @@ export class SolverJobService {
       editionId: delta.editionId,
       generation: delta.generation,
       intervalleMs: delta.intervalleMs,
+      dureeMs: delta.dureeMs,
       termine: delta.termine,
       points
     });

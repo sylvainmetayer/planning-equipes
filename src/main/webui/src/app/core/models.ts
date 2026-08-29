@@ -828,6 +828,14 @@ export interface ScoreTrace {
   generation: number;
   /** Current sampling interval, which widens as a long run is decimated. */
   intervalleMs: number;
+  /**
+   * How long the run has been going — the curve's right edge, and the only
+   * thing that can show a plateau: Timefold announces a new best score *only
+   * when it strictly improves*, so a solve that stops progressing stops
+   * producing points entirely. Read from the points alone, such a run would
+   * draw as if it were still climbing. Frozen once the run is over.
+   */
+  dureeMs: number;
   /** True once the run is over, whichever way it ended. */
   termine: boolean;
   points: ScorePoint[];

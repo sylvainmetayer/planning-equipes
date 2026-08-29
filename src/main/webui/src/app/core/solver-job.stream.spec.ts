@@ -8,7 +8,11 @@ import { SolverJobService } from './solver-job.service';
 import type { JobView, ScorePoint, ScoreTrace } from './models';
 
 /** Wire shape of a `score` event, mirrored here so the fake stays honest. */
-type ScoreDeltaWire = Omit<ScoreTrace, 'points'> & { depuis: number; points: ScorePoint[] };
+type ScoreDeltaWire = Omit<ScoreTrace, 'points' | 'jobId'> & {
+  jobId: string | null;
+  depuis: number;
+  points: ScorePoint[];
+};
 
 /**
  * The stream half of `SolverJobService`, and above all its fallback.
@@ -114,6 +118,7 @@ class FakeEventSource {
         editionId: 'ed-1',
         generation: 1,
         intervalleMs: 1000,
+        dureeMs: 30000,
         termine: false,
         ...delta
       })
@@ -140,9 +145,18 @@ class FakeApi {
   activeResponses: { status: number; body: JobView | null }[] = [];
   jobsById: Record<string, JobView> = {};
   file: JobView[] = [];
+  /**
+   * What `/api/jobs/score` answers. Null is what a 204 looks like through
+   * `ApiService.get` — no curve, or one belonging to another edition. A promise
+   * so a test can hold the answer back and land a stream delta underneath it.
+   */
+  scoreTrace: Promise<ScoreTrace | null> = Promise.resolve(null);
 
   getResponse = vi.fn(async () => this.activeResponses.shift() ?? { status: 204, body: null });
-  get = vi.fn(async (url: string) => {
+  get = vi.fn(async (url: string): Promise<JobView | JobView[] | ScoreTrace | null> => {
+    if (url === '/api/jobs/score') {
+      return this.scoreTrace;
+    }
     if (url === '/api/jobs/file') {
       return this.file;
     }
@@ -451,6 +465,22 @@ describe('SolverJobService — server-sent events', () => {
       expect(service.scoreTrace()?.points).toHaveLength(1);
     });
 
+    it('drops the curve when the server says it no longer has one', async () => {
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+      FakeEventSource.last.emitScore({ depuis: 0, points: [point(0, -40)] });
+      await vi.advanceTimersByTimeAsync(0);
+      expect(service.scoreTrace()).not.toBeNull();
+
+      // A restart. Without this event the last curve received would stay on
+      // screen with its last `termine: false`, reading as a live solve for a
+      // run the server already reports as interrupted.
+      FakeEventSource.last.emitScore({ jobId: null, generation: -1, depuis: 0, points: [] });
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(service.scoreTrace()).toBeNull();
+    });
+
     it('refuses to expose a curve belonging to another edition', async () => {
       service.start();
       await vi.advanceTimersByTimeAsync(0);
@@ -474,6 +504,67 @@ describe('SolverJobService — server-sent events', () => {
       await vi.advanceTimersByTimeAsync(0);
 
       expect(service.scoreTraceEdition()?.points).toHaveLength(1);
+    });
+
+    /**
+     * The full read is a second writer next to the stream, and the two are not
+     * ordered. Letting it overwrite would leave the series shorter than what
+     * the server believes this connection holds — and every following delta
+     * would then splice one gap too far, for the rest of the run, on a curve
+     * that would look perfectly plausible throughout.
+     */
+    describe('the one-shot full read', () => {
+      const courbe = (points: ScorePoint[]): ScoreTrace => ({
+        jobId: 'job-1',
+        editionId: 'ed-1',
+        generation: 1,
+        intervalleMs: 1000,
+        dureeMs: 5000,
+        termine: false,
+        points
+      });
+
+      it('fills the curve when nothing is held yet', async () => {
+        api.scoreTrace = Promise.resolve(courbe([point(0, -40)]));
+        service.start();
+        await vi.advanceTimersByTimeAsync(0);
+
+        await service.chargerCourbeScore();
+
+        expect(service.scoreTrace()?.points).toHaveLength(1);
+      });
+
+      it('never overwrites a series the stream is already feeding', async () => {
+        api.scoreTrace = Promise.resolve(courbe([point(0, -40)]));
+        service.start();
+        await vi.advanceTimersByTimeAsync(0);
+        FakeEventSource.last.emitScore({ depuis: 0, points: [point(0, -40), point(1000, -30)] });
+        await vi.advanceTimersByTimeAsync(0);
+
+        await service.chargerCourbeScore();
+
+        expect(service.scoreTrace()?.points).toHaveLength(2);
+        // Not even asked for: there is nothing this read could add.
+        expect(api.get.mock.calls.filter(([url]) => url === '/api/jobs/score')).toHaveLength(0);
+      });
+
+      it('discards its answer when a delta lands while it is in flight', async () => {
+        let repondre: ((trace: ScoreTrace) => void) | null = null;
+        api.scoreTrace = new Promise<ScoreTrace>((resolve) => {
+          repondre = resolve;
+        });
+        service.start();
+        await vi.advanceTimersByTimeAsync(0);
+        const lecture = service.chargerCourbeScore();
+
+        // The stream got there first, with more than the snapshot carries.
+        FakeEventSource.last.emitScore({ depuis: 0, points: [point(0, -40), point(1000, -30)] });
+        await vi.advanceTimersByTimeAsync(0);
+        repondre!(courbe([point(0, -40)]));
+        await lecture;
+
+        expect(service.scoreTrace()?.points).toHaveLength(2);
+      });
     });
   });
 });

@@ -168,6 +168,29 @@ Le même flux porte un troisième type d'événement, `score` : les points
 que la suivante la remplace. Rien n'est persisté : un redémarrage oublie tout,
 et rejouer les solves passés est hors périmètre.
 
+### Pourquoi la durée voyage à part des points
+
+Timefold ne déclenche `bestSolutionChanged` **que lorsque le meilleur score
+s'améliore strictement**. Une résolution qui plafonne cesse donc de produire
+des points — et c'est exactement l'état que l'écran existe pour montrer. Une
+courbe normalisée sur ses seuls points toucherait toujours le bord droit : un
+solve dont la dernière amélioration date de t=200 s sur un budget de 900 s se
+dessinerait comme s'il progressait encore.
+
+D'où `dureeMs`, mesuré à l'horloge et non aux événements : c'est le bord droit
+de la courbe. Le navigateur y prolonge la dernière valeur à plat — ce segment
+*est* le plateau — et en déduit depuis combien de temps chaque niveau ne bouge
+plus. L'alternative (ajouter un point « rien de neuf » chaque seconde) mettrait
+le plateau dans la série au prix d'un ordonnanceur, de mémoire et de points sur
+le fil qui ne portent aucune information. `dureeMs` est **figé à la fin du
+run**, pour qu'une courbe laissée à l'écran cesse de s'élargir.
+
+Conséquence sur le flux : **une résolution en cours émet un événement à chaque
+tick, même sans nouveau point** — c'est `dureeMs` qui bouge. L'événement est
+alors minuscule (`points: []`). Une courbe terminée, elle, se tait.
+
+### Deux bornes d'échantillonnage
+
 Un solve annonce bien plus d'améliorations par seconde qu'une courbe n'a de
 pixels. **Deux bornes, toutes deux côté serveur** :
 
@@ -198,9 +221,20 @@ qu'il fait déjà de `JobView.editionId`. La lecture qui, elle, porte un en-têt
 pour une courbe d'une autre édition. C'est elle que la page Solveur appelle à
 son ouverture.
 
+**Un événement `score` sans `jobId` veut dire « il n'y a plus de courbe »**,
+et il est envoyé une fois par connexion. Le cas visé est un redémarrage : le
+client tient une courbe dont le dernier événement disait `termine: false`, le
+serveur auquel il se reconnecte n'a plus de trace, et le silence laisserait ce
+graphe à l'écran comme s'il était vivant — pour une résolution que le serveur
+rapporte déjà en `INTERROMPU`.
+
 La courbe se ferme à la fin du job, dans les trois cas — succès, échec,
 annulation à la main : le dernier score annoncé est ajouté même si la fenêtre
-d'échantillonnage n'était pas écoulée, et `termine` passe à `true`.
+d'échantillonnage n'était pas écoulée, `dureeMs` est figé, et `termine` passe à
+`true`. Un job annulé **avant même que son solveur démarre** ne touche pas à la
+courbe : ouvrir une trace vide effacerait celle du run précédent, et l'écran
+annoncerait « pas encore de première solution » pour une résolution déjà
+terminée.
 
 Réglage : `planning.jobs.stream.score` (1 s par défaut,
 `JOBS_STREAM_SCORE`).

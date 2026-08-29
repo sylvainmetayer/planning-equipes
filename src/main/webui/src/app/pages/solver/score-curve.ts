@@ -10,6 +10,13 @@
 // picture readable without axis labels: the top edge of a box is "nothing left
 // to fix at this level", and a curve reaching it is the answer to the only
 // question asked of a running solve.
+//
+// The horizontal axis spans the RUN, not the points. Timefold announces a new
+// best score only when it strictly improves, so a solve that stops progressing
+// stops producing points — the very state this screen exists to show. Scaled on
+// the points, such a run would always touch the right edge and read as still
+// climbing; scaled on the run's real duration, its last value extends flat to
+// that edge, which is what a plateau looks like.
 
 import { ScorePoint } from '../../core/models';
 
@@ -39,9 +46,14 @@ export interface SerieScore {
   /** Value at the last point: what the solve stands at. */
   dernier: number;
   /**
-   * How long that value has held, in milliseconds. The signal the whole screen
-   * exists for: "hard has been at 0 for two minutes, soft is still moving" is
-   * read off this, not off the shape of the curve.
+   * How long that value has held, in milliseconds — measured to *now* (the
+   * run's elapsed time), never to the last recorded point. The signal the whole
+   * screen exists for: "hard has been at 0 for two minutes, soft is still
+   * moving" is read off this, not off the shape of the curve.
+   *
+   * Measured to the last point instead, it would freeze on the gap between the
+   * last two improvements and stay there however long the wait — the one label
+   * an operator is meant to decide on would be the one that lies.
    */
   plateauMs: number;
 }
@@ -49,37 +61,50 @@ export interface SerieScore {
 /**
  * Builds the three curves, or `null` when there is nothing to draw yet: a solve
  * whose solver has not announced a first complete solution.
+ *
+ * @param dureeMs how long the run has been going. The curve's right edge; it
+ *                cannot be derived from the points — see the note above.
  */
-export function construireSeries(points: readonly ScorePoint[]): SerieScore[] | null {
+export function construireSeries(points: readonly ScorePoint[], dureeMs: number): SerieScore[] | null {
   if (points.length === 0) {
     return null;
   }
-  return NIVEAUX_SCORE.map((niveau) => serie(niveau, points));
+  // Never shorter than the last point: a snapshot taken between an improvement
+  // and the next reading of the clock must not produce an axis that ends before
+  // the data it has to show.
+  const fin = Math.max(dureeMs, points[points.length - 1].tempsMs);
+  return NIVEAUX_SCORE.map((niveau) => serie(niveau, points, fin));
 }
 
-function serie(niveau: NiveauScore, points: readonly ScorePoint[]): SerieScore {
+function serie(niveau: NiveauScore, points: readonly ScorePoint[], fin: number): SerieScore {
   const valeurs = points.map((point) => point[niveau]);
   // Zero is forced into the range so the top edge always means "nothing left to
   // fix" — a curve that flattens against it is the readable end state.
   const haut = Math.max(0, ...valeurs);
   const bas = Math.min(0, ...valeurs);
   const amplitude = haut - bas;
-  const debut = points[0].tempsMs;
-  const duree = points[points.length - 1].tempsMs - debut;
 
   const y = (valeur: number): number =>
     amplitude === 0 ? 0 : ((haut - valeur) / amplitude) * HAUTEUR_COURBE;
-  const x = (tempsMs: number): number =>
-    duree === 0 ? 0 : ((tempsMs - debut) / duree) * LARGEUR_COURBE;
+  // From zero, not from the first point: the seconds before the solver held a
+  // first complete solution are part of the run too, and an axis anchored on
+  // the first point would rescale itself under every improvement.
+  const x = (tempsMs: number): number => (fin === 0 ? 0 : (tempsMs / fin) * LARGEUR_COURBE);
 
   const dernier = valeurs[valeurs.length - 1];
+  // One point is a level, not a shape: held across the whole box, since a
+  // polyline with a single vertex draws nothing at all and the first score of a
+  // run would simply never appear.
   const sommets =
-    // A single point, or every point at the same instant, has no width to be
-    // drawn across: a flat segment says "this is where it stands" where a
-    // one-vertex polyline would draw nothing at all.
-    duree === 0
+    points.length === 1
       ? [coord(0, y(dernier)), coord(LARGEUR_COURBE, y(dernier))]
       : points.map((point) => coord(x(point.tempsMs), y(point[niveau])));
+  // Held flat to the right edge — that segment *is* the plateau. Without it a
+  // run that stopped improving would end wherever its last improvement was, and
+  // a solve at a standstill would draw exactly like one still under way.
+  if (points.length > 1 && fin > points[points.length - 1].tempsMs) {
+    sommets.push(coord(LARGEUR_COURBE, y(dernier)));
+  }
 
   return {
     niveau,
@@ -88,18 +113,21 @@ function serie(niveau: NiveauScore, points: readonly ScorePoint[]): SerieScore {
     haut,
     bas,
     dernier,
-    plateauMs: plateau(points, valeurs)
+    plateauMs: plateau(points, valeurs, fin)
   };
 }
 
-/** Milliseconds the last value has held, walking back while it does not change. */
-function plateau(points: readonly ScorePoint[], valeurs: readonly number[]): number {
+/**
+ * Milliseconds the last value has held: from the point that first reached it up
+ * to *now*, never up to the last recorded point.
+ */
+function plateau(points: readonly ScorePoint[], valeurs: readonly number[], fin: number): number {
   const dernier = valeurs[valeurs.length - 1];
   let index = valeurs.length - 1;
   while (index > 0 && valeurs[index - 1] === dernier) {
     index -= 1;
   }
-  return points[points.length - 1].tempsMs - points[index].tempsMs;
+  return Math.max(0, fin - points[index].tempsMs);
 }
 
 /** Rounded to a hundredth: three decimals of SVG precision nobody can see. */
