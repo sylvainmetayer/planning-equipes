@@ -86,7 +86,12 @@ import jakarta.enterprise.context.ApplicationScoped;
  * single category can claim them; they are reported apart, as
  * {@link CompetenceStaffing#siegesNonAttribues()}. Splitting them over every
  * category of their stand would count the same seat several times and invent
- * bottlenecks.</li>
+ * bottlenecks. A stand proposing <b>no</b> category is the opposite case, not
+ * the same one: {@link Animateur#hasCompetenceFor(Stand)} then answers yes to
+ * polyvalents only, so its seats are the tightest demand there is. They join
+ * the ninja row — the very same required population — and are counted in
+ * {@link CompetenceStaffing#siegesReservesAuxPolyvalents()}; with no ninja
+ * category in the referential, nobody can hold them at all.</li>
  * <li><b>A ninja is a reinforcement, never a specialist.</b>
  * {@link Animateur#hasCompetenceFor(Stand)} lets a polyvalent take any stand,
  * so counting them as available in every category would add the same person to
@@ -98,10 +103,13 @@ import jakarta.enterprise.context.ApplicationScoped;
  * dispatchable anywhere but each on one seat at a time. A
  * {@link CompetenceStaffing#manqueTotal()} larger than that reserve is a
  * signal, not a proof: two categories peaking at different hours can be served
- * by the same polyvalent. This is the reading the decision record "le ninja
- * est un renfort, jamais un spécialiste" settles for the neighbouring
- * fragilité screen, applied to the same question — measuring the rarity of a
- * competence never counts the polyvalents in.</li>
+ * by the same polyvalent. The ninja row's own shortfall is excluded from that
+ * reading — {@link CompetenceStaffing#manquePolyvalents()} — because its pool
+ * <em>is</em> the reserve: offering the reinforcements against their own
+ * shortage would promise an absorption nobody can deliver. This is the reading
+ * the decision record "le ninja est un renfort, jamais un spécialiste" settles
+ * for the neighbouring fragilité screen, applied to the same question —
+ * measuring the rarity of a competence never counts the polyvalents in.</li>
  * </ul>
  *
  * <p>Both approximations this leaves point the same way — demand understated
@@ -183,9 +191,18 @@ public class StaffingAnalyzer {
      * @param polyvalents       animateurs holding the ninja category: a shared
      *                          reserve, dispatchable on any category but on one
      *                          seat at a time
-     * @param siegesNonAttribues seats of stands proposing several categories (or
-     *                          none), which no single category can claim
+     * @param siegesNonAttribues seats of stands proposing <b>several</b>
+     *                          categories, which no single category can claim
+     * @param siegesReservesAuxPolyvalents seats of stands proposing <b>no</b>
+     *                          category — the opposite case, and the tightest
+     *                          demand there is: only a polyvalent can hold one.
+     *                          They are folded into the ninja row when the
+     *                          referential has one, and holdable by nobody at
+     *                          all when it has not
      * @param manqueTotal       sum of the {@code manque} of every row
+     * @param manquePolyvalents the part of {@code manqueTotal} carried by the
+     *                          ninja row itself. No reinforcement can absorb it:
+     *                          that row's pool <em>is</em> the reserve
      * @param animateursTotal   animateurs known at all — {@code 0} means the
      *                          référentiel is still empty and nothing is compared
      * @param typologieNinjaDefinie whether the referential marks a ninja category
@@ -197,7 +214,9 @@ public class StaffingAnalyzer {
             List<TypologieStaffing> parTypologie,
             int polyvalents,
             int siegesNonAttribues,
+            int siegesReservesAuxPolyvalents,
             int manqueTotal,
+            int manquePolyvalents,
             int animateursTotal,
             boolean typologieNinjaDefinie) {
     }
@@ -296,21 +315,32 @@ public class StaffingAnalyzer {
         List<Animateur> connus = animateurs == null ? List.of() : animateurs;
         List<TypologieItem> referentiel = typologies == null ? List.of() : typologies;
 
-        Map<String, List<Siege>> parTypologie = new LinkedHashMap<>();
-        int siegesNonAttribues = 0;
-        for (Siege siege : sieges) {
-            String typologie = typologieExclusive(siege.stand());
-            if (typologie == null) {
-                siegesNonAttribues++;
-            } else {
-                parTypologie.computeIfAbsent(typologie, id -> new ArrayList<>()).add(siege);
-            }
-        }
-
         String ninja = referentiel.stream().filter(TypologieItem::ninja).map(TypologieItem::id).findFirst()
                 .orElse(null);
         Map<String, String> labels = new LinkedHashMap<>();
         referentiel.forEach(typologie -> labels.put(typologie.id(), typologie.label()));
+
+        Map<String, List<Siege>> parTypologie = new LinkedHashMap<>();
+        int siegesNonAttribues = 0;
+        int siegesReservesAuxPolyvalents = 0;
+        for (Siege siege : sieges) {
+            Set<String> offered = offeredTypologies(siege.stand());
+            if (offered.size() > 1) {
+                // Either pool staffs them: no single category can claim them.
+                siegesNonAttribues++;
+            } else if (offered.isEmpty()) {
+                // The opposite case, and the tightest demand there is: with no
+                // category at all, hasCompetenceFor() only answers yes for a
+                // polyvalent. The demand is the ninja category's own — same
+                // required population — so it joins that row when one exists.
+                siegesReservesAuxPolyvalents++;
+                if (ninja != null) {
+                    parTypologie.computeIfAbsent(ninja, id -> new ArrayList<>()).add(siege);
+                }
+            } else {
+                parTypologie.computeIfAbsent(offered.iterator().next(), id -> new ArrayList<>()).add(siege);
+            }
+        }
 
         Map<String, Integer> specialistes = new LinkedHashMap<>();
         int polyvalents = 0;
@@ -357,21 +387,24 @@ public class StaffingAnalyzer {
                 List.copyOf(lignes),
                 polyvalents,
                 siegesNonAttribues,
+                siegesReservesAuxPolyvalents,
                 lignes.stream().mapToInt(TypologieStaffing::manque).sum(),
+                lignes.stream().filter(TypologieStaffing::ninja).mapToInt(TypologieStaffing::manque).sum(),
                 connus.size(),
                 ninja != null);
     }
 
     /**
-     * The one game category a stand's seats provably require, or {@code null}
-     * when it proposes several (either pool staffs them) or none at all.
+     * What a stand offers, never {@code null}. Its size is what the attribution
+     * reads: one category is a provable demand for it, several is a demand no
+     * single one can claim, and <b>none</b> is the opposite of several — only a
+     * polyvalent can hold such a seat.
      */
-    private static String typologieExclusive(Stand stand) {
-        if (stand == null || stand.getTypologiesProposees() == null
-                || stand.getTypologiesProposees().size() != 1) {
-            return null;
+    private static Set<String> offeredTypologies(Stand stand) {
+        if (stand == null || stand.getTypologiesProposees() == null) {
+            return Set.of();
         }
-        return stand.getTypologiesProposees().iterator().next();
+        return stand.getTypologiesProposees();
     }
 
     /** The three bounds of the class javadoc, over an arbitrary set of seats. */

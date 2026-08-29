@@ -59,7 +59,9 @@ function competence(overrides: Partial<CompetenceStaffing> = {}): CompetenceStaf
     parTypologie: [typologie()],
     polyvalents: 3,
     siegesNonAttribues: 0,
+    siegesReservesAuxPolyvalents: 0,
     manqueTotal: 0,
+    manquePolyvalents: 0,
     animateursTotal: 40,
     typologieNinjaDefinie: true,
     ...overrides
@@ -102,6 +104,7 @@ type PageInternals = {
   estGoulot: (ligne: TypologieStaffing) => boolean;
   reserveLabel: Signal<string>;
   siegesNonAttribuesLabel: Signal<string>;
+  siegesReservesLabel: Signal<string>;
   /** Private to the component; reachable here because `private` is compile-time only. */
   load: () => Promise<void>;
 };
@@ -295,12 +298,6 @@ describe('StaffingPage', () => {
       expect(page.estGoulot(typologie({ manque: 0 }))).toBe(false);
     });
 
-    it('says nothing can be detected yet while no animateur is known', async () => {
-      const page = await pageWith({ animateursTotal: 0, polyvalents: 0, manqueTotal: 0 });
-
-      expect(page.reserveLabel()).toContain('Aucun animateur');
-    });
-
     it('announces the absence of a bottleneck without claiming a reserve there is none of', async () => {
       const withReserve = await pageWith({ manqueTotal: 0, polyvalents: 4 });
       expect(withReserve.reserveLabel()).toContain('Aucun goulot');
@@ -332,6 +329,27 @@ describe('StaffingPage', () => {
       const page = await pageWith({ siegesNonAttribues: 14 });
 
       expect(page.siegesNonAttribuesLabel()).toContain('14');
+    });
+
+    // The opposite case of the one above, and the loud one: a stand proposing
+    // nothing can only be held by a polyvalent — by nobody when the
+    // referential marks none.
+    it('separates the seats only polyvalents can hold from those no typologie claims', async () => {
+      const withNinja = await pageWith({ siegesReservesAuxPolyvalents: 20, typologieNinjaDefinie: true });
+      expect(withNinja.siegesReservesLabel()).toContain('20');
+      expect(withNinja.siegesReservesLabel()).toContain('seuls les polyvalents');
+
+      const withoutNinja = await pageWith({ siegesReservesAuxPolyvalents: 20, typologieNinjaDefinie: false });
+      expect(withoutNinja.siegesReservesLabel()).toContain('personne');
+    });
+
+    // Offering the reinforcements against their own shortage would promise an
+    // absorption nobody can deliver.
+    it('never offers the polyvalent reserve against a shortfall on the polyvalent typologie itself', async () => {
+      const page = await pageWith({ manqueTotal: 2, manquePolyvalents: 2, polyvalents: 3 });
+
+      expect(page.reserveLabel()).toContain('rien ne peut absorber');
+      expect(page.reserveLabel()).not.toContain('peuvent y répondre');
     });
   });
 });

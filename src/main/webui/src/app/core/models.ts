@@ -862,9 +862,20 @@ export interface CompetenceStaffing {
   parTypologie: TypologieStaffing[];
   /** Animateurs holding the ninja typologie: dispatchable anywhere, one seat at a time. */
   polyvalents: number;
-  /** Seats of stands proposing several typologies (or none): claimed by no row. */
+  /** Seats of stands proposing **several** typologies: claimed by no row. */
   siegesNonAttribues: number;
+  /**
+   * Seats of stands proposing **no** typologie — the opposite case, and the
+   * tightest demand there is: only a polyvalent can hold one. Folded into the
+   * ninja row when the referential has one, holdable by nobody when it has not.
+   */
+  siegesReservesAuxPolyvalents: number;
   manqueTotal: number;
+  /**
+   * The part of `manqueTotal` carried by the ninja row itself. No reinforcement
+   * absorbs it: that row's pool *is* the reserve.
+   */
+  manquePolyvalents: number;
   /** `0` means the animateur referential is still empty and nothing was compared. */
   animateursTotal: number;
   /**

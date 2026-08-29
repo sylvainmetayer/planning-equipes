@@ -118,7 +118,17 @@
       </mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>
-      @if (goulot.parTypologie.length === 0) {
+      @if (goulot.animateursTotal === 0) {
+        <!--
+          Checked before the empty table: without a single animateur the problem cannot be
+          built at all, so there is no seat to break down — saying "no seat is attached to a
+          single typologie" there would blame the stands for a missing staff list.
+        -->
+        <p class="empty-hint" i18n="@@staffing.competence.noAnimateurs">
+          Aucun animateur saisi pour le moment : le besoin ne peut pas être calculé, et le goulot par compétence
+          encore moins. Renseignez la liste des animateurs.
+        </p>
+      } @else if (goulot.parTypologie.length === 0) {
         <p class="empty-hint" i18n="@@staffing.competence.empty">
           Aucun siège n'est rattaché à une typologie unique : rien à décliner par compétence pour le moment.
         </p>
@@ -191,6 +201,12 @@
           <p class="empty-hint staffing-caveat">
             <mat-icon inline aria-hidden="true">call_split</mat-icon>
             <span>{{ siegesNonAttribuesLabel() }}</span>
+          </p>
+        }
+        @if (goulot.siegesReservesAuxPolyvalents > 0) {
+          <p class="empty-hint staffing-caveat" [class.staffing-critical]="!goulot.typologieNinjaDefinie">
+            <mat-icon inline aria-hidden="true">person_search</mat-icon>
+            <span>{{ siegesReservesLabel() }}</span>
           </p>
         }
       }

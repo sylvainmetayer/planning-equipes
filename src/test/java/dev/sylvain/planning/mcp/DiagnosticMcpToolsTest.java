@@ -8,7 +8,9 @@ import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.mcp.ContrainteMcpTools.ContrainteView;
 import dev.sylvain.planning.mcp.StandMcpTools.StandsView;
+import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.ReferenceDataService;
 import dev.sylvain.planning.service.OuvertureStandsAnalyzer.RapportOuvertures;
 import dev.sylvain.planning.service.StaffingAnalyzer.CompetenceStaffing;
 import dev.sylvain.planning.service.StaffingAnalyzer.StaffingSummary;
@@ -33,6 +35,9 @@ class DiagnosticMcpToolsTest {
 
     @Inject
     DiagnosticMcpTools diagnosticTools;
+
+    @Inject
+    ReferenceDataService referenceDataService;
 
     @Inject
     ContrainteMcpTools contrainteTools;
@@ -78,6 +83,25 @@ class DiagnosticMcpToolsTest {
         assertThat(competence.parTypologie()).allSatisfy(
                 ligne -> assertThat(ligne.minimumTotal()).isPositive());
         assertThat(competence.siegesNonAttribues()).isZero();
+    }
+
+    @Test
+    void withStandsButNoAnimateurYetTheBoundsAreAbsentRatherThanUncompared() {
+        // The real path of a fresh edition: stands and créneaux imported, staff
+        // list not filled in yet. The problem cannot even be built then, so
+        // there is no seat to break down — and it is animateursTotal, not an
+        // empty category list, that says why.
+        loadScenario();
+        referenceDataService.listAnimateurs().stream().map(Animateur::getId)
+                .forEach(referenceDataService::deleteAnimateur);
+
+        StaffingSummary effectifs = diagnosticTools.analyser_effectifs(null);
+
+        assertThat(effectifs.parJour()).isEmpty();
+        assertThat(effectifs.minimumTotal()).isZero();
+        assertThat(effectifs.parCompetence().animateursTotal()).isZero();
+        assertThat(effectifs.parCompetence().parTypologie()).isEmpty();
+        assertThat(effectifs.parCompetence().manqueTotal()).isZero();
     }
 
     @Test

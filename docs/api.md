@@ -360,10 +360,11 @@ comme une cible :
 - le besoin minimum ignore les indisponibilités individuelles, et ne regarde
   les compétences que dans son volet par typologie, décrit plus bas.
 
-La compétence n'entre pas dans le calcul : depuis sa bascule en contrainte
-medium, n'importe quel animateur disponible peut tenir n'importe quel stand. Un
-écart d'appréciation est signalé *après* résolution, jamais comme cause
-bloquante avant.
+La compétence n'entre pas dans le calcul **de faisabilité** : depuis sa bascule
+en contrainte medium, n'importe quel animateur disponible peut tenir n'importe
+quel stand. Un écart d'appréciation est signalé *après* résolution, jamais comme
+cause bloquante avant. Le besoin minimum, lui, la regarde — mais seulement dans
+son volet par typologie décrit plus bas, jamais dans ses trois bornes globales.
 
 Une cause n'est pas toujours un manque d'animateurs : `GET /api/feasibility`
 remonte aussi les **contraintes ad hoc contradictoires**
@@ -385,7 +386,12 @@ rendent lisible :
 - un siège n'est compté pour une typologie que si son stand **ne propose
   qu'elle** ; les sièges d'un stand qui en propose plusieurs peuvent être tenus
   par l'un ou l'autre vivier, donc aucune typologie ne les revendique et ils
-  sont reportés à part (`siegesNonAttribues`) ;
+  sont reportés à part (`siegesNonAttribues`). Un stand n'en proposant
+  **aucune** est le cas inverse, pas le même : `hasCompetenceFor` ne répond
+  alors oui qu'aux polyvalents, donc ses sièges sont la demande la plus serrée
+  qui soit. Ils rejoignent la ligne de la typologie ninja — exactement la même
+  population requise — et sont comptés dans `siegesReservesAuxPolyvalents` ;
+  sans typologie ninja au référentiel, personne ne peut les tenir du tout ;
 - un **polyvalent** (celui qui possède la typologie marquée `ninja`) compte
   comme **spécialiste** dans les seules compétences qu'il déclare, jamais dans
   toutes : le compter partout ajouterait la même personne à chaque vivier et
@@ -395,13 +401,20 @@ rendent lisible :
   « le ninja est un renfort, jamais un spécialiste ».
   Quand aucune typologie ne porte le drapeau, `typologieNinjaDefinie` est faux
   et une réserve à zéro se lit « pas de renfort ici », pas « pénurie de
-  renforts ».
+  renforts ». Le manque de la ligne ninja elle-même est isolé
+  (`manquePolyvalents`) : ce vivier **étant** celui des renforts, il ne peut pas
+  être proposé contre son propre manque.
 
 Les deux approximations qui restent vont dans le même sens — demande sous-estimée
 pour les stands multi-typologies, vivier surestimé pour un animateur compétent
 sur plusieurs — donc un goulot signalé en est un, et l'absence de goulot ne
-prouve rien. Tant qu'aucun animateur n'est saisi (`animateursTotal` à 0), les
-bornes s'affichent sans comparaison : il n'y a rien à comparer.
+prouve rien.
+
+**Sans animateur au référentiel, il n'y a pas de bornes du tout** : le problème
+ne peut pas être construit, la réponse est celle d'une édition vide (aucun jour,
+toutes les bornes à 0) et `animateursTotal` vaut 0. C'est ce dernier champ, et
+non une liste de typologies vide, qui distingue « la liste d'animateurs n'est pas
+encore remplie » de « aucun stand ne propose une typologie unique ».
 
 La variante d'une simulation est construite **côté serveur**, sur des copies en
 mémoire — rien n'est écrit, elle meurt avec la requête. Côté serveur et non dans

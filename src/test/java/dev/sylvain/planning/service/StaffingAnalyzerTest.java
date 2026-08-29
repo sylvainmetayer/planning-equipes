@@ -232,7 +232,68 @@ class StaffingAnalyzerTest {
     }
 
     @Test
-    void anEmptyAnimateurReferentialFlagsNoBottleneckAtAll() {
+    void aStandProposingNoTypologieAtAllCanOnlyBeHeldByPolyvalents() {
+        // The opposite of the case above, and the reason the two must not
+        // share a branch: hasCompetenceFor() answers yes to polyvalents only,
+        // so those seats are the tightest demand there is — they belong to the
+        // ninja row, never to "no category can claim them".
+        Creneau matin = creneau(1, LocalTime.of(10, 0), LocalTime.of(12, 0));
+
+        CompetenceStaffing competence = analyzer
+                .analyze(postes(standWithoutTypologie("A", 4), matin, 4), List.of(animateur("1", "NINJA")),
+                        TYPOLOGIES, 48 * 60, 0)
+                .parCompetence();
+
+        assertThat(competence.siegesNonAttribues()).isZero();
+        assertThat(competence.siegesReservesAuxPolyvalents()).isEqualTo(4);
+        assertThat(competence.parTypologie()).extracting(TypologieStaffing::typologie).containsExactly("NINJA");
+        assertThat(competence.parTypologie().get(0).sieges()).isEqualTo(4);
+        assertThat(competence.parTypologie().get(0).minimumTotal()).isEqualTo(4);
+        assertThat(competence.parTypologie().get(0).manque()).isEqualTo(3);
+    }
+
+    @Test
+    void seatsNobodyIsEligibleForAreReportedWhenNoCategoryIsMarkedNinja() {
+        // No category carries the flag, so nobody is polyvalent and nobody at
+        // all can hold a stand that proposes nothing. There is no row to carry
+        // that demand; the count is what makes it visible.
+        Creneau matin = creneau(1, LocalTime.of(10, 0), LocalTime.of(12, 0));
+
+        CompetenceStaffing competence = analyzer
+                .analyze(postes(standWithoutTypologie("A", 4), matin, 4), List.of(animateur("1", "ESCAPE")),
+                        List.of(new TypologieItem("ESCAPE", "Escape game")), 48 * 60, 0)
+                .parCompetence();
+
+        assertThat(competence.typologieNinjaDefinie()).isFalse();
+        assertThat(competence.siegesReservesAuxPolyvalents()).isEqualTo(4);
+        assertThat(competence.siegesNonAttribues()).isZero();
+        assertThat(competence.parTypologie()).isEmpty();
+    }
+
+    @Test
+    void theShortfallOnTheNinjaCategoryIsIsolatedFromTheOneTheReserveCouldAbsorb() {
+        // The reserve cannot be offered against its own shortage: the pool
+        // that just came up short is the pool of reinforcements.
+        Creneau matin = creneau(1, LocalTime.of(10, 0), LocalTime.of(12, 0));
+        List<PosteAffectation> postes = new ArrayList<>(postes(stand("A", 5, "NINJA"), matin, 5));
+        postes.addAll(postes(stand("B", 1, "ESCAPE"), matin, 1));
+
+        CompetenceStaffing competence = analyzer.analyze(postes,
+                List.of(animateur("1", "NINJA"), animateur("2", "NINJA"), animateur("3", "NINJA"),
+                        animateur("4", "ESCAPE")),
+                TYPOLOGIES, 48 * 60, 0).parCompetence();
+
+        assertThat(competence.polyvalents()).isEqualTo(3);
+        assertThat(competence.manqueTotal()).isEqualTo(2);
+        assertThat(competence.manquePolyvalents()).isEqualTo(2);
+    }
+
+    @Test
+    void withoutAnyAnimateurTheBoundsStandButNothingIsCompared() {
+        // A guard of the analyzer itself: the resource never reaches this state
+        // (no animateur means the problem cannot be built, hence no seat), but
+        // the rule belongs here rather than in the caller — a shortfall against
+        // a pool nobody has declared yet would be an artefact.
         Creneau matin = creneau(1, LocalTime.of(10, 0), LocalTime.of(12, 0));
 
         CompetenceStaffing competence = analyzer
@@ -242,7 +303,6 @@ class StaffingAnalyzerTest {
         assertThat(competence.animateursTotal()).isZero();
         assertThat(competence.parTypologie().get(0).minimumTotal()).isEqualTo(3);
         assertThat(competence.parTypologie().get(0).specialistes()).isZero();
-        assertThat(competence.parTypologie().get(0).manque()).isZero();
         assertThat(competence.manqueTotal()).isZero();
     }
 
@@ -275,6 +335,11 @@ class StaffingAnalyzerTest {
 
     private static Stand stand(String id, int effectifMin, String... typologies) {
         return new Stand(id, id, Set.of(typologies), effectifMin, effectifMin, false);
+    }
+
+    /** Accepted by the CRUD and by the YAML import alike — hence worth testing. */
+    private static Stand standWithoutTypologie(String id, int effectifMin) {
+        return new Stand(id, id, Set.of(), effectifMin, effectifMin, false);
     }
 
     /** {@code ninja} is derived from the referential, exactly as the problem build does it. */

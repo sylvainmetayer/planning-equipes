@@ -68,8 +68,11 @@ export class StaffingPage {
     }
     const polyvalents = competence.polyvalents;
     const manque = competence.manqueTotal;
-    if (competence.animateursTotal === 0) {
-      return $localize`:@@staffing.competence.noAnimateurs:Aucun animateur saisi pour le moment : les bornes par typologie s'affichent, mais aucun goulot ne peut encore être détecté.`;
+    const manqueRenforts = competence.manquePolyvalents;
+    if (manqueRenforts > 0) {
+      // The reserve cannot be offered against its own shortage: the pool that
+      // just came up short IS the pool of reinforcements.
+      return $localize`:@@staffing.competence.shortfallOnReserve:${manque}:manque: places de plus que de spécialistes, cumulées sur les typologies ci-dessous, dont ${manqueRenforts}:renforts: sur la typologie polyvalente elle-même : ce vivier étant celui des renforts, rien ne peut absorber ce manque-là.`;
     }
     if (manque === 0) {
       return polyvalents === 0
@@ -90,6 +93,19 @@ export class StaffingPage {
   protected readonly siegesNonAttribuesLabel = computed(() => {
     const sieges = this.competence()?.siegesNonAttribues ?? 0;
     return $localize`:@@staffing.competence.unattributed:${sieges}:count: sièges appartiennent à des stands proposant plusieurs typologies : l'un ou l'autre vivier peut les tenir, donc aucune typologie ne les revendique ici.`;
+  });
+
+  /**
+   * The opposite of the line above, and a far louder one: a stand declaring no
+   * typologie at all can only be held by a polyvalent — and by nobody when the
+   * referential marks none.
+   */
+  protected readonly siegesReservesLabel = computed(() => {
+    const competence = this.competence();
+    const sieges = competence?.siegesReservesAuxPolyvalents ?? 0;
+    return competence?.typologieNinjaDefinie
+      ? $localize`:@@staffing.competence.polyvalentsOnly:${sieges}:count: sièges appartiennent à des stands ne proposant aucune typologie : seuls les polyvalents peuvent les tenir, ils sont donc comptés dans la ligne de la typologie polyvalente.`
+      : $localize`:@@staffing.competence.nobodyEligible:${sieges}:count: sièges appartiennent à des stands ne proposant aucune typologie, et aucune typologie n'est marquée « polyvalente » : personne dans le référentiel n'est habilité à les tenir. Renseignez la typologie de ces stands.`;
   });
 
   /**
