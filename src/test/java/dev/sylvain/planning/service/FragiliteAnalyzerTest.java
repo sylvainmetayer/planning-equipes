@@ -18,6 +18,7 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.FragiliteAnalyzer.AnimateurFragilite;
 import dev.sylvain.planning.service.FragiliteAnalyzer.CompetenceRare;
+import dev.sylvain.planning.service.FragiliteAnalyzer.PosteFragile;
 import dev.sylvain.planning.service.FragiliteAnalyzer.RapportFragilite;
 import dev.sylvain.planning.service.FragiliteAnalyzer.SeveriteFragilite;
 
@@ -183,7 +184,7 @@ class FragiliteAnalyzerTest {
         assertThat(rare.animateurId()).isNull();
         assertThat(rare.renforts()).isZero();
         assertThat(rare.severite()).isEqualTo(SeveriteFragilite.CRITIQUE);
-        assertThat(rapport.standsSansSpecialiste()).isEqualTo(1);
+        assertThat(rapport.groupesSansSpecialiste()).isEqualTo(1);
         assertThat(rapport.ninjaConfigure()).isFalse();
     }
 
@@ -297,6 +298,65 @@ class FragiliteAnalyzerTest {
         // Bob's window does not overlap Alice's, so each can cover the other.
         assertThat(ligne(rapport, "alice").postesIrremplacables()).isZero();
         assertThat(ligne(rapport, "bob").postesIrremplacables()).isZero();
+    }
+
+    @Test
+    void aColleagueWorkingThroughMidnightIsNotFreeTheNextMorning() {
+        // Bob holds 22:00 → 02:00 on day J. The seat Alice would vacate runs
+        // 00:00 → 04:00 on day J+1, and the two really do overlap from midnight
+        // to 02:00. Bucketing busy windows per calendar day hid that overlap and
+        // declared Bob available — the analyzer promising the opposite.
+        Stand stand = stand("A", 1, "JEUX");
+        Creneau nuit = creneau(1, LocalTime.of(22, 0), LocalTime.of(2, 0));
+        Creneau petitMatin = new Creneau(2L, 2, LENDEMAIN, LocalTime.of(0, 0), LocalTime.of(4, 0));
+        Animateur alice = animateur("alice", "JEUX");
+        Animateur bob = animateur("bob", "JEUX");
+        List<PosteAffectation> postes = new ArrayList<>(seats(stand, nuit, bob));
+        postes.addAll(seats(stand, petitMatin, alice));
+
+        RapportFragilite rapport = analyzer.analyze(planning(List.of(alice, bob), postes));
+
+        assertThat(ligne(rapport, "alice").postesIrremplacables()).isEqualTo(1);
+        assertThat(ligne(rapport, "alice").postes().getFirst().remplacants()).isZero();
+    }
+
+    @Test
+    void aColleagueWhoseNightShiftEndsBeforeTheSeatStartsStaysASubstitute() {
+        // The other side of the same fix: 22:00 → 01:00 on day J leaves the
+        // 02:00 → 04:00 seat of day J+1 free, and an absolute timeline must not
+        // turn every night worker into an unavailable one.
+        Stand stand = stand("A", 1, "JEUX");
+        Creneau nuit = creneau(1, LocalTime.of(22, 0), LocalTime.of(1, 0));
+        Creneau petitMatin = new Creneau(2L, 2, LENDEMAIN, LocalTime.of(2, 0), LocalTime.of(4, 0));
+        Animateur alice = animateur("alice", "JEUX");
+        Animateur bob = animateur("bob", "JEUX");
+        List<PosteAffectation> postes = new ArrayList<>(seats(stand, nuit, bob));
+        postes.addAll(seats(stand, petitMatin, alice));
+
+        RapportFragilite rapport = analyzer.analyze(planning(List.of(alice, bob), postes));
+
+        assertThat(ligne(rapport, "alice").postes().getFirst().remplacants()).isEqualTo(1);
+    }
+
+    @Test
+    void aBreakCoveringShiftSaysWhyItsFloorIsHalfTheStandsMinimum() {
+        // Seat generation halves the headcount on a couverture de pause, so the
+        // group's floor is 2 where the stand is configured at 4. Both figures
+        // travel, and the flag is what keeps them from reading as a
+        // contradiction.
+        Stand stand = stand("A", 4, "JEUX");
+        Creneau pause = creneau(1, LocalTime.of(12, 0), LocalTime.of(13, 0));
+        pause.setCouverturePause(true);
+        Animateur alice = animateur("alice", "JEUX");
+        Animateur bob = animateur("bob", "JEUX");
+
+        RapportFragilite rapport = analyzer.analyze(
+                planning(List.of(alice, bob), seats(stand, pause, alice, bob)));
+
+        PosteFragile poste = ligne(rapport, "alice").postes().getFirst();
+        assertThat(poste.couverturePause()).isTrue();
+        assertThat(poste.effectifMin()).isEqualTo(4);
+        assertThat(poste.siegesRequis()).isEqualTo(2);
     }
 
     private static AnimateurFragilite ligne(RapportFragilite rapport, String animateurId) {

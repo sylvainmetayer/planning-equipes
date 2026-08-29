@@ -100,7 +100,7 @@ export function synthese(rapport: RapportFragilite): SyntheseFragilite {
     animateurs: rapport.animateurs.length,
     irremplacables: rapport.animateursIrremplacables,
     competencesRares: rapport.totalCompetencesRares,
-    sansSpecialiste: rapport.standsSansSpecialiste,
+    sansSpecialiste: rapport.groupesSansSpecialiste,
     groupes: rapport.groupesAnalyses,
     dejaSousEffectif: rapport.groupesDejaSousEffectif,
     ninjaConfigure: rapport.ninjaConfigure,

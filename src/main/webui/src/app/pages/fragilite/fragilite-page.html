@@ -118,7 +118,7 @@
                         </p>
                       } @else {
                         <ul class="fragilite-postes">
-                          @for (poste of ligne.postes; track poste.standId + '-' + poste.creneauId) {
+                          @for (poste of ligne.postes; track poste.standId + '-' + poste.creneauId + '-' + poste.heureDebut) {
                             <li [class.fragilite-alerte]="poste.irremplacable">
                               <span class="poste-stand">{{ poste.standNom || poste.standId }}</span>
                               <span class="poste-quand">J{{ poste.jour }} · {{ libelleJour(poste.date) }} · {{ heure(poste.heureDebut) }}→{{ heure(poste.heureFin) }}</span>
@@ -161,7 +161,7 @@
               </tr>
             </thead>
             <tbody>
-              @for (ligne of competences(); track ligne.standId + '-' + ligne.creneauId) {
+              @for (ligne of competences(); track ligne.standId + '-' + ligne.creneauId + '-' + ligne.heureDebut) {
                 <tr>
                   <th scope="row">{{ ligne.standNom || ligne.standId }}</th>
                   <td>J{{ ligne.jour }} · {{ libelleJour(ligne.date) }} · {{ heure(ligne.heureDebut) }}→{{ heure(ligne.heureFin) }}</td>

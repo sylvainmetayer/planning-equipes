@@ -256,7 +256,10 @@ export interface PosteFragile {
   jour: number;
   heureDebut: string;
   heureFin: string;
+  /** The stand's configured minimum — not this group's floor, which `siegesRequis` carries. */
   effectifMin: number;
+  /** Break-covering shift: seats are generated at half the headcount, rounded up. */
+  couverturePause: boolean;
   siegesRequis: number;
   siegesPourvus: number;
   siegesLiberes: number;
@@ -304,7 +307,8 @@ export interface RapportFragilite {
   animateurs: AnimateurFragilite[];
   competencesRares: CompetenceRare[];
   totalCompetencesRares: number;
-  standsSansSpecialiste: number;
+  /** Counted in stand × créneau × fenêtre groups, like `groupesAnalyses`. */
+  groupesSansSpecialiste: number;
   groupesAnalyses: number;
   groupesDejaSousEffectif: number;
   animateursIrremplacables: number;

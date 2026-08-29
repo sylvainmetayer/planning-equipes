@@ -87,6 +87,8 @@ public class FragiliteAnalyzer {
     /** Scarcity rows returned; the rest is only counted. */
     static final int MAX_COMPETENCES_RARES = 100;
 
+    private static final long MINUTES_PAR_JOUR = 24 * 60L;
+
     /** How badly a row hurts, ranked the way {@code FeasibilityAnalyzer} ranks its causes. */
     public enum SeveriteFragilite {
         CRITIQUE,
@@ -97,11 +99,20 @@ public class FragiliteAnalyzer {
     /**
      * One stand × timeslot group an animateur's withdrawal would leave short.
      *
-     * @param siegesRequis  seats the group holds, which is its effectif floor
-     * @param siegesPourvus seats currently filled
-     * @param siegesLiberes seats this animateur would vacate
-     * @param remplacants   animateurs who could take one of them over
-     * @param irremplacable true when {@code remplacants} is zero
+     * @param effectifMin      the <em>stand's</em> configured minimum, for
+     *                         reference — not this group's floor, which
+     *                         {@code siegesRequis} carries
+     * @param couverturePause  true on a break-covering shift, where seat
+     *                         generation halves the headcount (rounded up):
+     *                         that, and nothing else, is why
+     *                         {@code siegesRequis} can be half
+     *                         {@code effectifMin}
+     * @param siegesRequis     seats the group holds, which <b>is</b> the
+     *                         effectif floor that applies to it
+     * @param siegesPourvus    seats currently filled
+     * @param siegesLiberes    seats this animateur would vacate
+     * @param remplacants      animateurs who could take one of them over
+     * @param irremplacable    true when {@code remplacants} is zero
      */
     public record PosteFragile(
             String standId,
@@ -112,6 +123,7 @@ public class FragiliteAnalyzer {
             LocalTime heureDebut,
             LocalTime heureFin,
             int effectifMin,
+            boolean couverturePause,
             int siegesRequis,
             int siegesPourvus,
             int siegesLiberes,
@@ -162,11 +174,19 @@ public class FragiliteAnalyzer {
             SeveriteFragilite severite) {
     }
 
+    /**
+     * @param groupesSansSpecialiste how many of {@code competencesRares} have
+     *                               <em>no</em> specialist at all. Counted in
+     *                               stand × timeslot × window groups, like
+     *                               {@code groupesAnalyses} — one stand nobody
+     *                               can hold, open on forty timeslots, weighs
+     *                               forty here.
+     */
     public record RapportFragilite(
             List<AnimateurFragilite> animateurs,
             List<CompetenceRare> competencesRares,
             int totalCompetencesRares,
-            int standsSansSpecialiste,
+            int groupesSansSpecialiste,
             int groupesAnalyses,
             int groupesDejaSousEffectif,
             int animateursIrremplacables,
@@ -228,8 +248,14 @@ public class FragiliteAnalyzer {
         }
     }
 
-    /** Half-open interval of an assigned seat, in minutes from the start of its day. */
-    private record Interval(int debut, int fin) {
+    /**
+     * Half-open interval of an assigned seat, in minutes since the epoch day —
+     * <b>absolute</b>, not relative to a day. A seat running 22:00 → 02:00 has
+     * to be comparable with the 00:00 → 04:00 seat of the next day, and two
+     * per-day buckets never compare them: the overlap fell between the two, and
+     * somebody already working through the night came out "free".
+     */
+    private record Interval(long debut, long fin) {
 
         private boolean overlaps(Interval other) {
             return debut < other.fin() && other.debut() < fin;
@@ -286,7 +312,7 @@ public class FragiliteAnalyzer {
         }
 
         rares.sort(ORDRE_RARES);
-        int standsSansSpecialiste = (int) rares.stream().filter(rare -> rare.specialistes() == 0).count();
+        int groupesSansSpecialiste = (int) rares.stream().filter(rare -> rare.specialistes() == 0).count();
 
         List<AnimateurFragilite> lignes = animateurLines(animateurs, groupes, remplacantsParGroupe, raresParAnimateur);
         int animateursIrremplacables = (int) lignes.stream()
@@ -297,12 +323,12 @@ public class FragiliteAnalyzer {
                 lignes,
                 List.copyOf(rares.subList(0, Math.min(MAX_COMPETENCES_RARES, rares.size()))),
                 rares.size(),
-                standsSansSpecialiste,
+                groupesSansSpecialiste,
                 groupes.size(),
                 dejaSousEffectif,
                 animateursIrremplacables,
                 ninjaConfigure,
-                buildMessage(groupes.size(), lignes, animateursIrremplacables, rares.size(), standsSansSpecialiste));
+                buildMessage(groupes.size(), lignes, animateursIrremplacables, rares.size(), groupesSansSpecialiste));
     }
 
     private List<AnimateurFragilite> animateurLines(List<Animateur> animateurs, Map<SeatGroupKey, SeatGroup> groupes,
@@ -331,6 +357,7 @@ public class FragiliteAnalyzer {
                                 groupe.debut,
                                 groupe.fin,
                                 groupe.stand.getEffectifMin(),
+                                groupe.creneau.isCouverturePause(),
                                 groupe.sieges,
                                 groupe.pourvus,
                                 occupant.getValue(),
@@ -433,7 +460,7 @@ public class FragiliteAnalyzer {
                 if (groupe.occupants.containsKey(candidat.getId())) {
                     continue;
                 }
-                if (isBusy(busy.get(key(candidat.getId(), groupe.creneau.getDate())), plage)) {
+                if (isBusy(busy.get(candidat.getId()), plage)) {
                     continue;
                 }
                 libres++;
@@ -472,7 +499,11 @@ public class FragiliteAnalyzer {
         return groupes;
     }
 
-    /** When each animateur is already busy, so a substitute is not double-booked. */
+    /**
+     * When each animateur is already busy, so a substitute is not
+     * double-booked. One list per animateur, on the absolute timeline — see
+     * {@link Interval}.
+     */
     private static Map<String, List<Interval>> busyIntervals(List<PosteAffectation> postes) {
         Map<String, List<Interval>> plages = new HashMap<>();
         for (PosteAffectation poste : postes) {
@@ -485,28 +516,25 @@ public class FragiliteAnalyzer {
             if (plage == null) {
                 continue;
             }
-            plages.computeIfAbsent(key(animateur.getId(), creneau.getDate()), ignored -> new ArrayList<>())
-                    .add(plage);
+            plages.computeIfAbsent(animateur.getId(), ignored -> new ArrayList<>()).add(plage);
         }
         return plages;
     }
 
-    private static String key(String animateurId, LocalDate date) {
-        return animateurId + "@" + date;
-    }
-
     /**
-     * Minutes from the start of the day, a window running past midnight staying
-     * on the day it started — the convention {@link StaffingAnalyzer} uses.
+     * The window an assigned seat occupies, on an absolute timeline: minutes
+     * since the epoch, so a window running past midnight simply ends on the
+     * next day instead of needing a day bucket of its own.
      */
     private static Interval window(LocalDate date, LocalTime debut, LocalTime fin) {
         if (date == null || debut == null || fin == null) {
             return null;
         }
-        int debutMinutes = debut.toSecondOfDay() / 60;
-        int finMinutes = fin.toSecondOfDay() / 60;
+        long base = date.toEpochDay() * MINUTES_PAR_JOUR;
+        long debutMinutes = base + debut.toSecondOfDay() / 60;
+        long finMinutes = base + fin.toSecondOfDay() / 60;
         if (finMinutes <= debutMinutes) {
-            finMinutes += 24 * 60;
+            finMinutes += MINUTES_PAR_JOUR;
         }
         return new Interval(debutMinutes, finMinutes);
     }
