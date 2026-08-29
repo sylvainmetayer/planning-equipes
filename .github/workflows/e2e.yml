@@ -1,33 +1,36 @@
-# Playwright, une fois par nuit — et délibérément pas sur les PR.
+# Playwright, à chaque poussée et sur chaque pull request.
 #
 # Ces 75 tests demandent la pile complète (application + PostgreSQL + serveur
-# de mail) et réamorcent la base à chaque exécution : les accrocher à chaque
-# PR coûterait plusieurs minutes par poussée pour un signal que la suite
-# unitaire donne déjà en six secondes.
+# de mail) et réamorcent la base à chaque exécution : ils coûtent donc
+# plusieurs minutes là où la suite unitaire répond en six secondes. Le coût est
+# assumé — trois défauts d'interface de la pile #331..#338 ont été trouvés par
+# un humain qui cliquait, pas par la CI : un créneau sans siège qui ouvrait un
+# écran en erreur, une échelle d'heures qui quittait l'écran à 153 lignes, et
+# un champ de filtre qui perdait le focus à chaque caractère. Aucun n'était
+# visible d'un test unitaire, tous l'étaient d'un navigateur.
 #
-# Mais « hors CI » avait un prix, et il a été payé : le défaut corrigé par
-# `8edef84` (les six champs du formulaire de verrouillage sans attribut `name`,
-# donc sans libellé accessible) a survécu six jours à un test e2e écrit
-# exprès pour lui. Le test existait, il échouait, personne ne le regardait.
-# Une exécution nocturne ne bloque aucune PR, mais elle rend cet oubli
-# impossible à répéter.
-name: Tests E2E (nocturne)
+# L'exécution nocturne qui précédait avait le défaut inverse de sa qualité :
+# elle ne bloquait rien. Le défaut corrigé par `8edef84` (six champs sans
+# attribut `name`, donc sans libellé accessible) a survécu six jours à un test
+# e2e écrit exprès pour lui — le test existait, il échouait, personne ne le
+# regardait. Un test qui ne barre pas la route se lit comme un test qui passe.
+name: Tests E2E
 
 on:
-  schedule:
-    # 01:00 UTC — 03:00 à Paris l'été, 02:00 l'hiver. GitHub ne planifie qu'en
-    # UTC : l'heure locale dérive donc d'une heure au changement d'heure, ce
-    # qui est sans conséquence pour une exécution nocturne.
-    - cron: '0 1 * * *'
-  # Pour valider une modification de ce fichier sans attendre la nuit.
+  push:
+    branches:
+      - main
+  pull_request:
   workflow_dispatch:
 
 permissions:
   contents: read
 
+# Par référence, et annulable : une poussée qui en suit une autre rend la
+# précédente sans objet, et la file d'un runner auto-hébergé est courte.
 concurrency:
-  group: e2e-nocturne
-  cancel-in-progress: false
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   e2e:
@@ -160,8 +163,8 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-      # Un échec nocturne se lit le matin, sans la pile : le journal de
-      # l'application est la moitié de l'histoire que les traces ne disent pas.
+      # Un échec se relit sans la pile : le journal de l'application est la
+      # moitié de l'histoire que les traces ne disent pas.
       - name: Upload the application log
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

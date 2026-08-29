@@ -109,8 +109,11 @@ Cinq familles :
 - **frontend** (Vitest, jsdom) — pas branchés sur la phase Maven, job CI dédié ;
 - **structurels** — ils ne jouent aucun scénario, ils **relisent le code** et
   échouent sur une règle que rien d'autre ne vérifie ;
-- **bout en bout** (Playwright) — jamais sur une PR, rejoués **chaque nuit** ;
-  voir [plus bas](#tests-de-bout-en-bout-playwright) pour les lancer en local.
+- **bout en bout** (Playwright) — **à chaque poussée et sur chaque pull
+  request**. Ils coûtent plusieurs minutes là où la suite unitaire répond en
+  six secondes, et ce coût est assumé : c'est la seule couche qui voit ce
+  qu'un navigateur fait vraiment. Voir [plus bas](#tests-de-bout-en-bout-playwright)
+  pour les lancer en local.
 
 ### Les tests structurels
 
