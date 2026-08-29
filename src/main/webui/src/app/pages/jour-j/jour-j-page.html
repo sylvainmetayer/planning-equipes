@@ -179,6 +179,11 @@
                       >Améliore le planning</span
                     >
                   }
+                  @if (candidat.dejaDeService) {
+                    <span class="jour-j-badge" i18n="@@jourJ.suggestions.dejaDeService"
+                      >Déjà de service</span
+                    >
+                  }
                   <button
                     matButton="filled"
                     type="button"
@@ -248,17 +253,19 @@
                 </li>
               }
             </ul>
-            <button
-              matButton="tonal"
-              type="button"
-              class="jour-j-cible"
-              (click)="annulerAbsence(absence.animateurId)"
-            >
-              <mat-icon>undo</mat-icon>
-              <ng-container i18n="@@jourJ.journal.annulerTout"
-                >Annuler toute l'absence</ng-container
+            @if (absence.annulable) {
+              <button
+                matButton="tonal"
+                type="button"
+                class="jour-j-cible"
+                (click)="annulerAbsence(absence.animateurId)"
               >
-            </button>
+                <mat-icon>undo</mat-icon>
+                <ng-container i18n="@@jourJ.journal.annulerTout"
+                  >Annuler toute l'absence</ng-container
+                >
+              </button>
+            }
           </li>
         }
       </ul>

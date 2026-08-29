@@ -2180,17 +2180,40 @@ public class PlanningService {
      * @param animateurId {@code null} empties the seat
      */
     public void applyReparation(String posteId, String animateurId) {
-        PlanningEvenement persiste = planningPersistenceService.loadPersistedPlanning();
-        PosteAffectation poste = findPoste(persiste, posteId);
+        applyReparations(planningPersistenceService.loadPersistedPlanning(), List.of(posteId), animateurId);
+    }
+
+    /**
+     * The same write as {@link #applyReparation}, over several seats and over a
+     * plan the caller already holds.
+     *
+     * <p>Reading the plan is what costs here — 1 800 seats resolved against the
+     * whole referential — and {@code applyReparation} pays it per call. Freeing
+     * the five seats of somebody absent for the rest of the day therefore paid
+     * it five times, on the one screen (issue #297) whose reason to exist is
+     * answering fast on a phone. Same checks, same single {@code UPDATE} per
+     * seat, one read.</p>
+     *
+     * <p>Every seat is validated <b>before</b> the first write, so a lock on the
+     * third one does not leave the first two reassigned.</p>
+     *
+     * @param animateurId {@code null} empties the seats
+     */
+    public void applyReparations(PlanningEvenement persiste, List<String> posteIds, String animateurId) {
+        List<PosteAffectation> postes = posteIds.stream().map(id -> findPoste(persiste, id)).toList();
         if (animateurId != null) {
             findAnimateur(persiste, animateurId);
         }
         List<VerrouillagePlanning> verrouillages = referenceDataService.listVerrouillages();
-        if (verrouillages.stream().anyMatch(verrouillage -> verrouillage.couvre(poste))) {
-            throw new BusinessError.Invalid(
-                    "Ce poste est verrouillé : déverrouillez-le avant d'y appliquer une réparation.");
+        for (PosteAffectation poste : postes) {
+            if (verrouillages.stream().anyMatch(verrouillage -> verrouillage.couvre(poste))) {
+                throw new BusinessError.Invalid(
+                        "Ce poste est verrouillé : déverrouillez-le avant d'y appliquer une réparation.");
+            }
         }
-        planningPersistenceService.reaffecterPoste(posteId, animateurId);
+        for (PosteAffectation poste : postes) {
+            planningPersistenceService.reaffecterPoste(poste.getId(), animateurId);
+        }
     }
     /**
      * Simulates a demande d'échange (issue #165) on an already-solved planning:

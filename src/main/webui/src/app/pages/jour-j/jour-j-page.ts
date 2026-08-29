@@ -23,6 +23,7 @@ import {
   aucuneSuggestion,
   blocageDuPoste,
   chargeRestante,
+  dejaDeService,
   libelleCreneau,
   nomDuCandidat,
   plage,
@@ -112,6 +113,10 @@ export class JourJPage {
   protected readonly absences = computed(() =>
     (this.etat()?.absences ?? []).map((absence: AbsenceJourJ) => ({
       ...absence,
+      // Nothing cancellable means no block button: it would call an endpoint
+      // whose filter finds nothing and answers "impossible", on a control the
+      // screen itself had offered.
+      annulable: absence.entrees.some((entree) => entree.annulable),
       entrees: absence.entrees.map((entree) => ({
         ...entree,
         plage: plage(entree.heureDebut, entree.heureFin)
@@ -226,7 +231,10 @@ export class JourJPage {
     return (suggestions?.suggestions ?? []).map((suggestion) => ({
       animateurId: suggestion.animateurId,
       nom: nomDuCandidat(this.etat(), suggestion.animateurId),
-      ameliore: compareDelta(suggestion.delta) === 'better'
+      ameliore: compareDelta(suggestion.delta) === 'better',
+      // Worth saying on the button: taking this seat adds to a day they are
+      // already working, rather than filling an idle one.
+      dejaDeService: dejaDeService(this.etat(), suggestion.animateurId)
     }));
   }
 
@@ -256,17 +264,27 @@ export class JourJPage {
     this.affectationEnCours.set(posteId);
     try {
       await this.reparations.appliquerReparation(posteId, animateurId);
-      this.suggestionsParPoste.update((par) => {
-        const reste = { ...par };
-        delete reste[posteId];
-        return reste;
-      });
+      // Every list on screen was computed against the plan as it was a moment
+      // ago. Keeping the others would let the same person be assigned twice on
+      // the same hour: the write is a surgical UPDATE that checks locks and
+      // nothing else, so a stale list is all it takes to create an overlap this
+      // screen would never report. They are dropped, then searched again.
+      const aRafraichir = Object.keys(this.suggestionsParPoste()).filter(
+        (identifiant) => identifiant !== posteId
+      );
+      this.suggestionsParPoste.set({});
       this.notifications.notify({
         title: $localize`:@@jourJ.affectation.faite:Poste pourvu`,
         message: $localize`:@@jourJ.affectation.detail:${nomDuCandidat(this.etat(), animateurId)}:nom: prend ce poste. Le planning publié ne bouge pas tant que vous n'avez pas republié.`,
         variant: 'success'
       });
       await this.recharger();
+      const trousRestants = new Set(this.trous().map((trou) => trou.posteId));
+      for (const identifiant of aRafraichir) {
+        if (trousRestants.has(identifiant)) {
+          await this.chercherRemplacants(identifiant);
+        }
+      }
     } catch (error) {
       this.notifications.notify({
         title: $localize`:@@jourJ.affectation.echec:Affectation refusée`,

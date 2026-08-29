@@ -104,19 +104,19 @@ export function libelleCreneau(creneau: CreneauJourJ): string {
 }
 
 /**
- * Display name of an animateur the suggestions only name by id. Falls back to
- * the raw id rather than to an empty cell: an unnamed candidate is still a
- * candidate, and blanking them would hide a real option.
+ * Display name of an animateur the suggestions only name by id.
+ *
+ * Read from the roster, not from the on-duty list: the best replacement is
+ * somebody *free* at that hour, so the people this has to name are precisely
+ * the ones missing from `animateursDeService` — named from there alone, the
+ * main action button read « anim-73 ».
+ *
+ * Falls back to the raw id rather than to an empty cell: an unnamed candidate is
+ * still a candidate, and blanking them would hide a real option.
  */
 export function nomDuCandidat(etat: EtatJourJ | null, animateurId: string): string {
-  const surPlace = etat?.animateursDeService.find(
-    (candidat) => candidat.animateurId === animateurId
-  );
-  if (surPlace) {
-    return surPlace.nomAffiche;
-  }
-  const absent = etat?.absences.find((candidat) => candidat.animateurId === animateurId);
-  return absent ? absent.nomAffiche : animateurId;
+  const connu = (etat?.animateurs ?? []).find((candidat) => candidat.animateurId === animateurId);
+  return connu ? connu.nomAffiche : animateurId;
 }
 
 /**

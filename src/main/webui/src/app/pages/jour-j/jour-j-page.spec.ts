@@ -30,6 +30,10 @@ function etat(overrides: Partial<EtatJourJ> = {}): EtatJourJ {
     ],
     postesAPourvoir: [],
     absences: [],
+    animateurs: [
+      { animateurId: 'A1', nomAffiche: 'Alice Referente' },
+      { animateurId: 'A2', nomAffiche: 'Bruno Autonome' }
+    ],
     ...overrides
   };
 }
@@ -214,6 +218,9 @@ describe('JourJPage', () => {
     bouton('Trouver un remplaçant').click();
     await fixture.whenStable();
     fixture.detectChanges();
+    // Named from the roster: A2 works nowhere on the remaining timeslots, which
+    // is exactly why they are the best replacement.
+    expect(texte()).toContain('Bruno Autonome');
 
     bouton('Affecter').click();
     await fixture.whenStable();
@@ -223,6 +230,34 @@ describe('JourJPage', () => {
     expect(notify).toHaveBeenCalledWith(
       expect.objectContaining({ variant: 'success', message: expect.stringContaining('republié') })
     );
+  });
+
+  /**
+   * The write is a surgical UPDATE that checks locks and nothing else, so a list
+   * computed against the previous plan is enough to hand the same person two
+   * seats on the same hour — an overlap this screen would never report. Every
+   * other list is therefore dropped, and searched again.
+   */
+  it('never leaves a suggestion list that was computed before the write', async () => {
+    const autrePoste = { ...posteLibere, posteId: 'P3', standNom: 'Homme-jeu' };
+    await rendre(etat({ postesAPourvoir: [posteLibere, autrePoste] }));
+    for (const bloc of Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('button')
+    ).filter((each) => (each.textContent ?? '').includes('Trouver un remplaçant'))) {
+      bloc.click();
+      await fixture.whenStable();
+      fixture.detectChanges();
+    }
+    expect(jourJ.suggestions).toHaveBeenCalledTimes(2);
+
+    bouton('Affecter').click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    // The other seat's list was thrown away and asked for again — never shown
+    // stale.
+    expect(jourJ.suggestions).toHaveBeenCalledTimes(3);
+    expect(jourJ.suggestions).toHaveBeenLastCalledWith('P3');
   });
 
   /** A lock is refused server-side, so the button is not offered at all. */
@@ -260,6 +295,42 @@ describe('JourJPage', () => {
         message: expect.stringContaining('FORCE-1')
       })
     );
+  });
+
+  /**
+   * An exception naming several animateurs is not this screen's to undo. Offering
+   * the block button anyway meant answering "Annulation impossible" on a control
+   * the screen had just proposed.
+   */
+  it('does not offer to undo an absence it cannot undo', async () => {
+    await rendre(
+      etat({
+        absences: [
+          {
+            animateurId: 'A1',
+            nomAffiche: 'Alice Referente',
+            entrees: [
+              {
+                contrainteId: 'EXCEPTION-PARTAGEE',
+                creneauId: 2,
+                heureDebut: '14:00:00',
+                heureFin: '18:00:00',
+                raison: null,
+                creeParUtilisateurId: 'admin',
+                creeLe: '2026-07-08T11:30:00Z',
+                annulable: false
+              }
+            ]
+          }
+        ]
+      })
+    );
+
+    const annuler = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('button')
+    ).find((each) => (each.textContent ?? '').includes("Annuler toute l'absence"));
+    expect(annuler).toBeUndefined();
+    expect(texte()).toContain('Ajustement partagé');
   });
 
   it('cancels one timeslot of an absence without touching the others', async () => {

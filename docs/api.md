@@ -347,6 +347,12 @@ sans relancer de solveur ni réécrire le reste du plan : le résultat est
 exactement le plan simulé. Un poste couvert par un verrouillage est refusé
 (400) — déverrouillez-le d'abord.
 
+C'est un `UPDATE` nu : hors verrouillage, il ne revérifie rien. Une liste de
+suggestions calculée **avant** une autre écriture est donc périmée, et l'appliquer
+peut créer un chevauchement que personne ne signale. Une IHM qui garde plusieurs
+listes à l'écran doit les invalider après chaque application — c'est ce que fait
+le mode jour J.
+
 **Un candidat qui casserait une règle dure sur ce siège n'est jamais proposé**,
 même quand le score dur global ne bouge pas. Le cas n'est pas théorique : sur un
 siège vide, pourvoir la place règle un point dur (`posteDoitEtrePourvu`) et peut
@@ -381,6 +387,18 @@ n'est au poste. Les créneaux déjà terminés ne sont jamais touchés : la pers
 les a réellement tenus, les transformer en indisponibilités ferait mentir le
 planning sur ce qui s'est passé.
 
+**La journée est une fenêtre horaire, pas une colonne `date`.** Un créneau
+ouvert à 22h et fermé à 2h porte la date de la veille : à une heure du matin,
+c'est pourtant lui qui tourne, et lui dont quelqu'un peut manquer. Tous les
+endpoints ci-dessus retiennent donc les créneaux dont la fenêtre **recoupe** la
+journée demandée, la nuit précédente comprise, et les classent par début réel —
+la même normalisation de minuit que `Creneau.chevaucheNuit`.
+
+Un animateur n'est marqué « déjà absent » que si l'une de ses indisponibilités
+couvre un créneau **encore devant**. Une indisponibilité du matin seul, saisie
+des semaines plus tôt, n'empêche donc pas de le marquer absent pour la suite de
+la journée.
+
 **Tout ou rien.** Une absence, c'est plusieurs exceptions et plusieurs sièges ;
 un refus sur le troisième ne doit pas laisser les deux premiers écrits. Les
 contradictions et les verrouillages sont donc vérifiés sur toute la portée avant
@@ -398,9 +416,15 @@ telle quelle sur la page « Ajustements manuels » le lendemain.
 
 Annuler une absence **ne rend pas les sièges** : qui tient un siège est une
 décision, et supposer que l'occupant précédent doit le récupérer effacerait en
-silence le remplacement appliqué entre-temps. L'annulation ne touche que les
-exceptions ne visant **que** cet animateur ; une exception nominative multiple
-appartient à qui l'a écrite.
+silence le remplacement appliqué entre-temps.
+
+L'annulation ne supprime que **ce que cet écran a écrit**, reconnu à l'id qu'il
+dérive du couple (animateur, créneau) — et seulement les exceptions ne visant
+**que** cet animateur. Supprimer toute indisponibilité mono-cible tombant ce
+jour-là aurait emporté, avec l'absence saisie par erreur le matin même, une
+indisponibilité de longue date enregistrée depuis Ajustements manuels : ce que
+la prochaine résolution a le droit de faire s'en serait trouvé élargi sans que
+personne le voie.
 
 Rien ici ne déclenche de résolution, et rien n'envoie de courriel : l'écran
 affiche le compte de la [publication](#publication) et renvoie vers le bouton,
@@ -422,6 +446,14 @@ mock activable là-bas ferait mentir l'écran jour J sur un vrai événement. Le
 garde-fou est donc **sur l'écriture, côté serveur**, pas sur l'affichage du
 champ — `modifiable` n'existe que pour que l'IHM masque un contrôle inutilisable,
 et l'endpoint refuse quoi que croie l'appelant.
+
+Le garde-fou porte aussi sur **la lecture**, pas seulement sur l'écriture : la
+valeur vit dans une ligne ordinaire, qu'un dump rejoué par
+`POST /api/database/import` emporte avec lui. Une date figée sur un poste de
+développement puis restaurée sur une instance déployée y resterait, et le chemin
+de retour est fermé puisque l'effacement y est refusé aussi. Hors `quarkus:dev`,
+la valeur est donc **ignorée** — la ligne est laissée telle quelle, mais
+l'horloge lue est celle de la machine.
 
 **Ce que le mock remplace, exactement : la date, et seulement pour l'écran
 jour J** — quel jour est regardé, quels créneaux de ce jour sont encore devant,

@@ -30,6 +30,7 @@ function etat(overrides: Partial<EtatJourJ> = {}): EtatJourJ {
     animateursDeService: [],
     postesAPourvoir: [],
     absences: [],
+    animateurs: [],
     ...overrides
   };
 }
@@ -186,11 +187,22 @@ describe('chargeRestante', () => {
 describe('nomDuCandidat', () => {
   const charge = etat({
     animateursDeService: [animateur()],
-    absences: [{ animateurId: 'A2', nomAffiche: 'Bruno Autonome', entrees: [] }]
+    animateurs: [
+      { animateurId: 'A1', nomAffiche: 'Alice Referente' },
+      { animateurId: 'A2', nomAffiche: 'Bruno Autonome' }
+    ]
   });
 
-  it('names people from either list', () => {
+  it('names people from the roster', () => {
     expect(nomDuCandidat(charge, 'A1')).toBe('Alice Referente');
+  });
+
+  /**
+   * The regression that made this a roster lookup: the best replacement is
+   * somebody *free* at that hour, so they are precisely the one missing from
+   * the on-duty list — and the main action button read « A2 ».
+   */
+  it('names a candidate who is not on duty at all', () => {
     expect(nomDuCandidat(charge, 'A2')).toBe('Bruno Autonome');
   });
 

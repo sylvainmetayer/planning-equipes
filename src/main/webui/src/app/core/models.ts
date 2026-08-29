@@ -1490,6 +1490,12 @@ export interface AbsenceJourJ {
   entrees: EntreeAbsence[];
 }
 
+/** An animateur of the edition, named. */
+export interface AnimateurNomme {
+  animateurId: string;
+  nomAffiche: string;
+}
+
 /** `/api/jour-j`: the whole event-day screen in one answer. */
 export interface EtatJourJ {
   date: string;
@@ -1500,6 +1506,12 @@ export interface EtatJourJ {
   animateursDeService: AnimateurAffecte[];
   postesAPourvoir: PosteAPourvoir[];
   absences: AbsenceJourJ[];
+  /**
+   * The whole roster. The replacements the assistant proposes are by definition
+   * *not* on duty, and they still have to be named on the button that hands
+   * them a seat.
+   */
+  animateurs: AnimateurNomme[];
 }
 
 /** What one « marquer absent » wrote, so the screen goes straight to the holes it opened. */

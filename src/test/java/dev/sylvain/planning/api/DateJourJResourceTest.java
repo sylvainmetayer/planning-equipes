@@ -135,6 +135,40 @@ class DateJourJResourceTest {
                 .then().statusCode(400).body("message", notNullValue());
     }
 
+    /**
+     * The guard has to be on the <b>read</b> too, and this is why. The frozen
+     * date lives in an ordinary row, so a dump replayed through
+     * {@code POST /api/database/import} carries it onto whatever instance
+     * restores it. Refusing to <em>set</em> it there would not help: the value
+     * is already in place, and the way back is shut by
+     * {@link #aServerOutsideDevModeRefusesToClearItEither}.
+     *
+     * <p>So a value present on a server that may not have one is simply ignored
+     * — the row is left alone, the clock is the machine's.</p>
+     */
+    @Test
+    void aFrozenDateRestoredOntoADeployedInstanceIsInert() {
+        solveScenario();
+        // Frozen the way a developer would, on a machine allowed to.
+        QuarkusMock.installMockForType(new DevModeActif(), DevMode.class);
+        given().contentType("application/json").body("{\"dateDuJour\":\"" + JOUR + "\"}")
+                .when().put("/api/debug/date-du-jour").then().statusCode(200);
+
+        // Same database, server that is not in development mode.
+        QuarkusMock.installMockForType(new DevMode(), DevMode.class);
+
+        given().when().get("/api/debug/date-du-jour")
+                .then().statusCode(200)
+                .body("dateDuJour", nullValue())
+                .body("modifiable", equalTo(false));
+        LocalDate lue = LocalDate.parse(
+                given().when().get("/api/jour-j").then().statusCode(200)
+                        .extract().jsonPath().getString("date"));
+        assertThat(lue).as("the machine's date, not the one the dump carried")
+                .isNotEqualTo(LocalDate.parse(JOUR));
+        assertThat(lue).isBetween(LocalDate.now().minusDays(1), LocalDate.now().plusDays(1));
+    }
+
     /* ---------------------- What the mock actually moves -------------------- */
 
     /**

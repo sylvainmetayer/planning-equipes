@@ -70,7 +70,17 @@ public class JourJClock {
 
     /**
      * The date the mode jour J screen treats as today: the mocked one when a
-     * developer has set one, the machine's otherwise.
+     * developer has set one on a development server, the machine's otherwise.
+     *
+     * <p><b>The guard is on the read too, not only on the write.</b> Refusing to
+     * <em>set</em> the value outside dev mode is not enough, because the row is
+     * an ordinary one: a database dump replayed through
+     * {@code POST /api/database/import} carries it over, so a date frozen on a
+     * laptop and restored onto a deployed instance would stick there — and the
+     * way back is deliberately shut, since clearing it is refused there as
+     * well. Ignoring the value where it may not be set closes that door: on a
+     * deployed instance this always answers the machine's date, whatever the
+     * table holds.</p>
      */
     public LocalDate today() {
         LocalDate fige = mockedDate();
@@ -85,8 +95,18 @@ public class JourJClock {
         return LocalTime.now().withNano(0);
     }
 
-    /** The mocked date, or {@code null} when the real one is in use. */
+    /**
+     * The mocked date, or {@code null} when the real one is in use.
+     *
+     * <p>Always {@code null} outside dev mode, whatever the table holds: see
+     * {@link #today()} for the dump-replay path that makes this necessary. The
+     * row is left alone rather than deleted — this is a read, and a read that
+     * quietly repairs data is a read nobody can reason about.</p>
+     */
     public LocalDate mockedDate() {
+        if (!devMode.isActive()) {
+            return null;
+        }
         // Not prepareScoped: this table carries no edition_id — it describes the
         // server's clock, not an event.
         return scope.read("Failed to read the mocked date", connection -> {

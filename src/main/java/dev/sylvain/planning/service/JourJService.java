@@ -97,10 +97,11 @@ public class JourJService {
     public EtatJourJ etat(LocalDate date, LocalTime heure) {
         LocalDate jour = date != null ? date : clock.today();
         LocalTime reference = referenceTime(jour, heure);
+        LocalDateTime maintenant = jour.atTime(reference);
         PlanningEvenement plan = persistenceService.loadPersistedPlanning();
         List<Creneau> creneauxDuJour = creneauxOf(referenceDataService.listCreneaux(), jour);
         List<Creneau> restants = creneauxDuJour.stream()
-                .filter(creneau -> isStillAhead(creneau, reference))
+                .filter(creneau -> isStillAhead(creneau, maintenant))
                 .toList();
         Set<Long> idsRestants = restants.stream().map(Creneau::getId)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
@@ -111,13 +112,23 @@ public class JourJService {
 
         Map<String, Identite> identites = identites();
         List<AbsenceJourJ> absences = absencesOf(creneauxDuJour, identites);
-        Set<String> absentIds = absences.stream().map(AbsenceJourJ::animateurId).collect(Collectors.toSet());
+        // Only an absence covering a timeslot that is still ahead counts as
+        // "already marked". Somebody declared unavailable this morning and
+        // nowhere else is on duty this afternoon like anyone else, and the
+        // screen has to let them be marked absent for the rest of the day —
+        // which is the one gesture it exists for.
+        Set<String> absentIds = absences.stream()
+                .filter(absence -> absence.entrees().stream()
+                        .anyMatch(entree -> idsRestants.contains(entree.creneauId())))
+                .map(AbsenceJourJ::animateurId)
+                .collect(Collectors.toSet());
 
         return new EtatJourJ(jour, reference, creneauxDuJour.size(),
-                restants.stream().map(creneau -> creneauJourJ(creneau, reference)).toList(),
+                restants.stream().map(creneau -> creneauJourJ(creneau, maintenant)).toList(),
                 animateursAffectes(postesRestants, identites, absentIds),
                 postesAPourvoir(postesRestants),
-                absences);
+                absences,
+                nommes(identites));
     }
 
     /**
@@ -155,7 +166,7 @@ public class JourJService {
         Animateur animateur = findAnimateur(animateurId, true);
 
         List<Creneau> restants = creneauxOf(referenceDataService.listCreneaux(), jour).stream()
-                .filter(creneau -> isStillAhead(creneau, reference))
+                .filter(creneau -> isStillAhead(creneau, jour.atTime(reference)))
                 .toList();
         if (restants.isEmpty()) {
             throw new BusinessError.Invalid("Aucun créneau ne reste à couvrir le " + jour + " après "
@@ -182,9 +193,11 @@ public class JourJService {
         // nothing until every one of them is accepted.
         referenceDataService.createContraintesAdHoc(exceptions);
 
-        for (PosteAffectation poste : aLiberer) {
-            planningService.applyReparation(poste.getId(), null);
-        }
+        // One write per seat, but a single read of the plan: applyReparation
+        // reloads all of it on every call, and somebody holding five remaining
+        // timeslots would pay five full loads of an 1 800-seat plan — on the one
+        // screen whose reason to exist is answering fast on a phone.
+        planningService.applyReparations(plan, aLiberer.stream().map(PosteAffectation::getId).toList(), null);
 
         Map<Long, Creneau> byId = creneauxById(restants);
         return new AbsenceMarquee(animateurId, nomAffiche(identites().get(animateurId), animateurId),
@@ -198,10 +211,15 @@ public class JourJService {
      *
      * <p>Deliberately keyed on the <b>day</b> and not on what is still ahead: an
      * absence typed by mistake is undone a minute later, by which time the
-     * timeslot it covers may already have started. Only exceptions targeting
-     * this animateur <em>alone</em> are removed — one naming several people
-     * belongs to whoever wrote it, and the Ajustements manuels screen owns
-     * it.</p>
+     * timeslot it covers may already have started.</p>
+     *
+     * <p>Only what <b>this screen wrote</b> is removed, recognised by the id it
+     * derives from (animateur, timeslot). Deleting every single-target
+     * unavailability landing on that day would have taken, along with the
+     * absence typed by mistake this morning, a long-standing one recorded weeks
+     * earlier from the Ajustements manuels screen — silently widening what the
+     * next solve is allowed to do. Same reason exceptions naming several people
+     * are left alone: they belong to whoever wrote them.</p>
      *
      * <p>The seats are not handed back. Who holds a seat is a decision, and
      * assuming the previous occupant should get it back would silently undo
@@ -215,6 +233,7 @@ public class JourJService {
         Map<Long, Creneau> creneaux = creneauxById(creneauxOf(referenceDataService.listCreneaux(), jour));
         List<ContrainteAdHoc> aSupprimer = referenceDataService.listContraintesAdHoc().stream()
                 .filter(contrainte -> contrainte.getType() == TypeContrainteAdHoc.INDISPONIBILITE_FORCEE)
+                .filter(contrainte -> isWrittenHere(contrainte, animateurId))
                 .filter(contrainte -> targetsOnly(contrainte, animateurId))
                 .filter(contrainte -> contrainte.getCreneau() != null
                         && creneaux.containsKey(contrainte.getCreneau().getId()))
@@ -246,30 +265,57 @@ public class JourJService {
     }
 
     /**
-     * Whether the timeslot is still ahead of {@code reference}. A slot whose end
-     * hour is not after its start hour crosses midnight and ends the next day —
-     * the same normalisation {@code Creneau.chevaucheNuit} applies.
+     * The wall-clock window a timeslot really covers. A slot whose end hour is
+     * not after its start hour crosses midnight and ends the next day — the
+     * same normalisation {@code Creneau.chevaucheNuit} applies, and the reason
+     * everything below reasons in {@link LocalDateTime} rather than in hours.
      */
-    private static boolean isStillAhead(Creneau creneau, LocalTime reference) {
-        LocalDate jour = creneau.getDate();
-        LocalDateTime debut = jour.atTime(creneau.getHeureDebut());
-        LocalDateTime fin = jour.atTime(creneau.getHeureFin());
-        if (!fin.isAfter(debut)) {
-            fin = fin.plusDays(1);
-        }
-        return fin.isAfter(jour.atTime(reference));
+    private static LocalDateTime[] window(Creneau creneau) {
+        LocalDateTime debut = creneau.getDate().atTime(creneau.getHeureDebut());
+        LocalDateTime fin = creneau.getDate().atTime(creneau.getHeureFin());
+        return new LocalDateTime[] { debut, fin.isAfter(debut) ? fin : fin.plusDays(1) };
+    }
+
+    /** Whether the timeslot has not ended yet at {@code reference}. */
+    private static boolean isStillAhead(Creneau creneau, LocalDateTime reference) {
+        return window(creneau)[1].isAfter(reference);
     }
 
     /** Started but not over: the one nobody is standing at right now. */
-    private static boolean isUnderWay(Creneau creneau, LocalTime reference) {
-        return !creneau.getHeureDebut().isAfter(reference) && isStillAhead(creneau, reference);
+    private static boolean isUnderWay(Creneau creneau, LocalDateTime reference) {
+        LocalDateTime[] fenetre = window(creneau);
+        return !fenetre[0].isAfter(reference) && fenetre[1].isAfter(reference);
     }
 
+    /**
+     * The timeslots of one operating day: every slot whose window <b>overlaps
+     * that calendar day</b>, not merely those whose {@code date} column equals
+     * it.
+     *
+     * <p>The difference is the night shift. A slot opened at 22:00 and closing
+     * at 02:00 carries yesterday's date, and at one in the morning it is the one
+     * running right now — the very slot somebody may have failed to show up for.
+     * Keyed on the date column alone it was invisible here: absent from the
+     * remaining slots, from the seats to free, and from the scope of an absence,
+     * so the person who was not there kept their seat and no unavailability
+     * covered it.</p>
+     *
+     * <p>Ordered by the start of that window rather than by the start hour, so
+     * yesterday's 22:00 slot sorts before this morning's 09:00 one instead of
+     * landing at the bottom of the list.</p>
+     */
     private static List<Creneau> creneauxOf(List<Creneau> creneaux, LocalDate jour) {
+        LocalDateTime debutDuJour = jour.atStartOfDay();
+        LocalDateTime finDuJour = jour.plusDays(1).atStartOfDay();
         return creneaux.stream()
-                .filter(creneau -> creneau.getId() != null && jour.equals(creneau.getDate())
+                .filter(creneau -> creneau.getId() != null && creneau.getDate() != null
                         && creneau.getHeureDebut() != null && creneau.getHeureFin() != null)
-                .sorted(Comparator.comparing(Creneau::getHeureDebut).thenComparing(Creneau::getId))
+                .filter(creneau -> {
+                    LocalDateTime[] fenetre = window(creneau);
+                    return fenetre[0].isBefore(finDuJour) && fenetre[1].isAfter(debutDuJour);
+                })
+                .sorted(Comparator.comparing((Creneau creneau) -> window(creneau)[0])
+                        .thenComparing(Creneau::getId))
                 .toList();
     }
 
@@ -319,7 +365,7 @@ public class JourJService {
     private static ContrainteAdHoc exception(Animateur animateur, Creneau creneau, String motif,
             String author, Instant maintenant) {
         ContrainteAdHoc contrainte = new ContrainteAdHoc(
-                PREFIXE_ABSENCE + "-" + animateur.getId() + "-" + creneau.getId(),
+                idAbsence(animateur.getId(), creneau.getId()),
                 TypeContrainteAdHoc.INDISPONIBILITE_FORCEE);
         Animateur cible = new Animateur();
         cible.setId(animateur.getId());
@@ -342,6 +388,21 @@ public class JourJService {
         return identity == null || identity.isAnonymous() || identity.getPrincipal() == null
                 ? AUTEUR_INCONNU
                 : identity.getPrincipal().getName();
+    }
+
+    /**
+     * Whether this exception is one this screen wrote for that animateur — the
+     * id is derived from (animateur, timeslot) precisely so it can be read back
+     * without a column of its own.
+     */
+    private static boolean isWrittenHere(ContrainteAdHoc contrainte, String animateurId) {
+        return contrainte.getCreneau() != null && contrainte.getCreneau().getId() != null
+                && contrainte.getId() != null
+                && contrainte.getId().equals(idAbsence(animateurId, contrainte.getCreneau().getId()));
+    }
+
+    private static String idAbsence(String animateurId, long creneauId) {
+        return PREFIXE_ABSENCE + "-" + animateurId + "-" + creneauId;
     }
 
     private static boolean targetsOnly(ContrainteAdHoc contrainte, String animateurId) {
@@ -401,9 +462,9 @@ public class JourJService {
                 annulable);
     }
 
-    private static CreneauJourJ creneauJourJ(Creneau creneau, LocalTime reference) {
+    private static CreneauJourJ creneauJourJ(Creneau creneau, LocalDateTime maintenant) {
         return new CreneauJourJ(creneau.getId(), creneau.getDate(), creneau.getHeureDebut(),
-                creneau.getHeureFin(), isUnderWay(creneau, reference));
+                creneau.getHeureFin(), isUnderWay(creneau, maintenant));
     }
 
     private static List<AnimateurAffecte> animateursAffectes(List<PosteAffectation> postesRestants,
@@ -441,6 +502,23 @@ public class JourJService {
                 poste.getCreneau().getId(), poste.heureDebutEffectif(), poste.heureFinEffectif(), false);
     }
 
+    /**
+     * Every animateur of the edition, id and display name only.
+     *
+     * <p>The screen has to name the people the repair assistant proposes, and
+     * those are precisely the ones <em>not</em> working the remaining timeslots
+     * — the best replacement is somebody free. Named from the on-duty list
+     * alone, the main action button read « anim-73 ». Two short fields per
+     * animateur, on a screen that already lists names.</p>
+     */
+    private static List<AnimateurNomme> nommes(Map<String, Identite> identites) {
+        return identites.entrySet().stream()
+                .map(entree -> new AnimateurNomme(entree.getKey(),
+                        nomAffiche(entree.getValue(), entree.getKey())))
+                .sorted(Comparator.comparing(AnimateurNomme::nomAffiche))
+                .toList();
+    }
+
     private Map<String, Identite> identites() {
         Map<String, Identite> identites = new HashMap<>();
         for (Animateur animateur : referenceDataService.listAnimateurs()) {
@@ -472,10 +550,19 @@ public class JourJService {
      * @param creneauxDuJour  how many timeslots the day holds in all — the
      *                        denominator that says how much of it is already
      *                        behind
+     * @param animateurs      the whole roster, id and name: the replacements the
+     *                        assistant proposes are by definition not in
+     *                        {@code animateursDeService}, and they still have to
+     *                        be named on the button that hands them a seat
      */
     public record EtatJourJ(LocalDate date, LocalTime heureReference, int creneauxDuJour,
             List<CreneauJourJ> creneauxRestants, List<AnimateurAffecte> animateursDeService,
-            List<PosteAPourvoir> postesAPourvoir, List<AbsenceJourJ> absences) {
+            List<PosteAPourvoir> postesAPourvoir, List<AbsenceJourJ> absences,
+            List<AnimateurNomme> animateurs) {
+    }
+
+    /** An animateur of the edition, named. */
+    public record AnimateurNomme(String animateurId, String nomAffiche) {
     }
 
     /** One timeslot still ahead. */

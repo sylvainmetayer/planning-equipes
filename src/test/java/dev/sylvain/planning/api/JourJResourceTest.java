@@ -13,6 +13,9 @@ import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.path.json.JsonPath;
 
@@ -27,6 +30,8 @@ import io.restassured.path.json.JsonPath;
  */
 @QuarkusTest
 class JourJResourceTest {
+
+    private static final ObjectMapper JSON = new ObjectMapper();
 
     private static final String JOUR = "2026-07-08";
 
@@ -303,6 +308,176 @@ class JourJResourceTest {
                 .then().statusCode(400).body("message", notNullValue());
     }
 
+    /* ----------------------- Regressions of the review ---------------------- */
+
+    /**
+     * Somebody carrying an unavailability on a timeslot that is <b>already
+     * over</b> is on duty this afternoon like anybody else. Flagging them
+     * "already marked absent" removed the only button that matters — the screen
+     * then could not do the one thing it exists for.
+     */
+    @Test
+    void anUnavailabilityOnAPastTimeslotDoesNotCountAsAbsentForTheRest() {
+        solveScenario();
+        long matin = morningCreneauId();
+        String surPlace = firstAnimateurOnDuty();
+        given().contentType("application/json")
+                .body("""
+                        {"id":"INDISPO-MATIN","type":"INDISPONIBILITE_FORCEE",
+                         "animateursConcernes":[{"id":"%s"}],"creneau":{"id":%d}}"""
+                        .formatted(surPlace, matin))
+                .when().post("/api/contraintes-ad-hoc").then().statusCode(200);
+
+        JsonPath etat = etat(ENTRE_LES_DEUX);
+
+        // Listed as an absence of the day — it is one — but not as somebody
+        // already handled for what is left of it.
+        assertThat(etat.getList("absences.animateurId", String.class)).contains(surPlace);
+        assertThat(etat.getBoolean(
+                "animateursDeService.find { it.animateurId == '" + surPlace + "' }.absent")).isFalse();
+    }
+
+    /**
+     * The mirror case: an unavailability on a timeslot that is <b>still
+     * ahead</b> does flag them. Written by hand rather than through this screen,
+     * because marking somebody absent frees their seats — they then hold none
+     * and leave the on-duty list altogether, where the flag could not be seen.
+     */
+    @Test
+    void anUnavailabilityOnARemainingTimeslotCountsAsAbsent() {
+        solveScenario();
+        String surPlace = firstAnimateurOnDuty();
+        given().contentType("application/json")
+                .body("""
+                        {"id":"INDISPO-APRES-MIDI","type":"INDISPONIBILITE_FORCEE",
+                         "animateursConcernes":[{"id":"%s"}],"creneau":{"id":%d}}"""
+                        .formatted(surPlace, afternoonCreneauId()))
+                .when().post("/api/contraintes-ad-hoc").then().statusCode(200);
+
+        assertThat(etat(ENTRE_LES_DEUX).getBoolean(
+                "animateursDeService.find { it.animateurId == '" + surPlace + "' }.absent")).isTrue();
+    }
+
+    /**
+     * Undoing an absence must not take a neighbour with it. A long-standing
+     * unavailability recorded from the Ajustements manuels screen, on the same
+     * animateur and the same day, is somebody else's decision — deleting it
+     * would silently widen what the next solve may do.
+     */
+    @Test
+    void cancellingAnAbsenceLeavesHandWrittenUnavailabilitiesAlone() {
+        solveScenario();
+        String absent = firstAnimateurOnDuty();
+        long apresMidi = afternoonCreneauId();
+        given().contentType("application/json")
+                .body("""
+                        {"id":"INDISPO-SAISIE-A-LA-MAIN","type":"INDISPONIBILITE_FORCEE",
+                         "animateursConcernes":[{"id":"%s"}],"creneau":{"id":%d}}"""
+                        .formatted(absent, apresMidi))
+                .when().post("/api/contraintes-ad-hoc").then().statusCode(200);
+        markAbsent(absent, null, ENTRE_LES_DEUX, 200);
+        assertThat(forcedUnavailabilities()).hasSize(2);
+
+        given().when().delete("/api/jour-j/absences/" + absent + "?date=" + JOUR)
+                .then().statusCode(200).body("supprimees", equalTo(1));
+
+        List<Map<String, Object>> restantes = forcedUnavailabilities();
+        assertThat(restantes).hasSize(1);
+        assertThat((String) restantes.getFirst().get("id")).isEqualTo("INDISPO-SAISIE-A-LA-MAIN");
+    }
+
+    /**
+     * A shift opened at 22:00 and closing at 02:00 carries the previous day's
+     * date. At one in the morning it is the one running — and the one somebody
+     * may have failed to show up for. Keyed on the date column it was invisible
+     * to this screen entirely.
+     */
+    @Test
+    void aShiftCrossingMidnightBelongsToTheDayItRunsInto() {
+        solveScenarioWithNightShift();
+
+        JsonPath etat = given().when().get("/api/jour-j?date=2026-07-09&heure=01:00")
+                .then().statusCode(200).extract().jsonPath();
+
+        assertThat(etat.getList("creneauxRestants.id", Integer.class))
+                .as("the night shift is what is running at 01:00")
+                .containsExactly(CRENEAU_NUIT);
+        assertThat(etat.getBoolean("creneauxRestants[0].enCours")).isTrue();
+    }
+
+    /** And it drops out again once it is really over. */
+    @Test
+    void aShiftCrossingMidnightIsGoneOnceItHasEnded() {
+        solveScenarioWithNightShift();
+
+        JsonPath etat = given().when().get("/api/jour-j?date=2026-07-09&heure=03:00")
+                .then().statusCode(200).extract().jsonPath();
+
+        assertThat(etat.getList("creneauxRestants")).isEmpty();
+    }
+
+    /** It is part of the day it runs into, so an absence marked then covers it. */
+    @Test
+    void anAbsenceAtOneInTheMorningCoversTheRunningNightShift() {
+        solveScenarioWithNightShift();
+
+        JsonPath marquee = given().contentType("application/json")
+                .body("{\"animateurId\":\"A1\"}")
+                .when().post("/api/jour-j/absences?date=2026-07-09&heure=01:00")
+                .then().statusCode(200).extract().jsonPath();
+
+        assertThat(marquee.getList("entrees.creneauId", Integer.class)).containsExactly(CRENEAU_NUIT);
+    }
+
+    /** On its own date, the night shift is still ahead at 23:00 and still counted. */
+    @Test
+    void aShiftCrossingMidnightAlsoBelongsToTheDayItStartsOn() {
+        solveScenarioWithNightShift();
+
+        JsonPath etat = given().when().get("/api/jour-j?date=" + JOUR + "&heure=23:00")
+                .then().statusCode(200).extract().jsonPath();
+
+        assertThat(etat.getList("creneauxRestants.id", Integer.class)).containsExactly(CRENEAU_NUIT);
+        assertThat(etat.getInt("creneauxDuJour")).isEqualTo(3);
+    }
+
+    /** Freeing several seats at once is one gesture, and it frees all of them. */
+    @Test
+    void markingAbsentFromTheStartOfTheDayFreesEverySeatHeld() {
+        solveScenario();
+        String absent = firstAnimateurOnDuty();
+        Map<String, String> avant = persistedOccupants();
+        List<String> tenus = avant.entrySet().stream()
+                .filter(siege -> siege.getValue().equals(absent))
+                .map(Map.Entry::getKey)
+                .toList();
+        assertThat(tenus).isNotEmpty();
+
+        JsonPath marquee = markAbsent(absent, null, "00:00", 200);
+
+        assertThat(marquee.getList("postesLiberes.posteId", String.class))
+                .containsExactlyInAnyOrderElementsOf(tenus);
+        Map<String, String> apres = persistedOccupants();
+        assertThat(tenus).allSatisfy(poste -> assertThat(apres).doesNotContainKey(poste));
+    }
+
+    /**
+     * The suggestions name people. The best replacement is by definition
+     * somebody <em>not</em> on duty, so the screen cannot name them from the
+     * on-duty list — the roster travels with the state for that.
+     */
+    @Test
+    void theStateCarriesTheWholeRosterSoCandidatesCanBeNamed() {
+        solveScenario();
+
+        JsonPath etat = etat(ENTRE_LES_DEUX);
+
+        List<String> ids = etat.getList("animateurs.animateurId", String.class);
+        assertThat(ids).contains("A1", "A2", "A3");
+        assertThat(etat.getString("animateurs.find { it.animateurId == 'A1' }.nomAffiche"))
+                .isEqualTo("Alice Referente");
+    }
+
     /* ------------------------------- Fixtures ------------------------------ */
 
     private static void solveScenario() {
@@ -334,6 +509,51 @@ class JourJResourceTest {
 
     private static long afternoonCreneauId() {
         return etat(ENTRE_LES_DEUX).getLong("creneauxRestants[0].id");
+    }
+
+    /** The morning slot: read from the start of the day, where both are still ahead. */
+    private static long morningCreneauId() {
+        return etat("00:00").getLong("creneauxRestants[0].id");
+    }
+
+    /** Explicit id of the seeded night shift — see {@link #solveScenarioWithNightShift()}. */
+    private static final int CRENEAU_NUIT = 3;
+
+    /**
+     * The scenario plus a 22:00-02:00 shift on the same day.
+     *
+     * <p>Seeded <b>through the solve payload</b>, with an explicit id, rather
+     * than through {@code POST /api/creneaux}: the scenario inserts its own
+     * timeslots under explicit ids 1 and 2 without advancing the table's
+     * sequence, so a generated id collides with them. Adding one seat carrying a
+     * new timeslot is how the scenario itself gets its referential in.</p>
+     */
+    private static void solveScenarioWithNightShift() {
+        String sample = given().when().get("/api/planning/sample?name=scenario.yml")
+                .then().statusCode(200).extract().asString();
+        String avecNuit = withNightShift(sample);
+        given().contentType("application/json").body(avecNuit)
+                .when().post("/api/solve?seconds=3").then().statusCode(200);
+    }
+
+    /** Copies the first seat onto a new timeslot that runs from 22:00 to 02:00. */
+    private static String withNightShift(String planningJson) {
+        try {
+            ObjectNode plan = (ObjectNode) JSON.readTree(planningJson);
+            ArrayNode postes = (ArrayNode) plan.get("postes");
+            ObjectNode nuit = ((ObjectNode) postes.get(0)).deepCopy();
+            nuit.put("id", "P-NUIT");
+            nuit.putNull("animateur");
+            ObjectNode creneau = (ObjectNode) nuit.get("creneau");
+            creneau.put("id", CRENEAU_NUIT);
+            creneau.put("date", JOUR);
+            creneau.put("heureDebut", "22:00:00");
+            creneau.put("heureFin", "02:00:00");
+            postes.add(nuit);
+            return JSON.writeValueAsString(plan);
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     /** The stand this animateur holds on the afternoon slot — the seat a lock will freeze. */
