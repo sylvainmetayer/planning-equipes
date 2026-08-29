@@ -458,7 +458,7 @@ export function buildHelpSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.views.term.fragilite:Fragilité du planning`,
-              text: $localize`:@@aide.views.def.fragilite:Qui est irremplaçable. Pour chaque personne, les créneaux qui passeraient sous l'effectif minimum si elle se désiste — et, colonne décisive, ceux que personne d'autre ne pourrait reprendre ce jour-là. La seconde vue liste les stands tenus par une seule personne compétente pour leurs typologies, ce qui désigne où recruter ou former. Les polyvalents « ninja » y sont comptés à part, en renforts : ils peuvent dépanner partout, mais un stand qu'ils sont seuls à pouvoir tenir n'a toujours aucun spécialiste. Rien n'est recalculé par le solveur : l'écran lit le planning enregistré.`
+              text: $localize`:@@aide.views.def.fragilite:Qui est irremplaçable. Pour chaque personne, les créneaux qui passeraient sous l'effectif minimum si elle se désiste — et, colonne décisive, ceux que personne d'autre ne pourrait reprendre ce jour-là. La seconde vue liste les stands tenus par une seule personne compétente pour leurs typologies, ce qui désigne où recruter ou former. Les polyvalents « ninja » y sont comptés à part, en renforts : ils peuvent dépanner partout, mais un stand qu'ils sont seuls à pouvoir tenir n'a toujours aucun spécialiste. Rien n'est recalculé par le solveur : l'écran lit le planning enregistré. Il est livré à l'essai, sous « En cours de développement » : il pourra être retiré s'il ne s'avère pas utile.`
             }
           ]
         }

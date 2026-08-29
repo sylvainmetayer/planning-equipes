@@ -3,8 +3,9 @@
 // its keyboard navigation and has no business knowing about the router.
 
 import { Signal, WritableSignal, provideZonelessChangeDetection } from '@angular/core';
+import { Location } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
+import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
 import { PlanningStateService } from '../../core/planning-state.service';
@@ -20,18 +21,18 @@ type PageInternals = {
 };
 
 function setUp(queryParams: Record<string, string>) {
-  const navigate = vi.fn(async () => true);
+  const replaceState = vi.fn();
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
       { provide: ApiService, useValue: { get: vi.fn(async () => []) } },
       { provide: PlanningStateService, useValue: { loadForDisplay: vi.fn(async () => ({ animateurs: [], postes: [] })) } },
-      { provide: Router, useValue: { navigate } },
+      { provide: Location, useValue: { path: () => '/heatmap', replaceState } },
       { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } } }
     ]
   });
   const fixture = TestBed.createComponent(HeatmapPage);
-  return { fixture, navigate, page: fixture.componentInstance as unknown as PageInternals };
+  return { fixture, replaceState, page: fixture.componentInstance as unknown as PageInternals };
 }
 
 describe('HeatmapPage query-param sync', () => {
@@ -61,40 +62,34 @@ describe('HeatmapPage query-param sync', () => {
   });
 
   it('writes the current view back to the URL (replacing, not pushing history)', async () => {
-    const { fixture, navigate } = setUp({ view: 'animateur', q: 'durand' });
+    const { fixture, replaceState } = setUp({ view: 'animateur', q: 'durand' });
 
     await fixture.whenStable();
 
-    expect(navigate).toHaveBeenCalledWith(
-      [],
-      expect.objectContaining({ queryParams: { view: 'animateur', q: 'durand' }, replaceUrl: true })
-    );
+    expect(replaceState).toHaveBeenCalledWith('/heatmap?view=animateur&q=durand');
   });
 
   it('clears both params from the URL once the view is reset', async () => {
-    const { fixture, navigate, page } = setUp({ view: 'animateur', q: 'durand' });
+    const { fixture, replaceState, page } = setUp({ view: 'animateur', q: 'durand' });
     await fixture.whenStable();
     expect(page.vueModifiee()).toBe(true);
-    navigate.mockClear();
+    replaceState.mockClear();
 
     page.reinitialiserVue();
     await fixture.whenStable();
 
     expect(page.vueModifiee()).toBe(false);
-    expect(navigate).toHaveBeenLastCalledWith([], expect.objectContaining({ queryParams: { view: null, q: null } }));
+    expect(replaceState).toHaveBeenLastCalledWith('/heatmap');
   });
 
   it('drops a search cleared down to blanks rather than trailing an empty param', async () => {
-    const { fixture, navigate, page } = setUp({ view: 'animateur' });
+    const { fixture, replaceState, page } = setUp({ view: 'animateur' });
     await fixture.whenStable();
-    navigate.mockClear();
+    replaceState.mockClear();
 
     page.animateurFilter.set('   ');
     await fixture.whenStable();
 
-    expect(navigate).toHaveBeenLastCalledWith(
-      [],
-      expect.objectContaining({ queryParams: expect.objectContaining({ q: null }) })
-    );
+    expect(replaceState).toHaveBeenLastCalledWith(expect.not.stringContaining('q='));
   });
 });

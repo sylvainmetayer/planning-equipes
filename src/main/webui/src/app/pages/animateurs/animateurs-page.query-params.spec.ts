@@ -3,10 +3,11 @@
 // alert badges and the rendered table.
 
 import { Signal, WritableSignal, provideZonelessChangeDetection } from '@angular/core';
+import { Location } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { Sort } from '@angular/material/sort';
-import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
+import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
 import { Animateur } from '../../core/models';
@@ -35,7 +36,7 @@ type PageInternals = {
 };
 
 function setUp(queryParams: Record<string, string>) {
-  const navigate = vi.fn(async () => true);
+  const replaceState = vi.fn();
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
@@ -43,14 +44,14 @@ function setUp(queryParams: Record<string, string>) {
       { provide: ReferenceCrudService, useValue: { reload: vi.fn(async () => undefined) } },
       { provide: SolverJobService, useValue: { solverBusy: () => false, editingLocked: () => false } },
       { provide: MatDialog, useValue: { open: vi.fn() } },
-      { provide: Router, useValue: { navigate } },
+      { provide: Location, useValue: { path: () => '/animateurs', replaceState } },
       { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } } }
     ]
   });
   const store = TestBed.inject(ReferenceDataStore);
   store.animateurs.set([animateur('alice', 'Alice', 'Martin'), animateur('bob', 'Bob', 'Durand')]);
   const fixture = TestBed.createComponent(AnimateursPage);
-  return { fixture, navigate, page: fixture.componentInstance as unknown as PageInternals };
+  return { fixture, replaceState, page: fixture.componentInstance as unknown as PageInternals };
 }
 
 describe('AnimateursPage query-param sync', () => {
@@ -81,28 +82,22 @@ describe('AnimateursPage query-param sync', () => {
   });
 
   it('writes filter and sort back to the URL (replacing, not pushing history)', async () => {
-    const { fixture, navigate } = setUp({ q: 'durand', sort: 'majorite', dir: 'asc' });
+    const { fixture, replaceState } = setUp({ q: 'durand', sort: 'majorite', dir: 'asc' });
     await fixture.whenStable();
 
-    expect(navigate).toHaveBeenCalledWith(
-      [],
-      expect.objectContaining({ queryParams: { sort: 'majorite', dir: 'asc', q: 'durand' }, replaceUrl: true })
-    );
+    expect(replaceState).toHaveBeenCalledWith('/animateurs?sort=majorite&dir=asc&q=durand');
   });
 
   it('clears every param once the view is reset', async () => {
-    const { fixture, navigate, page } = setUp({ q: 'durand', sort: 'majorite', dir: 'asc' });
+    const { fixture, replaceState, page } = setUp({ q: 'durand', sort: 'majorite', dir: 'asc' });
     await fixture.whenStable();
     expect(page.vueModifiee()).toBe(true);
-    navigate.mockClear();
+    replaceState.mockClear();
 
     page.reinitialiserVue();
     await fixture.whenStable();
 
     expect(page.vueModifiee()).toBe(false);
-    expect(navigate).toHaveBeenLastCalledWith(
-      [],
-      expect.objectContaining({ queryParams: { sort: null, dir: null, q: null } })
-    );
+    expect(replaceState).toHaveBeenLastCalledWith('/animateurs');
   });
 });

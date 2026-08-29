@@ -118,6 +118,35 @@ test('le filtre des animateurs se restaure au rechargement et se vide en une act
   await page.context().close();
 });
 
+test('un filtre se tape d’une traite, sans reprendre le focus entre deux lettres', async ({ browser }) => {
+  // Le défaut que l'utilisateur a remonté, et qu'aucun test unitaire ne pouvait
+  // voir : il naît de l'interaction entre le routeur, le DOM et le focus réel
+  // du navigateur. Refléter l'état de vue dans l'URL passait par une navigation
+  // du routeur, donc un re-rendu à chaque frappe — le champ perdait le focus et
+  // seule la première lettre arrivait.
+  //
+  // D'où le geste testé : un clic, puis la frappe caractère par caractère sans
+  // jamais recliquer. `fill()` ne l'aurait pas vu, il pose la valeur d'un bloc.
+  const page = await pageAdmin(browser, admin);
+  await page.goto('/fragilite');
+  const noms = page.locator('.fragilite-nom');
+  await expect(noms.filter({ hasText: 'Bruno' })).toHaveCount(1);
+
+  const champ = page.getByLabel('Filtrer', { exact: true });
+  await champ.click();
+  await page.keyboard.type('Alice', { delay: 50 });
+
+  // 1. le champ a gardé le focus d'un bout à l'autre ;
+  await expect(champ).toBeFocused();
+  // 2. la saisie est complète — c'est ce qui échouait vraiment ;
+  await expect(champ).toHaveValue('Alice');
+  // 3. et le filtrage a bien eu lieu.
+  await expect(noms.filter({ hasText: 'Bruno' })).toHaveCount(0);
+  await expect(noms.filter({ hasText: 'Alice' })).toHaveCount(1);
+  await expect(page).toHaveURL(/[?&]q=Alice/);
+  await page.context().close();
+});
+
 test('le bouton Retour quitte l’écran au lieu de rejouer chaque frappe du filtre', async ({ browser }) => {
   // `replaceUrl` : sans lui, filtrer sur cinq caractères laisserait cinq
   // entrées d'historique, et il faudrait cinq retours pour sortir de la page.

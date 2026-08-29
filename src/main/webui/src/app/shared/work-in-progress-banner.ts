@@ -15,10 +15,14 @@ import { MatIconModule } from '@angular/material/icon';
       <mat-card-content>
         <mat-icon>construction</mat-icon>
         <div>
-          <p i18n="@@workInProgress.message">
-            Cette fonctionnalité est en cours de développement : son comportement et les données saisies ici peuvent
-            encore évoluer, et le résultat du solveur peut ne pas en tenir compte.
-          </p>
+          @if (message()) {
+            <p>{{ message() }}</p>
+          } @else {
+            <p i18n="@@workInProgress.message">
+              Cette fonctionnalité est en cours de développement : son comportement et les données saisies ici peuvent
+              encore évoluer, et le résultat du solveur peut ne pas en tenir compte.
+            </p>
+          }
           @if (marche()) {
             <p class="work-in-progress-detail">
               <strong i18n="@@workInProgress.working">Ce qui fonctionne :</strong> {{ marche() }}
@@ -65,4 +69,13 @@ export class WorkInProgressBanner {
    */
   readonly marche = input('');
   readonly manque = input('');
+
+  /**
+   * Replaces the default sentence. That sentence speaks of data entered on the
+   * screen and of the solver taking it into account, which is exactly right for
+   * a screen that writes something and wrong for one that only reads — and a
+   * warning that describes the wrong screen is worse than none. A page under
+   * trial for a different reason says so in its own words.
+   */
+  readonly message = input('');
 }

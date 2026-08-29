@@ -18,6 +18,7 @@ import {
   SeveriteFragilite,
 } from '../../core/models';
 import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
+import { WorkInProgressBanner } from '../../shared/work-in-progress-banner';
 import {
   classeSeverite,
   FiltreFragilite,
@@ -54,6 +55,7 @@ import {
     MatInputModule,
     MatProgressBarModule,
     MatTooltipModule,
+    WorkInProgressBanner,
   ],
   templateUrl: './fragilite-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -125,6 +127,16 @@ export class FragilitePage {
   protected readonly iconeSeverite = iconeSeverite;
   protected readonly libelleJour = libelleJour;
   protected readonly heure = heure;
+
+  /**
+   * Why this screen sits under « En cours de développement ». Not the shared
+   * default sentence: nothing is entered here and the solver reads nothing back
+   * from it. What is provisional is the screen itself — it ships to be tried
+   * out, and goes away if it earns nothing.
+   */
+  protected messageEssai(): string {
+    return $localize`:@@fragilite.essai:Cet écran est livré à l'essai : il pourra être retiré s'il ne s'avère pas utile. Ce qu'il affiche est en revanche exact — dites-nous s'il vous sert.`;
+  }
 
   protected libelleSeverite(severite: SeveriteFragilite): string {
     switch (severite) {

@@ -115,11 +115,6 @@ function buildNavGroups(devMode: boolean): NavGroup[] {
         path: '/staffing',
         label: $localize`:@@nav.link.staffing:Besoin en animateurs`,
         icon: 'engineering'
-      },
-      {
-        path: '/fragilite',
-        label: $localize`:@@nav.link.fragilite:Fragilité du planning`,
-        icon: 'personal_injury'
       }
     ]
   },
@@ -214,6 +209,11 @@ function buildNavGroups(devMode: boolean): NavGroup[] {
         path: '/verrouillages',
         label: $localize`:@@nav.link.verrouillages:Verrouillages`,
         icon: 'lock'
+      },
+      {
+        path: '/fragilite',
+        label: $localize`:@@nav.link.fragilite:Fragilité du planning`,
+        icon: 'personal_injury'
       }
     ]
   }

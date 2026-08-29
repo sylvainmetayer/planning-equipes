@@ -1,6 +1,6 @@
 # 0012 — L'état de vue vit dans l'URL
 
-- **Statut** : accepté, implémenté
+- **Statut** : accepté, implémenté · précisé par 0018
 - **Date** : août 2026
 - **Portée** : frontend
 
@@ -45,9 +45,11 @@ par `core/view-query-params.ts` :
 2. **La lecture est tolérante.** Une valeur qu'un écran ne connaît pas est
    ignorée au profit du défaut, jamais appliquée ni signalée : une adresse mise
    en favori doit survivre à la colonne qu'elle nommait.
-3. **L'écriture remplace l'entrée d'historique** (`replaceUrl`). Trier, filtrer
-   puis retrier est une exploration, pas trois pages : le bouton Retour doit
-   quitter l'écran, pas rejouer les gestes.
+3. **L'écriture remplace l'entrée d'historique.** Trier, filtrer puis retrier
+   est une exploration, pas trois pages : le bouton Retour doit quitter l'écran,
+   pas rejouer les gestes. *(Le mécanisme retenu pour cela — écrire la barre
+   d'adresse sans navigation — est précisé par
+   [0018](0018-ecrire-l-url-de-vue-sans-naviguer.md).)*
 4. **Une vue se remet à zéro en une action**, puisque revenir à l'état nu en
    effaçant les paramètres à la main n'est pas une action offerte à l'utilisateur.
 

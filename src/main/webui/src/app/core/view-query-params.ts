@@ -7,8 +7,9 @@
 // by hand before this file existed; this is that pattern, factored out at the
 // third page rather than copied a third time.
 
+import { Location } from '@angular/common';
 import { effect, inject } from '@angular/core';
-import { ActivatedRoute, ParamMap, Params, Router } from '@angular/router';
+import { ParamMap, Params } from '@angular/router';
 
 /**
  * Same shape as Angular Material's `Sort`, and assignable both ways — spelled
@@ -59,14 +60,54 @@ export function optionalParam(value: string | null | undefined): string | null {
  * change. Call from an injection context (a field initializer or the
  * constructor).
  *
- * `replaceUrl` is what makes this bearable to use: browsing a table sorts,
- * filters and re-sorts it, and each of those would otherwise be a history entry
+ * The current history entry is *replaced*, never pushed: browsing a table
+ * sorts, filters and re-sorts it, and each of those would otherwise be an entry
  * the Back button has to walk through before leaving the page.
+ *
+ * **The address bar is written directly, without a router navigation**, and
+ * that is the whole point of this function rather than an implementation
+ * detail. It used to call `router.navigate(..., {replaceUrl: true})`, which
+ * runs a full navigation cycle on every change of the state it mirrors — so
+ * every single keystroke in a quick-filter field re-rendered the page and the
+ * field lost the focus, forcing a click before the next character. The URL is a
+ * *reflection* of the screen here, not a request to go somewhere: nothing has
+ * to be resolved, activated or re-rendered when it changes.
+ *
+ * Reading it back is unaffected, and deliberately so: every page using this
+ * reads `route.snapshot.queryParamMap` once, when it is constructed. A reload,
+ * a shared link and a Back that returns to the page all go through a real
+ * navigation, which parses the address bar the router state was momentarily out
+ * of step with — so both usages the URL exists for keep working. A page that
+ * ever needs to *observe* its query params has to make this a navigation again,
+ * and pay the re-render. See `docs/decisions/0018-ecrire-l-url-de-vue-sans-naviguer.md`.
  */
 export function keepViewInQueryParams(queryParams: () => Params): void {
-  const route = inject(ActivatedRoute);
-  const router = inject(Router);
+  const location = inject(Location);
   effect(() => {
-    void router.navigate([], { relativeTo: route, queryParams: queryParams(), replaceUrl: true });
+    const chemin = location.path().split('?')[0];
+    const query = queryString(queryParams());
+    location.replaceState(query ? chemin + '?' + query : chemin);
   });
+}
+
+/**
+ * The params as Angular's own serializer would write them: an entry left at its
+ * default is dropped (`null`, `undefined`, `''` — see `optionalParam`), the
+ * rest is percent-encoded.
+ *
+ * Deliberately not `URLSearchParams`, which writes a space as `+`. Angular
+ * decodes a query value with `decodeURIComponent`, which leaves a `+` as a
+ * literal plus — a filter on two words would come back mangled from a reload,
+ * which is the one thing this whole file exists to make work.
+ */
+function queryString(params: Params): string {
+  const morceaux: string[] = [];
+  for (const [cle, valeur] of Object.entries(params)) {
+    for (const unique of Array.isArray(valeur) ? valeur : [valeur]) {
+      if (unique !== null && unique !== undefined && unique !== '') {
+        morceaux.push(encodeURIComponent(cle) + '=' + encodeURIComponent(String(unique)));
+      }
+    }
+  }
+  return morceaux.join('&');
 }

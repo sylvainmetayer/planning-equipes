@@ -3,9 +3,10 @@
 // the loading/error/empty states of the report itself.
 
 import { Signal, WritableSignal, provideZonelessChangeDetection } from '@angular/core';
+import { Location } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
 import { Sort } from '@angular/material/sort';
-import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
+import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
 import { HeuresAnimateur, HeuresRapport, PlanningEvenement } from '../../core/models';
@@ -30,18 +31,18 @@ type PageInternals = {
 };
 
 function setUp(queryParams: Record<string, string>) {
-  const navigate = vi.fn(async () => true);
+  const replaceState = vi.fn();
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
       { provide: ApiService, useValue: { post: vi.fn(async () => RAPPORT), downloadPost: vi.fn() } },
       { provide: PlanningStateService, useValue: { require: vi.fn(async () => PLANNING) } },
-      { provide: Router, useValue: { navigate } },
+      { provide: Location, useValue: { path: () => '/hours', replaceState } },
       { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } } }
     ]
   });
   const fixture = TestBed.createComponent(HoursPage);
-  return { fixture, navigate, page: fixture.componentInstance as unknown as PageInternals };
+  return { fixture, replaceState, page: fixture.componentInstance as unknown as PageInternals };
 }
 
 describe('HoursPage query-param sync', () => {
@@ -82,24 +83,21 @@ describe('HoursPage query-param sync', () => {
   });
 
   it('writes the sort back to the URL (replacing, not pushing history)', async () => {
-    const { fixture, navigate } = setUp({ sort: 'total', dir: 'desc' });
+    const { fixture, replaceState } = setUp({ sort: 'total', dir: 'desc' });
     await fixture.whenStable();
 
-    expect(navigate).toHaveBeenCalledWith(
-      [],
-      expect.objectContaining({ queryParams: { sort: 'total', dir: 'desc' }, replaceUrl: true })
-    );
+    expect(replaceState).toHaveBeenCalledWith('/hours?sort=total&dir=desc');
   });
 
   it('clears both params once the sort is reset', async () => {
-    const { fixture, navigate, page } = setUp({ sort: 'total', dir: 'desc' });
+    const { fixture, replaceState, page } = setUp({ sort: 'total', dir: 'desc' });
     await fixture.whenStable();
     expect(page.vueModifiee()).toBe(true);
-    navigate.mockClear();
+    replaceState.mockClear();
 
     page.reinitialiserVue();
     await fixture.whenStable();
 
-    expect(navigate).toHaveBeenLastCalledWith([], expect.objectContaining({ queryParams: { sort: null, dir: null } }));
+    expect(replaceState).toHaveBeenLastCalledWith('/hours');
   });
 });

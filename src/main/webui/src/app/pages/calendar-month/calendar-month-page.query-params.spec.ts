@@ -4,8 +4,9 @@
 // tests.
 
 import { Signal, provideZonelessChangeDetection } from '@angular/core';
+import { Location } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
+import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { CalendarMonthPage } from './calendar-month-page';
@@ -21,17 +22,17 @@ type PageInternals = {
 };
 
 function setUp(queryParams: Record<string, string>) {
-  const navigate = vi.fn(async () => true);
+  const replaceState = vi.fn();
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
       { provide: PlanningStateService, useValue: { loadForDisplay: vi.fn(async () => ({ animateurs: [], postes: [] })) } },
-      { provide: Router, useValue: { navigate } },
+      { provide: Location, useValue: { path: () => '/calendar', replaceState } },
       { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } } }
     ]
   });
   const fixture = TestBed.createComponent(CalendarMonthPage);
-  return { fixture, navigate, page: fixture.componentInstance as unknown as PageInternals };
+  return { fixture, replaceState, page: fixture.componentInstance as unknown as PageInternals };
 }
 
 describe('CalendarMonthPage query-param sync', () => {
@@ -66,33 +67,25 @@ describe('CalendarMonthPage query-param sync', () => {
   });
 
   it('writes the current state back to the URL (replacing, not pushing history)', async () => {
-    const { fixture, navigate } = setUp({ month: '2026-07', date: '2026-07-10', animateur: 'A1', stand: 'S1' });
+    const { fixture, replaceState } = setUp({ month: '2026-07', date: '2026-07-10', animateur: 'A1', stand: 'S1' });
 
     fixture.detectChanges();
     await fixture.whenStable();
 
-    expect(navigate).toHaveBeenCalledWith(
-      [],
-      expect.objectContaining({
-        queryParams: { month: '2026-07', date: '2026-07-10', animateur: 'A1', stand: 'S1' },
-        replaceUrl: true
-      })
-    );
+    expect(replaceState).toHaveBeenCalledWith('/calendar?month=2026-07&date=2026-07-10&animateur=A1&stand=S1');
   });
 
   it('clears animateur/stand from the URL (null, not "ALL") once filters are reset', async () => {
-    const { fixture, navigate, page } = setUp({ animateur: 'A1', stand: 'S1' });
+    const { fixture, replaceState, page } = setUp({ animateur: 'A1', stand: 'S1' });
     fixture.detectChanges();
     await fixture.whenStable();
-    navigate.mockClear();
+    replaceState.mockClear();
 
     page.resetFilters();
     fixture.detectChanges();
     await fixture.whenStable();
 
-    expect(navigate).toHaveBeenLastCalledWith(
-      [],
-      expect.objectContaining({ queryParams: expect.objectContaining({ animateur: null, stand: null }) })
-    );
+    expect(replaceState).toHaveBeenLastCalledWith(expect.not.stringContaining('animateur='));
+    expect(replaceState).toHaveBeenLastCalledWith(expect.not.stringContaining('stand='));
   });
 });

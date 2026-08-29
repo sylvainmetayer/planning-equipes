@@ -35,12 +35,13 @@ scénario versionné de `src/main/resources/scenarios/`.
 | [0009](0009-edition-unique-porteur-de-variantes.md) | L'édition est l'unique porteur de variantes | Accepté · révise 0001, remplace 0008 |
 | [0010](0010-contraintes-ad-hoc-contradiction-plutot-que-budget.md) | Contraintes ad hoc : détecter la contradiction, pas plafonner le nombre | Accepté |
 | [0011](0011-publier-plutot-qu-envoyer-a-tous.md) | Publier, plutôt qu'envoyer à tous : le planning publié est distinct du planning de travail | Accepté |
-| [0012](0012-etat-de-vue-dans-l-url.md) | L'état de vue d'un écran est porté par l'URL | Accepté |
+| [0012](0012-etat-de-vue-dans-l-url.md) | L'état de vue d'un écran est porté par l'URL | Accepté · précisé par 0018 |
 | [0013](0013-diagnostic-par-le-score-director.md) | Diagnostiquer par le score director, sans mode dégradé | Accepté · remplace 0002 |
 | [0014](0014-analyser-le-plan-persiste.md) | Analyser le plan persisté, plutôt que résoudre pour jeter | Accepté · prolonge 0013 |
 | [0015](0015-sauvegarde-par-pg-dump-restauration-hors-application.md) | Sauvegarder par `pg_dump`, restaurer hors de l'application | Accepté |
 | [0016](0016-purge-manuelle-avant-automatisation.md) | Purger à la main d'abord, automatiser quand la charge le justifie | Accepté |
 | [0017](0017-fragilite-le-ninja-est-un-renfort-pas-un-specialiste.md) | Fragilité : le ninja est un renfort, jamais un spécialiste | Accepté · prolonge 0005 |
+| [0018](0018-ecrire-l-url-de-vue-sans-naviguer.md) | Écrire l'URL de vue sans naviguer | Accepté · précise 0012 |
 
 **0002** et **0013** se lisent ensemble : la première pose le blocage du
 diagnostic par l'édition du solveur et retient deux modes de qualité inégale,

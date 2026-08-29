@@ -646,6 +646,7 @@
   "ouvertures.anomalies.hint": "None of these blocks a solve, but each is the usual symptom of an entry that does not do what it looks like.",
   "aide.views.term.fragilite": "Planning fragility",
   "aide.views.def.fragilite": "Who is irreplaceable. For each person, the slots that would drop below the minimum head count if they withdraw — and, the decisive column, the ones nobody else could take over that day. The second view lists the stands held by a single person competent for their game categories, which is what tells you where to recruit or train. Polyvalent “ninja” staff are counted separately, as backups: they can step in anywhere, but a stand only they can hold still has no specialist. Nothing is recomputed by the solver: the screen reads the saved plan.",
+  "fragilite.essai": "This screen ships on trial: it may be withdrawn if it proves of no use. What it shows is accurate all the same — tell us whether it helps.",
   "fragilite.title": "Planning fragility",
   "fragilite.subtitle": "Who is a single point of failure: the seats that would drop below the minimum head count if somebody withdraws, and the stands held by a single competent person. Computed on the persisted plan, without running the solver.",
   "fragilite.reset": "Reset the view",

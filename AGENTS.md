@@ -293,7 +293,9 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `core/view-query-params.ts`: a refresh restores the screen and the link is
   shareable, with no schema and no browser storage. The default of a control is
   the *absence* of its param, reading is tolerant (an unknown value falls back
-  to the default rather than failing the page), writing uses `replaceUrl`, and
+  to the default rather than failing the page), writing replaces the history
+  entry through `Location.replaceState` and **never navigates** — a router
+  navigation per keystroke costs the filter field its focus — and
   every such screen carries a one-action reset. See
   `docs/decisions/0012-etat-de-vue-dans-l-url.md`.
 - The "a solver is running" state is never stored in the browser
