@@ -114,7 +114,16 @@ export class DebugPage {
     // edition's name — the very thing that is about to be emptied. Without a
     // loaded edition the name is unknown, and a keyword takes its place rather
     // than a confirmation naming an edition we cannot vouch for.
-    const nomEdition = this.editions.courant()?.nom ?? null;
+    // `admin-shell` recharge le store sans attendre, donc un lien direct vers
+    // cette page peut arriver ici avant la réponse : on attend plutôt que de
+    // retomber sur un mot-clé de cinq lettres pour une action qui supprime une
+    // vraie édition. `trim() || null` et non `?? null` : un nom vide ferait
+    // choisir le message générique tout en exigeant une valeur vide, que
+    // `PromptDialog` refuse — le reset deviendrait inatteignable.
+    if (this.editions.courant() === null) {
+      await this.editions.reload();
+    }
+    const nomEdition = this.editions.courant()?.nom?.trim() || null;
     const confirmed = await this.recopie.demander({
       title: $localize`:@@dataSetup.resetConfirmTitle:Vider la base de données ?`,
       message: nomEdition

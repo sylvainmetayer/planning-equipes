@@ -31,6 +31,7 @@ describe('DebugPage reset', () => {
   const instantane = { proposer: vi.fn() };
   const notifications = { notify: vi.fn() };
   const courant = vi.fn<() => Edition | null>();
+  const rechargerEditions = vi.fn(async () => undefined);
 
   beforeEach(() => {
     api.get.mockReset();
@@ -50,7 +51,7 @@ describe('DebugPage reset', () => {
       providers: [
         provideZonelessChangeDetection(),
         { provide: ApiService, useValue: api },
-        { provide: EditionStore, useValue: { courant } },
+        { provide: EditionStore, useValue: { courant, reload: rechargerEditions } },
         { provide: NotificationService, useValue: notifications },
         { provide: ConfirmationRecopie, useValue: recopie },
         { provide: InstantaneAvantAction, useValue: instantane },
@@ -104,13 +105,35 @@ describe('DebugPage reset', () => {
     expect(demande().message).toContain('Les autres éditions ne sont pas touchées');
   });
 
-  it('falls back to a keyword when no edition is loaded, without naming one', async () => {
+  // Le shell recharge les éditions sans attendre : arriver ici par un lien
+  // direct peut précéder la réponse. On recharge plutôt que de dégrader la
+  // recopie, sans quoi cinq lettres suffiraient à vider une vraie édition.
+  it('reloads the editions before asking, rather than degrading the transcription', async () => {
+    courant.mockReturnValueOnce(null).mockReturnValue({ id: 'e1', nom: 'Année 2026' } as Edition);
+
+    await page().onResetDatabase();
+
+    expect(rechargerEditions).toHaveBeenCalled();
+    expect(demande().valeurAttendue).toBe('Année 2026');
+  });
+
+  it('falls back to a keyword when the edition stays unknown after the reload', async () => {
     courant.mockReturnValue(null);
 
     await page().onResetDatabase();
 
     expect(demande().valeurAttendue).toBe(MOT_CLE_VIDER);
     expect(demande().message).toContain("l'édition courante");
+  });
+
+  // Un nom vide ferait exiger une valeur vide, que PromptDialog refuse : le
+  // reset deviendrait inatteignable. Un dump rejoué à la main peut le produire.
+  it('treats a blank edition name as no name at all', async () => {
+    courant.mockReturnValue({ id: 'e1', nom: '   ' } as Edition);
+
+    await page().onResetDatabase();
+
+    expect(demande().valeurAttendue).toBe(MOT_CLE_VIDER);
   });
 
   // The solver lock comes first: no point asking for a transcription of

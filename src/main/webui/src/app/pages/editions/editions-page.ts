@@ -113,7 +113,10 @@ export class EditionsPage {
     const saisi = await PromptDialog.ask(this.dialog, {
       title: $localize`:@@editions.delete.title:Supprimer l'édition ${edition.nom}:nom: ?`,
       label: $localize`:@@editions.delete.typeName:Saisissez « ${edition.nom}:nom: » pour confirmer`,
-      confirmLabel: $localize`:@@common.delete:Supprimer`
+      confirmLabel: $localize`:@@common.delete:Supprimer`,
+      // Supprimer une édition entière est plus destructeur que vider la base :
+      // le bouton se lit comme tel, au même titre que les deux autres recopies.
+      danger: true
     });
     if (saisi === null) {
       return;
