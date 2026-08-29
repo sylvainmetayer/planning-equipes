@@ -13,6 +13,7 @@ import {
   chargeRestante,
   dejaDeService,
   heure,
+  heureDe,
   libelleCreneau,
   nomDuCandidat,
   plage,
@@ -24,7 +25,7 @@ import {
 function etat(overrides: Partial<EtatJourJ> = {}): EtatJourJ {
   return {
     date: '2026-07-08',
-    heureReference: '13:30:00',
+    maintenant: '2026-07-08T13:30:00',
     creneauxDuJour: 4,
     creneauxRestants: [],
     animateursDeService: [],
@@ -89,6 +90,12 @@ describe('heure / plage', () => {
     expect(heure(null)).toBe('');
     expect(plage('14:00:00', '18:00:00')).toBe('14:00 – 18:00');
   });
+
+  /** The reference moment is an instant, since a journée can run past midnight. */
+  it('reads the time of day off a full instant', () => {
+    expect(heureDe('2026-07-09T01:00:00')).toBe('01:00');
+    expect(heureDe(null)).toBe('');
+  });
 });
 
 describe('resumeDuJour', () => {
@@ -100,7 +107,17 @@ describe('resumeDuJour', () => {
   });
 
   it('says the day is over rather than showing a zero', () => {
-    expect(resumeDuJour(etat())).toContain('terminée');
+    expect(resumeDuJour(etat({ creneauxDuJour: 4 }))).toContain('terminée');
+  });
+
+  /**
+   * A date carrying no timeslot has no first one, so no journée at all. Calling
+   * that "over" would be a lie the operator acts on.
+   */
+  it('tells an empty journée from a finished one', () => {
+    const texte = resumeDuJour(etat({ creneauxDuJour: 0 }));
+    expect(texte).toContain('Aucun créneau');
+    expect(texte).not.toContain('terminée');
   });
 
   it('says nothing before the state has loaded', () => {

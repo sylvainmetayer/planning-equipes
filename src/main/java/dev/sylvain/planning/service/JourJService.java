@@ -85,21 +85,21 @@ public class JourJService {
     /* -------------------------------- Reads -------------------------------- */
 
     /**
-     * What the screen shows: the timeslots of {@code date} still ahead of
-     * {@code heure}, who is on duty over them, which seats are unstaffed, and
-     * the absences already recorded for that day.
+     * What the screen shows: the timeslots of the journée still ahead of the
+     * reference moment, who is on duty over them, which seats are unstaffed, and
+     * the absences already recorded for that journée.
      *
-     * @param date  {@code null} means today
-     * @param heure {@code null} means now when {@code date} is today, and the
-     *              start of the day otherwise — reading another day is reading
-     *              all of it
+     * @param date       {@code null} resolves the journée under way — see
+     *                   {@link #journee}
+     * @param maintenant {@code null} means the server's own clock
      */
-    public EtatJourJ etat(LocalDate date, LocalTime heure) {
-        LocalDate jour = date != null ? date : clock.today();
-        LocalTime reference = referenceTime(jour, heure);
-        LocalDateTime maintenant = jour.atTime(reference);
+    public EtatJourJ etat(LocalDate date, LocalDateTime maintenantDemande) {
+        List<Creneau> tousLesCreneaux = referenceDataService.listCreneaux();
+        Journee journee = journee(tousLesCreneaux, date, maintenantDemande);
+        LocalDate jour = journee.jour();
+        LocalDateTime maintenant = journee.maintenant();
         PlanningEvenement plan = persistenceService.loadPersistedPlanning();
-        List<Creneau> creneauxDuJour = creneauxOf(referenceDataService.listCreneaux(), jour);
+        List<Creneau> creneauxDuJour = creneauxOf(tousLesCreneaux, jour);
         List<Creneau> restants = creneauxDuJour.stream()
                 .filter(creneau -> isStillAhead(creneau, maintenant))
                 .toList();
@@ -123,7 +123,7 @@ public class JourJService {
                 .map(AbsenceJourJ::animateurId)
                 .collect(Collectors.toSet());
 
-        return new EtatJourJ(jour, reference, creneauxDuJour.size(),
+        return new EtatJourJ(jour, maintenant, creneauxDuJour.size(),
                 restants.stream().map(creneau -> creneauJourJ(creneau, maintenant)).toList(),
                 animateursAffectes(postesRestants, identites, absentIds),
                 postesAPourvoir(postesRestants),
@@ -160,17 +160,25 @@ public class JourJService {
      * the next solve is exactly the failure mode
      * {@link ContrainteAdHocContradictions} exists to replace.</p>
      */
-    public AbsenceMarquee recordAbsence(String animateurId, String raison, LocalDate date, LocalTime heure) {
-        LocalDate jour = date != null ? date : clock.today();
-        LocalTime reference = referenceTime(jour, heure);
+    public AbsenceMarquee recordAbsence(String animateurId, String raison, LocalDate date,
+            LocalDateTime maintenantDemande) {
+        List<Creneau> tousLesCreneaux = referenceDataService.listCreneaux();
+        Journee journee = journee(tousLesCreneaux, date, maintenantDemande);
+        LocalDate jour = journee.jour();
+        LocalDateTime maintenant = journee.maintenant();
         Animateur animateur = findAnimateur(animateurId, true);
 
-        List<Creneau> restants = creneauxOf(referenceDataService.listCreneaux(), jour).stream()
-                .filter(creneau -> isStillAhead(creneau, jour.atTime(reference)))
+        List<Creneau> duJour = creneauxOf(tousLesCreneaux, jour);
+        if (duJour.isEmpty()) {
+            throw new BusinessError.Invalid("Aucun créneau n'est programmé le " + jour
+                    + " : il n'y a pas de journée à couvrir.");
+        }
+        List<Creneau> restants = duJour.stream()
+                .filter(creneau -> isStillAhead(creneau, maintenant))
                 .toList();
         if (restants.isEmpty()) {
             throw new BusinessError.Invalid("Aucun créneau ne reste à couvrir le " + jour + " après "
-                    + reference + " : il n'y a rien à libérer.");
+                    + maintenant.toLocalTime() + " : il n'y a rien à libérer.");
         }
 
         PlanningEvenement plan = persistenceService.loadPersistedPlanning();
@@ -183,11 +191,11 @@ public class JourJService {
                 .toList();
         refuseLockedSeats(aLiberer);
 
-        String motif = motif(raison, jour, reference);
-        Instant maintenant = Instant.now();
+        String motif = motif(raison, jour, maintenant);
+        Instant ecritLe = Instant.now();
         String recordedBy = author();
         List<ContrainteAdHoc> exceptions = restants.stream()
-                .map(creneau -> exception(animateur, creneau, motif, recordedBy, maintenant))
+                .map(creneau -> exception(animateur, creneau, motif, recordedBy, ecritLe))
                 .toList();
         // Refuses the whole set rather than the first offender, and writes
         // nothing until every one of them is accepted.
@@ -228,7 +236,9 @@ public class JourJService {
      * @return how many exceptions were removed
      */
     public int cancelAbsence(String animateurId, LocalDate date, Long creneauId) {
-        LocalDate jour = date != null ? date : clock.today();
+        LocalDate jour = date != null
+                ? date
+                : journee(referenceDataService.listCreneaux(), null, null).jour();
         findAnimateur(animateurId, false);
         Map<Long, Creneau> creneaux = creneauxById(creneauxOf(referenceDataService.listCreneaux(), jour));
         List<ContrainteAdHoc> aSupprimer = referenceDataService.listContraintesAdHoc().stream()
@@ -250,18 +260,69 @@ public class JourJService {
     /* ------------------------------- Internals ----------------------------- */
 
     /**
-     * Reading a day other than today reads all of it: "now" only means
-     * something on the day it belongs to.
+     * Which journée is being looked at, and from which moment "remaining" is
+     * counted. The two are kept apart on purpose: at one in the morning they sit
+     * on different calendar dates.
      *
-     * <p>"Today" is {@link JourJClock#today()}, which a developer may have
-     * frozen — the point of that seam being that this very branch can be
-     * exercised out of season.</p>
+     * <p><b>A journée starts at its first timeslot.</b> Not at midnight, and not
+     * at some configured hour: a festival day begins when the first stand opens.
+     * So the journée under way at moment {@code T} is the latest one whose first
+     * timeslot has already started and whose last one has not ended — which is
+     * how, at one in the morning, the answer is still yesterday's date while its
+     * 22:00-02:00 shift runs.</p>
+     *
+     * <p>When nothing is running — between two days, or on a date carrying no
+     * timeslot at all — the answer falls back to the calendar date. There is no
+     * journée to name, and inventing one would be worse than saying "nothing is
+     * scheduled".</p>
+     *
+     * @param date       names the journée outright, for a rehearsal or a test
+     * @param maintenant names the moment outright, same reason; it also names the
+     *                   journée when {@code date} does not
      */
-    private LocalTime referenceTime(LocalDate jour, LocalTime heure) {
-        if (heure != null) {
-            return heure;
+    private Journee journee(List<Creneau> creneaux, LocalDate date, LocalDateTime maintenant) {
+        LocalDateTime horloge = maintenant != null ? maintenant : clock.today().atTime(clock.now());
+        LocalDate enCours = currentDay(creneaux, horloge);
+        LocalDate jour = date != null ? date : enCours;
+        if (maintenant != null || jour.equals(enCours)) {
+            return new Journee(jour, horloge);
         }
-        return jour.equals(clock.today()) ? clock.now() : LocalTime.MIN;
+        // A journée nobody is standing in is read whole: an instant before its
+        // first timeslot leaves all of them ahead.
+        return new Journee(jour, jour.atStartOfDay());
+    }
+
+    /** The journée being looked at, and the moment it is read from. */
+    private record Journee(LocalDate jour, LocalDateTime maintenant) {
+    }
+
+    /**
+     * The journée under way at {@code maintenant}, or the calendar date when
+     * none is. See {@link #journee} for why the boundary is the first timeslot.
+     */
+    private static LocalDate currentDay(List<Creneau> creneaux, LocalDateTime maintenant) {
+        return creneaux.stream()
+                .filter(JourJService::horaireConnu)
+                .collect(Collectors.groupingBy(Creneau::getDate))
+                .entrySet().stream()
+                .filter(journee -> isUnderWay(journee.getValue(), maintenant))
+                .map(Map.Entry::getKey)
+                .max(Comparator.naturalOrder())
+                .orElseGet(maintenant::toLocalDate);
+    }
+
+    /** Whether that day's first timeslot has started and its last one has not ended. */
+    private static boolean isUnderWay(List<Creneau> duJour, LocalDateTime maintenant) {
+        LocalDateTime debut = duJour.stream().map(creneau -> window(creneau)[0])
+                .min(Comparator.naturalOrder()).orElseThrow();
+        LocalDateTime fin = duJour.stream().map(creneau -> window(creneau)[1])
+                .max(Comparator.naturalOrder()).orElseThrow();
+        return !debut.isAfter(maintenant) && fin.isAfter(maintenant);
+    }
+
+    private static boolean horaireConnu(Creneau creneau) {
+        return creneau.getId() != null && creneau.getDate() != null
+                && creneau.getHeureDebut() != null && creneau.getHeureFin() != null;
     }
 
     /**
@@ -288,34 +349,22 @@ public class JourJService {
     }
 
     /**
-     * The timeslots of one operating day: every slot whose window <b>overlaps
-     * that calendar day</b>, not merely those whose {@code date} column equals
-     * it.
+     * The timeslots of one journée: those the journée <b>opens</b>, which is to
+     * say those whose start falls on that date.
      *
-     * <p>The difference is the night shift. A slot opened at 22:00 and closing
-     * at 02:00 carries yesterday's date, and at one in the morning it is the one
-     * running right now — the very slot somebody may have failed to show up for.
-     * Keyed on the date column alone it was invisible here: absent from the
-     * remaining slots, from the seats to free, and from the scope of an absence,
-     * so the person who was not there kept their seat and no unavailability
-     * covered it.</p>
-     *
-     * <p>Ordered by the start of that window rather than by the start hour, so
-     * yesterday's 22:00 slot sorts before this morning's 09:00 one instead of
-     * landing at the bottom of the list.</p>
+     * <p>A 22:00-02:00 shift therefore belongs to the evening that opens it and
+     * to that evening alone — it does not split itself over two journées. What
+     * carries it past midnight is not membership but
+     * {@link #isStillAhead(Creneau, LocalDateTime)}, which compares the end of
+     * its window: at one in the morning it is the timeslot of yesterday's
+     * journée that is still running, and {@link #currentDay} is what says the
+     * journée being looked at is still yesterday's.</p>
      */
     private static List<Creneau> creneauxOf(List<Creneau> creneaux, LocalDate jour) {
-        LocalDateTime debutDuJour = jour.atStartOfDay();
-        LocalDateTime finDuJour = jour.plusDays(1).atStartOfDay();
         return creneaux.stream()
-                .filter(creneau -> creneau.getId() != null && creneau.getDate() != null
-                        && creneau.getHeureDebut() != null && creneau.getHeureFin() != null)
-                .filter(creneau -> {
-                    LocalDateTime[] fenetre = window(creneau);
-                    return fenetre[0].isBefore(finDuJour) && fenetre[1].isAfter(debutDuJour);
-                })
-                .sorted(Comparator.comparing((Creneau creneau) -> window(creneau)[0])
-                        .thenComparing(Creneau::getId))
+                .filter(JourJService::horaireConnu)
+                .filter(creneau -> jour.equals(creneau.getDate()))
+                .sorted(Comparator.comparing(Creneau::getHeureDebut).thenComparing(Creneau::getId))
                 .toList();
     }
 
@@ -357,8 +406,8 @@ public class JourJService {
         }
     }
 
-    private static String motif(String raison, LocalDate jour, LocalTime reference) {
-        String base = "Absent le " + jour + " à partir de " + reference + " (mode jour J)";
+    private static String motif(String raison, LocalDate jour, LocalDateTime maintenant) {
+        String base = "Absent le " + jour + " à partir de " + maintenant.toLocalTime() + " (mode jour J)";
         return raison == null || raison.isBlank() ? base : base + " — " + raison.trim();
     }
 
@@ -544,9 +593,13 @@ public class JourJService {
     /**
      * The whole screen in one answer.
      *
-     * @param heureReference  the moment "remaining" is counted from, echoed back
+     * @param maintenant      the moment "remaining" is counted from, echoed back
      *                        so the screen states it rather than assuming the
-     *                        phone's clock matches the server's
+     *                        phone's clock matches the server's. A full instant,
+     *                        not an hour: at one in the morning it sits on the
+     *                        calendar date <em>after</em> {@code date}, since a
+     *                        journée running past midnight is still that
+     *                        journée
      * @param creneauxDuJour  how many timeslots the day holds in all — the
      *                        denominator that says how much of it is already
      *                        behind
@@ -555,7 +608,7 @@ public class JourJService {
      *                        {@code animateursDeService}, and they still have to
      *                        be named on the button that hands them a seat
      */
-    public record EtatJourJ(LocalDate date, LocalTime heureReference, int creneauxDuJour,
+    public record EtatJourJ(LocalDate date, LocalDateTime maintenant, int creneauxDuJour,
             List<CreneauJourJ> creneauxRestants, List<AnimateurAffecte> animateursDeService,
             List<PosteAPourvoir> postesAPourvoir, List<AbsenceJourJ> absences,
             List<AnimateurNomme> animateurs) {

@@ -439,6 +439,10 @@ export function buildHelpSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
+          text: $localize`:@@aide.jourJ.journee:La journée commence à son premier créneau, pas à minuit : un festival commence quand le premier stand ouvre. Une soirée qui se prolonge après minuit reste donc la même journée, et à une heure du matin l'écran affiche encore celle de la veille tant que son dernier créneau tourne. Un créneau de 22h à 2h appartient au soir qui l'ouvre, et à lui seul. Quand plus rien ne tourne — entre deux journées, ou sur une date sans aucun créneau programmé — l'écran le dit et n'invente pas de journée.`
+        },
+        {
+          kind: 'paragraph',
           text: $localize`:@@aide.jourJ.refus:L'absence est appliquée en entier ou pas du tout. Elle est refusée, sans rien écrire, si elle contredit une affectation forcée sur l'un des créneaux visés — le message nomme les deux ajustements — ou si l'un des postes à libérer est verrouillé : levez le verrou d'abord.`
         },
         {

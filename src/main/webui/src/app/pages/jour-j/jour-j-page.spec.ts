@@ -20,7 +20,7 @@ import { JourJPage } from './jour-j-page';
 function etat(overrides: Partial<EtatJourJ> = {}): EtatJourJ {
   return {
     date: '2026-07-08',
-    heureReference: '13:30:00',
+    maintenant: '2026-07-08T13:30:00',
     creneauxDuJour: 2,
     creneauxRestants: [
       { id: 2, date: '2026-07-08', heureDebut: '14:00:00', heureFin: '18:00:00', enCours: false }

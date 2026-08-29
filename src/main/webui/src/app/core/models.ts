@@ -1498,9 +1498,14 @@ export interface AnimateurNomme {
 
 /** `/api/jour-j`: the whole event-day screen in one answer. */
 export interface EtatJourJ {
+  /** The journée being looked at — it starts at its first timeslot, not at midnight. */
   date: string;
-  /** The moment "remaining" is counted from, as the *server* reads its clock. */
-  heureReference: string;
+  /**
+   * The moment "remaining" is counted from, as the *server* reads its clock. A
+   * full instant, not an hour: a journée running past midnight puts it on the
+   * calendar date *after* `date`.
+   */
+  maintenant: string;
   creneauxDuJour: number;
   creneauxRestants: CreneauJourJ[];
   animateursDeService: AnimateurAffecte[];

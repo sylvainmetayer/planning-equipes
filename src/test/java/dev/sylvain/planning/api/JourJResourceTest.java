@@ -23,7 +23,7 @@ import io.restassured.path.json.JsonPath;
  * The event-day screen (issue #297) end to end, over {@code scenario.yml}: one
  * day (2026-07-08), a morning slot 09:00-13:00 and an afternoon one 14:00-18:00.
  *
- * <p>Every test states the moment it reads the day from ({@code heure=…})
+ * <p>Every test states the moment it reads the day from ({@code maintenant=…})
  * rather than depending on the wall clock: the whole feature is "what is still
  * ahead", so a test whose reference time is the machine's would assert
  * something different every afternoon.</p>
@@ -57,7 +57,7 @@ class JourJResourceTest {
         JsonPath etat = etat(ENTRE_LES_DEUX);
 
         assertThat(etat.getString("date")).isEqualTo(JOUR);
-        assertThat(etat.getString("heureReference")).startsWith(ENTRE_LES_DEUX);
+        assertThat(etat.getString("maintenant")).isEqualTo(JOUR + "T" + ENTRE_LES_DEUX + ":00");
         assertThat(etat.getInt("creneauxDuJour")).isEqualTo(2);
         assertThat(etat.getList("creneauxRestants.heureDebut", String.class))
                 .singleElement().asString().startsWith("14:00");
@@ -165,7 +165,7 @@ class JourJResourceTest {
 
         given().contentType("application/json")
                 .body("{\"animateurId\":\"ANIMATEUR-INEXISTANT\"}")
-                .when().post("/api/jour-j/absences?date=" + JOUR + "&heure=" + ENTRE_LES_DEUX)
+                .when().post("/api/jour-j/absences?date=" + JOUR + "&maintenant=" + JOUR + "T" + ENTRE_LES_DEUX)
                 .then().statusCode(400).body("message", notNullValue());
         assertThat(forcedUnavailabilities()).isEmpty();
     }
@@ -193,7 +193,7 @@ class JourJResourceTest {
 
         given().contentType("application/json")
                 .body("{\"animateurId\":\"" + absent + "\"}")
-                .when().post("/api/jour-j/absences?date=" + JOUR + "&heure=" + ENTRE_LES_DEUX)
+                .when().post("/api/jour-j/absences?date=" + JOUR + "&maintenant=" + JOUR + "T" + ENTRE_LES_DEUX)
                 .then().statusCode(400)
                 // Both exceptions are named: the one already recorded, and the
                 // one the absence would have written.
@@ -217,7 +217,7 @@ class JourJResourceTest {
 
         given().contentType("application/json")
                 .body("{\"animateurId\":\"" + absent + "\"}")
-                .when().post("/api/jour-j/absences?date=" + JOUR + "&heure=" + ENTRE_LES_DEUX)
+                .when().post("/api/jour-j/absences?date=" + JOUR + "&maintenant=" + JOUR + "T" + ENTRE_LES_DEUX)
                 .then().statusCode(400).body("message", containsString(standVerrouille));
 
         assertThat(forcedUnavailabilities()).isEmpty();
@@ -304,7 +304,7 @@ class JourJResourceTest {
 
     @Test
     void aMalformedReferenceTimeIsA400() {
-        given().when().get("/api/jour-j?date=" + JOUR + "&heure=midi")
+        given().when().get("/api/jour-j?date=" + JOUR + "&maintenant=midi")
                 .then().statusCode(400).body("message", notNullValue());
     }
 
@@ -392,53 +392,114 @@ class JourJResourceTest {
      * may have failed to show up for. Keyed on the date column it was invisible
      * to this screen entirely.
      */
+    /**
+     * A journée starts at its first timeslot. At one in the morning the journée
+     * under way is therefore still the one that opened the previous morning, and
+     * the screen names it without being told which day to look at.
+     */
     @Test
-    void aShiftCrossingMidnightBelongsToTheDayItRunsInto() {
+    void atOneInTheMorningTheJourneeIsStillTheOneThatOpenedYesterday() {
         solveScenarioWithNightShift();
 
-        JsonPath etat = given().when().get("/api/jour-j?date=2026-07-09&heure=01:00")
+        JsonPath etat = given().when().get("/api/jour-j?maintenant=2026-07-09T01:00")
                 .then().statusCode(200).extract().jsonPath();
 
+        assertThat(etat.getString("date")).as("the journée that opened at 09:00 yesterday")
+                .isEqualTo(JOUR);
         assertThat(etat.getList("creneauxRestants.id", Integer.class))
                 .as("the night shift is what is running at 01:00")
                 .containsExactly(CRENEAU_NUIT);
         assertThat(etat.getBoolean("creneauxRestants[0].enCours")).isTrue();
     }
 
-    /** And it drops out again once it is really over. */
+    /**
+     * The night shift belongs to the evening that opens it and to that evening
+     * alone: it does not show up again on the next calendar day.
+     */
     @Test
-    void aShiftCrossingMidnightIsGoneOnceItHasEnded() {
+    void aShiftCrossingMidnightDoesNotSplitOverTwoJournees() {
         solveScenarioWithNightShift();
 
-        JsonPath etat = given().when().get("/api/jour-j?date=2026-07-09&heure=03:00")
+        JsonPath etat = given().when().get("/api/jour-j?date=2026-07-09")
                 .then().statusCode(200).extract().jsonPath();
 
+        assertThat(etat.getInt("creneauxDuJour")).isZero();
         assertThat(etat.getList("creneauxRestants")).isEmpty();
     }
 
-    /** It is part of the day it runs into, so an absence marked then covers it. */
+    /** Once the last timeslot has ended, no journée is under way: the calendar date answers. */
+    @Test
+    void onceTheLastTimeslotHasEndedTheCalendarDateAnswers() {
+        solveScenarioWithNightShift();
+
+        JsonPath etat = given().when().get("/api/jour-j?maintenant=2026-07-09T03:00")
+                .then().statusCode(200).extract().jsonPath();
+
+        assertThat(etat.getString("date")).isEqualTo("2026-07-09");
+        assertThat(etat.getInt("creneauxDuJour")).isZero();
+    }
+
+    /** Before the first timeslot opens, nothing is under way either. */
+    @Test
+    void beforeTheFirstTimeslotOpensTheCalendarDateAnswers() {
+        solveScenarioWithNightShift();
+
+        JsonPath etat = given().when().get("/api/jour-j?maintenant=" + JOUR + "T06:00")
+                .then().statusCode(200).extract().jsonPath();
+
+        assertThat(etat.getString("date")).isEqualTo(JOUR);
+        assertThat(etat.getInt("creneauxDuJour")).isEqualTo(3);
+        assertThat(etat.getList("creneauxRestants")).hasSize(3);
+    }
+
+    /** It is still the journée's own timeslot, so an absence marked at 01:00 covers it. */
     @Test
     void anAbsenceAtOneInTheMorningCoversTheRunningNightShift() {
         solveScenarioWithNightShift();
 
         JsonPath marquee = given().contentType("application/json")
                 .body("{\"animateurId\":\"A1\"}")
-                .when().post("/api/jour-j/absences?date=2026-07-09&heure=01:00")
+                .when().post("/api/jour-j/absences?maintenant=2026-07-09T01:00")
                 .then().statusCode(200).extract().jsonPath();
 
         assertThat(marquee.getList("entrees.creneauId", Integer.class)).containsExactly(CRENEAU_NUIT);
     }
 
-    /** On its own date, the night shift is still ahead at 23:00 and still counted. */
+    /** On the evening it opens, it is the last timeslot still ahead. */
     @Test
-    void aShiftCrossingMidnightAlsoBelongsToTheDayItStartsOn() {
+    void aShiftCrossingMidnightIsTheLastOneAheadOnItsOwnEvening() {
         solveScenarioWithNightShift();
 
-        JsonPath etat = given().when().get("/api/jour-j?date=" + JOUR + "&heure=23:00")
+        JsonPath etat = given().when().get("/api/jour-j?maintenant=" + JOUR + "T23:00")
                 .then().statusCode(200).extract().jsonPath();
 
+        assertThat(etat.getString("date")).isEqualTo(JOUR);
         assertThat(etat.getList("creneauxRestants.id", Integer.class)).containsExactly(CRENEAU_NUIT);
         assertThat(etat.getInt("creneauxDuJour")).isEqualTo(3);
+    }
+
+    /**
+     * A date carrying no timeslot has no first one, so no journée. The screen
+     * answers an empty day rather than failing, and marking somebody absent on it
+     * is refused with a sentence saying why.
+     */
+    @Test
+    void aDateWithNoTimeslotIsAnEmptyJournee() {
+        solveScenario();
+
+        JsonPath etat = given().when().get("/api/jour-j?date=2026-12-25")
+                .then().statusCode(200).extract().jsonPath();
+
+        assertThat(etat.getString("date")).isEqualTo("2026-12-25");
+        assertThat(etat.getInt("creneauxDuJour")).isZero();
+        assertThat(etat.getList("creneauxRestants")).isEmpty();
+        assertThat(etat.getList("animateursDeService")).isEmpty();
+        assertThat(etat.getList("postesAPourvoir")).isEmpty();
+
+        given().contentType("application/json").body("{\"animateurId\":\"A1\"}")
+                .when().post("/api/jour-j/absences?date=2026-12-25")
+                .then().statusCode(400)
+                .body("message", containsString("Aucun créneau n'est programmé"));
     }
 
     /** Freeing several seats at once is one gesture, and it frees all of them. */
@@ -487,8 +548,9 @@ class JourJResourceTest {
                 .when().post("/api/solve?seconds=3").then().statusCode(200);
     }
 
+    /** Reads the journée of {@link #JOUR} at that wall-clock time on it. */
     private static JsonPath etat(String heure) {
-        return given().when().get("/api/jour-j?date=" + JOUR + "&heure=" + heure)
+        return given().when().get("/api/jour-j?date=" + JOUR + "&maintenant=" + JOUR + "T" + heure)
                 .then().statusCode(200).extract().jsonPath();
     }
 
@@ -497,7 +559,7 @@ class JourJResourceTest {
                 ? "{\"animateurId\":\"" + animateurId + "\"}"
                 : "{\"animateurId\":\"" + animateurId + "\",\"raison\":\"" + raison + "\"}";
         return given().contentType("application/json").body(body)
-                .when().post("/api/jour-j/absences?date=" + JOUR + "&heure=" + heure)
+                .when().post("/api/jour-j/absences?date=" + JOUR + "&maintenant=" + JOUR + "T" + heure)
                 .then().statusCode(statut).extract().jsonPath();
     }
 

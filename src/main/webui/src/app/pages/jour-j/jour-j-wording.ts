@@ -20,25 +20,40 @@ export function heure(brut: string | null | undefined): string {
   return brut ? brut.slice(0, 5) : '';
 }
 
+/**
+ * `2026-07-09T01:00:00` → `01:00`. The reference moment is a full instant, since
+ * a journée running past midnight ends on the next calendar date; what the
+ * operator needs off it is the time of day.
+ */
+export function heureDe(instant: string | null | undefined): string {
+  return instant ? heure(instant.split('T')[1]) : '';
+}
+
 /** `14:00 – 18:00`, the one label every row of this screen is anchored on. */
 export function plage(debut: string | null | undefined, fin: string | null | undefined): string {
   return `${heure(debut)} – ${heure(fin)}`;
 }
 
 /**
- * How much of the day is still ahead: « 3 créneaux restants sur 8 ». States the
- * denominator on purpose — "3 remaining" alone reads as "3 in total" at a
+ * How much of the journée is still ahead: « 3 créneaux restants sur 8 ». States
+ * the denominator on purpose — "3 remaining" alone reads as "3 in total" at a
  * glance, and the whole screen is about what is left rather than what was.
+ *
+ * A journée with no timeslot at all is not a finished one, and saying so would
+ * be a lie the operator acts on: it gets its own sentence.
  */
 export function resumeDuJour(etat: EtatJourJ | null): string {
   if (!etat) {
     return '';
   }
+  if (etat.creneauxDuJour === 0) {
+    return $localize`:@@jourJ.resume.vide:Aucun créneau n'est programmé ce jour-là : il n'y a pas de journée à couvrir.`;
+  }
   const restants = etat.creneauxRestants.length;
   if (restants === 0) {
     return $localize`:@@jourJ.resume.termine:La journée est terminée : plus aucun créneau à couvrir.`;
   }
-  return $localize`:@@jourJ.resume.restants:${restants}:restants: créneau(x) restants sur ${etat.creneauxDuJour}:total:, à partir de ${heure(etat.heureReference)}:heure: (heure du serveur)`;
+  return $localize`:@@jourJ.resume.restants:${restants}:restants: créneau(x) restants sur ${etat.creneauxDuJour}:total:, à partir de ${heureDe(etat.maintenant)}:heure: (heure du serveur)`;
 }
 
 /**

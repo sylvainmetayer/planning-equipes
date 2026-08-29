@@ -205,7 +205,7 @@ class DateJourJResourceTest {
         // The scenario's only two timeslots are on that day: on it, at least one
         // is still ahead unless the wall clock is past 18:00 — so the assertion
         // is made on the day itself, where the mock is what put us.
-        JsonPath etat = given().when().get("/api/jour-j?heure=13:30")
+        JsonPath etat = given().when().get("/api/jour-j?maintenant=2026-07-08T13:30")
                 .then().statusCode(200).extract().jsonPath();
         List<String> restants = etat.getList("creneauxRestants.heureDebut", String.class);
         assertThat(restants).singleElement().asString().startsWith("14:00");
@@ -213,7 +213,7 @@ class DateJourJResourceTest {
         String absent = etat.getList("animateursDeService.animateurId", String.class).getFirst();
         JsonPath marquee = given().contentType("application/json")
                 .body("{\"animateurId\":\"" + absent + "\"}")
-                .when().post("/api/jour-j/absences?heure=13:30")
+                .when().post("/api/jour-j/absences?maintenant=2026-07-08T13:30")
                 .then().statusCode(200).extract().jsonPath();
 
         // One unavailability, on the afternoon timeslot of the frozen day.
@@ -255,10 +255,10 @@ class DateJourJResourceTest {
         QuarkusMock.installMockForType(new DevModeActif(), DevMode.class);
         given().contentType("application/json").body("{\"dateDuJour\":\"" + JOUR + "\"}")
                 .when().put("/api/debug/date-du-jour").then().statusCode(200);
-        String absent = given().when().get("/api/jour-j?heure=13:30").then().statusCode(200)
+        String absent = given().when().get("/api/jour-j?maintenant=2026-07-08T13:30").then().statusCode(200)
                 .extract().jsonPath().getList("animateursDeService.animateurId", String.class).getFirst();
         given().contentType("application/json").body("{\"animateurId\":\"" + absent + "\"}")
-                .when().post("/api/jour-j/absences?heure=13:30").then().statusCode(200);
+                .when().post("/api/jour-j/absences?maintenant=2026-07-08T13:30").then().statusCode(200);
 
         String creeLe = given().when().get("/api/contraintes-ad-hoc").then().statusCode(200)
                 .extract().jsonPath()

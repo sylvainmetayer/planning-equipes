@@ -369,16 +369,42 @@ sont les briques ci-dessus, appelées dans l'ordre du geste.
 
 | Endpoint | Effet |
 | --- | --- |
-| `GET /api/jour-j?date=&heure=` | L'écran complet : créneaux restants, animateurs de service, places vides, absences du jour. Ne lit que. |
-| `POST /api/jour-j/absences?date=&heure=` | `{ "animateurId": "A1", "raison": "…" }` — une `INDISPONIBILITE_FORCEE` par créneau restant, et les sièges tenus sur ces créneaux vidés. Écrit. |
+| `GET /api/jour-j?date=&maintenant=` | L'écran complet : créneaux restants, animateurs de service, places vides, absences du jour. Ne lit que. |
+| `POST /api/jour-j/absences?date=&maintenant=` | `{ "animateurId": "A1", "raison": "…" }` — une `INDISPONIBILITE_FORCEE` par créneau restant, et les sièges tenus sur ces créneaux vidés. Écrit. |
 | `DELETE /api/jour-j/absences/{animateurId}?date=&creneauId=` | Annule l'absence : un créneau si `creneauId` est donné, toute la journée sinon. |
 | `POST /api/jour-j/postes/{posteId}/suggestions?plafond=N` | L'assistant de réparation ci-dessus, sur le **plan enregistré** au lieu d'un plan envoyé dans le corps. |
 
-`date` et `heure` valent par défaut aujourd'hui et maintenant, **à l'horloge du
-serveur** — la réponse renvoie `heureReference` pour que l'écran énonce cette
-heure-là plutôt que celle du téléphone. Lire un autre jour que le jour courant
-le lit en entier (`heure` retombe à `00:00`) : « maintenant » ne veut rien dire
-sur une autre date.
+### Une journée commence à son premier créneau
+
+**Ni minuit, ni une heure d'exploitation fixe : la borne est le premier créneau
+réellement programmé.** Une journée de festival commence quand le premier stand
+ouvre. La journée en cours à un instant donné est donc la plus récente dont le
+premier créneau a déjà commencé et dont le dernier n'est pas terminé.
+
+Ce qui en découle :
+
+- **un créneau appartient à la journée que son début ouvre**, et à elle seule.
+  Un créneau 22h→2h est du soir qui l'ouvre ; il ne se dédouble pas sur deux
+  journées ;
+- **à 1h du matin, la journée en cours est encore celle de la veille** tant que
+  ce créneau tourne. `GET /api/jour-j` sans paramètre répond donc `date` =
+  la veille ;
+- une fois le dernier créneau terminé — ou avant que le premier n'ouvre —
+  **aucune journée n'est en cours**, et la date du calendrier répond ;
+- **une date sans aucun créneau n'a pas de journée** : l'écran répond
+  `creneauxDuJour: 0` et des listes vides plutôt que d'échouer, et
+  `POST /api/jour-j/absences` y est refusé (**400**, « Aucun créneau n'est
+  programmé le … »).
+
+`date` et `maintenant` valent par défaut la journée en cours et l'horloge du
+serveur. Les deux se surchargent, pour une répétition ou un test : `date` nomme
+la journée, `maintenant` nomme l'instant — et nomme aussi la journée quand
+`date` est absent. Lire une journée qui n'est pas celle en cours la lit en
+entier. `maintenant` est un **instant complet** (`AAAA-MM-JJTHH:MM`) et non une
+heure, précisément parce qu'une journée qui déborde de minuit met les deux sur
+des dates différentes : à `2026-07-09T01:00`, la journée regardée est
+`2026-07-08`. La réponse renvoie `maintenant` pour que l'écran énonce l'heure du
+serveur plutôt que celle du téléphone.
 
 **La portée d'une absence, ce sont les créneaux restants, et eux seuls.** Un
 créneau est restant quand sa **fin** est postérieure à l'heure de référence —
@@ -387,12 +413,10 @@ n'est au poste. Les créneaux déjà terminés ne sont jamais touchés : la pers
 les a réellement tenus, les transformer en indisponibilités ferait mentir le
 planning sur ce qui s'est passé.
 
-**La journée est une fenêtre horaire, pas une colonne `date`.** Un créneau
-ouvert à 22h et fermé à 2h porte la date de la veille : à une heure du matin,
-c'est pourtant lui qui tourne, et lui dont quelqu'un peut manquer. Tous les
-endpoints ci-dessus retiennent donc les créneaux dont la fenêtre **recoupe** la
-journée demandée, la nuit précédente comprise, et les classent par début réel —
-la même normalisation de minuit que `Creneau.chevaucheNuit`.
+Ce qui porte un créneau au-delà de minuit n'est donc pas son appartenance mais
+sa **fin** : un créneau 22h→2h reste « devant » jusqu'à 2h du matin, et c'est la
+règle de journée ci-dessus qui fait que la journée regardée est encore celle qui
+l'a ouvert. La normalisation de minuit est la même que `Creneau.chevaucheNuit`.
 
 Un animateur n'est marqué « déjà absent » que si l'une de ses indisponibilités
 couvre un créneau **encore devant**. Une indisponibilité du matin seul, saisie
