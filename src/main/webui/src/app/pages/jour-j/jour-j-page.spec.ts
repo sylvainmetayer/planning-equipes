@@ -153,6 +153,22 @@ describe('JourJPage', () => {
     await rendre(etat());
   });
 
+  /**
+   * The screen is under development and, unlike the other screens on trial, it
+   * writes. The default banner wording ("data entered here may still change")
+   * would be too gentle: what is pinned here is that the warning says the screen
+   * acts, and on what.
+   */
+  it('warns that it writes to the saved plan, in its own words', () => {
+    const banniere = (fixture.nativeElement as HTMLElement).querySelector(
+      '.work-in-progress-banner'
+    );
+    expect(banniere).not.toBeNull();
+    expect(banniere!.textContent).toContain('il agit');
+    expect(banniere!.textContent).toContain('planning enregistré');
+    expect(banniere!.textContent).toContain('ne sont pas encore garantis');
+  });
+
   it('shows who is on duty over the remaining timeslots', () => {
     expect(texte()).toContain('Alice Referente');
     expect(texte()).toContain('14:00 – 18:00');

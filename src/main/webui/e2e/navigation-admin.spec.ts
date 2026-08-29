@@ -42,6 +42,7 @@ const ROUTES: { path: string; marker?: string }[] = [
   { path: '/ouvertures', marker: 'Ouvertures des stands' },
   { path: '/staffing', marker: 'Besoin minimum en effectif' },
   { path: '/fragilite', marker: 'Fragilité du planning' },
+  { path: '/jour-j', marker: 'Mode jour J' },
   { path: '/heatmap' },
   { path: '/timeline', marker: 'Timeline animateur' },
   { path: '/ad-hoc-constraints' },

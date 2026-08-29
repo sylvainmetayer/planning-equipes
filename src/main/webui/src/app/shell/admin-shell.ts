@@ -84,7 +84,6 @@ function buildNavGroups(devMode: boolean): NavGroup[] {
     title: $localize`:@@nav.group.planning:Planning`,
     links: [
       { path: '/', label: $localize`:@@nav.link.solver:Solveur`, icon: 'play_circle' },
-      { path: '/jour-j', label: $localize`:@@nav.link.jourJ:Mode jour J`, icon: 'emergency' },
       {
         path: '/notifications',
         label: $localize`:@@nav.link.notifications:Notifications`,
@@ -216,7 +215,11 @@ function buildNavGroups(devMode: boolean): NavGroup[] {
         path: '/fragilite',
         label: $localize`:@@nav.link.fragilite:Fragilité du planning`,
         icon: 'personal_injury'
-      }
+      },
+      // The only one of this group that *writes*: it records real forced
+      // unavailabilities and empties real seats of the persisted plan. Its
+      // banner says so rather than borrowing the default wording.
+      { path: '/jour-j', label: $localize`:@@nav.link.jourJ:Mode jour J`, icon: 'emergency' }
     ]
   }
   ];

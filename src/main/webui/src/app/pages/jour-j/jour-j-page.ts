@@ -19,6 +19,7 @@ import {
 } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { compareDelta } from '../../shared/affectation-explanation-rules';
+import { WorkInProgressBanner } from '../../shared/work-in-progress-banner';
 import {
   aucuneSuggestion,
   blocageDuPoste,
@@ -57,7 +58,8 @@ import {
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
-    MatProgressBarModule
+    MatProgressBarModule,
+    WorkInProgressBanner
   ],
   templateUrl: './jour-j-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -83,6 +85,16 @@ export class JourJPage {
   protected readonly rechercheEnCours = signal<string[]>([]);
   /** Poste id being written right now, so only its buttons are disabled. */
   protected readonly affectationEnCours = signal<string | null>(null);
+
+  /**
+   * The default banner wording says the data entered here "may still change"
+   * and that the solver "may not take it into account". Both are too gentle for
+   * this screen: it is the only one under trial that <em>writes</em>, and what
+   * it writes lands in the persisted plan straight away. Somebody has to
+   * understand, before tapping, that they are changing the plan and that
+   * nothing revalidates the whole of it until the next solve.
+   */
+  protected readonly avertissement = $localize`:@@jourJ.wip.message:Cet écran est en cours de développement, et contrairement aux autres écrans à l'essai, il agit : marquer un absent écrit de vraies indisponibilités et vide de vrais sièges du planning enregistré. Ses impacts ne sont pas encore garantis — aucune résolution ne revérifie l'ensemble avant la prochaine que vous lancerez.`;
 
   protected readonly resume = computed(() => resumeDuJour(this.etat()));
   protected readonly rappel = computed(() => rappelPublication(this.apercu()));

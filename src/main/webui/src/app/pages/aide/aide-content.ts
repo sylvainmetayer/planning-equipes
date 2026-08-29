@@ -427,11 +427,15 @@ export function buildHelpSections(): HelpSection[] {
       id: 'jour-j',
       icon: 'emergency',
       title: $localize`:@@aide.jourJ.title:Mode jour J`,
-      summary: $localize`:@@aide.jourJ.summary:Quelqu'un ne s'est pas présenté : le marquer absent, trouver un remplaçant, appliquer — sans relancer de calcul.`,
+      summary: $localize`:@@aide.jourJ.summary:En cours de développement. Quelqu'un ne s'est pas présenté : le marquer absent, trouver un remplaçant, appliquer — sans relancer de calcul.`,
       blocks: [
         {
           kind: 'paragraph',
           text: $localize`:@@aide.jourJ.intro:Tous les autres écrans travaillent en amont de l'événement. Celui-ci est pensé pour le jour même, debout dans l'allée, sur un téléphone : peu de clics, de grandes cibles, et les trois étapes dans l'ordre du geste — qui manque, quelles places cela ouvre, qui peut les reprendre.`
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.jourJ.essai:Cet écran est en cours de développement, et ses impacts ne sont pas encore garantis. Il se distingue des autres écrans à l'essai sur un point qui compte : il agit. Marquer un absent écrit de vraies indisponibilités et vide de vrais sièges du planning enregistré, tout de suite. Aucune résolution ne revérifie l'ensemble entre-temps : la cohérence globale n'est établie qu'à la prochaine que vous lancerez. Utilisez-le en le sachant, et relancez une résolution dès que la situation le permet.`
         },
         {
           kind: 'paragraph',
