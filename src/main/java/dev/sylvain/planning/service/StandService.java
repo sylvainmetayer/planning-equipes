@@ -65,7 +65,24 @@ public class StandService {
         return stand;
     }
 
+    /**
+     * Saves the stand as edited.
+     *
+     * <p>Refused while a solve holds this edition's solver, for the same reason
+     * as {@link #delete}: the landing persist rewrites {@code nom},
+     * {@code effectif_min}, {@code effectif_max} and {@code reserve_majeurs}
+     * from the stand captured when the problem was built — plus its typologies,
+     * indisponibilités and ouvertures — so a rename or a raised effectif would
+     * quietly revert minutes later. See {@link SolverJobService#refuseIfSolving}.</p>
+     *
+     * <p>The bulk edit of the referential screen is this same method, once per
+     * row: {@code ReferenceDataStore.saveMany} issues one
+     * {@code PUT /api/stands/{id}} per stand, one transaction each, so there is
+     * no server-side batch to check once — unlike {@code CreneauService.deleteInBulk},
+     * which really is one.</p>
+     */
     public Stand update(String id, Stand stand) {
+        solverJobs.refuseIfSolving();
         if (!repository.standExists(id)) {
             throw new NotFoundException("Stand not found: " + id);
         }
@@ -120,6 +137,11 @@ public class StandService {
         if (!apply) {
             return rapport;
         }
+        // Checked once for the whole compaction, not per stand: it rewrites every
+        // compacted stand through saveStand, and a landing solve would revert
+        // their typologies, indisponibilités and ouvertures. A dry run writes
+        // nothing, hence the check sitting after the early return.
+        solverJobs.refuseIfSolving();
         Set<String> compactes = rapport.stands().stream()
                 .filter(HoraireCompaction.LigneCompactage::compacte)
                 .map(HoraireCompaction.LigneCompactage::standId)

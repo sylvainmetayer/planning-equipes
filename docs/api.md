@@ -544,8 +544,16 @@ Dans les deux cas la règle vaut ligne à ligne en suppression en lot, chaque
 suppression étant sa propre transaction.
 
 **Écrire le référentiel est refusé (`409`) tant qu'une résolution tient le
-solveur** : supprimer un stand, un animateur ou un créneau, réinitialiser
-l'édition (`POST /api/planning/reset`) et importer un scénario. Le corps de la
+solveur** : supprimer **et modifier** un stand ou un animateur, supprimer un
+créneau, compacter les horaires, réinitialiser l'édition
+(`POST /api/planning/reset`) et importer un scénario. La modification est
+concernée pour la même raison que la suppression — l'atterrissage réécrit `nom`,
+les effectifs et `reserveMajeurs` d'un stand, `prenom`, `nom`, `dateNaissance`,
+`manager`, compétences et jours d'indisponibilité d'un animateur, depuis les
+objets capturés au démarrage : un renommage fait pendant reviendrait à
+l'ancienne valeur sans que rien ne le dise. La **création**, elle, n'est pas
+refusée : une entité qui n'existait pas au démarrage n'est nommée par aucun
+poste du résultat, donc l'atterrissage ne la touche pas. Le corps de la
 réponse porte le job en cause **et un `message`** lisible tel quel par l'IHM. Une
 résolution construit son problème depuis le référentiel au démarrage et
 réenregistre ce référentiel en persistant son résultat : supprimer entre les deux

@@ -312,6 +312,132 @@ class ReferenceDataServiceSuppressionTest {
         }
     }
 
+
+    /**
+     * Modifying is refused for the same reason deleting is: the landing persist
+     * rewrites nom, effectifs and reserveMajeurs — and prenom, nom, naissance,
+     * manager, compétences and jours d'indispo for an animateur — from the
+     * objects captured when the problem was built, so an edit made meanwhile
+     * would quietly revert minutes later.
+     */
+    @Test
+    void modifierPendantUnSolveEstRefuse() {
+        Creneau creneau = creneau(9507L);
+        Stand stand = stand("SUP-S11");
+        Animateur animateur = animateur("SUP-A11");
+        PlanningEvenement probleme = new PlanningEvenement(JOUR, List.of(animateur),
+                List.of(poste("SUP-P11", stand, creneau, animateur)));
+        String jobId = null;
+        try {
+            persistence.persist(probleme);
+            attendreSolveurLibre();
+            assertThat(solverJobs.findActive()).isEmpty();
+
+            jobId = solverJobs.submitSolve(probleme, 60L).getId();
+            assertThat(solverJobs.findActive()).isPresent();
+
+            Stand renomme = stand("SUP-S11");
+            renomme.setNom("Nom qui ne doit pas ressusciter");
+            assertThatThrownBy(() -> referenceData.updateStand("SUP-S11", renomme))
+                    .isInstanceOf(SolverJobService.SolverBusyException.class);
+
+            Animateur modifie = animateur("SUP-A11");
+            modifie.setPrenom("Prenom modifie");
+            assertThatThrownBy(() -> referenceData.updateAnimateur("SUP-A11", modifie))
+                    .isInstanceOf(SolverJobService.SolverBusyException.class);
+
+            // Refused, so the referential still holds what the solve will land on.
+            assertThat(referenceData.listStands())
+                    .filteredOn(st -> "SUP-S11".equals(st.getId()))
+                    .singleElement()
+                    .satisfies(st -> assertThat(st.getNom()).isEqualTo("Stand SUP-S11"));
+        } finally {
+            if (jobId != null) {
+                solverJobs.cancel(jobId);
+            }
+            attendreSolveurLibre();
+            nettoyer();
+        }
+    }
+
+    /** A solve on another edition must not freeze data entry here — same rule as the deletes. */
+    @Test
+    void modifierDansUneAutreEditionEstAccepteePendantUnSolve() {
+        Creneau creneau = creneau(9508L);
+        Stand stand = stand("SUP-S12");
+        Animateur animateur = animateur("SUP-A12");
+        PlanningEvenement probleme = new PlanningEvenement(JOUR, List.of(animateur),
+                List.of(poste("SUP-P12", stand, creneau, animateur)));
+        String jobId = null;
+        editions.create(new Edition(EDITION_VOISINE, "Édition voisine", false, null));
+        try {
+            editionContext.executeIn(EDITION_VOISINE, () -> {
+                referenceData.createStand(stand("SUP-S13"));
+                referenceData.createAnimateur(animateur("SUP-A13"));
+            });
+
+            persistence.persist(probleme);
+            attendreSolveurLibre();
+            assertThat(solverJobs.findActive()).isEmpty();
+
+            jobId = solverJobs.submitSolve(probleme, 60L).getId();
+            assertThat(solverJobs.findActive()).isPresent();
+
+            editionContext.executeIn(EDITION_VOISINE, () -> {
+                Stand renomme = stand("SUP-S13");
+                renomme.setNom("Renomme pendant le solve d'a cote");
+                referenceData.updateStand("SUP-S13", renomme);
+                assertThat(referenceData.listStands())
+                        .filteredOn(st -> "SUP-S13".equals(st.getId()))
+                        .singleElement()
+                        .satisfies(st -> assertThat(st.getNom())
+                                .isEqualTo("Renomme pendant le solve d'a cote"));
+            });
+
+            // …while the solve's own edition stays protected.
+            Stand refuse = stand("SUP-S12");
+            refuse.setNom("Interdit");
+            assertThatThrownBy(() -> referenceData.updateStand("SUP-S12", refuse))
+                    .isInstanceOf(SolverJobService.SolverBusyException.class);
+        } finally {
+            if (jobId != null) {
+                solverJobs.cancel(jobId);
+            }
+            attendreSolveurLibre();
+            nettoyer();
+            editionContext.executeIn(EDITION_VOISINE, () -> {
+                referenceData.deleteStand("SUP-S13");
+                referenceData.deleteAnimateur("SUP-A13");
+            });
+            editions.delete(EDITION_VOISINE);
+        }
+    }
+
+    /** Once the solver is free, the same edit goes through. */
+    @Test
+    void modifierUneFoisLeSolveTermineFonctionne() {
+        Creneau creneau = creneau(9509L);
+        Stand stand = stand("SUP-S14");
+        Animateur animateur = animateur("SUP-A14");
+        try {
+            persistence.persist(new PlanningEvenement(JOUR, List.of(animateur),
+                    List.of(poste("SUP-P13", stand, creneau, animateur))));
+            attendreSolveurLibre();
+            assertThat(solverJobs.findActive()).isEmpty();
+
+            Stand renomme = stand("SUP-S14");
+            renomme.setNom("Nom accepte");
+            referenceData.updateStand("SUP-S14", renomme);
+
+            assertThat(referenceData.listStands())
+                    .filteredOn(st -> "SUP-S14".equals(st.getId()))
+                    .singleElement()
+                    .satisfies(st -> assertThat(st.getNom()).isEqualTo("Nom accepte"));
+        } finally {
+            nettoyer();
+        }
+    }
+
     private List<PosteAffectation> postesForStand(String standId) {
         return persistence.loadPersistedPlanning().getPostes().stream()
                 .filter(poste -> poste.getStand() != null && standId.equals(poste.getStand().getId()))
@@ -334,14 +460,14 @@ class ReferenceDataServiceSuppressionTest {
         attendreSolveurLibre();
         persistence.persist(new PlanningEvenement(JOUR, List.of(), List.of()));
         for (String id : List.of("SUP-S1", "SUP-S2", "SUP-S3", "SUP-S4", "SUP-S5", "SUP-S6", "SUP-S7", "SUP-S8",
-                "SUP-S9")) {
+                "SUP-S9", "SUP-S11", "SUP-S12", "SUP-S14")) {
             referenceData.deleteStand(id);
         }
         for (String id : List.of("SUP-A1", "SUP-A2", "SUP-A3", "SUP-A4", "SUP-A5", "SUP-A6", "SUP-A7", "SUP-A8",
-                "SUP-A9")) {
+                "SUP-A9", "SUP-A11", "SUP-A12", "SUP-A14")) {
             referenceData.deleteAnimateur(id);
         }
-        referenceData.deleteCreneaux(List.of(9501L, 9502L, 9503L, 9504L, 9505L, 9506L));
+        referenceData.deleteCreneaux(List.of(9501L, 9502L, 9503L, 9504L, 9505L, 9506L, 9507L, 9508L, 9509L));
     }
 
     /**

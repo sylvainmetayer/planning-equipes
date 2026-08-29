@@ -35,7 +35,23 @@ public class AnimateurService {
         return animateur;
     }
 
+    /**
+     * Saves the animateur as edited.
+     *
+     * <p>Refused while a solve holds this edition's solver, for the same reason
+     * as {@link #delete}: the landing persist rewrites {@code prenom},
+     * {@code nom}, {@code date_naissance} and {@code manager} from the animateur
+     * captured when the problem was built, and rewrites their competences and
+     * off-days wholesale — so an edit made meanwhile would quietly revert
+     * minutes later. See {@link SolverJobService#refuseIfSolving}.</p>
+     *
+     * <p>The bulk edit of the referential screen is this same method, once per
+     * row ({@code ReferenceDataStore.saveMany} issues one
+     * {@code PUT /api/animateurs/{id}} per animateur), so there is no
+     * server-side batch to check once.</p>
+     */
     public Animateur update(String id, Animateur animateur) {
+        solverJobs.refuseIfSolving();
         if (!repository.animateurExists(id)) {
             throw new NotFoundException("Animateur not found: " + id);
         }
