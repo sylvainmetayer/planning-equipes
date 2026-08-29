@@ -19,6 +19,18 @@
             <span i18n="@@espace.dispo.fenetre.ouverte">La collecte est ouverte.</span>
           }
         </p>
+      } @else if (pasEncoreOuverte(); as debut) {
+        <!-- « Fermée » et « pas encore ouverte » sont le même booléen côté
+             serveur, et disent le contraire à celui qui lit : un animateur à
+             qui on annonce que la collecte est terminée alors qu'elle commence
+             dans deux semaines n'y reviendra pas. -->
+        <p class="espace-dispo-fenetre">
+          <mat-icon inline>schedule</mat-icon>
+          <span i18n="@@espace.dispo.fenetre.aVenir"
+            >La collecte n'est pas encore ouverte : revenez à partir du
+            {{ debut | date: 'longDate' }}.</span
+          >
+        </p>
       } @else {
         <p class="espace-dispo-fermee">
           <mat-icon inline>lock</mat-icon>

@@ -11,7 +11,7 @@ import jakarta.inject.Inject;
  *
  * <p>Two guards cover the two abuses, and neither replaces the other. Storage
  * is bounded by the domain itself: <b>one pending declaration per animateur</b>
- * (a partial unique index in {@code V58}), so resending a thousand times leaves
+ * (a partial unique index in {@code V59}), so resending a thousand times leaves
  * one row. What is left is the <b>churn</b> — a loop of writes and of admin
  * notifications, at the pace of the network — and that is what this counter
  * stops. Nobody declares their availability twenty times in ten minutes; the

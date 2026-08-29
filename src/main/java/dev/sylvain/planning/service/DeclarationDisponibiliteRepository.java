@@ -117,36 +117,55 @@ public class DeclarationDisponibiliteRepository {
     }
 
     /**
-     * Replaces the animateur's pending declaration with {@code declaration}, in
-     * one transaction: the deletion and the insertion must not leave a window
-     * where the partial unique index sees two pending rows.
+     * The upsert behind {@link #replacePending}. Only the column list is
+     * concatenated, from this class's own constant; every value travels bound.
+     */
+    private static final String UPSERT_SQL =
+            "INSERT INTO declaration_disponibilite (edition_id, " + COLONNES + ") "
+                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                    + "ON CONFLICT (edition_id, animateur_id) WHERE statut = 'EN_ATTENTE' "
+                    + "DO UPDATE SET id = EXCLUDED.id, "
+                    + "jours_indisponibles = EXCLUDED.jours_indisponibles, "
+                    + "souhaits = EXCLUDED.souhaits, "
+                    + "commentaire = EXCLUDED.commentaire, "
+                    + "cree_le = EXCLUDED.cree_le";
+
+    /**
+     * Replaces the animateur's pending declaration with {@code declaration}.
+     *
+     * <p><b>One statement, not a delete followed by an insert.</b> That pair
+     * looked atomic because it sat in one transaction, and it was not: a
+     * concurrent transaction's uncommitted row is invisible to the
+     * {@code DELETE}, so two submissions by the same animateur — two phone
+     * tabs, a retried request — both deleted nothing, both inserted, and the
+     * second broke the partial unique index with a 500, exactly where the
+     * feature promises that resending corrects. The upsert lets the database
+     * arbitrate instead: the conflict target <b>is</b> that index, so the
+     * loser updates the row rather than colliding with it.</p>
+     *
+     * <p>{@code id} is among the columns the update writes: there is still one
+     * pending row per animateur, and it now holds the <b>new</b> declaration —
+     * same identity on the wire as if it had been inserted fresh, which is
+     * what the espace shows back.</p>
      */
     public void replacePending(DeclarationDisponibilite declaration) {
         scope.write("Failed to store the declaration of animateur " + declaration.getAnimateurId(),
                 connection -> {
-                    try (PreparedStatement suppression = scope.prepareScoped(connection,
-                            "DELETE FROM declaration_disponibilite WHERE edition_id = ? "
-                                    + "AND animateur_id = ? AND statut = 'EN_ATTENTE'")) {
-                        suppression.setString(2, declaration.getAnimateurId());
-                        suppression.executeUpdate();
-                    }
-                    try (PreparedStatement insertion = scope.prepareScoped(connection,
-                            "INSERT INTO declaration_disponibilite (edition_id, " + COLONNES + ") "
-                                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
-                        insertion.setString(2, declaration.getId());
-                        insertion.setString(3, declaration.getAnimateurId());
-                        insertion.setString(4, lines(declaration.getJoursIndisponibles().stream()
+                    try (PreparedStatement upsert = scope.prepareScoped(connection, UPSERT_SQL)) {
+                        upsert.setString(2, declaration.getId());
+                        upsert.setString(3, declaration.getAnimateurId());
+                        upsert.setString(4, lines(declaration.getJoursIndisponibles().stream()
                                 .map(LocalDate::toString)
                                 .toList()));
-                        insertion.setString(5, lines(declaration.getSouhaits()));
-                        insertion.setString(6, declaration.getCommentaire());
-                        insertion.setString(7, declaration.getStatut().name());
-                        insertion.setString(8, declaration.getCommentaireAdmin());
-                        insertion.setTimestamp(9, Timestamp.from(declaration.getCreeLe()));
-                        insertion.setTimestamp(10, declaration.getDecideLe() == null
+                        upsert.setString(5, lines(declaration.getSouhaits()));
+                        upsert.setString(6, declaration.getCommentaire());
+                        upsert.setString(7, declaration.getStatut().name());
+                        upsert.setString(8, declaration.getCommentaireAdmin());
+                        upsert.setTimestamp(9, Timestamp.from(declaration.getCreeLe()));
+                        upsert.setTimestamp(10, declaration.getDecideLe() == null
                                 ? null
                                 : Timestamp.from(declaration.getDecideLe()));
-                        insertion.executeUpdate();
+                        upsert.executeUpdate();
                     }
                 });
     }

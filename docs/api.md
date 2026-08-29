@@ -935,7 +935,7 @@ est public. Trois bornes, et aucune n'est cosmétique :
 | Borne | Ce qu'elle empêche |
 | --- | --- |
 | Fenêtre de collecte **fermée par défaut** | La foire au planning (V42) est ouverte tant que personne ne l'a fermée, par compatibilité ; une route qui écrit ne s'ouvre pas par omission |
-| **Une seule proposition en attente par animateur** (index unique partiel, V58) | Le volume : renvoyer mille fois laisse une ligne |
+| **Une seule proposition en attente par animateur** (index unique partiel, V59) | Le volume : renvoyer mille fois laisse une ligne |
 | `ESPACE_DECLARATION_MAX_ENVOIS` par animateur et par fenêtre | Le rythme : une boucle d'écritures et de notifications à la vitesse du réseau. Au-delà, `429` + `Retry-After` (voir `securite.md`) |
 
 Un jour hors des dates de l'événement et une typologie inconnue sont refusés
@@ -955,6 +955,12 @@ Le formulaire s'ouvre sur la proposition en attente s'il y en a une, sinon sur
 ce que le référentiel contient : une page blanche voudrait dire « je suis
 disponible tous les jours », ce que personne n'a voulu déclarer.
 
+`collecteOuverte` est faux dans **deux** situations opposées pour qui lit :
+pas encore commencée, et terminée. `collecteDebut` les sépare — une fenêtre
+fermée dont le début est à venir se lit « revenez à partir du 15 », pas « la
+collecte est fermée ». Un animateur à qui on annonce la fin d'une collecte qui
+commence dans deux semaines n'y revient pas.
+
 ### Écran admin
 
 | Route | Effet |
@@ -969,12 +975,29 @@ disponible tous les jours », ce que personne n'a voulu déclarer.
 ligne à ligne. Le désaccord se règle hors application — l'animateur renvoie une
 version corrigée tant que la fenêtre est ouverte.
 
+L'application **réclame la décision avant d'écrire la fiche**. Dans l'autre
+sens, deux admins qui tranchent en même temps — l'un refuse pendant que l'autre
+applique — laissaient le second écraser les jours et les souhaits de l'animateur
+*puis* recevoir un `409` : le référentiel avait bougé pour une déclaration
+enregistrée REFUSEE. Réclamer d'abord transforme la course en un `409` net,
+fiche intacte.
+
 `prevenirAnimateurs` est une **action, pas un réglage** : il n'est jamais
 renvoyé dans la réponse. L'invitation est indispensable au premier tour et
 lassante à la réouverture après correction, donc elle se coche à chaque fois
 qu'on la veut. La réponse porte alors `invitation` : envoyés, sans adresse,
 échecs. Le lien pointe l'onglet de déclaration de chaque espace, construit par
 `ApplicationLinks` — jamais par concaténation.
+
+**Le `PUT` est atomique.** Sans `PUBLIC_URL` — un déploiement supporté —, une
+ouverture cochée « prévenir » répond `400` **sans rien enregistrer** : la
+collecte reste fermée. Elle s'enregistrait avant que l'invitation n'échoue, et
+l'admin lisait une erreur sur une collecte déjà ouverte, qui acceptait déjà des
+déclarations. Ce qui peut encore échouer après l'écriture est **par animateur**
+et se lit dans `invitation`, jamais levé : une adresse manquante va dans
+`sansEmail`, un jeton d'espace manquant dans `echecs` avec sa cause — dire
+« sans adresse » à qui en a une envoie l'opérateur corriger ce qui n'est pas
+cassé.
 
 Les compétences ne se déclarent **pas** ici : une compétence auto-déclarée
 alimente des contraintes *dures*, et l'enjeu de validation n'est pas le même.

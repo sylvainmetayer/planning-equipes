@@ -45,6 +45,29 @@ export function brouillonInitial(vue: DeclarationEspaceView | null): BrouillonDe
   };
 }
 
+/**
+ * The day collection opens, when it is closed only because it has not started
+ * yet — `null` when it is open, or closed for good.
+ *
+ * `collecteOuverte` is one boolean for two situations that say the opposite to
+ * the person reading: "you are too late" and "come back later". An animateur
+ * told the collection is over, two weeks before it starts, does not come back.
+ *
+ * @param aujourdHui ISO date of today, passed in rather than read here so the
+ *                   rule is testable without freezing a clock
+ */
+export function ouvertureAVenir(
+  vue: DeclarationEspaceView | null,
+  aujourdHui: string
+): string | null {
+  if (!vue || vue.collecteOuverte || !vue.collecteDebut) {
+    return null;
+  }
+  // Closed AND past the start means the window really is over — or that the
+  // admin flipped the switch off, which is a closure whatever the dates say.
+  return vue.collecteDebut > aujourdHui ? vue.collecteDebut : null;
+}
+
 /** Groups the event days by calendar month, in chronological order. */
 export function moisDeCollecte(joursEvenement: readonly string[]): MoisCollecte[] {
   const mois: MoisCollecte[] = [];

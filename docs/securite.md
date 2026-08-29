@@ -113,7 +113,7 @@ Internet avec une URL pour tout justificatif. Deux bornes, qui ne se remplacent
 pas :
 
 - le **volume** est borné par le métier — une seule proposition en attente par
-  animateur, garantie par un index unique partiel (`V58`) : renvoyer mille fois
+  animateur, garantie par un index unique partiel (`V59`) : renvoyer mille fois
   laisse une ligne, et l'admin n'a jamais deux versions contradictoires de la
   même personne à arbitrer ;
 - le **rythme** est borné ici. Sans plafond, une session ouverte écrit et

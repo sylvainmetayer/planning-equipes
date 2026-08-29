@@ -66,6 +66,12 @@ public class DeclarationDisponibiliteResource {
      * indispensable on the first round and merely tiresome when the window is
      * reopened after a correction. Nobody is invited to a window that is being
      * closed.</p>
+     *
+     * <p>Both halves are one service call, deliberately. Sequenced here, the
+     * window got saved and the invitation then refused the whole request: the
+     * admin read an error on a collection that was already open. Ordering
+     * "everything refusable first, then the write" is a business rule, and it
+     * belongs where the business rules are.</p>
      */
     @PUT
     @Path("/configuration")
@@ -73,12 +79,10 @@ public class DeclarationDisponibiliteResource {
         ConfigurationCollecte demandee = configuration == null
                 ? new ConfigurationCollecte(false, null, null, false, null)
                 : configuration;
-        FenetreCollecte fenetre = declarationService.configure(
-                new FenetreCollecte(demandee.collecteOuverte(), demandee.debut(), demandee.fin()));
-        InvitationReport invitation = demandee.prevenirAnimateurs() && fenetre.ouverte()
-                ? declarationService.invite()
-                : null;
-        return ConfigurationCollecte.of(fenetre, invitation);
+        DeclarationDisponibiliteService.ConfigurationAppliquee appliquee = declarationService.configure(
+                new FenetreCollecte(demandee.collecteOuverte(), demandee.debut(), demandee.fin()),
+                demandee.prevenirAnimateurs());
+        return ConfigurationCollecte.of(appliquee.fenetre(), appliquee.invitation());
     }
 
     /**

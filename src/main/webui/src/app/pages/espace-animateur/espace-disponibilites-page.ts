@@ -8,6 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { EspaceAnimateurService } from '../../core/espace-animateur.service';
+import { toDateKey } from '../../core/date-utils';
 import { errorMessage } from '../../core/error-message';
 import { DeclarationView } from '../../core/models';
 import {
@@ -16,6 +17,7 @@ import {
   brouillonInitial,
   declarationModifiee,
   moisDeCollecte,
+  ouvertureAVenir,
   versNouvelleDeclaration
 } from './declaration-brouillon';
 
@@ -67,6 +69,15 @@ export class EspaceDisponibilitesPage {
 
   /** No créneau exists yet: the days cannot be offered, but the wishes still can. */
   protected readonly sansJours = computed(() => (this.vue()?.joursEvenement.length ?? 0) === 0);
+
+  /**
+   * The day collection opens, when it is closed only because it has not
+   * started yet. `collecteOuverte` alone would tell an animateur that a window
+   * opening in two weeks is already over.
+   */
+  protected readonly pasEncoreOuverte = computed(() =>
+    ouvertureAVenir(this.vue(), toDateKey(new Date()))
+  );
 
   constructor() {
     void this.recharger();

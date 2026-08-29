@@ -137,17 +137,46 @@ public class DeclarationDisponibiliteService {
     }
 
     /**
-     * Admin decision: opens or closes the collection window for the current
-     * edition. Dates are optional bounds; the boolean stays the master switch,
-     * so a dated but closed window collects nothing.
+     * What one configuration call did: the window as it now stands, and the
+     * invitation report when one was asked for ({@code null} otherwise).
      */
-    public FenetreCollecte configure(FenetreCollecte fenetre) {
+    public record ConfigurationAppliquee(FenetreCollecte fenetre, InvitationReport invitation) {
+    }
+
+    /**
+     * Admin decision: opens or closes the collection window for the current
+     * edition, and — only when {@code prevenirAnimateurs} — mails every
+     * animateur the link to their espace. Dates are optional bounds; the
+     * boolean stays the master switch, so a dated but closed window collects
+     * nothing.
+     *
+     * <p><b>Everything that can refuse the call refuses before anything is
+     * written.</b> The two steps used to be sequential in the resource, and a
+     * deployment with no {@code planning.public-url} — a supported one, the
+     * property is {@code Optional} — made the second throw after the first had
+     * committed: the admin read « Erreur » on a collection that was, in fact,
+     * open and already taking declarations. There is no transaction spanning a
+     * database write and a batch of mails, so the guarantee has to be that
+     * nothing refusable is left after the write. What can still fail
+     * afterwards is per-animateur, and that is reported rather than
+     * thrown.</p>
+     */
+    public ConfigurationAppliquee configure(FenetreCollecte fenetre, boolean prevenirAnimateurs) {
         FenetreCollecte demandee = fenetre == null ? FenetreCollecte.closed() : fenetre;
         if (demandee.debut() != null && demandee.fin() != null && demandee.debut().isAfter(demandee.fin())) {
             throw new BusinessError.Invalid("La fin de la collecte précède son début");
         }
+        // Nobody is invited to a window being closed, so the precondition only
+        // bites when an invitation is really about to leave.
+        boolean invitera = prevenirAnimateurs && demandee.ouverte();
+        if (invitera && !liens.disponible()) {
+            throw new BusinessError.Invalid(
+                    "Aucune URL publique n'est configurée : l'invitation ne peut pas porter de lien "
+                            + "d'espace. Ouvrez la collecte sans cocher l'envoi, ou renseignez PUBLIC_URL.");
+        }
         repository.saveFenetre(demandee);
-        return repository.fenetre();
+        FenetreCollecte enregistree = repository.fenetre();
+        return new ConfigurationAppliquee(enregistree, invitera ? invite() : null);
     }
 
     /**
@@ -167,12 +196,12 @@ public class DeclarationDisponibiliteService {
      * when they mean it. An explicit admin send, so it goes through
      * {@link MailService} and the report says who could not be reached —
      * a failure per animateur never aborts the others.</p>
+     *
+     * <p>Called by {@link #configure} once the window is saved, and only after
+     * it has checked that a public URL exists at all: what is left to fail here
+     * is per-animateur, never the whole batch.</p>
      */
-    public InvitationReport invite() {
-        if (!liens.disponible()) {
-            throw new BusinessError.Invalid(
-                    "Aucune URL publique n'est configurée : l'invitation ne peut pas porter de lien d'espace.");
-        }
+    InvitationReport invite() {
         FenetreCollecte fenetre = repository.fenetre();
         int envoyes = 0;
         List<String> sansEmail = new ArrayList<>();
@@ -184,7 +213,11 @@ public class DeclarationDisponibiliteService {
             }
             Optional<String> lien = liens.espaceDisponibilites(animateur.getAccessToken());
             if (lien.isEmpty()) {
-                sansEmail.add(animateur.nomAffiche());
+                // NOT « sans adresse » — theirs is right there. Reported with
+                // its real cause: an operator told « no address » adds an
+                // address that already exists and the invitation still does not
+                // leave. The fix is « Régénérer le lien » on their fiche.
+                echecs.add(animateur.nomAffiche() + " (aucun lien d'espace : jeton d'accès manquant)");
                 continue;
             }
             try {
@@ -195,7 +228,7 @@ public class DeclarationDisponibiliteService {
                 // The address is what the operator needs to act; the name is
                 // enough for the report and nothing nominative is logged.
                 Log.errorf(e, "Failed to mail the declaration invitation to animateur %s", animateur.getId());
-                echecs.add(animateur.nomAffiche());
+                echecs.add(animateur.nomAffiche() + " (échec de l'envoi)");
             }
         }
         return new InvitationReport(envoyes, sansEmail, echecs);
@@ -275,6 +308,16 @@ public class DeclarationDisponibiliteService {
      * screen does, so the change marks the reference data as modified and
      * {@code dataStale} fires: an applied declaration really did move the
      * solver's input.</p>
+     *
+     * <p><b>The decision is claimed before the fiche is written</b>, and that
+     * order is the whole safety of the method. Written the other way round, an
+     * admin refusing the declaration while another applies it left the second
+     * one overwriting somebody's days and wishes and <i>then</i> being told the
+     * row had moved: the referential had changed for a declaration recorded as
+     * REFUSEE, and nothing said so. Claiming first turns that race into a plain
+     * 409 with the fiche untouched. The residual window is the opposite one — a
+     * claimed decision whose write then fails — and it is the better failure:
+     * it surfaces as a 500 the admin sees, on a declaration they can read.</p>
      */
     public DeclarationDisponibilite apply(String id) {
         DeclarationDisponibilite declaration = pendingOrFail(id);
@@ -286,14 +329,16 @@ public class DeclarationDisponibiliteService {
         // Fails loudly when a game category was dropped between the submission
         // and the decision: the stored proposal is a snapshot, and silently
         // dropping half of what somebody declared would be worse than a refusal
-        // the admin can act on.
+        // the admin can act on. Checked before claiming, so a proposal nobody
+        // can apply stays pending rather than being burnt by the attempt.
         typologieService.validerIds(new LinkedHashSet<>(declaration.getSouhaits()));
+
+        DeclarationDisponibilite decidee = decider(declaration, StatutDeclaration.APPLIQUEE, null);
 
         animateur.setJoursIndisponibles(new TreeSet<>(declaration.getJoursIndisponibles()));
         animateur.setSouhaits(new LinkedHashSet<>(declaration.getSouhaits()));
         animateurService.update(animateur.getId(), animateur);
-
-        return decider(declaration, StatutDeclaration.APPLIQUEE, null);
+        return decidee;
     }
 
     /**

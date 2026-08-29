@@ -13,6 +13,9 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -261,6 +264,55 @@ class DeclarationDisponibiliteFlowTest {
         assertThat(mailsTo("dec-alice@example.org"))
                 .anySatisfy(mail -> assertThat(mail.getText()).contains("/animateur/")
                         .contains("/disponibilites"));
+    }
+
+    @Test
+    void unRefusConcurrentNEcritPasLaFicheQuandMeme() {
+        openWindow(null, null, false);
+        String id = declarer("[\"2026-07-10\"]", "[\"DEC-T1\"]");
+
+        given().contentType(ContentType.JSON).body("{\"commentaire\":\"pas ce jour-là\"}")
+                .when().post("/api/disponibilites/" + id + "/refus")
+                .then().statusCode(200);
+
+        // An admin applying the very declaration another just refused: the
+        // decision is claimed before the fiche is written, so this is a plain
+        // refusal — not a write followed by « déjà traitée ».
+        given().contentType(ContentType.JSON)
+                .when().post("/api/disponibilites/" + id + "/application")
+                .then().statusCode(400);
+
+        assertThat(animateur("DEC-A").getJoursIndisponibles())
+                .as("a refused declaration must never have touched the fiche")
+                .isEmpty();
+        assertThat(animateur("DEC-A").getSouhaits()).isEmpty();
+    }
+
+    @Test
+    void deuxEnvoisSimultanesLaissentUneSeuleProposition() throws Exception {
+        openWindow(null, null, false);
+        String corps = "{\"joursIndisponibles\":[\"2026-07-10\"],\"souhaits\":[]}";
+        String url = "/api/espace-animateur/" + tokenOf("DEC-A") + "/disponibilites";
+
+        // Two tabs, or one retried request: the espace's own « envoi en cours »
+        // guard is per component and stops neither. The pair used to break the
+        // partial unique index and answer 500, right where the feature promises
+        // that resending corrects.
+        ExecutorService pool = Executors.newFixedThreadPool(2);
+        try {
+            List<Future<Integer>> envois = pool.invokeAll(List.of(
+                    () -> given().contentType(ContentType.JSON).body(corps)
+                            .when().post(url).then().extract().statusCode(),
+                    () -> given().contentType(ContentType.JSON).body(corps)
+                            .when().post(url).then().extract().statusCode()));
+            for (Future<Integer> envoi : envois) {
+                assertThat(envoi.get()).as("neither submission may fail").isEqualTo(200);
+            }
+        } finally {
+            pool.shutdownNow();
+        }
+
+        assertThat(storedDeclarations()).hasSize(1);
     }
 
     /* -------------------------------- Helpers -------------------------------- */

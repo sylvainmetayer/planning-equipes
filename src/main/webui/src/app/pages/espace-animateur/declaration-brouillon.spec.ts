@@ -5,6 +5,7 @@ import {
   brouillonInitial,
   declarationModifiee,
   moisDeCollecte,
+  ouvertureAVenir,
   versNouvelleDeclaration
 } from './declaration-brouillon';
 
@@ -78,6 +79,37 @@ describe('moisDeCollecte', () => {
 
   it('has nothing to show before the grid of créneaux exists', () => {
     expect(moisDeCollecte([])).toEqual([]);
+  });
+});
+
+describe('ouvertureAVenir', () => {
+  it('names the opening day when the window has not started yet', () => {
+    // « Fermée » et « pas encore ouverte » sont le même booléen côté serveur,
+    // et disent le contraire à celui qui lit.
+    const source = vue({ collecteOuverte: false, collecteDebut: '2026-09-15' });
+
+    expect(ouvertureAVenir(source, '2026-09-01')).toBe('2026-09-15');
+  });
+
+  it('says nothing once the window is open', () => {
+    expect(ouvertureAVenir(vue({ collecteOuverte: true, collecteDebut: '2026-09-15' }), '2026-09-20')).toBeNull();
+  });
+
+  it('says nothing when the window is really over', () => {
+    const source = vue({ collecteOuverte: false, collecteDebut: '2026-09-01', collecteFin: '2026-09-10' });
+
+    expect(ouvertureAVenir(source, '2026-09-20')).toBeNull();
+  });
+
+  it('says nothing on the opening day itself — closed then is a closure', () => {
+    const source = vue({ collecteOuverte: false, collecteDebut: '2026-09-15' });
+
+    expect(ouvertureAVenir(source, '2026-09-15')).toBeNull();
+  });
+
+  it('says nothing without a start date, nor without a view', () => {
+    expect(ouvertureAVenir(vue({ collecteOuverte: false }), '2026-09-01')).toBeNull();
+    expect(ouvertureAVenir(null, '2026-09-01')).toBeNull();
   });
 });
 

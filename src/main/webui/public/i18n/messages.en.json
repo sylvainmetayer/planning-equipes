@@ -1849,5 +1849,6 @@
   "aide.dispo.term.remplacement": "One proposal per person",
   "aide.dispo.def.remplacement": "An animateur correcting themself replaces their pending proposal, they do not stack a second one: you will never have to arbitrate two contradictory versions of the same person, and what reaches you is always the latest. You are e-mailed when a proposal lands on your desk, not on every correction they make to it before you process it.",
   "aide.dispo.term.competences": "What is not declared here",
-  "aide.dispo.def.competences": "Skills stay decided with you. A self-declared skill feeds hard rules — who may staff which stand — and the stakes are not those of an unavailability or a wish, which can be caught up. An animateur declaring a day outside the dates of the event, or a game category that does not exist, is refused on submission."
+  "aide.dispo.def.competences": "Skills stay decided with you. A self-declared skill feeds hard rules — who may staff which stand — and the stakes are not those of an unavailability or a wish, which can be caught up. An animateur declaring a day outside the dates of the event, or a game category that does not exist, is refused on submission.",
+  "espace.dispo.fenetre.aVenir": "Collection is not open yet: come back from {$INTERPOLATION} onwards."
 }
