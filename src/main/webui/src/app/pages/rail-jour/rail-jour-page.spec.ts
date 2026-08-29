@@ -220,6 +220,20 @@ describe('RailJourPage', () => {
     expect(racine().querySelectorAll('.rail-bloc')).toHaveLength(750);
     // The hour scale is drawn once, in the header, and never inside a line.
     expect(racine().querySelectorAll('tbody .rail-tick')).toHaveLength(0);
+    // And it stays on screen: `position: sticky` needs a scrolling ancestor of
+    // its own — measured at 153 lines, without it the scale simply left.
+    expect(racine().querySelector('.rail-scroll .rail-table')).not.toBeNull();
+  });
+
+  it('drops the hour step on a hatched line, which would tile the pattern', async () => {
+    await rendre(planningDeuxJours());
+
+    const pistes = Array.from(racine().querySelectorAll('.rail-track')) as HTMLElement[];
+    // Alice works, so her track carries the hour gridlines and their step.
+    expect(pistes[0].style.backgroundSize).not.toBe('');
+    // Chloé's is hatched: an hour-wide tile would restart the 45° pattern at
+    // every hour instead of running continuously across the day.
+    expect(pistes[2].style.backgroundSize).toBe('');
   });
 
   it('says what to do rather than showing an empty rail when nothing is solved', async () => {

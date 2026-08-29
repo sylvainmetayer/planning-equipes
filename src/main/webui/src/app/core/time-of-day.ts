@@ -18,6 +18,14 @@ export function minutesOfDay(time: string): number {
   return hours * 60 + minutes;
 }
 
+/**
+ * `HH:mm` of a time the API sends as `HH:mm:ss`. Seconds are noise on a
+ * schedule, and they cost the width a stand name needs.
+ */
+export function formatHeure(time: string): string {
+  return time.length > 5 ? time.slice(0, 5) : time;
+}
+
 /** `HH:mm` label of a whole-hour tick of a time axis. */
 export function formatHourTick(hour: number): string {
   return `${String(hour % 24).padStart(2, '0')}:00`;

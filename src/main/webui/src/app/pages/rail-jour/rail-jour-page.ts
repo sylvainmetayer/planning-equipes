@@ -71,7 +71,12 @@ export class RailJourPage {
 
   protected readonly jours = computed<RailJour[]>(() => {
     const planning = this.planning();
-    return planning ? buildRailJours(planning.postes ?? [], planning.animateurs ?? []) : [];
+    if (!planning) {
+      return [];
+    }
+    // The ad hoc exceptions travel with the plan already: no second request to
+    // know which hours someone was recorded as unavailable on.
+    return buildRailJours(planning.postes ?? [], planning.animateurs ?? [], planning.contraintesAdHoc ?? []);
   });
 
   /**
@@ -124,6 +129,19 @@ export class RailJourPage {
       .map((id) => ({ id, label: typologieLabel(labels, id), colorClass: typologieColorClass(id) }))
       .sort((left, right) => left.label.localeCompare(right.label));
   });
+
+  /**
+   * Background step of one line's track: the hour gridlines for a normal line,
+   * nothing for a hatched one.
+   *
+   * An unavailable line replaces the gridlines with a 45° hatching, which an
+   * hour-wide `background-size` would tile once per hour — a visible seam every
+   * hour instead of one continuous pattern. And an inline style wins over any
+   * stylesheet rule, so the fix has to be here rather than in the CSS.
+   */
+  protected fondPiste(ligne: RailLigne): string | null {
+    return ligne.statut === 'indisponible' ? null : this.gridSize();
+  }
 
   /**
    * Width of one hour of the rail, as a background-size: the gridlines are one

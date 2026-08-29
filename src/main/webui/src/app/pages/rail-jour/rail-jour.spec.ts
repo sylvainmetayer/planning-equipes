@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Animateur, Creneau, PosteAffectation, Stand } from '../../core/models';
+import { Animateur, ContrainteAdHoc, Creneau, PosteAffectation, Stand } from '../../core/models';
 import { RailLigne, buildRailJours, compterStatuts } from './rail-jour';
 
 function creneau(overrides: Partial<Creneau> & { id: number }): Creneau {
@@ -39,6 +39,21 @@ function animateur(id: string, overrides: Partial<Animateur> = {}): Animateur {
 
 function poste(overrides: Partial<PosteAffectation> & { id: string }): PosteAffectation {
   return { stand: null, creneau: null, animateur: null, ...overrides };
+}
+
+function indisponibiliteForcee(
+  animateurIds: string[],
+  overrides: Partial<ContrainteAdHoc> = {}
+): ContrainteAdHoc {
+  return {
+    id: `c-${animateurIds.join('-')}`,
+    type: 'INDISPONIBILITE_FORCEE',
+    animateursConcernes: animateurIds.map((id) => ({ id })),
+    creneau: null,
+    stand: null,
+    raison: 'test',
+    ...overrides
+  };
 }
 
 function ligne(lignes: RailLigne[], nom: string): RailLigne {
@@ -242,6 +257,120 @@ describe('buildRailJours', () => {
       [animateur('a1', { prenom: 'Jean', nom: 'Dupont' }), animateur('a2', { prenom: 'Jean', nom: 'Dupont' })]
     );
     expect(avecJour[0].lignes.map((l) => l.nom)).toEqual(['Jean Dupont (a1)', 'Jean Dupont (a2)']);
+  });
+
+  it('says out loud that two vacations overlap, which no outline can do', () => {
+    const jours = buildRailJours(
+      [
+        poste({
+          id: 'p1',
+          creneau: creneau({ id: 1, heureDebut: '10:00', heureFin: '12:00' }),
+          stand: stand('S1'),
+          animateur: animateur('Ines')
+        }),
+        poste({
+          id: 'p2',
+          creneau: creneau({ id: 2, heureDebut: '11:00', heureFin: '13:00' }),
+          stand: stand('S2'),
+          animateur: animateur('Ines')
+        })
+      ],
+      [animateur('Ines')]
+    );
+
+    expect(ligne(jours[0].lignes, 'Ines').resume).toContain('chevauchent');
+  });
+
+  it('hatches the hours a forced unavailability covers, without denying the rest of the day', () => {
+    const matin = creneau({ id: 1, heureDebut: '09:00', heureFin: '12:00' });
+    const apresMidi = creneau({ id: 2, heureDebut: '14:00', heureFin: '18:00' });
+    const jours = buildRailJours(
+      [
+        poste({ id: 'p1', creneau: matin, stand: stand('S1'), animateur: animateur('Ines') }),
+        poste({ id: 'p2', creneau: apresMidi, stand: stand('S1') })
+      ],
+      [animateur('Ines'), animateur('Zoe')],
+      [indisponibiliteForcee(['Zoe'], { creneau: { id: 2 } })]
+    );
+
+    const zoe = ligne(jours[0].lignes, 'Zoe');
+    // Blocked in the afternoon only: still someone to call for the morning.
+    expect(zoe.statut).toBe('libre');
+    expect(zoe.blocages).toHaveLength(1);
+    expect(zoe.blocages[0]).toMatchObject({ heureDebut: '14:00', heureFin: '18:00' });
+    expect(zoe.resume).toContain('14:00 – 18:00');
+    expect(compterStatuts(jours[0].lignes)).toEqual({ affectes: 1, libres: 1, indisponibles: 0 });
+  });
+
+  it('counts an animateur blocked all day out of the mobilisable ones', () => {
+    const jours = buildRailJours(
+      [poste({ id: 'p1', creneau: creneau({ id: 1 }), stand: stand('S1'), animateur: animateur('Ines') })],
+      [animateur('Ines'), animateur('Zoe')],
+      // No créneau: the exception covers the whole event, so the whole day.
+      [indisponibiliteForcee(['Zoe'])]
+    );
+
+    expect(ligne(jours[0].lignes, 'Zoe').statut).toBe('indisponible');
+    expect(compterStatuts(jours[0].lignes)).toEqual({ affectes: 1, libres: 0, indisponibles: 1 });
+  });
+
+  it('leaves an animateur callable when the exception only bars them from one stand', () => {
+    // « pas sur ce stand » forbids a seat, not a person: counting it as an
+    // unavailability would hide exactly who a day of tension is looking for.
+    const jours = buildRailJours(
+      [poste({ id: 'p1', creneau: creneau({ id: 1 }), stand: stand('S1'), animateur: animateur('Ines') })],
+      [animateur('Ines'), animateur('Zoe')],
+      [indisponibiliteForcee(['Zoe'], { stand: { id: 'S1' } })]
+    );
+
+    const zoe = ligne(jours[0].lignes, 'Zoe');
+    expect(zoe.statut).toBe('libre');
+    expect(zoe.blocages).toHaveLength(0);
+  });
+
+  it('ignores an exception naming a créneau of another day', () => {
+    const jours = buildRailJours(
+      [
+        poste({ id: 'p1', creneau: creneau({ id: 1, jour: 1 }), stand: stand('S1'), animateur: animateur('Ines') }),
+        poste({
+          id: 'p2',
+          creneau: creneau({ id: 2, jour: 2, date: '2026-08-02' }),
+          stand: stand('S1'),
+          animateur: animateur('Ines')
+        })
+      ],
+      [animateur('Ines'), animateur('Zoe')],
+      [indisponibiliteForcee(['Zoe'], { creneau: { id: 2 } })]
+    );
+
+    expect(ligne(jours[0].lignes, 'Zoe').blocages).toHaveLength(0);
+    expect(ligne(jours[1].lignes, 'Zoe').blocages).toHaveLength(1);
+  });
+
+  it('merges two exceptions covering back-to-back créneaux into one window', () => {
+    const jours = buildRailJours(
+      [
+        poste({
+          id: 'p1',
+          creneau: creneau({ id: 1, heureDebut: '09:00', heureFin: '12:00' }),
+          stand: stand('S1'),
+          animateur: animateur('Ines')
+        }),
+        poste({ id: 'p2', creneau: creneau({ id: 2, heureDebut: '12:00', heureFin: '15:00' }), stand: stand('S1') })
+      ],
+      [animateur('Ines'), animateur('Zoe')],
+      [
+        indisponibiliteForcee(['Zoe'], { creneau: { id: 1 } }),
+        { ...indisponibiliteForcee(['Zoe'], { creneau: { id: 2 } }), id: 'c2' }
+      ]
+    );
+
+    const zoe = ligne(jours[0].lignes, 'Zoe');
+    // 09:00-12:00 then 12:00-15:00 is one 09:00-15:00 hole, and it swallows the
+    // whole day: nobody to call.
+    expect(zoe.blocages).toHaveLength(1);
+    expect(zoe.blocages[0]).toMatchObject({ heureDebut: '09:00', heureFin: '15:00' });
+    expect(zoe.statut).toBe('indisponible');
   });
 
   it('still lines up an animateur holding a seat but missing from the referential', () => {

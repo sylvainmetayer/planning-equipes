@@ -48,9 +48,21 @@
   background: var(--mat-sys-surface-container-low);
 }
 
-/* Same hatching as the track of an unavailable animateur — the two must read as one thing. */
+/* A line with nothing on it is the answer to "who can I still call", so it is
+   tinted rather than left to read as an empty row of the table. */
+.rail-swatch-libre,
+.rail-cell-libre .rail-track {
+  background-color: color-mix(in srgb, var(--mat-sys-primary-container) 40%, var(--mat-sys-surface-container-low));
+}
+
+/* Same hatching as the track of an unavailable animateur — the two must read as
+   one thing. `background-size: auto` keeps the 45° pattern continuous: the
+   component stops binding the hour step on these lines, and a tile an hour wide
+   would restart the hatching at every hour. */
 .rail-swatch-indisponible,
-.rail-cell-indisponible .rail-track {
+.rail-swatch-blocage,
+.rail-cell-indisponible .rail-track,
+.rail-blocage {
   background-image: repeating-linear-gradient(
     45deg,
     var(--mat-sys-surface-container-highest),
@@ -58,6 +70,28 @@
     transparent 4px,
     transparent 8px
   );
+  background-size: auto;
+}
+
+/* One recorded unavailability window, behind the blocks of the same line. */
+.rail-blocage {
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  background-color: var(--mat-sys-surface-container-low);
+  border-radius: var(--mat-sys-corner-extra-small);
+  outline: 1px dashed var(--mat-sys-outline);
+  outline-offset: -1px;
+}
+
+/* The rail scrolls inside its card rather than with the page. `position:
+   sticky` needs a scrolling ancestor, and the page's is the shell's content
+   area, several `overflow` boundaries up: measured at 153 lines, the hour scale
+   simply left the screen. On a view whose whole point is reading hours on an
+   axis, the scale has to stay under the reader's eyes. */
+.rail-scroll {
+  max-height: 70vh;
+  overflow: auto;
 }
 
 .rail-table {
@@ -80,14 +114,25 @@
   font: var(--mat-sys-label-medium);
   text-align: left;
   padding: 0.25rem 0.5rem 0.5rem;
+  /* `border-collapse: collapse` drops the border of a sticky cell as soon as it
+     detaches; an inset shadow is the same line and does not. */
+  box-shadow: inset 0 -1px 0 var(--mat-sys-outline-variant);
 }
 
 .rail-nom-header {
   width: 15rem;
 }
 
-.rail-scale-header {
-  position: relative;
+/* The ticks are positioned in percentages of this box, and the blocks in
+   percentages of `.rail-cell` below: give the two the same horizontal inset or
+   every label drifts right of the line it names — a good eight minutes of lie
+   on a fifteen-hour day, on a view whose whole point is reading hours. */
+.rail-table thead th.rail-scale-header {
+  /* No `position` here on purpose: the sticky of the rule above already
+     positions this cell, and `relative` would silently unstick the hour scale
+     — which is the one thing that must not leave the screen. */
+  padding-left: 0;
+  padding-right: 0.5rem;
 }
 
 .rail-scale {
@@ -103,6 +148,16 @@
   font: var(--mat-sys-label-small);
   color: var(--mat-sys-on-surface-variant);
   white-space: nowrap;
+}
+
+/* The first and last ticks sit on the very edges: centred, half of them would
+   hang over the animateur column and over the end of the table. */
+.rail-tick:first-child {
+  transform: none;
+}
+
+.rail-tick:last-child {
+  transform: translateX(-100%);
 }
 
 /* Left column of the grid. Kept a plain table cell — a flex `th` drops out of

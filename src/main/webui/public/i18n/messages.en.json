@@ -1757,5 +1757,10 @@
   "railJour.resume.libre": "{$animateur} — no shift that day, available",
   "railJour.resume.indisponible": "{$animateur} — declared unavailable that day",
   "aide.views.term.railJour": "Day rail",
-  "aide.views.def.railJour": "The same day as the day calendar, but seen person by person: one line per staff member, the shifts placed on the time axis. Gaps, daily spans and back-to-back chains jump out, and the empty lines say who is still available — the ones marked « unavailable » mean the opposite: do not call on that person."
+  "aide.views.def.railJour": "The same day as the day calendar, but seen person by person: one line per staff member, the shifts placed on the time axis. Gaps, daily spans and back-to-back chains jump out, and the empty lines say who is still available — the ones marked « unavailable » mean the opposite: do not call on that person.",
+  "railJour.legend.blocage": "Hatched span: a recorded unavailability on those hours, do not call on them",
+  "railJour.blocage.tooltip": "Recorded unavailability: {$debut} – {$fin}",
+  "railJour.resume.indisponibleForcee": "{$animateur} — recorded unavailable for the whole day",
+  "railJour.resume.avecBlocage": "{$ligne} — recorded unavailability: {$plages}",
+  "railJour.resume.chevauchement": "{$ligne} — warning, two shifts overlap"
 }
