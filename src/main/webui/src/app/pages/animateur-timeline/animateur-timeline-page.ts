@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -6,7 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { uniqueById } from '../../core/date-utils';
 import { NotificationService } from '../../core/notification.service';
@@ -15,6 +15,7 @@ import { Animateur, CompteRenduEnvoi, PlanningEvenement, PosteAffectation, Typol
 import { standTypologies, typologieColorClass, typologieLabel, typologieLabels, typologiePrincipale } from '../../core/typologie-colors';
 import { SelectionRecherche } from '../../shared/selection-recherche';
 import { errorMessage, errorPrefix } from '../../core/error-message';
+import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
 
 export interface AnimateurOption {
   id: string;
@@ -118,7 +119,6 @@ export class AnimateurTimelinePage {
   private readonly notifications = inject(NotificationService);
   private readonly planningState = inject(PlanningStateService);
   private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
 
   protected readonly animateurOptions = computed<AnimateurOption[]>(() => buildAnimateurOptions(this.planning()?.postes ?? []));
 
@@ -153,11 +153,11 @@ export class AnimateurTimelinePage {
     this.selectedAnimateurId.set(this.route.snapshot.queryParamMap.get('animateur'));
     void this.refresh();
     // Keeps the selection in the URL so it survives a refresh (F5) and can be
-    // bookmarked/shared, without piling up history entries.
-    effect(() => {
-      const animateurId = this.selectedAnimateurId();
-      void this.router.navigate([], { relativeTo: this.route, queryParams: { animateur: animateurId }, replaceUrl: true });
-    });
+    // bookmarked/shared — « regarde le planning d'Untel » is a link, not a
+    // description. This page had its own copy of that effect, written before
+    // the shared helper existed and still navigating on every change; see
+    // `docs/decisions/0018-ecrire-l-url-de-vue-sans-naviguer.md`.
+    keepViewInQueryParams(() => ({ animateur: optionalParam(this.selectedAnimateurId()) }));
   }
 
   protected async refresh(): Promise<void> {

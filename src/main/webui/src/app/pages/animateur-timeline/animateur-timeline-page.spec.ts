@@ -4,9 +4,10 @@
 // the three exports, which are the only actions of the screen — each of them
 // hands out a file or a mail carrying someone's personal planning.
 
+import { Location } from '@angular/common';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
 import { NotificationService } from '../../core/notification.service';
@@ -281,7 +282,7 @@ describe('AnimateurTimelinePage', () => {
   let fixture: ComponentFixture<AnimateurTimelinePage>;
   let api: { get: ReturnType<typeof vi.fn>; post: ReturnType<typeof vi.fn>; downloadPost: ReturnType<typeof vi.fn> };
   let notify: ReturnType<typeof vi.fn>;
-  let navigate: ReturnType<typeof vi.fn>;
+  let replaceState: ReturnType<typeof vi.fn>;
   let planningState: { loadForDisplay: ReturnType<typeof vi.fn>; require: ReturnType<typeof vi.fn> };
 
   function planningDeDeux(): PlanningEvenement {
@@ -306,7 +307,7 @@ describe('AnimateurTimelinePage', () => {
       downloadPost: vi.fn(async () => 'Téléchargement démarré.')
     };
     notify = vi.fn();
-    navigate = vi.fn(async () => true);
+    replaceState = vi.fn();
     planningState = {
       loadForDisplay: vi.fn(async () => evenement),
       require: vi.fn(async () => evenement)
@@ -318,7 +319,7 @@ describe('AnimateurTimelinePage', () => {
         { provide: ApiService, useValue: api },
         { provide: NotificationService, useValue: { notify } },
         { provide: PlanningStateService, useValue: planningState },
-        { provide: Router, useValue: { navigate } },
+        { provide: Location, useValue: { path: () => '/timeline', replaceState } },
         {
           provide: ActivatedRoute,
           useValue: {
@@ -333,6 +334,11 @@ describe('AnimateurTimelinePage', () => {
 
   function racine(): HTMLElement {
     return fixture.nativeElement as HTMLElement;
+  }
+
+  /** Le geste de l'écran : choisir quelqu'un d'autre dans la liste. */
+  function selectionner(animateurId: string): void {
+    (fixture.componentInstance as unknown as { selectAnimateur(id: string): void }).selectAnimateur(animateurId);
   }
 
   function bouton(libelle: string): HTMLButtonElement {
@@ -361,10 +367,28 @@ describe('AnimateurTimelinePage', () => {
   it('keeps the selection in the URL without piling up history entries', async () => {
     await rendre(planningDeDeux());
 
-    expect(navigate).toHaveBeenCalled();
-    const [, extras] = navigate.mock.calls.at(-1) as unknown as [unknown[], { queryParams: { animateur: string }; replaceUrl: boolean }];
-    expect(extras.queryParams.animateur).toBe('a1');
-    expect(extras.replaceUrl).toBe(true);
+    // Written straight to the address bar, never through a router navigation:
+    // this page had its own copy of that effect until it joined the shared
+    // helper. See docs/decisions/0018-ecrire-l-url-de-vue-sans-naviguer.md.
+    expect(replaceState).toHaveBeenLastCalledWith('/timeline?animateur=a1');
+  });
+
+  it("suit le changement d'animateur dans l'URL, et c'est cette URL qui rouvre la même personne", async () => {
+    // Le lien qu'on partage sur cet écran, c'est « regarde le planning
+    // d'Untel » : changer de personne doit donc se voir dans la barre
+    // d'adresse, et cette adresse doit rouvrir la même personne.
+    await rendre(planningDeDeux());
+    expect(replaceState).toHaveBeenLastCalledWith('/timeline?animateur=a1');
+
+    selectionner('a2');
+    await fixture.whenStable();
+
+    expect(replaceState).toHaveBeenLastCalledWith('/timeline?animateur=a2');
+
+    // Et le retour : cette URL-là, rechargée, rouvre bien Bob — une seule
+    // vacation, là où Alice en a deux.
+    await rendre(planningDeDeux(), { animateurEnParametre: 'a2' });
+    expect(racine().querySelectorAll('.timeline-block-list li')).toHaveLength(1);
   });
 
   it('names the teammates of each seat, and says so when there are none', async () => {

@@ -147,6 +147,62 @@ test('un filtre se tape d’une traite, sans reprendre le focus entre deux lettr
   await page.context().close();
 });
 
+test('la timeline suit l’animateur choisi dans l’URL, et ce lien rouvre la même personne', async ({ browser }) => {
+  // Le lien qu'on partage depuis cet écran, c'est « regarde le planning
+  // d'Untel » : c'est donc la sélection, et non un tri, que l'URL doit porter.
+  // Cette page écrivait son URL à la main, hors du helper partagé, jusqu'à ce
+  // qu'elle le rejoigne — d'où ce test au même endroit que les autres.
+  const page = await pageAdmin(browser, admin);
+  await page.goto('/timeline');
+  // Le champ de sélection porte lui-même le nom retenu : c'est le seul endroit
+  // de l'écran qui nomme la personne affichée.
+  const champ = page.getByLabel('Animateur', { exact: true });
+  // Le champ arrive prérempli par la sélection d'ouverture : on le vide comme
+  // le ferait l'utilisateur, puis on tape.
+  await champ.click();
+  await page.keyboard.press('ControlOrMeta+a');
+  await page.keyboard.type('Bruno', { delay: 30 });
+  await page.getByRole('option', { name: /Bruno/ }).click();
+
+  await expect(page).toHaveURL(/[?&]animateur=E2E-B/);
+  await expect(champ).toHaveValue(/Bruno/);
+
+  // Le rechargement : c'est lui qui distingue un état porté par l'URL d'un
+  // état gardé en mémoire.
+  await page.reload();
+  await expect(page.getByLabel('Animateur', { exact: true })).toHaveValue(/Bruno/);
+  await expect(page).toHaveURL(/[?&]animateur=E2E-B/);
+  await page.context().close();
+});
+
+test('un lien de timeline partagé ouvre directement la bonne personne', async ({ browser }) => {
+  const page = await pageAdmin(browser, admin);
+  await page.goto('/timeline?animateur=E2E-B');
+
+  await expect(page.getByLabel('Animateur', { exact: true })).toHaveValue(/Bruno/);
+  await page.context().close();
+});
+
+test('le bouton Retour quitte la timeline au lieu de rejouer chaque sélection', async ({ browser }) => {
+  const page = await pageAdmin(browser, admin);
+  await page.goto('/hours');
+  await page.goto('/timeline');
+
+  const champ = page.getByLabel('Animateur', { exact: true });
+  // Le champ arrive prérempli par la sélection d'ouverture : on le vide comme
+  // le ferait l'utilisateur, puis on tape.
+  await champ.click();
+  await page.keyboard.press('ControlOrMeta+a');
+  await page.keyboard.type('Bruno', { delay: 30 });
+  await page.getByRole('option', { name: /Bruno/ }).click();
+  await expect(page).toHaveURL(/[?&]animateur=E2E-B/);
+
+  await page.goBack();
+
+  await expect(page).toHaveURL(/\/hours/);
+  await page.context().close();
+});
+
 test('le bouton Retour quitte l’écran au lieu de rejouer chaque frappe du filtre', async ({ browser }) => {
   // `replaceUrl` : sans lui, filtrer sur cinq caractères laisserait cinq
   // entrées d'historique, et il faudrait cinq retours pour sortir de la page.
