@@ -82,8 +82,19 @@ export class BancDeTouchePage {
     void this.premierChargement();
   }
 
+  /**
+   * The référentiel first — the selectors are built from it — then the bench.
+   * Both failures are caught in the same place: a `reload()` rejection used to
+   * escape into the `void`, leaving the card blank with no message at all,
+   * which is the one outcome a screen must never produce.
+   */
   private async premierChargement(): Promise<void> {
-    await this.store.reload(['creneaux', 'stands', 'animateurs']);
+    try {
+      await this.store.reload(['creneaux', 'stands', 'animateurs']);
+    } catch (error) {
+      this.erreur.set(errorPrefix(error));
+      return;
+    }
     this.defautCreneau();
     await this.charger();
   }
@@ -120,7 +131,18 @@ export class BancDeTouchePage {
     void this.charger();
   }
 
+  /**
+   * Which request is allowed to write the screen. Changing créneau then stand
+   * quickly fires two calls, and nothing guarantees they come back in order:
+   * without this, the older answer could land last and leave the table showing
+   * one créneau while the selectors show another. The same counter keeps the
+   * progress bar up until the *current* request is done, instead of dropping it
+   * on the first answer to arrive.
+   */
+  private requeteCourante = 0;
+
   private async charger(): Promise<void> {
+    const requete = ++this.requeteCourante;
     const creneauId = this.creneauId();
     if (creneauId === null) {
       this.banc.set(null);
@@ -130,13 +152,22 @@ export class BancDeTouchePage {
     this.chargement.set(true);
     try {
       const query = standId ? `?standId=${encodeURIComponent(standId)}` : '';
-      this.banc.set(await this.api.get<BancDeTouche>(`/api/banc-de-touche/${creneauId}${query}`));
+      const banc = await this.api.get<BancDeTouche>(`/api/banc-de-touche/${creneauId}${query}`);
+      if (requete !== this.requeteCourante) {
+        return;
+      }
+      this.banc.set(banc);
       this.erreur.set('');
     } catch (error) {
+      if (requete !== this.requeteCourante) {
+        return;
+      }
       this.banc.set(null);
       this.erreur.set(errorPrefix(error));
     } finally {
-      this.chargement.set(false);
+      if (requete === this.requeteCourante) {
+        this.chargement.set(false);
+      }
     }
   }
 

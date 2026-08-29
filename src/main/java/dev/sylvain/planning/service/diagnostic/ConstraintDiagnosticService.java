@@ -53,11 +53,28 @@ public interface ConstraintDiagnosticService {
      * keys {@code ConstraintCatalog} already describes in business words, and
      * never a rule of their own.</p>
      *
+     * <p><b>The baseline is the seat empty, not the seat as it stands.</b> Each
+     * hypothesis is measured against the plan with {@code cible} unassigned,
+     * and that is not a detail: measured against the current occupant, a
+     * candidate breaking the very rule the occupant already breaks leaves every
+     * per-constraint total flat, and the answer comes back « nothing against
+     * them ». That is how an animateur already on duty elsewhere at that hour
+     * was reported as available. Emptying the seat first removes the whole
+     * class: what the candidate would strain is compared against nobody
+     * straining anything.
+     *
+     * <p>A caller wanting the cost <em>relative to the current occupant</em>
+     * has it for one more candidate: probe that occupant too, and subtract
+     * their {@link AffectationHypothesis#scoreApres()}.</p>
+     *
      * <p>Nothing is persisted and no solve is started. {@code cible}'s
-     * occupant is restored before returning, so the caller's planning comes
-     * back exactly as it was handed over — like
-     * {@code PlanningService.simulateSwap}'s in-place substitution, and for the
-     * same reason (the planning is a per-request payload, never shared).</p>
+     * occupant is restored before returning <b>and the solution's score is
+     * recomputed</b>, so the caller's planning comes back exactly as it was
+     * handed over — like {@code PlanningService.simulateSwap}'s in-place
+     * substitution, and for the same reason (the planning is a per-request
+     * payload, never shared). Restoring the variable without the score would
+     * leave the last candidate's score on the solution, which the next reader
+     * has no way to tell from a real one.</p>
      *
      * <p>The default implementation is the naive one, one full
      * {@link #analyze} per candidate. {@link ScoreDirectorConstraintDiagnosticService}

@@ -130,10 +130,14 @@ public final class ScoreDirectorConstraintDiagnosticService implements Constrain
      * <p><b>Why the seat comes back untouched.</b> Every substitution is
      * wrapped in the {@code beforeVariableChanged}/{@code afterVariableChanged}
      * pair the score director requires, and the original occupant is restored
-     * through the same pair in a {@code finally} — skipping either half is what
-     * score corruption is made of. {@code AffectationHypothesisTest} asserts
-     * both the parity with the default implementation and that the plan's
-     * score is unchanged once the loop is over.</p>
+     * through the same pair in a {@code finally}, followed by one last
+     * {@code calculateScore()} so the solution stops carrying the last
+     * candidate's score — skipping either half of the pair is what score
+     * corruption is made of, and skipping the recalculation leaves a stale
+     * score the next reader cannot tell from a real one.
+     * {@code AffectationHypothesisTest} asserts the parity with the default
+     * implementation, and that the plan and its score both come back
+     * unchanged.</p>
      *
      * <p>Justifications are deliberately <b>not</b> tracked
      * ({@link ConstraintMatchPolicy#ENABLED_WITHOUT_JUSTIFICATIONS}): building
@@ -146,10 +150,13 @@ public final class ScoreDirectorConstraintDiagnosticService implements Constrain
         Animateur initial = cible.getAnimateur();
         try (InnerScoreDirector<PlanningEvenement, HardMediumSoftScore> scoreDirector = buildProbeScoreDirector()) {
             scoreDirector.setWorkingSolution(solution);
-            HardMediumSoftScore avant = scoreDirector.calculateScore().raw();
-            Map<String, HardMediumSoftScore> totalsBefore = totals(scoreDirector);
             List<AffectationHypothesis> hypotheses = new ArrayList<>(candidats.size());
             try {
+                // The baseline is the seat EMPTY, never its current occupant —
+                // see the interface's javadoc for the answer that gets wrong.
+                assign(scoreDirector, cible, null);
+                HardMediumSoftScore avant = scoreDirector.calculateScore().raw();
+                Map<String, HardMediumSoftScore> totalsBefore = totals(scoreDirector);
                 for (Animateur candidat : candidats) {
                     assign(scoreDirector, cible, candidat);
                     HardMediumSoftScore apres = scoreDirector.calculateScore().raw();
@@ -158,6 +165,10 @@ public final class ScoreDirectorConstraintDiagnosticService implements Constrain
                 }
             } finally {
                 assign(scoreDirector, cible, initial);
+                // Restoring the variable is not restoring the plan: the score
+                // director writes the score onto the solution, so the last
+                // candidate's would stay on it, indistinguishable from a real one.
+                scoreDirector.calculateScore();
             }
             return List.copyOf(hypotheses);
         }

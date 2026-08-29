@@ -927,17 +927,18 @@ export interface MotifExclusion {
  * One line of the banc de touche, with two verdicts that are deliberately not
  * the same one:
  *
- * - `disponible` — no hard rule stands between this animateur and the seat.
- *   This is what the screen shows.
- * - `envisageable` — the repair assistant's own test (eligible, and the plan's
- *   hard score no worse). Laxer: filling an empty seat earns back a hard point,
- *   so a candidate introducing exactly one hard violation comes out
- *   score-neutral. `disponible` implies `envisageable`, never the reverse.
+ * - `disponible` — not a single hard rule stands between this animateur and the
+ *   seat, measured against that seat being empty. This is what the screen shows.
+ * - `degradeLePlan` — the plan's hard score would actually get worse than it is
+ *   today. Taking over from someone who already breaks a rule can break another
+ *   and leave the plan no worse overall, so the two verdicts come apart.
+ *
+ * `disponible` implies `!degradeLePlan`, never the reverse.
  */
 export interface AnimateurBanc {
   animateurId: string;
   disponible: boolean;
-  envisageable: boolean;
+  degradeLePlan: boolean;
   /** Score delta the assignment would cause; null when no hypothesis was evaluated. */
   delta: HardMediumSoftScore | null;
   motifs: MotifExclusion[];

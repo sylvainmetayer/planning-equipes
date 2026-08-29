@@ -12,11 +12,13 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.service.PlanningService.AnimateurAvailability;
 import dev.sylvain.planning.service.PlanningService.CreneauAvailability;
 import dev.sylvain.planning.service.PlanningService.MotifExclusion;
@@ -37,11 +39,16 @@ import dev.sylvain.planning.service.PlanningService.SuggestionsReparation;
  * {@code EligibleAnimateurMoveFilter} and both read the hard-score delta of
  * the same hypothesis. This test is what keeps that true after the next edit.</p>
  *
- * <p>The correspondence is pinned on {@code AnimateurAvailability.envisageable},
- * which <i>is</i> the repair assistant's own test. What the screen shows as
- * « disponible » is deliberately stricter — see
- * {@link PlanningService.AnimateurAvailability} — and is checked here to be sound
- * against it rather than equal to it.</p>
+ * <p><b>What is pinned is an implication, not an equality</b>, and that is a
+ * deliberate retreat from an earlier, false claim. The assistant applies two
+ * filters — a plan-wide hard-score test, and « no hard violation introduced on
+ * this very seat », the second one read off the per-seat constraint
+ * <i>matches</i>. Reproducing the second exactly here would mean
+ * re-implementing that match analysis, which is the duplication issue #303
+ * exists to remove. The screen instead applies its own, <b>stricter</b>
+ * instrument (no hard constraint worsened at all, measured against the seat
+ * being empty), so what holds is: anyone shown as {@code disponible} is a
+ * candidate the assistant proposes. The converse is false, on purpose.</p>
  */
 class CreneauAvailabilityCoherenceTest {
 
@@ -53,42 +60,10 @@ class CreneauAvailabilityCoherenceTest {
             new EmptyReferenceData(), new FeasibilityAnalyzer(), ConfigProvider.getConfig());
 
     /**
-     * The criterion, both ways at once: restricted to the population the banc
-     * covers (the repair assistant also weighs animateurs already busy on that
-     * créneau, who are by definition not on the bench), « ruled out here » and
-     * « not proposed there » are the same set of people.
-     */
-    @Test
-    void whoTheBenchRulesOutIsExactlyWhoTheRepairAssistantDoesNotPropose() {
-        PlanningEvenement planning = planning();
-
-        CreneauAvailability banc = planningService.creneauAvailability(planning, CRENEAU_CIBLE, null, null);
-        SuggestionsReparation reparations = planningService.suggererReparations(planning, banc.posteCibleId(),
-                PlanningService.SUGGESTIONS_PLAFOND_MAX);
-
-        Set<String> surLeBanc = ids(banc.animateurs().stream());
-        Set<String> proposes = reparations.suggestions().stream()
-                .map(SuggestionReparation::animateurId)
-                .filter(surLeBanc::contains)
-                .collect(java.util.stream.Collectors.toSet());
-        Set<String> retenus = ids(banc.animateurs().stream().filter(AnimateurAvailability::envisageable));
-        Set<String> ecartes = ids(banc.animateurs().stream().filter(ligne -> !ligne.envisageable()));
-
-        assertThat(retenus).isNotEmpty().isEqualTo(proposes);
-        assertThat(ecartes).isNotEmpty().noneMatch(proposes::contains);
-    }
-
-    /**
-     * The stricter reading the screen displays is sound against the same
-     * assistant: someone shown as « disponible » — nothing hard against them —
-     * is always a candidate it would propose.
-     *
-     * <p>Not an equality, on purpose. Filling an empty seat earns back the hard
-     * point {@code posteDoitEtrePourvu} was costing, so a candidate introducing
-     * exactly one new hard violation comes out score-neutral and the assistant
-     * keeps them, reporting what they would break. Calling that person
-     * « disponible » would be the lie this screen exists to avoid, so the two
-     * notions are carried apart rather than reconciled by weakening one.</p>
+     * The criterion: anyone this screen shows as available is a candidate the
+     * repair assistant proposes for the same seat. Restricted to the population
+     * the banc covers — the assistant also weighs animateurs already busy on
+     * that créneau, who are by definition not on the bench.
      */
     @Test
     void anyoneShownAsAvailableIsAlsoACandidateForTheRepairAssistant() {
@@ -104,7 +79,60 @@ class CreneauAvailabilityCoherenceTest {
         assertThat(ids(banc.animateurs().stream().filter(AnimateurAvailability::disponible)))
                 .isNotEmpty()
                 .allMatch(proposes::contains);
-        assertThat(banc.animateurs()).noneMatch(ligne -> ligne.disponible() && !ligne.envisageable());
+        assertThat(banc.animateurs()).noneMatch(ligne -> ligne.disponible() && ligne.degradeLePlan());
+    }
+
+    /**
+     * The case that made the equality claim false, and the one the assistant's
+     * second filter exists for: an ad hoc {@code INDISPONIBILITE_FORCEE} is a
+     * hard rule of weight 1 that {@code EligibleAnimateurMoveFilter} does not
+     * know about. Filling an empty seat with that animateur settles
+     * {@code posteDoitEtrePourvu} (+1) and spends it on
+     * {@code indisponibiliteForcee} (−1): the plan-wide hard score comes out
+     * flat, so a screen reading only that score would announce « disponible ».
+     *
+     * <p>Reading per-constraint totals instead is what catches it, and it must
+     * keep catching it whatever the weights happen to be.</p>
+     */
+    @Test
+    void anAdHocBanIsSeenEvenWhenItCostsThePlanNothingOverall() {
+        PlanningEvenement planning = planningWithAdHocBan();
+
+        CreneauAvailability banc = planningService.creneauAvailability(planning, CRENEAU_CIBLE, null, null);
+
+        AnimateurAvailability interdit = row(banc, "A-INTERDIT");
+        assertThat(constraintNames(banc, "A-INTERDIT")).contains("indisponibiliteForcee");
+        assertThat(interdit.disponible()).isFalse();
+        // The very reason the screen cannot lean on this verdict alone.
+        assertThat(interdit.delta().hardScore()).isZero();
+        assertThat(interdit.degradeLePlan()).isFalse();
+    }
+
+    /**
+     * The graver half of the same lesson, on an <b>occupied</b> seat — the
+     * normal case on a solved plan.
+     *
+     * <p>Measured against the seat as it stands, a candidate who breaks exactly
+     * the rule its occupant already breaks leaves the constraint's total flat,
+     * and the answer used to come back with <b>no motif at all</b>: « Disponible »
+     * for somebody physically on duty elsewhere at that hour. Measuring against
+     * the seat <em>empty</em> is what removes the whole class, and this is the
+     * fixture that proves it: {@code A-TITULAIRE} holds the target seat and an
+     * overlapping one, {@code A-DOUBLE} holds an overlapping one too, so the
+     * swap keeps {@code pasDeChevauchementHoraire} at exactly one match.</p>
+     */
+    @Test
+    void aClashIsSeenEvenWhenTheOccupantAlreadyHasTheSameOne() {
+        PlanningEvenement planning = planningWithDoubleBookedOccupant();
+
+        CreneauAvailability banc = planningService.creneauAvailability(planning, CRENEAU_CIBLE, null, null);
+
+        assertThat(banc.animateurCibleId()).isEqualTo("A-TITULAIRE");
+        assertThat(constraintNames(banc, "A-DOUBLE")).contains("pasDeChevauchementHoraire");
+        assertThat(row(banc, "A-DOUBLE").disponible()).isFalse();
+        // Flat plan-wide: one clash traded for another. That is exactly why the
+        // per-constraint totals have to be read against an empty seat.
+        assertThat(row(banc, "A-DOUBLE").delta().hardScore()).isZero();
     }
 
     /**
@@ -275,6 +303,52 @@ class CreneauAvailabilityCoherenceTest {
                 .filter(ligne -> ligne.animateurId().equals(animateurId))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Absent du banc de touche : " + animateurId));
+    }
+
+    /**
+     * An empty seat, one animateur banned from it by an ad hoc rule, and one
+     * with nothing against them. Nothing else, so the arithmetic stays legible:
+     * the ban costs exactly the hard point filling the seat earns back.
+     */
+    private static PlanningEvenement planningWithAdHocBan() {
+        Stand stand = new Stand("S-CIBLE", "Chamboule-tout", Set.of(), 1, 2, false);
+        Creneau matin = new Creneau(CRENEAU_CIBLE, 1, JOUR, LocalTime.of(10, 0), LocalTime.of(13, 0));
+        Animateur interdit = new Animateur("A-INTERDIT", "Inès", "Durand", LocalDate.of(1990, 1, 1), false);
+        Animateur libre = new Animateur("A-LIBRE", "Léa", "Martin", LocalDate.of(1990, 1, 1), false);
+
+        PosteAffectation vide = new PosteAffectation("P-LIBRE", stand, matin);
+        ContrainteAdHoc interdiction = new ContrainteAdHoc("C-BAN", TypeContrainteAdHoc.INDISPONIBILITE_FORCEE);
+        interdiction.setAnimateursConcernes(List.of(interdit));
+        interdiction.setCreneau(matin);
+        interdiction.setRaison("Écarté de ce créneau par l'organisateur");
+
+        return new PlanningEvenement(JOUR, List.of(interdit, libre), List.of(vide), List.of(interdiction));
+    }
+
+    /**
+     * The occupied-seat trap: the seat's own occupant is already double-booked
+     * on an overlapping créneau, and so is the candidate. Swapping them keeps
+     * {@code pasDeChevauchementHoraire} at one match, so any reading based on
+     * the seat as it stands reports nothing at all.
+     */
+    private static PlanningEvenement planningWithDoubleBookedOccupant() {
+        Stand cible = new Stand("S-CIBLE", "Chamboule-tout", Set.of(), 1, 2, false);
+        Stand ailleurs = new Stand("S-AILLEURS", "Molkky", Set.of(), 1, 2, false);
+        Creneau matin = new Creneau(CRENEAU_CIBLE, 1, JOUR, LocalTime.of(10, 0), LocalTime.of(13, 0));
+        Creneau chevauchant = new Creneau(2L, 1, JOUR, LocalTime.of(12, 0), LocalTime.of(15, 0));
+
+        Animateur titulaire = new Animateur("A-TITULAIRE", "Théo", "Roux", LocalDate.of(1990, 1, 1), false);
+        Animateur doublon = new Animateur("A-DOUBLE", "Dina", "Martin", LocalDate.of(1990, 1, 1), false);
+
+        PosteAffectation siege = new PosteAffectation("P-CIBLE", cible, matin);
+        siege.setAnimateur(titulaire);
+        PosteAffectation autreDuTitulaire = new PosteAffectation("P-AUTRE-1", ailleurs, chevauchant);
+        autreDuTitulaire.setAnimateur(titulaire);
+        PosteAffectation autreDuDoublon = new PosteAffectation("P-AUTRE-2", ailleurs, chevauchant);
+        autreDuDoublon.setAnimateur(doublon);
+
+        return new PlanningEvenement(JOUR, List.of(titulaire, doublon),
+                List.of(siege, autreDuTitulaire, autreDuDoublon));
     }
 
     /**

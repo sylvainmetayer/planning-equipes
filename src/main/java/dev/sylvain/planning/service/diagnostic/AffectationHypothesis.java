@@ -21,15 +21,21 @@ import dev.sylvain.planning.domain.PosteAffectation;
  * from a second implementation of the same rule. Nothing here knows what a
  * daily cap is.</p>
  *
+ * <p><b>Everything here is measured against the seat being empty</b>, never
+ * against its current occupant — see {@link ConstraintDiagnosticService#hypotheses}
+ * for why that distinction is the difference between an honest answer and a
+ * flattering one.</p>
+ *
  * @param animateurId          the candidate
- * @param scoreApres           the plan's score with the candidate on the seat
- * @param delta                {@code scoreApres - scoreAvant}; a negative hard
- *                             component is the exact verdict
- *                             {@code PlanningService.suggererReparations} uses
- *                             to drop a candidate
+ * @param scoreApres           the plan's score with the candidate on the seat.
+ *                             An absolute score, so a caller wanting the cost
+ *                             relative to the current occupant only has to
+ *                             probe that occupant too and subtract
+ * @param delta                {@code scoreApres} minus the score of the plan
+ *                             with the seat <b>empty</b>
  * @param contraintesAggravees names of the constraints whose own contribution
- *                             got strictly worse, in catalogue order — the
- *                             reasons, each one a key of
+ *                             got strictly worse than with the seat empty —
+ *                             the reasons, each one a key of
  *                             {@code ConstraintCatalog}
  */
 public record AffectationHypothesis(String animateurId, HardMediumSoftScore scoreApres,
@@ -39,7 +45,7 @@ public record AffectationHypothesis(String animateurId, HardMediumSoftScore scor
         contraintesAggravees = List.copyOf(contraintesAggravees);
     }
 
-    /** True when the plan's hard score would drop — the seat is out of reach for this candidate. */
+    /** True when this candidate breaks a hard rule the empty seat did not — see {@link #delta()}. */
     public boolean degradesHardScore() {
         return delta.hardScore() < 0;
     }
@@ -60,10 +66,11 @@ public record AffectationHypothesis(String animateurId, HardMediumSoftScore scor
     static List<AffectationHypothesis> byFullAnalysis(ConstraintDiagnosticService diagnostic,
             PlanningEvenement solution, PosteAffectation cible, List<Animateur> candidats) {
         Animateur initial = cible.getAnimateur();
-        PlanningAnalysis avant = diagnostic.analyze(solution);
-        Map<String, HardMediumSoftScore> totalsBefore = totals(avant);
         List<AffectationHypothesis> hypotheses = new ArrayList<>(candidats.size());
         try {
+            cible.setAnimateur(null);
+            PlanningAnalysis avant = diagnostic.analyze(solution);
+            Map<String, HardMediumSoftScore> totalsBefore = totals(avant);
             for (Animateur candidat : candidats) {
                 cible.setAnimateur(candidat);
                 PlanningAnalysis apres = diagnostic.analyze(solution);
@@ -73,6 +80,9 @@ public record AffectationHypothesis(String animateurId, HardMediumSoftScore scor
             }
         } finally {
             cible.setAnimateur(initial);
+            // The score the caller's solution carries is a side effect of
+            // analyze(), so the last candidate's would otherwise stay on it.
+            diagnostic.analyze(solution);
         }
         return List.copyOf(hypotheses);
     }

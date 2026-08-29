@@ -497,6 +497,15 @@ sources, et d'aucune troisième :
   manquante — est obtenu en **posant le siège à chaque candidat et en demandant
   aux contraintes ce qui a empiré**. Aucun seuil n'est recopié.
 
+**Empiré par rapport à quoi : au siège vide, jamais à son occupant.** La nuance
+décide de la justesse de l'écran. Comparé à l'occupant en place, un candidat qui
+casse précisément la règle que l'occupant casse déjà laisse le total de cette
+contrainte inchangé, et l'écran répondait « rien contre lui » — c'est ainsi
+qu'un animateur déjà de service ailleurs à cette heure-là ressortait
+« Disponible ». Le siège est donc vidé avant de sonder, ce qui supprime la
+classe entière : ce que le candidat tendrait est comparé à personne ne tendant
+rien.
+
 Le siège évalué est nommé par `posteCibleId` : celui que `posteId` désigne,
 sinon le premier siège libre du créneau (restreint à `standId` s'il est fourni),
 sinon son premier siège — auquel cas la question posée devient « qui pourrait le
@@ -506,15 +515,24 @@ Chaque ligne porte **deux verdicts, qui ne disent pas la même chose** :
 
 | Champ | Sens |
 | --- | --- |
-| `disponible` | Aucune règle dure ne s'oppose à cette affectation. C'est ce que l'écran affiche. |
-| `envisageable` | Le verdict de l'assistant de réparation : éligible, et le score dur du plan pas plus mauvais. |
+| `disponible` | Aucune règle dure ne s'oppose à cette affectation, siège vide pour référence. C'est ce que l'écran affiche. |
+| `degradeLePlan` | Le score dur du plan serait réellement plus mauvais qu'aujourd'hui. |
 
-`disponible` implique `envisageable`, jamais l'inverse. Pourvoir un siège vide
-récupère le point dur que `posteDoitEtrePourvu` coûtait, si bien qu'un candidat
-qui introduit **exactement une** violation dure ressort à score constant :
-l'assistant le garde en annonçant ce qu'il casserait, alors que l'appeler
-« disponible » serait faux. La correspondance entre les deux écrans est vérifiée
-dans les deux sens sur `envisageable` (`CreneauAvailabilityCoherenceTest`).
+`disponible` implique `!degradeLePlan`, jamais l'inverse : reprendre le siège de
+quelqu'un qui casse déjà une règle peut en casser une autre sans que le plan
+empire globalement. `delta` chiffre l'écart par rapport au plan **actuel** — ce
+qui suppose de sonder aussi l'occupant du siège, et c'est exactement ce que fait
+le service.
+
+**Ce que la vue garantit face à l'assistant de réparation**, et rien de plus :
+tout animateur affiché `disponible` est un candidat que `suggererReparations`
+propose sur le même siège (`CreneauAvailabilityCoherenceTest`). La réciproque
+est fausse **volontairement** : l'assistant applique deux filtres, dont le
+second lit les violations *du siège lui-même* match par match ; le reproduire
+ici reviendrait à réimplémenter cette analyse, c'est-à-dire la duplication que
+cet écran existe pour éviter. La vue applique à la place son propre instrument,
+plus strict — aucune contrainte dure aggravée, siège vide pour référence — et
+c'est l'implication qui est vérifiée, pas une égalité.
 
 Tous les motifs applicables sont listés, pas seulement le plus bloquant : savoir
 que lever l'indisponibilité en laisserait trois autres derrière est précisément

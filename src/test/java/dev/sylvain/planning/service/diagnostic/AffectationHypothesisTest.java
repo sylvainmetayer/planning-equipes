@@ -7,6 +7,7 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.Set;
 
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.solver.SolverFactory;
 import ai.timefold.solver.core.config.score.director.ScoreDirectorFactoryConfig;
 import ai.timefold.solver.core.config.solver.SolverConfig;
@@ -109,6 +110,56 @@ class AffectationHypothesisTest {
 
         assertThat(fixture.siegeLibre.getAnimateur()).isSameAs(occupantInitial);
         assertThat(rapide.analyze(fixture.planning).score()).isEqualTo(avant.score());
+    }
+
+    /**
+     * Restoring the variable is not restoring the plan. Both implementations
+     * write the score onto the solution as they go, so without a final
+     * recalculation the caller gets its planning back carrying the <em>last
+     * candidate's</em> score — indistinguishable from a real one, and a trap
+     * for anything reading {@code getScore()} afterwards.
+     *
+     * <p>Read straight off the solution on purpose: calling {@code analyze()}
+     * again is what hid this, because it recomputes the very field under test.
+     * And probed on the <b>free</b> seat, because the state to come back to —
+     * unfilled, so one {@code posteDoitEtrePourvu} short — is one no candidate
+     * can score the same as. On an occupied seat two interchangeable adults
+     * score alike and a missing recalculation slips through unnoticed.</p>
+     */
+    @Test
+    void bothImplementationsLeaveAFreshScoreOnTheSolution() {
+        for (ConstraintDiagnosticService implementation : List.of(rapide, naif)) {
+            Fixture fixture = new Fixture();
+            HardMediumSoftScore attendu = implementation.analyze(fixture.planning).score();
+
+            implementation.hypotheses(fixture.planning, fixture.siegeLibre, fixture.candidats);
+
+            assertThat(fixture.planning.getScore())
+                    .describedAs("score left on the solution by %s", implementation.getClass().getSimpleName())
+                    .isEqualTo(attendu);
+        }
+    }
+
+    /**
+     * The baseline is the seat empty, not its occupant — the fix for the bug
+     * that made this screen call somebody « disponible » while they were on
+     * duty elsewhere at that hour.
+     *
+     * <p>Probing an occupied seat with its own occupant must therefore report a
+     * cost, not nothing: they do fill a seat the baseline leaves empty.</p>
+     */
+    @Test
+    void theBaselineIsTheSeatEmptyEvenWhenItIsTaken() {
+        Fixture fixture = new Fixture();
+        Animateur titulaire = fixture.siegeOccupe.getAnimateur();
+
+        List<AffectationHypothesis> hypotheses =
+                rapide.hypotheses(fixture.planning, fixture.siegeOccupe, List.of(titulaire));
+
+        // posteDoitEtrePourvu is settled by putting them back: that is a gain,
+        // so the baseline really was the empty seat and not the plan as given.
+        assertThat(hypotheses).singleElement()
+                .satisfies(hypothese -> assertThat(hypothese.delta().hardScore()).isPositive());
     }
 
     /**

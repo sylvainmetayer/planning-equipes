@@ -19,7 +19,7 @@ const motif = (contrainte: string, niveau: MotifExclusion['niveau']): MotifExclu
 
 const ligne = (partial: Partial<AnimateurBanc> & { animateurId: string }): AnimateurBanc => ({
   disponible: true,
-  envisageable: true,
+  degradeLePlan: false,
   delta: null,
   motifs: [],
   ...partial
@@ -38,15 +38,15 @@ const animateur = (id: string, prenom: string, nom: string): Animateur => ({
 
 describe('etatDe', () => {
   it('sépare les trois états au lieu de les aplatir en deux', () => {
-    expect(etatDe(ligne({ animateurId: 'A', disponible: true, envisageable: true }))).toBe('disponible');
-    expect(etatDe(ligne({ animateurId: 'B', disponible: false, envisageable: true }))).toBe('sousReserve');
-    expect(etatDe(ligne({ animateurId: 'C', disponible: false, envisageable: false }))).toBe('impossible');
+    expect(etatDe(ligne({ animateurId: 'A', disponible: true, degradeLePlan: false }))).toBe('disponible');
+    expect(etatDe(ligne({ animateurId: 'B', disponible: false, degradeLePlan: false }))).toBe('sousReserve');
+    expect(etatDe(ligne({ animateurId: 'C', disponible: false, degradeLePlan: true }))).toBe('impossible');
   });
 
-  // The server guarantees `disponible` implies `envisageable`; if that ever
+  // The server guarantees `disponible` implies `!degradeLePlan`; if that ever
   // stops holding, the stricter reading must win rather than the laxer one.
   it("retient le verdict le plus strict si le serveur se contredit", () => {
-    expect(etatDe(ligne({ animateurId: 'D', disponible: true, envisageable: false }))).toBe('impossible');
+    expect(etatDe(ligne({ animateurId: 'D', disponible: true, degradeLePlan: true }))).toBe('impossible');
   });
 });
 
@@ -87,11 +87,11 @@ describe('lignes', () => {
       ligne({
         animateurId: 'A2',
         disponible: false,
-        envisageable: false,
+        degradeLePlan: true,
         delta: { hardScore: -3, mediumScore: 0, softScore: 0 },
         motifs: [motif('souhaitsIncompatibles', 'MEDIUM'), motif('animateurDisponible', 'HARD')]
       }),
-      ligne({ animateurId: 'A-INCONNU', disponible: false, envisageable: true })
+      ligne({ animateurId: 'A-INCONNU', disponible: false, degradeLePlan: false })
     ]
   };
 

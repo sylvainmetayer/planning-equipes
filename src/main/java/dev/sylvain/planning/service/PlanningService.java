@@ -2187,13 +2187,18 @@ public class PlanningService {
      *     changed. Nothing here knows what a cap is worth.</li>
      * </ol>
      *
-     * <p><b>{@code AnimateurAvailability.envisageable} is exactly
-     * {@link #suggererReparations}' verdict</b> — eligible, and a hard score no
-     * worse — and {@code CreneauAvailabilityCoherenceTest} pins the two together in
-     * both directions, so an animateur this screen rules out is never one the
-     * repair assistant proposes for the same seat. {@code disponible} is the
-     * stricter reading the screen displays; see {@link AnimateurAvailability} for why
-     * the two are not one field.</p>
+     * <p><b>Both readings are measured against the seat being empty</b>, which
+     * is what keeps them honest: against the current occupant, a candidate
+     * breaking the very rule that occupant already breaks leaves the
+     * per-constraint totals flat and comes back with nothing against them. See
+     * {@link ConstraintDiagnosticService#hypotheses}.</p>
+     *
+     * <p>{@code AnimateurAvailability.disponible} is <b>stricter</b> than
+     * {@link #suggererReparations}, and {@code CreneauAvailabilityCoherenceTest}
+     * proves the implication that follows: anyone this screen shows as
+     * available is a candidate the repair assistant proposes for the same seat.
+     * See {@link AnimateurAvailability} for why the converse is deliberately
+     * not claimed.</p>
      *
      * <p>All applicable reasons are listed, not the first one found: three
      * reasons and one reason are different situations for whoever has to fill
@@ -2234,9 +2239,23 @@ public class PlanningService {
                 .sorted(Comparator.comparing(Animateur::getId, NaturalOrder.DES_IDS))
                 .toList();
 
+        // The occupant is probed alongside the bench, and for one reason: the
+        // hypotheses are measured against the seat being EMPTY (the only
+        // baseline a candidate cannot hide behind — see
+        // ConstraintDiagnosticService#hypotheses), while « what would this cost
+        // compared to today » is measured against the plan as it stands. Asking
+        // what the occupant himself costs on his own seat is exactly that
+        // reference, at the price of one more candidate.
+        Animateur titulaire = cible.getAnimateur();
+        List<Animateur> sondes = titulaire == null
+                ? banc
+                : Stream.concat(Stream.of(titulaire), banc.stream()).toList();
         Map<String, AffectationHypothesis> hypotheses = constraintDiagnosticService
-                .hypotheses(solved, cible, banc).stream()
+                .hypotheses(solved, cible, sondes).stream()
                 .collect(Collectors.toMap(AffectationHypothesis::animateurId, Function.identity()));
+        HardMediumSoftScore reference = titulaire == null || hypotheses.get(titulaire.getId()) == null
+                ? HardMediumSoftScore.ZERO
+                : hypotheses.get(titulaire.getId()).delta();
 
         List<AnimateurAvailability> lignes = new ArrayList<>(banc.size());
         for (Animateur animateur : banc) {
@@ -2250,16 +2269,15 @@ public class PlanningService {
             }
             List<MotifExclusion> motifs = contraintes.stream().map(PlanningService::motifExclusion).toList();
             boolean disponible = motifs.stream().noneMatch(PlanningService::isHardRule);
-            boolean envisageable = EligibleAnimateurMoveFilter.isEligible(cible, animateur)
-                    && (hypothese == null || !hypothese.degradesHardScore());
-            lignes.add(new AnimateurAvailability(animateur.getId(), disponible, envisageable,
-                    hypothese == null ? null : hypothese.delta(), motifs));
+            HardMediumSoftScore delta = hypothese == null ? null : hypothese.delta().subtract(reference);
+            boolean degradeLePlan = delta != null && delta.hardScore() < 0;
+            lignes.add(new AnimateurAvailability(animateur.getId(), disponible, degradeLePlan, delta, motifs));
         }
         // Available first: this screen is opened to find someone, and the
         // people who can take the seat without breaking anything are the
         // answer — the refusals are the explanation of why the list is short.
         lignes.sort(Comparator.comparing(AnimateurAvailability::disponible, Comparator.reverseOrder())
-                .thenComparing(AnimateurAvailability::envisageable, Comparator.reverseOrder())
+                .thenComparing(AnimateurAvailability::degradeLePlan)
                 .thenComparing(AnimateurAvailability::animateurId, NaturalOrder.DES_IDS));
         int disponibles = (int) lignes.stream().filter(AnimateurAvailability::disponible).count();
         return new CreneauAvailability(creneauId, SeatStatus.EVALUATED, cible.getId(),
@@ -2856,30 +2874,34 @@ public class PlanningService {
      * are genuinely two questions and they do not have the same answer.
      *
      * <p>{@code disponible} is the one the screen is named after: not a single
-     * hard rule stands between this animateur and the seat.
-     * {@code envisageable} is {@link #suggererReparations}' own test —
-     * eligible, and the plan's hard score no worse — and it is the
-     * <i>laxer</i> of the two: filling an empty seat earns back the hard point
-     * {@code posteDoitEtrePourvu} was costing, so a candidate introducing
-     * exactly one new hard violation comes out score-neutral and the repair
-     * assistant keeps them, reporting what they would break as
-     * {@code violationsIntroduites}. « Il peut le prendre, mais il sera sur
-     * deux stands à la fois » is a real answer; « il est disponible » would be
-     * a false one.</p>
+     * hard rule stands between this animateur and the seat, measured against
+     * that seat being <b>empty</b>. {@code degradeLePlan} is the wider
+     * question — would the plan's hard score actually get worse than it is
+     * today. The two come apart on an occupied seat and on a full one: taking
+     * over from someone who already breaks a rule can break another and leave
+     * the plan no worse overall. « Il peut le prendre, mais il sera sur deux
+     * stands à la fois » is a real answer; « il est disponible » would be a
+     * false one.</p>
      *
-     * <p>Carrying both is what lets this screen stay honest and stay in step
-     * with the repair assistant at the same time — the correspondence
-     * {@code CreneauAvailabilityCoherenceTest} pins in both directions is on
-     * {@code envisageable}. {@code disponible} implies {@code envisageable},
-     * never the reverse.</p>
+     * <p><b>{@code disponible} is the strict one, and deliberately stricter
+     * than {@link #suggererReparations}.</b> The repair assistant keeps a
+     * candidate whose hard score comes out flat, reporting what they would
+     * break as {@code violationsIntroduites}; this screen refuses to call that
+     * person available. The guarantee that holds, and that
+     * {@code CreneauAvailabilityCoherenceTest} proves, is the implication:
+     * anyone shown as {@code disponible} <em>is</em> a candidate the assistant
+     * proposes. The converse is false on purpose — see that test for why
+     * pretending otherwise would mean re-implementing the assistant's per-seat
+     * match analysis here, which is the duplication issue #303 exists to
+     * avoid.</p>
      *
-     * @param delta  what the plan's score would become minus what it is, so a
-     *               viable candidate can still be ranked by what they would cost
+     * @param delta  what the plan's score would become minus what it is today,
+     *               so a viable candidate can still be ranked by what they cost
      * @param motifs every applicable reason, not the most blocking one: the
      *               point of the screen is to tell « lever l'indisponibilité
      *               suffirait » apart from « il en resterait trois »
      */
-    public record AnimateurAvailability(String animateurId, boolean disponible, boolean envisageable,
+    public record AnimateurAvailability(String animateurId, boolean disponible, boolean degradeLePlan,
             HardMediumSoftScore delta, List<MotifExclusion> motifs) {
     }
 

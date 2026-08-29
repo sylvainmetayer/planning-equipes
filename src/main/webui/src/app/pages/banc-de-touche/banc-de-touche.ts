@@ -24,12 +24,12 @@ export interface LigneBanc {
 }
 
 /**
- * `impossible` — the repair assistant would not propose them either.
- * `sousReserve` — it would, but a hard rule is strained: « il peut le prendre,
- * mais il sera sur deux stands à la fois ».
+ * `impossible` — the plan itself would get worse.
+ * `sousReserve` — it would not, but a hard rule is strained all the same:
+ * « il peut le prendre, mais il sera sur deux stands à la fois ».
  */
 export function etatDe(ligne: AnimateurBanc): EtatBanc {
-  if (!ligne.envisageable) {
+  if (ligne.degradeLePlan) {
     return 'impossible';
   }
   return ligne.disponible ? 'disponible' : 'sousReserve';
