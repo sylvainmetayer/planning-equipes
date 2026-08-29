@@ -1,11 +1,16 @@
 import { defineConfig, devices, type VideoMode } from '@playwright/test';
 
 /**
- * End-to-end perimeter tests (issue #165), deliberately OUT of CI: they need
- * the full stack running (app + PostgreSQL), which no CI job provides — see
- * docs/developpement.md § "Tests de bout en bout (Playwright)".
+ * End-to-end perimeter tests (issue #165), run on every push and every pull
+ * request by .github/workflows/e2e.yml, which stands up the full stack the
+ * suite needs (app + PostgreSQL + Mailpit) as disposable service containers —
+ * see docs/developpement.md § "Tests de bout en bout (Playwright)".
  *
- * Target a DISPOSABLE local stack: the suite seeds data through the admin API
+ * They cost minutes where the unit suites answer in seconds, and that is the
+ * point: three interface defects of the #331..#338 stack were found by a human
+ * clicking, none of them visible to a unit test.
+ *
+ * Locally, target a DISPOSABLE stack: the suite seeds data through the admin API
  * (`/api/database/import`) and decides real demandes d'échange.
  *
  * Environment knobs:
