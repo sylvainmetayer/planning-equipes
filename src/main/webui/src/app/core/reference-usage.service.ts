@@ -20,13 +20,17 @@ import { ReferenceUsage } from './models';
 const RESOURCES_COMPTEES: readonly string[] = ['stands', 'animateurs', 'creneaux'];
 
 /**
- * Ids per request. The whole selection travels in the query string, and a
- * "select all" on a full timeslot grid would otherwise push the request line
- * past what the server accepts — which would silently drop the count exactly
- * when the deletion is largest. Split rather than truncate: the totals stay
- * exact.
+ * Longest query string a batch may build, in encoded characters.
+ *
+ * The whole selection travels in the URL, and Quarkus refuses a request line
+ * longer than 4096 by default — so a "tout sélectionner" would lose the count
+ * exactly where the deletion is largest. The budget is on the **accumulated
+ * encoded length**, not on a number of ids: stand and animateur ids are free
+ * `VARCHAR(64)` text, so a hundred of them can be ten characters or six
+ * hundred. Half the server's limit leaves room for the path, the host and the
+ * headers of the request line.
  */
-const IDS_PAR_REQUETE = 100;
+const LONGUEUR_MAX_REQUETE = 2000;
 
 const AUCUN: ReferenceUsage = { affectations: 0, contraintesAdHoc: 0, verrouillages: 0 };
 
@@ -35,8 +39,9 @@ export class ReferenceUsageService {
   private readonly api = inject(ApiService);
 
   /**
-   * One request for the whole selection — one more per 100 ids beyond that,
-   * never one per row: the confirmation of a bulk delete shows a single total.
+   * One request for the whole selection — one more each time the query string
+   * would outgrow what the server accepts, never one per row: the confirmation
+   * of a bulk delete shows a single total.
    *
    * Returns an empty string — no sentence at all — when the resource has no
    * counter or when the call fails. **The count informs, it never blocks**: a
@@ -49,7 +54,7 @@ export class ReferenceUsageService {
     }
     try {
       const lots = await Promise.all(
-        decouper(ids).map((lot) => this.api.get<ReferenceUsage>(url(resource, lot)))
+        decouper(ids).map((lot) => this.api.get<ReferenceUsage>(`/api/${resource}/usages?${lot}`))
       );
       return phraseUsages(lots.reduce(additionner, AUCUN));
     } catch {
@@ -58,17 +63,30 @@ export class ReferenceUsageService {
   }
 }
 
-function decouper(ids: readonly (string | number)[]): (string | number)[][] {
-  const lots: (string | number)[][] = [];
-  for (let debut = 0; debut < ids.length; debut += IDS_PAR_REQUETE) {
-    lots.push(ids.slice(debut, debut + IDS_PAR_REQUETE));
+/**
+ * The selection as query strings, each kept under {@link LONGUEUR_MAX_REQUETE}.
+ * A single id longer than the budget still gets its own request rather than
+ * being dropped: an over-long URL that the server refuses costs the count, and
+ * silently skipping the id would falsify it.
+ */
+function decouper(ids: readonly (string | number)[]): string[] {
+  const lots: string[] = [];
+  let courant = '';
+  for (const id of ids) {
+    const parametre = `id=${encodeURIComponent(String(id))}`;
+    if (courant === '') {
+      courant = parametre;
+    } else if (courant.length + 1 + parametre.length <= LONGUEUR_MAX_REQUETE) {
+      courant += `&${parametre}`;
+    } else {
+      lots.push(courant);
+      courant = parametre;
+    }
+  }
+  if (courant !== '') {
+    lots.push(courant);
   }
   return lots;
-}
-
-function url(resource: string, ids: readonly (string | number)[]): string {
-  const query = ids.map((id) => `id=${encodeURIComponent(String(id))}`).join('&');
-  return `/api/${resource}/usages?${query}`;
 }
 
 /**
@@ -86,14 +104,20 @@ function additionner(cumul: ReferenceUsage, lot: ReferenceUsage): ReferenceUsage
 }
 
 /**
- * The counters as one sentence. Zero is said rather than omitted: "nothing
- * references it" is the answer that lets someone delete without hesitating,
- * and silence would read as "the count failed".
+ * The counters as one sentence.
+ *
+ * Zero is said rather than omitted — "nothing references it" is the answer
+ * that lets someone delete without hesitating, and silence would read as "the
+ * count failed". But it is said by **naming the three counters**, never as a
+ * blanket "nothing refers to it": other tables cascade on these referentials
+ * without being counted here (a stand's demandes d'échange, its opening hours,
+ * an animateur's competences and wishes), and an absolute sentence would
+ * promise something this call never checked.
  */
 export function phraseUsages(usages: ReferenceUsage): string {
   const total = usages.affectations + usages.contraintesAdHoc + usages.verrouillages;
   if (total === 0) {
-    return $localize`:@@usages.none:Rien dans le planning n'y fait référence.`;
+    return $localize`:@@usages.none:Aucune affectation, aucun ajustement manuel et aucun verrouillage ne le référencent.`;
   }
   return $localize`:@@usages.counts:Référencé par ${usages.affectations}:affectations: affectation(s), ${usages.contraintesAdHoc}:contraintes: ajustement(s) manuel(s) et ${usages.verrouillages}:verrouillages: verrouillage(s).`;
 }

@@ -42,6 +42,44 @@ describe('ConfirmDialog', () => {
     expect(racine.querySelector('mat-dialog-content p')!.textContent!.trim()).toBe('Action irréversible.');
   });
 
+  /**
+   * The impact figures of a deletion are fetched from the server, and the
+   * dialog opens before they arrive: it must render without them and grow the
+   * paragraph when they land, never wait.
+   */
+  it('opens without the detail it was still fetching, then shows it', async () => {
+    let repondre: (texte: string) => void = () => undefined;
+    const detail = new Promise<string>((resolve) => {
+      repondre = resolve;
+    });
+    const { fixture, racine } = monter({ title: 't', message: 'Action irréversible.', detail });
+
+    expect(racine.querySelectorAll('mat-dialog-content p')).toHaveLength(1);
+
+    repondre('Référencé par 42 affectation(s).');
+    await detail;
+    fixture.detectChanges();
+
+    const paragraphes = Array.from(racine.querySelectorAll('mat-dialog-content p'));
+    expect(paragraphes.map((p) => p.textContent!.trim())).toEqual([
+      'Action irréversible.',
+      'Référencé par 42 affectation(s).'
+    ]);
+  });
+
+  /** The count informs, it never blocks: a failed lookup just leaves it out. */
+  it('stays usable when the detail it was fetching failed', async () => {
+    const detail = Promise.reject(new Error('injoignable'));
+    const { fixture, racine, close } = monter({ title: 't', message: 'm', detail });
+
+    await detail.catch(() => undefined);
+    fixture.detectChanges();
+
+    expect(racine.querySelectorAll('mat-dialog-content p')).toHaveLength(1);
+    boutons(racine)[1].click();
+    expect(close).toHaveBeenCalledWith(true);
+  });
+
   it('offers a dismiss button distinct from the confirm one, both labelled by default', () => {
     const { racine } = monter({ title: 't', message: 'm' });
 

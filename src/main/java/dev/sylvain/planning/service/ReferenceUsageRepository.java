@@ -1,7 +1,6 @@
 package dev.sylvain.planning.service;
 
 import java.sql.Array;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -24,9 +23,21 @@ import jakarta.inject.Inject;
  * <p>Every statement takes the <b>whole selection at once</b> ({@code = ANY(?)}
  * over a bound array): a bulk delete of fifty rows must cost one round trip per
  * counter, not fifty. The ids travel bound, never concatenated.</p>
+ *
+ * <p><b>Each statement is written at its own {@code prepareScoped} call</b>,
+ * and the nine of them are spelled out rather than passed to one shared helper.
+ * That repetition is the price of being <em>seen</em>:
+ * {@code IsolationEditionStructurelleTest} reads the SQL of the backend by
+ * collecting the literals between the parentheses of a {@code prepareScoped(}
+ * call, so a statement handed over as a variable is invisible to it — and a
+ * future edit dropping an {@code edition_id} predicate would then aggregate
+ * across every edition with the guard built for exactly that saying
+ * nothing.</p>
  */
 @ApplicationScoped
 public class ReferenceUsageRepository {
+
+    private static final String FAILURE = "Failed to count what references the selection";
 
     @Inject
     JdbcEditionScope scope;
@@ -40,16 +51,29 @@ public class ReferenceUsageRepository {
      * have this stand on their planning.</p>
      */
     public ReferenceUsage forStands(Collection<String> ids) {
-        return count(ids, "varchar",
-                """
-                SELECT COUNT(*) FROM poste_affectation
-                WHERE edition_id = ? AND animateur_id IS NOT NULL AND stand_id = ANY(?)""",
-                """
-                SELECT COUNT(*) FROM contrainte_ad_hoc
-                WHERE edition_id = ? AND stand_id = ANY(?)""",
-                """
-                SELECT COUNT(*) FROM verrouillage_planning
-                WHERE edition_id = ? AND stand_id = ANY(?)""");
+        if (ids.isEmpty()) {
+            return ReferenceUsage.AUCUN;
+        }
+        Object[] values = ids.toArray();
+        return scope.read(FAILURE, connection -> {
+            Array bound = connection.createArrayOf("varchar", values);
+            try (PreparedStatement seats = scope.prepareScoped(connection,
+                    """
+                    SELECT COUNT(*) FROM poste_affectation
+                    WHERE edition_id = ? AND animateur_id IS NOT NULL AND stand_id = ANY(?)""");
+                    PreparedStatement adHoc = scope.prepareScoped(connection,
+                            """
+                            SELECT COUNT(*) FROM contrainte_ad_hoc
+                            WHERE edition_id = ? AND stand_id = ANY(?)""");
+                    PreparedStatement locks = scope.prepareScoped(connection,
+                            """
+                            SELECT COUNT(*) FROM verrouillage_planning
+                            WHERE edition_id = ? AND stand_id = ANY(?)""")) {
+                return new ReferenceUsage(count(seats, bound), count(adHoc, bound), count(locks, bound));
+            } finally {
+                bound.free();
+            }
+        });
     }
 
     /**
@@ -59,57 +83,63 @@ public class ReferenceUsageRepository {
      * one exception, not two.
      */
     public ReferenceUsage forAnimateurs(Collection<String> ids) {
-        return count(ids, "varchar",
-                """
-                SELECT COUNT(*) FROM poste_affectation
-                WHERE edition_id = ? AND animateur_id = ANY(?)""",
-                """
-                SELECT COUNT(DISTINCT contrainte_id) FROM contrainte_animateur
-                WHERE edition_id = ? AND animateur_id = ANY(?)""",
-                """
-                SELECT COUNT(*) FROM verrouillage_planning
-                WHERE edition_id = ? AND animateur_id = ANY(?)""");
-    }
-
-    /** Counters for a set of timeslots; their ids are database-generated, hence the {@code bigint} array. */
-    public ReferenceUsage forCreneaux(Collection<Long> ids) {
-        return count(ids, "bigint",
-                """
-                SELECT COUNT(*) FROM poste_affectation
-                WHERE edition_id = ? AND animateur_id IS NOT NULL AND creneau_id = ANY(?)""",
-                """
-                SELECT COUNT(*) FROM contrainte_ad_hoc
-                WHERE edition_id = ? AND creneau_id = ANY(?)""",
-                """
-                SELECT COUNT(*) FROM verrouillage_planning
-                WHERE edition_id = ? AND creneau_id = ANY(?)""");
-    }
-
-    /** The three counters on one borrowed connection: three round trips, whatever the size of the selection. */
-    private ReferenceUsage count(Collection<?> ids, String sqlType, String seats, String adHoc, String locks) {
         if (ids.isEmpty()) {
             return ReferenceUsage.AUCUN;
         }
         Object[] values = ids.toArray();
-        return scope.read("Failed to count what references the selection", connection -> {
-            Array bound = connection.createArrayOf(sqlType, values);
-            try {
-                return new ReferenceUsage(
-                        countOne(connection, seats, bound),
-                        countOne(connection, adHoc, bound),
-                        countOne(connection, locks, bound));
+        return scope.read(FAILURE, connection -> {
+            Array bound = connection.createArrayOf("varchar", values);
+            try (PreparedStatement seats = scope.prepareScoped(connection,
+                    """
+                    SELECT COUNT(*) FROM poste_affectation
+                    WHERE edition_id = ? AND animateur_id = ANY(?)""");
+                    PreparedStatement adHoc = scope.prepareScoped(connection,
+                            """
+                            SELECT COUNT(DISTINCT contrainte_id) FROM contrainte_animateur
+                            WHERE edition_id = ? AND animateur_id = ANY(?)""");
+                    PreparedStatement locks = scope.prepareScoped(connection,
+                            """
+                            SELECT COUNT(*) FROM verrouillage_planning
+                            WHERE edition_id = ? AND animateur_id = ANY(?)""")) {
+                return new ReferenceUsage(count(seats, bound), count(adHoc, bound), count(locks, bound));
             } finally {
                 bound.free();
             }
         });
     }
 
-    private int countOne(Connection connection, String sql, Array ids) throws SQLException {
-        try (PreparedStatement ps = scope.prepareScoped(connection, sql)) {
-            ps.setArray(2, ids);
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() ? rs.getInt(1) : 0;
+    /** Counters for a set of timeslots; their ids are database-generated, hence the {@code bigint} array. */
+    public ReferenceUsage forCreneaux(Collection<Long> ids) {
+        if (ids.isEmpty()) {
+            return ReferenceUsage.AUCUN;
+        }
+        Object[] values = ids.toArray();
+        return scope.read(FAILURE, connection -> {
+            Array bound = connection.createArrayOf("bigint", values);
+            try (PreparedStatement seats = scope.prepareScoped(connection,
+                    """
+                    SELECT COUNT(*) FROM poste_affectation
+                    WHERE edition_id = ? AND animateur_id IS NOT NULL AND creneau_id = ANY(?)""");
+                    PreparedStatement adHoc = scope.prepareScoped(connection,
+                            """
+                            SELECT COUNT(*) FROM contrainte_ad_hoc
+                            WHERE edition_id = ? AND creneau_id = ANY(?)""");
+                    PreparedStatement locks = scope.prepareScoped(connection,
+                            """
+                            SELECT COUNT(*) FROM verrouillage_planning
+                            WHERE edition_id = ? AND creneau_id = ANY(?)""")) {
+                return new ReferenceUsage(count(seats, bound), count(adHoc, bound), count(locks, bound));
+            } finally {
+                bound.free();
             }
+        });
+    }
+
+    /** Binds the selection to a statement already prepared above, and reads its single row. */
+    private static int count(PreparedStatement statement, Array ids) throws SQLException {
+        statement.setArray(2, ids);
+        try (ResultSet rs = statement.executeQuery()) {
+            return rs.next() ? rs.getInt(1) : 0;
         }
     }
 }

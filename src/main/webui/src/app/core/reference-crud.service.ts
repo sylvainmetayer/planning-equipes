@@ -71,6 +71,11 @@ export class ReferenceCrudService {
 
   /** Asks for a confirmation, then deletes. Returns true when deleted. */
   /**
+   * The dialog opens on the click, and the impact figures land in it when the
+   * server answers — never the other way round: awaiting the count first left
+   * the delete button live with nothing on screen, and a double click then
+   * stacked two dialogs and two deletions.
+   *
    * @param detail extra sentence appended to the confirmation, for the entities
    *               whose deletion has consequences the user cannot see from the
    *               row itself (e.g. how many stands reference a typologie).
@@ -78,12 +83,10 @@ export class ReferenceCrudService {
    *               server instead — see {@link ReferenceUsageService}.
    */
   async remove(resource: string, id: string | number, label: string, detail = ''): Promise<boolean> {
-    const phrase = detail || (await this.usages.describe(resource, [id]));
     const confirmed = await this.confirm.ask({
       title: $localize`:@@crud.deleteTitle:Supprimer ${label}:label: ${id}:id: ?`,
-      message: phrase
-        ? $localize`:@@crud.deleteMessageDetail:${phrase}:detail: Cette action est irréversible.`
-        : $localize`:@@crud.deleteMessage:Cette action est irréversible.`,
+      message: $localize`:@@crud.deleteMessage:Cette action est irréversible.`,
+      detail: detail ? Promise.resolve(detail) : this.usages.describe(resource, [id]),
       confirmLabel: $localize`:@@crud.deleteConfirm:Supprimer`,
       danger: true
     });
@@ -120,14 +123,12 @@ export class ReferenceCrudService {
       return 0;
     }
     const count = ids.length;
-    // One aggregated total for the whole selection, not one line per row: a
-    // list of fifty impact sentences would say less than their sum.
-    const phrase = await this.usages.describe(resource, ids);
     const confirmed = await this.confirm.ask({
       title: $localize`:@@crud.deleteManyTitle:Supprimer ${count}:count: ${labelPluriel}:label: ?`,
-      message: phrase
-        ? $localize`:@@crud.deleteMessageDetail:${phrase}:detail: Cette action est irréversible.`
-        : $localize`:@@crud.deleteMessage:Cette action est irréversible.`,
+      message: $localize`:@@crud.deleteMessage:Cette action est irréversible.`,
+      // One aggregated total for the whole selection, not one line per row: a
+      // list of fifty impact sentences would say less than their sum.
+      detail: this.usages.describe(resource, ids),
       confirmLabel: $localize`:@@crud.deleteConfirm:Supprimer`,
       danger: true
     });

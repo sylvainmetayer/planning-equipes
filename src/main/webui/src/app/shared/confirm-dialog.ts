@@ -1,7 +1,7 @@
 // Material replacement for window.confirm: a dialog, plus a service exposing it
 // as an awaitable boolean so pages keep their linear async flow.
 
-import { ChangeDetectionStrategy, Component, Injectable, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Injectable, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import {
   MAT_DIALOG_DATA,
@@ -18,6 +18,19 @@ export interface ConfirmData {
   /** Label of the dismiss button — defaults to « Annuler ». */
   cancelLabel?: string;
   danger?: boolean;
+  /**
+   * A second paragraph the caller is still fetching — typically what the
+   * deletion would take with it, counted by the server.
+   *
+   * A promise rather than a string on purpose: the dialog must open on the
+   * click that asked for it. Awaiting the count before opening left a window
+   * in which the button was still live and nothing had appeared, so a double
+   * click stacked two dialogs and then two deletions, the second failing on a
+   * row the first had already removed. It arrives here instead, and a
+   * rejection simply leaves the paragraph out — the count informs, it never
+   * blocks.
+   */
+  detail?: Promise<string>;
 }
 
 /** `null` when the dialog was cancelled. */
@@ -30,6 +43,9 @@ export type ConfirmResult = boolean | null;
     <h2 mat-dialog-title>{{ data.title }}</h2>
     <mat-dialog-content>
       <p>{{ data.message }}</p>
+      @if (detail(); as texte) {
+        <p>{{ texte }}</p>
+      }
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button matButton (click)="dialogRef.close(null)">
@@ -47,6 +63,12 @@ export class ConfirmDialog {
   protected readonly data = inject<ConfirmData>(MAT_DIALOG_DATA);
   protected readonly defaultConfirmLabel = $localize`:@@confirmDialog.confirm:Confirmer`;
   protected readonly defaultCancelLabel = $localize`:@@confirmDialog.cancel:Annuler`;
+  /** Empty until {@link ConfirmData.detail} resolves, and after it rejects. */
+  protected readonly detail = signal('');
+
+  constructor() {
+    void this.data.detail?.then((texte) => this.detail.set(texte)).catch(() => undefined);
+  }
 }
 
 @Injectable({ providedIn: 'root' })

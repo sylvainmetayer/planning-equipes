@@ -57,10 +57,16 @@ public class CreneauResource {
      * for the whole selection, which is what the confirmation dialog shows.
      * Repeat {@code id} to count several at once; a bulk delete asks once,
      * never once per row.
+     *
+     * <p>The ids are taken as text although a timeslot id is a number: bound
+     * as a {@code List<Long>} they would be converted by the container, whose
+     * failure is a {@code 404} raised before this method runs. A mistyped
+     * query field is a {@code 400}, and the conversion therefore belongs to
+     * {@code ReferenceUsageService}.</p>
      */
     @GET
     @Path("/usages")
-    public ReferenceUsage countCreneauUsages(@QueryParam("id") List<Long> ids) {
+    public ReferenceUsage countCreneauUsages(@QueryParam("id") List<String> ids) {
         return referenceDataService.countCreneauUsages(ids);
     }
 

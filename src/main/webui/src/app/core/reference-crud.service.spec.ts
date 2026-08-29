@@ -7,7 +7,7 @@ import { PlanningResolutionStore } from './planning-resolution.store';
 import { ReferenceCrudService } from './reference-crud.service';
 import { ReferenceDataStore } from './reference-data.store';
 import { ReferenceUsageService } from './reference-usage.service';
-import { ConfirmService } from '../shared/confirm-dialog';
+import { ConfirmData, ConfirmService } from '../shared/confirm-dialog';
 
 class FakeStore {
   reload = vi.fn(async () => undefined);
@@ -29,7 +29,12 @@ class FakeNotifications {
 
 class FakeConfirm {
   reponse = true;
-  ask = vi.fn(async (_options: unknown) => this.reponse);
+  ask = vi.fn(async (_options: ConfirmData) => this.reponse);
+
+  /** The data of the nth dialog opened, for the assertions on its detail. */
+  demande(index = 0): ConfirmData {
+    return this.ask.mock.calls[index][0];
+  }
 }
 
 class FakeResolution {
@@ -180,9 +185,28 @@ describe('ReferenceCrudService', () => {
       await service.remove('stands', 'S1', 'le stand');
 
       expect(usages.describe).toHaveBeenCalledWith('stands', ['S1']);
-      expect(confirm.ask).toHaveBeenCalledWith(
-        expect.objectContaining({ message: expect.stringContaining('Référencé par 42 affectation(s).') })
+      await expect(confirm.demande().detail).resolves.toBe('Référencé par 42 affectation(s).');
+    });
+
+    /**
+     * La modale doit s'ouvrir sur le clic, pas après l'aller-retour : sinon le
+     * bouton reste actif alors que rien n'est affiché, et un double-clic empile
+     * deux dialogues puis deux suppressions — la seconde échouant sur une ligne
+     * que la première a déjà retirée.
+     */
+    it('ouvre la confirmation sans attendre la réponse du décompte', async () => {
+      let repondre: (phrase: string) => void = () => undefined;
+      usages.describe.mockReturnValueOnce(
+        new Promise<string>((resolve) => {
+          repondre = resolve;
+        })
       );
+
+      const suppression = service.remove('stands', 'S1', 'le stand');
+
+      expect(confirm.ask).toHaveBeenCalledTimes(1);
+      repondre('Référencé par 3 affectation(s).');
+      await expect(suppression).resolves.toBe(true);
     });
 
     // Précédent des typologies : la page calcule ses usages côté client et les
@@ -193,9 +217,7 @@ describe('ReferenceCrudService', () => {
       await service.remove('typologies', 'T1', 'la typologie', 'détail de la page');
 
       expect(usages.describe).not.toHaveBeenCalled();
-      expect(confirm.ask).toHaveBeenCalledWith(
-        expect.objectContaining({ message: expect.stringContaining('détail de la page') })
-      );
+      await expect(confirm.demande().detail).resolves.toBe('détail de la page');
     });
 
     // Le décompte informe, il ne verrouille rien : sans phrase à afficher, la
@@ -242,9 +264,7 @@ describe('ReferenceCrudService', () => {
 
       expect(usages.describe).toHaveBeenCalledTimes(1);
       expect(usages.describe).toHaveBeenCalledWith('stands', ['S1', 'S2']);
-      expect(confirm.ask).toHaveBeenCalledWith(
-        expect.objectContaining({ message: expect.stringContaining('Référencé par 12 affectation(s).') })
-      );
+      await expect(confirm.demande().detail).resolves.toBe('Référencé par 12 affectation(s).');
     });
 
     // Une ligne refusée par le serveur (typologie encore utilisée, ...) ne doit

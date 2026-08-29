@@ -45,13 +45,44 @@ describe('ReferenceUsageService', () => {
    */
   it('découpe une très longue sélection et additionne les compteurs', async () => {
     api.reponse = { affectations: 5, contraintesAdHoc: 1, verrouillages: 0 };
-    const ids = Array.from({ length: 250 }, (_, index) => index + 1);
+    const ids = Array.from({ length: 900 }, (_, index) => index + 1);
 
     const phrase = await service.describe('creneaux', ids);
 
-    expect(api.get).toHaveBeenCalledTimes(3);
-    expect(phrase).toContain('15');
-    expect(phrase).toContain('3');
+    expect(api.get.mock.calls.length).toBeGreaterThan(1);
+    const appels = api.get.mock.calls.length;
+    expect(phrase).toContain(String(5 * appels));
+    expect(phrase).toContain(String(appels));
+  });
+
+  /**
+   * Le budget porte sur la longueur encodée, pas sur un nombre d'identifiants :
+   * ceux des stands et des animateurs sont du texte libre (VARCHAR(64)), donc
+   * cent d'entre eux pèsent dix caractères ou six cents. Compter les lignes
+   * laissait passer des URL que le serveur refuse, et le décompte disparaissait
+   * en silence sur les grandes sélections.
+   */
+  it('borne chaque requête sur la longueur, pas sur le nombre d\'identifiants', async () => {
+    const ids = Array.from({ length: 60 }, (_, index) => `S${index}-${'x'.repeat(60)}`);
+
+    await service.describe('stands', ids);
+
+    expect(api.get.mock.calls.length).toBeGreaterThan(1);
+    for (const [url] of api.get.mock.calls) {
+      expect(url.length).toBeLessThanOrEqual(2100);
+    }
+  });
+
+  // Aucun identifiant ne doit disparaître d'un découpage : le total mentirait.
+  it('envoie chaque identifiant exactement une fois', async () => {
+    const ids = Array.from({ length: 300 }, (_, index) => `S${index}`);
+
+    await service.describe('stands', ids);
+
+    const envoyes = api.get.mock.calls.flatMap(([url]) =>
+      [...new URLSearchParams(url.slice(url.indexOf('?') + 1)).getAll('id')]
+    );
+    expect(envoyes).toEqual(ids);
   });
 
   it("encode les identifiants qui contiennent des caractères d'URL", async () => {

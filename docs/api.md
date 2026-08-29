@@ -588,22 +588,32 @@ chiffrent ce qui référence une sélection — postes **pourvus** du planning
 persisté, ajustements manuels, verrouillages — pour que la confirmation de
 suppression le dise avant de supprimer. Répéter `id` compte plusieurs entités :
 `?id=S1&id=S2` renvoie **un total agrégé**, pas un détail ligne par ligne, et
-une suppression en lot n'a donc qu'un appel à faire — le client découpe
-au-delà de cent identifiants, pour que la ligne de requête reste dans les
-limites du serveur plutôt que de perdre le décompte sur les grosses
-sélections.
+une suppression en lot n'a donc qu'un appel à faire. Le client redécoupe quand
+la chaîne de requête approche la limite de ligne du serveur — budget sur la
+**longueur encodée**, pas sur un nombre d'`id`, les identifiants de stand et
+d'animateur étant du texte libre.
 
-Trois propriétés, et aucune n'est un oubli :
+Quatre propriétés, et aucune n'est un oubli :
 
 - **le décompte informe, il ne bloque pas** — aucun seuil, aucun refus au-delà
   d'un nombre ; la suppression reste celle que la ressource expose déjà ;
 - **un `id` inconnu compte pour zéro**, il ne déclenche pas de `404` : l'appel
   sert un dialogue ouvert sur des lignes déjà affichées, et une ligne
   supprimée entre-temps ne doit pas transformer une confirmation en message
-  d'erreur — c'est la suppression elle-même qui le dira. Seule la requête sans
-  aucun `id` est refusée (`400`), parce qu'elle ne demande rien ;
+  d'erreur — c'est la suppression elle-même qui le dira. Deux requêtes sont
+  refusées en `400`, et toutes deux nomment une requête cassée plutôt qu'une
+  ligne absente : celle sans aucun `id`, et un `id` de créneau qui n'est pas un
+  nombre. C'est pourquoi `/api/creneaux/usages` prend ses `id` en texte : liés
+  en `List<Long>`, la conversion échouerait *avant* la ressource et répondrait
+  `404` ;
 - **un siège vide ne compte pas** : ce que le chiffre annonce, c'est le nombre
-  de créneaux effectivement tenus par quelqu'un qui disparaîtront.
+  de créneaux effectivement tenus par quelqu'un qui disparaîtront ;
+- **trois compteurs, pas un inventaire.** Zéro partout se dit en les nommant
+  (« aucune affectation, aucun ajustement manuel et aucun verrouillage »), et
+  jamais « rien ne le référence » : d'autres tables suivent en cascade sans
+  être comptées ici — demandes d'échange, horaires et ouvertures d'un stand,
+  compétences et souhaits d'un animateur. Les compter aussi est un autre
+  chantier ; affirmer qu'elles n'existent pas serait un mensonge.
 
 ### Horaires d'un stand
 

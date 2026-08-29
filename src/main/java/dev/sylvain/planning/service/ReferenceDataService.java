@@ -175,7 +175,7 @@ public class ReferenceDataService implements ReferenceData {
         return creneaux.deleteInBulk(ids);
     }
 
-    public ReferenceUsage countCreneauUsages(List<Long> ids) {
+    public ReferenceUsage countCreneauUsages(List<String> ids) {
         return usages.forCreneaux(ids);
     }
 

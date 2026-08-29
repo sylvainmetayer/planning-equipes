@@ -159,6 +159,21 @@ class ReferenceUsageResourceTest {
         given().when().get("/api/stands/usages").then().statusCode(400);
     }
 
+    /**
+     * A timeslot id that is not a number is a broken query field, not a
+     * missing row: {@code 400}, never the {@code 404} the container's own
+     * conversion of a {@code List<Long>} would have produced before the
+     * resource was even entered — which would have contradicted the rule
+     * above, where an unknown id is precisely what never gets a {@code 404}.
+     */
+    @Test
+    void unIdentifiantDeCreneauNonNumeriqueEstRefuseEnQuatreCents() {
+        given().queryParam("id", "abc")
+                .when().get("/api/creneaux/usages")
+                .then()
+                .statusCode(400);
+    }
+
     private static ValidatableResponse usages(String resource, String id) {
         return given().queryParam("id", id).when().get(resource + "/usages").then().statusCode(200);
     }
