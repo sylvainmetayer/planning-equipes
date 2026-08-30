@@ -68,7 +68,24 @@
         </td>
       </ng-container>
       <ng-container matColumnDef="confirmation">
-        <th mat-header-cell *matHeaderCellDef i18n="@@animateurs.column.confirmation">Accusé de réception</th>
+        <th mat-header-cell *matHeaderCellDef>
+          <span i18n="@@animateurs.column.confirmation">Accusé de réception</span>
+          <!-- Un bouton, pas une icône nue : une infobulle posée sur un
+               `mat-icon aria-hidden` n'est atteignable ni au clavier ni au
+               lecteur d'écran, et ces trois états ne se devinent pas. Le
+               bouton reçoit le focus (l'infobulle s'ouvre alors) et porte le
+               même texte en `aria-label`. -->
+          <button
+            matIconButton
+            type="button"
+            class="column-help"
+            [matTooltip]="confirmationAide()"
+            matTooltipClass="tooltip-multiligne"
+            [attr.aria-label]="confirmationAide()"
+          >
+            <mat-icon inline>help_outline</mat-icon>
+          </button>
+        </th>
         <td mat-cell *matCellDef="let animateur">
           @if (confirmationLabel(animateur); as libelle) {
             <span [matTooltip]="confirmationDate(animateur) ?? ''">{{ libelle }}</span>

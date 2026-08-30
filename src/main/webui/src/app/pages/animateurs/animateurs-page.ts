@@ -213,6 +213,17 @@ export class AnimateursPage {
     }
   }
 
+  /**
+   * What the three states mean — none of it is guessable from the labels, and
+   * two of the rules actively surprise people who assume otherwise.
+   *
+   * Built in a method, never at module scope: `$localize` only resolves once
+   * `main.ts` has loaded the translations.
+   */
+  protected confirmationAide(): string {
+    return $localize`:@@animateurs.confirmation.aide:Ce que l'animateur a répondu au planning qu'on lui a envoyé.\n\n• Confirmé : il a cliqué « J'ai lu et je serai là ». La date s'affiche au survol.\n• Relancé : un message automatique lui a déjà été envoyé. Il n'y en aura pas d'autre — les derniers silencieux sont à reprendre à la main.\n• Silencieux : rien n'est revenu.\n• — : cette personne n'a aucun poste au planning publié. Ce n'est pas un silence, on ne lui a rien demandé.\n\nRepublier ne remet à « silencieux » que les personnes dont le planning a réellement changé : celles dont les journées n'ont pas bougé gardent leur confirmation.`;
+  }
+
   /** Wording of the acknowledgement column, and the text its quick filter matches on. */
   protected confirmationLabel(animateur: Animateur): string {
     const confirmation = this.confirmations().get(animateur.id);

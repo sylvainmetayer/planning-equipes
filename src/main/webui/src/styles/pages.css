@@ -664,3 +664,30 @@ table td.hours-verifier {
   color: var(--mat-sys-primary);
   text-decoration-style: solid;
 }
+
+/*
+ * Bouton d'aide d'un en-tête de colonne : l'infobulle doit être atteignable au
+ * clavier, donc portée par un élément focusable et non par une icône nue. Le
+ * bouton s'aligne sur le libellé sans grossir la ligne d'en-tête.
+ */
+.column-help {
+  --mat-icon-button-state-layer-size: 1.75rem;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  margin-inline-start: 0.25rem;
+  vertical-align: middle;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/*
+ * Infobulle explicative : plusieurs lignes et des puces, là où une infobulle
+ * ordinaire tient sur une phrase. Sans `pre-line`, les sauts de ligne du texte
+ * traduit sont écrasés et la liste redevient un pavé.
+ */
+.tooltip-multiligne {
+  --mdc-plain-tooltip-supporting-text-line-height: 1.35;
+  white-space: pre-line;
+  max-width: 26rem !important;
+  text-align: left;
+}
