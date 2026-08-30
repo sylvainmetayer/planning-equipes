@@ -59,10 +59,34 @@ test.describe('Accusé de réception : la colonne s’explique', () => {
     expect(explication).toContain("on ne lui a rien demandé");
     expect(explication).toContain('que les personnes dont le planning a réellement changé');
 
-    // Atteignable au clavier : le focus suffit à ouvrir l'infobulle, sans souris.
+    // Atteignable au clavier : l'infobulle doit s'ouvrir sur une tabulation.
+    //
+    // Deux précautions, sans quoi ce test échoue alors que le produit va bien
+    // — la première version les ignorait toutes les deux et a été fusionnée
+    // rouge :
+    //
+    //  1. la tabulation doit être vraie. `locator.focus()` est un focus
+    //     programmatique, et le `FocusMonitor` de Material n'ouvre l'infobulle
+    //     que sur une origine `keyboard`. D'où le détour par Shift+Tab : on se
+    //     place juste avant, puis on tabule pour de bon ;
+    //  2. la souris doit être écartée. Playwright la laisse en (0,0), et le
+    //     panneau de l'infobulle est posé en haut à gauche avant d'être
+    //     déplacé à sa position définitive. Il passe donc sous le curseur
+    //     immobile, puis s'en éloigne : le `mouseleave` qui en résulte referme
+    //     l'infobulle vingt millisecondes après son ouverture.
+    const coin = page.viewportSize();
+    await page.mouse.move((coin?.width ?? 1280) - 2, (coin?.height ?? 720) - 2);
+
     await aide.focus();
+    await page.keyboard.press('Shift+Tab');
+    await expect(aide).not.toBeFocused();
+    await page.keyboard.press('Tab');
     await expect(aide).toBeFocused();
-    await expect(page.getByRole('tooltip')).toBeVisible();
+
+    // Le panneau de Material ne porte pas `role="tooltip"` : c'est un simple
+    // div, décrit au lecteur d'écran par l'`aria-label` vérifié plus haut. On
+    // vérifie donc ce qu'une personne voit — le texte, dans la surcouche.
+    await expect(page.locator('.cdk-overlay-container').getByText("Il n'y en aura pas d'autre")).toBeVisible();
 
     await page.close();
   });
