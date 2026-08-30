@@ -1,5 +1,6 @@
 package dev.sylvain.planning.api;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import dev.sylvain.planning.domain.DemandeEchange;
@@ -42,27 +43,53 @@ public class DemandeEchangeResource {
         return espaceAnimateurService.toViews(demandeEchangeService.list());
     }
 
-    /** Whether animateurs may currently submit demandes (open by default). */
+    /** The foire window: the switch, its optional bounds, and whether it is open today. */
     @GET
     @Path("/configuration")
     public ConfigurationFoire configuration() {
-        return new ConfigurationFoire(demandeEchangeService.isFoireOpen());
+        return configurationView();
     }
 
     /**
-     * Opens or closes the foire for the current edition. Closing turns the
-     * espaces animateurs read-only: submissions and withdrawals are refused
-     * server-side, the planning stays consultable (and downloadable).
+     * Opens or closes the foire for the current edition, and bounds it with the
+     * optional dates. Closing turns the espaces animateurs read-only:
+     * submissions and withdrawals are refused server-side, the planning stays
+     * consultable (and downloadable). The dates are enforced the same way — a
+     * bound checked only at display time would not be a bound.
+     *
+     * <p>An end preceding the start is a {@code BusinessError.Invalid} raised
+     * by the service before it writes, so nothing is stored: no
+     * {@code try/catch} here.</p>
      */
     @PUT
     @Path("/configuration")
     public ConfigurationFoire configure(ConfigurationFoire configuration) {
-        demandeEchangeService.openFoire(configuration != null && configuration.foireOuverte());
-        return new ConfigurationFoire(demandeEchangeService.isFoireOpen());
+        demandeEchangeService.openFoire(configuration == null
+                ? DemandeEchangeService.FenetreFoire.unbounded()
+                : new DemandeEchangeService.FenetreFoire(
+                        configuration.foireOuverte(), configuration.debut(), configuration.fin()));
+        return configurationView();
     }
 
-    /** The single admin switch of the foire au planning. */
-    public record ConfigurationFoire(boolean foireOuverte) {
+    private ConfigurationFoire configurationView() {
+        DemandeEchangeService.FenetreFoire fenetre = demandeEchangeService.fenetre();
+        return new ConfigurationFoire(fenetre.ouverte(), fenetre.debut(), fenetre.fin(),
+                demandeEchangeService.isFoireOpen());
+    }
+
+    /**
+     * The foire window as the admin sets it.
+     *
+     * @param foireOuverte the switch, and the master: a dated window that is
+     *                     switched off accepts nothing
+     * @param ouverteAujourdhui read-only — the switch AND today's date against
+     *                     the bounds. Kept apart from {@code foireOuverte} so
+     *                     the screen can say « ouverte à partir du… » rather
+     *                     than showing a switch that reads « on » while nothing
+     *                     is accepted
+     */
+    public record ConfigurationFoire(boolean foireOuverte, LocalDate debut, LocalDate fin,
+            boolean ouverteAujourdhui) {
     }
 
     /**

@@ -4,6 +4,7 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.nullValue;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -198,6 +199,85 @@ class FoireAndEspaceExportsTest {
                 .then()
                 .statusCode(200)
                 .body("foireOuverte", equalTo(ouverte));
+    }
+
+    /** Opens the foire, bounded by the given dates — {@code null} leaves a side unbounded. */
+    private static void configureFenetre(LocalDate debut, LocalDate fin) {
+        given().contentType(ContentType.JSON)
+                .body("{\"foireOuverte\":true,\"debut\":" + json(debut) + ",\"fin\":" + json(fin) + "}")
+                .when().put("/api/echanges/configuration")
+                .then()
+                .statusCode(200);
+    }
+
+    private static String json(LocalDate date) {
+        return date == null ? "null" : "\"" + date + "\"";
+    }
+
+    /**
+     * A dated bound must be a bound, not a label: the espace hides the form
+     * outside the window, and the server refuses the write regardless.
+     */
+    @Test
+    void aSubmissionOutsideTheDatedWindowIsRefusedServerSide() {
+        String token = tokenOf("FOIRE-A");
+        LocalDate demain = LocalDate.now().plusDays(1);
+
+        // The switch says open, the dates say « pas encore ».
+        configureFenetre(demain, demain.plusDays(7));
+
+        given().when().get("/api/echanges/configuration")
+                .then().statusCode(200)
+                .body("foireOuverte", equalTo(true))
+                .body("ouverteAujourdhui", equalTo(false));
+
+        given().contentType(ContentType.JSON)
+                .body("[{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"FOIRE-S1\",\"cibleId\":\"FOIRE-B\"}]")
+                .when().post("/api/espace-animateur/" + token + "/demandes")
+                .then()
+                .statusCode(400)
+                .body("message", containsString("fermée"));
+    }
+
+    /**
+     * « Pas encore ouverte » and « fermée » are the same boolean and say the
+     * opposite to the person reading, so the espace is told which one it is.
+     */
+    @Test
+    void theEspaceIsToldWhenTheFoireHasNotStartedYet() {
+        LocalDate debut = LocalDate.now().plusDays(3);
+        configureFenetre(debut, null);
+
+        given().when().get("/api/espace-animateur/" + tokenOf("FOIRE-A"))
+                .then()
+                .statusCode(200)
+                .body("foireOuverte", equalTo(false))
+                .body("foireOuvreLe", equalTo(debut.toString()));
+
+        // Once the window is over there is nothing to come back for: the espace
+        // must NOT be given a date, or it would announce a reopening.
+        configureFenetre(LocalDate.now().minusDays(10), LocalDate.now().minusDays(3));
+        given().when().get("/api/espace-animateur/" + tokenOf("FOIRE-A"))
+                .then()
+                .statusCode(200)
+                .body("foireOuverte", equalTo(false))
+                .body("foireOuvreLe", nullValue());
+    }
+
+    /** Refused before anything is written: the previous window stands. */
+    @Test
+    void anEndBeforeTheStartIsRefused() {
+        given().contentType(ContentType.JSON)
+                .body("{\"foireOuverte\":true,\"debut\":\"2026-07-20\",\"fin\":\"2026-07-10\"}")
+                .when().put("/api/echanges/configuration")
+                .then()
+                .statusCode(400)
+                .body("message", containsString("précède"));
+
+        given().when().get("/api/echanges/configuration")
+                .then().statusCode(200)
+                .body("debut", nullValue())
+                .body("fin", nullValue());
     }
 
     private String tokenOf(String animateurId) {

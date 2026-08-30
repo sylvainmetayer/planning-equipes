@@ -925,10 +925,30 @@ et l'interface le dit. Les suggestions d'échange se calculent sur ce même plan
 publié : on ne troque que ce qu'on nous a annoncé.
 
 **Foire fermée** : soumissions et annulations sont refusées **côté serveur**
-(`400`) ; la vue `foireOuverte` ne sert qu'à l'afficher. Le planning reste
+(`400`) ; la vue `foireOuverte` ne sert qu'à l'afficher. Une borne datée est
+appliquée de la même façon — une date vérifiée seulement à l'affichage ne
+serait pas une borne. `foireOuvreLe` distingue « pas encore ouverte » de
+« fermée » : c'est le même booléen côté serveur et l'inverse pour qui le lit,
+et un animateur à qui l'on annonce que c'est terminé deux semaines avant
+l'ouverture ne revient pas. Il est nul quand la foire est ouverte, et nul aussi
+quand la fenêtre est passée — il n'y a alors rien à attendre. Le planning reste
 visible et téléchargeable.
 
 ## Échanges
+
+`GET` / `PUT /api/echanges/configuration` — la fenêtre de la foire, sur le
+modèle de `parametres_collecte` (#291) : un interrupteur et deux dates
+facultatives.
+
+| Champ | Rôle |
+| --- | --- |
+| `foireOuverte` | L'interrupteur, et le maître : une fenêtre datée mais fermée n'accepte rien |
+| `debut` / `fin` | Bornes facultatives, incluses. Vide = pas de borne de ce côté |
+| `ouverteAujourdhui` | En lecture seule : l'interrupteur **et** la date du jour dans les bornes. Distinct de `foireOuverte` pour que l'écran puisse dire « ouverte, mais hors période » au lieu d'afficher un interrupteur qui prétend le contraire |
+
+Une fin antérieure au début est refusée (`400`) **avant** l'écriture : une
+configuration refusée laisse la précédente en place, jamais la moitié d'une
+nouvelle.
 
 Une demande naît `EN_ATTENTE_CIBLE` et n'entre dans la file décidable
 (`PROPOSEE`) qu'une fois **acceptée par le collègue ciblé**. Un refus du

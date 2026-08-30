@@ -1,11 +1,13 @@
 package dev.sylvain.planning.service;
 
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -264,34 +266,107 @@ public class DemandeEchangeService {
     /* --------------------------- Foire open/close --------------------------- */
 
     /**
-     * True when animateurs may submit and withdraw demandes. Open by default:
-     * the row only exists once the admin has decided something.
+     * When the foire accepts demandes: the switch, and the optional dates that
+     * bound it.
+     *
+     * <p>Same shape as the collection window of issue #291
+     * ({@code parametres_collecte}), deliberately: two windows configured on
+     * the same screen must not mean two different things. The switch is the
+     * master — a dated window that is switched off collects nothing — and a
+     * missing bound simply does not bound.</p>
+     *
+     * @param ouverte the admin switch; open by default, since the row only
+     *                exists once somebody has decided something
      */
-    public boolean isFoireOpen() {
+    public record FenetreFoire(boolean ouverte, LocalDate debut, LocalDate fin) {
+
+        /** What an edition nobody configured looks like: open, unbounded. */
+        public static FenetreFoire unbounded() {
+            return new FenetreFoire(true, null, null);
+        }
+
+        /** True on {@code jour}: the switch is on and the day is inside the bounds. */
+        public boolean openOn(LocalDate jour) {
+            return ouverte
+                    && (debut == null || !jour.isBefore(debut))
+                    && (fin == null || !jour.isAfter(fin));
+        }
+
+        /**
+         * The day the foire opens, when it is shut only because it has not
+         * started yet — {@code null} when it is open, or shut for good.
+         *
+         * <p>« Not yet open » and « closed » are the same boolean and say the
+         * opposite to the person reading. An animateur told the foire is over,
+         * two weeks before it starts, does not come back.</p>
+         */
+        public LocalDate ouvertureAVenir(LocalDate jour) {
+            if (!ouverte || debut == null || !jour.isBefore(debut)) {
+                return null;
+            }
+            return debut;
+        }
+    }
+
+    /** The window as the admin configured it, open and unbounded while nobody has. */
+    public FenetreFoire fenetre() {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection,
-                        "SELECT foire_ouverte FROM parametres_echange WHERE edition_id = ?");
+                        "SELECT foire_ouverte, date_debut, date_fin FROM parametres_echange "
+                                + "WHERE edition_id = ?");
                 ResultSet rs = ps.executeQuery()) {
-            return !rs.next() || rs.getBoolean("foire_ouverte");
+            if (!rs.next()) {
+                return FenetreFoire.unbounded();
+            }
+            return new FenetreFoire(rs.getBoolean("foire_ouverte"),
+                    date(rs, "date_debut"), date(rs, "date_fin"));
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to read the foire state", e);
         }
     }
 
+    private static LocalDate date(ResultSet rs, String colonne) throws SQLException {
+        Date valeur = rs.getDate(colonne);
+        return valeur == null ? null : valeur.toLocalDate();
+    }
+
     /**
-     * Admin decision: opens or closes the foire for the current edition. The
-     * closure is enforced server-side ({@link #submit}, {@link #cancel}),
-     * not merely hidden in the interface.
+     * True when animateurs may submit and withdraw demandes <b>right now</b> —
+     * switch on, and today inside the bounds. Open by default: the row only
+     * exists once the admin has decided something.
      */
-    public void openFoire(boolean ouverte) {
+    public boolean isFoireOpen() {
+        return fenetre().openOn(LocalDate.now());
+    }
+
+    /**
+     * Admin decision: opens or closes the foire for the current edition, with
+     * the dates that bound it. The closure is enforced server-side
+     * ({@link #submit}, {@link #cancel}), not merely hidden in the interface —
+     * and so are the bounds: a date checked only at display time would not be
+     * a bound at all.
+     *
+     * @throws BusinessError.Invalid when the end precedes the start. Checked
+     *         <b>before</b> the write, so a refused configuration leaves the
+     *         previous one standing rather than half of a new one
+     */
+    public void openFoire(FenetreFoire fenetre) {
+        FenetreFoire demandee = fenetre == null ? FenetreFoire.unbounded() : fenetre;
+        if (demandee.debut() != null && demandee.fin() != null && demandee.fin().isBefore(demandee.debut())) {
+            throw new BusinessError.Invalid("La fin de la foire précède son début");
+        }
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection,
                         """
-                        INSERT INTO parametres_echange (edition_id, foire_ouverte)
-                        VALUES (?, ?)
+                        INSERT INTO parametres_echange (edition_id, foire_ouverte, date_debut, date_fin)
+                        VALUES (?, ?, ?, ?)
                         ON CONFLICT (edition_id)
-                        DO UPDATE SET foire_ouverte = EXCLUDED.foire_ouverte""")) {
-            ps.setBoolean(2, ouverte);
+                        DO UPDATE SET foire_ouverte = EXCLUDED.foire_ouverte,
+                        date_debut = EXCLUDED.date_debut,
+                        date_fin = EXCLUDED.date_fin""")) {
+            ps.setBoolean(2, demandee.ouverte());
+            ps.setObject(3, demandee.debut());
+            ps.setObject(4, demandee.fin());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to store the foire state", e);

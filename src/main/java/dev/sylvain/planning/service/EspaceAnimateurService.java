@@ -98,11 +98,20 @@ public class EspaceAnimateurService {
      *                 to NON_VU
      * @param confirmeLe when « j'ai lu et je serai là » was clicked,
      *                 {@code null} while it has not been
+     * @param foireOuvreLe the day the foire opens, when it is shut only
+     *                 because it has not started yet — {@code null} when it is
+     *                 open, or shut for good. {@code foireOuverte} alone is one
+     *                 boolean for two situations that say the opposite to the
+     *                 person reading, and « c'est terminé » two weeks before it
+     *                 starts is the version nobody comes back from
+     * @param foireFermeLe the last day demandes are accepted, {@code null} when
+     *                 the window has no end
      */
     public record EspaceAnimateurView(String animateurId, String prenom, String nom, Instant publieLe,
             boolean foireOuverte, List<PosteAnimateurView> postes,
             List<LocalDate> joursRepos, List<ColleagueView> collegues,
-            String statutConfirmation, Instant confirmeLe) {
+            String statutConfirmation, Instant confirmeLe,
+            LocalDate foireOuvreLe, LocalDate foireFermeLe) {
     }
 
     /**
@@ -144,11 +153,13 @@ public class EspaceAnimateurService {
         PlanSnapshotService.SnapshotMeta publication = planPublieService.lastPublication();
         ConfirmationPlanningRepository.Confirmation confirmation =
                 confirmationService.stored(animateurId).orElse(null);
+        DemandeEchangeService.FenetreFoire foire = demandeEchangeService.fenetre();
         return new EspaceAnimateurView(animateur.getId(), animateur.getPrenom(), animateur.getNom(),
                 publication == null ? null : publication.publieLe(),
-                demandeEchangeService.isFoireOpen(), postes, joursRepos, collegues,
+                foire.openOn(LocalDate.now()), postes, joursRepos, collegues,
                 (confirmation == null ? StatutConfirmation.NON_VU : confirmation.statut()).name(),
-                confirmation == null ? null : confirmation.confirmeLe());
+                confirmation == null ? null : confirmation.confirmeLe(),
+                foire.ouvertureAVenir(LocalDate.now()), foire.fin());
     }
 
     private static List<PosteAnimateurView> postesOf(PlanningEvenement planning, String animateurId,

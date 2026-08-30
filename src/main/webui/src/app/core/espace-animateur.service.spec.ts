@@ -17,7 +17,9 @@ function vue(): EspaceAnimateurView {
     joursRepos: [],
     collegues: [],
     statutConfirmation: 'NON_VU',
-    confirmeLe: null
+    confirmeLe: null,
+    foireOuvreLe: null,
+    foireFermeLe: null
   };
 }
 

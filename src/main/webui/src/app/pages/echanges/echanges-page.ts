@@ -3,12 +3,14 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { ApiService } from '../../core/api.service';
 import { statutDemandeClasse, statutDemandeLabel } from '../../core/demande-echange-labels';
-import { DemandeEchangeView, EchangeSimulation, HardMediumSoftScore } from '../../core/models';
+import { ConfigurationFoire, DemandeEchangeView, EchangeSimulation, HardMediumSoftScore } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { formatDeltaScore } from '../../core/score-format';
 import { ConfirmService } from '../../shared/confirm-dialog';
@@ -31,7 +33,16 @@ interface DemandeRow extends DemandeEchangeView {
  */
 @Component({
   selector: 'app-echanges-page',
-  imports: [DatePipe, MatButtonModule, MatCardModule, MatIconModule, MatProgressBarModule, MatSlideToggleModule],
+  imports: [
+    DatePipe,
+    MatButtonModule,
+    MatCardModule,
+    MatFormFieldModule,
+    MatIconModule,
+    MatInputModule,
+    MatProgressBarModule,
+    MatSlideToggleModule
+  ],
   templateUrl: './echanges-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -49,6 +60,21 @@ export class EchangesPage {
   protected readonly decisionEnCours = signal<string | null>(null);
   /** `null` while the configuration has not been fetched yet. */
   protected readonly foireOuverte = signal<boolean | null>(null);
+
+  /**
+   * Optional bounds of the foire, same shape as the collection window of issue
+   * #291. `''` and `null` mean « pas de borne » alike — an emptied date input
+   * gives the former, the server the latter.
+   */
+  protected readonly debut = signal<string | null>(null);
+  protected readonly fin = signal<string | null>(null);
+
+  /**
+   * True when the switch is on but today is outside the bounds — the case the
+   * screen must not present as « ouverte ». The server decides it: it owns the
+   * bounds and the clock.
+   */
+  protected readonly horsFenetre = signal(false);
   protected readonly foireEnCours = signal(false);
 
   protected readonly rows = computed<DemandeRow[]>(() =>
@@ -76,15 +102,37 @@ export class EchangesPage {
     try {
       const [demandes, configuration] = await Promise.all([
         this.api.get<DemandeEchangeView[]>('/api/echanges'),
-        this.api.get<{ foireOuverte: boolean }>('/api/echanges/configuration')
+        this.api.get<ConfigurationFoire>('/api/echanges/configuration')
       ]);
       this.demandes.set(demandes);
-      this.foireOuverte.set(configuration.foireOuverte);
+      this.appliquer(configuration);
     } catch (error) {
       this.report(error);
     } finally {
       this.chargement.set(false);
     }
+  }
+
+  /** One place to fold the server's answer back into the screen. */
+  private appliquer(configuration: ConfigurationFoire): void {
+    this.foireOuverte.set(configuration.foireOuverte);
+    this.debut.set(configuration.debut);
+    this.fin.set(configuration.fin);
+    this.horsFenetre.set(configuration.foireOuverte && !configuration.ouverteAujourdhui);
+  }
+
+  /** An emptied date input is « no bound », not an empty string to store. */
+  protected majDebut(valeur: string): void {
+    this.debut.set(valeur || null);
+  }
+
+  protected majFin(valeur: string): void {
+    this.fin.set(valeur || null);
+  }
+
+  /** Saves the bounds without touching the switch. */
+  protected async enregistrerFenetre(): Promise<void> {
+    await this.basculerFoire(this.foireOuverte() === true);
   }
 
   /**
@@ -94,10 +142,12 @@ export class EchangesPage {
   protected async basculerFoire(ouverte: boolean): Promise<void> {
     this.foireEnCours.set(true);
     try {
-      const configuration = await this.api.put<{ foireOuverte: boolean }>('/api/echanges/configuration', {
-        foireOuverte: ouverte
+      const configuration = await this.api.put<ConfigurationFoire>('/api/echanges/configuration', {
+        foireOuverte: ouverte,
+        debut: this.debut(),
+        fin: this.fin()
       });
-      this.foireOuverte.set(configuration.foireOuverte);
+      this.appliquer(configuration);
       this.notifications.notify({
         title: configuration.foireOuverte
           ? $localize`:@@echanges.foireOuverteNotif:Foire au planning ouverte : les animateurs peuvent proposer des échanges.`

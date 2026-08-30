@@ -1,12 +1,33 @@
 @if (!foireOuverte()) {
-  <div class="espace-foire-fermee">
-    <mat-icon>lock</mat-icon>
-    <p i18n="@@espace.echanges.foireFermee">
-      La foire au planning est fermée : vous pouvez consulter votre planning et vos demandes
-      passées, mais plus en proposer ni en annuler. Rapprochez-vous de l'organisation si un
-      échange reste nécessaire.
-    </p>
-  </div>
+  @if (ouvertureAVenir(); as debut) {
+    <!-- « Pas encore ouverte » et « fermée » sont le même booléen côté serveur
+         et disent le contraire à celui qui lit : un animateur à qui on annonce
+         que la foire est terminée alors qu'elle ouvre dans deux semaines n'y
+         revient pas. Même distinction que la collecte des disponibilités. -->
+    <div class="espace-foire-fermee">
+      <mat-icon>schedule</mat-icon>
+      <p i18n="@@espace.echanges.foireAVenir">
+        La foire au planning n'est pas encore ouverte : revenez à partir du
+        {{ debut | date: 'longDate' }} pour proposer un échange.
+      </p>
+    </div>
+  } @else {
+    <div class="espace-foire-fermee">
+      <mat-icon>lock</mat-icon>
+      <p i18n="@@espace.echanges.foireFermee">
+        La foire au planning est fermée : vous pouvez consulter votre planning et vos demandes
+        passées, mais plus en proposer ni en annuler. Rapprochez-vous de l'organisation si un
+        échange reste nécessaire.
+      </p>
+    </div>
+  }
+} @else if (foireFermeLe(); as fin) {
+  <p class="espace-foire-echeance">
+    <mat-icon inline>event_available</mat-icon>
+    <span i18n="@@espace.echanges.foireJusquAu"
+      >Vous avez jusqu'au {{ fin | date: 'longDate' }} pour proposer un échange.</span
+    >
+  </p>
 }
 @if (foireOuverte()) {
 <mat-card class="espace-form" appearance="outlined">

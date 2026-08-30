@@ -1282,6 +1282,14 @@ export interface EspaceAnimateurView {
   publieLe: string | null;
   /** False turns the espace read-only: the foire is closed by the admin (enforced server-side too). */
   foireOuverte: boolean;
+  /**
+   * The day the foire opens, when it is shut only because it has not started
+   * yet — `null` when it is open, or shut for good. `foireOuverte` alone is one
+   * boolean for two situations that say the opposite to the person reading.
+   */
+  foireOuvreLe: string | null;
+  /** Last day demandes are accepted, `null` when the window has no end. */
+  foireFermeLe: string | null;
   postes: PosteAnimateurView[];
   collegues: CollegueView[];
   /** Where this animateur stands with the published plan (issue #293). */
@@ -1313,6 +1321,19 @@ export interface ConfirmationView {
 export interface AccuseReception {
   statut: StatutConfirmation;
   confirmeLe: string | null;
+}
+
+/**
+ * The foire window as the admin sets it, on the model of the collection window
+ * of issue #291: an optional start and end bounding an explicit switch.
+ */
+export interface ConfigurationFoire {
+  /** The switch, and the master: a dated window that is switched off accepts nothing. */
+  foireOuverte: boolean;
+  debut: string | null;
+  fin: string | null;
+  /** Read-only: the switch AND today's date against the bounds. */
+  ouverteAujourdhui: boolean;
 }
 
 /**

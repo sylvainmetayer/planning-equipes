@@ -96,6 +96,19 @@ export class EspaceEchangesPage {
   /** Closed foire = read-only history: no submission form, no withdrawals. */
   protected readonly foireOuverte = computed(() => this.espace.vue()?.foireOuverte ?? true);
 
+  /**
+   * The day the foire opens, when it is shut only because it has not started
+   * yet — `null` when it is open, or shut for good.
+   *
+   * The server computes it, deliberately: it holds the bounds and the clock,
+   * and « pas encore ouverte » must not depend on the date of the browser that
+   * happens to be reading.
+   */
+  protected readonly ouvertureAVenir = computed(() => this.espace.vue()?.foireOuvreLe ?? null);
+
+  /** Last day demandes are accepted, `null` when the window has no end. */
+  protected readonly foireFermeLe = computed(() => this.espace.vue()?.foireFermeLe ?? null);
+
   protected readonly demandes = computed<DemandeRow[]>(() =>
     this.espace.demandes().map((demande) => ({
       ...demande,

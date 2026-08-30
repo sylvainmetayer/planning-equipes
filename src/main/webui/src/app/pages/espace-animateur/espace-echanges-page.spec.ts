@@ -54,6 +54,8 @@ function vue(overrides: Partial<EspaceAnimateurView> = {}): EspaceAnimateurView 
     collegues: [{ id: 'bob', nomComplet: 'Bob Durand' }],
     statutConfirmation: 'NON_VU',
     confirmeLe: null,
+    foireOuvreLe: null,
+    foireFermeLe: null,
     ...overrides
   };
 }

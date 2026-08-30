@@ -566,7 +566,7 @@ export function buildHelpSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.foire.term.ouverture:Ouverture et fermeture`,
-              text: $localize`:@@aide.foire.def.ouverture:L'interrupteur en tête de l'écran Échanges ouvre ou ferme la foire pour l'édition courante. Fermée, les espaces animateurs passent en consultation seule — le planning reste visible et téléchargeable (PDF, ICS), mais plus aucune demande ne peut être soumise ni annulée, et le refus est appliqué côté serveur, pas seulement masqué à l'écran.`
+              text: $localize`:@@aide.foire.def.ouverture:L'interrupteur en tête de l'écran Échanges ouvre ou ferme la foire pour l'édition courante. Fermée, les espaces animateurs passent en consultation seule — le planning reste visible et téléchargeable (PDF, ICS), mais plus aucune demande ne peut être soumise ni annulée, et le refus est appliqué côté serveur, pas seulement masqué à l'écran. Vous pouvez aussi borner la foire par une date de début et une date de fin, comme la collecte des disponibilités : laissez une date vide pour ne pas borner ce côté-là. L'interrupteur reste maître — une période renseignée n'ouvre jamais une foire fermée — et les bornes sont appliquées côté serveur elles aussi. Avant la date d'ouverture, l'espace annonce « pas encore ouverte » et la date de retour, et non « fermée » : quelqu'un à qui l'on dit que c'est terminé deux semaines trop tôt ne revient pas.`
             },
             {
               term: $localize`:@@aide.foire.term.envoi:Publier le planning`,
