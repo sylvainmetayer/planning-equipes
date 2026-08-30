@@ -25,6 +25,21 @@ import { HAUTEUR_COURBE, LARGEUR_COURBE, NiveauScore, SerieScore, construireSeri
   selector: 'app-score-chart',
   template: `
     @if (series(); as courbes) {
+      @if (replie()) {
+        <!-- Folded: the numbers without the boxes. Still worth a line — "hard
+             is at 0" is the answer most visits come for, and hiding the panel
+             should cost the room, not the information. -->
+        <p class="score-curve-resume">
+          @for (serie of courbes; track serie.niveau) {
+            <span class="score-curve-resume-niveau">
+              <span class="score-curve-resume-titre">{{ titre(serie.niveau) }}</span>
+              <span class="score-curve-valeur" [class.score-curve-resolu]="serie.dernier === 0">
+                {{ nombre(serie.dernier) }}
+              </span>
+            </span>
+          }
+        </p>
+      } @else {
       <div class="score-curve">
         @for (serie of courbes; track serie.niveau) {
           <div class="score-curve-niveau">
@@ -58,7 +73,10 @@ import { HAUTEUR_COURBE, LARGEUR_COURBE, NiveauScore, SerieScore, construireSeri
           </div>
         }
       </div>
-    } @else {
+      }
+    } @else if (!replie()) {
+      <!-- Not while folded: the point of folding is to give the room back, and
+           a paragraph explaining an empty chart is exactly the room in question. -->
       <p class="score-curve-vide" i18n="@@solver.scoreCurve.attente">
         Le solveur n'a pas encore annoncé de première solution complète : la courbe démarre dès qu'il en tient une.
       </p>
@@ -78,6 +96,13 @@ export class ScoreChart {
   readonly dureeMs = input(0);
   /** True once the run is over: the curve is final and says so rather than looking live. */
   readonly termine = input(false);
+  /**
+   * Folded away: the three boxes give way to one line of figures. Three charts
+   * are a lot of screen for someone who started a fifteen-minute solve and went
+   * to do something else — but folding must cost the room, not the reading, so
+   * the current scores stay.
+   */
+  readonly replie = input(false);
 
   protected readonly largeur = LARGEUR_COURBE;
   protected readonly hauteur = HAUTEUR_COURBE;

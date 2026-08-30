@@ -56,3 +56,11 @@
 .publication-demande {
   font-style: italic;
 }
+
+/* Sending: the one action that writes to real people, and it used to take tens
+   of seconds without a sign. */
+.publication-envoi {
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+  margin: 0 0 0.5rem;
+}

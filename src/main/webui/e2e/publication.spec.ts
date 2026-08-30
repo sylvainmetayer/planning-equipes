@@ -84,6 +84,54 @@ test.describe('Publication du planning', () => {
     await page.close();
   });
 
+  /**
+   * Le reproche d'origine (#333) : plusieurs dizaines de secondes sans le
+   * moindre signe, sur la seule action qui écrit à de vraies personnes — et le
+   * réflexe naturel devant un écran muet est de recliquer.
+   *
+   * L'envoi est retenu par une interception de route, pas par une attente
+   * arbitraire : le test contrôle exactement quand la réponse arrive, donc il
+   * ne dépend d'aucune durée.
+   */
+  test('pendant l’envoi, l’écran le dit et le bouton devient inerte', async ({ browser }) => {
+    await deplacerUnSiege(admin);
+    const page = await pageAdmin(browser, admin);
+
+    let libererEnvoi: (() => void) | null = null;
+    const envoiRetenu = new Promise<void>((resolve) => {
+      libererEnvoi = resolve;
+    });
+    await page.route('**/api/planning/publication', async (route) => {
+      if (route.request().method() !== 'POST') {
+        return route.fallback();
+      }
+      await envoiRetenu;
+      await route.fallback();
+    });
+
+    await page.goto('/solveur');
+    const bouton = page.getByRole('button', { name: /Publier — 2 personnes concernées/ });
+    await expect(bouton).toBeEnabled();
+    await bouton.click();
+    await page.getByRole('button', { name: 'Publier', exact: true }).click();
+
+    // Ce que l'utilisateur n'avait pas : un signe que son clic a porté.
+    await expect(page.getByText(/Envoi en cours vers 2 personne/)).toBeVisible();
+    await expect(page.getByRole('progressbar', { name: 'Publication en cours' })).toBeVisible();
+    // Et l'impossibilité d'en déclencher un second — sur cette action-là, le
+    // double clic est le mode de défaillance.
+    await expect(bouton).toBeDisabled();
+
+    libererEnvoi!();
+    // L'envoi rendu : l'indicateur s'efface, et le bouton retombe sur « plus
+    // personne à prévenir » plutôt que de rester bloqué.
+    await expect(page.getByRole('button', { name: 'Tout le monde est à jour' })).toBeVisible();
+    await expect(page.getByText(/Envoi en cours vers/)).toBeHidden();
+    expect((await apercu(admin)).nombreConcernes).toBe(0);
+
+    await page.close();
+  });
+
   test('publier écrit aux seules personnes concernées, puis le décompte retombe à zéro', async () => {
     await deplacerUnSiege(admin);
 

@@ -73,3 +73,23 @@
   color: var(--mat-sys-on-surface-variant);
   margin: 0;
 }
+
+/* Folded: the three boxes give way to one line of figures, so hiding the panel
+   costs the room and not the reading. */
+.score-curve-resume {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.5rem;
+  margin: 0;
+}
+
+.score-curve-resume-niveau {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+.score-curve-resume-titre {
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+}

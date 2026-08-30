@@ -293,7 +293,13 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   solve. Components don't call `fetch` directly.
 - **View state — a sort, a quick filter, a chosen view — goes in the URL**, via
   `core/view-query-params.ts`: a refresh restores the screen and the link is
-  shareable, with no schema and no browser storage. The default of a control is
+  shareable, with no schema and no browser storage. A **chrome preference** is
+  not view state and does not go there — how much room a panel is allowed on
+  *this* person's screen is neither shareable nor worth a param, and a param
+  would be gone on the next plain navigation, which is the visit the preference
+  has to survive. Those go to localStorage, through `core/nav-collapse` (the
+  drawer's folded groups) or `core/panel-collapse` (a page panel, e.g. the
+  solver's score curve). The default of a control is
   the *absence* of its param, reading is tolerant (an unknown value falls back
   to the default rather than failing the page), writing replaces the history
   entry through `Location.replaceState` and **never navigates** — a router

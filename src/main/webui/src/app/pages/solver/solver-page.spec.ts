@@ -123,6 +123,12 @@ type PageInternals = {
   courbeScore: Signal<ScoreTrace | null>;
   courbePoints: Signal<ScorePoint[]>;
   courbeVisible: Signal<boolean>;
+  courbeRepliee: WritableSignal<boolean>;
+  basculerCourbe: () => void;
+  publicationBusy: Signal<boolean>;
+  publicationPossible: Signal<boolean>;
+  publicationDestinatairesEnCours: Signal<number>;
+  onPublier: () => Promise<void>;
 };
 
 describe('SolverPage', () => {
@@ -174,6 +180,9 @@ describe('SolverPage', () => {
     solverBusy.set(false);
     editingLocked.set(false);
     scoreTraceEdition.set(null);
+    // The folded state of the score curve is a real localStorage preference:
+    // clear it, or one test's fold decides the next one's opening state.
+    localStorage.removeItem('planning-equipes.solver.scoreCurveCollapsed');
     for (const stub of [
       jobs.listJobs,
       jobs.onResult,
@@ -520,6 +529,178 @@ describe('SolverPage', () => {
       // The one read carrying an edition header, hence the only one the server
       // can refuse — see SolverJobService.chargerCourbeScore.
       expect(jobs.chargerCourbeScore).toHaveBeenCalledTimes(1);
+    });
+
+    /**
+     * Folding it away (retour utilisateur, #333) — three charts are a lot of
+     * screen for someone who launched a fifteen-minute solve and left the room.
+     */
+    describe('folding it away', () => {
+      it('starts unfolded, and remembers the fold across visits', () => {
+        const page = createPage();
+        expect(page.courbeRepliee()).toBe(false);
+
+        page.basculerCourbe();
+
+        expect(page.courbeRepliee()).toBe(true);
+        // Written where the drawer writes its own folded groups: a fold the
+        // next visit forgets is a gesture to make again on every load.
+        expect(localStorage.getItem('planning-equipes.solver.scoreCurveCollapsed')).toBe('true');
+        // And a page rebuilt (a navigation, a reload) comes back folded.
+        expect(createPage().courbeRepliee()).toBe(true);
+      });
+
+      it('unfolds again, and stops remembering', () => {
+        localStorage.setItem('planning-equipes.solver.scoreCurveCollapsed', 'true');
+        const page = createPage();
+
+        page.basculerCourbe();
+
+        expect(page.courbeRepliee()).toBe(false);
+        expect(localStorage.getItem('planning-equipes.solver.scoreCurveCollapsed')).toBe('false');
+      });
+
+      it('keeps the whole curve while folded, rather than a hole', () => {
+        // The property that matters, and the one that would quietly break:
+        // folding is a rendering choice, so nothing may stop the recording.
+        // Reopened, the panel must show the run from its first point — that
+        // history is the entire reason the curve exists.
+        scoreTraceEdition.set(trace());
+        const page = createPage();
+        page.basculerCourbe();
+
+        expect(page.courbePoints()).toHaveLength(1);
+        expect(page.courbeVisible()).toBe(true);
+        // Points that landed while folded are held just the same.
+        scoreTraceEdition.set(
+          trace({ points: [{ tempsMs: 0, hard: -40, medium: -10, soft: -1000 }, { tempsMs: 1000, hard: 0, medium: -6, soft: -800 }] })
+        );
+        expect(page.courbePoints()).toHaveLength(2);
+
+        page.basculerCourbe();
+        expect(page.courbeRepliee()).toBe(false);
+        expect(page.courbePoints()).toHaveLength(2);
+      });
+    });
+  });
+
+  /**
+   * Publishing (retour utilisateur, #333). Tens of seconds used to pass with no
+   * sign at all, on the one action that writes to real people — and the natural
+   * reflex in front of a screen that says nothing is to click again.
+   */
+  describe('publishing the planning', () => {
+    const apercuPret = {
+      jamaisPublie: false,
+      planVide: false,
+      solveEnCours: false,
+      dernierePublicationLe: null,
+      nombreConcernes: 3,
+      destinataires: []
+    };
+
+    /** A publication that hangs until the test lets it finish. */
+    function envoiSuspendu(): { terminer: () => void } {
+      let terminer = (): void => undefined;
+      api.post.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            terminer = () => resolve({ envoyes: 3, sansEmail: [], echecs: [] });
+          })
+      );
+      return {
+        terminer: () => terminer()
+      };
+    }
+
+    async function pagePrete(): Promise<PageInternals> {
+      api.get.mockResolvedValue(apercuPret);
+      const page = createPage();
+      await vi.waitFor(() => expect(page.publicationPossible()).toBe(true));
+      return page;
+    }
+
+    it('says a send is under way, and how many people it concerns', async () => {
+      confirm.ask.mockResolvedValue(true);
+      const envoi = envoiSuspendu();
+      const page = await pagePrete();
+
+      const publication = page.onPublier();
+      await vi.waitFor(() => expect(api.post).toHaveBeenCalledTimes(1));
+
+      expect(page.publicationBusy()).toBe(true);
+      // The count is frozen at the start: the preview reloads at the end and
+      // would otherwise fall to zero in the middle of the sentence.
+      expect(page.publicationDestinatairesEnCours()).toBe(3);
+
+      envoi.terminer();
+      await publication;
+      expect(page.publicationBusy()).toBe(false);
+    });
+
+    it('is inert while the send is in flight, rather than firing a second wave', async () => {
+      confirm.ask.mockResolvedValue(true);
+      const envoi = envoiSuspendu();
+      const page = await pagePrete();
+      const publication = page.onPublier();
+      await vi.waitFor(() => expect(api.post).toHaveBeenCalledTimes(1));
+
+      await page.onPublier();
+
+      // Real mail to real people: a second click must not send it twice.
+      expect(api.post).toHaveBeenCalledTimes(1);
+      envoi.terminer();
+      await publication;
+    });
+
+    it('is already inert while the confirmation is on screen', async () => {
+      // The window the guard used to leave open: the flag was raised only after
+      // the confirmation, so a second click opened a second dialog — and two
+      // confirmations meant two waves of mail.
+      let confirmer = (): void => undefined;
+      confirm.ask.mockImplementation(
+        () =>
+          new Promise<boolean>((resolve) => {
+            confirmer = () => resolve(true);
+          })
+      );
+      const envoi = envoiSuspendu();
+      const page = await pagePrete();
+
+      const publication = page.onPublier();
+      await vi.waitFor(() => expect(confirm.ask).toHaveBeenCalledTimes(1));
+      expect(page.publicationBusy()).toBe(true);
+
+      await page.onPublier();
+      expect(confirm.ask).toHaveBeenCalledTimes(1);
+
+      confirmer();
+      await vi.waitFor(() => expect(api.post).toHaveBeenCalledTimes(1));
+      envoi.terminer();
+      await publication;
+    });
+
+    it('releases the button when the confirmation is declined', async () => {
+      confirm.ask.mockResolvedValue(false);
+      const page = await pagePrete();
+
+      await page.onPublier();
+
+      expect(api.post).not.toHaveBeenCalled();
+      expect(page.publicationBusy()).toBe(false);
+    });
+
+    it('releases the button when the send fails', async () => {
+      confirm.ask.mockResolvedValue(true);
+      api.post.mockRejectedValue(new Error('SMTP injoignable'));
+      const page = await pagePrete();
+
+      await page.onPublier();
+
+      // Otherwise a failed send would leave the action locked until reload,
+      // with no way to try again.
+      expect(page.publicationBusy()).toBe(false);
+      expect(page.output()).toContain('SMTP injoignable');
     });
   });
 

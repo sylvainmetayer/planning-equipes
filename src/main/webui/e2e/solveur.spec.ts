@@ -253,3 +253,64 @@ test("un échange accepté survit à la régénération du planning", async ({ b
   await expect(page.locator('#contenu')).toContainText(`Échange validé (demande ${demandeId})`);
   await page.context().close();
 });
+
+/**
+ * La courbe de score en direct (#304) et son repli (retour utilisateur, #333).
+ *
+ * Deux propriétés, et la seconde est celle qui pouvait casser en silence : le
+ * repli tient d'une visite à l'autre, et **replier n'interrompt pas
+ * l'enregistrement**. C'est pour ça qu'une seconde résolution est lancée
+ * pendant que le panneau est fermé : le rouvrir doit montrer cette
+ * résolution-là depuis son début, pas un trou commençant au clic.
+ */
+test('la courbe de score se replie, s’en souvient, et continue d’enregistrer', async ({ browser }) => {
+  test.slow();
+  await reseed();
+  const parametres = await admin.put('/api/parametres-solveur', {
+    data: { dureeResolutionSecondes: 6 }
+  });
+  expect(parametres.ok()).toBe(true);
+
+  // Une première résolution, pour qu'une courbe existe à l'ouverture.
+  const premier = await lancerSolve(admin, 6);
+  expect(premier.status).toBe('COMPLETED');
+
+  const page = await pageAdmin(browser, admin);
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'Progression du score' })).toBeVisible();
+  // Trois cadres, un par niveau : c'est le rendu déplié.
+  await expect(page.getByRole('img', { name: /Contraintes dures/ })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Réduire la courbe' }).click();
+  await expect(page.getByRole('img', { name: /Contraintes dures/ })).toBeHidden();
+  // Replier coûte la place, pas la lecture : le panneau reste là avec ses scores.
+  await expect(page.getByRole('heading', { name: 'Progression du score' })).toBeVisible();
+
+  // Le repli survit à un rechargement complet, sinon le geste serait à refaire
+  // à chaque visite.
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Afficher la courbe' })).toBeVisible();
+  await expect(page.getByRole('img', { name: /Contraintes dures/ })).toBeHidden();
+
+  // Panneau fermé, on relance : rien ici ne doit couper le flux.
+  await page.getByRole('button', { name: 'Résoudre avec Timefold' }).click();
+  await expect
+    .poll(async () => (await page.request.get('/api/jobs/active')).status(), { timeout: 15_000 })
+    .toBe(200);
+  await expect
+    .poll(async () => (await page.request.get('/api/jobs/active')).status(), { timeout: 90_000 })
+    .toBe(204);
+
+  await page.getByRole('button', { name: 'Afficher la courbe' }).click();
+  const courbeDure = page.getByRole('img', { name: /Contraintes dures/ });
+  await expect(courbeDure).toBeVisible();
+  // Et surtout : une vraie courbe, pas l'état vide. Vider la trace en repliant
+  // — la façon dont ce panneau pouvait casser en silence — se lirait ici, le
+  // rouvrir affichant « pas encore de première solution » après une résolution
+  // qui vient de se terminer.
+  await expect(page.getByText(/pas encore annoncé de première solution/)).toBeHidden();
+  const sommets = await courbeDure.locator('polyline').getAttribute('points');
+  expect(sommets?.split(' ').length).toBeGreaterThan(1);
+
+  await page.context().close();
+});

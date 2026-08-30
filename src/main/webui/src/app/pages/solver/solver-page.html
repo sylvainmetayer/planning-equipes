@@ -122,14 +122,34 @@
   <mat-card appearance="outlined" class="page-card">
     <mat-card-header>
       <h2 mat-card-title i18n="@@solver.scoreCurve.title">Progression du score</h2>
-      <mat-card-subtitle i18n="@@solver.scoreCurve.hint">
-        Les trois niveaux de score pendant la résolution, chacun à son échelle : un score dur à -36 et un score souple à
-        -400 000 ne se comparent pas sur le même axe. Le haut de chaque cadre est le zéro, c'est-à-dire « plus rien à
-        corriger à ce niveau-là ». Rien n'est conservé : seule la résolution en cours est tracée.
-      </mat-card-subtitle>
+      @if (!courbeRepliee()) {
+        <mat-card-subtitle i18n="@@solver.scoreCurve.hint">
+          Les trois niveaux de score pendant la résolution, chacun à son échelle : un score dur à -36 et un score souple à
+          -400 000 ne se comparent pas sur le même axe. Le haut de chaque cadre est le zéro, c'est-à-dire « plus rien à
+          corriger à ce niveau-là ». Rien n'est conservé : seule la résolution en cours est tracée.
+        </mat-card-subtitle>
+      }
     </mat-card-header>
+    <mat-card-actions class="card-actions">
+      <button
+        matButton
+        type="button"
+        [attr.aria-expanded]="!courbeRepliee()"
+        i18n-matTooltip="@@solver.scoreCurve.bascule.tooltip"
+        matTooltip="La courbe continue d'être enregistrée quand elle est réduite : la rouvrir montre la résolution depuis son début."
+        (click)="basculerCourbe()"
+      >
+        <mat-icon>{{ courbeRepliee() ? 'expand_more' : 'expand_less' }}</mat-icon>
+        <span>{{ libelleBasculeCourbe() }}</span>
+      </button>
+    </mat-card-actions>
     <mat-card-content>
-      <app-score-chart [points]="courbePoints()" [dureeMs]="courbeDureeMs()" [termine]="courbeTerminee()" />
+      <app-score-chart
+        [points]="courbePoints()"
+        [dureeMs]="courbeDureeMs()"
+        [termine]="courbeTerminee()"
+        [replie]="courbeRepliee()"
+      />
     </mat-card-content>
   </mat-card>
 }
@@ -218,6 +238,23 @@
       <span>{{ publicationLibelle() }}</span>
     </button>
   </mat-card-actions>
+
+  @if (publicationBusy()) {
+    <mat-card-content>
+      <!-- Tens of seconds with no sign at all, on the one action that writes to
+           real people: the natural reflex is to click again. The bar is
+           indeterminate on purpose — the server answers once, at the end, and a
+           fabricated percentage would be a lie. -->
+      <p class="publication-envoi" aria-live="polite">
+        <ng-container i18n="@@publication.envoiEnCours">
+          Envoi en cours vers {{ publicationDestinatairesEnCours() }} personne(s). Cela peut prendre plusieurs
+          dizaines de secondes ; laissez cet écran ouvert, un seul envoi part à la fois.
+        </ng-container>
+      </p>
+      <mat-progress-bar mode="indeterminate"
+                        i18n-aria-label="@@publication.envoi.label" aria-label="Publication en cours" />
+    </mat-card-content>
+  }
 
   <mat-card-content class="publication-etat">
     <p class="publication-derniere">

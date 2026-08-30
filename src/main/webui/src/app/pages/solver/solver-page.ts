@@ -31,6 +31,11 @@ import {
   ResultatSolveIncremental,
   StatistiquesIncremental
 } from '../../core/models';
+import {
+  defaultPanelStorage,
+  readPanelCollapsed,
+  writePanelCollapsed
+} from '../../core/panel-collapse';
 import { PlanSnapshotStore } from '../../core/plan-snapshot.store';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { NotificationService } from '../../core/notification.service';
@@ -69,6 +74,12 @@ import {
  * {@link PlanningDiagnostic.contraintes} list, which (unlike `ConstraintView`
  * on the Contraintes page) doesn't carry the constraint's `niveau`.
  */
+/**
+ * Where the folded state of the score curve is kept. A stable, namespaced key,
+ * like every other one this application writes to localStorage.
+ */
+const SCORE_CURVE_STORAGE_KEY = 'planning-equipes.solver.scoreCurveCollapsed';
+
 function hardPart(score: string): number {
   const match = /^(-?\d+)hard/.exec(score);
   return match ? Number(match[1]) : 0;
@@ -122,6 +133,13 @@ export class SolverPage {
    */
   protected readonly publicationApercu = signal<ApercuPublication | null>(null);
   protected readonly publicationBusy = signal(false);
+  /**
+   * How many people the send under way concerns, frozen when it starts: the
+   * preview reloads at the end and would otherwise drop to zero mid-sentence.
+   * Real information rather than a fabricated percentage — the server answers
+   * once, when everything has gone out.
+   */
+  protected readonly publicationDestinatairesEnCours = signal(0);
   protected readonly publicationListeOuverte = signal(false);
   protected readonly publicationLibelle = computed(() => libellePublier(this.publicationApercu()));
   protected readonly publicationRaisonIndisponible = computed(() =>
@@ -432,6 +450,20 @@ export class SolverPage {
     return trace && actif && trace.jobId !== actif.id ? null : trace;
   });
 
+  /**
+   * Whether the curve is folded to a single line of figures, remembered across
+   * visits (see `core/panel-collapse`). Three charts are a lot of screen for
+   * someone who launched a fifteen-minute solve and walked away.
+   *
+   * <p>Folding is a rendering choice and nothing else: the stream stays open
+   * and `SolverJobService` keeps recording, so unfolding shows the run from its
+   * first point rather than a hole starting where the panel was closed — which
+   * would defeat the one reading the curve exists to give.</p>
+   */
+  protected readonly courbeRepliee = signal(
+    readPanelCollapsed(defaultPanelStorage(), SCORE_CURVE_STORAGE_KEY)
+  );
+
   protected readonly courbePoints = computed(() => this.courbeScore()?.points ?? []);
   protected readonly courbeTerminee = computed(() => this.courbeScore()?.termine ?? false);
   /** Elapsed time of the run the curve describes: its right edge, see `score-curve.ts`. */
@@ -444,6 +476,18 @@ export class SolverPage {
    */
   protected readonly courbeVisible = computed(
     () => this.courbeScore() !== null || (this.jobs.activeJob() !== null && this.editingLocked())
+  );
+
+  protected basculerCourbe(): void {
+    const replie = !this.courbeRepliee();
+    this.courbeRepliee.set(replie);
+    writePanelCollapsed(defaultPanelStorage(), SCORE_CURVE_STORAGE_KEY, replie);
+  }
+
+  protected readonly libelleBasculeCourbe = computed(() =>
+    this.courbeRepliee()
+      ? $localize`:@@solver.scoreCurve.deplier:Afficher la courbe`
+      : $localize`:@@solver.scoreCurve.replier:Réduire la courbe`
   );
 
   /**
@@ -683,26 +727,35 @@ export class SolverPage {
     }
     const apercu = this.publicationApercu();
     const nombre = apercu ? apercu.nombreConcernes : 0;
-    const confirme = await this.confirm.ask({
-      title: $localize`:@@publication.confirmTitre:Publier le planning ?`,
-      message: $localize`:@@publication.confirmMessage:${nombre}:count: personne(s) recevront leur planning à jour et le détail de ce qui change pour elles. Personne d'autre ne sera sollicité.`,
-      confirmLabel: $localize`:@@publication.confirmAction:Publier`
-    });
-    if (!confirme) {
-      return;
-    }
+    // Raised BEFORE the confirmation, not after it: the button drives it, and
+    // leaving it live while the dialog is open lets a second click open a
+    // second dialog — two confirmations, two POSTs, two waves of mail. On this
+    // action the double click is the failure mode, so the guard has to cover
+    // the whole gesture and not only the request.
     this.publicationBusy.set(true);
-    this.output.set($localize`:@@publication.enCours:Publication du planning...`);
+    this.publicationDestinatairesEnCours.set(nombre);
     try {
-      const rapport = await this.api.post<RapportPublication>('/api/planning/publication', null);
-      const resume = resumePublication(rapport);
-      this.output.set(resume.details ? `${resume.titre} — ${resume.details}` : resume.titre);
-      this.publicationListeOuverte.set(false);
-    } catch (error) {
-      this.output.set(errorPrefix(error));
+      const confirme = await this.confirm.ask({
+        title: $localize`:@@publication.confirmTitre:Publier le planning ?`,
+        message: $localize`:@@publication.confirmMessage:${nombre}:count: personne(s) recevront leur planning à jour et le détail de ce qui change pour elles. Personne d'autre ne sera sollicité.`,
+        confirmLabel: $localize`:@@publication.confirmAction:Publier`
+      });
+      if (!confirme) {
+        return;
+      }
+      this.output.set($localize`:@@publication.enCours:Publication du planning...`);
+      try {
+        const rapport = await this.api.post<RapportPublication>('/api/planning/publication', null);
+        const resume = resumePublication(rapport);
+        this.output.set(resume.details ? `${resume.titre} — ${resume.details}` : resume.titre);
+        this.publicationListeOuverte.set(false);
+      } catch (error) {
+        this.output.set(errorPrefix(error));
+      } finally {
+        await this.chargerApercuPublication();
+      }
     } finally {
       this.publicationBusy.set(false);
-      await this.chargerApercuPublication();
     }
   }
 
