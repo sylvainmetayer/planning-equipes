@@ -1,3 +1,11 @@
+<app-work-in-progress-banner
+  [message]="messageEssai()"
+  i18n-marche="@@bancDeTouche.wip.marche"
+  marche="les motifs affichés sont ceux des contraintes que le solveur applique vraiment, lus sur le plan enregistré — ce qui est écrit là est exact"
+  i18n-manque="@@bancDeTouche.wip.manque"
+  manque="agir depuis cet écran, et le choix du siège évalué quand un créneau en compte plusieurs de libres"
+/>
+
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
     <h1 mat-card-title i18n="@@bancDeTouche.title">Banc de touche</h1>
@@ -10,28 +18,32 @@
   </mat-card-header>
 
   <mat-card-content>
-    <div class="banc-controls">
-      <mat-form-field appearance="outline">
-        <mat-label i18n="@@bancDeTouche.slotLabel">Créneau</mat-label>
-        <mat-select [ngModel]="creneauId()" (ngModelChange)="changerCreneau($event)">
-          @for (creneau of creneaux(); track creneau.id) {
-            <mat-option [value]="creneau.id">{{ libelleCreneau(creneau) }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
+    <!-- No créneau carries a seat: an empty selector would say nothing, so the
+         controls stand down and the explanation below does the talking. -->
+    @if (creneaux().length > 0) {
+      <div class="banc-controls">
+        <mat-form-field appearance="outline">
+          <mat-label i18n="@@bancDeTouche.slotLabel">Créneau</mat-label>
+          <mat-select [ngModel]="creneauId()" (ngModelChange)="changerCreneau($event)">
+            @for (creneau of creneaux(); track creneau.id) {
+              <mat-option [value]="creneau.id">{{ libelleCreneau(creneau) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
 
-      <mat-form-field appearance="outline">
-        <mat-label i18n="@@bancDeTouche.standLabel">Stand (facultatif)</mat-label>
-        <mat-select [ngModel]="standId()" (ngModelChange)="changerStand($event)">
-          <mat-option value="" i18n="@@bancDeTouche.anyStand">N'importe lequel</mat-option>
-          @for (stand of stands(); track stand.id) {
-            <mat-option [value]="stand.id">{{ stand.nom }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label i18n="@@bancDeTouche.standLabel">Stand (facultatif)</mat-label>
+          <mat-select [ngModel]="standId()" (ngModelChange)="changerStand($event)">
+            <mat-option value="" i18n="@@bancDeTouche.anyStand">N'importe lequel</mat-option>
+            @for (stand of stands(); track stand.id) {
+              <mat-option [value]="stand.id">{{ stand.nom }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
 
-      <button matButton (click)="reinitialiser()" i18n="@@bancDeTouche.reset">Réinitialiser</button>
-    </div>
+        <button matButton (click)="reinitialiser()" i18n="@@bancDeTouche.reset">Réinitialiser</button>
+      </div>
+    }
 
     @if (chargement()) {
       <mat-progress-bar mode="indeterminate" />

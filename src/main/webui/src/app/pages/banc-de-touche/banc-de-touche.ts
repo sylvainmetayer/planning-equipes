@@ -3,7 +3,7 @@
 // animateur may take a seat: the server already did, from the constraints
 // themselves (issue #303). This only sorts, groups and words the answer.
 
-import { Animateur, AnimateurBanc, BancDeTouche, Creneau, MotifExclusion, Stand } from '../../core/models';
+import { Animateur, AnimateurBanc, BancDeTouche, CreneauSiege, MotifExclusion, Stand } from '../../core/models';
 
 /**
  * The three states a line can be in. Deliberately three and not two: the
@@ -75,7 +75,7 @@ export function lignes(banc: BancDeTouche | null, animateurs: Animateur[]): Lign
  * when there is only one family is noise on top of the one thing this label is
  * for — telling two otherwise identical vacations apart.
  */
-export function libelleCreneau(creneau: Creneau, avecFamille = false): string {
+export function libelleCreneau(creneau: CreneauSiege, avecFamille = false): string {
   const famille = avecFamille ? ` (F${(creneau.famille ?? 0) + 1})` : '';
   return `J${creneau.jour} · ${creneau.date} · ${heure(creneau.heureDebut)}-${heure(creneau.heureFin)}${famille}`;
 }
@@ -86,22 +86,23 @@ function heure(valeur: string): string {
 }
 
 /** True once a découpage has produced more than one stagger family, so the tag carries information. */
-export function familleUtile(creneaux: readonly Creneau[]): boolean {
+export function familleUtile(creneaux: readonly CreneauSiege[]): boolean {
   return creneaux.some((creneau) => (creneau.famille ?? 0) > 0);
 }
 
 /**
- * The timeslots the saved plan actually holds a seat on, as a lookup.
+ * The timeslots to offer: the ones the saved plan holds a seat on, and only
+ * those.
  *
- * The selector lists the referential's timeslots, which are legitimately more
- * numerous — nothing is scheduled on a slot where no stand is open, and a
- * découpage can add slots after the last solve. Marking the difference in the
- * list is what turns « that one is empty, and so is that one » into a choice.
- * An empty set means the answer carries no such information (no saved plan at
- * all), and nothing is marked rather than everything.
+ * They come from the answer rather than from the referential, which holds every
+ * timeslot of the edition — including the ones nothing is scheduled on, where
+ * this screen has nothing to say. Offering those was how a user landed on an
+ * empty answer with no way out; not fetching them at all is why this page no
+ * longer reads the timeslot referential. Empty means nothing is staffed, which
+ * the screen words rather than showing a bare empty list.
  */
-export function creneauxUtiles(banc: BancDeTouche | null): ReadonlySet<number> {
-  return new Set(banc?.creneauxAvecSieges ?? []);
+export function creneauxUtiles(banc: BancDeTouche | null): CreneauSiege[] {
+  return banc?.creneauxAvecSieges ?? [];
 }
 
 export function libelleStand(stands: Stand[], standId: string | null): string {

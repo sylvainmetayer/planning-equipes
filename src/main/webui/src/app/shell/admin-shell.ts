@@ -116,11 +116,6 @@ function buildNavGroups(devMode: boolean): NavGroup[] {
         path: '/staffing',
         label: $localize`:@@nav.link.staffing:Besoin en animateurs`,
         icon: 'engineering'
-      },
-      {
-        path: '/banc-de-touche',
-        label: $localize`:@@nav.link.bancDeTouche:Banc de touche`,
-        icon: 'airline_seat_recline_normal'
       }
     ]
   },
@@ -220,6 +215,11 @@ function buildNavGroups(devMode: boolean): NavGroup[] {
         path: '/fragilite',
         label: $localize`:@@nav.link.fragilite:Fragilité du planning`,
         icon: 'personal_injury'
+      },
+      {
+        path: '/banc-de-touche',
+        label: $localize`:@@nav.link.bancDeTouche:Banc de touche`,
+        icon: 'airline_seat_recline_normal'
       },
       // The only one of this group that *writes*: it records real forced
       // unavailabilities and empties real seats of the persisted plan. Its

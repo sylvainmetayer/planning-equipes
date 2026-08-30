@@ -109,6 +109,7 @@ service.PlanningService$AnimateurAvailability = animateurId, degradeLePlan, delt
 service.PlanningService$ContrainteImpact = categorie, description, details, matchCount, name, niveau
 service.PlanningService$ContributionAdHoc = contrainteId, contraintes, raison, type, violations
 service.PlanningService$CreneauAvailability = animateurCibleId, animateurs, creneauId, creneauxAvecSieges, disponibles, posteCibleId, standCibleId, statut, total
+service.PlanningService$CreneauSiege = date, famille, heureDebut, heureFin, id, jour
 service.PlanningService$MotifExclusion = categorie, contrainte, description, niveau
 service.PlanningService$SuggestionReparation = animateurId, delta, scoreApres, violationsIntroduites, violationsResolues
 service.PlanningService$SuggestionsReparation = animateurActuelId, candidatsEligibles, candidatsEvalues, contraintesVioleesAvant, plafond, posteId, scoreAvant, suggestions

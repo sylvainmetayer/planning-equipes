@@ -458,6 +458,7 @@ il ne le duplique pas.
 | Endpoint | Effet |
 | --- | --- |
 | `GET /api/banc-de-touche/{creneauId}?standId=X&posteId=P` | Qui n'est pas de service sur ce créneau, et pourquoi il ne pourrait pas l'être. Lecture seule. |
+| `GET /api/banc-de-touche?standId=X` | Idem, sur le premier créneau que le plan pourvoit. |
 
 Répond sur le **dernier plan enregistré**, sans relancer de solveur. Affecter
 quelqu'un depuis cet écran est hors périmètre : cela passe par l'assistant de
@@ -477,11 +478,23 @@ faire pour en sortir. Le champ `statut` distingue donc les trois réponses :
 | `EVALUATED` | Un siège a été sondé | La liste, et ses motifs |
 
 Hors `EVALUATED`, `posteCibleId`, `standCibleId` et `animateurCibleId` sont nuls
-et les listes vides. `creneauxAvecSieges` énumère, dans tous les cas, les
-créneaux sur lesquels le plan enregistré porte au moins un siège : c'est ce qui
-permet à l'écran de désigner un créneau utile au lieu de laisser essayer un par
-un. Un `404` reste réservé à un créneau qui n'existe **nulle part** dans
-l'édition — la seule requête qui soit vraiment fausse.
+et les listes vides. Un `404` reste réservé à un créneau qui n'existe **nulle
+part** dans l'édition — la seule requête qui soit vraiment fausse.
+
+**`creneauxAvecSieges` est tout ce que le sélecteur propose**, et c'est
+délibérément la seule source de créneaux de l'écran. Le référentiel en porte
+davantage — 354 vacations sur le scénario de référence, dont le plan n'en
+pourvoit qu'une partie — et proposer les autres, c'était envoyer des données que
+l'écran n'affichera pas, en laissant l'utilisateur tomber sur un créneau dont la
+réponse ne peut être que vide. La liste porte de quoi étiqueter chaque option
+(`id`, `jour`, `date`, `heureDebut`, `heureFin`, `famille`) : l'écran ne lit plus
+`/api/creneaux` du tout.
+
+Un sélecteur ne peut pas nommer un créneau valide avant sa première réponse,
+d'où la variante **sans identifiant** : le serveur répond sur le premier créneau
+qu'il pourvoit et dit lequel dans `creneauId`. Quand il n'en pourvoit aucun,
+`creneauId` est nul, `creneauxAvecSieges` vide, et `statut` vaut `NO_PLAN` — les
+deux cas coïncident, et l'écran l'explique au lieu d'afficher une liste vide.
 
 Les raisons ne sont **pas réécrites ici** : chacune porte le `contrainte` d'une
 règle réellement appliquée par le solveur, avec le `niveau`, la `categorie` et

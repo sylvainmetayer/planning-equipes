@@ -955,9 +955,24 @@ export interface AnimateurBanc {
  */
 export type StatutBanc = 'NO_PLAN' | 'NO_SEAT' | 'EVALUATED';
 
-/** Answer of `GET /api/banc-de-touche/{creneauId}`. */
+/**
+ * One timeslot the saved plan holds a seat on — everything the bench's selector
+ * needs to label it, and nothing else.
+ */
+export interface CreneauSiege {
+  id: number;
+  jour: number;
+  date: string;
+  heureDebut: string;
+  heureFin: string;
+  /** Découpage stagger family; only means something once a découpage produced several. */
+  famille: number;
+}
+
+/** Answer of `GET /api/banc-de-touche[/{creneauId}]`. */
 export interface BancDeTouche {
-  creneauId: number;
+  /** The timeslot actually answered on; null only when the plan staffs none. */
+  creneauId: number | null;
   statut: StatutBanc;
   /** The seat every reason is relative to; null unless `statut` is `EVALUATED`. */
   posteCibleId: string | null;
@@ -966,8 +981,13 @@ export interface BancDeTouche {
   animateurCibleId: string | null;
   total: number;
   disponibles: number;
-  /** Every timeslot the saved plan holds a seat on, so the screen can point at a useful one. */
-  creneauxAvecSieges: number[];
+  /**
+   * Every timeslot the saved plan holds a seat on, and the whole of what the
+   * selector offers. The referential holds more than the plan does, and
+   * offering those was how a user landed on one with nothing to show. Empty
+   * means nothing is staffed at all — which is exactly `statut === 'NO_PLAN'`.
+   */
+  creneauxAvecSieges: CreneauSiege[];
   animateurs: AnimateurBanc[];
 }
 

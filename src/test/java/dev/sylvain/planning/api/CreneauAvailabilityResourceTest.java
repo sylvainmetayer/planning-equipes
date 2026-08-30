@@ -97,8 +97,11 @@ class CreneauAvailabilityResourceTest {
         assertThat(banc.getString("statut")).isEqualTo("NO_SEAT");
         assertThat(banc.getString("posteCibleId")).isNull();
         assertThat(banc.getList("animateurs")).isEmpty();
-        // What lets the screen point at a créneau worth opening.
-        assertThat(banc.getList("creneauxAvecSieges", Long.class)).contains(creneauId);
+        // The seatless créneau is not among the ones offered, but the answer
+        // about it is still a 200 that explains itself: a bookmark may name it.
+        assertThat(banc.getList("creneauxAvecSieges.id", Long.class))
+                .contains(creneauId)
+                .doesNotContain(creneauSansSiege);
     }
 
     /** Same for a stand the plan opened no seat for on that créneau. */
@@ -132,6 +135,25 @@ class CreneauAvailabilityResourceTest {
         assertThat(banc.getString("statut")).isEqualTo("NO_PLAN");
         assertThat(banc.getList("animateurs")).isEmpty();
         assertThat(banc.getList("creneauxAvecSieges")).isEmpty();
+    }
+
+    /**
+     * The call the screen makes on a cold open: no créneau named, because it
+     * cannot know one before the answer tells it which are staffed.
+     */
+    @Test
+    void sansCreneauLeServeurEnChoisitUnQuiEstPourvu() throws InterruptedException {
+        long creneauId = persistedPlan();
+
+        JsonPath banc = given()
+                .when().get("/api/banc-de-touche")
+                .then().statusCode(200)
+                .extract().jsonPath();
+
+        assertThat(banc.getString("statut")).isEqualTo("EVALUATED");
+        assertThat(banc.getLong("creneauId")).isNotNull();
+        assertThat(banc.getList("creneauxAvecSieges.id", Long.class)).contains(banc.getLong("creneauId"));
+        assertThat(creneauId).isPositive();
     }
 
     /**

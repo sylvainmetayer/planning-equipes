@@ -13,10 +13,13 @@
 // show it.
 
 import { APIRequestContext, expect, Page, test } from '@playwright/test';
-import { contexteAdmin, pageAdmin, SEED, seedPlanning } from './support';
+import { contexteAdmin, ouvrirSelect, pageAdmin, SEED, seedPlanning } from './support';
 
 /** A créneau of the referential that no seat of the saved plan points at. */
 const CRENEAU_SANS_SIEGE = 987003;
+
+/** Its date, the one the selector must never offer. */
+const DATE_SANS_SIEGE = '2026-07-12';
 
 let admin: APIRequestContext;
 
@@ -48,7 +51,7 @@ async function semer(): Promise<void> {
     `delete from poste_affectation where creneau_id = ${CRENEAU_SANS_SIEGE};\n` +
       `delete from creneau where id = ${CRENEAU_SANS_SIEGE};\n` +
       `insert into creneau (edition_id, id, date_creneau, heure_debut, heure_fin) ` +
-      `values ('DEFAUT', ${CRENEAU_SANS_SIEGE}, '2026-07-12', '09:00', '11:00');`
+      `values ('DEFAUT', ${CRENEAU_SANS_SIEGE}, '${DATE_SANS_SIEGE}', '09:00', '11:00');`
   );
 }
 
@@ -67,9 +70,49 @@ test("un créneau sans siège dans le plan s'explique au lieu d'échouer", async
   // The regression itself: a real créneau answered « Créneau inconnu », as an error.
   await expect(contenu).not.toContainText('Erreur :');
   await expect(contenu).not.toContainText('inconnu');
-  // What it says instead names the situation and the way out.
+  // A bookmark can still name it, so the answer explains rather than fails.
   await expect(contenu).toContainText('Aucun siège sur ce créneau');
   await expect(contenu).toContainText('Choisissez un créneau qui porte des sièges');
+  await page.context().close();
+});
+
+/**
+ * The screen ships under « En cours de développement », and says so: it reads
+ * and changes nothing, so the banner is the read-only wording, not the one the
+ * jour-J screen uses.
+ */
+test("l'écran s'annonce comme livré à l'essai", async ({ browser }) => {
+  const page = await pageAdmin(browser, admin);
+
+  await ouvrirBanc(page, SEED.creneauId);
+
+  await expect(page.locator('#contenu')).toContainText("Cet écran est livré à l'essai");
+  await expect(page.getByRole('navigation', { name: 'Navigation principale' })).toContainText(
+    'En cours de développement'
+  );
+  await page.context().close();
+});
+
+/**
+ * What the user asked for after the previous round: a créneau the saved plan
+ * staffs nothing on is not merely marked, it is not offered at all. The
+ * selector is built from the answer, so this also proves the page no longer
+ * reads the créneau referential to fill it.
+ */
+test("le sélecteur ne propose pas un créneau que le plan ne pourvoit pas", async ({ browser }) => {
+  // Guard against a vacuous assertion: the créneau really is in the
+  // référentiel — it is only absent from the plan — so leaving it out of the
+  // selector is a decision, not an accident of the fixture.
+  const referentiel = await (await admin.get('/api/creneaux')).json();
+  expect(referentiel.map((creneau: { date: string }) => creneau.date)).toContain(DATE_SANS_SIEGE);
+
+  const page = await pageAdmin(browser, admin);
+  await ouvrirBanc(page, SEED.creneauId);
+  await ouvrirSelect(page, 'Créneau');
+
+  const options = page.locator('mat-option');
+  await expect(options.filter({ hasText: SEED.jour })).toHaveCount(1);
+  await expect(options.filter({ hasText: DATE_SANS_SIEGE })).toHaveCount(0);
   await page.context().close();
 });
 
@@ -115,6 +158,9 @@ test("sans planning enregistré, l'écran dit quoi faire", async ({ browser }) =
     const contenu = page.locator('#contenu');
     await expect(contenu).toContainText('Aucun planning enregistré');
     await expect(contenu).not.toContainText('Erreur :');
+    // Nothing staffed means nothing to offer: the selectors stand down rather
+    // than showing an empty dropdown the user would have to interpret.
+    await expect(contenu.getByLabel('Créneau')).toHaveCount(0);
   } finally {
     await page.context().close();
     await semer();

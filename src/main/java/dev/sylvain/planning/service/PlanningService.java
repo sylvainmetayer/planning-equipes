@@ -2208,23 +2208,26 @@ public class PlanningService {
      * @param standId optional — narrows which seat of the créneau is probed
      * @param posteId optional — names that seat outright; wins over {@code standId}
      */
-    public CreneauAvailability creneauAvailability(PlanningEvenement solved, long creneauId, String standId,
+    public CreneauAvailability creneauAvailability(PlanningEvenement solved, Long creneauId, String standId,
             String posteId) {
-        List<Long> creneauxAvecSieges = solved.getPostes().stream()
-                .map(PosteAffectation::getCreneau)
-                .filter(Objects::nonNull)
-                .map(Creneau::getId)
-                .filter(Objects::nonNull)
-                .distinct()
-                .sorted()
-                .toList();
+        List<CreneauSiege> creneauxAvecSieges = staffedCreneaux(solved);
+        // No créneau asked for: answer on the first one that has something to
+        // show, rather than making the screen guess an id it cannot know before
+        // its first call. A screen that only ever offers staffed créneaux has
+        // no way to pick a valid default on its own.
+        Long cibleId = creneauId != null ? creneauId
+                : creneauxAvecSieges.stream().map(CreneauSiege::id).findFirst().orElse(null);
+        if (cibleId == null) {
+            return new CreneauAvailability(null, SeatStatus.NO_PLAN, null, null, null, 0, 0,
+                    creneauxAvecSieges, List.of());
+        }
         List<PosteAffectation> postesDuCreneau = solved.getPostes().stream()
                 .filter(poste -> poste.getCreneau() != null
-                        && Objects.equals(poste.getCreneau().getId(), creneauId))
+                        && Objects.equals(poste.getCreneau().getId(), cibleId))
                 .toList();
-        PosteAffectation cible = targetSeat(solved, postesDuCreneau, creneauId, standId, posteId);
+        PosteAffectation cible = targetSeat(solved, postesDuCreneau, cibleId, standId, posteId);
         if (cible == null) {
-            return new CreneauAvailability(creneauId,
+            return new CreneauAvailability(cibleId,
                     solved.getPostes().isEmpty() ? SeatStatus.NO_PLAN : SeatStatus.NO_SEAT,
                     null, null, null, 0, 0, creneauxAvecSieges, List.of());
         }
@@ -2280,7 +2283,7 @@ public class PlanningService {
                 .thenComparing(AnimateurAvailability::degradeLePlan)
                 .thenComparing(AnimateurAvailability::animateurId, NaturalOrder.DES_IDS));
         int disponibles = (int) lignes.stream().filter(AnimateurAvailability::disponible).count();
-        return new CreneauAvailability(creneauId, SeatStatus.EVALUATED, cible.getId(),
+        return new CreneauAvailability(cibleId, SeatStatus.EVALUATED, cible.getId(),
                 cible.getStand() == null ? null : cible.getStand().getId(),
                 cible.getAnimateur() == null ? null : cible.getAnimateur().getId(),
                 lignes.size(), disponibles, creneauxAvecSieges, List.copyOf(lignes));
@@ -2302,10 +2305,9 @@ public class PlanningService {
      * @throws BusinessError.NotFound when the créneau exists in no edition data
      *         at all — the one case that really is a bad request
      */
-    public CreneauAvailability persistedCreneauAvailability(long creneauId, String standId, String posteId) {
-        boolean connu = referenceDataService.listCreneaux().stream()
-                .anyMatch(creneau -> Objects.equals(creneau.getId(), creneauId));
-        if (!connu) {
+    public CreneauAvailability persistedCreneauAvailability(Long creneauId, String standId, String posteId) {
+        if (creneauId != null && referenceDataService.listCreneaux().stream()
+                .noneMatch(creneau -> Objects.equals(creneau.getId(), creneauId))) {
             throw new BusinessError.NotFound("Créneau inconnu: " + creneauId);
         }
         PlanningEvenement persiste = planningPersistenceService.loadPersistedPlanning();
@@ -2350,6 +2352,37 @@ public class PlanningService {
                 .min(byId)
                 .or(() -> candidats.stream().min(byId))
                 .orElse(null);
+    }
+
+    /**
+     * The créneaux the saved plan holds at least one seat on, described rather
+     * than merely named — they are what the screen's selector is built from.
+     *
+     * <p>Sending descriptors, and only these, is the point: the référentiel
+     * holds every créneau of the edition (354 vacations on the reference
+     * scenario), the plan covers a fraction of them, and a créneau nothing is
+     * scheduled on has nothing to show. The screen used to pull the whole
+     * référentiel and offer all of it, which is how a user landed on a créneau
+     * the answer could only be empty for.</p>
+     *
+     * <p>Ordered as a day is read — date, then start time, then id — so the
+     * selector needs no ordering rule of its own.</p>
+     */
+    private static List<CreneauSiege> staffedCreneaux(PlanningEvenement solved) {
+        Map<Long, Creneau> parId = new LinkedHashMap<>();
+        for (PosteAffectation poste : solved.getPostes()) {
+            Creneau creneau = poste.getCreneau();
+            if (creneau != null && creneau.getId() != null) {
+                parId.putIfAbsent(creneau.getId(), creneau);
+            }
+        }
+        return parId.values().stream()
+                .sorted(Comparator.comparing(Creneau::getDate, Comparator.nullsLast(Comparator.naturalOrder()))
+                        .thenComparing(Creneau::getHeureDebut, Comparator.nullsLast(Comparator.naturalOrder()))
+                        .thenComparing(Creneau::getId))
+                .map(creneau -> new CreneauSiege(creneau.getId(), creneau.getJour(), creneau.getDate(),
+                        creneau.getHeureDebut(), creneau.getHeureFin(), creneau.getFamille()))
+                .toList();
     }
 
     /** True for a reason the catalogue rates as a hard rule — the ones « disponible » may not hide. */
@@ -2940,16 +2973,31 @@ public class PlanningService {
      *                           « qui pourrait le remplacer ? »
      * @param disponibles        how many of {@code animateurs} could take the
      *                           seat without breaking a hard rule
+     * @param creneauId          the créneau actually answered on: the one asked
+     *                           for, or the first staffed one when none was —
+     *                           {@code null} only when the plan staffs none
      * @param creneauxAvecSieges every créneau the saved plan holds a seat on,
-     *                           so the screen can point at one that has
-     *                           something to show instead of leaving the user to
-     *                           try them one by one — the selector is fed by the
-     *                           referential, which legitimately holds more
-     *                           créneaux than the plan does
+     *                           and <b>the whole of what the selector offers</b>.
+     *                           The référentiel holds more créneaux than the
+     *                           plan does; offering those was how a user landed
+     *                           on one the answer could only be empty for. Empty
+     *                           here means nothing is staffed at all, which is
+     *                           exactly {@link SeatStatus#NO_PLAN}
      */
-    public record CreneauAvailability(long creneauId, SeatStatus statut, String posteCibleId, String standCibleId,
-            String animateurCibleId, int total, int disponibles, List<Long> creneauxAvecSieges,
+    public record CreneauAvailability(Long creneauId, SeatStatus statut, String posteCibleId, String standCibleId,
+            String animateurCibleId, int total, int disponibles, List<CreneauSiege> creneauxAvecSieges,
             List<AnimateurAvailability> animateurs) {
+    }
+
+    /**
+     * One créneau of the saved plan, with what it takes to label it in a
+     * selector and nothing more.
+     *
+     * @param famille the découpage stagger family, meaningful only once a
+     *                découpage has produced several variants of the same hours
+     */
+    public record CreneauSiege(Long id, int jour, LocalDate date, LocalTime heureDebut, LocalTime heureFin,
+            int famille) {
     }
 
     /**

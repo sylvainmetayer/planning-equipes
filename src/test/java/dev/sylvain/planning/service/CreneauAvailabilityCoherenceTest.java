@@ -269,7 +269,47 @@ class CreneauAvailabilityCoherenceTest {
         CreneauAvailability banc = planningService.creneauAvailability(planning(), CRENEAU_CIBLE, null, null);
 
         assertThat(banc.statut()).isEqualTo(SeatStatus.EVALUATED);
-        assertThat(banc.creneauxAvecSieges()).containsExactly(1L, 2L, 3L, 4L);
+        assertThat(banc.creneauxAvecSieges()).extracting(PlanningService.CreneauSiege::id)
+                .containsExactly(1L, 2L, 3L, 4L);
+        // Described, not merely named: the selector is built from this alone,
+        // so the screen never reads the créneau referential.
+        assertThat(banc.creneauxAvecSieges()).allSatisfy(creneau -> {
+            assertThat(creneau.date()).isNotNull();
+            assertThat(creneau.heureDebut()).isNotNull();
+            assertThat(creneau.heureFin()).isNotNull();
+        });
+    }
+
+    /**
+     * Asked for no créneau in particular, the answer picks one that has
+     * something to show. The screen cannot name a valid créneau before its
+     * first call — its selector only offers staffed ones, which this very
+     * answer carries — so guessing is the server's job, not its.
+     */
+    @Test
+    void withoutACreneauTheAnswerPicksAStaffedOne() {
+        CreneauAvailability banc = planningService.creneauAvailability(planning(), null, null, null);
+
+        assertThat(banc.statut()).isEqualTo(SeatStatus.EVALUATED);
+        assertThat(banc.creneauId()).isEqualTo(CRENEAU_CIBLE);
+        assertThat(banc.posteCibleId()).isNotNull();
+    }
+
+    /**
+     * Nothing staffed at all: no créneau to offer and none to fall back on. The
+     * selector then has nothing to show, so the answer has to say why rather
+     * than leave an empty list to be interpreted.
+     */
+    @Test
+    void withNothingStaffedThereIsNoCreneauToOfferAndTheAnswerSaysSo() {
+        PlanningEvenement vide = new PlanningEvenement(JOUR, List.of(), List.of());
+
+        CreneauAvailability banc = planningService.creneauAvailability(vide, null, null, null);
+
+        assertThat(banc.statut()).isEqualTo(SeatStatus.NO_PLAN);
+        assertThat(banc.creneauId()).isNull();
+        assertThat(banc.creneauxAvecSieges()).isEmpty();
+        assertThat(banc.animateurs()).isEmpty();
     }
 
     /** Read-only: asking the question must not move a single seat. */

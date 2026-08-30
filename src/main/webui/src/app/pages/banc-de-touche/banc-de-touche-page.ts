@@ -8,9 +8,10 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
+import { WorkInProgressBanner } from '../../shared/work-in-progress-banner';
 import { ApiService } from '../../core/api.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
-import { BancDeTouche, Creneau } from '../../core/models';
+import { BancDeTouche, CreneauSiege } from '../../core/models';
 import { errorPrefix } from '../../core/error-message';
 import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
 import {
@@ -43,7 +44,8 @@ import {
     MatIconModule,
     MatProgressBarModule,
     MatSelectModule,
-    MatTooltipModule
+    MatTooltipModule,
+    WorkInProgressBanner
   ],
   templateUrl: './banc-de-touche-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -59,16 +61,21 @@ export class BancDeTouchePage {
   protected readonly chargement = signal(false);
   protected readonly erreur = signal('');
 
-  protected readonly creneaux = this.store.creneaux;
   protected readonly stands = this.store.stands;
 
   protected readonly lignes = computed<LigneBanc[]>(() => lignes(this.banc(), this.store.animateurs()));
   protected readonly standCible = computed(() =>
     libelleStand(this.store.stands(), this.banc()?.standCibleId ?? null)
   );
-  /** Which créneaux the saved plan holds a seat on, to mark the others in the selector. */
-  protected readonly creneauxUtiles = computed(() => creneauxUtiles(this.banc()));
-  private readonly familleUtile = computed(() => familleUtile(this.store.creneaux()));
+  /**
+   * The whole of what the créneau selector offers, and it comes from the
+   * answer, not from the référentiel: only créneaux the saved plan staffs have
+   * anything to show here. That is also why this page never loads the créneau
+   * référentiel — on the reference scenario it would be 354 vacations fetched
+   * to display a fraction of them.
+   */
+  protected readonly creneaux = computed(() => creneauxUtiles(this.banc()));
+  private readonly familleUtile = computed(() => familleUtile(this.creneaux()));
 
   constructor() {
     const params = this.route.snapshot.queryParamMap;
@@ -83,36 +90,23 @@ export class BancDeTouchePage {
   }
 
   /**
-   * The référentiel first — the selectors are built from it — then the bench.
-   * Both failures are caught in the same place: a `reload()` rejection used to
-   * escape into the `void`, leaving the card blank with no message at all,
-   * which is the one outcome a screen must never produce.
+   * Stands and animateurs come from the référentiel — they name the rows and
+   * fill the second selector. The créneaux do not: the answer carries the only
+   * ones worth offering, so on a cold open the server is asked to pick, and the
+   * screen adopts whichever créneau it answered on.
+   *
+   * A `reload()` rejection used to escape into the `void`, leaving the card
+   * blank with no message at all, which is the one outcome a screen must never
+   * produce — hence the same `catch` as the bench request.
    */
   private async premierChargement(): Promise<void> {
     try {
-      await this.store.reload(['creneaux', 'stands', 'animateurs']);
+      await this.store.reload(['stands', 'animateurs']);
     } catch (error) {
       this.erreur.set(errorPrefix(error));
       return;
     }
-    this.defautCreneau();
     await this.charger();
-  }
-
-  /**
-   * Nothing chosen yet, or a link pointing at a créneau this edition no longer
-   * has: fall back to the first one rather than leaving an empty screen with no
-   * explanation.
-   */
-  private defautCreneau(): void {
-    const creneaux = this.store.creneaux();
-    if (creneaux.length === 0) {
-      return;
-    }
-    const courant = this.creneauId();
-    if (courant === null || !creneaux.some((creneau) => creneau.id === courant)) {
-      this.creneauId.set(creneaux[0].id);
-    }
   }
 
   /**
@@ -144,19 +138,20 @@ export class BancDeTouchePage {
   private async charger(): Promise<void> {
     const requete = ++this.requeteCourante;
     const creneauId = this.creneauId();
-    if (creneauId === null) {
-      this.banc.set(null);
-      return;
-    }
     const standId = this.standId();
     this.chargement.set(true);
     try {
+      // No créneau yet — a cold open, or a bookmark naming one the plan no
+      // longer staffs — is a question for the server: it answers on the first
+      // créneau it does staff, and says which.
+      const chemin = creneauId === null ? '/api/banc-de-touche' : `/api/banc-de-touche/${creneauId}`;
       const query = standId ? `?standId=${encodeURIComponent(standId)}` : '';
-      const banc = await this.api.get<BancDeTouche>(`/api/banc-de-touche/${creneauId}${query}`);
+      const banc = await this.api.get<BancDeTouche>(`${chemin}${query}`);
       if (requete !== this.requeteCourante) {
         return;
       }
       this.banc.set(banc);
+      this.creneauId.set(banc.creneauId);
       this.erreur.set('');
     } catch (error) {
       if (requete !== this.requeteCourante) {
@@ -176,17 +171,28 @@ export class BancDeTouchePage {
    * is a legitimate one — but they say so up front, so the user is choosing
    * rather than hunting.
    */
-  protected libelleCreneau(creneau: Creneau): string {
-    const utiles = this.creneauxUtiles();
-    const marque = utiles.size > 0 && !utiles.has(creneau.id)
-      ? ' — ' + $localize`:@@bancDeTouche.slotWithoutSeat:aucun siège`
-      : '';
-    return libelleCreneau(creneau, this.familleUtile()) + marque;
+  /**
+   * Why this screen sits under « En cours de développement ». Not the shared
+   * default sentence: nothing is entered here and the solver reads nothing back
+   * from it — same situation as the fragility screen. What is provisional is
+   * the screen itself, and which seat it decides to reason about.
+   */
+  protected messageEssai(): string {
+    return $localize`:@@bancDeTouche.essai:Cet écran est livré à l'essai : il ne modifie rien et pourra être retiré s'il ne s'avère pas utile. Ce qu'il affiche est en revanche exact, puisque chaque motif vient des contraintes elles-mêmes — dites-nous s'il vous sert.`;
+  }
+
+  /**
+   * No « aucun siège » marker any more: the list holds none of those. Marking
+   * them was the way out of a selector that offered créneaux the answer could
+   * only be empty for — not offering them at all is the better answer.
+   */
+  protected libelleCreneau(creneau: CreneauSiege): string {
+    return libelleCreneau(creneau, this.familleUtile());
   }
 
   protected reinitialiser(): void {
     this.standId.set('');
-    this.defautCreneau();
+    this.creneauId.set(null);
     void this.charger();
   }
 

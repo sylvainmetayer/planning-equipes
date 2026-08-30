@@ -49,4 +49,20 @@ public class CreneauAvailabilityResource {
             @QueryParam("standId") String standId, @QueryParam("posteId") String posteId) {
         return planningService.persistedCreneauAvailability(creneauId, standId, posteId);
     }
+
+    /**
+     * Same answer, on a créneau the server picks: the first one the saved plan
+     * staffs.
+     *
+     * <p>It exists because the screen cannot name a valid créneau before its
+     * first call. Its selector only offers créneaux the plan staffs — which the
+     * answer itself carries — so on a cold open there is nothing to ask for
+     * yet, and guessing from the référentiel is what used to land the user on a
+     * créneau with nothing to show.</p>
+     */
+    @GET
+    public CreneauAvailability premierCreneau(@QueryParam("standId") String standId,
+            @QueryParam("posteId") String posteId) {
+        return planningService.persistedCreneauAvailability(null, standId, posteId);
+    }
 }

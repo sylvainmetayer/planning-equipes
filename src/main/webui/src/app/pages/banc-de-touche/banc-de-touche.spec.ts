@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Animateur, AnimateurBanc, BancDeTouche, Creneau, MotifExclusion } from '../../core/models';
+import { Animateur, AnimateurBanc, BancDeTouche, CreneauSiege, MotifExclusion } from '../../core/models';
 import {
   creneauxUtiles,
   etatDe,
@@ -9,6 +9,15 @@ import {
   lignes,
   ordreMotifs
 } from './banc-de-touche';
+
+const creneauSiege = (id: number, famille = 0): CreneauSiege => ({
+  id,
+  jour: 3,
+  date: '2026-07-16',
+  heureDebut: '10:00',
+  heureFin: '13:00',
+  famille
+});
 
 const motif = (contrainte: string, niveau: MotifExclusion['niveau']): MotifExclusion => ({
   contrainte,
@@ -81,7 +90,7 @@ describe('lignes', () => {
     animateurCibleId: null,
     total: 3,
     disponibles: 1,
-    creneauxAvecSieges: [1, 2],
+    creneauxAvecSieges: [creneauSiege(1), creneauSiege(2)],
     animateurs: [
       ligne({ animateurId: 'A1' }),
       ligne({
@@ -125,13 +134,7 @@ describe('lignes', () => {
 });
 
 describe('libellés', () => {
-  const creneau: Creneau = {
-    id: 7,
-    jour: 3,
-    date: '2026-07-16',
-    heureDebut: '10:00',
-    heureFin: '13:00'
-  };
+  const creneau: CreneauSiege = creneauSiege(7);
 
   it('distingue deux vacations de même horaire par leur famille', () => {
     expect(libelleCreneau({ ...creneau, famille: 1 }, true)).toBe('J3 · 2026-07-16 · 10:00-13:00 (F2)');
@@ -172,20 +175,21 @@ describe('creneauxUtiles', () => {
     animateurCibleId: null,
     total: 0,
     disponibles: 0,
-    creneauxAvecSieges: [1, 2],
+    creneauxAvecSieges: [creneauSiege(1), creneauSiege(2)],
     animateurs: []
   };
 
-  it('désigne les créneaux que le plan enregistré porte réellement', () => {
-    const utiles = creneauxUtiles(vide);
-    expect(utiles.has(1)).toBe(true);
-    expect(utiles.has(9)).toBe(false);
+  // The selector offers these and nothing else: a créneau the saved plan does
+  // not staff has nothing to show, and offering it is what stranded a user on
+  // an empty answer.
+  it('ne propose que les créneaux que le plan enregistré pourvoit', () => {
+    expect(creneauxUtiles(vide).map((creneau) => creneau.id)).toEqual([1, 2]);
+    expect(creneauxUtiles(vide).map((creneau) => creneau.id)).not.toContain(9);
   });
 
-  // Marking every option would be noise, not guidance.
-  it('ne marque rien quand la réponse ne porte aucune information', () => {
-    expect(creneauxUtiles(null).size).toBe(0);
-    expect(creneauxUtiles({ ...vide, statut: 'NO_PLAN', creneauxAvecSieges: [] }).size).toBe(0);
+  it('rend une liste vide quand rien n’est pourvu, plutôt que de deviner', () => {
+    expect(creneauxUtiles(null)).toEqual([]);
+    expect(creneauxUtiles({ ...vide, statut: 'NO_PLAN', creneauxAvecSieges: [] })).toEqual([]);
   });
 
   it("rend une liste vide de lignes sur une réponse sans siège, sans planter", () => {
