@@ -167,9 +167,42 @@ export function buildHelpSections(): HelpSection[] {
       ],
       links: [
         { route: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs` },
+        {
+          route: '/import-animateurs',
+          label: $localize`:@@nav.link.importAnimateurs:Import CSV des animateurs`
+        },
         { route: '/stands', label: $localize`:@@nav.link.stands:Stands` },
         { route: '/ouvertures', label: $localize`:@@nav.link.ouvertures:Ouvertures des stands` },
         { route: '/staffing', label: $localize`:@@nav.link.staffing:Besoin en animateurs` }
+      ]
+    },
+    {
+      id: 'import-csv-animateurs',
+      icon: 'upload_file',
+      title: $localize`:@@aide.importCsv.title:Import CSV des animateurs`,
+      summary: $localize`:@@aide.importCsv.summary:Reprendre le tableur des bénévoles sans le ressaisir : format attendu, aperçu ligne à ligne, et les deux refus qui surprennent la première fois.`,
+      blocks: [
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.data.importCsv:Si vos bénévoles arrivent dans un tableur, l'écran « Import CSV des animateurs » évite de tout ressaisir. Enregistrez la feuille au format « CSV UTF-8 » (le .xlsx n'est pas lu, et un fichier enregistré dans un autre encodage est refusé : ses accents sont déjà perdus quand le fichier arrive), déposez-la, et dites quelle colonne est quel champ : une correspondance est proposée d'après les en-têtes, vous la corrigez. L'écran affiche alors, ligne par ligne, ce que l'import ferait — acceptée, rejetée et pourquoi, avec le numéro de ligne du fichier — et rien n'est écrit tant que vous n'avez pas validé. Par défaut il ajoute et met à jour sans supprimer personne, et les jours d'indisponibilité du fichier viennent compléter ceux déjà enregistrés plutôt que les effacer ; deux cases à cocher inversent chacun de ces deux choix. Si vous cochez le remplacement complet, lisez l'avertissement de l'aperçu avant de valider : supprimer une fiche emporte aussi la déclaration de disponibilités de la personne, son accusé de réception du planning publié et son code d'accès à l'espace. Deux refus surprennent au premier essai et sont volontaires : créez d'abord vos créneaux (sans dates d'événement, un jour d'indisponibilité importé serait invisible dans l'espace animateur puis effacé), et donnez une date de naissance à chaque nouvelle fiche (tout le régime mineur / majeur en dépend). Enfin, si deux personnes portent le même nom, ajoutez une colonne identifiant ou e-mail : l'import refuse la ligne plutôt que de choisir à votre place.`
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.importCsv.colonnes:Une seule colonne est vraiment obligatoire en plus du nom : la date de naissance, dont tout le régime mineur / majeur se déduit à la date de chaque créneau. Les compétences, les souhaits et les jours d'indisponibilité tiennent plusieurs valeurs dans une même cellule, séparées par « | » (un point-virgule, une virgule ou un retour à la ligne dans une cellule entre guillemets font aussi l'affaire, mais jamais un « / », qu'une date utilise). Une compétence s'écrit « typologie » ou « typologie:REFERENT » — sans niveau, elle vaut « autonome ». Les dates se lisent aussi bien en JJ/MM/AAAA qu'en AAAA-MM-JJ, et une colonne laissée sur « — » n'est pas une colonne vide : le champ correspondant n'est pas touché sur les fiches déjà enregistrées.`
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.importCsv.exemple:Le bouton « Télécharger un fichier d'exemple » de l'écran d'import donne un CSV complet, prêt à ouvrir dans un tableur : les neuf colonnes lues, remplies avec les 153 animateurs du scénario de démonstration « festival réaliste ». C'est le plus court chemin pour voir à quoi doit ressembler une cellule de compétences ou de jours d'indisponibilité. Ses jours d'indisponibilité et ses typologies sont ceux de ce scénario : importé tel quel dans une édition qui a d'autres dates ou d'autres typologies, il se fera rejeter des lignes — recopiez-en la forme, pas le contenu.`
+        }
+      ],
+      links: [
+        {
+          route: '/import-animateurs',
+          label: $localize`:@@nav.link.importAnimateurs:Import CSV des animateurs`
+        },
+        { route: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs` },
+        { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
+        { route: '/typologies', label: $localize`:@@nav.link.typologies:Typologies` }
       ]
     },
     {

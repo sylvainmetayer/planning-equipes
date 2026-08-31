@@ -28,6 +28,29 @@ describe('buildHelpSections', () => {
     }
   });
 
+  /**
+   * The import screen deep-links to `/aide#import-csv-animateurs`. A link that
+   * lands on nothing is worse than no link, so the anchor is asserted here and
+   * not only in the E2E — and the section has to be its own, not a paragraph
+   * lost inside « Données de référence », which is where it started.
+   */
+  it('gives the CSV import an anchor of its own, reachable by that exact id', () => {
+    const section = sections.find((candidate) => candidate.id === 'import-csv-animateurs');
+    expect(section).toBeDefined();
+    const texte = textOf(section as HelpSection);
+    // What the screen's own help text claims, said again where the link lands.
+    expect(texte).toContain('« | »');
+    expect(texte).toContain('typologie:REFERENT');
+    expect(texte).toContain('date de naissance');
+    expect(texte).toContain("Télécharger un fichier d'exemple");
+    // And nothing else still explains the import from inside another section.
+    const donnees = sections.find((candidate) => candidate.id === 'donnees');
+    expect(textOf(donnees as HelpSection)).not.toContain('CSV UTF-8');
+    // The two words a lost user types into the search box of this very page.
+    expect(filterHelpSections(sections, 'CSV')).toContainEqual(section);
+    expect(filterHelpSections(sections, 'tableur')).toContainEqual(section);
+  });
+
   it('covers the solver configuration and how to read a score', () => {
     const ids = sections.map((section) => section.id);
     expect(ids).toContain('configuration-solveur');

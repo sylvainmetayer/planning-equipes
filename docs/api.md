@@ -1287,6 +1287,55 @@ Quatre propriétés, et aucune n'est un oubli :
   compétences et souhaits d'un animateur. Les compter aussi est un autre
   chantier ; affirmer qu'elles n'existent pas serait un mensonge.
 
+### Import CSV des animateurs
+
+Deux endpoints, même corps, et un seul écrit :
+
+| Méthode | Chemin | Effet |
+| --- | --- | --- |
+| `POST` | `/api/animateurs/import-csv/analyse` | Lit le fichier et rend le rapport ligne par ligne. **N'ouvre aucune transaction** |
+| `POST` | `/api/animateurs/import-csv` | Relit le même fichier, rejoue toutes les vérifications, puis écrit les lignes acceptées en **une** transaction |
+| `GET` | `/api/animateurs/import-csv/exemple` | Rend le CSV d'exemple versionné (`text/csv`, en pièce jointe). Lecture pure, hors édition — le fichier est une ressource du classpath, pas une donnée |
+
+Le corps est identique aux deux : `{ fileName, content, mapping,
+replaceAnimateurs, replaceJoursIndisponibles }`. `content` est le texte du
+fichier, `mapping` associe un champ d'animateur à un **index de colonne**
+(`null` = champ absent du fichier, donc jamais écrasé). Le `mapping` **absent**
+(`null`) demande la correspondance proposée d'après les en-têtes ; un mapping
+**fourni mais entièrement vide** est pris tel quel — c'est ainsi que l'écran
+repart d'une correspondance blanche sans se la voir redessiner.
+
+**L'écriture reçoit le fichier, pas le rapport**, et c'est le point : elle ne
+fait confiance à rien de ce que le navigateur a affiché. Un rejeu de requête ou
+un corps fabriqué à la main repasse par les mêmes contrôles.
+
+La réponse est le même rapport dans les deux cas — `applied` distingue l'aperçu
+de l'écriture, `rows[]` porte une entrée par ligne du fichier avec son numéro de
+ligne **physique**, son verdict (`CREATED`, `UPDATED`, `REJECTED`), ses motifs
+de refus et ses avertissements.
+
+Refus qui portent sur le fichier entier, avant toute écriture :
+
+| Cas | Réponse |
+| --- | --- |
+| Fichier vide, `.xlsx` / `.xls` / `.ods`, binaire, plus de 1 000 000 caractères ou 5 000 lignes | `400`, message disant quoi faire |
+| Fichier non encodé en UTF-8 (accents déjà illisibles) | `400`, message nommant l'encodage et citant un extrait |
+| Mapping ne désignant ni identifiant, ni prénom, ni nom | `400` |
+| Remplacement complet demandé alors qu'une ligne est rejetée | `400` |
+| Aucun créneau dans l'édition | `409` |
+| Une résolution tient le solveur de l'édition | `409`, comme toute écriture de référentiel |
+
+L'endpoint `/exemple` sert
+`src/main/resources/scenarios/festival-realiste-animateurs.csv` tel quel,
+sous le nom `festival-realiste-animateurs.csv` : les neuf colonnes lues,
+remplies avec les 153 animateurs du scénario anonymisé du même nom. C'est ce
+que le bouton « Télécharger un fichier d'exemple » de l'écran d'import
+récupère — servi depuis le classpath plutôt que copié dans le bundle, pour
+qu'il n'existe qu'un seul fichier à garder juste.
+
+Le fichier n'est **jamais écrit sur disque**. Règles métier détaillées dans
+[`import-export.md`](import-export.md#import-csv-des-animateurs).
+
 ### Horaires d'un stand
 
 Deux niveaux, rendus tels quels sans expansion — c'est la vue que l'IHM édite :

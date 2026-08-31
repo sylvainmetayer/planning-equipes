@@ -3,6 +3,9 @@ package dev.sylvain.planning.api;
 import java.util.List;
 
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.service.AnimateurCsvImportReport;
+import dev.sylvain.planning.service.AnimateurCsvImportRequest;
+import dev.sylvain.planning.service.AnimateurCsvImportService;
 import dev.sylvain.planning.service.ConfirmationPlanningService;
 import dev.sylvain.planning.service.ReferenceDataService;
 import dev.sylvain.planning.service.ReferenceUsage;
@@ -16,12 +19,13 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 /**
- * CRUD of the animateurs, plus the rotation of their espace access token and
- * the read of who acknowledged the published planning.
+ * CRUD of the animateurs, plus the rotation of their espace access token, the
+ * read of who acknowledged the published planning, and the tabular import.
  */
 @Path("/animateurs")
 @Produces(MediaType.APPLICATION_JSON)
@@ -33,6 +37,9 @@ public class AnimateurResource {
 
     @Inject
     ConfirmationPlanningService confirmationService;
+
+    @Inject
+    AnimateurCsvImportService csvImport;
 
     @GET
     public List<Animateur> listAnimateurs() {
@@ -94,6 +101,56 @@ public class AnimateurResource {
     @Path("/{id}/token")
     public Response regenerateAnimateurToken(@PathParam("id") String id) {
         return Response.ok(new AnimateurToken(referenceDataService.regenerateAnimateurToken(id))).build();
+    }
+
+    /**
+     * The example roster the import screen offers for download: the nine
+     * columns this import reads, filled with the anonymised animateurs of the
+     * {@code festival-realiste} scenario.
+     *
+     * <p>Served from the classpath rather than copied into the front-end
+     * bundle, so there is exactly one file to keep true — and a test re-imports
+     * that same file through the real parser.</p>
+     */
+    @GET
+    @Path("/import-csv/exemple")
+    @Produces("text/csv")
+    public Response exempleCsvAnimateurs() {
+        return Response.ok(csvImport.exemple())
+                .type("text/csv; charset=utf-8")
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + AnimateurCsvImportService.EXEMPLE_FICHIER + "\"")
+                .build();
+    }
+
+    /**
+     * What a CSV file would do, without doing any of it: the columns read, the
+     * mapping used, and one line of report per row of the file.
+     *
+     * <p>Separate from {@link #importCsvAnimateurs} on purpose, and not just
+     * as a convenience: an import that previews and writes in the same call
+     * has no moment at which the operator can say no. This one is a pure read
+     * — no transaction is opened at all.</p>
+     */
+    @POST
+    @Path("/import-csv/analyse")
+    public AnimateurCsvImportReport analyseCsvAnimateurs(AnimateurCsvImportRequest request) {
+        return csvImport.preview(request);
+    }
+
+    /**
+     * Applies the same request the preview was computed from — file included.
+     *
+     * <p>The body is the file, not the preview: the server re-reads it and
+     * re-runs every check before writing, so a replayed or hand-crafted call
+     * cannot get a row past a validation. The answer is the report again, this
+     * time with {@code applied: true} and counts that a committed transaction
+     * stands behind.</p>
+     */
+    @POST
+    @Path("/import-csv")
+    public AnimateurCsvImportReport importCsvAnimateurs(AnimateurCsvImportRequest request) {
+        return csvImport.apply(request);
     }
 
     /**

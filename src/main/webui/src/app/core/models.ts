@@ -1809,3 +1809,64 @@ export interface AbsenceMarquee {
   entrees: EntreeAbsence[];
   postesLiberes: PosteAPourvoir[];
 }
+
+/* ----------------------- Tabular import of animateurs ---------------------- */
+
+/**
+ * Which column of an uploaded CSV feeds which field of an `Animateur`, by
+ * **column index**. `null` means "not in the file": an unmapped field never
+ * touches an animateur who already exists, which is what makes a partial
+ * catch-up file safe.
+ */
+export interface AnimateurCsvMapping {
+  id: number | null;
+  prenom: number | null;
+  nom: number | null;
+  dateNaissance: number | null;
+  email: number | null;
+  manager: number | null;
+  competences: number | null;
+  souhaits: number | null;
+  joursIndisponibles: number | null;
+}
+
+/** What one row of the file does. */
+export type ImportCsvAction = 'CREATED' | 'UPDATED' | 'REJECTED';
+
+/** One data row of the file, as the report shows it. */
+export interface ImportCsvLigne {
+  /** Physical line of the file, counted from 1 — what the operator acts on. */
+  line: number;
+  label: string;
+  animateurId: string | null;
+  action: ImportCsvAction;
+  reasons: string[];
+  warnings: string[];
+  /** The off days the fiche would carry *after* the import, merged or replaced. */
+  joursIndisponibles: string[];
+}
+
+/** The same shape answers the preview and the write; `applied` tells them apart. */
+export interface ImportCsvRapport {
+  applied: boolean;
+  columns: string[];
+  mapping: AnimateurCsvMapping;
+  separator: string;
+  total: number;
+  accepted: number;
+  rejected: number;
+  created: number;
+  updated: number;
+  deleted: number;
+  rows: ImportCsvLigne[];
+  warnings: string[];
+}
+
+/** Body of both calls — the file travels again, so the write re-validates it. */
+export interface ImportCsvDemande {
+  fileName: string;
+  content: string;
+  mapping: AnimateurCsvMapping | null;
+  replaceAnimateurs: boolean;
+  replaceJoursIndisponibles: boolean;
+}

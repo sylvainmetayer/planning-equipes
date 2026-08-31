@@ -80,6 +80,14 @@ Le plafond de connexions est ce qui empêche d'épuiser le serveur en ouvrant de
 connexions sans jamais rien envoyer. `500` est large au regard de l'usage réel,
 donc sans effet sur le trafic légitime.
 
+L'**import CSV des animateurs** ajoute deux bornes qui lui sont propres, plus
+serrées que `MAX_BODY_SIZE` et écrites dans le code plutôt qu'en configuration :
+1 000 000 de caractères et 5 000 lignes de données. Le fichier est lu en
+mémoire d'un seul tenant, et une liste de bénévoles pèse quelques dizaines de
+kilo-octets — un plafond commun avec celui des dumps SQL laisserait dix
+mégaoctets de marge à un import qui n'en a aucun besoin. Le fichier n'est
+jamais écrit sur disque : voir [`rgpd.md`](rgpd.md).
+
 Ces plafonds ne remplacent pas ceux du reverse proxy, qui doit rester la
 première ligne (limitation de débit par IP, plafond de connexions par client,
 délais d'attente).

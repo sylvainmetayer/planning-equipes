@@ -36,6 +36,7 @@ const ROUTES: { path: string; marker?: string }[] = [
   { path: '/animateurs', marker: 'Animateurs (' },
   { path: '/creneaux', marker: 'Créneaux (' },
   { path: '/typologies', marker: 'Typologies (' },
+  { path: '/import-animateurs', marker: 'Import des animateurs' },
   { path: '/calendar', marker: 'Calendrier des affectations' },
   { path: '/day-calendar' },
   { path: '/hours', marker: 'Heures planifiées par animateur' },

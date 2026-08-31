@@ -1,11 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, afterNextRender, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { buildHelpSections, filterHelpSections } from './aide-content';
 import { StatusMessage } from '../../shared/status-message';
 
@@ -38,6 +38,26 @@ export class AidePage {
   protected readonly query = signal('');
   protected readonly visibleSections = computed(() => filterHelpSections(this.sections, this.query()));
   protected readonly noResult = computed(() => this.visibleSections().length === 0);
+
+  private readonly route = inject(ActivatedRoute);
+
+  /**
+   * Honours `/aide#une-section` on a direct load — a link pasted, bookmarked
+   * or followed from another screen, and the same URL after a refresh.
+   *
+   * Angular does not do it for us here, twice over. `withInMemoryScrolling`'s
+   * anchor scrolling moves the *document*, and what scrolls in this shell is
+   * `mat-sidenav-content`; and the sections only exist once the `@for` has
+   * rendered, so reading the fragment in a field initializer would look for an
+   * id that is not in the DOM yet. Hence `afterNextRender` plus the same
+   * manual scroll the summary uses.
+   */
+  constructor() {
+    const fragment = this.route.snapshot.fragment;
+    if (fragment) {
+      afterNextRender(() => this.scrollToSection(fragment));
+    }
+  }
 
   /**
    * Scrolls to a section of the guide. Deliberately programmatic rather than

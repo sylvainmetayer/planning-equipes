@@ -148,16 +148,46 @@ public class AnimateurRepository {
      * took for créneaux.</p>
      */
     public void deleteAnimateur(String id) {
-        scope.write("Failed to delete animator " + id, connection -> {
-            try (PreparedStatement ps = scope.prepareScoped(connection,
-                    "UPDATE poste_affectation SET animateur_id = NULL WHERE edition_id = ? AND animateur_id = ?")) {
-                ps.setString(2, id);
-                ps.executeUpdate();
+        scope.write("Failed to delete animator " + id, connection -> deleteAnimateurTx(connection, id));
+    }
+
+    /** The same delete, on a caller's connection — see {@link #importAnimateurs}. */
+    private void deleteAnimateurTx(Connection connection, String id) throws SQLException {
+        try (PreparedStatement ps = scope.prepareScoped(connection,
+                "UPDATE poste_affectation SET animateur_id = NULL WHERE edition_id = ? AND animateur_id = ?")) {
+            ps.setString(2, id);
+            ps.executeUpdate();
+        }
+        try (PreparedStatement ps = scope.prepareScoped(connection,
+                "DELETE FROM animateur WHERE edition_id = ? AND id = ?")) {
+            ps.setString(2, id);
+            ps.executeUpdate();
+        }
+    }
+
+    /**
+     * Writes a whole tabular import in <b>one</b> transaction: the fiches the
+     * file accepted, then — in replacement mode only — the ones it does not
+     * name.
+     *
+     * <p>Atomic because the report is a promise. A per-row commit would let a
+     * failure on row 90 leave 89 fiches written under a report announcing 150,
+     * and the operator would have no way of telling which half landed. Here a
+     * failure rolls everything back and propagates, so the report is either
+     * entirely true or never shown.</p>
+     *
+     * <p>Addresses are preserved when the file carries none
+     * ({@code conserverEmailSiAbsent}), for the reason the scenario import
+     * has: the address is the espace's second factor, and a roster exported
+     * without an e-mail column must not lock everybody out of it.</p>
+     */
+    public void importAnimateurs(List<Animateur> aEcrire, List<String> aSupprimer) {
+        scope.write("Failed to import animators from a tabular file", connection -> {
+            for (Animateur animateur : aEcrire) {
+                upsertAnimateur(connection, animateur, true);
             }
-            try (PreparedStatement ps = scope.prepareScoped(connection,
-                    "DELETE FROM animateur WHERE edition_id = ? AND id = ?")) {
-                ps.setString(2, id);
-                ps.executeUpdate();
+            for (String id : aSupprimer) {
+                deleteAnimateurTx(connection, id);
             }
         });
     }

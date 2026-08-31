@@ -115,6 +115,12 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/creneaux/creneaux-page').then((m) => m.CreneauxPage)
   },
   {
+    path: 'import-animateurs',
+    title: 'Import animateurs',
+    loadComponent: () =>
+      import('./pages/import-animateurs/import-animateurs-page').then((m) => m.ImportAnimateursPage)
+  },
+  {
     path: 'typologies',
     title: 'Typologies',
     loadComponent: () => import('./pages/typologies/typologies-page').then((m) => m.TypologiesPage)

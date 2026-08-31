@@ -96,7 +96,7 @@ crochet.
 | --- | --- |
 | Catégories de personnes | Animateurs, **dont des mineurs** ; encadrants et managers |
 | Catégories de données | Nom, prénom, **date de naissance**, adresse électronique (facultative), compétences, souhaits d'affectation, jours d'indisponibilité, **deux jetons d'accès** — celui de l'espace animateur et celui de l'abonnement au calendrier —, affectations et échanges, **déclarations de disponibilités en libre-service — dont un commentaire en champ libre**, instantanés de planning, sessions et journaux d'accès |
-| Traitements réalisés | Hébergement, planification et résolution, envoi d'e-mails (codes d'accès, plannings individuels, notifications d'échange, **rappels et relances automatiques de nuit**), sauvegarde, purge |
+| Traitements réalisés | Hébergement, planification et résolution, **import d'un fichier tabulaire d'animateurs fourni par l'organisation (traité en mémoire, jamais conservé)**, envoi d'e-mails (codes d'accès, plannings individuels, notifications d'échange, **rappels et relances automatiques de nuit**), sauvegarde, purge |
 | Destinataires | L'organisateur via l'interface d'administration ; l'animateur via son espace **et via l'application d'agenda à laquelle il communique son adresse d'abonnement** ; les autres animateurs pour la part visible du planning (voir `securite.md`) ; le relais SMTP |
 | Mesures de sécurité | TLS et HSTS ; en-têtes CSP et `Referrer-Policy` — **les deux jetons voyagent dans l'URL** ; chiffrement des sessions ; limitation de débit sur les codes d'espace et verrouillage du formulaire de connexion ; origine injoignable autrement que par le reverse proxy ; sauvegarde nocturne automatique par `pg_dump`, en rotation dans un volume dédié, dont l'**externalisation chiffrée hors machine reste à la charge de l'exploitant** (`exploitation.md` §5) |
 
@@ -307,6 +307,18 @@ complètes. Quatre points sont connus et se consignent :
   alerte qui ne nomme plus personne. Ce journal n'a pas de purge propre : il
   disparaît avec son édition, en cascade sur `edition_id`, donc à la purge
   annuelle ;
+- **l'import CSV des animateurs fait entrer des données personnelles par un
+  fichier que l'exploitant tient lui-même**, et c'est une entrée à consigner :
+  ce tableur porte des noms, des dates de naissance — donc l'information qui
+  désigne les **mineurs** — et souvent des adresses e-mail. Ce que l'application
+  garantit de son côté : le fichier est reçu dans le corps de la requête, lu en
+  mémoire et **jamais écrit sur disque** (`service/backup/` reste le seul
+  endroit où l'application écrit), ni conservé entre les deux appels — la
+  prévisualisation et l'écriture le reçoivent chacune, et la mémoire est rendue
+  à la fin de la requête. Ce qu'elle ne peut pas garantir : le **fichier
+  source**, qui reste sur le poste de l'organisateur, dans sa messagerie et
+  dans ses sauvegardes. C'est cette copie-là qui se consigne au registre, avec
+  la consigne de la supprimer après import ;
 - **l'effacement demandé par un animateur sur une édition encore active** n'a
   pas de procédure outillée : c'est une suppression manuelle de sa fiche. Une
   demande d'effacement ne se refuse pas au motif que l'événement n'est pas

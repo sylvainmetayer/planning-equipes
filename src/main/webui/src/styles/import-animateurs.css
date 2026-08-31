@@ -1,0 +1,57 @@
+/* The CSV import report: the counters above the table, and the three outcomes
+   a row can have. Colours come from the Material system tokens, so the page
+   follows the light/dark theme instead of pinning its own palette. */
+
+.import-compteurs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.5rem;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  list-style: none;
+  font: var(--mat-sys-body-medium);
+}
+
+table.import-rapport {
+  width: 100%;
+  border-collapse: collapse;
+  font: var(--mat-sys-body-medium);
+}
+
+table.import-rapport th,
+table.import-rapport td {
+  text-align: left;
+  padding: 0.4rem 0.6rem;
+  vertical-align: top;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+table.import-rapport td mat-icon {
+  vertical-align: middle;
+  margin-right: 0.25rem;
+}
+
+.import-ligne-rejet {
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+
+.import-ligne-creation td:first-child,
+.import-ligne-maj td:first-child {
+  font-variant-numeric: tabular-nums;
+}
+
+.import-identifiant {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.import-motif,
+.import-avertissement,
+.import-jours {
+  margin: 0 0 0.25rem;
+}
+
+.import-avertissement,
+.import-jours {
+  color: var(--mat-sys-on-surface-variant);
+}

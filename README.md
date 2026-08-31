@@ -276,6 +276,7 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 | Fonctionnalité | En une phrase |
 | --- | --- |
 | Import / export de scénario | Un fichier YAML décrit une configuration complète d'événement ; l'import valide le fichier et explique ce qui cloche |
+| Import CSV des animateurs | Le tableur de bénévoles arrive tel quel : on désigne quelle colonne est quel champ, on lit ligne par ligne ce que l'import ferait — acceptée, rejetée et pourquoi, avec le numéro de ligne du fichier — et rien n'est écrit tant qu'on n'a pas validé. Par défaut il ajoute et met à jour sans supprimer personne, et complète les jours d'indisponibilité déjà déclarés au lieu de les effacer. Un CSV d'exemple est téléchargeable depuis l'écran |
 | Export / import d'un dump SQL | Dupliquer ou restaurer un jeu de données complet |
 | Sauvegarde automatique | Chaque nuit, toute la base est copiée sur le disque de l'hébergeur, et seules les dernières copies sont gardées. L'écran des paramètres dit où elles vont, lesquelles existent et si la dernière nuit s'est bien passée. La restauration, elle, est une opération de l'exploitant sur la base |
 | Assistant IA (MCP) | Un assistant IA consulte et pilote l'application en langage naturel, sans jamais voir les données personnelles des animateurs — voir [`docs/mcp.md`](docs/mcp.md) |

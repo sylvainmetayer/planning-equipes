@@ -1,0 +1,265 @@
+<div class="page-header">
+  <h1 i18n="@@importCsv.titre">Import des animateurs (CSV)</h1>
+  <p i18n="@@importCsv.intro">
+    Déposez le tableur de vos bénévoles, exporté en CSV, dites quelle colonne est quel champ,
+    lisez ce que l'import ferait, puis validez. Rien n'est écrit avant cette validation : tant que
+    vous n'avez pas cliqué sur « Importer », cet écran ne fait que lire votre fichier. Le fichier
+    reste en mémoire, il n'est jamais enregistré sur le serveur.
+  </p>
+</div>
+
+<mat-card class="page-card" appearance="outlined">
+  <mat-card-header>
+    <mat-card-title i18n="@@importCsv.fichier.titre">1. Le fichier</mat-card-title>
+    <mat-card-subtitle i18n="@@importCsv.fichier.aide">
+      Format CSV uniquement — séparateur virgule, point-virgule ou tabulation, reconnu tout seul.
+      Un classeur .xlsx doit d'abord être ré-enregistré en CSV depuis votre tableur.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <p class="empty-hint" i18n="@@importCsv.fichier.format">
+      La date de naissance est obligatoire pour créer une fiche : tout le régime mineur / majeur en
+      dépend. Les compétences, les souhaits et les jours d'indisponibilité peuvent tenir plusieurs
+      valeurs dans une même cellule, séparées par « | ». Une compétence s'écrit « typologie » ou
+      « typologie:REFERENT ».
+    </p>
+    <div class="card-actions">
+      <button matButton (click)="telechargerExemple()" [disabled]="telechargementEnCours()">
+        <mat-icon>download</mat-icon>
+        <span i18n="@@importCsv.fichier.exemple">Télécharger un fichier d'exemple</span>
+      </button>
+      <a matButton routerLink="/aide" fragment="import-csv-animateurs">
+        <mat-icon>help_outline</mat-icon>
+        <span i18n="@@importCsv.fichier.aideDetaillee">Tous les détails dans l'aide</span>
+      </a>
+    </div>
+    <div class="card-actions">
+      <button matButton="filled" (click)="choisirFichier()" [disabled]="analyseEnCours() || importEnCours()">
+        <mat-icon>upload_file</mat-icon>
+        <span i18n="@@importCsv.fichier.choisir">Choisir un fichier CSV</span>
+      </button>
+      @if (nomFichier()) {
+        <button matButton (click)="reinitialiser()" [disabled]="importEnCours()">
+          <mat-icon>close</mat-icon>
+          <span i18n="@@importCsv.fichier.oublier">Oublier ce fichier</span>
+        </button>
+      }
+    </div>
+    <input #csvInput type="file" accept=".csv,text/csv,text/plain" hidden (change)="onFichierChoisi($event)" />
+    @if (nomFichier()) {
+      <p class="empty-hint">
+        <span i18n="@@importCsv.fichier.nom">Fichier chargé :</span> {{ nomFichier() }}
+        @if (rapport(); as vue) {
+          <span i18n="@@importCsv.fichier.detail"
+            >&nbsp;— séparateur « {{ vue.separator }} », {{ vue.columns.length }} colonne(s),
+            {{ vue.total }} ligne(s) de données.</span
+          >
+        }
+      </p>
+    }
+    @if (analyseEnCours() || importEnCours()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    @if (erreur()) {
+      <p class="field-error" role="alert">{{ erreur() }}</p>
+    }
+  </mat-card-content>
+</mat-card>
+
+@if (fichierCharge()) {
+  <mat-card class="page-card" appearance="outlined">
+    <mat-card-header>
+      <mat-card-title i18n="@@importCsv.mapping.titre">2. Les colonnes</mat-card-title>
+      <mat-card-subtitle i18n="@@importCsv.mapping.aide">
+        Une correspondance est proposée à partir des en-têtes ; corrigez-la librement. Un champ
+        laissé sur « — » n'est pas dans le fichier : il ne touchera pas les fiches déjà en base.
+      </mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="form-grid">
+        @for (champ of champs; track champ) {
+          <mat-form-field appearance="outline">
+            <mat-label>{{ libelleChamp(champ) }}</mat-label>
+            <mat-select
+              [value]="colonneDe(champ)"
+              (valueChange)="changerColonne(champ, $event)"
+              [disabled]="importEnCours()"
+            >
+              <mat-option [value]="null" i18n="@@importCsv.mapping.aucune">— pas dans le fichier</mat-option>
+              @for (colonne of colonnes(); track $index) {
+                <mat-option [value]="$index">{{ libelleColonne($index) }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        }
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="page-card" appearance="outlined">
+    <mat-card-header>
+      <mat-card-title i18n="@@importCsv.options.titre">3. Ce que l'import remplace</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <mat-checkbox
+        [checked]="remplacerAnimateurs()"
+        (change)="changerRemplacerAnimateurs($event.checked)"
+        [disabled]="importEnCours()"
+      >
+        <span i18n="@@importCsv.options.remplacerAnimateurs"
+          >Remplacement complet : supprimer les animateurs absents du fichier</span
+        >
+      </mat-checkbox>
+      <p class="empty-hint" i18n="@@importCsv.options.remplacerAnimateursAide">
+        Décoché (par défaut), l'import ajoute et met à jour, sans jamais supprimer personne. Coché,
+        il refuse de s'exécuter tant qu'une ligne est rejetée — sinon il supprimerait justement les
+        personnes que ces lignes n'ont pas su décrire.
+      </p>
+      @if (remplacementBloque()) {
+        <p class="field-error" i18n="@@importCsv.options.remplacementBloque">
+          Remplacement complet impossible tant qu'une ligne est rejetée : corrigez le fichier, ou
+          décochez cette case pour importer sans supprimer personne.
+        </p>
+      }
+      <mat-checkbox
+        [checked]="remplacerJours()"
+        (change)="changerRemplacerJours($event.checked)"
+        [disabled]="importEnCours()"
+      >
+        <span i18n="@@importCsv.options.remplacerJours"
+          >Remplacer les jours d'indisponibilité au lieu de les compléter</span
+        >
+      </mat-checkbox>
+      <p class="empty-hint" i18n="@@importCsv.options.remplacerJoursAide">
+        Décoché (par défaut), les jours du fichier s'ajoutent à ceux déjà enregistrés : un import de
+        rattrapage n'efface pas ce que les animateurs ont déclaré eux-mêmes.
+      </p>
+    </mat-card-content>
+  </mat-card>
+}
+
+@if (rapport(); as vue) {
+  <mat-card class="page-card" appearance="outlined">
+    <mat-card-header>
+      <mat-card-title>
+        @if (vue.applied) {
+          <ng-container i18n="@@importCsv.rapport.titreApplique">4. Ce qui a été importé</ng-container>
+        } @else {
+          <ng-container i18n="@@importCsv.rapport.titrePreview">4. Ce que l'import ferait</ng-container>
+        }
+      </mat-card-title>
+      <mat-card-subtitle>
+        @if (vue.applied) {
+          <ng-container i18n="@@importCsv.rapport.sousTitreApplique"
+            >Import effectué en une seule transaction : ces chiffres sont ceux de la base.</ng-container
+          >
+        } @else {
+          <ng-container i18n="@@importCsv.rapport.sousTitrePreview"
+            >Aucune écriture n'a eu lieu. Rien ne part en base tant que vous n'avez pas cliqué sur
+            « Importer ».</ng-container
+          >
+        }
+      </mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <ul class="import-compteurs">
+        <li>
+          <span i18n="@@importCsv.rapport.acceptees">Lignes acceptées</span> :
+          <strong>{{ vue.accepted }}</strong> / {{ vue.total }}
+        </li>
+        <li>
+          <span i18n="@@importCsv.rapport.rejetees">Lignes rejetées</span> :
+          <strong>{{ vue.rejected }}</strong>
+        </li>
+        <li>
+          <span i18n="@@importCsv.rapport.creations">Fiches créées</span> :
+          <strong>{{ vue.created }}</strong>
+        </li>
+        <li>
+          <span i18n="@@importCsv.rapport.majs">Fiches mises à jour</span> :
+          <strong>{{ vue.updated }}</strong>
+        </li>
+        <li>
+          <span i18n="@@importCsv.rapport.suppressions">Fiches supprimées</span> :
+          <strong>{{ vue.deleted }}</strong>
+        </li>
+      </ul>
+
+      @for (avertissement of vue.warnings; track avertissement) {
+        <p class="empty-hint">{{ avertissement }}</p>
+      }
+
+      @if (vue.rows.length === 0) {
+        <p class="empty-hint" i18n="@@importCsv.rapport.vide">
+          Le fichier ne porte aucune ligne de données sous son en-tête.
+        </p>
+      } @else {
+        <div class="table-wrapper">
+          <table class="import-rapport">
+            <thead>
+              <tr>
+                <th scope="col" i18n="@@importCsv.rapport.colonneLigne">Ligne</th>
+                <th scope="col" i18n="@@importCsv.rapport.colonneQui">Qui</th>
+                <th scope="col" i18n="@@importCsv.rapport.colonneAction">Résultat</th>
+                <th scope="col" i18n="@@importCsv.rapport.colonneDetail">Détail</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (ligne of vue.rows; track ligne.line) {
+                <tr [class]="classeAction(ligne.action)" [attr.data-ligne]="ligne.line">
+                  <td>{{ ligne.line }}</td>
+                  <td>
+                    {{ ligne.label }}
+                    @if (ligne.animateurId) {
+                      <span class="import-identifiant">({{ ligne.animateurId }})</span>
+                    }
+                  </td>
+                  <td>
+                    <mat-icon aria-hidden="true">{{ iconeAction(ligne.action) }}</mat-icon>
+                    @switch (ligne.action) {
+                      @case ('CREATED') {
+                        <span i18n="@@importCsv.action.creation">Création</span>
+                      }
+                      @case ('UPDATED') {
+                        <span i18n="@@importCsv.action.maj">Mise à jour</span>
+                      }
+                      @default {
+                        <span i18n="@@importCsv.action.rejet">Rejetée</span>
+                      }
+                    }
+                  </td>
+                  <td>
+                    @for (motif of ligne.reasons; track motif) {
+                      <p class="import-motif">{{ motif }}</p>
+                    }
+                    @for (avis of ligne.warnings; track avis) {
+                      <p class="import-avertissement">{{ avis }}</p>
+                    }
+                    @if (ligne.joursIndisponibles.length > 0) {
+                      <p class="import-jours">
+                        <span i18n="@@importCsv.rapport.joursRetenus">Jours d'indisponibilité retenus</span> :
+                        {{ ligne.joursIndisponibles.join(', ') }}
+                      </p>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </mat-card-content>
+    <mat-card-actions class="card-actions">
+      @if (!vue.applied) {
+        <button matButton="filled" (click)="importer()" [disabled]="!peutImporter()">
+          <mat-icon>done_all</mat-icon>
+          <span i18n="@@importCsv.importer">Importer</span>
+        </button>
+      }
+      <button matButton (click)="analyser()" [disabled]="analyseEnCours() || importEnCours()">
+        <mat-icon>refresh</mat-icon>
+        <span i18n="@@importCsv.reanalyser">Recalculer l'aperçu</span>
+      </button>
+    </mat-card-actions>
+  </mat-card>
+}

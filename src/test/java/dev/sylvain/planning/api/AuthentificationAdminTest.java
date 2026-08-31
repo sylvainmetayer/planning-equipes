@@ -75,6 +75,24 @@ class AuthentificationAdminTest {
     }
 
     /**
+     * The tabular import takes a file of names and birth dates, minors
+     * included, and the preview alone would already read the whole roster
+     * back. Both halves are asserted: an endpoint that only writes behind the
+     * wall while it reads in front of it would be worse than neither.
+     */
+    @Test
+    void lImportTabulaireDesAnimateursExigeUneSession() {
+        given().contentType("application/json").body("{}")
+                .when().post("/api/animateurs/import-csv/analyse").then().statusCode(401);
+        given().contentType("application/json").body("{}")
+                .when().post("/api/animateurs/import-csv").then().statusCode(401);
+        // The example roster carries no real person, but it lives under the
+        // admin prefix and stays there: the exemptions are enumerated, never
+        // widened by accident.
+        given().when().get("/api/animateurs/import-csv/exemple").then().statusCode(401);
+    }
+
+    /**
      * A legal notice readable only once logged in would miss the reader it
      * exists for: someone deciding whether to trust the site, or an animateur
      * whose access link has expired and who needs to know whom to contact.

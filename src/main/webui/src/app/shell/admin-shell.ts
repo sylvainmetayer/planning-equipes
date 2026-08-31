@@ -135,7 +135,12 @@ function buildNavGroups(devMode: boolean): NavGroup[] {
       { path: '/emplacements', label: $localize`:@@nav.link.emplacements:Emplacements`, icon: 'place' },
       { path: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs`, icon: 'groups' },
       { path: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux`, icon: 'schedule' },
-      { path: '/typologies', label: $localize`:@@nav.link.typologies:Typologies`, icon: 'category' }
+      { path: '/typologies', label: $localize`:@@nav.link.typologies:Typologies`, icon: 'category' },
+      {
+        path: '/import-animateurs',
+        label: $localize`:@@nav.link.importAnimateurs:Import CSV des animateurs`,
+        icon: 'table_view'
+      }
     ]
   },
   {
