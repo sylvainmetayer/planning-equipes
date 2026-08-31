@@ -19,7 +19,8 @@ function vue(): EspaceAnimateurView {
     statutConfirmation: 'NON_VU',
     confirmeLe: null,
     foireOuvreLe: null,
-    foireFermeLe: null
+    foireFermeLe: null,
+    abonnementToken: 'abo-1'
   };
 }
 
@@ -104,6 +105,25 @@ describe('EspaceAnimateurService', () => {
     expect(service.vue()).toBeNull();
     expect(service.demandes()).toEqual([]);
     expect(service.chargement()).toBe(false);
+  });
+
+  it("la rotation de l'abonnement remplace le jeton sans recharger l'espace", async () => {
+    api.getPreservingHttpError.mockImplementation(async (url: string) =>
+      url.endsWith('/demandes') ? [demande('D1')] : vue()
+    );
+    await service.charger('jeton-1');
+    api.getPreservingHttpError.mockClear();
+    api.post.mockResolvedValue({ abonnementToken: 'abo-2' });
+
+    await service.regenererAbonnement();
+
+    expect(api.post).toHaveBeenCalledWith('/api/espace-animateur/jeton-1/abonnement', null);
+    expect(service.vue()?.abonnementToken).toBe('abo-2');
+    // The espace token is a separate credential: nothing else moved, and the
+    // page was not reloaded to find out.
+    expect(service.jeton()).toBe('jeton-1');
+    expect(service.demandes().map((d) => d.id)).toEqual(['D1']);
+    expect(api.getPreservingHttpError).not.toHaveBeenCalled();
   });
 
   it("un 401 bascule en « authentification requise » plutôt qu'en erreur", async () => {

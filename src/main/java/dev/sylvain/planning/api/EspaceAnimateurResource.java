@@ -14,6 +14,7 @@ import dev.sylvain.planning.service.EspaceAnimateurService;
 import dev.sylvain.planning.service.EspaceAnimateurService.DemandeEchangeView;
 import dev.sylvain.planning.service.EspaceAnimateurService.EspaceAnimateurView;
 import dev.sylvain.planning.service.PlanningExportService;
+import dev.sylvain.planning.service.ReferenceDataService;
 import dev.sylvain.planning.service.PlanPublieService;
 import io.quarkus.logging.Log;
 import jakarta.inject.Inject;
@@ -32,8 +33,9 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 
 /**
- * The animateur self-service espace (issue #165), the only part of the API
- * reachable without the admin session: every route carries the animateur's
+ * The animateur self-service espace (issue #165), one of the two parts of the
+ * API reachable without the admin session (the other being
+ * {@link AbonnementIcsResource}): every route carries the animateur's
  * access token, printed as a link on their individual PDF planning.
  *
  * <p>The guards do all the plumbing, declaratively. {@link TokenRequired}
@@ -77,6 +79,9 @@ public class EspaceAnimateurResource {
 
     @Inject
     ConfirmationPlanningService confirmationService;
+
+    @Inject
+    ReferenceDataService referenceDataService;
 
     /** Who I am, my persisted planning (with teammates) and the colleagues I can swap with. */
     @GET
@@ -258,6 +263,31 @@ public class EspaceAnimateurResource {
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         "attachment; filename=\"" + fileName(planning, "ics") + "\"")
                 .build();
+    }
+
+    /**
+     * Revokes my calendar subscription URL and mints a new one — the gesture
+     * that answers « my phone was lost, that link is out there ».
+     *
+     * <p>The rotation lives <b>here</b> rather than on an admin screen on
+     * purpose. The URL is only ever shown in this espace, so its holder is the
+     * only person who can know it leaked; and reaching this route already
+     * costs the token <i>and</i> the e-mail code, which is a stronger proof
+     * than the subscription itself will ever ask for. Nothing else moves: the
+     * espace access token is a separate credential and keeps working, so the
+     * link printed on an already-distributed PDF survives.</p>
+     */
+    @POST
+    @Path("/{jeton}/abonnement")
+    @Consumes(MediaType.WILDCARD)
+    @EspaceSessionRequired
+    public AbonnementToken regenerateAbonnementToken() {
+        return new AbonnementToken(
+                referenceDataService.regenerateAbonnementToken(animateurCourant()));
+    }
+
+    /** Body of a subscription rotation: the new token, nothing else. */
+    public record AbonnementToken(String abonnementToken) {
     }
 
     /** Withdraws one of my own, still-pending demandes. */

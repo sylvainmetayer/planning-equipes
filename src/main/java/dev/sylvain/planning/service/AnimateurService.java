@@ -103,4 +103,28 @@ public class AnimateurService {
         }
         return token;
     }
+
+    /** See {@link AnimateurRepository#resolveAbonnementToken}. */
+    public TokenOwner resolveAbonnementToken(String token) {
+        return repository.resolveAbonnementToken(token);
+    }
+
+    /** See {@link AnimateurRepository#abonnementToken}. */
+    public String abonnementToken(String id) {
+        return repository.abonnementToken(id);
+    }
+
+    /**
+     * Rotates an animateur's ICS subscription token. Independent of
+     * {@link #regenerateToken}: the two credentials open different things, and
+     * revoking a leaked calendar URL must not invalidate the espace link
+     * printed on a PDF.
+     */
+    public String regenerateAbonnementToken(String id) {
+        String token = repository.regenerateAbonnementToken(id);
+        if (token == null) {
+            throw new BusinessError.NotFound("Animateur inconnu : " + id);
+        }
+        return token;
+    }
 }

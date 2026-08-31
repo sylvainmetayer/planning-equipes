@@ -18,8 +18,9 @@ import io.quarkus.test.junit.TestProfile;
  * Admin authentication (issue #165). The default %test profile opens the API
  * so the functional tests don't need a session; this profile restores the real
  * {@code authenticated} policy and exercises the whole form-login flow — the
- * 401 wall, the login endpoint, the session cookie, and the two deliberate
- * public exceptions (espace animateur, auth status, legal notice).
+ * 401 wall, the login endpoint, the session cookie, and the deliberate
+ * public exceptions (espace animateur, calendar subscription, auth status,
+ * legal notice).
  */
 @QuarkusTest
 @TestProfile(AuthentificationAdminTest.Profil.class)
@@ -49,6 +50,28 @@ class AuthentificationAdminTest {
     void lEspaceAnimateurResteAccessibleSansSession() {
         // 404 (unknown token), never 401: the token itself is the credential.
         given().when().get("/api/espace-animateur/jeton-inconnu").then().statusCode(404);
+    }
+
+    /**
+     * The calendar subscription lives under a prefix of its own so an access
+     * proxy can except exactly it, and that exception is worth nothing unless
+     * the origin agrees: a calendar client cannot answer a 401 challenge, so
+     * a wall here would break every subscription silently. 404 (unknown
+     * token), never 401 — the token itself is the credential.
+     */
+    @Test
+    void lAbonnementIcsResteAccessibleSansSession() {
+        given().when().get("/api/abonnements/jeton-inconnu/planning.ics").then().statusCode(404);
+    }
+
+    /**
+     * And the exemption stops there. The prefix names one route; nothing else
+     * under {@code /api} follows it out of the admin wall.
+     */
+    @Test
+    void lExemptionNeDeborddePasDuPrefixeDAbonnement() {
+        given().when().get("/api/animateurs").then().statusCode(401);
+        given().when().get("/api/planning/publication").then().statusCode(401);
     }
 
     /**

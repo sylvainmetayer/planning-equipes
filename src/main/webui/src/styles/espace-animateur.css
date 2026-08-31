@@ -269,38 +269,61 @@
   color: var(--mat-sys-on-surface-variant);
 }
 
-/* Téléchargements du planning personnel (PDF / ICS). */
-.espace-telechargements {
+/*
+ * Bande « Emporter mon planning » (#324) : abonnement, PDF et ICS ponctuel
+ * ensemble, AU-DESSUS des cartes de journée. Sous elles, il fallait faire
+ * défiler tout le planning pour découvrir l'abonnement — sur un téléphone,
+ * personne n'y arrivait. Elle reste donc compacte : la première journée doit
+ * rester lisible sans défiler.
+ */
+.espace-agenda {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 0.5rem;
-  margin-bottom: 1rem;
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: var(--mat-sys-surface-container-low);
+}
+
+.espace-agenda-titre {
+  margin: 0;
+  font: var(--mat-sys-title-medium);
 }
 
 /*
- * Les deux actions qu'un animateur cherche sur son téléphone. Étirés sans
- * contour, ils se lisaient comme des liens flottants au milieu de la page :
- * un contour et un contenu aligné à gauche disent « bouton », et la cible de
- * frappe couvre alors toute la largeur.
+ * Sur un téléphone, chaque action prend toute la largeur : la cible de frappe
+ * couvre la ligne et le libellé ne se tronque pas. Le contenu reste aligné à
+ * gauche, comme une liste d'actions et non trois liens flottants.
  */
-.espace-telechargements a {
+.espace-agenda-actions {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  gap: 0.5rem;
+}
+
+.espace-agenda-actions a {
   justify-content: flex-start;
-  border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: 999px;
 }
 
 @media (min-width: 40rem) {
-  .espace-telechargements a {
-    justify-content: center;
-    border: 0;
-  }
-}
-
-@media (min-width: 40rem) {
-  .espace-telechargements {
+  .espace-agenda-actions {
     flex-direction: row;
     flex-wrap: wrap;
+    align-self: auto;
   }
+
+  .espace-agenda-actions a {
+    justify-content: center;
+  }
+}
+
+.espace-agenda-aide {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.9em;
 }
 
 .espace-vide {
@@ -690,4 +713,70 @@
   color: var(--mat-sys-on-surface-variant);
   font-size: 0.9rem;
   margin: -0.25rem 0 0.75rem;
+}
+
+/*
+ * Détail de l'abonnement (issue #324) : replié par défaut sous le bouton
+ * « Copier l'adresse, ou la remplacer ». L'adresse, sa copie et son
+ * remplacement se règlent une fois et ne se relisent plus — les déplier
+ * d'emblée repousserait le planning sous la ligne de flottaison.
+ */
+.espace-abonnement-details {
+  align-self: stretch;
+}
+
+.espace-abonnement {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--mat-sys-surface-container-high);
+}
+
+.espace-abonnement-aide {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.9em;
+}
+
+/*
+ * L'adresse est longue et sans espace : sur un téléphone elle doit se couper
+ * plutôt que déborder, et rester sélectionnable à la main quand le
+ * presse-papiers est refusé.
+ */
+.espace-abonnement-url {
+  align-self: stretch;
+  overflow-wrap: anywhere;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--mat-sys-surface-container-high);
+  font-size: 0.85em;
+  user-select: all;
+}
+
+.espace-abonnement-copie {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.9em;
+}
+
+.espace-abonnement-revocation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.espace-abonnement-revocation p {
+  margin: 0;
+  flex-basis: 100%;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.9em;
+}
+
+.espace-abonnement-erreur {
+  margin: 0;
+  color: var(--mat-sys-error);
 }

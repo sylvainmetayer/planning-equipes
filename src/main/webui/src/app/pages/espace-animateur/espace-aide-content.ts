@@ -154,19 +154,32 @@ export function buildEspaceAideSections(): EspaceAideSection[] {
       id: 'emporter',
       icon: 'download',
       question: $localize`:@@espace.aide.emporter.question:Puis-je emporter mon planning ?`,
-      resume: $localize`:@@espace.aide.emporter.resume:Oui, en PDF à imprimer ou dans l'agenda de votre téléphone.`,
+      resume: $localize`:@@espace.aide.emporter.resume:Oui — le mieux est de vous y abonner, pour qu'il se tienne à jour tout seul.`,
       cible: 'planning',
       blocks: [
         {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.emporter.abonnement:En haut de la page « Mon planning », la bande « Emporter mon planning » propose trois sorties. La première, « S'abonner dans mon agenda », est celle à privilégier : donnée une fois à votre agenda, l'adresse le tient à jour tout seul à chaque nouvelle publication.`
+        },
+        {
           kind: 'list',
           items: [
+            $localize`:@@espace.aide.emporter.item0:« S'abonner dans mon agenda » : vos créneaux apparaissent dans votre agenda et suivent les republications. Rien à refaire ensuite.`,
             $localize`:@@espace.aide.emporter.item1:« Télécharger en PDF » : votre planning sur une page, à imprimer ou à garder hors connexion.`,
-            $localize`:@@espace.aide.emporter.item2:« Ajouter à mon agenda (ICS) » : chaque créneau devient un rendez-vous dans l'agenda de votre téléphone.`
+            $localize`:@@espace.aide.emporter.item2:« Télécharger le fichier ICS » : chaque créneau devient un rendez-vous, versé une seule fois dans l'agenda de votre téléphone.`
           ]
         },
         {
           kind: 'paragraph',
           text: $localize`:@@espace.aide.emporter.photo:Ces deux fichiers sont une photo prise au moment du téléchargement : ils ne se mettent pas à jour tout seuls quand le planning change ou qu'un échange est accepté. Au moindre doute, fiez-vous à cette page plutôt qu'au fichier.`
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.emporter.abonnementColler:Certaines applications, Google Agenda en premier, demandent qu'on leur colle l'adresse au lieu de cliquer. Elle est alors sous « Copier l'adresse, ou la remplacer », dans la même bande.`
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.emporter.abonnementPrudence:Cette adresse est personnelle : qui l'obtient voit votre planning, sans code ni mot de passe. Ne la publiez pas sur un agenda partagé, et si elle vous échappe, le bouton « Cette adresse a fuité, la remplacer » — au même endroit — en crée une neuve, l'ancienne cessant aussitôt de fonctionner.`
         }
       ]
     },

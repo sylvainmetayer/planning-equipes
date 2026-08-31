@@ -115,6 +115,21 @@ export class EspaceAnimateurService {
     }
   }
 
+  /**
+   * Revokes the calendar subscription URL and mints a new one (issue #324).
+   * Refreshes the loaded view in place: the answer carries the new token, and
+   * nothing else on the page can have moved because of the click.
+   */
+  async regenererAbonnement(): Promise<void> {
+    const jeton = this.jetonRequis();
+    const reponse = await this.api.post<{ abonnementToken: string }>(
+      `/api/espace-animateur/${jeton}/abonnement`, null);
+    const vue = this.vue();
+    if (vue) {
+      this.vue.set({ ...vue, abonnementToken: reponse.abonnementToken });
+    }
+  }
+
   /** A colleague's seats, for the « créneau souhaité en échange » picker of a directed exchange. */
   async postesCollegue(collegueId: string): Promise<PosteAnimateurView[]> {
     return this.api.get<PosteAnimateurView[]>(

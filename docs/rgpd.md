@@ -95,10 +95,10 @@ crochet.
 | Rubrique | Contenu |
 | --- | --- |
 | Catégories de personnes | Animateurs, **dont des mineurs** ; encadrants et managers |
-| Catégories de données | Nom, prénom, **date de naissance**, adresse électronique (facultative), compétences, souhaits d'affectation, jours d'indisponibilité, jeton d'accès à l'espace animateur, affectations et échanges, **déclarations de disponibilités en libre-service — dont un commentaire en champ libre**, instantanés de planning, sessions et journaux d'accès |
+| Catégories de données | Nom, prénom, **date de naissance**, adresse électronique (facultative), compétences, souhaits d'affectation, jours d'indisponibilité, **deux jetons d'accès** — celui de l'espace animateur et celui de l'abonnement au calendrier —, affectations et échanges, **déclarations de disponibilités en libre-service — dont un commentaire en champ libre**, instantanés de planning, sessions et journaux d'accès |
 | Traitements réalisés | Hébergement, planification et résolution, envoi d'e-mails (codes d'accès, plannings individuels, notifications d'échange, **rappels et relances automatiques de nuit**), sauvegarde, purge |
-| Destinataires | L'organisateur via l'interface d'administration ; l'animateur via son espace ; les autres animateurs pour la part visible du planning (voir `securite.md`) ; le relais SMTP |
-| Mesures de sécurité | TLS et HSTS ; en-têtes CSP et `Referrer-Policy` — **le jeton d'espace voyage dans l'URL** ; chiffrement des sessions ; limitation de débit sur les codes d'espace et verrouillage du formulaire de connexion ; origine injoignable autrement que par le reverse proxy ; sauvegarde nocturne automatique par `pg_dump`, en rotation dans un volume dédié, dont l'**externalisation chiffrée hors machine reste à la charge de l'exploitant** (`exploitation.md` §5) |
+| Destinataires | L'organisateur via l'interface d'administration ; l'animateur via son espace **et via l'application d'agenda à laquelle il communique son adresse d'abonnement** ; les autres animateurs pour la part visible du planning (voir `securite.md`) ; le relais SMTP |
+| Mesures de sécurité | TLS et HSTS ; en-têtes CSP et `Referrer-Policy` — **les deux jetons voyagent dans l'URL** ; chiffrement des sessions ; limitation de débit sur les codes d'espace et verrouillage du formulaire de connexion ; origine injoignable autrement que par le reverse proxy ; sauvegarde nocturne automatique par `pg_dump`, en rotation dans un volume dédié, dont l'**externalisation chiffrée hors machine reste à la charge de l'exploitant** (`exploitation.md` §5) |
 
 ### Bloc variable, par instance
 
@@ -126,7 +126,7 @@ dans le même document que le registre :
 | Nature | Purge de conservation, suppression sur demande, ou restauration |
 | Périmètre | Édition supprimée, ou fiche animateur ; la suppression est en cascade sur les tables portant `edition_id` |
 | Dump archivé | Référence de la sauvegarde chiffrée prise avant l'opération |
-| Vérification | Espace animateur d'un jeton supprimé répondant bien `404` |
+| Vérification | Espace animateur **et adresse d'abonnement** d'un jeton supprimé répondant bien `404` |
 
 Une purge manuelle sans écrit ne prouve rien : c'est ce journal qui rend tenable
 la durée annoncée par `LEGAL_CONSERVATION`, pas la procédure seule.
@@ -153,7 +153,7 @@ pareil.
 | --- | --- |
 | Dump égaré : sauvegarde déposée en clair, envoyée par un canal non maîtrisé, oubliée sur une machine cédée | Ce qu'il contenait — un dump est **complet** : noms, dates de naissance de mineurs, adresses, jetons d'espace (`exploitation.md` §5) |
 | Accès non autorisé à l'administration | Depuis quand, ce qui a été consulté ou modifié, et si le mot de passe d'administration a servi ailleurs |
-| Fuite de jetons d'espace animateur | Les jetons voyagent **dans le chemin de l'URL** : des journaux d'accès de reverse proxy partagés, indexés ou transmis sont une violation, pas une négligence sans suite (`securite.md`, dernière section) |
+| Fuite de jetons d'espace animateur ou d'abonnement au calendrier | Les jetons voyagent **dans le chemin de l'URL** : des journaux d'accès de reverse proxy partagés, indexés ou transmis sont une violation, pas une négligence sans suite (`securite.md`, dernière section). Un jeton d'abonnement fuité est **immédiatement exploitable sans second facteur**, et il apparaît dans ces journaux à chaque synchronisation d'un agenda, donc bien plus souvent que l'autre |
 | Base ou sauvegarde perdue sans copie | C'est une violation de **disponibilité** : elle se notifie, même sans le moindre accès d'un tiers |
 | Envoi d'un planning individuel à la mauvaise adresse | Violation aussi, à sa mesure — l'erreur de destinataire est le cas le plus fréquent en pratique |
 
@@ -236,9 +236,41 @@ complètes. Quatre points sont connus et se consignent :
   instances tournent en parallèle. Ce qui se consigne au registre n'est donc pas
   « purge automatique : non », mais « purge manuelle, à date fixe, tracée au
   journal du §5 » ;
-- **le jeton d'accès voyage dans le chemin de l'URL** : il atterrit tel quel
-  dans les journaux d'accès du reverse proxy, qui doivent donc être purgés ou
-  écrits sans ces chemins (`securite.md`, dernière section) ;
+- **les jetons d'accès voyagent dans le chemin de l'URL** : ils atterrissent
+  tels quels dans les journaux d'accès du reverse proxy, qui doivent donc être
+  purgés ou écrits sans ces chemins (`securite.md`, dernière section) ;
+- **l'abonnement au calendrier expose un planning nominatif de façon durable et
+  sans second facteur**, et c'est le point le plus exposant de ce document
+  après la purge manuelle. Il se consigne au registre tel quel, avec ce qui le
+  borne et ce qui ne le borne pas.
+
+  Ce qu'il est : une adresse permanente qui, à elle seule, sert le planning
+  publié d'une personne nommée — ses vacations, ses stands, ses coéquipiers —
+  à qui la détient. **Elle est communiquée volontairement à un tiers** : le
+  fournisseur de l'application d'agenda de l'animateur (Google, Apple,
+  Microsoft, un serveur CalDAV…), qui la rappellera plusieurs fois par jour et
+  en conservera le contenu selon ses propres règles. Ce destinataire-là n'est
+  **pas** un sous-traitant de l'hébergeur : il est choisi par la personne
+  concernée, pour son propre compte, et c'est précisément pour ça que
+  l'abonnement doit rester un geste explicite de sa part — jamais un envoi
+  automatique.
+
+  Ce qui le borne : le jeton est distinct de celui de l'espace et n'ouvre
+  **qu'un document en lecture** (ni échanges, ni disponibilités, ni
+  trombinoscope, ni écriture) ; il fait 122 bits d'aléa ; il est **révocable
+  par la personne concernée elle-même**, depuis son espace, sans passer par
+  l'organisation ; et il disparaît avec sa fiche ou son édition. Le contenu
+  n'est jamais que le plan **publié** : il n'annonce rien que la personne n'ait
+  déjà reçu.
+
+  Ce qui ne le borne pas : rien n'expire, rien ne compte les accès, rien ne
+  distingue le propriétaire d'un tiers qui aurait récupéré l'adresse. Une
+  adresse d'abonnement qui a fuité reste exploitable **jusqu'à ce que
+  quelqu'un la remplace** — et la seule personne en position de s'en rendre
+  compte est celle à qui elle appartient. C'est ce qui rend le bouton de
+  remplacement, dans l'espace, une mesure et non un confort : il se mentionne
+  au registre à ce titre, et l'invitation à s'en servir fait partie de ce qu'on
+  explique aux animateurs ;
 - **les sauvegardes sont un lieu de stockage à part entière** : depuis qu'elles
   sont automatiques, un dump complet — mineurs et jetons compris — existe en
   permanence sur le volume. Le registre doit le dire, et l'entrée n'est

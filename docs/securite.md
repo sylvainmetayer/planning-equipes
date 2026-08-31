@@ -17,7 +17,7 @@ compris — les en-têtes suivants :
 | En-tête | Valeur | Pourquoi ici |
 | --- | --- | --- |
 | `Content-Security-Policy` | `planning.securite.csp` (voir ci-dessous) | Le SPA ne charge aucun script tiers hormis la balise Cloudflare Web Analytics : tout ce qui serait injecté dans une page est refusé à l'exécution |
-| `Referrer-Policy` | `no-referrer` | Le jeton de l'espace animateur voyage **dans l'URL** ; sans cet en-tête il part dans le `Referer` de chaque navigation sortante (lien d'attribution OpenStreetMap, lien vers le dépôt). Une exception pour les tuiles, ci-dessous |
+| `Referrer-Policy` | `no-referrer` | Le jeton de l'espace animateur **et** celui de l'abonnement ICS voyagent **dans l'URL** ; sans cet en-tête ils partent dans le `Referer` de chaque navigation sortante (lien d'attribution OpenStreetMap, lien vers le dépôt). Une exception pour les tuiles, ci-dessous |
 | `X-Frame-Options` | `DENY` | Rien n'est prévu pour être encadré, et détourner un clic dans une session qui peut réécrire tout le planning n'a pas de contrepartie |
 | `Cross-Origin-Opener-Policy` | `same-origin` | Isole la fenêtre de tout `window.opener` ouvert depuis un autre site |
 | `X-Content-Type-Options` | `nosniff` | Les exports (PDF, ICS, SQL, CSV) sont servis avec leur type ; qu'un navigateur en devine un autre n'apporte rien |
@@ -200,6 +200,109 @@ resserrements :
 fenêtre — le seul contrôle visant réellement le balayage — et, plus en
 profondeur, remplacer le trombinoscope entier par une recherche à la frappe.
 
+## Abonnement ICS : le second jeton, et ce qu'il permet exactement
+
+`GET /api/abonnements/{token}/planning.ics` est la **seule** route de
+l'application qu'une URL seule ouvre. Elle existe parce qu'un client d'agenda
+abonné ne porte aucun cookie et ne sait pas répondre à un défi
+d'authentification : sans elle, l'abonnement serait un `401` à la première
+resynchronisation.
+
+### Pourquoi un jeton de plus plutôt que le jeton d'espace
+
+Le jeton d'espace ne suffit à rien seul aujourd'hui : il permet de *demander*
+un code par e-mail, et c'est tout. Le réutiliser ici en aurait fait, sur cette
+route, une preuve d'accès complète et durable au planning nominatif sans second
+facteur — et un lien imprimé sur un PDF circule.
+
+Le jeton d'abonnement est donc une clé séparée (`animateur.abonnement_token`),
+avec la même génération que l'autre (`gen_random_uuid()`, 122 bits d'aléa,
+unicité globale) et un cycle de vie indépendant. Voir
+[décision 0019](decisions/0019-jeton-et-chemin-dedies-pour-l-abonnement-ics.md).
+
+### Ce qu'il permet, exactement
+
+Qui détient un jeton d'abonnement peut lire, indéfiniment et sans rien d'autre,
+**un seul document** : le planning publié de son propriétaire — ses vacations,
+ses stands, et les coéquipiers que son PDF individuel imprime déjà. C'est une
+donnée nominative, et il faut le lire ainsi : ce jeton dit *qui travaille où et
+quand*, pour une personne.
+
+Il ne permet **rien** d'autre. Il n'ouvre pas l'espace animateur, ne lit ni les
+demandes d'échange, ni les disponibilités, ni le trombinoscope, ne télécharge
+pas le PDF, et n'écrit nulle part. Le garde qui le résout est lié à une seule
+route (`@AbonnementTokenRequired`), et le jeton d'espace ne fonctionne pas sur
+cette route — ni l'inverse. `AbonnementIcsTest` vérifie les deux sens.
+
+### Révocation
+
+**L'animateur révoque lui-même**, depuis son espace (« cette adresse a fuité,
+la remplacer ») : l'adresse n'est jamais affichée ailleurs que là, donc son
+porteur est la seule personne en position de savoir qu'elle a fuité, et
+atteindre ce bouton coûte déjà le jeton d'espace **et** le code e-mail — une
+preuve plus forte que celle que l'abonnement demandera jamais. La rotation tue
+l'ancienne adresse immédiatement et n'affecte pas le jeton d'espace : le lien
+déjà imprimé sur un PDF survit.
+
+Une fiche supprimée ou une édition supprimée emportent leur jeton avec elles :
+l'adresse cesse simplement d'exister (`404`). Il n'existe pas d'état « abonné /
+non abonné » : le jeton existe toujours, et ne sert que si quelqu'un s'en est
+servi.
+
+Ce qui **n'existe pas**, et qui est un manque assumé : un geste côté admin pour
+révoquer l'abonnement de quelqu'un d'autre. Un exploitant qui doit couper
+l'accès d'une personne partie supprime sa fiche, ce qui coupe tout. Ajouter le
+bouton à l'écran Animateurs est un ajout d'écran, pas de modèle.
+
+### Le jeton dans le chemin, et les journaux
+
+Même défaut que le jeton d'espace, et la même conséquence : il atterrit tel
+quel dans les journaux d'accès du reverse proxy, **et il y atterrit beaucoup
+plus souvent** — un client d'agenda resynchronise seul, plusieurs fois par
+jour, depuis chaque appareil. Ces journaux se purgent ou s'écrivent sans ces
+chemins (voir la dernière section). `Referrer-Policy: no-referrer` couvre le
+reste : le jeton ne part dans le `Referer` d'aucune navigation sortante.
+
+### Pas de limiteur de débit ici, et pourquoi
+
+`AdminLoginLimiter` et `CodeRequestLimiter` bornent deux choses précises : des
+tentatives d'authentification, et un envoi de mail. Cette route ne fait ni
+l'un ni l'autre — elle lit, sans effet de bord.
+
+Un plafond par animateur y serait **contre-productif** : un abonnement se
+resynchronise tout seul, depuis un téléphone, un ordinateur et une tablette à
+la fois, à un rythme que l'application ne choisit pas. Le plafond ne
+distinguerait pas l'abus de l'usage, et un flux coupé au mauvais moment se
+manifeste par un agenda silencieusement figé — exactement le symptôme que cette
+fonctionnalité supprime.
+
+Reste l'énumération : elle n'est pas praticable sur 122 bits d'aléa, un jeton
+inconnu ne répond qu'un `404` portant une phrase fixe (« Abonnement inconnu ou
+révoqué »), la même pour un jeton révoqué que pour un jeton inventé — elle ne
+renseigne donc sur rien —, et **la limitation par IP du reverse proxy reste la
+première ligne**, comme pour les exports et le reste de l'API.
+
+Ce qui **reste ouvert** : rien ne borne le coût d'un client mal réglé qui
+appellerait toutes les minutes. Chaque appel reconstruit le plan publié, comme
+le fait déjà le téléchargement de l'espace, donc ce n'est pas une classe de
+charge nouvelle — mais c'est la première qui soit déclenchée par une machine
+plutôt que par un humain.
+
+### La règle côté proxy d'accès
+
+Le préfixe `/api/abonnements/` **n'existe que pour cette route**, et c'est sa
+raison d'être : un proxy d'accès qui authentifie ses visiteurs (Pangolin et
+consorts) a besoin d'un motif d'URL qui ne désigne que le flux à excepter.
+
+| À configurer | Valeur |
+| --- | --- |
+| Exception d'authentification | `/api/abonnements/*` — et **ce préfixe seul** |
+| Ce qu'il ne faut pas faire | élargir l'exception à `/api/espace-animateur/*` : cela ouvrirait du même geste toutes les routes de l'espace, dont la seule écriture publique |
+
+Côté application, la même exception est déclarée dans `application.properties`
+(`quarkus.http.auth.permission.abonnement-ics`), et `AuthentificationAdminTest`
+vérifie à la fois qu'elle s'applique et qu'elle **ne déborde pas** du préfixe.
+
 ## Analyse statique : les suppressions et leur justification
 
 Le job `code` de `securite.yml` (Semgrep OSS) fait échouer la CI sur toute
@@ -266,7 +369,7 @@ L'application ne peut pas s'en occuper à sa place, et ces points sont des
 | Terminer le TLS et rediriger tout le trafic http vers https | HSTS et le flag `Secure` du cookie de l'espace ne s'activent que sur une visite HTTPS |
 | **Rendre l'origine injoignable autrement que par le proxy** (pare-feu, réseau) | Sans cela, `X-Forwarded-For` et `X-Forwarded-Proto` sont forgeables : le verrouillage de connexion se contourne en changeant d'adresse annoncée. À défaut, renseigner `TRUSTED_PROXIES` (`QUARKUS_HTTP_PROXY_TRUSTED_PROXIES`) |
 | Limiter le débit par adresse IP sur tout le site | Les plafonds de l'application sont ciblés (connexion admin, codes de l'espace) ; le reste — exports, résolution, API — n'en a pas |
-| Journaliser sans les URL de l'espace animateur, ou purger ces journaux | Le jeton d'accès voyage **dans le chemin** : il atterrit tel quel dans les journaux d'accès |
+| Journaliser sans les URL de l'espace animateur **ni celles de l'abonnement ICS**, ou purger ces journaux | Les deux jetons voyagent **dans le chemin** : ils atterrissent tels quels dans les journaux d'accès, et l'abonnement y revient à chaque synchronisation d'un agenda |
 
 ### Avant d'ouvrir : la liste courte
 

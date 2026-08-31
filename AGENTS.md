@@ -157,8 +157,9 @@ Single Quarkus service, no separate solver microservice. Package root:
   `docs/migration-timefold-2.md`.
 - `api/` — JAX-RS resources: `PlanningResource`, `SolverJobResource`,
   `EditionResource`, `ConstraintResource`, `DatabaseResource`,
-  `PlanningExportResource`, `EspaceAnimateurResource` (token-authenticated, the
-  only public part of the API), `DemandeEchangeResource`, `AuthResource`, plus
+  `PlanningExportResource`, `EspaceAnimateurResource` and
+  `AbonnementIcsResource` (token-authenticated, the only public parts of the
+  API), `DemandeEchangeResource`, `AuthResource`, plus
   one resource per referential family (`StandResource`, `AnimateurResource`, …)
   and `ReferenceDataResource` for scenario import. A resource holds transport
   only — status codes and payload shapes; anything that decides something
@@ -166,8 +167,19 @@ Single Quarkus service, no separate solver microservice. Package root:
 - HTTP security (issue #165): everything under `/api` requires the admin form
   login (single `admin` account from config) **except**
   `/api/espace-animateur/*` (its URL token is the credential and resolves the
-  edition by itself), `/api/auth/*` and `/api/config`; `/mcp` keeps its own
-  API-key mechanism. An **opt-in** header mode (`planning.auth.remote-user.*`,
+  edition by itself), `/api/abonnements/*`, `/api/auth/*` and `/api/config`;
+  `/mcp` keeps its own API-key mechanism.
+  **`/api/abonnements/{token}/planning.ics` is the one route a URL alone
+  opens** (issue #324): a calendar client subscribed to a feed carries no
+  cookie and cannot answer a challenge, so the espace's e-mail-code session is
+  out of reach there. It therefore uses a **second, separate token**
+  (`animateur.abonnement_token`, rotated from the espace itself) and lives
+  under a prefix of its own — that prefix is what an access proxy excepts from
+  its authentication, and it must keep naming nothing else. Do not widen it,
+  and do not bind `@AbonnementTokenRequired` to a second route: the perimeter
+  of that token is "one document, read-only", and it is readable only as long
+  as one route carries it. See
+  `docs/decisions/0019-jeton-et-chemin-dedies-pour-l-abonnement-ics.md`. An **opt-in** header mode (`planning.auth.remote-user.*`,
   off by default) lets an access proxy assert an already-authenticated
   address: `admin-email` gets the admin role, any other recognised address is
   an animateur whose espace opens without the e-mail code. It refuses to boot
@@ -632,14 +644,19 @@ uses them bare says something else entirely — "the animateur works two
 vacations" reads as two holidays. Write *shift* and *opening span* in the
 prose, keep `Vacation` and `Amplitude` in the identifiers.
 
-**The espace access token says `token` all the way down.** Java, the SQL column
+**Both public tokens say `token` all the way down.** Java, the SQL column
 (`animateur.access_token`, since `V52`), the JSON key (`accessToken`) and the
 HTTP path (`POST /api/animateurs/{id}/token`) were aligned together in issue
 #186 — before that, one thing carried three names and each one had to be
 explained where it showed. What stays French is the **path parameter** of the
 espace itself (`@Path("/{jeton}")`, route `animateur/:jeton`): it names a
 variable, never a published segment, so the links already printed on the PDFs
-are unaffected.
+are unaffected. The subscription token of issue #324 carries no such history,
+so it says `token` everywhere the credential appears — column
+`animateur.abonnement_token`, JSON key `abonnementToken`, path parameter
+`@Path("/{token}")` — while the *concept* is named `abonnement` in the
+identifiers and the URL (`/api/abonnements`), as `Alerte`, `Fragilite` and
+`Decoupage` already are, and *subscription* in the English prose.
 
 A JSON key is a contract, not an identifier: `JsonContractTest` freezes the
 keys of every exposed type in `src/test/resources/json-contract.txt`. Renaming

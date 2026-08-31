@@ -20,8 +20,9 @@ import jakarta.inject.Inject;
 
 /**
  * Animateur rows, their competences, their off-days and their wishes — plus
- * the access token their espace is reached by, which is the one thing here
- * that is deliberately unique across every edition.
+ * the two tokens their public links are reached by (the espace one and the ICS
+ * subscription one), which are the only things here that are deliberately
+ * unique across every edition.
  */
 @ApplicationScoped
 public class AnimateurRepository {
@@ -185,6 +186,45 @@ public class AnimateurRepository {
     }
 
     /**
+     * Rotates the ICS subscription token — the animateur's own way of killing
+     * a calendar URL that leaked. Deliberately separate from
+     * {@link #regenerateAnimateurToken}: the two credentials open different
+     * things, so revoking one must not cost the other.
+     *
+     * @return the new token, or {@code null} when the animateur is unknown.
+     */
+    public String regenerateAbonnementToken(String id) {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = scope.prepareScoped(connection,
+                        """
+                        UPDATE animateur
+                        SET abonnement_token = gen_random_uuid()::text
+                        WHERE edition_id = ? AND id = ?
+                        RETURNING abonnement_token""")) {
+            ps.setString(2, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getString(1) : null;
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to regenerate the subscription token of animator " + id, e);
+        }
+    }
+
+    /** The animateur's current ICS subscription token, {@code null} when unknown. */
+    public String abonnementToken(String id) {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = scope.prepareScoped(connection,
+                        "SELECT abonnement_token FROM animateur WHERE edition_id = ? AND id = ?")) {
+            ps.setString(2, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getString(1) : null;
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to read the subscription token of animator " + id, e);
+        }
+    }
+
+    /**
      * Whether any animateur, in any edition, carries this address. Like
      * {@link #resolveAnimateurToken}, deliberately not edition-scoped: the
      * caller is the startup check of the remote-user mode, which has no
@@ -236,6 +276,35 @@ public class AnimateurRepository {
         }
     }
 
+    /**
+     * Resolves an ICS subscription token to its owner. Not edition-scoped for
+     * the very reason {@link #resolveAnimateurToken} is not: the token arrives
+     * on a public URL with no {@code X-Edition-Id} to trust, and is globally
+     * unique so it can designate the edition by itself.
+     *
+     * <p>The e-mail is not read here, and that is the point: nothing this
+     * token opens ever needs it. A {@link TokenOwner} with a {@code null}
+     * address cannot satisfy the proxy assertion the espace guard accepts, so
+     * a subscription token can never stand in for an espace session.</p>
+     */
+    public TokenOwner resolveAbonnementToken(String token) {
+        if (token == null || token.isBlank()) {
+            return null;
+        }
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = connection.prepareStatement(
+                        "SELECT edition_id, id FROM animateur WHERE abonnement_token = ?")) {
+            ps.setString(1, token);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next()
+                        ? new TokenOwner(rs.getString("edition_id"), rs.getString("id"), null)
+                        : null;
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to resolve a subscription token", e);
+        }
+    }
+
     void upsertAnimateur(Connection connection, Animateur animateur) throws SQLException {
         upsertAnimateur(connection, animateur, false);
     }
@@ -249,9 +318,9 @@ public class AnimateurRepository {
      */
     void upsertAnimateur(Connection connection, Animateur animateur, boolean conserverEmailSiAbsent)
             throws SQLException {
-        // access_token is deliberately absent: a fresh row gets the database
-        // default, an existing row keeps its token. Rotation only happens
-        // through regenerateAnimateurToken.
+        // Neither token is listed: a fresh row gets the database default, an
+        // existing row keeps both. Rotation only happens through
+        // regenerateAnimateurToken and regenerateAbonnementToken.
         String miseAJourEmail = conserverEmailSiAbsent
                 ? "email = COALESCE(EXCLUDED.email, animateur.email)"
                 : "email = EXCLUDED.email";

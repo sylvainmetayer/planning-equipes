@@ -106,12 +106,18 @@ public class EspaceAnimateurService {
      *                 starts is the version nobody comes back from
      * @param foireFermeLe the last day demandes are accepted, {@code null} when
      *                 the window has no end
+     * @param abonnementToken credential of the permanent calendar feed
+     *                 ({@code /api/abonnements/&lt;token&gt;/planning.ics}),
+     *                 sent so the espace can build the subscription URL. It is
+     *                 <b>not</b> the espace token: it opens that one document
+     *                 and nothing else, and the espace rotates it on its own
      */
     public record EspaceAnimateurView(String animateurId, String prenom, String nom, Instant publieLe,
             boolean foireOuverte, List<PosteAnimateurView> postes,
             List<LocalDate> joursRepos, List<ColleagueView> collegues,
             String statutConfirmation, Instant confirmeLe,
-            LocalDate foireOuvreLe, LocalDate foireFermeLe) {
+            LocalDate foireOuvreLe, LocalDate foireFermeLe,
+            String abonnementToken) {
     }
 
     /**
@@ -159,7 +165,8 @@ public class EspaceAnimateurService {
                 foire.openOn(LocalDate.now()), postes, joursRepos, collegues,
                 (confirmation == null ? StatutConfirmation.NON_VU : confirmation.statut()).name(),
                 confirmation == null ? null : confirmation.confirmeLe(),
-                foire.ouvertureAVenir(LocalDate.now()), foire.fin());
+                foire.ouvertureAVenir(LocalDate.now()), foire.fin(),
+                referenceDataService.abonnementToken(animateurId));
     }
 
     private static List<PosteAnimateurView> postesOf(PlanningEvenement planning, String animateurId,

@@ -259,6 +259,7 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 | Export PDF global | Toutes les affectations dans un seul document pour l'organisateur, journée par journée puis stand par stand, places vides signalées |
 | Export PDF individuel | Le planning d'un animateur, ou de tous en une archive ; les journées sans affectation y figurent explicitement comme jours de repos |
 | Export ICS | Le planning individuel importable dans Google Calendar, Apple Calendar ou Outlook |
+| Abonnement au calendrier | Une adresse d'abonnement permanente, donnée une fois à son agenda : il se remet à jour tout seul à chaque republication, au lieu de rester figé sur le fichier téléchargé la première fois. Elle est personnelle, et l'animateur la remplace lui-même en un clic si elle a fuité |
 | Publication | Envoyer leur planning et le lien de leur espace aux seules personnes dont l'emploi du temps a changé, en leur disant ce qui change |
 | Espace animateur | Un espace personnel par lien nominatif : son planning, ses jours de repos, ses demandes d'échange, ses disponibilités déclarées — sans compte à créer |
 | Accusé de réception | Un bouton « J'ai lu et je serai là » sur le planning publié, et une colonne confirmé / relancé / silencieux côté organisation. Republier ne redemande une confirmation qu'aux personnes dont l'emploi du temps a réellement changé |

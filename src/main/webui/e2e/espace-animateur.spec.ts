@@ -193,6 +193,90 @@ test.describe('espace animateur', () => {
     await expect(page.getByText('Annulée').first()).toBeVisible();
   });
 
+  /**
+   * Le cœur de l'issue #324 : un client d'agenda n'est pas un navigateur
+   * connecté. Le `GET` part donc d'un contexte neuf, sans le moindre cookie —
+   * un test qui réutiliserait la session de la page ne prouverait rien.
+   */
+  test("l'adresse d'abonnement sert l'ICS depuis un contexte sans cookie", async ({ page, browser }) => {
+    await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
+    const vue = await page.request.get(`/api/espace-animateur/${jeton}`);
+    expect(vue.ok(), await vue.text()).toBe(true);
+    const { abonnementToken } = (await vue.json()) as { abonnementToken: string };
+    expect(abonnementToken).toBeTruthy();
+    // Une clé distincte du jeton d'espace, et pas seulement un chemin distinct.
+    expect(abonnementToken).not.toBe(jeton);
+
+    const anonyme = await browser.newContext();
+    try {
+      const url = `/api/abonnements/${abonnementToken}/planning.ics`;
+      // Deux fois : un abonnement revient tout seul, c'est ce qui le distingue
+      // d'un téléchargement.
+      for (let appel = 0; appel < 2; appel++) {
+        const reponse = await anonyme.request.get(url);
+        expect(reponse.status(), await reponse.text()).toBe(200);
+        expect(reponse.headers()['content-type']).toContain('text/calendar');
+        expect(await reponse.text()).toContain('BEGIN:VCALENDAR');
+      }
+      // Et ce jeton-là n'ouvre rien d'autre : l'espace le refuse.
+      const espace = await anonyme.request.get(`/api/espace-animateur/${abonnementToken}`);
+      expect(espace.status()).toBe(404);
+    } finally {
+      await anonyme.close();
+    }
+  });
+
+  test("l'espace propose l'abonnement, et le téléchargement en second", async ({ page }) => {
+    await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
+    await page.goto(`/animateur/${jeton}`);
+    await expect(page.getByRole('heading', { name: 'Emporter mon planning' })).toBeVisible();
+    await expect(page.getByRole('link', { name: "S'abonner dans mon agenda" })).toBeVisible();
+    // En complément, pas à la place : les deux fichiers ponctuels restent là.
+    await expect(page.getByRole('link', { name: 'Télécharger en PDF' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Télécharger le fichier ICS' })).toBeVisible();
+
+    // L'adresse elle-même est repliée : elle se règle une fois et occuperait,
+    // dépliée, la place que le planning doit garder.
+    await expect(page.getByText('/api/abonnements/')).toBeHidden();
+    await page.getByRole('button', { name: "Copier l'adresse, ou la remplacer" }).click();
+    await expect(page.getByText('/api/abonnements/')).toBeVisible();
+  });
+
+  /**
+   * La demande d'origine, transformée en garde : le bloc d'abonnement était
+   * sous TOUTES les cartes de journée, donc invisible sans dérouler l'écran
+   * entier. Rien d'autre n'empêcherait qu'il y redescende un jour.
+   *
+   * Le test vaut surtout sur le projet `mobile` (viewport Pixel 7), mais il
+   * tient aussi sur bureau — et il vérifie les deux moitiés du compromis :
+   * l'abonnement est atteignable sans défiler, ET la première journée du
+   * planning, ce que la personne vient lire, n'a pas été repoussée hors écran
+   * pour lui faire de la place.
+   */
+  test("l'abonnement est visible sans défiler, sans chasser le planning", async ({ page }) => {
+    await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
+    await page.goto(`/animateur/${jeton}`);
+
+    const abonnement = page.getByRole('link', { name: "S'abonner dans mon agenda" });
+    await expect(abonnement).toBeVisible();
+    const premiereJournee = page.locator('.espace-jour').first();
+    await expect(premiereJournee).toBeVisible();
+
+    // Aucun défilement n'a eu lieu, et rien n'en a provoqué.
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+    const hauteur = page.viewportSize()!.height;
+
+    const bande = await abonnement.boundingBox();
+    expect(bande, "le bouton d'abonnement n'a pas de boîte").not.toBeNull();
+    expect(bande!.y + bande!.height).toBeLessThanOrEqual(hauteur);
+
+    // Le haut de la première journée doit rester dans l'écran : remonter
+    // l'abonnement ne doit pas revenir à cacher ce qu'on vient consulter.
+    const journee = await premiereJournee.boundingBox();
+    expect(journee, 'la première journée n\'a pas de boîte').not.toBeNull();
+    expect(journee!.y).toBeLessThan(hauteur);
+  });
+
   test("le périmètre du jeton : l'espace ne donne aucune session admin", async ({ page }) => {
     await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
     await page.goto(`/animateur/${jeton}`);

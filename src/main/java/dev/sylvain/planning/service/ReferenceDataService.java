@@ -281,6 +281,21 @@ public class ReferenceDataService implements ReferenceData {
         return animateurs.regenerateToken(id);
     }
 
+    /** See {@link AnimateurRepository#resolveAbonnementToken}. */
+    public TokenOwner resolveAbonnementToken(String token) {
+        return animateurs.resolveAbonnementToken(token);
+    }
+
+    /** See {@link AnimateurRepository#abonnementToken}. */
+    public String abonnementToken(String id) {
+        return animateurs.abonnementToken(id);
+    }
+
+    /** See {@link AnimateurService#regenerateAbonnementToken}. */
+    public String regenerateAbonnementToken(String id) {
+        return animateurs.regenerateAbonnementToken(id);
+    }
+
     /**
      * Replaces the whole persisted reference dataset with the one carried by a
      * (sample or solved) planning, so it becomes editable through the CRUD

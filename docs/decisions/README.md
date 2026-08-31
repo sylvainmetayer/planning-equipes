@@ -42,6 +42,7 @@ scénario versionné de `src/main/resources/scenarios/`.
 | [0016](0016-purge-manuelle-avant-automatisation.md) | Purger à la main d'abord, automatiser quand la charge le justifie | Accepté |
 | [0017](0017-fragilite-le-ninja-est-un-renfort-pas-un-specialiste.md) | Fragilité : le ninja est un renfort, jamais un spécialiste | Accepté · prolonge 0005 |
 | [0018](0018-ecrire-l-url-de-vue-sans-naviguer.md) | Écrire l'URL de vue sans naviguer | Accepté · précise 0012 |
+| [0019](0019-jeton-et-chemin-dedies-pour-l-abonnement-ics.md) | Un jeton et un chemin dédiés pour l'abonnement au calendrier | Accepté |
 
 **0002** et **0013** se lisent ensemble : la première pose le blocage du
 diagnostic par l'édition du solveur et retient deux modes de qualité inégale,

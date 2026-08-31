@@ -122,13 +122,16 @@ class IsolationEditionStructurelleTest {
             "creneau_remap");
 
     /**
-     * The four deliberately cross-edition statements, and why.
+     * The five deliberately cross-edition statements, and why.
      *
      * <ul>
      *   <li>The espace animateur token arrives on a public URL, with no
      *       {@code X-Edition-Id} to believe: it is globally unique precisely so
      *       it can name the edition on its own, the caller carrying on inside
      *       {@code EditionContext.executeIn}.</li>
+     *   <li>The ICS subscription token, for the very same reason: it reaches
+     *       the server on a calendar client's bare {@code GET}, which carries
+     *       no header anybody may trust.</li>
      *   <li>The e-mail address collision is checked when the "trusted header"
      *       mode boots, which has no edition to consider and wants to know
      *       whether the collision exists anywhere at all.</li>
@@ -145,6 +148,7 @@ class IsolationEditionStructurelleTest {
      */
     private static final List<String> EXCEPTIONS_ASSUMEES = List.of(
             "SELECT edition_id, id, email FROM animateur WHERE access_token = ?",
+            "SELECT edition_id, id FROM animateur WHERE abonnement_token = ?",
             "SELECT 1 FROM animateur WHERE lower(email) = lower(?) LIMIT 1",
             "SELECT s.id, s.libelle, s.automatique, s.score, s.nombre_affectations, s.cree_le, s.edition_id,"
                     + " s.publie_le, e.nom AS edition_nom , s.kpi FROM plan_snapshot s"

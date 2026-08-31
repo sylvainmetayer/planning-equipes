@@ -28,45 +28,132 @@
       <span i18n="@@espace.planning.confirmeLe">Présence confirmée le {{ confirme | date: 'short' }}</span>
     </p>
   }
-  @if (lienPdf(); as pdf) {
-    <div class="espace-telechargements">
-      <a matButton [href]="pdf" download>
-        <mat-icon>picture_as_pdf</mat-icon>
-        <span i18n="@@espace.planning.telechargerPdf">Télécharger en PDF</span>
-      </a>
-      <a matButton [href]="lienIcs()" download>
-        <mat-icon>event</mat-icon>
-        <span i18n="@@espace.planning.telechargerIcs">Ajouter à mon agenda (ICS)</span>
-      </a>
+}
+
+<!--
+  Au-dessus des cartes de journée, et non plus tout en bas de page : sur le
+  téléphone d'un animateur qui a trois jours de vacations, le pied de page ne se
+  lit jamais, et l'abonnement — la seule des trois sorties qui suive les
+  republications — n'était donc jamais découvert.
+  La bande reste courte à dessein (un titre, les actions, un dépliant) pour que
+  la première journée du planning, ce que la personne vient lire, reste visible
+  sans défiler. L'adresse elle-même, sa copie et son remplacement sont derrière
+  le dépliant : ils se règlent une fois et ne se relisent plus.
+  La hiérarchie est celle de Material, pas une couleur inventée : rempli pour
+  l'abonnement, contour pour le PDF, texte pour l'ICS ponctuel — le fichier est
+  une photo qui périme à la republication, quand l'abonnement, lui, suit.
+-->
+@if (urlAbonnement() || telechargementsOfferts()) {
+  <section class="espace-agenda" aria-labelledby="espace-agenda-titre">
+    <h2 id="espace-agenda-titre" class="espace-agenda-titre" i18n="@@espace.planning.agendaTitre">
+      Emporter mon planning
+    </h2>
+    <div class="espace-agenda-actions">
+      @if (lienWebcal(); as webcal) {
+        <a class="espace-agenda-abonnement" matButton="filled" [href]="webcal">
+          <mat-icon>event_repeat</mat-icon>
+          <span i18n="@@espace.planning.abonnementSouscrire">S'abonner dans mon agenda</span>
+        </a>
+      }
+      @if (telechargementsOfferts()) {
+        <a matButton="outlined" [href]="lienPdf()" download>
+          <mat-icon>picture_as_pdf</mat-icon>
+          <span i18n="@@espace.planning.telechargerPdf">Télécharger en PDF</span>
+        </a>
+        <a matButton [href]="lienIcs()" download>
+          <mat-icon>event</mat-icon>
+          <span i18n="@@espace.planning.telechargerIcs">Télécharger le fichier ICS</span>
+        </a>
+      }
     </div>
-  }
-  @for (jour of jours(); track jour.date) {
-    <mat-card class="espace-jour" appearance="outlined">
-      <mat-card-header>
-        <mat-card-title>{{ jour.date ? (jour.date | date: 'EEEE d MMMM') : '—' }}</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        @if (jour.repos) {
-          <p class="espace-repos">
-            <mat-icon inline>self_improvement</mat-icon>
-            <span i18n="@@espace.planning.repos">Repos — aucune affectation ce jour.</span>
-          </p>
+    <p class="espace-agenda-aide" i18n="@@espace.planning.agendaAide">
+      L'abonnement se met à jour tout seul à chaque nouvelle publication. Le PDF et le fichier ICS,
+      eux, sont une photo prise aujourd'hui : ils ne changeront plus.
+    </p>
+    @if (urlAbonnement(); as url) {
+      <button matButton type="button"
+              [attr.aria-expanded]="abonnementDeplie()" aria-controls="espace-abonnement-details"
+              (click)="basculerDetailsAbonnement()">
+        <mat-icon>{{ abonnementDeplie() ? 'expand_less' : 'expand_more' }}</mat-icon>
+        <span i18n="@@espace.planning.abonnementDetails">Copier l'adresse, ou la remplacer</span>
+      </button>
+      <!-- Le conteneur reste dans le DOM une fois replié : c'est lui que
+           désigne l'`aria-controls` du bouton ci-dessus. -->
+      <div id="espace-abonnement-details" class="espace-abonnement-details">
+        @if (abonnementDeplie()) {
+          <div class="espace-abonnement">
+            <p class="espace-abonnement-aide" i18n="@@espace.planning.abonnementAide">
+              Voici l'adresse que votre agenda interroge. Certaines applications — Google Agenda en
+              premier — demandent de la coller plutôt que de cliquer sur le bouton. Elle est
+              personnelle : qui l'obtient voit votre planning.
+            </p>
+            <code class="espace-abonnement-url">{{ url }}</code>
+            <button matButton="outlined" type="button" (click)="copierAbonnement()">
+              <mat-icon>content_copy</mat-icon>
+              <span i18n="@@espace.planning.abonnementCopier">Copier l'adresse</span>
+            </button>
+            @if (abonnementCopie()) {
+              <p class="espace-abonnement-copie" i18n="@@espace.planning.abonnementCopie">
+                Adresse copiée : collez-la dans « S'abonner à un agenda » de votre application.
+              </p>
+            }
+            @if (rotationADemander()) {
+              <div class="espace-abonnement-revocation">
+                <p i18n="@@espace.planning.abonnementRevoquerAide">
+                  Une nouvelle adresse sera créée et l'ancienne cessera immédiatement de fonctionner.
+                  Les agendas déjà abonnés devront être réabonnés avec la nouvelle adresse.
+                </p>
+                <button matButton="filled" type="button" [disabled]="rotationEnCours()"
+                        (click)="regenererAbonnement()">
+                  <span i18n="@@espace.planning.abonnementRevoquerConfirmer">Créer une nouvelle adresse</span>
+                </button>
+                <button matButton type="button" [disabled]="rotationEnCours()"
+                        (click)="rotationADemander.set(false)">
+                  <span i18n="@@espace.planning.abonnementRevoquerAnnuler">Annuler</span>
+                </button>
+              </div>
+            } @else {
+              <button matButton type="button" (click)="rotationADemander.set(true)">
+                <mat-icon>link_off</mat-icon>
+                <span i18n="@@espace.planning.abonnementRevoquer">Cette adresse a fuité, la remplacer</span>
+              </button>
+            }
+            @if (erreurAbonnement(); as erreur) {
+              <p class="espace-abonnement-erreur">{{ erreur }}</p>
+            }
+          </div>
         }
-        <ul class="espace-postes">
-          @for (poste of jour.postes; track poste.standId + '-' + poste.creneauId + '-' + poste.heureDebut) {
-            <li class="espace-poste">
-              <span class="espace-poste-horaire">{{ poste.heureDebut }}–{{ poste.heureFin }}</span>
-              <span class="espace-poste-stand">{{ poste.standNom }}</span>
-              @if (poste.coequipiers.length > 0) {
-                <span class="espace-poste-equipe">
-                  <mat-icon inline>group</mat-icon>
-                  {{ poste.coequipiers.join(', ') }}
-                </span>
-              }
-            </li>
-          }
-        </ul>
-      </mat-card-content>
-    </mat-card>
-  }
+      </div>
+    }
+  </section>
+}
+
+@for (jour of jours(); track jour.date) {
+  <mat-card class="espace-jour" appearance="outlined">
+    <mat-card-header>
+      <mat-card-title>{{ jour.date ? (jour.date | date: 'EEEE d MMMM') : '—' }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      @if (jour.repos) {
+        <p class="espace-repos">
+          <mat-icon inline>self_improvement</mat-icon>
+          <span i18n="@@espace.planning.repos">Repos — aucune affectation ce jour.</span>
+        </p>
+      }
+      <ul class="espace-postes">
+        @for (poste of jour.postes; track poste.standId + '-' + poste.creneauId + '-' + poste.heureDebut) {
+          <li class="espace-poste">
+            <span class="espace-poste-horaire">{{ poste.heureDebut }}–{{ poste.heureFin }}</span>
+            <span class="espace-poste-stand">{{ poste.standNom }}</span>
+            @if (poste.coequipiers.length > 0) {
+              <span class="espace-poste-equipe">
+                <mat-icon inline>group</mat-icon>
+                {{ poste.coequipiers.join(', ') }}
+              </span>
+            }
+          </li>
+        }
+      </ul>
+    </mat-card-content>
+  </mat-card>
 }

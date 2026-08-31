@@ -209,3 +209,11 @@ montre à l'animateur les heures qu'il couvre réellement, pas la plage fermée.
 
 Quand le stand a un emplacement géocodé, le PDF porte un lien OpenStreetMap et
 l'ICS les champs `LOCATION` et `GEO`.
+
+Le même document ICS se sert de deux façons, et la différence est de mode, pas
+de format : en **téléchargement** (une photo à l'instant du clic) ou en
+**abonnement**, sur une adresse permanente que l'agenda rappelle tout seul —
+`GET /api/abonnements/{token}/planning.ics`, voir [`api.md`](api.md). Les
+`UID` des événements sont stables d'un appel à l'autre, ce qui est la condition
+pour qu'un client d'agenda mette à jour ses rendez-vous au lieu d'en créer des
+doublons à chaque synchronisation.

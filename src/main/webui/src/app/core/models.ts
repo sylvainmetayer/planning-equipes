@@ -1296,6 +1296,13 @@ export interface EspaceAnimateurView {
   statutConfirmation: StatutConfirmation;
   /** When « j'ai lu et je serai là » was clicked, `null` while it has not been. */
   confirmeLe: string | null;
+  /**
+   * Credential of the permanent calendar feed
+   * (`/api/abonnements/<token>/planning.ics`, issue #324) — a second token,
+   * distinct from the espace one in the URL: it opens that one document and
+   * nothing else, and the espace rotates it on its own.
+   */
+  abonnementToken: string;
 }
 
 /**

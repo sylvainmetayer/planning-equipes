@@ -71,6 +71,109 @@ export class EspacePlanningPage {
     this.espace.jeton() ? `/api/espace-animateur/${this.espace.jeton()}/planning.ics` : null
   );
 
+  /* ---------- Permanent calendar subscription (issue #324) ---------- */
+
+  /**
+   * The subscription address, as an absolute URL. Absolute on purpose: it is
+   * meant to be pasted into a calendar application, which has no page to
+   * resolve a relative path against.
+   *
+   * A different token from the one in the address bar, and a path of its own:
+   * this one opens the calendar and nothing else, which is what makes it
+   * tolerable to hand out to a third-party application.
+   */
+  protected readonly urlAbonnement = computed(() => {
+    const token = this.espace.vue()?.abonnementToken;
+    return token ? `${window.location.origin}/api/abonnements/${token}/planning.ics` : null;
+  });
+
+  /**
+   * The same address in the scheme calendar clients register for: clicking it
+   * offers to subscribe instead of downloading a file once. The copy button
+   * next to it exists because several clients (Google Calendar above all) ask
+   * for the address to be pasted rather than clicked.
+   */
+  protected readonly lienWebcal = computed(() => {
+    const url = this.urlAbonnement();
+    return url ? url.replace(/^https?:/, 'webcal:') : null;
+  });
+
+  protected readonly abonnementCopie = signal(false);
+  /**
+   * The subscription address, its copy button and its replacement are folded
+   * away by default. They are set once and never read again, and the band they
+   * live in now sits above the planning: unfolded, they would push the first
+   * day below the fold on a phone — the very defect moving the block up was
+   * meant to fix.
+   */
+  protected readonly abonnementDeplie = signal(false);
+  protected readonly rotationEnCours = signal(false);
+  /** True once the confirm step is showing: rotating breaks the subscriptions already registered. */
+  protected readonly rotationADemander = signal(false);
+  /** Message of a failed rotation or copy, `null` while everything is fine. */
+  protected readonly erreurAbonnement = signal<string | null>(null);
+
+  /**
+   * Folding the panel back also drops a pending « replace this address »
+   * confirmation: reopening the panel must not land straight on a destructive
+   * button the animateur no longer remembers asking for.
+   */
+  protected basculerDetailsAbonnement(): void {
+    const deplie = !this.abonnementDeplie();
+    this.abonnementDeplie.set(deplie);
+    if (!deplie) {
+      this.rotationADemander.set(false);
+    }
+  }
+
+  protected async copierAbonnement(): Promise<void> {
+    const url = this.urlAbonnement();
+    if (!url) {
+      return;
+    }
+    // Both outcomes of the previous attempt go, not just the error: a copy
+    // that fails after one that worked would otherwise leave « Adresse
+    // copiée » on screen next to « Copie impossible », and the fallback the
+    // error asks for — select the address by hand — is exactly what the
+    // stale success tells the animateur not to bother with.
+    this.erreurAbonnement.set(null);
+    this.abonnementCopie.set(false);
+    try {
+      await navigator.clipboard.writeText(url);
+      this.abonnementCopie.set(true);
+    } catch {
+      // No clipboard (insecure context, refusal): say so rather than
+      // pretending it worked — the address is displayed right above.
+      this.erreurAbonnement.set(
+        $localize`:@@espace.planning.abonnementCopieEchec:Copie impossible : sélectionnez l'adresse ci-dessus.`
+      );
+    }
+  }
+
+  protected async regenererAbonnement(): Promise<void> {
+    this.rotationEnCours.set(true);
+    this.erreurAbonnement.set(null);
+    try {
+      await this.espace.regenererAbonnement();
+      this.rotationADemander.set(false);
+      this.abonnementCopie.set(false);
+    } catch (error) {
+      this.erreurAbonnement.set(errorMessage(error));
+    } finally {
+      this.rotationEnCours.set(false);
+    }
+  }
+
+  /**
+   * PDF and one-shot ICS only mean something once there is a planning to take a
+   * photograph of. The subscription, on the contrary, is offered right away:
+   * subscribing ahead of the publication is the good gesture — the feed fills
+   * itself.
+   */
+  protected readonly telechargementsOfferts = computed(
+    () => this.jours().length > 0 && !!this.lienPdf()
+  );
+
   protected readonly jours = computed<JourPlanning[]>(() => {
     const parJour = new Map<string, PosteAnimateurView[]>();
     for (const poste of this.espace.vue()?.postes ?? []) {

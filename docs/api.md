@@ -30,8 +30,9 @@ Le verrou « un solveur à la fois » reste, lui, **global à l'instance**.
 
 ## Authentification
 
-Toute l'API est réservée à la session admin, avec quatre exceptions
-volontaires : l'espace animateur (le jeton d'URL est la clé), les routes de
+Toute l'API est réservée à la session admin, avec cinq exceptions
+volontaires : l'espace animateur (le jeton d'URL est la clé), l'abonnement ICS
+(`/api/abonnements/*`, voir plus bas), les routes de
 session, `/api/config` et `/api/branding` — lus par le frontend avant son
 démarrage, page de connexion comprise — et `/api/mentions-legales`. Un appel
 non authentifié répond **401, jamais une redirection HTML**.
@@ -915,7 +916,8 @@ le compteur.
 
 La rotation du jeton (`POST /api/animateurs/{id}/token`) invalide aussitôt le
 lien déjà distribué : c'est le geste à faire quand un planning individuel a
-fuité.
+fuité. Elle ne touche **pas** au jeton d'abonnement ICS, qui est une clé
+distincte (voir la section suivante).
 
 **L'espace montre le plan publié**, pas le plan de travail : ce qu'un animateur
 voit est ce qu'on lui a envoyé. Un échange validé, une réparation appliquée ou
@@ -933,6 +935,58 @@ et un animateur à qui l'on annonce que c'est terminé deux semaines avant
 l'ouverture ne revient pas. Il est nul quand la foire est ouverte, et nul aussi
 quand la fenêtre est passée — il n'y a alors rien à attendre. Le planning reste
 visible et téléchargeable.
+
+## Abonnement ICS permanent
+
+`GET /api/abonnements/{token}/planning.ics` — le planning **publié** de
+l'animateur, reconstruit à chaque appel, en `text/calendar`. C'est l'adresse
+qu'on donne une fois à son agenda et qu'il rappelle tout seul : une
+republication apparaît à la synchronisation suivante, sans rien à refaire. Le
+téléchargement direct de l'espace (`.../planning.ics`) reste ce qu'il est — une
+photo à un instant — et l'abonnement s'ajoute à côté, il ne le remplace pas.
+
+**Un préfixe à part, et un jeton à part.** Les deux vont ensemble :
+
+| | Jeton d'espace (`access_token`) | Jeton d'abonnement (`abonnement_token`) |
+| --- | --- | --- |
+| Chemin | `/api/espace-animateur/{jeton}/…` | `/api/abonnements/{token}/planning.ics` |
+| Ce qu'il faut en plus | la session ouverte par code e-mail | **rien** |
+| Ce qu'il ouvre | tout l'espace : planning, PDF, échanges, disponibilités, et une écriture | **un document**, en lecture |
+| Rotation | `POST /api/animateurs/{id}/token` (admin) | `POST /api/espace-animateur/{jeton}/abonnement` (l'animateur, depuis son espace) |
+
+Un client d'agenda ne porte aucun cookie et ne sait pas répondre à un défi
+d'authentification : exiger la session ici rendrait l'abonnement impossible.
+Plutôt que d'élargir ce que le jeton d'espace permet — il deviendrait, sur une
+route au moins, une preuve d'accès complète et durable au planning nominatif
+sans second facteur —, l'abonnement a sa propre clé, révocable séparément. Voir
+[décision 0019](decisions/0019-jeton-et-chemin-dedies-pour-l-abonnement-ics.md)
+et [`securite.md`](securite.md).
+
+Le préfixe `/api/abonnements/` n'existe que pour cette route, et c'est
+délibéré : c'est le motif d'URL qu'un proxy d'accès (Pangolin et consorts)
+excepte de son authentification, et il ne doit désigner que ça.
+
+Deux comportements à connaître :
+
+- **jeton inconnu ou révoqué → `404`**, dont le corps est une phrase fixe
+  (« Abonnement inconnu ou révoqué ») : un client d'agenda affiche ce qu'on lui
+  donne, et cette phrase est la même dans les deux cas, donc elle n'aide ni à
+  deviner un jeton, ni à savoir si celui-ci a existé ;
+- **rien de publié → `200` et un calendrier vide**, jamais `404`. Un client
+  d'abonnement qui rencontre un `404` répété désactive le flux ou alerte son
+  propriétaire ; l'animateur qui s'était abonné avant la première publication
+  devrait alors se réabonner sans que rien ne le lui dise. « Rien de prévu pour
+  vous, pour l'instant » est une réponse valable.
+
+La réponse porte `Cache-Control: private, no-cache` : le document est nominatif
+et ne doit ni transiter par un cache partagé, ni être rejoué après une nouvelle
+publication.
+
+`POST /api/espace-animateur/{jeton}/abonnement` (session requise) révoque
+l'adresse en cours et en crée une neuve — `{"abonnementToken": "…"}`. Le jeton
+d'espace, lui, ne bouge pas : le lien déjà imprimé sur un PDF continue de
+fonctionner. La vue de l'espace porte le jeton courant dans
+`abonnementToken`.
 
 ## Échanges
 
