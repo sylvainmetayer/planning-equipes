@@ -9,7 +9,15 @@
    Ce que cette variable couvre : tout ce que les feuilles de style de
    l'application peignent elle-même (titres de section, bordures actives,
    pastilles de calendrier, liens d'aide…). Par défaut elle vaut l'accent
-   Material, donc une instance qui ne configure rien reste cohérente. */
+   Material, donc une instance qui ne configure rien reste cohérente — et
+   comme tous les `--mat-sys-*`, cet accent par défaut est déjà une paire
+   `light-dark()`.
+
+   Quand un déploiement renseigne BRANDING_ACCENT_COLOR, `core/branding.ts`
+   écrase cette variable par une paire `light-dark()` calculée : la couleur
+   configurée telle quelle en clair, une jumelle éclaircie en OKLCH en sombre.
+   Sans ça, une encre de marque choisie sur fond blanc — donc foncée — servait
+   de couleur de texte sur la surface sombre et tombait sous 2,5:1. */
 :root {
   --app-accent: var(--mat-sys-primary);
 }

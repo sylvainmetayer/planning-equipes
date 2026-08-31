@@ -10,9 +10,17 @@ import { getStoredLocale } from './app/core/locale';
 import { APP_CONFIG } from './app/core/app-config';
 import { BRANDING, appliquerBranding, loadBranding } from './app/core/branding';
 import { initObservability, loadAppConfig } from './app/core/observability';
+import { defaultNavStorage } from './app/core/nav-collapse';
+import { applyThemePreference, readThemePreference } from './app/core/theme-preference';
 
 registerLocaleData(localeFr, 'fr');
 registerLocaleData(localeEn, 'en');
+
+// Synchronously, before anything is awaited: the stylesheet has already been
+// applied when this module runs, so a theme restored one round trip later
+// would paint a frame of the wrong one. Reading localStorage costs nothing and
+// needs no server (issue #317).
+applyThemePreference(readThemePreference(defaultNavStorage()), document.documentElement);
 
 async function bootstrap(): Promise<void> {
   // Falls back to the source language rather than to a blank page: the stored

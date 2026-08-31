@@ -82,6 +82,27 @@
   flex: 1 1 auto;
 }
 
+/* The theme button always shows the scheme actually painted, so "dark because
+   the user asked" and "dark because the machine says so" would draw the same
+   moon. This dot is what tells them apart. It is a real element rather than a
+   pseudo — Material owns the button's own pseudo-elements — and it takes
+   `currentColor`, which keeps it legible on the brand toolbar, itself left out
+   of the theme switch. */
+.theme-toggle {
+  position: relative;
+}
+
+.theme-auto-dot {
+  position: absolute;
+  right: 0.35rem;
+  bottom: 0.35rem;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: var(--mat-sys-corner-full);
+  background: currentColor;
+  pointer-events: none;
+}
+
 .app-shell {
   flex: 1 1 auto;
   background: var(--mat-sys-surface);

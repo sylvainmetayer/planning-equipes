@@ -141,6 +141,45 @@ d'un autre.
 > recolorer les composants Material demande une **recompilation**, pas une
 > variable d'environnement.
 
+**Thème clair ou sombre** : `mat.theme()` compile les **deux** palettes d'un
+coup — chaque couleur `--mat-sys-*` est une paire `light-dark(clair, sombre)` —
+et c'est la propriété CSS `color-scheme` de l'élément racine qui décide laquelle
+est peinte. Il n'y a donc pas de second thème, pas de feuille de style
+parallèle, et rien à recompiler : l'application écrit `light dark` (« suis la
+machine », le défaut), `light` ou `dark` sur `<html>`, et la préférence est
+retenue dans `localStorage` comme les autres préférences de chrome.
+
+Deux couleurs échappent à `mat.theme()` et portent donc leurs propres paires
+`light-dark()` :
+
+- la palette catégorielle des typologies, `styles/typologie-colors.css` — huit
+  teintes qu'aucun `--mat-sys-*` ne fournit ;
+- `--app-accent`, quand `BRANDING_ACCENT_COLOR` la renseigne. Elle vaut sinon
+  `--mat-sys-primary`, déjà une paire ; renseignée, c'est une couleur unique
+  choisie sur fond blanc, et elle sert de couleur de texte sur
+  `--mat-sys-surface` dans une douzaine de partials. `core/branding.ts` la pose
+  donc en paire : la couleur configurée telle quelle en clair, une jumelle
+  éclaircie en OKLCH (plancher de clarté, plafond de chroma) en sombre, qui
+  garde la teinte de la marque. Un navigateur qui ne sait pas parser la paire
+  garde la couleur brute.
+
+Trois surfaces restent volontairement en dehors :
+
+- la **barre d'outils de marque** (administration et espace animateur) garde sa
+  couleur d'enseigne dans les deux thèmes : une identité qui change de couleur
+  selon l'heure n'est plus une identité ;
+- la **carte des emplacements** affiche des tuiles OpenStreetMap, c'est-à-dire
+  du contenu et non du chrome ; les assombrir demanderait un autre fournisseur
+  de tuiles, pas une variable ;
+- les **PDF** sont composés côté serveur, pour être imprimés : ils suivent la
+  marque, jamais le thème du navigateur.
+
+Le bouton de bascule, lui, ne vit que dans la barre d'administration. La page
+de connexion et l'espace animateur, qui s'affichent hors de ce cadre, suivent
+la préférence enregistrée par ce navigateur, et à défaut celle du système : sur
+un téléphone, c'est déjà le bon réglage, et un contrôle de plus sur un écran
+qui en compte quatre coûterait plus qu'il ne rendrait.
+
 ### Le poll n'est pas un vestige — ne le supprimez pas
 
 L'état « un solveur tourne » n'est **jamais** stocké dans le navigateur : il est

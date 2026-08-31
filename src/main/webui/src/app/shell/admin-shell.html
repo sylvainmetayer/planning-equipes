@@ -10,6 +10,13 @@
   <app-date-mock-indicator />
   <app-solver-running-indicator />
   <app-data-stale-indicator />
+  <button matIconButton class="theme-toggle" (click)="toggleTheme()" [attr.aria-label]="themeLabel()"
+          [attr.data-theme-preference]="theme.preference()">
+    <mat-icon>{{ themeIcon() }}</mat-icon>
+    @if (theme.preference() === 'system') {
+      <span class="theme-auto-dot" aria-hidden="true"></span>
+    }
+  </button>
   <button matButton (click)="toggleLocale()" i18n-aria-label="@@shell.switchLanguage" aria-label="Changer de langue">
     {{ locale === 'fr' ? 'EN' : 'FR' }}
   </button>

@@ -2,46 +2,57 @@
    a stand after its typologie (animateur timeline, load heatmap). Eight hues
    picked far enough apart to stay distinguishable side by side, each paired with
    a text colour dark enough to read on it. The bucket a typologie lands in is
-   computed in `core/typologie-colors.ts`. */
+   computed in `core/typologie-colors.ts`.
+
+   Categorical colours cannot come from `--mat-sys-*`: the Material palette is
+   one hue plus its neutrals, and a category axis needs eight that no one reads
+   as "more" or "less" than the next. So this is the one place declaring
+   colours of its own — and therefore the one place a dark scheme does not get
+   for free, which is why every pair here goes through `light-dark()` (issue
+   #317). The dark half keeps the hue of its light twin and swaps the
+   lightnesses: a deep, low-saturation ground under a pale text, every pair
+   above 7.9:1 and every ground clearly off the dark surface. Same mechanism as
+   the whole Material theme, whose `--mat-sys-*` colours are `light-dark()`
+   pairs too, so all of it follows the same `color-scheme`. */
 
 .typologie-color-0 {
-  background: #d7e3fc;
-  color: #16305c;
+  background: light-dark(#d7e3fc, #1c2d4a);
+  color: light-dark(#16305c, #c4d3ee);
 }
 
 .typologie-color-1 {
-  background: #d9efd8;
-  color: #1d4620;
+  background: light-dark(#d9efd8, #1e4821);
+  color: light-dark(#1d4620, #c9e9cb);
 }
 
 .typologie-color-2 {
-  background: #fde3cf;
-  color: #6a3410;
+  background: light-dark(#fde3cf, #4a2e1c);
+  color: light-dark(#6a3410, #eed5c4);
 }
 
 .typologie-color-3 {
-  background: #ecdcf5;
-  color: #472159;
+  background: light-dark(#ecdcf5, #3b1c4a);
+  color: light-dark(#472159, #dfc7ea);
 }
 
 .typologie-color-4 {
-  background: #fbdce4;
-  color: #6b1f36;
+  background: light-dark(#fbdce4, #4a1c2a);
+  color: light-dark(#6b1f36, #eec4d0);
 }
 
 .typologie-color-5 {
-  background: #d2ecef;
-  color: #12454c;
+  background: light-dark(#d2ecef, #1c444a);
+  color: light-dark(#12454c, #c4e9ee);
 }
 
 .typologie-color-6 {
-  background: #f6e7bf;
-  color: #5a4410;
+  background: light-dark(#f6e7bf, #4a3c1c);
+  color: light-dark(#5a4410, #eee1c4);
 }
 
 .typologie-color-7 {
-  background: #e0e2e6;
-  color: #33373d;
+  background: light-dark(#e0e2e6, #2e3238);
+  color: light-dark(#33373d, #cdd6e4);
 }
 
 .typologie-color-none {

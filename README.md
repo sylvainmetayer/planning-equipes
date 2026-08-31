@@ -103,7 +103,7 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 | `BRANDING_PRODUCT_NAME` | `Planning Équipes` | Nom du produit : onglet du navigateur, titre de chaque page, sujets des mails, en-tête du dump SQL, `PRODID` des exports ICS, en-tête des PDF |
 | `BRANDING_ORGANISATION` | *(vide)* | Client pour lequel cette instance est déployée, imprimé au pied des PDF ; vide = seule la date de génération y figure |
 | `BRANDING_LOGO_URL` | *(vide = aucun logo)* | URL du logo affiché dans les barres d'outils et sur la carte de connexion (`logo.png` pour un fichier servi à la racine, ou une URL absolue) |
-| `BRANDING_ACCENT_COLOR` | *(vide = accent Material compilé)* | Couleur d'accent de l'IHM, toute couleur CSS ; alimente `--app-accent` |
+| `BRANDING_ACCENT_COLOR` | *(vide = accent Material compilé)* | Couleur d'accent de l'IHM, toute couleur CSS ; alimente `--app-accent`. À choisir sur le thème clair : le thème sombre en dérive une jumelle éclaircie |
 | `BRANDING_MASCOT_URL` | *(vide = pas d'easter egg)* | Mascotte du déploiement en grand, montrée par le code Konami ; même syntaxe que `BRANDING_LOGO_URL` |
 | `BRANDING_MASCOT_ICON_URL` | *(vide = icône Material)* | La même mascotte découpée en petit : elle tourne dans la barre pendant une résolution et saute sur l'invite de défilement |
 | `BRANDING_PDF_LOGO` | *(vide = aucun logo)* | Logo de l'en-tête des PDF : `classpath:/branding/xxx.png` pour une image embarquée, sinon un chemin de fichier monté |
@@ -282,6 +282,7 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 | Conditions d'utilisation | La ligne de partage, écrite noir sur blanc : l'application calcule des propositions, l'organisation décide. Elle reste l'employeur, le responsable des données et du respect de la réglementation ; le logiciel est fourni en l'état |
 | Aide intégrée | Le mode d'emploi complet, cherchable, consultable pendant qu'une résolution tourne ou sur une édition vide |
 | Palette de commandes | Ctrl+K ouvre une zone de saisie unique qui mène à n'importe quel écran et retrouve un animateur, un stand ou un créneau ; « g » suivi d'une lettre va droit à un écran, « / » saisit le filtre de la page et « ? » liste les raccourcis |
+| Thème clair ou sombre | Un bouton de la barre d'outils fait tourner l'affichage entre « automatique », « clair » et « sombre ». « Automatique » suit le réglage du système d'exploitation et le suit en direct ; un choix explicite est retenu par le navigateur et survit au rechargement comme au changement d'humeur de la machine |
 | Accès | Connexion administrateur par mot de passe, ou attestation par en-tête derrière un proxy d'accès ; les espaces animateurs restent joignables par leur lien |
 
 Formats d'échange détaillés dans

@@ -64,6 +64,39 @@ export async function loadBranding(): Promise<Branding> {
 }
 
 /**
+ * Lightness floor and chroma ceiling of the dark half of the accent, in OKLCH.
+ * 0.78 is the lowest lightness that keeps every hue above 8:1 on the dark
+ * surface (`--mat-sys-surface` is `#121316` there); the chroma cap stops a
+ * saturated brand from glaring once it has been lightened that far.
+ */
+const ACCENT_DARK_LIGHTNESS = 0.78;
+const ACCENT_DARK_CHROMA = 0.14;
+
+/**
+ * The accent as a `light-dark()` pair: the configured colour untouched on the
+ * light scheme, a lightened twin of it on the dark one.
+ *
+ * <p>`--app-accent` is a *text* colour on `--mat-sys-surface` in a dozen
+ * partials (help titles, detail labels, the active drawer link). An operator
+ * picks `BRANDING_ACCENT_COLOR` by looking at the light surface, so a deep
+ * brand ink — `#8b1e3f` reads 8.5:1 on `#faf9fd` — collapses to 2.1:1 once the
+ * dark scheme paints `#121316` under it. Raising the lightness in OKLCH keeps
+ * the hue, and therefore the identity, while restoring the contrast.</p>
+ *
+ * <p>The pair is only kept if the browser can parse it: relative colour syntax
+ * shipped in Firefox 128 while `light-dark()` shipped in 120, so a handful of
+ * versions would read the whole value as invalid. They keep the flat colour,
+ * which is exactly what they showed before the theme switch existed. A
+ * malformed `BRANDING_ACCENT_COLOR` falls back the same way.</p>
+ */
+export function accentForBothSchemes(accent: string): string {
+  const dark = `oklch(from ${accent} max(l, ${ACCENT_DARK_LIGHTNESS}) min(c, ${ACCENT_DARK_CHROMA}) h)`;
+  const pair = `light-dark(${accent}, ${dark})`;
+  const supports = typeof CSS !== 'undefined' && typeof CSS.supports === 'function';
+  return supports && CSS.supports('color', pair) ? pair : accent;
+}
+
+/**
  * Applies what has to be applied outside Angular: the document title — so the
  * tab is right before the first route resolves — and the accent colour, set as
  * a custom property on the root element.
@@ -77,7 +110,7 @@ export async function loadBranding(): Promise<Branding> {
 export function appliquerBranding(branding: Branding): void {
   document.title = branding.productName;
   if (branding.accentColor) {
-    document.documentElement.style.setProperty('--app-accent', branding.accentColor);
+    document.documentElement.style.setProperty('--app-accent', accentForBothSchemes(branding.accentColor));
   }
 }
 

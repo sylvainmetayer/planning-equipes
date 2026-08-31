@@ -263,6 +263,23 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `--mat-sys-*` tokens in custom CSS instead of hard-coded colours. The app has
   no `@angular/animations` dependency: Material components animate through CSS,
   so don't add `provideAnimations*()` back.
+- **Light and dark come from the same `mat.theme()` call** (issue #317): with no
+  explicit `theme-type` the mixin emits every `--mat-sys-*` colour as a
+  `light-dark(light, dark)` pair, and the CSS `color-scheme` of `<html>` picks
+  the half. `core/theme-preference.ts` writes it (`light dark` = follow the
+  machine, the default; `light`; `dark`), `core/theme.service.ts` exposes it as
+  signals to the toolbar's three-state button, and `main.ts` applies it
+  synchronously before bootstrap so no frame paints the wrong scheme. There is
+  **no second theme block and no parallel stylesheet** — which is exactly why a
+  hard-coded colour in `src/styles/` is now a dark-mode bug, not a nit. Two
+  colours are not `mat.theme()`'s to switch and carry their own `light-dark()`
+  pairs: `styles/typologie-colors.css` (a categorical palette has no
+  `--mat-sys-*` equivalent) and `--app-accent` once `BRANDING_ACCENT_COLOR`
+  fills it — `core/branding.ts` writes it as a pair, the configured colour on
+  light and an OKLCH-lightened twin on dark, because it is a *text* colour on
+  `--mat-sys-surface` in a dozen partials. Deliberately outside the switch: the
+  brand toolbar, the OpenStreetMap tiles of `/emplacements`, and the
+  server-side PDFs — see `docs/architecture.md`.
 - Shell: `app/app.ts` is a bare `<router-outlet/>`; the admin chrome
   (`mat-toolbar` + `mat-sidenav`, navigation grouped in Planning / Reference
   data / Views, the solver `app-job-monitor`, the logout button) lives in
@@ -398,7 +415,8 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
 - End-to-end tests are Playwright specs in `src/main/webui/e2e` (`npm run
   e2e`): the issue #165 security perimeter (auth wall, espace animateur
   boundary, full échange flow with refusal and cancellation), a smoke sweep of
-  every admin route plus the language toggle, reference-data CRUD through the
+  every admin route plus the language and colour-scheme toggles, reference-data
+  CRUD through the
   UI, the planning views over seeded data, locks, the help page, **real short
   solves** (ad hoc constraints respected and visible, a locked animateur
   unchanged by a re-solve, an accepted échange surviving regeneration),

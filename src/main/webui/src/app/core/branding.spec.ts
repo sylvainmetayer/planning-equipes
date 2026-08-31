@@ -1,5 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { BRANDING_NEUTRE, appliquerBranding, loadBranding, slugMarque } from './branding';
+import { BRANDING_NEUTRE, accentForBothSchemes, appliquerBranding, loadBranding, slugMarque } from './branding';
+
+/** Ce que `core/branding.ts` doit produire pour `#8b1e3f`, moitié claire intacte. */
+const PAIRE_8B1E3F = 'light-dark(#8b1e3f, oklch(from #8b1e3f max(l, 0.78) min(c, 0.14) h))';
 
 /**
  * La marque est lue avant le bootstrap : ce qui est vérifié ici, c'est qu'un
@@ -16,8 +19,15 @@ describe('branding', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
     document.documentElement.style.removeProperty('--app-accent');
   });
+
+  // jsdom n'expose aucun objet `CSS` : c'est le test qui décide ce que le
+  // navigateur sait parser, et donc quelle branche est empruntée.
+  function navigateurSachantDeriver(sait: boolean): void {
+    vi.stubGlobal('CSS', { supports: () => sait });
+  }
 
   describe('loadBranding', () => {
     function repond(body: unknown, ok = true): void {
@@ -71,7 +81,20 @@ describe('branding', () => {
       expect(document.title).toBe('Planning Bénévoles');
     });
 
-    it('pose la couleur d\'accent en custom property', () => {
+    // Le fond sombre est arrivé avec l'issue #317 : une encre de marque choisie
+    // sur fond blanc doit désormais être posée en paire, sinon elle sert de
+    // couleur de texte illisible sur la surface sombre.
+    it('pose la couleur d\'accent en paire claire/sombre', () => {
+      navigateurSachantDeriver(true);
+
+      appliquerBranding({ ...BRANDING_NEUTRE, accentColor: '#8b1e3f' });
+
+      expect(document.documentElement.style.getPropertyValue('--app-accent')).toBe(PAIRE_8B1E3F);
+    });
+
+    it('pose la couleur brute quand le navigateur ne sait pas la dériver', () => {
+      navigateurSachantDeriver(false);
+
       appliquerBranding({ ...BRANDING_NEUTRE, accentColor: '#8b1e3f' });
 
       expect(document.documentElement.style.getPropertyValue('--app-accent')).toBe('#8b1e3f');
@@ -83,6 +106,38 @@ describe('branding', () => {
       appliquerBranding(BRANDING_NEUTRE);
 
       expect(document.documentElement.style.getPropertyValue('--app-accent')).toBe('');
+    });
+  });
+
+  describe('accentForBothSchemes', () => {
+    // La moitié claire reste la couleur configurée au caractère près : le
+    // thème clair ne doit pas bouger d'un pixel, seule la moitié sombre naît.
+    it('garde la couleur configurée en clair et l\'éclaircit en sombre', () => {
+      navigateurSachantDeriver(true);
+
+      expect(accentForBothSchemes('#8b1e3f')).toBe(PAIRE_8B1E3F);
+    });
+
+    it('accepte n\'importe quelle notation de couleur CSS', () => {
+      navigateurSachantDeriver(true);
+
+      expect(accentForBothSchemes('rebeccapurple')).toBe(
+        'light-dark(rebeccapurple, oklch(from rebeccapurple max(l, 0.78) min(c, 0.14) h))'
+      );
+    });
+
+    // Firefox 120 à 127 connaît `light-dark()` mais pas la syntaxe relative :
+    // la paire y serait invalide et emporterait aussi la moitié claire.
+    it('retombe sur la couleur brute quand la paire n\'est pas parsable', () => {
+      navigateurSachantDeriver(false);
+
+      expect(accentForBothSchemes('#8b1e3f')).toBe('#8b1e3f');
+    });
+
+    it('retombe sur la couleur brute sans objet CSS du tout', () => {
+      vi.stubGlobal('CSS', undefined);
+
+      expect(accentForBothSchemes('#8b1e3f')).toBe('#8b1e3f');
     });
   });
 

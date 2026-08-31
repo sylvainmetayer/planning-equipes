@@ -37,6 +37,8 @@ import {
 import { KeyboardShortcutsService } from '../core/keyboard-shortcuts.service';
 import { NotificationService } from '../core/notification.service';
 import { PlanningResolutionStore } from '../core/planning-resolution.store';
+import { ThemeService } from '../core/theme.service';
+import { ThemePreference } from '../core/theme-preference';
 import { APP_CONFIG } from '../core/app-config';
 import { SolverJobService } from '../core/solver-job.service';
 import { BrandLogo } from '../shared/brand-logo';
@@ -283,6 +285,7 @@ export class AdminShell {
   protected readonly resolution = inject(PlanningResolutionStore);
   protected readonly editions = inject(EditionStore);
   protected readonly notifications = inject(NotificationService);
+  protected readonly theme = inject(ThemeService);
   protected readonly locale: AppLocale = getStoredLocale();
 
   private readonly router = inject(Router);
@@ -487,6 +490,60 @@ export class AdminShell {
   /** Language messages resolve once at bootstrap, so switching reloads the page. */
   protected toggleLocale(): void {
     setStoredLocaleAndReload(this.locale === 'fr' ? 'en' : 'fr');
+  }
+
+  /* ------------------------- Colour scheme (issue #317) ------------------------- */
+
+  /**
+   * The button shows what is *painted*, never what was chosen: a user staring
+   * at a dark screen expects a moon there, including under `system`. That is
+   * the whole reason `ThemeService` listens to the media query — at sunset the
+   * machine flips, `color-scheme: light dark` repaints natively, and this icon
+   * follows instead of freezing on the scheme of an hour ago.
+   *
+   * <p>What `system` adds is a marker, not another icon: `.theme-auto-dot` in
+   * `admin-shell.css` pins a dot on the corner, so "dark because I asked" and
+   * "dark because it is 9 pm" do not look identical. The accessible name
+   * spells the difference out.</p>
+   */
+  protected readonly themeIcon = computed(() => (this.theme.scheme() === 'dark' ? 'dark_mode' : 'light_mode'));
+
+  /**
+   * The accessible name carries the current state *and* what activating will
+   * do: the control cycles through three values, so "switch theme" alone would
+   * leave a screen-reader user unable to tell where they are.
+   */
+  protected readonly themeLabel = computed(() => this.themeLabelFor(this.theme.preference()));
+
+  private themeLabelFor(preference: ThemePreference): string {
+    switch (preference) {
+      case 'system':
+        return $localize`:@@shell.theme.system:Thème automatique, suit le système. Activer le thème clair.`;
+      case 'light':
+        return $localize`:@@shell.theme.light:Thème clair. Activer le thème sombre.`;
+      case 'dark':
+        return $localize`:@@shell.theme.dark:Thème sombre. Revenir au thème automatique.`;
+    }
+  }
+
+  /**
+   * Cycles system → light → dark. The new state is also announced: the
+   * button's own name changes, and a name that changes under the focus is not
+   * re-read by assistive technology.
+   */
+  protected toggleTheme(): void {
+    this.announcer.announce(this.themeAnnouncementFor(this.theme.cycle()), 'polite');
+  }
+
+  private themeAnnouncementFor(preference: ThemePreference): string {
+    switch (preference) {
+      case 'system':
+        return $localize`:@@shell.theme.announce.system:Thème automatique, suit le système.`;
+      case 'light':
+        return $localize`:@@shell.theme.announce.light:Thème clair.`;
+      case 'dark':
+        return $localize`:@@shell.theme.announce.dark:Thème sombre.`;
+    }
   }
 
   private readonly api = inject(ApiService);

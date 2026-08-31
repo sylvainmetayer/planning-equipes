@@ -26,6 +26,7 @@ import { SolverJobService } from '../core/solver-job.service';
 import { AdminShell } from './admin-shell';
 
 const NAV_STORAGE_KEY = 'planning-equipes.nav.collapsedGroups';
+const THEME_STORAGE_KEY = 'planning-equipes.theme';
 
 interface NavGroupShape {
   id: string;
@@ -48,6 +49,9 @@ type ShellInternals = {
   toggleGroup: (group: NavGroupShape) => void;
   toggleAllGroups: () => void;
   onNavigate: () => void;
+  themeIcon: Signal<string>;
+  themeLabel: Signal<string>;
+  toggleTheme: () => void;
   focusContenu: (event: Event) => void;
   logout: () => Promise<void>;
 };
@@ -95,6 +99,8 @@ describe('AdminShell', () => {
       }
     );
     localStorage.removeItem(NAV_STORAGE_KEY);
+    localStorage.removeItem(THEME_STORAGE_KEY);
+    document.documentElement.style.colorScheme = '';
     for (const stub of [
       breakpoints.observe,
       jobs.start,
@@ -145,6 +151,8 @@ describe('AdminShell', () => {
 
   afterEach(() => {
     localStorage.removeItem(NAV_STORAGE_KEY);
+    localStorage.removeItem(THEME_STORAGE_KEY);
+    document.documentElement.style.colorScheme = '';
   });
 
   function createShell(): ShellInternals {
@@ -595,6 +603,108 @@ describe('AdminShell', () => {
 
       const paths = shell.navGroups.flatMap((group) => group.links.map((link) => link.path));
       expect(new Set(paths).size).toBe(paths.length);
+    });
+  });
+
+  // The resolution logic lives in `theme-preference.ts` and `theme.service.ts`;
+  // what is pinned here is the toolbar button on top of them — a control with
+  // three states, whose whole accessibility rests on saying which one it is in.
+  describe('the colour-scheme button', () => {
+    /** The `auto` marker: the only thing separating "dark chosen" from "dark resolved". */
+    function marqueurAuto(): Element | null {
+      return fixture.nativeElement.querySelector('.theme-auto-dot');
+    }
+
+    /** A `matchMedia` this test drives, standing in for the machine's setting. */
+    function machine(prefereSombre: boolean) {
+      const listeners = new Set<(event: MediaQueryListEvent) => void>();
+      const media = {
+        matches: prefereSombre,
+        addEventListener: (_type: string, listener: (event: MediaQueryListEvent) => void) =>
+          listeners.add(listener),
+        removeEventListener: (_type: string, listener: (event: MediaQueryListEvent) => void) =>
+          listeners.delete(listener),
+        emit(matches: boolean) {
+          media.matches = matches;
+          for (const listener of listeners) {
+            listener({ matches } as MediaQueryListEvent);
+          }
+        }
+      };
+      vi.stubGlobal('matchMedia', () => media);
+      return media;
+    }
+
+    // The icon names the scheme actually painted, in all three states: jsdom
+    // asks for no dark, so `système` resolves to light and shows the same moon
+    // as an explicit light — the marker below is what separates them.
+    it('cycles système → clair → sombre and says so', () => {
+      const shell = createShell();
+
+      expect(shell.themeIcon()).toBe('light_mode');
+      expect(shell.themeLabel()).toContain('automatique');
+      expect(marqueurAuto()).not.toBeNull();
+
+      shell.toggleTheme();
+      TestBed.tick();
+      expect(shell.themeIcon()).toBe('light_mode');
+      expect(shell.themeLabel()).toContain('clair');
+      expect(marqueurAuto()).toBeNull();
+
+      shell.toggleTheme();
+      TestBed.tick();
+      expect(shell.themeIcon()).toBe('dark_mode');
+      expect(shell.themeLabel()).toContain('sombre');
+      expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe('dark');
+      expect(marqueurAuto()).toBeNull();
+
+      shell.toggleTheme();
+      TestBed.tick();
+      expect(shell.themeIcon()).toBe('light_mode');
+      expect(marqueurAuto()).not.toBeNull();
+    });
+
+    // Why `ThemeService` listens to the media query at all: under `système`,
+    // sunset flips the machine and `color-scheme: light dark` repaints on its
+    // own. An icon frozen on the scheme of an hour ago would then show a sun
+    // over a dark screen.
+    it('follows the machine turning dark while staying on système', () => {
+      const media = machine(false);
+      const shell = createShell();
+
+      expect(shell.themeIcon()).toBe('light_mode');
+
+      media.emit(true);
+      TestBed.tick();
+
+      expect(shell.themeIcon()).toBe('dark_mode');
+      expect(shell.themeLabel()).toContain('automatique');
+      expect(marqueurAuto()).not.toBeNull();
+    });
+
+    // An explicit choice outranks the machine, so the icon must not move.
+    it('ignores the machine once a scheme has been chosen', () => {
+      const media = machine(false);
+      const shell = createShell();
+      shell.toggleTheme();
+      TestBed.tick();
+
+      media.emit(true);
+      TestBed.tick();
+
+      expect(shell.themeIcon()).toBe('light_mode');
+      expect(marqueurAuto()).toBeNull();
+    });
+
+    // The button's own accessible name changes under the focus, and a name
+    // that changes under the focus is not re-read: without the announcement a
+    // screen-reader user presses the button and hears nothing at all.
+    it('announces the new scheme', () => {
+      const shell = createShell();
+
+      shell.toggleTheme();
+
+      expect(announcer.announce).toHaveBeenCalledWith(expect.stringContaining('clair'), 'polite');
     });
   });
 

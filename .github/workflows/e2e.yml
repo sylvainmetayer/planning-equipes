@@ -1,6 +1,6 @@
 # Playwright, à chaque poussée et sur chaque pull request.
 #
-# Ces 75 tests demandent la pile complète (application + PostgreSQL + serveur
+# Ces tests demandent la pile complète (application + PostgreSQL + serveur
 # de mail) et réamorcent la base à chaque exécution : ils coûtent donc
 # plusieurs minutes là où la suite unitaire répond en six secondes. Le coût est
 # assumé — trois défauts d'interface de la pile #331..#338 ont été trouvés par

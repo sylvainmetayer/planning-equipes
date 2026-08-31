@@ -75,6 +75,10 @@ export function buildHelpSections(): HelpSection[] {
         {
           kind: 'paragraph',
           text: $localize`:@@aide.start.iterate:Les étapes 6 et 7 se répètent : une première résolution courte sert surtout à révéler ce qui bloque, et non à produire le planning final.`
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.start.theme:En haut à droite, un bouton fait tourner l'affichage entre trois réglages : automatique, clair et sombre. « Automatique » suit le réglage de votre ordinateur ou de votre téléphone — c'est pourquoi l'application peut passer au sombre toute seule le soir. Choisir explicitement « clair » ou « sombre » fige l'affichage : ce navigateur s'en souvient et ne change plus d'avis.`
         }
       ],
       links: [

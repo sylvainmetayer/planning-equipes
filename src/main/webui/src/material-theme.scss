@@ -7,6 +7,20 @@
 
 html {
   height: 100%;
+
+  // Both palettes at once, and only one `mat.theme()` call: with no explicit
+  // `theme-type` the mixin emits every `--mat-sys-*` colour as a
+  // `light-dark(light, dark)` pair, so the dark theme is already compiled in.
+  // What follows decides which half is used, nothing more (issue #317).
+  //
+  // `light dark` means "this document supports both, pick with
+  // prefers-color-scheme" — the default, so a visitor who never chose follows
+  // their machine, live and with no listener. An explicit choice replaces this
+  // with `light` or `dark` as an inline style on this same element
+  // (`core/theme-preference.ts`), which outranks the declaration and therefore
+  // survives the machine changing its mind.
+  color-scheme: light dark;
+
   @include mat.theme(
     (
       color: (
@@ -20,10 +34,9 @@ html {
 }
 
 body {
-  // Default the application to a light color theme. This can be changed to
-  // `dark` to enable the dark color theme, or to `light dark` to defer to the
-  // user's system settings.
-  color-scheme: light;
+  // No `color-scheme` here: it is inherited from `html`, and re-declaring it
+  // would shadow the root element's value — which is the one the theme toggle
+  // writes.
 
   // Set a default background, font and text colors for the application using
   // Angular Material's system-level CSS variables. Learn more about these
