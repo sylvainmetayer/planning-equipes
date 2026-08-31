@@ -33,7 +33,7 @@
       (click)="onLoadSample()"
     >
       <mat-icon>auto_awesome</mat-icon>
-      <ng-container i18n="@@dataSetup.loadSample">Charger le scénario selectionné</ng-container>
+      <ng-container i18n="@@dataSetup.loadSample">Charger le scénario sélectionné</ng-container>
     </button>
     <button matButton="outlined" [disabled]="exporting()" (click)="onExportScenario()">
       <mat-icon>file_download</mat-icon>
@@ -247,6 +247,9 @@
       </li>
       <li>
         <a routerLink="/echanges" i18n="@@parametres.renvoi.echanges">Ouverture et fermeture de la foire au planning — page Échanges</a>
+      </li>
+      <li>
+        <a routerLink="/disponibilites" i18n="@@parametres.renvoi.disponibilites">Ouverture et fermeture de la collecte des disponibilités et des souhaits — page Disponibilités</a>
       </li>
       <li>
         <a routerLink="/constraints" i18n="@@parametres.renvoi.contraintes">Activation et désactivation des contraintes — page Contraintes</a>

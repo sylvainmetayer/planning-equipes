@@ -1,6 +1,23 @@
 import { describe, expect, it } from 'vitest';
+import { Routes } from '@angular/router';
 import { HelpSection, buildHelpSections, filterHelpSections } from './aide-content';
 import { buildRaccourcisNavigation } from '../../core/keyboard-shortcuts';
+import { routes } from '../../app.routes';
+
+/**
+ * Every path the router declares *and renders a page for*, children flattened
+ * onto their parent. Pure redirections (`/decoupage`, `/validateur-yaml`, the
+ * `**` catch-all…) are left out on purpose: the guide names several of those
+ * screens, and a link landing on a redirect sends the reader somewhere other
+ * than the screen it just named — which is exactly what this list must catch.
+ */
+function declaredPaths(table: Routes, prefix = ''): string[] {
+  return table.flatMap((route) => {
+    const path = [prefix, route.path ?? ''].filter(Boolean).join('/');
+    const rendered = route.loadComponent !== undefined || route.component !== undefined;
+    return [...(rendered ? [path] : []), ...declaredPaths(route.children ?? [], path)];
+  });
+}
 
 /** Every string of a section, so the tests can assert on its whole content. */
 function textOf(section: HelpSection): string {
@@ -26,6 +43,75 @@ describe('buildHelpSections', () => {
         expect(link.href).toMatch(/^(https:|mailto:)/);
       }
     }
+  });
+
+  it('only sends the reader to screens the router actually declares', () => {
+    const declared = new Set(declaredPaths(routes));
+    for (const link of sections.flatMap((section) => section.links)) {
+      if (link.route !== undefined) {
+        expect(declared).toContain(link.route.slice(1));
+      }
+    }
+  });
+
+  it('walks the whole cycle in getting started, not just up to the export', () => {
+    const section = sections.find((candidate) => candidate.id === 'prise-en-main');
+    expect(section).toBeDefined();
+    const texte = textOf(section as HelpSection);
+    // The two windows an organiser opens and closes by hand: they are the only
+    // places an animateur writes anything, and they were missing here.
+    expect(texte).toContain('Ouvrir la collecte des disponibilités');
+    expect(texte).toContain('fermer la collecte');
+    // The fair is open by default (`V42__foire_ouverture.sql`), so the step is
+    // a check, not an action: a reader must not go looking for a switch to flip.
+    expect(texte).toContain('foire au planning est ouverte');
+    expect(texte).not.toContain('10. Ouvrir la foire');
+    // The cycle does not end at the export: it ends at a schedule people have
+    // received and acknowledged.
+    expect(texte).toContain('Publier');
+    expect(texte).toContain('accusés de réception');
+    // Entering the staff is the very first thing the cycle does, and the CSV
+    // import is one of the two ways to do it: naming it only in its own
+    // section would hide it from the one reader who has not started yet.
+    expect(texte).toContain('import CSV');
+    // Nothing on a reference screen refuses in silence, and the cycle says so
+    // where the reader is about to type for the first time.
+    expect(texte).toContain('avertissement');
+    // The « notify » box mails the espace link: it has nothing to send before
+    // the records exist, so the order of the steps is part of the content.
+    // `indexOf` returns -1 for a label that moved, which is below every real
+    // index: without these two assertions the ordering one would pass on a
+    // section that no longer holds either step.
+    expect(texte).toContain('2. Saisir les référentiels');
+    expect(texte).toContain('3. Ouvrir la collecte');
+    expect(texte.indexOf('2. Saisir les référentiels')).toBeLessThan(
+      texte.indexOf('3. Ouvrir la collecte')
+    );
+  });
+
+  /**
+   * The permanent subscription is offered from the espace, but the person who
+   * gets asked "why is my calendar not updating?" is the organiser, and the
+   * answer — publish — is only theirs to act on.
+   */
+  it('answers the calendar subscription from the admin side, not only in the espace help', () => {
+    const section = sections.find((candidate) => candidate.id === 'foire-au-planning');
+    const texte = textOf(section as HelpSection);
+    expect(texte).toContain('Abonnement au calendrier');
+    expect(texte).toContain('planning publié');
+    // The two credentials are rotated separately server-side; saying otherwise
+    // would send an organiser to regenerate the wrong one.
+    expect(texte).toContain("ne coupe pas son abonnement");
+    // And it is findable by the words somebody would actually type.
+    const ids = filterHelpSections(sections, 'agenda').map((found) => found.id);
+    expect(ids).toContain('foire-au-planning');
+  });
+
+  it('lists the CSV import where an organiser looks for imports', () => {
+    const outils = sections.find((candidate) => candidate.id === 'echanges');
+    expect(textOf(outils as HelpSection)).toContain('Import CSV des animateurs');
+    const routes = (outils as HelpSection).links.map((link) => link.route);
+    expect(routes).toContain('/import-animateurs');
   });
 
   /**
@@ -124,6 +210,13 @@ describe('filterHelpSections', () => {
   it('requires every term of a multi-word query', () => {
     const both = filterHelpSections(sections, 'solveur zzzzz');
     expect(both).toHaveLength(0);
+  });
+
+  it('keeps getting started among the hits for « foire », which its last step names', () => {
+    const ids = filterHelpSections(sections, 'foire').map((section) => section.id);
+    expect(ids).toContain('foire-au-planning');
+    expect(ids).toContain('prise-en-main');
+    expect(ids).not.toContain('raccourcis-clavier');
   });
 
   it('returns nothing rather than everything when no section matches', () => {

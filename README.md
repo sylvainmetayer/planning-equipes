@@ -49,7 +49,7 @@ Le code Java comme le frontend Angular sont rechargés à chaud : Quarkus démar
 aussi le serveur de développement Angular et le proxifie, tout passe donc par
 <http://localhost:8080>.
 
-## Registry login
+### Se connecter au registre d'images
 
 ```bash
 echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
@@ -59,19 +59,24 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 
 1. Ouvrir <http://localhost:8080> et se connecter (compte `admin`, mot de passe
    `admin` par défaut en local — variable `ADMIN_PASSWORD`) — la page
-   **Solver** s'affiche ; le menu latéral donne accès à chaque écran.
-2. Cliquer sur **Generate sample planning** pour charger le jeu de données
-   d'exemple (les référentiels sont ensuite modifiables depuis **Stands**,
-   **Animateurs**, **Créneaux**, **Typologies** et **Ad hoc constraints**).
-3. Cliquer sur **Solve with Timefold** : la résolution part en tâche de fond
-   (plusieurs minutes sur le scénario complet), la navigation reste libre et une
-   notification s'affiche à la fin — y compris dans les autres navigateurs
-   ouverts sur l'application, qui voient le calcul en cours et son temps écoulé.
-4. Consulter le résultat dans **Assignment calendar** (vue mensuelle) ou
-   **Day calendar** (vue par jour), et le respect des règles dans **Constraints**.
+   **Solveur** s'affiche ; le menu latéral donne accès à chaque écran.
+2. Sur **Paramètres**, choisir un scénario puis **Charger le scénario
+   sélectionné** pour remplir l'édition courante (les référentiels sont ensuite
+   modifiables depuis **Stands**, **Emplacements**, **Animateurs**,
+   **Créneaux** et **Typologies**).
+3. Revenir sur **Solveur** et cliquer sur **Résoudre avec Timefold** : la résolution
+   part en tâche de fond (plusieurs minutes sur le scénario complet), la
+   navigation reste libre, le score se trace en direct et une notification
+   s'affiche à la fin — y compris dans les autres navigateurs ouverts sur
+   l'application, qui voient le calcul en cours et son temps écoulé.
+4. Consulter le résultat dans **Calendrier des affectations** (vue mensuelle) ou
+   **Calendrier journalier** (vue par jour), ce qui bloque dans **Problèmes**,
+   et le respect des règles dans **Contraintes**.
 5. Exporter le planning : le PDF global de l'organisateur ou l'archive complète
    des plannings individuels (PDF + ICS) depuis la page **Solveur**, ou le
    planning d'un seul animateur depuis la page **Timeline animateur**.
+6. Le mode d'emploi complet est dans l'application, page **Aide** (menu
+   *Planning → Aide*, ou <kbd>Ctrl</kbd>+<kbd>K</kbd> puis « aide »).
 
 ### Configuration
 

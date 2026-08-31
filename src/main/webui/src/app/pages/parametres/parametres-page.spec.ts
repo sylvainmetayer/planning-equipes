@@ -355,7 +355,7 @@ describe('ParametresPage rendering', () => {
     await rendre();
 
     expect(racine().querySelector('.scenario-select .mat-mdc-select-value')!.textContent!.trim()).toBe('festival.yaml');
-    expect(bouton('Charger le scénario selectionné').disabled).toBe(false);
+    expect(bouton('Charger le scénario sélectionné').disabled).toBe(false);
   });
 
   it('locks every destructive action of the edition while a solve runs on it', async () => {
@@ -363,7 +363,7 @@ describe('ParametresPage rendering', () => {
     editingLocked.set(true);
     await fixture.whenStable();
 
-    expect(bouton('Charger le scénario selectionné').disabled).toBe(true);
+    expect(bouton('Charger le scénario sélectionné').disabled).toBe(true);
     expect(bouton('Importer un fichier').disabled).toBe(true);
     expect(bouton('Enregistrer les paramètres').disabled).toBe(true);
     expect(bouton('Importer un dump SQL').disabled).toBe(true);

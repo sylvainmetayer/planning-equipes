@@ -43,12 +43,15 @@ test("l'aide se recherche et documente la foire au planning", async ({ browser }
   await expect(page.locator('#contenu')).toContainText("Aide à l'utilisation");
   await expect(page.locator('#contenu')).toContainText('Foire au planning (échanges de créneaux)');
 
-  // The filter narrows the guide to the matching sections.
+  // The filter narrows the guide to the matching sections. « Prise en main »
+  // is not one of the sections it drops: the cycle it describes ends on
+  // opening and closing that very fair.
   await page.getByLabel("Rechercher dans l'aide").fill('foire');
   await expect(page.locator('#contenu')).toContainText('Foire au planning (échanges de créneaux)');
-  await expect(page.locator('#contenu')).not.toContainText('Prise en main');
+  await expect(page.locator('#contenu')).toContainText('Prise en main');
+  await expect(page.locator('#contenu')).not.toContainText('Raccourcis clavier');
 
   await page.getByLabel("Rechercher dans l'aide").fill('');
-  await expect(page.locator('#contenu')).toContainText('Prise en main');
+  await expect(page.locator('#contenu')).toContainText('Raccourcis clavier');
   await page.context().close();
 });

@@ -18,6 +18,11 @@
 //   placeholder  same id, different {$…} names between source and translation
 //                -> breaks at *display* time, on that one screen, in English
 //                   only: the nastiest of the three, and invisible to a build
+//   libellé      a message quotes « another message » verbatim, and its own
+//                translation quotes something the English UI never displays
+//                -> the English guide sends a reader looking for a button that
+//                   reads differently on screen. Naming a control is only
+//                   worth it if the reader finds that exact wording.
 //
 // Run it with `npm run i18n-check`.
 
@@ -60,6 +65,70 @@ function lister(titre, ids, detail) {
   }
 }
 
+/** Quoted spans: « … » on the French side, “ … ” or " … " on the English one. */
+const CITATION_FR = /«\s*([^«»]+?)\s*»/g;
+const CITATION_EN = /[«“"]\s*([^«»“”"]+?)\s*[»”"]/g;
+
+function citations(message, motif) {
+  return [...message.matchAll(motif)].map((found) => found[1]);
+}
+
+/** Same string modulo spacing, apostrophe shape, case and trailing punctuation. */
+function comparable(texte) {
+  return texte
+    .replace(/[\u2019\u2018]/g, "'")
+    .replace(/[\u00a0\u202f]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase()
+    .replace(/[ .:?!]+$/, '');
+}
+
+/**
+ * Ids whose whole source string is exactly this label. Single words are left
+ * out: « tous » or « continu » quoted in a sentence is prose, and would collide
+ * with an unrelated filter label.
+ */
+function indexerLibelles(source) {
+  const index = new Map();
+  for (const [id, message] of Object.entries(source)) {
+    if (message.trim().split(/\s+/).length < 2) {
+      continue;
+    }
+    const cle = comparable(message);
+    index.set(cle, [...(index.get(cle) ?? []), id]);
+  }
+  return index;
+}
+
+/**
+ * Ids whose French quotes a control by its exact label, while their English
+ * quotes none of that control's English labels. Reported per id, with what the
+ * screen actually reads.
+ */
+function libellesDivergents(source, anglais) {
+  const libelles = indexerLibelles(source);
+  const rapport = new Map();
+  for (const [id, message] of Object.entries(source)) {
+    if (!(id in anglais)) {
+      continue;
+    }
+    const citeesEn = citations(anglais[id], CITATION_EN).map(comparable);
+    for (const citee of citations(message, CITATION_FR)) {
+      if (citee.trim().split(/\s+/).length < 2) {
+        continue;
+      }
+      const candidats = (libelles.get(comparable(citee)) ?? []).filter((autre) => autre !== id);
+      const attendus = candidats.filter((autre) => autre in anglais).map((autre) => anglais[autre]);
+      if (attendus.length === 0 || attendus.some((attendu) => citeesEn.includes(comparable(attendu)))) {
+        continue;
+      }
+      rapport.set(id, [...(rapport.get(id) ?? []), { citee, attendus }]);
+    }
+  }
+  return rapport;
+}
+
 const source = extraire();
 const anglais = JSON.parse(readFileSync(CATALOGUE, 'utf8'));
 
@@ -69,8 +138,10 @@ const divergents = Object.keys(source)
   .filter((id) => id in anglais)
   .filter((id) => placeholders(source[id]).join('|') !== placeholders(anglais[id]).join('|'));
 
-if (manquants.length === 0 && orphelins.length === 0 && divergents.length === 0) {
-  console.log(`i18n-check : ${Object.keys(source).length}/${Object.keys(source).length} messages traduits, placeholders cohérents.`);
+const libelles = libellesDivergents(source, anglais);
+
+if (manquants.length === 0 && orphelins.length === 0 && divergents.length === 0 && libelles.size === 0) {
+  console.log(`i18n-check : ${Object.keys(source).length}/${Object.keys(source).length} messages traduits, placeholders cohérents, libellés cités alignés sur l'écran.`);
   process.exit(0);
 }
 
@@ -94,6 +165,22 @@ if (divergents.length > 0) {
     'Placeholders divergents — casse à l\'affichage, en anglais uniquement',
     divergents,
     (id) => `      source : ${placeholders(source[id]).join(' ') || '(aucun)'}\n      anglais : ${placeholders(anglais[id]).join(' ') || '(aucun)'}`
+  );
+}
+
+if (libelles.size > 0) {
+  lister(
+    'Libellés cités qui ne correspondent à rien à l\'écran en anglais',
+    [...libelles.keys()],
+    (id) =>
+      libelles
+        .get(id)
+        .map(
+          (ecart) =>
+            `      cité (fr) : ${JSON.stringify(ecart.citee)}\n` +
+            `      à l'écran (en) : ${ecart.attendus.map((attendu) => JSON.stringify(attendu)).join(' | ')}`
+        )
+        .join('\n')
   );
 }
 

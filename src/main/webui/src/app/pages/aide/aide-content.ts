@@ -54,27 +54,38 @@ export function buildHelpSections(): HelpSection[] {
       id: 'prise-en-main',
       icon: 'rocket_launch',
       title: $localize`:@@aide.start.title:Prise en main`,
-      summary: $localize`:@@aide.start.summary:L'ordre dans lequel enchaîner les écrans, de la saisie des données au planning exporté.`,
+      summary: $localize`:@@aide.start.summary:Le cycle complet d'une édition : collecter, construire, résoudre, publier, suivre.`,
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.start.intro:L'application produit un planning en affectant des animateurs à des postes. Un poste, c'est une place à pourvoir sur un stand pendant un créneau : le solveur ne « crée » rien, il choisit qui occupe chaque place déjà décrite par vos données de référence. Tout part donc de la qualité de la saisie.`
+          text: $localize`:@@aide.start.intro:L'application affecte des animateurs à des postes. Un poste, c'est une place à pourvoir sur un stand pendant un créneau : le solveur n'en crée aucune, il choisit qui occupe celles que vos stands et vos créneaux décrivent déjà. Ce qui se réglait dans la mise en page du classeur se règle donc en amont, dans la saisie.`
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.start.classeur:Trois choses changent la méthode par rapport à un tableur. Le cadre légal est vérifié en continu, pas à la relecture. Un changement tardif se rejoue par une replanification incrémentale, qui laisse intact tout ce qui restait valable. Et le planning diffusé est daté : l'application sait qui a reçu quelle version, et qui ne l'a pas encore lue.`
         },
         {
           kind: 'list',
           items: [
-            $localize`:@@aide.start.step1:1. Choisir (ou créer) l'édition sur laquelle travailler — tout le reste lui appartient.`,
-            $localize`:@@aide.start.step2:2. Saisir les référentiels : typologies de jeux, emplacements, stands, animateurs, créneaux. Un import de scénario YAML ou un dump SQL peut remplacer cette étape.`,
-            $localize`:@@aide.start.step3:3. Vérifier les ouvertures de stands : c'est là que se voient les erreurs d'horaires, sans attendre une résolution.`,
-            $localize`:@@aide.start.step4:4. Vérifier le besoin en animateurs : si l'effectif saisi est sous le minimum estimé, aucun réglage du solveur ne sauvera le planning.`,
-            $localize`:@@aide.start.step5:5. Si les journées sont décrites par une simple amplitude d'ouverture, générer le découpage en vacations.`,
-            $localize`:@@aide.start.step6:6. Régler la durée de résolution, puis lancer le solveur.`,
-            $localize`:@@aide.start.step7:7. Lire le score et les problèmes signalés, corriger, relancer — puis exporter.`
+            $localize`:@@aide.start.step1:1. Choisir ou créer l'édition : tout le reste lui appartient, et rien ne circule d'une édition à l'autre.`,
+            $localize`:@@aide.start.step2:2. Saisir les référentiels : typologies de jeux, emplacements, stands, animateurs, créneaux. Les animateurs entrent aussi d'un seul geste par l'import CSV, si vos bénévoles arrivent déjà dans un tableur ; un scénario YAML ou un dump SQL remplace l'étape entière. Une saisie douteuse mais tenable est enregistrée avec un avertissement à lire, jamais refusée en silence.`,
+            $localize`:@@aide.start.step3:3. Ouvrir la collecte des disponibilités, case « prévenir » cochée : elle envoie à chacun le lien de son espace, où il déclare depuis son téléphone ses jours d'absence et les jeux qu'il aimerait animer. Les fiches animateurs doivent donc déjà exister ; et si vous ouvrez la collecte avant d'avoir saisi les créneaux, l'espace n'offre aucun jour à cocher — seuls les souhaits se déclarent.`,
+            $localize`:@@aide.start.step4:4. Appliquer ou refuser les déclarations reçues, puis fermer la collecte : appliquer écrit la proposition entière sur la fiche de l'animateur.`,
+            $localize`:@@aide.start.step5:5. Vérifier les ouvertures des stands, puis le besoin en animateurs : ces deux écrans répondent sans qu'aucun calcul ait tourné.`,
+            $localize`:@@aide.start.step6:6. Si les journées sont décrites par une simple amplitude d'ouverture, générer le découpage en vacations.`,
+            $localize`:@@aide.start.step7:7. Lancer une résolution courte, lire la page Problèmes, corriger — puis relancer sur une durée longue.`,
+            $localize`:@@aide.start.step8:8. Publier : seules les personnes dont l'emploi du temps a changé reçoivent un message, avec le lien de leur espace. C'est aussi le seul moment où les agendas abonnés bougent — tant que vous n'avez pas publié, ils montrent la version précédente.`,
+            $localize`:@@aide.start.step9:9. Suivre les accusés de réception sur la page Animateurs, et activer les envois de nuit sur la page Paramètres pour que les silencieux soient relancés — une fois.`,
+            $localize`:@@aide.start.step10:10. Vérifier que la foire au planning est ouverte — elle l'est par défaut — pour que les échanges se négocient entre animateurs, la fermer quand le planning est figé. Le jour même, le mode jour J prend le relais.`
           ]
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.start.iterate:Les étapes 6 et 7 se répètent : une première résolution courte sert surtout à révéler ce qui bloque, et non à produire le planning final.`
+          text: $localize`:@@aide.start.guichets:Deux guichets s'ouvrent et se ferment à la main, et ce sont les seuls endroits où un animateur écrit quelque chose : la collecte des disponibilités (page Disponibilités) avant la construction, la foire au planning (page Échanges) après la publication. Chacun accepte en plus une période datée, mais l'interrupteur reste maître — une période renseignée n'ouvre jamais un guichet fermé. La collecte est fermée tant que vous ne l'ouvrez pas ; la foire, elle, est ouverte par défaut.`
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.start.iterate:Les étapes de résolution se répètent : une première résolution courte sert à révéler ce qui bloque, pas à produire le planning final. Ne changez qu'une chose à la fois entre deux essais, sinon plus rien n'est comparable.`
         },
         {
           kind: 'paragraph',
@@ -83,8 +94,14 @@ export function buildHelpSections(): HelpSection[] {
       ],
       links: [
         { route: '/editions', label: $localize`:@@nav.link.editions:Éditions` },
-        { route: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres` },
-        { route: '/', label: $localize`:@@nav.link.solver:Solveur` }
+        {
+          route: '/import-animateurs',
+          label: $localize`:@@nav.link.importAnimateurs:Import CSV des animateurs`
+        },
+        { route: '/disponibilites', label: $localize`:@@nav.link.disponibilites:Disponibilités` },
+        { route: '/', label: $localize`:@@nav.link.solver:Solveur` },
+        { route: '/echanges', label: $localize`:@@nav.link.echanges:Échanges` },
+        { route: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres` }
       ]
     },
     {
@@ -136,7 +153,7 @@ export function buildHelpSections(): HelpSection[] {
           items: [
             {
               term: $localize`:@@aide.data.term.animateurs:Animateurs`,
-              text: $localize`:@@aide.data.def.animateurs:Identité, date de naissance, compétences par typologie avec un niveau (débutant / autonome / référent), et jours d'indisponibilité. Le régime légal applicable (moins de 16 ans, 16-18 ans, majeur) n'est jamais saisi : il est recalculé à la date de chaque créneau. Par défaut un animateur est disponible : ne saisissez que les absences.`
+              text: $localize`:@@aide.data.def.animateurs:Identité, date de naissance, compétences par typologie avec un niveau (débutant / autonome / référent), et jours d'indisponibilité. Le régime légal applicable (moins de 16 ans, 16-18 ans, majeur) n'est jamais saisi : il est recalculé à la date de chaque créneau. Par défaut un animateur est disponible : ne saisissez que les absences. Le tableau, lui, ne montre que ce qui tient dans une cellule — identité, majorité, manager, nombre de jours d'indisponibilité, accusé de réception — et chacune de ces colonnes se trie, en remontant d'abord ce qui reste à faire : les managers, les majeurs, puis les silencieux avant les relancés et les confirmés. L'appréciation est une liste par personne : elle se lit dans la fiche de consultation et se modifie dans le formulaire, y compris en édition groupée.`
             },
             {
               term: $localize`:@@aide.data.term.stands:Stands`,
@@ -308,6 +325,10 @@ export function buildHelpSections(): HelpSection[] {
           text: $localize`:@@aide.results.previousPlan:Relancer une résolution sur une édition qui a déjà un bon planning peut le dégrader : le solveur repart de zéro et n'est pas tenu de retrouver aussi bien. La page Solveur affiche donc le score d'avant à côté de celui d'après, et le signale quand la nouvelle résolution est moins bonne — un score dur toujours à zéro ne veut pas dire que rien n'a été perdu, l'écart se lit sur le medium. Un bouton « Revenir au plan d'avant » remet alors en place le planning précédent. Ne tardez pas : ce filet est un instantané automatique, et seuls les cinq derniers sont conservés par édition.`
         },
         {
+          kind: 'paragraph',
+          text: $localize`:@@aide.results.instantanes:Un seul planning est enregistré à la fois, et chaque résolution écrase le précédent : c'est la page Instantanés qui garde les autres. Une capture y est prise automatiquement avant chaque résolution — c'est ce filet que « Revenir au plan d'avant » utilise. Un plan que vous voulez garder au-delà des cinq dernières se met de côté explicitement, avec un libellé : celui-là n'est jamais purgé, et sert de terme de comparaison au Comparateur A/B. Le bouton « Restaurer ce plan » est désactivé pendant une résolution : celle-ci écraserait en se terminant le plan qu'on vient de remettre en place.`
+        },
+        {
           kind: 'definitions',
           items: [
             {
@@ -332,7 +353,8 @@ export function buildHelpSections(): HelpSection[] {
       links: [
         { route: '/problemes', label: $localize`:@@nav.link.problemes:Problèmes` },
         { route: '/constraints', label: $localize`:@@nav.link.constraints:Contraintes` },
-        { route: '/day-calendar', label: $localize`:@@nav.link.dayCalendar:Calendrier journalier` }
+        { route: '/day-calendar', label: $localize`:@@nav.link.dayCalendar:Calendrier journalier` },
+        { route: '/instantanes', label: $localize`:@@nav.link.snapshots:Instantanés` }
       ]
     },
     {
@@ -553,6 +575,14 @@ export function buildHelpSections(): HelpSection[] {
               text: $localize`:@@aide.views.def.carteJour:Encore la même journée, mais sur la carte des emplacements : un curseur temporel, et chaque emplacement coloré par ce que le planning enregistré dit qu'il s'y passe à cet instant — ouvert et entièrement pourvu, ouvert avec des places vides, ou ouvert sans personne. Rien n'est recalculé : un stand est ouvert quand le plan porte un poste qui couvre cet instant. Les stands rattachés à aucun emplacement géolocalisé sont listés à côté de la carte plutôt qu'escamotés.`
             },
             {
+              term: $localize`:@@aide.views.term.graphe:Graphe`,
+              text: $localize`:@@aide.views.def.graphe:La même donnée prise par le terrain : un emplacement, les stands qui s'y trouvent, les créneaux sur lesquels ils sont armés, qui y est affecté. Une colonne par niveau, on clique pour ouvrir la suivante. C'est la vue de qui connaît le plan de l'événement mieux que la liste de ses stands. Les deux dernières colonnes se lisent sur le planning enregistré et restent vides tant qu'aucune résolution n'a tourné ; les emplacements et leurs stands, eux, viennent des données de référence et se parcourent tout de suite.`
+            },
+            {
+              term: $localize`:@@aide.views.term.kpi:Autopsie du planning`,
+              text: $localize`:@@aide.views.def.kpi:Une ligne par résolution terminée, toutes éditions confondues : score, couverture, dispersion des heures, nombre de modifications manuelles, durée. C'est la mémoire des campagnes passées — elle dit si l'édition en cours se règle mieux ou moins bien que la précédente, et combien de reprises à la main il a fallu. Rien n'y est nominatif, et l'historique survit à la suppression de l'édition qu'il décrit.`
+            },
+            {
               term: $localize`:@@aide.views.term.comparateur:Comparateur A/B`,
               text: $localize`:@@aide.views.def.comparateur:Deux plannings côte à côte — deux instantanés, ou un instantané et le planning actuel — sur le score, la couverture, l'équité et les violations, avec le sens de chaque écart écrit en toutes lettres. Les instantanés de toutes les éditions sont proposés : c'est ainsi qu'on compare une variante (canicule, repli) à l'édition nominale. L'écran prévient quand les deux plannings n'ont pas la même taille ou ne viennent pas de la même édition : une partie de l'écart vient alors du problème posé, pas de la qualité de la résolution. Comparer ne lance jamais de calcul.`
             },
@@ -580,6 +610,8 @@ export function buildHelpSections(): HelpSection[] {
         { route: '/hours', label: $localize`:@@nav.link.hours:Heures` },
         { route: '/fragilite', label: $localize`:@@nav.link.fragilite:Fragilité du planning` },
         { route: '/banc-de-touche', label: $localize`:@@nav.link.bancDeTouche:Banc de touche` },
+        { route: '/graphe', label: $localize`:@@nav.link.graphe:Graphe` },
+        { route: '/kpi', label: $localize`:@@nav.link.kpi:Autopsie du planning` },
         { route: '/comparateur', label: $localize`:@@nav.link.comparateur:Comparateur A/B` }
       ]
     },
@@ -680,7 +712,7 @@ export function buildHelpSections(): HelpSection[] {
           items: [
             {
               term: $localize`:@@aide.foire.term.espace:Espace animateur`,
-              text: $localize`:@@aide.foire.def.espace:L'animateur constitue sa liste de demandes (créneau concerné, collègue avec qui échanger, motif) puis la soumet en une fois. Quand il n'a personne en tête — il ne veut simplement pas ce créneau — « qui peut me remplacer ? » cherche les collègues avec qui l'échange tient réellement, sous ses trois formes : un collègue libre le remplace, une permutation sur le même créneau, ou un troc contre un créneau d'un autre jour. Il choisit dans la liste et le champ collègue se remplit. Il suit ensuite le statut de chacune — en attente, acceptée, refusée — avec votre commentaire éventuel, et peut annuler une demande tant qu'elle n'est pas décidée. Il peut aussi télécharger son planning en PDF ou l'ajouter à son agenda (ICS) depuis l'onglet « Mon planning ». Le lien de son espace se copie (et se régénère, si un PDF a fuité) depuis sa fiche sur la page Animateurs.`
+              text: $localize`:@@aide.foire.def.espace:L'animateur constitue sa liste de demandes (créneau concerné, collègue avec qui échanger, motif) puis la soumet en une fois. Quand il n'a personne en tête — il ne veut simplement pas ce créneau — « qui peut me remplacer ? » cherche les collègues avec qui l'échange tient réellement, sous ses trois formes : un collègue libre le remplace, une permutation sur le même créneau, ou un troc contre un créneau d'un autre jour. Il choisit dans la liste et le champ collègue se remplit. Il suit ensuite le statut de chacune — en attente, acceptée, refusée — avec votre commentaire éventuel, et peut annuler une demande tant qu'elle n'est pas décidée. Il peut aussi, depuis l'onglet « Mon planning », emporter son planning : la bande « Emporter mon planning » propose d'abord d'y abonner son agenda, puis de télécharger un PDF ou un fichier ICS. Le lien de son espace se copie (et se régénère, si un PDF a fuité) depuis sa fiche sur la page Animateurs.`
             },
             {
               term: $localize`:@@aide.foire.term.ecran:Écran Échanges`,
@@ -695,8 +727,12 @@ export function buildHelpSections(): HelpSection[] {
               text: $localize`:@@aide.foire.def.planPublie:L'espace d'un animateur montre le plan qu'on lui a envoyé, pas celui sur lequel vous travaillez : un échange validé, un remplacement appliqué ou une nouvelle résolution ne déplacent son espace qu'une fois publiés. Tant que rien ne l'a été sur l'édition, les espaces restent vides et le disent — l'application ne peut pas affirmer avoir communiqué un planning qu'elle n'a jamais envoyé. La première publication concerne donc tout le monde. Publier est refusé pendant une résolution : ce serait figer un plan sur le point d'être réécrit.`
             },
             {
+              term: $localize`:@@aide.foire.term.abonnement:Abonnement au calendrier`,
+              text: $localize`:@@aide.foire.def.abonnement:Depuis la bande « Emporter mon planning » de son espace, un animateur donne à son agenda une adresse d'abonnement permanente, au lieu de télécharger un fichier ICS qui se périme dès la republication. Ce que cet agenda relit à chaque synchronisation, c'est le planning publié : « mon agenda ne se met pas à jour » veut donc presque toujours dire que le changement n'a pas encore été publié, et jamais qu'il faut se réabonner. Tant que rien n'a été publié sur l'édition, l'abonnement répond un calendrier vide plutôt qu'une erreur — un agenda à qui l'on répond en erreur coupe l'abonnement sans prévenir personne. Cette adresse est un second identifiant, distinct du lien de l'espace : régénérer le lien d'un animateur depuis sa fiche ne coupe pas son abonnement, et l'animateur remplace lui-même son adresse d'abonnement si elle a fuité, sans que son lien d'espace change. Vous ne la voyez pas et n'avez pas à la manipuler.`
+            },
+            {
               term: $localize`:@@aide.foire.term.ouverture:Ouverture et fermeture`,
-              text: $localize`:@@aide.foire.def.ouverture:L'interrupteur en tête de l'écran Échanges ouvre ou ferme la foire pour l'édition courante. Fermée, les espaces animateurs passent en consultation seule — le planning reste visible et téléchargeable (PDF, ICS), mais plus aucune demande ne peut être soumise ni annulée, et le refus est appliqué côté serveur, pas seulement masqué à l'écran. Vous pouvez aussi borner la foire par une date de début et une date de fin, comme la collecte des disponibilités : laissez une date vide pour ne pas borner ce côté-là. L'interrupteur reste maître — une période renseignée n'ouvre jamais une foire fermée — et les bornes sont appliquées côté serveur elles aussi. Avant la date d'ouverture, l'espace annonce « pas encore ouverte » et la date de retour, et non « fermée » : quelqu'un à qui l'on dit que c'est terminé deux semaines trop tôt ne revient pas.`
+              text: $localize`:@@aide.foire.def.ouverture:L'interrupteur en tête de l'écran Échanges ouvre ou ferme la foire pour l'édition courante. Fermée, les espaces animateurs passent en consultation seule — le planning reste visible, téléchargeable (PDF, ICS) et les agendas abonnés continuent de le suivre, mais plus aucune demande ne peut être soumise ni annulée, et le refus est appliqué côté serveur, pas seulement masqué à l'écran. Vous pouvez aussi borner la foire par une date de début et une date de fin, comme la collecte des disponibilités : laissez une date vide pour ne pas borner ce côté-là. L'interrupteur reste maître — une période renseignée n'ouvre jamais une foire fermée — et les bornes sont appliquées côté serveur elles aussi. Avant la date d'ouverture, l'espace annonce « pas encore ouverte » et la date de retour, et non « fermée » : quelqu'un à qui l'on dit que c'est terminé deux semaines trop tôt ne revient pas.`
             },
             {
               term: $localize`:@@aide.foire.term.envoi:Publier le planning`,
@@ -714,7 +750,7 @@ export function buildHelpSections(): HelpSection[] {
     {
       id: 'disponibilites',
       icon: 'event_available',
-      title: $localize`:@@aide.dispo.title:Collecte des disponibilités`,
+      title: $localize`:@@aide.dispo.title:Collecte des disponibilités et des souhaits`,
       summary: $localize`:@@aide.dispo.summary:Les animateurs déclarent eux-mêmes leurs jours d'indisponibilité et leurs souhaits ; vous appliquez, ou non.`,
       blocks: [
         {
@@ -726,7 +762,7 @@ export function buildHelpSections(): HelpSection[] {
           items: [
             {
               term: $localize`:@@aide.dispo.term.fenetre:Ouvrir la collecte`,
-              text: $localize`:@@aide.dispo.def.fenetre:La collecte est fermée tant que vous ne l'avez pas ouverte — contrairement à la foire au planning, ouverte par défaut. Les deux dates sont facultatives : elles bornent la période, l'interrupteur reste le maître. Fermée, l'espace refuse toute déclaration côté serveur, pas seulement à l'écran ; l'animateur garde l'accès à ce qu'il a déclaré et à vos réponses.`
+              text: $localize`:@@aide.dispo.def.fenetre:Le bandeau « Fenêtre de collecte », en tête de la page Disponibilités, porte les deux boutons « Ouvrir la collecte » et « Fermer la collecte ». Elle est fermée tant que vous ne l'avez pas ouverte — contrairement à la foire au planning, ouverte par défaut. Les deux dates sont facultatives : elles bornent la période, l'interrupteur reste le maître. Fermée, l'espace refuse toute déclaration côté serveur, pas seulement à l'écran ; l'animateur garde l'accès à ce qu'il a déclaré et à vos réponses.`
             },
             {
               term: $localize`:@@aide.dispo.term.prevenir:Prévenir les animateurs`,
@@ -817,16 +853,22 @@ export function buildHelpSections(): HelpSection[] {
           kind: 'list',
           items: [
             $localize`:@@aide.exchange.item.scenario:Import d'un scénario YAML depuis votre poste : la façon la plus rapide de remplir une édition vide. Un fichier invalide donne une notification détaillée plutôt qu'un import partiel.`,
+            $localize`:@@aide.exchange.item.csvAnimateurs:Import CSV des animateurs : reprendre le tableur des bénévoles sans le ressaisir, avec un aperçu ligne à ligne avant que quoi que ce soit ne soit écrit. Le format attendu a sa propre section dans ce guide.`,
             $localize`:@@aide.exchange.item.sql:Export et import d'un dump SQL complet, pour dupliquer ou restaurer un jeu de données entier.`,
-            $localize`:@@aide.exchange.item.pdfIcs:Export du planning individuel d'un animateur en PDF ou en ICS (importable dans Google Calendar, Apple Calendar ou Outlook), à l'unité ou en archive ZIP pour tout le monde.`,
+            $localize`:@@aide.exchange.item.pdfIcs:Export du planning individuel d'un animateur en PDF ou en ICS (importable dans Google Calendar, Apple Calendar ou Outlook), à l'unité ou en archive ZIP pour tout le monde. Un fichier ICS est une photo : il ne bougera plus. Pour un agenda qui suit les republications, c'est l'abonnement de l'espace animateur qu'il faut — voir « Foire au planning ».`,
             $localize`:@@aide.exchange.item.yamlValidator:Validateur YAML (sur la page Débogage) : vérifie un fichier scénario sans rien importer, pour corriger avant de toucher aux données.`,
             $localize`:@@aide.exchange.item.notifications:Notifications : l'historique des événements — fin de résolution, import, erreur. Une alerte non lue est signalée dans la navigation.`,
-            $localize`:@@aide.exchange.item.debug:Débogage : l'état brut renvoyé par le serveur, utile pour rapporter un problème précisément.`
+            $localize`:@@aide.exchange.item.debug:Débogage : l'état brut renvoyé par le serveur, utile pour rapporter un problème précisément.`,
+            $localize`:@@aide.exchange.item.sauvegarde:Sauvegarde de nuit (page Paramètres) : la base entière est copiée sur le disque du serveur chaque nuit, et l'écran dit où vont les copies, lesquelles existent et si la dernière s'est bien passée. Elle ne se télécharge pas — elle porte les noms, les dates de naissance et les adresses de tout le monde — et la restauration est une opération de l'exploitant sur le serveur, pas un bouton.`
           ]
         }
       ],
       links: [
         { route: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres` },
+        {
+          route: '/import-animateurs',
+          label: $localize`:@@nav.link.importAnimateurs:Import CSV des animateurs`
+        },
         { route: '/debug', label: $localize`:@@nav.link.debug:Débogage` },
         { route: '/notifications', label: $localize`:@@nav.link.notifications:Notifications` }
       ]

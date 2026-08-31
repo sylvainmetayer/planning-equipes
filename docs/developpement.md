@@ -61,16 +61,23 @@ ordre**, puis `npm run i18n-check`.
 > `loadTranslations()` et resterait figé en français. Utiliser un `computed()`,
 > une méthode, ou une fonction appelée depuis le constructeur.
 
-`npm run i18n-check` échoue sur trois écarts, chacun invisible autrement : un id
-sans traduction (l'écran s'affiche **en français** pour un anglophone,
+`npm run i18n-check` échoue sur quatre écarts, chacun invisible autrement : un
+id sans traduction (l'écran s'affiche **en français** pour un anglophone,
 `$localize` retombe sur la source sans rien dire), une clé orpheline
-(généralement la moitié oubliée d'un renommage), et des placeholders divergents
+(généralement la moitié oubliée d'un renommage), des placeholders divergents
 (casse **à l'affichage**, en anglais seulement — ni le build ni les tests ne la
-voient).
+voient), et un libellé cité qui ne correspond à rien à l'écran.
 
 Le troisième écart est le plus sournois : un placeholder renommé côté anglais
 fait voir le jeton littéral au lieu de la valeur, sur ce seul écran, dans cette
 seule langue.
+
+Le quatrième garde l'aide en application honnête. Quand un message cite un
+autre message mot pour mot — « Ouvrir la collecte », « Arrêter le solveur » —
+sa traduction doit citer le libellé anglais de ce même id, pas une paraphrase :
+nommer un bouton n'a d'intérêt que si le lecteur retrouve ces mots-là à
+l'écran. La comparaison ne porte que sur les citations d'au moins deux mots,
+pour ne pas confondre une tournure ordinaire avec un libellé.
 
 ## Accessibilité
 
