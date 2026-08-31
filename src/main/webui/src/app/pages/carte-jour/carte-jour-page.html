@@ -1,0 +1,172 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h1 mat-card-title i18n="@@nav.link.carteJour">Carte de la journée</h1>
+    <mat-card-subtitle i18n="@@carteJour.subtitle">
+      Une journée rejouée sur la carte des emplacements : déplacez le curseur et voyez, heure par heure, quels
+      stands sont ouverts, lesquels sont pourvus et lesquels restent sans personne. Lecture seule, à partir du
+      planning enregistré — rien n'est recalculé.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <div class="carte-jour-toolbar">
+      <button matIconButton type="button" [disabled]="estPremierJour()" (click)="decalerJour(-1)"
+              [attr.aria-label]="jourPrecedentLabel" [title]="jourPrecedentLabel">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      <mat-form-field appearance="outline" class="carte-jour-select">
+        <mat-label i18n="@@carteJour.day.label">Journée</mat-label>
+        <mat-select [value]="jourCourant()?.jour ?? null" (valueChange)="selectionnerJour($event)">
+          @for (jour of jours(); track jour.jour) {
+            <mat-option [value]="jour.jour">{{ jour.title }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <button matIconButton type="button" [disabled]="estDernierJour()" (click)="decalerJour(1)"
+              [attr.aria-label]="jourSuivantLabel" [title]="jourSuivantLabel">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+      @if (vueModifiee()) {
+        <button matButton type="button" (click)="reinitialiserVue()">
+          <mat-icon>filter_alt_off</mat-icon>
+          <ng-container i18n="@@common.resetView">Réinitialiser la vue</ng-container>
+        </button>
+      }
+      <button matButton="tonal" type="button" [disabled]="loading()" (click)="refresh()">
+        <mat-icon>refresh</mat-icon>
+        <ng-container i18n="@@common.refresh">Actualiser</ng-container>
+      </button>
+    </div>
+
+    @if (loading()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    @if (error()) {
+      <p class="empty-hint">{{ error() }}</p>
+    }
+  </mat-card-content>
+</mat-card>
+
+@if (!error() && !loading()) {
+  @if (jourCourant(); as jour) {
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-content>
+        <div class="carte-jour-curseur">
+          <button matIconButton type="button" (click)="decalerCurseur(-1)"
+                  [disabled]="minutes() <= jour.debutMinutes"
+                  [attr.aria-label]="reculerLabel" [title]="reculerLabel">
+            <mat-icon>fast_rewind</mat-icon>
+          </button>
+          <button matIconButton type="button" (click)="basculerLecture()"
+                  [attr.aria-label]="lecture() ? pauseLabel : lireLabel"
+                  [attr.aria-pressed]="lecture()"
+                  [title]="lecture() ? pauseLabel : lireLabel"
+                  data-test="carte-jour-lecture">
+            <mat-icon>{{ lecture() ? 'pause' : 'play_arrow' }}</mat-icon>
+          </button>
+          <button matIconButton type="button" (click)="decalerCurseur(1)"
+                  [disabled]="minutes() >= jour.finMinutes"
+                  [attr.aria-label]="avancerLabel" [title]="avancerLabel">
+            <mat-icon>fast_forward</mat-icon>
+          </button>
+          <mat-slider class="carte-jour-slider" discrete
+                      [min]="jour.debutMinutes" [max]="jour.finMinutes" [step]="15"
+                      [displayWith]="formatCurseur">
+            <!-- (input), not (valueChange): the latter only fires when the drag
+                 is committed, and the point of the screen is the map following
+                 the cursor. Arrow keys on the native range input are handled
+                 here too, locally — no document-level listener. -->
+            <input #pouce matSliderThumb [value]="minutes()" (input)="deplacerCurseur(+pouce.value)"
+                   [attr.aria-label]="curseurLabel" data-test="carte-jour-curseur" />
+          </mat-slider>
+          <output class="carte-jour-heure" data-test="carte-jour-heure">{{ instant().heure }}</output>
+        </div>
+
+        <p class="carte-jour-compteurs" role="status" data-test="carte-jour-compteurs">
+          {{ compteursLabel() }}
+          @if (alerteLabel()) {
+            <span class="carte-jour-alerte"> — {{ alerteLabel() }}</span>
+          }
+        </p>
+
+        <ul class="carte-jour-legende">
+          <li><span class="carte-jour-pastille etat-pourvu"></span><ng-container i18n="@@carteJour.legend.pourvu">Ouvert, toutes les places pourvues</ng-container></li>
+          <li><span class="carte-jour-pastille etat-partiel"></span><ng-container i18n="@@carteJour.legend.partiel">Ouvert, des places vides</ng-container></li>
+          <li><span class="carte-jour-pastille etat-decouvert"></span><ng-container i18n="@@carteJour.legend.decouvert">Ouvert, personne</ng-container></li>
+          <li><span class="carte-jour-pastille etat-ferme"></span><ng-container i18n="@@carteJour.legend.ferme">Fermé à cette heure-là</ng-container></li>
+          <li><span class="carte-jour-pastille etat-sansStand"></span><ng-container i18n="@@carteJour.legend.sansStand">Aucun stand rattaché ce jour-là</ng-container></li>
+        </ul>
+        <p class="empty-hint" i18n="@@carteJour.hint">
+          Le chiffre d'une pastille est le nombre de stands ouverts à cet endroit. La couleur reprend le plus
+          préoccupant d'entre eux. Un clic sur une pastille ou sur une ligne de la liste met l'emplacement en
+          évidence.
+        </p>
+
+        <app-carte-jour-map
+          [marqueurs]="instant().marqueurs"
+          [selection]="selection()"
+          [cadrage]="cadrage()"
+          [ariaLabel]="carteAriaLabel()"
+          (marqueurChoisi)="choisirEmplacement($event)"
+        />
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-header>
+        <h2 mat-card-title i18n="@@carteJour.list.title">Emplacements à cette heure-là</h2>
+      </mat-card-header>
+      <mat-card-content>
+        @if (instant().marqueurs.length === 0) {
+          <p class="empty-hint" i18n="@@carteJour.list.empty">
+            Aucun emplacement géolocalisé : la carte ne peut rien montrer tant que les stands de cette journée
+            ne sont pas rattachés à un emplacement muni de coordonnées.
+          </p>
+        } @else {
+          <ul class="carte-jour-liste">
+            @for (marqueur of instant().marqueurs; track marqueur.emplacementId) {
+              <li>
+                <button type="button" class="carte-jour-emplacement"
+                        [class.selection]="selection() === marqueur.emplacementId"
+                        [attr.aria-pressed]="selection() === marqueur.emplacementId"
+                        (click)="choisirEmplacement(marqueur.emplacementId)">
+                  <span class="carte-jour-pastille" [class]="'etat-' + marqueur.etat"></span>
+                  <span class="carte-jour-emplacement-nom">{{ marqueur.nom }}</span>
+                  <span class="carte-jour-emplacement-resume">{{ marqueur.resume }}</span>
+                </button>
+                @if (marqueur.stands.length > 0) {
+                  <ul class="carte-jour-stands">
+                    @for (stand of marqueur.stands; track stand.standId) {
+                      <li [class]="'etat-' + stand.etat">{{ stand.resume }}</li>
+                    }
+                  </ul>
+                }
+              </li>
+            }
+          </ul>
+        }
+
+        @if (instant().nonSitues.length > 0) {
+          <h3 class="carte-jour-sous-titre">{{ nonSituesLabel() }}</h3>
+          <ul class="carte-jour-stands carte-jour-non-situes" data-test="carte-jour-non-situes">
+            @for (stand of instant().nonSitues; track stand.standId) {
+              <li [class]="'etat-' + stand.etat">{{ stand.resume }}</li>
+            }
+          </ul>
+        }
+      </mat-card-content>
+    </mat-card>
+  } @else {
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-content>
+        <p class="empty-hint" i18n="@@carteJour.empty">
+          Aucun planning enregistré pour le moment : il n'y a donc aucune journée à rejouer. Lancez une
+          résolution depuis la page Solveur, puis revenez ici.
+        </p>
+        <a matButton="tonal" routerLink="/">
+          <mat-icon>play_arrow</mat-icon>
+          <ng-container i18n="@@carteJour.empty.action">Aller à la page Solveur</ng-container>
+        </a>
+      </mat-card-content>
+    </mat-card>
+  }
+}

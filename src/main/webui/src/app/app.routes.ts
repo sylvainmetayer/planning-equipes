@@ -187,6 +187,14 @@ const adminRoutes: Routes = [
     title: 'Day rail',
     loadComponent: () => import('./pages/rail-jour/rail-jour-page').then((m) => m.RailJourPage)
   },
+  {
+    // Lazy like every other route, and that matters here beyond the rule:
+    // `leaflet` must not reach the initial bundle, so nothing outside this
+    // chunk and the /emplacements one may import it.
+    path: 'carte-jour',
+    title: 'Day map',
+    loadComponent: () => import('./pages/carte-jour/carte-jour-page').then((m) => m.CarteJourPage)
+  },
   { path: '**', redirectTo: '' }
 ];
 

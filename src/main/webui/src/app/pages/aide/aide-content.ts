@@ -512,6 +512,10 @@ export function buildHelpSections(): HelpSection[] {
               text: $localize`:@@aide.views.def.railJour:La même journée que le calendrier journalier, mais vue par personne : une ligne par animateur, les vacations placées dans le temps. Les trous, les amplitudes et les enchaînements sautent aux yeux, et les lignes vides disent qui reste mobilisable — celles marquées « indisponible » signalent au contraire de ne pas solliciter la personne.`
             },
             {
+              term: $localize`:@@aide.views.term.carteJour:Carte de la journée`,
+              text: $localize`:@@aide.views.def.carteJour:Encore la même journée, mais sur la carte des emplacements : un curseur temporel, et chaque emplacement coloré par ce que le planning enregistré dit qu'il s'y passe à cet instant — ouvert et entièrement pourvu, ouvert avec des places vides, ou ouvert sans personne. Rien n'est recalculé : un stand est ouvert quand le plan porte un poste qui couvre cet instant. Les stands rattachés à aucun emplacement géolocalisé sont listés à côté de la carte plutôt qu'escamotés.`
+            },
+            {
               term: $localize`:@@aide.views.term.comparateur:Comparateur A/B`,
               text: $localize`:@@aide.views.def.comparateur:Deux plannings côte à côte — deux instantanés, ou un instantané et le planning actuel — sur le score, la couverture, l'équité et les violations, avec le sens de chaque écart écrit en toutes lettres. Les instantanés de toutes les éditions sont proposés : c'est ainsi qu'on compare une variante (canicule, repli) à l'édition nominale. L'écran prévient quand les deux plannings n'ont pas la même taille ou ne viennent pas de la même édition : une partie de l'écart vient alors du problème posé, pas de la qualité de la résolution. Comparer ne lance jamais de calcul.`
             },
@@ -535,6 +539,7 @@ export function buildHelpSections(): HelpSection[] {
         { route: '/heatmap', label: $localize`:@@nav.link.heatmap:Heatmap de charge` },
         { route: '/timeline', label: $localize`:@@nav.link.timeline:Timeline animateur` },
         { route: '/rail-jour', label: $localize`:@@nav.link.railJour:Rail de la journée` },
+        { route: '/carte-jour', label: $localize`:@@nav.link.carteJour:Carte de la journée` },
         { route: '/hours', label: $localize`:@@nav.link.hours:Heures` },
         { route: '/fragilite', label: $localize`:@@nav.link.fragilite:Fragilité du planning` },
         { route: '/banc-de-touche', label: $localize`:@@nav.link.bancDeTouche:Banc de touche` },

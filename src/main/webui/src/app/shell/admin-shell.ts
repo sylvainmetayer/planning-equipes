@@ -168,6 +168,11 @@ function buildNavGroups(devMode: boolean): NavGroup[] {
         label: $localize`:@@nav.link.railJour:Rail de la journée`,
         icon: 'view_timeline'
       },
+      {
+        path: '/carte-jour',
+        label: $localize`:@@nav.link.carteJour:Carte de la journée`,
+        icon: 'map'
+      },
       { path: '/graphe', label: $localize`:@@nav.link.graphe:Graphe`, icon: 'hub' },
       { path: '/kpi', label: $localize`:@@nav.link.kpi:Autopsie du planning`, icon: 'query_stats' },
       {

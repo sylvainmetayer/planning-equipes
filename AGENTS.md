@@ -320,7 +320,8 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   renamed), `/calendar`, `/day-calendar`, `/constraints`,
   `/problemes`, `/echanges`, `/hours`, `/staffing`, `/jour-j` (« Mode jour J » —
   the day-of screen: mark somebody absent, repair the seats they held),
-  `/banc-de-touche`, `/aide` (`/solver`,
+  `/banc-de-touche`, `/carte-jour` (« Carte de la journée » — the day replayed
+  on the emplacement map, one time cursor), `/aide` (`/solver`,
   `/exports`, `/data-transfer`, `/data-setup`, `/decoupage` and
   `/validateur-yaml` are legacy redirects, kept for old bookmarks/links).
   Adding a functional block means adding a route and a `app/pages/<block>/`
@@ -434,7 +435,11 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   + its CLI + Angular Material + `@angular/localize` (the stack proper);
   `@sentry/angular` (error reporting, loaded by a dynamic `import()` only when a
   DSN is configured — see `core/observability.ts`); `leaflet` + `@types/leaflet`
-  (the emplacement map picker, reached only by the lazy `/emplacements` route).
+  (the maps, reached only by the lazy `/emplacements`, `/graphe` and
+  `/carte-jour` routes — it is a 150 kB chunk of its own and **must stay out of
+  the initial bundle**, so nothing eagerly loaded may import it; the tile
+  layer, the attribution and the bundled icon paths are shared by
+  `shared/leaflet-base.ts`).
   Dev-only: `@playwright/test`, `vitest`, `@vitest/coverage-v8`
   (`npm run test:coverage`, run in CI — the report is published as an artifact
   and nothing consumes it: no threshold, no external service), `jsdom`,

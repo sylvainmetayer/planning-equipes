@@ -109,6 +109,7 @@ function buildDefinitionsRoutes(): Map<string, DefinitionRoute> {
     ['/heatmap', { label: $localize`:@@nav.link.heatmap:Heatmap de charge`, icon: 'grid_view' }],
     ['/timeline', { label: $localize`:@@nav.link.timeline:Timeline animateur`, icon: 'timeline' }],
     ['/rail-jour', { label: $localize`:@@nav.link.railJour:Rail de la journée`, icon: 'view_timeline' }],
+    ['/carte-jour', { label: $localize`:@@nav.link.carteJour:Carte de la journée`, icon: 'map' }],
     ['/graphe', { label: $localize`:@@nav.link.graphe:Graphe`, icon: 'hub' }],
     ['/kpi', { label: $localize`:@@nav.link.kpi:Autopsie du planning`, icon: 'query_stats', touche: 'k' }],
     ['/comparateur', { label: $localize`:@@nav.link.comparateur:Comparateur A/B`, icon: 'compare_arrows' }],

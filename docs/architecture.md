@@ -172,9 +172,11 @@ Trois surfaces restent volontairement en dehors :
 - la **barre d'outils de marque** (administration et espace animateur) garde sa
   couleur d'enseigne dans les deux thèmes : une identité qui change de couleur
   selon l'heure n'est plus une identité ;
-- la **carte des emplacements** affiche des tuiles OpenStreetMap, c'est-à-dire
-  du contenu et non du chrome ; les assombrir demanderait un autre fournisseur
-  de tuiles, pas une variable ;
+- les **cartes** (saisie d'un emplacement, carte de la journée) affichent des
+  tuiles OpenStreetMap, c'est-à-dire du contenu et non du chrome ; les
+  assombrir demanderait un autre fournisseur de tuiles, pas une variable. Ce
+  qui les entoure — pastilles d'état, légende, liste — suit le thème comme le
+  reste ;
 - les **PDF** sont composés côté serveur, pour être imprimés : ils suivent la
   marque, jamais le thème du navigateur.
 
@@ -272,6 +274,17 @@ La table `g`+lettre et les libellés de la palette vivent dans
 `core/keyboard-shortcuts.ts` ; les destinations, elles, sont **dérivées de
 `app.routes.ts`**, pour qu'une page ajoutée demain soit atteignable au clavier
 sans qu'on ait pensé à l'y inscrire.
+
+### `leaflet` reste hors du bundle initial
+
+Trois routes affichent une carte — `/emplacements` (saisie d'un point),
+`/graphe` (le même sélecteur en lecture seule) et `/carte-jour` (le rejeu d'une
+journée). Toutes trois sont en lazy loading, et `leaflet` pèse à lui seul un
+morceau de 150 ko : **rien de chargé au démarrage ne doit l'importer**, sinon
+ce poids passe dans le bundle initial de tout le monde, y compris de la page de
+connexion. Ce qu'elles partagent — les tuiles OpenStreetMap, leur attribution,
+la politique de `Referrer` qu'elles exigent et les chemins d'icônes qui
+survivent au bundle — vit dans `shared/leaflet-base.ts`, jamais recopié.
 
 ### Le seul endroit où le frontend réimplémente du domaine
 
