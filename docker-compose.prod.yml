@@ -99,7 +99,8 @@ services:
       # recopiés hors de l'hôte, chiffrés. Un montage de répertoire hôte
       # (`- /srv/sauvegardes:/backups`) est le montage attendu dès qu'une
       # externalisation existe — il faut alors que le répertoire appartienne à
-      # l'uid 1001.
+      # l'uid 1000, celui du conteneur, qui est aussi celui du premier compte
+      # de l'hôte : le montage tombe juste sans `chown`.
       - backups:/backups
     depends_on:
       postgres:

@@ -251,7 +251,7 @@ dans l'espace animateur.
 ## Conteneurisation
 
 `docker-compose.yml` : l'application (build multi-stage, JRE en image finale,
-utilisateur non privilégié `uid 1001`), PostgreSQL avec son volume et son
+utilisateur non privilégié `uid 1000`), PostgreSQL avec son volume et son
 healthcheck, pgAdmin. L'image finale embarque `postgresql-client-18` pour la
 sauvegarde de nuit : un `pg_dump` plus ancien que le serveur refuse de tourner,
 donc cette version suit celle de l'image `postgres:`. La configuration de production est dans

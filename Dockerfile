@@ -30,13 +30,22 @@ RUN apt-get update \
 # disque, et n'ouvre qu'un port non privilégié : elle n'a aucune raison de
 # tourner en root, où la moindre exécution de code arbitraire s'exercerait sur
 # tout le conteneur.
-RUN groupadd --system --gid 1001 planning && useradd --system --uid 1001 --gid planning planning
+#
+# L'uid est 1000 parce que c'est celui du premier compte d'une machine Linux :
+# un répertoire de l'hôte monté sur `/backups` lui appartient alors déjà, et
+# l'exploitant n'a pas de `chown` à faire pour que la sauvegarde puisse écrire.
+# L'image de base est une Ubuntu, qui livre son propre compte `ubuntu` sur ce
+# même 1000 : il faut le retirer d'abord, sinon `useradd` échoue sur un uid
+# déjà pris.
+RUN userdel --remove ubuntu \
+    && groupadd --gid 1000 planning \
+    && useradd --uid 1000 --gid planning --no-create-home --shell /usr/sbin/nologin planning
 # Créé ici, et appartenant déjà à l'utilisateur applicatif : un volume Docker
 # monté sur un chemin qui existe dans l'image en reprend les droits. Sans cela
 # il arriverait en `root:root` et la première sauvegarde échouerait sur un
 # refus d'écriture.
-RUN install -d -o 1001 -g 1001 /backups
-COPY --from=build --chown=1001:1001 /workspace/target/quarkus-app/ /app/
-USER 1001
+RUN install -d -o 1000 -g 1000 /backups
+COPY --from=build --chown=1000:1000 /workspace/target/quarkus-app/ /app/
+USER 1000
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "/app/quarkus-run.jar"]
