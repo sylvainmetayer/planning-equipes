@@ -11,7 +11,8 @@
       <mat-icon>settings</mat-icon>
       <ng-container i18n="@@typologies.ninjaVersParametres">La typologie ninja se choisit dans les Paramètres</ng-container>
     </a>
-    <app-table-filter [(value)]="filtre" [matches]="typologiesFiltrees().length" [total]="store.typologies().length" />
+    <app-table-filter [(value)]="filtre" [matches]="typologiesFiltrees().length" [total]="store.typologies().length"
+                      (enterTable)="navigation.focusCurrent()" />
   </mat-card-actions>
   <mat-card-content class="table-wrapper">
     @if (selection.hasSelection()) {
@@ -66,7 +67,12 @@
         </td>
       </ng-container>
       <tr mat-header-row *matHeaderRowDef="columns"></tr>
-      <tr mat-row *matRowDef="let row; columns: columns"></tr>
+      <tr mat-row *matRowDef="let row; columns: columns; let i = index"
+          [attr.data-row-index]="i"
+          [tabindex]="navigation.isCurrent(i) ? 0 : -1"
+          [class.row-selected]="selection.isSelected(row.id)"
+          (focus)="navigation.onFocus(i)"
+          (keydown)="navigation.onKeydown($event, i)"></tr>
     </table>
     @if (store.typologies().length === 0) {
       <p class="empty-hint" i18n="@@typologies.empty">Aucune typologie pour le moment.</p>

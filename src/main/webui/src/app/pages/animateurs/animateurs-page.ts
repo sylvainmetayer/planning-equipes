@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { LiveAnnouncer } from '@angular/cdk/a11y';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { firstValueFrom } from 'rxjs';
 import { MatCardModule } from '@angular/material/card';
@@ -18,12 +19,14 @@ import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
+import { TableNavigation } from '../../core/table-navigation';
 import { TableSelection } from '../../core/table-selection';
 import { correspondAuFiltre } from '../../core/text-filter';
 import { NO_SORT, keepViewInQueryParams, optionalParam, readSort, sortQueryParams } from '../../core/view-query-params';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { DetailData, DetailDialog } from '../../shared/detail-dialog';
+import { SortHeaderName } from '../../shared/sort-header-name';
 import { TableFilter } from '../../shared/table-filter';
 import { AnimateurBulkEditData, AnimateurBulkEditDialog } from './animateur-bulk-edit-dialog';
 import { buildAnimateurDetail } from './animateur-detail';
@@ -40,7 +43,9 @@ import { errorMessage } from '../../core/error-message';
  * reasons the day cannot be staffed at all.
  *
  * Rows are multi-selectable, for a bulk delete or a bulk edit of the fields
- * animateurs share (appréciation, souhaits, manager, indisponibilités).
+ * animateurs share (appréciation, souhaits, manager, indisponibilités). The
+ * appréciation has no column of its own — it is a list per row, unreadable in
+ * a cell — and is read in the detail dialog, edited in the form.
  */
 @Component({
   selector: 'app-animateurs-page',
@@ -53,13 +58,14 @@ import { errorMessage } from '../../core/error-message';
     MatSortModule,
     MatTooltipModule,
     BulkActionsBar,
+    SortHeaderName,
     TableFilter
   ],
   templateUrl: './animateurs-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AnimateursPage {
-  protected readonly columns = ['select', 'id', 'nom', 'majorite', 'manager', 'competences', 'indisponibilites', 'confirmation', 'actions'];
+  protected readonly columns = ['select', 'id', 'nom', 'majorite', 'manager', 'indisponibilites', 'confirmation', 'actions'];
   protected readonly sort = signal<Sort>(NO_SORT);
   /** Quick filter of the table: id, identity and compétences. Applied before the sort. */
   protected readonly filtre = signal('');
@@ -98,8 +104,9 @@ export class AnimateursPage {
     if (!active || !direction) {
       return animateurs;
     }
+    const confirmations = this.confirmations();
     const factor = direction === 'asc' ? 1 : -1;
-    return [...animateurs].sort((a, b) => factor * compareByColumn(a, b, active));
+    return [...animateurs].sort((a, b) => factor * compareByColumn(a, b, active, confirmations));
   });
 
   protected readonly store = inject(ReferenceDataStore);
@@ -111,6 +118,25 @@ export class AnimateursPage {
   protected readonly selection = new TableSelection<string>(
     computed(() => this.sortedAnimateurs().map((animateur) => animateur.id))
   );
+
+  private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  /**
+   * Roving tabindex over the rows: the arrows move the focus, Entrée opens the
+   * detail, Espace ticks the row. `core/table-navigation.ts` holds the whole
+   * mechanism, shared with the other reference-data tables.
+   */
+  protected readonly navigation = new TableNavigation({
+    rows: this.sortedAnimateurs,
+    id: (animateur: Animateur) => animateur.id,
+    host: () => this.hote.nativeElement,
+    selection: this.selection,
+    open: (animateur: Animateur) => {
+      void this.consult(animateur);
+      return true;
+    },
+    announcer: inject(LiveAnnouncer)
+  });
 
   private readonly problemes = inject(ProblemesStore);
   private readonly crud = inject(ReferenceCrudService);
@@ -261,11 +287,6 @@ export class AnimateursPage {
     return $localize`:@@animateurs.alerte.indisponibiliteCritique:Indisponible le ${jour}:date:, un jour où l'effectif est structurellement insuffisant : ${cause}:cause:`;
   }
 
-  protected competencesLabel(animateur: Animateur): string {
-    const entries = Object.entries(animateur.competences ?? {});
-    return entries.length === 0 ? '—' : entries.map(([typo, niveau]) => `${typo}: ${niveau}`).join(', ');
-  }
-
   protected ouiNon(value: boolean): string {
     return value ? $localize`:@@common.oui:Oui` : $localize`:@@common.non:Non`;
   }
@@ -345,12 +366,82 @@ const CONFIRMATION_LABELS: Record<StatutConfirmation, () => string> = {
   RELANCE: () => $localize`:@@animateurs.confirmation.relance:Relancé`
 };
 
-function compareByColumn(a: Animateur, b: Animateur, column: string): number {
-  if (column !== 'majorite') {
-    return 0;
+/**
+ * Order of one column, ascending. Every column here is sorted on something the
+ * cell actually shows, so the result reads as sorted rather than shuffled — and
+ * where the value is not a text, the ranking is chosen to put what still needs
+ * doing on top of the ascending order:
+ *
+ *   - `majorite` and `manager` are booleans: "Oui" first, so the people the
+ *     column exists to spot come up on the first click;
+ *   - `indisponibilites` is a list, and its cell shows a count, so the count is
+ *     what is compared;
+ *   - `confirmation` is a status with no natural order: silencieux, then
+ *     relancé, then confirmé, and last the people who were asked nothing —
+ *     ascending is then "who is left to chase".
+ *
+ * An unknown column answers 0, which leaves the rows in source order: a link
+ * carrying a `?sort=` of a column since removed degrades to an unsorted table
+ * (see `core/view-query-params.ts`).
+ */
+function compareByColumn(
+  a: Animateur,
+  b: Animateur,
+  column: string,
+  confirmations: Map<string, ConfirmationView>
+): number {
+  switch (column) {
+    case 'id':
+      return compareTexte(a.id, b.id);
+    case 'nom':
+      // On the string the cell shows, not on the family name: the column reads
+      // « Prénom Nom », and sorting on anything else looks broken on screen.
+      return compareTexte(nomAffiche(a), nomAffiche(b));
+    case 'majorite':
+      return rankMajorite(a) - rankMajorite(b);
+    case 'manager':
+      return rankBooleen(a.manager) - rankBooleen(b.manager);
+    case 'indisponibilites':
+      return (a.joursIndisponibles?.length ?? 0) - (b.joursIndisponibles?.length ?? 0);
+    case 'confirmation':
+      return rankConfirmation(a, confirmations) - rankConfirmation(b, confirmations);
+    default:
+      return 0;
   }
-  return rankMajorite(a) - rankMajorite(b);
 }
+
+/**
+ * Numeric-aware and accent-insensitive: ids run A1, A2 … A10, which a plain
+ * code-point comparison files as A1, A10, A2 — and « Élodie » must not land
+ * after « Zoé ».
+ */
+function compareTexte(left: string, right: string): number {
+  return (left ?? '').localeCompare(right ?? '', intlLocale(), { numeric: true, sensitivity: 'base' });
+}
+
+function nomAffiche(animateur: Animateur): string {
+  return `${animateur.prenom ?? ''} ${animateur.nom ?? ''}`.trim();
+}
+
+/** "Oui" first, like {@link rankMajorite}. */
+function rankBooleen(valeur: boolean): number {
+  return valeur ? 0 : 1;
+}
+
+function rankConfirmation(animateur: Animateur, confirmations: Map<string, ConfirmationView>): number {
+  const confirmation = confirmations.get(animateur.id);
+  if (!confirmation || !confirmation.affecte) {
+    // Nothing was asked of them: last, because there is nothing to chase.
+    return 3;
+  }
+  return CONFIRMATION_RANKS[confirmation.statut];
+}
+
+const CONFIRMATION_RANKS: Record<StatutConfirmation, number> = {
+  NON_VU: 0,
+  RELANCE: 1,
+  CONFIRME: 2
+};
 
 function rankMajorite(animateur: Animateur): number {
   const statut = majorite(animateur);

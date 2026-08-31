@@ -36,6 +36,19 @@ interface RaccourciGeneral {
         }
       </dl>
 
+      <h3 class="raccourcis-titre" i18n="@@shortcuts.table.title">Dans un tableau de données de référence</h3>
+      <p class="raccourcis-intro" i18n="@@shortcuts.table.intro">
+        Pour entrer dans le tableau : « / » place le curseur dans le filtre de la page, puis Flèche bas saute sur la
+        ligne courante. Tab y entre aussi, sur une seule ligne, et en ressort vers les boutons de cette ligne : le
+        tableau ne retient jamais le focus.
+      </p>
+      <dl class="raccourcis-liste">
+        @for (raccourci of tableau; track raccourci.touches) {
+          <dt><kbd>{{ raccourci.touches }}</kbd></dt>
+          <dd>{{ raccourci.description }}</dd>
+        }
+      </dl>
+
       <h3 class="raccourcis-titre" i18n="@@shortcuts.navigation.title">Navigation : « g » puis une lettre</h3>
       <dl class="raccourcis-liste">
         @for (raccourci of navigation; track raccourci.touche) {
@@ -90,6 +103,34 @@ interface RaccourciGeneral {
 })
 export class KeyboardShortcutsDialog {
   protected readonly navigation: RaccourciNavigation[] = buildRaccourcisNavigation();
+
+  /**
+   * Local to a table, and only while the focus is inside one — which is why
+   * they are not in `keyboard-shortcuts.service.ts` with the global ones. Same
+   * roving tabindex as the heatmap and the month calendar.
+   */
+  protected readonly tableau: RaccourciGeneral[] = [
+    {
+      touches: $localize`:@@shortcuts.key.arrowDown:Flèche bas`,
+      description: $localize`:@@shortcuts.table.enter:Depuis le filtre de la page, entrer dans le tableau : le focus saute sur la ligne courante.`
+    },
+    {
+      touches: '↑ ↓',
+      description: $localize`:@@shortcuts.table.move:Passer d'une ligne à l'autre du tableau.`
+    },
+    {
+      touches: $localize`:@@shortcuts.key.homeEnd:Début / Fin`,
+      description: $localize`:@@shortcuts.table.bounds:Aller à la première ou à la dernière ligne affichée.`
+    },
+    {
+      touches: $localize`:@@shortcuts.key.enter:Entrée`,
+      description: $localize`:@@shortcuts.table.open:Ouvrir la ligne : sa fiche de consultation, ou son formulaire là où il n'y a pas de fiche.`
+    },
+    {
+      touches: $localize`:@@shortcuts.key.space:Espace`,
+      description: $localize`:@@shortcuts.table.select:Cocher ou décocher la ligne, pour une action groupée.`
+    }
+  ];
 
   protected readonly general: RaccourciGeneral[] = [
     {

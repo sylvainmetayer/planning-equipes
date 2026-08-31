@@ -83,7 +83,12 @@
           </td>
         </ng-container>
         <tr mat-header-row *matHeaderRowDef="columns()"></tr>
-        <tr mat-row *matRowDef="let row; columns: columns()"></tr>
+        <tr mat-row *matRowDef="let row; columns: columns(); let i = index"
+          [attr.data-row-index]="i"
+          [tabindex]="navigation.isCurrent(i) ? 0 : -1"
+          [class.row-selected]="selection.isSelected(row.id)"
+          (focus)="navigation.onFocus(i)"
+          (keydown)="navigation.onKeydown($event, i)"></tr>
       </table>
     </div>
     @if (creneauxAffiches().length === 0) {

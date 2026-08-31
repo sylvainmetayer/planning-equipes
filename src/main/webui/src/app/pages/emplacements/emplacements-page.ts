@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { LiveAnnouncer } from '@angular/cdk/a11y';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { firstValueFrom } from 'rxjs';
 import { MatCardModule } from '@angular/material/card';
@@ -11,6 +12,7 @@ import { labelEmplacementsPluriel } from '../../core/entity-labels';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
+import { TableNavigation } from '../../core/table-navigation';
 import { TableSelection } from '../../core/table-selection';
 import { correspondAuFiltre } from '../../core/text-filter';
 import { distanceMetres, formatDistance } from '../../core/distance';
@@ -103,6 +105,25 @@ export class EmplacementsPage {
   protected readonly selection = new TableSelection<string>(
     computed(() => this.emplacementsFiltres().map((emplacement) => emplacement.id))
   );
+
+  private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  /**
+   * Roving tabindex over the rows: the arrows move the focus, Entrée opens the
+   * detail, Espace ticks the row. `core/table-navigation.ts` holds the whole
+   * mechanism, shared with the other reference-data tables.
+   */
+  protected readonly navigation = new TableNavigation({
+    rows: this.emplacementsFiltres,
+    id: (emplacement: Emplacement) => emplacement.id,
+    host: () => this.hote.nativeElement,
+    selection: this.selection,
+    open: (emplacement: Emplacement) => {
+      void this.consult(emplacement);
+      return true;
+    },
+    announcer: inject(LiveAnnouncer)
+  });
 
   private readonly crud = inject(ReferenceCrudService);
   private readonly dialog = inject(MatDialog);

@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { LiveAnnouncer } from '@angular/cdk/a11y';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -23,6 +24,7 @@ import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
+import { TableNavigation } from '../../core/table-navigation';
 import { TableSelection } from '../../core/table-selection';
 import { CauseInfaisabilite, Creneau } from '../../core/models';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
@@ -119,6 +121,41 @@ export class CreneauxPage {
   protected readonly selection = new TableSelection<number>(
     computed(() => this.creneauxAffiches().map((creneau) => creneau.id))
   );
+
+  private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  /**
+   * Roving tabindex over the rows: the arrows move the focus, Entrée opens the
+   * row, Espace ticks it. `core/table-navigation.ts` holds the whole mechanism,
+   * shared with the other reference-data tables.
+   */
+  protected readonly navigation = new TableNavigation({
+    rows: this.creneauxAffiches,
+    id: (creneau: Creneau) => creneau.id,
+    host: () => this.hote.nativeElement,
+    selection: this.selection,
+    open: (creneau: Creneau) => this.ouvrirLigne(creneau),
+    announcer: inject(LiveAnnouncer)
+  });
+
+  /**
+   * Entrée on a row. A créneau has no read-only detail view — it carries a day,
+   * a date and two times, all four already in the table — so the keyboard opens
+   * the form straight away, and refuses it while a solve runs exactly like the
+   * row's own "Modifier" button.
+   *
+   * <p>Refusing returns `false`, so the navigation leaves the key alone rather
+   * than eating it for nothing. The refusal stays silent on purpose: the page
+   * already carries a permanent banner saying the edition is locked for as
+   * long as it is, and one snack bar per keystroke would only repeat it.</p>
+   */
+  private ouvrirLigne(creneau: Creneau): boolean {
+    if (this.editingLocked()) {
+      return false;
+    }
+    this.edit(creneau);
+    return true;
+  }
 
   /**
    * Créneau id → the feasibility cause naming it, re-keyed on the numeric id so

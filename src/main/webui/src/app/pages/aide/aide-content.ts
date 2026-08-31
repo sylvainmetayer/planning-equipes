@@ -589,6 +589,31 @@ export function buildHelpSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
+          text: $localize`:@@aide.shortcuts.tables:Les tableaux de données de référence (animateurs, stands, créneaux, emplacements, typologies) se parcourent aussi au clavier. Le chemin le plus court pour y entrer : « / » place le curseur dans le filtre de la page, tapez de quoi réduire la liste, puis Flèche bas saute directement sur la première ligne. Tab y entre également, sur une seule ligne — jamais ligne par ligne — mais il traverse d'abord les commandes de l'en-tête (la case « tout sélectionner » et chaque en-tête triable). Les flèches déplacent ensuite le focus d'un cran ; Tab ressort de la ligne vers ses boutons, puis vers le reste de la page.`
+        },
+        {
+          kind: 'definitions',
+          items: [
+            {
+              term: $localize`:@@aide.shortcuts.term.rowEnter:Flèche bas depuis le filtre`,
+              text: $localize`:@@aide.shortcuts.def.rowEnter:Entre dans le tableau sans compter les tabulations : le focus saute sur la ligne courante, celle qu'un contour marque. C'est le geste à retenir — filtrer, puis descendre. Un clic sur une ligne la focalise de la même façon, et les flèches enchaînent aussitôt.`
+            },
+            {
+              term: $localize`:@@aide.shortcuts.term.rowMove:Flèches haut et bas`,
+              text: $localize`:@@aide.shortcuts.def.rowMove:Passent d'une ligne à l'autre. Début et Fin sautent à la première et à la dernière ligne affichée. Le focus suit la ligne, pas son rang : changer le tri ne le fait pas sauter ailleurs, et filtrer la ligne focalisée le repose sur celle qui prend sa place.`
+            },
+            {
+              term: $localize`:@@aide.shortcuts.term.rowOpen:Entrée`,
+              text: $localize`:@@aide.shortcuts.def.rowOpen:Ouvre la ligne focalisée : sa fiche de consultation, ou directement son formulaire sur les créneaux, qui n'ont pas de fiche. Comme les boutons de la ligne, la touche reste sans effet tant qu'une résolution verrouille l'édition.`
+            },
+            {
+              term: $localize`:@@aide.shortcuts.term.rowSelect:Espace`,
+              text: $localize`:@@aide.shortcuts.def.rowSelect:Coche ou décoche la ligne focalisée. La barre d'actions groupées apparaît dès la première ligne cochée, exactement comme avec la souris.`
+            }
+          ]
+        },
+        {
+          kind: 'paragraph',
           text: $localize`:@@aide.shortcuts.guard:Aucun raccourci à une touche ne se déclenche pendant que vous saisissez du texte : tant que le curseur est dans un champ, « g », « / » et « ? » restent des caractères ordinaires. Ils reprennent dès que le focus quitte le champ.`
         }
       ],

@@ -15,7 +15,8 @@
       <mat-icon>compress</mat-icon>
       <ng-container i18n="@@stands.compactage.action">Compacter les horaires</ng-container>
     </button>
-    <app-table-filter [(value)]="filtre" [matches]="standsFiltres().length" [total]="store.stands().length" />
+    <app-table-filter [(value)]="filtre" [matches]="standsFiltres().length" [total]="store.stands().length"
+                      (enterTable)="navigation.focusCurrent()" />
   </mat-card-actions>
   <mat-card-content class="table-wrapper">
     @if (selection.hasSelection()) {
@@ -86,7 +87,12 @@
         </td>
       </ng-container>
       <tr mat-header-row *matHeaderRowDef="columns"></tr>
-      <tr mat-row *matRowDef="let row; columns: columns"></tr>
+      <tr mat-row *matRowDef="let row; columns: columns; let i = index"
+          [attr.data-row-index]="i"
+          [tabindex]="navigation.isCurrent(i) ? 0 : -1"
+          [class.row-selected]="selection.isSelected(row.id)"
+          (focus)="navigation.onFocus(i)"
+          (keydown)="navigation.onKeydown($event, i)"></tr>
     </table>
     @if (store.stands().length === 0) {
       <p class="empty-hint" i18n="@@stands.empty">Aucun stand pour le moment. Créez-en un ci-dessus, ou chargez l'exemple depuis la page Solveur.</p>

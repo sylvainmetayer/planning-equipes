@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { LiveAnnouncer } from '@angular/cdk/a11y';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -12,6 +13,7 @@ import { labelTypologiesPluriel } from '../../core/entity-labels';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
+import { TableNavigation } from '../../core/table-navigation';
 import { TableSelection } from '../../core/table-selection';
 import { correspondAuFiltre } from '../../core/text-filter';
 import { TypologieItem } from '../../core/models';
@@ -76,6 +78,25 @@ export class TypologiesPage {
   protected readonly selection = new TableSelection<string>(
     computed(() => this.typologiesFiltrees().map((typologie) => typologie.id))
   );
+
+  private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  /**
+   * Roving tabindex over the rows: the arrows move the focus, Entrée opens the
+   * detail, Espace ticks the row. `core/table-navigation.ts` holds the whole
+   * mechanism, shared with the other reference-data tables.
+   */
+  protected readonly navigation = new TableNavigation({
+    rows: this.typologiesFiltrees,
+    id: (typologie: TypologieItem) => typologie.id,
+    host: () => this.hote.nativeElement,
+    selection: this.selection,
+    open: (typologie: TypologieItem) => {
+      void this.consult(typologie);
+      return true;
+    },
+    announcer: inject(LiveAnnouncer)
+  });
 
   private readonly crud = inject(ReferenceCrudService);
   private readonly dialog = inject(MatDialog);

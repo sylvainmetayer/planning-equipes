@@ -64,6 +64,43 @@ test.describe('fiche animateur', () => {
     await expect(page.getByRole('row', { name: /E2E-UI/ })).toHaveCount(0);
     await page.context().close();
   });
+
+  test("l'aide sous la date de naissance ne recouvre pas la case Manager", async ({ browser }) => {
+    // Défaut signalé sur une capture d'écran : la zone de sous-titre d'un
+    // `mat-form-field` ne réserve par défaut la place que d'une ligne, et cette
+    // aide-là en tient trois — le texte passait par-dessus la case à cocher de
+    // la ligne suivante. Une géométrie, parce que rien d'autre ne le voit : le
+    // DOM est correct, seul le rendu se superpose.
+    const page = await pageAdmin(browser, admin);
+    // Étroit à dessein : c'est là que l'aide déborde le plus.
+    await page.setViewportSize({ width: 760, height: 900 });
+    await page.goto('/animateurs');
+    await page.getByRole('button', { name: 'Ajouter' }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+
+    const chevauchements = await dialog.evaluate((racine) => {
+      const rectangles = Array.from(racine.querySelectorAll('mat-hint')).map((hint) => ({
+        texte: (hint.textContent ?? '').trim().slice(0, 30),
+        boite: hint.getBoundingClientRect()
+      }));
+      const voisins = Array.from(racine.querySelectorAll('mat-checkbox, .subform, .form-warning')).map(
+        (element) => ({
+          texte: (element.textContent ?? '').trim().slice(0, 30),
+          boite: element.getBoundingClientRect()
+        })
+      );
+      const croise = (a: DOMRect, b: DOMRect) =>
+        a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+      return rectangles
+        .flatMap((hint) => voisins.map((voisin) => ({ hint, voisin })))
+        .filter(({ hint, voisin }) => croise(hint.boite, voisin.boite))
+        .map(({ hint, voisin }) => `« ${hint.texte} » sur « ${voisin.texte} »`);
+    });
+
+    expect(chevauchements).toEqual([]);
+    await page.context().close();
+  });
 });
 
 test.describe('typologies', () => {

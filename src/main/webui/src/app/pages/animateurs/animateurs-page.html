@@ -10,7 +10,8 @@
       <mat-icon>add</mat-icon>
       <ng-container i18n="@@common.add">Ajouter</ng-container>
     </button>
-    <app-table-filter [(value)]="filtre" [matches]="animateursFiltres().length" [total]="store.animateurs().length" />
+    <app-table-filter [(value)]="filtre" [matches]="animateursFiltres().length" [total]="store.animateurs().length"
+                      (enterTable)="navigation.focusCurrent()" />
     @if (vueModifiee()) {
       <button matButton type="button" (click)="reinitialiserVue()">
         <mat-icon>filter_alt_off</mat-icon>
@@ -25,7 +26,7 @@
                             (edit)="editSelection()" (remove)="removeSelection()" (clear)="selection.clear()" />
     }
     <table mat-table [dataSource]="sortedAnimateurs()" matSort [matSortActive]="sort().active" [matSortDirection]="sort().direction" (matSortChange)="sort.set($event)">
-      <caption class="visually-hidden" i18n="@@animateurs.table.caption">Animateurs du référentiel : nom, typologies maîtrisées, statut et actions</caption>
+      <caption class="visually-hidden" i18n="@@animateurs.table.caption">Animateurs du référentiel : identité, statut, indisponibilités, accusé de réception et actions</caption>
       <ng-container matColumnDef="select">
         <th mat-header-cell *matHeaderCellDef>
           <mat-checkbox i18n-aria-label="@@bulk.selectAll" aria-label="Tout sélectionner"
@@ -39,11 +40,11 @@
         </td>
       </ng-container>
       <ng-container matColumnDef="id">
-        <th mat-header-cell *matHeaderCellDef i18n="@@common.id">Id</th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header i18n="@@common.id">Id</th>
         <td mat-cell *matCellDef="let animateur">{{ animateur.id }}</td>
       </ng-container>
       <ng-container matColumnDef="nom">
-        <th mat-header-cell *matHeaderCellDef i18n="@@common.nom">Nom</th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header i18n="@@common.nom">Nom</th>
         <td mat-cell *matCellDef="let animateur">{{ animateur.prenom }} {{ animateur.nom }}</td>
       </ng-container>
       <ng-container matColumnDef="majorite">
@@ -51,15 +52,11 @@
         <td mat-cell *matCellDef="let animateur">{{ majoriteLabel(animateur) }}</td>
       </ng-container>
       <ng-container matColumnDef="manager">
-        <th mat-header-cell *matHeaderCellDef i18n="@@animateurs.column.manager">Manager</th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header i18n="@@animateurs.column.manager">Manager</th>
         <td mat-cell *matCellDef="let animateur">{{ ouiNon(animateur.manager) }}</td>
       </ng-container>
-      <ng-container matColumnDef="competences">
-        <th mat-header-cell *matHeaderCellDef i18n="@@animateurs.appreciation.title">Appréciation</th>
-        <td mat-cell *matCellDef="let animateur">{{ competencesLabel(animateur) }}</td>
-      </ng-container>
       <ng-container matColumnDef="indisponibilites">
-        <th mat-header-cell *matHeaderCellDef i18n="@@animateurs.column.indisponibilites">Indisponibilités</th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header i18n="@@animateurs.column.indisponibilites">Indisponibilités</th>
         <td mat-cell *matCellDef="let animateur">
           {{ animateur.joursIndisponibles.length }}
           @if (alerteParAnimateurId().get(animateur.id); as alerte) {
@@ -68,13 +65,21 @@
         </td>
       </ng-container>
       <ng-container matColumnDef="confirmation">
-        <th mat-header-cell *matHeaderCellDef>
-          <span i18n="@@animateurs.column.confirmation">Accusé de réception</span>
+        <!-- `appSortHeaderName` : l'en-tête triable se nomme par son titre, et
+             non par tout ce que la cellule contient. Sans lui, le bouton
+             d'aide prête son `aria-label` — six lignes — au bouton de tri que
+             Material génère, et un lecteur d'écran les relit à chaque passage
+             du focus sur l'en-tête. -->
+        <th mat-header-cell *matHeaderCellDef mat-sort-header [appSortHeaderName]="titreConfirmation">
+          <span #titreConfirmation i18n="@@animateurs.column.confirmation">Accusé de réception</span>
           <!-- Un bouton, pas une icône nue : une infobulle posée sur un
                `mat-icon aria-hidden` n'est atteignable ni au clavier ni au
                lecteur d'écran, et ces trois états ne se devinent pas. Le
                bouton reçoit le focus (l'infobulle s'ouvre alors) et porte le
-               même texte en `aria-label`. -->
+               même texte en `aria-label`. Il est à l'intérieur de l'en-tête
+               triable, et `mat-sort-header` écoute le clic et la touche sur
+               le `th` : sans la coupure de propagation, ouvrir l'infobulle
+               trierait la colonne. -->
           <button
             matIconButton
             type="button"
@@ -82,6 +87,8 @@
             [matTooltip]="confirmationAide()"
             matTooltipClass="tooltip-multiligne"
             [attr.aria-label]="confirmationAide()"
+            (click)="$event.stopPropagation()"
+            (keydown)="$event.stopPropagation()"
           >
             <mat-icon inline>help_outline</mat-icon>
           </button>
@@ -118,7 +125,12 @@
         </td>
       </ng-container>
       <tr mat-header-row *matHeaderRowDef="columns"></tr>
-      <tr mat-row *matRowDef="let row; columns: columns"></tr>
+      <tr mat-row *matRowDef="let row; columns: columns; let i = index"
+          [attr.data-row-index]="i"
+          [tabindex]="navigation.isCurrent(i) ? 0 : -1"
+          [class.row-selected]="selection.isSelected(row.id)"
+          (focus)="navigation.onFocus(i)"
+          (keydown)="navigation.onKeydown($event, i)"></tr>
     </table>
     @if (store.animateurs().length === 0) {
       <p class="empty-hint" i18n="@@animateurs.empty">Aucun animateur pour le moment.</p>

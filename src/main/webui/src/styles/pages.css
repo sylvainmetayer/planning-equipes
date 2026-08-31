@@ -198,6 +198,35 @@ form.form-grid {
   overflow: visible;
 }
 
+/*
+ * Les tables de données de référence se parcourent au clavier (roving
+ * tabindex, `core/table-navigation.ts`) : une seule ligne est atteignable par
+ * Tab et les flèches déplacent ensuite le focus d'un cran à la fois, donc la
+ * ligne focalisée doit être repérable sans hésitation. `--app-accent` vaut
+ * `--mat-sys-primary` par défaut, une paire `light-dark()` : le liseré suit le
+ * thème clair comme le sombre.
+ */
+tr.mat-mdc-row:focus-visible {
+  outline: 3px solid var(--app-accent);
+  outline-offset: -3px;
+}
+
+/*
+ * … et la case cochée d'une ligne sélectionnée vit dans la première colonne,
+ * la première à sortir de l'écran quand le tableau défile horizontalement.
+ * Espace bascule la sélection sans la souris : sa trace doit rester lisible
+ * sur toute la largeur de la ligne. Les cellules Material héritent du fond, ce
+ * qui garde la colonne d'actions épinglée opaque et de la bonne couleur.
+ *
+ * Une classe et non `[aria-selected]` : cet attribut n'est une propriété
+ * supportée de `role=row` que dans une `grid`, alors qu'un `mat-table` expose
+ * `role="table"`. L'état accessible est porté par la case à cocher de la ligne
+ * et annoncé par une région live ; le surlignage, lui, reste du visuel.
+ */
+tr.mat-mdc-row.row-selected {
+  background: var(--mat-sys-secondary-container);
+}
+
 .danger-action {
   color: var(--mat-sys-error);
 }

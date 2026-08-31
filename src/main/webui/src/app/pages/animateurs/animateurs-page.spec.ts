@@ -184,6 +184,21 @@ describe('AnimateursPage table', () => {
     return bouton as HTMLButtonElement;
   }
 
+  /** Header cell texts, in display order. */
+  function entetes(): string[] {
+    return Array.from(racine().querySelectorAll('thead th')).map((cell) => cell.textContent!.trim());
+  }
+
+  /** Clicks the sort header whose label starts with `libelle`. */
+  async function trier(libelle: string): Promise<void> {
+    const entete = Array.from(racine().querySelectorAll<HTMLElement>('thead th[mat-sort-header]')).find(
+      (cell) => cell.textContent!.trim().startsWith(libelle)
+    );
+    expect(entete, `en-tête triable « ${libelle} » absent`).toBeDefined();
+    (entete!.querySelector('.mat-sort-header-container') as HTMLElement).click();
+    await fixture.whenStable();
+  }
+
   async function filtrer(texte: string): Promise<void> {
     const input = racine().querySelector('app-table-filter input') as HTMLInputElement;
     input.value = texte;
@@ -218,7 +233,7 @@ describe('AnimateursPage table', () => {
     referenceData = TestBed.inject(ReferenceDataStore);
   });
 
-  it('renders one row per animateur, with the derived majority and the appreciation summary', async () => {
+  it('renders one row per animateur, with the derived majority and no appreciation column', async () => {
     await rendre([
       personne('alice', { prenom: 'Amélie', nom: 'Nothomb', dateNaissance: '1990-05-04', manager: true, competences: { ambiance: 'REFERENT' } }),
       personne('bob', { prenom: 'Bob', nom: 'Ados', dateNaissance: '2015-01-01' })
@@ -226,8 +241,12 @@ describe('AnimateursPage table', () => {
 
     expect(racine().querySelector('h1')!.textContent!).toContain('Animateurs (2)');
     // Majority is derived from the birth date, never stored.
-    expect(lignes()[0].slice(1, 6)).toEqual(['alice', 'Amélie Nothomb', 'Oui', 'Oui', 'ambiance: REFERENT']);
-    expect(lignes()[1].slice(1, 6)).toEqual(['bob', 'Bob Ados', 'Non', 'Non', '—']);
+    expect(lignes()[0].slice(1, 5)).toEqual(['alice', 'Amélie Nothomb', 'Oui', 'Oui']);
+    expect(lignes()[1].slice(1, 5)).toEqual(['bob', 'Bob Ados', 'Non', 'Non']);
+    // The appreciation is a list per row: unreadable in a cell, and read in the
+    // detail dialog instead. No cell may spell it out again.
+    expect(lignes().flat().join(' ')).not.toContain('REFERENT');
+    expect(entetes()).not.toContain('Appréciation');
   });
 
   it('says the majority is unknown rather than guessing it without a birth date', async () => {
@@ -243,14 +262,93 @@ describe('AnimateursPage table', () => {
       personne('majeur', { dateNaissance: '1990-01-01' })
     ]);
 
-    const entete = racine().querySelector('th.mat-sort-header, th[mat-sort-header]') as HTMLElement;
-    (entete.querySelector('.mat-sort-header-container') as HTMLElement).click();
-    await fixture.whenStable();
+    await trier('Majeur');
     expect(lignes().map((row) => row[1])).toEqual(['majeur', 'mineur', 'inconnu']);
 
-    (entete.querySelector('.mat-sort-header-container') as HTMLElement).click();
-    await fixture.whenStable();
+    await trier('Majeur');
     expect(lignes().map((row) => row[1])).toEqual(['inconnu', 'mineur', 'majeur']);
+  });
+
+  it('sorts the identifiers as numbers where they carry one, not as text', async () => {
+    await rendre([personne('A10'), personne('A2'), personne('A1')]);
+
+    await trier('Id');
+    expect(lignes().map((row) => row[1])).toEqual(['A1', 'A2', 'A10']);
+  });
+
+  it('sorts the name column on what the cell shows, first name included', async () => {
+    await rendre([
+      personne('c', { prenom: 'Zoé', nom: 'Abadie' }),
+      personne('a', { prenom: 'Élodie', nom: 'Blanc' }),
+      personne('b', { prenom: 'Adrien', nom: 'Costa' })
+    ]);
+
+    await trier('Nom');
+    expect(lignes().map((row) => row[2])).toEqual(['Adrien Costa', 'Élodie Blanc', 'Zoé Abadie']);
+  });
+
+  it('brings the managers up first, like the majority column', async () => {
+    await rendre([personne('a', { manager: false }), personne('b', { manager: true })]);
+
+    await trier('Manager');
+    expect(lignes().map((row) => row[1])).toEqual(['b', 'a']);
+  });
+
+  it('sorts the unavailability column on the number of days', async () => {
+    await rendre([
+      personne('trois', { joursIndisponibles: ['2026-07-01', '2026-07-02', '2026-07-03'] }),
+      personne('aucune', { joursIndisponibles: [] }),
+      personne('une', { joursIndisponibles: ['2026-07-01'] })
+    ]);
+
+    await trier('Indisponibilités');
+    expect(lignes().map((row) => row[1])).toEqual(['aucune', 'une', 'trois']);
+  });
+
+  it('puts what is left to chase on top of the acknowledgement sort', async () => {
+    api.get.mockImplementation(async (url: string) => {
+      if (url.includes('feasibility')) {
+        return report([]);
+      }
+      if (url.includes('confirmations')) {
+        return [
+          { animateurId: 'confirme', statut: 'CONFIRME', affecte: true, confirmeLe: null, relanceLe: null },
+          { animateurId: 'relance', statut: 'RELANCE', affecte: true, confirmeLe: null, relanceLe: null },
+          { animateurId: 'silencieux', statut: 'NON_VU', affecte: true, confirmeLe: null, relanceLe: null },
+          { animateurId: 'sansPoste', statut: 'NON_VU', affecte: false, confirmeLe: null, relanceLe: null }
+        ];
+      }
+      return [];
+    });
+    await rendre([personne('confirme'), personne('sansPoste'), personne('relance'), personne('silencieux')]);
+    await fixture.whenStable();
+
+    await trier('Accusé de réception');
+    // Silencieux, relancé, confirmé — and last the person nothing was asked of.
+    expect(lignes().map((row) => row[1])).toEqual(['silencieux', 'relance', 'confirme', 'sansPoste']);
+  });
+
+  it('opens the acknowledgement tooltip without sorting the column it sits in', async () => {
+    await rendre([personne('alice')]);
+
+    const aide = racine().querySelector('th .column-help') as HTMLButtonElement;
+    aide.click();
+    await fixture.whenStable();
+
+    expect(racine().querySelectorAll('th[aria-sort]:not([aria-sort="none"])')).toHaveLength(0);
+  });
+
+  it('enters the table on arrow down from the quick filter', async () => {
+    await rendre([personne('alice'), personne('bob')]);
+
+    const champ = racine().querySelector('app-table-filter input') as HTMLInputElement;
+    champ.focus();
+    const touche = new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true });
+    champ.dispatchEvent(touche);
+    await fixture.whenStable();
+
+    expect(touche.defaultPrevented).toBe(true);
+    expect((document.activeElement as HTMLElement).getAttribute('data-row-index')).toBe('0');
   });
 
   it('narrows the table on the quick filter, and says when nothing matches', async () => {
@@ -368,5 +466,54 @@ describe('AnimateursPage table', () => {
     const dernier = notify.mock.calls.at(-1)![0];
     expect(dernier.variant).toBe('warning');
     expect(dernier.message).toContain('/animateur/jeton-1');
+  });
+
+  // The invariant the acknowledgement column broke the day it became sortable.
+  // Material names the sort control it generates from everything the header
+  // cell contains, `aria-label`s of nested controls included: a header holding
+  // a help button lends it its whole explanation, and a screen reader reads
+  // those lines out on every pass of the focus. A header that holds a named
+  // control must therefore name its sort control itself
+  // (`shared/sort-header-name.ts`). Written as a sweep rather than a single
+  // case: the next sortable column carrying an icon or a checkbox is the one
+  // that would bring the defect back.
+  it('never lets a sortable header take its name from a control it contains', async () => {
+    await rendre([personne('alice')]);
+
+    const triables = Array.from(racine().querySelectorAll<HTMLElement>('thead th[mat-sort-header]'));
+    expect(triables.length, 'colonnes triables rendues').toBeGreaterThan(0);
+
+    for (const entete of triables) {
+      const controles = Array.from(entete.querySelectorAll('[aria-label]'));
+      if (controles.length === 0) {
+        continue;
+      }
+      const conteneur = entete.querySelector('.mat-sort-header-container');
+      expect(conteneur, 'conteneur de tri de Material').not.toBeNull();
+      const nomme =
+        conteneur!.hasAttribute('aria-label') || conteneur!.hasAttribute('aria-labelledby');
+      expect(
+        nomme,
+        `l'en-tête « ${entete.textContent!.trim().slice(0, 30)} » contient un contrôle nommé ` +
+          `(« ${controles[0].getAttribute('aria-label')!.slice(0, 40)}… ») et laisse son bouton de ` +
+          `tri se nommer par son contenu : appliquer appSortHeaderName`
+      ).toBe(true);
+    }
+  });
+
+  it('announces the acknowledgement header by its title, and the help by its explanation', async () => {
+    await rendre([personne('alice')]);
+
+    const entete = Array.from(
+      racine().querySelectorAll<HTMLElement>('thead th[mat-sort-header]')
+    ).find((cell) => cell.textContent!.trim().startsWith('Accusé de réception'))!;
+    const reference = entete.querySelector('.mat-sort-header-container')!.getAttribute('aria-labelledby');
+
+    expect(racine().querySelector(`#${reference}`)!.textContent!.trim()).toBe('Accusé de réception');
+    // The help keeps the whole thing: that is what issue #338 put there, and
+    // what a screen reader must read when the focus reaches the button itself.
+    expect(entete.querySelector('.column-help')!.getAttribute('aria-label')).toContain(
+      "Ce que l'animateur a répondu"
+    );
   });
 });

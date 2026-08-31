@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, model } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -13,6 +13,14 @@ import { MatInputModule } from '@angular/material/input';
  *
  * Only holds the text: what a row is matched against belongs to the page
  * (see `core/text-filter.ts`), which knows its own columns.
+ *
+ * It also owns the one gesture that makes the tables' keyboard navigation
+ * findable: **arrow down goes into the table**. Filtering then walking the
+ * result is the natural sequence, and it is the only entry that does not ask
+ * the user to guess how many times to press Tab — a count that grows with
+ * every sortable column added to the header. The listener sits on this field
+ * and consumes nothing else, so `/`, `?` and Ctrl+K keep reaching
+ * `core/keyboard-shortcuts.service.ts`, the application's only global one.
  */
 @Component({
   selector: 'app-table-filter',
@@ -33,6 +41,7 @@ import { MatInputModule } from '@angular/material/input';
         (ngModelChange)="value.set($event)"
         [placeholder]="placeholder()"
         [attr.aria-label]="label()"
+        (keydown.arrowdown)="entrerDansTableau($event)"
       />
       @if (value()) {
         <button matIconButton matSuffix type="button" [attr.aria-label]="clearLabel" [title]="clearLabel"
@@ -58,5 +67,22 @@ export class TableFilter {
   readonly matches = input(0);
   readonly total = input(0);
 
+  /**
+   * Arrow down from the field: the page moves the focus onto the table's
+   * current row. Emitted, never done here — this component knows the text and
+   * nothing about the rows.
+   */
+  readonly enterTable = output<void>();
+
   protected readonly clearLabel = $localize`:@@filter.clear:Effacer le filtre`;
+
+  /**
+   * The default is prevented in every case, including on a page that does not
+   * listen: in a single-line search field the browser's own arrow down only
+   * drops the caret at the end of the text, which nobody reaches for.
+   */
+  protected entrerDansTableau(event: Event): void {
+    event.preventDefault();
+    this.enterTable.emit();
+  }
 }

@@ -8,7 +8,8 @@
       <ng-container i18n="@@common.add">Ajouter</ng-container>
     </button>
     <app-table-filter [(value)]="filtre" [matches]="emplacementsFiltres().length"
-                      [total]="store.emplacements().length" />
+                      [total]="store.emplacements().length"
+                      (enterTable)="navigation.focusCurrent()" />
   </mat-card-actions>
   <mat-card-content class="table-wrapper">
     @if (selection.hasSelection()) {
@@ -62,7 +63,12 @@
         </td>
       </ng-container>
       <tr mat-header-row *matHeaderRowDef="columns"></tr>
-      <tr mat-row *matRowDef="let row; columns: columns"></tr>
+      <tr mat-row *matRowDef="let row; columns: columns; let i = index"
+          [attr.data-row-index]="i"
+          [tabindex]="navigation.isCurrent(i) ? 0 : -1"
+          [class.row-selected]="selection.isSelected(row.id)"
+          (focus)="navigation.onFocus(i)"
+          (keydown)="navigation.onKeydown($event, i)"></tr>
     </table>
     @if (store.emplacements().length === 0) {
       <p class="empty-hint" i18n="@@emplacements.empty">Aucun emplacement pour le moment. Créez-en un ci-dessus.</p>

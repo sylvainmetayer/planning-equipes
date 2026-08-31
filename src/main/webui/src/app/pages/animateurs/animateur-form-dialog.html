@@ -18,7 +18,11 @@
   <mat-label i18n="@@stands.field.nom">Nom</mat-label>
   <input matInput name="nom" [ngModel]="draft().nom" (ngModelChange)="patch({ nom: $event })" />
 </mat-form-field>
-<mat-form-field appearance="outline">
+<!-- `subscriptSizing="dynamic"` sur les deux champs qui portent une aide de
+     plusieurs lignes : la zone de sous-titre d'un `mat-form-field` ne réserve
+     par défaut la place que d'une ligne, et l'aide débordait par-dessus la
+     case « Manager » et le bloc « Appréciation » de la ligne suivante. -->
+<mat-form-field appearance="outline" subscriptSizing="dynamic">
   <mat-label i18n="@@animateurs.field.dateNaissance">Date de naissance</mat-label>
   <input matInput name="dateNaissance" type="date"
          [ngModel]="draft().dateNaissance" (ngModelChange)="patch({ dateNaissance: $event })" />
@@ -26,7 +30,7 @@
     Détermine le régime légal appliqué (moins de 16 ans / 16-18 ans / majeur), recalculé à la date de chaque créneau.
   </mat-hint>
 </mat-form-field>
-<mat-form-field appearance="outline">
+<mat-form-field appearance="outline" subscriptSizing="dynamic">
   <mat-label i18n="@@animateurs.field.email">E-mail</mat-label>
   <input matInput name="email" type="email" autocomplete="off"
          [ngModel]="draft().email" (ngModelChange)="patch({ email: $event })" />

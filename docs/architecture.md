@@ -203,11 +203,66 @@ armé et désarmé avec le shell d'administration : `/login` et l'espace animate
 n'ont ni palette ni ces destinations. **N'en ajoutez pas un second** — deux
 écouteurs globaux se disputent la même frappe sans que rien ne le signale.
 
-Deux exceptions volontaires : le code Konami du shell (une séquence, son propre
-état) et les flèches des calendriers et de la heatmap, locales au composant
-affiché. Échap n'est écrit nulle part : aucun dialogue n'utilise
-`disableClose`, donc `MatDialog` ferme déjà le dialogue du dessus et rend le
-focus.
+Une exception volontaire : le code Konami du shell (une séquence, son propre
+état). Les flèches des calendriers, de la heatmap et des tables de données de
+référence n'en sont pas : elles sont posées sur l'élément du composant, ne
+consomment que les touches qu'elles utilisent, et laissent tout le reste
+remonter jusqu'à l'écouteur global — qui s'arrête sur un événement déjà
+consommé. C'est ainsi qu'on ajoute un comportement clavier ici. Échap n'est
+écrit nulle part : aucun dialogue n'utilise `disableClose`, donc `MatDialog`
+ferme déjà le dialogue du dessus et rend le focus.
+
+Le tabindex mobile des cinq tables de données de référence (une seule ligne
+atteignable par Tab, flèches, Début/Fin, Entrée pour ouvrir, Espace pour
+cocher) est mutualisé dans `core/table-navigation.ts`, à côté de
+`core/table-selection.ts` qu'il pilote.
+
+**On entre dans le tableau par le filtre.** Le tabindex mobile est invisible :
+la ligne qui porte `tabindex="0"` se trouve derrière la case « tout
+sélectionner » et derrière un arrêt de tabulation par en-tête triable, si bien
+que le nombre de Tab à taper change chaque fois qu'une colonne devient
+triable — une fonctionnalité qu'il faut deviner n'existe pas. Le geste
+documenté est donc : « / » saisit le filtre de la page, Flèche bas y entre.
+Ce `keydown` est posé sur le champ de `shared/table-filter.ts`, qui émet
+`enterTable` ; la page appelle `TableNavigation.focusCurrent()`. Rien de
+global n'est ajouté. Un clic sur une ligne la focalise aussi (le `tr` porte un
+`tabindex`), donc les flèches enchaînent sans détour. La page des créneaux,
+qui n'a pas de filtre rapide, garde la seule entrée par Tab. Le focus s'ancre sur la **ligne**, pas
+sur son rang : un tri ne le fait pas sauter ailleurs, et une ligne effacée par
+le filtre le repose sur la place que cette ligne occupait en dernier — sans
+quoi plus aucune ligne ne porterait `tabindex="0"` et le tableau sortirait de
+l'ordre de tabulation. Ce dernier rang est la valeur précédente du signal
+lui-même (`linkedSignal`), et non le rang figé à la prise de focus, sinon un
+tri passé entre les deux renverrait le focus à une position que la ligne a
+quittée depuis longtemps.
+
+Entrée et Espace ne sont consommés qu'une fois quelque chose réellement
+ouvert ou coché : une table sans sélection rend l'Espace à la page, et les
+créneaux refusent d'ouvrir pendant qu'une résolution verrouille l'édition —
+la touche poursuit alors sa route au lieu de mourir en silence, le bandeau de
+verrouillage déjà affiché disant pourquoi. La ligne cochée ne porte pas
+`aria-selected` : cet attribut n'est une propriété supportée de `role=row` que
+dans une `grid`, alors qu'un `mat-table` expose `role="table"`. L'état
+accessible est celui de la case à cocher de la ligne, le changement est annoncé
+par le `LiveAnnouncer` du CDK, et le surlignage passe par une classe.
+
+**Un en-tête triable ne se nomme pas tout seul.** Material rend la cellule
+d'en-tête à l'intérieur d'un `role="button"` qu'il ne nomme jamais : le nom
+accessible est calculé à partir du contenu, et ce calcul descend dans les
+`aria-label` des contrôles imbriqués. Rendre « Accusé de réception » triable a
+donc suffi pour que les six lignes d'explication de son bouton d'aide
+deviennent le nom du bouton de tri, relues à chaque passage du focus sur
+l'en-tête. `shared/sort-header-name.ts` coupe le couplage : la directive pose
+un `aria-labelledby` vers l'élément qui porte le titre de la colonne, si bien
+que l'en-tête s'annonce par son titre et le bouton d'aide garde son
+explication entière pour lui. Elle n'est nécessaire que sur un en-tête
+contenant autre chose que son titre. `sortActionDescription` ne remplace pas :
+il alimente `aria-describedby`, qui décrit l'action et laisse le nom
+intact ; masquer le bouton du calcul le rendrait invisible au lecteur d'écran
+alors qu'il est focalisable.
+
+Les deux grilles à deux axes (calendrier mensuel, heatmap) gardent leur
+navigation propre : leur géométrie n'est pas celle d'une liste.
 
 La table `g`+lettre et les libellés de la palette vivent dans
 `core/keyboard-shortcuts.ts` ; les destinations, elles, sont **dérivées de

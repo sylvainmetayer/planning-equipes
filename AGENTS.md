@@ -306,7 +306,16 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `reference-data.store.ts`; `reference-crud.service.ts` — save/delete, single
   or in bulk, plus snack-bar feedback shared by the five reference pages;
   `table-selection.ts` — multi-row selection of those pages, always intersected
-  with the displayed rows; `text-filter.ts` — accent/case-insensitive
+  with the displayed rows; `table-navigation.ts` — their keyboard navigation
+  (roving tabindex over the rows: arrows, Home/End, Enter to open, Space to
+  tick), local to a table and never a `document` listener. **The way in is the
+  quick filter**: arrow down from `table-filter.ts` calls `focusCurrent()` on
+  the page's navigation. A roving tabindex is invisible — the row carrying
+  `tabindex="0"` sits behind the "select all" checkbox and one stop per
+  sortable header, so the Tab count changes whenever a column gains a sort, and
+  a feature reached by guessing that count does not exist. Keep that entry
+  working, and keep the E2E assertion on the count;
+  `text-filter.ts` — accent/case-insensitive
   "contains every term" matching behind those pages' quick filter; `bulk-edit.ts` — the "leave unchanged / add / remove
   / replace" modes a bulk edit applies to one row; `entity-labels.ts` — plural
   entity labels of the bulk actions;
@@ -319,7 +328,9 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   field, `detail-dialog.ts` — their read-only "consultation" view, whose
   content each page builds in a plain `<entity>-detail.ts` next to it,
   `command-palette-dialog.ts` and `keyboard-shortcuts-dialog.ts` — Ctrl+K and
-  `?`), and `app/pages/<page>/` holds one folder per route.
+  `?`, `sort-header-name.ts` — the one directive: a `mat-sort-header` holding a
+  control must name itself, or the generated sort button borrows that control's
+  `aria-label`), and `app/pages/<page>/` holds one folder per route.
 - **One global keyboard listener, and it already exists.** Ctrl+K (command
   palette), `g`+letter (navigation), `/` (the page's filter, marked by
   `data-page-filter`), `?` (the shortcut list) and Ctrl+Enter (submit the
@@ -330,8 +341,13 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   not, since Ctrl+Enter is meant to be pressed from inside a field. Escape is
   deliberately not implemented: no dialog sets `disableClose`, so `MatDialog`
   already closes the topmost one. Do not add a second `document`-level
-  `keydown`; the Konami easter egg of the shell and the arrow navigation local
-  to a calendar are the two accepted exceptions.
+  `keydown`; the Konami easter egg of the shell is the one accepted exception.
+  Arrow navigation inside a widget — the calendars, the heatmap, the reference
+  tables through `core/table-navigation.ts` — is *not* an exception: it is
+  bound to that widget's own element, consumes only the keys it uses, and
+  leaves everything else travelling up to the global listener, which stops at a
+  `defaultPrevented` event. Add a keyboard behaviour that way, never with a
+  second `document` listener.
 - Bulk edits go through one dialog per entity (`<entity>-bulk-edit-dialog.ts`),
   whose rules live in a plain `<entity>-bulk-edit.ts` next to it so they are
   unit-tested without rendering. Every field defaults to "ne pas modifier": a
