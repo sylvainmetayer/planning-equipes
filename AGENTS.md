@@ -243,7 +243,20 @@ Single Quarkus service, no separate solver microservice. Package root:
   the `service` package, which keeps the predicate auditable by a `grep` over
   the package instead of over a file. What makes that safe is not the reader's
   diligence: `IsolationEditionStructurelleTest` reads the backend's SQL and
-  fails on any business-table statement without an `edition_id` predicate. See
+  fails on any business-table statement without an `edition_id` predicate. It
+  **resolves the statement through indirection** — a `static final String`
+  constant, a local variable, a concatenation of those, the SQL parameter of a
+  private helper — so moving the SQL into a variable first hides nothing from
+  it. A form it cannot follow (`StringBuilder`, `String.join`, a constant of
+  another class, a literal followed by a method call, a variable reassigned
+  after its declaration) **fails the test** unless it is named in
+  `INDIRECTIONS_ASSUMEES` with a written reason, and every table **named by a
+  prepared statement the scan resolves** must be declared either partitioned
+  (`TABLES_METIER`) or global with its motive (`TABLES_HORS_EDITION`). That net
+  is narrower than "every table": SQL run through a plain `Statement`
+  (`DatabaseDumpService`, the temporary table of `EditionRepository`) is not an
+  anchor, and a statement whose table name is itself a variable has no name to
+  classify. See
   `docs/decisions/0001-cloisonnement-par-edition.md`.
 - Solver tuning: `planning.solver.seconds-limit` /
   `planning.solver.unimproved-seconds-limit` in `application.properties`.

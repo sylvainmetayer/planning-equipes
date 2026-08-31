@@ -26,7 +26,11 @@ primaire composite `(edition_id, id)`.
 l'édition courante au premier paramètre de chaque requête et porte la
 transaction. C'est ce qui rend le prédicat systématique plutôt qu'espéré :
 `IsolationEditionStructurelleTest` lit le SQL de tout le backend et échoue sur
-toute requête visant une table métier sans ce prédicat.
+toute requête visant une table métier sans ce prédicat. Il **suit
+l'indirection** — constante, variable locale, concaténation, paramètre d'un
+helper privé —, si bien qu'écrire la requête dans une variable avant de la
+préparer ne la lui cache pas ; une forme qu'il ne sait pas lire fait échouer le
+test au lieu d'être ignorée.
 
 Une nouvelle table du référentiel suit la même convention et passe par ce
 helper. Voir

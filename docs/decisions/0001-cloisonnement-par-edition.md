@@ -220,16 +220,38 @@ Mise en œuvre :
   le prédicat d'édition est parti avec, sans bruit ;
 - le filet est structurel, pas humain : `IsolationEditionStructurelleTest` lit
   le SQL de tout le backend et échoue sur toute requête visant une table métier
-  sans prédicat d'édition. Les deux exceptions assumées y sont listées et
-  justifiées, et le test vérifie qu'elles correspondent encore à une requête
-  réelle. La première est `resolveAnimateurToken`, qui résout un
+  sans prédicat d'édition. Il **suit l'indirection** : le SQL passé par une
+  constante `static final String`, par une variable locale, par la
+  concaténation des deux, ou reçu en paramètre d'un helper privé (résolu alors
+  chez ses appelants, qu'un helper privé a tous dans son propre fichier) est lu
+  comme s'il était écrit sur place. Écrire la requête dans une variable avant
+  de la préparer ne la soustrait donc plus au garde — c'était le cas de 21 %
+  des appels, dont les deux services qui écrivent le plan persisté et ses
+  instantanés. Ce que le scan ne sait **pas** lire (`StringBuilder`,
+  `String.join`, constante d'une autre classe, littéral suivi d'un appel de
+  méthode, variable réaffectée après sa déclaration) fait échouer le test au
+  lieu d'être ignoré en silence : il faut alors nommer l'appel, le fragment
+  qu'il ne sait pas lire et le nombre d'appels couverts, et écrire pourquoi.
+  Les quatre exceptions assumées y sont listées et justifiées, et le test
+  vérifie qu'elles correspondent encore à une requête réelle. La première est
+  `resolveAnimateurToken`, qui résout un
   jeton d'espace animateur **globalement** — le jeton arrive sur une URL
   publique sans en-tête d'édition à croire, et est justement unique toutes
   éditions confondues pour désigner la sienne ; les gardes de l'espace lient
   ensuite l'édition résolue à la requête (`EditionRequestScope`), et tout le
-  reste s'exécute dedans sans enveloppe explicite. La seconde est la détection
+  reste s'exécute dedans sans enveloppe explicite. La deuxième est la détection
   de collision d'adresse e-mail au démarrage du mode « en-tête de confiance »,
-  qui n'a aucune édition à considérer ;
+  qui n'a aucune édition à considérer. Les deux dernières sont les lectures
+  toutes éditions du comparateur A/B (`PlanSnapshotService.listAllEditions` et
+  `loadAllEditions`) : depuis 0009 une variante **est** une autre édition, donc
+  cloisonner ces deux lectures masquerait exactement la paire qu'on veut
+  confronter — la restauration, elle, reste cloisonnée. Chaque table **nommée
+  par une requête préparée que le scan sait résoudre** doit enfin être déclarée
+  cloisonnée ou globale-avec-motif, sans quoi le garde reste muet sur une table
+  entière. Le filet s'arrête là, et le dire fait partie du garde : le SQL passé
+  par un `Statement` nu (le rejeu d'un dump, la table temporaire de
+  duplication) n'est ancré nulle part, et une requête dont le nom de table est
+  justement la variable n'offre aucun nom à classer ;
 - côté Angular, un `HttpInterceptor` (`core/edition.interceptor.ts`) pose
   l'en-tête depuis `core/edition-courante.ts`, dont la valeur est persistée en
   `localStorage`. C'est un module et non un service : l'intercepteur tourne à

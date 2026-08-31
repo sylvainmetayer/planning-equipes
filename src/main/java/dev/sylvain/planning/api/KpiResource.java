@@ -20,6 +20,11 @@ import jakarta.ws.rs.core.Response;
  * survive the deletion of the edition it describes (its labels are
  * denormalised for exactly that). Rows are written by the solve jobs
  * themselves, never through this API.
+ *
+ * <p>The deletion follows the listing: it takes an id, not an edition, because
+ * the row deleted is one of those the caller has just been shown — including
+ * the rows of an edition that no longer exists, which nothing else could ever
+ * clean up.</p>
  */
 @Path("/kpi/historique")
 @Produces(MediaType.APPLICATION_JSON)

@@ -30,6 +30,14 @@ import jakarta.inject.Inject;
  * For the same reason the listing is <b>not</b> edition-scoped, unlike every
  * other repository: a year-over-year comparison needs all editions side by
  * side.</p>
+ *
+ * <p>{@link #delete(long)} is not scoped either, and deliberately so: the
+ * screen it serves lists every edition's rows, edition column included, so the
+ * row deleted is the row the operator picked rather than one guessed at; the
+ * id is a server-wide {@code BIGSERIAL}, which names one row on its own; and a
+ * row orphaned by the deletion of its edition could never be cleaned up by an
+ * edition-scoped {@code DELETE}. {@code IsolationEditionStructurelleTest}
+ * carries the same reason in {@code TABLES_HORS_EDITION}.</p>
  */
 @ApplicationScoped
 public class KpiHistoriqueService {
