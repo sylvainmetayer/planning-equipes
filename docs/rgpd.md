@@ -319,6 +319,22 @@ complètes. Quatre points sont connus et se consignent :
   source**, qui reste sur le poste de l'organisateur, dans sa messagerie et
   dans ses sauvegardes. C'est cette copie-là qui se consigne au registre, avec
   la consigne de la supprimer après import ;
+- **le navigateur de l'organisateur garde un journal de ce qu'on lui a
+  affiché**, et c'est un lieu de stockage de plus, hors de la base et hors des
+  sauvegardes. Chaque bulle d'information est recopiée dans un journal de 200
+  entrées tenu dans le `localStorage` du profil, cloisonné par édition mais
+  **non effacé à la déconnexion** et relisible depuis la page *Notifications*
+  par quiconque rouvre ce profil — un poste partagé de régie, typiquement. Deux
+  bornes sont posées et se consignent telles quelles : les messages
+  d'avertissement de saisie **nomment un animateur par son identifiant seul**,
+  jamais par ses nom et prénom ni par sa date de naissance ; et la phrase qui
+  dit qu'une personne est **mineure** — la seule qui, en nommant le jour de ses
+  18 ans, laisserait recalculer sa date de naissance — est **affichée sans être
+  journalisée**. Ce qui ne le borne pas : le journal n'expire pas de lui-même,
+  il se vide au bouton depuis la page *Notifications*, et rien n'empêche un
+  autre message de l'application d'y écrire un nom. La consigne d'exploitation
+  qui va avec est celle d'un poste partagé : vider le journal, ou fermer la
+  session du navigateur, en quittant le poste ;
 - **l'effacement demandé par un animateur sur une édition encore active** n'a
   pas de procédure outillée : c'est une suppression manuelle de sa fiche. Une
   demande d'effacement ne se refuse pas au motif que l'événement n'est pas

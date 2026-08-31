@@ -324,6 +324,56 @@ export interface Emplacement {
   longitude: number | null;
 }
 
+/**
+ * What the server noticed about a write it accepted — never a refusal (those
+ * come back as an `ApiError` carrying a 4xx). Raised at the creation and at the
+ * edit of an animateur or a créneau, and carried in the success body next to
+ * the entity; nothing is recomputed here, the rules live in the backend so an
+ * import or an MCP call reads the same ones.
+ */
+export type TypeAvertissement =
+  | 'INDISPONIBILITE_HORS_EVENEMENT'
+  | 'INDISPONIBILITE_JOUR_SANS_CRENEAU'
+  | 'MINEUR_PENDANT_EVENEMENT'
+  | 'CRENEAU_HORS_OUVERTURE_STANDS'
+  | 'CRENEAU_DEBORDE_OUVERTURE_STANDS';
+
+export interface Avertissement {
+  type: TypeAvertissement;
+  /** Already names the dates and entities involved: shown as typed. */
+  message: string;
+}
+
+/**
+ * Warning types whose sentence must not be written to the notification log.
+ *
+ * Every notification is appended to a 200-entry journal kept in `localStorage`,
+ * which outlives the logout and is readable from the Notifications page by
+ * anyone reopening that browser profile. A sentence saying that a named person
+ * is a minor — and, when they turn 18 during the event, saying exactly when —
+ * has no business surviving the screen it was shown on (`docs/rgpd.md` §7).
+ * The snack bar still shows it: it is the persistence that is refused, not the
+ * warning.
+ */
+const AVERTISSEMENTS_HORS_JOURNAL: readonly TypeAvertissement[] = ['MINEUR_PENDANT_EVENEMENT'];
+
+/** See {@link AVERTISSEMENTS_HORS_JOURNAL}. */
+export function estJournalisable(avertissement: Avertissement): boolean {
+  return !AVERTISSEMENTS_HORS_JOURNAL.includes(avertissement.type);
+}
+
+/** Body of `POST`/`PUT /api/animateurs`: the fiche as written, and its warnings. */
+export interface WrittenAnimateur {
+  animateur: Animateur;
+  avertissements: Avertissement[];
+}
+
+/** Body of `POST`/`PUT /api/creneaux` — same shape, same reason. */
+export interface WrittenCreneau {
+  creneau: Creneau;
+  avertissements: Avertissement[];
+}
+
 export interface Creneau {
   id: number;
   jour: number;

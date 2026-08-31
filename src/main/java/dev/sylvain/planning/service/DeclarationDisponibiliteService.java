@@ -4,7 +4,6 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
@@ -13,7 +12,6 @@ import java.util.TreeSet;
 import java.util.UUID;
 
 import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.DeclarationDisponibilite;
 import dev.sylvain.planning.domain.StatutDeclaration;
 import dev.sylvain.planning.service.DeclarationDisponibiliteRepository.FenetreCollecte;
@@ -380,14 +378,12 @@ public class DeclarationDisponibiliteService {
      * declaration may name. An edition with no créneau yet accepts any day:
      * collecting availability before the grid exists is exactly when this
      * feature is most useful.
+     *
+     * <p>Derived by {@link JoursEvenement}, which the write-time warnings read
+     * too: the span of an edition is computed once, not once per feature.</p>
      */
     public List<LocalDate> joursEvenement() {
-        return referenceDataService.listCreneaux().stream()
-                .map(Creneau::getDate)
-                .filter(java.util.Objects::nonNull)
-                .distinct()
-                .sorted(Comparator.naturalOrder())
-                .toList();
+        return JoursEvenement.of(referenceDataService.listCreneaux()).jours();
     }
 
     private List<LocalDate> checkDays(List<LocalDate> jours) {

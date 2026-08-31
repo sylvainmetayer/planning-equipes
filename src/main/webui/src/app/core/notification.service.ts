@@ -35,6 +35,13 @@ export type NotificationSeverity = 'info' | 'warning' | 'alert';
 export interface NotifyOptions {
   title: string;
   message?: string;
+  /**
+   * What the persisted log keeps instead of `message`, when what is shown must
+   * not survive the session. The snack bar always shows `message`; only this
+   * goes to `localStorage`. Left out, the two are the same — which is the case
+   * everywhere but the write-time warnings naming a minor (`docs/rgpd.md` §7).
+   */
+  messageJournal?: string;
   variant?: ToastVariant;
   /** 0 keeps the snack bar open until the user dismisses it. */
   timeout?: number;
@@ -82,6 +89,7 @@ export class NotificationService {
   notify({
     title,
     message = '',
+    messageJournal,
     variant = 'info',
     timeout = SNACK_TIMEOUT_MS,
     desktop = false,
@@ -95,9 +103,11 @@ export class NotificationService {
         verticalPosition: 'bottom'
       });
     }
-    this.push(severityOf(variant), title, message);
+    this.push(severityOf(variant), title, messageJournal ?? message);
     if (desktop) {
-      this.showDesktopNotification(title, message);
+      // Desktop notifications are handed to the operating system, which keeps
+      // its own history: same restraint as the log.
+      this.showDesktopNotification(title, messageJournal ?? message);
     }
   }
 

@@ -7,8 +7,10 @@ import { ReferenceDataStore } from './reference-data.store';
 /** Answers every collection with an empty list, so `reload()` succeeds. */
 class FakeApi {
   get = vi.fn(async (url: string) => (url.endsWith('/volumetrie') ? {} : []));
-  post = vi.fn(async () => undefined);
-  put = vi.fn(async () => undefined);
+  // Typed `unknown`: two resources answer `{ <entite>, avertissements }` and
+  // the others the bare entity, which is exactly what `save` has to tell apart.
+  post = vi.fn(async (): Promise<unknown> => undefined);
+  put = vi.fn(async (): Promise<unknown> => undefined);
   delete = vi.fn(async () => undefined);
 }
 
@@ -69,6 +71,56 @@ describe('ReferenceDataStore bulk operations', () => {
     expect(api.put).toHaveBeenCalledWith('/api/animateurs/alice', { id: 'alice', manager: true });
     expect(result.succes).toEqual(['alice', 'bob']);
     expect(reloadCount('/api/animateurs')).toBe(1);
+  });
+
+  // `/api/animateurs` and `/api/creneaux` answer `{ <entite>, avertissements }`;
+  // every other resource still answers the bare entity.
+  it('remonte les avertissements portés par la réponse d’écriture', async () => {
+    api.post.mockResolvedValueOnce({
+      animateur: { id: 'alice' },
+      avertissements: [{ type: 'MINEUR_PENDANT_EVENEMENT', message: 'majeur le 2026-07-09' }]
+    });
+
+    const { avertissements } = await store.save('animateurs', { id: 'alice' }, null);
+
+    expect(avertissements).toHaveLength(1);
+    expect(avertissements[0].type).toBe('MINEUR_PENDANT_EVENEMENT');
+  });
+
+  it('rend une liste vide quand la ressource répond l’entité nue', async () => {
+    api.put.mockResolvedValueOnce({ id: 't1', nom: 'Ninja' });
+
+    expect((await store.save('typologies', { id: 't1' }, 't1')).avertissements).toEqual([]);
+  });
+
+  // Un créneau n'a pas d'identifiant avant son écriture : celui du serveur est
+  // le seul que la bulle puisse afficher.
+  it('rend l’identifiant généré par le serveur pour une création sans id', async () => {
+    api.post.mockResolvedValueOnce({ creneau: { id: 4242, date: '2026-07-08' }, avertissements: [] });
+
+    expect((await store.save('creneaux', { id: null }, null)).id).toBe(4242);
+  });
+
+  it('rend l’identifiant de l’entité nue quand la ressource ne l’enveloppe pas', async () => {
+    api.put.mockResolvedValueOnce({ id: 't1', nom: 'Ninja' });
+
+    expect((await store.save('typologies', { id: 't1' }, 't1')).id).toBe('t1');
+  });
+
+  it('rend null quand la réponse ne porte aucun identifiant', async () => {
+    api.put.mockResolvedValueOnce(undefined);
+
+    expect((await store.save('typologies', { id: 't1' }, 't1')).id).toBeNull();
+  });
+
+  it('regroupe les avertissements de tout le lot', async () => {
+    api.put
+      .mockResolvedValueOnce({ animateur: { id: 'alice' }, avertissements: [{ type: 'X', message: 'a' }] })
+      .mockResolvedValueOnce({ animateur: { id: 'bob' }, avertissements: [{ type: 'X', message: 'b' }] });
+
+    const result = await store.saveMany('animateurs', [{ id: 'alice' }, { id: 'bob' }]);
+
+    expect(result.avertissements.map((avertissement) => avertissement.message)).toEqual(['a', 'b']);
   });
 
   describe('rechargement sélectif', () => {

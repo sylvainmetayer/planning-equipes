@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -75,6 +76,9 @@ public class ReferenceDataService implements ReferenceData {
     @Inject
     SolverJobService solverJobs;
 
+    @Inject
+    CoherenceService coherence;
+
     /* ------------------------------ Animateurs ----------------------------- */
 
     @Override
@@ -88,6 +92,38 @@ public class ReferenceDataService implements ReferenceData {
 
     public Animateur updateAnimateur(String id, Animateur animateur) {
         return animateurs.update(id, animateur);
+    }
+
+    /**
+     * Creates the animateur, then reports what is worth a second look — an off
+     * day outside the event, a birth date making them a jeune travailleur while
+     * it runs. The write happens first and is never undone by what comes back:
+     * see {@link Avertissement}.
+     */
+    public WrittenAnimateur writeAnimateur(Animateur animateur) {
+        Animateur ecrit = createAnimateur(animateur);
+        return new WrittenAnimateur(ecrit, coherence.onAnimateur(ecrit));
+    }
+
+    /**
+     * Same as {@link #writeAnimateur(Animateur)}, for an edit of an existing
+     * fiche — but reported against the fiche <b>as it stood before</b>, read
+     * here and passed on.
+     *
+     * <p>Without that comparison the bulk edit would shout on every write: it
+     * sends the whole merged fiche, date de naissance included, one
+     * {@code PUT} per row, so adding a competence to thirty volunteers would
+     * end on a snack bar listing every minor of the selection. Costs one read
+     * of the roster per edit, the same order as the créneaux and stands the
+     * warnings already read.</p>
+     */
+    public WrittenAnimateur writeAnimateur(String id, Animateur animateur) {
+        Animateur avant = animateurs.list().stream()
+                .filter(candidat -> Objects.equals(candidat.getId(), id))
+                .findFirst()
+                .orElse(null);
+        Animateur ecrit = updateAnimateur(id, animateur);
+        return new WrittenAnimateur(ecrit, coherence.onAnimateur(avant, ecrit));
     }
 
     public void deleteAnimateur(String id) {
@@ -162,6 +198,22 @@ public class ReferenceDataService implements ReferenceData {
 
     public Creneau updateCreneau(Long id, Creneau creneau) {
         return creneaux.update(id, creneau);
+    }
+
+    /**
+     * Creates the timeslot, then reports whether any stand is open on it. Same
+     * "written first, warned second" contract as
+     * {@link #writeAnimateur(Animateur)}.
+     */
+    public WrittenCreneau writeCreneau(Creneau creneau) {
+        Creneau ecrit = createCreneau(creneau);
+        return new WrittenCreneau(ecrit, coherence.onCreneau(ecrit));
+    }
+
+    /** Same as {@link #writeCreneau(Creneau)}, for an edit of an existing timeslot. */
+    public WrittenCreneau writeCreneau(Long id, Creneau creneau) {
+        Creneau ecrit = updateCreneau(id, creneau);
+        return new WrittenCreneau(ecrit, coherence.onCreneau(ecrit));
     }
 
     public void deleteCreneau(Long id) {

@@ -22,6 +22,42 @@ Les typologies elles-mêmes ne sont pas un enum : ce sont des lignes CRUD
 référencées par clé étrangère, donc on en ajoute ou en renomme sans toucher au
 code.
 
+## Les bornes de l'édition se dérivent
+
+Une `Edition` ne porte **ni dates ni drapeau « en cours »** : c'est un
+cloisonnement, pas un calendrier. L'événement d'une édition court donc du
+**premier au dernier créneau** qu'elle contient, bornes comprises, et rien
+d'autre ne fait autorité — ni un paramètre, ni la date du jour.
+
+Trois conséquences, et aucune n'est un défaut à corriger plus tard :
+
+- Un jour **creux** entre deux dates de créneaux (un lundi de relâche au milieu
+  de deux week-ends) est *dans* l'événement, même s'il ne porte aucun créneau.
+  L'intervalle est la borne ; l'ensemble des dates de créneaux, lui, sert à la
+  collecte des disponibilités, qui n'a pas la même question à trancher.
+
+  **Être dans l'événement ne veut pas dire être utilisable**, et l'écart se
+  paie sur les indisponibilités. Le formulaire de déclaration ne propose que
+  les **dates de créneaux**, et appliquer une déclaration remplace
+  `joursIndisponibles` en bloc : une indisponibilité posée sur un jour creux
+  est donc effacée à la première déclaration acceptée, sans que l'animateur
+  l'ait jamais vue dans son espace. C'est la même donnée condamnée que l'import
+  CSV **refuse** en rejetant la ligne ; la saisie manuelle, elle, avertit sans
+  bloquer (`INDISPONIBILITE_JOUR_SANS_CRENEAU`, voir
+  [`api.md`](api.md#avertissements-de-saisie)) — deux traitements différents
+  pour deux doctrines assumées, jamais un silence.
+- Une édition **sans aucun créneau** n'a **pas** de bornes. Rien ne peut y être
+  déclaré « hors événement », et les avertissements de saisie se taisent : la
+  seule alternative serait un faux positif sur l'écran par lequel une édition
+  commence.
+- Ajouter ou supprimer un créneau **déplace** les bornes. C'est voulu — la
+  grille *est* l'événement — mais un avertissement déjà affiché ne se
+  réévalue pas tout seul : il décrit l'instant de l'écriture.
+
+Cette dérivation est écrite une fois (`service/JoursEvenement`) et lue à la
+fois par la collecte des disponibilités et par les avertissements de saisie
+(voir [`api.md`](api.md#avertissements-de-saisie)).
+
 ## Un poste = une place
 
 Un `PosteAffectation` est créé **par place à pourvoir**, jamais un par couple
@@ -415,6 +451,8 @@ peut donc pas desserrer un seuil de qualité en l'envoyant dans son payload.
   une amplitude d'ouverture brute.
 - L'espace animateur ne montre jamais le planning de travail : ce qu'une
   personne voit est ce qu'on lui a envoyé.
+- Les bornes d'une édition se dérivent de ses créneaux — une `Edition` ne
+  stocke pas de dates, et une édition sans créneau n'a pas de bornes.
 - Les noms de domaine restent en français métier.
 
 <!-- Liens vers Légifrance. Chaque référence pointe vers la recherche par

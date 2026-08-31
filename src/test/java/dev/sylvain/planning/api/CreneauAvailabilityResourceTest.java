@@ -174,7 +174,7 @@ class CreneauAvailabilityResourceTest {
                         """)
                 .when().post("/api/creneaux")
                 .then().statusCode(200)
-                .extract().jsonPath().getLong("id");
+                .extract().jsonPath().getLong("creneau.id");
         assertThat(ajoute).isNotEqualTo(creneauExistant);
         return ajoute;
     }

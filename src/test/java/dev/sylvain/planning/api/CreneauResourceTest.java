@@ -176,7 +176,8 @@ class CreneauResourceTest {
                 .when().post("/api/creneaux")
                 .then()
                 .statusCode(200)
-                .body("id", notNullValue())
-                .extract().path("id");
+                .body("creneau.id", notNullValue())
+                .body("avertissements", notNullValue())
+                .extract().path("creneau.id");
     }
 }

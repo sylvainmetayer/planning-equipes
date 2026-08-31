@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError, SessionExpireeError } from './api.service';
+import { Avertissement } from './models';
 import { NotificationService } from './notification.service';
 import { PlanningResolutionStore } from './planning-resolution.store';
 import { ReferenceCrudService } from './reference-crud.service';
@@ -11,15 +12,20 @@ import { ConfirmData, ConfirmService } from '../shared/confirm-dialog';
 
 class FakeStore {
   reload = vi.fn(async () => undefined);
-  save = vi.fn(async (_resource: string, _payload: unknown, _editingId: unknown) => undefined);
+  save = vi.fn(async (_resource: string, _payload: unknown, _editingId: unknown) => ({
+    id: null as string | number | null,
+    avertissements: [] as Avertissement[]
+  }));
   remove = vi.fn(async (_resource: string, _id: unknown) => undefined);
   removeMany = vi.fn(async (_resource: string, ids: readonly (string | number)[]) => ({
     succes: [...ids],
-    echecs: [] as { id: string | number; message: string }[]
+    echecs: [] as { id: string | number; message: string }[],
+    avertissements: [] as Avertissement[]
   }));
   saveMany = vi.fn(async (_resource: string, payloads: readonly { id: string | number }[]) => ({
     succes: payloads.map((payload) => payload.id),
-    echecs: [] as { id: string | number; message: string }[]
+    echecs: [] as { id: string | number; message: string }[],
+    avertissements: [] as Avertissement[]
   }));
 }
 
@@ -85,6 +91,46 @@ describe('ReferenceCrudService', () => {
       );
     });
 
+    // Un avertissement n'est pas un refus : la ligne est écrite, `save` rend
+    // toujours true, et le message reste affiché (timeout 0) parce qu'il nomme
+    // des dates que l'utilisateur doit aller vérifier ailleurs.
+    it('signale un avertissement sans faire échouer la sauvegarde', async () => {
+      store.save.mockResolvedValueOnce({
+        id: 'A1',
+        avertissements: [{ type: 'MINEUR_PENDANT_EVENEMENT', message: 'majeur le 2026-07-09' }]
+      });
+
+      const ok = await service.save('animateurs', { id: 'A1' }, null, "l'animateur");
+
+      expect(ok).toBe(true);
+      expect(notifications.notify).toHaveBeenCalledWith(
+        expect.objectContaining({
+          variant: 'warning',
+          timeout: 0,
+          message: expect.stringContaining('majeur le 2026-07-09')
+        })
+      );
+      expect(notifications.notify).toHaveBeenCalledTimes(1);
+    });
+
+    it('détaille au plus trois avertissements puis compte le reste', async () => {
+      store.save.mockResolvedValueOnce({
+        id: 'A1',
+        avertissements: ['un', 'deux', 'trois', 'quatre'].map((message) => ({
+          type: 'INDISPONIBILITE_HORS_EVENEMENT' as const,
+          message
+        }))
+      });
+
+      await service.save('animateurs', { id: 'A1' }, null, "l'animateur");
+
+      const notification = notifications.notify.mock.calls[0][0] as { message: string };
+      expect(notification.message).toContain('un');
+      expect(notification.message).toContain('trois');
+      expect(notification.message).not.toContain('quatre');
+      expect(notification.message).toContain('1');
+    });
+
     // Toutes les entités sauf les créneaux sont clés par un identifiant saisi
     // par l'utilisateur : sans lui, la sauvegarde n'a pas de sens et ne doit
     // pas atteindre le serveur.
@@ -104,6 +150,54 @@ describe('ReferenceCrudService', () => {
 
       expect(ok).toBe(true);
       expect(store.save).toHaveBeenCalled();
+    });
+
+    // Le payload d'une création de créneau n'a pas d'id : interpoler le sien
+    // affichait « Créneau undefined » dans une bulle qui reste à l'écran.
+    it('affiche l’identifiant rendu par le serveur, pas celui du payload absent', async () => {
+      store.save.mockResolvedValueOnce({
+        id: 4242,
+        avertissements: [{ type: 'CRENEAU_DEBORDE_OUVERTURE_STANDS', message: 'déborde' }]
+      });
+
+      await service.save('creneaux', { id: null }, null, 'Créneau', { requireId: false });
+
+      const notification = notifications.notify.mock.calls[0][0] as { title: string };
+      expect(notification.title).toContain('4242');
+      expect(notification.title).not.toContain('undefined');
+    });
+
+    it('affiche aussi l’identifiant du serveur sur la bulle de succès', async () => {
+      store.save.mockResolvedValueOnce({ id: 4242, avertissements: [] });
+
+      await service.save('creneaux', { id: null }, null, 'Créneau', { requireId: false });
+
+      const notification = notifications.notify.mock.calls[0][0] as { title: string };
+      expect(notification.title).toContain('4242');
+      expect(notification.title).not.toContain('undefined');
+    });
+
+    /**
+     * Toute notification est écrite dans un journal `localStorage` de 200
+     * entrées qui survit à la déconnexion. Une phrase disant qu'une personne
+     * nommée est mineure n'a rien à y faire (docs/rgpd.md §7) : la bulle la
+     * montre, le journal ne la garde pas.
+     */
+    it('garde hors du journal la phrase qui dit qu’une personne est mineure', async () => {
+      store.save.mockResolvedValueOnce({
+        id: 'A1',
+        avertissements: [
+          { type: 'MINEUR_PENDANT_EVENEMENT', message: "L'animateur A1 est mineur" },
+          { type: 'INDISPONIBILITE_HORS_EVENEMENT', message: 'Indisponibilité le 2027-08-15' }
+        ]
+      });
+
+      await service.save('animateurs', { id: 'A1' }, null, "l'animateur");
+
+      const notification = notifications.notify.mock.calls[0][0] as { message: string; messageJournal: string };
+      expect(notification.message).toContain('est mineur');
+      expect(notification.messageJournal).not.toContain('est mineur');
+      expect(notification.messageJournal).toContain('2027-08-15');
     });
 
     it('retourne false et notifie quand le store échoue', async () => {
@@ -273,7 +367,8 @@ describe('ReferenceCrudService', () => {
     it('rapporte les échecs sans perdre les suppressions réussies', async () => {
       store.removeMany.mockResolvedValueOnce({
         succes: ['S1'],
-        echecs: [{ id: 'S2', message: 'encore référencé' }]
+        echecs: [{ id: 'S2', message: 'encore référencé' }],
+        avertissements: []
       });
 
       const supprimes = await service.removeMany('stands', ['S1', 'S2'], 'stands');
@@ -292,6 +387,52 @@ describe('ReferenceCrudService', () => {
       expect(enregistres).toBe(2);
       expect(confirm.ask).not.toHaveBeenCalled();
       expect(notifications.notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'success' }));
+    });
+
+    // Un lot de cinquante lignes doit ouvrir une seule bulle, pas cinquante.
+    it("regroupe les avertissements du lot en une seule bulle", async () => {
+      store.saveMany.mockResolvedValueOnce({
+        succes: ['a', 'b'],
+        echecs: [],
+        avertissements: [
+          { type: 'MINEUR_PENDANT_EVENEMENT', message: 'a est mineur' },
+          { type: 'MINEUR_PENDANT_EVENEMENT', message: 'b est mineur' }
+        ]
+      });
+
+      const enregistres = await service.saveMany('animateurs', [{ id: 'a' }, { id: 'b' }], 'animateurs');
+
+      expect(enregistres).toBe(2);
+      expect(notifications.notify).toHaveBeenCalledTimes(1);
+      expect(notifications.notify).toHaveBeenCalledWith(
+        expect.objectContaining({ variant: 'warning', timeout: 0 })
+      );
+    });
+
+    /**
+     * Une ligne refusée (un solve tient le solveur) ne doit pas emporter les
+     * avertissements des lignes réellement écrites : la bulle est prise par le
+     * refus, alors le reste part au journal des notifications.
+     */
+    it('conserve les avertissements des lignes écrites quand une ligne échoue', async () => {
+      store.saveMany.mockResolvedValueOnce({
+        succes: ['a'],
+        echecs: [{ id: 'b', message: 'résolution en cours' }],
+        avertissements: [
+          { type: 'INDISPONIBILITE_HORS_EVENEMENT', message: 'Indisponibilité le 2027-08-15' },
+          { type: 'MINEUR_PENDANT_EVENEMENT', message: "L'animateur a est mineur" }
+        ]
+      });
+
+      await service.saveMany('animateurs', [{ id: 'a' }, { id: 'b' }], 'animateurs');
+
+      expect(notifications.notify).toHaveBeenCalledWith(
+        expect.objectContaining({ variant: 'error', message: expect.stringContaining('résolution en cours') })
+      );
+      const journal = notifications.notify.mock.calls[1][0] as { message: string; silent: boolean };
+      expect(journal.silent).toBe(true);
+      expect(journal.message).toContain('2027-08-15');
+      expect(journal.message).not.toContain('est mineur');
     });
 
     it('retourne 0 et notifie quand le store échoue', async () => {

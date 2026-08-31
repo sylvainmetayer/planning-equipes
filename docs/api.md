@@ -1195,6 +1195,80 @@ l'une des trois, l'écriture répond `400` plutôt que d'aller heurter la colonn
 c'est ainsi que s'écrit un créneau franchissant minuit (20:00→00:00 dure quatre
 heures), et lui seul lit une fenêtre de stand datée du lendemain.
 
+### Avertissements de saisie
+
+Trois incohérences ne sont **pas** des refus : une indisponibilité hors des
+bornes de l'édition, une date de naissance qui rend l'animateur mineur pendant
+l'événement, un créneau qui déborde l'amplitude d'ouverture de tous les stands.
+Un organisateur a le droit de saisir les trois — la doctrine du dépôt est de ne
+refuser que ce qui est *certainement* insatisfiable — alors la ligne est
+écrite et l'avertissement voyage **dans la réponse de succès**, à côté de
+l'entité :
+
+```json
+POST /api/animateurs  →  200
+{
+  "animateur": { "id": "A-12", "prenom": "…", … },
+  "avertissements": [
+    { "type": "MINEUR_PENDANT_EVENEMENT",
+      "message": "L'animateur A-12 est mineur du 2026-07-08 au 2026-07-08 et devient majeur le 2026-07-09 …" }
+  ]
+}
+```
+
+`POST` et `PUT /api/animateurs` répondent `{ animateur, avertissements }`,
+`POST` et `PUT /api/creneaux` répondent `{ creneau, avertissements }` — le
+créneau y porte son `id` généré, comme avant. Les autres référentiels répondent
+toujours l'entité nue : une clé `avertissements` absente veut dire « rien à
+signaler ». `avertissements` est toujours présent sur ces deux ressources, vide
+quand tout va bien.
+
+| `type` | Ce qui l'a déclenché |
+| --- | --- |
+| `INDISPONIBILITE_HORS_EVENEMENT` | Un jour d'indisponibilité hors de l'intervalle `[premier créneau, dernier créneau]` : il ne recouvre aucun créneau, donc il ne protège personne. |
+| `INDISPONIBILITE_JOUR_SANS_CRENEAU` | Un jour d'indisponibilité **dans** l'intervalle mais sur une date qui ne porte aucun créneau (un lundi de relâche entre deux week-ends). La date n'est pas fautive, mais l'espace animateur ne l'affichera pas et la première déclaration de disponibilités appliquée l'effacera — l'import CSV refuse la ligne pour ce même motif, la saisie manuelle avertit. |
+| `MINEUR_PENDANT_EVENEMENT` | L'animateur est mineur au moins un jour de l'événement. Le message dit à partir de quelle date il devient majeur, ou qu'il est mineur du début à la fin. Émis **seulement quand l'écriture pose ou change la date de naissance** : être mineur est un état légitime, pas une faute de saisie, et le redire à chaque modification d'une autre colonne apprend à ignorer le message. |
+| `CRENEAU_HORS_OUVERTURE_STANDS` | Aucun stand n'est ouvert une seule minute du créneau : il n'ouvrira aucun poste. |
+| `CRENEAU_DEBORDE_OUVERTURE_STANDS` | Le créneau commence avant que tous les stands n'ouvrent, ou finit après qu'ils ont tous fermé, d'au moins un quart d'heure. |
+
+**Les bornes se dérivent, elles ne se stockent pas** : une `Edition` ne porte ni
+dates ni drapeau « en cours », donc l'événement court du premier au dernier
+créneau de l'édition — la même dérivation que la collecte des disponibilités
+(*Déclaration de disponibilités*). Une édition **sans aucun créneau** n'a donc
+pas de bornes du tout, et n'émet aucun avertissement : inventer une borne là
+serait un faux positif sur l'écran même par lequel une nouvelle édition
+commence.
+
+Les horaires des stands sont lus **récurrences développées** (voir *Horaires
+d'un stand*), et développées contre le créneau qu'on est en train d'écrire —
+sinon un créneau créé sur une date neuve verrait fermés tous les stands
+programmés par règle, et l'avertissement crierait au loup sur la saisie la plus
+banale.
+
+**Seul ce que l'écriture change est signalé.** Sur une modification, chaque
+règle se lit contre la fiche telle qu'elle était avant : un jour
+d'indisponibilité déjà enregistré et une date de naissance non touchée ne
+produisent rien. C'est ce qui rend l'édition en lot tenable — elle émet un
+`PUT` par ligne portant la fiche **entière** fusionnée, donc sans cette
+comparaison, cocher trente bénévoles pour leur ajouter une compétence
+finirait sur un message citant chaque mineur de la sélection. À la création,
+tout est nouveau et tout est examiné.
+
+**Ce que les messages ne disent pas.** Un avertissement nomme un animateur par
+son **identifiant seul** — jamais par ses nom et prénom, jamais par sa date de
+naissance. Ce n'est pas une économie de caractères : le navigateur recopie
+chaque message dans un journal `localStorage` qui survit à la déconnexion
+(`rgpd.md` §7), et l'identité d'un mineur n'a rien à y faire. L'IHM va plus
+loin sur ce seul type : la phrase `MINEUR_PENDANT_EVENEMENT` est affichée mais
+**pas journalisée**, parce qu'en nommant le jour des 18 ans elle laisserait
+recalculer la date de naissance.
+
+Non couverts, délibérément : l'import de scénario (un fichier vaut pour
+lui-même et son rapport d'impact dit déjà ce qu'il change) et les outils MCP,
+qui continuent d'appeler les écritures nues et de répondre l'entité seule.
+L'édition en lot, elle, est couverte : elle émet un `PUT` par ligne et les
+avertissements du lot sont regroupés en un seul message.
+
 **Supprimer un créneau ou un stand emporte les postes du planning persisté qui
 s'y trouvaient**, et eux seuls — un poste ne survit ni au créneau sur lequel il
 était placé, ni au stand sur lequel il était ouvert (`stand_id` et `creneau_id`

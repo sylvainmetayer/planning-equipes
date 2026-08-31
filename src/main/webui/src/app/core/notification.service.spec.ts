@@ -44,6 +44,29 @@ describe('NotificationService', () => {
     expect(service.notifications()[0].severity).toBe(severity);
   });
 
+  /**
+   * The log is written to `localStorage` and outlives the logout, so a sentence
+   * that may be shown is not always a sentence that may be kept — a warning
+   * naming a minor, typically (docs/rgpd.md §7).
+   */
+  it('keeps messageJournal in the log while the snack bar shows message', () => {
+    const { service, snackBar } = configure();
+
+    service.notify({ title: 'Saved', message: 'A1 is a minor · off day 2027-08-15', messageJournal: 'off day 2027-08-15' });
+
+    expect(snackBar.open).toHaveBeenCalledWith(
+      expect.stringContaining('A1 is a minor'),
+      expect.anything(),
+      expect.anything()
+    );
+    expect(service.notifications()[0].message).toBe('off day 2027-08-15');
+
+    // And nothing of it survives into the next session either.
+    TestBed.resetTestingModule();
+    const { service: relu } = configure();
+    expect(relu.notifications()[0].message).toBe('off day 2027-08-15');
+  });
+
   it('silent notify() logs without showing a snack bar', () => {
     const { service, snackBar } = configure();
     service.notify({ title: 'Quiet', silent: true });

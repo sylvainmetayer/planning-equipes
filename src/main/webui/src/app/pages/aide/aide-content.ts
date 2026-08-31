@@ -162,6 +162,10 @@ export function buildHelpSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
+          text: $localize`:@@aide.data.avertissements:Certaines saisies sont enregistrées avec un avertissement : la ligne est bien écrite, et un message reste affiché jusqu'à ce que vous le fermiez. Quatre cas, à la création comme à la modification — une indisponibilité posée hors des dates de l'événement (elle ne recouvre aucun créneau, donc elle ne protège personne) ; une indisponibilité posée sur un jour de l'événement qui ne porte aucun créneau, par exemple un lundi de relâche entre deux week-ends : la date n'est pas fautive, mais l'espace animateur ne l'affichera pas et la première déclaration de disponibilités appliquée l'effacera ; une date de naissance qui rend l'animateur mineur pendant l'événement, le message précisant à partir de quel jour il devient majeur ; un créneau qu'aucun stand n'est ouvert à couvrir, en tout ou seulement à ses extrémités. Ce ne sont jamais des refus : un refus s'affiche en rouge et rien n'est enregistré. Une modification ne signale que ce qu'elle change : reprendre l'adresse d'un mineur ne relance pas le message sur sa minorité, et une édition en lot ne réveille pas ce que personne n'a touché. Tant que l'édition n'a aucun créneau, l'événement n'a pas de dates et ces avertissements se taisent.`
+        },
+        {
+          kind: 'paragraph',
           text: $localize`:@@aide.data.ouvertures:Avant toute résolution, ouvrez « Ouvertures des stands » : la grille stand × jour montre ce que le solveur lira réellement une fois les règles étendues et les exceptions appliquées, et signale les trois erreurs de saisie habituelles — un stand finalement ouvert aucun jour, une fenêtre horaire hors des heures du jour (donc sans effet), et une plage trop courte pour être une vraie vacation.`
         }
       ],

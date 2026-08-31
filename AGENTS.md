@@ -485,6 +485,26 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   boolean flag.
 - Availability is opt-out: an animateur is available unless the date is listed in
   `joursIndisponibles` (`isIndisponibleOn(LocalDate)`).
+- **An edition's dates are derived, never stored.** An `Edition` carries neither
+  dates nor an "ongoing" flag, so the event runs from the first to the last
+  créneau of the edition (`service/JoursEvenement`, read by the availability
+  collection and by the write-time warnings). An edition with no créneau has no
+  bounds at all, and anything reasoning on them must stay silent rather than
+  invent one. Being *inside* those bounds is not the same as being usable: the
+  availability circuit keeps only the exact dates carrying a créneau
+  (`JoursEvenement.hasCreneauOn`), so an off day on a gap day is written and
+  then erased by the first applied declaration — the warnings say so instead of
+  staying silent.
+- **A write-time warning names an animateur by their id, never by their
+  identity.** No nom, no prénom, no date de naissance in an `Avertissement`
+  message: the browser copies every notification into a `localStorage` log that
+  outlives the logout (`docs/rgpd.md` §7). The sentence saying somebody is a
+  minor goes one step further — shown, never logged
+  (`models.ts`/`AVERTISSEMENTS_HORS_JOURNAL`).
+- **A warning is only raised on what the write changed.** An edit compares
+  against the fiche as it stood before; the bulk edit sends the whole merged
+  fiche one row at a time, so anything else re-shouts on data nobody touched,
+  and a warning that fires on correct data stops being read.
 - `ContrainteAdHoc`'s prescriptive types (`INDISPONIBILITE_FORCEE`,
   `INCOMPATIBILITE`, `AFFECTATION_FORCEE`) are evaluated as `HardScore`, at the
   same priority as legal/minor hard constraints — never demote these to

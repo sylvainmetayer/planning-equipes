@@ -43,6 +43,7 @@ scénario versionné de `src/main/resources/scenarios/`.
 | [0017](0017-fragilite-le-ninja-est-un-renfort-pas-un-specialiste.md) | Fragilité : le ninja est un renfort, jamais un spécialiste | Accepté · prolonge 0005 |
 | [0018](0018-ecrire-l-url-de-vue-sans-naviguer.md) | Écrire l'URL de vue sans naviguer | Accepté · précise 0012 |
 | [0019](0019-jeton-et-chemin-dedies-pour-l-abonnement-ics.md) | Un jeton et un chemin dédiés pour l'abonnement au calendrier | Accepté |
+| [0020](0020-avertir-dans-la-reponse-d-ecriture.md) | Avertir dans la réponse d'écriture, pas dans un contrôle à part | Accepté · prolonge 0010 |
 | [0021](0021-import-tabulaire-partiel-et-previsualise.md) | L'import tabulaire d'animateurs est partiel, prévisualisé et rejoué | Accepté |
 
 **0002** et **0013** se lisent ensemble : la première pose le blocage du

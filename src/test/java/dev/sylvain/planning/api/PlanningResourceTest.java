@@ -119,8 +119,8 @@ class PlanningResourceTest {
                 .when().post("/api/creneaux")
                 .then()
                 .statusCode(200)
-                .body("id", notNullValue())
-                .extract().path("id");
+                .body("creneau.id", notNullValue())
+                .extract().path("creneau.id");
 
         given()
                 .when().get("/api/creneaux")

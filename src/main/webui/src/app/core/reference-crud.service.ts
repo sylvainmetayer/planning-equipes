@@ -3,6 +3,7 @@
 
 import { Injectable, inject } from '@angular/core';
 import { ApiError, SessionExpireeError } from './api.service';
+import { Avertissement, estJournalisable } from './models';
 import { NotificationService } from './notification.service';
 import { PlanningResolutionStore } from './planning-resolution.store';
 import { BulkResult, ReferenceDataStore } from './reference-data.store';
@@ -12,6 +13,13 @@ import { errorMessage } from './error-message';
 
 /** Failures detailed in the snack bar before it degrades to a plain count. */
 const MAX_ECHECS_DETAILLES = 3;
+
+/**
+ * Warnings spelled out in the snack bar before it says "and n others". Same
+ * ceiling as the failures, for the same reason: past three sentences nobody
+ * reads the fourth.
+ */
+const MAX_AVERTISSEMENTS_DETAILLES = 3;
 
 @Injectable({ providedIn: 'root' })
 export class ReferenceCrudService {
@@ -53,12 +61,29 @@ export class ReferenceCrudService {
       return false;
     }
     try {
-      await this.store.save(resource, payload, editingId);
+      const { id, avertissements } = await this.store.save(resource, payload, editingId);
       this.refreshResolution();
+      // The id the server wrote, not the one that was sent: a créneau is
+      // created without one, and echoing the payload printed "Créneau
+      // undefined" in a snack bar that stays until it is dismissed.
+      const identifiant = id ?? payload.id ?? editingId ?? '';
+      if (avertissements.length > 0) {
+        // Written all the same — the entity is in the list behind the snack
+        // bar. No timeout: a warning nobody had time to read is a warning that
+        // was not given, and this one names dates the user has to go and check.
+        this.notifications.notify({
+          title: $localize`:@@crud.savedWithWarnings:Enregistrement de ${label}:label: ${identifiant}:id: effectué — ${avertissements.length}:count: point(s) à vérifier.`,
+          message: detailler(avertissements),
+          messageJournal: detailler(avertissements.filter(estJournalisable)),
+          variant: 'warning',
+          timeout: 0
+        });
+        return true;
+      }
       this.notifications.notify({
         title: editingId
-          ? $localize`:@@crud.updated:Modification de ${label}:label: ${payload.id}:id: effectuée.`
-          : $localize`:@@crud.created:Création de ${label}:label: ${payload.id}:id: effectuée.`,
+          ? $localize`:@@crud.updated:Modification de ${label}:label: ${identifiant}:id: effectuée.`
+          : $localize`:@@crud.created:Création de ${label}:label: ${identifiant}:id: effectuée.`,
         variant: 'success',
         timeout: 4000
       });
@@ -188,6 +213,18 @@ export class ReferenceCrudService {
     successTitle: (count: number) => string,
     failureTitle: (count: number) => string
   ): void {
+    if (result.echecs.length === 0 && result.avertissements.length > 0) {
+      // Every row went through, and some of them raised something: one snack
+      // bar for the batch, kept open, exactly as a single save does.
+      this.notifications.notify({
+        title: $localize`:@@crud.bulkSavedWithWarnings:${successTitle(result.succes.length)}:saved: ${result.avertissements.length}:count: point(s) à vérifier.`,
+        message: detailler(result.avertissements),
+        messageJournal: detailler(result.avertissements.filter(estJournalisable)),
+        variant: 'warning',
+        timeout: 0
+      });
+      return;
+    }
     if (result.echecs.length === 0) {
       this.notifications.notify({
         title: successTitle(result.succes.length),
@@ -206,6 +243,19 @@ export class ReferenceCrudService {
       message: restants > 0 ? `${details} · ${$localize`:@@crud.bulkMoreErrors:et ${restants}:count: autre(s)`}` : details,
       variant: 'error'
     });
+    // A partly failed batch still wrote most of its rows, and what they raised
+    // is not cancelled by the one row the server refused. The snack bar is
+    // taken by the refusal — Material shows one at a time, a second `open()`
+    // would hide it — so the warnings go to the Notifications page instead of
+    // being dropped.
+    if (result.avertissements.length > 0) {
+      this.notifications.notify({
+        title: $localize`:@@crud.bulkPartialWarnings:${result.avertissements.length}:count: point(s) à vérifier sur les lignes enregistrées.`,
+        message: detailler(result.avertissements.filter(estJournalisable)),
+        variant: 'warning',
+        silent: true
+      });
+    }
   }
 
   /**
@@ -231,6 +281,21 @@ export class ReferenceCrudService {
       variant: 'error'
     });
   }
+}
+
+/**
+ * The warning sentences as one line, capped so a batch cannot fill the screen.
+ * The messages come from the server already naming their dates and entities:
+ * nothing is rebuilt here, and nothing is translated — the backend speaks the
+ * same French as its refusals do.
+ */
+function detailler(avertissements: readonly Avertissement[]): string {
+  const detail = avertissements
+    .slice(0, MAX_AVERTISSEMENTS_DETAILLES)
+    .map((avertissement) => avertissement.message)
+    .join(' · ');
+  const restants = avertissements.length - MAX_AVERTISSEMENTS_DETAILLES;
+  return restants > 0 ? `${detail} · ${$localize`:@@crud.moreWarnings:et ${restants}:count: autre(s)`}` : detail;
 }
 
 /**

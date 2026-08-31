@@ -9,6 +9,7 @@ import dev.sylvain.planning.service.AnimateurCsvImportService;
 import dev.sylvain.planning.service.ConfirmationPlanningService;
 import dev.sylvain.planning.service.ReferenceDataService;
 import dev.sylvain.planning.service.ReferenceUsage;
+import dev.sylvain.planning.service.WrittenAnimateur;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -62,15 +63,25 @@ public class AnimateurResource {
         return confirmationService.byAnimateur();
     }
 
+    /**
+     * Creates an animateur. The body carries the fiche <b>and</b> the
+     * non-blocking warnings the write raised ({@link WrittenAnimateur}) — the
+     * fiche is written either way, so this stays a {@code 200}.
+     *
+     * <p>Declared as {@link WrittenAnimateur} rather than wrapped in a
+     * {@code Response}: the declared return type is what {@code JsonContractTest}
+     * walks, and a payload nothing declares is a payload nothing freezes.</p>
+     */
     @POST
-    public Response createAnimateur(Animateur animateur) {
-        return Response.ok(referenceDataService.createAnimateur(animateur)).build();
+    public WrittenAnimateur createAnimateur(Animateur animateur) {
+        return referenceDataService.writeAnimateur(animateur);
     }
 
+    /** Same body, same warnings, for an edit — see {@link #createAnimateur}. */
     @PUT
     @Path("/{id}")
-    public Response updateAnimateur(@PathParam("id") String id, Animateur animateur) {
-        return Response.ok(referenceDataService.updateAnimateur(id, animateur)).build();
+    public WrittenAnimateur updateAnimateur(@PathParam("id") String id, Animateur animateur) {
+        return referenceDataService.writeAnimateur(id, animateur);
     }
 
     @DELETE

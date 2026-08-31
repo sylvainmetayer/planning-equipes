@@ -5,6 +5,7 @@ import java.util.List;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.service.ReferenceDataService;
 import dev.sylvain.planning.service.ReferenceUsage;
+import dev.sylvain.planning.service.WrittenCreneau;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -34,15 +35,21 @@ public class CreneauResource {
         return referenceDataService.listCreneaux();
     }
 
+    /**
+     * Creates a timeslot. The body carries the timeslot — the generated id
+     * included — <b>and</b> the non-blocking warnings the write raised
+     * ({@link WrittenCreneau}).
+     */
     @POST
-    public Creneau createCreneau(Creneau creneau) {
-        return referenceDataService.createCreneau(creneau);
+    public WrittenCreneau createCreneau(Creneau creneau) {
+        return referenceDataService.writeCreneau(creneau);
     }
 
+    /** Same body, same warnings, for an edit — see {@link #createCreneau}. */
     @PUT
     @Path("/{id}")
-    public Creneau updateCreneau(@PathParam("id") Long id, Creneau creneau) {
-        return referenceDataService.updateCreneau(id, creneau);
+    public WrittenCreneau updateCreneau(@PathParam("id") Long id, Creneau creneau) {
+        return referenceDataService.writeCreneau(id, creneau);
     }
 
     @DELETE
