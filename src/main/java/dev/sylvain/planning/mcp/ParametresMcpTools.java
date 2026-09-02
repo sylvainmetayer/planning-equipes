@@ -11,6 +11,7 @@ import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.ParametresDecoupage;
 import dev.sylvain.planning.domain.ParametresDecoupage.PauseCoverageStrategy;
 import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.service.ReferenceDataService;
@@ -161,6 +162,42 @@ public class ParametresMcpTools {
         ParametresSolveur actuels = referenceDataService.getParametresSolveur();
         return toView(referenceDataService.updateParametresSolveur(
                 new ParametresSolveur(dureeResolutionSecondes, actuels.mailFinResolution())));
+    }
+
+    /* ------------------------- Notification parameters ---------------------- */
+
+    @Tool(description = "Consulte ce que les notifications planifiées ont le droit de faire sur l'édition : "
+            + "l'interrupteur, l'heure du rappel de la veille, le délai avant relance des animateurs qui n'ont "
+            + "pas confirmé, et l'ancienneté à partir de laquelle une demande d'échange sans réponse est "
+            + "signalée. Une édition que personne n'a armée répond les valeurs par défaut, actives à faux.",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
+    ParametresNotifications consulter_parametres_notifications(
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+        return referenceDataService.getParametresNotifications();
+    }
+
+    @Tool(description = "Modifie les paramètres des notifications planifiées. Seuls les champs fournis sont "
+            + "modifiés. actives=true ARME DES ENVOIS DE COURRIELS automatiques nocturnes (rappel de la veille, "
+            + "relance des non-confirmés, alerte sur les échanges sans réponse) : cet outil n'envoie rien "
+            + "lui-même, il autorise le planificateur à le faire. L'heure du rappel ne peut pas dépasser "
+            + "23:00 — plus tard, la tâche horaire passerait par-dessus et le rappel ne partirait jamais.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
+    ParametresNotifications modifier_parametres_notifications(
+            @ToolArg(description = "Notifications planifiées actives ou non", required = false) Boolean actives,
+            @ToolArg(description = "Heure du rappel de la veille (HH:MM), au plus tard 23:00", required = false) String heureRappelVeille,
+            @ToolArg(description = "Délai avant relance des non-confirmés, en heures", required = false) Integer delaiRelanceHeures,
+            @ToolArg(description = "Ancienneté d'une demande d'échange sans réponse avant alerte, en jours", required = false) Integer ancienneteEchangeJours,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+        ParametresNotifications actuels = referenceDataService.getParametresNotifications();
+        return referenceDataService.updateParametresNotifications(new ParametresNotifications(
+                actives == null ? actuels.actives() : actives,
+                heureRappelVeille == null
+                        ? actuels.heureRappelVeille()
+                        : McpArgs.heure(heureRappelVeille, "heureRappelVeille"),
+                delaiRelanceHeures == null ? actuels.delaiRelanceHeures() : delaiRelanceHeures,
+                ancienneteEchangeJours == null ? actuels.ancienneteEchangeJours() : ancienneteEchangeJours));
     }
 
     /* -------------------------- Contraintes ad hoc -------------------------- */

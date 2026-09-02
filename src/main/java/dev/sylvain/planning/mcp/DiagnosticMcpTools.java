@@ -5,6 +5,7 @@ import java.util.List;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.ImportImpact;
 import dev.sylvain.planning.service.KpiHistoriqueService;
 import dev.sylvain.planning.service.KpiHistoriqueService.KpiHistoriqueEntry;
@@ -13,6 +14,7 @@ import dev.sylvain.planning.service.OuvertureStandsAnalyzer.LigneStand;
 import dev.sylvain.planning.service.OuvertureStandsAnalyzer.RapportOuvertures;
 import dev.sylvain.planning.service.PlanningService;
 import dev.sylvain.planning.service.ReferenceDataService;
+import dev.sylvain.planning.service.ReferenceUsage;
 import dev.sylvain.planning.service.StaffingAnalyzer;
 import dev.sylvain.planning.service.StaffingAnalyzer.StaffingSummary;
 import io.quarkiverse.mcp.server.Tool;
@@ -113,6 +115,42 @@ public class DiagnosticMcpTools {
         return kpiHistoriqueService.list();
     }
 
+    /**
+     * Deliberately not edition-scoped either, for the reason
+     * {@code lister_kpi_historique} is not: a row survives the edition it
+     * describes, and the rows of a deleted edition are exactly the ones
+     * nothing else could ever clean up.
+     */
+    @Tool(description = "Supprime une ligne de l'historique des KPI, désignée par l'id que renvoie "
+            + "lister_kpi_historique. Sert à retirer une résolution ratée qui fausse la comparaison entre "
+            + "éditions ; l'historique est le seul endroit où elle est stockée, la ligne est perdue.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = true,
+                    idempotentHint = true, openWorldHint = false))
+    SuppressionResult supprimer_kpi_historique(
+            @ToolArg(description = "Id de la ligne d'historique") long id) {
+        if (!kpiHistoriqueService.delete(id)) {
+            throw new BusinessError.NotFound("Ligne d'historique KPI inconnue : " + id);
+        }
+        return new SuppressionResult(String.valueOf(id), true);
+    }
+
+    @Tool(description = "Ce qu'une suppression emporterait avec elle : pour les ids donnés, le nombre "
+            + "d'affectations du planning enregistré, de contraintes ad hoc et de verrouillages qui les citent. "
+            + "Les compteurs sont agrégés sur toute la sélection, comme la question posée avant une suppression "
+            + "en lot. Ne supprime rien.",
+            annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
+    UsagesView analyser_usages_suppression(
+            @ToolArg(description = "Ids d'animateurs", required = false) List<String> animateurIds,
+            @ToolArg(description = "Ids de stands", required = false) List<String> standIds,
+            @ToolArg(description = "Ids de créneaux", required = false) List<String> creneauIds,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+        return new UsagesView(
+                referenceDataService.countAnimateurUsages(animateurIds == null ? List.of() : animateurIds),
+                referenceDataService.countStandUsages(standIds == null ? List.of() : standIds),
+                referenceDataService.countCreneauUsages(creneauIds == null ? List.of() : creneauIds));
+    }
+
     @Tool(description = "Ce qu'un import de scénario écraserait dans l'édition : nombre d'animateurs, de stands, "
             + "de postes déjà planifiés, de demandes d'échange et de verrouillages. À appeler avant "
             + "importer_scenario, qui remplace tout sans prévenir.",
@@ -121,5 +159,9 @@ public class DiagnosticMcpTools {
     ImportImpact previsualiser_import(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return referenceDataService.countImportImpact();
+    }
+
+    /** One counter set per family asked about, each aggregated over its ids. */
+    public record UsagesView(ReferenceUsage animateurs, ReferenceUsage stands, ReferenceUsage creneaux) {
     }
 }

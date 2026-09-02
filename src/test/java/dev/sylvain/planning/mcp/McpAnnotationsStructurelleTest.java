@@ -61,15 +61,50 @@ class McpAnnotationsStructurelleTest {
     /** Tools that write without destroying: creations, edits, toggles, locks. */
     private static final List<String> ECRITURE = List.of(
             "creer_", "modifier_", "ajouter_", "activer_", "desactiver_", "dupliquer_",
-            "renommer_", "definir_", "verrouiller", "capturer_", "arreter_", "affecter_");
+            "renommer_", "definir_", "verrouiller", "capturer_", "arreter_", "affecter_",
+            "configurer_", "appliquer_", "accepter_", "refuser_", "publier_", "envoyer_",
+            "compacter_");
+
+    /**
+     * The tools that leave the building, and the only ones allowed to declare
+     * {@code openWorldHint = true}: they send mail. Everything else answers
+     * out of this application's own database.
+     *
+     * <p>Listing them rather than deriving them from the name is the point:
+     * an outgoing mail is a decision somebody has to take deliberately, and
+     * adding a tool to this list is that decision, reviewed. A tool that
+     * forgot its annotation block is still caught, since the same block also
+     * carries {@code destructiveHint}, which its name is checked against
+     * above.</p>
+     */
+    private static final List<String> SORTIE_EXTERIEURE = List.of(
+            "publier_planning", "envoyer_planning_animateur", "configurer_collecte_disponibilites");
 
     @Test
     void chaqueOutilDeclareSesAnnotations() throws Exception {
         for (Method outil : OutilsMcp.all()) {
+            if (correspond(outil.getName(), SORTIE_EXTERIEURE)) {
+                continue;
+            }
             assertThat(annotations(outil).openWorldHint())
                     .as("l'outil %s doit déclarer @Tool.Annotations : sans le bloc, il est annoncé destructif"
                             + " et ouvert sur le monde extérieur", outil.getName())
                     .isFalse();
+        }
+    }
+
+    /**
+     * Sending mail is the one thing a tool here can do outside the database,
+     * and it is claimed from both ends: a mail-sending tool must say so, and
+     * nothing else may.
+     */
+    @Test
+    void seulsLesOutilsQuiEnvoientDuCourrielSortentDeLApplication() throws Exception {
+        for (Method outil : OutilsMcp.all()) {
+            assertThat(annotations(outil).openWorldHint())
+                    .as("openWorldHint de %s : vrai pour les seuls outils qui envoient du courriel"
+                            + " (voir SORTIE_EXTERIEURE)", outil.getName())
+                    .isEqualTo(correspond(outil.getName(), SORTIE_EXTERIEURE));
         }
     }
 

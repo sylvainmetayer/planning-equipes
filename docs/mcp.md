@@ -5,8 +5,9 @@ par `quarkus-mcp-server-http`. **La liste des outils est celle que le serveur
 annonce lui-même** — le code du paquet `mcp` en est la source. Ce document porte
 les règles qui ne s'y lisent pas.
 
-Périmètre retenu : tous les endpoints peuvent être exposés, **la seule
-restriction est la confidentialité des données animateur**.
+Périmètre retenu : tous les endpoints de l'organisation peuvent être exposés,
+**la seule restriction est la confidentialité des données animateur**. Ce qui
+reste dehors est énuméré en fin de document, avec sa raison.
 
 ## Authentification : clé API partagée
 
@@ -90,6 +91,8 @@ qui vient d'afficher la donnée.
 | `lister_affectations`, `consulter_instantane` | plafonnent la liste (200 par défaut) et annoncent le total | un planning réel porte plusieurs milliers de postes ; le total à côté de la liste est ce qui rend la troncature lisible, plutôt qu'un plafond caché |
 | `lister_animateurs`, `lister_stands` | acceptent une `limite` mais ne plafonnent rien par défaut | leur taille est celle du référentiel, pas celle du planning : l'appelant qui les demande les veut en général en entier |
 | `diagnostiquer_plan` | lève une erreur sans planning persisté, là où `POST /api/constraints/diagnostic` renvoie la vue vide | l'écran a un état vide permanent qui dit déjà « aucune analyse » ; une structure vide rendue à un assistant se lit comme « aucune contrainte en défaut » |
+| `publier_planning`, `configurer_collecte_disponibilites` | comptent les personnes sans adresse et les échecs d'envoi, là où le REST les **nomme** | ces listes existent pour un écran qui affiche déjà les fiches ; `lister_destinataires_publication` redonne le détail par id, qui est ce que les autres outils prennent en entrée |
+| `envoyer_planning_animateur` | réécrit le refus « *Prénom Nom* n'a pas d'adresse » en « l'animateur *id* n'a pas d'adresse » | la phrase du service ne porte aucun id : rien ne pourrait l'anonymiser après coup, elle est donc remplacée, pas réécrite. La règle de confidentialité vaut aussi sur le chemin d'erreur |
 
 **La question « où ça coince ? » ne passe pas par la liste.**
 `synthese_affectations` répond en quelques dizaines de lignes — postes pourvus
@@ -174,7 +177,7 @@ plus rien dire.
 | `readOnlyHint` | vrai pour les outils qui ne font que lire |
 | `destructiveHint` | vrai pour les suppressions, les imports, une restauration d'instantané — et pour les résolutions, qui remplacent le planning persisté |
 | `idempotentHint` | vrai quand rappeler l'outil avec les mêmes arguments ne change plus rien |
-| `openWorldHint` | **toujours faux** : aucun outil ne sort de la base de l'application |
+| `openWorldHint` | vrai pour les **trois outils qui envoient du courriel** (`publier_planning`, `envoyer_planning_animateur`, `configurer_collecte_disponibilites` quand elle prévient les animateurs) ; faux partout ailleurs, aucun autre outil ne sort de la base de l'application |
 
 `McpAnnotationsStructurelleTest` tient les deux bouts. Le `openWorldHint = false`
 sert de marqueur — un bloc oublié garde la valeur par défaut et échoue — et les
@@ -182,6 +185,47 @@ hints attendus sont dérivés du **nom** de l'outil, si bien qu'un
 `supprimer_stand` qui se déclarerait en lecture seule échoue aussi. Un nom que
 le test ne sait pas classer échoue également : un nouvel outil ne passe pas
 sans que quelqu'un ait dit ce qu'il fait.
+
+Les trois outils qui envoient du courriel sont **énumérés** dans ce test, jamais
+déduits d'un nom : un envoi sortant est une décision que quelqu'un prend, et
+inscrire un outil dans cette liste *est* cette décision, relue. Ils ne perdent
+pas pour autant le filet du bloc oublié, puisque leur `destructiveHint` reste
+confronté à leur nom.
+
+## Trois outils font sortir un courriel
+
+Ce sont les seuls, et ce sont les seuls à s'annoncer `openWorldHint = true` :
+`publier_planning`, `envoyer_planning_animateur`, et
+`configurer_collecte_disponibilites` lorsqu'elle coche l'invitation. Un client
+qui veut faire confirmer ce qui quitte l'application a de quoi le repérer.
+
+**Deux dates, deux questions.** `etat_planning` dit quand le solveur a tourné
+pour la dernière fois ; `etat_publication` dit quand les animateurs ont été
+prévenus pour la dernière fois. La seconde est la seule qui décrive ce que les
+gens ont sous les yeux : un planning résolu ce matin et publié la semaine
+dernière est, pour eux, celui de la semaine dernière. `etat_publication` répond
+aussi qui serait concerné par la prochaine publication, et pourquoi — sans rien
+envoyer, comme l'écran.
+
+`publier_planning` capture d'abord l'instantané publié, puis écrit aux gens :
+un envoi qui échoue à mi-chemin laisse un planning publié cohérent et une trace
+qui dit qui a été manqué. C'est cette trace que relit
+`lister_destinataires_publication`, par id.
+
+## Décider ce que les animateurs ont demandé
+
+Les déclarations de disponibilité et les demandes d'échange arrivent de
+l'espace animateur et attendent une décision. Les outils les listent, les
+chiffrent et les tranchent côté organisation — `appliquer_declaration_disponibilite`
+écrit la déclaration sur la fiche par le même chemin que l'écran de saisie, donc
+les données de référence sont marquées modifiées et `etat_planning` signale que
+le planning résolu est périmé.
+
+`accepter_demande_echange` est, avec `affecter_poste`, l'un des deux seuls
+outils qui écrivent dans le planning résolu sans passer par le solveur : il
+applique l'échange puis le fige par des verrouillages `ANIMATEUR_CRENEAU`.
+D'où `analyser_impact_echange` à côté : la prévalidation stockée avec la demande
+décrit le planning du jour où elle a été envoyée, pas celui d'aujourd'hui.
 
 ## Retoucher un poste sans relancer le solveur
 
@@ -199,10 +243,17 @@ respecter, il ne doit pas pouvoir passer dessus en silence.
 Deux autres familles MCP sont servies, parce qu'elles portent ce qu'un outil ne
 peut pas dire.
 
-**Quatre prompts** — construire la grille de créneaux, vérifier une édition
-avant de résoudre, résoudre sans perdre le planning en place, diagnostiquer les
-contraintes dures. Chacun prend un argument `edition` facultatif et enchaîne les
-outils dans le bon ordre.
+**Sept prompts**, un par moment du cycle : construire la grille de créneaux,
+traiter les déclarations de disponibilité, vérifier une édition avant de
+résoudre, résoudre sans perdre le planning en place, diagnostiquer les
+contraintes dures, publier le planning, trancher les demandes d'échange. Chacun
+prend un argument `edition` facultatif et enchaîne les outils dans le bon ordre.
+
+Les trois derniers arrivent après la résolution, et deux d'entre eux nomment un
+outil qui envoie du courriel : ils exigent un accord explicite avant l'appel.
+`McpPromptsWordingTest` le vérifie sans énumérer quoi que ce soit — il relit les
+outils dont `openWorldHint` est vrai, si bien qu'un futur outil sortant cité par
+un prompt muet fait échouer le build.
 
 La page MCP de l'interface **ne les recopie pas** : elle les lit sur
 `GET /api/mcp/prompts`. Elle portait auparavant ses propres textes, et l'un
@@ -235,3 +286,7 @@ Le vocabulaire est le seul texte écrit à la main ici : il résume
 | Exports PDF / ICS / CSV | Binaires ou nominatifs, destinés au téléchargement depuis l'interface |
 | `/api/config` | Clés publiques destinées au navigateur : aucun intérêt pour un assistant |
 | `/api/planning/sample`, `/persisted` | Un `PlanningEvenement` entier, plusieurs dizaines de Mo avec les données personnelles. `lister_affectations` couvre le besoin en restant filtré |
+| Import CSV des bénévoles | Le tableur porte nom, prénom, date de naissance et adresse : un outil qui l'accepterait ferait entrer par MCP exactement ce qui n'en sort pas |
+| Espace animateur (`/api/espace-animateur/{jeton}`, abonnement ICS) | Le côté animateur du produit, derrière un jeton personnel. MCP est l'outil de l'organisation : il voit les demandes et les déclarations **côté admin**, jamais l'espace de quelqu'un |
+| Rotation du jeton d'espace d'un animateur | Invalide le lien déjà imprimé sur un PDF distribué : une conséquence hors de l'application, que personne ne peut annuler depuis une conversation |
+| `/api/auth`, `/api/branding`, `/api/mentions-legales`, `/api/debug` | La session admin, l'habillage de l'interface et les bacs à sable de développement : rien qu'un assistant puisse en faire |

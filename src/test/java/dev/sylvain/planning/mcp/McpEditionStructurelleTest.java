@@ -34,7 +34,8 @@ class McpEditionStructurelleTest {
     private static final Set<String> HORS_EDITION = Set.of(
             "lister_scenarios", "valider_scenario_yaml",
             "arreter_solveur", "statut_solveur", "lister_jobs", "supprimer_job",
-            "lister_kpi_historique");
+            "lister_kpi_historique", "supprimer_kpi_historique",
+            "etat_sauvegardes", "modifier_sauvegardes");
 
     /** The edition tools themselves designate their target explicitly, argument by argument. */
     private static final String OUTILS_DEDITION = EditionMcpTools.class.getName();

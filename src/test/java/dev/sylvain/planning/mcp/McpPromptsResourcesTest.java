@@ -22,6 +22,13 @@ import jakarta.inject.Inject;
  * Prompts and resources are text an assistant acts on, so what has to hold is
  * that the text says the right thing: the edition reaches it, the catalogue is
  * the solver's own, and no name of a person can travel in either.
+ *
+ * <p>What is checked here is what needs the <b>running server</b>: that a
+ * declared prompt is really announced by the registry, and that a resource
+ * answers the URI it advertises. The guards over the prompt text alone — their
+ * display order, the tools they cite, the consent they must ask for before a
+ * tool that mails 150 people — live in {@link McpPromptsWordingTest}, which
+ * needs no container and therefore runs everywhere.</p>
  */
 @QuarkusTest
 class McpPromptsResourcesTest {
@@ -63,14 +70,6 @@ class McpPromptsResourcesTest {
                     .doesNotContain("%s")
                     .doesNotContain("null");
         }
-    }
-
-    /** The page shows them in this order, which is the order of a real event. */
-    @Test
-    void leCatalogueCommenceParLaGrilleEtFinitParLeDiagnostic() {
-        assertThat(prompts.catalogue()).extracting(PromptExpose::nom)
-                .startsWith("construire_la_grille_de_creneaux")
-                .endsWith("diagnostiquer_contraintes_dures");
     }
 
     @Test

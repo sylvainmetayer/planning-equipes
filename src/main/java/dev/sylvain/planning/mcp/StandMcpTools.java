@@ -19,6 +19,7 @@ import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
+import dev.sylvain.planning.service.HoraireCompaction;
 import dev.sylvain.planning.service.ReferenceDataService;
 import dev.sylvain.planning.service.TypologieItem;
 import io.quarkiverse.mcp.server.Tool;
@@ -383,6 +384,18 @@ public class StandMcpTools {
         Stand stand = findStand(standId);
         stand.getHoraires().clear();
         return toView(referenceDataService.updateStand(standId, stand));
+    }
+
+    @Tool(description = "Réécrit les plages datées saisies à la main en horaires récurrents équivalents, pour "
+            + "tous les stands de l'édition : c'est la façon dont un jeu de données antérieur aux règles les "
+            + "rattrape. appliquer=false (défaut) est une simulation qui décrit exactement ce qui serait fait, "
+            + "stand par stand, sans rien écrire ; seul appliquer=true persiste.",
+            annotations = @Tool.Annotations(readOnlyHint = false, destructiveHint = false,
+                    idempotentHint = true, openWorldHint = false))
+    HoraireCompaction.RapportCompactage compacter_horaires_stands(
+            @ToolArg(description = "Écrire vraiment le résultat (défaut : simulation)", required = false) Boolean appliquer,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+        return referenceDataService.compactHoraires(Boolean.TRUE.equals(appliquer));
     }
 
     /* ----------------------------- Emplacements ---------------------------- */

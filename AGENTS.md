@@ -206,6 +206,12 @@ Single Quarkus service, no separate solver microservice. Package root:
      writes the default edition (`McpEditionStructurelleTest`). Beware CDI
      self-invocation: a tool calling another tool on `this` bypasses the
      interceptor.
+  3. every tool declares the four MCP hints, and only the tools that **send
+     mail** (`publier_planning`, `envoyer_planning_animateur`,
+     `configurer_collecte_disponibilites`) may declare
+     `openWorldHint = true` — they are enumerated in
+     `McpAnnotationsStructurelleTest`, which also derives the other hints from
+     the tool's own name.
 
   See `docs/mcp.md`.
 - **`service/backup/` is the only place the application writes to disk**: a

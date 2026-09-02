@@ -10,7 +10,8 @@ import jakarta.enterprise.context.ApplicationScoped;
 
 /**
  * The two pieces of context an assistant cannot deduce from the tools: what
- * the solver actually optimises, and what the words mean.
+ * the solver actually optimises, and what the words mean — « publié » and
+ * « résolu » among them, which name two different plannings.
  *
  * <p>Resources rather than tools because they are read before the work, not
  * during it — a client attaches them once and every later call is better
@@ -79,6 +80,9 @@ public class McpResources {
                 | **Édition** | un événement complet et son référentiel. Chaque outil accepte un argument `edition` ; sans lui, il travaille dans l'édition par défaut. Une variante d'une édition est **une autre édition**. |
                 | **Verrouillage** | une partie du planning que le solveur n'a plus le droit de déplacer. |
                 | **Instantané** | une copie datée d'un planning résolu, qu'on peut comparer et restaurer. |
+                | **Publication** | l'envoi du planning aux animateurs concernés. Elle capture au passage un **instantané publié** : c'est lui que les animateurs lisent, pas le planning de travail. Résoudre ne prévient personne — `etat_planning` date la dernière résolution, `etat_publication` la dernière publication. |
+                | **Déclaration de disponibilité** | ce qu'un animateur propose depuis son espace pendant la fenêtre de collecte. Elle n'entre dans le référentiel que si quelqu'un l'applique. |
+                | **Demande d'échange** | une permutation de postes demandée par un animateur pendant la « foire ». Acceptée, elle est appliquée au planning résolu **et figée** par un verrouillage. |
 
                 ## L'ordre dans lequel les choses se font
 
@@ -90,6 +94,11 @@ public class McpResources {
                    `expliquer_echec_contraintes_dures` ;
                 5. la retouche : `verrouiller` ce qui est bon, `resoudre_incremental` pour le reste,
                    `suggerer_reparations` et `affecter_poste` pour un siège isolé.
+                6. la diffusion : `etat_publication` puis `publier_planning` — et ensuite les demandes
+                   d'échange, `analyser_impact_echange` avant de trancher.
+
+                Les déclarations de disponibilité, elles, se traitent **avant** l'étape 3 : une
+                déclaration non décidée n'est pas dans le référentiel que le solveur lira.
                 """);
     }
 

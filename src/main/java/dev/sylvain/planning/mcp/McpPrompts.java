@@ -9,8 +9,10 @@ import io.quarkiverse.mcp.server.PromptMessage;
 import jakarta.enterprise.context.ApplicationScoped;
 
 /**
- * The three conversations this server is actually for, served as MCP prompts
- * instead of being copy-pasted.
+ * The conversations this server is actually for, served as MCP prompts
+ * instead of being copy-pasted: one per moment of a real event, from the
+ * empty grid to the swap requests that arrive once everybody has read their
+ * planning.
  *
  * <p>The MCP page hands the user a ready-to-copy prompt, and that text had
  * already drifted: it named a tool the application has never exposed. A prompt
@@ -47,9 +49,12 @@ public class McpPrompts {
      */
     private static final List<String> ORDRE = List.of(
             "construire_la_grille_de_creneaux",
+            "traiter_les_declarations_de_disponibilite",
             "verifier_avant_resolution",
             "resoudre_sans_perdre_le_planning",
-            "diagnostiquer_contraintes_dures");
+            "diagnostiquer_contraintes_dures",
+            "publier_le_planning",
+            "traiter_les_demandes_dechange");
 
     @Prompt(description = "Diagnostiquer les contraintes dures encore violées après une résolution, et dire "
             + "quoi corriger dans les données de référence.")
@@ -81,14 +86,17 @@ public class McpPrompts {
                 Vérifie que %s est prête à être résolue, sans rien lancer ni rien modifier.
 
                 1. volumes : y a-t-il des animateurs et des postes à pourvoir ?
-                2. valider_creneaux : la grille est-elle cohérente ? Le mode est obligatoire — si tu \
+                2. lister_declarations_disponibilite avec statut EN_ATTENTE : une déclaration non \
+                décidée n'est pas dans le référentiel, et résoudre avant de la traiter, c'est résoudre \
+                le mauvais problème. Dis-moi combien il en reste.
+                3. valider_creneaux : la grille est-elle cohérente ? Le mode est obligatoire — si tu \
                 hésites entre AMPLITUDES et VACATIONS, appelle diagnostiquer_grille_creneaux et \
                 demande-moi.
-                3. analyser_ouvertures_stands : y a-t-il des stands jamais ouverts, des fenêtres sans \
+                4. analyser_ouvertures_stands : y a-t-il des stands jamais ouverts, des fenêtres sans \
                 effet, des segments trop courts ?
-                4. analyser_effectifs : combien d'animateurs faut-il au minimum, et l'effectif présent \
+                5. analyser_effectifs : combien d'animateurs faut-il au minimum, et l'effectif présent \
                 suffit-il ?
-                5. analyser_faisabilite : reste-t-il une cause structurellement bloquante ?
+                6. analyser_faisabilite : reste-t-il une cause structurellement bloquante ?
 
                 Conclus par oui/non, puis par la liste de ce qui reste à corriger avant de lancer une \
                 résolution.""".formatted(designation(edition)));
@@ -110,6 +118,9 @@ public class McpPrompts {
                 résultat est moins bon, propose restaurer_instantane — mais ne le fais pas sans mon \
                 accord.
 
+                6. Rappelle-moi que résoudre n'est pas prévenir : tant que le planning n'est pas \
+                publié, les animateurs lisent toujours le précédent. etat_publication dit depuis quand.
+
                 Ne relance pas une deuxième résolution de ta propre initiative.""".formatted(suffixe(edition)));
     }
 
@@ -130,6 +141,78 @@ public class McpPrompts {
                 5. valider_creneaux pour finir, et explique-moi chaque anomalie — doublon, chevauchement, \
                 trou dans une journée, date isolée, stand que personne ne pourra armer, sous-effectif — en \
                 disant pour chacune si c'est une vraie erreur ou un choix légitime de ma part.""".formatted(suffixe(edition)));
+    }
+
+    @Prompt(description = "Traiter les déclarations de disponibilité envoyées par les animateurs : les "
+            + "lire, les appliquer ou les refuser, avant de résoudre.")
+    PromptMessage traiter_les_declarations_de_disponibilite(
+            @PromptArg(description = EDITION, required = false) String edition) {
+        return PromptMessage.withUserRole("""
+                Aide-moi à traiter les déclarations de disponibilité en attente%s.
+
+                1. consulter_collecte_disponibilites : la collecte est-elle encore ouverte ? Une \
+                déclaration peut encore arriver après celles que nous allons lire.
+                2. lister_declarations_disponibilite avec statut EN_ATTENTE. Pour chacune, compare ce \
+                qui est déclaré (joursIndisponibles, souhaits) avec ce que la fiche dit aujourd'hui \
+                (joursActuels) : dis-moi ce qui changerait vraiment.
+                3. Signale-moi celles qui coûtent cher avant de les appliquer : un jour retiré sur une \
+                journée déjà tendue se voit avec analyser_effectifs et analyser_faisabilite.
+                4. appliquer_declaration_disponibilite ou refuser_declaration_disponibilite, une par \
+                une et seulement après mon accord — appliquer écrit sur la fiche, tout ou rien, et il \
+                n'y a pas de retour en arrière.
+                5. Quand il n'en reste plus, rappelle-moi que le planning résolu est maintenant \
+                périmé : etat_planning le dit, et il faut relancer une résolution.
+
+                Les animateurs se désignent par leur id : ne me demande pas de noms, tu n'en verras \
+                pas.""".formatted(suffixe(edition)));
+    }
+
+    @Prompt(description = "Publier le planning aux animateurs : vérifier qui est concerné et ce qu'ils "
+            + "liront, publier, puis contrôler qui a bien été prévenu.")
+    PromptMessage publier_le_planning(
+            @PromptArg(description = EDITION, required = false) String edition) {
+        return PromptMessage.withUserRole("""
+                Prépare la publication du planning%s. **Publier envoie des courriels** : ne le fais \
+                pas sans mon accord explicite.
+
+                1. etat_publication : depuis quand rien n'est parti, combien de personnes sont \
+                concernées, et ce que chacune lirait. Zéro concerné veut dire que le planning publié \
+                est déjà à jour — il n'y a rien à faire.
+                2. Si une résolution tourne, ou si le plan à publier est vide, la publication sera \
+                refusée : dis-le-moi plutôt que de réessayer.
+                3. diagnostiquer_plan avant d'envoyer : publier un planning qui viole encore des \
+                contraintes dures, c'est faire lire à quelqu'un un horaire qu'on va lui reprendre.
+                4. Signale-moi les personnes dont adresseConnue est faux : elles ne recevront rien et \
+                devront être prévenues autrement.
+                5. publier_planning seulement après mon accord.
+                6. lister_destinataires_publication pour contrôler le résultat, et \
+                envoyer_planning_animateur — un courriel de plus — pour rattraper un échec isolé, \
+                toujours après mon accord.
+
+                Les destinataires se désignent par leur id : ni nom ni adresse ne sortent d'ici.""".formatted(suffixe(edition)));
+    }
+
+    @Prompt(description = "Trancher les demandes d'échange des animateurs : chiffrer l'impact de chacune sur "
+            + "le planning d'aujourd'hui, puis accepter ou refuser.")
+    PromptMessage traiter_les_demandes_dechange(
+            @PromptArg(description = EDITION, required = false) String edition) {
+        return PromptMessage.withUserRole("""
+                Aide-moi à trancher les demandes d'échange en attente%s.
+
+                1. consulter_foire_echanges : la foire accepte-t-elle encore des demandes aujourd'hui ?
+                2. lister_demandes_echange avec statut PROPOSEE — celles dont le collègue visé a déjà \
+                donné son accord, et qui n'attendent que nous. Celles en EN_ATTENTE_CIBLE ne sont pas \
+                à nous.
+                3. Pour chacune, analyser_impact_echange : la prévalidation stockée décrit le planning \
+                du jour où la demande a été envoyée, pas celui d'aujourd'hui. Classe-les par delta de \
+                score, et mets à part celles qui cassent une contrainte dure.
+                4. accepter_demande_echange ou refuser_demande_echange, une par une et après mon \
+                accord. Accepter écrit dans le planning résolu et le fige par des verrouillages : une \
+                résolution ultérieure ne le défera pas, mais lister_verrouillages s'allonge d'autant.
+                5. Rappelle-moi de publier ensuite : un échange accepté n'est annoncé à personne tant \
+                que la publication n'est pas partie.
+
+                Demandeur et cible se désignent par leur id.""".formatted(suffixe(edition)));
     }
 
     /**
