@@ -318,7 +318,9 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `/ad-hoc-constraints` (« Ajustements manuels » on screen — the route, the API
   path and the domain type keep the `ContrainteAdHoc` name, only the label was
   renamed), `/calendar`, `/day-calendar`, `/constraints`,
-  `/problemes`, `/echanges`, `/hours`, `/staffing`, `/jour-j` (« Mode jour J » —
+  `/problemes`, `/echanges`, `/hours`, `/repos` (« Jours de repos » — the
+  animateur x day grid: who works, who rests, who was unavailable),
+  `/staffing`, `/jour-j` (« Mode jour J » —
   the day-of screen: mark somebody absent, repair the seats they held),
   `/banc-de-touche`, `/carte-jour` (« Carte de la journée » — the day replayed
   on the emplacement map, one time cursor), `/aide` (`/solver`,

@@ -571,6 +571,10 @@ export function buildHelpSections(): HelpSection[] {
               text: $localize`:@@aide.views.def.railJour:La même journée que le calendrier journalier, mais vue par personne : une ligne par animateur, les vacations placées dans le temps. Les trous, les amplitudes et les enchaînements sautent aux yeux, et les lignes vides disent qui reste mobilisable — celles marquées « indisponible » signalent au contraire de ne pas solliciter la personne.`
             },
             {
+              term: $localize`:@@aide.views.term.repos:Jours de repos`,
+              text: $localize`:@@aide.views.def.repos:L'inverse des autres vues : non pas qui est où, mais qui souffle. Une ligne par animateur, une colonne par journée de l'événement, et trois états seulement — journée travaillée (avec le nombre d'heures), jour de repos, indisponible. Un jour de repos est une journée que la personne pouvait faire et sur laquelle le planning ne l'a pas affectée ; une journée qu'elle avait déclarée indisponible n'en est pas un, elle n'était pas mobilisable. Les lignes les plus tendues sont en haut : celles qui enchaînent le plus de jours travaillés d'affilée, celles qui n'ont aucune journée libre. La colonne « Série » donne cette plus longue série, et le pied de tableau dit combien de personnes se reposent chaque jour — donc combien restent à appeler. Une case rouge signale une affectation posée sur une journée déclarée indisponible : une anomalie du plan, à corriger.`
+            },
+            {
               term: $localize`:@@aide.views.term.carteJour:Carte de la journée`,
               text: $localize`:@@aide.views.def.carteJour:Encore la même journée, mais sur la carte des emplacements : un curseur temporel, et chaque emplacement coloré par ce que le planning enregistré dit qu'il s'y passe à cet instant — ouvert et entièrement pourvu, ouvert avec des places vides, ou ouvert sans personne. Rien n'est recalculé : un stand est ouvert quand le plan porte un poste qui couvre cet instant. Les stands rattachés à aucun emplacement géolocalisé sont listés à côté de la carte plutôt qu'escamotés.`
             },
@@ -608,6 +612,7 @@ export function buildHelpSections(): HelpSection[] {
         { route: '/rail-jour', label: $localize`:@@nav.link.railJour:Rail de la journée` },
         { route: '/carte-jour', label: $localize`:@@nav.link.carteJour:Carte de la journée` },
         { route: '/hours', label: $localize`:@@nav.link.hours:Heures` },
+        { route: '/repos', label: $localize`:@@nav.link.repos:Jours de repos` },
         { route: '/fragilite', label: $localize`:@@nav.link.fragilite:Fragilité du planning` },
         { route: '/banc-de-touche', label: $localize`:@@nav.link.bancDeTouche:Banc de touche` },
         { route: '/graphe', label: $localize`:@@nav.link.graphe:Graphe` },

@@ -158,6 +158,7 @@ function buildNavGroups(devMode: boolean): NavGroup[] {
         icon: 'view_day'
       },
       { path: '/hours', label: $localize`:@@nav.link.hours:Heures`, icon: 'schedule' },
+      { path: '/repos', label: $localize`:@@nav.link.repos:Jours de repos`, icon: 'weekend' },
       {
         path: '/heatmap',
         label: $localize`:@@nav.link.heatmap:Heatmap de charge`,

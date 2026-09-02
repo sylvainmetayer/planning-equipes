@@ -156,6 +156,11 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/hours/hours-page').then((m) => m.HoursPage)
   },
   {
+    path: 'repos',
+    title: 'Rest days',
+    loadComponent: () => import('./pages/repos/repos-page').then((m) => m.ReposPage)
+  },
+  {
     path: 'staffing',
     title: 'Staffing need',
     loadComponent: () => import('./pages/staffing/staffing-page').then((m) => m.StaffingPage)

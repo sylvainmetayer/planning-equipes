@@ -267,8 +267,8 @@ il alimente `aria-describedby`, qui décrit l'action et laisse le nom
 intact ; masquer le bouton du calcul le rendrait invisible au lecteur d'écran
 alors qu'il est focalisable.
 
-Les deux grilles à deux axes (calendrier mensuel, heatmap) gardent leur
-navigation propre : leur géométrie n'est pas celle d'une liste.
+Les trois grilles à deux axes (calendrier mensuel, heatmap, jours de repos)
+gardent leur navigation propre : leur géométrie n'est pas celle d'une liste.
 
 La table `g`+lettre et les libellés de la palette vivent dans
 `core/keyboard-shortcuts.ts` ; les destinations, elles, sont **dérivées de

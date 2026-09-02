@@ -1,5 +1,6 @@
 // The read-only views over the seeded persisted planning: hours, staffing,
-// stand openings and the animateur timeline actually show the seeded data —
+// stand openings, rest days and the animateur timeline actually show the
+// seeded data —
 // not just a rendered shell.
 
 import { APIRequestContext, expect, test } from '@playwright/test';
@@ -37,6 +38,15 @@ test('la grille des ouvertures montre les stands ensemencés', async ({ browser 
   await page.goto('/ouvertures');
   await expect(page.locator('#contenu')).toContainText('Stand E2E un');
   await expect(page.locator('#contenu')).toContainText('Stand E2E deux');
+  await page.context().close();
+});
+
+test('la grille des jours de repos montre les animateurs du planning enregistré', async ({ browser }) => {
+  const page = await pageAdmin(browser, admin);
+  await page.goto('/repos');
+  await expect(page.locator('#contenu')).toContainText('Jours de repos');
+  await expect(page.locator('#contenu')).toContainText('Alice E2E');
+  await expect(page.locator('#contenu')).toContainText('Au repos ce jour-là');
   await page.context().close();
 });
 

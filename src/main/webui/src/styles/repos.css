@@ -1,0 +1,127 @@
+/* Rest days: animateur x day grid saying who works, who rests and who was not
+   available. Same shape as the load heatmap, one status per cell instead of a
+   count — sized for ~150 lines, so a cell is one <td> and nothing else. */
+
+.repos-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.repos-legende {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem 1.25rem;
+  list-style: none;
+  margin: 0 0 0.5rem;
+  padding: 0;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.repos-legende li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.repos-swatch {
+  display: inline-block;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: var(--mat-sys-corner-extra-small);
+  border: 1px solid var(--mat-sys-outline-variant);
+}
+
+.repos-compteurs {
+  margin: 0.25rem 0 0.5rem;
+  font: var(--mat-sys-body-medium);
+}
+
+.repos-table {
+  border-collapse: collapse;
+  white-space: nowrap;
+}
+
+.repos-row-header {
+  text-align: left;
+  font: var(--mat-sys-label-medium);
+  padding: 0.375rem 0.75rem;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+/* The name stays readable while the day columns scroll under it. */
+.repos-table .repos-row-header {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--mat-sys-surface);
+}
+
+.repos-day-header,
+.repos-total-header {
+  font: var(--mat-sys-label-medium);
+  padding: 0.375rem 0.5rem;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  text-align: center;
+}
+
+.repos-cell,
+.repos-total-cell {
+  min-width: 3.5rem;
+  text-align: center;
+  padding: 0.375rem 0.5rem;
+  font: var(--mat-sys-body-small);
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.repos-total-cell {
+  font-weight: 600;
+}
+
+.repos-cell-travaille {
+  background: var(--mat-sys-surface-container-highest);
+}
+
+/* Rest is the one thing this grid is read for: it is the cell that stands out,
+   not the working one. */
+.repos-cell-repos {
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+}
+
+.repos-cell-indisponible {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--mat-sys-surface-container),
+    var(--mat-sys-surface-container) 4px,
+    var(--mat-sys-surface-container-low) 4px,
+    var(--mat-sys-surface-container-low) 8px
+  );
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/* Assigned on a day declared unavailable: an anomaly of the plan, not a state. */
+.repos-cell-conflit {
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+  font-weight: 600;
+}
+
+.repos-ligne-sans-repos .repos-row-header {
+  color: var(--mat-sys-error);
+}
+
+.repos-alerte-icon {
+  margin-left: 0.25rem;
+  vertical-align: middle;
+}
+
+/* The grid is keyboard-navigable (roving tabindex): the focused cell must be
+   unmistakable, since the arrows move it one step at a time. */
+.repos-cell:focus-visible {
+  outline: 3px solid var(--app-accent);
+  outline-offset: -3px;
+}

@@ -1,0 +1,140 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h1 mat-card-title i18n="@@nav.link.repos">Jours de repos</h1>
+    <mat-card-subtitle i18n="@@repos.subtitle">
+      Tout l'événement d'un coup d'œil, jour par jour : qui travaille, qui se repose, et qui n'a aucune journée
+      de libre.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <div class="repos-toolbar">
+      <mat-checkbox [checked]="sansReposSeulement()" (change)="sansReposSeulement.set($event.checked)"
+                    i18n="@@repos.filter.sansRepos">Seulement sans jour de repos</mat-checkbox>
+      @if (vueModifiee()) {
+        <button matButton type="button" (click)="reinitialiserVue()">
+          <mat-icon>filter_alt_off</mat-icon>
+          <ng-container i18n="@@common.resetView">Réinitialiser la vue</ng-container>
+        </button>
+      }
+      <button matButton="tonal" type="button" [disabled]="loading()" (click)="refresh()">
+        <mat-icon>refresh</mat-icon>
+        <ng-container i18n="@@common.refresh">Actualiser</ng-container>
+      </button>
+    </div>
+
+    <app-table-filter
+      [(value)]="filtre"
+      label="Filtrer par nom"
+      i18n-label="@@repos.filter.label"
+      placeholder="Nom, prénom…"
+      i18n-placeholder="@@repos.filter.placeholder"
+      [matches]="lignesAffichees().length"
+      [total]="lignes().length"
+    />
+
+    <p class="empty-hint" i18n="@@repos.legendHint">
+      Un jour de repos est une journée que l'animateur pouvait faire et sur laquelle le planning ne l'a pas
+      affecté. Une journée qu'il avait déclarée indisponible n'en est pas un : il n'était pas mobilisable.
+    </p>
+
+    <ul class="repos-legende">
+      <li><span class="repos-swatch repos-cell-travaille"></span><ng-container i18n="@@repos.legend.travaille">Journée travaillée</ng-container></li>
+      <li><span class="repos-swatch repos-cell-repos"></span><ng-container i18n="@@repos.legend.repos">Jour de repos</ng-container></li>
+      <li><span class="repos-swatch repos-cell-indisponible"></span><ng-container i18n="@@repos.legend.indisponible">Indisponible</ng-container></li>
+    </ul>
+
+    @if (!loading() && !error() && lignes().length > 0) {
+      <p class="repos-compteurs" role="status">{{ compteursLabel() }}</p>
+      <p class="empty-hint" i18n="@@repos.keyboardHint">
+        Dans la grille : les flèches déplacent la sélection, Origine et Fin vont au début et à la fin de la ligne.
+        Chaque cellule annonce le détail de sa journée.
+      </p>
+    }
+
+    @if (loading()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    @if (error()) {
+      <p class="empty-hint">{{ error() }}</p>
+    }
+  </mat-card-content>
+</mat-card>
+
+@if (!error() && !loading()) {
+  <mat-card appearance="outlined" class="page-card">
+    <mat-card-content>
+      @if (tableau().jours.length === 0) {
+        <p class="empty-hint" i18n="@@repos.empty">
+          Aucune donnée de planning disponible pour le moment. Lancez une résolution depuis la page Solveur.
+        </p>
+      } @else if (lignesAffichees().length === 0) {
+        <p class="empty-hint" i18n="@@repos.emptyFiltre">Aucun animateur ne correspond au filtre.</p>
+      } @else {
+        <div class="table-wrapper">
+          <table class="repos-table" role="grid">
+            <caption class="visually-hidden" i18n="@@repos.table.caption">
+              Jours de repos : une ligne par animateur, une colonne par journée de l'événement, puis le nombre de
+              jours de repos et la plus longue série de jours travaillés d'affilée
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col" class="repos-row-header">{{ animateurColumnLabel }}</th>
+                @for (jour of tableau().jours; track jour.jour) {
+                  <th scope="col" class="repos-day-header" [title]="jour.titre">{{ jour.label }}</th>
+                }
+                <th scope="col" class="repos-total-header" i18n="@@repos.column.repos">Repos</th>
+                <th scope="col" class="repos-total-header" i18n="@@repos.column.serie">Série</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (ligne of lignesAffichees(); track ligne.animateurId; let indexLigne = $index) {
+                <tr [class.repos-ligne-sans-repos]="ligne.sansRepos">
+                  <th class="repos-row-header" scope="row" [attr.aria-label]="ligne.resume">
+                    <span class="repos-row-label">{{ ligne.nom }}</span>
+                    @if (ligne.sansRepos) {
+                      <mat-icon inline class="repos-alerte-icon" [matTooltip]="sansReposLabel"
+                                [attr.aria-label]="sansReposLabel">priority_high</mat-icon>
+                    }
+                  </th>
+                  @for (cellule of ligne.cellules; track cellule.jour; let indexColonne = $index) {
+                    <td
+                      class="repos-cell"
+                      [class.repos-cell-travaille]="cellule.statut === 'travaille'"
+                      [class.repos-cell-repos]="cellule.statut === 'repos'"
+                      [class.repos-cell-indisponible]="cellule.statut === 'indisponible'"
+                      [class.repos-cell-conflit]="cellule.conflit"
+                      [attr.data-ligne]="indexLigne"
+                      [attr.data-colonne]="indexColonne"
+                      [tabindex]="estCelluleCourante(indexLigne, indexColonne) ? 0 : -1"
+                      (focus)="celluleCourante.set({ ligne: indexLigne, colonne: indexColonne })"
+                      (keydown)="naviguer($event, indexLigne, indexColonne)"
+                      [matTooltip]="cellule.tooltip"
+                      [attr.aria-label]="cellule.tooltip"
+                    >
+                      {{ cellule.label }}
+                      @if (cellule.conflit) {
+                        <mat-icon inline class="repos-alerte-icon" [attr.aria-label]="conflitLabel">warning</mat-icon>
+                      }
+                    </td>
+                  }
+                  <td class="repos-total-cell">{{ ligne.joursRepos }}</td>
+                  <td class="repos-total-cell">{{ ligne.serieMax }}</td>
+                </tr>
+              }
+            </tbody>
+            <tfoot>
+              <tr>
+                <th scope="row" class="repos-row-header" i18n="@@repos.footer.label">Au repos ce jour-là</th>
+                @for (total of totaux(); track total.jour) {
+                  <td class="repos-total-cell">{{ total.repos }}</td>
+                }
+                <td class="repos-total-cell"></td>
+                <td class="repos-total-cell"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+}

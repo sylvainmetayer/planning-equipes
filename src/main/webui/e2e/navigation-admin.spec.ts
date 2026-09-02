@@ -45,6 +45,7 @@ const ROUTES: { path: string; marker?: string }[] = [
   { path: '/banc-de-touche', marker: 'Banc de touche' },
   { path: '/fragilite', marker: 'Fragilité du planning' },
   { path: '/jour-j', marker: 'Mode jour J' },
+  { path: '/repos', marker: 'Jours de repos' },
   { path: '/heatmap' },
   { path: '/timeline', marker: 'Timeline animateur' },
   { path: '/rail-jour', marker: 'Rail de la journée' },

@@ -107,6 +107,7 @@ function buildDefinitionsRoutes(): Map<string, DefinitionRoute> {
     ['/calendar', { label: $localize`:@@nav.link.calendar:Calendrier des affectations`, icon: 'calendar_month', touche: 'm' }],
     ['/day-calendar', { label: $localize`:@@nav.link.dayCalendar:Calendrier journalier`, icon: 'view_day', touche: 'j' }],
     ['/hours', { label: $localize`:@@nav.link.hours:Heures`, icon: 'schedule', touche: 'h' }],
+    ['/repos', { label: $localize`:@@nav.link.repos:Jours de repos`, icon: 'weekend' }],
     ['/heatmap', { label: $localize`:@@nav.link.heatmap:Heatmap de charge`, icon: 'grid_view' }],
     ['/timeline', { label: $localize`:@@nav.link.timeline:Timeline animateur`, icon: 'timeline' }],
     ['/rail-jour', { label: $localize`:@@nav.link.railJour:Rail de la journée`, icon: 'view_timeline' }],
