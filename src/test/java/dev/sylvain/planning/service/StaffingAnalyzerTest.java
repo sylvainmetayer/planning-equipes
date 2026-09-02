@@ -120,6 +120,128 @@ class StaffingAnalyzerTest {
     }
 
     @Test
+    void theWorkloadBoundIsProvedWeekByWeekNotOverTheWholeEvent() {
+        // A full week of demand, then a single quiet day in the next one. The
+        // hours of week 28 can only be covered by people working week 28: the
+        // former event-wide division handed that week half of a two-week
+        // capacity and lost a whole person on the way.
+        List<PosteAffectation> postes = new ArrayList<>();
+        for (int jour = 0; jour < 7; jour++) {
+            Creneau creneau = new Creneau((long) jour, jour + 1, LocalDate.of(2026, 7, 6).plusDays(jour),
+                    LocalTime.of(10, 0), LocalTime.of(20, 0));
+            postes.addAll(postes(stand("A", 2), creneau, 2));
+        }
+        postes.addAll(postes(stand("A", 1), new Creneau(99L, 8, LocalDate.of(2026, 7, 13),
+                LocalTime.of(10, 0), LocalTime.of(12, 0)), 1));
+
+        StaffingSummary summary = analyzer.analyze(postes, List.of(), TYPOLOGIES, 48 * 60, 30);
+
+        assertThat(summary.nombreSemaines()).isEqualTo(2);
+        // 142 h over 2 x 48 h of "capacity" used to say 2 — one short of what
+        // the busiest week alone requires.
+        assertThat(summary.chargeTotal()).isEqualTo(3);
+        assertThat(summary.semaineCritique().semaine()).isEqualTo("2026-W28");
+        assertThat(summary.semaineCritique().heures()).isEqualTo(140.0);
+        assertThat(summary.minimumTotal()).isEqualTo(3);
+    }
+
+    @Test
+    void aWeekTheEventBarelyTouchesCannotOfferAFullWeeklyCeiling() {
+        // Two event days in that ISO week: 2 x 10 h of work per person, not the
+        // 48 h the weekly ceiling would allow on a full week.
+        List<PosteAffectation> postes = new ArrayList<>();
+        for (int jour = 0; jour < 2; jour++) {
+            Creneau creneau = new Creneau((long) jour, jour + 1, LocalDate.of(2026, 7, 20).plusDays(jour),
+                    LocalTime.of(8, 0), LocalTime.of(18, 0));
+            postes.addAll(postes(stand("A", 3), creneau, 3));
+        }
+
+        StaffingSummary summary = analyzer.analyze(postes, List.of(), TYPOLOGIES, 48 * 60, 30);
+
+        assertThat(summary.parSemaine()).hasSize(1);
+        assertThat(summary.parSemaine().get(0).jours()).isEqualTo(2);
+        assertThat(summary.parSemaine().get(0).joursTravaillables()).isEqualTo(2);
+        assertThat(summary.parSemaine().get(0).capaciteHeuresParAnimateur()).isEqualTo(20.0);
+        assertThat(summary.parSemaine().get(0).debut()).isEqualTo(LocalDate.of(2026, 7, 20));
+    }
+
+    @Test
+    void aWeekOfSevenIdenticalDaysNeedsMorePeopleThanOneOfThem() {
+        // The bound the estimate was missing outright: nobody may work seven
+        // days in the same ISO week (art. L3132-1), so 7 days needing 3 people
+        // each are 21 person-days, and 6 workable days apiece means 4 people.
+        List<PosteAffectation> postes = new ArrayList<>();
+        for (int jour = 0; jour < 7; jour++) {
+            Creneau creneau = new Creneau((long) jour, jour + 1, LocalDate.of(2026, 7, 6).plusDays(jour),
+                    LocalTime.of(10, 0), LocalTime.of(12, 0));
+            postes.addAll(postes(stand("A", 3), creneau, 3));
+        }
+
+        StaffingSummary summary = analyzer.analyze(postes, List.of(), TYPOLOGIES, 48 * 60, 30);
+
+        assertThat(summary.picAvecPause()).isEqualTo(3);
+        assertThat(summary.chargeTotal()).isEqualTo(1);
+        assertThat(summary.parSemaine().get(0).joursPersonne()).isEqualTo(21);
+        assertThat(summary.rotationTotal()).isEqualTo(4);
+        assertThat(summary.minimumTotal()).isEqualTo(4);
+        assertThat(summary.borneRetenue()).isEqualTo(BorneRetenue.ROTATION_JOURS);
+    }
+
+    @Test
+    void aDayLongerThanTheDailyCeilingNeedsMorePeopleThanItsPeak() {
+        // One seat held continuously from 06:00 to 02:00: a single person at a
+        // time, but 20 h of work in one calendar day, and nobody may work more
+        // than ten (art. L3121-18).
+        Stand stand = stand("A", 1);
+        List<PosteAffectation> postes = new ArrayList<>();
+        postes.addAll(postes(stand, creneau(1, LocalTime.of(6, 0), LocalTime.of(16, 0)), 1));
+        postes.addAll(postes(stand, creneau(2, LocalTime.of(16, 0), LocalTime.of(2, 0)), 1));
+
+        StaffingSummary summary = analyzer.analyze(postes, List.of(), TYPOLOGIES, 48 * 60, 0);
+
+        assertThat(summary.picAvecPause()).isEqualTo(1);
+        assertThat(summary.parJour().get(0).heures()).isEqualTo(20.0);
+        assertThat(summary.parJour().get(0).minimumJour()).isEqualTo(2);
+        assertThat(summary.minimumTotal()).isEqualTo(2);
+    }
+
+    @Test
+    void declaredUnavailabilityRaisesTheProjectionAboveTheProvenFloor() {
+        // Half the pool is off on the only event day, so a need of 4 people
+        // that day requires a pool of 8 — the correction the bounds, which
+        // assume everybody available every day, cannot make on their own.
+        Creneau matin = creneau(1, LocalTime.of(10, 0), LocalTime.of(12, 0));
+        List<Animateur> pool = new ArrayList<>();
+        for (int index = 1; index <= 8; index++) {
+            Animateur animateur = animateur("A" + index, "JEUX");
+            if (index % 2 == 0) {
+                animateur.setJoursIndisponibles(Set.of(JOUR));
+            }
+            pool.add(animateur);
+        }
+
+        StaffingSummary summary = analyzer.analyze(postes(stand("A", 4), matin, 4), pool, TYPOLOGIES, 48 * 60, 0);
+
+        assertThat(summary.minimumTotal()).isEqualTo(4);
+        assertThat(summary.parJour().get(0).disponibles()).isEqualTo(4);
+        assertThat(summary.indisponibilitesDeclarees()).isTrue();
+        assertThat(summary.minimumAvecIndisponibilites()).isEqualTo(8);
+    }
+
+    @Test
+    void withoutAnyDeclaredUnavailabilityTheProjectionIsTheFloorItself() {
+        // Nothing declared is not "everybody always free": it is unknown, and
+        // an unknown availability must not be invented in either direction.
+        Creneau matin = creneau(1, LocalTime.of(10, 0), LocalTime.of(12, 0));
+
+        StaffingSummary summary = analyzer.analyze(postes(stand("A", 4), matin, 4),
+                List.of(animateur("1", "JEUX")), TYPOLOGIES, 48 * 60, 0);
+
+        assertThat(summary.indisponibilitesDeclarees()).isFalse();
+        assertThat(summary.minimumAvecIndisponibilites()).isEqualTo(summary.minimumTotal());
+    }
+
+    @Test
     void aWindowCrossingMidnightStaysOnTheEveningItStartedOn() {
         Creneau soiree = creneau(1, LocalTime.of(22, 0), LocalTime.of(2, 0));
         StaffingSummary summary = analyzer.analyze(postes(stand("A", 1), soiree, 1), List.of(), TYPOLOGIES, 48 * 60, 30);
@@ -307,7 +429,7 @@ class StaffingAnalyzerTest {
     }
 
     @Test
-    void aTypologieBoundUsesTheSameThreeBoundsAsTheGlobalOne() {
+    void aTypologieBoundUsesTheSameBoundsAsTheGlobalOne() {
         // One ESCAPE seat open 10 h a day over one ISO week: the workload
         // bound wins there too, exactly as it does globally.
         List<PosteAffectation> postes = new ArrayList<>();

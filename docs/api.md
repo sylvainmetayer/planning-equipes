@@ -769,14 +769,17 @@ comme une cible :
 
 - la faisabilité ignore quel stand précis chaque animateur pourrait tenir :
   **`feasible: true` ne garantit pas** un score dur nul après résolution ;
-- le besoin minimum ignore les indisponibilités individuelles, et ne regarde
-  les compétences que dans son volet par typologie, décrit plus bas.
+- le besoin minimum ne regarde les compétences que dans son volet par
+  typologie, décrit plus bas, et ne tient pas compte du repos quotidien ni du
+  fait qu'un planning réel répartit le travail loin en dessous des plafonds
+  légaux. Les indisponibilités déclarées, elles, sont désormais reportées à
+  part — voir `minimumAvecIndisponibilites` plus bas.
 
 La compétence n'entre pas dans le calcul **de faisabilité** : depuis sa bascule
 en contrainte medium, n'importe quel animateur disponible peut tenir n'importe
 quel stand. Un écart d'appréciation est signalé *après* résolution, jamais comme
 cause bloquante avant. Le besoin minimum, lui, la regarde — mais seulement dans
-son volet par typologie décrit plus bas, jamais dans ses trois bornes globales.
+son volet par typologie décrit plus bas, jamais dans ses quatre bornes globales.
 
 Une cause n'est pas toujours un manque d'animateurs : `GET /api/feasibility`
 remonte aussi les **contraintes ad hoc contradictoires**
@@ -786,11 +789,48 @@ concernées). Elles sont refusées à la saisie, donc ce que cette cause désign
 signalerait. Toujours `CRITIQUE`, et classée avant les sous-effectifs : elle se
 corrige en supprimant une ligne que l'utilisateur a saisie lui-même.
 
-Trois bornes pour le besoin minimum, la plus grande étant retenue : pic
-simultané, **pic avec pause** (le nombre exact d'animateurs distincts qu'exige
-la journée la plus chargée), et charge totale rapportée au plafond hebdomadaire.
+Quatre bornes pour le besoin minimum, la plus grande étant retenue. Chacune
+découle d'une règle que `LegalConstraints` applique vraiment, si bien que le
+plancher et le solveur ne peuvent pas se contredire :
 
-Les mêmes trois bornes sont déclinées **par typologie** — `parCompetence` dans
+- **pic simultané** — des sièges ouverts au même instant : personne n'en tient
+  deux à la fois ;
+- **pic avec pause** — le même pic sur des intervalles prolongés de la pause
+  légale entre deux vacations, soit le nombre exact d'animateurs distincts
+  qu'exige la journée la plus chargée ;
+- **charge horaire** — les heures de la **semaine ISO la plus chargée**,
+  rapportées à ce qu'un animateur peut y travailler ;
+- **rotation sur les jours** — les jours-personne de cette même semaine,
+  rapportés aux six jours qu'un animateur peut y travailler (art. L3132-1).
+
+Les deux dernières se prouvent **semaine par semaine**, jamais sur le total de
+l'événement : les heures de la semaine 28 ne peuvent être couvertes que par les
+personnes qui travaillent la semaine 28, et la capacité inemployée d'une semaine
+que l'événement effleure n'en dote aucune autre. La capacité d'une semaine est
+elle-même plafonnée deux fois — par le plafond hebdomadaire, et par les jours
+que l'événement y occupe (six au plus, de dix heures au plus) : une semaine de
+deux jours ne vaut pas 48 h de travail par personne. La borne de **rotation**
+manquait purement et simplement : une journée exigeant cent personnes, répétée
+sept jours d'affilée, ne se tient pas à cent, puisque personne ne peut
+travailler les sept jours. Sur une édition réelle de seize jours, ces deux
+corrections font passer le plancher de 102 à 117, pour un événement réellement
+couvert par 153 personnes —
+l'écart restant tient aux compétences, au repos quotidien et à l'équité, qu'un
+plancher ne peut pas prouver.
+
+Le besoin d'une journée est lui-même le plus grand du pic avec pause et de ses
+heures divisées par le plafond quotidien : une journée de 600 heures-personne
+demande au moins soixante personnes, quelle que soit sa forme.
+
+À côté de ces bornes, `minimumAvecIndisponibilites` corrige le plancher par les
+**indisponibilités déclarées** : une journée dont seuls 70 % du vivier connu
+sont libres exige un vivier de `besoin / 0,7`. C'est une **projection**, pas une
+borne — elle suppose les recrues à venir aussi indisponibles que les personnes
+déjà connues — d'où son champ distinct ; `indisponibilitesDeclarees` dit si
+quiconque a déclaré quoi que ce soit, ce qui distingue « tout le monde est
+libre » de « personne n'a répondu ».
+
+Les mêmes quatre bornes sont déclinées **par typologie** — `parCompetence` dans
 la même réponse, le *goulot par compétence* : « il ne manque pas 4 personnes, il
 manque 4 personnes compétentes en escape game ». Deux règles d'attribution la
 rendent lisible :

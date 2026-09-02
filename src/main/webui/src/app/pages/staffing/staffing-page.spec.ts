@@ -10,7 +10,14 @@ import { provideZonelessChangeDetection, Signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
-import { BorneStaffing, CompetenceStaffing, JourStaffing, StaffingSummary, TypologieStaffing } from '../../core/models';
+import {
+  BorneStaffing,
+  CompetenceStaffing,
+  JourStaffing,
+  SemaineStaffing,
+  StaffingSummary,
+  TypologieStaffing
+} from '../../core/models';
 import { StaffingPage } from './staffing-page';
 
 /** A promise whose settlement the test drives, to observe the in-flight state. */
@@ -31,6 +38,23 @@ function jour(overrides: Partial<JourStaffing> = {}): JourStaffing {
     heures: 200,
     picSimultane: 18,
     picAvecPause: 22,
+    minimumJour: 22,
+    disponibles: 40,
+    ...overrides
+  };
+}
+
+function semaine(overrides: Partial<SemaineStaffing> = {}): SemaineStaffing {
+  return {
+    semaine: '2026-W31',
+    debut: '2026-07-27',
+    jours: 7,
+    joursTravaillables: 6,
+    heures: 1400,
+    capaciteHeuresParAnimateur: 48,
+    chargeTotal: 30,
+    joursPersonne: 154,
+    rotationTotal: 26,
     ...overrides
   };
 }
@@ -46,6 +70,7 @@ function typologie(overrides: Partial<TypologieStaffing> = {}): TypologieStaffin
     picSimultane: 4,
     picAvecPause: 6,
     chargeTotal: 3,
+    rotationTotal: 4,
     minimumTotal: 6,
     borneRetenue: 'PIC_AVEC_PAUSE',
     specialistes: 6,
@@ -71,19 +96,26 @@ function competence(overrides: Partial<CompetenceStaffing> = {}): CompetenceStaf
 function summary(overrides: Partial<StaffingSummary> = {}): StaffingSummary {
   return {
     parJour: [jour()],
+    parSemaine: [semaine()],
+    semaineCritique: semaine(),
     picSimultane: 18,
     picAvecPause: 22,
     jourCritique: jour(),
     totalDemandeHeures: 1200,
     nombreSemaines: 3,
-    capaciteHeuresParAnimateur: 90,
+    capaciteHeuresParAnimateur: 48,
     chargeTotal: 14,
+    rotationTotal: 20,
     minimumTotal: 22,
     borneRetenue: 'PIC_AVEC_PAUSE',
+    minimumAvecIndisponibilites: 22,
+    indisponibilitesDeclarees: false,
     minimumMajeurs: 15,
     minimumMineurs: 7,
     pauseMinimaleMinutes: 30,
     dureeHebdomadaireMaxMinutes: 2880,
+    dureeQuotidienneMaxMinutes: 600,
+    joursTravaillesMaxParSemaine: 6,
     parCompetence: competence(),
     ...overrides
   };
@@ -96,9 +128,13 @@ type PageInternals = {
   error: Signal<string>;
   columns: string[];
   heuresParSemaine: Signal<number>;
+  heuresSemaineCritique: Signal<number>;
+  projectionLabel: Signal<string>;
   jourCritiqueLabel: (jour: JourStaffing) => string;
+  semaineCritiqueLabel: () => string;
   estBorneRetenue: (borne: BorneStaffing) => boolean;
   pauseMinutes: () => number;
+  joursTravaillesMax: () => number;
   competenceColumns: string[];
   competence: Signal<CompetenceStaffing | null>;
   estGoulot: (ligne: TypologieStaffing) => boolean;
@@ -195,13 +231,23 @@ describe('StaffingPage', () => {
   });
 
   describe('empty state', () => {
-    it('reports no hours per week rather than a division by zero when no week is covered', async () => {
-      api.get.mockResolvedValue(summary({ nombreSemaines: 0, capaciteHeuresParAnimateur: 0, parJour: [] }));
+    it('reports no hours per week and names no week when the edition covers none', async () => {
+      api.get.mockResolvedValue(
+        summary({
+          nombreSemaines: 0,
+          capaciteHeuresParAnimateur: 0,
+          parSemaine: [],
+          semaineCritique: null,
+          parJour: []
+        })
+      );
 
       const page = createPage();
       await vi.waitFor(() => expect(page.summary()).not.toBeNull());
 
       expect(page.heuresParSemaine()).toBe(0);
+      expect(page.heuresSemaineCritique()).toBe(0);
+      expect(page.semaineCritiqueLabel()).toBe('');
     });
 
     it('reports no hours per week and no break while nothing is loaded', () => {
@@ -210,19 +256,65 @@ describe('StaffingPage', () => {
       const page = createPage();
 
       expect(page.heuresParSemaine()).toBe(0);
+      expect(page.projectionLabel()).toBe('');
       expect(page.pauseMinutes()).toBe(0);
       expect(page.estBorneRetenue('PIC_AVEC_PAUSE')).toBe(false);
     });
   });
 
   describe('displayed data', () => {
-    it('spreads the per-animateur capacity over the covered weeks', async () => {
-      api.get.mockResolvedValue(summary({ capaciteHeuresParAnimateur: 90, nombreSemaines: 3 }));
+    // The capacity is the busiest week's own, not an event-wide total to
+    // divide: a week the event barely touches offers far less than the weekly
+    // ceiling, and the former division hid exactly that.
+    it('reads the busiest week capacity as the server proved it, without dividing anything', async () => {
+      api.get.mockResolvedValue(
+        summary({
+          capaciteHeuresParAnimateur: 20,
+          nombreSemaines: 3,
+          semaineCritique: semaine({ semaine: '2026-W30', jours: 2, joursTravaillables: 2, heures: 96 })
+        })
+      );
 
       const page = createPage();
       await vi.waitFor(() => expect(page.summary()).not.toBeNull());
 
-      expect(page.heuresParSemaine()).toBe(30);
+      expect(page.heuresParSemaine()).toBe(20);
+      expect(page.heuresSemaineCritique()).toBe(96);
+      expect(page.semaineCritiqueLabel()).toContain('2026-W30');
+    });
+
+    it('highlights the rotation bound like any other when the server retained it', async () => {
+      api.get.mockResolvedValue(summary({ borneRetenue: 'ROTATION_JOURS', rotationTotal: 26 }));
+
+      const page = createPage();
+      await vi.waitFor(() => expect(page.summary()).not.toBeNull());
+
+      expect(page.estBorneRetenue('ROTATION_JOURS')).toBe(true);
+      expect(page.estBorneRetenue('PIC_AVEC_PAUSE')).toBe(false);
+      expect(page.joursTravaillesMax()).toBe(6);
+    });
+
+    // A projection, not a bound — so it only appears when it says something
+    // the bounds do not, and never when nobody declared anything.
+    it('shows the availability projection only when declared days off push it above the floor', async () => {
+      api.get.mockResolvedValue(
+        summary({ minimumTotal: 22, minimumAvecIndisponibilites: 31, indisponibilitesDeclarees: true })
+      );
+      const page = createPage();
+      await vi.waitFor(() => expect(page.summary()).not.toBeNull());
+      expect(page.projectionLabel()).toContain('31');
+
+      api.get.mockResolvedValue(
+        summary({ minimumTotal: 22, minimumAvecIndisponibilites: 22, indisponibilitesDeclarees: true })
+      );
+      await page.load();
+      expect(page.projectionLabel()).toBe('');
+
+      api.get.mockResolvedValue(
+        summary({ minimumTotal: 22, minimumAvecIndisponibilites: 22, indisponibilitesDeclarees: false })
+      );
+      await page.load();
+      expect(page.projectionLabel()).toBe('');
     });
 
     it('highlights the bound the server actually retained, and only that one', async () => {
@@ -255,11 +347,12 @@ describe('StaffingPage', () => {
       expect(label).toContain('27');
     });
 
-    it('lists the peak with break as a column of its own, distinct from the simultaneous peak', () => {
+    it('lists the peaks and the day minimum as columns of their own', () => {
       const page = createPage();
 
       expect(page.columns).toContain('picSimultane');
       expect(page.columns).toContain('picAvecPause');
+      expect(page.columns).toContain('minimumJour');
     });
   });
 

@@ -57,10 +57,12 @@ public class DiagnosticMcpTools {
      * change the count.
      */
     @Tool(description = "Combien d'animateurs il faut au minimum pour couvrir l'événement, et pourquoi : pic "
-            + "simultané, pic avec pause, charge horaire totale, jour critique, et le détail par jour, plus le "
-            + "goulot par typologie : les mêmes bornes sur les sièges d'une seule typologie, face aux animateurs "
-            + "qui la déclarent. Calcul en Java pur, aucune résolution lancée. Le résultat est un plancher "
-            + "optimiste — il ignore disponibilités individuelles et repos quotidien.",
+            + "simultané, pic avec pause, charge horaire de la semaine la plus chargée, rotation sur les jours "
+            + "(nul ne travaille plus de six jours par semaine ISO), jour et semaine critiques, le détail par jour "
+            + "et par semaine, plus le goulot par typologie : les mêmes bornes sur les sièges d'une seule typologie, "
+            + "face aux animateurs qui la déclarent. Calcul en Java pur, aucune résolution lancée. Le résultat est "
+            + "un plancher optimiste — il ignore compétences et repos quotidien ; minimumAvecIndisponibilites y "
+            + "ajoute, à part, une projection sur les indisponibilités déjà déclarées.",
             annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
                     idempotentHint = true, openWorldHint = false))
     StaffingSummary analyser_effectifs(

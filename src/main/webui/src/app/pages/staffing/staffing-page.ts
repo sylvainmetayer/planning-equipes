@@ -17,8 +17,8 @@ import { errorPrefix } from '../../core/error-message';
  * solve would have to fill. This page used to compute it in the browser from
  * `effectifMin` × open stands × créneaux, which ignored recurring horaires
  * (every stand counted open around the clock) and counted overlapping relay
- * vacations several times over — on edition-1708 it announced more than 1500
- * animateurs for an event staffed by 153. See `StaffingAnalyzer` on the
+ * vacations several times over — on a real 16-day edition it announced more
+ * than 1500 animateurs for an event staffed by 153. See `StaffingAnalyzer` on the
  * backend for the methodology and its limits.
  *
  * The second section reads the same payload per game category — the bottleneck
@@ -39,7 +39,15 @@ import { errorPrefix } from '../../core/error-message';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class StaffingPage {
-  protected readonly columns = ['jour', 'standsOuverts', 'sieges', 'heures', 'picSimultane', 'picAvecPause'];
+  protected readonly columns = [
+    'jour',
+    'standsOuverts',
+    'sieges',
+    'heures',
+    'picSimultane',
+    'picAvecPause',
+    'minimumJour'
+  ];
   protected readonly competenceColumns = ['typologie', 'sieges', 'minimumTotal', 'specialistes', 'manque'];
   protected readonly summary = signal<StaffingSummary | null>(null);
   // `false`, not `true`: the constructor calls `load()`, which flips it to
@@ -49,9 +57,31 @@ export class StaffingPage {
   protected readonly loading = signal(false);
   protected readonly error = signal('');
 
-  protected readonly heuresParSemaine = computed(() => {
+  /**
+   * What one animateur may work during the week the workload bound was proved
+   * on. Read straight from the payload: it used to be a browser-side division
+   * of an event-wide capacity by the number of weeks, which only ever
+   * reconstructed the weekly ceiling and hid the fact that a week the event
+   * barely touches offers far less than it.
+   */
+  protected readonly heuresParSemaine = computed(() => this.summary()?.capaciteHeuresParAnimateur ?? 0);
+
+  /** Hours the busiest week has to cover — the numerator of the workload bound. */
+  protected readonly heuresSemaineCritique = computed(() => this.summary()?.semaineCritique?.heures ?? 0);
+
+  /**
+   * The projection line, shown only when it says something the bounds do not:
+   * an availability nobody declared cannot be projected, and a projection
+   * equal to the floor would only repeat it.
+   */
+  protected readonly projectionLabel = computed(() => {
     const summary = this.summary();
-    return summary && summary.nombreSemaines > 0 ? summary.capaciteHeuresParAnimateur / summary.nombreSemaines : 0;
+    if (!summary || !summary.indisponibilitesDeclarees || summary.minimumAvecIndisponibilites <= summary.minimumTotal) {
+      return '';
+    }
+    const projete = summary.minimumAvecIndisponibilites;
+    const minimum = summary.minimumTotal;
+    return $localize`:@@staffing.projection.description:Avec les indisponibilités déjà déclarées, il faudrait un vivier de ${projete}:projete: personnes pour couvrir un besoin de ${minimum}:minimum: : la journée la plus tendue ne dispose pas de tout l'effectif. C'est une projection — elle suppose que les recrues à venir seront indisponibles aussi souvent que les personnes déjà connues — et non une borne prouvée.`;
   });
 
   protected readonly competence = computed<CompetenceStaffing | null>(() => this.summary()?.parCompetence ?? null);
@@ -147,6 +177,23 @@ export class StaffingPage {
 
   protected pauseMinutes(): number {
     return this.summary()?.pauseMinimaleMinutes ?? 0;
+  }
+
+  /** Days one animateur may work in an ISO week — six, art. L3132-1. */
+  protected joursTravaillesMax(): number {
+    return this.summary()?.joursTravaillesMaxParSemaine ?? 0;
+  }
+
+  /** The ISO week both weekly bounds were proved on, named for the reader. */
+  protected semaineCritiqueLabel(): string {
+    const semaine = this.summary()?.semaineCritique;
+    if (!semaine) {
+      return '';
+    }
+    const label = semaine.semaine;
+    const jours = semaine.jours;
+    const joursTravaillables = semaine.joursTravaillables;
+    return $localize`:@@staffing.criticalWeek:Semaine la plus chargée : ${label}:semaine: · ${jours}:jours: jours d'événement, dont ${joursTravaillables}:travaillables: travaillables par personne`;
   }
 
   /** A typologie whose bound exceeds the animateurs declaring it: the bottleneck. */

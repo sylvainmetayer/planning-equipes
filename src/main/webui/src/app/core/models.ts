@@ -909,13 +909,44 @@ export interface JourStaffing {
    * vacations — the exact minimum number of distinct animateurs the day needs.
    */
   picAvecPause: number;
+  /**
+   * The distinct animateurs the day provably needs: the peak above, or the
+   * day's hours over the daily legal ceiling when a long, flat day demands
+   * more people than its peak shows.
+   */
+  minimumJour: number;
+  /** Known animateurs not declaring that day off. Equals the pool while nothing is declared. */
+  disponibles: number;
+}
+
+/**
+ * One ISO week of `GET /api/staffing`: the window the workload and rotation
+ * bounds are proved inside. An event-wide aggregate proves nothing — the hours
+ * of a week can only be covered by the people working that week.
+ */
+export interface SemaineStaffing {
+  /** ISO label, e.g. `2026-W28`. */
+  semaine: string;
+  /** Monday of that week, so the label needs no parsing. */
+  debut: string;
+  /** Event days the week holds. */
+  jours: number;
+  /** How many of them one animateur may work — six at most (art. L3132-1). */
+  joursTravaillables: number;
+  heures: number;
+  /** Weekly ceiling, capped by `joursTravaillables` × the daily ceiling. */
+  capaciteHeuresParAnimateur: number;
+  chargeTotal: number;
+  /** Sum of the days' `minimumJour`: the (animateur, jour travaillé) pairs required. */
+  joursPersonne: number;
+  rotationTotal: number;
 }
 
 /** Which bound `GET /api/staffing` ended up retaining for `minimumTotal`. */
-export type BorneStaffing = 'PIC_SIMULTANE' | 'PIC_AVEC_PAUSE' | 'CHARGE_HORAIRE';
+export type BorneStaffing = 'PIC_SIMULTANE' | 'PIC_AVEC_PAUSE' | 'CHARGE_HORAIRE' | 'ROTATION_JOURS';
 
 /**
- * One game category of `GET /api/staffing`: the same three bounds, computed on
+ * One game category of `GET /api/staffing`: the same bounds, computed on
  * the seats that provably require it, against the animateurs who declare it.
  */
 export interface TypologieStaffing {
@@ -929,6 +960,7 @@ export interface TypologieStaffing {
   picSimultane: number;
   picAvecPause: number;
   chargeTotal: number;
+  rotationTotal: number;
   minimumTotal: number;
   borneRetenue: BorneStaffing;
   /**
@@ -983,19 +1015,38 @@ export interface CompetenceStaffing {
  */
 export interface StaffingSummary {
   parJour: JourStaffing[];
+  parSemaine: SemaineStaffing[];
+  /** The week that set `chargeTotal` and `rotationTotal`; `null` on an empty edition. */
+  semaineCritique: SemaineStaffing | null;
   picSimultane: number;
   picAvecPause: number;
   jourCritique: JourStaffing | null;
   totalDemandeHeures: number;
   nombreSemaines: number;
+  /** What one animateur may work during `semaineCritique`, not an event-wide total. */
   capaciteHeuresParAnimateur: number;
   chargeTotal: number;
+  /** Person-days of the busiest week over the six days one animateur may work in it. */
+  rotationTotal: number;
   minimumTotal: number;
   borneRetenue: BorneStaffing;
+  /**
+   * `minimumTotal` corrected by the days the animateurs declared off — a
+   * projection, not a bound: it assumes the people yet to be recruited will be
+   * unavailable as often as the ones already known. Equals `minimumTotal`
+   * while nothing is declared.
+   */
+  minimumAvecIndisponibilites: number;
+  /** Whether anybody declared a day off at all — what tells "all free" from "unknown". */
+  indisponibilitesDeclarees: boolean;
   minimumMajeurs: number;
   minimumMineurs: number;
   pauseMinimaleMinutes: number;
   dureeHebdomadaireMaxMinutes: number;
+  /** Art. L3121-18: 10 h. Not configurable — the bounds read it, they do not set it. */
+  dureeQuotidienneMaxMinutes: number;
+  /** Art. L3132-1: six days. Same, and what the rotation bound divides by. */
+  joursTravaillesMaxParSemaine: number;
   parCompetence: CompetenceStaffing;
 }
 

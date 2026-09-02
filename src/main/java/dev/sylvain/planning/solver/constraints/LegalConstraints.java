@@ -19,6 +19,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.JoursFeries;
 import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.PlafondsLegauxMajeurs;
 import dev.sylvain.planning.domain.PlafondsLegauxMineurs;
 import dev.sylvain.planning.domain.PosteAffectation;
 
@@ -54,9 +55,6 @@ import dev.sylvain.planning.domain.PosteAffectation;
  */
 public final class LegalConstraints {
 
-    /** Art. L3121-18: 10 h/day of travail effectif for an adult. */
-    private static final int DUREE_QUOTIDIENNE_MAX_MAJEUR_MINUTES = 10 * 60;
-
     /** Art. L3131-1: 11 consecutive hours of daily rest for an adult. */
     private static final int REPOS_QUOTIDIEN_MIN_MAJEUR_MINUTES = 11 * 60;
 
@@ -74,9 +72,6 @@ public final class LegalConstraints {
 
     /** Art. L3162-3: the break that interrupts a young worker's stretch lasts at least 30 min. */
     private static final int PAUSE_MIN_MINEUR_MINUTES = 30;
-
-    /** Art. L3132-1: no more than six worked days in the same week. */
-    private static final int JOURS_TRAVAILLES_MAX_PAR_SEMAINE = 6;
 
     /**
      * Art. L3132-2 + L3131-1: 24 consecutive hours of weekly rest, on top of the
@@ -312,9 +307,9 @@ public final class LegalConstraints {
                 .groupBy(PosteAffectation::getAnimateur,
                         poste -> poste.getCreneau().getDate(),
                         ConstraintCollectors.sum(PosteAffectation::getDureeEffectiveMinutes))
-                .filter((animateur, date, dureeTotale) -> dureeTotale > DUREE_QUOTIDIENNE_MAX_MAJEUR_MINUTES)
+                .filter((animateur, date, dureeTotale) -> dureeTotale > PlafondsLegauxMajeurs.DUREE_QUOTIDIENNE_MAX_MINUTES)
                 .penalize(HardMediumSoftScore.ONE_HARD,
-                        (animateur, date, dureeTotale) -> dureeTotale - DUREE_QUOTIDIENNE_MAX_MAJEUR_MINUTES)
+                        (animateur, date, dureeTotale) -> dureeTotale - PlafondsLegauxMajeurs.DUREE_QUOTIDIENNE_MAX_MINUTES)
                 .asConstraint("dureeQuotidienneMaxMajeur");
     }
 
@@ -418,9 +413,9 @@ public final class LegalConstraints {
                 .groupBy(PosteAffectation::getAnimateur,
                         poste -> poste.getCreneau().semaineIso(),
                         ConstraintCollectors.countDistinct(poste -> poste.getCreneau().getDate()))
-                .filter((animateur, semaine, jours) -> jours > JOURS_TRAVAILLES_MAX_PAR_SEMAINE)
+                .filter((animateur, semaine, jours) -> jours > PlafondsLegauxMajeurs.JOURS_TRAVAILLES_MAX_PAR_SEMAINE)
                 .penalize(HardMediumSoftScore.ONE_HARD,
-                        (animateur, semaine, jours) -> jours - JOURS_TRAVAILLES_MAX_PAR_SEMAINE)
+                        (animateur, semaine, jours) -> jours - PlafondsLegauxMajeurs.JOURS_TRAVAILLES_MAX_PAR_SEMAINE)
                 .asConstraint("maxJoursTravaillesParSemaine");
     }
 

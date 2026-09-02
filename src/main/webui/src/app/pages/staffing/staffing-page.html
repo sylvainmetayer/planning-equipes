@@ -2,8 +2,10 @@
   <mat-card-header>
     <h1 mat-card-title i18n="@@staffing.title">Besoin minimum en effectif</h1>
     <mat-card-subtitle i18n="@@staffing.description">
-      Trois bornes minimales calculées sur les sièges que le solveur devrait réellement pourvoir (horaires des stands
-      résolus, vacations générées comprises), avant la saisie d'aucun animateur — la plus grande des trois est retenue.
+      Quatre bornes minimales calculées sur les sièges que le solveur devrait réellement pourvoir (horaires des stands
+      résolus, vacations générées comprises), avant la saisie d'aucun animateur — la plus grande des quatre est retenue.
+      Chacune découle d'une règle que le solveur applique vraiment : nul ne tient deux sièges à la fois, ne travaille
+      plus de dix heures par jour, plus que le plafond hebdomadaire, ni plus de six jours dans la même semaine ISO.
       Aucune ne tient compte des compétences ni des disponibilités réelles : à traiter comme un plancher de recrutement
       à dépasser, pas comme une cible — voir la note ci-dessous.
     </mat-card-subtitle>
@@ -53,16 +55,37 @@
           <mat-icon inline aria-hidden="true">schedule</mat-icon>
           <strong i18n="@@staffing.workloadBound.label">Charge horaire / plafond légal : {{ resume.chargeTotal }}</strong>
           <ng-container i18n="@@staffing.workloadBound.description"> —
-          {{ resume.totalDemandeHeures | number: '1.0-0' }} heures-personne à couvrir au total, réparties sur
-          {{ resume.nombreSemaines }} semaine(s) ISO à {{ heuresParSemaine() | number: '1.0-0' }}
-          h maximum par animateur et par semaine (durée hebdomadaire maximale légale).</ng-container>
+          {{ heuresSemaineCritique() | number: '1.0-0' }} heures-personne à couvrir pendant la semaine la plus chargée,
+          pour {{ heuresParSemaine() | number: '1.0-0' }} h au maximum par animateur cette semaine-là. La borne se
+          prouve semaine par semaine, jamais sur le total de l'événement : les heures d'une semaine ne peuvent être
+          couvertes que par les personnes qui travaillent cette semaine-là, et une semaine que l'événement effleure
+          n'offre pas le plafond hebdomadaire entier.</ng-container>
+          @if (resume.semaineCritique) {
+            {{ semaineCritiqueLabel() }}
+          }
+        </p>
+        <p [class.staffing-binding]="estBorneRetenue('ROTATION_JOURS')">
+          <mat-icon inline aria-hidden="true">calendar_month</mat-icon>
+          <strong i18n="@@staffing.rotationBound.label">Rotation sur les jours : {{ resume.rotationTotal }}</strong>
+          <ng-container i18n="@@staffing.rotationBound.description"> — personne ne peut travailler plus de
+          {{ joursTravaillesMax() }} jours dans la même semaine ISO (art. L3132-1). La semaine la plus chargée demande
+          {{ resume.semaineCritique?.joursPersonne }} jours-personne : sept journées d'affilée exigeant cent personnes
+          ne se tiennent pas à cent, même si le pic d'une seule journée s'arrête là.</ng-container>
         </p>
       </div>
+
+      @if (projectionLabel(); as projection) {
+        <p class="empty-hint staffing-caveat">
+          <mat-icon inline aria-hidden="true">event_busy</mat-icon>
+          <span>{{ projection }}</span>
+        </p>
+      }
 
       <p class="empty-hint staffing-caveat">
         <mat-icon inline aria-hidden="true">warning</mat-icon>
         <ng-container i18n="@@staffing.caveat">Ces minimums restent optimistes : ils supposent une répartition parfaite, sans tenir compte des
-        compétences de chaque animateur ni de la façon dont les indisponibilités réelles se superposent. Il n'existe pas de marge universelle à appliquer ici :
+        compétences de chaque animateur, du repos quotidien, ni du fait qu'un planning réel répartit le travail bien en dessous des plafonds légaux — un
+        événement couvert par 153 personnes peut n'avoir qu'un plancher prouvé de 117. Il n'existe pas de marge universelle à appliquer ici :
         une fois de vrais animateurs saisis, vérifiez la faisabilité réelle sur la page « Contraintes ».</ng-container>
       </p>
 
@@ -94,8 +117,12 @@
             </ng-container>
             <ng-container matColumnDef="picAvecPause">
               <th mat-header-cell *matHeaderCellDef i18n="@@staffing.column.picAvecPause">Pic avec pause</th>
+              <td mat-cell *matCellDef="let row">{{ row.picAvecPause }}</td>
+            </ng-container>
+            <ng-container matColumnDef="minimumJour">
+              <th mat-header-cell *matHeaderCellDef i18n="@@staffing.column.minimumJour">Minimum de la journée</th>
               <td mat-cell *matCellDef="let row">
-                <strong [class.staffing-critical]="row.picAvecPause === resume.picAvecPause">{{ row.picAvecPause }}</strong>
+                <strong [class.staffing-critical]="row.minimumJour === resume.jourCritique?.minimumJour">{{ row.minimumJour }}</strong>
               </td>
             </ng-container>
             <tr mat-header-row *matHeaderRowDef="columns"></tr>
