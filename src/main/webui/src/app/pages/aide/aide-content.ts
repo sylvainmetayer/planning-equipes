@@ -157,11 +157,11 @@ export function buildHelpSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.data.term.stands:Stands`,
-              text: $localize`:@@aide.data.def.stands:Typologies proposées, effectif minimum et maximum d'animateurs simultanés, restriction éventuelle aux majeurs, indicateurs premium et niveau d'effort, et horaires d'ouverture. Les horaires se saisissent en règles récurrentes (« tous les jours de 10 h à 12 h puis de 14 h à la fermeture ») complétées par des exceptions datées, qui priment sur les règles pour le jour qu'elles nomment.`
+              text: $localize`:@@aide.data.def.stands:Typologies proposées, effectif minimum et maximum d'animateurs simultanés, restriction éventuelle aux majeurs, indicateurs premium et niveau d'effort, et horaires d'ouverture. Les horaires se saisissent en règles récurrentes (« tous les jours de 10 h à 12 h puis de 14 h à la fermeture ») complétées par des exceptions datées, qui priment sur les règles pour le jour qu'elles nomment. Chaque fenêtre d'ouverture — d'une règle comme d'une ouverture datée — peut nommer son propre effectif : un stand qui tient à deux le matin, à quatre l'après-midi et à un en nocturne se décrit ainsi, fenêtre par fenêtre ; une fenêtre sans effectif reprend le minimum du stand.`
             },
             {
               term: $localize`:@@aide.data.term.creneaux:Créneaux`,
-              text: $localize`:@@aide.data.def.creneaux:Jour de l'événement, date, heures de début et de fin. C'est le découpage temporel que le solveur remplit ; l'effectif minimum d'un stand y est multiplié par le nombre de créneaux où il est ouvert.`
+              text: $localize`:@@aide.data.def.creneaux:Jour de l'événement, date, heures de début et de fin. C'est le découpage temporel que le solveur remplit : sur chaque créneau, chaque stand ouvert reçoit autant de sièges que sa fenêtre d'ouverture en nomme — ou son effectif minimum, à défaut. Deux créneaux qui se touchent ne s'enchaînent pas forcément pour une même personne : la pause minimale entre vacations, réglée dans les paramètres légaux, décide si le même animateur peut tenir les deux.`
             },
             {
               term: $localize`:@@aide.data.term.familles:Familles de créneaux`,
@@ -249,7 +249,7 @@ export function buildHelpSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.config.term.legaux:Paramètres légaux`,
-              text: $localize`:@@aide.config.def.legaux:Plafonds hebdomadaires de temps de travail, sur la page Contraintes : 48 h pour les majeurs, 35 h pour les mineurs. Ces maximums sont d'ordre public — une valeur supérieure est refusée. Une valeur inférieure, plus protectrice, est acceptée mais durcit fortement le problème : c'est souvent elle, et non le nombre d'animateurs, qui rend un planning infaisable.`
+              text: $localize`:@@aide.config.def.legaux:Sur la page Contraintes. Les plafonds hebdomadaires de temps de travail (48 h pour les majeurs, 35 h pour les mineurs) sont d'ordre public — une valeur supérieure est refusée, une valeur inférieure reste libre. Le repos quotidien minimal (11 h, 9 h par accord collectif) et la pause minimale entre deux vacations (30 min par défaut, sans base légale : à 0, deux vacations peuvent s'enchaîner) se règlent au même endroit. Enfin, la « pause légale prise sur le poste » déclare que les vingt minutes dues à la sixième heure se prennent par relais entre collègues plutôt que comme un trou entre deux vacations : cochée, une séquence de sept heures devient possible, et les plafonds quotidiens déduisent cette pause.`
             },
             {
               term: $localize`:@@aide.config.term.contraintes:Activation des contraintes`,
@@ -283,6 +283,75 @@ export function buildHelpSections(): HelpSection[] {
         { route: '/constraints', label: $localize`:@@nav.link.constraints:Contraintes` },
         { route: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres` },
         { route: '/verrouillages', label: $localize`:@@nav.link.verrouillages:Verrouillages` }
+      ]
+    },
+    {
+      id: 'parametrer-pour-un-planning-complet',
+      icon: 'checklist',
+      title: $localize`:@@aide.setup.title:Paramétrer pour un planning complet`,
+      summary: $localize`:@@aide.setup.summary:Créneaux, stands et options : ce qui fait tenir un planning à zéro violation avec l'effectif dont vous disposez, et dans quel ordre le vérifier.`,
+      blocks: [
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.setup.intro:Un planning qui ne se remplit pas n'est presque jamais une affaire de temps de calcul. Trois causes reviennent, dans cet ordre : un besoin mal décrit (des stands dont l'effectif ne varie pas dans la journée alors qu'il varie), une grille de créneaux qui oblige à deux équipes là où une suffit, et des réglages qui disent plus que la loi. Cette section décrit le paramétrage qui les évite, tel qu'il a été mesuré sur une édition réelle de cent cinquante-trois animateurs.`
+        },
+        {
+          kind: 'definitions',
+          items: [
+            {
+              term: $localize`:@@aide.setup.term.stands:Les stands : un effectif par fenêtre, pas par stand`,
+              text: $localize`:@@aide.setup.def.stands:L'effectif minimum du stand s'applique à toute la journée. Si un stand tient à deux le matin et à quatre l'après-midi, saisir « 2 » sous-dote l'après-midi d'un tiers, et saisir « 4 » sur-dote le matin. Donnez à chaque fenêtre d'ouverture son effectif, dans la fiche du stand — règles récurrentes et ouvertures datées — et laissez vide les fenêtres qui reprennent le minimum. Sur une vacation de couverture de pause, la moitié de cet effectif est demandée, arrondie au supérieur. Le besoin en animateurs, la faisabilité, la fragilité et la règle des stands premium lisent tous ce même compte de sièges.`
+            },
+            {
+              term: $localize`:@@aide.setup.term.ouvertures:Les ouvertures : vérifier ce que le solveur lira`,
+              text: $localize`:@@aide.setup.def.ouvertures:La grille « Ouvertures des stands » montre, stand par jour, les fenêtres résolues et le nombre de sièges qu'elles génèrent. Un stand jamais ouvert, une fenêtre hors des créneaux, un segment trop court pour valoir une vacation s'y voient avant tout calcul. Un stand dont personne ne doit s'occuper à une heure donnée se déclare fermé, jamais à effectif zéro.`
+            },
+            {
+              term: $localize`:@@aide.setup.term.creneaux:Les créneaux : des blocs, et ce que coûte une coupe`,
+              text: $localize`:@@aide.setup.def.creneaux:Le solveur affecte une personne par créneau et par siège. Chaque coupe dans la journée est une relève : si la pause minimale entre vacations vaut 30 minutes, l'équipe sortante est encore en pause quand l'équipe entrante prend le poste, et la coupe double le besoin en personnes distinctes à cet instant. Préférez des blocs — matin, midi, après-midi, nocturne — à une grille fine, et gardez la relève de midi comme trou planifié : c'est la pause déjeuner. Découper un après-midi de six heures en deux ou trois sessions ne réduit jamais le besoin ; il l'augmente.`
+            },
+            {
+              term: $localize`:@@aide.setup.term.pause:La pause entre vacations : un réglage, pas la loi`,
+              text: $localize`:@@aide.setup.def.pause:La seule pause que le Code du travail impose est celle de vingt minutes dès que le travail atteint six heures d'affilée. Les 30 minutes entre deux vacations sont un confort d'organisation : mettez-les à 0 sur la page Contraintes si vos créneaux forment des blocs qui se touchent, sinon la relève de midi impose une seconde équipe. Mesuré : ce seul réglage a rendu quarante-quatre sièges sur une grille de soixante-deux créneaux.`
+            },
+            {
+              term: $localize`:@@aide.setup.term.surPoste:La pause prise sur le poste : déclarer ce que vous organisez`,
+              text: $localize`:@@aide.setup.def.surPoste:Par défaut, l'outil ne sait exprimer une pause que comme un trou entre deux vacations ; une relève de 13 h à 20 h est alors refusée, alors qu'elle est légale si les vingt minutes se prennent par relais sur le stand. Cochez « Pause légale prise sur le poste » dans les paramètres légaux si c'est ainsi que vous fonctionnez : la règle des six heures continues lit alors la séquence comme contenant sa pause, et les plafonds quotidiens la déduisent — 14 h à minuit vaut 9 h 40 de travail effectif et passe, 13 h à minuit reste refusé. L'écran Pauses vous dit ensuite pour qui, à quelle heure au plus tard et avec quel relais.`
+            },
+            {
+              term: $localize`:@@aide.setup.term.repos:Le repos hebdomadaire : lu d'un tenant`,
+              text: $localize`:@@aide.setup.def.repos:Trente-cinq heures consécutives par semaine, c'est vingt-quatre heures plus le repos quotidien. Un repos pris le dimanche ou le lundi enjambe le changement de semaine : il compte en entier pour la semaine où il tombe. Sur un événement ouvert sept jours sur sept, c'est ce qui rend possible un jour de repos par personne et par semaine, et c'est la règle qui tenait les derniers sièges vides avant d'être corrigée.`
+            },
+            {
+              term: $localize`:@@aide.setup.term.contraintes:Les autres règles : n'en désactivez aucune pour remplir`,
+              text: $localize`:@@aide.setup.def.contraintes:Six jours par semaine, dix heures par jour, onze heures de repos quotidien, quarante-huit heures par semaine sont le droit, et le planning décrit ci-dessus les respecte toutes. Désactiver une règle légale sert à comprendre ce qui bloque, jamais à produire le planning qu'on diffuse. Les règles de confort — six jours consécutifs au plus, roulement limité sur les stands premium — pèsent en score moyen : elles n'empêchent pas un planning complet, elles le classent.`
+            }
+          ]
+        },
+        {
+          kind: 'list',
+          items: [
+            $localize`:@@aide.setup.step1:1. Besoin en animateurs : les quatre bornes disent le plancher. Si l'effectif est sous le plancher, aucun réglage n'y changera rien ; si le plancher dépasse l'effectif de peu, revoyez la grille et la pause entre vacations avant tout.`,
+            $localize`:@@aide.setup.step2:2. Ouvertures des stands, puis faisabilité : le besoin lu fenêtre par fenêtre, et la capacité jour par jour, sans calcul.`,
+            $localize`:@@aide.setup.step3:3. Une résolution courte, puis la page Problèmes : les violations restantes disent laquelle des règles tient les sièges vides.`,
+            $localize`:@@aide.setup.step4:4. Une résolution longue, une fois la configuration stable — en ne changeant qu'une chose à la fois entre deux essais.`,
+            $localize`:@@aide.setup.step5:5. Fragilité, puis Pauses : qui est irremplaçable, et quels relais organiser avant de publier.`
+          ]
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.setup.repere:Un repère pour arbitrer : retirer un siège au moment du pic vaut à peu près un demi-recrutement, et une grille dont la borne d'effectif est plus basse ne se résout pas forcément mieux — la borne dit ce qui est impossible, jamais ce qui est faisable. Seule la résolution tranche.`
+        }
+      ],
+      links: [
+        { route: '/stands', label: $localize`:@@nav.link.stands:Stands` },
+        { route: '/ouvertures', label: $localize`:@@nav.link.ouvertures:Ouvertures des stands` },
+        { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
+        { route: '/constraints', label: $localize`:@@nav.link.constraints:Contraintes` },
+        { route: '/staffing', label: $localize`:@@nav.link.staffing:Besoin en animateurs` },
+        { route: '/problemes', label: $localize`:@@nav.link.problemes:Problèmes` },
+        { route: '/fragilite', label: $localize`:@@nav.link.fragilite:Fragilité du planning` },
+        { route: '/pauses', label: $localize`:@@nav.link.pauses:Pauses` }
       ]
     },
     {
@@ -380,7 +449,7 @@ export function buildHelpSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.tuning.term.legal:Les violations sont toutes des règles de temps de travail`,
-              text: $localize`:@@aide.tuning.def.legal:Les plafonds hebdomadaires et le repos entre journées se heurtent au découpage. Revoyez les paramètres de découpage (vacations plus courtes, chevauchement, stratégie de couverture pendant la pause) plutôt que les plafonds légaux, qui ne sont pas négociables vers le haut. Un plafond volontairement abaissé sous le maximum légal est souvent le vrai coupable.`
+              text: $localize`:@@aide.tuning.def.legal:Les plafonds hebdomadaires et le repos entre journées se heurtent au découpage. Revoyez les paramètres de découpage (vacations plus courtes, chevauchement, stratégie de couverture) plutôt que les plafonds légaux. Deux réglages disent souvent plus que la loi : la pause minimale entre vacations à 30 minutes interdit d'enchaîner deux blocs qui se touchent, et sans la « pause prise sur le poste » aucune séquence ne peut dépasser six heures — voir la section « Paramétrer pour un planning complet ».`
             },
             {
               term: $localize`:@@aide.tuning.term.mineurs:Les violations concernent les mineurs`,

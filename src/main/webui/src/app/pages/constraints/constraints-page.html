@@ -41,6 +41,9 @@
                [ngModel]="pauseEntreVacationsMinutes()" (ngModelChange)="pauseEntreVacationsMinutes.set($event)" />
         <mat-hint i18n="@@constraints.legal.hint.pauseEntreVacations">Sans base légale : la seule pause due est celle de l'art. <a class="legal-article-link" [href]="articlePause" target="_blank" rel="noopener">L3121-16</a>. À 0, deux vacations peuvent s'enchaîner.</mat-hint>
       </mat-form-field>
+      <p class="legal-guide">
+        <a routerLink="/aide" fragment="parametrer-pour-un-planning-complet" i18n="@@constraints.legal.guide">Comment régler ces paramètres pour un planning complet : voir l'aide.</a>
+      </p>
       <div class="legal-toggle">
         <mat-slide-toggle name="pauseSurPoste" [checked]="pauseSurPoste()" (change)="pauseSurPoste.set($event.checked)"
                           i18n="@@constraints.legal.field.pauseSurPoste">Pause légale prise sur le poste, par relais entre collègues</mat-slide-toggle>

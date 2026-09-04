@@ -222,4 +222,56 @@ describe('filterHelpSections', () => {
   it('returns nothing rather than everything when no section matches', () => {
     expect(filterHelpSections(sections, 'zzzzz')).toHaveLength(0);
   });
+
+});
+
+describe('parametrer-pour-un-planning-complet', () => {
+  const sections = buildHelpSections();
+  const section = sections.find((each) => each.id === 'parametrer-pour-un-planning-complet')!;
+
+  it('sits between the solver configuration and the results', () => {
+    const ids = sections.map((each) => each.id);
+    expect(ids.indexOf('parametrer-pour-un-planning-complet')).toBe(ids.indexOf('configuration-solveur') + 1);
+    expect(ids.indexOf('parametrer-pour-un-planning-complet')).toBe(ids.indexOf('lire-les-resultats') - 1);
+  });
+
+  it('names the three levers and the order to check them in', () => {
+    const texte = section.blocks
+      .flatMap((block) =>
+        block.kind === 'paragraph' ? [block.text] : block.kind === 'list' ? block.items : block.items.map((d) => d.term + ' ' + d.text)
+      )
+      .join('\n');
+    expect(texte).toContain('effectif par fenêtre');
+    expect(texte).toContain('pause minimale entre vacations');
+    expect(texte).toContain('Pause légale prise sur le poste');
+    expect(texte).toContain('lu d\'un tenant');
+    const etapes = section.blocks.find((block) => block.kind === 'list')!;
+    expect(etapes.kind === 'list' && etapes.items.map((item) => item.slice(0, 2))).toEqual(['1.', '2.', '3.', '4.', '5.']);
+    expect(etapes.kind === 'list' && etapes.items[0]).toContain('Besoin en animateurs');
+    expect(etapes.kind === 'list' && etapes.items[4]).toContain('Pauses');
+  });
+
+  it('links every screen the guide names, and only real routes', () => {
+    expect(section.links.map((link) => link.route)).toEqual([
+      '/stands', '/ouvertures', '/creneaux', '/constraints', '/staffing', '/problemes', '/fragilite', '/pauses'
+    ]);
+  });
+
+  it('is found by the words an organiser would type', () => {
+    for (const mot of ['effectif par fenêtre', 'pause sur le poste', 'relève de midi', 'zéro violation']) {
+      expect(filterHelpSections(sections, mot).map((each) => each.id), mot).toContain('parametrer-pour-un-planning-complet');
+    }
+  });
+
+  it('tells the stand and legal definitions about the new fields, without duplicating the guide', () => {
+    const donnees = sections.find((each) => each.id === 'donnees')!;
+    const stands = donnees.blocks.flatMap((b) => (b.kind === 'definitions' ? b.items : [])).find((d) => d.term === 'Stands')!;
+    expect(stands.text).toContain('son propre effectif');
+    const config = sections.find((each) => each.id === 'configuration-solveur')!;
+    const legaux = config.blocks.flatMap((b) => (b.kind === 'definitions' ? b.items : [])).find((d) => d.term === 'Paramètres légaux')!;
+    expect(legaux.text).toContain('pause légale prise sur le poste');
+    expect(legaux.text).toContain('pause minimale entre deux vacations');
+    // The measured figure lives in the guide only.
+    expect(legaux.text).not.toContain('quarante-quatre');
+  });
 });

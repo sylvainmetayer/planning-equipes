@@ -9,6 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { RouterLink } from '@angular/router';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ApiService } from '../../core/api.service';
 import { urlLegifrance } from '../../core/legifrance';
@@ -77,6 +78,7 @@ const POIDS_MAX = 100;
     MatInputModule,
     MatProgressBarModule,
     MatSlideToggleModule,
+    RouterLink,
     MatTooltipModule,
     FeasibilityBanner,
     LegalText,
