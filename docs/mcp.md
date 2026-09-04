@@ -288,8 +288,8 @@ rejeté. Les vues renvoient l'effectif de chaque fenêtre et de chaque ouverture
 `null` quand il hérite.
 
 `analyser_pauses` lit le planning persisté sous les paramètres légaux courants
-et dit, par animateur et par jour, où tombe la pause due, sur quel stand, et
-qui peut relayer. Là où l'écran et le planning individuel nomment les
+et dit, par animateur et par jour, où tombe la pause due — de quelle heure à
+quelle heure, dans la rotation du stand —, sur quel stand, et qui peut relayer. Là où l'écran et le planning individuel nomment les
 collègues, l'outil ne rend que des **ids** — `relaisAnimateurIds` — comme tout
 ce qui traverse MCP. Les trous déjà planifiés par la grille ne sont donnés
 qu'en l'absence de filtre par stand ou par relais : ils appartiennent à la

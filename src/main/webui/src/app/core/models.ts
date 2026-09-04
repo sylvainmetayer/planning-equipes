@@ -1384,17 +1384,22 @@ export interface RelaisView {
   nomComplet: string;
 }
 
-/** One legal break a working stretch owes (`GET /api/pauses`). */
+/** One legal break a working stretch owes (`GET /api/pauses`), placed in the stand's rotation. */
 export interface PauseDueView {
-  /** Latest start of the break, `HH:mm:ss`: the stretch reaches the legal mark then. */
+  /** When the break starts, `HH:mm:ss` — as late as its window allows, after the colleague's break on the stand. */
+  debut: string;
+  fin: string;
+  /** Latest possible start, `HH:mm:ss`: the stretch reaches the legal mark then. */
   heureLimite: string;
   /** 20 for an adult, 30 for a minor. */
   dureeMinutes: number;
   standId: string;
   standNom: string;
   relais: RelaisView[];
-  /** False when nobody else is on the stand at that moment. */
+  /** False when nobody else is on the stand for the whole break. */
   relaisDisponible: boolean;
+  /** True when the windows left no room: two people of the stand are out at once. */
+  simultanee: boolean;
 }
 
 /** An uninterrupted working stretch of one animateur's day, with the breaks it owes. */
@@ -1441,7 +1446,10 @@ export interface RapportPauses {
 export interface PauseAnimateurView {
   /** ISO date. */
   date: string;
-  /** `HH:mm:ss`. */
+  /** `HH:mm:ss`: « pause de 18:20 à 18:40 ». */
+  debut: string;
+  fin: string;
+  /** `HH:mm:ss`, latest possible start. */
   heureLimite: string;
   dureeMinutes: number;
   standId: string;

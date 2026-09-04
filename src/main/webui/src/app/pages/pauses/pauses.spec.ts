@@ -4,6 +4,9 @@ import { groupesDuJour, heure, joursDuRapport, libelleRelais, planifieesDuJour, 
 
 function pause(overrides: Partial<PauseDueView> = {}): PauseDueView {
   return {
+    debut: '19:00:00',
+    fin: '19:20:00',
+    simultanee: false,
     heureLimite: '19:00:00',
     dureeMinutes: 20,
     standId: 'JEUX',
@@ -80,11 +83,11 @@ describe('groupesDuJour', () => {
               debut: '10:00:00',
               fin: '20:30:00',
               minutes: 630,
-              pausesDues: [pause({ heureLimite: '16:00:00' }), pause({ heureLimite: '20:20:00', standId: 'AUTRE', standNom: 'Autre' })]
+              pausesDues: [pause({ debut: '16:00:00', fin: '16:20:00', heureLimite: '16:00:00' }), pause({ debut: '20:20:00', fin: '20:40:00', heureLimite: '20:20:00', standId: 'AUTRE', standNom: 'Autre' })]
             }
           ]
         }),
-        journee({ animateurId: 'bob', nomComplet: 'Bob Durand', sequences: [{ debut: '13:00:00', fin: '20:00:00', minutes: 420, pausesDues: [pause({ heureLimite: '19:00:00', relais: [] })] }] }),
+        journee({ animateurId: 'bob', nomComplet: 'Bob Durand', sequences: [{ debut: '13:00:00', fin: '20:00:00', minutes: 420, pausesDues: [pause({ debut: '18:40:00', fin: '19:00:00', relais: [] })] }] }),
         journee({ animateurId: 'dan', date: '2026-07-11' })
       ]),
       '2026-07-10'
@@ -93,9 +96,10 @@ describe('groupesDuJour', () => {
     // Nobody short of a relay here: plain alphabetical order.
     expect(groupes.map((g) => g.standId)).toEqual(['AUTRE', 'JEUX']);
     const jeux = groupes.find((g) => g.standId === 'JEUX')!;
-    expect(jeux.lignes.map((l) => [l.nomComplet, l.heureLimite])).toEqual([
+    // Rotation order: by start time.
+    expect(jeux.lignes.map((l) => [l.nomComplet, l.debut])).toEqual([
       ['Alice Martin', '16:00:00'],
-      ['Bob Durand', '19:00:00']
+      ['Bob Durand', '18:40:00']
     ]);
     expect(jeux.lignes[0].sequenceMinutes).toBe(630);
   });

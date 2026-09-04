@@ -361,6 +361,132 @@ class PauseAnalyzerTest {
         assertThat(analyzer.journeesAnimateur(planning(List.of(alice, bob), postes), surPoste(true), "nobody")).isEmpty();
     }
 
+    // --- rotation on the stand -------------------------------------------------
+
+    @Test
+    void aLoneBreakIsPlacedAtItsDeadlineAndSpansItsDuration() {
+        Stand stand = stand("JEUX", 1);
+        Animateur alice = adulte("alice");
+        PauseDueView pause = journee(analyzer.analyze(
+                planning(List.of(alice), List.of(poste("p1", stand, creneau(1, 13, 0, 20, 0), alice))), surPoste(true)),
+                "alice").sequences().getFirst().pausesDues().getFirst();
+
+        assertThat(pause.debut()).isEqualTo(LocalTime.of(19, 0));
+        assertThat(pause.fin()).isEqualTo(LocalTime.of(19, 20));
+        assertThat(pause.simultanee()).isFalse();
+    }
+
+    @Test
+    void threeColleaguesOnOneStandTakeTheirBreaksOneAfterTheOtherLatestFirst() {
+        // Same 13:00-20:00 stretch for all three: the rotation packs the breaks
+        // backwards from the shared deadline, in id order, so nobody is out at
+        // the same time and each one still has a relay for the whole break.
+        Stand stand = stand("JEUX", 3);
+        Animateur a = adulte("a");
+        Animateur b = adulte("b");
+        Animateur c = adulte("c");
+        List<PosteAffectation> postes = List.of(
+                poste("p1", stand, creneau(1, 13, 0, 20, 0), a),
+                poste("p2", stand, creneau(1, 13, 0, 20, 0), b),
+                poste("p3", stand, creneau(1, 13, 0, 20, 0), c));
+
+        RapportPauses rapport = analyzer.analyze(planning(List.of(a, b, c), postes), surPoste(true));
+
+        assertThat(pause(rapport, "a").debut()).isEqualTo(LocalTime.of(19, 0));
+        assertThat(pause(rapport, "b").debut()).isEqualTo(LocalTime.of(18, 40));
+        assertThat(pause(rapport, "c").debut()).isEqualTo(LocalTime.of(18, 20));
+        assertThat(pause(rapport, "c").fin()).isEqualTo(LocalTime.of(18, 40));
+        for (String id : List.of("a", "b", "c")) {
+            assertThat(pause(rapport, id).simultanee()).isFalse();
+            assertThat(pause(rapport, id).relais()).hasSize(2);
+        }
+        assertThat(rapport.relaisManquants()).isZero();
+    }
+
+    @Test
+    void aBreakCannotStartSoEarlyThatTheRestOfTheStretchExceedsTheMark() {
+        // 14:00-24:00: the break must end by 18:00 at the earliest (six hours
+        // remain after it) and start by 20:00 at the latest. Two people: the
+        // second one's break lands right before the first one's.
+        Stand stand = stand("JEUX", 2);
+        Animateur a = adulte("a");
+        Animateur b = adulte("b");
+        List<PosteAffectation> postes = List.of(
+                poste("p1", stand, creneau(1, 14, 0, 0, 0), a),
+                poste("p2", stand, creneau(1, 14, 0, 0, 0), b));
+
+        RapportPauses rapport = analyzer.analyze(planning(List.of(a, b), postes), surPoste(true));
+
+        assertThat(pause(rapport, "a").debut()).isEqualTo(LocalTime.of(20, 0));
+        assertThat(pause(rapport, "b").debut()).isEqualTo(LocalTime.of(19, 40));
+        assertThat(pause(rapport, "b").heureLimite()).isEqualTo(LocalTime.of(20, 0));
+    }
+
+    @Test
+    void whenTheWindowsLeaveNoRoomTheBreakIsFlaggedSimultaneousNotDropped() {
+        // 08:00-20:00 leaves a twenty-minute window (13:40-14:00): two people
+        // fit back to back, the third cannot — placed at the start of its
+        // window, out at the same time as another, and said so.
+        Stand stand = stand("JEUX", 3);
+        Animateur a = adulte("a");
+        Animateur b = adulte("b");
+        Animateur c = adulte("c");
+        List<PosteAffectation> postes = List.of(
+                poste("p1", stand, creneau(1, 8, 0, 20, 0), a),
+                poste("p2", stand, creneau(1, 8, 0, 20, 0), b),
+                poste("p3", stand, creneau(1, 8, 0, 20, 0), c));
+
+        RapportPauses rapport = analyzer.analyze(planning(List.of(a, b, c), postes), surPoste(true));
+
+        assertThat(pause(rapport, "a").debut()).isEqualTo(LocalTime.of(14, 0));
+        assertThat(pause(rapport, "b").debut()).isEqualTo(LocalTime.of(13, 40));
+        assertThat(pause(rapport, "b").simultanee()).isFalse();
+        assertThat(pause(rapport, "c").debut()).isEqualTo(LocalTime.of(13, 40));
+        assertThat(pause(rapport, "c").simultanee()).isTrue();
+        assertThat(rapport.pausesDues()).isEqualTo(3);
+    }
+
+    @Test
+    void theRelayMustCoverTheWholeBreakNotJustItsStart() {
+        // Bob leaves at 19:10: present when Alice's break starts at 19:00, gone
+        // before it ends. He is no relay.
+        Stand stand = stand("JEUX", 2);
+        Animateur alice = adulte("alice");
+        Animateur bob = adulte("bob");
+        List<PosteAffectation> postes = List.of(
+                poste("p1", stand, creneau(1, 13, 0, 20, 0), alice),
+                poste("p2", stand, creneau(2, 15, 0, 19, 10), bob));
+
+        PauseDueView pause = pause(analyzer.analyze(planning(List.of(alice, bob), postes), surPoste(true)), "alice");
+
+        assertThat(pause.debut()).isEqualTo(LocalTime.of(19, 0));
+        assertThat(pause.relaisDisponible()).isFalse();
+    }
+
+    @Test
+    void breaksOnDifferentStandsOrDaysNeverConstrainEachOther() {
+        Stand jeux = stand("JEUX", 1);
+        Stand autre = stand("AUTRE", 1);
+        Animateur a = adulte("a");
+        Animateur b = adulte("b");
+        Animateur c = adulte("c");
+        Creneau lendemain = new Creneau(9L, 2, JOUR.plusDays(1), LocalTime.of(13, 0), LocalTime.of(20, 0));
+        List<PosteAffectation> postes = List.of(
+                poste("p1", jeux, creneau(1, 13, 0, 20, 0), a),
+                poste("p2", autre, creneau(1, 13, 0, 20, 0), b),
+                poste("p3", jeux, lendemain, c));
+
+        RapportPauses rapport = analyzer.analyze(planning(List.of(a, b, c), postes), surPoste(true));
+
+        for (String id : List.of("a", "b", "c")) {
+            assertThat(pause(rapport, id).debut()).as(id).isEqualTo(LocalTime.of(19, 0));
+        }
+    }
+
+    private static PauseDueView pause(RapportPauses rapport, String animateurId) {
+        return journee(rapport, animateurId).sequences().getFirst().pausesDues().getFirst();
+    }
+
     /* ------------------------------- helpers ------------------------------- */
 
     private static JourneeAnimateurView journee(RapportPauses rapport, String animateurId) {

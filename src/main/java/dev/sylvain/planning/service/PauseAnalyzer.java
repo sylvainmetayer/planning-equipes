@@ -57,21 +57,31 @@ public class PauseAnalyzer {
     }
 
     /**
-     * One break a stretch owes.
+     * One break a stretch owes, placed in the stand's rotation.
      *
-     * @param heureLimite     latest start of the break — the stretch reaches
-     *                        the legal mark then
+     * @param debut           when the break starts, as the rotation places it:
+     *                        as late as its window allows, and after the
+     *                        colleague's break on the same stand
+     * @param fin             {@code debut} plus the duration
+     * @param heureLimite     latest possible start — the stretch reaches the
+     *                        legal mark then; {@code debut} never exceeds it
      * @param dureeMinutes    20 for an adult, 30 for a minor
-     * @param standId         stand the animateur holds at that moment
+     * @param standId         stand the animateur holds during the break
      * @param standNom        its name
-     * @param relais          colleagues holding a seat on that stand at that
-     *                        moment, in name order
+     * @param relais          colleagues holding a seat on that stand for the
+     *                        whole break, in name order
      * @param relaisDisponible false when nobody else is on the stand: the
      *                        relay must come from elsewhere, or the stand
      *                        closes for the break
+     * @param simultanee      true when the rotation could not keep this break
+     *                        apart from another one on the stand — the
+     *                        windows left no room — so two people are out at
+     *                        once; the break is then placed as early as its
+     *                        window allows
      */
-    public record PauseDueView(LocalTime heureLimite, int dureeMinutes, String standId, String standNom,
-            List<RelaisView> relais, boolean relaisDisponible) {
+    public record PauseDueView(LocalTime debut, LocalTime fin, LocalTime heureLimite, int dureeMinutes,
+            String standId, String standNom, List<RelaisView> relais, boolean relaisDisponible,
+            boolean simultanee) {
     }
 
     /** An uninterrupted working stretch of the day, with the breaks it owes inside. */
@@ -125,27 +135,45 @@ public class PauseAnalyzer {
             parJournee.computeIfAbsent(cle, ignored -> new ArrayList<>()).add(poste);
         }
 
-        List<JourneeAnimateurView> journees = new ArrayList<>();
+        // 1. Each animateur-day: its stretches, and the breaks they owe, with
+        //    the window each break may fall in.
+        List<Journee> journees = new ArrayList<>();
+        for (List<PosteAffectation> postesDuJour : parJournee.values()) {
+            journees.add(journee(postesDuJour));
+        }
+        // 2. Each stand-day: the rotation, one break after the other.
+        Map<String, List<Demande>> parStandJour = new LinkedHashMap<>();
+        for (Journee journee : journees) {
+            for (Sequence sequence : journee.sequences) {
+                for (Demande demande : sequence.demandes) {
+                    String cle = demande.tenu.getStand().getId() + "|" + journee.date;
+                    parStandJour.computeIfAbsent(cle, ignored -> new ArrayList<>()).add(demande);
+                }
+            }
+        }
+        parStandJour.values().forEach(PauseAnalyzer::rotation);
+        // 3. The views, relays read on the placed breaks.
+        List<JourneeAnimateurView> vues = new ArrayList<>();
         int pausesDues = 0;
         int relaisManquants = 0;
-        for (List<PosteAffectation> journee : parJournee.values()) {
-            JourneeAnimateurView vue = journee(journee, tenus);
+        for (Journee journee : journees) {
+            JourneeAnimateurView vue = toView(journee, tenus);
             if (vue.sequences().stream().allMatch(sequence -> sequence.pausesDues().isEmpty())
                     && vue.pausesPlanifiees().isEmpty()) {
                 continue;
             }
-            journees.add(vue);
+            vues.add(vue);
             for (SequenceView sequence : vue.sequences()) {
                 pausesDues += sequence.pausesDues().size();
                 relaisManquants += (int) sequence.pausesDues().stream()
                         .filter(pause -> !pause.relaisDisponible()).count();
             }
         }
-        journees.sort(Comparator.comparing(JourneeAnimateurView::date)
+        vues.sort(Comparator.comparing(JourneeAnimateurView::date)
                 .thenComparing(JourneeAnimateurView::nomComplet, String.CASE_INSENSITIVE_ORDER)
                 .thenComparing(JourneeAnimateurView::animateurId));
         return new RapportPauses(pauseSurPoste, parJournee.size(), pausesDues, relaisManquants,
-                List.copyOf(journees), buildMessage(pauseSurPoste, pausesDues, relaisManquants));
+                List.copyOf(vues), buildMessage(pauseSurPoste, pausesDues, relaisManquants));
     }
 
     /** The days of one animateur only — what their own planning shows. */
@@ -165,21 +193,21 @@ public class PauseAnalyzer {
             }
             for (SequenceView sequence : journee.sequences()) {
                 for (PauseDueView pause : sequence.pausesDues()) {
-                    pauses.add(new PauseAnimateurView(journee.date(), pause.heureLimite(), pause.dureeMinutes(),
-                            pause.standId(), pause.standNom(), pause.relaisDisponible()));
+                    pauses.add(new PauseAnimateurView(journee.date(), pause.debut(), pause.fin(), pause.heureLimite(),
+                            pause.dureeMinutes(), pause.standId(), pause.standNom(), pause.relaisDisponible()));
                 }
             }
         }
         return List.copyOf(pauses);
     }
 
-    /** One break of one animateur, as their own planning prints it. */
-    public record PauseAnimateurView(LocalDate date, LocalTime heureLimite, int dureeMinutes, String standId,
-            String standNom, boolean relaisDisponible) {
+    /** One break of one animateur, as their own planning prints it: « pause de 18:20 à 18:40 ». */
+    public record PauseAnimateurView(LocalDate date, LocalTime debut, LocalTime fin, LocalTime heureLimite,
+            int dureeMinutes, String standId, String standNom, boolean relaisDisponible) {
     }
 
-    private static JourneeAnimateurView journee(List<PosteAffectation> postesDuJour,
-            List<PosteAffectation> tousLesPostes) {
+    /** The stretches of one animateur's day, with the breaks each owes and the window of each. */
+    private static Journee journee(List<PosteAffectation> postesDuJour) {
         Animateur animateur = postesDuJour.get(0).getAnimateur();
         LocalDate date = postesDuJour.get(0).getCreneau().getDate();
         boolean mineur = animateur.isMineurOn(date);
@@ -189,33 +217,86 @@ public class PauseAnalyzer {
                 ? PlafondsLegauxMineurs.PAUSE_MINIMALE_MINUTES : PlafondsLegauxMajeurs.PAUSE_MINIMALE_MINUTES;
 
         List<Sequence> sequences = sequences(postesDuJour, pauseMinimale);
-        List<SequenceView> vues = new ArrayList<>();
         for (Sequence sequence : sequences) {
-            List<PauseDueView> dues = new ArrayList<>();
             long minutes = Duration.between(sequence.debut, sequence.fin).toMinutes();
             int pauses = minutes <= travailContinuMax ? 0
                     : Math.ceilDiv((int) minutes - travailContinuMax, travailContinuMax + pauseMinimale);
+            LocalDateTime finPrecedente = sequence.debut;
             for (int k = 1; k <= pauses; k++) {
+                // Latest start: the stretch reaches the legal mark then. Earliest
+                // start: what remains after this break — and the breaks still
+                // to come — must itself stay within the mark.
                 LocalDateTime limite = sequence.debut.plusMinutes((long) k * travailContinuMax
                         + (long) (k - 1) * pauseMinimale);
+                int restantes = pauses - k;
+                LocalDateTime auPlusTot = sequence.fin.minusMinutes((long) (restantes + 1) * travailContinuMax
+                        + (long) (restantes + 1) * pauseMinimale);
                 PosteAffectation tenu = sequence.posteA(limite);
-                List<RelaisView> relais = relais(tousLesPostes, tenu, limite);
-                dues.add(new PauseDueView(limite.toLocalTime(), pauseMinimale, tenu.getStand().getId(),
-                        tenu.getStand().getNom(), relais, !relais.isEmpty()));
+                LocalDateTime plancher = maxOf(maxOf(auPlusTot, debut(tenu)), finPrecedente);
+                Demande demande = new Demande(animateur, tenu, plancher.isAfter(limite) ? limite : plancher,
+                        limite, pauseMinimale);
+                sequence.demandes.add(demande);
+                finPrecedente = limite.plusMinutes(pauseMinimale);
             }
-            vues.add(new SequenceView(sequence.debut.toLocalTime(), sequence.fin.toLocalTime(), (int) minutes,
-                    List.copyOf(dues)));
+        }
+        int jour = postesDuJour.stream().mapToInt(poste -> poste.getCreneau().getJour()).min().orElse(0);
+        return new Journee(animateur, date, jour, mineur, sequences);
+    }
+
+    /**
+     * Places the breaks of one stand-day one after the other, as late as their
+     * windows allow: the latest deadline first, each following break ending
+     * where the previous one starts. When the windows leave no room, the break
+     * is placed at the start of its window and flagged as simultaneous —
+     * the plan is not changed, the organiser is told.
+     */
+    private static void rotation(List<Demande> demandes) {
+        demandes.sort(Comparator.comparing((Demande demande) -> demande.auPlusTard).reversed()
+                .thenComparing(demande -> demande.animateur.getId()));
+        LocalDateTime curseur = null;
+        for (Demande demande : demandes) {
+            LocalDateTime fin = demande.auPlusTard.plusMinutes(demande.dureeMinutes);
+            if (curseur != null && curseur.isBefore(fin)) {
+                fin = curseur;
+            }
+            LocalDateTime debut = fin.minusMinutes(demande.dureeMinutes);
+            if (debut.isBefore(demande.auPlusTot)) {
+                debut = demande.auPlusTot;
+                demande.simultanee = true;
+            }
+            demande.debut = debut;
+            curseur = demande.debut;
+        }
+    }
+
+    private static JourneeAnimateurView toView(Journee journee, List<PosteAffectation> tousLesPostes) {
+        List<SequenceView> vues = new ArrayList<>();
+        for (Sequence sequence : journee.sequences) {
+            List<PauseDueView> dues = new ArrayList<>();
+            for (Demande demande : sequence.demandes) {
+                LocalDateTime fin = demande.debut.plusMinutes(demande.dureeMinutes);
+                List<RelaisView> relais = relais(tousLesPostes, demande.tenu, demande.debut, fin);
+                dues.add(new PauseDueView(demande.debut.toLocalTime(), fin.toLocalTime(),
+                        demande.auPlusTard.toLocalTime(), demande.dureeMinutes, demande.tenu.getStand().getId(),
+                        demande.tenu.getStand().getNom(), relais, !relais.isEmpty(), demande.simultanee));
+            }
+            dues.sort(Comparator.comparing(PauseDueView::heureLimite));
+            vues.add(new SequenceView(sequence.debut.toLocalTime(), sequence.fin.toLocalTime(),
+                    (int) Duration.between(sequence.debut, sequence.fin).toMinutes(), List.copyOf(dues)));
         }
         List<PausePlanifieeView> planifiees = new ArrayList<>();
-        for (int i = 1; i < sequences.size(); i++) {
-            LocalDateTime debut = sequences.get(i - 1).fin;
-            LocalDateTime fin = sequences.get(i).debut;
+        for (int i = 1; i < journee.sequences.size(); i++) {
+            LocalDateTime debut = journee.sequences.get(i - 1).fin;
+            LocalDateTime fin = journee.sequences.get(i).debut;
             planifiees.add(new PausePlanifieeView(debut.toLocalTime(), fin.toLocalTime(),
                     (int) Duration.between(debut, fin).toMinutes()));
         }
-        int jour = postesDuJour.stream().mapToInt(poste -> poste.getCreneau().getJour()).min().orElse(0);
-        return new JourneeAnimateurView(animateur.getId(), animateur.nomAffiche(), mineur, date, jour,
-                List.copyOf(vues), List.copyOf(planifiees));
+        return new JourneeAnimateurView(journee.animateur.getId(), journee.animateur.nomAffiche(), journee.mineur,
+                journee.date, journee.jour, List.copyOf(vues), List.copyOf(planifiees));
+    }
+
+    private static LocalDateTime maxOf(LocalDateTime a, LocalDateTime b) {
+        return a.isAfter(b) ? a : b;
     }
 
     /** The stretches of one day: seats closer than the legal break form one. */
@@ -239,15 +320,15 @@ public class PauseAnalyzer {
         return sequences;
     }
 
-    /** Colleagues holding a seat on the same stand at that instant, the animateur excluded. */
+    /** Colleagues holding a seat on the same stand for the whole break, the animateur excluded. */
     private static List<RelaisView> relais(List<PosteAffectation> postes, PosteAffectation tenu,
-            LocalDateTime instant) {
+            LocalDateTime debutPause, LocalDateTime finPause) {
         String animateurId = tenu.getAnimateur().getId();
         Map<String, RelaisView> parId = new LinkedHashMap<>();
         for (PosteAffectation autre : postes) {
             if (autre.getStand().getId().equals(tenu.getStand().getId())
                     && !autre.getAnimateur().getId().equals(animateurId)
-                    && !debut(autre).isAfter(instant) && fin(autre).isAfter(instant)) {
+                    && !debut(autre).isAfter(debutPause) && !fin(autre).isBefore(finPause)) {
                 parId.putIfAbsent(autre.getAnimateur().getId(),
                         new RelaisView(autre.getAnimateur().getId(), autre.getAnimateur().nomAffiche()));
             }
@@ -279,11 +360,40 @@ public class PauseAnalyzer {
         return debut(poste).plusMinutes(poste.getDureeEffectiveMinutes());
     }
 
-    /** A stretch under construction: mutable end, and the seats it is made of. */
+    /** One animateur's day, before the rotation places its breaks. */
+    private record Journee(Animateur animateur, LocalDate date, int jour, boolean mineur, List<Sequence> sequences) {
+    }
+
+    /**
+     * One break to place: its window, the seat it falls in, and — once the
+     * rotation has run — where it starts.
+     */
+    private static final class Demande {
+        private final Animateur animateur;
+        private final PosteAffectation tenu;
+        private final LocalDateTime auPlusTot;
+        private final LocalDateTime auPlusTard;
+        private final int dureeMinutes;
+        private LocalDateTime debut;
+        private boolean simultanee;
+
+        private Demande(Animateur animateur, PosteAffectation tenu, LocalDateTime auPlusTot,
+                LocalDateTime auPlusTard, int dureeMinutes) {
+            this.animateur = animateur;
+            this.tenu = tenu;
+            this.auPlusTot = auPlusTot;
+            this.auPlusTard = auPlusTard;
+            this.dureeMinutes = dureeMinutes;
+            this.debut = auPlusTard;
+        }
+    }
+
+    /** A stretch under construction: mutable end, the seats it is made of, and the breaks it owes. */
     private static final class Sequence {
         private final LocalDateTime debut;
         private LocalDateTime fin;
         private final List<PosteAffectation> postes = new ArrayList<>();
+        private final List<Demande> demandes = new ArrayList<>();
 
         private Sequence(LocalDateTime debut, LocalDateTime fin) {
             this.debut = debut;

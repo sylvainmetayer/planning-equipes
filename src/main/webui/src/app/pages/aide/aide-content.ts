@@ -316,7 +316,7 @@ export function buildHelpSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.setup.term.surPoste:La pause prise sur le poste : déclarer ce que vous organisez`,
-              text: $localize`:@@aide.setup.def.surPoste:Par défaut, l'outil ne sait exprimer une pause que comme un trou entre deux vacations ; une relève de 13 h à 20 h est alors refusée, alors qu'elle est légale si les vingt minutes se prennent par relais sur le stand. Cochez « Pause légale prise sur le poste » dans les paramètres légaux si c'est ainsi que vous fonctionnez : la règle des six heures continues lit alors la séquence comme contenant sa pause, et les plafonds quotidiens la déduisent — 14 h à minuit vaut 9 h 40 de travail effectif et passe, 13 h à minuit reste refusé. L'écran Pauses vous dit ensuite pour qui, à quelle heure au plus tard et avec quel relais.`
+              text: $localize`:@@aide.setup.def.surPoste:Par défaut, l'outil ne sait exprimer une pause que comme un trou entre deux vacations ; une relève de 13 h à 20 h est alors refusée, alors qu'elle est légale si les vingt minutes se prennent par relais sur le stand. Cochez « Pause légale prise sur le poste » dans les paramètres légaux si c'est ainsi que vous fonctionnez : la règle des six heures continues lit alors la séquence comme contenant sa pause, et les plafonds quotidiens la déduisent — 14 h à minuit vaut 9 h 40 de travail effectif et passe, 13 h à minuit reste refusé. L'écran Pauses pose ensuite la rotation : sur chaque stand, les pauses se suivent, une personne à la fois, chacune de telle heure à telle heure, et chaque animateur lit la sienne sur son planning.`
             },
             {
               term: $localize`:@@aide.setup.term.repos:Le repos hebdomadaire : lu d'un tenant`,
@@ -673,7 +673,7 @@ export function buildHelpSections(): HelpSection[] {
             }
             ,{
               term: $localize`:@@aide.views.term.pauses:Pauses`,
-              text: $localize`:@@aide.views.def.pauses:Où tombent les pauses légales, jour par jour et stand par stand : qui sort au plus tard à quelle heure, pour combien de temps, et qui est là pour relayer. Le solveur ne planifie pas la pause de vingt minutes due à la sixième heure (trente à quatre heures et demie pour un mineur) ; quand elle est déclarée prise sur le poste, c'est ici qu'on organise les relais. Les trous déjà planifiés par la grille sont listés à part. Chaque animateur retrouve ses pauses sur son propre planning.`
+              text: $localize`:@@aide.views.def.pauses:La rotation des pauses légales, jour par jour et stand par stand : qui sort de quelle heure à quelle heure, une personne à la fois par stand, et qui est là pour relayer. Le solveur ne planifie pas la pause de vingt minutes due à la sixième heure (trente à quatre heures et demie pour un mineur) ; quand elle est déclarée prise sur le poste, l'écran la pose au plus tard possible avant la sixième heure, après celle du collègue. Les trous déjà planifiés par la grille sont listés à part. Chaque animateur retrouve ses pauses sur son propre planning.`
             }
           ]
         }

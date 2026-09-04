@@ -184,10 +184,11 @@ public class DiagnosticMcpTools {
      * its own so that no name crosses MCP — the analyzer's own views carry the
      * animateur's display name for the screens.
      */
-    @Tool(description = "Où tombent les pauses légales du planning persisté : pour chaque animateur et chaque "
-            + "jour, les séquences de travail ininterrompu, l'heure limite de la pause due (20 min à la sixième "
-            + "heure, 30 min à 4 h 30 pour un mineur), le stand tenu à ce moment et les collègues présents pour "
-            + "relayer, plus les trous déjà planifiés par la grille. Lu sous les paramètres légaux courants — "
+    @Tool(description = "La rotation des pauses légales du planning persisté : pour chaque animateur et chaque "
+            + "jour, les séquences de travail ininterrompu, la pause due (20 min à la sixième heure, 30 min à "
+            + "4 h 30 pour un mineur) posée de telle heure à telle heure — une personne à la fois par stand, au "
+            + "plus tard possible —, le stand tenu et les collègues présents pendant la pause, plus les trous déjà "
+            + "planifiés par la grille. Lu sous les paramètres légaux courants — "
             + "pauseSurPoste déclaré ou non — sans lancer de résolution. Filtrable par date, par stand, ou aux "
             + "seules pauses sans relais.",
             annotations = @Tool.Annotations(readOnlyHint = true, destructiveHint = false,
@@ -212,9 +213,10 @@ public class DiagnosticMcpTools {
                 List<PauseDueView> dues = sequence.pausesDues().stream()
                         .filter(pause -> standId == null || standId.equals(pause.standId()))
                         .filter(pause -> !sansRelais || !pause.relaisDisponible())
-                        .map(pause -> new PauseDueView(pause.heureLimite(), pause.dureeMinutes(), pause.standId(),
+                        .map(pause -> new PauseDueView(pause.debut(), pause.fin(), pause.heureLimite(),
+                                pause.dureeMinutes(), pause.standId(),
                                 pause.relais().stream().map(PauseAnalyzer.RelaisView::animateurId).toList(),
-                                pause.relaisDisponible()))
+                                pause.relaisDisponible(), pause.simultanee()))
                         .toList();
                 if (!dues.isEmpty() || planifieesVisibles) {
                     sequences.add(new SequencePausesView(sequence.debut(), sequence.fin(), sequence.minutes(), dues));
@@ -240,9 +242,14 @@ public class DiagnosticMcpTools {
                 journees, rapport.message());
     }
 
-    /** One break owed; the relays are animateur ids only. */
-    public record PauseDueView(LocalTime heureLimite, int dureeMinutes, String standId,
-            List<String> relaisAnimateurIds, boolean relaisDisponible) {
+    /**
+     * One break, placed in the stand's rotation ({@code debut}–{@code fin},
+     * never starting after {@code heureLimite}); the relays are animateur ids
+     * only, and {@code simultanee} says the windows left no room to keep it
+     * apart from another break on the stand.
+     */
+    public record PauseDueView(LocalTime debut, LocalTime fin, LocalTime heureLimite, int dureeMinutes,
+            String standId, List<String> relaisAnimateurIds, boolean relaisDisponible, boolean simultanee) {
     }
 
     public record SequencePausesView(LocalTime debut, LocalTime fin, int minutes, List<PauseDueView> pausesDues) {

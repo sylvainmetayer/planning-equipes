@@ -96,6 +96,19 @@
   color: var(--mat-sys-error);
 }
 
+.pauses-duree {
+  margin-left: 0.4rem;
+  font-weight: 400;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.pauses-simultanee {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--mat-sys-error);
+}
+
 .pauses-mineur {
   margin-left: 0.4rem;
   font-size: 0.75rem;

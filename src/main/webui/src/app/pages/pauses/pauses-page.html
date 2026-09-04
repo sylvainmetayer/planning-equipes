@@ -4,8 +4,8 @@
   <mat-card-header>
     <h1 mat-card-title i18n="@@pauses.title">Pauses</h1>
     <mat-card-subtitle i18n="@@pauses.subtitle">
-      Où tombent les pauses légales, jour par jour et stand par stand : qui sort au plus tard à quelle heure, et qui
-      est là pour relayer. Lu sur le planning persisté, sans lancer le solveur.
+      La rotation des pauses légales, jour par jour et stand par stand : qui sort de quelle heure à quelle heure, une
+      personne à la fois par stand, et qui est là pour relayer. Lue sur le planning persisté, sans lancer le solveur.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-actions class="card-actions">
@@ -76,7 +76,7 @@
 
         @if (synthese(); as bilan) {
           <div class="pauses-synthese">
-            <span><strong>{{ bilan.pauses }}</strong>&nbsp;<ng-container i18n="@@pauses.synthese.pauses">pauses à organiser</ng-container></span>
+            <span><strong>{{ bilan.pauses }}</strong>&nbsp;<ng-container i18n="@@pauses.synthese.pauses">pauses dans la rotation</ng-container></span>
             <span [class.synthese-alerte]="bilan.relaisManquants > 0"><strong>{{ bilan.relaisManquants }}</strong>&nbsp;<ng-container i18n="@@pauses.synthese.sansRelais">sans relais sur le stand</ng-container></span>
             <span><strong>{{ bilan.animateurs }}</strong>&nbsp;<ng-container i18n="@@pauses.synthese.animateurs">animateurs concernés</ng-container></span>
             <span><strong>{{ bilan.planifiees }}</strong>&nbsp;<ng-container i18n="@@pauses.synthese.planifiees">pauses déjà planifiées</ng-container></span>
@@ -97,19 +97,19 @@
             </h2>
             <div class="table-wrapper">
               <table class="pauses-table">
-                <caption class="visually-hidden" i18n="@@pauses.table.caption">Pauses à organiser sur ce stand, dans l'ordre des heures limites</caption>
+                <caption class="visually-hidden" i18n="@@pauses.table.caption">Pauses de ce stand, dans l'ordre de la rotation</caption>
                 <thead>
                   <tr>
                     <th scope="col" i18n="@@pauses.colonne.animateur">Animateur</th>
                     <th scope="col" i18n="@@pauses.colonne.sequence">Séquence</th>
-                    <th scope="col" i18n="@@pauses.colonne.limite">Pause au plus tard à</th>
-                    <th scope="col" i18n="@@pauses.colonne.duree">Durée</th>
-                    <th scope="col" i18n="@@pauses.colonne.relais">Relais possible</th>
+                    <th scope="col" i18n="@@pauses.colonne.pause">Pause</th>
+                    <th scope="col" i18n="@@pauses.colonne.limite">Au plus tard à</th>
+                    <th scope="col" i18n="@@pauses.colonne.relais">Relais pendant la pause</th>
                   </tr>
                 </thead>
                 <tbody>
-                  @for (ligne of groupe.lignes; track ligne.animateurId + ligne.heureLimite) {
-                    <tr [class.pauses-ligne-alerte]="!ligne.relaisDisponible">
+                  @for (ligne of groupe.lignes; track ligne.animateurId + ligne.debut) {
+                    <tr [class.pauses-ligne-alerte]="!ligne.relaisDisponible || ligne.simultanee">
                       <th scope="row">
                         {{ ligne.nomComplet }}
                         @if (ligne.mineur) {
@@ -117,8 +117,14 @@
                         }
                       </th>
                       <td>{{ heure(ligne.sequenceDebut) }}–{{ heure(ligne.sequenceFin) }}</td>
-                      <td class="pauses-limite">{{ heure(ligne.heureLimite) }}</td>
-                      <td>{{ ligne.dureeMinutes }} min</td>
+                      <td class="pauses-limite">
+                        {{ heure(ligne.debut) }}–{{ heure(ligne.fin) }}
+                        <span class="pauses-duree">{{ ligne.dureeMinutes }} min</span>
+                        @if (ligne.simultanee) {
+                          <span class="pauses-simultanee" i18n="@@pauses.simultanee">en même temps qu'une autre pause</span>
+                        }
+                      </td>
+                      <td>{{ heure(ligne.heureLimite) }}</td>
                       <td>
                         @if (ligne.relaisDisponible) {
                           {{ libelleRelais(ligne) }}

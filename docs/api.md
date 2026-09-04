@@ -947,8 +947,8 @@ ils ne peuvent pas être un point de défaillance.
 ## Pauses légales
 
 `GET /api/pauses` répond à la question que la règle des six heures ne pose
-qu'en creux : **où tombent les pauses**, pour qui, sur quel stand, et qui est là
-pour relayer. Le solveur décide qui tient quel siège ; il ne planifie jamais la
+qu'en creux : **où tombent les pauses**, pour qui, de quelle heure à quelle
+heure, sur quel stand, et qui est là pour relayer. Le solveur décide qui tient quel siège ; il ne planifie jamais la
 pause de vingt minutes que l'art. L3121-16 doit dès que le travail atteint six
 heures (trente minutes à 4 h 30 pour un mineur, art. L3162-3). Quand
 l'organisateur déclare la pause **prise sur le poste** (`pauseSurPoste` des
@@ -970,12 +970,22 @@ rapport vide, `journeesAnalysees` à zéro, pas d'erreur.
 - `sequences[]` — les séquences de travail ininterrompu de la journée, sur les
   fenêtres **effectives** des sièges, fusionnées quand le trou entre deux est
   plus court que la pause légale (un trou de quinze minutes n'est pas une
-  pause). Chaque séquence porte `pausesDues[]` : `heureLimite` (au plus tard,
-  la séquence atteint le seuil à cet instant), `dureeMinutes` (20 ou 30),
-  `standId`/`standNom` (le stand tenu à cet instant), `relais[]` (les collègues
-  qui y tiennent un siège à ce moment-là) et `relaisDisponible`. Une séquence
-  de douze heures et demie en doit deux : la seconde tombe six heures vingt
-  après la première.
+  pause). Chaque séquence porte `pausesDues[]` : `debut` et `fin` (la pause
+  telle que la rotation la pose), `heureLimite` (au plus tard, la séquence
+  atteint le seuil à cet instant ; `debut` ne le dépasse jamais), `dureeMinutes`
+  (20 ou 30), `standId`/`standNom` (le stand tenu pendant la pause), `relais[]`
+  (les collègues qui y tiennent un siège pendant toute la pause),
+  `relaisDisponible` et `simultanee`. Une séquence de douze heures et demie en
+  doit deux : la seconde tombe six heures vingt après la première.
+- **La rotation** : sur chaque stand et chaque jour, les pauses sont posées
+  l'une après l'autre, au plus tard possible — la première traitée est celle
+  dont l'heure limite est la plus tardive, la suivante se termine où la
+  précédente commence —, si bien qu'une seule personne du stand est sortie à
+  la fois. Une pause ne peut pas non plus commencer trop tôt : ce qui reste de
+  la séquence après elle doit tenir sous le seuil. Quand les fenêtres ne
+  laissent pas la place (trois personnes sur douze heures d'affilée), la pause
+  est posée au début de sa fenêtre et `simultanee` le dit : deux personnes
+  sortent en même temps, le plan n'est pas modifié.
 - `pausesPlanifiees[]` — les trous d'au moins la pause légale entre deux
   séquences, typiquement la relève de midi : ce que la grille donne déjà.
 - `journeesAnalysees`, `pausesDues`, `relaisManquants`, `pauseSurPoste`,
@@ -986,8 +996,8 @@ l'ignorent des deux côtés, et la pause adulte est celle qui est toujours due.
 
 La même lecture sert le planning individuel : l'espace de l'animateur
 (`pauses[]` de `GET /api/espace-animateur/{jeton}`, sur le plan **publié**),
-son PDF (« Pause de 20 min à prendre avant 19:00 », sous la vacation qui la
-doit) et son flux de calendrier (dans la description de l'événement).
+son PDF (« Pause de 18:20 à 18:40 (20 min) », sous la vacation qui la doit) et
+son flux de calendrier (dans la description de l'événement).
 
 ## Espace animateur
 

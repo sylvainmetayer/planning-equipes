@@ -273,21 +273,21 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
       vue({
         postes: [poste()],
         pauses: [
-          { date: '2026-07-10', heureLimite: '19:00:00', dureeMinutes: 20, standId: 'stand-1', standNom: 'Stand un', relaisDisponible: true }
+          { date: '2026-07-10', debut: '18:40:00', fin: '19:00:00', heureLimite: '19:00:00', dureeMinutes: 20, standId: 'stand-1', standNom: 'Stand un', relaisDisponible: true }
         ]
       })
     );
     await rendre();
 
     const note = (fixture.nativeElement as HTMLElement).querySelector('.espace-pause')!;
-    expect(note.textContent).toContain('Pause de 20 min à prendre avant 19:00, sur Stand un');
+    expect(note.textContent).toContain('Pause de 18:40 à 19:00, sur Stand un');
     expect(note.querySelector('.espace-pause-seul')).toBeNull();
 
     espaceVue.set(
       vue({
         postes: [poste()],
         pauses: [
-          { date: '2026-07-10', heureLimite: '19:00:00', dureeMinutes: 20, standId: 'stand-1', standNom: 'Stand un', relaisDisponible: false }
+          { date: '2026-07-10', debut: '18:40:00', fin: '19:00:00', heureLimite: '19:00:00', dureeMinutes: 20, standId: 'stand-1', standNom: 'Stand un', relaisDisponible: false }
         ]
       })
     );

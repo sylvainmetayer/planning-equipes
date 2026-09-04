@@ -99,13 +99,13 @@ class PlanningPdfContenuTest {
                 new ArrayList<>(List.of(ada, alan)), postes);
 
         String text = textOf(service.exportAnimateurPdf(planning, "A-ADA"));
-        assertThat(text).contains("Pause de 20 min à prendre avant 19:00").contains("en relais avec l'équipe du stand");
+        assertThat(text).contains("Pause de 19:00 à 19:20 (20 min)").contains("en relais avec l'équipe du stand");
         // Alan's six hours end at 20:00 exactly: nothing owed, nothing printed.
         assertThat(textOf(service.exportAnimateurPdf(planning, "A-ALAN"))).doesNotContain("Pause de");
 
         postes.remove(2);
         String seule = textOf(service.exportAnimateurPdf(planning, "A-ADA"));
-        assertThat(seule).contains("Pause de 20 min à prendre avant 19:00").contains("personne d'autre sur le stand");
+        assertThat(seule).contains("Pause de 19:00 à 19:20 (20 min)").contains("personne d'autre sur le stand");
     }
 
     /**

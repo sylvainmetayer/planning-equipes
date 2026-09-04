@@ -200,7 +200,7 @@ export class EspacePlanningPage {
       date,
       postes,
       repos: false,
-      pauses: (pausesParJour.get(date) ?? []).sort((a, b) => a.heureLimite.localeCompare(b.heureLimite))
+      pauses: (pausesParJour.get(date) ?? []).sort((a, b) => a.debut.localeCompare(b.debut))
     }));
     // Rest days take their chronological place among the worked ones: a day
     // silently missing reads as an oversight, an explicit « Repos » card as a

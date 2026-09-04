@@ -111,7 +111,7 @@ export function buildEspaceAideSections(): EspaceAideSection[] {
             },
             {
               term: $localize`:@@espace.aide.planning.term.pause:La pause`,
-              text: $localize`:@@espace.aide.planning.def.pause:Dès que votre journée atteint six heures d'affilée, vous avez droit à vingt minutes de pause. Votre planning vous dit avant quelle heure la prendre et sur quel stand vous serez : sortez en vous relayant avec vos coéquipiers, ou demandez le relais à l'organisation si vous êtes seul.`
+              text: $localize`:@@espace.aide.planning.def.pause:Dès que votre journée atteint six heures d'affilée, vous avez droit à vingt minutes de pause. Votre planning vous dit de quelle heure à quelle heure la prendre et sur quel stand vous serez ; les pauses d'un même stand se suivent, une personne à la fois. Sortez à l'heure dite, ou demandez le relais à l'organisation si vous êtes seul.`
             }
           ]
         },

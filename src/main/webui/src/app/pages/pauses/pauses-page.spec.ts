@@ -32,6 +32,9 @@ function rapport(overrides: Partial<RapportPauses> = {}): RapportPauses {
             minutes: 420,
             pausesDues: [
               {
+                debut: '18:40:00',
+                fin: '19:00:00',
+                simultanee: false,
                 heureLimite: '19:00:00',
                 dureeMinutes: 20,
                 standId: 'JEUX',
@@ -57,6 +60,9 @@ function rapport(overrides: Partial<RapportPauses> = {}): RapportPauses {
             minutes: 330,
             pausesDues: [
               {
+                debut: '18:30:00',
+                fin: '19:00:00',
+                simultanee: true,
                 heureLimite: '18:30:00',
                 dureeMinutes: 30,
                 standId: 'REF',
@@ -117,7 +123,7 @@ describe('PausesPage', () => {
     const contenu = texte(fixture);
     expect(contenu).toContain('Alice Martin');
     expect(contenu).toContain('13:00–20:00');
-    expect(contenu).toContain('19:00');
+    expect(contenu).toContain('18:40–19:00');
     expect(contenu).toContain('20 min');
     expect(contenu).toContain('Bob Durand');
     // The scheduled gap of the day is listed apart.
@@ -139,6 +145,7 @@ describe('PausesPage', () => {
     expect(contenu).toContain('mineur');
     expect(contenu).toContain('30 min');
     expect(contenu).toContain("Personne d'autre sur le stand");
+    expect(contenu).toContain("en même temps qu'une autre pause");
     expect(titresStands(fixture)[0]).toContain('1 sans relais');
     expect(suivant.disabled).toBe(true);
     // The day lands in the address, so the view can be shared and reloaded.

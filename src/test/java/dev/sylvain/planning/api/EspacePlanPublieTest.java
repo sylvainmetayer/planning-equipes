@@ -159,6 +159,8 @@ class EspacePlanPublieTest {
                 .body("pauses.size()", equalTo(1))
                 .body("pauses[0].date", equalTo(JOUR.toString()))
                 .body("pauses[0].heureLimite", equalTo("19:00:00"))
+                .body("pauses[0].debut", equalTo("19:00:00"))
+                .body("pauses[0].fin", equalTo("19:20:00"))
                 .body("pauses[0].dureeMinutes", equalTo(20))
                 .body("pauses[0].standNom", equalTo("Stand espace un"))
                 .body("pauses[0].relaisDisponible", equalTo(true));

@@ -25,8 +25,11 @@ export interface LignePause {
   sequenceDebut: string;
   sequenceFin: string;
   sequenceMinutes: number;
+  debut: string;
+  fin: string;
   heureLimite: string;
   dureeMinutes: number;
+  simultanee: boolean;
   standId: string;
   standNom: string;
   relais: RelaisView[];
@@ -86,7 +89,10 @@ function lignesDe(journee: JourneeAnimateurPauses): LignePause[] {
         sequenceDebut: sequence.debut,
         sequenceFin: sequence.fin,
         sequenceMinutes: sequence.minutes,
+        debut: pause.debut,
+        fin: pause.fin,
         heureLimite: pause.heureLimite,
+        simultanee: pause.simultanee,
         dureeMinutes: pause.dureeMinutes,
         standId: pause.standId,
         standNom: pause.standNom,
@@ -107,8 +113,8 @@ function correspond(ligne: LignePause, recherche: string): boolean {
 }
 
 /**
- * The breaks of one day, grouped by stand and ordered by deadline inside each
- * group — the order the relays happen in. Stands short of a relay come first;
+ * The breaks of one day, grouped by stand and ordered by start time inside
+ * each group — the rotation, in the order the relays happen in. Stands short of a relay come first;
  * a stand whose every break has one still shows, so the organiser confirms
  * rather than guesses.
  */
@@ -146,9 +152,7 @@ export function groupesDuJour(
   }
   const groupes = Array.from(parStand.values());
   for (const groupe of groupes) {
-    groupe.lignes.sort(
-      (a, b) => a.heureLimite.localeCompare(b.heureLimite) || a.nomComplet.localeCompare(b.nomComplet)
-    );
+    groupe.lignes.sort((a, b) => a.debut.localeCompare(b.debut) || a.nomComplet.localeCompare(b.nomComplet));
   }
   return groupes.sort(
     (a, b) =>

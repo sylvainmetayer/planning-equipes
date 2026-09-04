@@ -281,14 +281,14 @@ public class AnimateurPlanningPdf {
         LocalTime debut = poste.heureDebutEffectif();
         LocalTime fin = poste.heureFinEffectif();
         boolean passeMinuit = fin != null && debut != null && !fin.isAfter(debut);
-        return debut != null && !pause.heureLimite().isBefore(debut)
-                && (passeMinuit || fin == null || pause.heureLimite().isBefore(fin));
+        return debut != null && !pause.debut().isBefore(debut)
+                && (passeMinuit || fin == null || pause.debut().isBefore(fin));
     }
 
     /**
-     * « Pause de 20 min à prendre avant 19:00 » — under the shift, in the
-     * accent colour, so the one legal obligation the animateur has to act on
-     * themselves stands out from the shifts somebody else planned.
+     * « Pause de 18:20 à 18:40 » — under the shift, in the accent colour, so
+     * the one legal obligation the animateur has to act on themselves stands
+     * out from the shifts somebody else planned.
      */
     private PdfPTable pauseCard(PauseAnalyzer.PauseAnimateurView pause) {
         PdfPTable card = new PdfPTable(1);
@@ -299,8 +299,8 @@ public class AnimateurPlanningPdf {
         cell.setBorder(Rectangle.NO_BORDER);
         cell.setPadding(8f);
         cell.setPaddingLeft(14f);
-        String texte = "Pause de " + pause.dureeMinutes() + " min à prendre avant "
-                + pause.heureLimite().format(PdfTheme.TIME_FORMAT)
+        String texte = "Pause de " + pause.debut().format(PdfTheme.TIME_FORMAT) + " à "
+                + pause.fin().format(PdfTheme.TIME_FORMAT) + " (" + pause.dureeMinutes() + " min)"
                 + (pause.relaisDisponible() ? ", en relais avec l'équipe du stand"
                         : " — personne d'autre sur le stand : demandez le relais à l'organisation");
         cell.addElement(new Paragraph(texte, theme.calloutTitleFont()));

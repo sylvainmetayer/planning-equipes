@@ -149,16 +149,16 @@ public class PlanningIcs {
                 .replace("\n", "\\n");
     }
 
-    /** « Pause de 20 min à prendre avant 19:00 », appended to the event the deadline falls in. */
+    /** « Pause de 18:20 à 18:40 (20 min) », appended to the event the break falls in. */
     private static String descriptionPauses(List<PauseAnalyzer.PauseAnimateurView> pauses, PosteAffectation poste) {
         StringBuilder texte = new StringBuilder();
         for (PauseAnalyzer.PauseAnimateurView pause : pauses) {
             if (pause.date().equals(poste.getCreneau().getDate()) && pause.standId().equals(poste.getStand().getId())
-                    && !pause.heureLimite().isBefore(poste.heureDebutEffectif())
+                    && !pause.debut().isBefore(poste.heureDebutEffectif())
                     && (poste.heureFinEffectif() == null || !poste.heureFinEffectif().isAfter(poste.heureDebutEffectif())
-                            || pause.heureLimite().isBefore(poste.heureFinEffectif()))) {
-                texte.append(" - Pause de ").append(pause.dureeMinutes()).append(" min à prendre avant ")
-                        .append(pause.heureLimite());
+                            || pause.debut().isBefore(poste.heureFinEffectif()))) {
+                texte.append(" - Pause de ").append(pause.debut()).append(" à ").append(pause.fin())
+                        .append(" (").append(pause.dureeMinutes()).append(" min)");
             }
         }
         return texte.toString();
