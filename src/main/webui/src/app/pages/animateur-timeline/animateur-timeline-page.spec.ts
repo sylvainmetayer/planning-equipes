@@ -507,4 +507,21 @@ describe('AnimateurTimelinePage', () => {
     expect(segment!.getAttribute('aria-label')).toContain("personne d'autre sur le stand");
     expect(racine().querySelector('.timeline-pause-item')?.textContent).toContain('Pause 11:40 – 12:00');
   });
+
+  it('still draws the tracks when the breaks cannot be read, and draws none without a selected animateur', async () => {
+    await rendre(planningDeDeux(), {}, (url: string) => {
+      if (url === '/api/pauses') {
+        throw new Error('HTTP 500');
+      }
+      return [];
+    });
+    expect(racine().querySelectorAll('.timeline-day-card').length).toBeGreaterThan(0);
+    expect(racine().querySelector('.timeline-pause')).toBeNull();
+
+    await rendre({ postes: [] } as unknown as PlanningEvenement, {}, (url: string) =>
+      url === '/api/pauses' ? { journees: [], pauseSurPoste: true, journeesAnalysees: 0, pausesDues: 0, relaisManquants: 0, message: '' } : []
+    );
+    expect(racine().querySelector('.timeline-pause')).toBeNull();
+    expect(racine().querySelector('.timeline-day-card')).toBeNull();
+  });
 });

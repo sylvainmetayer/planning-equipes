@@ -424,6 +424,16 @@ describe('buildRailJours — pauses', () => {
     expect(ligne.resume).toContain("Pause 19:00 – 19:20 sur Tir — personne d'autre sur le stand");
   });
 
+  it('ignores a seat without a timeslot rather than failing the day', () => {
+    const alice = animateur('alice');
+    const postes = [
+      poste({ id: 'p1', creneau: creneau({ id: 1, date: '2026-08-01' }), stand: stand('Tir'), animateur: alice }),
+      poste({ id: 'p2', creneau: undefined, stand: stand('Tir'), animateur: alice })
+    ];
+
+    expect(buildRailJours(postes, [alice], [])).toHaveLength(1);
+  });
+
   it('draws nothing without a report, and an empty line carries no break', () => {
     const alice = animateur('alice');
     const postes = [poste({ id: 'p1', creneau: creneau({ id: 1, date: '2026-08-01', heureDebut: '13:00', heureFin: '20:00' }), stand: stand('Tir'), animateur: alice })];

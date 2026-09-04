@@ -178,6 +178,20 @@ describe('PausesPage', () => {
     expect(rien.nativeElement.querySelector('.pauses-alerte')).toBeNull();
   });
 
+  it('resets the filters with one button, and leaves the day alone', async () => {
+    const fixture = await mount(rapport(), { jour: '2026-07-11', q: 'carol', vue: 'sans-relais' });
+    const page = fixture.componentInstance as unknown as { reinitialiser(): void; recherche(): string; sansRelaisSeulement(): boolean; vueModifiee(): boolean };
+    expect(page.vueModifiee()).toBe(true);
+
+    page.reinitialiser();
+    await fixture.whenStable();
+
+    expect(page.recherche()).toBe('');
+    expect(page.sansRelaisSeulement()).toBe(false);
+    expect(page.vueModifiee()).toBe(false);
+    expect(texte(fixture)).toContain('Carol Petit');
+  });
+
   it('shows the error instead of an empty screen when the request fails', async () => {
     const fixture = await mount(async () => {
       throw new Error('boom');

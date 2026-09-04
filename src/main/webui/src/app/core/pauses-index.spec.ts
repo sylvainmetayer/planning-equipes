@@ -51,6 +51,9 @@ describe('indexerPauses / pausesDe', () => {
     expect(pausesDe(index, '2026-07-10', 'bob')).toEqual([]);
     expect(pausesDe(index, '2026-07-11', 'alice')).toEqual([]);
     expect(pausesDe(indexerPauses(null), '2026-07-10', 'alice')).toEqual([]);
+    // A day without a date can never match a dated break.
+    expect(pausesDe(index, null, 'alice')).toEqual([]);
+    expect(pausesDe(index, undefined, 'alice')).toEqual([]);
   });
 });
 

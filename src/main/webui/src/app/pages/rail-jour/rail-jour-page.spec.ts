@@ -78,7 +78,11 @@ describe('RailJourPage', () => {
   let fixture: ComponentFixture<RailJourPage>;
   let loadForDisplay: () => Promise<PlanningEvenement>;
 
-  async function rendre(evenement: PlanningEvenement, queryParams: Record<string, string> = {}): Promise<void> {
+  async function rendre(
+    evenement: PlanningEvenement,
+    queryParams: Record<string, string> = {},
+    apiGet: (url: string) => unknown = () => []
+  ): Promise<void> {
     loadForDisplay = vi.fn(async () => evenement);
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -86,7 +90,7 @@ describe('RailJourPage', () => {
         provideZonelessChangeDetection(),
         { provide: Router, useValue: { navigate: vi.fn(async () => true) } },
         { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } } },
-        { provide: ApiService, useValue: { get: vi.fn(async () => []) } },
+        { provide: ApiService, useValue: { get: vi.fn(async (url: string) => apiGet(url)) } },
         { provide: PlanningStateService, useValue: { loadForDisplay } }
       ]
     });
@@ -241,5 +245,80 @@ describe('RailJourPage', () => {
 
     expect(racine().querySelector('.rail-table')).toBeNull();
     expect(racine().textContent!).toContain('Lancez une résolution depuis la page Solveur');
+  });
+
+  describe('pauses', () => {
+    const rapport = {
+      pauseSurPoste: true,
+      journeesAnalysees: 1,
+      pausesDues: 1,
+      relaisManquants: 1,
+      message: '',
+      journees: [
+        {
+          animateurId: ALICE.id,
+          nomComplet: 'Alice Martin',
+          mineur: false,
+          date: '2026-08-01',
+          jour: 1,
+          sequences: [
+            {
+              debut: '09:00:00',
+              fin: '12:00:00',
+              minutes: 180,
+              pausesDues: [
+                { debut: '11:00:00', fin: '11:20:00', heureLimite: '15:00:00', dureeMinutes: 20, standId: 'tir', standNom: 'Tir', relais: [], relaisDisponible: false, simultanee: false }
+              ]
+            }
+          ],
+          pausesPlanifiees: []
+        }
+      ]
+    };
+
+    it('draws each break on its line, the relay-less one in the alert style, and names it in the summary', async () => {
+      await rendre(planningDeuxJours(), {}, (url) => (url === '/api/pauses' ? rapport : []));
+
+      const segment = racine().querySelector('.rail-pause');
+      expect(segment).not.toBeNull();
+      expect(segment!.classList.contains('rail-pause-alerte')).toBe(true);
+      expect(segment!.getAttribute('title')).toContain("personne d'autre sur le stand");
+      expect(cellule(0).getAttribute('aria-label')).toContain('Pause 11:00 – 11:20 sur Tir');
+      expect(racine().querySelector('.rail-swatch-pause-alerte')).not.toBeNull();
+    });
+
+    it('still draws the rail when the breaks cannot be read', async () => {
+      await rendre(planningDeuxJours(), {}, (url) => {
+        if (url === '/api/pauses') {
+          throw new Error('HTTP 500');
+        }
+        return [];
+      });
+
+      expect(noms()).toHaveLength(3);
+      expect(racine().querySelector('.rail-pause')).toBeNull();
+      expect(racine().querySelector('.empty-hint')?.textContent ?? '').not.toContain('HTTP 500');
+    });
+
+    it('shows the error and no rail when the plan itself cannot be read', async () => {
+      loadForDisplay = vi.fn(async () => {
+        throw new Error('plan indisponible');
+      });
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [
+          provideZonelessChangeDetection(),
+          { provide: Router, useValue: { navigate: vi.fn(async () => true) } },
+          { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({}) } } },
+          { provide: ApiService, useValue: { get: vi.fn(async () => []) } },
+          { provide: PlanningStateService, useValue: { loadForDisplay } }
+        ]
+      });
+      fixture = TestBed.createComponent(RailJourPage);
+      await fixture.whenStable();
+
+      expect(noms()).toHaveLength(0);
+      expect(racine().textContent).toContain('plan indisponible');
+    });
   });
 });

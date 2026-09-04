@@ -123,6 +123,95 @@ describe('ProblemesStore', () => {
       expect(store.comptage()).toEqual({ bloquants: 2, avertissements: 0, mineurs: 0, total: 2 });
     });
 
+    it('folds the relay-less breaks into the list and into the one-line alert', async () => {
+      api.responses = {
+        '/api/feasibility': report([]),
+        '/api/constraints': { ...constraintsView(), contraintes: [] },
+        '/api/pauses': {
+      pauseSurPoste: true,
+      journeesAnalysees: 1,
+      pausesDues: 1,
+      relaisManquants: 1,
+      message: '',
+      journees: [
+        {
+          animateurId: 'alice',
+          nomComplet: 'Alice Martin',
+          mineur: false,
+          date: '2026-08-01',
+          jour: 1,
+          sequences: [
+            {
+              debut: '13:00:00',
+              fin: '20:00:00',
+              minutes: 420,
+              pausesDues: [
+                { debut: '19:00:00', fin: '19:20:00', heureLimite: '19:00:00', dureeMinutes: 20, standId: 'tir', standNom: 'Tir', relais: [], relaisDisponible: false, simultanee: false }
+              ]
+            }
+          ],
+          pausesPlanifiees: []
+        }
+      ]
+    }
+      };
+      await store.reload();
+      expect(store.pauses()?.relaisManquants).toBe(1);
+      expect(store.problemes().map((probleme) => probleme.source)).toEqual(['PAUSES']);
+      expect(store.problemes()[0].liens[0].route).toBe('/pauses');
+      expect(store.alertePausesSansRelais()).toContain('1 pause(s) légale(s) sans relais');
+      expect(store.error()).toBe('');
+    });
+
+    it('says nothing about breaks when every one has a relay, or when the endpoint fails', async () => {
+      api.responses = {
+        '/api/feasibility': report([]),
+        '/api/constraints': { ...constraintsView(), contraintes: [] },
+        '/api/pauses': { ...{
+      pauseSurPoste: true,
+      journeesAnalysees: 1,
+      pausesDues: 1,
+      relaisManquants: 1,
+      message: '',
+      journees: [
+        {
+          animateurId: 'alice',
+          nomComplet: 'Alice Martin',
+          mineur: false,
+          date: '2026-08-01',
+          jour: 1,
+          sequences: [
+            {
+              debut: '13:00:00',
+              fin: '20:00:00',
+              minutes: 420,
+              pausesDues: [
+                { debut: '19:00:00', fin: '19:20:00', heureLimite: '19:00:00', dureeMinutes: 20, standId: 'tir', standNom: 'Tir', relais: [], relaisDisponible: false, simultanee: false }
+              ]
+            }
+          ],
+          pausesPlanifiees: []
+        }
+      ]
+    }, relaisManquants: 0 }
+      };
+      await store.reload();
+      expect(store.alertePausesSansRelais()).toBe('');
+      expect(store.problemes()).toEqual([]);
+
+      // A missing endpoint shortens the list; it is never the screen's failure.
+      api.responses = { '/api/feasibility': report([]), '/api/constraints': { ...constraintsView(), contraintes: [] } };
+      await store.reload();
+      expect(store.pauses()).toBeNull();
+      expect(store.alertePausesSansRelais()).toBe('');
+      expect(store.error()).toBe('');
+
+      // An answer that is not a report is ignored the same way.
+      api.responses['/api/pauses'] = 'pas un rapport';
+      await store.reload();
+      expect(store.pauses()).toBeNull();
+    });
+
     it('still exposes the source that answered when the other one fails', async () => {
       api.responses = {
         '/api/feasibility': new Error('HTTP 404'),
