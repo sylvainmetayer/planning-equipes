@@ -29,6 +29,23 @@
                [ngModel]="dureeHebdomadaireMaxMineurHeures()" (ngModelChange)="dureeHebdomadaireMaxMineurHeures.set($event)" />
         <mat-hint i18n="@@constraints.legal.hint.dureeMaxMineur">Maximum légal : 35 h (art. <a class="legal-article-link" [href]="articlePlafondMineur" target="_blank" rel="noopener">L3162-1</a>)</mat-hint>
       </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label i18n="@@constraints.legal.field.reposQuotidien">Repos quotidien minimal (heures)</mat-label>
+        <input matInput type="number" min="0" step="0.5" name="reposQuotidienHeures"
+               [ngModel]="reposQuotidienHeures()" (ngModelChange)="reposQuotidienHeures.set($event)" />
+        <mat-hint i18n="@@constraints.legal.hint.reposQuotidien">Minimum légal : 11 h (art. <a class="legal-article-link" [href]="articleReposQuotidien" target="_blank" rel="noopener">L3131-1</a>), 9 h par accord collectif</mat-hint>
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label i18n="@@constraints.legal.field.pauseEntreVacations">Pause minimale entre deux vacations (minutes)</mat-label>
+        <input matInput type="number" min="0" step="5" name="pauseEntreVacationsMinutes"
+               [ngModel]="pauseEntreVacationsMinutes()" (ngModelChange)="pauseEntreVacationsMinutes.set($event)" />
+        <mat-hint i18n="@@constraints.legal.hint.pauseEntreVacations">Sans base légale : la seule pause due est celle de l'art. <a class="legal-article-link" [href]="articlePause" target="_blank" rel="noopener">L3121-16</a>. À 0, deux vacations peuvent s'enchaîner.</mat-hint>
+      </mat-form-field>
+      <div class="legal-toggle">
+        <mat-slide-toggle name="pauseSurPoste" [checked]="pauseSurPoste()" (change)="pauseSurPoste.set($event.checked)"
+                          i18n="@@constraints.legal.field.pauseSurPoste">Pause légale prise sur le poste, par relais entre collègues</mat-slide-toggle>
+        <p class="legal-toggle-hint" i18n="@@constraints.legal.hint.pauseSurPoste">Quand elle est active, la pause de 20 minutes due à la sixième heure (art. L3121-16) est organisée à l'intérieur de la vacation, et les plafonds quotidiens la déduisent. Sinon, une pause est un trou entre deux vacations.</p>
+      </div>
       <div class="form-actions">
         <button matButton="filled" type="submit" [disabled]="parametresLoading()">
           <mat-icon>save</mat-icon>

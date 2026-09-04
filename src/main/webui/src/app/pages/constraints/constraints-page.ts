@@ -98,6 +98,13 @@ export class ConstraintsPage {
   protected readonly parametresError = signal('');
   protected readonly parametresSaved = signal(false);
   protected readonly dureeHebdomadaireMaxHeures = signal<number | null>(null);
+  protected readonly pauseSurPoste = signal(false);
+  /** Minimum gap between two same-day vacations, in minutes (no legal floor: 0 lets blocks chain). */
+  protected readonly pauseEntreVacationsMinutes = signal<number | null>(null);
+  /** Minimum daily rest, in hours (art. L3131-1: 11 h; a lower value needs a collective agreement). */
+  protected readonly reposQuotidienHeures = signal<number | null>(null);
+  protected readonly articleReposQuotidien = urlLegifrance('L3131-1');
+  protected readonly articlePause = urlLegifrance('L3121-16');
   protected readonly dureeHebdomadaireMaxMineurHeures = signal<number | null>(null);
 
   /** Ordre public ceilings, mirrored from the server-side validation. */
@@ -227,6 +234,9 @@ export class ConstraintsPage {
       const parametres = await this.api.get<ParametresLegaux>('/api/parametres-legaux');
       this.dureeHebdomadaireMaxHeures.set(parametres.dureeHebdomadaireMaxMinutes / 60);
       this.dureeHebdomadaireMaxMineurHeures.set(parametres.dureeHebdomadaireMaxMineurMinutes / 60);
+      this.pauseEntreVacationsMinutes.set(parametres.pauseMinimaleEntreVacationsMinutes);
+      this.reposQuotidienHeures.set(parametres.reposQuotidienMinimalMinutes / 60);
+      this.pauseSurPoste.set(parametres.pauseSurPoste);
     } catch (error) {
       this.parametresError.set(errorPrefix(error));
     } finally {
@@ -235,7 +245,10 @@ export class ConstraintsPage {
   }
 
   /**
-   * Saves both weekly ceilings. The bounds mirror the server-side check
+   * Saves every legal parameter the screen holds — the two weekly ceilings, the
+   * gap between vacations, the daily rest and the on-post break — so that a
+   * save never silently resets a field the screen did not show: the server
+   * replaces the whole record. The bounds mirror the server-side check
    * (`ReferenceDataService.updateParametresLegaux`): a value above the ordre
    * public maximum is refused here too, so the administrator gets an
    * explanation rather than an HTTP 500. A lower value stays free — it is more
@@ -244,7 +257,10 @@ export class ConstraintsPage {
   protected async saveParametresLegaux(): Promise<void> {
     const heures = this.dureeHebdomadaireMaxHeures();
     const heuresMineur = this.dureeHebdomadaireMaxMineurHeures();
-    if (heures === null || heures <= 0 || heuresMineur === null || heuresMineur <= 0) {
+    const pauseMinutes = this.pauseEntreVacationsMinutes();
+    const reposHeures = this.reposQuotidienHeures();
+    if (heures === null || heures <= 0 || heuresMineur === null || heuresMineur <= 0
+        || pauseMinutes === null || pauseMinutes < 0 || reposHeures === null || reposHeures < 0) {
       return;
     }
     if (heures > this.plafondMajeurHeures) {
@@ -265,10 +281,16 @@ export class ConstraintsPage {
     try {
       const parametres = await this.api.put<ParametresLegaux>('/api/parametres-legaux', {
         dureeHebdomadaireMaxMinutes: Math.round(heures * 60),
-        dureeHebdomadaireMaxMineurMinutes: Math.round(heuresMineur * 60)
+        dureeHebdomadaireMaxMineurMinutes: Math.round(heuresMineur * 60),
+        pauseMinimaleEntreVacationsMinutes: Math.round(pauseMinutes),
+        reposQuotidienMinimalMinutes: Math.round(reposHeures * 60),
+        pauseSurPoste: this.pauseSurPoste()
       });
       this.dureeHebdomadaireMaxHeures.set(parametres.dureeHebdomadaireMaxMinutes / 60);
       this.dureeHebdomadaireMaxMineurHeures.set(parametres.dureeHebdomadaireMaxMineurMinutes / 60);
+      this.pauseEntreVacationsMinutes.set(parametres.pauseMinimaleEntreVacationsMinutes);
+      this.reposQuotidienHeures.set(parametres.reposQuotidienMinimalMinutes / 60);
+      this.pauseSurPoste.set(parametres.pauseSurPoste);
       this.parametresSaved.set(true);
     } catch (error) {
       this.parametresError.set(errorPrefix(error));

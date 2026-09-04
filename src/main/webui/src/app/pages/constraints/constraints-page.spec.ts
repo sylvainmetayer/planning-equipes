@@ -75,6 +75,10 @@ type PageInternals = {
   toggleConstraint: (constraint: ConstraintView, event: MatSlideToggleChange) => Promise<void>;
   setPoids: (constraint: ConstraintView, poids: number) => Promise<void>;
   onPoidsChange: (constraint: ConstraintView, field: HTMLInputElement) => Promise<void>;
+  pauseSurPoste: { (): boolean; set: (value: boolean) => void };
+  pauseEntreVacationsMinutes: { (): number | null; set: (value: number | null) => void };
+  reposQuotidienHeures: { (): number | null; set: (value: number | null) => void };
+  saveParametresLegaux: () => Promise<void>;
 };
 
 describe('ConstraintsPage', () => {
@@ -88,7 +92,7 @@ describe('ConstraintsPage', () => {
     api.get.mockImplementation(async (url: string) =>
       url === '/api/constraints'
         ? view([])
-        : { dureeHebdomadaireMaxMinutes: 48 * 60, dureeHebdomadaireMaxMineurMinutes: 35 * 60 }
+        : { dureeHebdomadaireMaxMinutes: 48 * 60, dureeHebdomadaireMaxMineurMinutes: 35 * 60, pauseMinimaleEntreVacationsMinutes: 30, reposQuotidienMinimalMinutes: 660, pauseSurPoste: false }
     );
     api.put.mockImplementation(async (_url: string, body: unknown) => body);
     legalDisable.allowsDisabling.mockResolvedValue(true);
@@ -118,12 +122,55 @@ describe('ConstraintsPage', () => {
     api.get.mockImplementation(async (url: string) =>
       url === '/api/constraints'
         ? view(contraintes)
-        : { dureeHebdomadaireMaxMinutes: 48 * 60, dureeHebdomadaireMaxMineurMinutes: 35 * 60 }
+        : { dureeHebdomadaireMaxMinutes: 48 * 60, dureeHebdomadaireMaxMineurMinutes: 35 * 60, pauseMinimaleEntreVacationsMinutes: 30, reposQuotidienMinimalMinutes: 660, pauseSurPoste: false }
     );
     const page = TestBed.createComponent(ConstraintsPage).componentInstance as unknown as PageInternals;
     await vi.waitFor(() => expect(page.view()?.contraintes).toHaveLength(contraintes.length));
     return page;
   }
+
+  describe('legal parameters form', () => {
+    it('loads every field and sends them all back, so a save never resets one it did not show', async () => {
+      api.get.mockImplementation(async (url: string) =>
+        url === '/api/constraints'
+          ? view([])
+          : {
+              dureeHebdomadaireMaxMinutes: 48 * 60,
+              dureeHebdomadaireMaxMineurMinutes: 35 * 60,
+              pauseMinimaleEntreVacationsMinutes: 0,
+              reposQuotidienMinimalMinutes: 9 * 60,
+              pauseSurPoste: true
+            }
+      );
+      const page = TestBed.createComponent(ConstraintsPage).componentInstance as unknown as PageInternals;
+      await vi.waitFor(() => expect(page.pauseSurPoste()).toBe(true));
+      expect(page.pauseEntreVacationsMinutes()).toBe(0);
+      expect(page.reposQuotidienHeures()).toBe(9);
+
+      page.pauseSurPoste.set(false);
+      await page.saveParametresLegaux();
+
+      expect(api.put).toHaveBeenCalledWith('/api/parametres-legaux', {
+        dureeHebdomadaireMaxMinutes: 48 * 60,
+        dureeHebdomadaireMaxMineurMinutes: 35 * 60,
+        pauseMinimaleEntreVacationsMinutes: 0,
+        reposQuotidienMinimalMinutes: 9 * 60,
+        pauseSurPoste: false
+      });
+    });
+
+    it('refuses to save while a field it holds is still unknown', async () => {
+      api.get.mockImplementation(async (url: string) =>
+        url === '/api/constraints' ? view([]) : new Promise(() => undefined)
+      );
+      const page = TestBed.createComponent(ConstraintsPage).componentInstance as unknown as PageInternals;
+      await vi.waitFor(() => expect(page.view()).not.toBeNull());
+
+      await page.saveParametresLegaux();
+
+      expect(api.put).not.toHaveBeenCalledWith('/api/parametres-legaux', expect.anything());
+    });
+  });
 
   describe('switching a rule off', () => {
     it('asks nothing for an ordinary rule and saves it', async () => {
