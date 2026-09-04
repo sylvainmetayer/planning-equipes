@@ -29,8 +29,8 @@ PART_MANAGERS = 0.1
 # sans emplacement, comme le permet le modèle Java).
 PART_STANDS_AVEC_EMPLACEMENT = 0.8
 
-# Emplacements géolocalisés dans un centre-ville fictif, mêmes lieux que le
-# jeu de données de scenario-complet.yaml / V9__emplacement.sql.
+# Emplacements géolocalisés d'une ville fictive, mêmes lieux que le jeu de
+# données de scenario-complet.yaml / V9__emplacement.sql.
 EMPLACEMENTS = [
     {"id": "PLACE-DRAPEAU", "nom": "Place du Drapeau", "latitude": 46.6513, "longitude": 2.2492},
     {"id": "MAIRIE", "nom": "Mairie centrale", "latitude": 46.6490, "longitude": 2.2547},

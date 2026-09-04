@@ -626,23 +626,36 @@ public class PlanningService {
     }
 
     /**
-     * One {@link PosteAffectation} per required seat ({@code stand.effectifMin})
-     * on every stand × timeslot × open segment (see
-     * {@link Creneau#segmentsOuvertsMinutes(Stand)}), all seats unassigned.
-     * Package-private and static so it can be unit-tested without a database.
+     * One {@link PosteAffectation} per required seat on every stand × timeslot
+     * × open segment (see {@link Creneau#segmentsOuverts(Stand)}),
+     * all seats unassigned. Package-private and static so it can be unit-tested
+     * without a database.
      *
-     * <p>Uses {@code effectifMin}, not {@code effectifMax}: {@code effectifMax}
-     * is the upper capacity a stand could accept, not the number of seats that
-     * must be staffed (that's exactly what {@code posteDoitEtrePourvu} makes a
-     * hard requirement for every generated poste). Confirmed against
-     * scenario-complet.yaml, whose hand-authored poste list — since dropped as
-     * redundant with this very method — held 2088 entries, precisely
-     * {@code sum(effectifMin) * creneaux} (58 * 36); the
+     * <p>The seat count comes from the <b>open segment</b>, not from the stand:
+     * a stand whose staffing varies during the day states it per opening window
+     * ({@link dev.sylvain.planning.domain.FenetreHoraire#getEffectif()}), and a
+     * window that names none falls back to {@code stand.effectifMin}. A slot
+     * spanning two windows of different effectifs therefore yields two groups of
+     * seats, each carrying the effective time window of its own segment.</p>
+     *
+     * <p>The fallback is {@code effectifMin}, not {@code effectifMax}:
+     * {@code effectifMax} is the upper capacity a stand could accept, not the
+     * number of seats that must be staffed (that's exactly what
+     * {@code posteDoitEtrePourvu} makes a hard requirement for every generated
+     * poste). Confirmed against scenario-complet.yaml, whose hand-authored poste
+     * list — since dropped as redundant with this very method — held 2088
+     * entries, precisely {@code sum(effectifMin) * creneaux} (58 * 36); the
      * effectifMax sum instead gives 2736, 31% more mandatory seats than the
      * scenario intends. Building a problem from reference data with effectifMax
      * silently inflated every solve started from "Lancer le solveur" into a
      * substantially bigger, harder problem than the one actually staffed
      * for — the real reason it kept stalling short of hard-feasibility.</p>
+     *
+     * <p>Falling back to {@code effectifMin} on <i>every</i> slot was in turn
+     * what made a real event's planning cover 7 155 h where its source workbook
+     * needed 10 986: the minimum is what a stand needs at its quietest hour, and
+     * applying it at the peak under-staffs by a third. Hence the per-window
+     * effectif.</p>
      *
      * <p>A stand closed for only part of a créneau (see
      * {@link dev.sylvain.planning.domain.IndisponibiliteStand})
@@ -670,26 +683,29 @@ public class PlanningService {
         List<PosteAffectation> postes = new ArrayList<>();
         int counter = 0;
         for (Stand stand : stands) {
-            int effectif = Math.max(1, stand.getEffectifMin());
-            // On a break-covering shift (EFFECTIF_REDUIT strategy) the stand
-            // runs at half staffing, rounded up: a stand held by a single person
-            // keeps that person rather than closing.
-            int effectifPause = (effectif + 1) / 2;
             int familleStand = familleParStand.get(stand.getId());
             for (Creneau creneau : creneaux) {
                 if (creneau.getFamille() != familleStand) {
                     continue;
                 }
-                int seats = creneau.isCouverturePause() ? effectifPause : effectif;
-                List<int[]> segments = creneau.segmentsOuvertsMinutes(stand);
-                boolean creneauEntierOuvert = segments.size() == 1 && segments.get(0)[0] == 0
-                        && segments.get(0)[1] == creneau.getDureeMinutes();
-                for (int[] segment : segments) {
+                List<Creneau.SegmentOuvert> segments = creneau.segmentsOuverts(stand);
+                boolean creneauEntierOuvert = segments.size() == 1 && segments.get(0).debutMinutes() == 0
+                        && segments.get(0).finMinutes() == creneau.getDureeMinutes();
+                for (Creneau.SegmentOuvert segment : segments) {
+                    // At least one seat on an open stand: a stand nobody
+                    // declared a headcount for still needs somebody, so closing
+                    // it stays an explicit decision rather than a side effect of
+                    // an unset effectifMin.
+                    int effectif = Math.max(1, segment.effectif());
+                    // On a break-covering shift (EFFECTIF_REDUIT strategy) the
+                    // stand runs at half staffing, rounded up: a stand held by a
+                    // single person keeps that person rather than closing.
+                    int seats = creneau.isCouverturePause() ? (effectif + 1) / 2 : effectif;
                     for (int seat = 0; seat < seats; seat++) {
                         PosteAffectation poste = new PosteAffectation("poste-" + (counter++), stand, creneau);
                         if (!creneauEntierOuvert) {
-                            poste.setHeureDebutEffective(decaler(creneau.getHeureDebut(), segment[0]));
-                            poste.setHeureFinEffective(decaler(creneau.getHeureDebut(), segment[1]));
+                            poste.setHeureDebutEffective(decaler(creneau.getHeureDebut(), segment.debutMinutes()));
+                            poste.setHeureFinEffective(decaler(creneau.getHeureDebut(), segment.finMinutes()));
                         }
                         postes.add(poste);
                     }
@@ -1018,7 +1034,7 @@ public class PlanningService {
         return result;
     }
 
-    /** Only the three fields a scenario file is read back with (see {@link ScenarioSections}). */
+    /** Only the four fields a scenario file is read back with (see {@link ScenarioSections}). */
     private static Map<String, Object> parametresLegauxYaml(ParametresLegaux parametres) {
         Map<String, Object> item = new LinkedHashMap<>();
         item.put("dureeHebdomadaireMaxMinutes", parametres.getDureeHebdomadaireMaxMinutes());
@@ -1133,6 +1149,12 @@ public class PlanningService {
                 // a missing end than as an explicit empty one.
                 if (fenetre.getHeureFin() != null) {
                     fenetreYaml.put("heureFin", asString(fenetre.getHeureFin()));
+                }
+                // Absent for the same reason: no effectif means "inherit
+                // effectifMin", and writing it out would freeze today's value
+                // into the file as if it had been chosen.
+                if (fenetre.getEffectif() != null) {
+                    fenetreYaml.put("effectif", fenetre.getEffectif());
                 }
                 fenetres.add(fenetreYaml);
             }
@@ -3326,8 +3348,14 @@ public class PlanningService {
                 if (heureDebut == null) {
                     throw new BusinessError.Invalid("Champ manquant: stands.horaires.fenetres.heureDebut");
                 }
+                Object effectif = fenetreData.get("effectif");
+                if (effectif != null && !(effectif instanceof Number)) {
+                    throw new BusinessError.Invalid(
+                            "Champ invalide: stands.horaires.fenetres.effectif doit être un entier");
+                }
                 fenetres.add(new FenetreHoraire(LocalTime.parse(heureDebut.toString()),
-                        parseTimeOrEndOfDay(fenetreData.get("heureFin"))));
+                        parseTimeOrEndOfDay(fenetreData.get("heureFin")),
+                        effectif == null ? null : ((Number) effectif).intValue()));
             }
             horaire.setFenetres(fenetres);
             horaire.setMotif((String) horaireData.get("motif"));

@@ -174,35 +174,85 @@ public class Creneau {
      * behaves exactly as it did before rules existed.</p>
      */
     public List<int[]> segmentsOuvertsMinutes(Stand stand) {
+        // Pure opening geometry: two segments that touch and differ only by
+        // their effectif are one continuous opening here, so every caller that
+        // only asks "when is this stand open" keeps the exact answer it got
+        // before windows carried a headcount. Callers that need the staffing
+        // read segmentsOuverts instead.
+        List<int[]> minutes = new ArrayList<>();
+        for (SegmentOuvert segment : segmentsOuverts(stand)) {
+            int[] dernier = minutes.isEmpty() ? null : minutes.get(minutes.size() - 1);
+            if (dernier != null && dernier[1] == segment.debutMinutes()) {
+                dernier[1] = segment.finMinutes();
+            } else {
+                minutes.add(new int[] {segment.debutMinutes(), segment.finMinutes()});
+            }
+        }
+        return minutes;
+    }
+
+    /**
+     * One open sub-interval of this slot together with the number of seats to
+     * staff on it, in minutes from this slot's start.
+     *
+     * <p>{@code effectif} is already resolved: a window that named one carries
+     * that value, a window that did not carries the stand's
+     * {@link Stand#getEffectifMin()}. It is <b>not</b> floored to 1 — that rule
+     * belongs to poste generation, which is the only place that decides a stand
+     * open with nobody declared still gets one seat.</p>
+     */
+    public record SegmentOuvert(int debutMinutes, int finMinutes, int effectif) {
+    }
+
+    /**
+     * Same open sub-intervals as {@link #segmentsOuvertsMinutes(Stand)}, each
+     * carrying the headcount that applies to it.
+     *
+     * <p>This is the primary computation; {@code segmentsOuvertsMinutes} is a
+     * projection of it. It exists because a stand's staffing can vary during
+     * the day — 4 people in the morning, 5 in the evening — which
+     * {@link FenetreHoraire#getEffectif()} expresses per window. A slot spanning
+     * two windows of different effectifs therefore comes back as <b>two</b>
+     * segments, and poste generation emits the right number of seats on each.</p>
+     *
+     * <p>Where two opening windows overlap, the overlap takes the <b>higher</b>
+     * of the two effectifs: overlapping windows are two statements of a need
+     * over the same minutes, and satisfying the larger satisfies both. Adjacent
+     * stretches that end up with the same effectif are merged back, so a stand
+     * whose windows carry no effectif at all — the overwhelming majority —
+     * produces exactly the single merged segment it always did.</p>
+     */
+    public List<SegmentOuvert> segmentsOuverts(Stand stand) {
         int dureeMinutes = getDureeMinutes();
         if (dureeMinutes <= 0) {
             return List.of();
         }
         int dureeSecondes = dureeMinutes * 60;
+        int effectifStand = stand == null ? 0 : stand.getEffectifMin();
         if (dayInOuvertureMode(stand)) {
             // The day has at least one OuvertureStand: closed-by-default. This
             // slot's open segments are exactly whichever of that day's opening
             // windows overlap it — possibly none at all, i.e. this slot is
             // fully closed even though the stand does open elsewhere that day.
             List<int[]> ouverturesSecondes = ouverturesInSeconds(stand, dureeSecondes);
-            return ouverturesSecondes.isEmpty() ? List.of() : mergeSegments(ouverturesSecondes);
+            return ouverturesSecondes.isEmpty() ? List.of() : profilEffectif(ouverturesSecondes);
         }
         List<int[]> fermeturesSecondes = closingsInSeconds(stand, dureeSecondes);
         if (fermeturesSecondes.isEmpty()) {
-            return List.of(new int[] {0, dureeMinutes});
+            return List.of(new SegmentOuvert(0, dureeMinutes, effectifStand));
         }
         fermeturesSecondes.sort(Comparator.comparingInt(f -> f[0]));
-        List<int[]> ouverts = new ArrayList<>();
+        List<SegmentOuvert> ouverts = new ArrayList<>();
         int curseur = 0;
         for (int[] fermeture : fermeturesSecondes) {
             int debut = Math.max(curseur, fermeture[0]);
             if (debut > curseur) {
-                ouverts.add(new int[] {curseur / 60, debut / 60});
+                ouverts.add(new SegmentOuvert(curseur / 60, debut / 60, effectifStand));
             }
             curseur = Math.max(curseur, fermeture[1]);
         }
         if (curseur < dureeSecondes) {
-            ouverts.add(new int[] {curseur / 60, dureeMinutes});
+            ouverts.add(new SegmentOuvert(curseur / 60, dureeMinutes, effectifStand));
         }
         return ouverts;
     }
@@ -297,7 +347,12 @@ public class Creneau {
         return false;
     }
 
-    /** Opening windows of {@code stand} overlapping this slot, clamped to {@code [0, dureeSecondes]} and expressed in seconds since this slot's start. */
+    /**
+     * Opening windows of {@code stand} overlapping this slot, clamped to
+     * {@code [0, dureeSecondes]} and expressed in seconds since this slot's
+     * start, as {@code {debut, fin, effectif}} — the effectif already resolved
+     * against {@link Stand#getEffectifMin()} for a window that names none.
+     */
     private List<int[]> ouverturesInSeconds(Stand stand, int dureeSecondes) {
         if (stand == null || stand.getOuverturesEffectives().isEmpty() || heureDebut == null || date == null) {
             return List.of();
@@ -316,29 +371,56 @@ public class Creneau {
             int debut = Math.max(0, ouvertureDebut);
             int fin = fenetreEndInSeconds(ouverture.getHeureFin(), decalageJour, debutSlotSecondes, dureeSecondes);
             if (fin > debut) {
-                ouvertures.add(new int[] {debut, fin});
+                Integer effectif = ouverture.getEffectif();
+                ouvertures.add(new int[] {debut, fin, effectif != null ? effectif : stand.getEffectifMin()});
             }
         }
         return ouvertures;
     }
 
-    /** Merges overlapping/touching second-granularity windows and converts their boundaries to minutes. */
-    private static List<int[]> mergeSegments(List<int[]> segmentsSecondes) {
-        segmentsSecondes.sort(Comparator.comparingInt(s -> s[0]));
-        List<int[]> fusionnes = new ArrayList<>();
-        for (int[] segment : segmentsSecondes) {
-            if (!fusionnes.isEmpty() && segment[0] <= fusionnes.get(fusionnes.size() - 1)[1]) {
-                int[] dernier = fusionnes.get(fusionnes.size() - 1);
-                dernier[1] = Math.max(dernier[1], segment[1]);
+    /**
+     * Turns overlapping/touching second-granularity windows into the staffing
+     * profile they describe: a sweep over every window boundary, each resulting
+     * stretch taking the highest effectif among the windows covering it, then
+     * touching stretches of equal effectif merged back and converted to minutes.
+     *
+     * <p>Uncovered stretches between two windows are dropped, which is what
+     * makes a gap between two openings stay closed. With every window carrying
+     * the same effectif — the case whenever nobody sets one — this collapses to
+     * the plain interval merge it replaces.</p>
+     */
+    private static List<SegmentOuvert> profilEffectif(List<int[]> fenetresSecondes) {
+        List<Integer> bornes = new ArrayList<>();
+        for (int[] fenetre : fenetresSecondes) {
+            bornes.add(fenetre[0]);
+            bornes.add(fenetre[1]);
+        }
+        bornes.sort(Comparator.naturalOrder());
+        List<SegmentOuvert> segments = new ArrayList<>();
+        for (int i = 1; i < bornes.size(); i++) {
+            int debut = bornes.get(i - 1);
+            int fin = bornes.get(i);
+            if (fin <= debut) {
+                continue;
+            }
+            int effectif = Integer.MIN_VALUE;
+            for (int[] fenetre : fenetresSecondes) {
+                if (fenetre[0] <= debut && fenetre[1] >= fin) {
+                    effectif = Math.max(effectif, fenetre[2]);
+                }
+            }
+            if (effectif == Integer.MIN_VALUE) {
+                continue;
+            }
+            SegmentOuvert dernier = segments.isEmpty() ? null : segments.get(segments.size() - 1);
+            if (dernier != null && dernier.finMinutes() == debut / 60 && dernier.effectif() == effectif) {
+                segments.set(segments.size() - 1,
+                        new SegmentOuvert(dernier.debutMinutes(), fin / 60, effectif));
             } else {
-                fusionnes.add(segment.clone());
+                segments.add(new SegmentOuvert(debut / 60, fin / 60, effectif));
             }
         }
-        List<int[]> minutes = new ArrayList<>();
-        for (int[] segment : fusionnes) {
-            minutes.add(new int[] {segment[0] / 60, segment[1] / 60});
-        }
-        return minutes;
+        return segments;
     }
 
     /** True when at least part of this slot is open for {@code stand} (open-by-default). */

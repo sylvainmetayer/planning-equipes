@@ -168,6 +168,11 @@
     "FenetreHoraireDto" : {
       "type" : "object",
       "properties" : {
+        "effectif" : {
+          "type" : "integer",
+          "format" : "int32",
+          "exclusiveMinimum" : 0
+        },
         "heureDebut" : {
           "$ref" : "#/$defs/LocalTime"
         },

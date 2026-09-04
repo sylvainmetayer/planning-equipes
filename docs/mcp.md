@@ -26,8 +26,6 @@ serait pire qu'un refus de servir.
 > politiques `quarkus.http.auth.permission.*`, qui s'applique à tout chemin
 > quelle que soit l'extension qui l'a monté.
 
-`PLANNING_MCP_*` remplace `PLANNING_MCP_*`, encore accepté en repli.
-
 ## Derrière un proxy d'accès
 
 `PLANNING_MCP_REQUIRED_HEADERS` exige des paires `Nom=valeur` **en plus** de la

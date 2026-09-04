@@ -133,7 +133,7 @@ describe('buildDays — understaffing indicator', () => {
     // shortfall — the previous effectifMin comparison flagged every such slot.
     const pause = creneau({ id: 2, heureDebut: '12:00', heureFin: '13:00', couverturePause: true });
     const days = buildDays([
-      poste({ id: 'p1', creneau: pause, stand: stand('Silver Fest', 2), animateur: animateur('Oscar') })
+      poste({ id: 'p1', creneau: pause, stand: stand('Stand Argent', 2), animateur: animateur('Oscar') })
     ]);
 
     const line = days[0].slots[0].stands[0];

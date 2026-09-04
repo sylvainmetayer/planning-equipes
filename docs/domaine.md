@@ -94,6 +94,31 @@ minuit, contrairement à un créneau.
 Une fenêtre datée d'un jour J+1 n'est lue que par un créneau qui **traverse
 réellement minuit**.
 
+### L'effectif se porte sur la fenêtre, pas sur le stand
+
+Un stand dont la charge varie dans la journée — 4 personnes le matin, 4
+l'après-midi, 5 le soir — reste **un seul stand** : chaque fenêtre d'ouverture
+porte son `effectif`. `null`, le cas très majoritaire, veut dire « hériter de
+`effectifMin` », donc une fenêtre qui n'en nomme aucun génère exactement ce
+qu'elle générait avant que le champ existe.
+
+Un créneau à cheval sur deux fenêtres d'effectifs différents produit **deux
+groupes de sièges**, chacun portant la [fenêtre effective](#fenêtre-effective)
+de son segment. Là où deux fenêtres se recouvrent, le recouvrement prend le
+**plus haut** des deux effectifs : deux fenêtres qui se chevauchent énoncent
+deux fois le besoin sur les mêmes minutes, et satisfaire le plus grand satisfait
+les deux. Les tranches contiguës de même effectif sont refusionnées.
+
+`segmentsOuverts` est le calcul primaire ; `segmentsOuvertsMinutes`
+en est la projection et reste la **géométrie d'ouverture pure** — deux segments
+que seul l'effectif sépare y redeviennent une ouverture continue, pour que tout
+appelant qui demande « quand ce stand est-il ouvert » garde sa réponse.
+
+> Pourquoi ce champ existe : appliquer `effectifMin` à toutes les tranches est
+> ce qui faisait couvrir 7 155 h à un planning réel là où son classeur source en
+> demandait 10 986. Le minimum est ce qu'un stand exige à son heure la plus
+> creuse ; l'appliquer au pic sous-dote d'un tiers.
+
 ### Horaires récurrents : trois couches, un seul mode par jour
 
 Les fenêtres datées sont des **exceptions** ; le motif qui se répète se saisit
@@ -352,7 +377,7 @@ chaque stand n'en suivant qu'une, donc les relèves s'étalent) et
 | --- | --- | --- |
 | `FERMETURE` (défaut) | aucun, le stand ferme | non |
 | `RELEVE` | effectif plein, en plus des deux vacations encadrantes | oui |
-| `EFFECTIF_REDUIT` | moitié de `effectifMin`, **arrondie au supérieur** | oui |
+| `EFFECTIF_REDUIT` | moitié de l'effectif du segment ouvert, **arrondie au supérieur** | oui |
 
 `RELEVE` est à manier avec prudence sur un scénario déjà tendu : une vacation de
 relève de plus par pause, sur *chaque* stand concerné, concentrée sur la même

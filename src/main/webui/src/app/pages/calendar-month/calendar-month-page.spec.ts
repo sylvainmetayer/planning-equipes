@@ -99,7 +99,7 @@ describe('buildAssignmentsByDate — understaffing indicator', () => {
     // two-person stand — filling it is full coverage, not a shortfall.
     const pause = creneau({ id: 2, date: '2026-07-15', heureDebut: '12:00', heureFin: '13:00', couverturePause: true });
     const byDate = buildAssignmentsByDate([
-      poste({ id: 'p1', creneau: pause, stand: stand('Silver Fest', 2), animateur: animateur('Oscar') })
+      poste({ id: 'p1', creneau: pause, stand: stand('Stand Argent', 2), animateur: animateur('Oscar') })
     ]);
 
     const line = byDate.get('2026-07-15')![0].stands[0];

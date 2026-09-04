@@ -221,7 +221,8 @@ public final class HoraireCompaction {
             LocalDate date = ouverture.getDate();
             modes.put(date, ModeHoraire.OUVERTURE);
             fenetres.computeIfAbsent(date, key -> new LinkedHashSet<>())
-                    .add(normalize(ouverture.getHeureDebut(), ouverture.getHeureFin(), endOfDay.get(date)));
+                    .add(normalize(ouverture.getHeureDebut(), ouverture.getHeureFin(), ouverture.getEffectif(),
+                            endOfDay.get(date)));
             motifs.putIfAbsent(date, ouverture.getMotif());
         }
         for (IndisponibiliteStand fermeture : stand.getIndisponibilites()) {
@@ -233,7 +234,8 @@ public final class HoraireCompaction {
             LocalDate date = fermeture.getDate();
             modes.put(date, ModeHoraire.FERMETURE);
             fenetres.computeIfAbsent(date, key -> new LinkedHashSet<>())
-                    .add(normalize(fermeture.getHeureDebut(), fermeture.getHeureFin(), endOfDay.get(date)));
+                    // A closure carries no headcount: being shut has no effectif.
+                    .add(normalize(fermeture.getHeureDebut(), fermeture.getHeureFin(), null, endOfDay.get(date)));
             motifs.putIfAbsent(date, fermeture.getMotif());
         }
         Map<LocalDate, JourSaisi> parJour = new LinkedHashMap<>();
@@ -251,21 +253,26 @@ public final class HoraireCompaction {
      * time — within {@link #ECART_TOLERE_MINUTES}, which is what recognises the
      * {@code 23:59} written for a day closing at midnight.
      */
-    private static FenetreHoraire normalize(LocalTime heureDebut, LocalTime heureFin, Integer finJourneeSecondes) {
+    private static FenetreHoraire normalize(LocalTime heureDebut, LocalTime heureFin, Integer effectif,
+            Integer finJourneeSecondes) {
+        // The effectif rides along untouched: only the window's end is being
+        // normalised here, and two days that staff the same hours differently
+        // are different rules — FenetreHoraire equality covers the effectif, so
+        // they simply won't collapse together.
         if (heureFin == null) {
-            return new FenetreHoraire(heureDebut, null);
+            return new FenetreHoraire(heureDebut, null, effectif);
         }
         if (finJourneeSecondes == null || finJourneeSecondes > SECONDES_PAR_JOUR) {
             // The day's schedule runs past midnight into the next one, so "the
             // day's closing time" is not a same-day hour at all and an open-ended
             // window would stretch beyond what was entered. Leave it concrete;
             // the day's windows simply won't collapse with another day's.
-            return new FenetreHoraire(heureDebut, heureFin);
+            return new FenetreHoraire(heureDebut, heureFin, effectif);
         }
         if (heureFin.toSecondOfDay() + ECART_TOLERE_MINUTES * 60 >= finJourneeSecondes) {
-            return new FenetreHoraire(heureDebut, null);
+            return new FenetreHoraire(heureDebut, null, effectif);
         }
-        return new FenetreHoraire(heureDebut, heureFin);
+        return new FenetreHoraire(heureDebut, heureFin, effectif);
     }
 
     /**

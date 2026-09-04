@@ -30,7 +30,7 @@ public interface ConfigBranding {
 
     /**
      * The customer this instance is deployed for, printed at the foot of the
-     * PDFs ("Event — Centre-ville" on the original deployment). Blank
+     * PDFs ("Festival du jeu — Ville hôte", say). Blank
      * leaves the footer with only the generation date, which is honest rather
      * than wrong.
      */

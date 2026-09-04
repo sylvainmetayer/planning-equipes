@@ -72,6 +72,12 @@ couvrir un jour fermant à 20 h et un jour fermant à minuit, et ce qui remplace
 le contournement `23:59` qu'imposait une heure de fin concrète — une fenêtre ne
 peut pas chevaucher minuit.
 
+**`effectif` omis signifie « hériter de `effectifMin` »** : c'est le cas très
+majoritaire. Le renseigner sur une fenêtre est ce qui permet à un stand dont la
+charge varie dans la journée — 4 personnes le matin, 5 le soir — de rester un
+seul stand plutôt que d'être éclaté en plusieurs. Voir
+[`domaine.md`](domaine.md#leffectif-se-porte-sur-la-fenêtre-pas-sur-le-stand).
+
 Une portée plus précise prime sur une portée plus large ; une exception datée
 prime sur toutes les règles, pour le seul jour qu'elle nomme. Arbitrage complet
 dans [`domaine.md`](domaine.md#horaires-récurrents--trois-couches-un-seul-mode-par-jour).
@@ -79,9 +85,11 @@ dans [`domaine.md`](domaine.md#horaires-récurrents--trois-couches-un-seul-mode-
 ## `postes` : absente ≠ vide
 
 **Absente**, la section est générée à partir des stands et créneaux importés —
-un poste par place (`effectifMin`, pas `effectifMax`) sur chaque créneau ×
-segment réellement ouvert, exactement comme « Lancer le solveur » depuis le
-référentiel.
+un poste par place sur chaque créneau × segment réellement ouvert, exactement
+comme « Lancer le solveur » depuis le référentiel. Le nombre de places vient de
+la fenêtre d'ouverture quand elle porte un `effectif`, et retombe sinon sur
+`effectifMin` (jamais `effectifMax`) : voir
+[`domaine.md`](domaine.md#leffectif-se-porte-sur-la-fenêtre-pas-sur-le-stand).
 
 **Présente**, elle est reprise telle quelle, y compris vide. C'est ce qui permet
 un staffing s'écartant de la règle.

@@ -15,19 +15,34 @@ import java.util.Objects;
  * ending at 20:00, at 21:00 or at midnight no longer needs three different
  * rules — nor the {@code 23:59} stand-in a concrete end time forces whenever
  * the real end is midnight (a window may not cross midnight).</p>
+ *
+ * <p>{@code effectif} is how a stand whose staffing varies during the day is
+ * expressed: a stand needing 4 people in the morning, 4 in the afternoon and 5
+ * in the evening is <b>one</b> stand with three windows carrying 4, 4 and 5 —
+ * not three stands. {@code null}, the overwhelming majority, means "inherit
+ * {@link Stand#getEffectifMin()}", which is exactly what every window did
+ * before this field existed. Two windows with the same hours but different
+ * effectifs are different facts, so equality covers it.</p>
  */
 public class FenetreHoraire {
 
     private LocalTime heureDebut;
     /** {@code null} = until the end of the evaluated créneau ("fin de journée"). */
     private LocalTime heureFin;
+    /** Seats to fill on this window; {@code null} = inherit {@link Stand#getEffectifMin()}. */
+    private Integer effectif;
 
     public FenetreHoraire() {
     }
 
     public FenetreHoraire(LocalTime heureDebut, LocalTime heureFin) {
+        this(heureDebut, heureFin, null);
+    }
+
+    public FenetreHoraire(LocalTime heureDebut, LocalTime heureFin, Integer effectif) {
         this.heureDebut = heureDebut;
         this.heureFin = heureFin;
+        this.effectif = effectif;
     }
 
     public LocalTime getHeureDebut() {
@@ -46,6 +61,15 @@ public class FenetreHoraire {
         this.heureFin = heureFin;
     }
 
+    /** {@code null} = inherit {@link Stand#getEffectifMin()}, the historical behaviour. */
+    public Integer getEffectif() {
+        return effectif;
+    }
+
+    public void setEffectif(Integer effectif) {
+        this.effectif = effectif;
+    }
+
     /** True when this is a genuine, non-empty, same-day window (an open end counts as valid). */
     public boolean hasValidRange() {
         return heureDebut != null && (heureFin == null || heureFin.isAfter(heureDebut));
@@ -59,16 +83,18 @@ public class FenetreHoraire {
         if (!(o instanceof FenetreHoraire that)) {
             return false;
         }
-        return Objects.equals(heureDebut, that.heureDebut) && Objects.equals(heureFin, that.heureFin);
+        return Objects.equals(heureDebut, that.heureDebut) && Objects.equals(heureFin, that.heureFin)
+                && Objects.equals(effectif, that.effectif);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(heureDebut, heureFin);
+        return Objects.hash(heureDebut, heureFin, effectif);
     }
 
     @Override
     public String toString() {
-        return heureDebut + "→" + (heureFin != null ? heureFin.toString() : "fin de journée");
+        return heureDebut + "→" + (heureFin != null ? heureFin.toString() : "fin de journée")
+                + (effectif != null ? " (" + effectif + ")" : "");
     }
 }

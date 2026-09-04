@@ -156,7 +156,7 @@ class HoraireCompactionTest {
     /** A pattern seen on a single day is left dated: turning it into a rule buys nothing. */
     @Test
     void unMotifIsoleResteUneExceptionDatee() {
-        Stand stand = stand("SILVER-FEST");
+        Stand stand = stand("STAND-ARGENT");
         for (int jour = 0; jour < NOMBRE_JOURS; jour++) {
             stand.getIndisponibilites().add(new IndisponibiliteStand(null, PREMIER_JOUR.plusDays(jour),
                     LocalTime.of(10, 0), LocalTime.of(20, 0), null));

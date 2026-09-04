@@ -243,8 +243,8 @@ public class PlanningPersistenceService {
                 PreparedStatement insert = scope.prepareScoped(connection,
                         """
                         INSERT INTO stand_ouverture (edition_id, stand_id, date_ouverture,
-                        heure_debut, heure_fin, motif)
-                        VALUES (?, ?, ?, ?, ?, ?)""")) {
+                        heure_debut, heure_fin, motif, effectif)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)""")) {
             for (Stand stand : stands) {
                 delete.setString(2, stand.getId());
                 delete.addBatch();
@@ -255,6 +255,7 @@ public class PlanningPersistenceService {
                         insert.setObject(4, ouverture.getHeureDebut());
                         insert.setObject(5, ouverture.getHeureFin());
                         insert.setString(6, ouverture.getMotif());
+                        insert.setObject(7, ouverture.getEffectif());
                         insert.addBatch();
                     }
                 }

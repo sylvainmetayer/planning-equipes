@@ -107,8 +107,11 @@ public final class HoraireStandResolver {
             }
             for (FenetreHoraire fenetre : resolu.fenetres()) {
                 if (resolu.mode() == ModeHoraire.OUVERTURE) {
+                    // The window's effectif rides along: it is the whole point
+                    // of a rule that a stand's staffing profile is stated once
+                    // and expanded onto every day it covers.
                     ouvertures.add(new OuvertureStand(null, date, fenetre.getHeureDebut(), fenetre.getHeureFin(),
-                            resolu.motif()));
+                            resolu.motif(), fenetre.getEffectif()));
                 } else {
                     fermetures.add(new IndisponibiliteStand(null, date, fenetre.getHeureDebut(), fenetre.getHeureFin(),
                             resolu.motif()));

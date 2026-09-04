@@ -31,13 +31,38 @@ import java.time.LocalTime;
  * <p>Entering one window <i>per event day</i> is what {@link HoraireStand}
  * exists to avoid: a recurring rule expands to these rows, and a row entered
  * here is the per-date exception that overrides them.</p>
+ *
+ * <p>{@code effectif} carries the staffing of that window, {@code null}
+ * meaning "inherit {@link Stand#getEffectifMin()}" — see
+ * {@link FenetreHoraire#getEffectif()}, whose value a rule expansion copies
+ * onto the rows it produces. A closure has no equivalent field, which is why
+ * this lives here rather than on {@link FenetreDateeStand}: there is no
+ * headcount attached to being shut.</p>
  */
 public class OuvertureStand extends FenetreDateeStand {
+
+    /** Seats to fill on this window; {@code null} = inherit {@link Stand#getEffectifMin()}. */
+    private Integer effectif;
 
     public OuvertureStand() {
     }
 
     public OuvertureStand(Long id, LocalDate date, LocalTime heureDebut, LocalTime heureFin, String motif) {
+        this(id, date, heureDebut, heureFin, motif, null);
+    }
+
+    public OuvertureStand(Long id, LocalDate date, LocalTime heureDebut, LocalTime heureFin, String motif,
+            Integer effectif) {
         super(id, date, heureDebut, heureFin, motif);
+        this.effectif = effectif;
+    }
+
+    /** {@code null} = inherit {@link Stand#getEffectifMin()}, the historical behaviour. */
+    public Integer getEffectif() {
+        return effectif;
+    }
+
+    public void setEffectif(Integer effectif) {
+        this.effectif = effectif;
     }
 }

@@ -1,7 +1,7 @@
 -- Issue #172: the edition becomes the ONLY variant carrier. Timeslot groups
 -- only ever scoped the créneaux — every other referential (stands, hours,
 -- parameters, animateurs) stayed edition-wide, so a "variant" group silently
--- mixed referentials (the edition-1708 / canicule incident). Editions already
+-- mixed referentials (the 1708 / canicule incident). Editions already
 -- scope everything, persisted plan included: the half-measure goes away, the
 -- découpage now replaces the edition's créneaux in place.
 --

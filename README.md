@@ -135,10 +135,6 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 | `CONNEXION_MAX_ECHECS` | `5` | Échecs de connexion admin tolérés par adresse avant verrouillage |
 | `CONNEXION_DUREE_BLOCAGE` | `PT15M` | Durée du verrouillage, comptée depuis le dernier échec |
 
-> **Renommage** : les variables `PLANNING_MCP_*` remplacent les anciennes
-> `PLANNING_MCP_*`, encore acceptées en repli pour ne pas casser un déploiement
-> existant. Elles seront retirées dans une version ultérieure.
-
 #### Marque blanche
 
 Le modèle de déploiement est **une instance par client** : l'identité se règle
@@ -162,12 +158,9 @@ Deux limites à connaître :
   fournit soit par une URL (`BRANDING_LOGO_URL` — la CSP par défaut accepte
   `https:` et `data:`), soit par un fichier monté à côté du conteneur
   (`BRANDING_PDF_LOGO`), soit par une image embarquée dans le jar
-  (`classpath:/branding/…`). Les visuels du festival restent livrés
-  sous ce préfixe : `BRANDING_PDF_LOGO=classpath:/branding/logo.png`,
-  `BRANDING_PDF_STRIP=classpath:/branding/bandeau.png`, et
-  `BRANDING_LOGO_URL=logo.png` côté web, et la mascotte par
-  `BRANDING_MASCOT_URL=mascotte.png` /
-  `BRANDING_MASCOT_ICON_URL=mascotte-icone.png`.
+  (`classpath:/branding/…`). **Aucun visuel n'est livré avec le dépôt** : les
+  images d'un déploiement appartiennent à son client, elles se montent à côté
+  du conteneur ou se servent par URL.
 
 Détails et mise en place : [`docs/observabilite.md`](docs/observabilite.md) (Sentry/Cloudflare),
 [`docs/mcp.md`](docs/mcp.md) (serveur MCP).

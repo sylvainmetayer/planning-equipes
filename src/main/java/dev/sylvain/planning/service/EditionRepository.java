@@ -55,7 +55,8 @@ public class EditionRepository {
             new TableToCopy("stand_typologie", "stand_id, typologie"),
             new TableToCopy("stand_indisponibilite",
                     "stand_id, date_indisponibilite, heure_debut, heure_fin, motif"),
-            new TableToCopy("stand_ouverture", "stand_id, date_ouverture, heure_debut, heure_fin, motif"),
+            new TableToCopy("stand_ouverture",
+                    "stand_id, date_ouverture, heure_debut, heure_fin, motif, effectif"),
             // The recurring opening rules (V37) predated by this list: without
             // them a duplicated edition silently fell back to « open on every
             // slot ». Their BIGSERIAL ids are kept as-is — the PKs are
@@ -64,7 +65,8 @@ public class EditionRepository {
             // values, so future inserts cannot collide.
             new TableToCopy("stand_horaire",
                     "id, stand_id, mode, type_jours, jours_semaine, date_debut, date_fin, dates, motif"),
-            new TableToCopy("stand_horaire_fenetre", "id, horaire_id, position, heure_debut, heure_fin"),
+            new TableToCopy("stand_horaire_fenetre",
+                    "id, horaire_id, position, heure_debut, heure_fin, effectif"),
             new TableToCopy("constraint_toggle", "nom"),
             new TableToCopy("ponderation_contrainte", "nom, poids"),
             new TableToCopy("parametres_legaux",

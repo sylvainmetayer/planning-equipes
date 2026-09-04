@@ -21,7 +21,7 @@ class QualiteConstraintsTest extends ConstraintTestBase {
     private final Creneau creneauMatin = matin("J1-MATIN", 1, D1);
     private final Creneau creneauAprem = afternoon("J1-AM", 1, D1);
 
-    // Real coordinates in a fictional town centre: Place du Drapeau and la
+    // Coordinates of the sample locations seeded by V9: Place du Drapeau and la
     // Mairie are ~490 m apart (far), two nearby points on the same square are a
     // few dozen meters apart (close).
     private final Emplacement placeDrapeau = emplacement("PLACE-DRAPEAU", 46.6513, 2.2492);

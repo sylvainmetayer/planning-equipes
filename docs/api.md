@@ -885,8 +885,9 @@ Deux indicateurs dans la même réponse :
 
 - **par animateur**, les couples stand × créneau qui passeraient sous
   l'effectif minimum s'il se désiste. Les sièges étant générés à
-  `max(1, effectifMin)` par couple (moitié sur une vacation de couverture de
-  pause), le nombre de sièges d'un groupe **est** son plancher : un groupe
+  `max(1, effectif du segment ouvert)` par couple — l'effectif de la fenêtre
+  d'ouverture, ou `effectifMin` à défaut, moitié sur une vacation de couverture
+  de pause —, le nombre de sièges d'un groupe **est** son plancher : un groupe
   complet descend sous l'effectif dès qu'un siège se libère. Le chiffre qui
   classe vraiment est donc `postesIrremplacables` — les groupes où *personne
   d'autre* ne pourrait reprendre le siège. Un groupe **déjà** en sous-effectif

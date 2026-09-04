@@ -1,4 +1,4 @@
-// Explorbot — configuration pour « Planning Équipes » (planning-equipes).
+// Explorbot — configuration pour « Planning Équipes ».
 // Lancement : cd <ce dossier> && npx explorbot explore /stands --show
 //
 // Le fournisseur d'IA est choisi par EXPLORBOT_AI_PROVIDER (défaut : openrouter).

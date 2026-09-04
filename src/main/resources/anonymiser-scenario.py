@@ -51,8 +51,8 @@ import sys
 
 import yaml
 
-# Centre-ville -> centre de la France, à latitude constante pour que les distances
-# entre emplacements soient rigoureusement conservées.
+# Translation vers le centre de la France, à latitude constante pour que les
+# distances entre emplacements soient rigoureusement conservées.
 DECALAGE_LONGITUDE = 2.5
 
 ENTETE = """# yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json

@@ -12,6 +12,7 @@ fonctionnalités métier) : **tout ajout de documentation technique se fait ici*
 | [`api.md`](api.md) | Endpoints REST exposés par le service Quarkus |
 | [`mcp.md`](mcp.md) | Serveur MCP (outils exposés à un assistant IA, authentification, confidentialité) |
 | [`import-export.md`](import-export.md) | Formats d'import / export : dump SQL, PDF, ICS, schéma de validation des scénarios |
+| [`memoire-du-projet.md`](memoire-du-projet.md) | **Ce que l'historique portait** : les mesures qui ont tranché un réglage du solveur, les pistes abandonnées, et l'incident précis derrière chaque garde-fou. Complément des décisions, à lire quand on se demande « pourquoi est-ce écrit comme ça ? »
 | [`decisions/`](decisions/README.md) | **Décisions d'architecture** : ce qui a été choisi, contre quelles alternatives, et ce que ça engage. Commence par le cloisonnement par édition (modèle, en-tête `X-Edition-Id`, duplication, plan de migration) |
 | [`developpement.md`](developpement.md) | Build, tests, CI, Podman, réglage du solveur, mises à jour Renovate |
 | [`migration-timefold-2.md`](migration-timefold-2.md) | Passage de Timefold 1.34 à 2.5 : ce que l'édition Community refuse, les correctifs à appliquer, et le réglage du solveur remesuré sur le profil de production |

@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
+import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 
@@ -84,6 +86,74 @@ class PlanningServicePosteGenerationTest {
         List<PosteAffectation> postes = PlanningService.buildPostes(List.of(standMinMax), List.of(creneauOuvert));
 
         assertThat(postes).hasSize(2);
+    }
+
+    /**
+     * The reason {@code FenetreHoraire.effectif} exists: a stand needing 4
+     * people until 19:00 and 2 after is one stand, and one créneau must yield
+     * both groups — each narrowed to its own window. Applying
+     * {@code effectifMin} to the whole slot is what made a real event's
+     * planning cover a third fewer hours than its source workbook needed.
+     */
+    @Test
+    void effectifParFenetreGenereLeBonNombreDeSiegesSurChaqueSegment() {
+        LocalDate jour = LocalDate.of(2026, 8, 14);
+        Creneau apresMidi = new Creneau(4L, 1, jour, LocalTime.of(14, 0), LocalTime.of(20, 0));
+        Stand stand = new Stand("STAND-D", "D", Set.of(), 1, 6, false);
+        stand.setOuvertures(List.of(
+                new OuvertureStand(null, jour, LocalTime.of(14, 0), LocalTime.of(19, 0), null, 4),
+                new OuvertureStand(null, jour, LocalTime.of(19, 0), LocalTime.of(20, 0), null, 2)));
+
+        List<PosteAffectation> postes = PlanningService.buildPostes(List.of(stand), List.of(apresMidi));
+
+        assertThat(postes).hasSize(6);
+        assertThat(postes).extracting(PosteAffectation::getHeureDebutEffective, PosteAffectation::getHeureFinEffective)
+                .containsExactly(
+                        tuple(LocalTime.of(14, 0), LocalTime.of(19, 0)),
+                        tuple(LocalTime.of(14, 0), LocalTime.of(19, 0)),
+                        tuple(LocalTime.of(14, 0), LocalTime.of(19, 0)),
+                        tuple(LocalTime.of(14, 0), LocalTime.of(19, 0)),
+                        tuple(LocalTime.of(19, 0), LocalTime.of(20, 0)),
+                        tuple(LocalTime.of(19, 0), LocalTime.of(20, 0)));
+    }
+
+    /**
+     * A window naming no effectif must generate exactly what it generated
+     * before the field existed — otherwise adding the column would silently
+     * change the volume of every edition already in the database.
+     */
+    @Test
+    void uneFenetreSansEffectifGenereToujoursEffectifMinSieges() {
+        LocalDate jour = LocalDate.of(2026, 8, 14);
+        Creneau apresMidi = new Creneau(5L, 1, jour, LocalTime.of(14, 0), LocalTime.of(20, 0));
+        Stand stand = new Stand("STAND-E", "E", Set.of(), 3, 6, false);
+        stand.setOuvertures(List.of(
+                new OuvertureStand(null, jour, LocalTime.of(14, 0), LocalTime.of(20, 0), null)));
+
+        List<PosteAffectation> postes = PlanningService.buildPostes(List.of(stand), List.of(apresMidi));
+
+        assertThat(postes).hasSize(3);
+        assertThat(postes).allSatisfy(poste -> assertThat(poste.getHeureDebutEffective()).isNull());
+    }
+
+    /**
+     * On a break-covering slot (EFFECTIF_REDUIT) the halving applies to the
+     * <em>segment's</em> effectif, not the stand's: the relay is half of
+     * whoever was actually on duty at that hour.
+     */
+    @Test
+    void laCouverturePauseHalveLEffectifDeLaFenetrePasCeluiDuStand() {
+        LocalDate jour = LocalDate.of(2026, 8, 14);
+        Creneau releve = new Creneau(6L, 1, jour, LocalTime.of(12, 0), LocalTime.of(13, 0));
+        releve.setCouverturePause(true);
+        Stand stand = new Stand("STAND-F", "F", Set.of(), 1, 6, false);
+        stand.setOuvertures(List.of(
+                new OuvertureStand(null, jour, LocalTime.of(12, 0), LocalTime.of(13, 0), null, 5)));
+
+        List<PosteAffectation> postes = PlanningService.buildPostes(List.of(stand), List.of(releve));
+
+        // ceil(5 / 2) = 3, not ceil(effectifMin=1 / 2) = 1.
+        assertThat(postes).hasSize(3);
     }
 
     /**

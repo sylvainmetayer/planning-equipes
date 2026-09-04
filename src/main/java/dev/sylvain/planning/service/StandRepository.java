@@ -112,7 +112,7 @@ public class StandRepository {
             }
             try (PreparedStatement ps = scope.prepareScoped(connection,
                     """
-                    SELECT id, stand_id, date_ouverture, heure_debut, heure_fin, motif
+                    SELECT id, stand_id, date_ouverture, heure_debut, heure_fin, motif, effectif
                     FROM stand_ouverture
                     WHERE edition_id = ?
                     ORDER BY id""");
@@ -125,7 +125,8 @@ public class StandRepository {
                                 rs.getObject("date_ouverture", LocalDate.class),
                                 rs.getObject("heure_debut", LocalTime.class),
                                 rs.getObject("heure_fin", LocalTime.class),
-                                rs.getString("motif")));
+                                rs.getString("motif"),
+                                rs.getObject("effectif", Integer.class)));
                     }
                 }
             }
@@ -176,7 +177,7 @@ public class StandRepository {
         }
         try (PreparedStatement ps = scope.prepareScoped(connection,
                 """
-                SELECT horaire_id, heure_debut, heure_fin
+                SELECT horaire_id, heure_debut, heure_fin, effectif
                 FROM stand_horaire_fenetre
                 WHERE edition_id = ?
                 ORDER BY horaire_id, position, id""");
@@ -186,7 +187,8 @@ public class StandRepository {
                 if (horaire != null) {
                     horaire.getFenetres().add(new FenetreHoraire(
                             rs.getObject("heure_debut", LocalTime.class),
-                            rs.getObject("heure_fin", LocalTime.class)));
+                            rs.getObject("heure_fin", LocalTime.class),
+                            rs.getObject("effectif", Integer.class)));
                 }
             }
         }
@@ -330,14 +332,16 @@ public class StandRepository {
         if (stand.getOuvertures() != null && !stand.getOuvertures().isEmpty()) {
             try (PreparedStatement ins = scope.prepareScoped(connection,
                     """
-                    INSERT INTO stand_ouverture (edition_id, stand_id, date_ouverture, heure_debut, heure_fin, motif)
-                    VALUES (?, ?, ?, ?, ?, ?)""")) {
+                    INSERT INTO stand_ouverture
+                        (edition_id, stand_id, date_ouverture, heure_debut, heure_fin, motif, effectif)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)""")) {
                 for (OuvertureStand ouverture : stand.getOuvertures()) {
                     ins.setString(2, stand.getId());
                     ins.setObject(3, ouverture.getDate());
                     ins.setObject(4, ouverture.getHeureDebut());
                     ins.setObject(5, ouverture.getHeureFin());
                     ins.setString(6, ouverture.getMotif());
+                    ins.setObject(7, ouverture.getEffectif());
                     ins.addBatch();
                 }
                 ins.executeBatch();
@@ -390,14 +394,16 @@ public class StandRepository {
             }
             try (PreparedStatement ins = scope.prepareScoped(connection,
                     """
-                    INSERT INTO stand_horaire_fenetre (edition_id, horaire_id, position, heure_debut, heure_fin)
-                    VALUES (?, ?, ?, ?, ?)""")) {
+                    INSERT INTO stand_horaire_fenetre
+                        (edition_id, horaire_id, position, heure_debut, heure_fin, effectif)
+                    VALUES (?, ?, ?, ?, ?, ?)""")) {
                 int position = 0;
                 for (FenetreHoraire fenetre : horaire.getFenetres()) {
                     ins.setLong(2, horaireId);
                     ins.setInt(3, position++);
                     ins.setObject(4, fenetre.getHeureDebut());
                     ins.setObject(5, fenetre.getHeureFin());
+                    ins.setObject(6, fenetre.getEffectif());
                     ins.addBatch();
                 }
                 ins.executeBatch();
